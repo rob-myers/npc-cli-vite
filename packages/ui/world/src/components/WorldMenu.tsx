@@ -335,7 +335,7 @@ export function WorldMenu() {
                 align="start"
               >
                 <Menu.Popup
-                  className="relative select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1"
+                  className="relative select-none bg-slate-800/70 border border-slate-700 rounded-md shadow-lg py-1"
                   style={{ width: state.menuWidth }}
                 >
                   <div
