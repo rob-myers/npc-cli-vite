@@ -6,7 +6,7 @@ import {
   CheckIcon,
   ClipboardTextIcon,
   CopyIcon,
-  PlayIcon,
+  PencilSimpleIcon,
 } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
@@ -261,18 +261,19 @@ function LibraryExample({
 
   return (
     <div className="relative">
-      {/* a code fence, clickable to reveal its comment and args */}
+      {/* a code fence, clickable to run; without a session it reveals detail instead */}
       <button
         type="button"
-        title={focused ? "hide detail" : "show detail"}
+        title={canRun ? "run in background" : focused ? "hide detail" : "show detail"}
         className={cn(
           "block w-full text-left cursor-pointer transition-colors",
           "px-3 py-2 bg-[#131313] border rounded",
-          focused ? "border-[#aaca]" : "border-[#2a2a2a] hover:border-[#444]",
+          focused ? "border-[#aaca]" : "border-[#2a2a2a]",
+          !focused && (canRun ? "hover:border-[#a6c6a6]" : "hover:border-[#444]"),
           // the args panel continues this fence
           focused && example.args.length > 0 && "rounded-b-none",
         )}
-        onClick={() => onFocus(example.id)}
+        onClick={() => (canRun ? onRun(src) : onFocus(example.id))}
       >
         <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
           {/* only the first line makes room for the overlaid toolbar */}
@@ -315,14 +316,14 @@ function LibraryExample({
         >
           <ClipboardTextIcon alt="paste into prompt" className="size-3.5" />
         </button>
+        {/* editing needs no session, unlike the two above */}
         <button
           type="button"
-          title="run in background"
-          disabled={!canRun}
-          className={cn(iconCss, "text-[#a6c6a6] hover:text-[#cae6ca] disabled:hover:text-[#a6c6a6]")}
-          onClick={() => onRun(src)}
+          title={focused ? "hide detail" : "edit args"}
+          className={cn(iconCss, focused && "text-[#aaca] hover:text-[#cce]")}
+          onClick={() => onFocus(example.id)}
         >
-          <PlayIcon alt="run in background" className="size-3.5" />
+          <PencilSimpleIcon alt="edit args" className="size-3.5" />
         </button>
       </div>
 
