@@ -36,6 +36,7 @@ import {
   roomLightIntensityKey,
   roomLightingEnabledKey,
   roomLitStorageKeyPrefix,
+  touchModeStorageKey,
   wallHeight,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
@@ -75,6 +76,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         panSpeed: 2,
         rotateSpeed: 0.5,
         zoomSpeed: 0.3,
+        touchMode: tryLocalStorageGet<"rotate" | "zoom">(touchModeStorageKey) ?? "rotate",
       },
       dynamicLight: createDynamicLightPostprocess({
         bottomHeight: 0,
@@ -406,16 +408,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { onKeyDown } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
 
-        // both drive the on-screen indicator
-        const onIndicatorChange = (_e: Event) => w.update();
-        w.rootEl.addEventListener("extrazoomchange", onIndicatorChange);
-        w.rootEl.addEventListener("touchgesturechange", onIndicatorChange);
-
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
-          w.rootEl?.removeEventListener("extrazoomchange", onIndicatorChange);
-          w.rootEl?.removeEventListener("touchgesturechange", onIndicatorChange);
         };
       },
       setupLights() {
@@ -437,6 +432,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.setRoomLightingEnabled(state.ambientIntensity < 0.9);
 
         state.forceUpdate();
+      },
+      setTouchMode(touchMode) {
+        tryLocalStorageSet(touchModeStorageKey, touchMode);
+        state.ctrlOpts = { ...state.ctrlOpts, touchMode };
+        w.update();
       },
       setCameraMode(cameraMode) {
         tryLocalStorageSet(cameraModeStorageKey, cameraMode);
@@ -791,7 +791,7 @@ export type State = {
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
-  ctrlOpts: MapControlsProps & { extraZoom?: number };
+  ctrlOpts: MapControlsProps & { extraZoom?: number; touchMode?: "rotate" | "zoom" };
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
   lastPointer: {
@@ -862,6 +862,8 @@ export type State = {
   setupDom(): () => void;
   setupLights(): void;
   setCameraMode(cameraMode: CameraModeType): void;
+  /** What two fingers do; one finger always pans */
+  setTouchMode(touchMode: "rotate" | "zoom"): void;
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
   /** Moves the camera's orbit target onto `groundPoint`, preserving zoom/orientation. Resolves on arrival. */
   lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean }): Promise<void>;

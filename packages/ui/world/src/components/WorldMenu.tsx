@@ -12,16 +12,15 @@ import {
   EyeIcon,
   EyeSlashIcon,
   GlobeStandIcon,
+  GpsIcon,
+  GpsSlashIcon,
   type Icon,
   MagnifyingGlassIcon,
   PauseIcon,
   PencilSimpleIcon,
-  PencilSimpleSlashIcon,
   PlayIcon,
   SunIcon,
   TrashIcon,
-  VideoCameraIcon,
-  VideoCameraSlashIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
@@ -254,8 +253,7 @@ export function WorldMenu() {
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, 2000);
   const toggleToastKeys = useToastTs(state.toastTs);
-  const { extraZoomActive, readyForExtraZoom, touchGesture } = w.view.controls ?? {};
-  const litRootCount = w.view.roomLight?.getLitRoomCount() ?? 0;
+  const touchMode = w.view.ctrlOpts.touchMode ?? "rotate";
   const introEnabled = w.player.introEnabled;
   // click replays the intro, whereas long press disables it
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
@@ -748,26 +746,6 @@ export function WorldMenu() {
                   </Slider.Track>
                 </Slider.Control>
               </Slider.Root>
-              <div className="relative">
-                {w.view.roomLightEditingEnabled ? (
-                  <PencilSimpleIcon
-                    className="size-4 shrink-0 cursor-pointer"
-                    weight="fill"
-                    onClick={() => w.view.toggleRoomLightEditing()}
-                  />
-                ) : (
-                  <PencilSimpleSlashIcon
-                    className="size-4 shrink-0 cursor-pointer text-red-400"
-                    weight="regular"
-                    onClick={() => w.view.toggleRoomLightEditing()}
-                  />
-                )}
-                {litRootCount > 0 && (
-                  <span className="absolute -bottom-1.5 -right-1.5 min-w-3.5 px-0.5 rounded-full bg-black text-white text-[11px] leading-3.5 text-center font-bold pointer-events-none">
-                    {litRootCount}
-                  </span>
-                )}
-              </div>
             </div>
           )}
 
@@ -782,13 +760,9 @@ export function WorldMenu() {
               onContextMenu={(e) => e.preventDefault()}
             >
               {introEnabled ? (
-                <VideoCameraIcon
-                  className="size-5"
-                  alt="pan to the player (long press to disable on load)"
-                  weight="bold"
-                />
+                <GpsIcon className="size-5" alt="pan to the player (long press to disable on load)" weight="bold" />
               ) : (
-                <VideoCameraSlashIcon
+                <GpsSlashIcon
                   className="size-5 text-red-400"
                   alt="pan to the player (disabled on load)"
                   weight="bold"
@@ -809,22 +783,20 @@ export function WorldMenu() {
             </button>
           </div>
 
-          {/* the decided touch gesture, else extra zoom */}
-          {(touchGesture !== "none" || extraZoomActive || readyForExtraZoom) && (
-            <div
-              className={cn(
-                "outline-width-1 w-fit grid grid-flow-col items-center pointer-events-none flex justify-center rounded select-none size-9",
-                touchGesture !== "none" || extraZoomActive
-                  ? "bg-gray-800/90 text-white"
-                  : "bg-gray-800/50 text-gray-400",
-              )}
+          {/* what two fingers do; one finger always pans */}
+          {w.touchDevice === true && (
+            <button
+              type="button"
+              title={touchMode === "rotate" ? "two fingers rotate" : "two fingers zoom"}
+              className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
+              onClick={() => w.view.setTouchMode(touchMode === "rotate" ? "zoom" : "rotate")}
             >
-              {touchGesture === "rotate" ? (
-                <ArrowsClockwiseIcon className="size-5" alt="rotating" weight="bold" />
+              {touchMode === "rotate" ? (
+                <ArrowsClockwiseIcon className="size-5" alt="two fingers rotate" weight="bold" />
               ) : (
-                <MagnifyingGlassIcon className="size-5" alt="zooming" weight="bold" />
+                <MagnifyingGlassIcon className="size-5" alt="two fingers zoom" weight="bold" />
               )}
-            </div>
+            </button>
           )}
         </div>
 

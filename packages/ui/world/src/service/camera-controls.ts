@@ -284,28 +284,20 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     committed: false,
   };
 
-  twoFinger = {
-    gesture: "undecided" as "undecided" | "rotate" | "zoom",
-    start: {} as Record<number, { x: number; y: number }>,
-  };
+  /**
+   * What two fingers do, chosen explicitly rather than inferred:
+   * - `rotate`: horizontal drags the azimuth, vertical the polar; pinch is ignored
+   * - `zoom`: pinch dollies; dragging is ignored
+   *
+   * One finger pans either way.
+   */
+  touchMode: "rotate" | "zoom" = "rotate";
 
   get extraZoomActive() {
     return this._ez.active;
   }
   get readyForExtraZoom() {
     return this._ez.ready;
-  }
-  /** The decided two-finger gesture, for the on-screen indicator */
-  get touchGesture(): "none" | "rotate" | "zoom" {
-    return this.twoFinger.gesture === "undecided" ? "none" : this.twoFinger.gesture;
-  }
-
-  setTwoFingerGesture(gesture: CameraControls["twoFinger"]["gesture"]) {
-    if (this.twoFinger.gesture === gesture) {
-      return;
-    }
-    this.twoFinger.gesture = gesture;
-    this.domElement.dispatchEvent(new CustomEvent("touchgesturechange", { detail: { gesture }, bubbles: true }));
   }
 
   minPanDistance = 0;
@@ -520,53 +512,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTwoFingerMove(event: PointerEvent) {
-    const pos0 = this.pointerPositions[this.pointers[0].pointerId];
-    const pos1 = this.pointerPositions[this.pointers[1].pointerId];
-    if (!pos0 || !pos1) return;
-
-    const start0 = this.twoFinger.start[this.pointers[0].pointerId];
-    const start1 = this.twoFinger.start[this.pointers[1].pointerId];
-    if (!start0 || !start1) return;
-
-    const dx0 = pos0.x - start0.x,
-      dy0 = pos0.y - start0.y;
-    const dx1 = pos1.x - start1.x,
-      dy1 = pos1.y - start1.y;
-    // a pinch changes the spread, a drag moves the centroid.
-    // Comparing them (rather than each finger's own displacement) also detects
-    // a pinch where one finger stays anchored.
-    const spread = Math.abs(
-      Math.hypot(pos1.x - pos0.x, pos1.y - pos0.y) - Math.hypot(start1.x - start0.x, start1.y - start0.y),
-    );
-    const centroid = Math.hypot((dx0 + dx1) / 2, (dy0 + dy1) / 2);
-
-    if (this.twoFinger.gesture === "undecided") {
-      if (Math.max(spread, centroid) < twoFingerMinMove) return;
-
-      // decided until every finger lifts, else e.g. a two-finger polar
-      // rotate would keep flipping into a pinch-zoom
-      if (spread > centroid) {
-        this.setTwoFingerGesture("zoom");
-        this.handleTouchStartDolly();
-      } else {
-        this.setTwoFingerGesture("rotate");
-        this.handleTouchStartRotate();
-      }
-      return;
+    if (this.touchMode === "rotate") {
+      return this.handleTouchMoveRotate(event);
     }
 
-    if (this.twoFinger.gesture === "rotate") {
-      this.handleTouchMoveRotate(event);
-    } else {
-      const other = this.getSecondPointerPosition(event)!;
-      const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
-      this.u.dollyEnd.set(0, dist);
-      const baseRatio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
-      const ratio = 1 + (baseRatio - 1) * twoFingerZoomBoost;
-      if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
-      this.dollyOut(ratio);
-      this.u.dollyStart.copy(this.u.dollyEnd);
-    }
+    const other = this.getSecondPointerPosition(event);
+    if (!other) return;
+    const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
+    this.u.dollyEnd.set(0, dist);
+    const baseRatio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
+    const ratio = 1 + (baseRatio - 1) * twoFingerZoomBoost;
+    if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
+    this.dollyOut(ratio);
+    this.u.dollyStart.copy(this.u.dollyEnd);
   }
 
   handleTouchMovePan(event: PointerEvent) {
@@ -875,7 +833,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         this.pointerLastUp.x - this.pointerFirstDown.x,
         this.pointerLastUp.y - this.pointerFirstDown.y,
       );
-      this.setTwoFingerGesture("undecided");
     }
 
     if (this.params.snapAzimuth && !this.snapAzimuth.committed && !this.snapAzimuth.animating) {
@@ -926,7 +883,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
     this.rotateAxis = "none";
-    this.setTwoFingerGesture("undecided");
     this.snapAzimuth.animating = false;
     this._ez.onPointerUp();
     this.dispatchEvent(endEvent);
@@ -985,16 +941,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
       this.dispatchEvent(startEvent);
     } else if (this.pointers.length === 2) {
-      // the gesture persists until every finger lifts, so a re-placed finger
-      // only re-baselines it rather than permitting a switch
-      this.twoFinger.start = {};
-      for (const p of this.pointers) {
-        const pos = this.pointerPositions[p.pointerId];
-        this.twoFinger.start[p.pointerId] = pos ? { x: pos.x, y: pos.y } : { x: p.pageX, y: p.pageY };
-      }
-      if (this.twoFinger.gesture === "rotate") {
+      if (this.touchMode === "rotate") {
         this.handleTouchStartRotate();
-      } else if (this.twoFinger.gesture === "zoom") {
+      } else {
         this.handleTouchStartDolly();
       }
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
@@ -1264,7 +1213,6 @@ const snapAzimuthOffset = Math.PI / 4;
 /** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
 const snapAzimuthEaseIn = 2;
 /** Pixels of spread/centroid change before a two-finger gesture is classified */
-const twoFingerMinMove = 4;
 /** Factor by which the other gesture must dominate before we reclassify */
 const twoFingerZoomBoost = 3.0;
 
