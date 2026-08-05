@@ -297,6 +297,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   twoFingerTimer = 0;
   /** Where each finger went down, so a drag can cancel the long press */
   twoFingerStart: Record<number, THREE.Vector2> = {};
+  /** Midpoint of the two fingers, so a pinch can ignore their shared motion */
+  twoFingerCentroid = new THREE.Vector2();
 
   setTouchMode(touchMode: CameraControls["touchMode"]) {
     if (this.touchMode === touchMode) {
@@ -555,6 +557,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const other = this.getSecondPointerPosition(event);
     if (!other) return;
     const dist = Math.hypot(event.pageX - other.x, event.pageY - other.y);
+
+    // only pinching counts: if the fingers moved together more than they
+    // moved apart, it's a two-finger pan, which we ignore
+    const cx = 0.5 * (event.pageX + other.x);
+    const cy = 0.5 * (event.pageY + other.y);
+    const panned = Math.hypot(cx - this.twoFingerCentroid.x, cy - this.twoFingerCentroid.y);
+    this.twoFingerCentroid.set(cx, cy);
+
+    if (Math.abs(dist - this.u.dollyStart.y) <= panned) {
+      this.u.dollyStart.set(0, dist); // re-baseline, else the drift zooms later
+      return;
+    }
+
     this.u.dollyEnd.set(0, dist);
     const baseRatio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
     const ratio = 1 + (baseRatio - 1) * twoFingerZoomBoost;
@@ -611,31 +626,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const element = this.domElement;
 
     if (element) {
-      if (this.params.snapAzimuth) {
-        if (this.rotateAxis === "none") {
-          const ax = Math.abs(this.u.rotateDelta.x);
-          const ay = Math.abs(this.u.rotateDelta.y);
-          if (ax > 2 || ay > 2) {
-            this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
-          }
-        }
-        const horiz = this.rotateAxis !== "vertical";
-        const vert = this.rotateAxis !== "horizontal";
-        if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-        if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
-      } else {
-        const isFree = !this.params.fixedPolar;
-        if (isFree && this.rotateAxis === "none") {
-          const ax = Math.abs(this.u.rotateDelta.x);
-          const ay = Math.abs(this.u.rotateDelta.y);
-          if (ax > 2 || ay > 2) {
-            this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
-          }
-        }
-        const horiz = !isFree || this.rotateAxis !== "vertical";
-        const vert = isFree && this.rotateAxis !== "horizontal";
-        if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-        if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+      // unlike the mouse, touch rotates both axes at once
+      this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+      if (this.params.fixedPolar !== true) {
+        this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
       }
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
@@ -667,6 +661,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const x1 = p1?.x ?? this.pointers[1].pageX;
     const y1 = p1?.y ?? this.pointers[1].pageY;
     this.u.dollyStart.set(0, Math.hypot(x0 - x1, y0 - y1));
+    this.twoFingerCentroid.set(0.5 * (x0 + x1), 0.5 * (y0 + y1));
   }
 
   handleTouchStartPan() {
