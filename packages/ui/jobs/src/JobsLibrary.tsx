@@ -45,7 +45,7 @@ export default function JobsLibrary(props: Props) {
       focusedId: null,
       sectionKeys: stored?.sectionKeys ?? {},
       height: stored?.height ?? defaultLibraryHeight,
-      open: stored?.open ?? false,
+      open: stored?.open ?? true,
       resizing: false,
       rootEl: null,
       startHeight: 0,
