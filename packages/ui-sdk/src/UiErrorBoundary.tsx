@@ -1,4 +1,5 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
+import { cn } from "@npc-cli/util";
 import { error as logError, safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { Component } from "react";
@@ -42,49 +43,66 @@ export class UiErrorBoundary extends Component<
       return this.props.children;
     }
     return (
-      <div className="flex flex-col gap-1 text-white size-full bg-black">
-        <h2 className="p-4 border-b text-white border-on-background/25 bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-white)_20%,transparent)]">
+      <div className="flex flex-col size-full bg-black text-white">
+        <h2 className="shrink-0 px-4 py-3 border-b text-white border-on-background/25 bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-size-[10px_10px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-white)_20%,transparent)]">
           Error in <span className="font-mono">{this.props.meta?.uiKey}</span>
         </h2>
-        <div className="overflow-auto">
-          <pre className="px-4 py-2 whitespace-pre-wrap font-sans text-sm text-red-400 leading-relaxed tracking-wide">
+
+        <div className="flex-1 min-h-0 overflow-auto flex flex-col gap-5 p-4">
+          <pre className="whitespace-pre-wrap font-sans text-sm/relaxed text-red-400 tracking-wide">
             {this.state.error.message}
           </pre>
-          <div className="relative px-4 py-2">
-            <pre className="max-h-20 overflow-auto border border-white/50 p-2 pr-10 whitespace-pre-wrap font-sans text-green-600 text-sm leading-relaxed tracking-wide">
+
+          <section className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <h3 className={labelCss}>stack</h3>
+              <button
+                type="button"
+                title="copy stack"
+                className="cursor-pointer text-white/60 transition-colors hover:text-white"
+                onClick={this.copyStack}
+              >
+                {this.state.copied ? (
+                  <CheckIcon alt="copied" className="size-4 text-green-500" />
+                ) : (
+                  <CopyIcon alt="copy stack" className="size-4" />
+                )}
+              </button>
+            </div>
+            {/* drag the bottom-right corner to resize */}
+            <pre className={cn(boxCss, "h-56 min-h-16 resize-y font-sans text-sm/relaxed text-green-600")}>
               {this.state.error.stack}
             </pre>
-            <button
-              type="button"
-              title="copy stack"
-              className="absolute right-6 top-4 cursor-pointer text-white/60 transition-colors hover:text-white"
-              onClick={this.copyStack}
-            >
-              {this.state.copied ? (
-                <CheckIcon alt="copied" className="size-4 text-green-500" />
-              ) : (
-                <CopyIcon alt="copy stack" className="size-4" />
-              )}
-            </button>
-          </div>
-          <div className="px-4 py-2 flex flex-col gap-1">
-            <div className="text-sm">ui meta</div>
-            <pre className="whitespace-pre-wrap font-mono text-xs text-amber-200 leading-relaxed tracking-wide">
+          </section>
+
+          <section className="flex flex-col gap-1.5">
+            <h3 className={labelCss}>ui meta</h3>
+            <pre className={cn(boxCss, "h-40 min-h-16 resize-y font-mono text-xs/relaxed text-amber-200")}>
               {safeJsonCompact(this.props.meta)}
             </pre>
-          </div>
+          </section>
         </div>
-        <button
-          type="button"
-          className="cursor-pointer p-2 m-4 self-start font-sans text-sm text-white bg-black border rounded"
-          onClick={() => this.setState({ error: NoErrorSymbol })}
-        >
-          Refresh
-        </button>
+
+        <div className="shrink-0 p-4 border-t border-white/15">
+          <button
+            type="button"
+            className="cursor-pointer px-3 py-1.5 font-sans text-sm text-white bg-black border border-white/50 rounded transition-colors hover:bg-white/10"
+            onClick={() => this.setState({ error: NoErrorSymbol })}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
     );
   }
 }
+
+const labelCss = "text-xs uppercase tracking-widest text-white/40";
+/** A scrollable bordered block, shared by the stack and the ui meta */
+const boxCss = cn(
+  "overflow-auto [scrollbar-width:thin] whitespace-pre-wrap tracking-wide",
+  "p-3 rounded border border-white/25 bg-white/3",
+);
 
 const NoErrorSymbol = Symbol();
 
