@@ -103,12 +103,16 @@ export const dynamicLightRadiusKey = "world-tracked-light-radius";
 /** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
 export const defaultDynamicLightIntensity = 1;
 export const dynamicLightIntensityKey = "world-tracked-light-intensity";
+/** Default extent (0..1) of the vignette darkening the corners of the frame */
+export const defaultVignette = 1;
+
 /** Default magnitude of the world's ambient (unlit-area) tint — see `dimWorldColor` */
 export const defaultAmbientIntensity = 0.4;
 export const ambientIntensityKey = "world-ambient-intensity";
 export const ambientMoodKey = "world-ambient-mood";
 
-export const defaultCameraMode = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraModeDesktop = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;
 export const defaultCardinalDirectionsMobile = 4;
 
