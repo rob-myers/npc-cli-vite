@@ -95,6 +95,9 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       },
       connect() {
         state.connected = true;
+        state.connectOrMount();
+      },
+      connectOrMount() {
         if (state.connectSession() === false && state.ttyMeta !== null) {
           // no session yet: mount the tty offscreen and connect when it has booted
           uiStoreApi.markEverSeen(state.ttyMeta.id);
@@ -280,11 +283,12 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   }, []);
 
   useEffect(() => {
-    // connect explicitly the first time; thereafter e.g. session switches reconnect
+    // connect explicitly the first time; thereafter e.g. session switches reconnect,
+    // mounting the newly selected tty when it has never been seen
     if (state.connected === true) {
-      state.connectSession();
+      state.connectOrMount();
     }
-  }, [state.connected, state.ttyMeta?.sessionBootedAt]); // sync onchange session
+  }, [state.connected, state.ttyMeta?.id, state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
   const sessionExists = state.sessionKey !== null && sessionApi.getSession(state.sessionKey) !== undefined;
@@ -512,6 +516,8 @@ type State = {
   connected: boolean;
   /** Connect, and stay connected e.g. when the session changes */
   connect: () => void;
+  /** Connect to the selected session, mounting its tty in the background if absent */
+  connectOrMount: () => void;
   connectSession: () => boolean;
   debouncedUpdate: () => void;
   disconnectSession: null | (() => void);
