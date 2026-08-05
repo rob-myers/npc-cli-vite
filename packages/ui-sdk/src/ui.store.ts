@@ -67,6 +67,13 @@ export const uiStoreApi = {
   getUi(id: string): UiStoreByIdEntry | null {
     return uiStore.getState().byId[id] ?? null;
   },
+  /** Mount a ui in the background even if its tab was never viewed — see `everSeen` */
+  markEverSeen(id: string) {
+    uiStore.setState((draft) => {
+      const ui = draft.byId[id];
+      if (ui) ui.everSeen = true;
+    });
+  },
   removeItem(itemId: string) {
     const ui = uiStore.getState().byId[itemId];
     if (!ui) return;

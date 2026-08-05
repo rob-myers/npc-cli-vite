@@ -95,7 +95,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       },
       connect() {
         state.connected = true;
-        state.connectSession();
+        if (state.connectSession() === false && state.ttyMeta !== null) {
+          // no session yet: mount the tty offscreen and connect when it has booted
+          uiStoreApi.markEverSeen(state.ttyMeta.id);
+        }
       },
       connectSession() {
         try {
@@ -254,19 +257,17 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   );
 
   useEffect(() => {
-    const sessionKeys = ttyMetas.map((x) => x.sessionKey);
     if (ttyMetas.length === 0) {
       state.set({ sessionKey: null, ttyMeta: null });
-    } else if (state.sessionKey === null || !sessionKeys.includes(state.sessionKey)) {
-      // select first
-      state.set({
-        sessionKey: sessionKeys[0],
-        ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] ?? null,
-      });
-    } else {
-      // select current
-      state.set({ ttyMeta: ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] });
+      return;
     }
+    // keep the current session, else select the first
+    const sessionKey =
+      state.sessionKey !== null && ttyMetas.some((x) => x.sessionKey === state.sessionKey)
+        ? state.sessionKey
+        : ttyMetas[0].sessionKey;
+
+    state.set({ sessionKey, ttyMeta: ttyMetas.find((x) => x.sessionKey === sessionKey) ?? null });
   }, [ttyMetas]);
 
   useEffect(() => {
@@ -325,7 +326,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           </Select.Positioner>
         </Select.Portal>
       </Select.Root>
-      {sessionExists === true && state.connected === false && (
+      {state.connected === false ? (
         <button
           type="button"
           title="connect to session"
@@ -335,8 +336,15 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           {/* <PlugsIcon alt="connect" className="size-4" /> */}
           connect
         </button>
+      ) : (
+        sessionExists === false && (
+          // the tty is mounting in the background — see `connect`
+          <div className="flex items-center px-3 py-1 rounded-sm border border-[#ccc]/20 text-sm text-[#999]">
+            connecting…
+          </div>
+        )
       )}
-      {state.ttyMeta !== null && (
+      {state.connected === true && state.ttyMeta !== null && (
         <button
           type="button"
           title={state.ttyMeta.disabled ? "resume tty" : "pause tty"}
@@ -366,15 +374,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
         {state.processes[0] === undefined && (
-          <div className="self-start w-full max-w-[400px] p-1 font-mono">
-            {sessionHeader}
-
-            {sessionExists === false && (
-              <div className="w-full p-4 text-sm bg-black text-[#ff9b] border border-[#505050] rounded rounded-tr-none">
-                Switch to the terminal tab to mount it
-              </div>
-            )}
-          </div>
+          <div className="self-start w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
         )}
 
         {sessionsExist && (
