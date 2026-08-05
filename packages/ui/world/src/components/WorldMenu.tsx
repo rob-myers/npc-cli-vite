@@ -255,7 +255,9 @@ export function WorldMenu() {
   };
 
   const pendingKeys = Object.keys(w.pending);
-  const toastKeys = useToastKeys(pendingKeys, 2000);
+  const toastKeys = useToastKeys(pendingKeys, toastLingerMs);
+  // held briefly, else a fast load just flickers the trigger
+  const spinnerKeys = useToastKeys(pendingKeys, spinnerMinMs);
   const toggleToastKeys = useToastTs(state.toastTs);
   const introEnabled = w.player.introEnabled;
   // click replays the intro, whereas long press disables it
@@ -281,7 +283,11 @@ export function WorldMenu() {
   return (
     <>
       <motion.div
-        className="outline-none absolute top-0 left-0.5 z-10 touch-none select-none flex flex-col gap-0.5 max-w-full overflow-x-hidden"
+        // - `items-start` so no child can stretch the trigger, which would
+        //   carry the popup rightwards with it
+        // - above the popup's `z-50`, so the toasts below it are not covered. The drag
+        //   transform makes this a stacking context, so a child cannot escape on its own
+        className="outline-none absolute top-0 left-0.5 z-[60] touch-none select-none flex flex-col items-start gap-0.5"
         style={{ y }}
         drag="y"
         dragListener={false}
@@ -320,11 +326,12 @@ export function WorldMenu() {
                 state.set({ menuOpen: !state.menuOpen });
               }}
             >
-              <div className="outline-width-1 w-fit grid grid-flow-col items-center bg-gray-800 text-white">
-                <div className="grid place-items-center size-9">
+              <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
+                {spinnerKeys.length > 0 ? (
+                  <Spinner className="size-4" />
+                ) : (
                   <GlobeStandIcon className="size-5" weight="bold" />
-                </div>
-                {pendingKeys.length > 0 && <Spinner className="mr-2 size-4" />}
+                )}
               </div>
             </Menu.Trigger>
 
@@ -787,12 +794,12 @@ export function WorldMenu() {
           </div>
         </div>
 
-        <div>
+        <div className="absolute top-full left-0 mt-1 w-max max-w-64 flex flex-col gap-0.5">
           <AnimatePresence>
             {[...toastKeys, ...toggleToastKeys].map((key) => (
               <motion.div
                 key={key}
-                className="bg-zinc-800/90 text-slate-300 text-xs p-3 py-1.5 wrap-break-word"
+                className="rounded shadow-lg shadow-black/40 bg-zinc-900/95 text-slate-100 text-xs px-3 py-1.5 wrap-break-word"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -1003,6 +1010,11 @@ const menuWidthStorageKey = (id: string) => `world-context-menu-width-${id}`;
 const menuHeightStorageKey = (id: string) => `world-context-menu-height-${id}`;
 const minMenuWidth = 200;
 const minMenuHeight = 120;
+/** How long a toast lingers after its pending key clears */
+const toastLingerMs = 2000;
+/** Minimum time the trigger's spinner stays up */
+const spinnerMinMs = 300;
+
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
 const playerOpenStorageKey = "world-player-section-open";
