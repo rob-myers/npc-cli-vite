@@ -48,6 +48,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       copiedTimeoutId: 0,
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       disconnectSession: null,
+      expandedUids: new Set(),
       ordered: [],
       pending: { src: null, timeoutId: 0, until: 0 },
       processes: [],
@@ -67,7 +68,12 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
         // `processes` is sparse i.e. indexed by pid
         state.processes.forEach((p) => {
-          canCleanup(p, now) ? removed++ : (alive[p.pid] = p);
+          if (canCleanup(p, now)) {
+            removed++;
+            state.expandedUids.delete(p.uid);
+          } else {
+            alive[p.pid] = p;
+          }
         });
 
         if (removed > 0) {
@@ -297,6 +303,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           })
           .catch(error);
       },
+      toggleExpanded(e) {
+        const uid = Number(e.currentTarget.dataset.uid);
+        state.expandedUids.delete(uid) === false && state.expandedUids.add(uid);
+        state.update();
+      },
       toggleTtyDisabled() {
         if (!state.ttyMeta) return;
         uiStoreApi.setUiMeta(state.ttyMeta.id, (draft) => (draft.disabled = !draft.disabled));
@@ -307,9 +318,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         }
         state.sessionKey = sessionKey as `tty-${number}`;
         state.ttyMeta = ttyMetas.find((x) => x.sessionKey === state.sessionKey) ?? null;
-        // a queued command belonged to the previous session
+        // a queued command belonged to the previous session, as did any expansion
         window.clearTimeout(state.pending.timeoutId);
         state.pending.src = null;
+        state.expandedUids.clear();
         state.set({ processes: [], ordered: [] });
       },
     }),
@@ -439,17 +451,16 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       >
         {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
 
-        {state.processes[0] === undefined && (
-          <div className="self-start w-full max-w-[400px] p-1 font-mono">{sessionHeader}</div>
-        )}
+        {state.processes[0] === undefined && <div className="w-full p-1 font-mono">{sessionHeader}</div>}
 
         {sessionsExist && (
-          <div className="flex flex-col items-start text-base text-white">
+          <div className="flex flex-col text-base text-white">
             {/* keyed, so switching session swaps items without exit animations */}
             <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
               {state.ordered.map((p) => {
                 const killed = p.status === toProcessStatus.Killed;
                 const paused = p.status === toProcessStatus.Suspended;
+                const expanded = state.expandedUids.has(p.uid);
                 return (
                   <motion.div
                     key={p.uid}
@@ -458,12 +469,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="min-w-32 flex flex-col w-full max-w-[400px] rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
+                    className="min-w-32 flex flex-col w-full rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                   >
                     {/* header, connected to the session leader */}
                     {p.pid === 0 && sessionHeader}
 
-                    <div className="flex flex-wrap items-stretch gap-y-0.5">
+                    {/* never wraps: a src too wide for the row truncates instead */}
+                    <div className="flex items-stretch">
                       {/* fixed width so cards align */}
                       <div className="relative flex shrink-0 bg-black border border-[#555]">
                         <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
@@ -508,10 +520,16 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
                       <div
                         title={p.src}
+                        data-uid={p.uid}
+                        onClick={state.toggleExpanded}
                         className={cn(
-                          // up to two lines i.e. 2 * 1.25rem + py-1
-                          "grow min-w-32 max-h-12 overflow-auto [scrollbar-width:thin] break-words",
-                          "px-2 py-1 bg-black border border-[#505050] text-sm",
+                          // `min-w-0` lets it shrink past its content, so `truncate` bites
+                          "grow min-w-0 cursor-pointer px-2 py-1 bg-black border border-[#505050] text-sm",
+                          expanded
+                            ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
+                              "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
+                            : // one line, however long the source
+                              "truncate",
                           killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
                         )}
                       >
@@ -586,6 +604,9 @@ type State = {
   toggleTtyDisabled: () => void;
   /** Forget killed processes */
   cleanupDead: () => void;
+  /** `uid`s whose `src` is shown over two lines, rather than one */
+  expandedUids: Set<number>;
+  toggleExpanded: (e: React.MouseEvent<HTMLDivElement>) => void;
   sessionKey: null | `tty-${number}`;
   /** The selected session, if it exists i.e. its tty is mounted */
   getSession: () => undefined | Session;
