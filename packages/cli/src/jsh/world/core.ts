@@ -748,14 +748,24 @@ export async function ray(
  * remove rob kate
  * # remove runtime decor and an npc
  * remove test-decor-point will
+ *
+ * remove npc:rob
+ * remove npcs:'["rob',"kate"]'
  * ```
  */
-export async function remove({ w, args }: JshCli.RunArg) {
+export async function remove(
+  { w, api, args }: JshCli.RunArg,
+  opts: { npcKey?: string; npcKeys?: string[] } = api.jsArg(args, { npc: "npcKey" }),
+) {
   if (args.length === 1) {
     if (args[0] === "npcs") {
       return w.e.removeNpcs(...Object.keys(w.n));
     } else if (args[0] === "decor") {
       return w.decor.remove(...Object.keys(w.decor.runtime.byKey));
+    } else if (typeof opts.npcKey === "string") {
+      return w.decor.remove(opts.npcKey);
+    } else if (Array.isArray(opts.npcKeys)) {
+      return w.decor.remove(...opts.npcKeys);
     }
   }
 

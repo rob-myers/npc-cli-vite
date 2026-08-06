@@ -38,10 +38,16 @@ pick | spawn npc:test as:human-1 look
 # remove
 
 ```sh
+# remove npc rob
+remove npc:rob
+
 # remove all npcs
 remove npcs
 
-# remove npc test0, ... , test5
+# remove all decor
+remove decor
+
+# remove npcs or decor test0, ... , test5
 remove test{0..5}
 ```
 
