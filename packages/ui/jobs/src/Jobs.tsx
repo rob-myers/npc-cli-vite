@@ -10,9 +10,17 @@ import {
 } from "@npc-cli/cli";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
 import { error, throttle } from "@npc-cli/util/legacy/generic";
-import { ArrowCounterClockwiseIcon, CaretRightIcon, PauseIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  CaretRightIcon,
+  PauseIcon,
+  PlayIcon,
+  PlugsConnectedIcon,
+  PlugsIcon,
+  XIcon,
+} from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
@@ -106,6 +114,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           // no session yet: mount the tty offscreen and connect when it has booted
           uiStoreApi.markEverSeen(state.ttyMeta.id);
         }
+      },
+      disconnect() {
+        state.disconnectSession?.();
+        state.disconnectSession = null;
+        window.clearTimeout(state.pending.timeoutId);
+        state.pending.src = null;
+        state.set({ connected: false, processes: [], ordered: [] });
       },
       getSession() {
         return state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
@@ -343,8 +358,9 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         <Select.Trigger
           title="sessionKey"
           className={cn(
-            "flex items-center gap-2 cursor-pointer px-3 py-1 rounded-sm text-sm",
-            "border border-[#aaca] shadow-sm shadow-black/50 bg-black text-[#ff9]",
+            "flex items-center gap-2 cursor-pointer px-3 py-1 rounded-l-sm text-sm",
+            // the connect icon continues this trigger
+            "border border-r-0 border-[#aaca] shadow-sm shadow-black/50 bg-black text-[#ff9]",
             "transition-colors hover:bg-[#111]",
           )}
         >
@@ -373,24 +389,27 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           </Select.Positioner>
         </Select.Portal>
       </Select.Root>
-      {state.connected === false ? (
-        <button
-          type="button"
-          title="connect to session"
-          className="cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-sm border border-[#ccc]/50 shadow-sm shadow-black/50 text-sm text-[#afa] transition-colors hover:bg-[#111]"
-          onClick={state.connect}
-        >
-          {/* <PlugsIcon alt="connect" className="size-4" /> */}
-          connect
-        </button>
-      ) : (
-        sessionExists === false && (
+      {/* attached to the select, being the same decision: which session, and are we on it */}
+      <button
+        type="button"
+        title={state.connected ? "disconnect" : "connect to session"}
+        className={cn(
+          "cursor-pointer grid place-items-center px-2 rounded-r-sm text-sm",
+          "border border-[#aaca] shadow-sm shadow-black/50 bg-black",
+          "transition-colors hover:bg-[#111]",
+          state.connected ? "text-[#afa] hover:text-[#faa]" : "text-[#999] hover:text-[#afa]",
+        )}
+        onClick={state.connected ? state.disconnect : state.connect}
+      >
+        {state.connected === false ? (
+          <PlugsIcon alt="connect to session" className="size-4" />
+        ) : sessionExists === false ? (
           // the tty is mounting in the background — see `connect`
-          <div className="flex items-center px-3 py-1 rounded-sm border border-[#ccc]/20 text-sm text-[#999]">
-            connecting…
-          </div>
-        )
-      )}
+          <Spinner className="size-4" />
+        ) : (
+          <PlugsConnectedIcon alt="disconnect" className="size-4" />
+        )}
+      </button>
       {state.connected === true && state.ttyMeta !== null && (
         <button
           type="button"
@@ -578,6 +597,8 @@ type State = {
   connect: () => void;
   /** Connect to the selected session, mounting its tty in the background if absent */
   connectOrMount: () => void;
+  /** Stop tracking the session, without touching its tty */
+  disconnect: () => void;
   connectSession: () => boolean;
   debouncedUpdate: () => void;
   disconnectSession: null | (() => void);
