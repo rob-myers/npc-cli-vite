@@ -1,4 +1,4 @@
-import { cn, useStateRef } from "@npc-cli/util";
+import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
@@ -43,6 +43,8 @@ export default function JobsLibrary(props: Props) {
       categoryKey: stored?.categoryKey ?? "",
       edits: {},
       focusedId: null,
+      press: { timeoutId: 0, longPressed: false },
+      props,
       sectionKeys: stored?.sectionKeys ?? {},
       height: stored?.height ?? defaultLibraryHeight,
       open: stored?.open ?? true,
@@ -51,16 +53,52 @@ export default function JobsLibrary(props: Props) {
       startHeight: 0,
       startY: 0,
 
-      editArg(editKey, value) {
-        state.edits[editKey] = value;
-        state.update();
-      },
       focusExample(exampleId) {
         state.set({ focusedId: state.focusedId === exampleId ? null : exampleId });
       },
       getMaxHeight() {
         const root = state.rootEl?.closest<HTMLElement>("[data-jobs-root]");
         return Math.max(minLibraryHeight, (root?.clientHeight ?? 600) - reservedHeight);
+      },
+      onEditArg(e) {
+        state.edits[e.currentTarget.dataset.editKey ?? ""] = e.currentTarget.value;
+        state.update();
+      },
+      onExampleClick(e) {
+        if (state.press.longPressed === true) {
+          return; // the long press already opened the detail
+        }
+        const { exampleId, src } = getExampleData(e);
+        e.shiftKey ? state.focusExample(exampleId) : state.props.onRun(src);
+      },
+      onExampleCopy(e) {
+        state.props.onCopy(getExampleData(e).src);
+      },
+      onExampleDown(e) {
+        const { exampleId } = getExampleData(e); // captured, the event won't outlive the timer
+        state.press.longPressed = false;
+        state.press.timeoutId = window.setTimeout(() => {
+          state.press.longPressed = true;
+          state.focusExample(exampleId);
+        }, longPressMs);
+      },
+      onExampleEdit(e) {
+        state.focusExample(getExampleData(e).exampleId);
+      },
+      onExamplePaste(e) {
+        state.props.onPaste(getExampleData(e).src);
+      },
+      onExamplePressEnd() {
+        window.clearTimeout(state.press.timeoutId);
+      },
+      onExampleReset(e) {
+        const prefix = `${getExampleData(e).exampleId}#`; // see `getEditKey`
+        for (const editKey of Object.keys(state.edits)) {
+          if (editKey.startsWith(prefix)) {
+            delete state.edits[editKey];
+          }
+        }
+        state.update();
       },
       onKeyDown(e) {
         if (e.key === "Escape" && state.focusedId !== null) {
@@ -95,10 +133,6 @@ export default function JobsLibrary(props: Props) {
         };
         tryLocalStorageSet(getStorageKey(props.uiId), JSON.stringify(stored));
       },
-      resetExample(example) {
-        example.args.forEach((_, index) => delete state.edits[getEditKey(example, index)]);
-        state.update();
-      },
       setCategory(categoryKey) {
         // a tab also unfolds, else it'd seem inert
         state.set({ categoryKey, focusedId: null, open: true });
@@ -116,6 +150,8 @@ export default function JobsLibrary(props: Props) {
     };
   });
 
+  state.props = props; // its handlers run long after this render
+
   useEffect(() => {
     // the window may have shrunk since `height` was persisted
     state.set({ height: Math.min(state.getMaxHeight(), Math.max(minLibraryHeight, state.height)) });
@@ -128,6 +164,8 @@ export default function JobsLibrary(props: Props) {
     hot.on(jobsExamplesChangedEvent, onExamplesChange);
     return () => hot.off(jobsExamplesChangedEvent, onExamplesChange);
   }, []);
+
+  useEffect(() => () => window.clearTimeout(state.press.timeoutId), []);
 
   const category = categories.find((x) => x.key === state.categoryKey) ?? categories[0] ?? null;
   const section =
@@ -204,25 +242,12 @@ export default function JobsLibrary(props: Props) {
 
       {state.open && section !== null && (
         <article
-          className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-2 px-3 py-3"
+          className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-1 px-3 py-3"
           onKeyDown={state.onKeyDown}
         >
           {section.prose && <p className="text-[13px]/relaxed text-[#aaa]">{section.prose}</p>}
           {section.examples.map((example) => (
-            <LibraryExample
-              key={example.id}
-              example={example}
-              focused={state.focusedId === example.id}
-              edits={state.edits}
-              canRun={props.canRun}
-              copiedSrc={props.copiedSrc}
-              onCopy={props.onCopy}
-              onEdit={state.editArg}
-              onFocus={state.focusExample}
-              onPaste={props.onPaste}
-              onReset={state.resetExample}
-              onRun={props.onRun}
-            />
+            <LibraryExample key={example.id} example={example} state={state} />
           ))}
         </article>
       )}
@@ -230,48 +255,35 @@ export default function JobsLibrary(props: Props) {
   );
 }
 
-/** A single example, whose `key:value` args become inputs when focused */
-function LibraryExample({
-  example,
-  focused,
-  edits,
-  canRun,
-  copiedSrc,
-  onCopy,
-  onEdit,
-  onFocus,
-  onPaste,
-  onReset,
-  onRun,
-}: {
-  example: Example;
-  focused: boolean;
-  edits: Record<string, string>;
-  canRun: boolean;
-  copiedSrc: null | string;
-  onCopy: (src: string) => void;
-  onEdit: (editKey: string, value: string) => void;
-  onFocus: (exampleId: string) => void;
-  onPaste: (src: string) => void;
-  onReset: (example: Example) => void;
-  onRun: (src: string) => void;
-}) {
+/**
+ * A single example, whose `key:value` args become inputs when focused.
+ * Every handler comes from `state`, so none is created per example.
+ */
+function LibraryExample({ example, state }: { example: Example; state: UseStateRef<State> }) {
+  const { canRun, copiedSrc } = state.props;
+  const { edits } = state;
+  const focused = state.focusedId === example.id;
   const src = toEditedSrc(example, edits);
   const edited = example.args.some((_, index) => edits[getEditKey(example, index)] !== undefined);
 
   return (
-    <div className="relative">
+    // the handlers read these, rather than closing over the example
+    <div className="relative" data-example-id={example.id} data-src={src}>
       <button
         type="button"
-        title="run in background"
+        title="run in background — shift+click or long press to edit"
         className={cn(
-          "block w-full text-left cursor-pointer transition-colors",
+          "block w-full text-left cursor-pointer select-none transition-colors",
           "px-3 py-2 bg-[#131313] border rounded",
           focused ? "border-[#aaca]" : "border-[#2a2a2a] hover:border-[#a6c6a6]",
           // the args panel continues this fence
           focused && example.args.length > 0 && "rounded-b-none",
         )}
-        onClick={() => onRun(src)}
+        onPointerDown={state.onExampleDown}
+        onPointerUp={state.onExamplePressEnd}
+        onPointerCancel={state.onExamplePressEnd}
+        onPointerLeave={state.onExamplePressEnd}
+        onClick={state.onExampleClick}
       >
         <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
           {/* only the first line makes room for the overlaid toolbar */}
@@ -294,11 +306,11 @@ function LibraryExample({
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5 rounded bg-[#131313]/90 px-1 py-0.5">
         {edited && (
-          <button type="button" title="reset args" className={iconCss} onClick={() => onReset(example)}>
+          <button type="button" title="reset args" className={iconCss} onClick={state.onExampleReset}>
             <ArrowCounterClockwiseIcon alt="reset args" className="size-3.5" />
           </button>
         )}
-        <button type="button" title="copy" className={iconCss} onClick={() => onCopy(src)}>
+        <button type="button" title="copy" className={iconCss} onClick={state.onExampleCopy}>
           {copiedSrc === src ? (
             <CheckIcon alt="copied" className="size-3.5 text-[#a6c6a6]" />
           ) : (
@@ -310,7 +322,7 @@ function LibraryExample({
           title="paste into prompt"
           disabled={!canRun}
           className={iconCss}
-          onClick={() => onPaste(src)}
+          onClick={state.onExamplePaste}
         >
           <ClipboardTextIcon alt="paste into prompt" className="size-3.5" />
         </button>
@@ -319,7 +331,7 @@ function LibraryExample({
           type="button"
           title={focused ? "hide detail" : "edit args"}
           className={cn(iconCss, focused && "text-[#aaca] hover:text-[#cce]")}
-          onClick={() => onFocus(example.id)}
+          onClick={state.onExampleEdit}
         >
           <PencilSimpleIcon alt="edit args" className="size-3.5" />
         </button>
@@ -341,6 +353,7 @@ function LibraryExample({
                 </label>
                 <input
                   id={editKey}
+                  data-edit-key={editKey}
                   value={edits[editKey] ?? token.value}
                   spellCheck={false}
                   autoComplete="off"
@@ -348,7 +361,7 @@ function LibraryExample({
                     "min-w-0 px-1.5 py-0.5 rounded-sm bg-[#1a1a1a] border border-[#3a3a3a]",
                     "font-mono text-xs text-[#e2e7ed] outline-none focus:border-[#aaca]",
                   )}
-                  onChange={(e) => onEdit(editKey, e.currentTarget.value)}
+                  onChange={state.onEditArg}
                 />
               </Fragment>
             );
@@ -376,6 +389,15 @@ const iconCss = cn(
   "shrink-0 cursor-pointer text-[#777] transition-colors hover:text-white",
   "disabled:opacity-40 disabled:cursor-default disabled:hover:text-[#777]",
 );
+
+/** The example an event occurred within, via the `data-*` on its wrapper */
+function getExampleData(e: React.SyntheticEvent) {
+  const el = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-example-id]");
+  return { exampleId: el?.dataset.exampleId ?? "", src: el?.dataset.src ?? "" };
+}
+
+/** Long press an example to edit it, since there is no shift key on mobile */
+const longPressMs = 400;
 
 /** Height of the panel when first opened */
 const defaultLibraryHeight = 220;
@@ -410,6 +432,10 @@ type State = {
   edits: Record<string, string>;
   /** Example whose comment and args are shown */
   focusedId: null | string;
+  /** Long press an example to edit it — see `onExampleDown` */
+  press: { timeoutId: number; longPressed: boolean };
+  /** Synced each render, so the handlers below never read stale props */
+  props: Props;
   /** categoryKey -> currently shown sectionKey */
   sectionKeys: Record<string, string>;
   /** Height in pixels when `open` */
@@ -420,15 +446,22 @@ type State = {
   startHeight: number;
   startY: number;
 
-  editArg: (editKey: string, value: string) => void;
   focusExample: (exampleId: string) => void;
   getMaxHeight: () => number;
+  /** Each of these reads the example from `data-*` — see `getExampleData` */
+  onEditArg: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onExampleClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onExampleCopy: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onExampleDown: (e: React.PointerEvent<HTMLButtonElement>) => void;
+  onExampleEdit: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onExamplePaste: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onExamplePressEnd: () => void;
+  onExampleReset: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   onResizeDown: (e: React.PointerEvent<HTMLDivElement>) => void;
   onResizeMove: (e: React.PointerEvent<HTMLDivElement>) => void;
   onResizeUp: (e: React.PointerEvent<HTMLDivElement>) => void;
   persist: () => void;
-  resetExample: (example: Example) => void;
   setCategory: (categoryKey: string) => void;
   setSection: (categoryKey: string, sectionKey: string) => void;
   toggleOpen: () => void;
