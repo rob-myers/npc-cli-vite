@@ -92,12 +92,15 @@ export function demo_remove_decor(ct: JshCli.RunArg) {
 
 /**
  * ```sh
+ * demo_npc_ui npc:rob
  * demo_npc_ui rob
  * ```
  */
-export function demo_npc_ui({ w, args }: JshCli.RunArg) {
-  const [npcKey] = args;
-  const npc = w.npc.get(npcKey);
+export function demo_npc_ui(
+  { w, api, args }: JshCli.RunArg,
+  opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  const npc = w.npc.get(opts.npcKey ?? args[0]);
   w.bubble.ensure(npc.key);
 }
 
