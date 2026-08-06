@@ -77,10 +77,9 @@
   - Npc select + npc radius/lit go up-one-level, organized into "player" subsection
     - onchange select change the `w.player.key` to that npcKey and ensure dynamicLight target updated
 
-- replace `meta` by `decor` i.e. decor queries by rect
-  - `decor at:...`
-  - `decor near:...`
-  - can specify exact e.g. check obstacle outline contains
+- ✅ replace `meta` by `at` i.e. decor query against single point
+  - `at $( pick 1 as:point )`
+  - `at $( pick 1 as:point ) | map meta.y`
 
 ## Other
 
@@ -112,6 +111,13 @@
 
 ## Bugs
 
+- 🚧 BUG parsing?
+  - mvdan-sh parse works
+  - convertMvdanShToJsh.File works `withParents(convertMvdanShToJsh.File(parsed.file))`
+  - 🚧 npm braces is crashing
+```sh
+expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.46,y:2.06},{x:12.95,y:1.86},{x:13.45,y:1.7},{x:13.97,y:1.59},{x:14.49,y:1.52},{x:15.01,y:1.5},{x:15.55,y:1.52},{x:15.55,y:1.52},{x:15.55,y:1.52},{x:16.07,y:1.59},{x:16.58,y:1.7},{x:17.09,y:1.86},{x:17.57,y:2.06},{x:18.04,y:2.31},{x:18.48,y:2.59},{x:18.9,y:2.92},{x:19.06,y:3.06},{x:17.68,y:3.06},{x:17.38,y:2.9},{x:17.12,y:2.9},{x:16.84,y:3.06},{x:16.15,y:3.06},{x:15.9,y:2.9},{x:15.63,y:2.9},{x:15.35,y:3.06},{x:14.66,y:3.06},{x:14.38,y:2.9},{x:14.16,y:2.9},{x:13.85,y:3.06},{x:13.16,y:3.06},{x:12.88,y:2.89},{x:12.66,y:2.89},{x:12.36,y:3.06},{x:10.95,y:3.06},{x:10.99,y:3.02}]}
+```
 
 - BUG change map to 301-101-301 and dynamicLight fails to propagate through some doors
   - fixed by saving texture.ts (hmr)
