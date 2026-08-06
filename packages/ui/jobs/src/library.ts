@@ -204,8 +204,27 @@ function readValueEnd(src: string, from: number) {
   return i;
 }
 
-export function getEditKey(example: Example, index: number) {
-  return `${example.id}#${index}`;
+/**
+ * The only editable args, edited once for every example rather than per example.
+ * `edits` is keyed by arg name, so every occurrence resolves to the same value.
+ */
+export const sharedArgKeys = new Set(["npc"]);
+
+/** The first value each shared arg has, so the header starts in step with the examples */
+export function getSharedArgs(categories: ExampleCategory[]) {
+  const shared: Record<string, string> = {};
+  for (const { sections } of categories) {
+    for (const { examples } of sections) {
+      for (const { args } of examples) {
+        for (const { key, value } of args) {
+          if (sharedArgKeys.has(key) && shared[key] === undefined) {
+            shared[key] = value;
+          }
+        }
+      }
+    }
+  }
+  return shared;
 }
 
 /** Rebuild `src` with `edits` applied, tracking where each arg landed */
@@ -214,12 +233,12 @@ function toEditedSource(example: Example, edits: Record<string, string>) {
   let src = "";
   let i = 0;
 
-  example.args.forEach((token, index) => {
+  example.args.forEach((token) => {
     src += example.src.slice(i, token.keyStart);
     const keyStart = src.length;
     src += `${token.key}:`;
     const valueStart = src.length;
-    src += edits[getEditKey(example, index)] ?? token.value;
+    src += edits[token.key] ?? token.value;
     ranges.push({ keyStart, valueStart, valueEnd: src.length });
     i = token.valueEnd;
   });

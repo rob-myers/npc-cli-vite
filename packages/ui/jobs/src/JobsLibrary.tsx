@@ -1,24 +1,19 @@
+import { Popover } from "@base-ui/react/popover";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import {
-  ArrowCounterClockwiseIcon,
-  CaretRightIcon,
-  CheckIcon,
-  ClipboardTextIcon,
-  CopyIcon,
-  PencilSimpleIcon,
-} from "@phosphor-icons/react";
+import { CaretRightIcon, CheckIcon, ClipboardTextIcon, CopyIcon, InfoIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { Fragment, useEffect } from "react";
+import { useEffect } from "react";
 import { jobsExamplesChangedEvent } from "./const";
 import {
   type Example,
   type ExampleCategory,
-  getEditKey,
+  getSharedArgs,
   jobsLibraryQueryKey,
   loadExamples,
   parseCategories,
+  sharedArgKeys,
   toEditedSrc,
   toSegments,
 } from "./library";
@@ -42,8 +37,6 @@ export default function JobsLibrary(props: Props) {
     return {
       categoryKey: stored?.categoryKey ?? "",
       edits: {},
-      focusedId: null,
-      press: { timeoutId: 0, longPressed: false },
       props,
       sectionKeys: stored?.sectionKeys ?? {},
       height: stored?.height ?? defaultLibraryHeight,
@@ -53,9 +46,6 @@ export default function JobsLibrary(props: Props) {
       startHeight: 0,
       startY: 0,
 
-      focusExample(exampleId) {
-        state.set({ focusedId: state.focusedId === exampleId ? null : exampleId });
-      },
       getMaxHeight() {
         const root = state.rootEl?.closest<HTMLElement>("[data-jobs-root]");
         return Math.max(minLibraryHeight, (root?.clientHeight ?? 600) - reservedHeight);
@@ -64,46 +54,14 @@ export default function JobsLibrary(props: Props) {
         state.edits[e.currentTarget.dataset.editKey ?? ""] = e.currentTarget.value;
         state.update();
       },
-      onExampleClick(e) {
-        if (state.press.longPressed === true) {
-          return; // the long press already opened the detail
-        }
-        const { exampleId, src } = getExampleData(e);
-        e.shiftKey ? state.focusExample(exampleId) : state.props.onRun(src);
-      },
       onExampleCopy(e) {
         state.props.onCopy(getExampleData(e).src);
-      },
-      onExampleDown(e) {
-        const { exampleId } = getExampleData(e); // captured, the event won't outlive the timer
-        state.press.longPressed = false;
-        state.press.timeoutId = window.setTimeout(() => {
-          state.press.longPressed = true;
-          state.focusExample(exampleId);
-        }, longPressMs);
-      },
-      onExampleEdit(e) {
-        state.focusExample(getExampleData(e).exampleId);
       },
       onExamplePaste(e) {
         state.props.onPaste(getExampleData(e).src);
       },
-      onExamplePressEnd() {
-        window.clearTimeout(state.press.timeoutId);
-      },
-      onExampleReset(e) {
-        const prefix = `${getExampleData(e).exampleId}#`; // see `getEditKey`
-        for (const editKey of Object.keys(state.edits)) {
-          if (editKey.startsWith(prefix)) {
-            delete state.edits[editKey];
-          }
-        }
-        state.update();
-      },
-      onKeyDown(e) {
-        if (e.key === "Escape" && state.focusedId !== null) {
-          state.set({ focusedId: null });
-        }
+      onExampleRun(e) {
+        state.props.onRun(getExampleData(e).src);
       },
       onResizeDown(e) {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -135,13 +93,13 @@ export default function JobsLibrary(props: Props) {
       },
       setCategory(categoryKey) {
         // a tab also unfolds, else it'd seem inert
-        state.set({ categoryKey, focusedId: null, open: true });
+        state.set({ categoryKey, open: true });
         state.persist();
       },
       setSection(categoryKey, sectionKey) {
         state.sectionKeys[categoryKey] = sectionKey;
-        state.set({ focusedId: null });
         state.persist();
+        state.update();
       },
       toggleOpen() {
         state.set({ open: !state.open, height: Math.min(state.getMaxHeight(), state.height) });
@@ -165,7 +123,10 @@ export default function JobsLibrary(props: Props) {
     return () => hot.off(jobsExamplesChangedEvent, onExamplesChange);
   }, []);
 
-  useEffect(() => () => window.clearTimeout(state.press.timeoutId), []);
+  useEffect(() => {
+    // seed the header from the examples, so it agrees with them before any edit
+    state.set({ edits: { ...getSharedArgs(categories), ...state.edits } });
+  }, [categories]);
 
   const category = categories.find((x) => x.key === state.categoryKey) ?? categories[0] ?? null;
   const section =
@@ -192,8 +153,13 @@ export default function JobsLibrary(props: Props) {
         </div>
       )}
 
-      <div className={cn("shrink-0 flex items-end gap-3 px-2", state.open && "border-b border-term-border-subtle")}>
-        <nav className="flex items-end -mb-px">
+      <div
+        className={cn(
+          "shrink-0 flex items-end gap-3 px-2 min-w-0 overflow-hidden",
+          state.open && "border-b border-term-border-subtle",
+        )}
+      >
+        <nav className="min-w-0 flex items-end -mb-px">
           {categories.map(({ key, label }) => (
             <button
               key={key}
@@ -210,6 +176,29 @@ export default function JobsLibrary(props: Props) {
             </button>
           ))}
         </nav>
+
+        {/* shared by every example, so editing here rewrites them all */}
+        {state.open &&
+          [...sharedArgKeys].map((key) => (
+            // takes the space left between the tabs and the caret, so it cannot overflow
+            <label
+              key={key}
+              className="min-w-0 flex-1 max-w-32 flex items-center gap-1 py-1 font-mono text-xs text-term-accent"
+            >
+              <span className="shrink-0">{`${key}:`}</span>
+              <input
+                data-edit-key={key}
+                value={state.edits[key] ?? ""}
+                spellCheck={false}
+                autoComplete="off"
+                className={cn(
+                  "w-full min-w-0 px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
+                  "text-sh-command outline-none focus:border-term-focus",
+                )}
+                onChange={state.onEditArg}
+              />
+            </label>
+          ))}
 
         <button
           type="button"
@@ -243,10 +232,7 @@ export default function JobsLibrary(props: Props) {
       )}
 
       {state.open && section !== null && (
-        <article
-          className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-1 px-3 py-3"
-          onKeyDown={state.onKeyDown}
-        >
+        <article className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-1 px-3 py-3">
           {section.prose && <p className="text-[13px]/relaxed text-term-muted">{section.prose}</p>}
           {section.examples.map((example) => (
             <LibraryExample key={example.id} example={example} state={state} />
@@ -258,48 +244,30 @@ export default function JobsLibrary(props: Props) {
 }
 
 /**
- * A single example, whose `key:value` args become inputs when focused.
+ * A single example: click to run, or read its comment via the info popover.
  * Every handler comes from `state`, so none is created per example.
  */
 function LibraryExample({ example, state }: { example: Example; state: UseStateRef<State> }) {
   const { canRun, copiedSrc } = state.props;
-  const { edits } = state;
-  const focused = state.focusedId === example.id;
-  const src = toEditedSrc(example, edits);
-  const edited = example.args.some((_, index) => edits[getEditKey(example, index)] !== undefined);
+  const src = toEditedSrc(example, state.edits);
 
   return (
     // the handlers read these, rather than closing over the example
     <div className="relative" data-example-id={example.id} data-src={src}>
       <button
         type="button"
-        title="run in background — shift+click or long press to edit"
+        title="run in background"
         className={cn(
           "block w-full text-left cursor-pointer select-none transition-colors",
-          "px-3 py-2 bg-term-fence border rounded",
-          focused ? "border-term-focus" : "border-term-border-subtle hover:border-term-ok",
-          // the args panel continues this fence
-          focused && example.args.length > 0 && "rounded-b-none",
+          "px-3 py-2 bg-term-fence border border-term-border-subtle rounded hover:border-term-ok",
         )}
-        onPointerDown={state.onExampleDown}
-        onPointerUp={state.onExamplePressEnd}
-        onPointerCancel={state.onExamplePressEnd}
-        onPointerLeave={state.onExamplePressEnd}
-        onClick={state.onExampleClick}
+        onClick={state.onExampleRun}
       >
         <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
           {/* only the first line makes room for the overlaid toolbar */}
           <span aria-hidden className="float-right w-22 h-[1.45em]" />
-          {focused && example.comment && <span className={tokenCss.comment}>{`# ${example.comment}\n`}</span>}
-          {toSegments(example, edits).map((segment, i) => (
-            <span
-              key={i}
-              className={cn(
-                segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind],
-                // editable values are underlined
-                // segment.arg === "value" && "decoration-dotted decoration-[#919ba6] underline underline-offset-4",
-              )}
-            >
+          {toSegments(example, state.edits).map((segment, i) => (
+            <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
               {segment.text}
             </span>
           ))}
@@ -307,11 +275,6 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
       </button>
 
       <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5 rounded bg-term-fence/90 px-1 py-0.5">
-        {edited && (
-          <button type="button" title="reset args" className={iconCss} onClick={state.onExampleReset}>
-            <ArrowCounterClockwiseIcon alt="reset args" className="size-3.5" />
-          </button>
-        )}
         <button type="button" title="copy" className={iconCss} onClick={state.onExampleCopy}>
           {copiedSrc === src ? (
             <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
@@ -328,48 +291,25 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         >
           <ClipboardTextIcon alt="paste into prompt" className="size-3.5" />
         </button>
-        {/* editing needs no session, unlike the two above */}
-        <button
-          type="button"
-          title={focused ? "hide detail" : "edit args"}
-          className={cn(iconCss, focused && "text-term-focus")}
-          onClick={state.onExampleEdit}
-        >
-          <PencilSimpleIcon alt="edit args" className="size-3.5" />
-        </button>
+        {/* portalled, else the popup would be clipped by the scrolling article */}
+        <Popover.Root>
+          <Popover.Trigger title={example.comment || "no description"} disabled={!example.comment} className={iconCss}>
+            <InfoIcon alt="what this does" className="size-3.5" />
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Positioner className="z-50 max-w-72" side="top" align="end" sideOffset={4}>
+              <Popover.Popup
+                className={cn(
+                  "px-3 py-2 rounded border border-term-focus shadow-lg shadow-black/50",
+                  "bg-term-inset font-sans text-xs/relaxed text-term-foreground",
+                )}
+              >
+                {example.comment}
+              </Popover.Popup>
+            </Popover.Positioner>
+          </Popover.Portal>
+        </Popover.Root>
       </div>
-
-      {focused && example.args.length > 0 && (
-        <div
-          className={cn(
-            "grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1",
-            "px-3 py-2 bg-term-inset border border-t-0 border-term-focus rounded-b",
-          )}
-        >
-          {example.args.map((token, index) => {
-            const editKey = getEditKey(example, index);
-            return (
-              <Fragment key={editKey}>
-                <label htmlFor={editKey} className="font-mono text-xs text-term-accent">
-                  {`${token.key}:`}
-                </label>
-                <input
-                  id={editKey}
-                  data-edit-key={editKey}
-                  value={edits[editKey] ?? token.value}
-                  spellCheck={false}
-                  autoComplete="off"
-                  className={cn(
-                    "min-w-0 px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
-                    "font-mono text-xs text-sh-command outline-none focus:border-term-focus",
-                  )}
-                  onChange={state.onEditArg}
-                />
-              </Fragment>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }
@@ -397,9 +337,6 @@ function getExampleData(e: React.SyntheticEvent) {
   const el = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-example-id]");
   return { exampleId: el?.dataset.exampleId ?? "", src: el?.dataset.src ?? "" };
 }
-
-/** Long press an example to edit it, since there is no shift key on mobile */
-const longPressMs = 400;
 
 /** Height of the panel when first opened */
 const defaultLibraryHeight = 220;
@@ -430,12 +367,8 @@ type Stored = Pick<State, "categoryKey" | "height" | "open" | "sectionKeys">;
 type State = {
   /** Currently shown category i.e. tab */
   categoryKey: string;
-  /** `${exampleId}#${argIndex}` -> value; not persisted */
+  /** Shared arg key -> value, applied to every example; not persisted */
   edits: Record<string, string>;
-  /** Example whose comment and args are shown */
-  focusedId: null | string;
-  /** Long press an example to edit it — see `onExampleDown` */
-  press: { timeoutId: number; longPressed: boolean };
   /** Synced each render, so the handlers below never read stale props */
   props: Props;
   /** categoryKey -> currently shown sectionKey */
@@ -448,18 +381,12 @@ type State = {
   startHeight: number;
   startY: number;
 
-  focusExample: (exampleId: string) => void;
   getMaxHeight: () => number;
-  /** Each of these reads the example from `data-*` — see `getExampleData` */
   onEditArg: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onExampleClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  /** Each of these reads the example from `data-*` — see `getExampleData` */
   onExampleCopy: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onExampleDown: (e: React.PointerEvent<HTMLButtonElement>) => void;
-  onExampleEdit: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onExamplePaste: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onExamplePressEnd: () => void;
-  onExampleReset: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  onExampleRun: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onResizeDown: (e: React.PointerEvent<HTMLDivElement>) => void;
   onResizeMove: (e: React.PointerEvent<HTMLDivElement>) => void;
   onResizeUp: (e: React.PointerEvent<HTMLDivElement>) => void;
