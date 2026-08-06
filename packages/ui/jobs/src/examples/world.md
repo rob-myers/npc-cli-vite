@@ -94,7 +94,7 @@ events /enter-room/
 # unsorted
 
 ```sh
-demo_npc_ui rob
+demo_npc_ui npc:rob
 
 # whilst on navmesh
 w n.rob.agent.maxSpeed
