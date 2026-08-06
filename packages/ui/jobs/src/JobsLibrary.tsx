@@ -261,19 +261,17 @@ function LibraryExample({
 
   return (
     <div className="relative">
-      {/* a code fence, clickable to run; without a session it reveals detail instead */}
       <button
         type="button"
-        title={canRun ? "run in background" : focused ? "hide detail" : "show detail"}
+        title="run in background"
         className={cn(
           "block w-full text-left cursor-pointer transition-colors",
           "px-3 py-2 bg-[#131313] border rounded",
-          focused ? "border-[#aaca]" : "border-[#2a2a2a]",
-          !focused && (canRun ? "hover:border-[#a6c6a6]" : "hover:border-[#444]"),
+          focused ? "border-[#aaca]" : "border-[#2a2a2a] hover:border-[#a6c6a6]",
           // the args panel continues this fence
           focused && example.args.length > 0 && "rounded-b-none",
         )}
-        onClick={() => (canRun ? onRun(src) : onFocus(example.id))}
+        onClick={() => onRun(src)}
       >
         <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
           {/* only the first line makes room for the overlaid toolbar */}

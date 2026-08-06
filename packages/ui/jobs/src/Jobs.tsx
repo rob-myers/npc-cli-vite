@@ -4,6 +4,7 @@ import {
   getPtagsPreview,
   type ProcessMeta,
   type ProcessStatus,
+  type Session,
   sessionApi,
   toProcessStatus,
 } from "@npc-cli/cli";
@@ -40,6 +41,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       disconnectSession: null,
       ordered: [],
+      pending: { src: null, timeoutId: 0, until: 0 },
       processes: [],
       reorder: throttle(() => {
         state.ordered = toOrdered(state.processes);
@@ -98,16 +100,21 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         state.connectOrMount();
       },
       connectOrMount() {
-        if (state.connectSession() === false && state.ttyMeta !== null) {
+        if (state.connectSession() === true) {
+          state.flushPending();
+        } else if (state.ttyMeta !== null) {
           // no session yet: mount the tty offscreen and connect when it has booted
           uiStoreApi.markEverSeen(state.ttyMeta.id);
         }
+      },
+      getSession() {
+        return state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
       },
       connectSession() {
         try {
           state.disconnectSession?.();
 
-          const session = sessionApi.getSession(state.sessionKey ?? "");
+          const session = state.getSession();
           if (session === undefined) {
             state.set({ processes: [], ordered: [] });
             return false;
@@ -212,8 +219,40 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           sessionApi.kill(state.sessionKey, [pid], { GROUP: true, SIGINT: true });
         }
       },
+      flushPending() {
+        window.clearTimeout(state.pending.timeoutId);
+        const src = state.pending.src;
+        if (src === null) {
+          return;
+        }
+
+        // the tty may still be mounting, or its profile still running
+        if (state.getSession()?.ttyShell.isInteractive() !== true) {
+          if (Date.now() < state.pending.until) {
+            state.pending.timeoutId = window.setTimeout(state.flushPending, pendingPollMs);
+          } else {
+            state.pending.src = null; // gave up
+          }
+          return;
+        }
+
+        state.pending.src = null;
+        void state.rerunProcess(src);
+      },
+      runSrc(src) {
+        if (!src) {
+          return;
+        }
+        // queue, then flush: it runs at once when ready, else waits for the profile
+        state.pending.src = src;
+        state.pending.until = Date.now() + pendingTimeoutMs;
+        if (state.connected === false || state.getSession() === undefined) {
+          state.connect(); // mounts the tty when it was never seen, or was unmounted
+        }
+        state.flushPending();
+      },
       async rerunProcess(src) {
-        const session = state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
+        const session = state.getSession();
         if (session === undefined || !src) {
           return;
         }
@@ -226,7 +265,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         }
       },
       pasteSrc(src) {
-        const session = state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
+        const session = state.getSession();
         if (session === undefined || !src) {
           return;
         }
@@ -252,7 +291,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           return;
         }
         state.sessionKey = sessionKey as `tty-${number}`;
-        state.ttyMeta = ttyMetas[ttyMetas.findIndex((x) => x.sessionKey === state.sessionKey)] ?? null;
+        state.ttyMeta = ttyMetas.find((x) => x.sessionKey === state.sessionKey) ?? null;
+        // a queued command belonged to the previous session
+        window.clearTimeout(state.pending.timeoutId);
+        state.pending.src = null;
         state.set({ processes: [], ordered: [] });
       },
     }),
@@ -279,6 +321,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
     return () => {
       clearInterval(intervalId);
       window.clearTimeout(state.copiedTimeoutId);
+      window.clearTimeout(state.pending.timeoutId);
     };
   }, []);
 
@@ -291,7 +334,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   }, [state.connected, state.ttyMeta?.id, state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
-  const sessionExists = state.sessionKey !== null && sessionApi.getSession(state.sessionKey) !== undefined;
+  const sessionExists = state.getSession() !== undefined;
 
   // rendered standalone when no session leader, else we couldn't switch session
   const sessionHeader = sessionsExist ? (
@@ -470,7 +513,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         copiedSrc={state.copiedSrc}
         onCopy={state.copySrc}
         onPaste={state.pasteSrc}
-        onRun={state.rerunProcess}
+        onRun={state.runSrc}
       />
     </div>
   );
@@ -486,6 +529,10 @@ const cleanupDeadMs = 3000;
 const minShownMs = 1000;
 /** How long a copied `src` is indicated */
 const copiedMs = 1000;
+/** How often we check whether a queued `src` can run yet */
+const pendingPollMs = 250;
+/** How long a queued `src` waits for its session, e.g. a tty which never boots */
+const pendingTimeoutMs = 20000;
 
 type State = {
   /** We use an array to represent mapping `pid -> processLeader` */
@@ -504,12 +551,25 @@ type State = {
   /** Kill the process group of `pid`, then re-run its `src` */
   onReset: (pid: number) => void;
   rerunProcess: (src: string) => Promise<void>;
+  /** Run `src`, first connecting (and mounting the tty) if we aren't ready */
+  runSrc: (src: string) => void;
+  /** A `src` awaiting a session whose profile has finished */
+  pending: {
+    src: null | string;
+    timeoutId: number;
+    /** When we give up on `src` */
+    until: number;
+  };
+  /** Run `pending.src` once ready, else poll until `pending.until` */
+  flushPending: () => void;
   /** Insert `src` at the tty prompt, without running it */
   pasteSrc: (src: string) => void;
   toggleTtyDisabled: () => void;
   /** Forget killed processes */
   cleanupDead: () => void;
   sessionKey: null | `tty-${number}`;
+  /** The selected session, if it exists i.e. its tty is mounted */
+  getSession: () => undefined | Session;
   ttyMeta: null | JshUiMeta;
   changeProcess: (e: React.PointerEvent<HTMLDivElement>) => void;
   /** Have we connected to the selected session? Until then nothing is shown */
