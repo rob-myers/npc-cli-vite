@@ -27,17 +27,22 @@ spawn npc:rob at:$( pick 1 ) look:$( pick 1 )
 # spawn with skin human-0
 spawn npc:rob at:$( pick 1 ) as:human-0
 
-# remove all npcs
-remove npcs
-
 # spawn npcs test0, test1 etc.
 pick | spawn npc:test
 
-# remove npc test0, ... , test5
-remove test{0..5}
 
 # two picks per spawn -- position and towards
 pick | spawn npc:test as:human-1 look
+```
+
+# remove
+
+```sh
+# remove all npcs
+remove npcs
+
+# remove npc test0, ... , test5
+remove test{0..5}
 ```
 
 # move
