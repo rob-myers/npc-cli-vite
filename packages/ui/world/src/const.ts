@@ -42,7 +42,7 @@ export const connectorEntranceHalfDepth = {
   nonHull: 0.125 + wallOutset,
 };
 
-/** Unchangeable 🚧 why this value? */
+/** 20 grid units + hull walls 0.15 either side */
 export const geomorphPngRectWidth = 30.3;
 /** Higher resolution floors */
 export const gmFloorExtraScale = 2.5;
@@ -73,8 +73,13 @@ export const cameraModeStorageKey = `world-camera-mode`;
 export const cameraPositionStorageKey = "world-camera-position";
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
-export const defaultDesktopFov = 50;
-export const defaultMobileFov = 50;
+
+export const fovConfig = {
+  min: 40,
+  max: 60,
+  default: 40,
+};
+
 export const defaultBrightness = 2;
 export const postProcessingEnabledKey = "world-post-processing-enabled";
 export const roomLightEditingEnabledKey = "world-room-light-editing-enabled";

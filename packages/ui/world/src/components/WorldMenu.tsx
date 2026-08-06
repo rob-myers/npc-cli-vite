@@ -29,11 +29,11 @@ import { WorldThemeSchema } from "../assets.schema";
 import {
   brightnessStorageKey,
   defaultAmbientIntensity,
-  defaultDesktopFov,
   defaultDynamicLightIntensity,
   defaultDynamicLightRadius,
   defaultRoomLightIntensity,
   defaultVignette,
+  fovConfig,
   fovStorageKey,
   maxDynamicLightRadius,
   pickOpenDoorsKey,
@@ -389,22 +389,22 @@ export function WorldMenu() {
                           <ArrowsOutIcon
                             className="size-4 text-white cursor-pointer shrink-0"
                             onClick={() => {
-                              w.view.fov = defaultDesktopFov;
+                              w.view.fov = fovConfig.default;
                               const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
                               if (cam?.isPerspectiveCamera) {
-                                cam.fov = defaultDesktopFov;
+                                cam.fov = fovConfig.default;
                                 cam.updateProjectionMatrix();
                               }
                               w.r3f?.invalidate();
-                              tryLocalStorageSet(fovStorageKey, String(defaultDesktopFov));
+                              tryLocalStorageSet(fovStorageKey, String(fovConfig.default));
                               w.update();
                             }}
                           />
                           <input
                             type="range"
-                            min="20"
-                            max="100"
-                            step="5"
+                            min={fovConfig.min}
+                            max={fovConfig.max}
+                            step="2.5"
                             value={w.view.fov}
                             onChange={(e) => {
                               const fov = Number(e.target.value);
