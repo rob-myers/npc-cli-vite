@@ -365,7 +365,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
   // rendered standalone when no session leader, else we couldn't switch session
   const sessionHeader = sessionsExist ? (
-    <div className="flex items-stretch gap-1 pb-2">
+    <div className="flex justify-end items-stretch gap-1 pb-2">
       <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
         <Select.Trigger
           title="sessionKey"
