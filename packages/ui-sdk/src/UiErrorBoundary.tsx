@@ -48,7 +48,7 @@ export class UiErrorBoundary extends Component<
           Error in <span className="font-mono">{this.props.meta?.uiKey}</span>
         </h2>
 
-        <div className="flex-1 min-h-0 overflow-auto flex flex-col gap-5 p-4">
+        <div className={cn("flex-1 min-h-0 overflow-auto flex flex-col gap-5 p-4", thinScrollbarCss)}>
           <pre className="whitespace-pre-wrap font-sans text-sm/relaxed text-red-400 tracking-wide">
             {this.state.error.message}
           </pre>
@@ -69,15 +69,15 @@ export class UiErrorBoundary extends Component<
                 )}
               </button>
             </div>
-            {/* drag the bottom-right corner to resize */}
-            <pre className={cn(boxCss, "h-56 min-h-16 resize-y font-sans text-sm/relaxed text-green-600")}>
+            {/* a few lines by default — drag the bottom-right corner for more */}
+            <pre className={cn(boxCss, "h-28 min-h-12 resize-y font-sans text-sm/relaxed text-green-600")}>
               {this.state.error.stack}
             </pre>
           </section>
 
           <section className="flex flex-col gap-1.5">
             <h3 className={labelCss}>ui meta</h3>
-            <pre className={cn(boxCss, "h-40 min-h-16 resize-y font-mono text-xs/relaxed text-amber-200")}>
+            <pre className={cn(boxCss, "h-28 min-h-12 resize-y font-mono text-xs/relaxed text-amber-200")}>
               {safeJsonCompact(this.props.meta)}
             </pre>
           </section>
@@ -98,10 +98,17 @@ export class UiErrorBoundary extends Component<
 }
 
 const labelCss = "text-xs uppercase tracking-widest text-white/40";
+/** Firefox honours `scrollbar-width`, the rest need the pseudo-elements */
+const thinScrollbarCss = cn(
+  "[scrollbar-width:thin]",
+  "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
+  "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25",
+);
 /** A scrollable bordered block, shared by the stack and the ui meta */
 const boxCss = cn(
-  "overflow-auto [scrollbar-width:thin] whitespace-pre-wrap tracking-wide",
+  "overflow-auto whitespace-pre-wrap tracking-wide",
   "p-3 rounded border border-white/25 bg-white/3",
+  thinScrollbarCss,
 );
 
 const NoErrorSymbol = Symbol();
