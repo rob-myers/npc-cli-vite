@@ -337,12 +337,7 @@ export default function Decor() {
       queryPoint(center, opts) {
         const groundPoint = helper.parseGroundPoint(center);
         const radius = opts?.radius ?? 0.05;
-        tmpRect.x = groundPoint.x - radius;
-        tmpRect.y = groundPoint.y - radius;
-        tmpRect.width = radius * 2;
-        tmpRect.height = radius * 2;
-
-        // return d.bounds.contains(groundPoint);
+        tmpRect.set(groundPoint.x - radius, groundPoint.y - radius, radius * 2, radius * 2);
 
         const results = queryDecorGridRect(state.grid, tmpRect, opts).filter((d) => {
           switch (d.type) {
@@ -358,18 +353,18 @@ export default function Decor() {
           }
         });
 
-        // we'll return ≤ 1 decor if opts?.desiredHeight defined
-        const desiredHeight = opts?.desiredHeight;
+        const desiredHeight = opts?.restrictByHeight;
 
-        if (desiredHeight === undefined || results.length === 0) {
+        if (desiredHeight === undefined || results.length <= 1) {
           return results;
         }
 
-        let closestDeltaSoFar = Infinity;
+        // further restrict by height i.e. singleton closest to desiredHeight
+        let closestDelta = Infinity;
         return [
-          results.reduce((closestSoFar, d) => {
+          results.reduce((agg, d) => {
             const delta = Math.abs((d.meta.y ?? 0) - desiredHeight);
-            return delta >= closestDeltaSoFar ? closestSoFar : ((closestDeltaSoFar = delta), d);
+            return delta >= closestDelta ? agg : ((closestDelta = delta), d);
           }, results[0]),
         ];
       },
@@ -1003,12 +998,14 @@ export type State = {
   hasInstance(
     decor: Geomorph.Decor,
   ): decor is Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle;
-  /** Find decor containing `point`, possibly using `d.meta.refinedOutline`  */
+  /**
+   * Find decor containing `point`, possibly using `d.meta.refinedOutline`.
+   */
   queryPoint: (
     point: JshCli.PointAnyFormat,
     opts?: Geomorph.DecorGridQueryOpts & {
-      /** Restrict to closest to supplied height (meters)? */
-      desiredHeight?: number;
+      /** Return at most one item i.e. closest by height (meters) */
+      restrictByHeight?: number;
       radius?: number;
     },
   ) => Geomorph.Decor[];

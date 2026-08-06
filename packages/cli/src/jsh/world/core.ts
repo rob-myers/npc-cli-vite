@@ -4,6 +4,37 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { localBoundary } from "navcat/blocks";
 
+/**
+ * Get at most one decor containing a given point.
+ * Accounts for height e.g. bunk beds.
+ * - opts
+ * ```sh
+ * at [1.5,4.5]
+ * at point:[1.5,4.5]
+ * at point:[1.5,2,4.5]
+ * at [1.5,4.5]
+ * ```
+ */
+export async function at(
+  { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
+  opts: { point?: JshCli.PointAnyFormat } = api.jsArg(args),
+) {
+  const point = opts.point ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
+
+  if (!w.helper.isPointAnyFormat(point)) {
+    throw Error("expected point");
+  }
+
+  const groundPoint = w.helper.parseGroundPoint(point);
+
+  const results = w.decor.queryPoint(groundPoint, {
+    restrictByHeight: w.helper.parse3dHeight(point) ?? npcfg.dist.height / 2,
+    radius: 1.5 / 2,
+  });
+
+  return results[0];
+}
+
 export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   if (typeof WORLD_KEY !== "string") {
     throw Error("WORLD_KEY not a string");
@@ -154,40 +185,6 @@ export async function look(
   } finally {
     dispose();
   }
-}
-
-/**
- * Get most-relevant (or all) decor at given world or ground point.
- * ```sh
- * meta [1.5,4.5]
- * meta at:[1.5,4.5]
- * meta all:[1.5,4.5]
- * meta at:[1.5,2,4.5]
- * ```
- */
-export async function meta(
-  { api, args, w, datum: _ }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { all?: JshCli.PointAnyFormat; at?: JshCli.PointAnyFormat; radius?: number } = api.jsArg(args),
-) {
-  const inputPoint = opts.all ?? opts.at ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
-  if (!w.helper.isPointAnyFormat(inputPoint)) {
-    throw Error("expected point");
-  }
-
-  const groundPoint = w.helper.parseGroundPoint(inputPoint);
-  const radius = opts.radius ?? 1.5 / 2;
-
-  const results = w.decor.queryPoint(groundPoint, {
-    // when we don't request all, results.length ≤ 1 via closest 3D height-off-ground
-    desiredHeight: !opts.all ? (w.helper.parse3dHeight(inputPoint) ?? npcfg.dist.height / 2) : undefined,
-    radius,
-  });
-
-  if (opts.all) {
-    return results;
-  }
-
-  return results[0];
 }
 
 /**
