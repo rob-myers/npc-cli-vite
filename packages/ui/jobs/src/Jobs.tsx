@@ -458,7 +458,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="min-w-32 flex flex-col w-full max-w-[400px] p-1 rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
+                    className="min-w-32 flex flex-col w-full max-w-[400px] rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
                   >
                     {/* header, connected to the session leader */}
                     {p.pid === 0 && sessionHeader}
