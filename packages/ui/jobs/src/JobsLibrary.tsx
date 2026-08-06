@@ -176,7 +176,7 @@ export default function JobsLibrary(props: Props) {
   return (
     <div
       ref={state.ref("rootEl")}
-      className="shrink-0 flex flex-col font-sans bg-black border border-[#505050] rounded shadow-md shadow-black/40"
+      className="shrink-0 flex flex-col font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40"
       style={state.open ? { height: state.height } : undefined}
     >
       {state.open && (
@@ -188,11 +188,11 @@ export default function JobsLibrary(props: Props) {
           onPointerUp={state.onResizeUp}
           onLostPointerCapture={state.onResizeUp}
         >
-          <div className="w-10 h-0.5 rounded bg-[#505050] group-hover:bg-[#aaca]" />
+          <div className="w-10 h-0.5 rounded bg-term-border group-hover:bg-term-focus" />
         </div>
       )}
 
-      <div className={cn("shrink-0 flex items-end gap-3 px-2", state.open && "border-b border-[#2a2a2a]")}>
+      <div className={cn("shrink-0 flex items-end gap-3 px-2", state.open && "border-b border-term-border-subtle")}>
         <nav className="flex items-end -mb-px">
           {categories.map(({ key, label }) => (
             <button
@@ -201,8 +201,8 @@ export default function JobsLibrary(props: Props) {
               className={cn(
                 "px-2 py-1 cursor-pointer text-sm border-b transition-colors",
                 state.open && key === category?.key
-                  ? "text-[#ff9] border-[#ff9]"
-                  : "text-[#999] border-transparent hover:text-white",
+                  ? "text-term-accent border-term-accent"
+                  : "text-term-muted border-transparent hover:text-term-foreground",
               )}
               onClick={() => state.setCategory(key)}
             >
@@ -214,7 +214,7 @@ export default function JobsLibrary(props: Props) {
         <button
           type="button"
           title={state.open ? "fold library" : "unfold library"}
-          className="ml-auto flex items-center py-1 cursor-pointer text-[#999] hover:text-white"
+          className="ml-auto flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground"
           onClick={state.toggleOpen}
         >
           <CaretRightIcon alt={state.open ? "fold" : "unfold"} className={cn("size-3", state.open && "rotate-90")} />
@@ -223,14 +223,16 @@ export default function JobsLibrary(props: Props) {
 
       {state.open && category !== null && (
         // wraps rather than scrolls, else tabs could hide
-        <nav className="shrink-0 flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-[#2a2a2a]">
+        <nav className="shrink-0 flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-term-border-subtle">
           {category.sections.map((x) => (
             <button
               key={x.key}
               type="button"
               className={cn(
                 "shrink-0 px-2 py-0.5 rounded-sm cursor-pointer text-xs transition-colors",
-                x.key === section?.key ? "bg-[#2a2a2a] text-[#eee]" : "text-[#999] hover:text-white",
+                x.key === section?.key
+                  ? "bg-term-surface text-term-foreground"
+                  : "text-term-muted hover:text-term-foreground",
               )}
               onClick={() => state.setSection(category.key, x.key)}
             >
@@ -245,7 +247,7 @@ export default function JobsLibrary(props: Props) {
           className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-1 px-3 py-3"
           onKeyDown={state.onKeyDown}
         >
-          {section.prose && <p className="text-[13px]/relaxed text-[#aaa]">{section.prose}</p>}
+          {section.prose && <p className="text-[13px]/relaxed text-term-muted">{section.prose}</p>}
           {section.examples.map((example) => (
             <LibraryExample key={example.id} example={example} state={state} />
           ))}
@@ -274,8 +276,8 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         title="run in background — shift+click or long press to edit"
         className={cn(
           "block w-full text-left cursor-pointer select-none transition-colors",
-          "px-3 py-2 bg-[#131313] border rounded",
-          focused ? "border-[#aaca]" : "border-[#2a2a2a] hover:border-[#a6c6a6]",
+          "px-3 py-2 bg-term-fence border rounded",
+          focused ? "border-term-focus" : "border-term-border-subtle hover:border-term-ok",
           // the args panel continues this fence
           focused && example.args.length > 0 && "rounded-b-none",
         )}
@@ -293,7 +295,7 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
             <span
               key={i}
               className={cn(
-                segment.arg === "key" ? "text-[#eaeaae]" : tokenCss[segment.kind],
+                segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind],
                 // editable values are underlined
                 // segment.arg === "value" && "decoration-dotted decoration-[#919ba6] underline underline-offset-4",
               )}
@@ -304,7 +306,7 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         </code>
       </button>
 
-      <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5 rounded bg-[#131313]/90 px-1 py-0.5">
+      <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5 rounded bg-term-fence/90 px-1 py-0.5">
         {edited && (
           <button type="button" title="reset args" className={iconCss} onClick={state.onExampleReset}>
             <ArrowCounterClockwiseIcon alt="reset args" className="size-3.5" />
@@ -312,7 +314,7 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         )}
         <button type="button" title="copy" className={iconCss} onClick={state.onExampleCopy}>
           {copiedSrc === src ? (
-            <CheckIcon alt="copied" className="size-3.5 text-[#a6c6a6]" />
+            <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
           ) : (
             <CopyIcon alt="copy" className="size-3.5" />
           )}
@@ -330,7 +332,7 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         <button
           type="button"
           title={focused ? "hide detail" : "edit args"}
-          className={cn(iconCss, focused && "text-[#aaca] hover:text-[#cce]")}
+          className={cn(iconCss, focused && "text-term-focus")}
           onClick={state.onExampleEdit}
         >
           <PencilSimpleIcon alt="edit args" className="size-3.5" />
@@ -341,14 +343,14 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         <div
           className={cn(
             "grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1",
-            "px-3 py-2 bg-[#0e0e0e] border border-t-0 border-[#aaca] rounded-b",
+            "px-3 py-2 bg-term-inset border border-t-0 border-term-focus rounded-b",
           )}
         >
           {example.args.map((token, index) => {
             const editKey = getEditKey(example, index);
             return (
               <Fragment key={editKey}>
-                <label htmlFor={editKey} className="font-mono text-xs text-[#eaeaae]">
+                <label htmlFor={editKey} className="font-mono text-xs text-term-accent">
                   {`${token.key}:`}
                 </label>
                 <input
@@ -358,8 +360,8 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
                   spellCheck={false}
                   autoComplete="off"
                   className={cn(
-                    "min-w-0 px-1.5 py-0.5 rounded-sm bg-[#1a1a1a] border border-[#3a3a3a]",
-                    "font-mono text-xs text-[#e2e7ed] outline-none focus:border-[#aaca]",
+                    "min-w-0 px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
+                    "font-mono text-xs text-sh-command outline-none focus:border-term-focus",
                   )}
                   onChange={state.onEditArg}
                 />
@@ -374,20 +376,20 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
 
 /** Muted, so the block reads as grey with only a hint of hue */
 const tokenCss: Record<TokenKind, string> = {
-  command: "text-[#e2e7ed]",
-  comment: "text-[#829282]",
-  flag: "text-[#c2b49e]",
-  keyword: "text-[#c6b4d1]",
-  number: "text-[#c2b49e]",
-  operator: "text-[#98a8b1]",
-  string: "text-[#aec09a]",
-  text: "text-[#c2c2c2]",
-  variable: "text-[#cebf92]",
+  command: "text-sh-command",
+  comment: "text-sh-comment",
+  flag: "text-sh-flag",
+  keyword: "text-sh-keyword",
+  number: "text-sh-number",
+  operator: "text-sh-operator",
+  string: "text-sh-string",
+  text: "text-sh-text",
+  variable: "text-sh-variable",
 };
 
 const iconCss = cn(
-  "shrink-0 cursor-pointer text-[#777] transition-colors hover:text-white",
-  "disabled:opacity-40 disabled:cursor-default disabled:hover:text-[#777]",
+  "shrink-0 cursor-pointer text-term-faint transition-colors hover:text-term-foreground",
+  "disabled:opacity-40 disabled:cursor-default disabled:hover:text-term-faint",
 );
 
 /** The example an event occurred within, via the `data-*` on its wrapper */

@@ -365,32 +365,32 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
   // rendered standalone when no session leader, else we couldn't switch session
   const sessionHeader = sessionsExist ? (
-    <div className="flex justify-end items-stretch gap-1 pb-2">
+    <div className="flex justify-end items-stretch gap-1">
       <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
         <Select.Trigger
           title="sessionKey"
           className={cn(
-            "flex items-center gap-2 cursor-pointer px-3 py-1 rounded-l-sm text-sm",
+            "flex items-center gap-2 cursor-pointer px-3 py-1 text-sm",
             // the connect icon continues this trigger
-            "border border-r-0 border-[#aaca] shadow-sm shadow-black/50 bg-black text-[#ff9]",
-            "transition-colors hover:bg-[#111]",
+            "border border-r-0 border-term-surface shadow-sm shadow-black/50 bg-term-inset text-term-accent",
+            "transition-colors hover:bg-term-hover",
           )}
         >
           <Select.Value placeholder="session" />
-          <CaretRightIcon alt="open" className="size-3 rotate-90 text-[#999]" />
+          <CaretRightIcon alt="open" className="size-3 rotate-90 text-term-muted" />
         </Select.Trigger>
 
         <Select.Portal>
           <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
-            <Select.Popup className="py-1 rounded-sm border border-[#505050] shadow-lg shadow-black/50 bg-black font-mono text-sm">
+            <Select.Popup className="py-1 rounded-sm border border-term-surface shadow-lg shadow-black/50 bg-term-inset font-mono text-sm">
               <Select.List>
                 {ttyMetas.map(({ sessionKey: key }) => (
                   <Select.Item
                     key={key}
                     value={key}
                     className={cn(
-                      "px-3 py-1 cursor-pointer text-[#ccc]",
-                      "data-highlighted:bg-[#222] data-selected:text-[#ff9]",
+                      "px-3 py-1 cursor-pointer text-term-paused",
+                      "data-highlighted:bg-term-surface data-selected:text-term-accent",
                     )}
                   >
                     <Select.ItemText>{key}</Select.ItemText>
@@ -407,9 +407,9 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         title={state.connected ? "disconnect" : "connect to session"}
         className={cn(
           "cursor-pointer grid place-items-center px-2 rounded-r-sm text-sm",
-          "border border-[#aaca] shadow-sm shadow-black/50 bg-black",
-          "transition-colors hover:bg-[#111]",
-          state.connected ? "text-[#afa] hover:text-[#faa]" : "text-[#999] hover:text-[#afa]",
+          "border border-term-surface shadow-sm shadow-black/50 bg-term-inset",
+          "transition-colors hover:bg-term-hover",
+          state.connected ? "text-term-ok hover:text-term-danger" : "text-term-muted hover:text-term-ok",
         )}
         onClick={state.connected ? state.disconnect : state.connect}
       >
@@ -426,13 +426,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         <button
           type="button"
           title={state.ttyMeta.disabled ? "resume tty" : "pause tty"}
-          className="cursor-pointer flex items-center px-3 py-1 rounded-sm border border-[#555] shadow-sm shadow-black/50 transition-colors hover:bg-[#333]"
+          className="cursor-pointer flex items-center px-3 py-1 rounded-sm border border-term-surface shadow-sm shadow-black/50 transition-colors hover:bg-term-hover-strong"
           onClick={state.toggleTtyDisabled}
         >
           {state.ttyMeta.disabled ? (
-            <PlayIcon alt="resume tty" className="size-4 text-green-400" />
+            <PlayIcon alt="resume tty" className="size-4 text-term-ok" />
           ) : (
-            <PauseIcon alt="pause tty" className="size-4 text-[#ccc]" />
+            <PauseIcon alt="pause tty" className="size-4 text-term-paused" />
           )}
         </button>
       )}
@@ -440,21 +440,22 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   ) : null;
 
   return (
-    <div data-jobs-root className="p-4 h-full overflow-hidden text-white min-h-[50px] flex flex-col gap-2">
+    <div data-jobs-root className="p-4 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col gap-2">
       {/* process leaders scroll, so spawning does not shift the library */}
       <div
         className={cn(
           // the gutter is stable, so overflowing does not shift either
           "flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
-          "flex flex-col gap-2 p-2 rounded border border-[#2a2a2a] bg-black/40",
+          "flex flex-col gap-2 p-2 rounded border border-term-border-subtle bg-term-inset/40",
+          // "items-end",
         )}
       >
-        {sessionsExist === false && <div className="font-mono text-[#999]">{`[No sessions]`}</div>}
+        {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
 
         {state.processes[0] === undefined && <div className="w-full p-1 font-mono">{sessionHeader}</div>}
 
         {sessionsExist && (
-          <div className="flex flex-col text-base text-white">
+          <div className="flex flex-col text-base text-term-foreground p-2">
             {/* keyed, so switching session swaps items without exit animations */}
             <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
               {state.ordered.map((p) => {
@@ -469,7 +470,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="min-w-32 flex flex-col w-full rounded shadow-lg shadow-black/40 bg-[#222] text-[#0f0] font-mono"
+                    className="min-w-32 flex flex-col w-full rounded text-term-running font-mono"
                   >
                     {/* header, connected to the session leader */}
                     {p.pid === 0 && sessionHeader}
@@ -477,13 +478,15 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                     {/* never wraps: a src too wide for the row truncates instead */}
                     <div className="flex items-stretch">
                       {/* fixed width so cards align */}
-                      <div className="relative flex shrink-0 bg-black border border-[#555]">
-                        <div className="w-12 px-1 flex items-center justify-center text-sm text-[#ff9]">{p.pid}</div>
+                      <div className="relative flex shrink-0 bg-term-inset">
+                        <div className="w-12 px-1 flex items-center justify-center text-sm text-term-accent">
+                          {p.pid}
+                        </div>
                       </div>
 
-                      <div className="flex shrink-0 items-stretch text-white">
+                      <div className="flex shrink-0 items-stretch text-term-foreground">
                         <div
-                          className={cn(controlCss, killed && "pointer-events-none text-[#777]")}
+                          className={cn(controlCss, killed && "pointer-events-none text-term-faint")}
                           onClick={!killed ? state.changeProcess : undefined}
                           data-act={paused ? "resume" : "pause"}
                           data-pid={p.pid}
@@ -495,7 +498,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                           )}
                         </div>
                         <div
-                          className={cn(controlCss, "text-[#faa]", killed && "pointer-events-none text-[#777]")}
+                          className={cn(
+                            controlCss,
+                            "text-term-danger",
+                            killed && "pointer-events-none text-term-faint",
+                          )}
                           onClick={!killed ? state.changeProcess : undefined}
                           data-act="kill"
                           data-pid={p.pid}
@@ -511,7 +518,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                           data-pid={p.pid}
                         >
                           {p.pid === 0 ? (
-                            <span className="text-sm leading-none text-[#999]">{"&"}</span>
+                            <span className="text-sm leading-none text-term-muted">{"&"}</span>
                           ) : (
                             <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
                           )}
@@ -524,13 +531,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                         onClick={state.toggleExpanded}
                         className={cn(
                           // `min-w-0` lets it shrink past its content, so `truncate` bites
-                          "grow min-w-0 cursor-pointer px-2 py-1 bg-black border border-[#505050] text-sm",
+                          "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset border-term-border text-sm",
                           expanded
                             ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
                               "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
                             : // one line, however long the source
                               "truncate",
-                          killed ? "text-[#f99]" : paused ? "text-[#ccc]" : "text-[#0f0]",
+                          killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
                         )}
                       >
                         {p.src || "[empty]"}
@@ -557,7 +564,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 }
 
 const controlCss = cn(
-  "flex items-center justify-center w-7 px-2 py-0.5 border border-[#555] cursor-pointer transition-colors hover:bg-[#333]",
+  "flex items-center justify-center w-7 px-2 py-0.5 cursor-pointer transition-colors hover:bg-term-hover-strong",
 );
 
 /** How often killed processes are forgotten */
