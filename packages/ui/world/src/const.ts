@@ -77,7 +77,7 @@ export const fovStorageKey = `world-fov-value`;
 export const fovConfig = {
   min: 40,
   max: 60,
-  default: 40,
+  default: 50,
 };
 
 export const defaultBrightness = 2;
