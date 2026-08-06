@@ -3,6 +3,38 @@
   --color-on-background: var(--color-black);
   --color-button-background: var(--color-zinc-100);
   --color-spinner: var(--color-zinc-400);
+
+  /* Terminal-flavoured surfaces, from recessed (inset) to raised (surface) */
+  --color-term-inset: #ffffff;
+  --color-term-fence: #fbfbfb;
+  --color-term-surface: #e6e6e6;
+  --color-term-hover: #ededed;
+  --color-term-hover-strong: #dfdfdf;
+  --color-term-border: #c4c4c4;
+  --color-term-border-subtle: #dcdcdc;
+  --color-term-foreground: #1a1a1a;
+  --color-term-muted: #6b6b6b;
+  --color-term-faint: #a0a0a0;
+  /* Session keys, pids and arg names */
+  --color-term-accent: #8a6a00;
+  /* Focused/selected outlines */
+  --color-term-focus: #6f86b5;
+  /* Process status: running, killed, suspended, connected */
+  --color-term-running: #1449c4;
+  --color-term-danger: #b3261e;
+  --color-term-paused: #5f6b7a;
+  --color-term-ok: #15803d;
+
+  /* Shell syntax highlighting — see `tokenCss` and `TokenKind` */
+  --color-sh-command: #1f2937;
+  --color-sh-comment: #5d7a5d;
+  --color-sh-flag: #7a6448;
+  --color-sh-keyword: #6b4c86;
+  --color-sh-number: #7a6448;
+  --color-sh-operator: #445c66;
+  --color-sh-string: #4a6b2f;
+  --color-sh-text: #3a3a3a;
+  --color-sh-variable: #7a6224;
 }
 
 .theme-dark {
@@ -10,4 +42,31 @@
   --color-on-background: #dddddd;
   --color-button-background: var(--color-zinc-800);
   --color-spinner: var(--color-blue-400);
+
+  --color-term-inset: #000000;
+  --color-term-fence: #131313;
+  --color-term-surface: #222222;
+  --color-term-hover: #111111;
+  --color-term-hover-strong: #333333;
+  --color-term-border: #505050;
+  --color-term-border-subtle: #2a2a2a;
+  --color-term-foreground: #ffffff;
+  --color-term-muted: #999999;
+  --color-term-faint: #777777;
+  --color-term-accent: #ffff99;
+  --color-term-focus: #aaaacc;
+  --color-term-running: #00ff00;
+  --color-term-danger: #ff9999;
+  --color-term-paused: #cccccc;
+  --color-term-ok: #aaffaa;
+
+  --color-sh-command: #e2e7ed;
+  --color-sh-comment: #829282;
+  --color-sh-flag: #c2b49e;
+  --color-sh-keyword: #c6b4d1;
+  --color-sh-number: #c2b49e;
+  --color-sh-operator: #98a8b1;
+  --color-sh-string: #aec09a;
+  --color-sh-text: #c2c2c2;
+  --color-sh-variable: #cebf92;
 }
