@@ -159,7 +159,7 @@ export default function JobsLibrary(props: Props) {
           state.open && "border-b border-term-border-subtle",
         )}
       >
-        <nav className="min-w-0 flex items-end -mb-px">
+        <nav className="min-w-0 flex flex-1 items-end -mb-px">
           {categories.map(({ key, label }) => (
             <button
               key={key}
@@ -183,7 +183,7 @@ export default function JobsLibrary(props: Props) {
             // takes the space left between the tabs and the caret, so it cannot overflow
             <label
               key={key}
-              className="min-w-0 flex-1 max-w-32 flex items-center gap-1 py-1 font-mono text-xs text-term-accent"
+              className="min-w-0 flex-1 max-w-22 flex items-center gap-1 py-1 font-mono text-xs text-term-accent"
             >
               <span className="shrink-0">{`${key}:`}</span>
               <input
