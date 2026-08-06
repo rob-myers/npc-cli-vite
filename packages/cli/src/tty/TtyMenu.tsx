@@ -1,12 +1,16 @@
 import { cn, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGet, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowArcLeftIcon,
   ArrowDownIcon,
   ArrowUpIcon,
+  CaretRightIcon,
+  ClipboardTextIcon,
   EraserIcon,
   KeyReturnIcon,
-  PaintBrushIcon,
+  PauseIcon,
+  PlayIcon,
   SkullIcon,
 } from "@phosphor-icons/react";
 import { type MotionValue, motion, useMotionValue } from "motion/react";
@@ -51,34 +55,39 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
         }
       },
       async onClickMenu(e: React.MouseEvent) {
-        const target = (e.target as HTMLElement).closest("div") as HTMLElement;
+        const act = (e.target as HTMLElement).closest<HTMLElement>("[data-act]")?.dataset.act;
+        if (act === undefined) {
+          return; // e.g. the gap between buttons
+        }
         state.xterm.xterm.scrollToBottom();
-        if (target.classList.contains("paste")) {
-          try {
-            const textToPaste = await navigator.clipboard.readText();
-            state.xterm.spliceInput(textToPaste);
-          } catch {}
-        } else if (target.classList.contains("can-type")) {
-          const next = !state.xterm.canType();
-          state.xterm.setCanType(next);
-          tryLocalStorageSet(localStorageKey.touchTtyCanType, `${next}`);
-          next && state.xterm.warnIfNotReady();
-          state.update();
-        } else if (target.classList.contains("ctrl-c")) {
-          sessionApi.killSessionLeader(props.session.key);
-        } else if (target.classList.contains("enter")) {
-          if (!state.xterm.warnIfNotReady()) {
-            // avoid sending 'newline' whilst 'await-prompt'
-            state.xterm.queueCommands([{ key: "newline" }]);
-          }
-        } else if (target.classList.contains("delete")) {
-          state.xterm.deletePreviousWord();
-        } else if (target.classList.contains("clear")) {
-          state.xterm.clearScreen();
-        } else if (target.classList.contains("up")) {
-          state.xterm.reqHistoryLine(+1);
-        } else if (target.classList.contains("down")) {
-          state.xterm.reqHistoryLine(-1);
+
+        switch (act) {
+          case "paste":
+            try {
+              state.xterm.spliceInput(await navigator.clipboard.readText());
+            } catch {}
+            break;
+          case "ctrl-c":
+            sessionApi.killSessionLeader(props.session.key);
+            break;
+          case "enter":
+            if (!state.xterm.warnIfNotReady()) {
+              // avoid sending 'newline' whilst 'await-prompt'
+              state.xterm.queueCommands([{ key: "newline" }]);
+            }
+            break;
+          case "delete":
+            state.xterm.deletePreviousWord();
+            break;
+          case "clear":
+            state.xterm.clearScreen();
+            break;
+          case "up":
+            state.xterm.reqHistoryLine(+1);
+            break;
+          case "down":
+            state.xterm.reqHistoryLine(-1);
+            break;
         }
         // on mobile avoid close keyboard
         state.xterm.xterm.focus();
@@ -122,10 +131,10 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
         "pointer-events-none",
         "absolute z-2 top-0 right-0 touch-none",
         "transition-opacity duration-300 delay-300 opacity-100 starting:opacity-0",
-        "[--menu-width:32px]",
-        "text-sm leading-1 border-none text-on-background/80",
+        "text-sm leading-none border-none",
       )}
-      style={{ y }}
+      // one square per button, enlarged for fingers
+      style={{ y, ...({ "--menu-width": isTouchDevice() ? "44px" : "32px" } as React.CSSProperties) }}
       drag="y"
       dragConstraints={{ top: state.minY, bottom: state.getMaxY() }}
       dragMomentum={false}
@@ -150,37 +159,47 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
     >
       <div
         className={cn(
-          "flex transition-transform duration-500",
+          "flex items-start transition-transform duration-500",
           state.touchMenuOpen ? "translate-x-0" : "translate-x-(--menu-width)",
         )}
       >
-        <div className="touch-none *:pointer-events-auto">
+        {/* stays put when the menu slides away, so it can bring it back */}
+        <div className="flex flex-col touch-none *:pointer-events-auto">
           <div
-            className="size-8 flex justify-center items-center cursor-pointer text-[1rem] font-['Segoe_UI',Tahoma,Geneva,Verdana,sans-serif] bg-background text-on-background border border-black/50"
+            className={cn(itemCss, "rounded-l bg-term-surface/90 border border-term-border backdrop-blur-xs")}
+            title={state.touchMenuOpen ? "hide controls" : "show controls"}
             onClick={(e) => {
               e.stopPropagation();
               if (!state.dragged) state.toggleTouchMenu();
             }}
           >
-            {state.touchMenuOpen ? ">" : "<"}
+            <CaretRightIcon className={cn(iconSizeCss, !state.touchMenuOpen && "rotate-180")} weight="bold" />
           </div>
+
           {props.canContOrStop != null && (
             <div
-              className="size-8 flex items-center justify-center writing-vertical-rl text-upright cursor-pointer border-none text-[#0f0b] bg-black text-[0.6rem]"
+              className={cn(itemCss, statusCss, "text-term-ok")}
               onClick={(e) => {
                 e.stopPropagation();
                 if (!state.dragged) state.contOrStopInteractive();
               }}
               title={props.canContOrStop === "CONT" ? "resume interactive" : "pause interactive"}
             >
-              {props.canContOrStop}
+              {props.canContOrStop === "CONT" ? (
+                <PlayIcon className={iconSizeCss} weight="fill" />
+              ) : (
+                <PauseIcon className={iconSizeCss} weight="fill" />
+              )}
             </div>
           )}
+
           {props.disabled && (
             <div
               className={cn(
-                "cursor-pointer size-8 flex justify-center items-center bg-black text-[#777] text-[0.8rem]",
-                !state.spawnBgPaused && "text-[#cc6]",
+                itemCss,
+                statusCss,
+                "font-mono text-[0.7rem] tracking-wider",
+                state.spawnBgPaused ? "text-term-faint" : "text-term-accent",
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -195,31 +214,32 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
 
         <div
           className={cn(
-            "max-h-full overflow-auto flex flex-col gap-1 border border-solid border-[#444]/60 py-2 filter backdrop-blur-[2px]",
-            "mb-8 w-(--menu-width)",
+            "max-h-full overflow-auto flex flex-col mb-8 w-(--menu-width)",
+            "rounded-bl border border-r-0 border-term-border bg-term-surface/90 backdrop-blur-xs",
+            "divide-y divide-term-border-subtle",
             "*:pointer-events-auto touch-none",
           )}
         >
-          <div className={cn(icon, "paste")} title="paste (Cmd+V)">
-            <PaintBrushIcon weight="light" />
+          <div className={itemCss} data-act="paste" title="paste (Cmd+V)">
+            <ClipboardTextIcon className={iconSizeCss} />
           </div>
-          <div className={cn(icon, "enter")} title="or press Enter">
-            <KeyReturnIcon size={18} weight="fill" />
+          <div className={itemCss} data-act="enter" title="or press Enter">
+            <KeyReturnIcon className={iconSizeCss} weight="fill" />
           </div>
-          <div className={cn(icon, "up")} title="or press Up">
-            <ArrowUpIcon weight="fill" />
+          <div className={itemCss} data-act="up" title="or press Up">
+            <ArrowUpIcon className={iconSizeCss} weight="bold" />
           </div>
-          <div className={cn(icon, "down")} title="or press Down">
-            <ArrowDownIcon weight="fill" />
+          <div className={itemCss} data-act="down" title="or press Down">
+            <ArrowDownIcon className={iconSizeCss} weight="bold" />
           </div>
-          <div className={cn(icon, "ctrl-c")} title="or press Ctrl+C">
-            <SkullIcon weight="fill" />
+          <div className={itemCss} data-act="delete" title="or press Backspace">
+            <EraserIcon className={iconSizeCss} weight="fill" />
           </div>
-          <div className={cn(icon, "clear")} title="or press Ctrl+L">
-            <ArrowArcLeftIcon weight="fill" />
+          <div className={itemCss} data-act="clear" title="or press Ctrl+L">
+            <ArrowArcLeftIcon className={iconSizeCss} weight="fill" />
           </div>
-          <div className={cn(icon, "delete")} title="or press Backspace">
-            <EraserIcon weight="fill" />
+          <div className={cn(itemCss, "text-term-danger")} data-act="ctrl-c" title="or press Ctrl+C">
+            <SkullIcon className={iconSizeCss} weight="fill" />
           </div>
         </div>
       </div>
@@ -252,5 +272,12 @@ export type State = {
   toggleTouchMenu(): void;
 };
 
-const icon = cn("flex justify-center h-6 cursor-pointer");
+/** One square button, sized by `--menu-width` so touch devices get bigger targets */
+const itemCss = cn(
+  "shrink-0 size-(--menu-width) flex justify-center items-center",
+  "cursor-pointer text-term-muted transition-colors hover:bg-term-hover hover:text-term-foreground",
+);
+/** The always-visible column, distinguished from the sliding one */
+const statusCss = cn("border-l border-y border-term-border bg-term-inset/90 backdrop-blur-xs");
+const iconSizeCss = "size-[calc(var(--menu-width)*0.45)]";
 const menuYStorageKey = "tty-menu-y";
