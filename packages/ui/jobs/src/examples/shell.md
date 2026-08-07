@@ -70,9 +70,9 @@ localLoop() {
 }
 localLoop 10
 
-# infinite loop: 🔔 each copy-paste or kill it using process manager UI above
+# infinite loop 🔔 either copy-paste or kill using UI above
 while true; do
-  echo ctrl-c to stop...
+  echo ctrl-c or kill to stop...
 done
 ```
 
