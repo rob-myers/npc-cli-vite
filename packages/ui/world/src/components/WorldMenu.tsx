@@ -310,11 +310,11 @@ export function WorldMenu() {
         <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
-            <div className={cn("flex flex-wrap max-w-52", touch && "max-w-none flex-col items-stretch")}>
+            <div className={cn("flex flex-wrap max-w-52", touch && "max-w-none items-stretch")}>
               <div
                 className={cn(
                   "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                  touch && "gap-3 px-3 py-2 text-sm",
+                  touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
                 )}
               >
                 <EyeIcon
@@ -338,7 +338,7 @@ export function WorldMenu() {
                 <div
                   className={cn(
                     "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                    touch && "gap-3 px-3 py-2 text-sm",
+                    touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
                   )}
                 >
                   <BrightnessPie
@@ -369,7 +369,7 @@ export function WorldMenu() {
               <div
                 className={cn(
                   "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                  touch && "gap-3 px-3 py-2 text-sm",
+                  touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
                 )}
               >
                 <ArrowsOutIcon

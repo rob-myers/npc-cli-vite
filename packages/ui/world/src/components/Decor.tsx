@@ -887,7 +887,6 @@ export default function Decor() {
       );
 
       state.ready = true;
-      // fade-in happens centrally in World.tsx once all pending keys clear (see setCanvasOpacity)
       w.setNextPending({ decor: false });
 
       return {
