@@ -35,22 +35,6 @@ pick | spawn npc:test
 pick | spawn npc:test as:human-1 look
 ```
 
-# remove
-
-```sh
-# remove npc rob
-remove npc:rob
-
-# remove all npcs
-remove npcs
-
-# remove all decor
-remove decor
-
-# remove npcs or decor named test0 ... test5
-remove test{0..5}
-```
-
 # doors
 
 ```sh
@@ -67,6 +51,22 @@ lock $( pick 1 as:meta.gdKey )
 
 ```sh
 events /enter-room/
+```
+
+# remove
+
+```sh
+# remove npc rob
+remove npc:rob
+
+# remove all npcs
+remove npcs
+
+# remove all decor
+remove decor
+
+# remove npcs or decor named test0 ... test5
+remove test{0..5}
 ```
 
 # unsorted
