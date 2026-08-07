@@ -1,3 +1,4 @@
+import { Select } from "@base-ui/react/select";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
@@ -131,13 +132,62 @@ export default function JobsLibrary(props: Props) {
           ))}
         </nav>
 
-        {/* shared by every example, so editing here rewrites them all */}
-        {state.open &&
-          [...sharedArgKeys].map((key) => (
-            // takes the space left between the tabs and the caret, so it cannot overflow
+        <button
+          type="button"
+          title={state.open ? "fold library" : "unfold library"}
+          className="ml-auto flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground"
+          onClick={state.toggleOpen}
+        >
+          <CaretRightIcon alt={state.open ? "fold" : "unfold"} className={cn("size-3", state.open && "rotate-90")} />
+        </button>
+      </div>
+
+      {state.open && category !== null && (
+        <div className="shrink-0 flex items-center gap-3 px-2 py-1.5 min-w-0 border-b border-term-border-subtle">
+          <Select.Root value={section?.key ?? ""} onValueChange={(key) => key && state.setSection(category.key, key)}>
+            <Select.Trigger
+              title="section"
+              className={cn(
+                "min-w-0 flex items-center gap-2 px-2 py-0.5 rounded-sm cursor-pointer text-sm",
+                "border border-term-border-subtle bg-term-hover text-term-foreground",
+                "transition-colors hover:bg-term-surface",
+              )}
+            >
+              {/* the value is a `${categoryKey}/${index}` key, so show the section's title */}
+              <Select.Value className="truncate">
+                {(key: string) => category.sections.find((x) => x.key === key)?.title ?? ""}
+              </Select.Value>
+              <CaretRightIcon alt="open" className="size-3 shrink-0 rotate-90 text-term-muted" />
+            </Select.Trigger>
+
+            <Select.Portal>
+              <Select.Positioner className="z-50" sideOffset={4} alignItemWithTrigger={false}>
+                <Select.Popup className="py-1 rounded-sm border border-term-border shadow-lg shadow-black/50 bg-term-inset text-sm">
+                  <Select.List>
+                    {category.sections.map((x) => (
+                      <Select.Item
+                        key={x.key}
+                        value={x.key}
+                        className={cn(
+                          "px-3 py-1 cursor-pointer text-term-muted",
+                          "data-highlighted:bg-term-surface data-selected:text-term-accent",
+                        )}
+                      >
+                        <Select.ItemText>{x.title}</Select.ItemText>
+                      </Select.Item>
+                    ))}
+                  </Select.List>
+                </Select.Popup>
+              </Select.Positioner>
+            </Select.Portal>
+          </Select.Root>
+
+          {/* shared by every example, so editing here rewrites them all */}
+          {[...sharedArgKeys].map((key) => (
+            // takes the space left beside the select, so it cannot overflow
             <label
               key={key}
-              className="min-w-0 flex-1 max-w-22 flex items-center gap-1 py-1 font-mono text-xs text-term-accent"
+              className="ml-auto min-w-0 flex-1 max-w-28 flex items-center gap-1 font-mono text-xs text-term-accent"
             >
               <span className="shrink-0">{`${key}:`}</span>
               <input
@@ -153,36 +203,7 @@ export default function JobsLibrary(props: Props) {
               />
             </label>
           ))}
-
-        <button
-          type="button"
-          title={state.open ? "fold library" : "unfold library"}
-          className="ml-auto flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground"
-          onClick={state.toggleOpen}
-        >
-          <CaretRightIcon alt={state.open ? "fold" : "unfold"} className={cn("size-3", state.open && "rotate-90")} />
-        </button>
-      </div>
-
-      {state.open && category !== null && (
-        // wraps rather than scrolls, else tabs could hide
-        <nav className="shrink-0 flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-term-border-subtle">
-          {category.sections.map((x) => (
-            <button
-              key={x.key}
-              type="button"
-              className={cn(
-                "shrink-0 px-2.5 py-1 rounded-sm cursor-pointer text-sm transition-colors",
-                x.key === section?.key
-                  ? "bg-term-surface text-term-foreground"
-                  : "text-term-muted hover:text-term-foreground",
-              )}
-              onClick={() => state.setSection(category.key, x.key)}
-            >
-              {x.title}
-            </button>
-          ))}
-        </nav>
+        </div>
       )}
 
       {state.open && section !== null && (
