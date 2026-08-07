@@ -81,6 +81,12 @@
   - `at $( pick 1 as:point )`
   - `at $( pick 1 as:point ) | map meta.y`
 
+- ✅ doors can use any decor icon
+  - technically restricted to list `doorIconKeys`
+
+- 🚧 cleanup door icons i.e. add decor, refine list, specify in maps
+
+
 ## Other
 
 - lock too small to pick?

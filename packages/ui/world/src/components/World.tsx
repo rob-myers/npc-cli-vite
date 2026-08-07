@@ -242,10 +242,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
 
-            state.door?.drawDoorTextures().then(() => {
+            if (state.door) {
+              state.door.drawDoorTextures();
               state.door.sendDataToGpu();
               state.door.update();
-            });
+            }
           }],
           [devMessageFromServer.skinSheetsRebuilding, () => {
             state.setNextPending({ skins: true });

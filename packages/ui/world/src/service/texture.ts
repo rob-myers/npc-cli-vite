@@ -2,7 +2,6 @@ import { Poly, Rect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { drawPolygons, drawRoundedRect } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
-import type { DecorSheetEntry } from "../assets.schema";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
 
@@ -471,39 +470,41 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   texArray.updateIndex(layerIndex);
 }
 
-export const doorIconKeys = ["dharma-wheel", "endless-knot"] as const;
+const doorIconSize = 100;
+const doorLogoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
 
-export function drawDoorIconLayer(
-  texArray: TexArray,
-  layerIndex: number,
-  sheetImage: HTMLImageElement,
-  entry: DecorSheetEntry,
-) {
+/**
+ * Where the icon sits within the door panel, in uv. The shader composites the icon itself
+ * (see `Doors.tsx`), so it must agree with the plaque `drawDoorPlaqueLayer` bakes.
+ */
+export const doorIconUvRect = {
+  x: (texW / 2 - doorIconSize / 2) / texW,
+  y: (doorLogoY - doorIconSize / 2) / texH,
+  width: doorIconSize / texW,
+  height: doorIconSize / texH,
+};
+
+/** The panel with an empty plaque, shared by every door icon */
+export function drawDoorPlaqueLayer(texArray: TexArray, layerIndex: number) {
   const { ct } = texArray;
   ct.clearRect(0, 0, texW, texH);
   ct.drawImage((basePanelCanvas ??= drawDoorBasePanel()), 0, 0);
 
-  const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
-  const iconSize = 100;
-  const { rect } = entry;
   ct.save();
-  ct.translate(texW / 2, logoY);
+  ct.translate(texW / 2, doorLogoY);
   ct.scale(1, -1);
 
   ct.globalAlpha = 0.5;
   drawRoundedRect(ct, {
-    x: -iconSize / 2,
-    y: -iconSize / 2,
-    width: iconSize,
-    height: iconSize,
+    x: -doorIconSize / 2,
+    y: -doorIconSize / 2,
+    width: doorIconSize,
+    height: doorIconSize,
     radius: 6,
     fillStyle: "rgba(30, 30, 30, 0.5)",
     strokeStyle: "rgba(220, 220, 220, 0.22)",
     lineWidth: 3,
   });
-
-  ct.globalAlpha = 0.25;
-  ct.drawImage(sheetImage, rect.x, rect.y, rect.width, rect.height, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
   ct.restore();
 
   texArray.updateIndex(layerIndex);
