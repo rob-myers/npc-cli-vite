@@ -287,14 +287,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           error(e);
         }
       },
-      pasteSrc(src) {
-        const session = state.getSession();
-        if (session === undefined || !src) {
-          return;
-        }
-        // xterm assumes newlines are \r\n
-        session.ttyShell.xterm.spliceInput(src.replace(/\r?\n/g, "\r\n"));
-      },
       copySrc(src) {
         window.clearTimeout(state.copiedTimeoutId);
         navigator.clipboard
@@ -580,14 +572,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         </div>
       )}
 
-      <JobsLibrary
-        uiId={meta.id}
-        canRun={sessionExists && state.connected}
-        copiedSrc={state.copiedSrc}
-        onCopy={state.copySrc}
-        onPaste={state.pasteSrc}
-        onRun={state.runSrc}
-      />
+      <JobsLibrary uiId={meta.id} copiedSrc={state.copiedSrc} onCopy={state.copySrc} onRun={state.runSrc} />
     </div>
   );
 }
@@ -639,8 +624,6 @@ type State = {
   };
   /** Run `pending.src` once ready, else poll until `pending.until` */
   flushPending: () => void;
-  /** Insert `src` at the tty prompt, without running it */
-  pasteSrc: (src: string) => void;
   toggleTtyDisabled: () => void;
   /** Forget killed processes */
   cleanupDead: () => void;

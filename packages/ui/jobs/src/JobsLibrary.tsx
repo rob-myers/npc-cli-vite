@@ -1,7 +1,7 @@
-import { Popover } from "@base-ui/react/popover";
+import { Tooltip } from "@base-ui/react/tooltip";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretRightIcon, CheckIcon, ClipboardTextIcon, CopyIcon, InfoIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect } from "react";
@@ -21,7 +21,7 @@ import type { TokenKind } from "./shell-highlight";
 
 /**
  * A library of example commands, provided via `./examples/*.md`.
- * Browsable without a session; only run/paste need one.
+ * Browsable without a session; only running needs one.
  */
 export default function JobsLibrary(props: Props) {
   const queryClient = useQueryClient();
@@ -47,9 +47,6 @@ export default function JobsLibrary(props: Props) {
       },
       onExampleCopy(e) {
         state.props.onCopy(getExampleData(e).src);
-      },
-      onExamplePaste(e) {
-        state.props.onPaste(getExampleData(e).src);
       },
       onExampleRun(e) {
         state.props.onRun(getExampleData(e).src);
@@ -175,7 +172,7 @@ export default function JobsLibrary(props: Props) {
               key={x.key}
               type="button"
               className={cn(
-                "shrink-0 px-2 py-0.5 rounded-sm cursor-pointer text-xs transition-colors",
+                "shrink-0 px-2.5 py-1 rounded-sm cursor-pointer text-sm transition-colors",
                 x.key === section?.key
                   ? "bg-term-surface text-term-foreground"
                   : "text-term-muted hover:text-term-foreground",
@@ -191,9 +188,11 @@ export default function JobsLibrary(props: Props) {
       {state.open && section !== null && (
         <article className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-1 px-3 py-3">
           {section.prose && <p className="text-[13px]/relaxed text-term-muted">{section.prose}</p>}
-          {section.examples.map((example) => (
-            <LibraryExample key={example.id} example={example} state={state} />
-          ))}
+          <Tooltip.Provider delay={300} closeDelay={100}>
+            {section.examples.map((example) => (
+              <LibraryExample key={example.id} example={example} state={state} />
+            ))}
+          </Tooltip.Provider>
         </article>
       )}
     </div>
@@ -201,71 +200,67 @@ export default function JobsLibrary(props: Props) {
 }
 
 /**
- * A single example: click to run, or read its comment via the info popover.
+ * A single example: click to run, or read its comment via the info tooltip.
  * Every handler comes from `state`, so none is created per example.
  */
 function LibraryExample({ example, state }: { example: Example; state: UseStateRef<State> }) {
-  const { canRun, copiedSrc } = state.props;
+  const { copiedSrc } = state.props;
   const src = toEditedSrc(example, state.edits);
 
   return (
     // the handlers read these, rather than closing over the example
     <div className="relative" data-example-id={example.id} data-src={src}>
-      <button
-        type="button"
-        title="run in background"
-        className={cn(
-          "block w-full text-left cursor-pointer select-none transition-colors",
-          "px-3 py-2 bg-term-fence border border-term-border-subtle rounded hover:border-term-ok",
-        )}
-        onClick={state.onExampleRun}
+      {/* the command itself explains what it does, on hover or focus */}
+      <Tooltip.Root
+        disabled={!example.comment}
+        onOpenChange={(open, eventDetails) => {
+          // running it would otherwise dismiss the description mid-read
+          if (open === false && eventDetails.reason === "trigger-press") {
+            eventDetails.cancel();
+          }
+        }}
       >
-        <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
-          {/* only the first line makes room for the overlaid toolbar */}
-          <span aria-hidden className="float-right w-22 h-[1.45em]" />
-          {toSegments(example, state.edits).map((segment, i) => (
-            <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
-              {segment.text}
-            </span>
-          ))}
-        </code>
-      </button>
+        <Tooltip.Trigger
+          className={cn(
+            "block w-full text-left cursor-pointer select-none transition-colors",
+            "px-3 py-2 bg-term-fence border border-term-border-subtle rounded hover:border-term-ok",
+          )}
+          onClick={state.onExampleRun}
+        >
+          <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
+            {/* only the first line makes room for the overlaid toolbar */}
+            <span aria-hidden className="float-right w-8 h-[1.45em]" />
+            {toSegments(example, state.edits).map((segment, i) => (
+              <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
+                {segment.text}
+              </span>
+            ))}
+          </code>
+        </Tooltip.Trigger>
 
-      <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5 rounded bg-term-fence/90 px-1 py-0.5">
+        {/* portalled, else the scrolling article would clip it */}
+        <Tooltip.Portal>
+          <Tooltip.Positioner className="z-50 max-w-72" side="top" align="end" sideOffset={4}>
+            <Tooltip.Popup
+              className={cn(
+                "px-3 py-2 rounded border border-term-focus shadow-lg shadow-black/50",
+                "bg-term-inset font-sans text-xs/relaxed text-term-foreground",
+              )}
+            >
+              {example.comment}
+            </Tooltip.Popup>
+          </Tooltip.Positioner>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <div className="absolute right-1.5 top-1.5 flex items-center rounded bg-term-fence/90 px-1 py-0.5">
         <button type="button" title="copy" className={iconCss} onClick={state.onExampleCopy}>
           {copiedSrc === src ? (
-            <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
+            <CheckIcon alt="copied" className="size-4 text-term-ok" />
           ) : (
-            <CopyIcon alt="copy" className="size-3.5" />
+            <CopyIcon alt="copy" className="size-4" />
           )}
         </button>
-        <button
-          type="button"
-          title="paste into prompt"
-          disabled={!canRun}
-          className={iconCss}
-          onClick={state.onExamplePaste}
-        >
-          <ClipboardTextIcon alt="paste into prompt" className="size-3.5" />
-        </button>
-        {/* portalled, else the popup would be clipped by the scrolling article */}
-        <Popover.Root>
-          <Popover.Trigger title={example.comment || "no description"} disabled={!example.comment} className={iconCss}>
-            <InfoIcon alt="what this does" className="size-3.5" />
-          </Popover.Trigger>
-          <Popover.Portal>
-            <Popover.Positioner className="z-50 max-w-72" side="top" align="end" sideOffset={4}>
-              <Popover.Popup
-                className={cn(
-                  "px-3 py-2 rounded border border-term-focus shadow-lg shadow-black/50",
-                  "bg-term-inset font-sans text-xs/relaxed text-term-foreground",
-                )}
-              >
-                {example.comment}
-              </Popover.Popup>
-            </Popover.Positioner>
-          </Popover.Portal>
-        </Popover.Root>
       </div>
     </div>
   );
@@ -304,11 +299,8 @@ function getStorageKey(uiId: string) {
 type Props = {
   /** UI instance id, for localStorage */
   uiId: string;
-  /** Does a session exist i.e. can we run/paste? */
-  canRun: boolean;
   copiedSrc: null | string;
   onCopy: (src: string) => void;
-  onPaste: (src: string) => void;
   onRun: (src: string) => void;
 };
 
@@ -329,7 +321,6 @@ type State = {
   onEditArg: (e: React.ChangeEvent<HTMLInputElement>) => void;
   /** Each of these reads the example from `data-*` — see `getExampleData` */
   onExampleCopy: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onExamplePaste: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onExampleRun: (e: React.MouseEvent<HTMLButtonElement>) => void;
   persist: () => void;
   setCategory: (categoryKey: string) => void;
