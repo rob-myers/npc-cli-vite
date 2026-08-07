@@ -538,20 +538,26 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     // squared, so a one-finger pinch (ratio 1/3) keeps a ninth of its rotation, not a third
     const rotateScale = this.rotateSpeed * this.twoFingerRotateRatio ** 2;
 
-    // deadzone on the raw drift, so the baseline still advances whilst suppressed
-    if (drift * this.rotateSpeed > twoFingerDeadzone) {
-      this.rotateLeft((2 * Math.PI * (cx - this.twoFingerCentroid.x) * rotateScale) / element.clientHeight);
-      if (this.params.fixedPolar !== true) {
-        this.rotateUp((2 * Math.PI * (cy - this.twoFingerCentroid.y) * rotateScale) / element.clientHeight);
-      }
-      this.twoFingerCentroid.set(cx, cy);
+    // Both channels are low-pass filtered rather than gated by a deadzone: a finger resting on
+    // glass wanders a pixel or two per event, and a threshold can only withhold that noise and
+    // then release it in one jump, which reads as stutter. Easing keeps slow motion responsive
+    // and still delivers the full displacement, just a frame or two behind the fingers.
+    const prevX = this.twoFingerCentroid.x;
+    const prevY = this.twoFingerCentroid.y;
+    this.twoFingerCentroid.set(prevX + (cx - prevX) * twoFingerSmoothing, prevY + (cy - prevY) * twoFingerSmoothing);
+
+    this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
+    if (this.params.fixedPolar !== true) {
+      this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
     }
 
-    if (spread > twoFingerDeadzone) {
-      const ratio = (dist / this.u.dollyStart.y) ** this.zoomSpeed;
+    const prevDist = this.u.dollyStart.y;
+    const nextDist = prevDist + (dist - prevDist) * twoFingerSmoothing;
+    if (prevDist > 0 && nextDist > 0) {
+      const ratio = (nextDist / prevDist) ** this.zoomSpeed;
       if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
       this.dollyOut(ratio);
-      this.u.dollyStart.set(0, dist);
+      this.u.dollyStart.set(0, nextDist);
     }
   }
 
@@ -1218,8 +1224,8 @@ const defaultDampingFactor = 0.05;
 const snapAzimuthOffset = Math.PI / 4;
 /** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
 const snapAzimuthEaseIn = 2;
-/** Pixels of centroid or spread change below which a two-finger motion is noise */
-const twoFingerDeadzone = 2;
+/** Per-event weight of the centroid and spread low-pass; lower is smoother but laggier */
+const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
 

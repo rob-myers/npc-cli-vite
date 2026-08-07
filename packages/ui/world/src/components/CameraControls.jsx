@@ -70,12 +70,12 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
     const old = r3f.get().controls;
     r3f.set({ controls });
     controls.setParams({
-      fixedPolar: false,
+      fixedPolar: props.fixedPolar ?? false,
       snapAzimuth: props.cameraMode === "cardinal",
       numCardinalDirections: props.numCardinalDirections ?? 4,
     });
     return () => r3f.set({ controls: old });
-  }, [props.cameraMode, props.numCardinalDirections, controls]);
+  }, [props.cameraMode, props.fixedPolar, props.numCardinalDirections, controls]);
 
   useFrame(() => {
     controls.update();
@@ -109,6 +109,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [numCardinalDirections]
  * @property {HTMLElement} domElement
  * @property {number} [extraZoom]
+ * @property {boolean} [fixedPolar] Pin the polar angle, leaving azimuth and zoom
  * @property {number} [initialAzimuthal]
  * @property {number} [initialPolar]
  * @property {{ x: number; y: number; z: number }} [initialPosition]

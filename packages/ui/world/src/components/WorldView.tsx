@@ -770,6 +770,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ref={state.ref("controls")}
           cameraMode={state.cameraMode}
           numCardinalDirections={state.cameraDirections}
+          fixedPolar={w.touchDevice && state.cameraMode === "cardinal"}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
