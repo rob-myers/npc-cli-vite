@@ -42804,7 +42804,7 @@
       "lights": {"ambientIntensity": 0.4},
       "obstacles": {"brightness": 1},
       "doors": {"brightness": 1},
-      "walls": {"color": "#000", "opacity": 0.5}
+      "walls": {"color": "#000", "opacity": 0.35}
     }
   },
   "hash": {"obstacles": 1570485669}
