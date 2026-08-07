@@ -48,12 +48,9 @@ export const geomorphPngRectWidth = 30.3;
 export const gmFloorExtraScale = 2.5;
 
 /** This is the width and height (even for edge geomorphs) because we use texture arrays. */
-export const floorTextureDimension = Math.ceil(
-  geomorphPngRectWidth * worldToSguScale * gmFloorExtraScale,
-);
+export const floorTextureDimension = Math.ceil(geomorphPngRectWidth * worldToSguScale * gmFloorExtraScale);
 
-export const roomHitTextureScaleDown =
-  Math.ceil(geomorphPngRectWidth * worldToSguScale) / floorTextureDimension;
+export const roomHitTextureScaleDown = Math.ceil(geomorphPngRectWidth * worldToSguScale) / floorTextureDimension;
 
 /** Assumed to exist inside `assets.json` `map` lookup */
 export const emptyMapKey = "empty-map";
@@ -78,10 +75,10 @@ export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
 
 export const fovConfig = {
-  min: 40,
-  max: 70,
-  default: 50,
-  defaultMobile: 60,
+  min: 35,
+  max: 60,
+  default: 40,
+  defaultMobile: 55,
 };
 
 export const defaultBrightness = 2;
@@ -120,10 +117,8 @@ export const defaultAmbientIntensity = 0.4;
 export const ambientIntensityKey = "world-ambient-intensity";
 export const ambientMoodKey = "world-ambient-mood";
 
-export const defaultCameraModeDesktop =
-  "cardinal" satisfies import("./components/CameraControls").CameraModeType;
-export const defaultCameraModeMobile =
-  "free" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraModeDesktop = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCardinalDirectionsDesktop = 8;
 export const defaultCardinalDirectionsMobile = 4;
 
@@ -251,8 +246,7 @@ export const fromAnimationClipKey = {
   walk: true,
 };
 
-export const defaultIdleAnimationClipKey =
-  "breathe" satisfies import("./components/NPCs").AnimationClipKey;
+export const defaultIdleAnimationClipKey = "breathe" satisfies import("./components/NPCs").AnimationClipKey;
 
 /** Fallback for @see {fadeSecs} */
 export const defaultFadeSecs = 0.3;
