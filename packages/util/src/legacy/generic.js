@@ -403,8 +403,12 @@ export function mapValues(input, transform) {
  * @param {string[]} args
  * @param {{ [aliasKey: string]: string; }} [alias]
  * Map alias keys to their true keys.
- * @param {{ array?: { [key: string]: true }; }} [opts]
+ * @param {{
+ *   array?: { [key: string]: true };
+ *   force?: boolean;
+ * }} [opts]
  * - `opts.array` if value isn't an array try to convert space-separated js values into one
+ * - `opts.force` ignores errors
  * @returns {T}
  */
 export function jsArg(args, alias, opts) {
@@ -419,6 +423,9 @@ export function jsArg(args, alias, opts) {
 
         let key = arg.slice(0, colonIndex);
         if (key.startsWith("{")) {
+          if (opts?.force === true) {
+            return agg;
+          }
           throw Error(`${key}: bad key (try quotes)`);
         }
 

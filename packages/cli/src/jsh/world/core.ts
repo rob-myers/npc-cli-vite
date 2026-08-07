@@ -13,13 +13,16 @@ import { localBoundary } from "navcat/blocks";
  * at point:[1.5,4.5]
  * at point:[1.5,2,4.5]
  * at [1.5,4.5]
+ * at $( pick 1 )
+ * at $( pick 1 as:point )
  * ```
  */
 export async function at(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
-  opts: { point?: JshCli.PointAnyFormat } = api.jsArg(args),
+  // force so can `at $( pick 1 )` sans throw
+  opts: { point?: JshCli.PointAnyFormat } = api.jsArg(args, undefined, { force: true }),
 ) {
-  const point = opts.point ?? api.parseJsArg(api.getJsOperands(args, opts)[0]);
+  const point = opts.point ?? api.parseJsArg(args[0]);
 
   if (!w.helper.isPointAnyFormat(point)) {
     throw Error("expected point");
