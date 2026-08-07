@@ -22,6 +22,7 @@ import * as THREE from "three/webgpu";
 import type { WorldTheme } from "../assets.schema";
 import {
   ambientIntensityKey,
+  cameraFov,
   cameraModeStorageKey,
   cameraPositionStorageKey,
   defaultCameraModeDesktop,
@@ -30,8 +31,6 @@ import {
   defaultCardinalDirectionsMobile,
   defaultRoomLightIntensity,
   defaultVignette,
-  fovConfig,
-  fovStorageKey,
   numCardinalDirectionsKey,
   postProcessingEnabledKey,
   roomLightEditingEnabledKey,
@@ -92,9 +91,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         marchSteps: 96,
       }),
       dynamicLightTarget: null,
-      fov:
-        tryLocalStorageGetParsed<number>(fovStorageKey) ??
-        (w.touchDevice ? fovConfig.defaultMobile : fovConfig.default),
       initial: getInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
       ambientAnimId: 0,
@@ -764,7 +760,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={state.fov} makeDefault zoom={1} />
+        <PerspectiveCamera fov={cameraFov} makeDefault zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
@@ -848,7 +844,6 @@ export type State = {
   dynamicLightTarget: null | { npcKey: string; position: { x: number; y: number; z: number } };
   /** Non-zero whilst the tracked light is catching up with a teleported target */
   lightTweenId: number;
-  fov: number;
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;

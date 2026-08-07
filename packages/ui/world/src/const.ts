@@ -72,14 +72,8 @@ export const brightnessStorageKey = `world-brightness-value`;
 export const cameraModeStorageKey = `world-camera-mode`;
 export const cameraPositionStorageKey = "world-camera-position";
 export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
-export const fovStorageKey = `world-fov-value`;
-
-export const fovConfig = {
-  min: 40,
-  max: 40,
-  default: 40,
-  defaultMobile: 40,
-};
+/** Vertical field of view (degrees) of the world camera */
+export const cameraFov = 40;
 
 export const defaultBrightness = 2;
 export const postProcessingEnabledKey = "world-post-processing-enabled";

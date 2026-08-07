@@ -6,7 +6,6 @@ import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
-  ArrowsOutIcon,
   CaretDownIcon,
   CaretRightIcon,
   EyeIcon,
@@ -26,7 +25,6 @@ import debounce from "debounce";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
 import {
   brightnessStorageKey,
@@ -35,8 +33,6 @@ import {
   defaultDynamicLightRadius,
   defaultRoomLightIntensity,
   defaultVignette,
-  fovConfig,
-  fovStorageKey,
   maxDynamicLightRadius,
   pickOpenDoorsKey,
 } from "../const";
@@ -334,76 +330,30 @@ export function WorldMenu() {
                 />
               </div>
 
-              {brightnessShown && (
-                <div
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                    touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
-                  )}
-                >
-                  <BrightnessPie
-                    ratio={brightnessToRatio(w.brightness)}
-                    onClick={() => {
-                      const brightness = 2;
-                      w.set({ brightness });
-                      tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
-                    }}
-                  />
-                  <input
-                    type="range"
-                    min="1"
-                    max="4"
-                    step="0.1"
-                    value={w.brightness}
-                    onChange={(e) => {
-                      w.brightness = Number(e.target.value);
-                      w.update();
-                      tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
-                  />
-                </div>
-              )}
-
               <div
                 className={cn(
                   "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
                   touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
                 )}
               >
-                <ArrowsOutIcon
-                  className="size-4 text-white cursor-pointer shrink-0"
+                <BrightnessPie
+                  ratio={brightnessToRatio(w.brightness)}
                   onClick={() => {
-                    const nextFov = w.touchDevice ? fovConfig.defaultMobile : fovConfig.default;
-                    w.view.fov = nextFov;
-                    const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                    if (cam?.isPerspectiveCamera) {
-                      cam.fov = nextFov;
-                      cam.updateProjectionMatrix();
-                    }
-                    w.r3f?.invalidate();
-                    tryLocalStorageSet(fovStorageKey, String(nextFov));
-                    w.update();
+                    const brightness = 2;
+                    w.set({ brightness });
+                    tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
                   }}
                 />
                 <input
                   type="range"
-                  min={fovConfig.min}
-                  max={fovConfig.max}
-                  step="2.5"
-                  value={w.view.fov}
+                  min="1"
+                  max="4"
+                  step="0.1"
+                  value={w.brightness}
                   onChange={(e) => {
-                    const fov = Number(e.target.value);
-                    w.view.fov = fov;
-                    const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                    if (cam?.isPerspectiveCamera) {
-                      cam.fov = fov;
-                      cam.updateProjectionMatrix();
-                    }
-                    w.r3f?.invalidate();
-                    tryLocalStorageSet(fovStorageKey, String(fov));
+                    w.brightness = Number(e.target.value);
                     w.update();
+                    tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
                   }}
                   onClick={(e) => e.stopPropagation()}
                   className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
@@ -1244,8 +1194,6 @@ const spinnerMinMs = 300;
 
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
-/** 🚧 kept, but not currently worth its space */
-const brightnessShown = false;
 const playerOpenStorageKey = "world-player-section-open";
 const roomLightsOpenStorageKey = "world-room-lights-section-open";
 const devScriptsOpenStorageKey = "world-dev-scripts-section-open";
