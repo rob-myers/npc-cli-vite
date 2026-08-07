@@ -77,7 +77,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: w.touchDevice ? 12 : 18,
+        minDistance: 10,
         maxDistance: 24,
         extraZoom: 2,
         panSpeed: 2,
@@ -965,14 +965,14 @@ const tmpVector3 = new THREE.Vector3();
 export type Picked = {
   instanceId: number;
 } & (
-  | { type: "floor"; floor: true; gmId: number; gmKey: string }
-  | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
-  | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
-  | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
-  | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
-  // static and runtime decor have same decode format
-  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
-  | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
-  // we require spawn inside room but map might change
-  | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
-);
+    | { type: "floor"; floor: true; gmId: number; gmKey: string }
+    | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
+    | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
+    | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
+    | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
+    // static and runtime decor have same decode format
+    | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
+    | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
+    // we require spawn inside room but map might change
+    | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
+  );

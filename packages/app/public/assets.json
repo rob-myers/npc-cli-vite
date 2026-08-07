@@ -42790,13 +42790,13 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-[#555]",
+      "background": "bg-[#666]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
         "nonHull": {"fill": "#000", "stroke": "#111"}
       },
       "floor": {
-        "hullFill": "#333",
+        "hullFill": "#111",
         "navStroke": "#000c",
         "patternFill": "#222",
         "tileStroke": "#0001"
