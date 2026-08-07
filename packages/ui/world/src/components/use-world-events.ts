@@ -155,9 +155,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           player.key = saved?.playerKey ?? defaultPlayerKey;
         }
 
-        // the player goes first, else a restored npc would be adopted as them
-        await player.ensure();
-        await state.restoreNpcs(saved);
+        try {
+          // the player goes first, else a restored npc would be adopted as them
+          await player.ensure();
+          await state.restoreNpcs(saved);
+          // spawning resolves on mount, which is not the same as drawn — without a rendered
+          // frame in hand the npcs pop in a beat after the world has been revealed empty
+          w.view.forceUpdate(0.01);
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        } finally {
+          // reveal world
+          void w.setCanvasOpacity(1);
+        }
 
         if (introDone === false && player.introEnabled === true) {
           await player.panTo();

@@ -183,16 +183,15 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       setCanvasOpacity(opacity) {
         return new Promise((resolve) => {
           const el = state.fadeEl;
-          const prevOverlayOpacity = 1 - state.canvasOpacity;
+          const prev = state.canvasOpacity;
           state.canvasOpacity = opacity;
-          if (!el) return resolve();
-          const nextOverlayOpacity = 1 - opacity;
-          if (nextOverlayOpacity === prevOverlayOpacity) return resolve();
-          // getting darker (more overlay) is a quick cover; getting lighter is a slower reveal
-          el.style.transitionDuration = nextOverlayOpacity > prevOverlayOpacity ? "0.3s" : "0.75s";
-          el.style.opacity = String(nextOverlayOpacity);
+          if (!el || opacity === prev) return resolve();
+          // black closes in whilst loading and clears once ready — see `world-reveal`.
+          // Covering is quick; clearing is a slower reveal
+          el.style.setProperty(revealDurationProperty, opacity < prev ? "0.4s" : "0.9s");
+          el.style.setProperty(revealProperty, opacity === 1 ? revealOpen : revealClosed);
           const onEnd = (e: TransitionEvent) => {
-            if (e.propertyName !== "opacity") return;
+            if (e.propertyName !== revealProperty) return;
             el.removeEventListener("transitionend", onEnd);
             resolve();
           };
@@ -299,13 +298,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
     return () => state.stopTick();
   }, [state.disabled, state.npc]); // pause/resume
-
-  // fade the canvas back in once nothing is pending, and stays that way for 300ms
-  useEffect(() => {
-    if (Object.keys(state.pending).length > 0) return;
-    const timer = setTimeout(() => state.setCanvasOpacity(1), 300);
-    return () => clearTimeout(timer);
-  }, [Object.keys(state.pending).join(",")]);
 
   state.sheets =
     useQuery({
@@ -563,12 +555,18 @@ const settledMs = 500;
 
 type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins";
 
+/** How far the world has cleared, transitioned by `setCanvasOpacity` — see `main.css` */
+const revealProperty = "--reveal";
+const revealOpen = "1";
+const revealClosed = "0";
+const revealDurationProperty = "--reveal-duration";
+
 function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
   return (
     <div
       ref={props.ref}
-      // initially faded
-      className="absolute inset-0 z-5 bg-zinc-800 pointer-events-none transition-opacity opacity-100 duration-100"
+      // starts covered, since the first map is still loading; `world-reveal` is the veil
+      className="world-reveal absolute inset-0 z-5 pointer-events-none"
     />
   );
 }
