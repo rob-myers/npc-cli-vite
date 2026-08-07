@@ -185,7 +185,7 @@ export function WorldMenu() {
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
         return w.debug?.gridShown ?? false;
-      case "Room Lights":
+      case "Light Tints":
         return w.debug?.lightSpheresShown ?? true;
       case "NavMesh":
         return w.debug?.navMeshShown ?? false;
@@ -230,7 +230,7 @@ export function WorldMenu() {
         w.debug?.set({ gridShown: !w.debug.gridShown });
         void w.floor?.draw().then(() => w.update());
         break;
-      case "Room Lights":
+      case "Light Tints":
         w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
         w.update();
         break;
@@ -389,14 +389,15 @@ export function WorldMenu() {
                           <ArrowsOutIcon
                             className="size-4 text-white cursor-pointer shrink-0"
                             onClick={() => {
-                              w.view.fov = fovConfig.default;
+                              const nextFov = (w.touchDevice ? fovConfig.defaultMobile : fovConfig.default);
+                              w.view.fov = nextFov;
                               const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
                               if (cam?.isPerspectiveCamera) {
-                                cam.fov = fovConfig.default;
+                                cam.fov = nextFov;
                                 cam.updateProjectionMatrix();
                               }
                               w.r3f?.invalidate();
-                              tryLocalStorageSet(fovStorageKey, String(fovConfig.default));
+                              tryLocalStorageSet(fovStorageKey, String(nextFov));
                               w.update();
                             }}
                           />
@@ -1071,7 +1072,7 @@ const debugItems = [
   "Light Map",
   "Colliders",
   "Grid",
-  "Room Lights",
+  "Light Tints",
   "Toggle Doors",
   "Door Normals",
   "Decor Points",
