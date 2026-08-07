@@ -1,15 +1,30 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
+import { warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect, useMemo } from "react";
 import { select } from "three/src/nodes/tsl/TSLBase.js";
-import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
+import {
+  attribute,
+  float,
+  int,
+  lights,
+  mix,
+  positionLocal,
+  texture,
+  uniform,
+  uniformArray,
+  uv,
+  vec2,
+  vec3,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
-import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
+import { doorIconAlpha, doorIconKeys, lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
+import { getDecorAtlasUv } from "../service/decor-atlas";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { doorIconKeys, drawDoorIconLayer, drawDoorLabelLayer, type SelectAnyType } from "../service/texture";
+import { doorIconUvRect, drawDoorLabelLayer, drawDoorPlaqueLayer, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -28,8 +43,17 @@ export default function Doors() {
       toInstanceId: [],
       fromInstanceId: {},
       openRatioArray: new Float32Array(MAX_DOORS),
-      /** Per-instance `[slideSign, flipFrontBack, doorLabelLayer, doorBackLabelLayer]` */
+      /** Per-instance `[slideSign, faceAspect, frontLayer, backLayer]` */
       doorMetaArray: new Float32Array(MAX_DOORS * 4),
+      /** Per-instance `[frontIconId, backIconId]`, indexing `doorIconKeys`; `-1` is no icon */
+      doorIconArray: new Float32Array(MAX_DOORS * 2),
+      /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
+      flipped: new Uint8Array(MAX_DOORS),
+      /** `doorIconKeys` -> where that image sits in `w.texDecor`; rewritten per redraw */
+      decorIconUvs: uniformArray(
+        doorIconKeys.map(() => new THREE.Vector4()),
+        "vec4",
+      ),
 
       buildInstanceIds() {
         state.toInstanceId = [];
@@ -133,58 +157,87 @@ export default function Doors() {
 
         return { blocked: !inGap, hit: inGap ? null : geomService.precision2d({ x: hitX, y: hitY }, 2) };
       },
-      async drawBaseDoorTextures() {
-        // layer 0 (door without label)
-        drawDoorLabelLayer(w.texDoorLabel, 0, "");
-        state.labelToLayer.set("", 0);
-
-        // layers 1 ... doorIconKeys.length (doors with icons)
-        // 🔔 cannot assume w.texDecor loaded
-        const sheetMeta = doorIconKeys.map((key) => w.sheets.decor[key]);
-        const sheetImages = await w.loadDecorImages();
-
-        for (const [i, iconKey] of doorIconKeys.entries()) {
-          const entry = sheetMeta[i];
-          const img = sheetImages[entry.sheetId];
-          if (img) drawDoorIconLayer(w.texDoorLabel, 1 + i, img, entry);
-          // use iconKey as label
-          state.labelToLayer.set(iconKey, 1 + i);
+      getIconId(instanceId, named) {
+        if (named !== undefined) {
+          const index = (doorIconKeys as readonly string[]).indexOf(named);
+          if (index !== -1) {
+            return index;
+          }
+          warn(`door icon "${named}" is not one of doorIconKeys: using a random icon`);
         }
+        // stable pseudo-random, so a door keeps its icon across redraws
+        return ((instanceId * 2654435761) >>> 0) % doorIconKeys.length;
       },
-      async drawDoorTextures() {
+      drawDoorTextures() {
+        // layer 0 (door without label), layer 1 (door with an empty icon plaque)
         state.labelToLayer.clear();
+        drawDoorLabelLayer(w.texDoorLabel, LAYER_PLAIN, "");
+        state.labelToLayer.set("", LAYER_PLAIN);
+        drawDoorPlaqueLayer(w.texDoorLabel, LAYER_PLAQUE);
 
-        await state.drawBaseDoorTextures();
+        // the sheets may have been repacked since the last redraw, so rects are re-read
+        doorIconKeys.forEach((key, i) => {
+          const uv = getDecorAtlasUv(w.sheets, key);
+          if (uv === null) {
+            warn(`door icon "${key}" not found in sheets.json`);
+          }
+          (state.decorIconUvs.array[i] as THREE.Vector4).copy(uv ?? zeroVector4);
+        });
+        state.decorIconUvs.needsUpdate = true;
 
-        let nextLabelIdx = state.labelToLayer.size;
+        // the plaque is a layer but not a label, so `labelToLayer.size` would collide with it
+        let nextLabelIdx = LAYER_PLAQUE + 1;
         const count = state.instanceCount;
         for (let i = 0; i < count; i++) {
-          state.doorMetaArray[i * 4 + DOOR_LABEL] = 0;
-          state.doorMetaArray[i * 4 + DOOR_BACK_LABEL] = 0;
+          state.doorMetaArray[i * 4 + FRONT_LAYER] = LAYER_PLAIN;
+          state.doorMetaArray[i * 4 + BACK_LAYER] = LAYER_PLAIN;
+          state.doorIconArray[i * 2 + FRONT_ICON] = NO_ICON;
+          state.doorIconArray[i * 2 + BACK_ICON] = NO_ICON;
         }
 
-        for (const { instanceId, connector, hull } of Object.values(state.byKey)) {
-          const label = (connector.meta.label as string | undefined) ?? "";
-          if (!state.labelToLayer.has(label)) {
-            state.labelToLayer.set(label, nextLabelIdx);
-            drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
+        /** A face shows its label if it has one, else the plaque plus an icon */
+        const applyFace = (
+          instanceId: number,
+          metaOffset: number,
+          iconOffset: number,
+          label: undefined | string,
+          named: undefined | string,
+        ) => {
+          if (label !== undefined) {
+            if (!state.labelToLayer.has(label)) {
+              state.labelToLayer.set(label, nextLabelIdx);
+              drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
+            }
+            state.doorMetaArray[instanceId * 4 + metaOffset] = state.labelToLayer.get(label) ?? LAYER_PLAIN;
+            return;
           }
-          state.doorMetaArray[instanceId * 4 + DOOR_LABEL] = state.labelToLayer.get(label) ?? 0;
+          state.doorMetaArray[instanceId * 4 + metaOffset] = LAYER_PLAQUE;
+          state.doorIconArray[instanceId * 2 + iconOffset] = state.getIconId(instanceId, named);
+        };
+
+        for (const { instanceId, connector, hull } of Object.values(state.byKey)) {
+          const { label, backLabel, icon, backIcon } = connector.meta as Record<string, undefined | string>;
+          // resolve which physical face is which here, so the shader never has to swap
+          const swap = state.flipped[instanceId] === 1;
+
+          applyFace(
+            instanceId,
+            swap ? BACK_LAYER : FRONT_LAYER,
+            swap ? BACK_ICON : FRONT_ICON,
+            typeof label === "string" ? label : undefined,
+            icon,
+          );
 
           if (hull) {
-            state.doorMetaArray[instanceId * 4 + DOOR_BACK_LABEL] = 0;
-          } else if (typeof connector.meta.backLabel === "string") {
-            const backLabel = connector.meta.backLabel as string;
-            if (!state.labelToLayer.has(backLabel)) {
-              state.labelToLayer.set(backLabel, nextLabelIdx);
-              drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, backLabel);
-            }
-            state.doorMetaArray[instanceId * 4 + DOOR_BACK_LABEL] = state.labelToLayer.get(backLabel) ?? 0;
-          } else {
-            // choose stable random icon
-            state.doorMetaArray[instanceId * 4 + DOOR_BACK_LABEL] =
-              1 + (((instanceId * 2654435761) >>> 0) % doorIconKeys.length);
+            continue; // the back of a hull door is never seen
           }
+          applyFace(
+            instanceId,
+            swap ? FRONT_LAYER : BACK_LAYER,
+            swap ? FRONT_ICON : BACK_ICON,
+            typeof backLabel === "string" ? backLabel : undefined,
+            backIcon ?? icon,
+          );
         }
       },
       encodeGmDoorId(gmId: number, doorId: number) {
@@ -256,7 +309,7 @@ export default function Doors() {
         for (let i = 0; i < count; i++) {
           inst.setMatrixAt(i, zeroMat4);
           state.doorMetaArray[i * 4 + SLIDE_SIGN] = 1;
-          state.doorMetaArray[i * 4 + FLIP_FRONT_BACK] = 0;
+          state.flipped[i] = 0;
         }
 
         for (let gmId = 0; gmId < w.gms.length; gmId++) {
@@ -309,10 +362,12 @@ export default function Doors() {
             );
 
             inst.setMatrixAt(instanceId, tmpMat4);
+            // lets the shader keep icons square, the panel being far wider than the plaque is tall
+            state.doorMetaArray[instanceId * 4 + FACE_ASPECT] = len / doorHeight;
 
             // box local -z maps to world 2D (nz, -nx); flip when door.normal points the other way
             const ds = state.byKey[helper.getGmDoorKey(gmId, localId)];
-            state.doorMetaArray[instanceId * 4 + FLIP_FRONT_BACK] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
+            state.flipped[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
             ds.gapAtHighLambda = determinant > 0 === state.doorMetaArray[instanceId * 4 + SLIDE_SIGN] > 0;
           }
         }
@@ -326,8 +381,10 @@ export default function Doors() {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         const openRatioAttr = state.box.getAttribute("openRatio");
         const doorMetaAttr = state.box.getAttribute("doorMeta");
+        const doorIconAttr = state.box.getAttribute("doorIcon");
         if (openRatioAttr) openRatioAttr.needsUpdate = true;
         if (doorMetaAttr) doorMetaAttr.needsUpdate = true;
+        if (doorIconAttr) doorIconAttr.needsUpdate = true;
       },
       toggleDoor(door, opts = {}) {
         if (door.sealed === true) {
@@ -435,20 +492,53 @@ export default function Doors() {
       mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
     }
 
-    /** swaps which face shows the front vs back label */
-    const flip = doorMeta.y;
-    const texLayer = doorMeta.z.toInt();
-    const backTexLayer = doorMeta.w.toInt();
-    const notFlipped = flip.lessThan(float(0.5));
+    const doorIcon = attribute<"vec2">("doorIcon", "vec2");
+    const faceAspect = doorMeta.y;
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
 
-    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
-      .depth((select as SelectAnyType)(notFlipped, texLayer, backTexLayer))
-      .mul(vec3(state.brightnessNode));
-    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
-      .depth((select as SelectAnyType)(notFlipped, backTexLayer, texLayer))
-      .mul(vec3(state.brightnessNode));
+    /**
+     * The panel's base layer with its icon composited on top, rather than a layer per icon.
+     * `panelUv` is already compressed and shifted for the slide, so deriving the icon from it
+     * (not from raw `uv()`) keeps the icon glued to the plaque as the door opens.
+     */
+    const withIcon = (panelUv: THREE.Node<"vec2">, layer: THREE.Node<"float">, id: THREE.Node<"float">) => {
+      const base = texture(w.texDoorLabel.tex, panelUv).depth(layer.toInt());
+
+      // The plaque is a square on the canvas but not in the world: the panel is `len` wide and
+      // `doorHeight` tall, so the plaque comes out ~1.8x wider than tall. Inset the longer axis
+      // about the centre, so the icon occupies a world square rather than being stretched.
+      const plaqueAspect = faceAspect.max(0.001).mul(doorIconUvRect.width / doorIconUvRect.height);
+      const squeeze = vec2(plaqueAspect.max(1), plaqueAspect.reciprocal().max(1));
+
+      const local = panelUv
+        .sub(vec2(doorIconUvRect.x, doorIconUvRect.y))
+        .div(vec2(doorIconUvRect.width, doorIconUvRect.height))
+        .sub(0.5)
+        .mul(squeeze)
+        .add(0.5);
+      const inside = local.x
+        .greaterThanEqual(0)
+        .and(local.x.lessThanEqual(1))
+        .and(local.y.greaterThanEqual(0))
+        .and(local.y.lessThanEqual(1));
+
+      // `[offX, offY + layer, dimX, dimY]` — see `getDecorAtlasUv`
+      const atlas = state.decorIconUvs.element(id.max(0).toInt());
+      // v is flipped because `DataArrayTexture` rows run top-down, as in `Decor.tsx`
+      const icon = texture(
+        w.texDecor.tex,
+        vec2(local.x, local.y.oneMinus()).mul(vec2(atlas.z, atlas.w)).add(vec2(atlas.x, atlas.y.fract())),
+      );
+      icon.depthNode = int(atlas.y.floor());
+
+      const shown = inside.and(id.greaterThanEqual(0));
+      const alpha = (select as SelectAnyType)(shown, icon.a.mul(float(doorIconAlpha)), float(0));
+      return mix(base.rgb, icon.rgb, alpha as THREE.Node<"float">).mul(vec3(state.brightnessNode));
+    };
+
+    front.colorNode = withIcon(vec2(uv().x.mul(cs).add(frontOffset), uv().y), doorMeta.z, doorIcon.x);
+    back.colorNode = withIcon(vec2(uv().x.mul(cs).add(backOffset), uv().y), doorMeta.w, doorIcon.y);
 
     // only 3 groups in door box
     const output = [edge, front, back];
@@ -456,15 +546,16 @@ export default function Doors() {
     const lightsNode = lights([new THREE.AmbientLight(0xffffff, 0.4)]);
     output.forEach((material) => (material.lightsNode = lightsNode));
     return output;
-  }, []);
+    // `TexArray.resize` recreates `tex`, disposing the one these nodes captured — so the
+    // materials must be rebuilt when it does, as `Decor.tsx` does via its query key
+  }, [w.texDecor.hash]);
 
   useEffect(() => {
     state.buildByKey();
     state.positionInstances();
-    state.drawDoorTextures().then(() => {
-      state.sendDataToGpu();
-      state.update();
-    });
+    state.drawDoorTextures();
+    state.sendDataToGpu();
+    state.update();
   }, [w.mapKey, w.hash]);
 
   return (
@@ -478,6 +569,7 @@ export default function Doors() {
     >
       <instancedBufferAttribute attach="geometry-attributes-openRatio" args={[state.openRatioArray, 1]} />
       <instancedBufferAttribute attach="geometry-attributes-doorMeta" args={[state.doorMetaArray, 4]} />
+      <instancedBufferAttribute attach="geometry-attributes-doorIcon" args={[state.doorIconArray, 2]} />
     </instancedMesh>
   );
 }
@@ -497,8 +589,14 @@ export type State = {
   /** Label or iconKey. */
   labelToLayer: Map<string, number>;
   openRatioArray: Float32Array;
-  /** Per-instance `[slideSign, flipFrontBack, doorLabelLayer, doorBackLabelLayer]` */
+  /** Per-instance `[slideSign, faceAspect, frontLayer, backLayer]` */
   doorMetaArray: Float32Array;
+  /** Per-instance `[frontIconId, backIconId]`, indexing `doorIconKeys`; `-1` is no icon */
+  doorIconArray: Float32Array;
+  /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
+  flipped: Uint8Array;
+  /** `doorIconKeys` -> where that image sits in `w.texDecor` */
+  decorIconUvs: ReturnType<typeof uniformArray<"vec4">>;
   buildByKey: () => void;
   /** (Re)builds `toInstanceId`/`fromInstanceId`/`instanceCount`; returns `instanceCount` */
   buildInstanceIds: () => number;
@@ -509,8 +607,9 @@ export type State = {
     dst: Geom.VectJson,
     gdKey: Geomorph.GmDoorKey,
   ) => { blocked: boolean; hit: Geom.VectJson | null };
-  drawBaseDoorTextures: () => Promise<void>;
-  drawDoorTextures: () => Promise<void>;
+  drawDoorTextures: () => void;
+  /** The named icon's id, else a stable pseudo-random one from `doorIconKeys` */
+  getIconId: (instanceId: number, named: undefined | string) => number;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
@@ -539,9 +638,18 @@ const panelDepth = 0.08;
 const hullPanelDepth = 0.2;
 /** Offsets within each instance's `doorMetaArray` quadruple */
 const SLIDE_SIGN = 0;
-const FLIP_FRONT_BACK = 1;
-const DOOR_LABEL = 2;
-const DOOR_BACK_LABEL = 3;
+const FACE_ASPECT = 1;
+/** These are the +z and -z faces, already oriented — see `state.flipped` */
+const FRONT_LAYER = 2;
+const BACK_LAYER = 3;
+/** Offsets within each instance's `doorIconArray` pair, likewise oriented */
+const FRONT_ICON = 0;
+const BACK_ICON = 1;
+/** Layers of `w.texDoorLabel` which every door shares */
+const LAYER_PLAIN = 0;
+const LAYER_PLAQUE = 1;
+const NO_ICON = -1;
+const zeroVector4 = new THREE.Vector4();
 const tmpMat = new Mat();
 const tmpV1 = new Vect();
 const tmpV2 = new Vect();

@@ -170,6 +170,23 @@ export const decorGridSize = geomorphGridMeters * 2;
 
 export const decorKeyFallback = "icon--warn";
 
+/**
+ * Decor images eligible as door icons; a door's icon id indexes this list.
+ * Also the pool a door without a named icon is assigned from — see `Doors.drawDoorTextures`.
+ */
+export const doorIconKeys = [
+  "arrow",
+  "axes-2d",
+  "dharma-wheel",
+  "endless-knot",
+  "icon--warn",
+  "number-zero",
+  "number-one",
+] as const;
+
+/** How strongly a door icon shows over its plaque */
+export const doorIconAlpha = 0.25;
+
 /** 15 (meters) */
 export const gmIdGridDim = 600 * sguToWorldScale;
 
