@@ -95,6 +95,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       maxDistance={props.maxDistance}
       minPanDistance={props.minPanDistance}
       panSpeed={props.panSpeed}
+      rotateSpeed={props.rotateSpeed}
       zoomSpeed={props.zoomSpeed}
       zoomToCursor={props.zoomToCursor}
       extraZoom={props.extraZoom ?? 1}
@@ -123,6 +124,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {(spherical: import('three').Spherical, target: import('three').Vector3) => void} [onFrame]
  * @property {() => void} [onStart]
  * @property {number} [panSpeed]
+ * @property {number} [rotateSpeed]
  * @property {number} [zoomSpeed]
  * @property {boolean} [zoomToCursor]
  */
