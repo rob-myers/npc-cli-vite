@@ -13,8 +13,8 @@
       "filename": "arrow.svg",
       "width": 6,
       "height": 6,
-      "outputWidth": 26,
-      "outputHeight": 26
+      "outputWidth": 52,
+      "outputHeight": 52
     },
     "axes-2d": {
       "key": "axes-2d",
@@ -53,8 +53,8 @@
       "filename": "icon--warn.svg",
       "width": 6,
       "height": 6,
-      "outputWidth": 26,
-      "outputHeight": 26
+      "outputWidth": 52,
+      "outputHeight": 52
     },
     "label": {
       "key": "label",
