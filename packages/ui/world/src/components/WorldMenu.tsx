@@ -889,6 +889,22 @@ function MenuShell({
             <AnimatePresence>
               {state.menuOpen && (
                 <motion.div
+                  key="backdrop"
+                  // below the panel but above the world, so a tap outside dismisses rather than
+                  // picking. The icon column is `z-[60]`, so its buttons stay reachable
+                  className="absolute inset-0 z-40"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    state.set({ menuOpen: false });
+                  }}
+                />
+              )}
+              {state.menuOpen && (
+                <motion.div
+                  key="panel"
                   className={cn(
                     "absolute inset-y-2 left-14 z-50 flex flex-col select-none",
                     "w-[min(22rem,calc(100%-4.5rem))] rounded-lg overflow-hidden",
