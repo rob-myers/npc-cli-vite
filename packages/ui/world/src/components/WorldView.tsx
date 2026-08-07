@@ -115,11 +115,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       ),
       raycaster: new THREE.Raycaster(),
       roomLight: createRoomLightPostprocess({
-        roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? true,
+        roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? false,
         bottomHeight: 0,
         topHeight: wallHeight - 0.01,
       }),
-      roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? true,
+      roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? false,
       roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
       unlitScale: uniform(persisted.getAmbientIntensity()),
 
