@@ -1,61 +1,73 @@
-# assign variable
+# assign var
 
 ```sh
-# deep thought textually
+# assign string "42"
 echo 42 >answer
-answer=$( echo 42 )
 
-# deep thought numerically
+# assign number 42
 expr 42 >answer
+
+# assign number 42
 answer=$( expr 42 )
+
+# assign number 42
 answer=$( call '() => 42')
+
+# assign number 42
 echo 42 | map Number >answer
 ```
 
 # loops
 
-<!-- Each command loop iteration is forced to take a minimum of 300ms.
+<!-- Each command loop iteration is forced to take ≥ 300ms.
 Use JavaScript loops to avoid this restriction.
-This avoids unstoppable infinite loops at the level of commands.
-It also aligns command loops with human reaction speeds. -->
+This avoids unstoppable shell syntax and aligns with human reaction speeds. -->
 
 ```sh
+# iterate through array [0...4]
 for x in $( range 5 ); do
   x
 done
 
+# iterate through values 0...4
 for x in $( seq 5 ); do
   x
 done
 
+# iterate through brace expansion
 for x in {1..5}; do
   x
 done
 
+# iterate through brace expansions
 for x in {a..h..2} {5..1}; do
   x
 done
 
+# iterate through lazy values
 for x in $( sleep 1; echo foo ) $( sleep 1; echo bar); do
   x
 done
 
+# decrement until zero
 c=5; while test $c; do
-  c
-  c+=-1
+  c; c+=-1
 done
 
+# decrement local var until zero
 localLoop() {
   local c=$1
   while test $c; do
-    echo $c; c+=-1
+    c; c+=-1
   done
 }
 localLoop 10
 
-while true; do
-  echo Ctrl-C to stop...
-done
+# infinite loop: copy-paste to run
+if test $$; then echo this example must run interactively; fi ||
+  while true; do
+    echo ctrl-c to stop...
+  done
 ```
 
 # shell vs js functions
