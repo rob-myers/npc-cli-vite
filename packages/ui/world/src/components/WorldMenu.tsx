@@ -64,6 +64,7 @@ export function WorldMenu() {
       lightMapOpen: false,
       menuOpen: false,
       playerOpen: tryLocalStorageGetParsed(playerOpenStorageKey) === true,
+      roomLightsOpen: tryLocalStorageGetParsed(roomLightsOpenStorageKey) === true,
       minY: 40,
       themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
       themeEditorRef: null as any,
@@ -265,8 +266,6 @@ export function WorldMenu() {
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
     longPressed: false,
   });
-  /** Buttons whose press should not dismiss the menu as an "outside press" */
-  const keepMenuOpenEl = useRef<HTMLDivElement>(null);
   const onIntroPressStart = () => {
     introPress.current.longPressed = false;
     introPress.current.timeoutId = setTimeout(() => {
@@ -310,7 +309,7 @@ export function WorldMenu() {
       >
         <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
           {/* main menu */}
-          <MenuShell keepOpenEl={keepMenuOpenEl} state={state} touch={touch} trigger={menuTrigger}>
+          <MenuShell state={state} touch={touch} trigger={menuTrigger}>
             <div className={cn("flex flex-wrap max-w-52", touch && "max-w-none flex-col items-stretch")}>
               <div
                 className={cn(
@@ -318,29 +317,54 @@ export function WorldMenu() {
                   touch && "gap-3 px-3 py-2 text-sm",
                 )}
               >
-                <BrightnessPie
-                  ratio={brightnessToRatio(w.brightness)}
-                  onClick={() => {
-                    const brightness = 2;
-                    w.set({ brightness });
-                    tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
-                  }}
+                <EyeIcon
+                  alt="focus"
+                  className="size-4 text-white cursor-pointer shrink-0"
+                  onClick={() => w.view.setFx("vignette", defaultVignette)}
                 />
                 <input
                   type="range"
-                  min="1"
-                  max="4"
+                  min={0}
+                  max={1}
                   step="0.1"
-                  value={w.brightness}
-                  onChange={(e) => {
-                    w.brightness = Number(e.target.value);
-                    w.update();
-                    tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                  }}
+                  value={w.view.fx?.vignette.value ?? defaultVignette}
+                  onChange={(e) => w.view.setFx("vignette", Number(e.target.value))}
                   onClick={(e) => e.stopPropagation()}
                   className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
                 />
               </div>
+
+              {brightnessShown && (
+                <div
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+                    touch && "gap-3 px-3 py-2 text-sm",
+                  )}
+                >
+                  <BrightnessPie
+                    ratio={brightnessToRatio(w.brightness)}
+                    onClick={() => {
+                      const brightness = 2;
+                      w.set({ brightness });
+                      tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min="1"
+                    max="4"
+                    step="0.1"
+                    value={w.brightness}
+                    onChange={(e) => {
+                      w.brightness = Number(e.target.value);
+                      w.update();
+                      tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
+                  />
+                </div>
+              )}
 
               <div
                 className={cn(
@@ -427,97 +451,59 @@ export function WorldMenu() {
                 }}
               />
             </div>
-            {import.meta.env.DEV && (
+            <div
+              className={sectionHeaderClass(touch)}
+              onClick={(e) => {
+                e.stopPropagation();
+                state.debugOpen = !state.debugOpen;
+                tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
+                state.update();
+              }}
+            >
+              {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              debug
+            </div>
+
+            {state.debugOpen && (
               <>
-                <div
-                  className={sectionHeaderClass(touch)}
+                <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
+                  {debugItems.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={cn(
+                        "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                        touch && "text-sm px-2 py-2 bg-slate-800",
+                        isDebugActive(item)
+                          ? "text-green-400 bg-slate-700"
+                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDebugToggle(item);
+                      }}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className={cn(
+                    "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
+                    touch && "text-sm py-2 mt-1",
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
-                    state.themeEditorOpen = !state.themeEditorOpen;
-                    tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
-                    w.update();
+                    w.debug.logGPUInfo = true;
+                    w.view.forceUpdate();
                   }}
                 >
-                  {state.themeEditorOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-                  edit theme
-                </div>
-                {state.themeEditorOpen && (
-                  <div className="p-2 pt-0 flex flex-col gap-1">
-                    <textarea
-                      key={w.themeKey}
-                      ref={state.ref("themeEditorRef")}
-                      className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
-                      defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => {
-                        const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                        if (parsed.success && w.assets) {
-                          (w.assets.theme ??= {})[w.themeKey] = parsed.data;
-                          w.e.onChangeTheme();
-                          state.saveThemeDevDebounced();
-                        }
-                      }}
-                      onBlur={() => {
-                        state.saveThemeDev();
-                      }}
-                    />
-                  </div>
-                )}
+                  log gpu info
+                </button>
               </>
             )}
-
-            <div
-              className={cn(
-                "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
-                touch && "max-w-none flex-col items-stretch gap-2 px-1 py-2 border-t border-slate-800",
-              )}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className={cn("w-24", touch && "w-full")}>
-                <LightsMenuSlider
-                  label="Room lights"
-                  value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                  defaultValue={defaultRoomLightIntensity}
-                  onChange={(next) => w.view.setRoomLightIntensity(next)}
-                />
-              </div>
-
-              <div className={cn("flex gap-1", touch && "gap-2 px-2")}>
-                <LightsIconButton
-                  active={w.view.roomLightEditingEnabled}
-                  icon={PencilSimpleIcon}
-                  title="Edit (long press)"
-                  onClick={() => w.view.toggleRoomLightEditing()}
-                />
-                <LightsIconButton
-                  active={w.view.roomLight?.roomLightingEnabled.value === 1}
-                  icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
-                  title="Lights shown"
-                  onClick={() => {
-                    w.view.setPostProcessingEnabled(true);
-                    w.view.setRoomLightingEnabled();
-                    state.update();
-                  }}
-                />
-                <LightsIconButton
-                  danger
-                  icon={TrashIcon}
-                  title="Clear lighting"
-                  onClick={() => w.view.resetAllRooms()}
-                />
-              </div>
-
-              <div className={cn("w-20", touch && "w-full")}>
-                <LightsMenuSlider
-                  label="focus"
-                  step={0.1}
-                  value={w.view.fx?.vignette.value ?? defaultVignette}
-                  defaultValue={defaultVignette}
-                  onChange={(next) => w.view.setFx("vignette", next)}
-                />
-              </div>
-            </div>
 
             <div
               className={sectionHeaderClass(touch)}
@@ -593,53 +579,96 @@ export function WorldMenu() {
               className={sectionHeaderClass(touch)}
               onClick={(e) => {
                 e.stopPropagation();
-                state.debugOpen = !state.debugOpen;
-                tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
+                state.roomLightsOpen = !state.roomLightsOpen;
+                tryLocalStorageSet(roomLightsOpenStorageKey, String(state.roomLightsOpen));
                 state.update();
               }}
             >
-              {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-              debug
+              {state.roomLightsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              room lights
             </div>
 
-            {state.debugOpen && (
-              <>
-                <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
-                  {debugItems.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={cn(
-                        "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                        touch && "text-sm px-2 py-2 bg-slate-800",
-                        isDebugActive(item)
-                          ? "text-green-400 bg-slate-700"
-                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDebugToggle(item);
-                      }}
-                    >
-                      {item}
-                    </button>
-                  ))}
+            {state.roomLightsOpen && (
+              <div
+                className={cn(
+                  "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
+                  touch && "max-w-none flex-col items-stretch gap-2 px-1 py-2",
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className={cn("w-24", touch && "w-full")}>
+                  <LightsMenuSlider
+                    label="intensity"
+                    value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                    defaultValue={defaultRoomLightIntensity}
+                    onChange={(next) => w.view.setRoomLightIntensity(next)}
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  className={cn(
-                    "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
-                    touch && "text-sm py-2 mt-1",
-                  )}
+                <div className={cn("flex gap-1", touch && "gap-2 px-2")}>
+                  <LightsIconButton
+                    active={w.view.roomLightEditingEnabled}
+                    icon={PencilSimpleIcon}
+                    title="Edit (long press)"
+                    onClick={() => w.view.toggleRoomLightEditing()}
+                  />
+                  <LightsIconButton
+                    active={w.view.roomLight?.roomLightingEnabled.value === 1}
+                    icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
+                    title="Lights shown"
+                    onClick={() => {
+                      w.view.setPostProcessingEnabled(true);
+                      w.view.setRoomLightingEnabled();
+                      state.update();
+                    }}
+                  />
+                  <LightsIconButton
+                    danger
+                    icon={TrashIcon}
+                    title="Clear lighting"
+                    onClick={() => w.view.resetAllRooms()}
+                  />
+                </div>
+              </div>
+            )}
+
+            {import.meta.env.DEV && (
+              <>
+                <div
+                  className={sectionHeaderClass(touch)}
                   onClick={(e) => {
                     e.stopPropagation();
-                    w.debug.logGPUInfo = true;
-                    w.view.forceUpdate();
+                    state.themeEditorOpen = !state.themeEditorOpen;
+                    tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
+                    w.update();
                   }}
                 >
-                  log gpu info
-                </button>
+                  {state.themeEditorOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                  edit theme
+                </div>
+                {state.themeEditorOpen && (
+                  <div className="p-2 pt-0 flex flex-col gap-1">
+                    <textarea
+                      key={w.themeKey}
+                      ref={state.ref("themeEditorRef")}
+                      className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                      defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => {
+                        const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
+                        if (parsed.success && w.assets) {
+                          (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                          w.e.onChangeTheme();
+                          state.saveThemeDevDebounced();
+                        }
+                      }}
+                      onBlur={() => {
+                        state.saveThemeDev();
+                      }}
+                    />
+                  </div>
+                )}
               </>
             )}
 
@@ -720,6 +749,20 @@ export function WorldMenu() {
             )}
           </MenuShell>
 
+          <button
+            type="button"
+            data-keep-menu-open
+            title={w.disabled ? "resume" : "pause"}
+            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
+            onClick={() => w.setDisabled()}
+          >
+            {w.disabled ? (
+              <PlayIcon alt="resume" className="size-5" weight="bold" />
+            ) : (
+              <PauseIcon alt="pause" className="size-5" weight="bold" />
+            )}
+          </button>
+
           <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
             <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
               <SunIcon className="size-4 shrink-0" />
@@ -744,38 +787,20 @@ export function WorldMenu() {
             </Slider.Root>
           </div>
 
-          {/* `contents` so these still lay out as siblings, whilst sharing one ref */}
-          <div ref={keepMenuOpenEl} className="contents">
-            {/* pan to the player: long press disables it on load */}
-            <div
-              className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
-              onPointerDown={onIntroPressStart}
-              onPointerUp={() => onIntroPressEnd()}
-              onPointerLeave={() => onIntroPressEnd(true)}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              {introEnabled ? (
-                <GpsIcon className="size-5" alt="pan to the player (long press to disable on load)" weight="bold" />
-              ) : (
-                <GpsSlashIcon
-                  className="size-5 text-red-400"
-                  alt="pan to the player (disabled on load)"
-                  weight="bold"
-                />
-              )}
-            </div>
-
-            {/* play/pause */}
-            <button
-              className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white cursor-pointerhover:bg-gray-700 size-9"
-              onClick={() => w.setDisabled()}
-            >
-              {w.disabled ? (
-                <PlayIcon className="size-5" weight="bold" />
-              ) : (
-                <PauseIcon className="size-5" weight="bold" />
-              )}
-            </button>
+          {/* pan to the player: long press disables it on load */}
+          <div
+            data-keep-menu-open
+            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            onPointerDown={onIntroPressStart}
+            onPointerUp={() => onIntroPressEnd()}
+            onPointerLeave={() => onIntroPressEnd(true)}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {introEnabled ? (
+              <GpsIcon className="size-5" alt="pan to the player (long press to disable on load)" weight="bold" />
+            ) : (
+              <GpsSlashIcon className="size-5 text-red-400" alt="pan to the player (disabled on load)" weight="bold" />
+            )}
           </div>
         </div>
 
@@ -835,14 +860,11 @@ export function WorldMenu() {
  */
 function MenuShell({
   children,
-  keepOpenEl,
   state,
   touch,
   trigger,
 }: {
   children: React.ReactNode;
-  /** Buttons whose press should not dismiss the menu as an "outside press" */
-  keepOpenEl: React.RefObject<HTMLDivElement | null>;
   state: UseStateRef<State>;
   touch: boolean;
   trigger: React.ReactNode;
@@ -904,7 +926,10 @@ function MenuShell({
       onOpenChange={(open, { reason, event }) => {
         if (open) {
           state.set({ menuOpen: true });
-        } else if (reason === "outside-press" && keepOpenEl.current?.contains(event.target as Node) === true) {
+        } else if (
+          reason === "outside-press" &&
+          (event.target as HTMLElement).closest?.("[data-keep-menu-open]") != null
+        ) {
           // panning to the player, or pausing, should not close the menu
         } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
           state.set({ menuOpen: false });
@@ -1138,6 +1163,8 @@ export type State = {
   menuOpen: boolean;
   /** Collapsible "player" section within the main menu */
   playerOpen: boolean;
+  /** Collapsible "room lights" section */
+  roomLightsOpen: boolean;
   /** Collapsible "dev scripts" section, only rendered in DEV */
   devScriptsOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -1201,7 +1228,10 @@ const spinnerMinMs = 300;
 
 const themeEditorStorageKey = "world-theme-editor-open";
 const debugStorageKey = "world-debug-panel-open";
+/** 🚧 kept, but not currently worth its space */
+const brightnessShown = false;
 const playerOpenStorageKey = "world-player-section-open";
+const roomLightsOpenStorageKey = "world-room-lights-section-open";
 const devScriptsOpenStorageKey = "world-dev-scripts-section-open";
 /** Long press the intro button to disable it, since a click always replays it */
 const introLongPressMs = 500;
