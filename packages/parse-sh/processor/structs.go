@@ -233,6 +233,8 @@ type FuncDecl struct {
 
 type IfClause struct {
 	Type string
+	/* empty for an "else" */
+	Cond []Stmt;
 	Then []Stmt;
 	/* if non-nil an "elif" or an "else" */
 	Else *IfClause;
@@ -640,7 +642,7 @@ func mapCommand(node syntax.Command) Command {
 		case *syntax.ForClause:
 			return &ForClause{
 				Type: "ForClause",
-				Do: mapStmts((node.Do)),
+				Do: mapStmts(node.Do),
 				Select: node.Select,
 				Loop: mapLoop(node.Loop),
 				ForPos: mapPos(node.ForPos),
@@ -662,8 +664,9 @@ func mapCommand(node syntax.Command) Command {
 		case *syntax.IfClause:
 			return &IfClause{
 				Type: "IfClause",
+				Cond: mapStmts(node.Cond),
 				Then: mapStmts(node.Then),
-				Else: mapCommand(node.Else).(*IfClause),
+				Else: mapIfClause(node.Else),
 				ThenPos: mapPos(node.ThenPos),
 				FiPos: mapPos(node.FiPos),
 				CondLast: mapComments(node.CondLast),
@@ -717,6 +720,16 @@ func mapCommand(node syntax.Command) Command {
 				End: mapPos(node.End()),
 			}
 	}
+}
+
+// A nil `*syntax.IfClause` must be checked before `mapCommand`, which takes an interface:
+// a typed nil is a non-nil interface, so it would reach the `*syntax.IfClause` case and
+// dereference nil. The type assertion would panic on a nil interface too.
+func mapIfClause(node *syntax.IfClause) *IfClause {
+	if node == nil {
+		return nil
+	}
+	return mapCommand(node).(*IfClause)
 }
 
 func mapComment(curr syntax.Comment) Comment {
