@@ -422,3 +422,8 @@ export async function* take({ api, args, datum }) {
     throw e ?? api.getKillError();
   }
 }
+
+/** @param {JshCli.RunArg} ct */
+export function tty({ api }) {
+  return api.isTtyAt(0);
+}
