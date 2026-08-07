@@ -75,8 +75,8 @@ export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 export const fovStorageKey = `world-fov-value`;
 
 export const fovConfig = {
-  min: 30,
-  max: 50,
+  min: 40,
+  max: 40,
   default: 40,
   defaultMobile: 40,
 };
