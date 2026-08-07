@@ -347,6 +347,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.pickObject(e);
       },
       async pickObject(e) {
+        if (w.settledMapKey !== w.mapKey) {
+          return;
+        }
         const { gl, scene, camera } = w.r3f;
         const renderer = gl as unknown as THREE.WebGPURenderer;
 
