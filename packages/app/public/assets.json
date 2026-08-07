@@ -42793,7 +42793,7 @@
       "background": "bg-[#666]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#222", "stroke": "#000"}
+        "nonHull": {"fill": "#111", "stroke": "#000"}
       },
       "floor": {
         "hullFill": "#111",
