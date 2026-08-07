@@ -11,10 +11,11 @@ import {
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
-import { error, throttle } from "@npc-cli/util/legacy/generic";
+import { error, throttle, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
   CaretRightIcon,
+  ListBulletsIcon,
   PauseIcon,
   PlayIcon,
   PlugsConnectedIcon,
@@ -59,6 +60,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       resetPids: new Set(),
       resetting: new Map(),
       sessionKey: null,
+      showProcesses: tryLocalStorageGetParsed(showProcessesStorageKey(meta.id)) === true,
       ttyMeta: null,
 
       cleanupDead() {
@@ -303,6 +305,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           })
           .catch(error);
       },
+      toggleShowProcesses() {
+        state.showProcesses = !state.showProcesses;
+        tryLocalStorageSet(showProcessesStorageKey(meta.id), String(state.showProcesses));
+        state.update();
+      },
       toggleExpanded(e) {
         const uid = Number(e.currentTarget.dataset.uid);
         state.expandedUids.delete(uid) === false && state.expandedUids.add(uid);
@@ -447,21 +454,37 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
   return (
     <div data-jobs-root className="p-4 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col gap-2">
-      {/* process leaders scroll, so spawning does not shift the library */}
-      <div
-        className={cn(
-          // the gutter is stable, so overflowing does not shift either
-          "flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
-          "flex flex-col gap-2 p-2 rounded border border-term-border-subtle bg-term-inset/40",
-          // "items-end",
-        )}
-      >
-        {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
+      <header className="shrink-0 flex items-stretch gap-1 font-mono">
+        {/* toggles the processes below, and says how many there are */}
+        <button
+          type="button"
+          title={state.showProcesses ? "hide processes" : "show processes"}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1 rounded-sm text-sm cursor-pointer",
+            "border border-term-surface shadow-sm shadow-black/50 transition-colors hover:bg-term-hover-strong",
+            state.showProcesses ? "text-term-accent" : "text-term-muted",
+          )}
+          onClick={state.toggleShowProcesses}
+        >
+          <ListBulletsIcon alt="processes" className="size-4" />
+          {state.ordered.length}
+        </button>
 
-        {sessionsExist && (
-          <div className="flex flex-col text-base text-term-foreground p-2">
-            <div className="font-mono">{sessionHeader}</div>
+        <div className="ml-auto">{sessionHeader}</div>
+      </header>
 
+      {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
+
+      {/* nothing to show whilst disconnected, so no empty box either */}
+      {state.showProcesses && state.ordered.length > 0 && (
+        <div
+          className={cn(
+            // bounded, so a burst of processes cannot squeeze the library away
+            "shrink-0 max-h-[45%] overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
+            "p-2 rounded border border-term-border-subtle bg-term-inset/40",
+          )}
+        >
+          <div className="flex flex-col text-base text-term-foreground">
             {/* keyed, so switching session swaps items without exit animations */}
             <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
               {state.ordered.map((p) => {
@@ -539,9 +562,9 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                           "dark:border-l dark:border-term-border-subtle",
                           expanded
                             ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
-                            "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
+                              "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
                             : // one line, however long the source
-                            "truncate",
+                              "truncate",
                           killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
                         )}
                       >
@@ -553,8 +576,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
               })}
             </AnimatePresence>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <JobsLibrary
         uiId={meta.id}
@@ -578,6 +601,10 @@ const cleanupDeadMs = 3000;
 const minShownMs = 1000;
 /** How long a copied `src` is indicated */
 const copiedMs = 1000;
+
+function showProcessesStorageKey(uiId: string) {
+  return `jobs-show-processes:${uiId}`;
+}
 /** How often we check whether a queued `src` can run yet */
 const pendingPollMs = 250;
 /** How long a queued `src` waits for its session, e.g. a tty which never boots */
@@ -616,6 +643,9 @@ type State = {
   toggleTtyDisabled: () => void;
   /** Forget killed processes */
   cleanupDead: () => void;
+  /** Are the process leaders shown below the header? Persisted */
+  showProcesses: boolean;
+  toggleShowProcesses: () => void;
   /** `uid`s whose `src` is shown over two lines, rather than one */
   expandedUids: Set<number>;
   toggleExpanded: (e: React.MouseEvent<HTMLDivElement>) => void;

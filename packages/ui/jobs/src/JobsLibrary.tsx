@@ -20,7 +20,7 @@ import {
 import type { TokenKind } from "./shell-highlight";
 
 /**
- * A resizable library of example commands, provided via `./examples/*.md`.
+ * A library of example commands, provided via `./examples/*.md`.
  * Browsable without a session; only run/paste need one.
  */
 export default function JobsLibrary(props: Props) {
@@ -39,17 +39,8 @@ export default function JobsLibrary(props: Props) {
       edits: {},
       props,
       sectionKeys: stored?.sectionKeys ?? {},
-      height: stored?.height ?? defaultLibraryHeight,
       open: stored?.open ?? true,
-      resizing: false,
-      rootEl: null,
-      startHeight: 0,
-      startY: 0,
 
-      getMaxHeight() {
-        const root = state.rootEl?.closest<HTMLElement>("[data-jobs-root]");
-        return Math.max(minLibraryHeight, (root?.clientHeight ?? 600) - reservedHeight);
-      },
       onEditArg(e) {
         state.edits[e.currentTarget.dataset.editKey ?? ""] = e.currentTarget.value;
         state.update();
@@ -63,30 +54,10 @@ export default function JobsLibrary(props: Props) {
       onExampleRun(e) {
         state.props.onRun(getExampleData(e).src);
       },
-      onResizeDown(e) {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        state.set({ resizing: true, startY: e.clientY, startHeight: state.height });
-      },
-      onResizeMove(e) {
-        if (state.resizing === false) {
-          return;
-        }
-        const next = state.startHeight - (e.clientY - state.startY); // drag up to grow
-        state.set({ height: Math.min(state.getMaxHeight(), Math.max(minLibraryHeight, next)) });
-      },
-      onResizeUp(e) {
-        if (state.resizing === false) {
-          return;
-        }
-        e.currentTarget.releasePointerCapture?.(e.pointerId);
-        state.resizing = false;
-        state.persist();
-      },
       persist() {
         const stored: Stored = {
           categoryKey: state.categoryKey,
           sectionKeys: state.sectionKeys,
-          height: state.height,
           open: state.open,
         };
         tryLocalStorageSet(getStorageKey(props.uiId), JSON.stringify(stored));
@@ -102,7 +73,7 @@ export default function JobsLibrary(props: Props) {
         state.update();
       },
       toggleOpen() {
-        state.set({ open: !state.open, height: Math.min(state.getMaxHeight(), state.height) });
+        state.set({ open: !state.open });
         state.persist();
       },
     };
@@ -111,9 +82,6 @@ export default function JobsLibrary(props: Props) {
   state.props = props; // its handlers run long after this render
 
   useEffect(() => {
-    // the window may have shrunk since `height` was persisted
-    state.set({ height: Math.min(state.getMaxHeight(), Math.max(minLibraryHeight, state.height)) });
-
     const hot = import.meta.hot;
     if (hot === undefined) {
       return;
@@ -136,23 +104,12 @@ export default function JobsLibrary(props: Props) {
 
   return (
     <div
-      ref={state.ref("rootEl")}
-      className="shrink-0 flex flex-col font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40"
-      style={state.open ? { height: state.height } : undefined}
-    >
-      {state.open && (
-        <div
-          title="resize"
-          className="group shrink-0 h-2 -mt-1 flex items-center justify-center cursor-ns-resize touch-none"
-          onPointerDown={state.onResizeDown}
-          onPointerMove={state.onResizeMove}
-          onPointerUp={state.onResizeUp}
-          onLostPointerCapture={state.onResizeUp}
-        >
-          <div className="w-10 h-0.5 rounded bg-term-border group-hover:bg-term-focus" />
-        </div>
+      className={cn(
+        "min-h-0 flex flex-col font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40",
+        // fills whatever the header and processes leave, unless folded away
+        state.open ? "flex-1" : "shrink-0",
       )}
-
+    >
       <div
         className={cn(
           "shrink-0 flex items-end gap-3 px-2 min-w-0 overflow-hidden",
@@ -338,12 +295,6 @@ function getExampleData(e: React.SyntheticEvent) {
   return { exampleId: el?.dataset.exampleId ?? "", src: el?.dataset.src ?? "" };
 }
 
-/** Height of the panel when first opened */
-const defaultLibraryHeight = 220;
-const minLibraryHeight = 120;
-/** Vertical space kept for the session header and process cards */
-const reservedHeight = 140;
-
 const noCategories: ExampleCategory[] = [];
 
 function getStorageKey(uiId: string) {
@@ -362,7 +313,7 @@ type Props = {
 };
 
 /** Persisted per UI instance */
-type Stored = Pick<State, "categoryKey" | "height" | "open" | "sectionKeys">;
+type Stored = Pick<State, "categoryKey" | "open" | "sectionKeys">;
 
 type State = {
   /** Currently shown category i.e. tab */
@@ -373,23 +324,13 @@ type State = {
   props: Props;
   /** categoryKey -> currently shown sectionKey */
   sectionKeys: Record<string, string>;
-  /** Height in pixels when `open` */
-  height: number;
   open: boolean;
-  resizing: boolean;
-  rootEl: null | HTMLDivElement;
-  startHeight: number;
-  startY: number;
 
-  getMaxHeight: () => number;
   onEditArg: (e: React.ChangeEvent<HTMLInputElement>) => void;
   /** Each of these reads the example from `data-*` — see `getExampleData` */
   onExampleCopy: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onExamplePaste: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onExampleRun: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onResizeDown: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onResizeMove: (e: React.PointerEvent<HTMLDivElement>) => void;
-  onResizeUp: (e: React.PointerEvent<HTMLDivElement>) => void;
   persist: () => void;
   setCategory: (categoryKey: string) => void;
   setSection: (categoryKey: string, sectionKey: string) => void;
