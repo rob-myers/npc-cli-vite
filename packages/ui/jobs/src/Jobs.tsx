@@ -445,7 +445,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   ) : null;
 
   return (
-    <div data-jobs-root className="p-4 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col gap-2">
+    <div data-jobs-root className="pt-2 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col gap-2">
       <header className="shrink-0 flex items-stretch gap-1 font-mono">
         {/* toggles the processes below, and says how many there are */}
         <button
