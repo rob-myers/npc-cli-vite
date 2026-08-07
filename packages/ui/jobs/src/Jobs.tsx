@@ -362,8 +362,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
   const sessionsExist = ttyMetas.length > 0;
   const sessionExists = state.getSession() !== undefined;
+  const ttyToggleAvailable = state.connected === true && state.ttyMeta !== null;
 
-  // rendered standalone when no session leader, else we couldn't switch session
   const sessionHeader = sessionsExist ? (
     <div className="flex justify-end items-stretch gap-1">
       <Select.Root value={state.sessionKey ?? ""} onValueChange={state.onChangeSessionKey}>
@@ -422,20 +422,26 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           <PlugsConnectedIcon alt="disconnect" className="size-4" />
         )}
       </button>
-      {state.connected === true && state.ttyMeta !== null && (
-        <button
-          type="button"
-          title={state.ttyMeta.disabled ? "resume tty" : "pause tty"}
-          className="cursor-pointer flex items-center px-3 py-1 rounded-sm border border-term-surface shadow-sm shadow-black/50 transition-colors hover:bg-term-hover-strong"
-          onClick={state.toggleTtyDisabled}
-        >
-          {state.ttyMeta.disabled ? (
-            <PlayIcon alt="resume tty" className="size-4 text-term-ok" />
-          ) : (
-            <PauseIcon alt="pause tty" className="size-4 text-term-paused" />
-          )}
-        </button>
-      )}
+      {/* shown greyed out whilst disconnected, else connecting would shift the row leftwards */}
+      <button
+        type="button"
+        disabled={ttyToggleAvailable === false}
+        title={ttyToggleAvailable === false ? "not connected" : state.ttyMeta?.disabled ? "resume tty" : "pause tty"}
+        className={cn(
+          "flex items-center px-3 py-1 rounded-sm text-sm",
+          "border border-term-surface shadow-sm shadow-black/50 transition-colors",
+          ttyToggleAvailable ? "cursor-pointer hover:bg-term-hover-strong" : "cursor-default",
+        )}
+        onClick={state.toggleTtyDisabled}
+      >
+        {ttyToggleAvailable === false ? (
+          <PauseIcon alt="pause tty (not connected)" className="size-4 text-term-faint" />
+        ) : state.ttyMeta?.disabled ? (
+          <PlayIcon alt="resume tty" className="size-4 text-term-ok" />
+        ) : (
+          <PauseIcon alt="pause tty" className="size-4 text-term-paused" />
+        )}
+      </button>
     </div>
   ) : null;
 
@@ -452,10 +458,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       >
         {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
 
-        {state.processes[0] === undefined && <div className="w-full p-1 font-mono">{sessionHeader}</div>}
-
         {sessionsExist && (
           <div className="flex flex-col text-base text-term-foreground p-2">
+            <div className="font-mono">{sessionHeader}</div>
+
             {/* keyed, so switching session swaps items without exit animations */}
             <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
               {state.ordered.map((p) => {
@@ -472,13 +478,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                     transition={{ duration: 0.3 }}
                     className="min-w-32 flex flex-col w-full rounded text-term-running font-mono"
                   >
-                    {/* header, connected to the session leader */}
-                    {p.pid === 0 && sessionHeader}
-
                     {/* never wraps: a src too wide for the row truncates instead */}
-                    <div className="flex items-stretch">
+                    {/* dark mode has too little contrast between the cells to separate them by fill alone */}
+                    <div className="flex items-stretch dark:border-b dark:border-term-border-subtle">
                       {/* fixed width so cards align */}
-                      <div className="relative flex shrink-0 bg-term-inset">
+                      <div className="relative flex shrink-0 bg-term-inset dark:border-r dark:border-term-border-subtle">
                         <div className="w-12 px-1 flex items-center justify-center text-sm text-term-accent">
                           {p.pid}
                         </div>
@@ -531,12 +535,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                         onClick={state.toggleExpanded}
                         className={cn(
                           // `min-w-0` lets it shrink past its content, so `truncate` bites
-                          "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset border-term-border text-sm",
+                          "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
+                          "dark:border-l dark:border-term-border-subtle",
                           expanded
                             ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
-                              "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
+                            "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
                             : // one line, however long the source
-                              "truncate",
+                            "truncate",
                           killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
                         )}
                       >
