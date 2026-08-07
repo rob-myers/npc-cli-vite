@@ -479,8 +479,9 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       {state.showProcesses && state.ordered.length > 0 && (
         <div
           className={cn(
-            // bounded, so a burst of processes cannot squeeze the library away
-            "shrink-0 max-h-[45%] overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
+            // a few items tall, draggable from the bottom-right up to half the pane
+            "shrink-0 h-24 min-h-12 max-h-[40%] resize-y",
+            "overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
             "p-2 rounded border border-term-border-subtle bg-term-inset/40",
           )}
         >
