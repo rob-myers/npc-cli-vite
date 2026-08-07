@@ -47,7 +47,7 @@ remove npcs
 # remove all decor
 remove decor
 
-# remove npcs or decor test0, ... , test5
+# remove npcs or decor named test0 ... test5
 remove test{0..5}
 ```
 
