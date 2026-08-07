@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
 import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, Spinner, useStateRef } from "@npc-cli/util";
+import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
@@ -20,10 +20,12 @@ import {
   PlayIcon,
   SunIcon,
   TrashIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type * as THREE from "three/webgpu";
 import { WorldThemeSchema } from "../assets.schema";
 import {
@@ -48,6 +50,8 @@ export function WorldMenu() {
   const w = useContext(WorldContext);
   const mapKeys = Object.keys(w.assets?.map ?? {});
   const npcKeys = Object.keys(w.n ?? {});
+  /** Touch gets a full-height panel with larger targets, instead of the resizable popup */
+  const touch = w.touchDevice;
 
   const state = useStateRef(
     (): State => ({
@@ -75,18 +79,14 @@ export function WorldMenu() {
       getClampedY(y: number) {
         return Math.min(state.getMaxY(), Math.max(state.minY, y));
       },
-      /** The popup is zoomed on touch devices, so its own lengths are in pre-zoom px */
-      getZoom() {
-        return w.touchDevice ? touchDeviceZoom : 1;
-      },
       getMaxMenuWidth() {
-        return Math.max(minMenuWidth, ((w.rootEl?.clientWidth ?? Infinity) - 32) / state.getZoom());
+        return Math.max(minMenuWidth, (w.rootEl?.clientWidth ?? Infinity) - 32);
       },
       getClampedMenuWidth(width: number) {
         return Math.min(state.getMaxMenuWidth(), Math.max(minMenuWidth, width));
       },
       getMaxMenuHeight() {
-        return Math.max(minMenuHeight, ((w.rootEl?.clientHeight ?? Infinity) - 160) / state.getZoom());
+        return Math.max(minMenuHeight, (w.rootEl?.clientHeight ?? Infinity) - 160);
       },
       getClampedMenuHeight(height: number) {
         return Math.min(state.getMaxMenuHeight(), Math.max(minMenuHeight, height));
@@ -106,9 +106,8 @@ export function WorldMenu() {
         state.resizing = true;
         const onMove = (ev: MouseEvent) => {
           // popup opens rightward/downward from the trigger, so dragging the corner out grows it
-          const zoom = state.getZoom();
-          state.menuWidth = state.getClampedMenuWidth(startWidth + (ev.clientX - startX) / zoom);
-          state.menuHeight = state.getClampedMenuHeight(startHeight + (ev.clientY - startY) / zoom);
+          state.menuWidth = state.getClampedMenuWidth(startWidth + (ev.clientX - startX));
+          state.menuHeight = state.getClampedMenuHeight(startHeight + (ev.clientY - startY));
           state.update();
         };
         const onUp = () => {
@@ -132,9 +131,8 @@ export function WorldMenu() {
         const onMove = (ev: TouchEvent) => {
           const t2 = ev.touches[0];
           if (t2) {
-            const zoom = state.getZoom();
-            state.menuWidth = state.getClampedMenuWidth(startWidth + (t2.clientX - startX) / zoom);
-            state.menuHeight = state.getClampedMenuHeight(startHeight + (t2.clientY - startY) / zoom);
+            state.menuWidth = state.getClampedMenuWidth(startWidth + (t2.clientX - startX));
+            state.menuHeight = state.getClampedMenuHeight(startHeight + (t2.clientY - startY));
             state.update();
           }
         };
@@ -283,6 +281,12 @@ export function WorldMenu() {
     }
   };
 
+  const menuTrigger = (
+    <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
+      {spinnerKeys.length > 0 ? <Spinner className="size-4" /> : <GlobeStandIcon className="size-5" weight="bold" />}
+    </div>
+  );
+
   return (
     <>
       <motion.div
@@ -306,495 +310,439 @@ export function WorldMenu() {
       >
         <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
           {/* main menu */}
-          <Menu.Root
-            open={state.menuOpen}
-            onOpenChange={(open, { reason, event }) => {
-              if (open) {
-                state.set({ menuOpen: true });
-              } else if (
-                reason === "outside-press" &&
-                keepMenuOpenEl.current?.contains(event.target as Node) === true
-              ) {
-                // panning to the player, or pausing, should not close the menu
-              } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
-                state.set({ menuOpen: false });
-              }
-            }}
-          >
-            <Menu.Trigger
-              className="cursor-pointer"
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => {
-                if (state.dragged) return;
-                state.set({ menuOpen: !state.menuOpen });
-              }}
-            >
-              <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
-                {spinnerKeys.length > 0 ? (
-                  <Spinner className="size-4" />
-                ) : (
-                  <GlobeStandIcon className="size-5" weight="bold" />
+          <MenuShell keepOpenEl={keepMenuOpenEl} state={state} touch={touch} trigger={menuTrigger}>
+            <div className={cn("flex flex-wrap max-w-52", touch && "max-w-none flex-col items-stretch")}>
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+                  touch && "gap-3 px-3 py-2 text-sm",
                 )}
-              </div>
-            </Menu.Trigger>
-
-            <Menu.Portal container={w.rootEl} className="w-full">
-              <Menu.Positioner
-                className="z-50 overflow-auto max-w-[calc(100%-40px)]"
-                side="right"
-                sideOffset={4}
-                align="start"
               >
-                <Menu.Popup
-                  className="relative select-none bg-slate-800/70 border border-slate-700 rounded-md shadow-lg py-1"
-                  // portalled, so it does not inherit the column's zoom
-                  style={{ width: state.menuWidth, zoom: w.touchDevice ? touchDeviceZoom : undefined }}
+                <BrightnessPie
+                  ratio={brightnessToRatio(w.brightness)}
+                  onClick={() => {
+                    const brightness = 2;
+                    w.set({ brightness });
+                    tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
+                  }}
+                />
+                <input
+                  type="range"
+                  min="1"
+                  max="4"
+                  step="0.1"
+                  value={w.brightness}
+                  onChange={(e) => {
+                    w.brightness = Number(e.target.value);
+                    w.update();
+                    tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
+                />
+              </div>
+
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+                  touch && "gap-3 px-3 py-2 text-sm",
+                )}
+              >
+                <ArrowsOutIcon
+                  className="size-4 text-white cursor-pointer shrink-0"
+                  onClick={() => {
+                    const nextFov = w.touchDevice ? fovConfig.defaultMobile : fovConfig.default;
+                    w.view.fov = nextFov;
+                    const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
+                    if (cam?.isPerspectiveCamera) {
+                      cam.fov = nextFov;
+                      cam.updateProjectionMatrix();
+                    }
+                    w.r3f?.invalidate();
+                    tryLocalStorageSet(fovStorageKey, String(nextFov));
+                    w.update();
+                  }}
+                />
+                <input
+                  type="range"
+                  min={fovConfig.min}
+                  max={fovConfig.max}
+                  step="2.5"
+                  value={w.view.fov}
+                  onChange={(e) => {
+                    const fov = Number(e.target.value);
+                    w.view.fov = fov;
+                    const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
+                    if (cam?.isPerspectiveCamera) {
+                      cam.fov = fov;
+                      cam.updateProjectionMatrix();
+                    }
+                    w.r3f?.invalidate();
+                    tryLocalStorageSet(fovStorageKey, String(fov));
+                    w.update();
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
+                />
+              </div>
+            </div>
+            <MenuRow
+              menu={!touch}
+              className={cn(
+                "flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer",
+                touch && "px-3 py-2 text-sm",
+              )}
+              onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
+            >
+              <div>camera: {w.view.cameraMode}</div>
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
+                  <MenuSelect
+                    side="bottom"
+                    value={String(w.view.cameraDirections)}
+                    items={cardinalDirItems}
+                    onValueChange={(v) => {
+                      if (v) w.view.setNumCardinalDirections(Number(v));
+                    }}
+                  />
+                </div>
+                <span title="reset camera" onClick={() => w.view.resetCamera()}>
+                  <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
+                </span>
+              </div>
+            </MenuRow>
+
+            <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
+              <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>map:</div>
+              <MenuSelect
+                label={w.mapKey}
+                value={w.mapKey}
+                items={mapKeys.map((key) => ({ key, value: key }))}
+                side="bottom"
+                onValueChange={async (key) => {
+                  if (!key || key === w.mapKey) return;
+                  await w.setCanvasOpacity(0);
+                  w.e.onChangeMap(); // persist + remove whilst the old map still exists
+                  uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
+                }}
+              />
+            </div>
+            {import.meta.env.DEV && (
+              <>
+                <div
+                  className={sectionHeaderClass(touch)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    state.themeEditorOpen = !state.themeEditorOpen;
+                    tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
+                    w.update();
+                  }}
                 >
-                  <div
-                    className={cn(
-                      "flex flex-col overflow-y-auto pb-6",
-                      "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
-                      "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600",
-                    )}
-                    style={{ maxHeight: state.menuHeight, scrollbarWidth: "thin" }}
-                  >
-                    <div className="flex flex-wrap max-w-52">
-                      <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                        <BrightnessPie
-                          ratio={brightnessToRatio(w.brightness)}
-                          onClick={() => {
-                            const brightness = 2;
-                            w.set({ brightness });
-                            tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
-                          }}
-                        />
-                        <input
-                          type="range"
-                          min="1"
-                          max="4"
-                          step="0.1"
-                          value={w.brightness}
-                          onChange={(e) => {
-                            w.brightness = Number(e.target.value);
-                            w.update();
-                            tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                        />
-                      </div>
-
-                      {w.view && (
-                        <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300">
-                          <ArrowsOutIcon
-                            className="size-4 text-white cursor-pointer shrink-0"
-                            onClick={() => {
-                              const nextFov = (w.touchDevice ? fovConfig.defaultMobile : fovConfig.default);
-                              w.view.fov = nextFov;
-                              const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                              if (cam?.isPerspectiveCamera) {
-                                cam.fov = nextFov;
-                                cam.updateProjectionMatrix();
-                              }
-                              w.r3f?.invalidate();
-                              tryLocalStorageSet(fovStorageKey, String(nextFov));
-                              w.update();
-                            }}
-                          />
-                          <input
-                            type="range"
-                            min={fovConfig.min}
-                            max={fovConfig.max}
-                            step="2.5"
-                            value={w.view.fov}
-                            onChange={(e) => {
-                              const fov = Number(e.target.value);
-                              w.view.fov = fov;
-                              const cam = w.r3f?.camera as THREE.PerspectiveCamera | undefined;
-                              if (cam?.isPerspectiveCamera) {
-                                cam.fov = fov;
-                                cam.updateProjectionMatrix();
-                              }
-                              w.r3f?.invalidate();
-                              tryLocalStorageSet(fovStorageKey, String(fov));
-                              w.update();
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-16 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    {w.view && (
-                      <Menu.Item
-                        className="flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer"
-                        closeOnClick={false}
-                        onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
-                      >
-                        <div>camera: {w.view.cameraMode}</div>
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
-                            <MenuSelect
-                              side="bottom"
-                              value={String(w.view.cameraDirections)}
-                              items={cardinalDirItems}
-                              onValueChange={(v) => {
-                                if (v) w.view.setNumCardinalDirections(Number(v));
-                              }}
-                            />
-                          </div>
-                          <span title="reset camera" onClick={() => w.view.resetCamera()}>
-                            <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
-                          </span>
-                        </div>
-                      </Menu.Item>
-                    )}
-
-                    <div className="flex">
-                      <div className="text-white text-xs flex items-center px-2">map:</div>
-                      <MenuSelect
-                        label={w.mapKey}
-                        value={w.mapKey}
-                        items={mapKeys.map((key) => ({ key, value: key }))}
-                        side="bottom"
-                        onValueChange={async (key) => {
-                          if (!key || key === w.mapKey) return;
-                          await w.setCanvasOpacity(0);
-                          w.e.onChangeMap(); // persist + remove whilst the old map still exists
-                          uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
-                        }}
-                      />
-                    </div>
-                    {import.meta.env.DEV && (
-                      <>
-                        <div
-                          className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            state.themeEditorOpen = !state.themeEditorOpen;
-                            tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
-                            w.update();
-                          }}
-                        >
-                          {state.themeEditorOpen ? (
-                            <CaretDownIcon className="size-3" />
-                          ) : (
-                            <CaretRightIcon className="size-3" />
-                          )}
-                          edit theme
-                        </div>
-                        {state.themeEditorOpen && (
-                          <div className="p-2 pt-0 flex flex-col gap-1">
-                            <textarea
-                              key={w.themeKey}
-                              ref={state.ref("themeEditorRef")}
-                              className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
-                              defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                              onKeyDown={(e) => e.stopPropagation()}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={() => {
-                                const parsed = WorldThemeSchema.safeParse(
-                                  JSON.parse(state.themeEditorRef?.value ?? ""),
-                                );
-                                if (parsed.success && w.assets) {
-                                  (w.assets.theme ??= {})[w.themeKey] = parsed.data;
-                                  w.e.onChangeTheme();
-                                  state.saveThemeDevDebounced();
-                                }
-                              }}
-                              onBlur={() => {
-                                state.saveThemeDev();
-                              }}
-                            />
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    <div
-                      className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
+                  {state.themeEditorOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                  edit theme
+                </div>
+                {state.themeEditorOpen && (
+                  <div className="p-2 pt-0 flex flex-col gap-1">
+                    <textarea
+                      key={w.themeKey}
+                      ref={state.ref("themeEditorRef")}
+                      className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                      defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                      onKeyDown={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="w-24">
-                        <LightsMenuSlider
-                          label="Room lights"
-                          value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                          defaultValue={defaultRoomLightIntensity}
-                          onChange={(next) => w.view.setRoomLightIntensity(next)}
-                        />
-                      </div>
-
-                      <div className="flex gap-1">
-                        <LightsIconButton
-                          active={w.view.roomLightEditingEnabled}
-                          icon={PencilSimpleIcon}
-                          title="Edit (long press)"
-                          onClick={() => w.view.toggleRoomLightEditing()}
-                        />
-                        <LightsIconButton
-                          active={w.view.roomLight?.roomLightingEnabled.value === 1}
-                          icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
-                          title="Lights shown"
-                          onClick={() => {
-                            w.view.setPostProcessingEnabled(true);
-                            w.view.setRoomLightingEnabled();
-                            state.update();
-                          }}
-                        />
-                        <LightsIconButton
-                          danger
-                          icon={TrashIcon}
-                          title="Clear lighting"
-                          onClick={() => w.view.resetAllRooms()}
-                        />
-                      </div>
-
-                      <div className="w-20">
-                        <LightsMenuSlider
-                          label="focus"
-                          step={0.1}
-                          value={w.view.fx?.vignette.value ?? defaultVignette}
-                          defaultValue={defaultVignette}
-                          onChange={(next) => w.view.setFx("vignette", next)}
-                        />
-                      </div>
-                    </div>
-
-                    <div
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        state.playerOpen = !state.playerOpen;
-                        tryLocalStorageSet(playerOpenStorageKey, String(state.playerOpen));
-                        state.update();
+                      onChange={() => {
+                        const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
+                        if (parsed.success && w.assets) {
+                          (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                          w.e.onChangeTheme();
+                          state.saveThemeDevDebounced();
+                        }
                       }}
-                    >
-                      {state.playerOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-                      player
-                    </div>
-
-                    {state.playerOpen && (
-                      <div
-                        className="max-w-80 flex flex-wrap items-end gap-1 px-2 py-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="w-24 flex items-stretch">
-                          <MenuSelect
-                            side="bottom"
-                            className="border rounded-l border-white/30 border-r-0"
-                            label={truncateLabel(w.player?.key ?? "no npc", 10)}
-                            value={w.player?.key ?? ""}
-                            items={npcKeys.map((k) => ({ key: k, value: k }))}
-                            onValueChange={(v) => v && w.player.setKey(v)}
-                          />
-                          <button
-                            type="button"
-                            title="Cycle player"
-                            className="grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (npcKeys.length === 0) return;
-                              const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
-                              w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
-                            }}
-                          >
-                            <CaretRightIcon className="size-3" />
-                          </button>
-                        </div>
-
-                        <div className="w-20">
-                          <LightsMenuSlider
-                            label="radius"
-                            min={0.2}
-                            max={maxDynamicLightRadius}
-                            step={0.1}
-                            value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
-                            defaultValue={defaultDynamicLightRadius}
-                            onChange={(next) => w.view.setDynamicLightRadius(next)}
-                          />
-                        </div>
-                        <div className="w-20">
-                          <LightsMenuSlider
-                            label="lit"
-                            value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
-                            defaultValue={defaultDynamicLightIntensity}
-                            onChange={(next) => w.view.setDynamicLightIntensity(next)}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <div
-                      className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        state.debugOpen = !state.debugOpen;
-                        tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
-                        state.update();
+                      onBlur={() => {
+                        state.saveThemeDev();
                       }}
-                    >
-                      {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-                      debug
-                    </div>
-
-                    {state.debugOpen && (
-                      <>
-                        <div className="px-2 pb-1 grid grid-cols-2 gap-0.5">
-                          {debugItems.map((item) => (
-                            <button
-                              key={item}
-                              type="button"
-                              className={cn(
-                                "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                                isDebugActive(item)
-                                  ? "text-green-400 bg-slate-700"
-                                  : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDebugToggle(item);
-                              }}
-                            >
-                              {item}
-                            </button>
-                          ))}
-                        </div>
-
-                        <button
-                          type="button"
-                          className="w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            w.debug.logGPUInfo = true;
-                            w.view.forceUpdate();
-                          }}
-                        >
-                          log gpu info
-                        </button>
-                      </>
-                    )}
-
-                    {import.meta.env.DEV && (
-                      <div
-                        className="flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          state.devScriptsOpen = !state.devScriptsOpen;
-                          tryLocalStorageSet(devScriptsOpenStorageKey, String(state.devScriptsOpen));
-                          state.update();
-                        }}
-                      >
-                        {state.devScriptsOpen ? (
-                          <CaretDownIcon className="size-3" />
-                        ) : (
-                          <CaretRightIcon className="size-3" />
-                        )}
-                        dev scripts
-                      </div>
-                    )}
-
-                    {import.meta.env.DEV && state.devScriptsOpen && (
-                      <div className="flex">
-                        <button
-                          type="button"
-                          className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            w.setNextPending({ obstacles: true });
-                            try {
-                              const res = await fetch("/api/gen-starship-sheets", {
-                                method: "POST",
-                              });
-                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                              await queryClientApi.queryClient.invalidateQueries({
-                                queryKey: [...w.worldQueryPrefix, "sheets"],
-                              });
-                              await queryClientApi.queryClient.invalidateQueries({
-                                queryKey: [...w.worldQueryPrefix, "obstacle-images"],
-                              });
-                            } catch (err) {
-                              console.error("Failed to update obstacles:", err);
-                            } finally {
-                              w.setNextPending({ obstacles: false });
-                            }
-                          }}
-                        >
-                          obstacles
-                          <ArrowsClockwiseIcon className="size-3.5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              const res = await fetch("/api/gen-assets-json", {
-                                method: "POST",
-                              });
-                              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                              await queryClientApi.queryClient.invalidateQueries({
-                                exact: false,
-                                queryKey: w.worldQueryPrefix,
-                              });
-                            } catch (err) {
-                              console.error("Failed to update assets:", err);
-                            }
-                          }}
-                        >
-                          assets
-                          <ArrowsClockwiseIcon className="size-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* drag to resize the popup — bottom-right corner, since it opens rightward/downward from the trigger */}
-                  <div
-                    className="absolute bottom-0 right-0 size-5 touch-none cursor-nwse-resize"
-                    // the portal still propagates React events to the draggable column, and
-                    // pointerdown precedes mouse/touch, so the drag must be stopped here
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onMouseDown={state.onResizeMouseDown}
-                    onTouchStart={state.onResizeTouchStart}
-                  >
-                    <div
-                      className={cn(
-                        "absolute bottom-1 right-1 size-2.5 border-b-2 border-r-2 border-slate-600 rounded-br",
-                        state.resizing && "border-slate-400",
-                      )}
                     />
                   </div>
-                </Menu.Popup>
-              </Menu.Positioner>
-            </Menu.Portal>
-          </Menu.Root>
+                )}
+              </>
+            )}
 
-          {w.view && (
-            <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
-              <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
-                <SunIcon className="size-4 shrink-0" />
-              </button>
-              <Slider.Root
-                orientation="vertical"
-                min={0}
-                max={1}
-                step={0.01}
-                value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
-                onValueChange={(v) => w.view.setAmbientIntensity(ambientSliderPosToValue(v))}
-              >
-                <Slider.Control
-                  className="h-20 w-4 flex justify-center cursor-pointer touch-none"
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <Slider.Track className="relative w-1 h-full rounded-full bg-white/50">
-                    <Slider.Indicator className="rounded-full bg-white" />
-                    <Slider.Thumb className="size-3.5 rounded-full bg-white outline-none" />
-                  </Slider.Track>
-                </Slider.Control>
-              </Slider.Root>
+            <div
+              className={cn(
+                "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
+                touch && "max-w-none flex-col items-stretch gap-2 px-1 py-2 border-t border-slate-800",
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={cn("w-24", touch && "w-full")}>
+                <LightsMenuSlider
+                  label="Room lights"
+                  value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
+                  defaultValue={defaultRoomLightIntensity}
+                  onChange={(next) => w.view.setRoomLightIntensity(next)}
+                />
+              </div>
+
+              <div className={cn("flex gap-1", touch && "gap-2 px-2")}>
+                <LightsIconButton
+                  active={w.view.roomLightEditingEnabled}
+                  icon={PencilSimpleIcon}
+                  title="Edit (long press)"
+                  onClick={() => w.view.toggleRoomLightEditing()}
+                />
+                <LightsIconButton
+                  active={w.view.roomLight?.roomLightingEnabled.value === 1}
+                  icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
+                  title="Lights shown"
+                  onClick={() => {
+                    w.view.setPostProcessingEnabled(true);
+                    w.view.setRoomLightingEnabled();
+                    state.update();
+                  }}
+                />
+                <LightsIconButton
+                  danger
+                  icon={TrashIcon}
+                  title="Clear lighting"
+                  onClick={() => w.view.resetAllRooms()}
+                />
+              </div>
+
+              <div className={cn("w-20", touch && "w-full")}>
+                <LightsMenuSlider
+                  label="focus"
+                  step={0.1}
+                  value={w.view.fx?.vignette.value ?? defaultVignette}
+                  defaultValue={defaultVignette}
+                  onChange={(next) => w.view.setFx("vignette", next)}
+                />
+              </div>
             </div>
-          )}
+
+            <div
+              className={sectionHeaderClass(touch)}
+              onClick={(e) => {
+                e.stopPropagation();
+                state.playerOpen = !state.playerOpen;
+                tryLocalStorageSet(playerOpenStorageKey, String(state.playerOpen));
+                state.update();
+              }}
+            >
+              {state.playerOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              player
+            </div>
+
+            {state.playerOpen && (
+              <div
+                className={cn(
+                  "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
+                  touch && "max-w-none flex-col items-stretch gap-2 px-1 py-2",
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className={cn("w-24 flex items-stretch", touch && "w-full mx-2")}>
+                  <MenuSelect
+                    side="bottom"
+                    className="border rounded-l border-white/30 border-r-0"
+                    label={truncateLabel(w.player?.key ?? "no npc", 10)}
+                    value={w.player?.key ?? ""}
+                    items={npcKeys.map((k) => ({ key: k, value: k }))}
+                    onValueChange={(v) => v && w.player.setKey(v)}
+                  />
+                  <button
+                    type="button"
+                    title="Cycle player"
+                    className={cn(
+                      "grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700",
+                      touch && "px-3",
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (npcKeys.length === 0) return;
+                      const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                      w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
+                    }}
+                  >
+                    <CaretRightIcon className="size-3" />
+                  </button>
+                </div>
+
+                <div className={cn("w-20", touch && "w-full")}>
+                  <LightsMenuSlider
+                    label="radius"
+                    min={0.2}
+                    max={maxDynamicLightRadius}
+                    step={0.1}
+                    value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
+                    defaultValue={defaultDynamicLightRadius}
+                    onChange={(next) => w.view.setDynamicLightRadius(next)}
+                  />
+                </div>
+                <div className={cn("w-20", touch && "w-full")}>
+                  <LightsMenuSlider
+                    label="lit"
+                    value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
+                    defaultValue={defaultDynamicLightIntensity}
+                    onChange={(next) => w.view.setDynamicLightIntensity(next)}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div
+              className={sectionHeaderClass(touch)}
+              onClick={(e) => {
+                e.stopPropagation();
+                state.debugOpen = !state.debugOpen;
+                tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
+                state.update();
+              }}
+            >
+              {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              debug
+            </div>
+
+            {state.debugOpen && (
+              <>
+                <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
+                  {debugItems.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={cn(
+                        "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                        touch && "text-sm px-2 py-2 bg-slate-800",
+                        isDebugActive(item)
+                          ? "text-green-400 bg-slate-700"
+                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDebugToggle(item);
+                      }}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className={cn(
+                    "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
+                    touch && "text-sm py-2 mt-1",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    w.debug.logGPUInfo = true;
+                    w.view.forceUpdate();
+                  }}
+                >
+                  log gpu info
+                </button>
+              </>
+            )}
+
+            {import.meta.env.DEV && (
+              <div
+                className={sectionHeaderClass(touch)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  state.devScriptsOpen = !state.devScriptsOpen;
+                  tryLocalStorageSet(devScriptsOpenStorageKey, String(state.devScriptsOpen));
+                  state.update();
+                }}
+              >
+                {state.devScriptsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                dev scripts
+              </div>
+            )}
+
+            {import.meta.env.DEV && state.devScriptsOpen && (
+              <div className="flex">
+                <button
+                  type="button"
+                  className={cn(
+                    "w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
+                    touch && "text-sm py-2.5",
+                  )}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    w.setNextPending({ obstacles: true });
+                    try {
+                      const res = await fetch("/api/gen-starship-sheets", {
+                        method: "POST",
+                      });
+                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                      await queryClientApi.queryClient.invalidateQueries({
+                        queryKey: [...w.worldQueryPrefix, "sheets"],
+                      });
+                      await queryClientApi.queryClient.invalidateQueries({
+                        queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+                      });
+                    } catch (err) {
+                      console.error("Failed to update obstacles:", err);
+                    } finally {
+                      w.setNextPending({ obstacles: false });
+                    }
+                  }}
+                >
+                  obstacles
+                  <ArrowsClockwiseIcon className="size-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  className={cn(
+                    "w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
+                    touch && "text-sm py-2.5",
+                  )}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      const res = await fetch("/api/gen-assets-json", {
+                        method: "POST",
+                      });
+                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                      await queryClientApi.queryClient.invalidateQueries({
+                        exact: false,
+                        queryKey: w.worldQueryPrefix,
+                      });
+                    } catch (err) {
+                      console.error("Failed to update assets:", err);
+                    }
+                  }}
+                >
+                  assets
+                  <ArrowsClockwiseIcon className="size-3.5" />
+                </button>
+              </div>
+            )}
+          </MenuShell>
+
+          <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
+            <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
+              <SunIcon className="size-4 shrink-0" />
+            </button>
+            <Slider.Root
+              orientation="vertical"
+              min={0}
+              max={1}
+              step={0.01}
+              value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
+              onValueChange={(v) => w.view.setAmbientIntensity(ambientSliderPosToValue(v))}
+            >
+              <Slider.Control
+                className="h-20 w-4 flex justify-center cursor-pointer touch-none"
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <Slider.Track className="relative w-1 h-full rounded-full bg-white/50">
+                  <Slider.Indicator className="rounded-full bg-white" />
+                  <Slider.Thumb className="size-3.5 rounded-full bg-white outline-none" />
+                </Slider.Track>
+              </Slider.Control>
+            </Slider.Root>
+          </div>
 
           {/* `contents` so these still lay out as siblings, whilst sharing one ref */}
           <div ref={keepMenuOpenEl} className="contents">
@@ -875,6 +823,173 @@ export function WorldMenu() {
   );
 }
 
+/**
+ * The shell around the menu's contents.
+ *
+ * Desktop keeps the anchored popup, resizable via its bottom-right corner.
+ *
+ * Touch instead gets a panel pinned to the full height of the world, because the popup's height
+ * could not be grown past what the anchored positioner allowed beside the button column. It is
+ * portalled into the world root so the column's drag transform cannot carry it around, and it
+ * swallows `pointerdown` because a React portal still propagates events to that draggable column.
+ */
+function MenuShell({
+  children,
+  keepOpenEl,
+  state,
+  touch,
+  trigger,
+}: {
+  children: React.ReactNode;
+  /** Buttons whose press should not dismiss the menu as an "outside press" */
+  keepOpenEl: React.RefObject<HTMLDivElement | null>;
+  state: UseStateRef<State>;
+  touch: boolean;
+  trigger: React.ReactNode;
+}) {
+  const w = useContext(WorldContext);
+
+  if (touch === true) {
+    return (
+      <>
+        <button
+          type="button"
+          className="cursor-pointer"
+          onClick={() => {
+            if (state.dragged) return;
+            state.set({ menuOpen: !state.menuOpen });
+          }}
+        >
+          {trigger}
+        </button>
+        {w.rootEl &&
+          createPortal(
+            <AnimatePresence>
+              {state.menuOpen && (
+                <motion.div
+                  className={cn(
+                    "absolute inset-y-2 left-14 z-50 flex flex-col select-none",
+                    "w-[min(22rem,calc(100%-4.5rem))] rounded-lg overflow-hidden",
+                    "bg-slate-900/95 border border-slate-700 shadow-2xl shadow-black/50",
+                  )}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -8 }}
+                  transition={{ duration: 0.15 }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between pl-3 pr-1.5 py-1.5 bg-slate-800 border-b border-slate-700">
+                    <span className="text-sm text-slate-300">world</span>
+                    <button
+                      type="button"
+                      className="grid place-items-center size-9 rounded text-slate-300 cursor-pointer hover:bg-slate-700"
+                      onClick={() => state.set({ menuOpen: false })}
+                    >
+                      <XIcon className="size-4" weight="bold" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto overscroll-contain pb-6">{children}</div>
+                </motion.div>
+              )}
+            </AnimatePresence>,
+            w.rootEl,
+          )}
+      </>
+    );
+  }
+
+  return (
+    <Menu.Root
+      open={state.menuOpen}
+      onOpenChange={(open, { reason, event }) => {
+        if (open) {
+          state.set({ menuOpen: true });
+        } else if (reason === "outside-press" && keepOpenEl.current?.contains(event.target as Node) === true) {
+          // panning to the player, or pausing, should not close the menu
+        } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
+          state.set({ menuOpen: false });
+        }
+      }}
+    >
+      <Menu.Trigger
+        className="cursor-pointer"
+        onPointerDown={(e) => e.preventDefault()}
+        onClick={() => {
+          if (state.dragged) return;
+          state.set({ menuOpen: !state.menuOpen });
+        }}
+      >
+        {trigger}
+      </Menu.Trigger>
+
+      <Menu.Portal container={w.rootEl} className="w-full">
+        <Menu.Positioner
+          className="z-50 overflow-auto max-w-[calc(100%-40px)]"
+          side="right"
+          sideOffset={4}
+          align="start"
+        >
+          <Menu.Popup
+            className="relative select-none bg-slate-800/70 border border-slate-700 rounded-md shadow-lg py-1"
+            style={{ width: state.menuWidth }}
+            // the portal still propagates React events to the draggable column, so a press
+            // anywhere in the popup would otherwise start dragging it up and down
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className={cn(
+                "flex flex-col overflow-y-auto pb-6",
+                "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
+                "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600",
+              )}
+              style={{ maxHeight: state.menuHeight, scrollbarWidth: "thin" }}
+            >
+              {children}
+            </div>
+
+            {/* drag to resize the popup — bottom-right corner, since it opens rightward/downward from the trigger */}
+            <div
+              className="absolute bottom-0 right-0 size-5 touch-none cursor-nwse-resize"
+              onMouseDown={state.onResizeMouseDown}
+              onTouchStart={state.onResizeTouchStart}
+            >
+              <div
+                className={cn(
+                  "absolute bottom-1 right-1 size-2.5 border-b-2 border-r-2 border-slate-600 rounded-br",
+                  state.resizing && "border-slate-400",
+                )}
+              />
+            </div>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+/** A menu row: a real `Menu.Item` in the desktop popup, a plain row in the touch panel */
+function MenuRow({
+  children,
+  className,
+  menu,
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  menu: boolean;
+  onClick: () => void;
+}) {
+  return menu === true ? (
+    <Menu.Item className={className} closeOnClick={false} onClick={onClick}>
+      {children}
+    </Menu.Item>
+  ) : (
+    <div className={className} onClick={onClick}>
+      {children}
+    </div>
+  );
+}
+
 /** Sun icon wi\th a pie-chart fill showing brightness ratio (0–1) */
 function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void }) {
   const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
@@ -936,6 +1051,7 @@ function LightsIconButton({
   title: string;
   onClick: () => void;
 }) {
+  const { touchDevice: touch } = useContext(WorldContext);
   return (
     <button
       type="button"
@@ -946,6 +1062,7 @@ function LightsIconButton({
       }}
       className={cn(
         "grid place-items-center rounded cursor-pointer size-6",
+        touch && "size-10 bg-slate-800",
         danger
           ? "text-red-300 hover:bg-red-900/40"
           : active
@@ -953,7 +1070,10 @@ function LightsIconButton({
             : "text-slate-500 hover:bg-slate-700",
       )}
     >
-      <IconCmp className={cn("size-3.5", danger && "scale-110")} weight={active ? "fill" : "regular"} />
+      <IconCmp
+        className={cn("size-3.5", touch && "size-5", danger && "scale-110")}
+        weight={active ? "fill" : "regular"}
+      />
     </button>
   );
 }
@@ -976,10 +1096,15 @@ function LightsMenuSlider({
   defaultValue?: number;
   onChange: (next: number) => void;
 }) {
+  const { touchDevice: touch } = useContext(WorldContext);
   return (
     <div className="flex flex-col gap-0.5 px-2 py-0.5">
       <span
-        className={cn("text-[10px] text-slate-400", defaultValue !== undefined && "cursor-pointer hover:underline")}
+        className={cn(
+          "text-[10px] text-slate-400",
+          touch && "text-xs",
+          defaultValue !== undefined && "cursor-pointer hover:underline",
+        )}
         onClick={(e) => {
           if (defaultValue === undefined) {
             return;
@@ -998,7 +1123,7 @@ function LightsMenuSlider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         onClick={(e) => e.stopPropagation()}
-        className="w-14 accent-white cursor-pointer appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50 [&::-moz-range-track]:bg-white/50 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+        className={rangeInputClass(touch, touch ? "w-full" : "w-14")}
       />
     </div>
   );
@@ -1028,7 +1153,6 @@ export type State = {
   resizing: boolean;
   getMaxY(): number;
   getClampedY(y: number): number;
-  getZoom(): number;
   getMaxMenuWidth(): number;
   getClampedMenuWidth(width: number): number;
   getMaxMenuHeight(): number;
@@ -1044,6 +1168,26 @@ export type State = {
 
 /** Enlarges the menu controls on touch devices */
 const touchDeviceZoom = 1.25;
+
+/** A collapsible section's header row, e.g. "player" or "debug" */
+const sectionHeaderClass = (touch: boolean) =>
+  cn(
+    "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
+    touch && "gap-2 px-3 py-2.5 text-sm border-t border-slate-800",
+  );
+
+/** Every `<input type="range">` in the menu — touch gets a fatter thumb and more room to drag */
+const rangeInputClass = (touch: boolean, width: string) =>
+  cn(
+    "accent-white cursor-pointer appearance-none bg-transparent",
+    "[&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-white/50",
+    "[&::-moz-range-track]:bg-white/50",
+    "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white",
+    touch
+      ? "py-1.5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5"
+      : "[&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5",
+    width,
+  );
 
 const storageKey = (id: string) => `world-context-menu-y-${id}`;
 const menuWidthStorageKey = (id: string) => `world-context-menu-width-${id}`;
@@ -1082,10 +1226,12 @@ const debugItems = [
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
 
-const selectItemClassName = cn(
-  "px-2 py-1 text-xs cursor-pointer text-slate-300",
-  "data-highlighted:bg-slate-700 data-selected:text-green-400",
-);
+const selectItemClassName = (touch: boolean) =>
+  cn(
+    "px-2 py-1 text-xs cursor-pointer text-slate-300",
+    "data-highlighted:bg-slate-700 data-selected:text-green-400",
+    touch && "px-3 py-2.5 text-sm",
+  );
 
 function MenuSelect<T extends string>({
   className,
@@ -1104,12 +1250,14 @@ function MenuSelect<T extends string>({
   onValueChange: (value: T | null) => void;
 }) {
   const w = useContext(WorldContext);
+  const touch = w.touchDevice;
 
   return (
     <Select.Root value={value} onValueChange={onValueChange}>
       <Select.Trigger
         className={cn(
           "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full min-w-0",
+          touch && "px-3 py-2 text-sm",
           className,
         )}
       >
@@ -1129,7 +1277,7 @@ function MenuSelect<T extends string>({
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
               {items.map(({ key, value }) => (
-                <Select.Item key={key} value={value} className={selectItemClassName}>
+                <Select.Item key={key} value={value} className={selectItemClassName(touch)}>
                   <Select.ItemText>{key}</Select.ItemText>
                 </Select.Item>
               ))}
