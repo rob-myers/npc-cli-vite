@@ -38,7 +38,11 @@ import {
   roomLightIntensityKey,
   roomLightingEnabledKey,
   roomLitStorageKeyPrefix,
+  rotateSpeedDesktop,
+  rotateSpeedMobile,
   wallHeight,
+  zoomSpeedDesktop,
+  zoomSpeedMobile,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
@@ -78,8 +82,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxDistance: 20,
         extraZoom: 2,
         panSpeed: 2,
-        rotateSpeed: 0.5,
-        zoomSpeed: 0.3,
+        // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
+        rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
+        zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
       dynamicLight: createDynamicLightPostprocess({
         bottomHeight: 0,
@@ -87,7 +92,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         marchSteps: 96,
       }),
       dynamicLightTarget: null,
-      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? fovConfig.default,
+      fov: tryLocalStorageGetParsed<number>(fovStorageKey) ?? (w.touchDevice ? fovConfig.defaultMobile : fovConfig.default),
       initial: getInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
       ambientAnimId: 0,
@@ -959,14 +964,14 @@ const tmpVector3 = new THREE.Vector3();
 export type Picked = {
   instanceId: number;
 } & (
-  | { type: "floor"; floor: true; gmId: number; gmKey: string }
-  | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
-  | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
-  | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
-  | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
-  // static and runtime decor have same decode format
-  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
-  | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
-  // we require spawn inside room but map might change
-  | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
-);
+    | { type: "floor"; floor: true; gmId: number; gmKey: string }
+    | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
+    | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
+    | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
+    | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
+    // static and runtime decor have same decode format
+    | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
+    | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
+    // we require spawn inside room but map might change
+    | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
+  );
