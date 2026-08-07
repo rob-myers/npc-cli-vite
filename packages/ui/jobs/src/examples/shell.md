@@ -1,4 +1,4 @@
-# assign var
+# assign
 
 ```sh
 # assign string "42"
@@ -15,13 +15,20 @@ answer=$( call '() => 42')
 
 # assign number 42
 echo 42 | map Number >answer
+
+# locally assign number 42
+( local y=42; echo $y )
+
+# locally assign and then read number 42
+( local y='{ foo: 42 }'; y/foo )
+
 ```
 
 # loops
 
 <!-- Each command loop iteration is forced to take ≥ 300ms.
 Use JavaScript loops to avoid this restriction.
-This avoids unstoppable shell syntax and aligns with human reaction speeds. -->
+Avoids unstoppable shell syntax while aligning with human reaction speeds. -->
 
 ```sh
 # iterate through array [0...4]
@@ -63,49 +70,35 @@ localLoop() {
 }
 localLoop 10
 
-# infinite loop: copy-paste to run
-if test $$; then echo this example must run interactively; fi ||
-  while true; do
-    echo ctrl-c to stop...
-  done
+# infinite loop: 🔔 each copy-paste or kill it using process manager UI above
+while true; do
+  echo ctrl-c to stop...
+done
 ```
 
-# shell vs js functions
+# if then
 
 ```sh
-narrate Listen to the sound of my voice
-
-# narrate () {
-#   run util narrate "${@}"
-# }
-declare -f narrate
-
-# async function narrate({ api, args }, opts = api.jsArg(args, { as: "voice" })) {
-# ...
-call 'x => x.lib.util.narrate'
-```
-
-# local variables
-
-```sh
-( local y; y=42; echo $y )
-( local y; y='{ foo: 42 }'; y/foo )
-```
-
-# if then elif else
-
-```sh
+# follow first branch
 if true; then echo foo; else echo bar; fi
+
+# follow second branch
 if false; then echo foo; else echo bar; fi
+
+# follow second then first branch
 if false; then echo foo; elif true; then echo bar; else echo baz; fi
+
+# follow second branch twice
 if false; then echo foo; elif false; then echo bar; else echo baz; fi
 
-# using builtin `test`
-if test '1 > 2'; then echo TEST PASSED; else echo TEST FAILED; fi
-if test '2 > 1'; then echo TEST PASSED; else echo TEST FAILED; fi
+# follow first branch
+if test '2 > 1'; then echo TEST PASSED ✅; else echo TEST FAILED ❌; fi
+
+# follow second branch
+if test '1 > 2'; then echo TEST PASSED ✅; else echo TEST FAILED ❌; fi
 ```
 
-# pipe semantics
+# pipe 
 
 <!-- pipe-child termination info -->
 
@@ -159,6 +152,7 @@ echo hi $( echo rob | false )
 echo hi $( echo rob | true )
 
 # should output `hello` continually
+# 🚧 util to guard against bg exec
 while true; do echo | false; echo hello; done
 
 # terminates because first pipe-child killed
@@ -172,4 +166,19 @@ take 1 | run '({ api }) { throw api.getKillError(); }'
 # ctrl-c should kill whole while loop
 awaitWorld
 while true; do click 1 >clicked; clicked/meta/nav; done
+```
+
+# etc
+
+```sh
+narrate Listen to the sound of my voice
+
+# narrate () {
+#   run util narrate "${@}"
+# }
+declare -f narrate
+
+# async function narrate({ api, args }, opts = api.jsArg(args, { as: "voice" })) {
+# ...
+call 'x => x.lib.util.narrate'
 ```
