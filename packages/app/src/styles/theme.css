@@ -25,6 +25,8 @@
   --color-term-paused: #5f6b7a;
   --color-term-ok: #15803d;
 
+  --color-term-dashboard: unset;
+
   /* Shell syntax highlighting — see `tokenCss` and `TokenKind` */
   --color-sh-command: #1f2937;
   --color-sh-comment: #5d7a5d;
@@ -59,6 +61,8 @@
   --color-term-danger: #ff9999;
   --color-term-paused: #cccccc;
   --color-term-ok: #aaffaa;
+
+  --color-term-dashboard: var(--color-zinc-800);
 
   --color-sh-command: #e2e7ed;
   --color-sh-comment: #829282;
