@@ -174,7 +174,7 @@ export const decorKeyFallback = "icon--warn";
  * Decor images eligible as door icons; a door's icon id indexes this list.
  * Also the pool a door without a named icon is assigned from — see `Doors.drawDoorTextures`.
  */
-export const doorIconKeys = ["text-aa", "text-ab", "text---"] as const;
+export const doorIconKeys = ["text-ae", "text-ab", "text---"] as const;
 
 /** How strongly a door icon shows over its plaque */
 export const doorIconAlpha = 0.25;

@@ -88,9 +88,9 @@
       "outputWidth": 86,
       "outputHeight": 86
     },
-    "text-aa": {
-      "key": "text-aa",
-      "filename": "text-aa.svg",
+    "text--ae": {
+      "key": "text--ae",
+      "filename": "text--ae.svg",
       "width": 10,
       "height": 10,
       "outputWidth": 86,
@@ -99,6 +99,14 @@
     "text-ab": {
       "key": "text-ab",
       "filename": "text-ab.svg",
+      "width": 10,
+      "height": 10,
+      "outputWidth": 86,
+      "outputHeight": 86
+    },
+    "text-ae": {
+      "key": "text-ae",
+      "filename": "text-ae.svg",
       "width": 10,
       "height": 10,
       "outputWidth": 86,
