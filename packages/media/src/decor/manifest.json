@@ -32,22 +32,6 @@
       "outputWidth": 128,
       "outputHeight": 128
     },
-    "dharma-wheel": {
-      "key": "dharma-wheel",
-      "filename": "dharma-wheel.svg",
-      "width": 10,
-      "height": 10,
-      "outputWidth": 86,
-      "outputHeight": 86
-    },
-    "fresher-0": {
-      "key": "fresher-0",
-      "filename": "fresher-0.svg",
-      "width": 10,
-      "height": 10,
-      "outputWidth": 43,
-      "outputHeight": 43
-    },
     "icon--warn": {
       "key": "icon--warn",
       "filename": "icon--warn.svg",
@@ -95,6 +79,30 @@
       "height": 6,
       "outputWidth": 26,
       "outputHeight": 26
+    },
+    "text---": {
+      "key": "text---",
+      "filename": "text---.svg",
+      "width": 10,
+      "height": 10,
+      "outputWidth": 86,
+      "outputHeight": 86
+    },
+    "text-aa": {
+      "key": "text-aa",
+      "filename": "text-aa.svg",
+      "width": 10,
+      "height": 10,
+      "outputWidth": 86,
+      "outputHeight": 86
+    },
+    "text-ab": {
+      "key": "text-ab",
+      "filename": "text-ab.svg",
+      "width": 10,
+      "height": 10,
+      "outputWidth": 86,
+      "outputHeight": 86
     }
   }
 }

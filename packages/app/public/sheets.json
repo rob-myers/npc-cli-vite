@@ -180,72 +180,79 @@
       "originalWidth": 60,
       "originalHeight": 60
     },
-    "dharma-wheel": {
-      "key": "dharma-wheel",
+    "text---": {
+      "key": "text---",
       "rect": {"x": 2, "y": 207, "width": 86, "height": 86},
+      "sheetId": 0,
+      "originalWidth": 10,
+      "originalHeight": 10
+    },
+    "text-aa": {
+      "key": "text-aa",
+      "rect": {"x": 90, "y": 207, "width": 86, "height": 86},
+      "sheetId": 0,
+      "originalWidth": 10,
+      "originalHeight": 10
+    },
+    "text-ab": {
+      "key": "text-ab",
+      "rect": {"x": 192, "y": 132, "width": 86, "height": 86},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 90, "y": 207, "width": 52, "height": 52},
+      "rect": {"x": 178, "y": 220, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 144, "y": 207, "width": 52, "height": 52},
+      "rect": {"x": 232, "y": 220, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
-    "fresher-0": {
-      "key": "fresher-0",
-      "rect": {"x": 175, "y": 141, "width": 43, "height": 43},
-      "sheetId": 0,
-      "originalWidth": 10,
-      "originalHeight": 10
-    },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 220, "y": 132, "width": 43, "height": 43},
+      "rect": {"x": 2, "y": 295, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 265, "y": 132, "width": 43, "height": 43},
+      "rect": {"x": 47, "y": 295, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "arrow-boxed": {
       "key": "arrow-boxed",
-      "rect": {"x": 90, "y": 261, "width": 26, "height": 26},
+      "rect": {"x": 286, "y": 132, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "axes-2d": {
       "key": "axes-2d",
-      "rect": {"x": 118, "y": 261, "width": 26, "height": 26},
+      "rect": {"x": 286, "y": 160, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 146, "y": 261, "width": 26, "height": 26},
+      "rect": {"x": 280, "y": 188, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 322, "height": 295}],
-  "maxDecorSheetDim": {"width": 322, "height": 295},
+  "decorSheetDims": [{"width": 322, "height": 340}],
+  "maxDecorSheetDim": {"width": 322, "height": 340},
   "skin": {
     "human-0": {
       "key": "human-0",

@@ -494,7 +494,7 @@ export function drawDoorPlaqueLayer(texArray: TexArray, layerIndex: number) {
   ct.translate(texW / 2, doorLogoY);
   ct.scale(1, -1);
 
-  ct.globalAlpha = 0.5;
+  ct.globalAlpha = 0.25;
   drawRoundedRect(ct, {
     x: -doorIconSize / 2,
     y: -doorIconSize / 2,
