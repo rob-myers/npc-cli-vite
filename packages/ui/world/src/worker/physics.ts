@@ -234,8 +234,8 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
 
   restoreRuntimeColliders(msg.runtimeColliderDefs);
 
-  // fire initial collisions
-  // stepWorld();
+  // fire initial collisions, since restored npcs may already be inside a sensor
+  stepWorld(state);
 }
 
 export function stepWorld(state: WorkerStoreState) {
