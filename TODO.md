@@ -85,6 +85,9 @@
   - technically restricted to list `doorIconKeys`
 
 - 🚧 cleanup door icons i.e. add decor, refine list, specify in maps
+  - ❌ https://game-icons.net/1x1/delapouite/towel.html
+  - try https://thenounproject.com/search/icons/?q=Psychology
+  - refine random list
 
 
 ## Other

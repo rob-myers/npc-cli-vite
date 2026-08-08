@@ -187,58 +187,58 @@
       "originalWidth": 10,
       "originalHeight": 10
     },
-    "endless-knot": {
-      "key": "endless-knot",
-      "rect": {"x": 90, "y": 207, "width": 86, "height": 86},
-      "sheetId": 0,
-      "originalWidth": 10,
-      "originalHeight": 10
-    },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 175, "y": 141, "width": 52, "height": 52},
+      "rect": {"x": 90, "y": 207, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 229, "y": 132, "width": 52, "height": 52},
+      "rect": {"x": 144, "y": 207, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
+    "fresher-0": {
+      "key": "fresher-0",
+      "rect": {"x": 175, "y": 141, "width": 43, "height": 43},
+      "sheetId": 0,
+      "originalWidth": 10,
+      "originalHeight": 10
+    },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 229, "y": 186, "width": 43, "height": 43},
+      "rect": {"x": 220, "y": 132, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 274, "y": 186, "width": 43, "height": 43},
+      "rect": {"x": 265, "y": 132, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "arrow-boxed": {
       "key": "arrow-boxed",
-      "rect": {"x": 283, "y": 132, "width": 26, "height": 26},
+      "rect": {"x": 90, "y": 261, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "axes-2d": {
       "key": "axes-2d",
-      "rect": {"x": 178, "y": 195, "width": 26, "height": 26},
+      "rect": {"x": 118, "y": 261, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 178, "y": 223, "width": 26, "height": 26},
+      "rect": {"x": 146, "y": 261, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
