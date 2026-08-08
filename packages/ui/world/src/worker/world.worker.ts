@@ -58,6 +58,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
           },
         });
       }
+      // stepWorld(state);
       break;
     }
     case "get-physics-debug-data": {
