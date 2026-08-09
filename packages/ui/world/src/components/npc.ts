@@ -276,7 +276,8 @@ export class Npc {
           this.nodeCount++;
         }
 
-        if (this.nodeCount > 2 && isDoorAreaId(node.area) === true) {
+        // if (this.nodeCount > 2 && isDoorAreaId(node.area) === true) {
+        if (isDoorAreaId(node.area) === true) {
           const gmDoorId = decodeDoorAreaId(node.area);
           if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
             this.last.blockingArea = node.area;
