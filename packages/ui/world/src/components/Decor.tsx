@@ -887,6 +887,7 @@ export default function Decor() {
       );
 
       state.ready = true;
+      w.door?.syncLockTints();
       w.setNextPending({ decor: false });
 
       return {

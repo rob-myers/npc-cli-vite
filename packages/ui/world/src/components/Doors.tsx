@@ -37,6 +37,7 @@ export default function Doors() {
       brightnessNode: uniform(1),
       byKey: {},
       labelToLayer: new Map(),
+      lastHmr: 0,
 
       inst: null,
       instanceCount: 0,
@@ -406,6 +407,17 @@ export default function Doors() {
       setBrightness(next) {
         state.brightnessNode.value = next;
       },
+      syncLockTint(door) {
+        const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
+        if (associatedDecorKeys) {
+          w.decor.tintDecor(door.locked ? lockedDoorTint : unlockedDoorTint, ...associatedDecorKeys);
+        }
+      },
+      syncLockTints() {
+        for (const door of Object.values(state.byKey)) {
+          state.syncLockTint(door);
+        }
+      },
       sendDataToGpu() {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         const openRatioAttr = state.box.getAttribute("openRatio");
@@ -478,10 +490,7 @@ export default function Doors() {
         // Actually lock/unlock door
         door.locked = !door.locked;
 
-        const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys[door.gdKey];
-        if (associatedDecorKeys) {
-          w.decor.tintDecor(door.locked ? lockedDoorTint : unlockedDoorTint, ...associatedDecorKeys);
-        } // e.g. lockers might not have switches
+        state.syncLockTint(door);
 
         w.events.next({
           key: door.locked ? "door-locked" : "door-unlocked",
@@ -579,12 +588,18 @@ export default function Doors() {
   }, [w.texDecor.hash]);
 
   useEffect(() => {
+    if (import.meta.hot?.data.__JUST_HMR_DOORS__ === true) {
+      import.meta.hot.data.__JUST_HMR_DOORS__ = false;
+      state.set({ lastHmr: Date.now() }); // re-run, the mesh having been recreated beneath us
+      return;
+    }
     state.buildByKey();
     state.positionInstances();
     state.drawDoorTextures();
     state.sendDataToGpu();
+    state.syncLockTints();
     state.update();
-  }, [w.mapKey, w.hash]);
+  }, [w.mapKey, w.hash, state.lastHmr, w.decor.ready]);
 
   return (
     <instancedMesh
@@ -616,6 +631,8 @@ export type State = {
   fromInstanceId: Record<number, Geomorph.GmDoorId>;
   /** Label or iconKey. */
   labelToLayer: Map<string, number>;
+  /** Bumped by an hmr of this file, so the effect below re-runs — see `__JUST_HMR_DOORS__` */
+  lastHmr: number;
   openRatioArray: Float32Array;
   /** Per-instance `[slideSign, faceAspect, frontLayer, backLayer]` */
   doorMetaArray: Float32Array;
@@ -658,6 +675,10 @@ export type State = {
   sendDataToGpu: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
+  /** Tint this door's switches to match `door.locked` */
+  syncLockTint: (door: Geomorph.DoorState) => void;
+  /** Re-apply every door's switch tint, e.g. once decor has been rebuilt */
+  syncLockTints: () => void;
 };
 
 /** Fixed InstancedMesh capacity so geometry attribute buffers are never recreated */
@@ -687,3 +708,10 @@ const tmpV1 = new Vect();
 const tmpV2 = new Vect();
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4();
+
+import.meta.hot?.on("vite:beforeUpdate", (payload) => {
+  const updatedThisFile = payload.updates.some((update) => update.path.endsWith("Doors.tsx"));
+  if (import.meta.hot && updatedThisFile) {
+    import.meta.hot.data.__JUST_HMR_DOORS__ = true;
+  }
+});
