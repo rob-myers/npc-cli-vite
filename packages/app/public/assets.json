@@ -379,7 +379,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 4.3125, 7.5],
-            "doorId": 6
+            "doorId": 7
           }
         },
         {
@@ -11878,7 +11878,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 4.3125, 7.5],
-            "doorId": 6
+            "doorId": 7
           }
         },
         {
@@ -16188,7 +16188,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 13.325, 9.0125],
-            "doorId": 18,
+            "doorId": 19,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -33015,7 +33015,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "doorId": 18,
+            "doorId": 19,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
