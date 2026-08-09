@@ -71,6 +71,9 @@ export default function Doors() {
             const prev = prevByKey[gdKey];
             const sealed =
               hull === true ? w.gmGraph.getDoorNodeById(gmId, doorId).sealed : connector.meta.sealed === true;
+            const src = ut.json;
+            const dst = vt.json;
+            const normal = tmpMat.transformSansTranslate(connector.normal.clone()).json;
 
             state.byKey[gdKey] = {
               gdKey,
@@ -86,9 +89,19 @@ export default function Doors() {
               sealed,
               hull,
 
-              src: ut.json,
-              dst: vt.json,
-              normal: tmpMat.transformSansTranslate(connector.normal.clone()).json,
+              src,
+              dst,
+              normal,
+              innerSegs: [
+                [
+                  { x: src.x + 0.2 * normal.x, y: src.y + 0.2 * normal.y },
+                  { x: dst.x + 0.2 * normal.x, y: dst.y + 0.2 * normal.y },
+                ],
+                [
+                  { x: src.x - 0.2 * normal.x, y: src.y - 0.2 * normal.y },
+                  { x: dst.x - 0.2 * normal.x, y: dst.y - 0.2 * normal.y },
+                ],
+              ],
 
               closeTimeoutId: -1,
               gapAtHighLambda: false,
@@ -162,6 +175,23 @@ export default function Doors() {
         const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
         const { meta, roomIds } = gm.doors[doorId];
         return { gmId, doorId, gdKey, seg, hull, roomIds, ...meta };
+      },
+      doesPathIntersectDoor(path, door) {
+        if (path.length === 0) {
+          return false;
+        }
+
+        // sign -1 means normal is pointing towards our current room i.e. inside `door.connector.roomIds[0]`
+        const roomIdsIndex =
+          Math.sign((door.src.x - path[0].x) * door.normal.x + (door.src.y - path[0].y) * door.normal.y) === -1 ? 0 : 1;
+
+        const [src, dst] = door.innerSegs[roomIdsIndex]; // closer than door.{src,dst}
+
+        const intersects = path.some(
+          (p, i) => i > 0 && geomService.getLineSegsIntersection(p, path[i - 1], src, dst) !== null,
+        );
+
+        return intersects;
       },
       drawDoorTextures() {
         // layer 0 (door without label), layer 1 (door with an empty icon plaque)
@@ -390,22 +420,21 @@ export default function Doors() {
           return false;
         }
 
-        state.cancelClose(door); // Cancel any pending close
-
         if (opts.access === false) {
           return false; // No access
         }
+
+        state.cancelClose(door); // Cancel any pending close
 
         if (door.open === true) {
           // was open
           if (opts.open === true) {
             // reverse any in-progress close animation
             state.forceDoor(door.gmId, door.doorId, true);
-            door.auto === true &&
-              w.events.next({
-                key: "try-close-door",
-                gdKey: door.gdKey,
-              });
+            w.events.next({
+              key: "try-close-door",
+              gdKey: door.gdKey,
+            });
             return true;
           }
           if (opts.clear !== true) {
@@ -422,7 +451,7 @@ export default function Doors() {
         const opening = !door.open;
         state.forceDoor(door.gmId, door.doorId, opening);
 
-        if (door.auto === true && opening === true) {
+        if (opening === true) {
           w.events.next({
             key: "try-close-door",
             gdKey: door.gdKey,
@@ -606,14 +635,18 @@ export type State = {
     dst: Geom.VectJson,
     gdKey: Geomorph.GmDoorKey,
   ) => { blocked: boolean; hit: Geom.VectJson | null };
-  drawDoorTextures: () => void;
-  /** The named icon's id, else a stable pseudo-random one from `doorIconKeys` */
-  getIconId: (instanceId: number, named: undefined | string) => number;
-  encodeGmDoorId: (gmId: number, doorId: number) => number;
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
     hull: boolean;
   };
+  /**
+   * For example `path` could be corners of agent.
+   */
+  doesPathIntersectDoor(path: Geom.VectJson[], door: Geomorph.DoorState): boolean;
+  drawDoorTextures: () => void;
+  /** The named icon's id, else a stable pseudo-random one from `doorIconKeys` */
+  getIconId: (instanceId: number, named: undefined | string) => number;
+  encodeGmDoorId: (gmId: number, doorId: number) => number;
   isOpen: (gmId: number, doorId: number) => boolean;
   /** Toggles when `open` is `undefined`. */
   forceDoor: (gmId: number, doorId: number, open?: boolean) => void;

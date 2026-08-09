@@ -136,6 +136,8 @@ declare namespace Geomorph {
     dst: Geom.VectJson;
     /** Transformed connector.normal */
     normal: Geom.VectJson;
+    /** Aligned to roomIds i.e. inside respective room */
+    innerSegs: [Geom.VectJson, Geom.VectJson][];
     /** Gap (open region) is at the door.dst end when true, door.src end when false */
     gapAtHighLambda: boolean;
 

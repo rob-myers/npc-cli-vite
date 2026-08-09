@@ -106,6 +106,26 @@
   - ✅ does not auto-close
   - ✅ can be closed via `close g0d20`
 
+- ✅ auto doors close when all nearby npcs are not moving
+- ✅ manual door closes when no nearby npcs, unless locked
+  - also closes when unlocked and closable
+- ✅ manual door can be closed when all nearby npcs are idle
+- ✅ manual door can be locked open
+- ✅ locked door auto closes when no npc inside
+
+- npc should not intersect locked door
+  - try use queryFilter
+
+- 🚧 BUG reachable prefix not working
+  - repro 301 g0r15
+    - door locked
+    - npc moves towards dst rather than doorway
+  - related to locked door and window?
+
+- BUG tty-0 run `pick` interactively then try to run job
+
+- BUG doors hmr
+
 ## Other
 
 - lock too small to pick?

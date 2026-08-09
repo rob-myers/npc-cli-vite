@@ -29,9 +29,28 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
       },
-      canCloseDoor(door) {
+      canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
-        return closeNpcs === undefined || (door.locked ? closeNpcs.inside.size === 0 : closeNpcs.nearby.size === 0);
+
+        if (door.auto === false && door.locked === true) {
+          // never auto-close manual locked doors
+          return false;
+        }
+
+        if (closeNpcs === undefined || closeNpcs.nearby.size === 0) {
+          // auto or unlocked manual doors auto-close when no nearby npcs
+          return true;
+        }
+
+        if (door.auto === false) {
+          return false;
+        }
+
+        if (closeNpcs.inside.size > 0) {
+          return false;
+        }
+
+        return [...closeNpcs.nearby].every((npcKey) => w.n[npcKey].isMoving() === false);
       },
       checkNpcTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
@@ -262,9 +281,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "map-settled":
             void state.onBootstrapMap();
             break;
+          case "door-unlocked":
+            state.tryCloseDoor(e.gdKey);
+            break;
           case "disabled":
           case "door-locked":
-          case "door-unlocked":
           case "enabled":
           case "nav-updated":
           case "spawned-many":
@@ -299,9 +320,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         if (e.type === "inside") {
-          if (door.locked === true && door.auto === true) {
-            state.tryCloseDoor(e.meta.gdKey);
-          }
+          state.tryCloseDoor(e.meta.gdKey);
 
           const gmRoomId = state.npcToRoom.get(npc.key);
           const nextGmRoomId = state.findRoomContaining(npc.position, true);
@@ -318,17 +337,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         if (e.type === "nearby") {
-          // try close door under conditions
-          if (door.open === true) {
-            if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
-              state.tryCloseDoor(e.meta.gdKey);
-            }
-          } else if (door.locked === true) {
-            state.tryCloseDoor(e.meta.gdKey);
-          } else if (door.auto === true && state.doorToNpcs[e.meta.gdKey]?.nearby.size === 0) {
-            // if auto and none nearby, try close
-            state.tryCloseDoor(e.meta.gdKey);
-          }
+          state.tryCloseDoor(e.meta.gdKey);
 
           if (door.hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
             // grow back once clear of every nearby hull door — but not while inside a threshold sensor
@@ -703,18 +712,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
-        if (!door) {
-          return false; // onchange map
-        }
+        if (!door) return false; // onchange map
 
-        // clear if already closed or no npc colliding with "inside" collider
+        // clear if closed or no npc "inside" collider
         opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
 
+        // patched navcat to use 4 corners to ensure path goes thru seg
+        // 🚧 maybe unnecessary now we use `door.innerSegs`
         const path = opts.npcIntention ?? [];
-        const intersects = path.some(
-          (p, i) => i > 0 && geomService.getLineSegsIntersection(p, path[i - 1], door.src, door.dst) !== null,
-        );
-        // console.log({ intersects, path }); // patched navcat to use 4 corners to ensure this works
+
+        const intersects = w.door.doesPathIntersectDoor(path, door);
+        // console.log({ intersects, path });
 
         opts.access ??=
           opts.npcKey === undefined ||
@@ -742,16 +750,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
-        if (!door) {
-          return; // onchange map
-        }
+        if (!door) return; // onchange map
+
         w.door.cancelClose(door);
         door.closeTimeoutId = window.setTimeout(() => {
           if (w.disabled === true) {
-            // do not close whilst paused; recheck in {ms}
+            // don't close whilst paused (recheck in {ms})
             state.tryCloseDoor(gdKey);
           } else if (door.open === true) {
-            state.toggleDoor(gdKey, { clear: state.canCloseDoor(door), close: true });
+            state.toggleDoor(gdKey, { clear: state.canAutoCloseDoor(door), close: true });
           } else {
             // closed
             delete door.closeTimeoutId;
@@ -802,7 +809,7 @@ export type State = {
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
   addFrameCallback(cb: () => void): () => void;
-  canCloseDoor(door: Geomorph.DoorState): boolean;
+  canAutoCloseDoor(door: Geomorph.DoorState): boolean;
   /**
    * - When an npc is moving its destination should be inside a room.
    * - When the npc is in a room adjacent to the destination room,
