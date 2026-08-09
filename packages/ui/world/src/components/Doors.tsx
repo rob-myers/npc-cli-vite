@@ -79,8 +79,7 @@ export default function Doors() {
               instanceId: state.encodeGmDoorId(gmId, doorId),
               connector,
 
-              // auto: prev?.auto ?? (door.meta.auto === true),
-              auto: true,
+              auto: connector.meta.manual !== true, // unless specified manual
               axisAligned: connector.normal.x === 0 || connector.normal.y === 0,
               locked: sealed ?? prev?.locked ?? connector.meta.locked === true,
               open: prev?.open ?? false,

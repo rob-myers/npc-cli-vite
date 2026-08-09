@@ -275,14 +275,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onEnterCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
-        if (!door) {
-          return; // onchange map
-        }
+        if (!door) return; // onchange map
+
         if (e.type === "nearby" || e.type === "inside") {
           state.toggleDoor(e.meta.gdKey, {
             open: true,
             npcKey: e.npcKey,
-            // don't toggle accessible locked door unless npc intends entry
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
@@ -427,7 +425,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               state.toggleDoor(gdKey, {
                 open: true,
                 npcKey: e.npcKey,
-                // don't toggle accessible locked door unless npc intends entry
                 npcIntention: npcIntention ?? undefined,
               });
             }
@@ -710,13 +707,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return false; // onchange map
         }
 
-        // clear if already closed and no npc colliding with "inside" collider
+        // clear if already closed or no npc colliding with "inside" collider
         opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
 
         const path = opts.npcIntention ?? [];
         const intersects = path.some(
           (p, i) => i > 0 && geomService.getLineSegsIntersection(p, path[i - 1], door.src, door.dst) !== null,
         );
+        // console.log({ intersects, path }); // patched navcat to use 4 corners to ensure this works
 
         opts.access ??=
           opts.npcKey === undefined ||
@@ -852,7 +850,7 @@ export type State = {
     opts?: {
       npcKey?: string;
       /**
-       * Given `npcIntention` then locked accessible doors will only
+       * Given `npcIntention` then locked/manual accessible doors will only
        * be opened if npc's intended path intersects the door.
        *
        * Intuitively the NPC flashed their authentication to enter.
