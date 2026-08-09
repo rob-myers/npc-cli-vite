@@ -113,10 +113,14 @@
 - ✅ manual door can be locked open
 - ✅ locked door auto closes when no npc inside
 
-- npc should not intersect locked door
+- 🚧 npc should not intersect locked door
   - try use queryFilter
 
-- 🚧 BUG reachable prefix not working
+- ✅ BUG doors hmr
+- should preserve locked doors on hmr
+  - probably extend useWorldEvents
+
+- BUG reachable prefix not working
   - repro 301 g0r15
     - door locked
     - npc moves towards dst rather than doorway
@@ -124,7 +128,6 @@
 
 - BUG tty-0 run `pick` interactively then try to run job
 
-- BUG doors hmr
 
 ## Other
 
