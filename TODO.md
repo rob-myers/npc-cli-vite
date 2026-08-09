@@ -86,7 +86,18 @@
 
 - 🚧 cleanup door icons i.e. add decor, refine list, specify in maps
   - ❌ https://game-icons.net/1x1/delapouite/towel.html
-  - try https://thenounproject.com/search/icons/?q=Psychology
+  - ❌ try https://thenounproject.com/search/icons/?q=Psychology
+  - 🚧 door status
+    - auto (auto open/closes for npcs)
+    - manual (only auto opens when accessible by npc)
+    - unlocked
+      - public
+      - free (unallocated)
+      - emergency access
+    - locked
+      - private 
+      - joined (locked open)
+      - quarantine (lock down)
   - refine random list
 
 
