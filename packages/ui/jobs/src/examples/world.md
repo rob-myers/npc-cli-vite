@@ -38,13 +38,17 @@ pick | spawn npc:test as:human-1 look
 # doors
 
 ```sh
-# get a doors gdKey
-pick 1 as:meta.gdKey
-
-# toggle a specific door's lock
-lock g0d19
-
+# lock clicked door
 lock $( pick 1 as:meta.gdKey )
+
+# unlock clicked door
+unlock $( pick 1 as:meta.gdKey )
+
+# click to see door gdKey
+pick as:meta.gdKey
+
+# lock a specific door
+lock g0d19
 ```
 
 # events

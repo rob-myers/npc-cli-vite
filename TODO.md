@@ -100,6 +100,11 @@
       - quarantine (lock down)
   - refine random list
 
+- ✅ door meta.manual
+  - ✅ forces door.auto false
+  - ✅ does not open unless npc about to walk through it
+  - ✅ does not auto-close
+  - ✅ can be closed via `close g0d20`
 
 ## Other
 
