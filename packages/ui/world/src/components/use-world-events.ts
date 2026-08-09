@@ -156,6 +156,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (!door || door.locked === false) {
           return true; // absent onchange map
         }
+        // npc without access can only enter from very nearby while door open
         if (door.open === true && state.doorToNpcs[door.gdKey]?.nearby.has(npcKey)) {
           return true;
         }
@@ -439,6 +440,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           }
+          case "speech":
+            break;
+          default:
+            throw new ExhaustiveError(e);
         }
       },
       async raycast(origSrc, origDst) {
