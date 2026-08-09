@@ -55,6 +55,48 @@ export function blur({ w }: JshCli.RunArg) {
 }
 
 /**
+ * ```sh
+ * close g0d29 g0d30
+ * close door:g0d30
+ * close doors:['g0d29','g0d30']
+ * ```
+ */
+export function close(
+  ct: JshCli.RunArg,
+  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
+) {
+  doorAction(ct, "close", opts);
+}
+
+function doorAction(
+  ct: JshCli.RunArg,
+  act: "open" | "close" | "lock" | "unlock",
+  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
+) {
+  const { w, api, args } = ct;
+
+  const inputs =
+    opts.all === true
+      ? keys(w.door.byKey)
+      : [...(opts.doors ?? []).concat(opts.door ?? []), ...api.getJsOperands(args, opts)];
+
+  for (const gdKey of inputs) {
+    if (!w.helper.isGmDoorKey(gdKey)) {
+      throw Error(`invalid gdKey: ${gdKey}`);
+    }
+    // biome-ignore format: succinct
+    switch (act) {
+      case 'open': w.e.toggleDoor(gdKey, { open: true }); break;
+      case 'close': w.e.toggleDoor(gdKey, { close: true });break;
+      case 'lock': w.e.toggleLock(gdKey, { lock: true }); break;
+      case 'unlock': w.e.toggleLock(gdKey, { unlock: true }); break;
+    }
+  }
+
+  w.view.forceUpdate();
+}
+
+/**
  * Examples:
  * ```sh
  * events
@@ -141,19 +183,15 @@ export function label(
 /**
  * ```sh
  * lock g0d29 g0d30
+ * lock door:g0d30
  * lock doors:['g0d29','g0d30']
  * ```
  */
-export async function lock(
-  { api, args, w }: JshCli.RunArg,
-  opts: { all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args),
+export function lock(
+  ct: JshCli.RunArg,
+  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
 ) {
-  const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
-  for (const gdKey of inputs) {
-    if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { lock: true });
-    else throw Error(`invalid gdKey: ${gdKey}`);
-  }
-  w.view.forceUpdate();
+  doorAction(ct, "lock", opts);
 }
 
 /**
@@ -460,6 +498,20 @@ export async function nudge(
     npcKey: npc.key,
     to: { x: src.x + delta.x, y: src.y + delta.y },
   });
+}
+
+/**
+ * ```sh
+ * open g0d29 g0d30
+ * open door:g0d29
+ * open doors:['g0d29','g0d30']
+ * ```
+ */
+export function open(
+  ct: JshCli.RunArg,
+  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
+) {
+  doorAction(ct, "open", opts);
 }
 
 /**
@@ -908,19 +960,15 @@ export async function spawn(
 /**
  * ```sh
  * unlock g0d29 g0d30
+ * unlock door:g0d29
  * unlock doors:['g0d29','g0d30']
  * ```
  */
-export async function unlock(
-  { api, args, w }: JshCli.RunArg,
-  opts: { all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args),
+export function unlock(
+  ct: JshCli.RunArg,
+  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
 ) {
-  const inputs = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? args);
-  for (const gdKey of inputs) {
-    if (w.helper.isGmDoorKey(gdKey)) w.e.toggleLock(gdKey, { unlock: true });
-    else throw Error(`invalid gdKey: ${gdKey}`);
-  }
-  w.view.forceUpdate();
+  doorAction(ct, "unlock", opts);
 }
 
 /**
