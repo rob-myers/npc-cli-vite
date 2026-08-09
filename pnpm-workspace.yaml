@@ -87,5 +87,8 @@ catalogMode: strict
 onlyBuiltDependencies:
   - skia-canvas
 
+patchedDependencies:
+  navcat@0.4.1: patches/navcat@0.4.1.patch
+
 publicHoistPattern:
   - react-resizable
