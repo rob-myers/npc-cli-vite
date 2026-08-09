@@ -55,23 +55,6 @@ export default function Doors() {
         "vec4",
       ),
 
-      buildInstanceIds() {
-        state.toInstanceId = [];
-        state.fromInstanceId = {};
-        let nextId = 0;
-        for (const [gmId, gm] of w.gms.entries()) {
-          state.toInstanceId[gmId] = [];
-          for (const [doorId] of gm.doors.entries()) {
-            state.toInstanceId[gmId][doorId] = nextId;
-            state.fromInstanceId[nextId] = helper.getGmDoorId(gmId, doorId);
-            nextId++;
-          }
-        }
-        if (nextId > MAX_DOORS) {
-          console.warn(`Doors: ${nextId} doors exceeds MAX_DOORS (${MAX_DOORS}); extra doors will not render`);
-        }
-        return (state.instanceCount = Math.min(nextId, MAX_DOORS));
-      },
       buildByKey() {
         const prevByKey = state.byKey;
         state.byKey = {};
@@ -114,16 +97,26 @@ export default function Doors() {
           }
         }
       },
+      buildInstanceIds() {
+        state.toInstanceId = [];
+        state.fromInstanceId = {};
+        let nextId = 0;
+        for (const [gmId, gm] of w.gms.entries()) {
+          state.toInstanceId[gmId] = [];
+          for (const [doorId] of gm.doors.entries()) {
+            state.toInstanceId[gmId][doorId] = nextId;
+            state.fromInstanceId[nextId] = helper.getGmDoorId(gmId, doorId);
+            nextId++;
+          }
+        }
+        if (nextId > MAX_DOORS) {
+          console.warn(`Doors: ${nextId} doors exceeds MAX_DOORS (${MAX_DOORS}); extra doors will not render`);
+        }
+        return (state.instanceCount = Math.min(nextId, MAX_DOORS));
+      },
       cancelClose(door) {
         window.clearTimeout(door.closeTimeoutId);
         delete door.closeTimeoutId;
-      },
-      computeRayDoorIntersect(src, dst, gdKey) {
-        const door = w.d[gdKey];
-        const lambda = geomService.getLineSegsIntersection(src, dst, door.src, door.dst);
-        return lambda === null
-          ? null
-          : geomService.precision2d({ x: src.x + lambda * (dst.x - src.x), y: src.y + lambda * (dst.y - src.y) }, 2);
       },
       checkRayDoorBlock(src, dst, gdKey) {
         const door = w.d[gdKey];
@@ -157,16 +150,19 @@ export default function Doors() {
 
         return { blocked: !inGap, hit: inGap ? null : geomService.precision2d({ x: hitX, y: hitY }, 2) };
       },
-      getIconId(instanceId, named) {
-        if (named !== undefined) {
-          const index = (doorIconKeys as readonly string[]).indexOf(named);
-          if (index !== -1) {
-            return index;
-          }
-          warn(`door icon "${named}" is not one of doorIconKeys: using a random icon`);
-        }
-        // stable pseudo-random, so a door keeps its icon across redraws
-        return ((instanceId * 2654435761) >>> 0) % doorIconKeys.length;
+      computeRayDoorIntersect(src, dst, gdKey) {
+        const door = w.d[gdKey];
+        const lambda = geomService.getLineSegsIntersection(src, dst, door.src, door.dst);
+        return lambda === null
+          ? null
+          : geomService.precision2d({ x: src.x + lambda * (dst.x - src.x), y: src.y + lambda * (dst.y - src.y) }, 2);
+      },
+      decodeInstanceId(instanceId) {
+        const { gmId, doorId, gdKey } = state.fromInstanceId[instanceId];
+        const gm = w.gms[gmId];
+        const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
+        const { meta, roomIds } = gm.doors[doorId];
+        return { gmId, doorId, gdKey, seg, hull, roomIds, ...meta };
       },
       drawDoorTextures() {
         // layer 0 (door without label), layer 1 (door with an empty icon plaque)
@@ -243,13 +239,6 @@ export default function Doors() {
       encodeGmDoorId(gmId: number, doorId: number) {
         return state.toInstanceId[gmId]?.[doorId] ?? -1;
       },
-      decodeInstanceId(instanceId) {
-        const { gmId, doorId, gdKey } = state.fromInstanceId[instanceId];
-        const gm = w.gms[gmId];
-        const { seg, hull } = w.gmsData.byKey[gm.key].doorSegs[doorId];
-        const { meta, roomIds } = gm.doors[doorId];
-        return { gmId, doorId, gdKey, seg, hull, roomIds, ...meta };
-      },
       forceDoor(gmId, doorId, open) {
         const instanceId = state.encodeGmDoorId(gmId, doorId);
         const animTarget = state.animTargets.get(instanceId);
@@ -265,6 +254,17 @@ export default function Doors() {
           open: isOpen,
           ...state.decodeInstanceId(instanceId),
         });
+      },
+      getIconId(instanceId, named) {
+        if (named !== undefined) {
+          const index = (doorIconKeys as readonly string[]).indexOf(named);
+          if (index !== -1) {
+            return index;
+          }
+          warn(`door icon "${named}" is not one of doorIconKeys: using a random icon`);
+        }
+        // stable pseudo-random, so a door keeps its icon across redraws
+        return ((instanceId * 2654435761) >>> 0) % doorIconKeys.length;
       },
       isOpen(gmId, doorId) {
         return state.openRatioArray[state.encodeGmDoorId(gmId, doorId)] > doorOpenTest;

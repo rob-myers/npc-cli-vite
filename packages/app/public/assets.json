@@ -542,6 +542,7 @@
           "coordinates": [[[3.1, 9.25], [3.1, 10.3], [2.9, 10.3], [2.9, 9.25]]],
           "meta": {
             "door": true,
+            "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
             "label": "office"
@@ -12417,6 +12418,7 @@
           "coordinates": [[[3.1, 9.25], [3.1, 10.3], [2.9, 10.3], [2.9, 9.25]]],
           "meta": {
             "door": true,
+            "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
             "label": "office"
@@ -18308,6 +18310,7 @@
           ],
           "meta": {
             "door": true,
+            "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
             "label": "office",
@@ -33473,7 +33476,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -35435,6 +35438,7 @@
             ],
             "meta": {
               "door": true,
+              "manual": true,
               "slide": [0, -1],
               "backLabel": "briefing",
               "label": "office",
