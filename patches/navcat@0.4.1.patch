@@ -1,0 +1,13 @@
+diff --git a/dist/blocks.js b/dist/blocks.js
+index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..0bde05fac4b3a804948d1b2ff88505013d071bfa 100644
+--- a/dist/blocks.js
++++ b/dist/blocks.js
+@@ -1584,7 +1584,7 @@ const updateCorners = (crowd, navMesh) => {
+             continue;
+         }
+         // get corridor corners for steering
+-        const corners = findCorners(agent.corridor, navMesh, 3);
++        const corners = findCorners(agent.corridor, navMesh, 4);
+         if (!corners) {
+             vec3.set(agent.desiredVelocity, 0, 0, 0);
+             continue;
