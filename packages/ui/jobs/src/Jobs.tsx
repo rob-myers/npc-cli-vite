@@ -67,26 +67,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       showProcesses: tryLocalStorageGetParsed(showProcessesStorageKey(meta.id)) === true,
       ttyMeta: null,
 
-      cleanupDead() {
-        const alive = [] as ProcessLeader[];
-        const now = Date.now();
-        let removed = 0;
-
-        // `processes` is sparse i.e. indexed by pid
-        state.processes.forEach((p) => {
-          if (canCleanup(p, now)) {
-            removed++;
-            state.expandedUids.delete(p.uid);
-          } else {
-            alive[p.pid] = p;
-          }
-        });
-
-        if (removed > 0) {
-          state.set({ processes: alive, ordered: toOrdered(alive) });
-        }
-      },
-
       changeProcess(e) {
         if (state.sessionKey === null) {
           return;
@@ -115,6 +95,46 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             throw new ExhaustiveError(act);
         }
       },
+      clampProcessesHeight(height) {
+        const rootHeight = state.listEl?.parentElement?.clientHeight ?? 0;
+        const max = rootHeight > 0 ? rootHeight * maxProcessesFraction : Infinity;
+        return Math.round(Math.min(Math.max(height, minProcessesHeight), Math.max(minProcessesHeight, max)));
+      },
+      cleanupDead() {
+        const alive = [] as ProcessLeader[];
+        const now = Date.now();
+        let removed = 0;
+
+        // `processes` is sparse i.e. indexed by pid
+        state.processes.forEach((p) => {
+          if (canCleanup(p, now)) {
+            removed++;
+            state.expandedUids.delete(p.uid);
+          } else {
+            alive[p.pid] = p;
+          }
+        });
+
+        if (removed > 0) {
+          state.set({ processes: alive, ordered: toOrdered(alive) });
+        }
+      },
+      clearSpawning() {
+        if (state.spawning.src === null) {
+          return;
+        }
+        window.clearTimeout(state.spawning.timeoutId);
+
+        // a local process starts within a frame, so without this the spinner never paints
+        const remainingMs = state.spawning.startedAt + spinnerMinMs - Date.now();
+        if (remainingMs > 0) {
+          state.spawning.timeoutId = window.setTimeout(state.clearSpawning, remainingMs);
+          return;
+        }
+
+        state.spawning.src = null;
+        state.update();
+      },
       connect() {
         state.connected = true;
         state.connectOrMount();
@@ -126,17 +146,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           // no session yet: mount the tty offscreen and connect when it has booted
           uiStoreApi.markEverSeen(state.ttyMeta.id);
         }
-      },
-      disconnect() {
-        state.disconnectSession?.();
-        state.disconnectSession = null;
-        window.clearTimeout(state.pending.timeoutId);
-        state.pending.src = null;
-        state.clearSpawning();
-        state.set({ connected: false, processes: [], ordered: [] });
-      },
-      getSession() {
-        return state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
       },
       connectSession() {
         try {
@@ -172,6 +181,48 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           error(e);
           return false;
         }
+      },
+      copySrc(src) {
+        window.clearTimeout(state.copiedTimeoutId);
+        navigator.clipboard
+          .writeText(src)
+          .then(() => {
+            state.set({ copiedSrc: src });
+            state.copiedTimeoutId = window.setTimeout(() => state.set({ copiedSrc: null }), copiedMs);
+          })
+          .catch(error);
+      },
+      disconnect() {
+        state.disconnectSession?.();
+        state.disconnectSession = null;
+        window.clearTimeout(state.pending.timeoutId);
+        state.pending.src = null;
+        state.clearSpawning();
+        state.set({ connected: false, processes: [], ordered: [] });
+      },
+      flushPending() {
+        window.clearTimeout(state.pending.timeoutId);
+        const src = state.pending.src;
+        if (src === null) {
+          return;
+        }
+
+        // the tty may still be mounting, or its profile still running
+        if (state.getSession()?.ttyShell.isInteractive() !== true) {
+          if (Date.now() < state.pending.until) {
+            state.pending.timeoutId = window.setTimeout(state.flushPending, pendingPollMs);
+          } else {
+            state.pending.src = null; // gave up
+            state.clearSpawning();
+          }
+          return;
+        }
+
+        state.pending.src = null;
+        void state.rerunProcess(src);
+      },
+      getSession() {
+        return state.sessionKey === null ? undefined : sessionApi.getSession(state.sessionKey);
       },
       handleLeaderMessage(msg) {
         if (state.sessionKey === null) {
@@ -232,6 +283,24 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
         state.reorder();
       },
+      isRunning(src) {
+        const key = toComparableSrc(src);
+        // paused counts as running, so only a killed process may be re-run
+        return state.processes.some((p) => p.status !== toProcessStatus.Killed && toComparableSrc(p.src) === key);
+      },
+      onChangeSessionKey(sessionKey) {
+        if (sessionKey === null) {
+          return;
+        }
+        state.sessionKey = sessionKey as `tty-${number}`;
+        state.ttyMeta = ttyMetas.find((x) => x.sessionKey === state.sessionKey) ?? null;
+        // a queued command belonged to the previous session, as did any expansion
+        window.clearTimeout(state.pending.timeoutId);
+        state.pending.src = null;
+        state.clearSpawning();
+        state.expandedUids.clear();
+        state.set({ processes: [], ordered: [] });
+      },
       onReset(pid) {
         const item = state.processes[pid];
         if (state.sessionKey === null || item === undefined) {
@@ -249,99 +318,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         } else {
           sessionApi.kill(state.sessionKey, [pid], { GROUP: true, SIGINT: true });
         }
-      },
-      flushPending() {
-        window.clearTimeout(state.pending.timeoutId);
-        const src = state.pending.src;
-        if (src === null) {
-          return;
-        }
-
-        // the tty may still be mounting, or its profile still running
-        if (state.getSession()?.ttyShell.isInteractive() !== true) {
-          if (Date.now() < state.pending.until) {
-            state.pending.timeoutId = window.setTimeout(state.flushPending, pendingPollMs);
-          } else {
-            state.pending.src = null; // gave up
-            state.clearSpawning();
-          }
-          return;
-        }
-
-        state.pending.src = null;
-        void state.rerunProcess(src);
-      },
-      isRunning(src) {
-        const key = toComparableSrc(src);
-        // paused counts as running, so only a killed process may be re-run
-        return state.processes.some((p) => p.status !== toProcessStatus.Killed && toComparableSrc(p.src) === key);
-      },
-      setSpawning(src) {
-        window.clearTimeout(state.spawning.timeoutId);
-        state.set({
-          spawning: { src, startedAt: Date.now(), timeoutId: window.setTimeout(state.clearSpawning, pendingTimeoutMs) },
-        });
-      },
-      clearSpawning() {
-        if (state.spawning.src === null) {
-          return;
-        }
-        window.clearTimeout(state.spawning.timeoutId);
-
-        // a local process starts within a frame, so without this the spinner never paints
-        const remainingMs = state.spawning.startedAt + spinnerMinMs - Date.now();
-        if (remainingMs > 0) {
-          state.spawning.timeoutId = window.setTimeout(state.clearSpawning, remainingMs);
-          return;
-        }
-
-        state.spawning.src = null;
-        state.update();
-      },
-      runSrc(src) {
-        if (!src || state.isRunning(src)) {
-          return; // already running, so re-running would just duplicate it
-        }
-        // queue, then flush: it runs at once when ready, else waits for the profile
-        state.pending.src = src;
-        state.pending.until = Date.now() + pendingTimeoutMs;
-        state.setSpawning(src);
-        if (state.connected === false || state.getSession() === undefined) {
-          state.connect(); // mounts the tty when it was never seen, or was unmounted
-        }
-        state.flushPending();
-      },
-      async rerunProcess(src) {
-        const session = state.getSession();
-        if (session === undefined || !src) {
-          return;
-        }
-
-        try {
-          // relaunched as a background process even when interactive
-          await session.ttyShell.sourceExternal(src, { background: true });
-        } catch (e) {
-          state.clearSpawning();
-          error(e);
-        }
-      },
-      copySrc(src) {
-        window.clearTimeout(state.copiedTimeoutId);
-        navigator.clipboard
-          .writeText(src)
-          .then(() => {
-            state.set({ copiedSrc: src });
-            state.copiedTimeoutId = window.setTimeout(() => state.set({ copiedSrc: null }), copiedMs);
-          })
-          .catch(error);
-      },
-      clampProcessesHeight(height) {
-        const rootHeight = state.listEl?.parentElement?.clientHeight ?? 0;
-        const max = rootHeight > 0 ? rootHeight * maxProcessesFraction : Infinity;
-        return Math.round(Math.min(Math.max(height, minProcessesHeight), Math.max(minProcessesHeight, max)));
-      },
-      setListEl(el) {
-        state.listEl = el;
       },
       onResizeStart(e) {
         e.preventDefault();
@@ -365,32 +341,55 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         handle.addEventListener("pointercancel", onUp);
         state.set({ resizing: true });
       },
-      toggleShowProcesses() {
-        state.showProcesses = !state.showProcesses;
-        tryLocalStorageSet(showProcessesStorageKey(meta.id), String(state.showProcesses));
-        state.update();
+      async rerunProcess(src) {
+        const session = state.getSession();
+        if (session === undefined || !src) {
+          return;
+        }
+
+        try {
+          // relaunched as a background process even when interactive
+          await session.ttyShell.sourceExternal(src, { background: true });
+        } catch (e) {
+          state.clearSpawning();
+          error(e);
+        }
+      },
+      runSrc(src) {
+        if (!src || state.isRunning(src)) {
+          return; // already running, so re-running would just duplicate it
+        }
+        // queue, then flush: it runs at once when ready, else waits for the profile
+        state.pending.src = src;
+        state.pending.until = Date.now() + pendingTimeoutMs;
+        state.setSpawning(src);
+        if (state.connected === false || state.getSession() === undefined) {
+          state.connect(); // mounts the tty when it was never seen, or was unmounted
+        }
+        state.flushPending();
+      },
+      setListEl(el) {
+        state.listEl = el;
+      },
+      setSpawning(src) {
+        window.clearTimeout(state.spawning.timeoutId);
+        state.set({
+          spawning: { src, startedAt: Date.now(), timeoutId: window.setTimeout(state.clearSpawning, pendingTimeoutMs) },
+        });
       },
       toggleExpanded(e) {
         const uid = Number(e.currentTarget.dataset.uid);
         state.expandedUids.delete(uid) === false && state.expandedUids.add(uid);
         state.update();
       },
+      toggleShowProcesses() {
+        state.showProcesses = !state.showProcesses;
+        tryLocalStorageSet(showProcessesStorageKey(meta.id), String(state.showProcesses));
+        state.update();
+      },
       toggleTtyDisabled() {
         if (!state.ttyMeta) return;
         uiStoreApi.setUiMeta(state.ttyMeta.id, (draft) => (draft.disabled = !draft.disabled));
-      },
-      onChangeSessionKey(sessionKey) {
-        if (sessionKey === null) {
-          return;
-        }
-        state.sessionKey = sessionKey as `tty-${number}`;
-        state.ttyMeta = ttyMetas.find((x) => x.sessionKey === state.sessionKey) ?? null;
-        // a queued command belonged to the previous session, as did any expansion
-        window.clearTimeout(state.pending.timeoutId);
-        state.pending.src = null;
-        state.clearSpawning();
-        state.expandedUids.clear();
-        state.set({ processes: [], ordered: [] });
       },
     }),
     { deps: [ttyMetas] },
