@@ -485,21 +485,36 @@
           "coordinates": [
             [[12.0875, 4.7], [12.0875, 5.8], [11.9125, 5.8], [11.9125, 4.7]]
           ],
-          "meta": {"door": true, "slide": [0, -1], "label": "bridge"}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "auto": true,
+            "label": "bridge"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[6.6625, 4.45], [6.6625, 4.65], [5.35, 4.65], [5.35, 4.45]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "bridge"}
+          "meta": {
+            "door": true,
+            "slide": [1, 0],
+            "auto": true,
+            "label": "bridge"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.075, 4.7], [0.075, 5.8], [-0.1, 5.8], [-0.1, 4.7]]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "bridge"}
+          "meta": {
+            "door": true,
+            "slide": [0, 1],
+            "auto": true,
+            "label": "bridge"
+          }
         },
         {
           "type": "Polygon",
@@ -1587,182 +1602,98 @@
           "coordinates": [
             [[7.4375, -0.15], [7.4375, 0.15], [6.25, 0.15], [6.25, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.7375, -0.15], [8.7375, 0.15], [7.55, 0.15], [7.55, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.4375, -0.15], [22.4375, 0.15], [21.25, 0.15], [21.25, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.7375, -0.15], [23.7375, 0.15], [22.55, 0.15], [22.55, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[7.4375, 29.85], [7.4375, 30.15], [6.25, 30.15], [6.25, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.7375, 29.85], [8.7375, 30.15], [7.55, 30.15], [7.55, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.4375, 29.85], [22.4375, 30.15], [21.25, 30.15], [21.25, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.7375, 29.85], [23.7375, 30.15], [22.55, 30.15], [22.55, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 7.55], [30.1625, 8.75], [29.85, 8.75], [29.85, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.15, 6.25], [30.15, 7.45], [29.85, 7.45], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 6.25], [0.15, 7.4375], [-0.1375, 7.4375], [-0.1375, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 7.55], [0.15, 8.7375], [-0.1375, 8.7375], [-0.1375, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 22.55], [30.1625, 23.75], [29.85, 23.75], [29.85, 22.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 21.25], [30.1625, 22.45], [29.85, 22.45], [29.85, 21.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
@@ -1774,13 +1705,7 @@
               [-0.1375, 21.25]
             ]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
@@ -1792,13 +1717,7 @@
               [-0.1375, 22.55]
             ]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
@@ -2576,104 +2495,56 @@
           "coordinates": [
             [[7.45, 14.85], [7.45, 15.15], [6.25, 15.15], [6.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.75, 14.85], [8.75, 15.15], [7.55, 15.15], [7.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.45, 14.85], [22.45, 15.15], [21.25, 15.15], [21.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.75, 14.85], [23.75, 15.15], [22.55, 15.15], [22.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 7.55], [0.15, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 6.25], [0.15, 7.45], [-0.15, 7.45], [-0.15, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 6.25], [30.1625, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 7.5], [30.1625, 8.675], [29.85, 8.675], [29.85, 7.5]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         }
       ],
       "obstacles": [],
@@ -2927,8 +2798,7 @@
             "hull": true,
             "y": 1.1,
             "h": 0.6,
-            "curved": true,
-            "auto": true
+            "curved": true
           }
         }
       ],
@@ -5189,104 +5059,56 @@
           "coordinates": [
             [[7.45, 14.8], [7.45, 15.15], [6.25, 15.15], [6.25, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.75, 14.8], [8.75, 15.15], [7.55, 15.15], [7.55, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.45, 14.8], [22.45, 15.15], [21.25, 15.15], [21.25, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.75, 14.8], [23.75, 15.15], [22.55, 15.15], [22.55, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.2, 7.55], [0.2, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.2, 6.25], [0.2, 7.4375], [-0.15, 7.4375], [-0.15, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.2, 6.25], [30.2, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.2, 7.55], [30.2, 8.75], [29.85, 8.75], [29.85, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         }
       ],
       "obstacles": [],
@@ -5791,104 +5613,56 @@
           "coordinates": [
             [[7.45, 14.85], [7.45, 15.15], [6.25, 15.15], [6.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.75, 14.85], [8.75, 15.15], [7.55, 15.15], [7.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.45, 14.85], [22.45, 15.15], [21.25, 15.15], [21.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.75, 14.85], [23.75, 15.15], [22.55, 15.15], [22.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 7.55], [0.15, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 6.25], [0.15, 7.45], [-0.15, 7.45], [-0.15, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 6.25], [30.1625, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 7.5], [30.1625, 8.675], [29.85, 8.675], [29.85, 7.5]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         }
       ],
       "obstacles": [],
@@ -6053,8 +5827,7 @@
             "hull": true,
             "y": 1.1,
             "h": 0.6,
-            "curved": true,
-            "auto": true
+            "curved": true
           }
         }
       ],
@@ -9048,182 +8821,98 @@
           "coordinates": [
             [[7.4375, -0.15], [7.4375, 0.15], [6.25, 0.15], [6.25, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.7375, -0.15], [8.7375, 0.15], [7.55, 0.15], [7.55, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.4375, -0.15], [22.4375, 0.15], [21.25, 0.15], [21.25, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.7375, -0.15], [23.7375, 0.15], [22.55, 0.15], [22.55, -0.15]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "n",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "n", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[7.4375, 29.85], [7.4375, 30.15], [6.25, 30.15], [6.25, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.7375, 29.85], [8.7375, 30.15], [7.55, 30.15], [7.55, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.4375, 29.85], [22.4375, 30.15], [21.25, 30.15], [21.25, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.7375, 29.85], [23.7375, 30.15], [22.55, 30.15], [22.55, 29.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 7.55], [30.1625, 8.75], [29.85, 8.75], [29.85, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.15, 6.25], [30.15, 7.45], [29.85, 7.45], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 6.25], [0.15, 7.4375], [-0.1375, 7.4375], [-0.1375, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 7.55], [0.15, 8.7375], [-0.1375, 8.7375], [-0.1375, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 22.55], [30.1625, 23.75], [29.85, 23.75], [29.85, 22.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 21.25], [30.1625, 22.45], [29.85, 22.45], [29.85, 21.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
@@ -9235,13 +8924,7 @@
               [-0.1375, 21.25]
             ]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
@@ -9253,13 +8936,7 @@
               [-0.1375, 22.55]
             ]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
@@ -12361,21 +12038,36 @@
           "coordinates": [
             [[12.0875, 4.7], [12.0875, 5.8], [11.9125, 5.8], [11.9125, 4.7]]
           ],
-          "meta": {"door": true, "slide": [0, -1], "label": "bridge"}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "auto": true,
+            "label": "bridge"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[6.6625, 4.45], [6.6625, 4.65], [5.35, 4.65], [5.35, 4.45]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "bridge"}
+          "meta": {
+            "door": true,
+            "slide": [1, 0],
+            "auto": true,
+            "label": "bridge"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.075, 4.7], [0.075, 5.8], [-0.1, 5.8], [-0.1, 4.7]]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "bridge"}
+          "meta": {
+            "door": true,
+            "slide": [0, 1],
+            "auto": true,
+            "label": "bridge"
+          }
         },
         {
           "type": "Polygon",
@@ -18036,104 +17728,56 @@
           "coordinates": [
             [[7.45, 14.85], [7.45, 15.15], [6.25, 15.15], [6.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.75, 14.85], [8.75, 15.15], [7.55, 15.15], [7.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.45, 14.85], [22.45, 15.15], [21.25, 15.15], [21.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.75, 14.85], [23.75, 15.15], [22.55, 15.15], [22.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 7.55], [0.15, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 6.25], [0.15, 7.45], [-0.15, 7.45], [-0.15, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 6.25], [30.1625, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 7.5], [30.1625, 8.675], [29.85, 8.675], [29.85, 7.5]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
@@ -18206,7 +17850,13 @@
           "coordinates": [
             [[21.1, 6.2125], [21.1, 7.3125], [20.925, 7.3125], [20.925, 6.2125]]
           ],
-          "meta": {"door": true, "slide": [0, -1], "label": "bridge", "det": 1}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "auto": true,
+            "label": "bridge",
+            "det": 1
+          }
         },
         {
           "type": "Polygon",
@@ -18218,7 +17868,13 @@
               [14.3625, 5.9625]
             ]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "bridge", "det": 1}
+          "meta": {
+            "door": true,
+            "slide": [1, 0],
+            "auto": true,
+            "label": "bridge",
+            "det": 1
+          }
         },
         {
           "type": "Polygon",
@@ -18230,7 +17886,13 @@
               [8.9125, 6.2125]
             ]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "bridge", "det": 1}
+          "meta": {
+            "door": true,
+            "slide": [0, 1],
+            "auto": true,
+            "label": "bridge",
+            "det": 1
+          }
         },
         {
           "type": "Polygon",
@@ -21043,8 +20705,7 @@
             "hull": true,
             "y": 1.1,
             "h": 0.6,
-            "curved": true,
-            "auto": true
+            "curved": true
           }
         },
         {
@@ -22928,104 +22589,56 @@
           "coordinates": [
             [[7.45, 14.8], [7.45, 15.15], [6.25, 15.15], [6.25, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.75, 14.8], [8.75, 15.15], [7.55, 15.15], [7.55, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.45, 14.8], [22.45, 15.15], [21.25, 15.15], [21.25, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.75, 14.8], [23.75, 15.15], [22.55, 15.15], [22.55, 14.8]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.2, 7.55], [0.2, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.2, 6.25], [0.2, 7.4375], [-0.15, 7.4375], [-0.15, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.2, 6.25], [30.2, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.2, 7.55], [30.2, 8.75], [29.85, 8.75], [29.85, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         }
       ],
       "obstacles": [
@@ -23499,104 +23112,56 @@
           "coordinates": [
             [[7.45, 14.85], [7.45, 15.15], [6.25, 15.15], [6.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[8.75, 14.85], [8.75, 15.15], [7.55, 15.15], [7.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[22.45, 14.85], [22.45, 15.15], [21.25, 15.15], [21.25, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [-1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[23.75, 14.85], [23.75, 15.15], [22.55, 15.15], [22.55, 14.85]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "s",
-            "slide": [1, 0],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 7.55], [0.15, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[0.15, 6.25], [0.15, 7.45], [-0.15, 7.45], [-0.15, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "w",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 6.25], [30.1625, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, -1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[30.1625, 7.5], [30.1625, 8.675], [29.85, 8.675], [29.85, 7.5]]
           ],
-          "meta": {
-            "door": true,
-            "hull": true,
-            "edge": "e",
-            "slide": [0, 1],
-            "auto": true
-          }
+          "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
         }
       ],
       "obstacles": [],
@@ -23761,8 +23326,7 @@
             "hull": true,
             "y": 1.1,
             "h": 0.6,
-            "curved": true,
-            "auto": true
+            "curved": true
           }
         }
       ],
@@ -26958,13 +26522,7 @@
             "coordinates": [
               [[7.4375, -0.15], [7.4375, 0.15], [6.25, 0.15], [6.25, -0.15]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "n",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "n", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -26975,13 +26533,7 @@
             "coordinates": [
               [[8.7375, -0.15], [8.7375, 0.15], [7.55, 0.15], [7.55, -0.15]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "n",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "n", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -26992,13 +26544,7 @@
             "coordinates": [
               [[22.4375, -0.15], [22.4375, 0.15], [21.25, 0.15], [21.25, -0.15]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "n",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "n", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27009,13 +26555,7 @@
             "coordinates": [
               [[23.7375, -0.15], [23.7375, 0.15], [22.55, 0.15], [22.55, -0.15]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "n",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "n", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27026,13 +26566,7 @@
             "coordinates": [
               [[7.4375, 29.85], [7.4375, 30.15], [6.25, 30.15], [6.25, 29.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27043,13 +26577,7 @@
             "coordinates": [
               [[8.7375, 29.85], [8.7375, 30.15], [7.55, 30.15], [7.55, 29.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27065,13 +26593,7 @@
                 [21.25, 29.85]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27087,13 +26609,7 @@
                 [22.55, 29.85]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27104,13 +26620,7 @@
             "coordinates": [
               [[30.1625, 7.55], [30.1625, 8.75], [29.85, 8.75], [29.85, 7.55]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27121,13 +26631,7 @@
             "coordinates": [
               [[30.15, 6.25], [30.15, 7.45], [29.85, 7.45], [29.85, 6.25]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27138,13 +26642,7 @@
             "coordinates": [
               [[0.15, 6.25], [0.15, 7.4375], [-0.1375, 7.4375], [-0.1375, 6.25]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27155,13 +26653,7 @@
             "coordinates": [
               [[0.15, 7.55], [0.15, 8.7375], [-0.1375, 8.7375], [-0.1375, 7.55]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27177,13 +26669,7 @@
                 [29.85, 22.55]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27199,13 +26685,7 @@
                 [29.85, 21.25]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27221,13 +26701,7 @@
                 [-0.1375, 21.25]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -27243,13 +26717,7 @@
                 [-0.1375, 22.55]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -33476,7 +32944,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -35049,13 +34517,7 @@
             "coordinates": [
               [[7.45, 14.85], [7.45, 15.15], [6.25, 15.15], [6.25, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35066,13 +34528,7 @@
             "coordinates": [
               [[8.75, 14.85], [8.75, 15.15], [7.55, 15.15], [7.55, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35083,13 +34539,7 @@
             "coordinates": [
               [[22.45, 14.85], [22.45, 15.15], [21.25, 15.15], [21.25, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35100,13 +34550,7 @@
             "coordinates": [
               [[23.75, 14.85], [23.75, 15.15], [22.55, 15.15], [22.55, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35117,13 +34561,7 @@
             "coordinates": [
               [[0.15, 7.55], [0.15, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35134,13 +34572,7 @@
             "coordinates": [
               [[0.15, 6.25], [0.15, 7.45], [-0.15, 7.45], [-0.15, 6.25]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35156,13 +34588,7 @@
                 [29.85, 6.25]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35173,13 +34599,7 @@
             "coordinates": [
               [[30.1625, 7.5], [30.1625, 8.675], [29.85, 8.675], [29.85, 7.5]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35280,6 +34700,7 @@
             "meta": {
               "door": true,
               "slide": [0, -1],
+              "auto": true,
               "label": "bridge",
               "det": 1
             }
@@ -35298,7 +34719,13 @@
                 [14.3625, 5.9625]
               ]
             ],
-            "meta": {"door": true, "slide": [1, 0], "label": "bridge", "det": 1}
+            "meta": {
+              "door": true,
+              "slide": [1, 0],
+              "auto": true,
+              "label": "bridge",
+              "det": 1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -35314,7 +34741,13 @@
                 [8.9125, 6.2125]
               ]
             ],
-            "meta": {"door": true, "slide": [0, 1], "label": "bridge", "det": 1}
+            "meta": {
+              "door": true,
+              "slide": [0, 1],
+              "auto": true,
+              "label": "bridge",
+              "det": 1
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -40119,8 +39552,7 @@
               "hull": true,
               "y": 1.1,
               "h": 0.6,
-              "curved": true,
-              "auto": true
+              "curved": true
             }
           },
           "navRectId": -1,
@@ -41311,13 +40743,7 @@
             "coordinates": [
               [[7.45, 14.8], [7.45, 15.15], [6.25, 15.15], [6.25, 14.8]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41328,13 +40754,7 @@
             "coordinates": [
               [[8.75, 14.8], [8.75, 15.15], [7.55, 15.15], [7.55, 14.8]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41345,13 +40765,7 @@
             "coordinates": [
               [[22.45, 14.8], [22.45, 15.15], [21.25, 15.15], [21.25, 14.8]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41362,13 +40776,7 @@
             "coordinates": [
               [[23.75, 14.8], [23.75, 15.15], [22.55, 15.15], [22.55, 14.8]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41379,13 +40787,7 @@
             "coordinates": [
               [[0.2, 7.55], [0.2, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41396,13 +40798,7 @@
             "coordinates": [
               [[0.2, 6.25], [0.2, 7.4375], [-0.15, 7.4375], [-0.15, 6.25]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41413,13 +40809,7 @@
             "coordinates": [
               [[30.2, 6.25], [30.2, 7.4375], [29.85, 7.4375], [29.85, 6.25]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -41430,13 +40820,7 @@
             "coordinates": [
               [[30.2, 7.55], [30.2, 8.75], [29.85, 8.75], [29.85, 7.55]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -42149,13 +41533,7 @@
             "coordinates": [
               [[7.45, 14.85], [7.45, 15.15], [6.25, 15.15], [6.25, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42166,13 +41544,7 @@
             "coordinates": [
               [[8.75, 14.85], [8.75, 15.15], [7.55, 15.15], [7.55, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42183,13 +41555,7 @@
             "coordinates": [
               [[22.45, 14.85], [22.45, 15.15], [21.25, 15.15], [21.25, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [-1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [-1, 0]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42200,13 +41566,7 @@
             "coordinates": [
               [[23.75, 14.85], [23.75, 15.15], [22.55, 15.15], [22.55, 14.85]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "s",
-              "slide": [1, 0],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "s", "slide": [1, 0]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42217,13 +41577,7 @@
             "coordinates": [
               [[0.15, 7.55], [0.15, 8.75], [-0.15, 8.75], [-0.15, 7.55]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, 1]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42234,13 +41588,7 @@
             "coordinates": [
               [[0.15, 6.25], [0.15, 7.45], [-0.15, 7.45], [-0.15, 6.25]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "w",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "w", "slide": [0, -1]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42256,13 +41604,7 @@
                 [29.85, 6.25]
               ]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, -1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, -1]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42273,13 +41615,7 @@
             "coordinates": [
               [[30.1625, 7.5], [30.1625, 8.675], [29.85, 8.675], [29.85, 7.5]]
             ],
-            "meta": {
-              "door": true,
-              "hull": true,
-              "edge": "e",
-              "slide": [0, 1],
-              "auto": true
-            }
+            "meta": {"door": true, "hull": true, "edge": "e", "slide": [0, 1]}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -42626,8 +41962,7 @@
               "hull": true,
               "y": 1.1,
               "h": 0.6,
-              "curved": true,
-              "auto": true
+              "curved": true
             }
           },
           "navRectId": -1,

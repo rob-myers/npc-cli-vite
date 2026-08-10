@@ -42,8 +42,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return true;
         }
 
-        if (door.auto === false) {
-          return false;
+        if (door.auto === false && door.proximity === true) {
+          return false; // non-auto proximity door won't close until npc leaves
         }
 
         if (closeNpcs.inside.size > 0) {

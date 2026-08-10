@@ -52,6 +52,7 @@ export default function Doors() {
             const src = ut.json;
             const dst = vt.json;
             const normal = tmpMat.transformSansTranslate(connector.normal.clone()).json;
+            const auto = connector.meta.auto === true;
 
             state.byKey[gdKey] = {
               gdKey,
@@ -60,11 +61,12 @@ export default function Doors() {
               instanceId: state.encodeGmDoorId(gmId, doorId),
               connector,
 
-              auto: connector.meta.manual !== true, // unless specified manual
+              auto,
               axisAligned: connector.normal.x === 0 || connector.normal.y === 0,
               locked: sealed ?? prev?.locked ?? connector.meta.locked === true,
               open: prev?.open ?? false,
               sealed,
+              proximity: connector.meta.proximity ?? (auto === true || hull === true),
               hull,
 
               src,

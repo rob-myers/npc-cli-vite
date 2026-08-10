@@ -210,11 +210,11 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "e9847770-fa35-4290-8310-23c701cf5ca6",
-          "name": "door slide=[0,-1]",
+          "name": "door slide=[0,-1] auto",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 476.5, "f": 188},
@@ -263,7 +263,7 @@
         },
         {
           "id": "17783229-5fd3-4013-8770-da0f371e9a6e",
-          "name": "door slide=[1,0]",
+          "name": "door slide=[1,0] auto",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 214, "f": 178},
@@ -325,7 +325,7 @@
         },
         {
           "id": "f2a4143a-76c9-4fbe-a8e4-66d2497aab1a",
-          "name": "door slide=[0,1]",
+          "name": "door slide=[0,1] auto",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 188},

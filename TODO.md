@@ -123,6 +123,13 @@
 
 - ✅ remove door icons
 
+- ✅ doors have `proximity` boolean
+  - auto doors default true i.e. don't close until no npcs nearby
+  - manual doors default false i.e. can close when npc nearby
+  - can specify via `meta.proximity`
+  - hull doors default true even when if not auto
+- ✅ hull doors should not auto-open unless specify meta.auto
+
 - BUG reachable prefix not working
   - repro 301 g0r15
     - door locked
