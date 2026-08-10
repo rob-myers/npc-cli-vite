@@ -207,12 +207,12 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           return;
         }
 
-        // the tty may still be mounting, or its profile still running
-        if (state.getSession()?.ttyShell.isInteractive() !== true) {
+        // wait until tty profile complete
+        if (state.getSession()?.ttyShell.isProfileFinished() !== true) {
           if (Date.now() < state.pending.until) {
             state.pending.timeoutId = window.setTimeout(state.flushPending, pendingPollMs);
           } else {
-            state.pending.src = null; // gave up
+            state.pending.src = null;
             state.clearSpawning();
           }
           return;
