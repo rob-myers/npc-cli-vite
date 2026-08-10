@@ -130,13 +130,14 @@
   - hull doors default true even when if not auto
 - ✅ hull doors should not auto-open unless specify meta.auto
 
-- BUG reachable prefix not working
+- ✅ BUG tty-0 run `pick` interactively then try to run job
+  - launching `pick | move npc:rob` in background didn't resolve until interactive `pick` killed
+
+- 🚧 BUG reachable prefix not working
   - repro 301 g0r15
     - door locked
     - npc moves towards dst rather than doorway
   - related to locked door and window?
-
-- BUG tty-0 run `pick` interactively then try to run job
 
 
 ## Other

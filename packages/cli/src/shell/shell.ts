@@ -134,6 +134,10 @@ export class TtyShell implements Device {
     return this.profileFinished === true && this.xterm.isPromptReady() === true;
   }
 
+  isProfileFinished() {
+    return this.profileFinished === true;
+  }
+
   private onMessage(msg: MessageFromXterm) {
     switch (msg.key) {
       case "req-history-line": {
