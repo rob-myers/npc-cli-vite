@@ -6,6 +6,7 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh, NavMeshTile } from "navcat";
 import * as THREE from "three";
 import { decompToXZGeometry } from "../service/geometry";
+import { geomService } from "@npc-cli/util/geom-service";
 
 export async function computeGmInstanceMeshes(gmGeoms: WW.GmGeomForNav[]) {
   const meshes = [] as THREE.Mesh[];
@@ -163,6 +164,7 @@ function getTileTriangles(tile: NavMeshTile): [number[], number[]] {
 
 export type EnrichedDoorway = WW.GmDoorwayForNav & {
   rect: Rect;
+  tris: Geom.Triangulation;
 };
 
 export type DoorwayGrid = { [key in `${number},${number}`]: EnrichedDoorway[] };
@@ -197,9 +199,13 @@ export function buildDoorwayGrid(
   meshBoundsMinZ: number,
   tileSizeWorld: number,
 ): DoorwayGrid {
-  const enrichedDoorways: EnrichedDoorway[] = doorways.map((door) => ({
+  // outset door polys to prevent npc intersecting locked door
+  const polys = doorways.map(door => geomService.createOutset(Poly.from(door.polygon), 0.1)[0]);
+  
+  const enrichedDoorways: EnrichedDoorway[] = doorways.map((door, i) => ({
     ...door,
-    rect: Poly.from(door.polygon).rect,
+    rect: polys[i].rect,
+    tris: polys[i].fastTriangulate()
   }));
 
   const grid: DoorwayGrid = {};

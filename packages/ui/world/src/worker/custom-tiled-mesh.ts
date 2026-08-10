@@ -25,14 +25,13 @@ import {
   erodeWalkableArea,
   filterLedgeSpans,
   filterLowHangingWalkableObstacles,
-  filterWalkableLowHeightSpans,
-  markBoxArea,
-  markWalkableTriangles,
+  filterWalkableLowHeightSpans, markWalkableTriangles,
   type NavMeshTileParams,
   polyMeshDetailToTileDetailMesh,
   polyMeshToTilePolys,
   rasterizeTriangles,
   WALKABLE_AREA,
+  markConvexPolyArea
 } from "navcat";
 import {
   chunkyTriMesh,
@@ -186,15 +185,22 @@ const buildCustomNavMeshTile = ({
   const intersectingDoors = doorways.flatMap((door) => (boundsRect.intersects(door.rect) ? door : []));
   // console.log("intersectingDoors", intersectingDoors);
   for (const door of intersectingDoors) {
-    markBoxArea(
-      [
-        door.rect.x,
-        0,
-        door.rect.y,
-        door.rect.x + door.rect.width,
-        walkableHeightVoxels * cellHeight,
-        door.rect.y + door.rect.height,
-      ],
+    // markBoxArea(
+    //   [
+    //     door.rect.x,
+    //     0,
+    //     door.rect.y,
+    //     door.rect.x + door.rect.width,
+    //     walkableHeightVoxels * cellHeight,
+    //     door.rect.y + door.rect.height,
+    //   ],
+    //   encodeDoorAreaId(door.gmId, door.doorId),
+    //   compactHeightfield,
+    // );
+    markConvexPolyArea(
+      door.tris.vs.flatMap(v => [v.x, 0, v.y]),
+      0,
+      walkableHeightVoxels * cellHeight,
       encodeDoorAreaId(door.gmId, door.doorId),
       compactHeightfield,
     );
