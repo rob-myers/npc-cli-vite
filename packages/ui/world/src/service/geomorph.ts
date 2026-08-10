@@ -211,7 +211,7 @@ export function createLayout(
           typeof x.meta["nav-outset"] === "number" ? x.meta["nav-outset"] * sguToWorldScale : obstacleOutset,
         ),
       ),
-      // 🚧 in future may cut out non-navigable decor quads
+      // in future may cut out non-navigable decor quads
       // ...decor
       //   .filter((d) => d.meta.nav === true)
       //   .map((d) => geomService.createOutset(Poly.fromRect(d.bounds2d), obstacleOutset)[0]),
@@ -436,18 +436,11 @@ export function decomposeLayoutNav(
   navPolyWithDoors: Geom.Poly[],
   doors: Connector[],
 ): Pick<Geomorph.Layout, "navDecomp" | "navRects"> {
-  // // remove all doorways... we'll use offMeshConnections instead
-  // const navDoorways = doors.map((x) => x.computeDoorway().precision(precision).cleanFinalReps());
-  // const navPolySansDoors = Poly.cutOut(navDoorways, navPolyWithDoors).map((x) => x.cleanFinalReps());
-  // const navDecomp = geomService.joinTriangulations(navPolySansDoors.map((poly) => poly.qualityTriangulate()));
-
-  const navDecomp = geomService.joinTriangulations(navPolyWithDoors.map((poly) => poly.qualityTriangulate()));
-
   // include doors to infer "connected components"
+  const navDecomp = geomService.joinTriangulations(navPolyWithDoors.map((poly) => poly.qualityTriangulate()));
   const navRects = navPolyWithDoors.map((x) => x.rect.precision(precision));
   // Smaller rects 1st, else larger overrides (e.g. 102)
   navRects.sort((a, b) => (a.area < b.area ? -1 : 1));
-  // Mutate doors
   doors.forEach((door) => (door.navRectId = navRects.findIndex((r) => r.contains(door.center))));
   return { navDecomp, navRects };
 }

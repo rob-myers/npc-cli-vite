@@ -113,8 +113,9 @@
 - ✅ manual door can be locked open
 - ✅ locked door auto closes when no npc inside
 
-- 🚧 npc should not intersect locked door
-  - try use queryFilter
+- ✅ npc should not intersect locked door
+  - use queryFilter
+  - extend door areas in web worker
 
 - ✅ BUG doors hmr
 - should preserve locked doors on hmr

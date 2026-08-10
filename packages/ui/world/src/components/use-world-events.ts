@@ -156,6 +156,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (!door || door.locked === false) {
           return true; // absent onchange map
         }
+        // npc without access can only enter from very nearby while door open
         if (door.open === true && state.doorToNpcs[door.gdKey]?.nearby.has(npcKey)) {
           return true;
         }
@@ -439,6 +440,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           }
+          case "speech":
+            break;
+          default:
+            throw new ExhaustiveError(e);
         }
       },
       async raycast(origSrc, origDst) {
@@ -715,19 +720,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (!door) return false; // onchange map
 
         // clear if closed or no npc "inside" collider
-        opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.nearby.size > 0);
+        opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.inside.size > 0);
 
-        // patched navcat to use 4 corners to ensure path goes thru seg
+        // patched navcat to use 4 corners to ensure path intersects door
         // 🚧 maybe unnecessary now we use `door.innerSegs`
         const path = opts.npcIntention ?? [];
 
-        const intersects = w.door.doesPathIntersectDoor(path, door);
-        // console.log({ intersects, path });
+        const willIntersect = w.door.doesPathIntersectDoor(path, door);
+        // console.log({ willIntersect, path });
 
         opts.access ??=
           opts.npcKey === undefined ||
-          (door.auto === true && door.locked === false) ||
-          (state.npcCanAccess(opts.npcKey, gdKey) && (path.length === 0 || intersects === true));
+          // non-auto should not open unless npc has access & will intersect
+          (door.locked === false && !(door.auto === false && door.open === false)) ||
+          (state.npcCanAccess(opts.npcKey, gdKey) && (path.length === 0 || willIntersect === true));
 
         return w.door.toggleDoor(door, opts);
       },
