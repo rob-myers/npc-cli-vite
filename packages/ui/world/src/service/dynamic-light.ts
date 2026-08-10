@@ -143,7 +143,7 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   // the light (a fixed step COUNT alone spreads over a longer `dist` far from the light, causing
   // wavy/bumpy shadow edges near the light's outer radius).
   const marchStepSize = (maxDynamicLightRadius + falloff) / marchSteps;
-  const doorHalfDepth = opts.doorHalfDepth ?? 0.08; // small enough to light
+  const doorHalfDepth = opts.doorHalfDepth ?? 0.06; // small enough to light
   // the march must stop this far short of the fragment itself — otherwise a fragment ON a door's
   // own surface (which sits right on that door's own occlusion segment) always self-samples its own
   // occlusion stroke and reads as fully occluded regardless of the light's radius/falloff.
