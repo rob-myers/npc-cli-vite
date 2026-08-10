@@ -70,7 +70,7 @@ export class UiErrorBoundary extends Component<
               </button>
             </div>
             {/* a few lines by default — drag the bottom-right corner for more */}
-            <pre className={cn(boxCss, "h-28 min-h-12 resize-y font-sans text-sm/relaxed text-green-600")}>
+            <pre className={cn(boxCss, "h-28 min-h-12 resize-y font-sans text-sm/relaxed text-white/70")}>
               {this.state.error.stack}
             </pre>
           </section>
