@@ -821,7 +821,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <AnimatePresence>
         {w.disabled && (
           <motion.div
-            className="absolute inset-x-0 top-[20%] flex justify-center pointer-events-none"
+            className="absolute inset-x-0 top-[40%] flex justify-center pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
