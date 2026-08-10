@@ -6,6 +6,7 @@ import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, ve
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
+import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { drawDoorLabelLayer } from "../service/texture";
@@ -36,6 +37,8 @@ export default function Doors() {
       buildByKey() {
         const prevByKey = state.byKey;
         state.byKey = {};
+        const saved = persisted.getDoorLocks(w.mapKey);
+        const savedLocked = saved === null ? null : new Set(saved);
 
         for (const [gmId, gm] of w.gms.entries()) {
           for (const [doorId, connector] of gm.doors.entries()) {
@@ -63,7 +66,9 @@ export default function Doors() {
 
               auto,
               axisAligned: connector.normal.x === 0 || connector.normal.y === 0,
-              locked: sealed ?? prev?.locked ?? connector.meta.locked === true,
+              // live state wins on rebuild (e.g. hmr), then the previous session, then the map
+              locked:
+                sealed === true ? true : (prev?.locked ?? savedLocked?.has(gdKey) ?? connector.meta.locked === true),
               open: prev?.open ?? false,
               sealed,
               proximity: connector.meta.proximity ?? (auto === true || hull === true),
@@ -339,6 +344,12 @@ export default function Doors() {
       setBrightness(next) {
         state.brightnessNode.value = next;
       },
+      persistLocks() {
+        // exhaustive, so an unlocked door which `meta.locked` would lock stays unlocked;
+        // sealed doors are always locked, so they'd only bloat it
+        const locked = Object.values(state.byKey).flatMap((d) => (d.sealed === false && d.locked ? d.gdKey : []));
+        persisted.setDoorLocks(w.mapKey, locked);
+      },
       syncLockTint(door) {
         const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
         if (associatedDecorKeys) {
@@ -421,6 +432,7 @@ export default function Doors() {
         door.locked = !door.locked;
 
         state.syncLockTint(door);
+        state.persistLocks();
 
         w.events.next({
           key: door.locked ? "door-locked" : "door-unlocked",
@@ -558,6 +570,8 @@ export type State = {
   positionInstances: () => void;
   /** Sets `brightnessNode`'s value — called by `onChangeTheme` (see `use-world-events.ts`), never `.value` directly */
   setBrightness: (next: number) => void;
+  /** Save which doors are locked for `w.mapKey`, so `buildByKey` can restore them */
+  persistLocks: () => void;
   sendDataToGpu: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
