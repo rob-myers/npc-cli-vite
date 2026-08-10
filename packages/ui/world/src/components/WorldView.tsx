@@ -292,12 +292,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.speech?.onResize();
       }, 100),
       onKeyDown(e) {
+        if (e.key === "Shift") {
+          state.controls?._ez.setShiftHeld(true);
+        }
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
+        }
+      },
+      onKeyUp(e) {
+        if (e.key === "Shift") {
+          state.controls?._ez.setShiftHeld(false);
         }
       },
       onPointerDown(e) {
@@ -323,6 +331,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
+        state.controls?._ez.setShiftHeld(false); // shift only locks whilst over the world
       },
       onPointerMove(e) {
         state.lastPointer.move.copy(getRelativePointer(e));
@@ -418,12 +427,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
         ro.observe(w.rootEl);
 
-        const { onKeyDown } = state;
+        const { onKeyDown, onKeyUp } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
+        // on `window`, else releasing Shift after focus moved elsewhere (another pane, a
+        // popup stealing focus) never reaches us and the extra zoom stays locked forever
+        window.addEventListener("keyup", onKeyUp);
+
+        // dispatched by `ExtraZoom` — only the extra-zoom button reads it
+        const onExtraZoomChange = () => w.menu?.update();
+        w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
 
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
+          window.removeEventListener("keyup", onKeyUp);
+          w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
         };
       },
       setupLights() {
@@ -850,6 +868,8 @@ export type State = {
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
+  /** Shift is the desktop extra-zoom lock, so we need the release too */
+  onKeyUp(e: KeyboardEvent): void;
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;

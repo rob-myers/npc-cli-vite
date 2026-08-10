@@ -11,6 +11,8 @@ class ExtraZoom {
   active = false;
   /** True when camera is at minDistance — visual indicator only */
   ready = false;
+  shiftHeld = false;
+  tapLocked = false;
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -38,14 +40,40 @@ class ExtraZoom {
     return this.active ? c.minDistance : c.maxDistance;
   }
 
+  /** Whilst locked we neither tween back to `minDistance` nor permit any zoom */
+  get zoomLocked() {
+    return this.active === true && (this.shiftHeld === true || this.tapLocked === true);
+  }
+
+  emitChange() {
+    const detail = { active: this.active, locked: this.zoomLocked };
+    this._ctrl.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail, bubbles: true }));
+  }
+
   setActive(active: boolean) {
     if (this.active === active) return;
     this.active = active;
     if (!active) {
+      this.tapLocked = false; // else stale lock applies to next extra zoom
       this.startCooldown();
       this.setReady(true);
     }
-    this._ctrl.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail: { active }, bubbles: true }));
+    this.emitChange();
+  }
+
+  setShiftHeld(shiftHeld: boolean) {
+    if (this.shiftHeld === shiftHeld) return;
+    const prevLocked = this.zoomLocked;
+    this.shiftHeld = shiftHeld;
+    if (this.zoomLocked !== prevLocked) this.emitChange();
+    if (prevLocked === true) this._ctrl.dispatchEvent(changeEvent); // restart tween
+  }
+
+  toggleTapLock() {
+    if (this.active === false) return;
+    this.tapLocked = !this.tapLocked;
+    this.emitChange();
+    if (this.tapLocked === false) this._ctrl.dispatchEvent(changeEvent); // restart tween
   }
 
   setReady(ready: boolean) {
@@ -64,8 +92,15 @@ class ExtraZoom {
   /** Returns false if blocked (tween-back in progress) */
   handleWheelIn(event: WheelEvent, zoomScale: number): boolean {
     const ctrl = this._ctrl;
+    if (this.zoomLocked === true) return false;
     if (this.active && this._activeTimer === undefined) return false;
-    if (ctrl.extraZoom > 1 && (this.active || ctrl.spherical.radius <= ctrl.minDistance * 1.05)) {
+    // holding Shift before entering keeps us out of extra zoom, rather than
+    // entering and instantly clamping back out (which would flicker the icon)
+    if (
+      ctrl.extraZoom > 1 &&
+      this.shiftHeld === false &&
+      (this.active || ctrl.spherical.radius <= ctrl.minDistance * 1.05)
+    ) {
       if (!this.active) ctrl.u.panOffset.set(0, 0, 0); // freeze target on entry
       this.setActive(true);
       this.setReady(false);
@@ -295,6 +330,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   get readyForExtraZoom() {
     return this._ez.ready;
   }
+  get extraZoomLocked() {
+    return this._ez.zoomLocked;
+  }
+  /** Touch lock: tapped whilst two fingers still pinch, so the tween has not begun */
+  toggleExtraZoomLock() {
+    this._ez.toggleTapLock();
+  }
 
   minPanDistance = 0;
   //#endregion
@@ -353,11 +395,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this._ez.clearTimers();
   }
 
+  /** Gated by `_ez.locked`, covering every zoom entry point. `applyTween` bypasses these. */
   dollyIn(dollyScale: number) {
+    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale * dollyScale;
   }
 
   dollyOut(dollyScale: number) {
+    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale / dollyScale;
   }
 
@@ -887,6 +932,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   /** Window losing focus mid-gesture may never deliver any pointer-release event at all */
   onWindowBlur = () => {
+    this._ez.setShiftHeld(false); // keyup never arrives if released whilst unfocused
     if (this.pointers.length === 0) {
       return;
     }
@@ -1160,7 +1206,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       );
     }
 
-    if (this._ez.active && this._ez._activeTimer === undefined && this.pointers.length === 0) {
+    if (
+      this._ez.active &&
+      this._ez.zoomLocked === false &&
+      this._ez._activeTimer === undefined &&
+      this.pointers.length === 0
+    ) {
       this._ez.applyTween(this.spherical, u);
     }
 
