@@ -75,18 +75,6 @@ export class Connector {
       }
     }
 
-    /**
-     * 🔔 every unsealed hull door is auto
-     * 🔔 unsealed non-hull locked doors default to auto
-     */
-    if (
-      this.meta.sealed !== true &&
-      (this.meta.hull === true || (this.meta.manual !== true && this.meta.locked === true))
-    ) {
-      this.meta.auto = true;
-    }
-
-    // 🚧 offset needed?
     const doorEntryDelta = 0.5 * baseRect.height + 0.05;
     const inFront = poly.center.addScaled(this.normal, doorEntryDelta).precision(precision);
     const behind = poly.center.addScaled(this.normal, -doorEntryDelta).precision(precision);
