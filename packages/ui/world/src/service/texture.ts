@@ -470,46 +470,6 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   texArray.updateIndex(layerIndex);
 }
 
-const doorIconSize = 100;
-const doorLogoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
-
-/**
- * Where the icon sits within the door panel, in uv. The shader composites the icon itself
- * (see `Doors.tsx`), so it must agree with the plaque `drawDoorPlaqueLayer` bakes.
- */
-export const doorIconUvRect = {
-  x: (texW / 2 - doorIconSize / 2) / texW,
-  y: (doorLogoY - doorIconSize / 2) / texH,
-  width: doorIconSize / texW,
-  height: doorIconSize / texH,
-};
-
-/** The panel with an empty plaque, shared by every door icon */
-export function drawDoorPlaqueLayer(texArray: TexArray, layerIndex: number) {
-  const { ct } = texArray;
-  ct.clearRect(0, 0, texW, texH);
-  ct.drawImage((basePanelCanvas ??= drawDoorBasePanel()), 0, 0);
-
-  ct.save();
-  ct.translate(texW / 2, doorLogoY);
-  ct.scale(1, -1);
-
-  ct.globalAlpha = 0.25;
-  drawRoundedRect(ct, {
-    x: -doorIconSize / 2,
-    y: -doorIconSize / 2,
-    width: doorIconSize,
-    height: doorIconSize,
-    radius: 6,
-    fillStyle: "rgba(30, 30, 30, 0.5)",
-    strokeStyle: "rgba(220, 220, 220, 0.22)",
-    lineWidth: 3,
-  });
-  ct.restore();
-
-  texArray.updateIndex(layerIndex);
-}
-
 /**
  * TypeScript is having trouble:
  * >  error TS2590: Expression produces a union type that is too complex to represent.

@@ -84,10 +84,10 @@
 - ✅ doors can use any decor icon
   - technically restricted to list `doorIconKeys`
 
-- 🚧 cleanup door icons i.e. add decor, refine list, specify in maps
+- ❌ cleanup door icons i.e. add decor, refine list, specify in maps
   - ❌ https://game-icons.net/1x1/delapouite/towel.html
   - ❌ try https://thenounproject.com/search/icons/?q=Psychology
-  - 🚧 door status
+  - ❌ door status
     - auto (auto open/closes for npcs)
     - manual (only auto opens when accessible by npc)
     - unlocked
@@ -120,6 +120,8 @@
 - ✅ BUG doors hmr
 - should preserve locked doors on hmr
   - probably extend useWorldEvents
+
+- ✅ remove door icons
 
 - BUG reachable prefix not working
   - repro 301 g0r15
