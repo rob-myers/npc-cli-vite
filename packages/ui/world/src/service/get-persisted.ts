@@ -1,5 +1,11 @@
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { ambientIntensityKey, defaultAmbientIntensity, introEnabledKey, npcsStorageKeyPrefix } from "../const";
+import {
+  ambientIntensityKey,
+  defaultAmbientIntensity,
+  doorLocksStorageKeyPrefix,
+  introEnabledKey,
+  npcsStorageKeyPrefix,
+} from "../const";
 
 export const getAmbientIntensity = () =>
   tryLocalStorageGetParsed<number>(ambientIntensityKey) ?? defaultAmbientIntensity;
@@ -16,6 +22,17 @@ export const getNpcs = (mapKey: string) => tryLocalStorageGetParsed<PersistedNpc
 
 export const setNpcs = (mapKey: string, value: PersistedNpcs) =>
   tryLocalStorageSet(npcsKey(mapKey), JSON.stringify(value));
+
+const doorLocksKey = (mapKey: string) => `${doorLocksStorageKeyPrefix}:${mapKey}`;
+
+/**
+ * The `gdKey`s of the locked doors of some map, or `null` if it was never saved.
+ * It is exhaustive, so an absent door is unlocked — even one whose `meta.locked` says otherwise.
+ */
+export const getDoorLocks = (mapKey: string) => tryLocalStorageGetParsed<string[]>(doorLocksKey(mapKey));
+
+export const setDoorLocks = (mapKey: string, gdKeys: string[]) =>
+  tryLocalStorageSet(doorLocksKey(mapKey), JSON.stringify(gdKeys));
 
 /** The npcs of some map, as left by the previous session */
 export type PersistedNpcs = {

@@ -83,6 +83,8 @@ export const roomLightingEnabledKey = "world-room-lighting-enabled";
 export const roomLitStorageKeyPrefix = "world-room-lit";
 /** Prefix for the per-map persisted npcs */
 export const npcsStorageKeyPrefix = "world-npcs";
+/** Prefix for the per-map persisted locked doors */
+export const doorLocksStorageKeyPrefix = "world-door-locks";
 /** Persists `w.player.introEnabled` */
 export const introEnabledKey = "world-intro-enabled";
 /** Default `w.player.key` */
