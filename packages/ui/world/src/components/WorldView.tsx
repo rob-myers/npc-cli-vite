@@ -476,22 +476,38 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const from = controls.target.clone();
         const to = new THREE.Vector3(groundPoint.x, 0, groundPoint.y);
 
-        /** Keeps the current zoom/orientation, only moving the orbit target */
+        // `update` would clamp it anyway, but then `fromRadius` and the tween would disagree
+        const fromRadius = controls.spherical.radius;
+        const toRadius =
+          opts.radius === undefined
+            ? fromRadius
+            : THREE.MathUtils.clamp(opts.radius, controls.minDistance, controls.maxDistance);
+
+        /**
+         * Keeps the current orientation, moving the orbit target and (optionally) the zoom.
+         * The camera must be carried along explicitly: `update` derives `spherical` from
+         * `position - target`, so moving the target alone would swing the camera instead.
+         * We don't call `update` ourselves — `CameraControls` does so from a `useFrame` just
+         * before the render, and a second call would double its per-call damping.
+         */
         const applyTarget = (alpha: number) => {
           controls.target.copy(from).lerp(to, alpha);
-          const delta = new THREE.Vector3().setFromSphericalCoords(
-            controls.spherical.radius,
-            controls.spherical.phi,
-            controls.spherical.theta,
-          );
-          controls.object.position.copy(controls.target).add(delta);
-          controls.update();
+          // live `phi`/`theta`, so e.g. cardinal snapping still applies mid-pan
+          const radius = fromRadius + (toRadius - fromRadius) * alpha;
+          tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, controls.spherical.theta);
+          controls.object.position.copy(controls.target).add(tmpLookAtOffset);
           w.r3f?.invalidate();
         };
 
         if (opts.animate !== true) {
-          return applyTarget(1);
+          applyTarget(1);
+          controls.update(); // no frame to wait for
+          return;
         }
+
+        // a leftover gesture would otherwise keep decaying underneath the pan
+        controls.u.panOffset.set(0, 0, 0);
+        controls.sphericalDelta.set(0, 0, 0);
 
         // further pans take longer, so the apparent speed stays similar
         const durationMs = Math.min(lookAtMaxMs, lookAtMinMs + from.distanceTo(to) * lookAtMsPerUnit);
@@ -906,8 +922,11 @@ export type State = {
   setCameraMode(cameraMode: CameraModeType): void;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
-  /** Moves the camera's orbit target onto `groundPoint`, preserving zoom/orientation. Resolves on arrival. */
-  lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean }): Promise<void>;
+  /**
+   * Moves the camera's orbit target onto `groundPoint`, preserving its orientation.
+   * Resolves on arrival. Zoom is preserved unless `radius` is given, which is tweened alongside.
+   */
+  lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number }): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** Animates `ambientIntensity`, persisting the final value */
@@ -981,18 +1000,19 @@ const fxKey = "world-fx";
 
 const tmpVect = new Vect();
 const tmpVector3 = new THREE.Vector3();
+const tmpLookAtOffset = new THREE.Vector3();
 
 export type Picked = {
   instanceId: number;
 } & (
-    | { type: "floor"; floor: true; gmId: number; gmKey: string }
-    | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
-    | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
-    | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
-    | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
-    // static and runtime decor have same decode format
-    | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
-    | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
-    // we require spawn inside room but map might change
-    | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
-  );
+  | { type: "floor"; floor: true; gmId: number; gmKey: string }
+  | { type: "ceiling"; ceiling: true; gmId: number; gmKey: string }
+  | ({ type: "door"; door: true } & ReturnType<import("./Doors").State["decodeInstanceId"]>)
+  | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
+  | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
+  // static and runtime decor have same decode format
+  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
+  | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
+  // we require spawn inside room but map might change
+  | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
+);
