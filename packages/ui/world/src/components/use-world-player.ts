@@ -37,8 +37,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       async panTo() {
         const npc = w.n[state.key];
         if (npc !== undefined) {
-          // we look at the player rather than restoring a persisted point
-          await w.view.lookAt(npc.point, { animate: true });
+          await w.view.lookAt(npc.point, { animate: true, radius: w.view.controls?.minDistance });
         }
       },
       persist() {
