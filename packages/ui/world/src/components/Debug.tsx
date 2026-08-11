@@ -1,6 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom/vect";
-import { pause, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
@@ -24,9 +24,10 @@ import {
   vec2,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { pickOpenDoorsKey, sguToWorldScale } from "../const";
+import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { getWorldStore } from "../service/storage";
 import { getLightMetas } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
@@ -63,7 +64,7 @@ export function Debug() {
       navMeshShown: false,
       doPointsShown: false,
       originShown: false,
-      pickOpenDoors: tryLocalStorageGetParsed(pickOpenDoorsKey) ?? false,
+      pickOpenDoors: getWorldStore(w.key).read().pickOpenDoors,
 
       physicsLines: new THREE.BufferGeometry(),
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],

@@ -1,16 +1,11 @@
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import * as profiles from "@npc-cli/cli/jsh/profiles";
+import { getTtyStore } from "@npc-cli/cli/shell/storage";
 import type { UiBootstrapProps } from "@npc-cli/ui-sdk";
 import { isWorldUiMeta } from "@npc-cli/ui-sdk/discriminator";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import {
-  jsStringify,
-  restoreFromPersistedJsStringify,
-  tryLocalStorageGet,
-  tryLocalStorageSet,
-  warn,
-} from "@npc-cli/util/legacy/generic";
+import { jsStringify, restoreFromPersistedJsStringify, warn } from "@npc-cli/util/legacy/generic";
 import { PlusCircleIcon, WarningIcon } from "@phosphor-icons/react";
 import { useContext } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -52,12 +47,13 @@ export function JshBootstrap(props: UiBootstrapProps): React.ReactNode {
       } satisfies Partial<JshUiMeta>);
     },
     prepareExtantPersistedSession(sessionKey: string) {
+      const store = getTtyStore(sessionKey);
       try {
-        const localStorageKey = `var@session-${sessionKey}`;
-        const persistedSessionHome = restoreFromPersistedJsStringify(tryLocalStorageGet(localStorageKey) || "null");
+        const persistedSessionHome = restoreFromPersistedJsStringify(store.read().vars ?? "{}");
         // 🔔 Remove PROFILE_KEY from persisted session, so we can overwrite it.
         delete persistedSessionHome.PROFILE_KEY;
-        tryLocalStorageSet(localStorageKey, jsStringify(persistedSessionHome, false, true));
+        store.patch({ vars: jsStringify(persistedSessionHome, false, true) });
+        store.flush(); // the session is created before the debounce would fire
       } catch {
         warn(`Failed to mutate persisted session ${sessionKey}`);
       }

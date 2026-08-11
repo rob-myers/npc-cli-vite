@@ -2,13 +2,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
-import {
-  mapValues,
-  testNever,
-  tryLocalStorageGet,
-  tryLocalStorageGetParsed,
-  tryLocalStorageSet,
-} from "@npc-cli/util/legacy/generic";
+import { mapValues, testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -21,22 +15,12 @@ import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec
 import * as THREE from "three/webgpu";
 import type { WorldTheme } from "../assets.schema";
 import {
-  ambientIntensityKey,
   cameraFov,
-  cameraModeStorageKey,
-  cameraPositionStorageKey,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
-  defaultRoomLightIntensity,
   defaultVignette,
-  numCardinalDirectionsKey,
-  postProcessingEnabledKey,
-  roomLightEditingEnabledKey,
-  roomLightIntensityKey,
-  roomLightingEnabledKey,
-  roomLitStorageKeyPrefix,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   wallHeight,
@@ -46,9 +30,9 @@ import {
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
-import * as persisted from "../service/get-persisted";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
+import { getWorldMapStore, getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { applyVignette } from "../service/vignette";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -59,17 +43,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   const { uiStoreApi } = useContext(UiContext);
   const w = useContext(WorldContext);
 
+  /** Every setting we persist — see `service/storage.ts`. Memoised per `worldKey` */
+  const store = getWorldStore(w.key);
+  const saved = store.read();
+
   const state = useStateRef(
     (): State => ({
-      ambientIntensity: persisted.getAmbientIntensity(),
+      ambientIntensity: saved.ambientIntensity,
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
       cameraDirections:
-        tryLocalStorageGetParsed<number>(numCardinalDirectionsKey) ??
-        (w.touchDevice ? defaultCardinalDirectionsMobile : defaultCardinalDirectionsDesktop),
-      cameraMode:
-        tryLocalStorageGet<CameraModeType>(cameraModeStorageKey) ??
-        (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
+        saved.cameraDirections ?? (w.touchDevice ? defaultCardinalDirectionsMobile : defaultCardinalDirectionsDesktop),
+      cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
@@ -89,9 +74,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         bottomHeight: 0,
         topHeight: wallHeight - 0.01, // avoid ceiling aliasing
         marchSteps: 96,
+        radius: saved.dynamicLightRadius,
+        intensity: saved.dynamicLightIntensity,
       }),
       dynamicLightTarget: null,
-      initial: getInitialCamera(w.touchDevice),
+      initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
       ambientAnimId: 0,
       lightTweenId: 0,
@@ -106,20 +93,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
-      postProcessing: tryLocalStorageGetParsed<boolean>(postProcessingEnabledKey) ?? true,
+      postProcessing: saved.postProcessing,
       // each is 0..1, driving a `mix` so 0 is exactly identity
-      fx: mapValues(fxDefaults, (value, key) =>
-        uniform(tryLocalStorageGetParsed<Record<string, number>>(fxKey)?.[key] ?? value),
-      ),
+      fx: mapValues(fxDefaults, (value, key) => uniform(saved.fx[key] ?? value)),
       raycaster: new THREE.Raycaster(),
       roomLight: createRoomLightPostprocess({
-        roomLightingEnabled: tryLocalStorageGetParsed<boolean>(roomLightingEnabledKey) ?? false,
+        roomLightingEnabled: saved.roomLighting,
         bottomHeight: 0,
         topHeight: wallHeight - 0.01,
       }),
-      roomLightEditingEnabled: tryLocalStorageGetParsed<boolean>(roomLightEditingEnabledKey) ?? false,
-      roomLightIntensity: uniform(tryLocalStorageGetParsed<number>(roomLightIntensityKey) ?? defaultRoomLightIntensity),
-      unlitScale: uniform(persisted.getAmbientIntensity()),
+      roomLightEditingEnabled: saved.roomLightEditing,
+      roomLightIntensity: uniform(saved.roomLightIntensity),
+      unlitScale: uniform(saved.ambientIntensity),
 
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
@@ -272,12 +257,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.dynamicLight.update(camera);
       },
       onCameraEnd() {
-        const lastCameraReading: State["initial"] = {
+        const cameraInitial: PersistedCamera = {
           azimuthal: state.controls.spherical.theta,
           polar: state.controls.spherical.phi,
           position: { x: state.controls.target.x, y: state.controls.spherical.radius, z: state.controls.target.z },
         };
-        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(lastCameraReading));
+        store.patch({ cameraInitial });
       },
       onCreated(rootState) {
         w.threeReady = true;
@@ -417,7 +402,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       resetAllRooms() {
         state.roomLight.resetAllRooms();
-        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify([]));
+        getWorldMapStore(w.key, w.mapKey).patch({ roomLit: [] });
         state.setPostProcessingEnabled(true);
       },
       setupDom() {
@@ -446,10 +431,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setupLights() {
         state.roomLight.syncGms(w.gms, w.gmsData);
-        const savedLitRooms = tryLocalStorageGetParsed<[number, number][]>(`${roomLitStorageKeyPrefix}:${w.mapKey}`);
-        if (savedLitRooms) {
-          state.roomLight.setRoomLitPairs(savedLitRooms);
-        }
+        state.roomLight.setRoomLitPairs(getWorldMapStore(w.key, w.mapKey).read().roomLit);
         if (state.dynamicLightTarget !== null && w.npc.npc[state.dynamicLightTarget.npcKey]) {
           w.npc.trackNpc(state.dynamicLightTarget.npcKey);
         }
@@ -458,11 +440,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.ambientIntensity = next;
         state.unlitScale.value = next;
         state.setPostProcessingEnabled(true);
-        persist && tryLocalStorageSet(ambientIntensityKey, String(next));
+        persist && store.patch({ ambientIntensity: next });
         state.forceUpdate();
       },
       setCameraMode(cameraMode) {
-        tryLocalStorageSet(cameraModeStorageKey, cameraMode);
+        store.patch({ cameraMode });
         state.set({ cameraMode });
         w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
       },
@@ -549,7 +531,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       resetCamera() {
         const initial = defaultInitialCamera(w.touchDevice);
         state.initial = initial;
-        tryLocalStorageSet(cameraPositionStorageKey, JSON.stringify(initial));
+        store.patch({ cameraInitial: initial });
         if (state.controls) {
           state.controls.target.set(initial.position.x, 0, initial.position.z);
           const delta = new THREE.Vector3().setFromSphericalCoords(
@@ -564,40 +546,42 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setDynamicLightIntensity(next) {
         state.dynamicLight.setIntensity(next);
+        store.patch({ dynamicLightIntensity: next });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
       setDynamicLightRadius(next) {
         state.dynamicLight.setRadius(next);
+        store.patch({ dynamicLightRadius: next });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
       setRoomLightingEnabled(next = state.roomLight.roomLightingEnabled.value === 0) {
         state.roomLight.setRoomLightingEnabled(next);
         state.roomLightEditingEnabled = next;
-        tryLocalStorageSet(roomLightingEnabledKey, String(next));
+        store.patch({ roomLighting: next, roomLightEditing: next });
         state.setPostProcessingEnabled(true);
       },
       setRoomLightIntensity(next) {
         state.roomLightIntensity.value = next;
-        tryLocalStorageSet(roomLightIntensityKey, String(next));
+        store.patch({ roomLightIntensity: next });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
       setNumCardinalDirections(n) {
-        tryLocalStorageSet(numCardinalDirectionsKey, String(n));
+        store.patch({ cameraDirections: n });
         state.set({ cameraDirections: n });
         w.update();
       },
       setFx(key, next = state.fx[key].value === 0 ? 1 : 0) {
         state.fx[key].value = next;
-        tryLocalStorageSet(fxKey, JSON.stringify(mapValues(state.fx, (u) => u.value)));
+        store.patch({ fx: mapValues(state.fx, (u) => u.value) });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
-        tryLocalStorageSet(postProcessingEnabledKey, String(next));
+        store.patch({ postProcessing: next });
         state.forceUpdate();
       },
       setRoomLit(groundPoint, next) {
@@ -610,7 +594,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const nextLit = next ?? !state.roomLight.isRoomLit(gmId, roomId);
         state.roomLight.setRoomLit(gmId, roomId, nextLit);
 
-        tryLocalStorageSet(`${roomLitStorageKeyPrefix}:${w.mapKey}`, JSON.stringify(state.roomLight.getLitRoomPairs()));
+        getWorldMapStore(w.key, w.mapKey).patch({ roomLit: state.roomLight.getLitRoomPairs() });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
       },
@@ -675,7 +659,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       toggleRoomLightEditing() {
         state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
-        tryLocalStorageSet(roomLightEditingEnabledKey, String(state.roomLightEditingEnabled));
+        store.patch({ roomLightEditing: state.roomLightEditingEnabled });
         w.update();
       },
       updateDynamicLight(rawTarget, opts = {}) {
@@ -974,10 +958,6 @@ const dynamicLightTweenRate = 6;
 const ambientFadeDurationMs = 1000;
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
-function getInitialCamera(touchDevice: boolean): State["initial"] {
-  return tryLocalStorageGetParsed<State["initial"]>(cameraPositionStorageKey) ?? defaultInitialCamera(touchDevice);
-}
-
 function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
     azimuthal: touchDevice ? 0 : Math.PI / 4,

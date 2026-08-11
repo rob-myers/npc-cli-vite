@@ -3,7 +3,7 @@ import { Select } from "@base-ui/react/select";
 import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
-import { hashJson, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   CaretDownIcon,
@@ -29,17 +29,17 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
 import {
-  brightnessStorageKey,
   defaultAmbientIntensity,
+  defaultBrightness,
   defaultDynamicLightIntensity,
   defaultDynamicLightRadius,
   defaultRoomLightIntensity,
   defaultVignette,
   maxDynamicLightRadius,
-  pickOpenDoorsKey,
 } from "../const";
 import { GeomorphGraphsModal, LightMapModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
+import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { WorldContext } from "./world-context";
 
 export function WorldMenu() {
@@ -51,26 +51,36 @@ export function WorldMenu() {
   /** Touch gets a full-height panel with larger targets, instead of the resizable popup */
   const touch = w.touchDevice;
 
+  const store = getWorldStore(w.key);
+  const saved = store.read();
+  /** Worlds we could restore this map's npcs, lit rooms and locked doors from */
+  const otherWorldKeys = listWorldKeysWithMap(w.mapKey, w.key);
+
   const state = useStateRef(
     (): State => ({
       debugHitOpen: false,
-      debugOpen: tryLocalStorageGetParsed(debugStorageKey) === true,
-      devScriptsOpen: tryLocalStorageGetParsed(devScriptsOpenStorageKey) === true,
       dragged: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
       lightMapOpen: false,
       menuOpen: false,
-      playerOpen: tryLocalStorageGetParsed(playerOpenStorageKey) === true,
-      roomLightsOpen: tryLocalStorageGetParsed(roomLightsOpenStorageKey) === true,
       minY: 40,
-      themeEditorOpen: tryLocalStorageGetParsed(themeEditorStorageKey) === true,
+      sections: { ...saved.menuSections },
       themeEditorRef: null as any,
       toastTs: {} as Record<string, number>,
-      y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
-      menuWidth: tryLocalStorageGetParsed<number>(menuWidthStorageKey(w.id)) ?? 288,
-      menuHeight: tryLocalStorageGetParsed<number>(menuHeightStorageKey(w.id)) ?? 288,
+      y: saved.menuY,
+      menuWidth: saved.menuWidth,
+      menuHeight: saved.menuHeight,
       resizing: false,
+
+      isOpen(section) {
+        return state.sections[section] === true;
+      },
+      toggleSection(section) {
+        state.sections[section] = !state.isOpen(section);
+        store.patch({ menuSections: { ...state.sections } });
+        state.update();
+      },
 
       getMaxY() {
         return Math.max(state.minY, (w.rootEl?.clientHeight ?? Infinity) - 120);
@@ -145,11 +155,10 @@ export function WorldMenu() {
         document.addEventListener("touchend", onEnd, { capture: true });
       },
       persistY() {
-        tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
+        store.patch({ menuY: state.getClampedY(y.get()) });
       },
       persistMenuSize() {
-        tryLocalStorageSet(menuWidthStorageKey(w.id), `${state.menuWidth}`);
-        tryLocalStorageSet(menuHeightStorageKey(w.id), `${state.menuHeight}`);
+        store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight });
       },
       async saveThemeDev() {
         const theme = w.assets?.theme?.[w.themeKey];
@@ -238,7 +247,7 @@ export function WorldMenu() {
       case "Toggle Doors": {
         const next = !w.debug?.pickOpenDoors;
         w.debug?.set({ pickOpenDoors: next });
-        tryLocalStorageSet(pickOpenDoorsKey, String(next));
+        store.patch({ pickOpenDoors: next });
         state.update();
         break;
       }
@@ -343,9 +352,9 @@ export function WorldMenu() {
                 <BrightnessPie
                   ratio={brightnessToRatio(w.brightness)}
                   onClick={() => {
-                    const brightness = 2;
+                    const brightness = defaultBrightness;
                     w.set({ brightness });
-                    tryLocalStorageSet(brightnessStorageKey, `${brightness}`);
+                    store.patch({ brightness });
                   }}
                 />
                 <input
@@ -357,7 +366,7 @@ export function WorldMenu() {
                   onChange={(e) => {
                     w.brightness = Number(e.target.value);
                     w.update();
-                    tryLocalStorageSet(brightnessStorageKey, String(w.brightness));
+                    store.patch({ brightness: w.brightness });
                   }}
                   onClick={(e) => e.stopPropagation()}
                   className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
@@ -405,20 +414,38 @@ export function WorldMenu() {
                 }}
               />
             </div>
+
+            {/* another world may have left npcs, lit rooms and locked doors on this map */}
+            {otherWorldKeys.length > 0 && (
+              <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
+                <div
+                  title="adopt another world's npcs, lit rooms and locked doors"
+                  className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}
+                >
+                  restore:
+                </div>
+                <MenuSelect
+                  label="from world"
+                  value={null}
+                  items={otherWorldKeys.map((key) => ({ key, value: key }))}
+                  side="bottom"
+                  onValueChange={(worldKey) => worldKey && void w.e.restoreFromWorld(worldKey)}
+                />
+              </div>
+            )}
+
             <div
               className={sectionHeaderClass(touch)}
               onClick={(e) => {
                 e.stopPropagation();
-                state.debugOpen = !state.debugOpen;
-                tryLocalStorageSet(debugStorageKey, String(state.debugOpen));
-                state.update();
+                state.toggleSection("debug");
               }}
             >
-              {state.debugOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              {state.isOpen("debug") ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
               debug
             </div>
 
-            {state.debugOpen && (
+            {state.isOpen("debug") && (
               <>
                 <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
                   {debugItems.map((item) => (
@@ -463,16 +490,14 @@ export function WorldMenu() {
               className={sectionHeaderClass(touch)}
               onClick={(e) => {
                 e.stopPropagation();
-                state.playerOpen = !state.playerOpen;
-                tryLocalStorageSet(playerOpenStorageKey, String(state.playerOpen));
-                state.update();
+                state.toggleSection("player");
               }}
             >
-              {state.playerOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              {state.isOpen("player") ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
               player
             </div>
 
-            {state.playerOpen && (
+            {state.isOpen("player") && (
               <div
                 className={cn(
                   "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
@@ -533,16 +558,18 @@ export function WorldMenu() {
               className={sectionHeaderClass(touch)}
               onClick={(e) => {
                 e.stopPropagation();
-                state.roomLightsOpen = !state.roomLightsOpen;
-                tryLocalStorageSet(roomLightsOpenStorageKey, String(state.roomLightsOpen));
-                state.update();
+                state.toggleSection("room lights");
               }}
             >
-              {state.roomLightsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+              {state.isOpen("room lights") ? (
+                <CaretDownIcon className="size-3" />
+              ) : (
+                <CaretRightIcon className="size-3" />
+              )}
               room lights
             </div>
 
-            {state.roomLightsOpen && (
+            {state.isOpen("room lights") && (
               <div
                 className={cn(
                   "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
@@ -592,15 +619,17 @@ export function WorldMenu() {
                   className={sectionHeaderClass(touch)}
                   onClick={(e) => {
                     e.stopPropagation();
-                    state.themeEditorOpen = !state.themeEditorOpen;
-                    tryLocalStorageSet(themeEditorStorageKey, String(state.themeEditorOpen));
-                    w.update();
+                    state.toggleSection("edit theme");
                   }}
                 >
-                  {state.themeEditorOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                  {state.isOpen("edit theme") ? (
+                    <CaretDownIcon className="size-3" />
+                  ) : (
+                    <CaretRightIcon className="size-3" />
+                  )}
                   edit theme
                 </div>
-                {state.themeEditorOpen && (
+                {state.isOpen("edit theme") && (
                   <div className="p-2 pt-0 flex flex-col gap-1">
                     <textarea
                       key={w.themeKey}
@@ -631,17 +660,19 @@ export function WorldMenu() {
                 className={sectionHeaderClass(touch)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  state.devScriptsOpen = !state.devScriptsOpen;
-                  tryLocalStorageSet(devScriptsOpenStorageKey, String(state.devScriptsOpen));
-                  state.update();
+                  state.toggleSection("dev scripts");
                 }}
               >
-                {state.devScriptsOpen ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
+                {state.isOpen("dev scripts") ? (
+                  <CaretDownIcon className="size-3" />
+                ) : (
+                  <CaretRightIcon className="size-3" />
+                )}
                 dev scripts
               </div>
             )}
 
-            {import.meta.env.DEV && state.devScriptsOpen && (
+            {import.meta.env.DEV && state.isOpen("dev scripts") && (
               <div className="flex">
                 <button
                   type="button"
@@ -1157,17 +1188,13 @@ export type State = {
   lightMapOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  /** Collapsible "player" section within the main menu */
-  playerOpen: boolean;
-  /** Collapsible "room lights" section */
-  roomLightsOpen: boolean;
-  /** Collapsible "dev scripts" section, only rendered in DEV */
-  devScriptsOpen: boolean;
+  /** Which collapsible sections are unfolded, e.g. `debug`. Persisted */
+  sections: Record<string, boolean>;
+  isOpen(section: string): boolean;
+  toggleSection(section: string): void;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
-  themeEditorOpen: boolean;
-  debugOpen: boolean;
   minY: number;
   /** Width (px) of the main menu popup — resizable, persisted */
   menuWidth: number;
@@ -1212,9 +1239,6 @@ const rangeInputClass = (touch: boolean, width: string) =>
     width,
   );
 
-const storageKey = (id: string) => `world-context-menu-y-${id}`;
-const menuWidthStorageKey = (id: string) => `world-context-menu-width-${id}`;
-const menuHeightStorageKey = (id: string) => `world-context-menu-height-${id}`;
 const minMenuWidth = 200;
 const minMenuHeight = 120;
 /** How long a toast lingers after its pending key clears */
@@ -1222,11 +1246,6 @@ const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
 const spinnerMinMs = 300;
 
-const themeEditorStorageKey = "world-theme-editor-open";
-const debugStorageKey = "world-debug-panel-open";
-const playerOpenStorageKey = "world-player-section-open";
-const roomLightsOpenStorageKey = "world-room-lights-section-open";
-const devScriptsOpenStorageKey = "world-dev-scripts-section-open";
 /** Long press the intro button to disable it, since a click always replays it */
 const introLongPressMs = 500;
 const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;

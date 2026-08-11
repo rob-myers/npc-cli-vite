@@ -1,6 +1,5 @@
 import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import type { Mat } from "@npc-cli/util/geom";
-import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import {
   Break,
@@ -23,13 +22,7 @@ import {
   viewZToPerspectiveDepth,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import {
-  defaultDynamicLightIntensity,
-  defaultDynamicLightRadius,
-  dynamicLightIntensityKey,
-  dynamicLightRadiusKey,
-  maxDynamicLightRadius,
-} from "../const";
+import { defaultDynamicLightIntensity, defaultDynamicLightRadius, maxDynamicLightRadius } from "../const";
 import { TexArray } from "./tex-array";
 
 export type DynamicLightPostprocessOpts = {
@@ -54,6 +47,10 @@ export type DynamicLightPostprocessOpts = {
   hullDoorwayRadius?: number;
   /** Per-second lerp speed for animating towards/away from `hullDoorwayRadius`. Default `4`. */
   hullDoorwayLerpSpeed?: number;
+  /** Initial radius, persisted by the caller. Default `defaultDynamicLightRadius` */
+  radius?: number;
+  /** Initial brightness multiplier, persisted by the caller. Default `defaultDynamicLightIntensity` */
+  intensity?: number;
 };
 
 export type DynamicLightPostprocess = {
@@ -151,9 +148,9 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
   const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
 
-  // read fresh from localStorage at creation time — `dynamicLight` is fully recreated on HMR
-  const initialRadius = tryLocalStorageGetParsed<number>(dynamicLightRadiusKey) ?? defaultDynamicLightRadius;
-  const initialIntensity = tryLocalStorageGetParsed<number>(dynamicLightIntensityKey) ?? defaultDynamicLightIntensity;
+  // persisted by `WorldView`, which owns the world's store
+  const initialRadius = opts.radius ?? defaultDynamicLightRadius;
+  const initialIntensity = opts.intensity ?? defaultDynamicLightIntensity;
 
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
   const camWorldMatrix = uniform(new THREE.Matrix4());
@@ -424,14 +421,12 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
     },
     setIntensity(next) {
       this.intensity.value = next;
-      tryLocalStorageSet(dynamicLightIntensityKey, String(next));
     },
     setNearHullDoor(near) {
       nearHullDoor = near;
     },
     setRadius(next) {
       this.radius = next;
-      tryLocalStorageSet(dynamicLightRadiusKey, String(next));
       if (tracked.value.z !== 0) {
         // instant, not animated — a slider drag should feel responsive; hull-door capping still applies
         this.setTracked(

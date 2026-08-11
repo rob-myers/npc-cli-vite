@@ -1,14 +1,12 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { geomorphKeys } from "@npc-cli/media/starship-symbol";
 import { cn } from "@npc-cli/util";
-import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { WorldContext } from "../components/world-context";
+import { getWorldStore } from "./storage";
 
 export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void; container?: HTMLElement | null };
-
-const gmGraphsFilterKey = "world-gm-graphs-filter";
 
 export function RoomHitModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
@@ -52,9 +50,8 @@ export function RoomHitModal({ open, onOpenChange, container }: DebugModalProps)
 
 export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
-  const [activeGraph, setActiveGraph] = useState<"gm" | "room">(
-    () => (tryLocalStorageGetParsed<string>(gmGraphsFilterKey) as "gm" | "room") || "room",
-  );
+  const store = getWorldStore(w.key);
+  const [activeGraph, setActiveGraph] = useState<"gm" | "room">(() => store.read().gmGraphsFilter);
   const showGm = activeGraph === "gm";
   const showRoom = activeGraph === "room";
 
@@ -155,7 +152,7 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
                 className={cn(toggleClass, showGm ? "bg-green-900/50 text-green-400" : "text-slate-500")}
                 onClick={() => {
                   setActiveGraph("gm");
-                  tryLocalStorageSet(gmGraphsFilterKey, '"gm"');
+                  store.patch({ gmGraphsFilter: "gm" });
                 }}
               >
                 Gm
@@ -165,7 +162,7 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
                 className={cn(toggleClass, showRoom ? "bg-blue-900/50 text-blue-400" : "text-slate-500")}
                 onClick={() => {
                   setActiveGraph("room");
-                  tryLocalStorageSet(gmGraphsFilterKey, '"room"');
+                  store.patch({ gmGraphsFilter: "room" });
                 }}
               >
                 Room

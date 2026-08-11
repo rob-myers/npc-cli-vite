@@ -17,7 +17,8 @@
     "./fetch-parsed": "./src/service/fetchParsed.ts",
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js",
-    "./service/canvas": "./src/service/canvas.ts"
+    "./service/canvas": "./src/service/canvas.ts",
+    "./local-store": "./src/service/local-store.ts"
   },
   "scripts": {},
   "dependencies": {

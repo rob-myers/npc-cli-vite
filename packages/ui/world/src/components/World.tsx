@@ -4,7 +4,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
-import { debug, entries, hashJson, tryLocalStorageGetParsed } from "@npc-cli/util/legacy/generic";
+import { debug, entries, hashJson } from "@npc-cli/util/legacy/generic";
 import type { RootState, RootStore } from "@react-three/fiber";
 import { extend } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
@@ -17,8 +17,6 @@ import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "..
 import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
-  brightnessStorageKey,
-  defaultBrightness,
   defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
@@ -35,6 +33,7 @@ import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
+import { flushWorldStores, getWorldStore, removeLegacyWorldKeys } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
@@ -67,7 +66,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       themeKey: "dark-theme",
       worldQueryPrefix: ["world", meta.worldKey],
 
-      brightness: tryLocalStorageGetParsed(brightnessStorageKey) ?? defaultBrightness,
+      brightness: getWorldStore(meta.worldKey).read().brightness,
 
       events: new Broadcaster(),
       reqAnimId: -1,
@@ -380,6 +379,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     state.menu?.persistY();
     state.speech?.persistY();
     state.player?.persist();
+    flushWorldStores(state.key, state.mapKey); // else a debounced write could be lost
   });
 
   return (
