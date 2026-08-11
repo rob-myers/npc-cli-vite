@@ -3,18 +3,18 @@ import { BinaryHeap } from "./BinaryHeap";
 import { Utils } from "./Utils";
 
 export class AStar {
-  static init<T extends Graph.AStarNode>(graph: Graph.BaseGraph<T>, initNodeCosts?: (nodes: T[]) => void) {
+  static init<T extends Graph.AStarNode>(graph: Graph.BaseGraph<T>, setNodeWeights?: (nodes: T[]) => void) {
     const nodes = graph.nodesArray;
-    for (let x = 0; x < nodes.length; x++) {
-      const node = nodes[x].astar;
+    for (const { astar: node } of nodes) {
       node.f = 0;
       node.g = 0;
       node.h = 0;
+      node.cost = 1;
       node.visited = false;
       node.closed = false;
       node.parent = null;
     }
-    initNodeCosts?.(nodes);
+    setNodeWeights?.(nodes);
   }
 
   static cleanUp(graph: Graph.AStarNode[]) {
@@ -58,8 +58,7 @@ export class AStar {
 
       const neighbours = AStar.neighbours<T>(nodes, currentNode);
 
-      for (let i = 0, il = neighbours.length; i < il; i++) {
-        const neighbour = neighbours[i];
+      for (const neighbour of neighbours) {
         if (neighbour.astar.closed === true) {
           continue;
         }
@@ -94,10 +93,10 @@ export class AStar {
     return Utils.distanceToSquared(pos1, pos2);
   }
 
-  static neighbours<T extends Graph.AStarNode>(graph: T[], node: T) {
+  static neighbours<T extends Graph.AStarNode>(graphNodes: T[], node: T) {
     const ret = [] as T[];
-    for (let e = 0; e < node.astar.neighbours.length; e++) {
-      ret.push(graph[node.astar.neighbours[e]]);
+    for (let i = 0; i < node.astar.neighbours.length; i++) {
+      ret.push(graphNodes[node.astar.neighbours[i]]);
     }
     return ret;
   }

@@ -93,7 +93,7 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
     src: Geomorph.GmRoomKey,
     dst: Geomorph.GmRoomKey,
     opts?: {
-      setWeights?(nodes: Graph.GmRoomGraphNode[]): void;
+      setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
     },
   ): AStarSearchResult<Graph.GmRoomGraphNode> {
     const srcNode = this.getNode(src);
@@ -106,7 +106,7 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
       graph: this,
       start: srcNode,
       end: dstNode,
-      setNodeWeights: opts?.setWeights,
+      setNodeWeights: opts?.setNodeWeights,
     });
   }
 

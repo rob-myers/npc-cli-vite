@@ -133,7 +133,7 @@
 - ✅ BUG tty-0 run `pick` interactively then try to run job
   - launching `pick | move npc:rob` in background didn't resolve until interactive `pick` killed
 
-- 🚧 BUG reachable prefix not working
+- ✅ BUG reachable prefix not working
   - repro 301 g0r15
     - door locked
     - npc moves towards dst rather than doorway
