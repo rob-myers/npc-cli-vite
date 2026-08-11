@@ -1,6 +1,5 @@
 import { cn, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { tryLocalStorageGet, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import {
   ArrowArcLeftIcon,
   ArrowDownIcon,
@@ -15,11 +14,15 @@ import {
 } from "@phosphor-icons/react";
 import { type MotionValue, motion, useMotionValue } from "motion/react";
 import React from "react";
-import { localStorageKey, spawnBgPausedDefault } from "../shell/const";
+import { spawnBgPausedDefault } from "../shell/const";
 import type { Session } from "../shell/session";
 import { sessionApi } from "../shell/session";
+import { getTtyStore } from "../shell/storage";
 
 export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null> }) {
+  /** Per session, so two ttys don't share one menu position — see `shell/storage.ts` */
+  const store = getTtyStore(props.session.key);
+
   const state = useStateRef<State>(
     (): State => ({
       dragged: false,
@@ -100,28 +103,21 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
       toggleTouchMenu() {
         const next = !state.touchMenuOpen;
         state.touchMenuOpen = next;
-        tryLocalStorageSet(localStorageKey.touchTtyOpen, `${next}`);
+        store.patch({ menuOpen: next });
         state.update();
       },
     }),
     { deps: [props.canContOrStop] },
   );
 
-  const storedY = Number(tryLocalStorageGetParsed(menuYStorageKey)) || 0;
-  const y = useMotionValue(state.getClampedY(storedY));
+  const y = useMotionValue(state.getClampedY(store.read().menuY));
   state.motionY = y;
   state.xterm = props.session.ttyShell.xterm;
   if (props.stateRef) (props.stateRef as React.RefObject<State | null>).current = state;
 
   React.useMemo(() => {
-    if (!tryLocalStorageGet(localStorageKey.touchTtyCanType)) {
-      tryLocalStorageSet(localStorageKey.touchTtyCanType, JSON.stringify(false));
-    }
-    if (!tryLocalStorageGet(localStorageKey.touchTtyOpen)) {
-      tryLocalStorageSet(localStorageKey.touchTtyOpen, JSON.stringify(false));
-    }
     state.xterm.setCanType(true);
-    state.touchMenuOpen = tryLocalStorageGetParsed(localStorageKey.touchTtyOpen) === true;
+    state.touchMenuOpen = store.read().menuOpen;
   }, []);
 
   return (
@@ -144,7 +140,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
       onDragEnd={() => {
         const clamped = state.getClampedY(y.get());
         y.set(clamped);
-        tryLocalStorageSet(menuYStorageKey, String(clamped));
+        store.patch({ menuY: clamped });
         requestAnimationFrame(() => {
           state.dragged = false;
         });
@@ -280,4 +276,3 @@ const itemCss = cn(
 /** The always-visible column, distinguished from the sliding one */
 const statusCss = cn("border-l border-y border-term-border bg-term-inset/90 backdrop-blur-xs");
 const iconSizeCss = "size-[calc(var(--menu-width)*0.45)]";
-const menuYStorageKey = "tty-menu-y";

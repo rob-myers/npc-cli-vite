@@ -6,9 +6,9 @@ import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, ve
 import * as THREE from "three/webgpu";
 import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
-import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { getWorldMapStore } from "../service/storage";
 import { drawDoorLabelLayer } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -37,7 +37,7 @@ export default function Doors() {
       buildByKey() {
         const prevByKey = state.byKey;
         state.byKey = {};
-        const saved = persisted.getDoorLocks(w.mapKey);
+        const saved = getWorldMapStore(w.key, w.mapKey).read().doorLocks;
         const savedLocked = saved === null ? null : new Set(saved);
 
         for (const [gmId, gm] of w.gms.entries()) {
@@ -347,8 +347,15 @@ export default function Doors() {
       persistLocks() {
         // exhaustive, so an unlocked door which `meta.locked` would lock stays unlocked;
         // sealed doors are always locked, so they'd only bloat it
-        const locked = Object.values(state.byKey).flatMap((d) => (d.sealed === false && d.locked ? d.gdKey : []));
-        persisted.setDoorLocks(w.mapKey, locked);
+        const doorLocks = Object.values(state.byKey).flatMap((d) => (d.sealed === false && d.locked ? d.gdKey : []));
+        getWorldMapStore(w.key, w.mapKey).patch({ doorLocks });
+      },
+      applyLocks(gdKeys) {
+        const locked = new Set(gdKeys);
+        for (const door of Object.values(state.byKey)) {
+          door.locked = door.sealed === true || locked.has(door.gdKey);
+        }
+        state.syncLockTints();
       },
       syncLockTint(door) {
         const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
@@ -572,6 +579,8 @@ export type State = {
   setBrightness: (next: number) => void;
   /** Save which doors are locked for `w.mapKey`, so `buildByKey` can restore them */
   persistLocks: () => void;
+  /** Lock exactly these doors, e.g. having restored them from another world */
+  applyLocks: (gdKeys: string[]) => void;
   sendDataToGpu: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;

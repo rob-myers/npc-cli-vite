@@ -1,7 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
 import { defaultPlayerKey, spawnPlayerAttempts } from "../const";
-import * as persisted from "../service/get-persisted";
+import { getWorldMapStore, getWorldStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 
 /**
@@ -14,7 +14,7 @@ import type { State as WorldState } from "./World";
 export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
-      introEnabled: persisted.getIntroEnabled(),
+      introEnabled: getWorldStore(w.key).read().introEnabled,
       introMapKey: null,
       key: defaultPlayerKey,
       prevMapPosition: null,
@@ -44,7 +44,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.e.persistNpcs();
       },
       async restore() {
-        const saved = persisted.getNpcs(w.mapKey)?.npcs.find((x) => x.key === state.key);
+        const saved = getWorldMapStore(w.key, w.mapKey)
+          .read()
+          .npcs?.npcs.find((x) => x.key === state.key);
         if (saved === undefined) {
           return false;
         }
@@ -123,7 +125,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         void state.panTo(); // as on load
       },
       setIntroEnabled(next) {
-        persisted.setIntroEnabled(next);
+        getWorldStore(w.key).patch({ introEnabled: next });
         if (next === false) {
           // on load we'll restore this view, rather than pan to the player
           w.view.controls !== null && w.view.onCameraEnd();

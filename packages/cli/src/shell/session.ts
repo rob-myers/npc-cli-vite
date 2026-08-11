@@ -7,8 +7,6 @@ import {
   type KeyedLookup,
   removeFromLookup,
   restoreFromPersistedJsStringify,
-  tryLocalStorageGet,
-  tryLocalStorageSet,
   warn,
 } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
@@ -28,6 +26,7 @@ import {
 import type { NamedFunction } from "./parse";
 import { queryClientApi } from "./query-client";
 import { TtyShell, ttyError } from "./shell";
+import { getSharedStore, getTtyStore } from "./storage";
 import { computeNormalizedParts, killProcess, resolveNormalized, ShError } from "./util";
 
 export const sessionApi = {
@@ -76,7 +75,7 @@ export const sessionApi = {
   createSession(sessionKey: string, env: Record<string, any>): Session {
     const persisted = sessionApi.rehydrate(sessionKey);
     const ttyIo = makeShellIo<MessageFromXterm, MessageFromShell>();
-    const ttyShell = new TtyShell(sessionKey, ttyIo, persisted.history || []);
+    const ttyShell = new TtyShell(sessionKey, ttyIo, persisted.history);
     const { device } = useSession.getState();
     device[ttyShell.key] = ttyShell;
     device["/dev/null"] = new NullDevice("/dev/null");
@@ -293,36 +292,27 @@ export const sessionApi = {
   },
   persistHistory(sessionKey: string) {
     const { ttyShell } = sessionApi.getSession(sessionKey);
-    tryLocalStorageSet(`history@session-${sessionKey}`, JSON.stringify(ttyShell.getHistory()));
+    getTtyStore(sessionKey).patch({ history: ttyShell.getHistory() });
   },
   persistHome(sessionKey: string) {
     const { PWD, OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } = sessionApi.getSession(sessionKey).var;
-    tryLocalStorageSet(`var@session-${sessionKey}`, jsStringify(persistedVarLookup, false, true));
+    getTtyStore(sessionKey).patch({ vars: jsStringify(persistedVarLookup, false, true) });
   },
   persistShared() {
-    tryLocalStorageSet(`var@shared`, jsStringify(sessionApi.getShared(), false, true));
+    getSharedStore().patch({ vars: jsStringify(sessionApi.getShared(), false, true) });
   },
   rehydrate(sessionKey: string) {
-    let storedHistory = null as null | string[];
-
-    try {
-      storedHistory = JSON.parse(tryLocalStorageGet(`history@session-${sessionKey}`) || "null");
-    } catch (e) {
-      // Can fail in CodeSandbox in Chrome Incognito
-      ttyError(`${sessionKey}: rehydrate history failed`);
-      ttyError(e);
-    }
+    const { history, vars } = getTtyStore(sessionKey).read();
 
     let storedHome = null as null | Record<string, any>;
-    const prevHome = tryLocalStorageGet(`var@session-${sessionKey}`) || "null";
     try {
-      storedHome = restoreFromPersistedJsStringify(prevHome);
+      storedHome = restoreFromPersistedJsStringify(vars ?? "null");
     } catch (e) {
-      ttyError(`${sessionKey}: rehydrate /home failed: ${prevHome}`);
+      ttyError(`${sessionKey}: rehydrate /home failed: ${vars}`);
       ttyError(e);
     }
 
-    return { history: storedHistory, var: storedHome };
+    return { history, var: storedHome };
   },
   removeDevice(deviceKey: string) {
     delete useSession.getState().device[deviceKey];
@@ -440,7 +430,7 @@ export const useSession = create<State>()(
 
 function rehydrateShared() {
   let rehydratedShared = {} as Record<string, any>;
-  const prevShared = tryLocalStorageGet(`var@shared`) || "{ rehydration_failed: true }";
+  const prevShared = getSharedStore().read().vars ?? "{}";
   try {
     rehydratedShared = restoreFromPersistedJsStringify(prevShared);
   } catch (e) {

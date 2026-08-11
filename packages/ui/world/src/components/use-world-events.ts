@@ -6,9 +6,9 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { defaultDoorCloseMs, defaultPlayerKey, defaultSkinKey, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import * as persisted from "../service/get-persisted";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
+import * as persisted from "../service/storage";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
 
@@ -164,7 +164,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const introDone = player.introMapKey === w.mapKey;
         player.introMapKey = w.mapKey;
 
-        const saved = persisted.getNpcs(w.mapKey);
+        const saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs;
 
         const firstBootstrap = player.prevMapPosition === null;
         if (firstBootstrap) {
@@ -187,6 +187,23 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (introDone === false && player.introEnabled === true) {
           await player.panTo();
         }
+      },
+      async restoreFromWorld(fromWorldKey) {
+        // cloned, else both worlds would share the arrays we just adopted
+        const saved = structuredClone(persisted.getWorldMapStore(fromWorldKey, w.mapKey).read());
+        // ours from now on, so a reload keeps it
+        persisted.getWorldMapStore(w.key, w.mapKey).patch(saved);
+
+        w.door.applyLocks(saved.doorLocks ?? []);
+        w.view.roomLight.setRoomLitPairs(saved.roomLit);
+        w.view.setPostProcessingEnabled(true);
+
+        state.removeNpcs(...Object.keys(w.n));
+        w.player.key = saved.npcs?.playerKey ?? w.player.key;
+        // the player goes first, else a restored npc would be adopted as them
+        await w.player.ensure();
+        await state.restoreNpcs(saved.npcs);
+        w.view.forceUpdate();
       },
       onChangeMap() {
         // whilst the outgoing map still exists
@@ -536,18 +553,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         };
       },
       persistNpcs() {
-        persisted.setNpcs(w.mapKey, {
-          playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
-          npcs: Object.values(w.n).map((npc) => ({
-            key: npc.key,
-            at: { x: npc.point.x, y: npc.point.y },
-            angle: npc.rotation.y,
-            skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
-            decorKey: state.npcToDoable[npc.key] ?? undefined,
-          })),
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({
+          npcs: {
+            playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
+            npcs: Object.values(w.n).map((npc) => ({
+              key: npc.key,
+              at: { x: npc.point.x, y: npc.point.y },
+              angle: npc.rotation.y,
+              skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
+              decorKey: state.npcToDoable[npc.key] ?? undefined,
+            })),
+          },
         });
       },
-      async restoreNpcs(saved = persisted.getNpcs(w.mapKey)) {
+      async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
         if (saved === null) {
           return;
         }
@@ -836,6 +855,8 @@ export type State = {
   onChangeMap(): void;
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
   persistNpcs(): void;
+  /** Adopt another world's npcs, lit rooms and locked doors for `w.mapKey`, and apply them */
+  restoreFromWorld(fromWorldKey: string): Promise<void>;
   /** Respawn the npcs persisted for `w.mapKey`, excluding the player */
   restoreNpcs(saved?: null | persisted.PersistedNpcs): Promise<void>;
   onChangeTheme(): void;

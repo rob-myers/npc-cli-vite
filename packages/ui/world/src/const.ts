@@ -68,50 +68,29 @@ export const assetsJsonChangingEvent = "assets-json-changing";
 export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
-export const brightnessStorageKey = `world-brightness-value`;
-export const cameraModeStorageKey = `world-camera-mode`;
-export const cameraPositionStorageKey = "world-camera-position";
-export const numCardinalDirectionsKey = `world-camera-cardinal-directions`;
 /** Vertical field of view (degrees) of the world camera */
 export const cameraFov = 50;
 
 export const defaultBrightness = 2;
-export const postProcessingEnabledKey = "world-post-processing-enabled";
-export const roomLightEditingEnabledKey = "world-room-light-editing-enabled";
-export const roomLightingEnabledKey = "world-room-lighting-enabled";
-/** Prefix for the per-map lit-rooms localStorage key — actual key is `${roomLitStorageKeyPrefix}:${mapKey}` */
-export const roomLitStorageKeyPrefix = "world-room-lit";
-/** Prefix for the per-map persisted npcs */
-export const npcsStorageKeyPrefix = "world-npcs";
-/** Prefix for the per-map persisted locked doors */
-export const doorLocksStorageKeyPrefix = "world-door-locks";
-/** Persists `w.player.introEnabled` */
-export const introEnabledKey = "world-intro-enabled";
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
 export const spawnPlayerAttempts = 10;
 /** Per-instance cap on room count, for sizing the `roomLit` boolean array */
 export const MAX_ROOMS_PER_GM = 32;
-export const roomLightIntensityKey = "world-room-light-intensity";
 /** Default brightness of a lit room (long-press), scaling `RoomLightPostprocess.litAmount()` */
 export const defaultRoomLightIntensity = 0.7;
 
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
-export const defaultDynamicLightRadius = 1;
+export const defaultDynamicLightRadius = 3.5;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
 export const maxDynamicLightRadius = 4.5;
-export const dynamicLightRadiusKey = "world-tracked-light-radius";
 /** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
 export const defaultDynamicLightIntensity = 1;
-export const dynamicLightIntensityKey = "world-tracked-light-intensity";
 /** Default extent (0..1) of the vignette darkening the corners of the frame */
-export const defaultVignette = 1;
+export const defaultVignette = 0;
 
-/** Default magnitude of the world's ambient (unlit-area) tint — see `dimWorldColor` */
-export const defaultAmbientIntensity = 0.4;
-export const ambientIntensityKey = "world-ambient-intensity";
-export const ambientMoodKey = "world-ambient-mood";
+export const defaultAmbientIntensity = 1;
 
 export const defaultCameraModeDesktop = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
@@ -264,7 +243,5 @@ export const fadeSecs: Record<
   sit: {},
   walk: {},
 };
-
-export const pickOpenDoorsKey = "world-debug-pick-open-doors";
 
 export const defaultSkinKey = "medic-0";

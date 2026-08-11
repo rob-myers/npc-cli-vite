@@ -1,14 +1,17 @@
 import { cn, useStateRef } from "@npc-cli/util";
-import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext } from "react";
+import { getWorldStore } from "../service/storage";
 import { WorldContext } from "./world-context";
 
 export function WorldSpeech() {
   const w = useContext(WorldContext);
   /** Bigger touch targets on mobile */
   const big = w.touchDevice;
+
+  const store = getWorldStore(w.key);
+  const saved = store.read();
 
   const state = useStateRef(
     (): State => ({
@@ -18,9 +21,9 @@ export function WorldSpeech() {
       minY: 40,
       nextId: 0,
       toasts: [],
-      y: tryLocalStorageGetParsed<number>(storageKey(w.id)) ?? 40,
-      historyHeight: tryLocalStorageGetParsed<number>(heightStorageKey(w.id)) ?? (big ? 384 : 288),
-      historyWidth: tryLocalStorageGetParsed<number>(widthStorageKey(w.id)) ?? (big ? 320 : 288),
+      y: saved.speechY,
+      historyHeight: saved.speechHeight ?? (big ? 384 : 288),
+      historyWidth: saved.speechWidth ?? (big ? 320 : 288),
       resizing: false,
 
       clear() {
@@ -100,11 +103,10 @@ export function WorldSpeech() {
         document.addEventListener("touchend", onEnd, { capture: true });
       },
       persistY() {
-        tryLocalStorageSet(storageKey(w.id), `${state.getClampedY(y.get())}`);
+        store.patch({ speechY: state.getClampedY(y.get()) });
       },
       persistHistorySize() {
-        tryLocalStorageSet(heightStorageKey(w.id), `${state.historyHeight}`);
-        tryLocalStorageSet(widthStorageKey(w.id), `${state.historyWidth}`);
+        store.patch({ speechHeight: state.historyHeight, speechWidth: state.historyWidth });
       },
       onTick(delta) {
         // ticks only advance while the world is unpaused (see World.tsx), so this doesn't drain
@@ -300,9 +302,6 @@ export type State = {
   say(npcKey: string, words: string, secs?: number): void;
 };
 
-const storageKey = (id: string) => `world-speech-y-${id}`;
-const heightStorageKey = (id: string) => `world-speech-history-height-${id}`;
-const widthStorageKey = (id: string) => `world-speech-history-width-${id}`;
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
