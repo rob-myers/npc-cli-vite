@@ -152,52 +152,52 @@
     </g>
     <g style="">
       <title>body</title>
-      <rect width="32" height="48" style="filter: none; mix-blend-mode: darken; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="128">
+      <rect width="32" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="128">
         <title>back</title>
       </rect>
-      <rect width="32" height="48" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="80">
+      <rect width="32" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="80">
         <title>front</title>
       </rect>
-      <rect width="16" height="48" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="112">
+      <rect width="16" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="112">
         <title>left</title>
       </rect>
-      <rect width="16" height="48" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="64">
+      <rect width="16" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="64">
         <title>right</title>
       </rect>
-      <rect width="32" height="48" style="filter: none; mix-blend-mode: darken; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="128">
+      <rect width="32" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="128">
         <title>back</title>
       </rect>
-      <rect width="32" height="48" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="80">
+      <rect width="32" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="80">
         <title>front</title>
       </rect>
-      <rect width="16" height="48" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="112">
+      <rect width="16" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="112">
         <title>left</title>
       </rect>
-      <rect width="16" height="48" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="64">
+      <rect width="16" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="144" x="64">
         <title>right</title>
       </rect>
-      <rect width="21.3333" height="16" style="filter: none; mix-blend-mode: darken; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="122.666">
+      <rect width="21.3333" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="122.666">
         <title>back</title>
       </rect>
-      <rect width="21.3333" height="16" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="90.6666">
+      <rect width="21.3333" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="90.6666">
         <title>front</title>
       </rect>
-      <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="112">
+      <rect width="10.6666" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="112">
         <title>left</title>
       </rect>
-      <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="80">
+      <rect width="10.6666" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="80">
         <title>right</title>
       </rect>
-      <rect width="21.3333" height="16" style="filter: none; mix-blend-mode: darken; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="122.666">
+      <rect width="21.3333" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="122.666">
         <title>back</title>
       </rect>
-      <rect width="21.3333" height="16" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="90.6666">
+      <rect width="21.3333" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="90.6666">
         <title>front</title>
       </rect>
-      <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="112">
+      <rect width="10.6666" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="112">
         <title>left</title>
       </rect>
-      <rect width="10.6666" height="16" style="mix-blend-mode: darken; filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="80">
+      <rect width="10.6666" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="64" x="80">
         <title>right</title>
       </rect>
     </g>
