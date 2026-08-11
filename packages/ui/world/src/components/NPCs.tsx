@@ -274,21 +274,25 @@ export default function NPCs() {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
       },
       async move({ npcKey, to, arrive = true, fast }) {
+        /** Can be overriden if unreachable due to locked doors */
+        let groundPoint = helper.parseGroundPoint(to);
+
         const npc = state.get(npcKey);
-        const groundPoint = helper.parseGroundPoint(to);
         const result = state.getClosestPoly(groundPoint, "0.5");
 
         const doResult = state.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
 
         if (doResult.type === "occupied") {
           throw Error("occupied");
-        } else if (doResult.type !== "none") {
+        }
+
+        if (doResult.type !== "none") {
           // doable overrides navigable
           if (doResult.type === "use-current") {
             await state.spawn({ npcKey, at: to }); // respawn
           } else {
+            // look when standing nearby
             if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcfg.dist.doableLook) {
-              // look + delay when standing nearby
               await npc.look(to, { minMs: npcfg.time.look * 1000 });
             }
 
@@ -312,20 +316,23 @@ export default function NPCs() {
         w.e.setNpcDo(npcKey, null); // in case do=stand
         npc.rejectAll(new Error("move again"));
 
-        // already at the closest reachable point e.g. locked door alongside,
-        // so look rather than begin a walk we'd immediately abort
-        const unreachable = w.e.checkNpcTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
-        if (unreachable !== null && npc.distanceTo(unreachable.nearbyPoint) < npcfg.dist.blockedLook) {
-          await npc.look(unreachable.nearbyPoint, { minMs: npcfg.time.look * 1000 });
-          return;
+        // navigation unreachable relative to locked doors?
+        const unreachableResult = w.e.checkNpcTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
+        npc.last.unreachableResult = unreachableResult;
+
+        if (unreachableResult !== null) {
+          // destination unreachable
+          if (npc.distanceTo(unreachableResult.nearbyPoint) < npcfg.dist.blockedLook) {
+            // too close: look instead of walk
+            await npc.look(unreachableResult.nearbyPoint, { minMs: npcfg.time.look * 1000 });
+            return;
+          }
+          // change destination to point near eventual locked door
+          const result = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
+          groundPoint = helper.parseGroundPoint(result.position);
         }
 
-        // shuffle, walk or run
-        const closeTarget =
-          Math.abs(groundPoint.x - npc.position.x) + Math.abs(groundPoint.y - npc.position.z) <
-          npcfg.dist.shuffleTarget;
-        npc.anim.moveClip = closeTarget ? state.clips.shuffle : fast ? state.clips.run : state.clips.walk;
-
+        npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
         npc.anim.startMoving(groundPoint, result, arrive);
 
         state.postCrowdTickEvents.push({ key: "started-moving", npcKey });

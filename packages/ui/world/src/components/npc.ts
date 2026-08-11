@@ -68,6 +68,8 @@ export class Npc {
     point: { x: 0, y: 0 },
     /** Distance to `dst` when the current move started */
     targetDistance: 0,
+    /** Non-null iff `dst` was unreachable at time of plan  */
+    unreachableResult: null,
   };
   /**
    * Number of times current nav node changed during current/last navigation.

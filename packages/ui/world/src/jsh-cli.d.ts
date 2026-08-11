@@ -137,5 +137,8 @@ declare namespace JshCli {
     point: Geom.VectJson;
     /** Distance to `dst` when the current move started */
     targetDistance: number;
+    unreachableResult: null | NpcUnreachableResult;
   };
+
+  type NpcUnreachableResult = { blockingGdKey: Geomorph.GmDoorKey; nearbyPoint: Geom.VectJson };
 }
