@@ -83,7 +83,7 @@ export class UiErrorBoundary extends Component<
           </section>
         </div>
 
-        <div className="shrink-0 p-4 border-t border-white/15">
+        <div className="text-right shrink-0 p-4 border-t border-white/15">
           <button
             type="button"
             className="cursor-pointer px-3 py-1.5 font-sans text-sm text-white bg-black border border-white/50 rounded transition-colors hover:bg-white/10"
