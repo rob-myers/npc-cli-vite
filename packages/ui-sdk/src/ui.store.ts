@@ -67,11 +67,14 @@ export const uiStoreApi = {
   getUi(id: string): UiStoreByIdEntry | null {
     return uiStore.getState().byId[id] ?? null;
   },
-  /** Mount a ui in the background even if its tab was never viewed — see `everSeen` */
-  markEverSeen(id: string) {
+  /**
+   * Mount a ui in the background even if its tab was never viewed — see `everSeen`.
+   * Passing `false` defers mounting, which only makes sense before it ever mounted.
+   */
+  markEverSeen(id: string, next = true) {
     uiStore.setState((draft) => {
       const ui = draft.byId[id];
-      if (ui) ui.everSeen = true;
+      if (ui) ui.everSeen = next;
     });
   },
   removeItem(itemId: string) {
