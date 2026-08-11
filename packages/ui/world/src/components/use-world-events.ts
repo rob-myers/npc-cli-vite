@@ -70,6 +70,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           (node) => node.type === "door" && state.npcCanAccess(npc.key, node.gdKey) === false,
         );
 
+        // 🚧 debug
+        console.log({ unblockedResult, firstBadDoorIndex });
+
         if (firstBadDoorIndex <= 0) {
           return null; // no bad door or already in doorway
         }
@@ -103,6 +106,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
                 for (const node of nodes) {
                   if (node.type === "door") {
                     node.astar.closed = !state.npcCanAccess(npcKey, node.gdKey);
+                  } else if (node.type === "window") {
+                    node.astar.closed = true;
                   }
                 }
               }
@@ -125,23 +130,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         } else {
           return null;
         }
-      },
-      fixInaccessibleTarget(npc) {
-        // avoid walking to other-side-of-wall of inaccessible room
-        const unreachableResult = state.checkNpcTargetUnreachable(npc);
-        if (unreachableResult === null || npc.agentId == null) {
-          return;
-        }
-
-        // walk along prefix
-        // 🚧 ...
-        const result = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
-        crowdApi.requestMoveTarget(
-          w.npc.crowd,
-          npc.agentId,
-          result.nodeRef,
-          helper.groundPointToTuple(unreachableResult.nearbyPoint),
-        );
       },
       getPoint(npcKey) {
         const npc = w.npc.get(npcKey);
@@ -427,8 +415,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "started-moving": {
-            state.fixInaccessibleTarget(npc);
-
             const nearbyGdKeys = state.npcToDoors[e.npcKey]?.nearby ?? emptySet;
             const npcIntention = nearbyGdKeys.size > 0 ? npc.getCornersPath() : null;
             for (const gdKey of nearbyGdKeys) {
@@ -823,10 +809,7 @@ export type State = {
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
   /** Defaults to the npc's current destination */
-  checkNpcTargetUnreachable(
-    npc: Npc,
-    dstGrId?: null | Geomorph.GmRoomId,
-  ): null | { blockingGdKey: Geomorph.GmDoorKey; nearbyPoint: Geom.VectJson };
+  checkNpcTargetUnreachable(npc: Npc, dstGrId?: null | Geomorph.GmRoomId): null | JshCli.NpcUnreachableResult;
   findPath(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
@@ -834,7 +817,6 @@ export type State = {
   ): AStarSearchResult<Graph.GmRoomGraphNode>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
-  fixInaccessibleTarget(npc: Npc): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   /** Restore this map's npcs, place the player, then maybe run the intro */
