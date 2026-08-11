@@ -2,14 +2,17 @@ import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 import { cn } from "@npc-cli/util";
 import { BookOpenTextIcon } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
+import { motion } from "motion/react";
+import { useRef } from "react";
 import * as portals from "react-reverse-portal";
 import { useStore } from "zustand";
 import type { PaneNode } from "./pane-service";
 import { setPaneHidden, setSizes, showPane } from "./pane-service";
 
-const btnClass = "px-1.5 py-0.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded cursor-pointer";
-
 export function PaneTree({ node }: { node: PaneNode }) {
+  /** Bounds the hidden-pane indicators' drag — see `EdgeBar` */
+  const containerRef = useRef<HTMLDivElement>(null);
+
   if (node.type === "leaf") {
     return <PaneLeaf node={node} />;
   }
@@ -29,26 +32,21 @@ export function PaneTree({ node }: { node: PaneNode }) {
   const edgeBar = (children: PaneNode[], edge: "start" | "end") => {
     if (children.length === 0) return null;
     return (
-      <div className={`absolute z-10 gap-1 *:p-1 ${posClass[edge]}`}>
-        {children.map((child) => (
-          <button
-            key={child.id}
-            type="button"
-            className={cn(
-              btnClass,
-              "text-on-background/50 bg-background/50 hover:bg-background hover:text-on-background",
-            )}
-            onClick={() => showPane(node.id, child.id)}
-          >
-            <BookOpenTextIcon className="size-5" />
-          </button>
-        ))}
+      // the centring transform stays out here, so the drag transform has this element to itself
+      <div className={`absolute z-10 ${posClass[edge]}`}>
+        <EdgeBar
+          nodeId={node.id}
+          panes={children}
+          // slides along the edge it sits on, not away from it
+          axis={isVertical ? "x" : "y"}
+          constraintsRef={containerRef}
+        />
       </div>
     );
   };
 
   return (
-    <div className="size-full relative">
+    <div ref={containerRef} className="size-full relative">
       {edgeBar(startHidden, "start")}
       {edgeBar(endHidden, "end")}
       <Allotment
@@ -66,6 +64,55 @@ export function PaneTree({ node }: { node: PaneNode }) {
         ))}
       </Allotment>
     </div>
+  );
+}
+
+/**
+ * The indicators for a split's hidden panes: click one to show that pane again,
+ * or drag the group along the edge it sits on.
+ */
+function EdgeBar({
+  axis,
+  constraintsRef,
+  nodeId,
+  panes,
+}: {
+  axis: "x" | "y";
+  constraintsRef: React.RefObject<HTMLDivElement | null>;
+  nodeId: number;
+  panes: PaneNode[];
+}) {
+  const dragged = useRef(false);
+
+  return (
+    <motion.div
+      className="touch-none select-none"
+      drag={axis}
+      dragConstraints={constraintsRef}
+      dragElastic={0.05}
+      dragMomentum={false}
+      onDragStart={() => (dragged.current = true)}
+      // cleared a frame late, else the click ending the drag would still show the pane
+      onDragEnd={() => requestAnimationFrame(() => (dragged.current = false))}
+    >
+      {panes.map((child) => (
+        <button
+          key={child.id}
+          type="button"
+          className={cn(
+            "px-4 py-2 mb-2 text-xs rounded cursor-pointer",
+            "text-on-background/50 bg-background hover:border hover:border-on-background/25 hover:text-on-background",
+          )}
+          onClick={() => {
+            if (dragged.current === false) {
+              showPane(nodeId, child.id);
+            }
+          }}
+        >
+          <BookOpenTextIcon className="size-6" />
+        </button>
+      ))}
+    </motion.div>
   );
 }
 
