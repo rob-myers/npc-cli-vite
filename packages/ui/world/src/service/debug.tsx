@@ -219,16 +219,19 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
                   />
                 ))}
 
-              {/* Room Graph door edges (entry-to-entry, extended) */}
+              {/* Room Graph door/window edges (entry-to-entry, extended) */}
               {showRoom &&
                 w.gmRoomGraph.nodesArray
-                  .filter((n): n is Graph.GmRoomGraphNodeDoor => n.type === "door")
+                  .filter(
+                    (n): n is Graph.GmRoomGraphNodeDoor | Graph.GmRoomGraphNodeWindow =>
+                      n.type === "door" || n.type === "window",
+                  )
                   .map((node) => {
                     const gm = w.gms[node.gmId];
-                    const door = gm.doors[node.doorId];
-                    if (!door) return null;
-                    const e0 = gm.matrix.transformPoint(door.entries[0].clone());
-                    const e1 = gm.matrix.transformPoint(door.entries[1].clone());
+                    const connector = node.type === "door" ? gm.doors[node.doorId] : gm.windows[node.windowId];
+                    if (!connector) return null;
+                    const e0 = gm.matrix.transformPoint(connector.entries[0].clone());
+                    const e1 = gm.matrix.transformPoint(connector.entries[1].clone());
                     const dx = e1.x - e0.x,
                       dy = e1.y - e0.y;
                     const len = Math.sqrt(dx * dx + dy * dy) || 1;
