@@ -413,26 +413,22 @@ export function WorldMenu() {
                   uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
                 }}
               />
-            </div>
-
-            {/* another world may have left npcs, lit rooms and locked doors on this map */}
-            {otherWorldKeys.length > 0 && (
-              <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
+              {/* another world may have left npcs, lit rooms and locked doors on this map */}
+              {otherWorldKeys.length > 0 && (
                 <div
-                  title="adopt another world's npcs, lit rooms and locked doors"
-                  className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}
+                  className={cn("flex", touch && "items-center border-t border-slate-800")}
+                  title="use other world's npcs, lit rooms, locked doors"
                 >
-                  restore:
+                  <MenuSelect
+                    label="sync"
+                    value={null}
+                    items={otherWorldKeys.map((key) => ({ key, value: key }))}
+                    side="bottom"
+                    onValueChange={(worldKey) => worldKey && void w.e.restoreFromWorld(worldKey)}
+                  />
                 </div>
-                <MenuSelect
-                  label="from world"
-                  value={null}
-                  items={otherWorldKeys.map((key) => ({ key, value: key }))}
-                  side="bottom"
-                  onValueChange={(worldKey) => worldKey && void w.e.restoreFromWorld(worldKey)}
-                />
-              </div>
-            )}
+              )}
+            </div>
 
             <div
               className={sectionHeaderClass(touch)}
