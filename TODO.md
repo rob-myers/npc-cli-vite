@@ -139,9 +139,18 @@
     - npc moves towards dst rather than doorway
   - related to locked door and window?
 
+- ✅ on remove tty, Jobs should disconnect
+
+- 🚧 improve hidden pane ui
+  - ✅ restore button more prominent
+  - do not mount uis which start hidden
+
+- sh: `foo=bar` currently writes to `~` but should write to CWD
+- BUG rm: foo: only /home/* writable
 
 ## Other
 
+- on hmr recreate tty session `move` stops working?
 - lock too small to pick?
 - ❌ idle-left with left-leg forward
 - ❌ idle-right with right-leg forward
