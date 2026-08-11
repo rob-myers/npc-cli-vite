@@ -762,8 +762,9 @@ export function WorldMenu() {
             data-keep-menu-open
             className={cn(
               "outline-width-1 grid place-items-center bg-gray-800 size-9 touch-none select-none",
+              "origin-top-left transition-transform duration-200 ease-out",
               extraZoomActive ? "cursor-pointer text-white hover:bg-gray-700" : "text-gray-500",
-              extraZoomActive && w.touchDevice && "size-14",
+              extraZoomActive && touch && "scale-150",
             )}
             onPointerDown={(e) => {
               e.stopPropagation(); // else the icon column starts dragging
