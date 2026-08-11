@@ -12,6 +12,7 @@ import { PaneTree } from "../components/PaneTree";
 import { PaneTreeWrapper } from "../components/PaneTreeWrapper";
 import {
   closePane,
+  deferHiddenPaneUis,
   ensureLeafUis,
   findLeafByUiId,
   findPanePosition,
@@ -76,6 +77,7 @@ function Index() {
     const { toUi } = uiStore.getState().persistedPanes;
     uiStoreApi.addUis({ metas: Object.values(toUi) });
     ensureLeafUis(root);
+    deferHiddenPaneUis(root);
   }
 
   useBeforeUnloadOrVisibilityChange(() => persistPanesToUi());

@@ -143,9 +143,14 @@
 
 - 🚧 improve hidden pane ui
   - ✅ restore button more prominent
-  - do not mount uis which start hidden
+  - ❌ seeing stale entries in ui.store on mount
+    - OK because they have `everSeen` false
+  - ✅ uis should not mount when in hidden pane
+    - repro: saw tabs-0 and children world-0, tty-0
+  - ✅ pane size wrong on expand
 
-- sh: `foo=bar` currently writes to `~` but should write to CWD
+- mobile extra zoom indicator only when extra-zoomed enough
+
 - BUG rm: foo: only /home/* writable
 
 ## Other

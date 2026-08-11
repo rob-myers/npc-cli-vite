@@ -166,6 +166,28 @@ export function setSizes(splitId: number, sizes: number[]) {
   setRoot((prev) => transformNode(prev, splitId, (node) => (node.type === "split" ? { ...node, sizes } : node)));
 }
 
+/**
+ * A pane which starts collapsed should not mount its ui until expanded — see `everSeen`.
+ * Startup only: collapsing a pane later must not unmount what it already has.
+ */
+export function deferHiddenPaneUis(node: PaneNode, hidden = false) {
+  if (node.type === "leaf") {
+    if (hidden === true && node.uiId) {
+      uiStoreApi.markEverSeen(node.uiId, false);
+    }
+    return;
+  }
+  const hiddenIds = new Set(node.hiddenIds);
+  node.children.forEach((child) => deferHiddenPaneUis(child, hidden || hiddenIds.has(child.id)));
+}
+
+/** Mount whatever `node` contains, now that it is on screen */
+function markPaneUisSeen(node: PaneNode) {
+  for (const uiId of collectLeafUiIds(node)) {
+    uiStoreApi.markEverSeen(uiId);
+  }
+}
+
 export function setPaneHidden(splitId: number, childIndex: number, visible: boolean) {
   setRoot((prev) =>
     transformNode(prev, splitId, (node) => {
@@ -178,6 +200,13 @@ export function setPaneHidden(splitId: number, childIndex: number, visible: bool
       return { ...node, hiddenIds: hiddenIds.size > 0 ? [...hiddenIds] : undefined };
     }),
   );
+
+  if (visible === true) {
+    // dragged back open, having possibly never mounted
+    const split = findNode(uiStore.getState().persistedPanes.root, splitId);
+    const child = split?.type === "split" ? split.children[childIndex] : undefined;
+    if (child) markPaneUisSeen(child);
+  }
 }
 
 export function showPane(splitId: number, childId: number) {
@@ -188,6 +217,9 @@ export function showPane(splitId: number, childId: number) {
       return { ...node, hiddenIds: hiddenIds?.length ? hiddenIds : undefined };
     }),
   );
+
+  const child = findNode(uiStore.getState().persistedPanes.root, childId);
+  if (child) markPaneUisSeen(child);
 }
 
 export function transformNode(node: PaneNode, targetId: number, fn: (node: PaneNode) => PaneNode): PaneNode {
