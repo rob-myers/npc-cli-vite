@@ -59,19 +59,37 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return null; // not moving or same room
         }
 
-        const npcResult = state.findPath(grId.grKey, dstGrId.grKey, { npcKey: npc.key });
+        // search, taking account of npc's access to locked doors
+        const npcKey = npc.key;
+        const npcResult = state.findPath(grId.grKey, dstGrId.grKey, {
+          setNodeWeights(nodes) {
+            for (const node of nodes) {
+              if (node.type === "door") {
+                node.astar.closed = !state.npcCanAccess(npcKey, node.gdKey);
+              } else if (node.type === "window") {
+                node.astar.closed = true;
+              }
+            }
+          },
+        });
         if (npcResult.success === true) {
           return null;
         }
 
-        // when astar fails find a good prefix
-        const unblockedResult = state.findPath(grId.grKey, dstGrId.grKey);
+        // search again freely to find a good prefix (no windows though)
+        const unblockedResult = state.findPath(grId.grKey, dstGrId.grKey, {
+          setNodeWeights(nodes) {
+            for (const node of nodes) {
+              if (node.type === "window") {
+                node.astar.closed = true;
+              }
+            }
+          },
+        });
         const firstBadDoorIndex = unblockedResult.path.findIndex(
           (node) => node.type === "door" && state.npcCanAccess(npc.key, node.gdKey) === false,
         );
-
-        // 🚧 debug
-        console.log({ unblockedResult, firstBadDoorIndex });
+        // console.log({ unblockedResult, firstBadDoorIndex });
 
         if (firstBadDoorIndex <= 0) {
           return null; // no bad door or already in doorway
@@ -99,19 +117,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         return w.gmGraph.findGmIdContaining(helper.parseGroundPoint(input));
       },
-      findPath(srcGrKey, dstGrKey, { npcKey } = {}) {
+      findPath(srcGrKey, dstGrKey, opts) {
         return w.gmRoomGraph.findPath(srcGrKey, dstGrKey, {
-          setWeights: npcKey
-            ? (nodes) => {
-                for (const node of nodes) {
-                  if (node.type === "door") {
-                    node.astar.closed = !state.npcCanAccess(npcKey, node.gdKey);
-                  } else if (node.type === "window") {
-                    node.astar.closed = true;
-                  }
-                }
-              }
-            : undefined,
+          setNodeWeights: opts?.setNodeWeights,
         });
       },
       findRoomContaining(input, includeDoors = false) {
@@ -813,7 +821,10 @@ export type State = {
   findPath(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
-    opts?: { npcKey?: string; srcCentroid?: Geom.VectJson },
+    opts?: {
+      setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
+      srcCentroid?: Geom.VectJson;
+    },
   ): AStarSearchResult<Graph.GmRoomGraphNode>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
