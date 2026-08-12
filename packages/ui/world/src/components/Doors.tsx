@@ -357,6 +357,14 @@ export default function Doors() {
         }
         state.syncLockTints();
       },
+      resetLocks() {
+        for (const door of Object.values(state.byKey)) {
+          door.locked = door.sealed === true || door.connector.meta.locked === true;
+        }
+        state.syncLockTints();
+        // persisted rather than cleared, so a reload agrees with what we just applied
+        state.persistLocks();
+      },
       syncLockTint(door) {
         const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
         if (associatedDecorKeys) {
@@ -581,6 +589,8 @@ export type State = {
   persistLocks: () => void;
   /** Lock exactly these doors, e.g. having restored them from another world */
   applyLocks: (gdKeys: string[]) => void;
+  /** Lock exactly the doors the map itself asks for, forgetting what we'd locked since */
+  resetLocks: () => void;
   sendDataToGpu: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
