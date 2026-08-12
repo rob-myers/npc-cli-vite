@@ -67,7 +67,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   introEnabled: true,
-  fx: { vignette: defaultVignette },
+  fx: { vignette: defaultVignette, npcOutline: 0 },
   ambientIntensity: defaultAmbientIntensity,
   roomLightIntensity: defaultRoomLightIntensity,
   roomLightEditing: false,
