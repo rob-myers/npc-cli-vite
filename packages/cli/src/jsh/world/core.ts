@@ -294,7 +294,8 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }
         if (npc.isMoving()) {
           pendingMoves.unshift({ ...npc.last.dst });
         } else if (npc.isLooking()) {
-          pendingLooks.unshift({ ...npc.last.look });
+          // pendingLooks.unshift({ ...npc.last.look });
+          pendingMoves.unshift({ ...npc.last.dst });
         }
         npc.rejectAll(Error("paused"));
         return true;
@@ -436,7 +437,7 @@ export async function move_next(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
-  const { w, api } = ct;
+  const { api } = ct;
 
   const {
     getNpcOrThrow,
