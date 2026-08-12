@@ -185,7 +185,7 @@ export const npcfg = {
     /** Within this of the closest reachable point we look rather than walk */
     blockedLook: 0.3,
     /** Look before teleporting onto a doable this close by */
-    doableLook: 1,
+    doableLook: 1.5,
     /** Below this much movement per frame an npc counts as motionless */
     stuckEpsilon: 0.002,
     /** Height of an npc */

@@ -349,11 +349,8 @@ export class Npc {
           longLook,
         } satisfies typeof lookState);
 
-        if (longLook) {
-          this.anim.moveClip = this.clips.shuffle;
-          this.anim.mixer.existingAction(this.anim.idleClip)?.fadeOut(0.15);
-          this.anim.mixer.clipAction(this.anim.moveClip).reset().fadeIn(0.15).play();
-          this.anim.mixer.timeScale = 2;
+        if (longLook === true) {
+          this.anim.startLookShuffle();
         }
       });
     } finally {
