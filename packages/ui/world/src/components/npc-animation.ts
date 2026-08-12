@@ -87,19 +87,33 @@ export class NpcAnimation {
 
     s.elapsed += delta;
 
+    // begin crossfading back early, so the shuffle has become idle just as the turn lands.
+    // Clamped, else a turn shorter than the fade would start it before it had begun
+    if (s.longLook === true) {
+      const idleFade = Math.min(lookIdleFadeMs / 1000, s.duration);
+      if (s.elapsed >= s.duration - idleFade) {
+        s.longLook = false;
+        this.playIdleClip(idleFade);
+      }
+    }
+
     if (s.elapsed >= s.duration) {
       this.npc.rotation.y = s.startAngle + s.totalDiff;
       s.active = false;
-      if (s.longLook) {
-        s.longLook = false;
-        this.playIdleClip(0.3);
-      }
       this.npc.resolve.look("lookAt");
     } else {
       // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
       const t = s.elapsed / s.duration;
       this.npc.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
     }
+  }
+
+  /** The turn-in-place animation of a `longLook` */
+  startLookShuffle() {
+    this.npc.anim.moveClip = this.npc.clips.shuffle;
+    this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
+    this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
+    this.mixer.timeScale = 1.5;
   }
 
   playIdleClip(duration = 0.1, idleClip = this.idleClip, force = false) {
@@ -243,6 +257,12 @@ export class NpcAnimation {
     return this.stuckAccum > npcfg.time.stuckDuration;
   }
 }
+
+/**
+ * How long a `longLook` takes to crossfade from its shuffle back to idle. It starts this
+ * far before the turn ends, so both finish together rather than the idle following on.
+ */
+const lookIdleFadeMs = 300;
 
 function bubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;
