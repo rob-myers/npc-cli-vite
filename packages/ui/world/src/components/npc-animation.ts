@@ -116,6 +116,16 @@ export class NpcAnimation {
     this.mixer.timeScale = 1.5;
   }
 
+  /** Undoes `startLookShuffle`, and only that — a walk or run is left alone */
+  stopLookShuffle() {
+    if (this.moveClip !== this.npc.clips.shuffle) {
+      return;
+    }
+    this.mixer.timeScale = 1;
+    this.moveClip = this.npc.clips.walk;
+    this.playIdleClip(0.15);
+  }
+
   playIdleClip(duration = 0.1, idleClip = this.idleClip, force = false) {
     // fading all clips prevents e.g. sit from continuing
     for (const clip of Object.values(this.npc.clips)) {

@@ -312,16 +312,16 @@ export class Npc {
   /**
    * Can look at `npcKey` or point.
    */
-  async look(at: string | MaybeMeta<JshCli.PointAnyFormat>, { minMs = 0, immediate = false } = {}) {
-    const p = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
-    this.last.look = p;
+  async look({ at, minMs = 0, immediate = false }: JshCli.LookOpts) {
+    const groundPoint = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
+    this.last.look = groundPoint;
 
     const cannotLook = npcCannotLookForClip[this.anim.idleClip.name];
     if (cannotLook !== undefined) {
       throw Error(cannotLook);
     }
 
-    const target = geomService.getThreeRotationY(p.y - this.position.z, p.x - this.position.x);
+    const target = geomService.getThreeRotationY(groundPoint.y - this.position.z, groundPoint.x - this.position.x);
     if (immediate) {
       this.skinnedMesh.rotation.y = target;
       return;
@@ -335,7 +335,7 @@ export class Npc {
 
     try {
       await new Promise<string>((resolve, reject) => {
-        this.rejectAll(new Error("interrupted"));
+        this.rejectAll(new Error("look again"));
         this.resolve.look = resolve;
         this.reject.look = reject;
 
@@ -351,16 +351,20 @@ export class Npc {
 
         if (longLook === true) {
           this.anim.startLookShuffle();
+        } else {
+          this.anim.stopLookShuffle(); // in case we superseded a `longLook`
         }
       });
     } catch (e) {
+      if (e instanceof Error && e.message === "look again") {
+        return; // the look which interrupted us owns the animation now
+      }
       this.anim.startIdle({ force: true });
+      this.anim.stopLookShuffle();
       throw e;
-    } finally {
-      lookState.longLook = false;
-      this.anim.mixer.timeScale = 1;
-      this.anim.moveClip = this.clips.walk;
     }
+
+    this.anim.stopLookShuffle();
   }
 
   pinTo(result: FindNearestPolyResult, overrideGroundPoint?: JshCli.GroundPoint): boolean {

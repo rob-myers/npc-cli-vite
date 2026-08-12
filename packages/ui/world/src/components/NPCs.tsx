@@ -309,7 +309,7 @@ export default function NPCs() {
           } else {
             // look when standing nearby
             if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcfg.dist.doableLook) {
-              await npc.look(to, { minMs: npcfg.time.look * 1000 });
+              await npc.look({ at: to, minMs: npcfg.time.look * 1000 });
             }
 
             await npc.fadeSpawn({ at: to });
@@ -340,7 +340,7 @@ export default function NPCs() {
           // destination unreachable
           if (npc.distanceTo(unreachableResult.nearbyPoint) < npcfg.dist.blockedLook) {
             // too close: look instead of walk
-            await npc.look(unreachableResult.nearbyPoint, { minMs: npcfg.time.look * 1000 });
+            await npc.look({ at: unreachableResult.nearbyPoint, minMs: npcfg.time.look * 1000 });
             return;
           }
           // change destination to point near eventual locked door
