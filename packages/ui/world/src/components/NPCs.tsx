@@ -300,6 +300,8 @@ export default function NPCs() {
           throw Error("occupied");
         }
 
+        npc.last.dst = helper.parseGroundPoint(to); // for doable or nav
+
         if (doResult.type !== "none") {
           // doable overrides navigable
           if (doResult.type === "use-current") {

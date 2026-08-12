@@ -190,9 +190,8 @@ export class NpcAnimation {
       helper.groundPointToTuple(groundPoint),
     );
 
-    // track destination for checkNpcTargetUnreachable
     const { last } = this.npc;
-    last.dst = groundPoint;
+    // last.dst = groundPoint; // already set in `w.npc.move`
     last.dstGrId = this.w.e.findRoomContaining(groundPoint);
     last.blockingArea = -1;
     last.navNodeRef = -1;

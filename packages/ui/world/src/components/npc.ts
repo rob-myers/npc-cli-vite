@@ -353,6 +353,9 @@ export class Npc {
           this.anim.startLookShuffle();
         }
       });
+    } catch (e) {
+      this.anim.startIdle({ force: true });
+      throw e;
     } finally {
       lookState.longLook = false;
       this.anim.mixer.timeScale = 1;
