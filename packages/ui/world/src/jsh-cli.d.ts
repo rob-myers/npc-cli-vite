@@ -94,6 +94,11 @@ declare namespace JshCli {
     arrive?: boolean;
     fast?: boolean;
   };
+  type LookOpts = {
+    at: string | MaybeMeta<JshCli.PointAnyFormat>;
+    minMs?: number;
+    immediate?: boolean;
+  };
 
   type RaycastResult = {
     success: boolean;

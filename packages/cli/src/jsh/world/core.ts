@@ -164,6 +164,20 @@ export function grant(
 }
 
 /**
+ * The "name" of an instanceof Error is `e.message`.
+ * A named error is either ignored (false) or handled, else rethrown.
+ */
+function handleNamedErrors(handlers: NamedErrorHandlers = {}) {
+  return (e: any) => {
+    const handler = e instanceof Error ? handlers[e.message] : undefined;
+    if (handler === undefined) {
+      throw e;
+    }
+    return handler === false ? undefined : handler();
+  };
+}
+
+/**
  * ```sh
  * label npc:rob color:#33f
  * label npc:rob
@@ -202,39 +216,41 @@ export function lock(
  * ```
  */
 export async function look(
-  { api, args, w, datum }: JshCli.RunArg<string | JshCli.PointAnyFormat>,
-  opts: { npcKey: string; at: string | JshCli.PointAnyFormat } = api.jsArg(args, {
+  ct: JshCli.RunArg,
+  opts: { npcKey: string; at: string | JshCli.PointAnyFormat } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
     to: "at",
     face: "at",
   }),
 ) {
-  const npc = w.npc.get(opts.npcKey);
-
-  const { dispose } = api.handleStatus({
-    cleanup: (killed) => killed && npc.rejectAll(new Error("killed")),
+  const { pendingLooks, processHandled, lookPausable } = lookHandling(ct, {
+    npcKey: opts.npcKey,
   });
 
   try {
-    if (api.isTtyAt(0)) {
-      return await npc.look(opts.at);
-    }
+    let next: undefined | (typeof pendingLooks)[number];
+    const { api } = ct;
 
-    while ((datum = await api.read()) !== api.eof) {
-      await npc.look(datum);
+    if (api.isTtyAt(0)) {
+      pendingLooks.push(opts.at);
+
+      while ((next = pendingLooks.shift())) {
+        await lookPausable({ at: next });
+      }
+    } else {
+      let pendingRead = api.read();
+
+      while ((next = pendingLooks.shift() ?? (await pendingRead)) !== api.eof && next) {
+        const lookPromise = lookPausable({ at: next });
+        await Promise.race([lookPromise, (pendingRead = api.read())]);
+      }
     }
   } finally {
-    dispose();
+    processHandled.dispose();
   }
 }
 
-/**
- * Generic machinary for pausing any look/move in progress,
- * storing the unreached target at the front of `pendings`.
- *
- * - `npcKey` is a literal string or a path to a literal string relative to CWD.
- */
-function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
@@ -246,33 +262,65 @@ function moveHandlingFactory({ api, w }: JshCli.RunArg, opts: { npcKey: string }
     }
   }
 
-  // usually singletons or empty
-  const pendingLooks: JshCli.PointAnyFormat[] = [];
-  const pendingMoves: JshCli.PointAnyFormat[] = [];
-
-  /**
-   * - a named error is either ignored (false) or handled, else rethrown/
-   * - "paused" handled by default.
-   */
-  function handleErrors(extra: NamedErrorHandlers = {}) {
-    const handlers: NamedErrorHandlers = { paused: () => api.awaitResume(), ...extra };
-    return (e: any) => {
-      const handler = e instanceof Error ? handlers[e.message] : undefined;
-      if (handler === undefined) {
-        throw e;
-      }
-      return handler === false ? undefined : handler();
-    };
-  }
+  // npcKey or point
+  const pendingLooks: (string | JshCli.PointAnyFormat)[] = [];
 
   return {
     pendingLooks,
+    getNpcOrUndefined,
+    getNpcOrThrow,
+    async lookPausable(lookOpts: JshCli.LookOpts, extra?: NamedErrorHandlers) {
+      if (!(typeof lookOpts.at === "string" || w.helper.isPointAnyFormat(lookOpts.at))) {
+        throw Error("lookOpts.at must be a string or point");
+      }
+
+      await getNpcOrThrow()
+        .look(lookOpts)
+        // .look({ ...lookOpts, minMs: 5000 })
+        .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }));
+    },
+    processHandled: api.handleStatus({
+      cleanup(killed) {
+        killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
+      },
+      onSuspend: () => {
+        const npc = getNpcOrUndefined();
+        if (!npc) {
+          return true;
+        }
+        pendingLooks.unshift({ ...npc.last.look });
+        npc.rejectAll(Error("paused"));
+        return true;
+      },
+    }),
+  };
+}
+
+/**
+ * Generic machinary for pause/resume move.
+ * - `npcKey` is a literal string or a path to a literal string relative to CWD.
+ */
+function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+  const getNpcOrUndefined = (): undefined | JshCli.Npc =>
+    w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
+
+  function getNpcOrThrow() {
+    try {
+      return w.npc.get(opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey));
+    } catch {
+      throw Error(`npc not found: ${opts.npcKey}`);
+    }
+  }
+
+  const pendingMoves: JshCli.PointAnyFormat[] = [];
+
+  return {
     pendingMoves,
     getNpcOrUndefined,
     getNpcOrThrow,
     /** Move, handling named errors and any pause the move deferred */
-    async move(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
-      await w.npc.move(moveOpts).catch(handleErrors(extra));
+    async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
+      await w.npc.move(moveOpts).catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }));
       // needed in case we allowed fade to complete
       await api.awaitResume();
     },
@@ -354,22 +402,16 @@ export async function move_const(
 ) {
   const fixedPoints = isArrayOfPoints(opts.to) ? opts.to : [opts.to];
 
-  const {
-    getNpcOrThrow,
-    pendingMoves,
-    processHandled,
-    move: movePausable,
-  } = moveHandlingFactory(ct, {
+  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
   });
 
   try {
-    const npc = getNpcOrThrow();
     pendingMoves.push(...fixedPoints);
     let next: undefined | JshCli.PointAnyFormat;
 
     while ((next = pendingMoves.shift())) {
-      await movePausable({ npcKey: npc.key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast });
+      await movePausable({ npcKey: getNpcOrThrow().key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast });
     }
   } finally {
     processHandled.dispose();
@@ -386,12 +428,7 @@ export async function move_lazy(
 ) {
   const { api, w } = ct;
 
-  const {
-    getNpcOrThrow,
-    pendingMoves,
-    processHandled,
-    move: movePausable,
-  } = moveHandlingFactory(ct, {
+  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
   });
 
@@ -439,12 +476,7 @@ export async function move_next(
 ) {
   const { api } = ct;
 
-  const {
-    getNpcOrThrow,
-    pendingMoves,
-    processHandled,
-    move: movePausable,
-  } = moveHandlingFactory(ct, {
+  const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
   });
 
@@ -599,7 +631,7 @@ export async function park(
       facing,
     });
   } else {
-    await npc.look(facing);
+    await npc.look({ at: facing });
   }
 }
 
