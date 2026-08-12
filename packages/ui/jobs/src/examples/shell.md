@@ -70,9 +70,9 @@ localLoop() {
 }
 localLoop 10
 
-# infinite loop 🔔 either copy-paste or kill using UI above
-while true; do
-  echo ctrl-c or kill to stop...
+# infinite loop, forced to run interactively only
+test $$ && echo please copy-paste to run || while true; do
+  echo ctrl-c to stop...
 done
 ```
 

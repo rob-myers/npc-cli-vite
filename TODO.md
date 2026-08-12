@@ -141,7 +141,7 @@
 
 - ✅ on remove tty, Jobs should disconnect
 
-- 🚧 improve hidden pane ui
+- ✅ improve hidden pane ui
   - ✅ restore button more prominent
   - ❌ seeing stale entries in ui.store on mount
     - OK because they have `everSeen` false
