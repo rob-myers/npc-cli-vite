@@ -205,6 +205,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         await state.restoreNpcs(saved.npcs);
         w.view.forceUpdate();
       },
+      async resetWorldState() {
+        w.door.resetLocks(); // back to the map's own `meta.locked`
+        w.view.roomLight.setRoomLitPairs([]);
+        w.view.setPostProcessingEnabled(true);
+
+        state.removeNpcs(...Object.keys(w.n));
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, roomLit: [] });
+        // nothing saved to restore now, so the player respawns near the camera
+        await w.player.ensure();
+        state.persistNpcs();
+        w.view.forceUpdate();
+      },
       onChangeMap() {
         // whilst the outgoing map still exists
         state.persistNpcs();
@@ -857,6 +869,8 @@ export type State = {
   persistNpcs(): void;
   /** Adopt another world's npcs, lit rooms and locked doors for `w.mapKey`, and apply them */
   restoreFromWorld(fromWorldKey: string): Promise<void>;
+  /** Forget this map's saved state, leaving only the player, spawned near the camera */
+  resetWorldState(): Promise<void>;
   /** Respawn the npcs persisted for `w.mapKey`, excluding the player */
   restoreNpcs(saved?: null | persisted.PersistedNpcs): Promise<void>;
   onChangeTheme(): void;

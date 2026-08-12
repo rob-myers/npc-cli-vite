@@ -25,6 +25,7 @@ import {
 } from "@phosphor-icons/react";
 import debounce from "debounce";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
+import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
@@ -71,7 +72,47 @@ export function WorldMenu() {
       y: saved.menuY,
       menuWidth: saved.menuWidth,
       menuHeight: saved.menuHeight,
+      armedState: null,
+      armedTimeoutId: 0,
       resizing: false,
+      stateSelectOpen: false,
+
+      onSelectState(value) {
+        if (value === null) {
+          return;
+        }
+        if (state.armedState !== value) {
+          // the popup stays open with this option now reading "confirm", so it can be clicked
+          // straight away. It forgets itself, lest a much later click take effect by surprise
+          window.clearTimeout(state.armedTimeoutId);
+          state.armedTimeoutId = window.setTimeout(state.disarmState, stateArmedMs);
+          state.set({ armedState: value });
+          return;
+        }
+
+        state.disarmState();
+        state.set({ stateSelectOpen: false });
+        if (value === resetStateValue) {
+          void w.e.resetWorldState();
+        } else {
+          void w.e.restoreFromWorld(value);
+        }
+      },
+      onStateSelectOpenChange(open, reason) {
+        if (open === false && reason === "item-press") {
+          return; // `onSelectState` decides, since arming "confirm" must not close the popup
+        }
+        if (open === false) {
+          state.disarmState(); // dismissed rather than confirmed
+        }
+        state.set({ stateSelectOpen: open });
+      },
+      disarmState() {
+        window.clearTimeout(state.armedTimeoutId);
+        if (state.armedState !== null) {
+          state.set({ armedState: null });
+        }
+      },
 
       isOpen(section) {
         return state.sections[section] === true;
@@ -419,21 +460,25 @@ export function WorldMenu() {
                   uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
                 }}
               />
-              {/* another world may have left npcs, lit rooms and locked doors on this map */}
-              {otherWorldKeys.length > 0 && (
-                <div
-                  className={cn("flex", touch && "items-center border-t border-slate-800")}
-                  title="use other world's npcs, lit rooms, locked doors"
-                >
-                  <MenuSelect
-                    label="load state"
-                    value={null}
-                    items={otherWorldKeys.map((key) => ({ key, value: key }))}
-                    side="bottom"
-                    onValueChange={(worldKey) => worldKey && void w.e.restoreFromWorld(worldKey)}
-                  />
-                </div>
-              )}
+              {/* reset this map's npcs, lit rooms and locked doors, or take another world's */}
+              <div
+                className={cn("flex", touch && "items-center border-t border-slate-800")}
+                title="reset, or use another world's npcs, lit rooms, locked doors"
+              >
+                <MenuSelect
+                  label="state"
+                  value={null}
+                  items={[resetStateValue, ...otherWorldKeys].map((value) => ({
+                    key: value === resetStateValue ? "reset" : value,
+                    el: state.armedState === value ? <span className="text-red-300">confirm</span> : undefined,
+                    value,
+                  }))}
+                  side="bottom"
+                  onValueChange={state.onSelectState}
+                  open={state.stateSelectOpen}
+                  onOpenChange={state.onStateSelectOpenChange}
+                />
+              </div>
             </div>
 
             <div
@@ -1205,6 +1250,15 @@ export type State = {
   /** Height (px) of the main menu popup's scrollable body — resizable, persisted */
   menuHeight: number;
   resizing: boolean;
+  /** The `state` option clicked once, whose next click takes effect. `null` when none is armed */
+  armedState: null | string;
+  armedTimeoutId: number;
+  /** Controlled, so arming "confirm" can keep the popup open — see `onStateSelectOpenChange` */
+  stateSelectOpen: boolean;
+  /** Either restore this map's state from another world, or reset it — each after confirming */
+  onSelectState(value: null | string): void;
+  onStateSelectOpenChange(open: boolean, reason: Select.Root.ChangeEventReason): void;
+  disarmState(): void;
   getMaxY(): number;
   getClampedY(y: number): number;
   getMaxMenuWidth(): number;
@@ -1242,6 +1296,11 @@ const rangeInputClass = (touch: boolean, width: string) =>
       : "[&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5",
     width,
   );
+
+/** `MenuSelect` value of the "reset" option, which no `worldKey` can collide with */
+const resetStateValue = "reset-world-state";
+/** How long a `state` option stays armed as "confirm" */
+const stateArmedMs = 5000;
 
 const minMenuWidth = 200;
 const minMenuHeight = 120;
@@ -1288,20 +1347,30 @@ function MenuSelect<T extends string>({
   side = "right",
   value,
   onValueChange,
+  open,
+  onOpenChange,
 }: {
   className?: string;
-  items: { key: string; value: T }[];
+  items: { key: string; el?: React.JSX.Element; value: T }[];
   /** Defaults to value */
   label?: string;
   side?: "left" | "right" | "bottom" | "top";
   value: T | null;
   onValueChange: (value: T | null) => void;
+  /** Optionally control the popup, e.g. to hold it open whilst confirming something */
+  open?: boolean;
+  onOpenChange?: (open: boolean, reason: Select.Root.ChangeEventReason) => void;
 }) {
   const w = useContext(WorldContext);
   const touch = w.touchDevice;
 
   return (
-    <Select.Root value={value} onValueChange={onValueChange}>
+    <Select.Root
+      value={value}
+      onValueChange={onValueChange}
+      open={open}
+      onOpenChange={(next, eventDetails) => onOpenChange?.(next, eventDetails.reason)}
+    >
       <Select.Trigger
         className={cn(
           "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full min-w-0",
@@ -1324,9 +1393,9 @@ function MenuSelect<T extends string>({
         >
           <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
             <Select.List>
-              {items.map(({ key, value }) => (
+              {items.map(({ key, el, value }) => (
                 <Select.Item key={key} value={value} className={selectItemClassName(touch)}>
-                  <Select.ItemText>{key}</Select.ItemText>
+                  <Select.ItemText>{el ?? key}</Select.ItemText>
                 </Select.Item>
               ))}
             </Select.List>
