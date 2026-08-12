@@ -471,20 +471,22 @@ export function WorldMenu() {
                   ))}
                 </div>
 
-                <button
-                  type="button"
-                  className={cn(
-                    "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
-                    touch && "text-sm py-2 mt-1",
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    w.debug.logGPUInfo = true;
-                    w.view.forceUpdate();
-                  }}
-                >
-                  log gpu info
-                </button>
+                <div className={cn("px-2 pb-1", touch && "px-3 pb-2")}>
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
+                      touch && "text-sm py-2 mt-1",
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      w.debug.logGPUInfo = true;
+                      w.view.forceUpdate();
+                    }}
+                  >
+                    log gpu info
+                  </button>
+                </div>
               </>
             )}
 
