@@ -28,6 +28,7 @@ import {
   float,
   mix,
   modelWorldMatrix,
+  mrt,
   normalWorld,
   output,
   positionLocal,
@@ -86,6 +87,17 @@ export default function NPCs() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = 64;
       },
+      syncOutlineMask() {
+        // a material mrt *replaces* the colour output unless the scene pass declares one too,
+        // so this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`
+        const next = w.view.npcMaskMrt === null ? null : npcMaskMrt;
+        for (const npc of Object.values(state.npc)) {
+          if (npc.material.mrtNode !== next) {
+            npc.material.mrtNode = next;
+            npc.material.needsUpdate = true;
+          }
+        }
+      },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
@@ -135,6 +147,8 @@ export default function NPCs() {
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
           output,
         );
+        // silhouette for the optional npc outlines — see `syncOutlineMask`
+        material.mrtNode = w.view.npcMaskMrt === null ? null : npcMaskMrt;
 
         return {
           brightness,
@@ -719,6 +733,7 @@ export type State = {
   postCrowdTickEvents: JshCli.Event[];
 
   configureCrowd(): void;
+  syncOutlineMask(): void;
   createMaterials(
     pickId: number,
     skinIndex: number,
@@ -856,6 +871,19 @@ const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance:
 
 const labelHw = 0.5;
 const labelHh = 0.125;
+
+/**
+ * Writes each npc's body (not its billboard label) into the scene pass's `npcMask` attachment,
+ * the silhouette the outline is grown from — see `service/npc-outline.ts`.
+ * Shared by every npc, since it reads only the `groupId` attribute.
+ */
+const npcMaskMrt = mrt({
+  npcMask: (select as SelectAnyType)(
+    attribute<"float">("groupId", "float").lessThan(0.5),
+    vec4(1, 1, 1, 1),
+    vec4(0, 0, 0, 0),
+  ),
+});
 const emptyMeta = {};
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {

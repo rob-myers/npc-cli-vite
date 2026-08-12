@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
-import { Fn, float, instanceIndex, mix, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
+import { Fn, float, instanceIndex, mix, mrt, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { WorldTheme } from "../assets.schema";
 import {
@@ -30,6 +30,7 @@ import {
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { createDynamicLightPostprocess, type DynamicLightPostprocess } from "../service/dynamic-light";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
+import { applyNpcOutline } from "../service/npc-outline";
 import { decodePick } from "../service/pick";
 import { createRoomLightPostprocess, type RoomLightPostprocess } from "../service/room-light-postprocess";
 import { getWorldMapStore, getWorldStore, type PersistedCamera } from "../service/storage";
@@ -92,7 +93,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
-      pickRT: new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat }),
+      pickRT: createPickRT(1),
+      npcMaskMrt: null,
       postProcessing: saved.postProcessing,
       // each is 0..1, driving a `mix` so 0 is exactly identity
       fx: mapValues(fxDefaults, (value, key) => uniform(saved.fx[key] ?? value)),
@@ -353,9 +355,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
+        // the npc material declares an extra output whilst outlining, so this pass needs the same
+        // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
+        renderer.setMRT(state.npcMaskMrt);
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
         state.objectPick.value = 0;
+        renderer.setMRT(null);
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
@@ -404,6 +410,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.roomLight.resetAllRooms();
         getWorldMapStore(w.key, w.mapKey).patch({ roomLit: [] });
         state.setPostProcessingEnabled(true);
+      },
+      syncPickRT() {
+        // `RenderTarget` attachments must match what the materials output — see `pickObject`
+        const count = state.npcMaskMrt === null ? 1 : 2;
+        if (state.pickRT.textures.length !== count) {
+          state.pickRT.dispose();
+          state.pickRT = createPickRT(count);
+        }
       },
       setupDom() {
         const ro = new ResizeObserver(([entry]) => {
@@ -601,6 +615,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
+        // the extra attachment only exists whilst wanted, so `PostProcessing` rebuilds on toggle.
+        // `setMRT` must precede the pipeline, which precompiles the pass
+        const outlineEnabled = state.fx.npcOutline.value > 0;
+        // one node shared by this pass and the pick pass, so both compile the same shader variant
+        state.npcMaskMrt = outlineEnabled === true ? mrt({ output, npcMask: vec4(0) }) : null;
+        if (state.npcMaskMrt !== null) {
+          scenePass.setMRT(state.npcMaskMrt); // only npcs opt in — see `NPCs.tsx`
+        }
+        state.syncPickRT();
+        w.npc?.syncOutlineMask();
         const sceneColor = scenePass.getTextureNode("output");
         // raw logarithmic depth — litAmount() (room + tracked) does its own log-depth inversion
         const sceneDepth = scenePass.getTextureNode("depth");
@@ -622,6 +646,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
           // cheap toggleable effects, each a no-op whilst its uniform is 0
           color.assign(applyVignette(color, state.fx.vignette, isBright));
+          if (outlineEnabled === true) {
+            const npcMask = scenePass.getTextureNode("npcMask");
+            color.assign(applyNpcOutline(color, npcMask, sceneDepth, state.fx.npcOutline));
+          }
 
           return color;
         })();
@@ -645,6 +673,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return () => {
           gl.render = originalRender;
           pipeline.dispose();
+          state.npcMaskMrt = null;
+          state.syncPickRT();
+          w.npc?.syncOutlineMask();
           state.forceUpdate();
         };
       },
@@ -840,6 +871,10 @@ export type State = {
     rightPress: boolean;
   };
   pickRT: THREE.RenderTarget;
+  /** Non-null whilst the npc outline is on, when materials write an extra `npcMask` output */
+  npcMaskMrt: null | ReturnType<typeof mrt>;
+  /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
+  syncPickRT(): void;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
@@ -958,6 +993,20 @@ const dynamicLightTweenRate = 6;
 const ambientFadeDurationMs = 1000;
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
+/**
+ * `MRTNode` maps its entries onto attachments by texture *name* (see `getTextureIndex`), which
+ * `PassNode` sets for us but a hand-made target does not — leave them unnamed and the pick
+ * colour never reaches attachment 0.
+ */
+function createPickRT(count: 1 | 2) {
+  const renderTarget = new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat, count });
+  renderTarget.textures[0].name = "output";
+  if (renderTarget.textures[1]) {
+    renderTarget.textures[1].name = "npcMask";
+  }
+  return renderTarget;
+}
+
 function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
     azimuthal: touchDevice ? 0 : Math.PI / 4,
@@ -968,15 +1017,16 @@ function defaultInitialCamera(touchDevice: boolean): State["initial"] {
 
 function PostProcessing() {
   const w = useContext(WorldContext);
-  useEffect(() => w.view.setupPostProcessing(), []);
+  // the npc outline needs an extra pass attachment, so flipping it rebuilds the pipeline
+  const outlineEnabled = (w.view.fx?.npcOutline.value ?? 0) > 0;
+  useEffect(() => w.view.setupPostProcessing(), [outlineEnabled]);
   return null;
 }
 
 export type FxKey = keyof typeof fxDefaults;
 
-/** Add a key here and a branch in `setupPostProcessing`, and it shows up under "debug" */
-const fxDefaults = { vignette: defaultVignette };
-const fxKey = "world-fx";
+/** Add a key here, a branch in `setupPostProcessing`, and an entry in `debugItems` (`WorldMenu`) */
+const fxDefaults = { vignette: defaultVignette, npcOutline: 0 };
 
 const tmpVect = new Vect();
 const tmpVector3 = new THREE.Vector3();
