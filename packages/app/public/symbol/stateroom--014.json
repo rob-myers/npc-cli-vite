@@ -32,16 +32,16 @@
     {
       "id": "70959401-aedd-41b3-b57f-0abc3831e434",
       "name": "doors",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "bd0deac9-37be-464a-bf80-dfd319951bbd",
           "name": "door slide=[1,0]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 67, "f": 115},
           "type": "rect",
@@ -51,7 +51,7 @@
         {
           "id": "1da53f82-5040-415a-919f-cee6351ad36d",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 122},
           "type": "image",
@@ -64,7 +64,7 @@
         {
           "id": "8ec9590d-64f4-4a31-907e-bcde3aab72a0",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 64, "f": 118},
           "type": "image",
@@ -83,7 +83,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "cf35bd35-052f-4488-a1bc-b679cf25699b",
@@ -100,7 +100,7 @@
         {
           "id": "746c4b16-e145-4c6d-bd02-e93f42891bc1",
           "name": "fresher--002",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60.5, "f": 0},
           "type": "symbol",
@@ -118,7 +118,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "4a00e238-02af-48dd-b043-6db9a896ccfd",
