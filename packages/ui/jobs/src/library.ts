@@ -42,22 +42,58 @@ function rank(key: string) {
 
 function parseSections(categoryKey: string, md: string): ExampleSection[] {
   const sections: ExampleSection[] = [];
-  let current: null | { title: string; prose: string[]; lines: string[] } = null;
+  /** `blocks` is ordered as the file reads them, which is what the preview renders */
+  let current: null | { title: string; blocks: ExampleBlock[] } = null;
   let mode: "idle" | "prose" | "fence" = "idle";
+  /** Lines of the prose or fence being read */
+  let pending: string[] = [];
   /** Is the current fence one we take examples from? */
   let collecting = false;
+
+  function sectionKey() {
+    return `${categoryKey}/${sections.length}`;
+  }
+
+  function flushProse() {
+    // html comments carry no meaningful indentation, and the preview renders them `pre-line`
+    const lines = trimBlankEnds(pending.map((line) => line.trim()));
+    pending = [];
+    if (current !== null && lines.length > 0) {
+      current.blocks.push({ type: "prose", key: `${sectionKey()}/p${current.blocks.length}`, lines });
+    }
+  }
+
+  /** A fence of its own, so two adjacent fences never merge their examples */
+  function flushFence() {
+    const lines = pending;
+    pending = [];
+    if (current === null) {
+      return;
+    }
+    const key = `${sectionKey()}/f${current.blocks.length}`;
+    const examples = splitExamples(key, lines);
+    if (examples.length > 0) {
+      current.blocks.push({ type: "fence", key, examples });
+    }
+  }
 
   function flushSection() {
     if (current === null) {
       return;
     }
-    const key = `${categoryKey}/${sections.length}`;
-    const examples = splitExamples(key, current.lines);
+    const blocks = current.blocks;
+    const examples = blocks.flatMap((block) => (block.type === "fence" ? block.examples : []));
     if (examples.length > 0) {
       sections.push({
-        key,
+        key: sectionKey(),
         title: current.title,
-        prose: current.prose.join(" ").replace(/\s+/g, " ").trim(),
+        // derived, so the compact view's one-liner cannot drift from `blocks`
+        prose: blocks
+          .flatMap((block) => (block.type === "prose" ? block.lines : []))
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim(),
+        blocks,
         examples,
       });
     }
@@ -69,31 +105,40 @@ function parseSections(categoryKey: string, md: string): ExampleSection[] {
 
     if (mode === "fence") {
       if (trimmed.startsWith("```")) {
+        if (collecting === true) {
+          flushFence();
+        } else {
+          pending = [];
+        }
         mode = "idle";
         collecting = false;
       } else if (collecting === true) {
-        current?.lines.push(line);
+        pending.push(line);
       }
       continue;
     }
 
     if (mode === "prose") {
       const end = line.indexOf("-->");
-      current?.prose.push(end === -1 ? line : line.slice(0, end));
+      pending.push(end === -1 ? line : line.slice(0, end));
       if (end !== -1) {
         mode = "idle";
+        flushProse();
       }
       continue;
     }
 
     if (line.startsWith("# ")) {
       flushSection();
-      current = { title: line.slice(2).trim(), prose: [], lines: [] };
+      current = { title: line.slice(2).trim(), blocks: [] };
     } else if (trimmed.startsWith("<!--")) {
       const body = trimmed.slice(4);
       const end = body.indexOf("-->");
-      current?.prose.push(end === -1 ? body : body.slice(0, end));
+      pending.push(end === -1 ? body : body.slice(0, end));
       mode = end === -1 ? "prose" : "idle";
+      if (end !== -1) {
+        flushProse();
+      }
     } else if (trimmed.startsWith("```")) {
       const info = trimmed.slice(3).trim();
       mode = "fence";
@@ -105,18 +150,31 @@ function parseSections(categoryKey: string, md: string): ExampleSection[] {
   return sections;
 }
 
+/** Drop leading/trailing blank lines, keeping any inside */
+function trimBlankEnds(lines: string[]): string[] {
+  let start = 0;
+  let end = lines.length;
+  while (start < end && lines[start].trim() === "") start++;
+  while (end > start && lines[end - 1].trim() === "") end--;
+  return lines.slice(start, end);
+}
+
 /**
  * A new example starts at a blank line, or at a `#` comment following code.
  * Leading `#` lines become the example's comment.
  */
-function splitExamples(sectionKey: string, lines: string[]): Example[] {
-  const chunks: string[][] = [];
+function splitExamples(blockKey: string, lines: string[]): Example[] {
+  const chunks: { lines: string[]; blankBefore: number }[] = [];
   let chunk: string[] = [];
   let sawCode = false;
+  /** Blank lines seen since the last chunk, so the preview can space them as the file does */
+  let blankRun = 0;
 
   function flush() {
     if (chunk.some((x) => x.trim() !== "")) {
-      chunks.push(chunk);
+      // no leading gap for the first chunk, whose blanks merely follow the fence marker
+      chunks.push({ lines: chunk, blankBefore: chunks.length === 0 ? 0 : blankRun });
+      blankRun = 0;
     }
     chunk = [];
     sawCode = false;
@@ -125,6 +183,7 @@ function splitExamples(sectionKey: string, lines: string[]): Example[] {
   for (const line of lines) {
     if (line.trim() === "") {
       flush();
+      blankRun++;
       continue;
     }
     const isComment = line.trimStart().startsWith("#");
@@ -138,15 +197,18 @@ function splitExamples(sectionKey: string, lines: string[]): Example[] {
   }
   flush();
 
-  return chunks.flatMap((ls, index) => {
+  return chunks.flatMap(({ lines: ls, blankBefore }, index) => {
     const at = ls.findIndex((x) => !x.trimStart().startsWith("#"));
     const src = (at === -1 ? [] : ls.slice(at)).join("\n").trim();
     if (src === "") {
       return [];
     }
+    const commentLines = at === -1 ? ls : ls.slice(0, at);
     return {
-      id: `${sectionKey}/${index}`,
-      comment: (at === -1 ? ls : ls.slice(0, at)).map((x) => x.replace(/^\s*#\s?/, "")).join(" "),
+      id: `${blockKey}/${index}`,
+      blankBefore,
+      comment: commentLines.map((x) => x.replace(/^\s*#\s?/, "")).join(" "),
+      commentLines,
       src,
       args: parseArgTokens(src),
     };
@@ -283,16 +345,28 @@ export type ExampleSection = {
   /** `${categoryKey}/${sectionIndex}` */
   key: string;
   title: string;
-  /** From an html comment following the heading */
+  /** Every prose block joined and collapsed — the compact view's one-liner */
   prose: string;
+  /** Prose and fences, ordered as the file reads them — the preview renders these */
+  blocks: ExampleBlock[];
+  /** Every fence's examples, flattened — the compact view lists these */
   examples: Example[];
 };
 
+/** One html comment, or one ```sh fence */
+export type ExampleBlock =
+  | { type: "prose"; key: string; lines: string[] }
+  | { type: "fence"; key: string; examples: Example[] };
+
 export type Example = {
-  /** `${categoryKey}/${sectionIndex}/${exampleIndex}` */
+  /** `${categoryKey}/${sectionIndex}/f${blockIndex}/${exampleIndex}` */
   id: string;
-  /** Leading `#` lines, joined */
+  /** Blank lines preceding it in the fence, which the preview reproduces */
+  blankBefore: number;
+  /** Leading `#` lines, stripped of their marker and joined */
   comment: string;
+  /** The same lines verbatim, `#` and all — shown in place by the preview */
+  commentLines: string[];
   /** Verbatim source, newlines preserved */
   src: string;
   args: ArgToken[];

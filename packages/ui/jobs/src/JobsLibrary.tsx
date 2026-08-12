@@ -2,7 +2,7 @@ import { Select } from "@base-ui/react/select";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
-import { CaretRightIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { ArticleIcon, CaretRightIcon, CheckIcon, CopyIcon, ListBulletsIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect } from "react";
@@ -36,17 +36,20 @@ export default function JobsLibrary(props: Props) {
   const state = useStateRef((): State => {
     const stored = tryLocalStorageGetParsed<Stored>(getStorageKey(props.uiId));
     return {
+      articleEl: null,
       categoryKey: stored?.categoryKey ?? "",
       edits: {},
       props,
       sectionKeys: stored?.sectionKeys ?? {},
       open: stored?.open ?? true,
+      view: stored?.view ?? "preview",
 
       onEditArg(e) {
         state.edits[e.currentTarget.dataset.editKey ?? ""] = e.currentTarget.value;
         state.update();
       },
       onExampleCopy(e) {
+        e.stopPropagation(); // the preview's row runs it, and this button sits within
         state.props.onCopy(getExampleData(e).src);
       },
       onExampleRun(e) {
@@ -57,6 +60,7 @@ export default function JobsLibrary(props: Props) {
           categoryKey: state.categoryKey,
           sectionKeys: state.sectionKeys,
           open: state.open,
+          view: state.view,
         };
         tryLocalStorageSet(getStorageKey(props.uiId), JSON.stringify(stored));
       },
@@ -69,6 +73,15 @@ export default function JobsLibrary(props: Props) {
         state.sectionKeys[categoryKey] = sectionKey;
         state.persist();
         state.update();
+        if (state.view === "preview") {
+          // the preview shows every section, so the select navigates rather than filters.
+          // Instant, else the observer would fire for each section swept past
+          state.articleEl?.querySelector(`[data-section-key="${sectionKey}"]`)?.scrollIntoView({ block: "start" });
+        }
+      },
+      toggleView() {
+        state.set({ view: state.view === "preview" ? "compact" : "preview", open: true });
+        state.persist();
       },
       toggleOpen() {
         state.set({ open: !state.open });
@@ -99,6 +112,43 @@ export default function JobsLibrary(props: Props) {
     category === null
       ? null
       : (category.sections.find((x) => x.key === state.sectionKeys[category.key]) ?? category.sections[0] ?? null);
+
+  useEffect(() => {
+    // the preview shows every section, so the select tracks whichever one we've scrolled to
+    const article = state.articleEl;
+    if (article === null || category === null || state.open === false || state.view !== "preview") {
+      return;
+    }
+    const sections = Array.from(article.querySelectorAll<HTMLElement>("[data-section-key]"));
+
+    let frameId = 0;
+
+    const syncSection = () => {
+      frameId = 0;
+      const top = article.getBoundingClientRect().top + sectionSpyOffset;
+      // the last section to have started above the top of the view
+      const active = sections.filter((el) => el.getBoundingClientRect().top <= top).at(-1) ?? sections[0];
+      const sectionKey = active?.dataset.sectionKey;
+      if (sectionKey !== undefined && state.sectionKeys[category.key] !== sectionKey) {
+        state.sectionKeys[category.key] = sectionKey;
+        state.persist();
+        state.update();
+      }
+    };
+
+    // a scroll listener rather than an `IntersectionObserver`: a section taller than the view
+    // crosses no threshold whilst its heading passes the top, which is the moment we care about
+    const onScroll = () => {
+      frameId ||= requestAnimationFrame(syncSection);
+    };
+
+    syncSection(); // e.g. having just switched to this view
+    article.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frameId);
+      article.removeEventListener("scroll", onScroll);
+    };
+  }, [category?.key, state.open, state.view, categories]);
 
   return (
     <div
@@ -134,8 +184,21 @@ export default function JobsLibrary(props: Props) {
 
         <button
           type="button"
+          title={state.view === "preview" ? "compact view" : "preview view"}
+          className={cn("ml-auto", headerButtonCss)}
+          onClick={state.toggleView}
+        >
+          {state.view === "preview" ? (
+            <ListBulletsIcon alt="compact view" className="size-4" />
+          ) : (
+            <ArticleIcon alt="preview view" className="size-4" />
+          )}
+        </button>
+
+        <button
+          type="button"
           title={state.open ? "fold library" : "unfold library"}
-          className="ml-auto flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground"
+          className={headerButtonCss}
           onClick={state.toggleOpen}
         >
           <CaretRightIcon alt={state.open ? "fold" : "unfold"} className={cn("size-3", state.open && "rotate-90")} />
@@ -206,16 +269,97 @@ export default function JobsLibrary(props: Props) {
         </div>
       )}
 
-      {state.open && section !== null && (
-        <article className="flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col gap-1 px-3 py-3">
-          {section.prose && <p className="text-[13px]/relaxed text-term-muted">{section.prose}</p>}
-          <Tooltip.Provider delay={300} closeDelay={100}>
-            {section.examples.map((example) => (
-              <LibraryExample key={example.id} example={example} state={state} />
-            ))}
-          </Tooltip.Provider>
+      {state.open && category !== null && (
+        <article
+          ref={state.ref("articleEl")}
+          className={cn(
+            "flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col px-3 py-3",
+            state.view === "preview" ? "gap-4" : "gap-1",
+          )}
+        >
+          {state.view === "preview"
+            ? category.sections.map((section) => (
+                // no heading: the select above already names whichever section we've reached
+                <section key={section.key} data-section-key={section.key} className="flex flex-col gap-2">
+                  {section.blocks.map((block) =>
+                    block.type === "prose" ? (
+                      <p key={block.key} className="whitespace-pre-line text-[13px]/relaxed text-term-muted">
+                        {block.lines.join("\n")}
+                      </p>
+                    ) : (
+                      // one bordered block per fence, its examples reading continuously
+                      <div key={block.key} className="rounded border border-term-border-subtle bg-term-fence py-1">
+                        {block.examples.map((example) => (
+                          <PreviewExample key={example.id} example={example} state={state} />
+                        ))}
+                      </div>
+                    ),
+                  )}
+                </section>
+              ))
+            : section !== null && (
+                <>
+                  {section.prose && <p className="text-[13px]/relaxed text-term-muted">{section.prose}</p>}
+                  <Tooltip.Provider delay={300} closeDelay={100}>
+                    {section.examples.map((example) => (
+                      <LibraryExample key={example.id} example={example} state={state} />
+                    ))}
+                  </Tooltip.Provider>
+                </>
+              )}
         </article>
       )}
+    </div>
+  );
+}
+
+/**
+ * One example as the markdown file reads it: its `#` comment lines verbatim above the command,
+ * with play/copy on hover. Every handler comes from `state`, so none is created per example.
+ */
+function PreviewExample({ example, state }: { example: Example; state: UseStateRef<State> }) {
+  const { copiedSrc } = state.props;
+  const src = toEditedSrc(example, state.edits);
+
+  return (
+    // the handlers read these, rather than closing over the example
+    <div
+      className="group px-3 py-0.5 cursor-pointer hover:bg-term-hover"
+      // the blank lines this example follows in the file, so the fence reads as it is written
+      style={example.blankBefore > 0 ? { marginTop: `${example.blankBefore * exampleLineHeight}em` } : undefined}
+      data-example-id={example.id}
+      data-src={src}
+      onClick={state.onExampleRun}
+    >
+      <code className={exampleCodeCss}>
+        {example.commentLines.map((line, i) => (
+          <span key={i} className={cn(tokenCss.comment, "block")}>
+            {line}
+          </span>
+        ))}
+        {srcSegments(example, state.edits)}
+
+        {/* inline, so it sits where the command ends. It always takes its space,
+            so fading it in shifts nothing */}
+        <button
+          type="button"
+          title="copy"
+          className={cn(
+            previewIconCss,
+            "align-middle ml-1.5 -my-1",
+            // shown outright without hover to reveal it, i.e. on touch. `hover:` is itself
+            // `@media (hover: hover)` in tailwind v4, so the fade only applies to pointers
+            "transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+          )}
+          onClick={state.onExampleCopy}
+        >
+          {copiedSrc === src ? (
+            <CheckIcon alt="copied" className="size-4 text-term-ok" />
+          ) : (
+            <CopyIcon alt="copy" className="size-4" />
+          )}
+        </button>
+      </code>
     </div>
   );
 }
@@ -248,14 +392,10 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
           )}
           onClick={state.onExampleRun}
         >
-          <code className="block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words">
+          <code className={exampleCodeCss}>
             {/* only the first line makes room for the overlaid toolbar */}
             <span aria-hidden className="float-right w-8 h-[1.45em]" />
-            {toSegments(example, state.edits).map((segment, i) => (
-              <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
-                {segment.text}
-              </span>
-            ))}
+            {srcSegments(example, state.edits)}
           </code>
         </Tooltip.Trigger>
 
@@ -287,6 +427,19 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
   );
 }
 
+/** The command itself, shell-highlighted, with editable arg keys picked out */
+function srcSegments(example: Example, edits: Record<string, string>) {
+  return toSegments(example, edits).map((segment, i) => (
+    <span key={i} className={segment.arg === "key" ? "text-term-accent" : tokenCss[segment.kind]}>
+      {segment.text}
+    </span>
+  ));
+}
+
+const exampleCodeCss = "block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words";
+
+const headerButtonCss = "flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground";
+
 /** Muted, so the block reads as grey with only a hint of hue */
 const tokenCss: Record<TokenKind, string> = {
   command: "text-sh-command",
@@ -305,6 +458,9 @@ const iconCss = cn(
   "disabled:opacity-40 disabled:cursor-default disabled:hover:text-term-faint",
 );
 
+/** Padded, for a tap target rather than a bare icon */
+const previewIconCss = cn(iconCss, "p-1");
+
 /** The example an event occurred within, via the `data-*` on its wrapper */
 function getExampleData(e: React.SyntheticEvent) {
   const el = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-example-id]");
@@ -312,6 +468,11 @@ function getExampleData(e: React.SyntheticEvent) {
 }
 
 const noCategories: ExampleCategory[] = [];
+
+/** How far below the top of the view a section must start before it counts as current */
+const sectionSpyOffset = 8;
+/** Matches the `text-[13px]/[1.45]` of an example's `code`, so a gap is a whole number of lines */
+const exampleLineHeight = 1.45;
 
 function getStorageKey(uiId: string) {
   return `jobs-library:${uiId}`;
@@ -326,9 +487,11 @@ type Props = {
 };
 
 /** Persisted per UI instance */
-type Stored = Pick<State, "categoryKey" | "open" | "sectionKeys">;
+type Stored = Pick<State, "categoryKey" | "open" | "sectionKeys" | "view">;
 
 type State = {
+  /** The scroll container, whose sections the preview observes */
+  articleEl: null | HTMLElement;
   /** Currently shown category i.e. tab */
   categoryKey: string;
   /** Shared arg key -> value, applied to every example; not persisted */
@@ -338,13 +501,16 @@ type State = {
   /** categoryKey -> currently shown sectionKey */
   sectionKeys: Record<string, string>;
   open: boolean;
+  /** `preview` reads like the markdown file; `compact` lists one section tersely */
+  view: "compact" | "preview";
 
   onEditArg: (e: React.ChangeEvent<HTMLInputElement>) => void;
   /** Each of these reads the example from `data-*` — see `getExampleData` */
-  onExampleCopy: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  onExampleRun: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onExampleCopy: (e: React.MouseEvent<HTMLElement>) => void;
+  onExampleRun: (e: React.MouseEvent<HTMLElement>) => void;
   persist: () => void;
   setCategory: (categoryKey: string) => void;
   setSection: (categoryKey: string, sectionKey: string) => void;
   toggleOpen: () => void;
+  toggleView: () => void;
 };
