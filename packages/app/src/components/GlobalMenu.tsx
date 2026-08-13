@@ -1,6 +1,7 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
 import { useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { ArrowsInIcon, GearIcon, MoonIcon, SquareHalfBottomIcon, SquareHalfIcon, SunIcon } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import { splitRoot } from "./pane-service";
 
 const storageKey = "allotment-menu-y";
 const minY = 120;
+const touchDevice = isTouchDevice();
 
 export function GlobalMenu() {
   const y = useMotionValue(Math.max(minY, getStoredY()));
@@ -44,7 +46,8 @@ export function GlobalMenu() {
       className="fixed text-white bg-gray-800 z-9999 touch-none flex flex-col gap-1"
       style={{
         y: menu.y,
-        left: menu.vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - 36,
+        left:
+          menu.vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - (2 + (touchDevice ? 6 : 5) + 2) * 4,
         top: menu.vpOffset.y,
       }}
       drag="y"
@@ -55,7 +58,7 @@ export function GlobalMenu() {
     >
       <Menu.Root open={menu.menuOpen} onOpenChange={menu.onMenuOpenChange}>
         <Menu.Trigger className="cursor-pointer p-2" render={<span />} nativeButton={false}>
-          <GearIcon className="size-5" weight="bold" />
+          <GearIcon className={touchDevice ? "size-6" : "size-5"} weight="bold" />
         </Menu.Trigger>
 
         <Menu.Portal>
