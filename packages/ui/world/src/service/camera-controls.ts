@@ -42,7 +42,10 @@ class ExtraZoom {
     return this.active ? c.minDistance : c.maxDistance;
   }
 
-  /** Whilst locked we neither tween back to `minDistance` nor permit any zoom */
+  /**
+   * Whilst locked we neither tween back to `minDistance` nor permit any zoom or pan,
+   * and rotation pivots about the camera rather than the target — see `update`
+   */
   get zoomLocked() {
     return this.active === true && (this.shiftHeld === true || this.tapLocked === true);
   }
@@ -497,7 +500,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const element = this.domElement;
 
     if (element) {
-      if (this.params.snapAzimuth) {
+      const dTheta = (2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight;
+      const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
+
+      if (this._ez.zoomLocked === true) {
+        // pivoting where it stands, so it may look about freely — no axis to commit to
+        this.rotateLeft(dTheta);
+        this.rotateUp(dPhi);
+      } else if (this.params.snapAzimuth) {
         const hasModifier = event.shiftKey || event.ctrlKey || event.metaKey;
         if (hasModifier && this.rotateAxis === "none") {
           const ax = Math.abs(this.u.rotateDelta.x);
@@ -505,9 +515,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
           if (ax > 2 || ay > 2) this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
         }
         if (this.rotateAxis === "vertical") {
-          this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+          this.rotateUp(dPhi);
         } else {
-          this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
+          this.rotateLeft(dTheta);
         }
       } else {
         const isFree = !this.params.fixedPolar;
@@ -520,8 +530,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         }
         const horiz = !isFree || this.rotateAxis !== "vertical";
         const vert = isFree && this.rotateAxis !== "horizontal";
-        if (horiz) this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-        if (vert) this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
+        if (horiz) this.rotateLeft(dTheta);
+        if (vert) this.rotateUp(dPhi);
       }
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
@@ -1161,6 +1171,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const object = this.object;
     const position = object.position;
 
+    // a lock pivots about the camera rather than the target, so remember where it stands
+    const lockedAt = this._ez.zoomLocked === true ? tempVector3Three.copy(position) : null;
+
     const fixedAzimuth = this.params.fixedAzimuth === true ? this.getAzimuthalAngle() : null;
     const fixedPolar = this.params.fixedPolar === true ? this.getPolarAngle() : null;
 
@@ -1243,6 +1256,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.u.offset.setFromSpherical(this.spherical);
     position.copy(this.target).add(this.u.offset);
 
+    if (lockedAt !== null) {
+      // put the camera back and carry the target with it, so a rotation turns the view
+      // where it stands rather than swinging the camera around the target
+      this.target.add(lockedAt).sub(position);
+      position.copy(lockedAt);
+    }
+
     if (this.object.matrixAutoUpdate === false) {
       this.object.updateMatrix();
     }
@@ -1314,3 +1334,4 @@ function normalizeAngle(a: number) {
 }
 const tempVector3One = new THREE.Vector3();
 const tempVector3Two = new THREE.Vector3();
+const tempVector3Three = new THREE.Vector3();
