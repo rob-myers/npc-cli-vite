@@ -32,6 +32,8 @@ import type { TemplateUiMeta } from "./schema";
 
 /**
  * Visual reinterpretation of shell CLI `jobs`.
+ *
+ * Includes library of useful commands.
  */
 export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   const { uiStore, uiStoreApi } = useContext(UiContext);
@@ -48,7 +50,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       copiedSrc: null,
       copiedTimeoutId: 0,
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
-      disconnectSession: null,
       expandedUids: new Set(),
       listEl: null,
       ordered: [],
@@ -56,13 +57,11 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       processes: [],
       processesHeight: tryLocalStorageGetParsed<number>(processesHeightStorageKey(meta.id)) ?? defaultProcessesHeight,
       spawning: { src: null, startedAt: 0, timeoutId: 0 },
-      reorder: throttle(() => {
-        state.ordered = toOrdered(state.processes);
-        state.update();
-      }, 200),
+      reorder: throttle(() => state.set({ ordered: toOrdered(state.processes) }), 200),
       resetPids: new Set(),
       resetting: new Map(),
       resizing: false,
+      sessionDisconnector: null,
       sessionKey: null,
       showProcesses: tryLocalStorageGetParsed(showProcessesStorageKey(meta.id)) === true,
       ttyMeta: null,
@@ -149,7 +148,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       },
       connectSession() {
         try {
-          state.disconnectSession?.();
+          state.sessionDisconnector?.();
 
           const session = state.getSession();
           if (session === undefined) {
@@ -171,7 +170,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           state.ordered = toOrdered(state.processes);
 
           // listen for leading process status
-          state.disconnectSession = session.ttyShell.io.handleWriters(
+          state.sessionDisconnector = session.ttyShell.io.handleWriters(
             (msg) => msg?.key === "external" && msg.msg.key === "process-leader" && state.handleLeaderMessage(msg.msg),
           );
 
@@ -193,8 +192,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           .catch(error);
       },
       disconnect() {
-        state.disconnectSession?.();
-        state.disconnectSession = null;
+        state.sessionDisconnector?.();
+        state.sessionDisconnector = null;
         window.clearTimeout(state.pending.timeoutId);
         state.pending.src = null;
         state.clearSpawning();
@@ -787,7 +786,7 @@ type State = {
   disconnect: () => void;
   connectSession: () => boolean;
   debouncedUpdate: () => void;
-  disconnectSession: null | (() => void);
+  sessionDisconnector: null | (() => void);
   handleLeaderMessage: (msg: ExternalMessageProcessLeader) => void;
   onChangeSessionKey: (sessionKey: null | string) => void;
   /** Recompute `ordered`, at most once per 200ms */

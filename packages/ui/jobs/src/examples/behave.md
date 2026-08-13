@@ -2,27 +2,26 @@
 # move
 
 ```sh
-# move rob to most recent picked
+# keep moving rob to next picked (1)
 pick | move npc:rob
 
-# only move to floor or doable
+# [1] but can only pick floor or doable
 pick meta.{floor,do} | move npc:rob
 
-# move rob sequentially along picked positions
+# [1] but follow picked in order
 pick | move npc:rob along
 
-# move rob to picked position, projected to ground
+# move rob once to picked projected to ground (2)
 move npc:rob to:$( pick 1 )
 
-# move rob to picked position on floor
+# [2] but must pick floor
 move npc:rob to:$( pick 1 meta.floor )
 
 # move rob sequentially to picked positions
-# swallowing errors via --force
 while true; do
   move --force npc:rob to:$( pick meta.floor 1 )
 done
 
-# move rob fast
+# [2] but fast
 move npc:rob to:$( pick 1 ) fast
 ```
