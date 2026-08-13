@@ -1,17 +1,22 @@
 # pick
 
 ```sh
-# pick things
-pick
-# pick one thing
+# pick a thing
 pick 1
+
+# keep picking
+pick
+
 # pick thrice
 pick 3
-# pick from the floor
+
+# pick once from the floor
 pick 1 meta.floor
-# pick something's meta
+
+# pick one thing's meta
 pick 1 as:meta
-# pick string identifiers of doors or switches
+
+# keep picking door identifiers
 pick as:meta.gdKey
 ```
 
