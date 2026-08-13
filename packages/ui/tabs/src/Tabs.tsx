@@ -331,7 +331,7 @@ function TabHeaderItem({
     <div
       ref={state.ref("tabEl")}
       className={cn(
-        "cursor-pointer shrink-0 px-1 border-b-2 border-outline font-medium text-sm focus:outline-none",
+        "cursor-pointer shrink-0 px-1 border-b-2 border-outline font-medium text-sm focus:outline-none select-none",
         !isCurrentTab && "opacity-50 hover:opacity-80",
         state.isDragging && "opacity-30",
         state.isDropTarget && "border-l-2 border-l-blue-400",
