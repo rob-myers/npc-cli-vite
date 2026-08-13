@@ -644,8 +644,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
           const color = mix(sceneColor.rgb.mul(state.unlitScale), brightColor, isBright).toVar();
 
-          // cheap toggleable effects, each a no-op whilst its uniform is 0
           color.assign(applyVignette(color, state.fx.vignette, isBright));
+
           if (outlineEnabled === true) {
             const npcMask = scenePass.getTextureNode("npcMask");
             color.assign(applyNpcOutline(color, npcMask, sceneDepth, state.fx.npcOutline));
