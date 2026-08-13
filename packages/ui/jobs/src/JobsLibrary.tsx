@@ -198,7 +198,7 @@ export default function JobsLibrary(props: Props) {
       </div>
 
       {category !== null && (
-        <div className="shrink-0 flex items-center gap-3 px-2 py-1.5 min-w-0 border-b border-term-border-subtle">
+        <div className="shrink-0 flex items-center gap-3 px-2 py-1.5 min-w-0  border-b border-term-border-subtle">
           <Select.Root value={section?.key ?? ""} onValueChange={(key) => key && state.setSection(category.key, key)}>
             <Select.Trigger
               title="section"
@@ -299,6 +299,8 @@ export default function JobsLibrary(props: Props) {
                   </Tooltip.Provider>
                 </>
               )}
+          {/* extra space to permit scroll */}
+          <div className="min-h-[calc(100%-64px)] bg-transparent" />
         </article>
       )}
     </div>
