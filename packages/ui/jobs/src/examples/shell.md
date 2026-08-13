@@ -4,13 +4,19 @@
 # assign string "42"
 echo 42 >answer
 
+# output "answer" in CWD
+answer
+
 # assign number 42
 expr 42 >answer
 
-# assign number 42
+# assign number 42 in home
 answer=$( expr 42 )
 
-# assign number 42
+# output "answer" in home
+~/answer
+
+# assign number 42 in home
 answer=$( call '() => 42')
 
 # assign number 42
@@ -27,8 +33,7 @@ echo 42 | map Number >answer
 # loops
 
 <!-- Each command loop iteration is forced to take ≥ 300ms.
-Use JavaScript loops to avoid this restriction.
-Avoids unstoppable shell syntax while aligning with human reaction speeds. -->
+Use JavaScript loops to avoid this restriction. -->
 
 ```sh
 # iterate through array [0...4]
@@ -164,17 +169,14 @@ run '({ api }) { throw api.getKillError(); }' | take 1
 take 1 | run '({ api }) { throw api.getKillError(); }'
 ```
 
-# etc
+# misc
 
 ```sh
 narrate Listen to the sound of my voice
 
-# narrate () {
-#   run util narrate "${@}"
-# }
+# narrate () ...
 declare -f narrate
 
-# async function narrate({ api, args }, opts = api.jsArg(args, { as: "voice" })) {
-# ...
-call 'x => x.lib.util.narrate'
+# async function narrate...
+call '({ lib }) => lib.util.narrate'
 ```
