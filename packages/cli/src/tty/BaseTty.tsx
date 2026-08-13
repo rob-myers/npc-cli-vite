@@ -193,7 +193,7 @@ const xtermThemes: Record<ThemeName, ITheme> = {
     foreground: "#1a1a1a",
     cursor: "#333333",
     selectionBackground: "#b0c4de",
-    brightYellow: "gray",
+    brightYellow: "#088",
 
     white: "#000",
     brightGreen: "blue",
