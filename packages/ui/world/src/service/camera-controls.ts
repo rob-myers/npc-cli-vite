@@ -18,6 +18,8 @@ class ExtraZoom {
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  /** Where the camera looked when it was locked — see `syncLock` */
+  _lock: null | { theta: number; phi: number; target: THREE.Vector3 } = null;
 
   constructor(ctrl: CameraControls) {
     this._ctrl = ctrl;
@@ -43,8 +45,8 @@ class ExtraZoom {
   }
 
   /**
-   * Whilst locked we neither tween back to `minDistance` nor permit any zoom or pan,
-   * and rotation pivots about the camera rather than the target — see `update`
+   * Whilst locked we never tween back to `minDistance`, and the view rubber-bands onto the
+   * line it was locked on — the controls still respond, but only zoom lasts. See `syncLock`
    */
   get zoomLocked() {
     return this.active === true && (this.shiftHeld === true || this.tapLocked === true);
@@ -164,6 +166,21 @@ class ExtraZoom {
       // pinching fingers (zoom out)
       this.setReady(false);
     }
+  }
+
+  /**
+   * The angles and target the camera was locked at, captured on the first locked frame and
+   * forgotten on release. `update` eases back towards them every frame, so rotating and panning
+   * still respond but spring back, leaving zoom — which slides along that line — the only lasting
+   * move. Returns null whilst unlocked.
+   */
+  syncLock(spherical: THREE.Spherical, target: THREE.Vector3) {
+    if (this.zoomLocked === false) {
+      this._lock = null;
+    } else if (this._lock === null) {
+      this._lock = { theta: spherical.theta, phi: spherical.phi, target: target.clone() };
+    }
+    return this._lock;
   }
 
   applyClamp(spherical: THREE.Spherical, u: CameraControls["u"]) {
@@ -508,10 +525,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const dTheta = (2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight;
       const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
 
-      if (this._ez.zoomLocked === true) {
-        // pivoting where it stands, turning on the spot — no axis to commit to, and no polar
-        this.rotateLeft(dTheta);
-      } else if (this.params.snapAzimuth) {
+      if (this.params.snapAzimuth) {
         const hasModifier = event.shiftKey || event.ctrlKey || event.metaKey;
         if (hasModifier && this.rotateAxis === "none") {
           const ax = Math.abs(this.u.rotateDelta.x);
@@ -617,12 +631,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const prevY = this.twoFingerCentroid.y;
     this.twoFingerCentroid.set(prevX + (cx - prevX) * twoFingerSmoothing, prevY + (cy - prevY) * twoFingerSmoothing);
 
-    // whilst locked two fingers only zoom, leaving the turn to the single-finger drag
-    if (this._ez.zoomLocked === false) {
-      this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
-      if (this.params.fixedPolar !== true) {
-        this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
-      }
+    this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
+    if (this.params.fixedPolar !== true) {
+      this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
     }
 
     const prevDist = this.u.dollyStart.y;
@@ -675,10 +686,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const element = this.domElement;
 
     if (element) {
-      // unlike the mouse, touch rotates both axes at once — unless locked, which turns
-      // the camera on the spot and so azimuthally only
+      // unlike the mouse, touch rotates both axes at once
       this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-      if (this.params.fixedPolar !== true && this._ez.zoomLocked === false) {
+      if (this.params.fixedPolar !== true) {
         this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
       }
     }
@@ -1005,8 +1015,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         break;
 
       case this.STATE.TOUCH_PAN:
-        // also mid-drag, since the lock is a tap away — see `toggleTapLock`
-        if (this.enablePan === false || this._ez.zoomLocked === true) return;
+        if (this.enablePan === false) return;
         this.handleTouchMovePan(event);
         this.update();
         break;
@@ -1031,25 +1040,18 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.trackPointer(event);
 
     if (this.pointers.length === 1) {
-      if (this._ez.zoomLocked === true) {
-        // a lock turns the camera on the spot rather than panning it, so one finger rotates
-        if (this.enableRotate === false) return;
-        this.handleTouchStartRotate();
-        this.state = this.STATE.TOUCH_ROTATE;
-      } else {
-        switch (this.touches.ONE) {
-          case TOUCH.ROTATE:
-            if (this.enableRotate === false) return;
-            this.handleTouchStartRotate();
-            this.state = this.STATE.TOUCH_ROTATE;
-            break;
-          case TOUCH.PAN:
-            if (this.enablePan === false) return;
-            this.handleTouchStartPan();
-            this.state = this.STATE.TOUCH_PAN;
-            break;
-          default:
-        }
+      switch (this.touches.ONE) {
+        case TOUCH.ROTATE:
+          if (this.enableRotate === false) return;
+          this.handleTouchStartRotate();
+          this.state = this.STATE.TOUCH_ROTATE;
+          break;
+        case TOUCH.PAN:
+          if (this.enablePan === false) return;
+          this.handleTouchStartPan();
+          this.state = this.STATE.TOUCH_PAN;
+          break;
+        default:
       }
 
       this.dispatchEvent(startEvent);
@@ -1192,10 +1194,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const object = this.object;
     const position = object.position;
 
-    // a lock turns the camera on the spot, so remember where it stands and how far it then was
-    const lockedAt = this._ez.zoomLocked === true ? tempVector3Three.copy(position) : null;
-    if (lockedAt !== null) {
-      u.zoomingToCursor = false; // a locked dolly follows the line of sight, not the cursor
+    if (this._ez.zoomLocked === true) {
+      u.zoomingToCursor = false; // a locked dolly runs along the line of sight, not the cursor's
     }
 
     const fixedAzimuth = this.params.fixedAzimuth === true ? this.getAzimuthalAngle() : null;
@@ -1206,7 +1206,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     // (x, y, z) -> { r, theta, phi }
     this.spherical.setFromVector3(u.offset);
 
-    const lockedRadius = this.spherical.radius;
+    const lock = this._ez.syncLock(this.spherical, this.target);
 
     // approach target via damped delta
     this.spherical.theta += this.sphericalDelta.theta * this.azimuthalDampingFactor;
@@ -1279,15 +1279,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this._ez.applyTween(this.spherical, u);
     }
 
-    this.u.offset.setFromSpherical(this.spherical);
+    if (lock !== null) {
+      // an azimuth snap would pull one way whilst the spring pulls the other, and neither
+      // would ever arrive — the spring is what returns us whilst locked
+      this.snapAzimuth.animating = false;
 
-    if (lockedAt !== null) {
-      // Swing the target about the camera at the radius we began with, so a rotation leaves the
-      // camera where it stands. Any change of radius is then a dolly along the line of sight,
-      // which is the one way a lock lets the camera move.
-      this.target.copy(lockedAt).sub(tempVector3Two.copy(this.u.offset).setLength(lockedRadius));
+      // rubber-band back onto the locked line: rotating and panning still respond, but ease
+      // out, leaving zoom — which slides along that line — the only lasting move
+      this.spherical.theta += deltaAngle(this.spherical.theta, lock.theta) * lockSpringFactor;
+      this.spherical.phi += (lock.phi - this.spherical.phi) * lockSpringFactor;
+      this.target.lerp(lock.target, lockSpringFactor);
     }
 
+    this.u.offset.setFromSpherical(this.spherical);
     position.copy(this.target).add(this.u.offset);
 
     if (this.object.matrixAutoUpdate === false) {
@@ -1353,6 +1357,8 @@ const twoFingerSmoothing = 0.35;
 const twoFingerRatioSmoothing = 0.25;
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
+/** Per-frame pull back onto the locked line; higher is stiffer, permitting less give */
+const lockSpringFactor = 0.1;
 
 const twoPI = 2 * Math.PI;
 
@@ -1361,4 +1367,3 @@ function normalizeAngle(a: number) {
 }
 const tempVector3One = new THREE.Vector3();
 const tempVector3Two = new THREE.Vector3();
-const tempVector3Three = new THREE.Vector3();
