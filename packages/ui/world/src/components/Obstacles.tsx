@@ -259,6 +259,10 @@ export default function Obstacles(_props: Props) {
     }).data ?? state.images;
 
   useEffect(() => {
+    if (skirtLightMeta.light0Values.length !== w.gmsData.count.obstacleSkirtEdges) {
+      return;
+    }
+
     state.addUvs();
     state.transformAndColorObstacles();
     state.transformAndColorSkirts();
