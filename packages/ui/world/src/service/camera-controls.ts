@@ -103,14 +103,13 @@ class ExtraZoom {
   /** Returns false if blocked (tween-back in progress) */
   handleWheelIn(event: WheelEvent, zoomScale: number): boolean {
     const ctrl = this._ctrl;
-    if (this.zoomLocked === true) return false;
-    if (this.active && this._activeTimer === undefined) return false;
-    // holding Shift before entering keeps us out of extra zoom, rather than
-    // entering and instantly clamping back out (which would flicker the icon)
+    // whilst locked there is no tween to fight, so wheeling in stays available throughout
+    if (this.zoomLocked === false && this.active && this._activeTimer === undefined) return false;
     if (
       ctrl.extraZoom > 1 &&
-      this.shiftHeld === false &&
-      (this.active || ctrl.spherical.radius <= ctrl.minDistance * 1.05)
+      // holding Shift before entering keeps us out of extra zoom, rather than
+      // entering and instantly clamping back out (which would flicker the icon)
+      (this.active || (this.shiftHeld === false && ctrl.spherical.radius <= ctrl.minDistance * 1.05))
     ) {
       if (!this.active) ctrl.u.panOffset.set(0, 0, 0); // freeze target on entry
       this.setActive(true);
@@ -372,6 +371,15 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.pointers.push(event);
   }
 
+  /**
+   * Where this pointer sits amongst those pressed on us, or `-1` for one that never was —
+   * `pointermove`/`pointerup` are bound to the document, so a finger pressed on the UI above
+   * the canvas, e.g. the extra zoom button, reports here too.
+   */
+  pointerIndex(event: PointerEvent) {
+    return this.pointers.findIndex((x) => x.pointerId === event.pointerId);
+  }
+
   connect(domElement: HTMLElement) {
     this.domElement = domElement;
 
@@ -410,14 +418,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this._ez.clearTimers();
   }
 
-  /** Gated by `_ez.locked`, covering every zoom entry point. `applyTween` bypasses these. */
   dollyIn(dollyScale: number) {
-    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale * dollyScale;
   }
 
   dollyOut(dollyScale: number) {
-    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale / dollyScale;
   }
 
@@ -504,9 +509,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
 
       if (this._ez.zoomLocked === true) {
-        // pivoting where it stands, so it may look about freely — no axis to commit to
+        // pivoting where it stands, turning on the spot — no axis to commit to, and no polar
         this.rotateLeft(dTheta);
-        this.rotateUp(dPhi);
       } else if (this.params.snapAzimuth) {
         const hasModifier = event.shiftKey || event.ctrlKey || event.metaKey;
         if (hasModifier && this.rotateAxis === "none") {
@@ -614,7 +618,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.twoFingerCentroid.set(prevX + (cx - prevX) * twoFingerSmoothing, prevY + (cy - prevY) * twoFingerSmoothing);
 
     this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
-    if (this.params.fixedPolar !== true) {
+    // a lock turns the camera on the spot, azimuthally only
+    if (this.params.fixedPolar !== true && this._ez.zoomLocked === false) {
       this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
     }
 
@@ -899,8 +904,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   };
 
   onPointerUp = (event: PointerEvent) => {
-    if (this.enabled === false) {
-      return;
+    if (this.enabled === false || this.pointerIndex(event) === -1) {
+      return; // never went down on us — see `pointerIndex`
     }
 
     this.removePointer(event);
@@ -980,6 +985,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   };
 
   onTouchMove = (event: PointerEvent) => {
+    const index = this.pointerIndex(event);
+    if (index === -1 || index > 1) {
+      // only the first two fingers drive the camera: a third would otherwise be paired with one
+      // of them by `getSecondPointerPosition`, and the spread and centroid jump across the screen
+      return;
+    }
+
     this.trackPointer(event);
 
     switch (this.state) {
@@ -1171,8 +1183,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const object = this.object;
     const position = object.position;
 
-    // a lock pivots about the camera rather than the target, so remember where it stands
+    // a lock turns the camera on the spot, so remember where it stands and how far it then was
     const lockedAt = this._ez.zoomLocked === true ? tempVector3Three.copy(position) : null;
+    if (lockedAt !== null) {
+      u.zoomingToCursor = false; // a locked dolly follows the line of sight, not the cursor
+    }
 
     const fixedAzimuth = this.params.fixedAzimuth === true ? this.getAzimuthalAngle() : null;
     const fixedPolar = this.params.fixedPolar === true ? this.getPolarAngle() : null;
@@ -1181,6 +1196,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     // (x, y, z) -> { r, theta, phi }
     this.spherical.setFromVector3(u.offset);
+
+    const lockedRadius = this.spherical.radius;
 
     // approach target via damped delta
     this.spherical.theta += this.sphericalDelta.theta * this.azimuthalDampingFactor;
@@ -1254,14 +1271,15 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     this.u.offset.setFromSpherical(this.spherical);
-    position.copy(this.target).add(this.u.offset);
 
     if (lockedAt !== null) {
-      // put the camera back and carry the target with it, so a rotation turns the view
-      // where it stands rather than swinging the camera around the target
-      this.target.add(lockedAt).sub(position);
-      position.copy(lockedAt);
+      // Swing the target about the camera at the radius we began with, so a rotation leaves the
+      // camera where it stands. Any change of radius is then a dolly along the line of sight,
+      // which is the one way a lock lets the camera move.
+      this.target.copy(lockedAt).sub(tempVector3Two.copy(this.u.offset).setLength(lockedRadius));
     }
+
+    position.copy(this.target).add(this.u.offset);
 
     if (this.object.matrixAutoUpdate === false) {
       this.object.updateMatrix();
