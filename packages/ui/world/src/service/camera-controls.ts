@@ -13,6 +13,8 @@ class ExtraZoom {
   ready = false;
   shiftHeld = false;
   tapLocked = false;
+  /** True whilst as close as `extraZoom` permits */
+  maxed = false;
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -48,6 +50,12 @@ class ExtraZoom {
   emitChange() {
     const detail = { active: this.active, locked: this.zoomLocked };
     this._ctrl.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail, bubbles: true }));
+  }
+
+  setMaxed(maxed: boolean) {
+    if (this.maxed === maxed) return;
+    this.maxed = maxed;
+    this.emitChange();
   }
 
   setActive(active: boolean) {
@@ -326,6 +334,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   get extraZoomActive() {
     return this._ez.active;
+  }
+  /** True whilst extra zoom is as close as it permits — see `extrazoomchange` */
+  get extraZoomMaxed() {
+    return this._ez.maxed;
   }
   get readyForExtraZoom() {
     return this._ez.ready;
@@ -1206,6 +1218,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       );
     }
 
+    // every zoom path lands here, unlike `applyClamp` which the zoom-to-cursor branch skips
+    this._ez.setMaxed(this._ez.active === true && this.spherical.radius <= this._ez.minR * extraZoomMaxedSlack);
+
     if (
       this._ez.active &&
       this._ez.zoomLocked === false &&
@@ -1279,6 +1294,8 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
+/** Within this factor of the closest extra zoom counts as being there */
+const extraZoomMaxedSlack = 1.01;
 
 const twoPI = 2 * Math.PI;
 

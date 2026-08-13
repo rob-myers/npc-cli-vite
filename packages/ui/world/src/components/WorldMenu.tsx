@@ -317,6 +317,7 @@ export function WorldMenu() {
   const toggleToastKeys = useToastTs(state.toastTs);
   const introEnabled = w.player.introEnabled;
   const extraZoomActive = w.view.controls?.extraZoomActive === true;
+  const extraZoomMaxed = w.view.controls?.extraZoomMaxed === true;
   const extraZoomLocked = w.view.controls?.extraZoomLocked === true;
   // click replays the intro, whereas long press disables it
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
@@ -844,7 +845,8 @@ export function WorldMenu() {
               "outline-width-1 grid place-items-center bg-gray-800 size-9 touch-none select-none",
               "origin-top-left transition-transform duration-200 ease-out",
               extraZoomActive ? "cursor-pointer text-white hover:bg-gray-700" : "text-gray-500",
-              extraZoomActive && touch && "scale-150",
+              // only once there is no closer to go, so it doesn't twitch as the pinch begins
+              extraZoomMaxed && touch && "scale-125",
             )}
             onPointerDown={(e) => {
               e.stopPropagation(); // else the icon column starts dragging
