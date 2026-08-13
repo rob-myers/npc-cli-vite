@@ -92,7 +92,7 @@ export function PaneTree({ node }: { node: PaneNode }) {
         onVisibleChange={(index, visible) => setPaneHidden(node.id, index, visible)}
       >
         {node.children.map((child) => (
-          <Allotment.Pane key={child.id} visible={!hiddenSet.has(child.id)} snap minSize={90} preferredSize={"50%"}>
+          <Allotment.Pane key={child.id} visible={!hiddenSet.has(child.id)} snap minSize={180} preferredSize={"50%"}>
             <PaneTree node={child} />
           </Allotment.Pane>
         ))}
