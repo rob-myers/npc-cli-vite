@@ -131,8 +131,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           return;
         }
 
-        state.spawning.src = null;
-        state.update();
+        state.setSpawning(null);
       },
       connect() {
         state.connected = true;
@@ -371,6 +370,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         state.listEl = el;
       },
       setSpawning(src) {
+        if (src === null) {
+          state.set({ spawning: { ...state.spawning, src: null } });
+        }
+
         window.clearTimeout(state.spawning.timeoutId);
         state.set({
           spawning: { src, startedAt: Date.now(), timeoutId: window.setTimeout(state.clearSpawning, pendingTimeoutMs) },
@@ -742,7 +745,7 @@ type State = {
     /** Gives up on `src`, so the spinner cannot spin forever */
     timeoutId: number;
   };
-  setSpawning: (src: string) => void;
+  setSpawning: (src: string | null) => void;
   clearSpawning: () => void;
   /** A `src` awaiting a session whose profile has finished */
   pending: {
