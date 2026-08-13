@@ -980,7 +980,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         break;
 
       case this.STATE.TOUCH_PAN:
-        if (this.enablePan === false) return;
+        // also mid-drag, since the lock is a tap away — see `toggleTapLock`
+        if (this.enablePan === false || this._ez.zoomLocked === true) return;
         this.handleTouchMovePan(event);
         this.update();
         break;
@@ -1012,7 +1013,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
           this.state = this.STATE.TOUCH_ROTATE;
           break;
         case TOUCH.PAN:
-          if (this.enablePan === false) return;
+          // a lock holds the view still, as holding shift does on desktop
+          if (this.enablePan === false || this._ez.zoomLocked === true) return;
           this.handleTouchStartPan();
           this.state = this.STATE.TOUCH_PAN;
           break;
