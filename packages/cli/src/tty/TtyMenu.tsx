@@ -26,6 +26,7 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
   const state = useStateRef<State>(
     (): State => ({
       dragged: false,
+      lastClipboardRead: "",
       minY: 40,
       motionY: null as any,
       rootEl: null as any,
@@ -67,8 +68,9 @@ export function TtyMenu(props: Props & { stateRef?: React.RefObject<State | null
         switch (act) {
           case "paste":
             try {
-              state.xterm.spliceInput(await navigator.clipboard.readText());
+              state.lastClipboardRead = await navigator.clipboard.readText();
             } catch {}
+            state.xterm.spliceInput(state.lastClipboardRead);
             break;
           case "ctrl-c":
             sessionApi.killSessionLeader(props.session.key);
@@ -252,6 +254,8 @@ interface Props {
 
 export type State = {
   dragged: boolean;
+  /** Mobile may not permit 2nd paste, so cache it */
+  lastClipboardRead: string;
   minY: number;
   motionY: MotionValue<number>;
   rootEl: HTMLDivElement | null;
