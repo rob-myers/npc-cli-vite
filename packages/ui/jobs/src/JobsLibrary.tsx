@@ -1,6 +1,7 @@
 import { Select } from "@base-ui/react/select";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { cn, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { ArticleIcon, CaretRightIcon, CheckIcon, CopyIcon, ListBulletsIcon } from "@phosphor-icons/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,8 @@ import {
   toSegments,
 } from "./library";
 import type { TokenKind } from "./shell-highlight";
+
+const touchDevice = isTouchDevice();
 
 /**
  * A library of example commands, provided via `./examples/*.md`.
@@ -40,8 +43,8 @@ export default function JobsLibrary(props: Props) {
       categoryKey: stored?.categoryKey ?? "",
       edits: {},
       props,
+      ranId: null,
       sectionKeys: stored?.sectionKeys ?? {},
-      open: stored?.open ?? true,
       view: stored?.view ?? "preview",
 
       onEditArg(e) {
@@ -53,20 +56,23 @@ export default function JobsLibrary(props: Props) {
         state.props.onCopy(getExampleData(e).src);
       },
       onExampleRun(e) {
-        state.props.onRun(getExampleData(e).src);
+        const { exampleId, src } = getExampleData(e);
+        state.props.onRun(src);
+        // stays until the next run, so it reads as "this is the one you ran" rather than
+        // as a flash of feedback — which a tap would miss anyway
+        state.set({ ranId: exampleId });
       },
       persist() {
         const stored: Stored = {
           categoryKey: state.categoryKey,
           sectionKeys: state.sectionKeys,
-          open: state.open,
           view: state.view,
         };
         tryLocalStorageSet(getStorageKey(props.uiId), JSON.stringify(stored));
       },
       setCategory(categoryKey) {
         // a tab also unfolds, else it'd seem inert
-        state.set({ categoryKey, open: true });
+        state.set({ categoryKey });
         state.persist();
       },
       setSection(categoryKey, sectionKey) {
@@ -80,11 +86,7 @@ export default function JobsLibrary(props: Props) {
         }
       },
       toggleView() {
-        state.set({ view: state.view === "preview" ? "compact" : "preview", open: true });
-        state.persist();
-      },
-      toggleOpen() {
-        state.set({ open: !state.open });
+        state.set({ view: state.view === "preview" ? "compact" : "preview" });
         state.persist();
       },
     };
@@ -116,7 +118,7 @@ export default function JobsLibrary(props: Props) {
   useEffect(() => {
     // the preview shows every section, so the select tracks whichever one we've scrolled to
     const article = state.articleEl;
-    if (article === null || category === null || state.open === false || state.view !== "preview") {
+    if (article === null || category === null || state.view !== "preview") {
       return;
     }
     const sections = Array.from(article.querySelectorAll<HTMLElement>("[data-section-key]"));
@@ -148,30 +150,29 @@ export default function JobsLibrary(props: Props) {
       cancelAnimationFrame(frameId);
       article.removeEventListener("scroll", onScroll);
     };
-  }, [category?.key, state.open, state.view, categories]);
+  }, [category?.key, state.view, categories]);
 
   return (
     <div
       className={cn(
-        "min-h-0 flex flex-col font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40",
-        // fills whatever the header and processes leave, unless folded away
-        state.open ? "flex-1" : "shrink-0",
+        "min-h-0 flex flex-col flex-1 font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40",
+        !touchDevice && "text-sm",
       )}
     >
       <div
         className={cn(
-          "shrink-0 flex items-end gap-3 px-2 min-w-0 overflow-hidden",
-          state.open && "border-b border-term-border-subtle",
+          "shrink-0 flex items-center gap-3 px-2 min-w-0 overflow-hidden",
+          "border-b border-term-border-subtle",
         )}
       >
-        <nav className="min-w-0 flex flex-1 items-end -mb-px">
+        <nav className="min-w-0 flex flex-1 items-end -mb-px pb-1">
           {categories.map(({ key, label }) => (
             <button
               key={key}
               type="button"
               className={cn(
-                "px-2 py-1 cursor-pointer text-sm border-b transition-colors",
-                state.open && key === category?.key
+                "px-2 py-1 cursor-pointer border-b transition-colors",
+                key === category?.key
                   ? "text-term-accent border-term-accent"
                   : "text-term-muted border-transparent hover:text-term-foreground",
               )}
@@ -189,29 +190,20 @@ export default function JobsLibrary(props: Props) {
           onClick={state.toggleView}
         >
           {state.view === "preview" ? (
-            <ListBulletsIcon alt="compact view" className="size-4" />
+            <ListBulletsIcon alt="compact view" className={touchDevice ? "size-5" : "size-4"} />
           ) : (
-            <ArticleIcon alt="preview view" className="size-4" />
+            <ArticleIcon alt="preview view" className={touchDevice ? "size-5" : "size-4"} />
           )}
-        </button>
-
-        <button
-          type="button"
-          title={state.open ? "fold library" : "unfold library"}
-          className={headerButtonCss}
-          onClick={state.toggleOpen}
-        >
-          <CaretRightIcon alt={state.open ? "fold" : "unfold"} className={cn("size-3", state.open && "rotate-90")} />
         </button>
       </div>
 
-      {state.open && category !== null && (
+      {category !== null && (
         <div className="shrink-0 flex items-center gap-3 px-2 py-1.5 min-w-0 border-b border-term-border-subtle">
           <Select.Root value={section?.key ?? ""} onValueChange={(key) => key && state.setSection(category.key, key)}>
             <Select.Trigger
               title="section"
               className={cn(
-                "min-w-0 flex items-center gap-2 px-2 py-0.5 rounded-sm cursor-pointer text-sm",
+                "min-w-0 flex items-center gap-2 px-2 py-0.5 rounded-sm cursor-pointer",
                 "border border-term-border-subtle bg-term-hover text-term-foreground",
                 "transition-colors hover:bg-term-surface",
               )}
@@ -250,7 +242,7 @@ export default function JobsLibrary(props: Props) {
             // takes the space left beside the select, so it cannot overflow
             <label
               key={key}
-              className="ml-auto min-w-0 flex-1 max-w-28 flex items-center gap-1 font-mono text-xs text-term-accent"
+              className="ml-auto min-w-0 flex-1 max-w-28 flex items-center gap-1 font-mono text-term-accent"
             >
               <span className="shrink-0">{`${key}:`}</span>
               <input
@@ -269,7 +261,7 @@ export default function JobsLibrary(props: Props) {
         </div>
       )}
 
-      {state.open && category !== null && (
+      {category !== null && (
         <article
           ref={state.ref("articleEl")}
           className={cn(
@@ -324,7 +316,13 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
   return (
     // the handlers read these, rather than closing over the example
     <div
-      className="group px-3 py-0.5 cursor-pointer hover:bg-term-hover"
+      className={cn(
+        // `term-hover` is darker than the `term-fence` it sits on, so it vanishes in dark mode
+        "group px-3 py-0.5 cursor-pointer hover:bg-term-hover-strong",
+        // bordered throughout, so gaining the colour shifts nothing
+        "border border-transparent",
+        example.id === state.ranId && "border-term-ok",
+      )}
       // the blank lines this example follows in the file, so the fence reads as it is written
       style={example.blankBefore > 0 ? { marginTop: `${example.blankBefore * exampleLineHeight}em` } : undefined}
       data-example-id={example.id}
@@ -436,7 +434,10 @@ function srcSegments(example: Example, edits: Record<string, string>) {
   ));
 }
 
-const exampleCodeCss = "block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words";
+const exampleCodeCss = cn(
+  "block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words",
+  touchDevice && "text-[15px]/[1.45]",
+);
 
 const headerButtonCss = "flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground";
 
@@ -487,7 +488,7 @@ type Props = {
 };
 
 /** Persisted per UI instance */
-type Stored = Pick<State, "categoryKey" | "open" | "sectionKeys" | "view">;
+type Stored = Pick<State, "categoryKey" | "sectionKeys" | "view">;
 
 type State = {
   /** The scroll container, whose sections the preview observes */
@@ -498,9 +499,10 @@ type State = {
   edits: Record<string, string>;
   /** Synced each render, so the handlers below never read stale props */
   props: Props;
+  /** The example most recently run, which stays bordered until another is */
+  ranId: null | string;
   /** categoryKey -> currently shown sectionKey */
   sectionKeys: Record<string, string>;
-  open: boolean;
   /** `preview` reads like the markdown file; `compact` lists one section tersely */
   view: "compact" | "preview";
 
@@ -511,6 +513,5 @@ type State = {
   persist: () => void;
   setCategory: (categoryKey: string) => void;
   setSection: (categoryKey: string, sectionKey: string) => void;
-  toggleOpen: () => void;
   toggleView: () => void;
 };
