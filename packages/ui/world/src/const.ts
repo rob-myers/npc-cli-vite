@@ -69,7 +69,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 /** Vertical field of view (degrees) of the world camera */
-export const cameraFov = 50;
+export const cameraFov = 60;
 
 export const defaultBrightness = 2;
 /** Default `w.player.key` */
