@@ -309,7 +309,7 @@ export default function JobsLibrary(props: Props) {
 
 /**
  * One example as the markdown file reads it: its `#` comment lines verbatim above the command,
- * with play/copy on hover. Every handler comes from `state`, so none is created per example.
+ * click to run. Every handler comes from `state`, so none is created per example.
  */
 function PreviewExample({ example, state }: { example: Example; state: UseStateRef<State> }) {
   const { copiedSrc } = state.props;
@@ -320,7 +320,7 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
     <div
       className={cn(
         // `term-hover` is darker than the `term-fence` it sits on, so it vanishes in dark mode
-        "group px-3 py-0.5 cursor-pointer hover:bg-term-hover-strong",
+        "px-3 py-0.5 cursor-pointer hover:bg-term-hover-strong",
         // bordered throughout, so gaining the colour shifts nothing
         "border border-transparent",
         example.id === state.ranId && "border-term-ok",
@@ -331,35 +331,27 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
       data-src={src}
       onClick={state.onExampleRun}
     >
-      <code className={exampleCodeCss}>
-        {example.commentLines.map((line, i) => (
-          <span key={i} className={cn(tokenCss.comment, "block")}>
-            {line}
-          </span>
-        ))}
-        {srcSegments(example, state.edits)}
+      {/* a row of its own, so the button below sits beside the command rather than the comment */}
+      {example.commentLines.length > 0 && (
+        <div className="flex items-start">
+          <span className={copyColumnCss} />
+          <code className={cn(exampleCodeCss, tokenCss.comment, "flex-1 min-w-0")}>
+            {example.commentLines.join("\n")}
+          </code>
+        </div>
+      )}
 
-        {/* inline, so it sits where the command ends. It always takes its space,
-            so fading it in shifts nothing */}
-        <button
-          type="button"
-          title="copy"
-          className={cn(
-            previewIconCss,
-            "align-middle ml-1.5 -my-1",
-            // shown outright without hover to reveal it, i.e. on touch. `hover:` is itself
-            // `@media (hover: hover)` in tailwind v4, so the fade only applies to pointers
-            "transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-          )}
-          onClick={state.onExampleCopy}
-        >
+      <div className="flex items-start">
+        {/* `data-src` is the command alone, comment lines excluded, so that is what it copies */}
+        <button type="button" title="copy command" className={copyColumnCss} onClick={state.onExampleCopy}>
           {copiedSrc === src ? (
-            <CheckIcon alt="copied" className="size-4 text-term-ok" />
+            <CheckIcon alt="copied" className={cn(copyIconCss, "text-term-ok")} />
           ) : (
-            <CopyIcon alt="copy" className="size-4" />
+            <CopyIcon alt="copy" className={copyIconCss} />
           )}
         </button>
-      </code>
+        <code className={cn(exampleCodeCss, "flex-1 min-w-0")}>{srcSegments(example, state.edits)}</code>
+      </div>
     </div>
   );
 }
@@ -439,9 +431,22 @@ function srcSegments(example: Example, edits: Record<string, string>) {
 }
 
 const exampleCodeCss = cn(
-  "block font-mono text-[13px]/[1.45] whitespace-pre-wrap break-words",
+  "block font-mono text-[13px]/[1.45] whitespace-pre-wrap wrap-break-word",
   touchDevice && "text-[15px]/[1.45]",
 );
+
+/**
+ * The column left of every preview line, holding the copy button on the command's own line.
+ * The comment above it leaves the same width empty, so the two align.
+ */
+const copyColumnCss = cn(
+  // its own font size, so `1.45em` is one line of the code beside it
+  "shrink-0 w-7 h-[1.45em] flex items-center text-[13px]",
+  touchDevice && "text-[15px]",
+  "cursor-pointer text-term-faint transition-colors hover:text-term-foreground",
+);
+
+const copyIconCss = "size-3.5";
 
 const headerButtonCss = "flex items-center py-1 cursor-pointer text-term-muted hover:text-term-foreground";
 
@@ -462,9 +467,6 @@ const iconCss = cn(
   "shrink-0 cursor-pointer text-term-faint transition-colors hover:text-term-foreground",
   "disabled:opacity-40 disabled:cursor-default disabled:hover:text-term-faint",
 );
-
-/** Padded, for a tap target rather than a bare icon */
-const previewIconCss = cn(iconCss, "p-1");
 
 /** The example an event occurred within, via the `data-*` on its wrapper */
 function getExampleData(e: React.SyntheticEvent) {
