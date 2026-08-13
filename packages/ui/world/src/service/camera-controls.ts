@@ -617,10 +617,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const prevY = this.twoFingerCentroid.y;
     this.twoFingerCentroid.set(prevX + (cx - prevX) * twoFingerSmoothing, prevY + (cy - prevY) * twoFingerSmoothing);
 
-    this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
-    // a lock turns the camera on the spot, azimuthally only
-    if (this.params.fixedPolar !== true && this._ez.zoomLocked === false) {
-      this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
+    // whilst locked two fingers only zoom, leaving the turn to the single-finger drag
+    if (this._ez.zoomLocked === false) {
+      this.rotateLeft((2 * Math.PI * (this.twoFingerCentroid.x - prevX) * rotateScale) / element.clientHeight);
+      if (this.params.fixedPolar !== true) {
+        this.rotateUp((2 * Math.PI * (this.twoFingerCentroid.y - prevY) * rotateScale) / element.clientHeight);
+      }
     }
 
     const prevDist = this.u.dollyStart.y;
@@ -673,9 +675,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const element = this.domElement;
 
     if (element) {
-      // unlike the mouse, touch rotates both axes at once
+      // unlike the mouse, touch rotates both axes at once — unless locked, which turns
+      // the camera on the spot and so azimuthally only
       this.rotateLeft((2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight);
-      if (this.params.fixedPolar !== true) {
+      if (this.params.fixedPolar !== true && this._ez.zoomLocked === false) {
         this.rotateUp((2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight);
       }
     }
@@ -1028,19 +1031,25 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.trackPointer(event);
 
     if (this.pointers.length === 1) {
-      switch (this.touches.ONE) {
-        case TOUCH.ROTATE:
-          if (this.enableRotate === false) return;
-          this.handleTouchStartRotate();
-          this.state = this.STATE.TOUCH_ROTATE;
-          break;
-        case TOUCH.PAN:
-          // a lock holds the view still, as holding shift does on desktop
-          if (this.enablePan === false || this._ez.zoomLocked === true) return;
-          this.handleTouchStartPan();
-          this.state = this.STATE.TOUCH_PAN;
-          break;
-        default:
+      if (this._ez.zoomLocked === true) {
+        // a lock turns the camera on the spot rather than panning it, so one finger rotates
+        if (this.enableRotate === false) return;
+        this.handleTouchStartRotate();
+        this.state = this.STATE.TOUCH_ROTATE;
+      } else {
+        switch (this.touches.ONE) {
+          case TOUCH.ROTATE:
+            if (this.enableRotate === false) return;
+            this.handleTouchStartRotate();
+            this.state = this.STATE.TOUCH_ROTATE;
+            break;
+          case TOUCH.PAN:
+            if (this.enablePan === false) return;
+            this.handleTouchStartPan();
+            this.state = this.STATE.TOUCH_PAN;
+            break;
+          default:
+        }
       }
 
       this.dispatchEvent(startEvent);
