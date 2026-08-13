@@ -26,11 +26,11 @@
     <title>black</title>
     <g style="pointer-events: none;">
       <title>right-leg</title>
-      <rect x="16" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
-        <title>front</title>
-      </rect>
       <rect y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
+      </rect>
+      <rect x="16" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
       </rect>
       <rect x="32" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
@@ -38,62 +38,65 @@
       <rect x="48" y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>back</title>
       </rect>
-      <rect x="16" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
-        <title>front</title>
-      </rect>
+    </g>
+    <g style="pointer-events: none;">
+      <title>right-leg-overlay</title>
       <rect y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
       </rect>
       <rect x="32" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
       </rect>
+      <rect x="16" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
       <rect x="48" y="144" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>back</title>
       </rect>
     </g>
-    <g style="">
-      <title>right-arm</title>
-      <g>
+    <g style="pointer-events: none;">
+      <title>right-arm-sans-hand</title>
+      <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>top</title>
-        <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>front</title>
-        </rect>
-        <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
-          <title>right</title>
-        </rect>
-        <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
-          <title>left</title>
-        </rect>
-        <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
-          <title>back</title>
-        </rect>
-        <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
-          <title>top</title>
-        </rect>
-        <rect x="176" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>front</title>
-        </rect>
-        <rect x="160" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>right</title>
-        </rect>
-        <rect x="192" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>left</title>
-        </rect>
-        <rect x="208" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>back</title>
-        </rect>
-        <rect x="176" y="128" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>top</title>
-        </rect>
-      </g>
+      </rect>
+      <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+        <title>right</title>
+      </rect>
+      <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+        <title>left</title>
+      </rect>
+      <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g>
+      <title>right-arm-overlay-sans-hand</title>
+      <rect x="176" y="128" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
+      </rect>
+      <rect x="160" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>right</title>
+      </rect>
+      <rect x="176" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="192" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>left</title>
+      </rect>
+      <rect x="208" y="144" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>back</title>
+      </rect>
     </g>
     <g style="pointer-events: none;">
       <title>left-leg</title>
-      <rect x="80" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
-        <title>front</title>
-      </rect>
       <rect y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;" x="64">
         <title>right</title>
+      </rect>
+      <rect x="80" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
       </rect>
       <rect x="96" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
@@ -101,11 +104,14 @@
       <rect x="112" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>back</title>
       </rect>
-      <rect x="16" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
-        <title>front</title>
-      </rect>
+    </g>
+    <g>
+      <title>left-leg-overlay</title>
       <rect y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
+      </rect>
+      <rect x="16" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
       </rect>
       <rect x="32" y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
@@ -115,40 +121,40 @@
       </rect>
     </g>
     <g style="pointer-events: none;" transform="matrix(1, 0, 0, 1, -32.000001, 128.000003)">
-      <title>left-arm</title>
-      <g>
-        <title>sans-hand</title>
-        <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>front</title>
-        </rect>
-        <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>right</title>
-        </rect>
-        <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>left</title>
-        </rect>
-        <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>back</title>
-        </rect>
-        <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>top</title>
-        </rect>
-        <rect x="240" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>front</title>
-        </rect>
-        <rect x="224" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>right</title>
-        </rect>
-        <rect x="256" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>left</title>
-        </rect>
-        <rect x="272" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>back</title>
-        </rect>
-        <rect x="240" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
-          <title>top</title>
-        </rect>
-      </g>
+      <title>left-arm-sans-hand</title>
+      <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
+      </rect>
+      <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>right</title>
+      </rect>
+      <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>left</title>
+      </rect>
+      <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, -32.000001, 128.000003)">
+      <title>left-arm-overlay-sans-hand</title>
+      <rect x="240" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
+      </rect>
+      <rect x="224" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>right</title>
+      </rect>
+      <rect x="240" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>front</title>
+      </rect>
+      <rect x="256" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>left</title>
+      </rect>
+      <rect x="272" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>back</title>
+      </rect>
     </g>
     <g style="">
       <title>body</title>
@@ -170,6 +176,9 @@
       <rect width="32" height="48" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="80" x="128">
         <title>back</title>
       </rect>
+    </g>
+    <g style="visibility: hidden;">
+      <title>body-overlay</title>
       <rect width="31.9999" height="16" style="filter: none; stroke: rgb(0, 0, 0); stroke-width: 2px;" y="128" x="80">
         <title>top</title>
       </rect>
