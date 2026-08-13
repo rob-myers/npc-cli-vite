@@ -165,7 +165,7 @@ export default function JobsLibrary(props: Props) {
           "border-b border-term-border-subtle",
         )}
       >
-        <nav className="min-w-0 flex flex-1 items-end -mb-px pb-1">
+        <nav className="min-w-0 flex flex-1 items-end -mb-px py-1">
           {categories.map(({ key, label }) => (
             <button
               key={key}
