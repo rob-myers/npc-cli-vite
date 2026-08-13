@@ -386,7 +386,9 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         <Tooltip.Trigger
           className={cn(
             "block w-full text-left cursor-pointer select-none transition-colors",
-            "px-3 py-2 bg-term-fence border border-term-border-subtle rounded hover:border-term-ok",
+            // as the preview: the hover tints the background, and the last run keeps its border
+            "px-3 py-2 rounded border bg-term-fence hover:bg-term-hover-strong",
+            example.id === state.ranId ? "border-term-ok" : "border-term-border-subtle",
           )}
           onClick={state.onExampleRun}
         >
