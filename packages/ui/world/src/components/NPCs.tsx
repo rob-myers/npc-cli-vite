@@ -159,6 +159,16 @@ export default function NPCs() {
           material,
         };
       },
+      clearMomentum(npc) {
+        if (npc.agentId === null) {
+          return;
+        }
+        const result = state.getClosestPoly(npc.point, "0.5");
+        if (result.success === true) {
+          // a fresh agent at the same spot has no velocity, so nothing carries over
+          state.placeNpcAt(npc, result, npc.point);
+        }
+      },
       createNpc(
         opts: Pick<NpcInit, "key" | "graph" | "geometry" | "pickId" | "position" | "rotation" | "skinnedMesh"> & {
           skinIndex: number;
@@ -309,6 +319,8 @@ export default function NPCs() {
           } else {
             // look when standing nearby
             if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcfg.dist.doableLook) {
+              // else an npc interrupted mid-move keeps its momentum and slides through the look
+              state.clearMomentum(npc);
               await npc.look({ at: to, minMs: npcfg.time.look * 1000 });
             }
 
@@ -755,6 +767,8 @@ export type State = {
     /** Non-existent on 1st spawn */
     npc?: Npc;
   }): number;
+  /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
+  clearMomentum(npc: Npc): void;
   createNpc(opts: {
     key: string;
     geometry: THREE.BufferGeometry;
