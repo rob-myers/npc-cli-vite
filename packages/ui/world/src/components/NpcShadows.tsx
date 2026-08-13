@@ -66,7 +66,7 @@ export type State = {
 };
 
 /** How far (in radii) a shadow shifts away from the light at the edge of its radius */
-const maxShadowOffset = 0.5;
+const maxShadowOffset = 0.15;
 const shadowRadius = npcScale / 2.5;
 
 function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
