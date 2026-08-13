@@ -438,7 +438,7 @@ export type NpcInit = {
 };
 
 /** Beyond this angle a look gets its own idle animation */
-const longLookAngle = (30 * Math.PI) / 180;
+const longLookAngle = 15 * (Math.PI / 180);
 
 const npcCannotLookForClip: Record<string, string | undefined> = {
   sit: "not while sitting",
