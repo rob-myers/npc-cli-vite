@@ -13,8 +13,8 @@ class ExtraZoom {
   ready = false;
   shiftHeld = false;
   tapLocked = false;
-  /** True whilst as close as `extraZoom` permits */
-  maxed = false;
+  /** True once `extraZoomDeepFrom` of the way into extra zoom */
+  deep = false;
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -52,9 +52,9 @@ class ExtraZoom {
     this._ctrl.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail, bubbles: true }));
   }
 
-  setMaxed(maxed: boolean) {
-    if (this.maxed === maxed) return;
-    this.maxed = maxed;
+  setDeep(deep: boolean) {
+    if (this.deep === deep) return;
+    this.deep = deep;
     this.emitChange();
   }
 
@@ -335,9 +335,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   get extraZoomActive() {
     return this._ez.active;
   }
-  /** True whilst extra zoom is as close as it permits — see `extrazoomchange` */
-  get extraZoomMaxed() {
-    return this._ez.maxed;
+  /** True well into extra zoom, rather than merely inside it — see `extrazoomchange` */
+  get extraZoomDeep() {
+    return this._ez.deep;
   }
   get readyForExtraZoom() {
     return this._ez.ready;
@@ -895,6 +895,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     this.removePointer(event);
 
+    if (event.pointerType === "touch" && this.pointers.length === 2 && this.state === this.STATE.TOUCH_DOLLY_ROTATE) {
+      // back to two fingers: re-baseline, else the next move is measured against a spread and
+      // centroid that included the finger which just left, and the camera jumps
+      this.handleTouchStartRotate();
+      this.handleTouchStartDolly();
+    }
+
     if (this.pointers.length === 0) {
       this.domElement.releasePointerCapture(event.pointerId);
       this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
@@ -1018,9 +1025,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.handleTouchStartDolly(); // baselines both spread and centroid
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
-    } else {
-      this.state = this.STATE.NONE;
     }
+    // a third finger — e.g. tapping the extra zoom button — is tracked but changes nothing,
+    // rather than dropping the pinch it interrupts
   };
 
   pan(deltaX: number, deltaY: number) {
@@ -1219,7 +1226,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     // every zoom path lands here, unlike `applyClamp` which the zoom-to-cursor branch skips
-    this._ez.setMaxed(this._ez.active === true && this.spherical.radius <= this._ez.minR * extraZoomMaxedSlack);
+    const deepFrom = this.minDistance - (this.minDistance - this._ez.minR) * extraZoomDeepFrom;
+    this._ez.setDeep(this._ez.active === true && this.spherical.radius <= deepFrom);
 
     if (
       this._ez.active &&
@@ -1294,8 +1302,8 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
-/** Within this factor of the closest extra zoom counts as being there */
-const extraZoomMaxedSlack = 1.01;
+/** How far through the extra zoom range before it counts as deep */
+const extraZoomDeepFrom = 0.5;
 
 const twoPI = 2 * Math.PI;
 
