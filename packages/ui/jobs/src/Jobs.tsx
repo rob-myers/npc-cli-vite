@@ -516,7 +516,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   return (
     <div
       data-jobs-root
-      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col gap-2"
+      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col"
     >
       <header className="shrink-0 flex items-stretch gap-1 font-mono">
         {/* toggles the processes below, and says how many there are */}
@@ -658,7 +658,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             title="drag to resize"
             onPointerDown={state.onResizeStart}
             className={cn(
-              "shrink-0 h-3 flex items-center justify-center cursor-ns-resize touch-none select-none group",
+              "shrink-0 h-5 flex items-center justify-center cursor-ns-resize touch-none select-none group",
               state.resizing && "cursor-grabbing",
             )}
           >
