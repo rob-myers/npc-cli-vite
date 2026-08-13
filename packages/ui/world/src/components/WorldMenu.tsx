@@ -66,7 +66,7 @@ export function WorldMenu() {
       lightMapOpen: false,
       menuOpen: false,
       minY: 40,
-      sections: { ...saved.menuSections },
+      openSection: saved.menuSection,
       themeEditorRef: null as any,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
@@ -115,12 +115,13 @@ export function WorldMenu() {
       },
 
       isOpen(section) {
-        return state.sections[section] === true;
+        return state.openSection === section;
       },
       toggleSection(section) {
-        state.sections[section] = !state.isOpen(section);
-        store.patch({ menuSections: { ...state.sections } });
-        state.update();
+        // a concertina: opening one folds whichever was open
+        const openSection = state.isOpen(section) === true ? null : section;
+        store.patch({ menuSection: openSection });
+        state.set({ openSection });
       },
 
       getMaxY() {
@@ -1242,8 +1243,8 @@ export type State = {
   lightMapOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  /** Which collapsible sections are unfolded, e.g. `debug`. Persisted */
-  sections: Record<string, boolean>;
+  /** The one unfolded section, e.g. `debug`. Persisted */
+  openSection: null | string;
   isOpen(section: string): boolean;
   toggleSection(section: string): void;
   themeEditorRef: HTMLTextAreaElement;

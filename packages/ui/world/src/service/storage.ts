@@ -53,8 +53,8 @@ export type WorldSettings = {
   menuY: number;
   menuWidth: number;
   menuHeight: number;
-  /** Section label -> is it unfolded, e.g. `debug` */
-  menuSections: Record<string, boolean>;
+  /** The one unfolded section, e.g. `debug` — the menu is a concertina */
+  menuSection: null | string;
   speechY: number;
   speechWidth: null | number;
   speechHeight: null | number;
@@ -79,7 +79,7 @@ const defaultWorldSettings: WorldSettings = {
   menuY: 40,
   menuWidth: 288,
   menuHeight: 288,
-  menuSections: {},
+  menuSection: null,
   speechY: 40,
   speechWidth: null,
   speechHeight: null,
