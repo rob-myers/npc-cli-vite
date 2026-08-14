@@ -17,8 +17,6 @@ class ExtraZoom {
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-  /** Where the camera looked when it was locked — see `syncLock` */
-  _lock: null | { phi: number } = null;
 
   constructor(ctrl: CameraControls) {
     this._ctrl = ctrl;
@@ -45,7 +43,7 @@ class ExtraZoom {
 
   /**
    * Whilst locked we never tween back to `minDistance`, and the view holds the extra zoom it
-   * has: turning and panning stay free, zoom and the polar angle do not. See `syncLock`
+   * has: turning, tilting and panning stay free, only zoom does not — see `dollyIn`
    */
   get zoomLocked() {
     return this.active === true && this.tapLocked === true;
@@ -151,20 +149,6 @@ class ExtraZoom {
       // pinching fingers (zoom out)
       this.setReady(false);
     }
-  }
-
-  /**
-   * The polar angle the camera was locked at, captured on the first locked frame and forgotten
-   * on release — `update` holds it there. Turning and panning stay free; zoom does not, being
-   * gated in `dollyIn`/`dollyOut`. Null whilst unlocked.
-   */
-  syncLock(spherical: THREE.Spherical) {
-    if (this.zoomLocked === false) {
-      this._lock = null;
-    } else if (this._lock === null) {
-      this._lock = { phi: spherical.phi };
-    }
-    return this._lock;
   }
 
   applyClamp(spherical: THREE.Spherical, u: CameraControls["u"]) {
@@ -1188,8 +1172,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     // (x, y, z) -> { r, theta, phi }
     this.spherical.setFromVector3(u.offset);
 
-    const lock = this._ez.syncLock(this.spherical);
-
     // approach target via damped delta
     this.spherical.theta += this.sphericalDelta.theta * this.azimuthalDampingFactor;
     this.spherical.phi += this.sphericalDelta.phi * this.polarDampingFactor;
@@ -1259,12 +1241,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.pointers.length === 0
     ) {
       this._ez.applyTween(this.spherical, u);
-    }
-
-    if (lock !== null) {
-      // held level at whatever we locked at, leaving turning and panning free — zoom is gated
-      // in `dollyIn`/`dollyOut` rather than here
-      this.spherical.phi = lock.phi;
     }
 
     this.u.offset.setFromSpherical(this.spherical);
