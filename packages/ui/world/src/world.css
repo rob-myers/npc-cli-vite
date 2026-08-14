@@ -10,8 +10,26 @@
   initial-value: 1;
 }
 
+/* The ambient intensity, mirroring `getBackgroundColor`'s mix towards black */
+@property --world-lit {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
 .world-background {
-  --pattern-fg: color-mix(in oklch, var(--color-blue-600) 60%, transparent);
+  /*
+   * Dimmed by the ambient intensity, and faded out whilst a map loads so the stripes dissolve
+   * rather than being buried by the black above them. Scaling the channels in `srgb-linear` is
+   * what mixing towards black amounts to, so the stripes track the background colour beneath.
+   * Relative colour rather than `color-mix`, whose percentage argument rejects a `calc()` over
+   * a `var()`; substituted afresh on every frame of a transition either way.
+   */
+  --pattern-fg: color(
+    from var(--color-blue-600) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
+      calc(b * var(--world-lit)) /
+    calc(0.6 * (1 - var(--world-dark)))
+  );
   background-image:
     linear-gradient(rgb(0 0 0 / var(--world-dark)), rgb(0 0 0 / var(--world-dark))),
     repeating-linear-gradient(45deg, var(--pattern-fg) 0, var(--pattern-fg) 1px, transparent 0, transparent 50%);

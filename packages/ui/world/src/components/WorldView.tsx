@@ -819,10 +819,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     <div className="size-full" ref={ref}>
       <Canvas
         className={props.className}
-        style={{
-          filter: `brightness(${w.brightness})`,
-          backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
-        }}
+        style={
+          {
+            filter: `brightness(${w.brightness})`,
+            backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
+            "--world-lit": state.ambientIntensity,
+          } as React.CSSProperties
+        }
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
