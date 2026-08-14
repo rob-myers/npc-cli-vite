@@ -53,7 +53,7 @@
   /* `auto` whilst up, so the camera cannot be driven around an unseen world */
   pointer-events: var(--world-freeze-events, none);
   opacity: var(--world-freeze, 0);
-  transition: opacity var(--world-freeze-duration, 250ms) ease-in-out;
+  transition: opacity var(--world-freeze-duration, 700ms) ease-in-out;
 }
 
 /* Over the held frame, and fading with it, so a slow map swap still looks alive */
@@ -62,7 +62,7 @@
   inset: 0;
   pointer-events: none;
   opacity: var(--world-freeze, 0);
-  transition: opacity var(--world-freeze-duration, 250ms) ease-in-out;
+  transition: opacity var(--world-freeze-duration, 700ms) ease-in-out;
 }
 
 /*
