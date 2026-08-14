@@ -844,14 +844,14 @@ export function WorldMenu() {
             data-keep-menu-open
             className={cn(
               "outline-width-1 grid place-items-center bg-gray-800 size-9 select-none",
-              "relative touch-none origin-top-left transition-transform duration-200 ease-out",
+              "relative touch-none origin-top-left transition duration-1000 ease-out",
               // it sits at the very edge of the screen, so the tap area reaches beyond the
               // icon — down and right only, else it would swallow taps meant for the button above
               touch && "after:absolute after:content-[''] after:inset-0 after:-right-3 after:-bottom-3",
               extraZoomActive ? "cursor-pointer text-white hover:bg-gray-700" : "text-gray-500",
               // only once well in, so it doesn't twitch as the pinch begins
               ((extraZoomDeep && touch) || extraZoomLocked) && "scale-150",
-              extraZoomLocked && "bg-gray-700 outline outline-white/40",
+              extraZoomLocked && "bg-gray-700",
             )}
             onPointerDown={(e) => {
               e.stopPropagation(); // else the icon column starts dragging
