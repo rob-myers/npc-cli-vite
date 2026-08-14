@@ -69,7 +69,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 /** Vertical field of view (degrees) of the world camera */
-export const cameraFov = 60;
+export const cameraFov = 30;
 
 export const defaultBrightness = 2;
 /** Default `w.player.key` */
@@ -129,6 +129,8 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
 };
 
 export const wallHeight = 1.7;
+
+export const floorFadeDelayMs = 260;
 
 export const MAX_GEOMORPH_INSTANCES = 8;
 

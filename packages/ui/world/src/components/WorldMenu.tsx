@@ -457,7 +457,7 @@ export function WorldMenu() {
                 side="bottom"
                 onValueChange={async (key) => {
                   if (!key || key === w.mapKey) return;
-                  await w.setCanvasOpacity(0);
+                  await w.floor?.fadeOut(key);
                   w.e.onChangeMap(); // persist + remove whilst the old map still exists
                   uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
                 }}

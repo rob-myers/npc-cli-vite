@@ -120,11 +120,25 @@ export default function NPCs() {
 
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
-        const ndotv = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1).mul(brightness);
-        const mainColor = vec4(mix(vec3(0).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale), skinTex.a);
+
+        // An npc keeps its height whilst a map changes over, darkening and fading out together
+        // as the world folds around it — see `setWorldFold`
+        const fold = w.view.foldNode;
+        const ndotv = normalWorld
+          .dot(cameraPosition.sub(positionWorld).normalize())
+          .clamp(0, 1)
+          .mul(brightness)
+          .mul(fold);
+        // `alphaTestNode` below gives way with this, or the body would be discarded whole the
+        // moment its alpha started dropping
+        const mainColor = vec4(
+          mix(vec3(0).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),
+          skinTex.a.mul(fold),
+        );
 
         const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(uniform(pickId));
-        const labelColor = vec4(labelTex.rgb, labelTex.a.mul(labelVisible));
+        // a label is unlit, so fading the body would leave it hanging there — it goes first
+        const labelColor = vec4(labelTex.rgb, labelTex.a.mul(labelVisible).mul(fold));
 
         // Output node: encode NPC pick ID for body; suppress label during picking
         const isPickMode = w.view.objectPick.notEqual(0);
@@ -139,7 +153,7 @@ export default function NPCs() {
           metalness: 0,
           roughness: 1,
         });
-        material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.1), float(0.9));
+        material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.1).mul(fold), float(0.9).mul(fold));
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         material.colorNode = (select as any)(isLabel, labelColor, mainColor);
         material.outputNode = (select as SelectAnyType)(
@@ -312,6 +326,8 @@ export default function NPCs() {
 
         npc.last.dst = helper.parseGroundPoint(to); // for doable or nav
 
+        npc.rejectAll(new Error("move again"));
+
         if (doResult.type !== "none") {
           // doable overrides navigable
           if (doResult.type === "use-current") {
@@ -342,7 +358,6 @@ export default function NPCs() {
         }
 
         w.e.setNpcDo(npcKey, null); // in case do=stand
-        npc.rejectAll(new Error("move again"));
 
         // navigation unreachable relative to locked doors?
         const unreachableResult = w.e.checkNpcTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
@@ -366,7 +381,10 @@ export default function NPCs() {
         state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
 
         try {
-          await npc.waitUntilResolved();
+          await new Promise<string>((resolve, reject) => {
+            npc.resolve.move = resolve;
+            npc.reject.move = reject;
+          });
         } catch (e) {
           if (e instanceof Error && e.message === "move again") {
             return;

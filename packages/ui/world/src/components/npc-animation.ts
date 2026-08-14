@@ -113,7 +113,7 @@ export class NpcAnimation {
     this.npc.anim.moveClip = this.npc.clips.shuffle;
     this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
     this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
-    this.mixer.timeScale = 2.5;
+    this.mixer.timeScale = 2;
   }
 
   /** Undoes `startLookShuffle`, and only that — a walk or run is left alone */

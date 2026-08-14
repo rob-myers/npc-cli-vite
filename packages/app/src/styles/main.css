@@ -13,28 +13,3 @@
 html {
   overscroll-behavior: none;
 }
-
-/*
- * A non-uniform fade: black closes in from the edges and lingers there, the centre being the
- * first to clear and the last to darken — driven by `setCanvasOpacity`, with `--reveal`
- * running 0 (covered) to 1 (clear).
- *
- * The two ends of the radial gradient run on staggered halves of that range: the centre is
- * done by 0.5, where the rim has yet to start. `@property` is what makes `--reveal`
- * transitionable; a bare custom property would jump.
- */
-@property --reveal {
-  syntax: "<number>";
-  inherits: false;
-  initial-value: 0;
-}
-
-.world-reveal {
-  background-image: radial-gradient(
-    circle farthest-corner at 50% 50%,
-    rgb(0 0 0 / clamp(0, calc(1 - var(--reveal) * 2), 1)) 0%,
-    rgb(0 0 0 / clamp(0, calc(1.5 - var(--reveal) * 2), 1)) 45%,
-    rgb(0 0 0 / clamp(0, calc(2 - var(--reveal) * 2), 1)) 100%
-  );
-  transition: --reveal var(--reveal-duration, 0.4s) ease-in-out;
-}
