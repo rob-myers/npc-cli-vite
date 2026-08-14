@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause, testNever } from "@npc-cli/util/legacy/generic";
@@ -551,6 +551,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         freezeEl.getContext("2d")?.drawImage(canvas, 0, 0);
         state.frozen = true;
         w.rootEl?.style.setProperty("--world-freeze-duration", "0ms");
+        // it swallows the pointer whilst up, so the camera cannot be driven around a world
+        // that is not the one on screen
+        w.rootEl?.style.setProperty("--world-freeze-events", "auto");
         w.rootEl?.style.setProperty("--world-freeze", "1");
       },
       unfreezeCanvas(durationMs = veilMs) {
@@ -558,7 +561,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.frozen = false;
         w.rootEl?.style.setProperty("--world-freeze-duration", `${durationMs}ms`);
         w.rootEl?.style.setProperty("--world-freeze", "0");
-        return pause(durationMs);
+        // the pointer comes back only once the world beneath is fully on show
+        return pause(durationMs).then(() => w.rootEl?.style.setProperty("--world-freeze-events", "none"));
       },
       veilCanvas(opaque, durationMs = veilMs) {
         w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
@@ -902,6 +906,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // the capture is of the raw drawing buffer, so it needs the canvas's own filter to match
         style={{ filter: `brightness(${w.brightness})` }}
       />
+      {/* over the held frame: progress whilst it is up, a map swap being far from instant */}
+      <div className="world-spinner">
+        <Spinner className="size-16" />
+      </div>
 
       <AnimatePresence>
         {w.disabled && (

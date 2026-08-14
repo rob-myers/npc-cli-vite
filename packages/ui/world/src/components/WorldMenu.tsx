@@ -975,7 +975,7 @@ function MenuShell({
                   className={cn(
                     "absolute inset-y-2 left-14 z-50 flex flex-col select-none",
                     "w-[min(22rem,calc(100%-4.5rem))] rounded-lg overflow-hidden",
-                    "bg-slate-900/95 border border-slate-700 shadow-2xl shadow-black/50",
+                    "bg-slate-900/70 border border-slate-700 shadow-2xl shadow-black/50",
                   )}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
