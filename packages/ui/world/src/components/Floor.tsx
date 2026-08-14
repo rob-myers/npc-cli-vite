@@ -150,9 +150,10 @@ export default function Floor() {
       async fadeOut() {
         // the world folds onto the floor as its art goes
         await Promise.all([state.fadeTo(0), w.foldTo(0)]);
-        // both maps at once, so the cover never shrinks before the new one can hold it
-        // and the background goes to black behind it
-        await w.view.dimBackground(true);
+        // the folded world is held on screen whilst the next map loads, and the background
+        // goes black unseen beneath it, ready for the gaps in the next map's floor
+        w.view.freezeCanvas();
+        void w.view.dimBackground(true, 0);
       },
       fadeTo(to, ms = floorFadeMs) {
         return new Promise<void>((resolve) => {
@@ -199,6 +200,14 @@ export default function Floor() {
         state.fade.texAmount.value = 0; // arrives black, whatever it was
         w.setWorldFold(0); // with the rest of the world flat until the map has settled
         state.drawHulls(w.gms);
+        // only once a frame holding them has been rendered, so they arrive whole. The first
+        // map has no held frame to cross-fade from, so it simply fades up from black
+        requestAnimationFrame(() =>
+          requestAnimationFrame(async () => {
+            await w.view.unfreezeCanvas();
+            await w.view.veilCanvas(false);
+          }),
+        );
       },
       /** Clear the shared canvas and put it in this geomorph's local coords */
       startGm(gmId, gms = w.gms) {

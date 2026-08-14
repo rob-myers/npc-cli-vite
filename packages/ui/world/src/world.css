@@ -39,3 +39,32 @@
   background-attachment: fixed;
   transition: --world-dark var(--world-dark-duration, 300ms) ease-in-out;
 }
+
+/*
+ * The last rendered frame, held over the canvas whilst the next map loads and its floor is
+ * drawn beneath — see `freezeCanvas`. Fading it out cross-fades to that new world, so the
+ * switch is a genuine transition rather than a wait on black.
+ */
+.world-freeze {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: var(--world-freeze, 0);
+  transition: opacity var(--world-freeze-duration, 250ms) ease-in-out;
+}
+
+/*
+ * Black over the canvas whilst the first map's floor arrives, so it fades up rather than
+ * appearing whole. Above the canvas contents, unlike `--world-dark`, which is a layer of its
+ * background and so cannot cover them. Opaque until then — see `veilCanvas`.
+ */
+.world-veil {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  opacity: var(--world-veil, 1);
+  transition: opacity var(--world-veil-duration, 300ms) ease-in-out;
+}
