@@ -473,6 +473,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.set({ cameraMode });
         w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
       },
+      zoomOut() {
+        const { controls } = state;
+        // the same target, so only the radius moves
+        return controls === null
+          ? Promise.resolve()
+          : state.lookAt(
+              { x: controls.target.x, y: controls.target.z },
+              { animate: true, radius: controls.maxDistance },
+            );
+      },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
         if (controls === null) {
@@ -1030,6 +1040,8 @@ export type State = {
    * Resolves on arrival. Zoom is preserved unless `radius` is given, which is tweened alongside.
    */
   lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number }): Promise<void>;
+  /** Pulls back to `maxDistance`, keeping the target — a map change wants the wider view */
+  zoomOut(): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** Animates `ambientIntensity`, persisting the final value */
