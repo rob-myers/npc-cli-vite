@@ -95,6 +95,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rightPress: false,
       },
       foldNode: uniform(1),
+      freezeEl: null as any,
+      frozen: false,
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(1),
@@ -540,6 +542,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.rootEl?.style.setProperty("--world-dark", `${darken ? 1 : 0}`);
         return pause(durationMs);
       },
+      freezeCanvas() {
+        // the last presented image is still there to be read, WebGPU having no
+        // `preserveDrawingBuffer` caveat, so long as nothing has rendered since
+        const { canvas, freezeEl } = state;
+        freezeEl.width = canvas.width;
+        freezeEl.height = canvas.height;
+        freezeEl.getContext("2d")?.drawImage(canvas, 0, 0);
+        state.frozen = true;
+        w.rootEl?.style.setProperty("--world-freeze-duration", "0ms");
+        w.rootEl?.style.setProperty("--world-freeze", "1");
+      },
+      unfreezeCanvas(durationMs = veilMs) {
+        if (state.frozen === false) return Promise.resolve();
+        state.frozen = false;
+        w.rootEl?.style.setProperty("--world-freeze-duration", `${durationMs}ms`);
+        w.rootEl?.style.setProperty("--world-freeze", "0");
+        return pause(durationMs);
+      },
+      veilCanvas(opaque, durationMs = veilMs) {
+        w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
+        w.rootEl?.style.setProperty("--world-veil", `${opaque ? 1 : 0}`);
+        return pause(durationMs);
+      },
       fadeAmbient(next, durationMs = ambientFadeDurationMs) {
         cancelAnimationFrame(state.ambientAnimId);
         const from = state.ambientIntensity;
@@ -869,6 +894,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         {props.children}
       </Canvas>
 
+      {/* the black, and over it the held frame that dips through it — see `world.css` */}
+      <div className="world-veil" />
+      <canvas
+        className="world-freeze"
+        ref={state.ref("freezeEl")}
+        // the capture is of the raw drawing buffer, so it needs the canvas's own filter to match
+        style={{ filter: `brightness(${w.brightness})` }}
+      />
+
       <AnimatePresence>
         {w.disabled && (
           <motion.div
@@ -995,6 +1029,14 @@ export type State = {
   foldNode: THREE.UniformNode<"float", number>;
   /** Takes the page background to black and back, whilst a map loads */
   dimBackground(darken: boolean, durationMs?: number): Promise<void>;
+  /** Black over the canvas contents, hiding a floor swap — see `world.css` */
+  veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
+  freezeEl: HTMLCanvasElement;
+  frozen: boolean;
+  /** Holds the last rendered frame on screen, so the world can change unseen beneath it */
+  freezeCanvas(): void;
+  /** Fades the held frame away, revealing whatever the world is now */
+  unfreezeCanvas(durationMs?: number): Promise<void>;
   fadeAmbient(next: number, durationMs?: number): void;
   /** Non-zero whilst `fadeAmbient` is animating */
   ambientAnimId: number;
@@ -1043,6 +1085,8 @@ const dynamicLightTweenUntil = 0.05;
 const dynamicLightTweenRate = 6;
 /** How long the background takes to go black, or to come back */
 const bgDimMs = 300;
+/** How long the veil over the canvas takes to fade, either way */
+const veilMs = 250;
 /** Default duration of `fadeAmbient` */
 const ambientFadeDurationMs = 1000;
 
