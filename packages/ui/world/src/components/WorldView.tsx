@@ -16,6 +16,7 @@ import * as THREE from "three/webgpu";
 import type { WorldTheme } from "../assets.schema";
 import {
   cameraFov,
+  cameraRefAspect,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   defaultCardinalDirectionsDesktop,
@@ -63,8 +64,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: 18,
-        maxDistance: 25,
+        minDistance: 8,
+        maxDistance: 12,
         extraZoom: 2,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
@@ -473,16 +474,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.set({ cameraMode });
         w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
       },
-      zoomOut() {
-        const { controls } = state;
-        // the same target, so only the radius moves
-        return controls === null
-          ? Promise.resolve()
-          : state.lookAt(
-              { x: controls.target.x, y: controls.target.z },
-              { animate: true, radius: controls.maxDistance },
-            );
-      },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
         if (controls === null) {
@@ -566,7 +557,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.rootEl?.style.setProperty("--world-freeze-events", "auto");
         w.rootEl?.style.setProperty("--world-freeze", "1");
       },
-      unfreezeCanvas(durationMs = veilMs) {
+      unfreezeCanvas(durationMs = freezeFadeMs) {
         if (state.frozen === false) return Promise.resolve();
         state.frozen = false;
         w.rootEl?.style.setProperty("--world-freeze-duration", `${durationMs}ms`);
@@ -884,7 +875,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={cameraFov} makeDefault zoom={1} />
+        <PerspectiveCamera fov={getCameraFov(bounds.width / bounds.height)} makeDefault zoom={1} />
 
         <CameraControls
           ref={state.ref("controls")}
@@ -1040,8 +1031,6 @@ export type State = {
    * Resolves on arrival. Zoom is preserved unless `radius` is given, which is tweened alongside.
    */
   lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number }): Promise<void>;
-  /** Pulls back to `maxDistance`, keeping the target — a map change wants the wider view */
-  zoomOut(): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** Animates `ambientIntensity`, persisting the final value */
@@ -1088,6 +1077,18 @@ const vignetteFocusMs = 300;
 /** Shift held longer than this is a hold, not a tap — see `onKeyUp` */
 const shiftTapMs = 300;
 
+/**
+ * `fov` is vertical, so a short wide viewport derives an ever wider horizontal one — 91° at
+ * 16:9 but 127° at 3.5:1, where the edges smear. Keep `cameraFov` up to `cameraRefAspect`,
+ * then hold the horizontal angle that implies and close the vertical instead.
+ */
+function getCameraFov(aspect: number) {
+  // `false` for the NaN of an unmeasured element, leaving the fov alone
+  if (!(aspect > cameraRefAspect)) return cameraFov;
+  const halfTan = Math.tan(cameraFov * 0.5 * THREE.MathUtils.DEG2RAD);
+  return 2 * Math.atan((halfTan * cameraRefAspect) / aspect) * THREE.MathUtils.RAD2DEG;
+}
+
 /** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
 function getPixelRatio() {
   return Math.min(Math.max(1, window.devicePixelRatio), 2);
@@ -1107,6 +1108,8 @@ const dynamicLightTweenRate = 6;
 const bgDimMs = 300;
 /** How long the veil over the canvas takes to fade, either way */
 const veilMs = 250;
+/** How long the held frame takes to give way to the map beneath it */
+const freezeFadeMs = 700;
 /** Default duration of `fadeAmbient` */
 const ambientFadeDurationMs = 1000;
 
