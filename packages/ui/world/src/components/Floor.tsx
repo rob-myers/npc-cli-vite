@@ -148,8 +148,9 @@ export default function Floor() {
         w.update();
       },
       async fadeOut() {
-        // the world folds onto the floor as its art goes
-        await Promise.all([state.fadeTo(0), w.foldTo(0)]);
+        // the world folds onto the floor as its art goes, and the camera pulls back so the
+        // next map arrives in full view
+        await Promise.all([state.fadeTo(0), w.foldTo(0), w.view.zoomOut()]);
         // the folded world is held on screen whilst the next map loads, and the background
         // goes black unseen beneath it, ready for the gaps in the next map's floor
         w.view.freezeCanvas();
