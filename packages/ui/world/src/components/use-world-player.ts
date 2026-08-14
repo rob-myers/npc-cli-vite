@@ -37,7 +37,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       async panTo() {
         const npc = w.n[state.key];
         if (npc !== undefined) {
-          await w.view.lookAt(npc.point, { animate: true, radius: w.view.controls?.minDistance });
+          // no `radius`, so the intro pans and turns without zooming — `lookAt` keeps the
+          // distance it finds, which on load is whatever view we restored
+          await w.view.lookAt(npc.point, { animate: true });
         }
       },
       persist() {

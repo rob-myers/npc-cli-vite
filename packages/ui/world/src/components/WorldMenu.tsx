@@ -839,7 +839,7 @@ export function WorldMenu() {
             )}
           </div>
 
-          {/* extra zoom: hold shift or tap while pinch-zoom */}
+          {/* extra zoom: tap shift (desktop) or this button (touch) to lock it */}
           <div
             data-keep-menu-open
             className={cn(
@@ -850,7 +850,8 @@ export function WorldMenu() {
               touch && "after:absolute after:content-[''] after:inset-0 after:-right-3 after:-bottom-3",
               extraZoomActive ? "cursor-pointer text-white hover:bg-gray-700" : "text-gray-500",
               // only once well in, so it doesn't twitch as the pinch begins
-              extraZoomDeep && touch && "scale-150",
+              ((extraZoomDeep && touch) || extraZoomLocked) && "scale-150",
+              extraZoomLocked && "bg-gray-700 outline outline-white/40",
             )}
             onPointerDown={(e) => {
               e.stopPropagation(); // else the icon column starts dragging

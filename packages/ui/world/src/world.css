@@ -11,13 +11,13 @@
 }
 
 .world-background {
-  --pattern-fg: color-mix(in oklch, var(--color-zinc-600) 20%, transparent);
+  --pattern-fg: color-mix(in oklch, var(--color-blue-600) 60%, transparent);
   background-image:
     linear-gradient(rgb(0 0 0 / var(--world-dark)), rgb(0 0 0 / var(--world-dark))),
     repeating-linear-gradient(45deg, var(--pattern-fg) 0, var(--pattern-fg) 1px, transparent 0, transparent 50%);
   background-size:
     auto,
-    4px 4px;
+    8px 8px;
   background-attachment: fixed;
   transition: --world-dark var(--world-dark-duration, 300ms) ease-in-out;
 }

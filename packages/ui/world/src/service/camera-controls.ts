@@ -11,7 +11,6 @@ class ExtraZoom {
   active = false;
   /** True when camera is at minDistance — visual indicator only */
   ready = false;
-  shiftHeld = false;
   tapLocked = false;
   /** True once `extraZoomDeepFrom` of the way into extra zoom */
   deep = false;
@@ -19,7 +18,7 @@ class ExtraZoom {
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   /** Where the camera looked when it was locked — see `syncLock` */
-  _lock: null | { theta: number; phi: number; target: THREE.Vector3 } = null;
+  _lock: null | { phi: number } = null;
 
   constructor(ctrl: CameraControls) {
     this._ctrl = ctrl;
@@ -45,11 +44,11 @@ class ExtraZoom {
   }
 
   /**
-   * Whilst locked we never tween back to `minDistance`, and the view rubber-bands onto the
-   * line it was locked on — the controls still respond, but only zoom lasts. See `syncLock`
+   * Whilst locked we never tween back to `minDistance`, and the view holds the extra zoom it
+   * has: turning and panning stay free, zoom and the polar angle do not. See `syncLock`
    */
   get zoomLocked() {
-    return this.active === true && (this.shiftHeld === true || this.tapLocked === true);
+    return this.active === true && this.tapLocked === true;
   }
 
   emitChange() {
@@ -72,14 +71,6 @@ class ExtraZoom {
       this.setReady(true);
     }
     this.emitChange();
-  }
-
-  setShiftHeld(shiftHeld: boolean) {
-    if (this.shiftHeld === shiftHeld) return;
-    const prevLocked = this.zoomLocked;
-    this.shiftHeld = shiftHeld;
-    if (this.zoomLocked !== prevLocked) this.emitChange();
-    if (prevLocked === true) this._ctrl.dispatchEvent(changeEvent); // restart tween
   }
 
   toggleTapLock() {
@@ -105,14 +96,8 @@ class ExtraZoom {
   /** Returns false if blocked (tween-back in progress) */
   handleWheelIn(event: WheelEvent, zoomScale: number): boolean {
     const ctrl = this._ctrl;
-    // whilst locked there is no tween to fight, so wheeling in stays available throughout
-    if (this.zoomLocked === false && this.active && this._activeTimer === undefined) return false;
-    if (
-      ctrl.extraZoom > 1 &&
-      // holding Shift before entering keeps us out of extra zoom, rather than
-      // entering and instantly clamping back out (which would flicker the icon)
-      (this.active || (this.shiftHeld === false && ctrl.spherical.radius <= ctrl.minDistance * 1.05))
-    ) {
+    if (this.active && this._activeTimer === undefined) return false;
+    if (ctrl.extraZoom > 1 && (this.active || ctrl.spherical.radius <= ctrl.minDistance * 1.05)) {
       if (!this.active) ctrl.u.panOffset.set(0, 0, 0); // freeze target on entry
       this.setActive(true);
       this.setReady(false);
@@ -169,16 +154,15 @@ class ExtraZoom {
   }
 
   /**
-   * The angles and target the camera was locked at, captured on the first locked frame and
-   * forgotten on release. `update` eases back towards them every frame, so rotating and panning
-   * still respond but spring back, leaving zoom — which slides along that line — the only lasting
-   * move. Returns null whilst unlocked.
+   * The polar angle the camera was locked at, captured on the first locked frame and forgotten
+   * on release — `update` holds it there. Turning and panning stay free; zoom does not, being
+   * gated in `dollyIn`/`dollyOut`. Null whilst unlocked.
    */
-  syncLock(spherical: THREE.Spherical, target: THREE.Vector3) {
+  syncLock(spherical: THREE.Spherical) {
     if (this.zoomLocked === false) {
       this._lock = null;
     } else if (this._lock === null) {
-      this._lock = { theta: spherical.theta, phi: spherical.phi, target: target.clone() };
+      this._lock = { phi: spherical.phi };
     }
     return this._lock;
   }
@@ -364,7 +348,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   get extraZoomLocked() {
     return this._ez.zoomLocked;
   }
-  /** Touch lock: tapped whilst two fingers still pinch, so the tween has not begun */
+  /** Tapped: the button on touch, a click that neither dragged nor lingered on desktop */
   toggleExtraZoomLock() {
     this._ez.toggleTapLock();
   }
@@ -435,11 +419,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this._ez.clearTimers();
   }
 
+  /** Gated by `_ez.zoomLocked`, covering every zoom entry point. `applyTween` bypasses these. */
   dollyIn(dollyScale: number) {
+    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale * dollyScale;
   }
 
   dollyOut(dollyScale: number) {
+    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale / dollyScale;
   }
 
@@ -979,7 +966,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   /** Window losing focus mid-gesture may never deliver any pointer-release event at all */
   onWindowBlur = () => {
-    this._ez.setShiftHeld(false); // keyup never arrives if released whilst unfocused
     if (this.pointers.length === 0) {
       return;
     }
@@ -1194,10 +1180,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const object = this.object;
     const position = object.position;
 
-    if (this._ez.zoomLocked === true) {
-      u.zoomingToCursor = false; // a locked dolly runs along the line of sight, not the cursor's
-    }
-
     const fixedAzimuth = this.params.fixedAzimuth === true ? this.getAzimuthalAngle() : null;
     const fixedPolar = this.params.fixedPolar === true ? this.getPolarAngle() : null;
 
@@ -1206,7 +1188,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     // (x, y, z) -> { r, theta, phi }
     this.spherical.setFromVector3(u.offset);
 
-    const lock = this._ez.syncLock(this.spherical, this.target);
+    const lock = this._ez.syncLock(this.spherical);
 
     // approach target via damped delta
     this.spherical.theta += this.sphericalDelta.theta * this.azimuthalDampingFactor;
@@ -1280,15 +1262,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     if (lock !== null) {
-      // an azimuth snap would pull one way whilst the spring pulls the other, and neither
-      // would ever arrive — the spring is what returns us whilst locked
-      this.snapAzimuth.animating = false;
-
-      // rubber-band back onto the locked line: rotating and panning still respond, but ease
-      // out, leaving zoom — which slides along that line — the only lasting move
-      this.spherical.theta += deltaAngle(this.spherical.theta, lock.theta) * lockSpringFactor;
-      this.spherical.phi += (lock.phi - this.spherical.phi) * lockSpringFactor;
-      this.target.lerp(lock.target, lockSpringFactor);
+      // held level at whatever we locked at, leaving turning and panning free — zoom is gated
+      // in `dollyIn`/`dollyOut` rather than here
+      this.spherical.phi = lock.phi;
     }
 
     this.u.offset.setFromSpherical(this.spherical);
@@ -1357,8 +1333,6 @@ const twoFingerSmoothing = 0.35;
 const twoFingerRatioSmoothing = 0.25;
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
-/** Per-frame pull back onto the locked line; higher is stiffer, permitting less give */
-const lockSpringFactor = 0.1;
 
 const twoPI = 2 * Math.PI;
 
