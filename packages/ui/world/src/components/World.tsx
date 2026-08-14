@@ -33,7 +33,7 @@ import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
-import { flushWorldStores, getWorldStore, removeLegacyWorldKeys } from "../service/storage";
+import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
@@ -53,6 +53,7 @@ import { WorldSpeech } from "./WorldSpeech";
 import { WorldView } from "./WorldView";
 import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
+import "../world.css";
 
 export default function World({ meta }: { meta: WorldUiMeta }) {
   const { uiStoreApi } = useContext(UiContext);
@@ -141,10 +142,43 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       helper,
 
-      canvasOpacity: 0,
-      fadeEl: null,
+      worldGroup: null,
+      fold: { amount: 0, animId: 0, resolve: null }, // flat until the first floor is up
       rootEl: null as any,
 
+      /** Announce the map once its pending keys stop changing */
+      mapSettled: debounce(() => {
+        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).length > 0) {
+          return;
+        }
+        state.settledMapKey = state.mapKey;
+        state.events.next({ key: "map-settled" });
+      }, settledMs),
+
+      /** Everything but the floor folds onto it, and rises again once the floor is back */
+      foldTo(amount, ms = worldFoldMs) {
+        return new Promise<void>((resolve) => {
+          const { fold } = state;
+          // a fold replaced mid-flight still settles, else its awaiter would wait forever
+          cancelAnimationFrame(fold.animId);
+          fold.resolve?.();
+          fold.resolve = resolve;
+
+          const from = fold.amount;
+          const startMs = performance.now();
+          const step = () => {
+            const t = ms > 0 ? Math.min(1, (performance.now() - startMs) / ms) : 1;
+            state.setWorldFold(from + (amount - from) * t);
+            if (t === 1) {
+              fold.animId = 0;
+              fold.resolve = null;
+              return resolve();
+            }
+            fold.animId = requestAnimationFrame(step);
+          };
+          step();
+        });
+      },
       getGmKeyTexId(gmKey: StarShipGeomorphKey) {
         return this.seenGmKeys.indexOf(gmKey);
       },
@@ -179,24 +213,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           state.view.updateDynamicLight(state.view.dynamicLightTarget.position);
         }
       },
-      setCanvasOpacity(opacity) {
-        return new Promise((resolve) => {
-          const el = state.fadeEl;
-          const prev = state.canvasOpacity;
-          state.canvasOpacity = opacity;
-          if (!el || opacity === prev) return resolve();
-          // black closes in whilst loading and clears once ready — see `world-reveal`.
-          // Covering is quick; clearing is a slower reveal
-          el.style.setProperty(revealDurationProperty, opacity < prev ? "0.4s" : "0.9s");
-          el.style.setProperty(revealProperty, opacity === 1 ? revealOpen : revealClosed);
-          const onEnd = (e: TransitionEvent) => {
-            if (e.propertyName !== revealProperty) return;
-            el.removeEventListener("transitionend", onEnd);
-            resolve();
-          };
-          el.addEventListener("transitionend", onEnd);
-        });
-      },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           draft.disabled = disabled ?? !state.disabled;
@@ -208,14 +224,19 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.set({ pending: next });
         state.mapSettled();
       },
-      /** Announce the map once its pending keys stop changing */
-      mapSettled: debounce(() => {
-        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).length > 0) {
-          return;
+      setWorldFold(amount) {
+        state.fold.amount = amount;
+        if (state.worldGroup !== null) {
+          // never exactly 0: a singular instance matrix takes the normals with it
+          state.worldGroup.scale.y = Math.max(minWorldFold, amount);
         }
-        state.settledMapKey = state.mapKey;
-        state.events.next({ key: "map-settled" });
-      }, settledMs),
+        // npcs are outside the fold, keeping their height — they fade to black by this instead,
+        // as do their shadows and rings
+        if (state.view?.foldNode !== undefined) {
+          state.view.foldNode.value = amount;
+        }
+        state.r3f?.invalidate();
+      },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
         if (!(import.meta.env.DEV && hot)) return () => {};
@@ -389,27 +410,29 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           <WorldView
             className={
               state.assets &&
-              cn(
-                state.getTheme().background,
-                // these stripes can show through floor
-                "bg-[repeating-linear-gradient(45deg,var(--pattern-fg)_0,var(--pattern-fg)_1px,transparent_0,transparent_50%)] bg-size-[4px_4px] bg-fixed [--pattern-fg:color-mix(in_oklch,var(--color-zinc-600)_20%,transparent)]",
-              )
+              // `world-background`: the stripes that can show through the floor, and the black
+              // over them whilst a map loads — see `main.css`
+              cn(state.getTheme().background, "world-background")
             }
           >
+            {/* outside the fold, else it would swing the directional rig */}
             <Lights />
+            {/* the floor is the fold's floor, and lies flat regardless — see `setWorldFold` */}
             <Floor key="floor" />
-            <Ceiling key="ceiling" />
-            <Walls key="walls" />
-            <Doors key="doors" />
-            <Obstacles key="obstacles" />
-            <Decor key="decor" />
-            <NpcShadows key="npc-shadows" />
-            <NpcRings key="npc-rings" />
+            <group ref={state.ref("worldGroup")}>
+              <Ceiling key="ceiling" />
+              <Walls key="walls" />
+              <Doors key="doors" />
+              <Obstacles key="obstacles" />
+              <Decor key="decor" />
+              <NpcShadows key="npc-shadows" />
+              <NpcRings key="npc-rings" />
+              <Debug key="debug" />
+            </group>
+            {/* outside the fold: an npc shrinks uniformly rather than squashing — `setWorldFold` */}
             <NPCs key="npcs" />
-            <Debug key="debug" />
           </WorldView>
         )}
-        <FadeOverlay ref={state.ref("fadeEl")} />
         <WorldWorker />
         {state.view && <WorldMenu />}
         <WorldSpeech />
@@ -500,16 +523,17 @@ export type State = {
   helper: typeof helper;
 
   rootEl: HTMLDivElement;
-  fadeEl: HTMLDivElement | null;
-  /** Current scene visibility set via `setCanvasOpacity`, tracked so the next call knows its start value */
-  canvasOpacity: number;
+  /** Everything but the lights and the floor, so it can fold flat whilst a map changes */
+  worldGroup: null | THREE.Group;
+  fold: {
+    /** `0` flat, `1` full height */
+    amount: number;
+    animId: number;
+    resolve: null | (() => void);
+  };
+  setWorldFold(amount: number): void;
+  foldTo(amount: number, ms?: number): Promise<void>;
 
-  /**
-   * Fades the canvas to the given scene visibility (`1` = fully visible, `0` = fully covered by a
-   * black overlay); resolves once the transition finishes (e.g. await fade-out, switch something,
-   * fade back in).
-   */
-  setCanvasOpacity(opacity: number): Promise<void>;
   setDisabled(nextDisabled?: boolean): void;
   setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
   mapSettled: () => void;
@@ -554,20 +578,14 @@ import.meta.hot?.on("vite:beforeUpdate", (foo) => {
 /** How long the pending keys must stop changing before "map-settled" */
 const settledMs = 500;
 
+/**
+ * Flat, but not so flat that everything lands on the floor plane: at a few thousandths the
+ * ceiling, obstacle quads and decor all sit within a millimetre of it and z-fight. A few
+ * hundredths still reads as flat whilst leaving them centimetres apart — and keeps the
+ * instance matrices non-singular, which a true 0 would not.
+ */
+const minWorldFold = 0.03;
+/** How long the world takes to fold flat, or to rise again */
+const worldFoldMs = 400;
+
 type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins";
-
-/** How far the world has cleared, transitioned by `setCanvasOpacity` — see `main.css` */
-const revealProperty = "--reveal";
-const revealOpen = "1";
-const revealClosed = "0";
-const revealDurationProperty = "--reveal-duration";
-
-function FadeOverlay(props: { ref: React.RefCallback<HTMLDivElement> }) {
-  return (
-    <div
-      ref={props.ref}
-      // starts covered, since the first map is still loading; `world-reveal` is the veil
-      className="world-reveal absolute inset-0 z-5 pointer-events-none"
-    />
-  );
-}

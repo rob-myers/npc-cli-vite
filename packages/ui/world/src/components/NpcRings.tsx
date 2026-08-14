@@ -11,7 +11,7 @@ export default function NpcRings() {
 
   const state = useStateRef(
     (): State => ({
-      ...createSpawnRingResources(w.view.objectPick),
+      ...createSpawnRingResources(w.view.objectPick, w.view.foldNode),
       spawnRingByNpc: new Map(),
 
       onTick(delta = 0) {
@@ -87,7 +87,10 @@ const spawnRingFadeSpeed = 2.5;
 /** Default ring height when target isn't doable (just above floor, avoids z-fighting) */
 const spawnRingDefaultHeight = 0.02;
 
-function createSpawnRingResources(objectPick: THREE.UniformNode<"float", number>) {
+function createSpawnRingResources(
+  objectPick: THREE.UniformNode<"float", number>,
+  fold: THREE.UniformNode<"float", number>,
+) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
   const ringScale = npcScale * 1.6;
@@ -118,7 +121,8 @@ function createSpawnRingResources(objectPick: THREE.UniformNode<"float", number>
 
   const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   ringMat.vertexNode = clipPos;
-  ringMat.colorNode = vec4(0.4, 0.4, 0.4, alpha.mul(0.5));
+  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold`
+  ringMat.colorNode = vec4(0.4, 0.4, 0.4, alpha.mul(0.5).mul(fold));
 
   const ringMesh = new THREE.Mesh(ringGeo, ringMat);
   ringMesh.frustumCulled = false;

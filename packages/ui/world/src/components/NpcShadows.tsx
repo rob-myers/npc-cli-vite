@@ -23,7 +23,7 @@ export default function NpcShadows() {
 
   const state = useStateRef(
     (): State => ({
-      shadow: createShadowResources(w.view.objectPick),
+      shadow: createShadowResources(w.view.objectPick, w.view.foldNode),
       onTick() {
         const { xzoData, xzoAttr, geo, light } = state.shadow;
 
@@ -69,7 +69,10 @@ export type State = {
 const maxShadowOffset = 0.15;
 const shadowRadius = npcScale / 2.5;
 
-function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
+function createShadowResources(
+  objectPick: THREE.UniformNode<"float", number>,
+  fold: THREE.UniformNode<"float", number>,
+) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
   const quadSide = shadowRadius * 2 * (maxShadowOffset + 1); // room for the max offset, any direction
@@ -114,7 +117,8 @@ function createShadowResources(objectPick: THREE.UniformNode<"float", number>) {
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   mat.vertexNode = clipPos;
-  mat.colorNode = vec4(0, 0, 0, alpha);
+  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold`
+  mat.colorNode = vec4(0, 0, 0, alpha.mul(fold));
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;

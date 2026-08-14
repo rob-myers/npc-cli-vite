@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
-import { defaultDoorCloseMs, defaultPlayerKey, defaultSkinKey, MAX_NPCS } from "../const";
+import { defaultDoorCloseMs, defaultPlayerKey, defaultSkinKey, floorFadeDelayMs, MAX_NPCS } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
@@ -180,8 +180,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         } finally {
-          // reveal world
-          void w.setCanvasOpacity(1);
+          // unfold world with delayed floor fade-in
+          const rising = w.foldTo(1);
+          await pause(floorFadeDelayMs);
+          void w.floor?.fadeTo(1);
+          await rising;
         }
 
         if (introDone === false && player.introEnabled === true) {

@@ -2,7 +2,7 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
-import { mapValues, testNever } from "@npc-cli/util/legacy/generic";
+import { mapValues, pause, testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -63,8 +63,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: 10,
-        maxDistance: 16,
+        minDistance: 18,
+        maxDistance: 25,
         extraZoom: 2,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
@@ -91,6 +91,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         down: new Vect(),
         rightPress: false,
       },
+      foldNode: uniform(1),
       objectPick: uniform(0),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(1),
@@ -526,6 +527,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           step();
         });
       },
+      dimBackground(darken, durationMs = bgDimMs) {
+        w.rootEl?.style.setProperty("--world-dark-duration", `${durationMs}ms`);
+        w.rootEl?.style.setProperty("--world-dark", `${darken ? 1 : 0}`);
+        return pause(durationMs);
+      },
       fadeAmbient(next, durationMs = ambientFadeDurationMs) {
         cancelAnimationFrame(state.ambientAnimId);
         const from = state.ambientIntensity;
@@ -949,6 +955,10 @@ export type State = {
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** Animates `ambientIntensity`, persisting the final value */
+  /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
+  foldNode: THREE.UniformNode<"float", number>;
+  /** Takes the page background to black and back, whilst a map loads */
+  dimBackground(darken: boolean, durationMs?: number): Promise<void>;
   fadeAmbient(next: number, durationMs?: number): void;
   /** Non-zero whilst `fadeAmbient` is animating */
   ambientAnimId: number;
@@ -989,6 +999,8 @@ const dynamicLightTweenFrom = 1;
 const dynamicLightTweenUntil = 0.05;
 /** Exponential approach rate of the tween, per second */
 const dynamicLightTweenRate = 6;
+/** How long the background takes to go black, or to come back */
+const bgDimMs = 300;
 /** Default duration of `fadeAmbient` */
 const ambientFadeDurationMs = 1000;
 

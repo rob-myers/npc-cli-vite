@@ -167,7 +167,7 @@ export class Npc {
 
   async fadeIn(speed = 4) {
     await new Promise<string>((resolve, reject) => {
-      this.rejectAll(new Error("interrupted"));
+      this.rejectAll(new Error("fade in"));
       this.resolve.fade = resolve;
       this.reject.scale = reject;
       this.anim.fadeState.target = 1;
@@ -177,7 +177,7 @@ export class Npc {
 
   async fadeOut(speed = 8) {
     await new Promise<string>((resolve, reject) => {
-      this.rejectAll(new Error("interrupted"));
+      this.rejectAll(new Error("fade out"));
       this.resolve.fade = resolve;
       this.reject.scale = reject;
       this.anim.fadeState.target = 0;
@@ -409,14 +409,6 @@ export class Npc {
     const skinIndex = this.w.npc.getSkinIndexBySkinKey(skinKey ?? "medic-0");
     console.warn(`${this.key}: skin "${skinKey}" not found`);
     this.skinIndexUniform.value = skinIndex;
-  }
-
-  async waitUntilResolved() {
-    await new Promise<string>((resolve, reject) => {
-      this.rejectAll(new Error("interrupted"));
-      this.resolve.move = resolve;
-      this.reject.move = reject;
-    });
   }
 }
 
