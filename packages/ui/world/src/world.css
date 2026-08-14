@@ -26,7 +26,7 @@
    * a `var()`; substituted afresh on every frame of a transition either way.
    */
   --pattern-fg: color(
-    from var(--color-blue-600) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
+    from var(--color-zinc-600) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
       calc(b * var(--world-lit)) /
     calc(0.6 * (1 - var(--world-dark)))
   );
@@ -50,6 +50,16 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  /* `auto` whilst up, so the camera cannot be driven around an unseen world */
+  pointer-events: var(--world-freeze-events, none);
+  opacity: var(--world-freeze, 0);
+  transition: opacity var(--world-freeze-duration, 250ms) ease-in-out;
+}
+
+/* Over the held frame, and fading with it, so a slow map swap still looks alive */
+.world-spinner {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
   opacity: var(--world-freeze, 0);
   transition: opacity var(--world-freeze-duration, 250ms) ease-in-out;
