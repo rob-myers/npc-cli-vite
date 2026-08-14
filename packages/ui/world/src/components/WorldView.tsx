@@ -81,6 +81,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       dynamicLightTarget: null,
       initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
+      prevVignette: null,
+      vignetteAnimId: 0,
+      shiftDownMs: 0,
       ambientAnimId: 0,
       lightTweenId: 0,
       lastPointer: {
@@ -280,8 +283,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.speech?.onResize();
       }, 100),
       onKeyDown(e) {
-        if (e.key === "Shift") {
-          state.controls?._ez.setShiftHeld(true);
+        if (e.key === "Shift" && e.repeat === false) {
+          state.shiftDownMs = performance.now();
         }
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
@@ -292,8 +295,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       onKeyUp(e) {
+        // a tap toggles the extra zoom lock, where holding it down does nothing — as the
+        // button does on touch. `shiftDownMs` is when it went down, `0` once spent
         if (e.key === "Shift") {
-          state.controls?._ez.setShiftHeld(false);
+          const tapped = state.shiftDownMs > 0 && performance.now() - state.shiftDownMs < shiftTapMs;
+          state.shiftDownMs = 0;
+          if (tapped === true) state.controls?.toggleExtraZoomLock();
         }
       },
       onPointerDown(e) {
@@ -319,7 +326,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         clearTimeout(state.lastPointer.longPressTimer);
         state.lastPointer.longPressTimer = 0;
         state.canvas.style.cursor = "";
-        state.controls?._ez.setShiftHeld(false); // shift only locks whilst over the world
       },
       onPointerMove(e) {
         state.lastPointer.move.copy(getRelativePointer(e));
@@ -429,12 +435,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const { onKeyDown, onKeyUp } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
-        // on `window`, else releasing Shift after focus moved elsewhere (another pane, a
-        // popup stealing focus) never reaches us and the extra zoom stays locked forever
+        // on `window`, else a release after focus moved elsewhere never reaches us and the
+        // next release would read as a very long tap
         window.addEventListener("keyup", onKeyUp);
 
-        // dispatched by `ExtraZoom` — only the extra-zoom button reads it
-        const onExtraZoomChange = () => w.menu?.update();
+        const onExtraZoomChange = (e: Event) => {
+          state.setVignetteFocus((e as CustomEvent<{ locked: boolean }>).detail.locked);
+          w.menu?.update(); // the extra-zoom button reads it too
+        };
         w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
 
         return () => {
@@ -594,10 +602,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.update();
       },
       setFx(key, next = state.fx[key].value === 0 ? 1 : 0) {
+        if (key === "vignette") state.prevVignette = null; // an explicit choice outranks the focus
         state.fx[key].value = next;
         store.patch({ fx: mapValues(state.fx, (u) => u.value) });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
+      },
+      setVignetteFocus(focus) {
+        const { vignette } = state.fx;
+        // `prevVignette` doubles as "currently focused", so unfocusing twice is a no-op
+        const to = focus === true ? 1 : state.prevVignette;
+        if (to === null) return;
+        state.prevVignette = focus === true ? (state.prevVignette ?? vignette.value) : null;
+
+        cancelAnimationFrame(state.vignetteAnimId);
+        const from = vignette.value;
+        const startEpochMs = performance.now();
+        const step = () => {
+          const ratio = Math.min(1, (performance.now() - startEpochMs) / vignetteFocusMs);
+          vignette.value = from + (to - from) * ratio;
+          state.forceUpdate();
+          if (ratio < 1) state.vignetteAnimId = requestAnimationFrame(step);
+        };
+        step();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
@@ -890,6 +917,11 @@ export type State = {
   fx: Record<FxKey, ReturnType<typeof uniform<"float", number>>>;
   /** Toggles (or sets) one of `fx` */
   setFx(key: FxKey, next?: number): void;
+  /** The vignette before the extra zoom lock forced it to max, else `null` */
+  prevVignette: null | number;
+  /** Whilst the extra zoom is locked the vignette tweens to max, focusing on the target */
+  setVignetteFocus(focus: boolean): void;
+  vignetteAnimId: number;
   roomLight: RoomLightPostprocess;
   /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling in `use-world-events.ts` */
   roomLightEditingEnabled: boolean;
@@ -909,8 +941,9 @@ export type State = {
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
-  /** Shift is the desktop extra-zoom lock, so we need the release too */
   onKeyUp(e: KeyboardEvent): void;
+  /** When Shift went down, so its release can tell a tap from a hold */
+  shiftDownMs: number;
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
@@ -983,6 +1016,12 @@ function getBackgroundColor(theme: WorldTheme, ambientIntensity: number) {
   const color = theme.background.match(/^bg-\[(.+)\]$/)?.[1];
   return color === undefined ? undefined : `color-mix(in srgb-linear, ${color} ${ambientIntensity * 100}%, #000)`;
 }
+
+/** How long the vignette takes to reach max whilst the extra zoom locks, and to come back */
+const vignetteFocusMs = 300;
+
+/** Shift held longer than this is a hold, not a tap — see `onKeyUp` */
+const shiftTapMs = 300;
 
 /** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
 function getPixelRatio() {
