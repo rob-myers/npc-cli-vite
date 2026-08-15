@@ -108,12 +108,21 @@ export class NpcAnimation {
     }
   }
 
-  /** The turn-in-place animation of a `longLook` */
+  /** The turn-in-place animation of a `longLook`, whose `lookState` must already be set */
   startLookShuffle() {
+    const s = this.lookState;
     this.npc.anim.moveClip = this.npc.clips.shuffle;
-    this.mixer.existingAction(this.idleClip)?.fadeOut(0.15);
+    // every other clip, not merely idle: a walk interrupted by this look — moving onto a
+    // doable, say — otherwise keeps its full weight and strides underneath the shuffle
+    for (const clip of Object.values(this.npc.clips)) {
+      if (clip === this.moveClip) continue;
+      this.mixer.existingAction(clip)?.fadeOut(0.15);
+    }
     this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
-    this.mixer.timeScale = 2;
+    // the feet keep up with the turn: a `minMs` slow enough to drag it out shuffles gently,
+    // where the default rate still gives the 2 this always used
+    const rate = s.duration > 0 ? Math.abs(s.totalDiff) / s.duration : lookShuffleRate;
+    this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
   }
 
   /** Undoes `startLookShuffle`, and only that — a walk or run is left alone */
@@ -272,6 +281,14 @@ export class NpcAnimation {
  * far before the turn ends, so both finish together rather than the idle following on.
  */
 const lookIdleFadeMs = 300;
+
+/**
+ * The mean turn rate (radians per second) the shuffle clip is played at 1x for. `look` turns
+ * at `2 * arc / duration` initially and eases to nothing, so the mean is half of that.
+ */
+const lookShuffleRate = Math.PI / 2;
+const minLookShuffleScale = 0.4;
+const maxLookShuffleScale = 3;
 
 function bubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;
