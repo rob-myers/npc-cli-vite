@@ -63,7 +63,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
-        maxPolarAngle: Math.PI / 2 - Math.PI / 4,
+        maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         minDistance: 10,
         maxDistance: 10,
         extraZoom: 2,

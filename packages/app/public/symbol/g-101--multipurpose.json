@@ -533,6 +533,25 @@
           "baseRect": {"width": 180, "height": 120},
           "offset": {"x": -0.7101, "y": 4.4154},
           "cssTransform": "matrix(0, -1, 1, 0, 838, 544)"
+        },
+        {
+          "id": "0691bd78-2baa-4b90-956c-4c63167eaa53",
+          "name": "medical--007 doors=[]",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 359.5846,
+            "f": 659.2101
+          },
+          "type": "symbol",
+          "srcKey": "medical--007",
+          "baseRect": {"width": 180, "height": 120},
+          "offset": {"x": 4.415396659402344, "y": -0.7101213559234938},
+          "cssTransform": "matrix(0, 1, -1, 0, 364, 658.5)"
         }
       ]
     },
