@@ -52,36 +52,36 @@
           "name": "fuel--010 y=1.6",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.7, "f": -2.3},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 3.7, "f": -0.3},
           "type": "symbol",
           "srcKey": "fuel--010",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, -6)"
+          "cssTransform": "matrix(1, 0, 0, 1, 0, -4)"
         },
         {
           "id": "97447bd8-99de-476c-b079-b32cb0b1e594",
           "name": "fuel--010 y=1.6",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 363.7, "f": -4.3},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 363.7, "f": -0.8},
           "type": "symbol",
           "srcKey": "fuel--010",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 360, -8)"
+          "cssTransform": "matrix(1, 0, 0, 1, 360, -4.5)"
         },
         {
           "id": "a93756d9-24c0-4676-926b-7c205c36e052",
           "name": "fuel--010 y=1.6-0.01",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 599.7, "f": -4.3},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 599.7, "f": -0.8},
           "type": "symbol",
           "srcKey": "fuel--010",
           "baseRect": {"width": 240, "height": 120},
           "offset": {"x": -3.7, "y": -3.7},
-          "cssTransform": "matrix(1, 0, 0, 1, 596, -8)"
+          "cssTransform": "matrix(1, 0, 0, 1, 596, -4.5)"
         },
         {
           "id": "0d882080-a674-4441-be67-0688fff999e8",
@@ -506,14 +506,14 @@
             "b": 1,
             "c": 1,
             "d": 0,
-            "e": 840.7102,
+            "e": 842.7101,
             "f": 660.4154
           },
           "type": "symbol",
           "srcKey": "fresher--025",
           "baseRect": {"width": 180, "height": 120},
           "offset": {"x": -0.7101213559234938, "y": -4.415396659402344},
-          "cssTransform": "matrix(0, 1, 1, 0, 840, 656)"
+          "cssTransform": "matrix(0, 1, 1, 0, 842, 656)"
         },
         {
           "id": "ca3225f0-26d4-4087-9f72-a454403453bc",
@@ -525,14 +525,14 @@
             "b": -1,
             "c": 1,
             "d": 0,
-            "e": 838.7101,
-            "f": 539.5846
+            "e": 840.7101,
+            "f": 541.5846
           },
           "type": "symbol",
           "srcKey": "fresher--025",
           "baseRect": {"width": 180, "height": 120},
           "offset": {"x": -0.7101, "y": 4.4154},
-          "cssTransform": "matrix(0, -1, 1, 0, 838, 544)"
+          "cssTransform": "matrix(0, -1, 1, 0, 840, 546)"
         },
         {
           "id": "0691bd78-2baa-4b90-956c-4c63167eaa53",
