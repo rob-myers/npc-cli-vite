@@ -323,7 +323,7 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
         "px-3 py-0.5 cursor-pointer hover:bg-term-hover-strong",
         // bordered throughout, so gaining the colour shifts nothing
         "border border-transparent",
-        example.id === state.ranId && "border-term-ok",
+        example.id === state.ranId && "border-term-ok/50 bg-term-ok/10",
       )}
       // the blank lines this example follows in the file, so the fence reads as it is written
       style={example.blankBefore > 0 ? { marginTop: `${example.blankBefore * exampleLineHeight}em` } : undefined}
