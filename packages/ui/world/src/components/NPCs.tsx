@@ -408,10 +408,18 @@ export default function NPCs() {
           }
 
           const agent = state.crowd.agents[npc.agentId];
+          // ignore obstacles when nearly arrived to avoid slow-down near nav-edges
+          const arriving = crowdApi.isAgentAtTarget(state.crowd, npc.agentId, agent.radius * 2);
+          agent.updateFlags = arriving === true ? arrivingUpdateFlags : movingUpdateFlags;
+
           npc.position.x = agent.position[0];
           npc.position.z = agent.position[2];
           const [vx, , vz] = agent.velocity;
           const speed = Math.hypot(vx, vz);
+
+          if (npc.isLooking() === true) {
+            continue;
+          }
 
           if (!npc.isMoving()) {
             if (speed < 0.05) {
@@ -851,6 +859,15 @@ function getArriveDistance(npc: Npc) {
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
 }
 
+/** Avoidance is what makes npcs part around each other, and what spoils an arrival */
+const movingUpdateFlags =
+  crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
+  crowdApi.CrowdUpdateFlags.SEPARATION |
+  crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
+
+/** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
+const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.SEPARATION;
+
 function getAgentParams(): crowd.AgentParams {
   return {
     radius: 0.2,
@@ -863,10 +880,7 @@ function getAgentParams(): crowd.AgentParams {
     // collisionQueryRange: 0.5,
     collisionQueryRange: 0.5 + 0.1,
     separationWeight: idleSeparationWeight,
-    updateFlags:
-      crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
-      crowdApi.CrowdUpdateFlags.SEPARATION |
-      crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE,
+    updateFlags: movingUpdateFlags,
     // crowdApi.CrowdUpdateFlags.OPTIMIZE_TOPO |
     // crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS,
     queryFilter: ANY_QUERY_FILTER,
