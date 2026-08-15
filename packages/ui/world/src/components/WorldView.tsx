@@ -458,8 +458,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setupLights() {
         state.roomLight.syncGms(w.gms, w.gmsData);
         state.roomLight.setRoomLitPairs(getWorldMapStore(w.key, w.mapKey).read().roomLit);
-        if (state.dynamicLightTarget !== null && w.npc.npc[state.dynamicLightTarget.npcKey]) {
-          w.npc.trackNpc(state.dynamicLightTarget.npcKey);
+        // re-establishing a target we already had, so an npc a map edit has left outside every
+        // room is no error: `trackNpc` would throw, taking the room lights above down with it,
+        // where waiting for the geometry to settle costs only this light and only for a pass
+        const npc = state.dynamicLightTarget === null ? undefined : w.n[state.dynamicLightTarget.npcKey];
+        if (npc !== undefined && w.e.findRoomContaining(npc.position, true) !== null) {
+          w.npc.trackNpc(npc.key);
         }
       },
       setAmbientIntensity(next, persist = true) {

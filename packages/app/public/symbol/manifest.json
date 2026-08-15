@@ -440,6 +440,15 @@
       "bounds": {"x": -2, "y": -4, "width": 124, "height": 186.6},
       "type": "symbol",
       "key": "empty-room--013"
+    },
+    "empty-room--039": {
+      "filename": "empty-room--039.json",
+      "thumbnailFilename": "empty-room--039.thumbnail.png",
+      "width": 180,
+      "height": 240,
+      "bounds": {"x": -5, "y": -2, "width": 186.8, "height": 244},
+      "type": "symbol",
+      "key": "empty-room--039"
     }
   }
 }

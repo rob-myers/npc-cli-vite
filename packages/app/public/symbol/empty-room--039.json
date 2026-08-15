@@ -1,0 +1,105 @@
+{
+  "filename": "empty-room--039.json",
+  "width": 180,
+  "height": 240,
+  "nodes": [
+    {
+      "id": "63cbf012-2b23-4f98-9f5a-f5326314ddff",
+      "name": "empty-room--039",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -5, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "empty-room--039",
+      "baseRect": {"width": 186.8, "height": 244},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -5, -2)"
+    },
+    {
+      "id": "0a99824f-7e4c-405a-aeea-729574d51559",
+      "name": "doors",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "b89437e5-209e-4ef1-84b6-f7ca0d086a70",
+          "name": "door slide=[0,1] label=locker",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 68},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 48},
+          "cssTransform": "matrix(1, 0, 0, 1, -4.5, 68)"
+        },
+        {
+          "id": "443e82a6-60ad-48c5-afc8-7583d48aca70",
+          "name": "door slide=[0,1] label=locker",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.5, "f": 124},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 48},
+          "cssTransform": "matrix(1, 0, 0, 1, -4.5, 124)"
+        }
+      ]
+    },
+    {
+      "id": "4f9e5398-b660-4df6-b52a-7e6115d08364",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "b93451ef-0884-4e6c-b171-2b3d9ffa4a1f",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 184, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "1a68ff11-bb63-4782-bb5c-d1fbb771d8e4",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 244},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "0be2669b-2eee-469c-9711-ea99b32fb037",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 242},
+          "cssTransform": "matrix(1, 0, 0, 1, 178, 0)"
+        },
+        {
+          "id": "f621c0eb-e6d6-4720-856f-3e4f8a99be1f",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 238},
+          "type": "rect",
+          "baseRect": {"width": 182, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 238)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -5, "y": -2, "width": 186.8, "height": 244},
+  "type": "symbol",
+  "key": "empty-room--039"
+}
