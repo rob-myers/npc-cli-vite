@@ -1727,28 +1727,48 @@
           "coordinates": [
             [[14.9, 13.4375], [14.9, 13.6625], [13.7, 13.6625], [13.7, 13.4375]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[16.3, 13.4375], [16.3, 13.6625], [15.1, 13.6625], [15.1, 13.4375]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[14.9, 16.4], [14.9, 16.6], [13.7, 16.6], [13.7, 16.4]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [-1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[16.3, 16.4], [16.3, 16.6], [15.1, 16.6], [15.1, 16.4]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [-1, 0],
+            "label": "common"
+          }
         }
       ],
       "obstacles": [],
@@ -8808,28 +8828,48 @@
           "coordinates": [
             [[14.9, 13.4375], [14.9, 13.6625], [13.7, 13.6625], [13.7, 13.4375]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[16.3, 13.4375], [16.3, 13.6625], [15.1, 13.6625], [15.1, 13.4375]]
           ],
-          "meta": {"door": true, "slide": [1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[14.9, 16.4], [14.9, 16.6], [13.7, 16.6], [13.7, 16.4]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [-1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
           "coordinates": [
             [[16.3, 16.4], [16.3, 16.6], [15.1, 16.6], [15.1, 16.4]]
           ],
-          "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+          "meta": {
+            "door": true,
+            "auto": true,
+            "slide": [-1, 0],
+            "label": "common"
+          }
         },
         {
           "type": "Polygon",
@@ -26337,7 +26377,12 @@
                 [13.7, 13.4375]
               ]
             ],
-            "meta": {"door": true, "slide": [1, 0], "label": "common"}
+            "meta": {
+              "door": true,
+              "auto": true,
+              "slide": [1, 0],
+              "label": "common"
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -26353,7 +26398,12 @@
                 [15.1, 13.4375]
               ]
             ],
-            "meta": {"door": true, "slide": [1, 0], "label": "common"}
+            "meta": {
+              "door": true,
+              "auto": true,
+              "slide": [1, 0],
+              "label": "common"
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -26364,7 +26414,12 @@
             "coordinates": [
               [[14.9, 16.4], [14.9, 16.6], [13.7, 16.6], [13.7, 16.4]]
             ],
-            "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+            "meta": {
+              "door": true,
+              "auto": true,
+              "slide": [-1, 0],
+              "label": "common"
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
@@ -26375,7 +26430,12 @@
             "coordinates": [
               [[16.3, 16.4], [16.3, 16.6], [15.1, 16.6], [15.1, 16.4]]
             ],
-            "meta": {"door": true, "slide": [-1, 0], "label": "common"}
+            "meta": {
+              "door": true,
+              "auto": true,
+              "slide": [-1, 0],
+              "label": "common"
+            }
           },
           "navRectId": 0,
           "roomIds": [null, null]
