@@ -458,6 +458,15 @@
       "bounds": {"x": -4, "y": -2, "width": 186.6, "height": 124},
       "type": "symbol",
       "key": "fresher--025"
+    },
+    "extra--006--desk": {
+      "filename": "extra--006--desk.json",
+      "thumbnailFilename": "extra--006--desk.thumbnail.png",
+      "width": 60,
+      "height": 24,
+      "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 25.4},
+      "type": "symbol",
+      "key": "extra--006--desk"
     }
   }
 }
