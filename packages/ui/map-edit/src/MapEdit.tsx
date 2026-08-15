@@ -288,7 +288,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const current = new Set(opts?.shiftKey || opts?.metaKey ? state.selectedIds : []);
 
         if (opts?.metaKey) {
-          current.add(id); // extend selection
+          // toggles, so a cmd-click takes a node back out of the selection as well as in
+          current.has(id) ? current.delete(id) : current.add(id);
           state.set({ selectedIds: current });
           return;
         }
