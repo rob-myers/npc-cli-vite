@@ -482,7 +482,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         cancelAnimationFrame(state.lookAtAnimId);
         const from = controls.target.clone();
-        const to = new THREE.Vector3(groundPoint.x, 0, groundPoint.y);
+        const to = new THREE.Vector3(groundPoint.x, opts.height ?? 0, groundPoint.y);
 
         // `update` would clamp it anyway, but then `fromRadius` and the tween would disagree
         const fromRadius = controls.spherical.radius;
@@ -1030,7 +1030,7 @@ export type State = {
    * Moves the camera's orbit target onto `groundPoint`, preserving its orientation.
    * Resolves on arrival. Zoom is preserved unless `radius` is given, which is tweened alongside.
    */
-  lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number }): Promise<void>;
+  lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number; height?: number }): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** Animates `ambientIntensity`, persisting the final value */

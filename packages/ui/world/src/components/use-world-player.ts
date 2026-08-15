@@ -1,6 +1,6 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { defaultPlayerKey, spawnPlayerAttempts } from "../const";
+import { defaultPlayerKey, npcfg, spawnPlayerAttempts } from "../const";
 import { getWorldMapStore, getWorldStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 
@@ -38,8 +38,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = w.n[state.key];
         if (npc !== undefined) {
           // no `radius`, so the intro pans and turns without zooming — `lookAt` keeps the
-          // distance it finds, which on load is whatever view we restored
-          await w.view.lookAt(npc.point, { animate: true });
+          // distance it finds, which on load is whatever view we restored. Their height, so
+          // the camera settles on the npc rather than on the floor they stand on
+          await w.view.lookAt(npc.point, { animate: true, height: npcfg.dist.height });
         }
       },
       persist() {
