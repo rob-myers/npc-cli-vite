@@ -344,7 +344,7 @@ export class Npc {
           startAngle,
           totalDiff,
           // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-          duration: Math.max(arc < 0.001 ? 0 : (2 * arc) / (2 * Math.PI), minMs / 1000),
+          duration: arc < 0.001 ? 0 : Math.max(minLookSecs, (2 * arc) / (2 * Math.PI), minMs / 1000),
           elapsed: 0,
           longLook,
         } satisfies typeof lookState);
@@ -431,6 +431,13 @@ export type NpcInit = {
 
 /** Beyond this angle a look gets its own idle animation */
 const longLookAngle = 15 * (Math.PI / 180);
+
+/**
+ * No look is quicker than this, however small the angle. The turn's peak rate is `2 * arc /
+ * duration`, so a floor eases small turns off the 2π a bare `arc / π` would always give them —
+ * and it meets that curve exactly at `arc = 0.3π`, so nothing jumps at the crossover.
+ */
+const minLookSecs = 0.3;
 
 const npcCannotLookForClip: Record<string, string | undefined> = {
   sit: "not while sitting",
