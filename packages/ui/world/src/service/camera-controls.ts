@@ -1156,7 +1156,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.update();
   }
 
-  /** True if `event` landed on the segment joining the two fingers already pinching */
+  /** True if `event` landed between the two fingers already pinching — see `pinchLine` */
   isOnPinchLine(event: PointerEvent) {
     const a = this.pointerPositions[this.pointers[0].pointerId];
     const b = this.pointerPositions[this.pointers[1].pointerId];
@@ -1165,16 +1165,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const abx = b.x - a.x;
     const aby = b.y - a.y;
     const length = Math.hypot(abx, aby);
-    if (length < minPinchSeparation) return false; // too close together to aim between
+    if (length < pinchLine.minSeparation) return false;
 
-    // where along the segment the finger fell, 0 at one pinching finger and 1 at the other
+    // 0 at one finger, 1 at the other
     const t = ((event.pageX - a.x) * abx + (event.pageY - a.y) * aby) / (length * length);
-    if (t < pinchLineEndGap || t > 1 - pinchLineEndGap) return false; // beside a finger, not between
+    if (t < pinchLine.endGap || t > 1 - pinchLine.endGap) return false;
 
-    // judged relative to how far apart the fingers are: a fixed corridor is a demanding aim
-    // across a wide pinch, and a blob that catches anything nearby across a narrow one
-    const tolerance = Math.min(maxPinchLineOffset, Math.max(minPinchLineOffset, pinchLineOffsetFraction * length));
-    return Math.hypot(event.pageX - (a.x + abx * t), event.pageY - (a.y + aby * t)) <= tolerance;
+    const offset = Math.hypot(event.pageX - (a.x + abx * t), event.pageY - (a.y + aby * t));
+    return offset <= THREE.MathUtils.clamp(length * pinchLine.offsetFraction, pinchLine.minOffset, pinchLine.maxOffset);
   }
 
   trackPointer(event: PointerEvent) {
@@ -1336,14 +1334,14 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
-/** Below this (px) apart, two fingers have no "between" worth aiming at — see `isOnPinchLine` */
-const minPinchSeparation = 96;
-/** How far off their line a third finger may land, as a fraction of how far apart they are */
-const pinchLineOffsetFraction = 0.2;
-const minPinchLineOffset = 28;
-const maxPinchLineOffset = 64;
-/** How much of each end of the line is too near a pinching finger to read as between them */
-const pinchLineEndGap = 0.15;
+/**
+ * How forgiving the third-finger lock is, in page px bar the two fractions. The fingers must be
+ * `minSeparation` apart to have a "between" worth aiming at; the third must land clear of either
+ * end by `endGap` of the span, rather than beside a finger; and how far off their line it may
+ * fall grows with that span, since a fixed corridor reads as demanding across a wide pinch and
+ * as a catch-all across a narrow one.
+ */
+const pinchLine = { minSeparation: 96, endGap: 0.15, offsetFraction: 0.2, minOffset: 28, maxOffset: 64 };
 
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
