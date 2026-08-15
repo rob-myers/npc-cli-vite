@@ -45,7 +45,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "c73c7d92-fb57-46f7-a36e-caf59d246541",
@@ -445,6 +445,18 @@
           "baseRect": {"width": 50, "height": 50},
           "offset": {"x": -0.5, "y": -0.5},
           "cssTransform": "matrix(1, 0, 0, 1, 724, 126)"
+        },
+        {
+          "id": "fd2372b2-ddc2-4736-8537-460eed1c7f34",
+          "name": "empty-room--013",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 181, "f": 361},
+          "type": "symbol",
+          "srcKey": "empty-room--013",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 3.2173350803802014, "y": -3.106244513967779},
+          "cssTransform": "matrix(0, 1, -1, 0, 184.2173, 357.8938)"
         }
       ]
     },

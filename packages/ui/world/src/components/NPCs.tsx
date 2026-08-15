@@ -635,14 +635,12 @@ export default function NPCs() {
         const layout = w.assets.layout[gm.key] as Geomorph.Layout;
         w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
         w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
-        const activeGmDoors = layout.doors.map((connector, doorId) => {
+        const activeGmDoors = layout.doors.flatMap((connector, doorId) => {
           const gdKey: Geomorph.GmDoorKey = `g${gmRoomId.gmId}d${doorId}`;
           const doorState = w.d[gdKey];
-          return {
-            seg: connector.seg,
-            gapAtHighLambda: doorState.gapAtHighLambda,
-            instanceId: doorState.instanceId,
-          };
+          return doorState === undefined
+            ? []
+            : [{ seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId }];
         });
         w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
         // immediate update so works while paused; a new target snaps rather than sweeps
