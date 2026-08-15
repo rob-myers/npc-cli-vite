@@ -1341,7 +1341,7 @@ const twoFingerRatioSmoothing = 0.25;
  * fall grows with that span, since a fixed corridor reads as demanding across a wide pinch and
  * as a catch-all across a narrow one.
  */
-const pinchLine = { minSeparation: 96, endGap: 0.15, offsetFraction: 0.2, minOffset: 28, maxOffset: 64 };
+const pinchLine = { minSeparation: 96, endGap: 0.15, offsetFraction: 0.4, minOffset: 28, maxOffset: 64 };
 
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
