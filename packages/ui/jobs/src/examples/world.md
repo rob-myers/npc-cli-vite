@@ -10,23 +10,23 @@ pick
 # pick thrice
 pick 3
 
-# pick once from the floor
+# pick floor once
 pick 1 meta.floor
 
-# pick one thing's meta
+# pick a thing's meta
 pick 1 as:meta
 
-# keep picking door identifiers
+# keep picking door keys
 pick as:meta.gdKey
 ```
 
 # spawn
 
 ```sh
-# spawn (or respawn) rob at picked position
+# spawn rob at pick
 spawn npc:rob at:$( pick 1 )
 
-# spawn at 1st pick looking towards 2nd pick
+# spawn at pick, look at 2nd pick
 spawn npc:rob at:$( pick 1 ) look:$( pick 1 )
 
 # spawn with skin human-0
@@ -35,8 +35,7 @@ spawn npc:rob at:$( pick 1 ) as:human-0
 # spawn npcs test0, test1 etc.
 pick | spawn npc:test
 
-
-# two picks per spawn -- position and towards
+# two picks per spawn (at, look)
 pick | spawn npc:test as:human-1 look
 ```
 
@@ -74,13 +73,14 @@ remove npcs
 # remove all decor
 remove decor
 
-# remove npcs or decor named test0 ... test5
+# remove named npcs or decor
 remove test{0..5}
 ```
 
 # unsorted
 
 ```sh
+# show npc tracking ui
 demo_npc_ui npc:rob
 
 # whilst on navmesh
