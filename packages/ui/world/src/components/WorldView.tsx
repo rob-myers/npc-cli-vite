@@ -64,8 +64,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 4,
-        minDistance: 12,
-        maxDistance: 12,
+        minDistance: 10,
+        maxDistance: 10,
         extraZoom: 2,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
