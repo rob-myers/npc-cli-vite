@@ -149,9 +149,13 @@
     - repro: saw tabs-0 and children world-0, tty-0
   - ✅ pane size wrong on expand
 
-- mobile extra zoom indicator only when extra-zoomed enough
+- ❌ mobile extra zoom indicator only when extra-zoomed enough
 
-- BUG rm: foo: only /home/* writable
+- ✅ BUG rm: foo: only /home/* writable
+
+- improve between map consistency
+  - wrongly persisted locked doors on 301
+  - door should be initially open if npc in doorway
 
 ## Other
 
