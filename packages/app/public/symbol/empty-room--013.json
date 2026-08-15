@@ -17,6 +17,53 @@
       "cssTransform": "matrix(1, 0, 0, 1, -2, -4)"
     },
     {
+      "id": "02f6e406-327a-4961-9fe9-a27b6d7848a8",
+      "name": "doors",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "3b50dd8b-46ae-485c-92ba-1a756a72caf0",
+          "name": "door slide=[-1,0] label=locker",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 66.5, "f": -4},
+          "type": "rect",
+          "baseRect": {"width": 46, "height": 8},
+          "cssTransform": "matrix(1, 0, 0, 1, 66.5, -4)"
+        },
+        {
+          "id": "ab7ebbb7-b475-4c80-b6cc-fc0e15615aaa",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 66, "f": -2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 66, -2)"
+        },
+        {
+          "id": "7bc85483-9fc6-4b26-892c-69f08fd18ba7",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 60, 2)"
+        }
+      ]
+    },
+    {
       "id": "d318238a-0b58-48bf-b057-cf7c0a0504f8",
       "name": "walls",
       "locked": false,
@@ -52,7 +99,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
           "type": "rect",
-          "baseRect": {"width": 4, "height": 184},
+          "baseRect": {"width": 4, "height": 182},
           "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
         },
         {
@@ -60,22 +107,12 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 178},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 178.5},
           "type": "rect",
-          "baseRect": {"width": 124, "height": 4},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 178)"
+          "baseRect": {"width": 122, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 178.5)"
         }
       ]
-    },
-    {
-      "id": "3b50dd8b-46ae-485c-92ba-1a756a72caf0",
-      "name": "door slide=[-1,0] label=locker",
-      "locked": false,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 66.5, "f": -4.5},
-      "type": "rect",
-      "baseRect": {"width": 46, "height": 10},
-      "cssTransform": "matrix(1, 0, 0, 1, 66.5, -4.5)"
     }
   ],
   "bounds": {"x": -2, "y": -4, "width": 124, "height": 186.6},
