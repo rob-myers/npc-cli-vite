@@ -467,6 +467,15 @@
       "bounds": {"x": -0.7, "y": -0.7, "width": 61.4, "height": 25.4},
       "type": "symbol",
       "key": "extra--006--desk"
+    },
+    "medical--007": {
+      "filename": "medical--007.json",
+      "thumbnailFilename": "medical--007.thumbnail.png",
+      "width": 180,
+      "height": 120,
+      "bounds": {"x": -2, "y": -4, "width": 184, "height": 126.6},
+      "type": "symbol",
+      "key": "medical--007"
     }
   }
 }
