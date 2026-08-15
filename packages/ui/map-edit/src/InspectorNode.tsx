@@ -131,6 +131,8 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
               node.expanded = !node.expanded;
               root.update();
             } else {
+              // centring on a node selects it too, cmd/shift extending as they do on the row
+              root.onSelect(node.id, { shiftKey: e.shiftKey, metaKey: e.metaKey });
               root.zoomToNode(node.id);
             }
           }}
