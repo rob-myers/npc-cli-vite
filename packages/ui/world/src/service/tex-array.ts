@@ -11,6 +11,11 @@ interface TexArrayOpts {
   ctKey: string;
   type?: typeof THREE.UnsignedByteType | typeof THREE.FloatType;
   force?: boolean;
+  /**
+   * Above `1` this samples smoothly with mipmaps, so a texture seen edge-on stops crawling —
+   * the fix for a decor screen viewed from the side. Costs a mip chain per layer, and lets
+   * neighbours in an atlas bleed into each other at the coarsest levels.
+   */
   anisotropy?: number;
 }
 
@@ -47,11 +52,26 @@ export class TexArray {
         ? new Float32Array(opts.numTextures * 4 * opts.width * opts.height)
         : new Uint8Array(opts.numTextures * 4 * opts.width * opts.height);
     this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
-    this.tex.format = THREE.RGBAFormat;
-    this.tex.type = opts.type ?? THREE.UnsignedByteType;
-    this.tex.anisotropy = opts.anisotropy ?? THREE.Texture.DEFAULT_ANISOTROPY;
+    this.applyOpts();
 
     this.hash = hashJson(opts);
+  }
+
+  /** Shared by the constructor and `recreate`, whose settings would otherwise drift apart */
+  applyOpts() {
+    const { tex, opts } = this;
+    tex.format = THREE.RGBAFormat;
+    tex.type = opts.type ?? THREE.UnsignedByteType;
+    tex.colorSpace = THREE.NoColorSpace;
+    tex.anisotropy = opts.anisotropy ?? THREE.Texture.DEFAULT_ANISOTROPY;
+
+    if (tex.anisotropy > 1) {
+      // a `DataArrayTexture` is nearest-filtered with no mipmaps by default, and WebGPU ignores
+      // anisotropy unless every filter is linear — so asking for it brings both along
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.generateMipmaps = true;
+    }
   }
 
   dispose() {
@@ -80,9 +100,7 @@ export class TexArray {
         ? new Float32Array(this.opts.numTextures * 4 * this.opts.width * this.opts.height)
         : new Uint8Array(this.opts.numTextures * 4 * this.opts.width * this.opts.height);
     this.tex = new THREE.DataArrayTexture(data, this.opts.width, this.opts.height, this.opts.numTextures);
-    this.tex.format = THREE.RGBAFormat;
-    this.tex.type = this.opts.type ?? THREE.UnsignedByteType;
-    this.tex.colorSpace = THREE.NoColorSpace;
+    this.applyOpts();
     this.hash = hashJson(this.opts);
   }
 
