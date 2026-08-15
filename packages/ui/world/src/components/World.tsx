@@ -73,7 +73,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       reqAnimId: -1,
       threeReady: false,
       timer: new Timer(),
-      touchDevice: isTouchDevice(),
+      touchDevice,
 
       hash: 0,
       gmsHash: 0,
@@ -99,6 +99,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 1, // from sheets.symbolSheetDims.length
         width: 1,
         height: 1,
+        anisotropy: touchDevice ? undefined : 16,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 16 }),
       texDoorLabel: new TexArray({ ctKey: "door-labels", width: 256, height: 512, numTextures: MAX_DOOR_LABELS }),
@@ -587,5 +588,7 @@ const settledMs = 500;
 const minWorldFold = 0.03;
 /** How long the world takes to fold flat, or to rise again */
 const worldFoldMs = 400;
+
+const touchDevice = isTouchDevice();
 
 type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins";
