@@ -72,8 +72,12 @@ class ExtraZoom {
   }
 
   toggleTapLock() {
-    if (this.active === false) return;
-    this.tapLocked = !this.tapLocked;
+    this.setTapLock(!this.tapLocked);
+  }
+
+  setTapLock(tapLocked: boolean) {
+    if (this.active === false || this.tapLocked === tapLocked) return;
+    this.tapLocked = tapLocked;
     this.emitChange();
     if (this.tapLocked === false) this._ctrl.dispatchEvent(changeEvent); // restart tween
   }
@@ -1030,9 +1034,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.handleTouchStartDolly(); // baselines both spread and centroid
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
+    } else if (this.pointers.length === 3 && this.isOnPinchLine(event) === true) {
+      // a third finger laid between the pinching two locks the extra zoom where it stands,
+      // without reaching for the button. Only locks: unlocking stays with the button
+      this._ez.setTapLock(true);
     }
-    // a third finger — e.g. tapping the extra zoom button — is tracked but changes nothing,
-    // rather than dropping the pinch it interrupts
+    // any other third finger — tapping the extra zoom button, say — is tracked but changes
+    // nothing, rather than dropping the pinch it interrupts
   };
 
   pan(deltaX: number, deltaY: number) {
@@ -1146,6 +1154,27 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   setPolarAngle(angle: number) {
     this.sphericalDelta.phi = deltaAngle(this.spherical.phi, angle);
     this.update();
+  }
+
+  /** True if `event` landed on the segment joining the two fingers already pinching */
+  isOnPinchLine(event: PointerEvent) {
+    const a = this.pointerPositions[this.pointers[0].pointerId];
+    const b = this.pointerPositions[this.pointers[1].pointerId];
+    if (a === undefined || b === undefined) return false;
+
+    const abx = b.x - a.x;
+    const aby = b.y - a.y;
+    const length = Math.hypot(abx, aby);
+    if (length < minPinchSeparation) return false; // too close together to aim between
+
+    // where along the segment the finger fell, 0 at one pinching finger and 1 at the other
+    const t = ((event.pageX - a.x) * abx + (event.pageY - a.y) * aby) / (length * length);
+    if (t < pinchLineEndGap || t > 1 - pinchLineEndGap) return false; // beside a finger, not between
+
+    // judged relative to how far apart the fingers are: a fixed corridor is a demanding aim
+    // across a wide pinch, and a blob that catches anything nearby across a narrow one
+    const tolerance = Math.min(maxPinchLineOffset, Math.max(minPinchLineOffset, pinchLineOffsetFraction * length));
+    return Math.hypot(event.pageX - (a.x + abx * t), event.pageY - (a.y + aby * t)) <= tolerance;
   }
 
   trackPointer(event: PointerEvent) {
@@ -1307,6 +1336,15 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
+/** Below this (px) apart, two fingers have no "between" worth aiming at — see `isOnPinchLine` */
+const minPinchSeparation = 96;
+/** How far off their line a third finger may land, as a fraction of how far apart they are */
+const pinchLineOffsetFraction = 0.2;
+const minPinchLineOffset = 28;
+const maxPinchLineOffset = 64;
+/** How much of each end of the line is too near a pinching finger to read as between them */
+const pinchLineEndGap = 0.15;
+
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
 
