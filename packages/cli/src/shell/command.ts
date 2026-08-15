@@ -957,7 +957,7 @@ class CmdService {
 
         for (const path of operands) {
           const parts = computeNormalizedParts(path, pwd);
-          if ((parts[0] === "home" || parts[1] === "shared") && parts.length > 1) {
+          if ((parts[0] === "home" || parts[0] === "shared") && parts.length > 1) {
             const last = parts.pop() as string;
             const parent = resolveNormalized(parts, root);
             if (last in parent) {
