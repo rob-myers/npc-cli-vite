@@ -449,6 +449,15 @@
       "bounds": {"x": -5, "y": -2, "width": 186.8, "height": 244},
       "type": "symbol",
       "key": "empty-room--039"
+    },
+    "fresher--025": {
+      "filename": "fresher--025.json",
+      "thumbnailFilename": "fresher--025.thumbnail.png",
+      "width": 180,
+      "height": 120,
+      "bounds": {"x": -4, "y": -2, "width": 186.6, "height": 124},
+      "type": "symbol",
+      "key": "fresher--025"
     }
   }
 }
