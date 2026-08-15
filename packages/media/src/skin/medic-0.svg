@@ -26,6 +26,12 @@
     <title>black</title>
     <g style="pointer-events: none;">
       <title>right-leg</title>
+      <rect x="16" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
+      </rect>
+      <rect x="32" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: hidden;">
+        <title>bottom</title>
+      </rect>
       <rect y="80" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
       </rect>
@@ -149,6 +155,12 @@
     </g>
     <g style="pointer-events: none;">
       <title>left-leg</title>
+      <rect x="80" y="192" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
+        <title>top</title>
+      </rect>
+      <rect x="96" y="192" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: hidden;">
+        <title>bottom</title>
+      </rect>
       <rect y="208" width="16" height="48" style="stroke-opacity: 0.5; stroke-width: 3px;" x="64">
         <title>right</title>
       </rect>
