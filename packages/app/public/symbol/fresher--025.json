@@ -1,0 +1,95 @@
+{
+  "filename": "fresher--025.json",
+  "width": 180,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "a6fc64f4-3b9b-4462-b215-2ee3ae121b4c",
+      "name": "fresher--025",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "fresher--025",
+      "baseRect": {"width": 186.60000000000002, "height": 124},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -4, -2)"
+    },
+    {
+      "id": "a917579b-4ede-4743-aa1e-c90927afc9b7",
+      "name": "doors",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "8163d00f-e9b7-482f-ac74-74eca66dfe5e",
+          "name": "door slide=[0,1] label=fresher",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 67.5},
+          "type": "rect",
+          "baseRect": {"width": 8.5, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, -4, 67.5)"
+        }
+      ]
+    },
+    {
+      "id": "667ddc3c-eb73-4bc1-acbd-bbef317e3386",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "103705fd-1a2e-4cf7-8f9e-7fb4114e8775",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 184, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "5a274464-bb57-43c9-9fb1-e0061cea8cdd",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 124},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "8437851c-5e82-4bc9-a1d6-f65b5ddb21c0",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 122},
+          "cssTransform": "matrix(1, 0, 0, 1, 178, 0)"
+        },
+        {
+          "id": "f6540a5a-dcc4-4402-a4be-4d0d8122a071",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 182, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 118)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -4, "y": -2, "width": 186.6, "height": 124},
+  "type": "symbol",
+  "key": "fresher--025"
+}

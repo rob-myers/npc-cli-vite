@@ -457,6 +457,82 @@
           "baseRect": {"width": 120, "height": 180},
           "offset": {"x": 3.2173350803802014, "y": -3.106244513967779},
           "cssTransform": "matrix(0, 1, -1, 0, 184.2173, 357.8938)"
+        },
+        {
+          "id": "03fc0d6b-f14d-418f-bacc-ed77116bf1b1",
+          "name": "empty-room--013",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 180.7827,
+            "f": 840.8938
+          },
+          "type": "symbol",
+          "srcKey": "empty-room--013",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 3.2173, "y": 3.1062},
+          "cssTransform": "matrix(0, -1, -1, 0, 184, 844)"
+        },
+        {
+          "id": "fd3eff94-07f2-482b-8e9d-c4c9400bf71e",
+          "name": "empty-room--039",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 181.0402,
+            "f": 719.5012
+          },
+          "type": "symbol",
+          "srcKey": "empty-room--039",
+          "baseRect": {"width": 180, "height": 240},
+          "offset": {"x": 2.9598449529923188, "y": 4.498812938347836},
+          "cssTransform": "matrix(-1, 0, 0, -1, 184, 724)"
+        },
+        {
+          "id": "afc84f94-850b-45b9-a268-c16561ff0aa5",
+          "name": "fresher--025",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": 1,
+            "d": 0,
+            "e": 840.7102,
+            "f": 660.4154
+          },
+          "type": "symbol",
+          "srcKey": "fresher--025",
+          "baseRect": {"width": 180, "height": 120},
+          "offset": {"x": -0.7101213559234938, "y": -4.415396659402344},
+          "cssTransform": "matrix(0, 1, 1, 0, 840, 656)"
+        },
+        {
+          "id": "ca3225f0-26d4-4087-9f72-a454403453bc",
+          "name": "fresher--025",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 838.7101,
+            "f": 539.5846
+          },
+          "type": "symbol",
+          "srcKey": "fresher--025",
+          "baseRect": {"width": 180, "height": 120},
+          "offset": {"x": -0.7101, "y": 4.4154},
+          "cssTransform": "matrix(0, -1, 1, 0, 838, 544)"
         }
       ]
     },
@@ -997,25 +1073,6 @@
           "cssTransform": "matrix(1, 0, 0, 1, 360, 658)"
         }
       ]
-    },
-    {
-      "id": "fd3eff94-07f2-482b-8e9d-c4c9400bf71e",
-      "name": "empty-room--039",
-      "locked": false,
-      "visible": true,
-      "transform": {
-        "a": -1,
-        "b": 0,
-        "c": 0,
-        "d": -1,
-        "e": 181.0402,
-        "f": 719.5012
-      },
-      "type": "symbol",
-      "srcKey": "empty-room--039",
-      "baseRect": {"width": 180, "height": 240},
-      "offset": {"x": 2.9598449529923188, "y": 4.498812938347836},
-      "cssTransform": "matrix(-1, 0, 0, -1, 184, 724)"
     }
   ],
   "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
