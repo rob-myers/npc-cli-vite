@@ -1,6 +1,3 @@
-import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
-import type { Mat } from "@npc-cli/util/geom";
-import { drawPolygons } from "@npc-cli/util/service/canvas";
 import {
   Break,
   Fn,
@@ -17,13 +14,17 @@ import {
   uniformArray,
   uv,
   vec2,
-  vec3,
   vec4,
   viewZToPerspectiveDepth,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultDynamicLightIntensity, defaultDynamicLightRadius, maxDynamicLightRadius } from "../const";
-import { TexArray } from "./tex-array";
+import {
+  defaultDynamicLightIntensity,
+  defaultDynamicLightRadius,
+  lightTileSize,
+  maxDynamicLightRadius,
+} from "../const";
+import { getContext2d } from "./tex-array";
 
 export type DynamicLightPostprocessOpts = {
   /**
@@ -39,14 +40,10 @@ export type DynamicLightPostprocessOpts = {
   topHeight: number;
   /** World-space distance over which the light fades out, starting at its own radius. Default `0.9` */
   falloff?: number;
-  /** Side length (px) of each gmKey's baked wall-occupancy texture layer. Default `512`. */
+  /** Side length (px) of the world-space wall-occupancy texture. Default `512`. */
   wallTexSize?: number;
   /** World-space half-depth used when stroking a door's currently-closed portion onto its mask. Default `0.05`. */
   doorHalfDepth?: number;
-  /** Radius used while the tracked npc is near a hull door (see `setNearHullDoor`). Default `0.8`. */
-  hullDoorwayRadius?: number;
-  /** Per-second lerp speed for animating towards/away from `hullDoorwayRadius`. Default `4`. */
-  hullDoorwayLerpSpeed?: number;
   /** Initial radius, persisted by the caller. Default `defaultDynamicLightRadius` */
   radius?: number;
   /** Initial brightness multiplier, persisted by the caller. Default `defaultDynamicLightIntensity` */
@@ -58,8 +55,8 @@ export type DynamicLightPostprocess = {
   displayCenter: THREE.Vector3;
   /** Persisted radius, settable via `setRadius` */
   radius: number;
-  /** Encoded (gmId, doorId) of every door in the tracked npc's current gm instance, written by `setActiveGmDoors` */
-  activeGmDoorInstanceIds: number[];
+  /** Encoded (gmId, doorId) of every door currently occupying a slot, in slot order — see `setDoors` */
+  doorInstanceIds: number[];
   /** Persisted brightness multiplier uniform */
   intensity: THREE.UniformNode<"float", number>;
 
@@ -75,42 +72,39 @@ export type DynamicLightPostprocess = {
   /** Sets the persisted brightness multiplier */
   setIntensity(next: number): void;
 
-  /**
-   * Shrinks (or restores) the effective radius, animated — call with `true` when the tracked npc
-   * is near ANY hull door (only one gm instance is ever "active" for occlusion, so a full-size
-   * light near a hull door can otherwise leak into an adjacent, unoccluded gm instance), `false`
-   * once it's no longer near any (not necessarily the same door it entered near).
-   */
-  setNearHullDoor(near: boolean): void;
-
-  /** Advances the hull-doorway radius animation. Call every tick (e.g. from `World.onTick`). */
-  tick(deltaSeconds: number): void;
-
-  /** Bakes `gmKey`'s wall polygons (local space) into an occupancy texture layer, once. */
-  setGmWalls(gmKey: StarShipGeomorphKey, wallPolys: Geom.Poly[], bounds: Geom.RectJson): void;
+  /** The window's width in metres — it spans whatever geomorphs it covers */
+  tileWorldSize: number;
 
   /**
-   * Sets which gm instance the tracked npc currently occupies. Call on room change.
-   * 🚧 Only one active instance at a time — occlusion outside it reads as unoccluded.
+   * Where the occupancy window should sit for a light at `(x, z)`, or `null` if it already sits
+   * there and `force` is not set.
    */
-  setActiveGm(gmKey: StarShipGeomorphKey, matrix: Mat): void;
+  nextTileOrigin(x: number, z: number, force?: boolean): { originX: number; originZ: number } | null;
 
   /**
-   * Registers the active instance's doors (local space, geometry only), cached per `gmKey` (a
-   * no-op if `gmKey` is already active). `gapAtHighLambda`: gap grows back from `seg[1]` if
-   * `true`, from `seg[0]` if `false` (matches `Doors.tsx`).
+   * Starts redrawing the window at that origin, returning a canvas context already transformed
+   * from WORLD coordinates — draw walls white. Finish with `endTile`, which swaps it in.
    */
-  setActiveGmDoors(
-    gmKey: StarShipGeomorphKey,
+  beginTile(originX: number, originZ: number): CanvasRenderingContext2D;
+
+  /** Uploads what `beginTile` drew and points sampling at it */
+  endTile(): void;
+
+  /**
+   * The doors close enough to the light to matter, in world space. `gapAtHighLambda`: the gap
+   * grows back from `dst` if `true`, from `src` if `false` (matches `Doors.tsx`).
+   */
+  setDoors(
     doors: {
-      seg: [{ x: number; y: number }, { x: number; y: number }];
+      src: { x: number; y: number };
+      dst: { x: number; y: number };
       gapAtHighLambda: boolean;
       instanceId: number;
     }[],
   ): void;
 
-  /** Live open ratio per door from `setActiveGmDoors` (same order). Call every frame. */
-  setActiveGmDoorRatios(ratios: number[]): void;
+  /** Live open ratio per door from `setDoors` (same order). Call every frame. */
+  setDoorRatios(ratios: ArrayLike<number>): void;
 
   /**
    * `1` at the tracked npc, fading uniformly to `0` at `radius + falloff`; `0` if occluded.
@@ -120,9 +114,9 @@ export type DynamicLightPostprocess = {
 
   /** Debug inspection only (see WorldMenu's "Light Map" modal) */
   debug: {
-    wallTex: TexArray;
-    bakedGmKeys(): StarShipGeomorphKey[];
-    activeGmKey(): StarShipGeomorphKey | null;
+    wallTexSize: number;
+    wallCanvas: HTMLCanvasElement;
+    tileOrigin(): { originX: number; originZ: number } | null;
   };
 };
 
@@ -146,8 +140,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   // own surface (which sits right on that door's own occlusion segment) always self-samples its own
   // occlusion stroke and reads as fully occluded regardless of the light's radius/falloff.
   const marchSurfaceBias = doorHalfDepth;
-  const hullDoorwayRadius = opts.hullDoorwayRadius ?? 0.5;
-  const hullDoorwayLerpSpeed = opts.hullDoorwayLerpSpeed ?? 4;
+  /** The window is this many metres square, covering the light plus a whole tile margin */
+  const tileWorldSize = lightTileSize * 3;
 
   // persisted by `WorldView`, which owns the world's store
   const initialRadius = opts.radius ?? defaultDynamicLightRadius;
@@ -161,24 +155,28 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
 
   // vec4(worldX, worldZ, activeFlag, radius)
   const tracked = uniform(new THREE.Vector4(0, 0, 0, 1));
-  // animated towards (near a hull door ? min(radius, hullDoorwayRadius) : radius) each tick
-  let effectiveRadius = initialRadius;
-  let nearHullDoor = false;
 
-  // one occupancy layer per gmKey, baked once (walls are static)
-  const wallTexArray = new TexArray({
-    ctKey: "raycast-light-walls",
-    numTextures: geomorphKeys.length,
-    width: wallTexSize,
-    height: wallTexSize,
-  });
-  const bakedGmKeys = new Set<StarShipGeomorphKey>();
-  const boundsByGmKey = new Map<StarShipGeomorphKey, Geom.RectJson>();
+  // walls of every instance the window covers, drawn in WORLD space. A `CanvasTexture` rather
+  // than a `DataTexture` over `getImageData`: three uploads the canvas itself with
+  // `copyExternalImageToTexture`, so nothing is read back into JS and the canvas can stay
+  // GPU-backed — hence no `willReadFrequently`, which would forfeit accelerated fills
+  const wallCt = getContext2d("dynamic-light-walls");
+  wallCt.canvas.width = wallTexSize;
+  wallCt.canvas.height = wallTexSize;
+  const wallTex = new THREE.CanvasTexture(wallCt.canvas);
+  wallTex.magFilter = THREE.NearestFilter;
+  wallTex.minFilter = THREE.NearestFilter;
+  wallTex.flipY = false; // texel v grows with world z, as `sampleOccupancy` assumes
 
-  // active gm instance's doors, local space, oriented so the gap grows a->b (rare writes).
-  // 🔔 hard cap: any door beyond this in a gm instance's door list is silently unregistered (never
-  // occludes) — the old canvas-based mask had no such cap. Current worst case is exactly 32
-  // (g-101--multipurpose, g-301--bridge — see assets.json), so this needs real headroom above that.
+  /** World position of the window's min corner, and the tile it is centred on */
+  const tileOrigin = uniform(new THREE.Vector2(0, 0));
+  let tileCenter: null | { tileX: number; tileZ: number } = null;
+  let pendingOrigin: null | { originX: number; originZ: number } = null;
+
+  // the doors near the light's window, world space, oriented so the gap grows a->b (rare writes).
+  // 🔔 a slot budget rather than a per-geomorph cap: `setDoors` registers only the doors that
+  // could matter from somewhere in the window's middle tile, so this needs headroom over that
+  // rather than over the ~39 doors a single geomorph can hold
   const maxActiveDoors = 40;
   const doorSegs = Array.from({ length: maxActiveDoors }, () => new THREE.Vector4());
   const doorSegsNode = uniformArray<"vec4">(doorSegs, "vec4");
@@ -188,19 +186,6 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   let activeDoorCount = 0;
   // last ratios actually pushed to the GPU, for the "did anything change enough" check
   let lastDoorRatios: number[] = new Array(maxActiveDoors).fill(-1);
-  // gmKey last passed to setActiveGmDoors — re-orienting/resetting is a no-op if unchanged
-  let lastActiveDoorsGmKey: StarShipGeomorphKey | null = null;
-
-  // (bounds.x, bounds.y, uniformScale, layerIndex) — uniform scale keeps non-square gmKeys unstretched
-  const activeOrigin = uniform(new THREE.Vector4());
-  // world -> local affine, as a 3x3 homogeneous matrix
-  const activeInverseTransform = uniform(new THREE.Matrix3());
-  let activeGmKeySet: StarShipGeomorphKey | null = null;
-
-  // aspect-preserving scale fitting `bounds` into a `wallTexSize` square
-  function gmToTexScale(bounds: Geom.RectJson) {
-    return Math.min(wallTexSize / bounds.width, wallTexSize / bounds.height);
-  }
 
   // clamped nearest point on segment (ax,az)-(bx,bz) to (px,pz)
   function nearestPointOnSegment(
@@ -225,9 +210,9 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   // renders the wall layer + live doors into one texture, sampled per march step (see combinedTex)
   const computeCombinedOccupancy = Fn(() => {
     const localUv = uv();
-    const wallSample = texture(wallTexArray.tex, localUv).depth(activeOrigin.w).r;
-    const localX = activeOrigin.x.add(localUv.x.mul(wallTexSize).div(activeOrigin.z));
-    const localZ = activeOrigin.y.add(localUv.y.mul(wallTexSize).div(activeOrigin.z));
+    const wallSample = texture(wallTex, localUv).r;
+    const localX = tileOrigin.x.add(localUv.x.mul(tileWorldSize));
+    const localZ = tileOrigin.y.add(localUv.y.mul(tileWorldSize));
 
     const doorOccupancy = float(0).toVar();
     for (let slot = 0; slot < maxActiveDoors; slot++) {
@@ -251,22 +236,24 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
 
   // continuous (unthresholded) occupancy so shadow edges stay soft, not jagged
   function sampleOccupancy(wx: THREE.Node<"float">, wz: THREE.Node<"float">) {
-    const local = activeInverseTransform.mul(vec3(wx, wz, 1));
-    const u = local.x.sub(activeOrigin.x).mul(activeOrigin.z).div(wallTexSize);
-    const v = local.y.sub(activeOrigin.y).mul(activeOrigin.z).div(wallTexSize);
-    const inBounds = u.greaterThanEqual(0).and(u.lessThanEqual(1)).and(v.greaterThanEqual(0)).and(v.lessThanEqual(1));
-    return inBounds.select(texture(combinedTex, vec2(u, v)).r, float(0));
+    const u = wx.sub(tileOrigin.x).div(tileWorldSize);
+    const v = wz.sub(tileOrigin.y).div(tileWorldSize);
+    // a safety net rather than a routine path: the light sits in the middle tile, so the window
+    // reaches a whole `lightTileSize` beyond anywhere the march can go
+    const inTile = u.greaterThanEqual(0).and(u.lessThanEqual(1)).and(v.greaterThanEqual(0)).and(v.lessThanEqual(1));
+    return inTile.select(texture(combinedTex, vec2(u, v)).r, float(1));
   }
 
   return {
+    tileWorldSize,
     debug: {
-      wallTex: wallTexArray,
-      bakedGmKeys: () => Array.from(bakedGmKeys),
-      activeGmKey: () => activeGmKeySet,
+      wallTexSize,
+      wallCanvas: wallCt.canvas,
+      tileOrigin: () => (tileCenter === null ? null : { originX: tileOrigin.value.x, originZ: tileOrigin.value.y }),
     },
     displayCenter: new THREE.Vector3(),
     radius: initialRadius,
-    activeGmDoorInstanceIds: [],
+    doorInstanceIds: [],
     intensity: uniform(initialIntensity),
 
     litAmount(sceneDepth) {
@@ -344,38 +331,55 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         return litOut;
       })();
     },
-    setActiveGm(gmKey, matrix) {
-      const layerIndex = geomorphKeys.indexOf(gmKey);
-      const bounds = boundsByGmKey.get(gmKey);
-      if (layerIndex === -1 || !bounds) {
-        return; // not yet baked
+    nextTileOrigin(x, z, force = false) {
+      const tileX = Math.floor(x / lightTileSize);
+      const tileZ = Math.floor(z / lightTileSize);
+      if (force === false && tileCenter !== null && tileCenter.tileX === tileX && tileCenter.tileZ === tileZ) {
+        return null;
       }
-      activeOrigin.value.set(bounds.x, bounds.y, gmToTexScale(bounds), layerIndex);
-      const inv = matrix.getInverseMatrix();
-      // biome-ignore format: row-major (a,c,e / b,d,f / 0,0,1)
-      activeInverseTransform.value.set(inv.a, inv.c, inv.e, inv.b, inv.d, inv.f, 0, 0, 1);
-      activeGmKeySet = gmKey;
+      // the window is centred on that tile, so it extends a whole tile past the light on every side
+      return { originX: (tileX - 1) * lightTileSize, originZ: (tileZ - 1) * lightTileSize };
+    },
+    beginTile(originX, originZ) {
+      pendingOrigin = { originX, originZ };
+      const scale = wallTexSize / tileWorldSize;
+      wallCt.resetTransform();
+      wallCt.clearRect(0, 0, wallTexSize, wallTexSize);
+      // world metres -> texture px, so callers draw in world space (composing `gm.matrix` on top)
+      wallCt.setTransform(scale, 0, 0, scale, -originX * scale, -originZ * scale);
+      return wallCt;
+    },
+    endTile() {
+      if (pendingOrigin === null) {
+        return;
+      }
+      const { originX, originZ } = pendingOrigin;
+      pendingOrigin = null;
+
+      wallTex.needsUpdate = true; // uploads the canvas as it stands
+      // origin and pixels swap together, so no frame samples one against the other
+      tileOrigin.value.set(originX, originZ);
+      tileCenter = {
+        tileX: Math.round(originX / lightTileSize) + 1,
+        tileZ: Math.round(originZ / lightTileSize) + 1,
+      };
       combinedTex.textureNeedsUpdate = true;
     },
-    setActiveGmDoors(gmKey, doors) {
-      if (gmKey === lastActiveDoorsGmKey) {
-        return; // door list for a gmKey is static — nothing changed
-      }
-      lastActiveDoorsGmKey = gmKey;
+    setDoors(doors) {
       activeDoorCount = Math.min(doors.length, maxActiveDoors);
       for (let i = 0; i < activeDoorCount; i++) {
-        const { seg, gapAtHighLambda } = doors[i];
+        const { src, dst, gapAtHighLambda } = doors[i];
         // orient so the passable gap always grows a->b
-        const [a, b] = gapAtHighLambda ? [seg[1], seg[0]] : [seg[0], seg[1]];
+        const [a, b] = gapAtHighLambda ? [dst, src] : [src, dst];
         doorSegs[i].set(a.x, a.y, b.x, b.y);
       }
-      // -1 marks every slot inactive until the next setActiveGmDoorRatios call
+      // -1 marks every slot inactive until the next setDoorRatios call
       doorOpenRatioValues.fill(-1);
       lastDoorRatios = new Array(maxActiveDoors).fill(-1);
-      this.activeGmDoorInstanceIds = doors.slice(0, activeDoorCount).map((d) => d.instanceId);
+      this.doorInstanceIds = doors.slice(0, activeDoorCount).map((d) => d.instanceId);
       combinedTex.textureNeedsUpdate = true;
     },
-    setActiveGmDoorRatios(ratios) {
+    setDoorRatios(ratios) {
       let changed = false;
       for (let i = 0; i < activeDoorCount; i++) {
         if (Math.abs((ratios[i] ?? 0) - lastDoorRatios[i]) > 0.01) {
@@ -393,47 +397,13 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
       }
       combinedTex.textureNeedsUpdate = true;
     },
-    setGmWalls(gmKey, wallPolys, bounds) {
-      if (bakedGmKeys.has(gmKey)) {
-        return;
-      }
-
-      const texIndex = geomorphKeys.indexOf(gmKey);
-      if (texIndex === -1) {
-        return;
-      }
-
-      bakedGmKeys.add(gmKey);
-      boundsByGmKey.set(gmKey, bounds);
-
-      const { ct } = wallTexArray;
-      ct.resetTransform();
-      ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
-      const scale = gmToTexScale(bounds);
-      ct.setTransform(scale, 0, 0, scale, -bounds.x * scale, -bounds.y * scale);
-
-      drawPolygons(ct, wallPolys, { fillStyle: "white", strokeStyle: null });
-      // drawPolygons(ct, wallPolys.flatMap((poly) =>
-      //   poly.meta.broad ? geomService.createInset(poly, 0.05) : poly,
-      // ), { fillStyle: "white", strokeStyle: null });
-
-      wallTexArray.updateIndex(texIndex);
-      combinedTex.textureNeedsUpdate = true;
-    },
     setIntensity(next) {
       this.intensity.value = next;
-    },
-    setNearHullDoor(near) {
-      nearHullDoor = near;
     },
     setRadius(next) {
       this.radius = next;
       if (tracked.value.z !== 0) {
-        // instant, not animated — a slider drag should feel responsive; hull-door capping still applies
-        this.setTracked(
-          { x: this.displayCenter.x, z: this.displayCenter.z },
-          nearHullDoor ? Math.min(next, hullDoorwayRadius) : next,
-        );
+        this.setTracked({ x: this.displayCenter.x, z: this.displayCenter.z }, next);
       }
     },
     setTracked(center, radius) {
@@ -441,17 +411,6 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
         tracked.value.z = 0;
       } else {
         tracked.value.set(center.x, center.z, 1, radius ?? tracked.value.w);
-        if (radius !== undefined) {
-          effectiveRadius = radius;
-        }
-      }
-    },
-    tick(deltaSeconds) {
-      const targetRadius = Math.min(this.radius, nearHullDoor ? hullDoorwayRadius : this.radius);
-      const lerpAmt = Math.min(1, deltaSeconds * hullDoorwayLerpSpeed);
-      effectiveRadius += (targetRadius - effectiveRadius) * lerpAmt;
-      if (tracked.value.z !== 0) {
-        tracked.value.w = effectiveRadius;
       }
     },
     update(camera) {

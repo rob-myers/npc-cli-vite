@@ -208,9 +208,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.door.onTick(delta);
         state.npc.onTick(delta);
         state.speech?.onTick(delta);
-        state.view.dynamicLight.tick(delta);
 
-        if (state.view.dynamicLightTarget) {
+        if (state.view.dynamicLightTarget !== null) {
           state.view.updateDynamicLight(state.view.dynamicLightTarget.position);
         }
       },

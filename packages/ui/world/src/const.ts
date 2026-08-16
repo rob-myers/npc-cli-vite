@@ -87,6 +87,12 @@ export const defaultRoomLightIntensity = 0.7;
 /** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
 export const defaultDynamicLightRadius = 3.5;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
+/**
+ * Side (metres) of dynamic-light super-tile.
+ * The light's occupancy window is 3x3 of these recentred whenever light leaves central one.
+ */
+export const lightTileSize = 7.5;
+
 export const maxDynamicLightRadius = 4.5;
 /** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
 export const defaultDynamicLightIntensity = 1;
