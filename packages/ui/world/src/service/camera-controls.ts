@@ -17,6 +17,7 @@ class ExtraZoom {
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  _holdTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
   constructor(ctrl: CameraControls) {
     this._ctrl = ctrl;
@@ -26,9 +27,11 @@ class ExtraZoom {
     clearTimeout(this._activeTimer);
     clearTimeout(this._normalZoomTimer);
     clearTimeout(this._cooldownTimer);
+    clearTimeout(this._holdTimer);
     this._activeTimer = undefined;
     this._normalZoomTimer = undefined;
     this._cooldownTimer = undefined;
+    this._holdTimer = undefined;
   }
 
   get minR() {
@@ -80,6 +83,12 @@ class ExtraZoom {
     this.tapLocked = tapLocked;
     this.emitChange();
     if (this.tapLocked === false) this._ctrl.dispatchEvent(changeEvent); // restart tween
+  }
+
+  /** A third finger resting on the canvas locks, once it has rested long enough to mean it */
+  startHold() {
+    clearTimeout(this._holdTimer);
+    this._holdTimer = this.active === false ? undefined : setTimeout(() => this.setTapLock(true), holdToLockMs);
   }
 
   setReady(ready: boolean) {
@@ -185,6 +194,7 @@ class ExtraZoom {
   }
 
   onPointerUp() {
+    clearTimeout(this._holdTimer); // a finger lifted, so any hold in progress was not meant
     if (this.active && this._activeTimer === undefined) {
       this._ctrl.dispatchEvent(changeEvent);
     }
@@ -1034,13 +1044,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.handleTouchStartDolly(); // baselines both spread and centroid
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
-    } else if (this.pointers.length === 3 && this.isOnPinchLine(event) === true) {
-      // a third finger laid between the pinching two locks the extra zoom where it stands,
-      // without reaching for the button. Only locks: unlocking stays with the button
-      this._ez.setTapLock(true);
+    } else if (this.pointers.length === 3) {
+      // a third finger held on the canvas locks the extra zoom where it stands, without
+      // reaching for the button. Only locks: unlocking stays with the button
+      this._ez.startHold();
     }
-    // any other third finger — tapping the extra zoom button, say — is tracked but changes
-    // nothing, rather than dropping the pinch it interrupts
+    // the finger changes nothing else, rather than dropping the pinch it interrupts
   };
 
   pan(deltaX: number, deltaY: number) {
@@ -1154,25 +1163,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   setPolarAngle(angle: number) {
     this.sphericalDelta.phi = deltaAngle(this.spherical.phi, angle);
     this.update();
-  }
-
-  /** True if `event` landed between the two fingers already pinching — see `pinchLine` */
-  isOnPinchLine(event: PointerEvent) {
-    const a = this.pointerPositions[this.pointers[0].pointerId];
-    const b = this.pointerPositions[this.pointers[1].pointerId];
-    if (a === undefined || b === undefined) return false;
-
-    const abx = b.x - a.x;
-    const aby = b.y - a.y;
-    const length = Math.hypot(abx, aby);
-    if (length < pinchLine.minSeparation) return false;
-
-    // 0 at one finger, 1 at the other
-    const t = ((event.pageX - a.x) * abx + (event.pageY - a.y) * aby) / (length * length);
-    if (t < pinchLine.endGap || t > 1 - pinchLine.endGap) return false;
-
-    const offset = Math.hypot(event.pageX - (a.x + abx * t), event.pageY - (a.y + aby * t));
-    return offset <= THREE.MathUtils.clamp(length * pinchLine.offsetFraction, pinchLine.minOffset, pinchLine.maxOffset);
   }
 
   trackPointer(event: PointerEvent) {
@@ -1334,14 +1324,8 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
-/**
- * How forgiving the third-finger lock is, in page px bar the two fractions. The fingers must be
- * `minSeparation` apart to have a "between" worth aiming at; the third must land clear of either
- * end by `endGap` of the span, rather than beside a finger; and how far off their line it may
- * fall grows with that span, since a fixed corridor reads as demanding across a wide pinch and
- * as a catch-all across a narrow one.
- */
-const pinchLine = { minSeparation: 96, endGap: 0.15, offsetFraction: 0.4, minOffset: 28, maxOffset: 64 };
+/** How long a third finger must rest on the canvas to lock the extra zoom */
+const holdToLockMs = 300;
 
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
