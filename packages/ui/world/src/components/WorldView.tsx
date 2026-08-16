@@ -1010,7 +1010,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="px-4 py-1.5 rounded-full bg-white/10 text-white/80 backdrop-blur-[2px] border border-white/40 text-xs font-mono tracking-[0.3em] uppercase select-none">
+            <div className="px-4 py-1.5 rounded-full bg-black text-white/80 border border-white/40 text-xs font-mono tracking-[0.3em] uppercase select-none">
               paused
             </div>
           </motion.div>
