@@ -114,6 +114,15 @@ class GeomService {
     return ((direction + delta) % 4) as Geom.Direction;
   }
 
+  /** Distance from `p` to segment `a` -- `b` */
+  getDistanceToSeg(px: number, py: number, a: Geom.VectJson, b: Geom.VectJson) {
+    const abx = b.x - a.x;
+    const abz = b.y - a.y;
+    const lengthSq = abx * abx + abz * abz;
+    const t = lengthSq === 0 ? 0 : Math.max(0, Math.min(1, ((px - a.x) * abx + (py - a.y) * abz) / lengthSq));
+    return Math.hypot(px - (a.x + abx * t), py - (a.y + abz * t));
+  }
+
   getFlippedDirection(direction: Geom.Direction, axis: "x" | "y"): Geom.Direction {
     if (axis === "x") {
       return direction % 2 === 0 ? ((2 - direction) as Geom.Direction) : direction;

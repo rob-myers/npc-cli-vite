@@ -1,8 +1,9 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
-import { Vect } from "@npc-cli/util/geom";
+import { Rect, Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { mapValues, pause, testNever } from "@npc-cli/util/legacy/generic";
+import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -22,6 +23,7 @@ import {
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
   defaultVignette,
+  lightTileSize,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   wallHeight,
@@ -86,7 +88,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       vignetteAnimId: 0,
       shiftDownMs: 0,
       ambientAnimId: 0,
-      lightTweenId: 0,
+      light: {
+        tweenId: 0,
+        ratios: new Float32Array(0),
+        tileDoors: [],
+        doorsByTile: new Map(),
+      },
       lastPointer: {
         epochMs: 0,
         longPressTimer: 0,
@@ -614,6 +621,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setDynamicLightRadius(next) {
         state.dynamicLight.setRadius(next);
+        state.light.doorsByTile.clear();
+        const { displayCenter } = state.dynamicLight;
+        const origin = state.dynamicLight.nextTileOrigin(displayCenter.x, displayCenter.z, true);
+        origin !== null && state.syncLightDoors(origin.originX, origin.originZ);
         store.patch({ dynamicLightRadius: next });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
@@ -760,16 +771,93 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ roomLightEditing: state.roomLightEditingEnabled });
         w.update();
       },
+      commitLightCentre() {
+        const { displayCenter } = state.dynamicLight;
+        state.dynamicLight.setTracked({ x: displayCenter.x, z: displayCenter.z });
+        state.syncLightTile();
+        state.pushLightDoorRatios(); // all the per-frame work there is: the rest follows the window
+      },
+      syncLightTile(force = false) {
+        const { displayCenter, tileWorldSize } = state.dynamicLight;
+        const next = state.dynamicLight.nextTileOrigin(displayCenter.x, displayCenter.z, force);
+        if (next === null) {
+          return; // still well inside the window we already have
+        }
+        if (force === true) {
+          state.light.doorsByTile.clear(); // a forced redraw means the doors themselves may be new
+        }
+
+        const { originX, originZ } = next;
+        const window = tmpRect.set(originX, originZ, tileWorldSize, tileWorldSize);
+        const ct = state.dynamicLight.beginTile(originX, originZ);
+
+        state.light.tileDoors = [];
+        for (const [gmId, gm] of w.gms.entries()) {
+          if (gm.gridRect.intersects(window) === false) {
+            continue; // `gridRect` is world space, unlike `gm.bounds`
+          }
+          const layout = w.assets.layout[gm.key];
+          if (layout === undefined) {
+            continue;
+          }
+          // `ct` already maps world -> texture, so composing the instance's own transform lets us
+          // draw its LOCAL polygons without cloning any of them
+          const { a, b, c, d, e, f } = gm.matrix;
+          ct.save();
+          ct.transform(a, b, c, d, e, f);
+          drawPolygons(ct, layout.walls, { fillStyle: "white", strokeStyle: null });
+          ct.restore();
+
+          for (let doorId = 0; doorId < layout.doors.length; doorId++) {
+            const door = w.d[`g${gmId}d${doorId}`];
+            // `Doors` renders in the r3f tree, a separate React root, so it can still describe the
+            // previous layout for a beat after a map edit
+            door !== undefined && state.light.tileDoors.push(door);
+          }
+        }
+
+        state.dynamicLight.endTile();
+        state.syncLightDoors(originX, originZ);
+      },
+      syncLightDoors(originX, originZ) {
+        const { radius, tileWorldSize } = state.dynamicLight;
+        const tileKey = `${originX},${originZ}` as const;
+
+        // cache reachable doors (could sort by distance)
+        let doors = state.light.doorsByTile.get(tileKey);
+        if (doors === undefined) {
+          const reach = radius + lightDoorMargin + lightTileSize * Math.SQRT1_2;
+          const centreX = originX + tileWorldSize / 2;
+          const centreZ = originZ + tileWorldSize / 2;
+          doors = state.light.tileDoors.filter(
+            (door) =>
+              Math.hypot(centreX - (door.src.x + door.dst.x) / 2, centreZ - (door.src.y + door.dst.y) / 2) <= reach,
+          );
+          state.light.doorsByTile.set(tileKey, doors);
+        }
+
+        state.dynamicLight.setDoors(doors);
+      },
+      pushLightDoorRatios() {
+        const ids = state.dynamicLight.doorInstanceIds;
+        if (state.light.ratios.length !== ids.length) {
+          state.light.ratios = new Float32Array(ids.length); // preallocated: this runs every tick
+        }
+        for (let i = 0; i < ids.length; i++) {
+          state.light.ratios[i] = w.door.openRatioArray[ids[i]];
+        }
+        state.dynamicLight.setDoorRatios(state.light.ratios);
+      },
       updateDynamicLight(rawTarget, opts = {}) {
         const { displayCenter } = state.dynamicLight;
         const target = tmpVector3.set(rawTarget.x, rawTarget.y, rawTarget.z);
 
         if (opts.snap === true) {
-          cancelAnimationFrame(state.lightTweenId);
-          state.lightTweenId = 0;
+          cancelAnimationFrame(state.light.tweenId);
+          state.light.tweenId = 0;
         }
 
-        if (state.lightTweenId === 0) {
+        if (state.light.tweenId === 0) {
           if (opts.snap !== true && displayCenter.distanceTo(target) > dynamicLightTweenFrom) {
             state.tweenDynamicLight(); // a teleport e.g. fadeSpawn
           } else {
@@ -777,13 +865,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           }
         }
 
-        state.dynamicLight.setTracked({ x: displayCenter.x, z: displayCenter.z });
-        state.dynamicLight.setActiveGmDoorRatios(
-          state.dynamicLight.activeGmDoorInstanceIds.map((id) => w.door.openRatioArray[id]),
-        );
+        state.commitLightCentre();
       },
       tweenDynamicLight() {
-        cancelAnimationFrame(state.lightTweenId);
+        cancelAnimationFrame(state.light.tweenId);
         const { displayCenter } = state.dynamicLight;
         let lastEpochMs = performance.now();
 
@@ -791,7 +876,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const step = () => {
           const position = state.dynamicLightTarget?.position;
           if (position === undefined) {
-            state.lightTweenId = 0;
+            state.light.tweenId = 0;
             return;
           }
 
@@ -803,17 +888,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           displayCenter.lerp(target, 1 - Math.exp(-dynamicLightTweenRate * deltaSecs));
 
           if (displayCenter.distanceTo(target) > dynamicLightTweenUntil) {
-            state.lightTweenId = requestAnimationFrame(step);
+            state.light.tweenId = requestAnimationFrame(step);
           } else {
             displayCenter.copy(target);
-            state.lightTweenId = 0;
+            state.light.tweenId = 0;
           }
 
-          state.dynamicLight.setTracked({ x: displayCenter.x, z: displayCenter.z });
+          state.commitLightCentre(); // a teleport can cross several super-tiles
           w.r3f?.invalidate();
         };
 
-        state.lightTweenId = requestAnimationFrame(step);
+        state.light.tweenId = requestAnimationFrame(step);
       },
       withPickOutput(typeId, forceAlpha) {
         const idx = float(instanceIndex);
@@ -983,8 +1068,17 @@ export type State = {
   dynamicLight: DynamicLightPostprocess;
   /** Set by `w.npc.trackNpc`; `position` is a live reference (e.g. `npc.position`), not a snapshot. `null` means off. Lives outside `dynamicLight` so it survives that object's HMR reset (see the re-hydration effect in `WorldView`). */
   dynamicLightTarget: null | { npcKey: string; position: { x: number; y: number; z: number } };
-  /** Non-zero whilst the tracked light is catching up with a teleported target */
-  lightTweenId: number;
+  /** What the dynamic light needs on the CPU: its tween, and the doors it occludes against */
+  light: {
+    /** Non-zero whilst the tracked light is catching up with a teleported target */
+    tweenId: number;
+    /** Preallocated open ratios for the doors holding a slot, pushed every tick */
+    ratios: Float32Array;
+    /** Every door of every instance the occupancy window covers — candidates below */
+    tileDoors: Geomorph.DoorState[];
+    /** Doors near each window we have visited, keyed by its origin — see `syncLightDoors` */
+    doorsByTile: Map<string, Geomorph.DoorState[]>;
+  };
 
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
@@ -1037,6 +1131,14 @@ export type State = {
   lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number; height?: number }): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
+  /** Points the light at its own `displayCenter`, recentring the window and its doors as needed */
+  commitLightCentre(): void;
+  /** Redraws the world-space occupancy window if the light has left its middle super-tile */
+  syncLightTile(force?: boolean): void;
+  /** Gives the doors near this window their occlusion slots, caching the choice per window */
+  syncLightDoors(originX: number, originZ: number): void;
+  /** Pushes live open ratios for whichever doors hold a slot — the only per-frame door work */
+  pushLightDoorRatios(): void;
   /** Animates `ambientIntensity`, persisting the final value */
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
   foldNode: THREE.UniformNode<"float", number>;
@@ -1104,6 +1206,9 @@ const lookAtMsPerUnit = 60;
 const lookAtMaxMs = 2500;
 /** A tracked-light jump beyond this (world units) tweens rather than snaps */
 const dynamicLightTweenFrom = 1;
+/** How far past the light's radius a door still gets an occlusion slot */
+const lightDoorMargin = 1.5;
+
 /** Tween ends once this close (world units) to the target */
 const dynamicLightTweenUntil = 0.05;
 /** Exponential approach rate of the tween, per second */
@@ -1154,6 +1259,7 @@ export type FxKey = keyof typeof fxDefaults;
 const fxDefaults = { vignette: defaultVignette, npcOutline: 0 };
 
 const tmpVect = new Vect();
+const tmpRect = new Rect();
 const tmpVector3 = new THREE.Vector3();
 const tmpLookAtOffset = new THREE.Vector3();
 

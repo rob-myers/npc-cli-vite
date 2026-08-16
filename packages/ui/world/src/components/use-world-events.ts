@@ -334,13 +334,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
-        if (e.type === "nearby" && door.hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
-          const inside = state.npcToDoors[npc.key]?.inside ?? null;
-          if (inside === null) {
-            // shrink on approach
-            w.view.dynamicLight.setNearHullDoor(true);
-          }
-        }
       },
       onExitCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
@@ -367,16 +360,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (e.type === "nearby") {
           state.tryCloseDoor(e.meta.gdKey);
-
-          if (door.hull && w.view.dynamicLightTarget?.npcKey === npc.key) {
-            // grow back once clear of every nearby hull door — but not while inside a threshold sensor
-            // (that case grows via the "enter-room" gmId-change branch instead, see onNpcEvent)
-            const inside = state.npcToDoors[npc.key]?.inside ?? null;
-            const stillNearHull = [...(state.npcToDoors[npc.key]?.nearby ?? [])].some((gdKey) => w.d[gdKey]?.hull);
-            if (inside === null && !stillNearHull) {
-              w.view.dynamicLight.setNearHullDoor(false);
-            }
-          }
         }
       },
       onNpcEvent(e) {
@@ -410,11 +393,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
             }
 
-            if (w.view.dynamicLightTarget?.npcKey === npc.key && gmRoomId?.gmId !== e.gmRoomId.gmId) {
-              state.switchTrackedNpcGm(e.gmRoomId.gmId);
-              w.view.dynamicLight.setNearHullDoor(false); // just crossed into the new gm
-            }
-
             break;
           }
           case "exit-collider": {
@@ -442,10 +420,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               const prevGrId = state.npcToRoom.get(npc.key);
               if (prevGrId !== undefined) {
                 state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
-              }
-              if (w.view.dynamicLightTarget?.npcKey === npc.key && prevGrId?.gmId !== e.gmRoomId.gmId) {
-                state.switchTrackedNpcGm(e.gmRoomId.gmId);
-                w.view.dynamicLight.setNearHullDoor(false);
               }
             }
 
@@ -726,23 +700,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.events.next({ key: "spawned-many" });
       },
-      switchTrackedNpcGm(gmId) {
-        const gm = w.gms[gmId];
-        const layout = w.assets.layout[gm.key];
-        if (!layout) {
-          return;
-        }
-        w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
-        w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
-        const activeGmDoors = layout.doors.map((connector, doorId) => {
-          const doorState = w.d[`g${gmId}d${doorId}` as Geomorph.GmDoorKey];
-          return { seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId };
-        });
-        w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
-        // fix initial lighting whilst paused
-        w.view.updateDynamicLight(w.view.dynamicLightTarget?.position as { x: number; y: number; z: number });
-        w.view.forceUpdate();
-      },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
         if (!door) return false; // onchange map
@@ -888,7 +845,6 @@ export type State = {
   setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
   /** Refreshes dynamicLight's active gm instance (walls/doors) — call whenever the tracked npc's `gmId` changes */
-  switchTrackedNpcGm(gmId: number): void;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {

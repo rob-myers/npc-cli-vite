@@ -629,22 +629,9 @@ export default function NPCs() {
         // preserve the current radius, rather than resetting to default
         w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.dynamicLight.radius);
 
-        // bake this gm instance's walls once, mark it as the currently-
-        // active one for sampling, and register ALL of its doors (not just room-bordering ones)
-        const gm = w.gms[gmRoomId.gmId];
-        const layout = w.assets.layout[gm.key] as Geomorph.Layout;
-        w.view.dynamicLight.setGmWalls(gm.key, layout.walls, layout.bounds);
-        w.view.dynamicLight.setActiveGm(gm.key, gm.matrix);
-        const activeGmDoors = layout.doors.flatMap((connector, doorId) => {
-          const gdKey: Geomorph.GmDoorKey = `g${gmRoomId.gmId}d${doorId}`;
-          const doorState = w.d[gdKey];
-          return doorState === undefined
-            ? []
-            : [{ seg: connector.seg, gapAtHighLambda: doorState.gapAtHighLambda, instanceId: doorState.instanceId }];
-        });
-        w.view.dynamicLight.setActiveGmDoors(gm.key, activeGmDoors);
         // immediate update so works while paused; a new target snaps rather than sweeps
         w.view.updateDynamicLight(npc.position, { snap: true });
+        w.view.syncLightTile(true);
         w.view.forceUpdate();
       },
     }),
