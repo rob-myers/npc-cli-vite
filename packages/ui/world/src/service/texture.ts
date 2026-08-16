@@ -143,7 +143,7 @@ export function drawLightsIntoTexture(ct: CanvasRenderingContext2D, gm: Geomorph
     // clip to room
     auxCt.save();
     drawPolygons(auxCt, room, { fillStyle: null, strokeStyle: null, clip: true });
-    auxCt.fillStyle = "rgba(0,0,2.5,0.7)"; // blue tint
+    auxCt.fillStyle = "rgba(0,0,2,0.7)"; // blue tint
     auxCt.fill();
 
     // Punch out light circles with radial fade
