@@ -119,6 +119,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         topHeight: wallHeight - 0.01,
       }),
       roomLightEditingEnabled: saved.roomLightEditing,
+      prevRoomLightEditing: null,
       roomLightIntensity: uniform(saved.roomLightIntensity),
       unlitScale: uniform(saved.ambientIntensity),
 
@@ -450,7 +451,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         window.addEventListener("keyup", onKeyUp);
 
         const onExtraZoomChange = (e: Event) => {
-          state.setVignetteFocus((e as CustomEvent<{ locked: boolean }>).detail.locked);
+          const { locked } = (e as CustomEvent<{ locked: boolean }>).detail;
+          state.setVignetteFocus(locked);
+          state.setRoomLightEditingWhilstLocked(locked);
           w.menu?.update(); // the extra-zoom button reads it too
         };
         w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
@@ -766,7 +769,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return "always";
         }
       },
+      setRoomLightEditingWhilstLocked(locked) {
+        // a locked extra zoom is for looking, and a long press whilst locked would otherwise
+        // relight the room under it. Not persisted: it comes back on unlock, as the user left it
+        if (locked === true) {
+          if (state.prevRoomLightEditing === null) state.prevRoomLightEditing = state.roomLightEditingEnabled;
+          state.roomLightEditingEnabled = false;
+        } else if (state.prevRoomLightEditing !== null) {
+          state.roomLightEditingEnabled = state.prevRoomLightEditing;
+          state.prevRoomLightEditing = null;
+        }
+      },
       toggleRoomLightEditing() {
+        state.prevRoomLightEditing = null; // an explicit choice outranks the restore on unlock
         state.roomLightEditingEnabled = !state.roomLightEditingEnabled;
         store.patch({ roomLightEditing: state.roomLightEditingEnabled });
         w.update();
@@ -1060,6 +1075,10 @@ export type State = {
   roomLight: RoomLightPostprocess;
   /** Toggled via long-press on WorldMenu's lights icon; gates long-press room toggling in `use-world-events.ts` */
   roomLightEditingEnabled: boolean;
+  /** What room-light editing was before a locked extra zoom suspended it, else `null` */
+  prevRoomLightEditing: null | boolean;
+  /** Suspends room-light editing whilst the extra zoom is locked, restoring it after */
+  setRoomLightEditingWhilstLocked(locked: boolean): void;
   /** Persisted, user-controlled brightness of a lit room (0..1) — see `defaultRoomLightIntensity` */
   roomLightIntensity: THREE.UniformNode<"float", number>;
   unlitScale: THREE.UniformNode<"float", number>;
