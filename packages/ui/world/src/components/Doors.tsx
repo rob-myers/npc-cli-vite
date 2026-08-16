@@ -20,6 +20,7 @@ export default function Doors() {
       animTargets: new Map(),
       box: createDoorBox(),
       brightnessNode: uniform(1),
+      builtMapKey: null,
       byKey: {},
       labelToLayer: new Map(),
       lastHmr: 0,
@@ -35,7 +36,10 @@ export default function Doors() {
       flipped: new Uint8Array(MAX_DOORS),
 
       buildByKey() {
-        const prevByKey = state.byKey;
+        // `gdKey` is positional, so another map's doors wear the same keys: carrying their live
+        // state over would lock doors nobody locked, and `persistLocks` would then save that
+        const prevByKey = state.builtMapKey === w.mapKey ? state.byKey : {};
+        state.builtMapKey = w.mapKey;
         state.byKey = {};
         const saved = getWorldMapStore(w.key, w.mapKey).read().doorLocks;
         const savedLocked = saved === null ? null : new Set(saved);
@@ -540,6 +544,8 @@ export type State = {
   animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
   brightnessNode: THREE.UniformNode<"float", number>;
+  /** Which map `byKey` describes, so a rebuild knows whether its live state still applies */
+  builtMapKey: null | string;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
   inst: null | THREE.InstancedMesh;
   /** Total number of doors across all `w.gms`; also the InstancedMesh's instance count */
