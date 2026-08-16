@@ -21,9 +21,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 
       async ensure() {
         if (w.n[state.key] === undefined) {
-          // prefer continuity of position, then this map's saved spot, then what we're looking at
-          (await state.restoreNearPrevMap()) ||
-            (await state.restore()) ||
+          // a map keeps its own player position, so returning to it puts them back where they
+          // were. Only a map we have never stood on carries their position over from the last
+          (await state.restore()) ||
+            (await state.restoreNearPrevMap()) ||
             (await state.restoreNearCamera()) ||
             (await state.spawnSomewhere());
         }
