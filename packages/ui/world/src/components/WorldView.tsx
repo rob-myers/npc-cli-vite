@@ -852,6 +852,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
 
         state.dynamicLight.setDoors(doors);
+        // straight away, not on the next tick: `setDoors` marks every slot inactive until its
+        // ratios arrive, and whilst the world is paused there is no next tick — the doors would
+        // stop occluding until it resumed. `trackNpc` rebuilds the window, so the intro button
+        // hits this exactly
+        state.pushLightDoorRatios();
       },
       pushLightDoorRatios() {
         const ids = state.dynamicLight.doorInstanceIds;
