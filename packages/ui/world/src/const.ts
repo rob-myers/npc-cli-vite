@@ -28,6 +28,9 @@ export const obstacleOutset = 8 * sguToWorldScale;
  */
 
 export const wallOutset = wallOutsetSgu * sguToWorldScale;
+
+/** How far a door's "inside" sensor pokes out of the doorway, each side — see `createDoorSensors` */
+export const insideDoorSensorOutset = 0.1;
 export const specialWallMetaKeys = ["y", "h", "broad", "hollow"] as const;
 
 /** Depth of doorway along line walking through door */
@@ -103,7 +106,7 @@ export const defaultAmbientIntensity = 1;
 
 export const defaultCameraModeDesktop = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
-export const defaultCardinalDirectionsDesktop = 8;
+export const defaultCardinalDirectionsDesktop = 4;
 export const defaultCardinalDirectionsMobile = 4;
 
 /** Camera rotate speed: touch drags are much shorter than mouse drags, so they get more per-pixel */

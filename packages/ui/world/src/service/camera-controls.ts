@@ -1316,8 +1316,11 @@ const endEvent = { type: "end" } as const;
 const changeEvent = { type: "change" } as const;
 
 const defaultDampingFactor = 0.05;
-/** Shifts cardinal snapping onto the diagonals ne, se, sw, nw */
-const snapAzimuthOffset = Math.PI / 4;
+/**
+ * Where the cardinal directions sit. `0` puts 4 of them on n, s, e, w rather than the diagonals;
+ * with 8 the two agree, since half a step of `2π / 8` lands on the same set either way.
+ */
+const snapAzimuthOffset = 0;
 /** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
 const snapAzimuthEaseIn = 2;
 /** Per-event weight of the centroid and spread low-pass; lower is smoother but laggier */

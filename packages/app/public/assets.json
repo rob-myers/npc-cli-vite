@@ -46052,7 +46052,7 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-[#666]",
+      "background": "bg-[#000]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
         "nonHull": {"fill": "#111", "stroke": "#000"}

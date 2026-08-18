@@ -1258,7 +1258,7 @@ function createPickRT(count: 1 | 2) {
 
 function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
-    azimuthal: touchDevice ? 0 : Math.PI / 4,
+    azimuthal: 0,
     polar: Math.PI / 4,
     position: { x: 4, y: touchDevice ? 10 : 16, z: 4 },
   };

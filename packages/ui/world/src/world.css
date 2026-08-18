@@ -26,7 +26,7 @@
    * a `var()`; substituted afresh on every frame of a transition either way.
    */
   --pattern-fg: color(
-    from var(--color-zinc-600) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
+    from var(--color-zinc-800) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
       calc(b * var(--world-lit)) /
     calc(0.6 * (1 - var(--world-dark)))
   );

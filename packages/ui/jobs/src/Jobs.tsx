@@ -63,7 +63,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       resizing: false,
       sessionDisconnector: null,
       sessionKey: null,
-      showProcesses: tryLocalStorageGetParsed(showProcessesStorageKey(meta.id)) === true,
+      showProcesses: (tryLocalStorageGetParsed(showProcessesStorageKey(meta.id)) ?? true) === true,
       ttyMeta: null,
 
       changeProcess(e) {
