@@ -221,6 +221,9 @@ export const defaultDoorCloseMs = 3000;
 
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
+/** How solid a door looks. Dithered rather than blended — see `Doors`' `alphaHash` */
+export const defaultDoorOpacity = 0.8;
+
 export const lockedDoorTint = "#f44";
 
 export const unlockedDoorTint = "#4b4";
