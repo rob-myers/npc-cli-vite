@@ -92,14 +92,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 2, // can change
         width: floorTextureDimension,
         height: floorTextureDimension,
-        anisotropy: touchDevice ? undefined : 16,
+        anisotropy: touchDevice ? undefined : 4,
       }),
       texObs: new TexArray({
         ctKey: "obs-tex",
         numTextures: 1, // from sheets.symbolSheetDims.length
         width: 1,
         height: 1,
-        anisotropy: touchDevice ? undefined : 16,
+        anisotropy: touchDevice ? undefined : 4,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 16 }),
       texDoorLabel: new TexArray({ ctKey: "door-labels", width: 256, height: 512, numTextures: MAX_DOOR_LABELS }),

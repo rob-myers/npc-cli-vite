@@ -157,6 +157,8 @@
   - wrongly persisted locked doors on 301
   - door should be initially open if npc in doorway
 
+- remove background color related code including stripes
+
 ## Other
 
 - on hmr recreate tty session `move` stops working?
