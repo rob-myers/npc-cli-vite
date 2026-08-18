@@ -47,7 +47,7 @@ export function getDefaultTabs() {
       id: uid(),
       title: "tabs-0",
       uiKey: "Tabs",
-      items: [worldMeta.id, jshMeta.id, jobsMeta.id, mapEditMeta.id],
+      items: [worldMeta.id, jobsMeta.id, jshMeta.id, mapEditMeta.id],
       currentTabId: worldMeta.id,
     });
     worldMeta.parentId = tabsMeta.id;
@@ -72,8 +72,8 @@ export function getDefaultTabs() {
       id: uid(),
       title: "tabs-1",
       uiKey: "Tabs",
-      items: [jshMeta.id, jobsMeta.id, mapEditMeta.id],
-      currentTabId: jshMeta.id,
+      items: [jobsMeta.id, jshMeta.id, mapEditMeta.id],
+      currentTabId: jobsMeta.id,
     });
     jshMeta.parentId = tabs1Meta.id;
     jobsMeta.parentId = tabs1Meta.id;

@@ -74,7 +74,7 @@ const defaultWorldSettings: WorldSettings = {
   roomLighting: false,
   dynamicLightRadius: defaultDynamicLightRadius,
   dynamicLightIntensity: defaultDynamicLightIntensity,
-  pickOpenDoors: false,
+  pickOpenDoors: true,
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,
