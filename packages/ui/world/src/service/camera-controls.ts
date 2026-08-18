@@ -17,7 +17,11 @@ class ExtraZoom {
   _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-  _holdTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  /** True once the zoom reached its limit and locked itself, until the view backs off again */
+  _autoLocked = false;
+  /** Zoom-out travel since the last pause, as a fraction of an unlock — see `advanceUnlock` */
+  _unlockProgress = 0;
+  _unlockLastMs = 0;
 
   constructor(ctrl: CameraControls) {
     this._ctrl = ctrl;
@@ -27,11 +31,9 @@ class ExtraZoom {
     clearTimeout(this._activeTimer);
     clearTimeout(this._normalZoomTimer);
     clearTimeout(this._cooldownTimer);
-    clearTimeout(this._holdTimer);
     this._activeTimer = undefined;
     this._normalZoomTimer = undefined;
     this._cooldownTimer = undefined;
-    this._holdTimer = undefined;
   }
 
   get minR() {
@@ -80,15 +82,31 @@ class ExtraZoom {
 
   setTapLock(tapLocked: boolean) {
     if (this.active === false || this.tapLocked === tapLocked) return;
+    this._unlockProgress = 0; // the next zoom-out starts afresh, whichever way this went
     this.tapLocked = tapLocked;
     this.emitChange();
     if (this.tapLocked === false) this._ctrl.dispatchEvent(changeEvent); // restart tween
   }
 
-  /** A third finger resting on the canvas locks, once it has rested long enough to mean it */
-  startHold() {
-    clearTimeout(this._holdTimer);
-    this._holdTimer = this.active === false ? undefined : setTimeout(() => this.setTapLock(true), holdToLockMs);
+  /**
+   * Zooming all the way in locks there, so the view holds rather than tweening back out. It can
+   * only do so again once the zoom has backed off `autoLockReleaseFrom` of the way, or the manual
+   * unlock would be undone on the very next frame.
+   */
+  syncAutoLock(radius: number) {
+    if (this.active === false) {
+      this._autoLocked = false;
+      return;
+    }
+    const range = this._ctrl.minDistance - this.minR;
+    if (radius <= this.minR + range * autoLockFrom) {
+      if (this._autoLocked === false) {
+        this._autoLocked = true;
+        this.setTapLock(true);
+      }
+    } else if (radius > this.minR + range * autoLockReleaseFrom) {
+      this._autoLocked = false;
+    }
   }
 
   setReady(ready: boolean) {
@@ -134,7 +152,28 @@ class ExtraZoom {
     return true;
   }
 
-  handleWheelOut(): void {
+  /**
+   * Zooming out is how the lock is undone, but it takes a deliberate gesture rather than a stray
+   * notch or a wobble: `amount` is that gesture's share of a whole unlock, accumulated whilst it
+   * continues and abandoned after a pause. `dollyIn`/`dollyOut` stay gated until it lands, so
+   * nothing moves meanwhile, and `_autoLocked` holds so it cannot re-lock until the view has
+   * backed off — see `syncAutoLock`
+   */
+  advanceUnlock(amount: number) {
+    if (this.zoomLocked === false) {
+      return;
+    }
+    const nowMs = performance.now();
+    this._unlockProgress = nowMs - this._unlockLastMs > unlockPauseMs ? 0 : this._unlockProgress;
+    this._unlockProgress += amount;
+    this._unlockLastMs = nowMs;
+    if (this._unlockProgress >= 1) {
+      this.setTapLock(false);
+    }
+  }
+
+  handleWheelOut(event: WheelEvent): void {
+    this.advanceUnlock(Math.abs(event.deltaY) / unlockWheelDelta);
     clearTimeout(this._normalZoomTimer);
     if (this.active) {
       clearTimeout(this._activeTimer);
@@ -159,7 +198,9 @@ class ExtraZoom {
         }
       }
     } else if (ratio < 1) {
-      // pinching fingers (zoom out)
+      // pinching fingers (zoom out) — in log space, so a given pinch counts the same wherever
+      // in the zoom range it happens
+      this.advanceUnlock(Math.abs(Math.log(ratio)) / unlockPinchLog);
       this.setReady(false);
     }
   }
@@ -194,7 +235,6 @@ class ExtraZoom {
   }
 
   onPointerUp() {
-    clearTimeout(this._holdTimer); // a finger lifted, so any hold in progress was not meant
     if (this.active && this._activeTimer === undefined) {
       this._ctrl.dispatchEvent(changeEvent);
     }
@@ -546,7 +586,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     if (event.deltaY < 0) {
       if (!this._ez.handleWheelIn(event, zoomScale)) return;
     } else if (event.deltaY > 0) {
-      this._ez.handleWheelOut();
+      this._ez.handleWheelOut(event);
       this.updateMouseParameters(event);
       this.dollyOut(zoomScale);
     }
@@ -1044,10 +1084,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.handleTouchStartDolly(); // baselines both spread and centroid
       this.state = this.STATE.TOUCH_DOLLY_ROTATE;
       this.dispatchEvent(startEvent);
-    } else if (this.pointers.length === 3) {
-      // a third finger held on the canvas locks the extra zoom where it stands, without
-      // reaching for the button. Only locks: unlocking stays with the button
-      this._ez.startHold();
     }
     // the finger changes nothing else, rather than dropping the pinch it interrupts
   };
@@ -1250,6 +1286,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     // every zoom path lands here, unlike `applyClamp` which the zoom-to-cursor branch skips
     const deepFrom = this.minDistance - (this.minDistance - this._ez.minR) * extraZoomDeepFrom;
     this._ez.setDeep(this._ez.active === true && this.spherical.radius <= deepFrom);
+    this._ez.syncAutoLock(this.spherical.radius);
 
     if (
       this._ez.active &&
@@ -1327,8 +1364,17 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
-/** How long a third finger must rest on the canvas to lock the extra zoom */
-const holdToLockMs = 300;
+/** Wheel travel needed to unlock, roughly 3 notches of a mouse — see `advanceUnlock` */
+const unlockWheelDelta = 300;
+/** And by pinch: `ln` of the ratio zoomed out through, where the whole extra zoom is `ln 2` */
+const unlockPinchLog = 0.25;
+/** A gap this long means the gesture stopped, so its travel no longer counts */
+const unlockPauseMs = 400;
+
+/** How near the limit the zoom must be to lock itself, as a fraction of the extra zoom range */
+const autoLockFrom = 0.02;
+/** And how far back out it must come before it may do so again */
+const autoLockReleaseFrom = 0.5;
 
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
