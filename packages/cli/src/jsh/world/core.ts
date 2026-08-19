@@ -50,10 +50,6 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   }
 }
 
-export function blur({ w }: JshCli.RunArg) {
-  w.npc.trackNpc();
-}
-
 /**
  * ```sh
  * close g0d29 g0d30
@@ -127,18 +123,6 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   // get here via ctrl-c or `kill`
   handlers.dispose();
   throw api.getKillError();
-}
-
-/**
- * Light a single npc.
- * ```sh
- * focus npc:rob
- * ```
- */
-export function focus({ api, args, w }: JshCli.RunArg, opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" })) {
-  const npc = w.npc.get(opts.npcKey ?? Object.values(w.n)[0]?.key);
-  w.npc.trackNpc(npc.key);
-  w.view.forceUpdate();
 }
 
 /**

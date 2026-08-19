@@ -32,7 +32,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 
         const npc = w.n[state.key];
         if (npc !== undefined) {
-          w.npc.trackNpc(npc.key);
         }
       },
       async panTo() {
@@ -124,7 +123,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         state.set({ key: npcKey });
         // retargets the dynamic light, snapping it so it shows whilst paused
-        w.npc.trackNpc(npcKey);
         state.persist();
         void state.panTo(); // as on load
       },

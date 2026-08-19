@@ -208,10 +208,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.door.onTick(delta);
         state.npc.onTick(delta);
         state.speech?.onTick(delta);
-
-        if (state.view.dynamicLightTarget !== null) {
-          state.view.updateDynamicLight(state.view.dynamicLightTarget.position);
-        }
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {

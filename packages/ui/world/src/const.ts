@@ -82,31 +82,7 @@ export const defaultBrightness = 2;
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
 export const spawnPlayerAttempts = 10;
-/** Per-instance cap on room count, for sizing the `roomLit` boolean array */
-export const MAX_ROOMS_PER_GM = 32;
-/** Default brightness of a lit room (long-press), scaling `RoomLightPostprocess.litAmount()` */
-export const defaultRoomLightIntensity = 0.7;
-
-/** Default radius of the light following a tracked npc (see `w.npc.trackNpc`) */
-export const defaultDynamicLightRadius = 3.5;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
-/**
- * Side (metres) of dynamic-light super-tile.
- * The light's occupancy window is 3x3 of these recentred whenever light leaves central one.
- */
-export const lightTileSize = 7.5;
-
-/** What the tracked light washes its ground polygon with, inside its black outline */
-export const defaultDynamicLightTint = "#6ea8ff";
-
-/**
- * Capped by the occupancy window: the light sits somewhere in the centre of `lightTileSize`, so
- * `radius + falloff` must stay under that for the march never to leave the texture. Raising it
- * further means a bigger window, or coarser texels across the same one.
- */
-export const maxDynamicLightRadius = 6.5;
-/** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
-export const defaultDynamicLightIntensity = 1;
 /** Default extent (0..1) of the vignette darkening the corners of the frame */
 export const defaultVignette = 0;
 

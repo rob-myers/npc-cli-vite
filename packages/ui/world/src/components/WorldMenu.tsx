@@ -1,6 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
-import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
@@ -9,7 +8,6 @@ import {
   CaretDownIcon,
   CaretRightIcon,
   EyeIcon,
-  EyeSlashIcon,
   GlobeStandIcon,
   GpsIcon,
   GpsSlashIcon,
@@ -17,10 +15,8 @@ import {
   LockSimpleIcon,
   MagnifyingGlassPlusIcon,
   PauseIcon,
-  PencilSimpleIcon,
   PlayIcon,
   SunIcon,
-  TrashIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -29,16 +25,8 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import {
-  defaultAmbientIntensity,
-  defaultBrightness,
-  defaultDynamicLightIntensity,
-  defaultDynamicLightRadius,
-  defaultRoomLightIntensity,
-  defaultVignette,
-  maxDynamicLightRadius,
-} from "../const";
-import { GeomorphGraphsModal, LightMapModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { defaultBrightness, defaultVignette } from "../const";
+import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { WorldContext } from "./world-context";
@@ -63,7 +51,6 @@ export function WorldMenu() {
       dragged: false,
       gmGraphsOpen: false,
       skinDebugOpen: false,
-      lightMapOpen: false,
       menuOpen: false,
       minY: 40,
       openSection: saved.menuSection,
@@ -272,9 +259,6 @@ export function WorldMenu() {
         break;
       case "Skins":
         state.set({ menuOpen: false, skinDebugOpen: true });
-        break;
-      case "Light Map":
-        state.set({ menuOpen: false, lightMapOpen: true });
         break;
       case "Colliders":
         w.debug?.showPhysicsColliders();
@@ -583,85 +567,6 @@ export function WorldMenu() {
                     <CaretRightIcon className="size-3" />
                   </button>
                 </div>
-
-                <div className={cn("w-20", touch && "w-full")}>
-                  <LightsMenuSlider
-                    label="radius"
-                    min={0.2}
-                    max={maxDynamicLightRadius}
-                    step={0.1}
-                    value={w.view.dynamicLight?.radius ?? defaultDynamicLightRadius}
-                    defaultValue={defaultDynamicLightRadius}
-                    onChange={(next) => w.view.setDynamicLightRadius(next)}
-                  />
-                </div>
-                <div className={cn("w-20", touch && "w-full")}>
-                  <LightsMenuSlider
-                    label="lit"
-                    value={w.view.dynamicLight?.intensity?.value ?? defaultDynamicLightIntensity}
-                    defaultValue={defaultDynamicLightIntensity}
-                    onChange={(next) => w.view.setDynamicLightIntensity(next)}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div
-              className={sectionHeaderClass(touch)}
-              onClick={(e) => {
-                e.stopPropagation();
-                state.toggleSection("room lights");
-              }}
-            >
-              {state.isOpen("room lights") ? (
-                <CaretDownIcon className="size-3" />
-              ) : (
-                <CaretRightIcon className="size-3" />
-              )}
-              room lights
-            </div>
-
-            {state.isOpen("room lights") && (
-              <div
-                className={cn(
-                  "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
-                  touch && "max-w-none flex-col items-stretch gap-2 px-1 py-2",
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className={cn("w-24", touch && "w-full")}>
-                  <LightsMenuSlider
-                    label="intensity"
-                    value={w.view.roomLightIntensity?.value ?? defaultRoomLightIntensity}
-                    defaultValue={defaultRoomLightIntensity}
-                    onChange={(next) => w.view.setRoomLightIntensity(next)}
-                  />
-                </div>
-
-                <div className={cn("flex gap-1", touch && "gap-2 px-2")}>
-                  <LightsIconButton
-                    active={w.view.roomLightEditingEnabled}
-                    icon={PencilSimpleIcon}
-                    title="Edit (long press)"
-                    onClick={() => w.view.toggleRoomLightEditing()}
-                  />
-                  <LightsIconButton
-                    active={w.view.roomLight?.roomLightingEnabled.value === 1}
-                    icon={w.view.roomLight?.roomLightingEnabled.value === 1 ? EyeIcon : EyeSlashIcon}
-                    title="Lights shown"
-                    onClick={() => {
-                      w.view.setPostProcessingEnabled(true);
-                      w.view.setRoomLightingEnabled();
-                      state.update();
-                    }}
-                  />
-                  <LightsIconButton
-                    danger
-                    icon={TrashIcon}
-                    title="Clear lighting"
-                    onClick={() => w.view.resetAllRooms()}
-                  />
-                </div>
               </div>
             )}
 
@@ -800,30 +705,6 @@ export function WorldMenu() {
             )}
           </button>
 
-          <div className="outline-width-1 flex flex-col items-center gap-1.5 bg-gray-800 text-white px-1.5 py-2 w-9">
-            <button type="button" className="cursor-pointer" onClick={() => w.view.setAmbientIntensity(0.4)}>
-              <SunIcon className="size-4 shrink-0" />
-            </button>
-            <Slider.Root
-              orientation="vertical"
-              min={0}
-              max={1}
-              step={0.01}
-              value={ambientValueToSliderPos(w.view.ambientIntensity ?? defaultAmbientIntensity)}
-              onValueChange={(v) => w.view.setAmbientIntensity(ambientSliderPosToValue(v))}
-            >
-              <Slider.Control
-                className="h-20 w-4 flex justify-center cursor-pointer touch-none"
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <Slider.Track className="relative w-1 h-full rounded-full bg-white/50">
-                  <Slider.Indicator className="rounded-full bg-white" />
-                  <Slider.Thumb className="size-3.5 rounded-full bg-white outline-none" />
-                </Slider.Track>
-              </Slider.Control>
-            </Slider.Root>
-          </div>
-
           {/* pan to the player: long press disables it on load */}
           <div
             data-keep-menu-open
@@ -907,11 +788,6 @@ export function WorldMenu() {
           container={w.rootEl}
         />
       )}
-      <LightMapModal
-        open={state.lightMapOpen}
-        onOpenChange={(open) => state.set({ lightMapOpen: open })}
-        container={w.rootEl}
-      />
     </>
   );
 }
@@ -1121,32 +997,13 @@ function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void
   );
 }
 
+/** Small square icon button used to pack several toggles/actions into one row in the lights menu */
 /** Map brightness (0.5–2.0) so that 1.0 = 50% pie fill */
 function brightnessToRatio(b: number) {
   return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
 }
 
-// non-uniform ambient slider: the bottom 1/3 of the value range takes up 2/3 of the slider's
-// travel, so low (dim) values are finer-grained to adjust than high ones
-const ambientSliderBreak = 2 / 3;
-const ambientValueBreak = 1 / 3;
-
-/** Slider position (0..1, uniform) -> actual ambient value (0..1, non-uniform) */
-function ambientSliderPosToValue(pos: number) {
-  return pos <= ambientSliderBreak
-    ? (pos / ambientSliderBreak) * ambientValueBreak
-    : ambientValueBreak + ((pos - ambientSliderBreak) / (1 - ambientSliderBreak)) * (1 - ambientValueBreak);
-}
-
-/** Inverse of `ambientSliderPosToValue` — actual ambient value -> slider position */
-function ambientValueToSliderPos(value: number) {
-  return value <= ambientValueBreak
-    ? (value / ambientValueBreak) * ambientSliderBreak
-    : ambientSliderBreak + ((value - ambientValueBreak) / (1 - ambientValueBreak)) * (1 - ambientSliderBreak);
-}
-
-/** Small square icon button used to pack several toggles/actions into one row in the lights menu */
-function LightsIconButton({
+function _LightsIconButton({
   active,
   danger,
   icon: IconCmp,
@@ -1188,7 +1045,7 @@ function LightsIconButton({
 }
 
 /** One labelled slider row in the lights menu */
-function LightsMenuSlider({
+function _LightsMenuSlider({
   label,
   min = 0,
   max = 1,
@@ -1242,7 +1099,6 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
-  lightMapOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
   /** The one unfolded section, e.g. `debug`. Persisted */
@@ -1328,7 +1184,6 @@ const debugItems = [
   "Room Hit",
   "Graphs",
   "Skins",
-  "Light Map",
   "Colliders",
   "Grid",
   "Light Tints",
