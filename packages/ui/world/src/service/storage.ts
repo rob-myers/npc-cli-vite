@@ -1,14 +1,7 @@
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import {
-  defaultAmbientIntensity,
-  defaultBrightness,
-  defaultDynamicLightIntensity,
-  defaultDynamicLightRadius,
-  defaultRoomLightIntensity,
-  defaultVignette,
-} from "../const";
+import { defaultBrightness, defaultVignette } from "../const";
 
 /**
  * Everything a World persists lives under two keys, both scoped by `worldKey`
@@ -42,12 +35,6 @@ export type WorldSettings = {
   introEnabled: boolean;
   /** Post-processing effect strengths, keyed by `FxKey` */
   fx: Record<string, number>;
-  ambientIntensity: number;
-  roomLightIntensity: number;
-  roomLightEditing: boolean;
-  roomLighting: boolean;
-  dynamicLightRadius: number;
-  dynamicLightIntensity: number;
   pickOpenDoors: boolean;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
@@ -68,12 +55,6 @@ const defaultWorldSettings: WorldSettings = {
   postProcessing: true,
   introEnabled: true,
   fx: { vignette: defaultVignette, npcOutline: 0 },
-  ambientIntensity: defaultAmbientIntensity,
-  roomLightIntensity: defaultRoomLightIntensity,
-  roomLightEditing: false,
-  roomLighting: false,
-  dynamicLightRadius: defaultDynamicLightRadius,
-  dynamicLightIntensity: defaultDynamicLightIntensity,
   pickOpenDoors: true,
   gmGraphsFilter: "room",
   menuY: 40,
@@ -88,8 +69,6 @@ const defaultWorldSettings: WorldSettings = {
 /** What we left behind on some map, restored on returning to it */
 export type WorldMapState = {
   npcs: null | PersistedNpcs;
-  /** `[gmId, roomId]` pairs */
-  roomLit: [number, number][];
   /**
    * The `gdKey`s of the locked doors. It is exhaustive, so an absent door is unlocked
    * — even one whose `meta.locked` says otherwise. `null` means never saved.
@@ -99,7 +78,6 @@ export type WorldMapState = {
 
 const defaultWorldMapState: WorldMapState = {
   npcs: null,
-  roomLit: [],
   doorLocks: null,
 };
 

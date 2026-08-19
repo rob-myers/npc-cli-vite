@@ -85,7 +85,7 @@ export default function Floor() {
           { fillStyle: null, strokeStyle: "#000", lineWidth: 0.1 },
         );
 
-        // draw nav mesh (gmId specific)
+        // 🔔 draw nav mesh: gmId specific
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
         const fillStyle = "#ffd1";

@@ -131,90 +131,6 @@ export default class DerivedGmsData {
       ];
     }
 
-    /**
-     * room-light mask
-     * - room-interior pixel RGB (roomId+1, 0, 0)
-     * - door pixel RGB (roomIds[0]+1, 1, roomIds[1]+1) where `null` ~ `0`
-     * - window pixel RGB (roomIds[0]+1, 2, roomIds[1]+1)
-     * i.e. G === 0 ~ room pixel, G === 1 ~ door, G === 2 ~ window — the shader only ever checks
-     * `G > 0` (see `sampleRoomLit`'s `connectorFlag`), never which of the two, so G is just a
-     * category tag here, not an id.
-     */
-    const roomMaskCt = gmData.roomMaskCt;
-    const { width: maskW, height: maskH } = roomCt.canvas;
-    roomMaskCt.canvas.width = maskW;
-    roomMaskCt.canvas.height = maskH;
-    roomMaskCt.resetTransform();
-    roomMaskCt.clearRect(0, 0, maskW, maskH);
-
-    const scratchCt = gmData.roomMaskScratchCt;
-    scratchCt.canvas.width = maskW;
-    scratchCt.canvas.height = maskH;
-
-    const maskData = new Uint8ClampedArray(maskW * maskH * 4);
-
-    for (const [roomId, room] of gm.rooms.entries()) {
-      scratchCt.resetTransform();
-      scratchCt.clearRect(0, 0, maskW, maskH);
-      scratchCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
-      // stroke on top of the fill, same solid color: a plain fill leaves a ring of partial-coverage
-      // (anti-aliased) pixels right at the path — the stroke repaints that ring at full coverage,
-      // pushing the boundary to a cleaner, more consistent edge before thresholding below.
-      drawPolygons(scratchCt, [room], { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
-
-      const { data: coverage } = scratchCt.getImageData(0, 0, maskW, maskH);
-      for (let i = 0; i < coverage.length; i += 4) {
-        if (coverage[i + 3] >= 128) {
-          maskData[i + 0] = roomId + 1;
-          maskData[i + 3] = 255;
-        }
-      }
-    }
-
-    // door pass: runs after all rooms
-    for (const door of gm.doors) {
-      const thinPoly = door.computeThinPoly(door.meta.hull === true ? 2 * 0.05 : 0.05);
-
-      scratchCt.resetTransform();
-      scratchCt.clearRect(0, 0, maskW, maskH);
-      scratchCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
-      drawPolygons(scratchCt, [thinPoly], { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
-
-      const [roomIdA, roomIdB] = door.roomIds;
-      const { data: coverage } = scratchCt.getImageData(0, 0, maskW, maskH);
-      for (let i = 0; i < coverage.length; i += 4) {
-        if (coverage[i + 3] >= 128) {
-          maskData[i + 0] = (roomIdA ?? -1) + 1;
-          maskData[i + 1] = 1;
-          maskData[i + 2] = (roomIdB ?? -1) + 1;
-          maskData[i + 3] = 255;
-        }
-      }
-    }
-
-    // window pass: same idea as doors, tagged G = 2 instead of 1. Uses the window's own polygon
-    // directly (not a thinned one) — windows aren't as deep/wide as a door's physical footprint,
-    // so there's no equivalent bleed concern.
-    for (const window of gm.windows) {
-      scratchCt.resetTransform();
-      scratchCt.clearRect(0, 0, maskW, maskH);
-      scratchCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
-      drawPolygons(scratchCt, [window.poly], { fillStyle: "#fff", strokeStyle: "#fff", lineWidth: 2 / scale });
-
-      const [roomIdA, roomIdB] = window.roomIds;
-      const { data: coverage } = scratchCt.getImageData(0, 0, maskW, maskH);
-      for (let i = 0; i < coverage.length; i += 4) {
-        if (coverage[i + 3] >= 128) {
-          maskData[i + 0] = (roomIdA ?? -1) + 1;
-          maskData[i + 1] = 2;
-          maskData[i + 2] = (roomIdB ?? -1) + 1;
-          maskData[i + 3] = 255;
-        }
-      }
-    }
-
-    roomMaskCt.putImageData(new ImageData(maskData, maskW, maskH), 0, 0);
-
     gmData.roomGraph = RoomGraph.from(gm, `${gm.key}: `);
 
     gmData.unseen = false;
@@ -275,8 +191,6 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     polyDecals: [],
     tops: { broad: [], hullDoor: [], hullWall: [], nonHullDoor: [], nonHullWall: [], window: [] },
     roomHitCt: getContext2d(`room-pick-${gmKey}`, { willReadFrequently: true }),
-    roomMaskCt: getContext2d(`room-mask-${gmKey}`, { willReadFrequently: true }),
-    roomMaskScratchCt: getContext2d(`room-mask-scratch-${gmKey}`, { willReadFrequently: true }),
     roomGraph: new RoomGraph(),
   };
 }

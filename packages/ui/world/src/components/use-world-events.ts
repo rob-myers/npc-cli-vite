@@ -198,7 +198,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         persisted.getWorldMapStore(w.key, w.mapKey).patch(saved);
 
         w.door.applyLocks(saved.doorLocks ?? []);
-        w.view.roomLight.setRoomLitPairs(saved.roomLit);
         w.view.setPostProcessingEnabled(true);
 
         state.removeNpcs(...Object.keys(w.n));
@@ -210,11 +209,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       async resetWorldState() {
         w.door.resetLocks(); // back to the map's own `meta.locked`
-        w.view.roomLight.setRoomLitPairs([]);
         w.view.setPostProcessingEnabled(true);
 
         state.removeNpcs(...Object.keys(w.n));
-        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, roomLit: [] });
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null });
         // nothing saved to restore now, so the player respawns near the camera
         await w.player.ensure();
         state.persistNpcs();
@@ -272,13 +270,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           }
-          case "picked": {
-            const { lastPointer, roomLightEditingEnabled, controls } = w.view;
-            if (roomLightEditingEnabled === true && lastPointer.longPress === true && controls.pointers.length <= 1) {
-              w.view.setRoomLit(helper.parseGroundPoint(e));
-            }
-            break;
-          }
           case "removed-npcs": {
             for (const npcKey of e.npcKeys) {
               const gmRoomId = state.npcToRoom.get(npcKey);
@@ -291,11 +282,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
 
             w.bubble.delete(...e.npcKeys);
-
-            const trackedNpcKey = w.view.dynamicLightTarget?.npcKey;
-            if (trackedNpcKey !== undefined && e.npcKeys.includes(trackedNpcKey)) {
-              w.npc.trackNpc();
-            }
 
             break;
           }
@@ -317,6 +303,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-locked":
           case "enabled":
           case "nav-updated":
+          case "picked":
           case "spawned-many":
             break;
           default:
@@ -844,7 +831,6 @@ export type State = {
   removeNpcs(...npcKeys: string[]): void;
   setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
-  /** Refreshes dynamicLight's active gm instance (walls/doors) — call whenever the tracked npc's `gmId` changes */
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {

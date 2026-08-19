@@ -426,60 +426,6 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
   );
 }
 
-export function LightMapModal({ open, onOpenChange, container }: DebugModalProps) {
-  const w = useContext(WorldContext);
-  // 🔔 `w.view.raycastLight` can be stale-undefined right after HMR adds this field to an
-  // already-running `useStateRef` instance (it doesn't re-run the initializer for existing state)
-  const debug = w.view.dynamicLight.debug;
-  const tile = debug.tileOrigin();
-
-  return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal container={container}>
-        <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
-        <Dialog.Popup
-          className={cn(
-            "absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-            "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-3xl w-[90%] max-h-[90%] flex flex-col",
-          )}
-        >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-            <Dialog.Title className="text-sm font-semibold text-slate-200">
-              Raycast Light — Wall Mask ({w.view.dynamicLight?.tileWorldSize ?? 0}m window)
-            </Dialog.Title>
-            <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
-              <XIcon className="size-5 text-slate-400" />
-            </Dialog.Close>
-          </div>
-          <div className="px-4 pt-3 text-xs text-slate-400">
-            World origin (top left):{" "}
-            <span className="text-emerald-400 font-mono">
-              {tile === null ? "(none)" : `${tile.originX.toFixed(1)}, ${tile.originZ.toFixed(1)}`}
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 flex justify-center">
-            {tile !== null ? (
-              <canvas
-                width={debug.wallTexSize}
-                height={debug.wallTexSize}
-                className="w-96 h-96 border border-emerald-400"
-                style={{ imageRendering: "pixelated" }}
-                ref={(el) => {
-                  const ct = el?.getContext("2d");
-                  ct?.drawImage(debug.wallCanvas, 0, 0);
-                }}
-              />
-            ) : (
-              <span className="text-sm text-slate-500">No wall mask drawn yet — track an npc first</span>
-            )}
-          </div>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
 function useSvgZoom(bounds: { minX: number; minY: number; width: number; height: number }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });

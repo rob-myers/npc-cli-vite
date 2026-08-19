@@ -610,30 +610,6 @@ export default function NPCs() {
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
       },
-      trackNpc(npcKey) {
-        if (!npcKey) {
-          w.view.dynamicLightTarget = null;
-          w.view.dynamicLight.setTracked(null);
-          w.view.forceUpdate();
-          return;
-        }
-
-        const npc = state.get(npcKey);
-        const gmRoomId = w.e.findRoomContaining(npc.position, true);
-
-        if (!gmRoomId) {
-          throw Error(`npc ${npc.key} must be in some room`);
-        }
-
-        w.view.dynamicLightTarget = { npcKey, position: npc.position };
-        // preserve the current radius, rather than resetting to default
-        w.view.dynamicLight.setTracked({ x: npc.position.x, z: npc.position.z }, w.view.dynamicLight.radius);
-
-        // immediate update so works while paused; a new target snaps rather than sweeps
-        w.view.updateDynamicLight(npc.position, { snap: true });
-        w.view.syncLightTile(true);
-        w.view.forceUpdate();
-      },
     }),
   );
 
@@ -815,7 +791,6 @@ export type State = {
   getSkinMeta(skinKey: string): Meta;
   hasDoMeta(meta: Meta): boolean;
   /** Follows this npc with a room-aware light (a room-poly clip that refreshes on `"enter-room"`). `null`/omitted stops tracking. */
-  trackNpc(npcKey?: string): void;
   move(opts: JshCli.MoveOpts): Promise<void>;
   onTick(delta: number): void;
   rawSpawn(opts: {
