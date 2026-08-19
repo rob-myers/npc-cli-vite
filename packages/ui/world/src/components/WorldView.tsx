@@ -727,16 +727,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
           color.assign(applyVignette(color, state.fx.vignette, isBright));
 
+          const alpha = sceneColor.a.toVar();
+
           if (outlineEnabled === true) {
             const npcMask = scenePass.getTextureNode("npcMask");
-            color.assign(applyNpcOutline(color, npcMask, sceneDepth, state.fx.npcOutline));
+            const outlined = applyNpcOutline(color, npcMask, sceneDepth, state.fx.npcOutline);
+            color.assign(outlined.rgb);
+            // the outline is painted here rather than drawn in the scene, so nothing has claimed
+            // the canvas where it falls on a gap in the floor — and the page would show through it
+            alpha.assign(alpha.max(outlined.a));
           }
 
-          return color;
+          return vec4(color, alpha);
         })();
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = vec4(litEffect, sceneColor.a);
+        pipeline.outputNode = litEffect;
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
