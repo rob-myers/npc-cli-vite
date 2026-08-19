@@ -5,7 +5,7 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { attribute, instanceIndex, int, texture, transformNormalToView, uniform, uv, vec3, vec4 } from "three/tsl";
+import { attribute, instanceIndex, int, mix, texture, transformNormalToView, uniform, uv, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { emptyMapDef, MAX_GEOMORPH_INSTANCES } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
@@ -26,7 +26,7 @@ export default function Floor() {
       drawnGmsHash: 0,
       drawnMapKey: null,
 
-      fade: { texAmount: uniform(0), animId: 0, resolve: null }, // initially black
+      fade: { texAmount: uniform(0), animId: 0, resolve: null }, // initially `fadeColor`
 
       addUvs(gms = w.gms) {
         const uvOffsets = state.quad.getAttribute("uvOffsets");
@@ -197,7 +197,7 @@ export default function Floor() {
         if (state.drawnMapKey === w.mapKey) return;
         state.drawnMapKey = w.mapKey;
 
-        state.fade.texAmount.value = 0; // arrives black, whatever it was
+        state.fade.texAmount.value = 0; // arrives flat, whatever it was
         w.setWorldFold(0); // with the rest of the world flat until the map has settled
         state.drawHulls(w.gms);
         // only once a frame holding them has been rendered, so they arrive whole. The first
@@ -261,9 +261,9 @@ export default function Floor() {
       // - force alpha 1 to avoid object-pick having rgb scaled by alpha
       // - can pick texture alpha < 1 because floor can be partially transparent
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1),
-      // `texAmount` takes the art to black whilst keeping the hull it lies in — a map leaves
-      // as a black shape, and the next arrives as one. See `draw`
-      texNode: vec4(texel.rgb.mul(state.fade.texAmount), texel.a),
+      // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
+      // leaves as a flat shape, and the next arrives as one. See `draw`
+      texNode: vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a),
       uid: generateUUID(),
     };
   }, [w.texFloor.hash]);
@@ -336,6 +336,9 @@ export type State = {
 
 /** How long each stage of the floor's fade takes */
 const floorFadeMs = 300;
+
+/** What a map's floor fades to as it leaves, and arrives as — the page it sits on, so white */
+const fadeColor = vec3(1, 1, 1);
 
 const tmpMat1 = new Mat();
 const tmpPoly = new Poly();

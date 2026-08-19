@@ -1,10 +1,12 @@
 /*
- * Black over the page background whilst a map loads, lifting once its floor is drawn. A layer
- * of the canvas's own background, so the canvas's contents paint above it and the world is
- * unaffected. `@property` is what makes `--world-dark` transitionable, and `inherits` lets it
- * be set on an ancestor — see `dimBackground`. Starts at 1, so the first paint is black.
+ * Flat white over the page background whilst a map loads, lifting once its floor is drawn — the
+ * colour a map's floor itself fades to, so the two agree (see `Floor`'s `fadeColor`; when this
+ * was black the white hulls read as a negative of the world). A layer of the canvas's own
+ * background, so the canvas's contents paint above it and the world is unaffected. `@property`
+ * is what makes it transitionable, and `inherits` lets it be set on an ancestor — see
+ * `dimBackground`. Starts at 1, so the first paint is flat.
  */
-@property --world-dark {
+@property --world-dim {
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
@@ -38,17 +40,17 @@
   --pattern-fg: color(
     from var(--color-zinc-800) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
       calc(b * var(--world-lit)) /
-    calc(0.6 * (1 - var(--world-dark)) * var(--world-stripe))
+    calc(0.6 * (1 - var(--world-dim)) * var(--world-stripe))
   );
   background-image:
-    linear-gradient(rgb(0 0 0 / var(--world-dark)), rgb(0 0 0 / var(--world-dark))),
+    linear-gradient(rgb(255 255 255 / var(--world-dim)), rgb(255 255 255 / var(--world-dim))),
     repeating-linear-gradient(45deg, var(--pattern-fg) 0, var(--pattern-fg) 1px, transparent 0, transparent 50%);
   background-size:
     auto,
     8px 8px;
   background-attachment: fixed;
   transition:
-    --world-dark var(--world-dark-duration, 300ms) ease-in-out,
+    --world-dim var(--world-dim-duration, 300ms) ease-in-out,
     --world-stripe var(--world-stripe-duration, 200ms) ease-out;
 }
 
@@ -78,14 +80,14 @@
 }
 
 /*
- * Black over the canvas whilst the first map's floor arrives, so it fades up rather than
- * appearing whole. Above the canvas contents, unlike `--world-dark`, which is a layer of its
- * background and so cannot cover them. Opaque until then — see `veilCanvas`.
+ * Over the canvas whilst the first map's floor arrives, so it fades up rather than appearing
+ * whole. Above the canvas contents, unlike `--world-dim`, which is a layer of its background and
+ * so cannot cover them. Opaque until then — see `veilCanvas`.
  */
 .world-veil {
   position: absolute;
   inset: 0;
-  background: #000;
+  background: #fff;
   pointer-events: none;
   opacity: var(--world-veil, 1);
   transition: opacity var(--world-veil-duration, 300ms) ease-in-out;

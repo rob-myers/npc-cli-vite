@@ -569,8 +569,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
       },
       dimBackground(darken, durationMs = bgDimMs) {
-        w.rootEl?.style.setProperty("--world-dark-duration", `${durationMs}ms`);
-        w.rootEl?.style.setProperty("--world-dark", `${darken ? 1 : 0}`);
+        w.rootEl?.style.setProperty("--world-dim-duration", `${durationMs}ms`);
+        w.rootEl?.style.setProperty("--world-dim", `${darken ? 1 : 0}`);
         return pause(durationMs);
       },
       freezeCanvas() {
