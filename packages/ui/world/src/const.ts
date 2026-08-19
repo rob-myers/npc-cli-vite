@@ -96,7 +96,15 @@ export const defaultDynamicLightRadius = 3.5;
  */
 export const lightTileSize = 7.5;
 
-export const maxDynamicLightRadius = 4.5;
+/** What the tracked light washes its ground polygon with, inside its black outline */
+export const defaultDynamicLightTint = "#6ea8ff";
+
+/**
+ * Capped by the occupancy window: the light sits somewhere in the centre of `lightTileSize`, so
+ * `radius + falloff` must stay under that for the march never to leave the texture. Raising it
+ * further means a bigger window, or coarser texels across the same one.
+ */
+export const maxDynamicLightRadius = 6.5;
 /** Brightness multiplier (0..1) applied to the dynamic light before combining with room lighting */
 export const defaultDynamicLightIntensity = 1;
 /** Default extent (0..1) of the vignette darkening the corners of the frame */

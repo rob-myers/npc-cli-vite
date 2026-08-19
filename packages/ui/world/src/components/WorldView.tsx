@@ -23,6 +23,7 @@ import {
   defaultCardinalDirectionsMobile,
   defaultVignette,
   lightTileSize,
+  maxDynamicLightRadius,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   wallHeight,
@@ -76,7 +77,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       dynamicLight: createDynamicLightPostprocess({
         bottomHeight: 0,
         topHeight: wallHeight - 0.01, // avoid ceiling aliasing
-        marchSteps: 96,
+        // enough that `marchStepSize` — (maxDynamicLightRadius + falloff) / this — stays well under
+        // `doorHalfDepth`, else the march steps straight over a closed door and lights the far side
+        marchSteps: 136,
         radius: saved.dynamicLightRadius,
         intensity: saved.dynamicLightIntensity,
       }),
@@ -728,17 +731,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const brightColor = colorBleeding(sceneColor, uniform(0.0025)).mul(vec3(1), sceneColor.a);
 
         const litEffect = Fn(() => {
-          const dynamicLitAmount = state.dynamicLight.litAmount(sceneDepth.r).mul(state.dynamicLight.intensity);
+          // a flat shape lying on the floor, rather than light falling on whatever it touches —
+          // the march gives its outline, walls and doors included
+          const insidePolygon = state.dynamicLight.litPolygon(sceneDepth.r);
 
           const isBright = state.roomLight
             .litAmount(sceneDepth.r)
             // lit rooms start darkening when intensity low
             .mul(select(state.unlitScale.lessThan(0.25), state.unlitScale.div(0.25), 1))
             .mul(state.roomLightIntensity)
-            .max(dynamicLitAmount)
             .toVar(); // reused by the vignette below
 
           const color = mix(sceneColor.rgb.mul(state.unlitScale), brightColor, isBright).toVar();
+
+          // blended TOWARDS the tint rather than multiplied by it, so it still reads at ambient 0,
+          // where the world beneath is black and a multiply would vanish
+          const tintAmount = state.dynamicLight.intensity;
+          color.assign(mix(color, state.dynamicLight.tint, insidePolygon.mul(dynamicFillMix).mul(tintAmount)));
 
           color.assign(applyVignette(color, state.fx.vignette, isBright));
 
@@ -856,19 +865,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.syncLightDoors(originX, originZ);
       },
       syncLightDoors(originX, originZ) {
-        const { radius, tileWorldSize } = state.dynamicLight;
+        const { tileWorldSize } = state.dynamicLight;
         const tileKey = `${originX},${originZ}` as const;
 
         // cache reachable doors (could sort by distance)
         let doors = state.light.doorsByTile.get(tileKey);
         if (doors === undefined) {
-          const reach = radius + lightDoorMargin + lightTileSize * Math.SQRT1_2;
+          // the MAX radius, not the current one: this is cached per tile, so a door dropped here
+          // would stay dropped after the slider grew
+          const reach = maxDynamicLightRadius + lightDoorMargin + lightTileSize * Math.SQRT1_2;
           const centreX = originX + tileWorldSize / 2;
           const centreZ = originZ + tileWorldSize / 2;
-          doors = state.light.tileDoors.filter(
-            (door) =>
-              Math.hypot(centreX - (door.src.x + door.dst.x) / 2, centreZ - (door.src.y + door.dst.y) / 2) <= reach,
-          );
+          const distanceTo = (door: (typeof state.light.tileDoors)[number]) =>
+            Math.hypot(centreX - (door.src.x + door.dst.x) / 2, centreZ - (door.src.y + door.dst.y) / 2);
+          // nearest first, because `setDoors` keeps only as many as it has slots
+          doors = state.light.tileDoors
+            .filter((door) => distanceTo(door) <= reach)
+            .sort((a, b) => distanceTo(a) - distanceTo(b));
           state.light.doorsByTile.set(tileKey, doors);
         }
 
@@ -1218,6 +1231,9 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
+
+/** How much of `tint` washes over what that outline encloses */
+const dynamicFillMix = 0.05;
 
 /** What the background stripes' alpha is scaled by whilst the camera moves */
 const movingStripeAlpha = 0.3;

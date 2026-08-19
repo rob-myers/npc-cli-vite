@@ -2,6 +2,7 @@ import {
   Break,
   Fn,
   float,
+  fwidth,
   getViewPosition,
   If,
   int,
@@ -9,6 +10,7 @@ import {
   logarithmicDepthToViewZ,
   rtt,
   screenUV,
+  smoothstep,
   texture,
   uniform,
   uniformArray,
@@ -21,6 +23,7 @@ import * as THREE from "three/webgpu";
 import {
   defaultDynamicLightIntensity,
   defaultDynamicLightRadius,
+  defaultDynamicLightTint,
   lightTileSize,
   maxDynamicLightRadius,
 } from "../const";
@@ -59,6 +62,8 @@ export type DynamicLightPostprocess = {
   doorInstanceIds: number[];
   /** Persisted brightness multiplier uniform */
   intensity: THREE.UniformNode<"float", number>;
+  /** What its ground polygon is washed with, inside its outline — see `WorldView` */
+  tint: THREE.UniformNode<"color", THREE.Color>;
 
   /** Feed the real scene camera (not the internal post-processing quad camera) */
   update(camera: THREE.Camera): void;
@@ -107,10 +112,11 @@ export type DynamicLightPostprocess = {
   setDoorRatios(ratios: ArrayLike<number>): void;
 
   /**
-   * `1` at the tracked npc, fading uniformly to `0` at `radius + falloff`; `0` if occluded.
+   * Coverage of the ground polygon the tracked npc can see — `1` within it, `0` without, with
+   * a pixel of easing between.
    * @param sceneDepth Raw logarithmic depth (not pre-linearized).
    */
-  litAmount(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
+  litPolygon(sceneDepth: THREE.Node<"float">): THREE.Node<"float">;
 
   /** Debug inspection only (see WorldMenu's "Light Map" modal) */
   debug: {
@@ -123,8 +129,6 @@ export type DynamicLightPostprocess = {
 /** Ignores rooms, occludes only against baked wall/door textures via a fixed-step march. */
 export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts): DynamicLightPostprocess {
   const falloff = opts.falloff ?? 0.6;
-  /** Width (meters) of the dither applied to the falloff distance — match the visible banding */
-  const ditherWorldDist = 0.25;
   const bottomHeight = opts.bottomHeight ?? 0;
   const topHeight = opts.topHeight;
   const wallTexSize = opts.wallTexSize ?? 512;
@@ -140,6 +144,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
   // own surface (which sits right on that door's own occlusion segment) always self-samples its own
   // occlusion stroke and reads as fully occluded regardless of the light's radius/falloff.
   const marchSurfaceBias = doorHalfDepth;
+  /** How far above `bottomHeight` still counts as the floor — see `litPolygon` */
+  const groundEpsilon = 0.05;
   /** The window is this many metres square, covering the light plus a whole tile margin */
   const tileWorldSize = lightTileSize * 3;
 
@@ -255,9 +261,10 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
     radius: initialRadius,
     doorInstanceIds: [],
     intensity: uniform(initialIntensity),
+    tint: uniform(new THREE.Color(defaultDynamicLightTint)),
 
-    litAmount(sceneDepth) {
-      return Fn(() => {
+    litPolygon(sceneDepth) {
+      const reachNode = Fn(() => {
         const viewZ = logarithmicDepthToViewZ(sceneDepth, camNear, camFar);
         // depthWrite:false surfaces (e.g. floor) read back as far-plane
         const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
@@ -280,22 +287,16 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
           worldY.assign(realWorldPos.y);
         });
 
-        const inHeightRange = worldY.greaterThanEqual(float(bottomHeight)).and(worldY.lessThanEqual(float(topHeight)));
+        // the floor alone: this reads as a shape lying there, not as light falling on things
+        const onGround = worldY.lessThanEqual(float(bottomHeight).add(groundEpsilon));
 
-        const litOut = float(0).toVar();
-        If(tracked.z.notEqual(0).and(inHeightRange), () => {
+        const reach = float(0).toVar();
+
+        If(tracked.z.notEqual(0).and(onGround), () => {
           const dist = worldXZ.sub(tracked.xy).length();
-          // the light is a fraction of the final colour, so 8-bit output quantises this gentle
-          // gradient into wide rings — jitter the distance by ~one ring to dissolve them
-          const jitter = screenUV
-            .dot(vec2(12.9898, 78.233))
-            .sin()
-            .mul(43758.5453)
-            .fract()
-            .sub(0.5)
-            .mul(ditherWorldDist);
+          const span = tracked.w.add(falloff);
           // uniform fade from the tracked npc out to the edge, rather than a flat core
-          const litVal = float(1).sub(dist.add(jitter).div(tracked.w.add(falloff)).clamp(0, 1));
+          const litVal = float(1).sub(dist.div(span).clamp(0, 1));
 
           If(litVal.greaterThan(0), () => {
             // step positions stay a FRACTION of this ray's own `dist` (like the original fixed-count
@@ -309,7 +310,8 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
             const marchTargetDist = dist.sub(marchSurfaceBias).max(0);
             const targetFrac = marchTargetDist.div(dist.max(0.0001));
             const effectiveSteps = marchTargetDist.div(marchStepSize).ceil().clamp(1, marchSteps);
-            const maxOccupancy = float(0).toVar();
+            const occupancy = float(0).toVar();
+
             Loop(marchSteps, ({ i }) => {
               If(float(i).greaterThanEqual(effectiveSteps), () => {
                 Break();
@@ -317,19 +319,22 @@ export function createDynamicLightPostprocess(opts: DynamicLightPostprocessOpts)
               const t = float(i).add(1).div(effectiveSteps).mul(targetFrac);
               const stepX = tracked.x.add(worldXZ.x.sub(tracked.x).mul(t));
               const stepZ = tracked.y.add(worldXZ.y.sub(tracked.y).mul(t));
-              maxOccupancy.assign(maxOccupancy.max(sampleOccupancy(stepX, stepZ)));
-              If(maxOccupancy.greaterThanEqual(0.5), () => {
-                maxOccupancy.assign(1);
+              occupancy.assign(occupancy.max(sampleOccupancy(stepX, stepZ)));
+              If(occupancy.greaterThanEqual(0.5), () => {
+                occupancy.assign(1);
                 Break();
               });
             });
 
-            litOut.assign(litVal.mul(float(1).sub(maxOccupancy.clamp(0, 1))));
+            reach.assign(litVal.mul(float(1).sub(occupancy.clamp(0, 1))));
           });
         });
 
-        return litOut;
-      })();
+        return reach;
+      })().toVar();
+
+      // an even shape with a crisp edge rather than the raw falloff, eased over one pixel
+      return smoothstep(0, fwidth(reachNode).max(0.0001), reachNode);
     },
     nextTileOrigin(x, z, force = false) {
       const tileX = Math.floor(x / lightTileSize);
