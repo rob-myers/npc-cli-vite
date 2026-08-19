@@ -22,24 +22,16 @@
   initial-value: 1;
 }
 
-/* The ambient intensity, mirroring `getBackgroundColor`'s mix towards black */
-@property --world-lit {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
 .world-background {
   /*
-   * Dimmed by the ambient intensity, and faded out whilst a map loads so the stripes dissolve
-   * rather than being buried by the black above them. Scaling the channels in `srgb-linear` is
-   * what mixing towards black amounts to, so the stripes track the background colour beneath.
-   * Relative colour rather than `color-mix`, whose percentage argument rejects a `calc()` over
-   * a `var()`; substituted afresh on every frame of a transition either way.
+   * Faded out whilst a map loads, so the stripes dissolve rather than being buried by the flat
+   * colour above them, and again whilst the camera moves — see `--world-stripe`. NOT dimmed by
+   * the ambient: the page is behind the canvas rather than part of the world, and following the
+   * ambient took the stripes away entirely at 0. Relative colour rather than `color-mix`, whose
+   * percentage argument rejects a `calc()` over a `var()`.
    */
   --pattern-fg: color(
-    from var(--color-zinc-800) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
-      calc(b * var(--world-lit)) /
+    from var(--color-zinc-800) srgb-linear r g b /
     calc(0.6 * (1 - var(--world-dim)) * var(--world-stripe))
   );
   background-image:
