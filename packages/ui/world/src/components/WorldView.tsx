@@ -14,7 +14,6 @@ import useMeasure from "react-use-measure";
 import { colorBleeding } from "three/addons/tsl/display/CRT.js";
 import { Fn, float, instanceIndex, mix, mrt, output, pass, select, uniform, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import type { WorldTheme } from "../assets.schema";
 import {
   cameraFov,
   cameraRefAspect,
@@ -980,13 +979,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     <div className="size-full" ref={ref}>
       <Canvas
         className={props.className}
-        style={
-          {
-            filter: `brightness(${w.brightness})`,
-            backgroundColor: getBackgroundColor(w.getTheme(), state.ambientIntensity),
-            "--world-lit": state.ambientIntensity,
-          } as React.CSSProperties
-        }
+        // the page behind the canvas keeps the theme's own colour whatever the ambient is — see
+        // `World`'s className. Dimming it with the world made the stripes vanish at ambient 0
+        style={{ filter: `brightness(${w.brightness})` }}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
@@ -1223,11 +1218,6 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
-
-function getBackgroundColor(theme: WorldTheme, ambientIntensity: number) {
-  const color = theme.background.match(/^bg-\[(.+)\]$/)?.[1];
-  return color === undefined ? undefined : `color-mix(in srgb-linear, ${color} ${ambientIntensity * 100}%, #000)`;
-}
 
 /** What the background stripes' alpha is scaled by whilst the camera moves */
 const movingStripeAlpha = 0.3;

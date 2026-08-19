@@ -46052,10 +46052,10 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-[#fff]",
+      "background": "bg-[#aaa]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#000", "stroke": "#4449"}
+        "nonHull": {"fill": "#000", "stroke": "#111"}
       },
       "floor": {
         "hullFill": "#1110",
@@ -46064,7 +46064,7 @@
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},
-      "obstacles": {"brightness": 1},
+      "obstacles": {"brightness": 1.5},
       "doors": {"brightness": 1.5},
       "walls": {"color": "#000", "opacity": 0.35}
     }
