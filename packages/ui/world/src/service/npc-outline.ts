@@ -1,4 +1,4 @@
-import { float, mix, screenSize, screenUV, step, vec2, vec3 } from "three/tsl";
+import { float, mix, screenSize, screenUV, step, vec2, vec3, vec4 } from "three/tsl";
 import type * as THREE from "three/webgpu";
 
 /**
@@ -11,13 +11,16 @@ import type * as THREE from "three/webgpu";
  * @param npcMask `1` where an npc body won the depth test, `0` elsewhere
  * @param sceneDepth Raw logarithmic depth, as `litAmount` takes — only compared, never linearized
  * @param amount `0` is exactly identity, `1` fully applies it — see `w.view.fx`
+ * @returns the outlined colour, with how strongly the outline landed in `a` — the caller owes
+ * that much alpha to the canvas, else the page shows through wherever the outline sits over a
+ * gap in the floor, which is where the scene wrote no alpha of its own
  */
 export function applyNpcOutline(
   color: THREE.Node<"vec3">,
   npcMask: THREE.TextureNode,
   sceneDepth: THREE.TextureNode,
   amount: THREE.Node<"float">,
-): THREE.Node<"vec3"> {
+): THREE.Node<"vec4"> {
   const onNpcHere = step(0.5, npcMask.r);
   const depthHere = sceneDepth.r;
   const texel = vec2(1, 1).div(screenSize).mul(outlineWidthPx);
@@ -35,7 +38,8 @@ export function applyNpcOutline(
   }
 
   // only just *outside* the silhouette, so an npc is never painted over
-  return mix(color, vec3(0, 0, 0), edge.mul(onNpcHere.oneMinus()).mul(amount));
+  const outline = edge.mul(onNpcHere.oneMinus()).mul(amount);
+  return vec4(mix(color, vec3(0, 0, 0), outline), outline);
 }
 
 /** Half-width (px) of the border, i.e. how far out we look for npc pixels */
