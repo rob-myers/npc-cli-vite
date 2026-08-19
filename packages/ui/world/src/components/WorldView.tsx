@@ -31,7 +31,7 @@ import { applyNpcOutline } from "../service/npc-outline";
 import { decodePick } from "../service/pick";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
-import { applyVignette } from "../service/vignette";
+import { applyVignette, createVignetteFocus, type VignetteFocus } from "../service/vignette";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -92,6 +92,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // each is 0..1, driving a `mix` so 0 is exactly identity
       fx: mapValues(fxDefaults, (value, key) => uniform(saved.fx[key] ?? value)),
       raycaster: new THREE.Raycaster(),
+      vignetteFocus: createVignetteFocus(),
 
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
@@ -239,8 +240,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
       onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
-        const _camera = state.controls?.object ?? w.r3f.camera;
+        const camera = state.controls?.object ?? w.r3f.camera;
+        state.vignetteFocus.update(camera);
         state.fadeStripes();
+      },
+      syncVignetteFocus() {
+        // the player, not the camera target: the vignette spares where they stand, wherever the
+        // view happens to be pointed
+        const player = w.n[w.player?.key ?? ""];
+        state.vignetteFocus.setCentre(player === undefined ? null : player.position);
       },
       fadeStripes() {
         // a timer rather than the controls' `end` event, so a programmatic pan — the intro, say —
@@ -613,7 +621,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const litEffect = Fn(() => {
           const color = sceneColor.rgb.toVar();
 
-          color.assign(applyVignette(color, state.fx.vignette, float(0)));
+          color.assign(applyVignette(color, state.fx.vignette, state.vignetteFocus.amount(sceneDepth.r)));
 
           const alpha = sceneColor.a.toVar();
 
@@ -826,6 +834,10 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
+  /** The cylinder of world the vignette leaves alone — see `createVignetteFocus` */
+  vignetteFocus: VignetteFocus;
+  /** Stands that cylinder on the player — called every tick from `World`'s `onTick` */
+  syncVignetteFocus(): void;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
   /** Debounced resize + key events */

@@ -32,7 +32,7 @@
    */
   --pattern-fg: color(
     from var(--color-zinc-800) srgb-linear r g b /
-    calc(0.6 * (1 - var(--world-dim)) * var(--world-stripe))
+    calc(0.8 * (1 - var(--world-dim)) * var(--world-stripe))
   );
   background-image:
     linear-gradient(rgb(255 255 255 / var(--world-dim)), rgb(255 255 255 / var(--world-dim))),

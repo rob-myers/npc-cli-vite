@@ -46055,12 +46055,12 @@
       "background": "bg-[#aaa]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#000", "stroke": "#6666"}
+        "nonHull": {"fill": "#0002", "stroke": "#6662"}
       },
       "floor": {
         "hullFill": "#1110",
         "navStroke": "#000a",
-        "patternFill": "#aaa",
+        "patternFill": "#666",
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},
