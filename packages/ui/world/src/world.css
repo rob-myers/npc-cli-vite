@@ -10,6 +10,16 @@
   initial-value: 1;
 }
 
+/*
+ * Scales the stripes' alpha down whilst the camera moves, where they are busiest against the
+ * world sliding past — see `fadeStripes`. `1` at rest.
+ */
+@property --world-stripe {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
 /* The ambient intensity, mirroring `getBackgroundColor`'s mix towards black */
 @property --world-lit {
   syntax: "<number>";
@@ -28,7 +38,7 @@
   --pattern-fg: color(
     from var(--color-zinc-800) srgb-linear calc(r * var(--world-lit)) calc(g * var(--world-lit))
       calc(b * var(--world-lit)) /
-    calc(0.6 * (1 - var(--world-dark)))
+    calc(0.6 * (1 - var(--world-dark)) * var(--world-stripe))
   );
   background-image:
     linear-gradient(rgb(0 0 0 / var(--world-dark)), rgb(0 0 0 / var(--world-dark))),
@@ -37,7 +47,9 @@
     auto,
     8px 8px;
   background-attachment: fixed;
-  transition: --world-dark var(--world-dark-duration, 300ms) ease-in-out;
+  transition:
+    --world-dark var(--world-dark-duration, 300ms) ease-in-out,
+    --world-stripe var(--world-stripe-duration, 200ms) ease-out;
 }
 
 /*

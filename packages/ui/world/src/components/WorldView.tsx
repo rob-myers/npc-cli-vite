@@ -84,6 +84,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       dynamicLightTarget: null,
       initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
+      stripesFaded: false,
+      stripeTimer: 0,
       prevVignette: null,
       vignetteAnimId: 0,
       shiftDownMs: 0,
@@ -272,6 +274,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const camera = state.controls?.object ?? w.r3f.camera;
         state.roomLight.update(camera);
         state.dynamicLight.update(camera);
+        state.fadeStripes();
+      },
+      fadeStripes() {
+        // a timer rather than the controls' `end` event, so a programmatic pan — the intro, say —
+        // brings them back too. This runs per frame whilst the camera moves, hence the guard
+        if (state.stripesFaded === false) {
+          state.stripesFaded = true;
+          w.rootEl?.style.setProperty("--world-stripe", `${movingStripeAlpha}`);
+        }
+        clearTimeout(state.stripeTimer);
+        state.stripeTimer = window.setTimeout(() => {
+          state.stripesFaded = false;
+          w.rootEl?.style.setProperty("--world-stripe", "1");
+        }, stripeRestoreMs);
       },
       onCameraEnd() {
         const cameraInitial: PersistedCamera = {
@@ -1161,6 +1177,12 @@ export type State = {
   lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number; height?: number }): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
+  /** Are the background stripes currently faded down, the camera having moved? */
+  stripesFaded: boolean;
+  /** Pending restore, restarted by every camera change — see `fadeStripes` */
+  stripeTimer: number;
+  /** Fades the stripes down whilst the camera moves, and back once it has been still */
+  fadeStripes(): void;
   /** Points the light at its own `displayCenter`, recentring the window and its doors as needed */
   commitLightCentre(): void;
   /** Redraws the world-space occupancy window if the light has left its middle super-tile */
@@ -1206,6 +1228,11 @@ function getBackgroundColor(theme: WorldTheme, ambientIntensity: number) {
   const color = theme.background.match(/^bg-\[(.+)\]$/)?.[1];
   return color === undefined ? undefined : `color-mix(in srgb-linear, ${color} ${ambientIntensity * 100}%, #000)`;
 }
+
+/** What the background stripes' alpha is scaled by whilst the camera moves */
+const movingStripeAlpha = 0.3;
+/** How still the camera must be before they come back */
+const stripeRestoreMs = 250;
 
 /** How long the vignette takes to reach max whilst the extra zoom locks, and to come back */
 const vignetteFocusMs = 300;
