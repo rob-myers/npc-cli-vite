@@ -208,6 +208,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.door.onTick(delta);
         state.npc.onTick(delta);
         state.speech?.onTick(delta);
+        state.view.syncVignetteFocus();
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
