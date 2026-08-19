@@ -72,7 +72,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 /** Vertical field of view (degrees) of the world camera, up to `cameraRefAspect` */
-export const cameraFov = 30;
+export const cameraFov = 60;
 
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;

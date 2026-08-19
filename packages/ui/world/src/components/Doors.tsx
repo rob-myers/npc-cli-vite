@@ -4,7 +4,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultDoorOpacity, lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
+import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -20,7 +20,6 @@ export default function Doors() {
       animTargets: new Map(),
       box: createDoorBox(),
       brightnessNode: uniform(1),
-      opacity: uniform(defaultDoorOpacity),
       builtMapKey: null,
       byKey: {},
       labelToLayer: new Map(),
@@ -474,10 +473,9 @@ export default function Doors() {
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
-    const edge = new THREE.MeshStandardNodeMaterial({ color: "#333", alphaToCoverage: true });
+    const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
 
-    // biome-ignore format: reads better as one line
-    const panelOpts = { metalness: 0.5, roughness: 0.25, side: THREE.FrontSide, transparent: false, depthWrite: true, alphaToCoverage: true };
+    const panelOpts = { metalness: 0.5, roughness: 0.25, side: THREE.FrontSide, transparent: false, depthWrite: true };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
 
@@ -487,14 +485,9 @@ export default function Doors() {
     const cs = float(1).sub(openRatio);
     const collapsedX = positionLocal.x.mul(cs).add(slideSign.mul(openRatio).mul(0.5));
 
-    // MSAA does the transparency: `alphaToCoverage` turns opacity into how many of a fragment's
-    // samples it covers, from the fixed sample pattern `antialias: true` gives us. So the doors
-    // stay in the OPAQUE pass — depth sorts them exactly, against each other and under the walls
-    // — with none of a dither's grain, and nothing that shifts when the canvas resizes
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
       mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
-      mat.opacityNode = state.opacity;
     }
 
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
@@ -551,8 +544,6 @@ export type State = {
   animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
   brightnessNode: THREE.UniformNode<"float", number>;
-  /** How solid a door looks — tweak live via `w.door.opacity.value` */
-  opacity: THREE.UniformNode<"float", number>;
   /** Which map `byKey` describes, so a rebuild knows whether its live state still applies */
   builtMapKey: null | string;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };

@@ -66,8 +66,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: 20,
-        maxDistance: 20,
+        minDistance: 10,
+        maxDistance: 10,
         extraZoom: 2,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
@@ -134,8 +134,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const renderer = new THREE.WebGPURenderer({
           canvas,
-          // alpha `false` so doors opacity (MSAA) doesn't include background
-          alpha: false,
+          alpha: true,
           antialias: true,
           logarithmicDepthBuffer: true,
           powerPreference: "high-performance",
