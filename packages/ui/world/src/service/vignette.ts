@@ -15,6 +15,7 @@ import {
   viewZToPerspectiveDepth,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { wallHeight } from "../const";
 
 /**
  * Darkens `color` towards the corners of the frame.
@@ -57,8 +58,9 @@ export type VignetteFocus = {
  * A cylinder of world standing on the player, which the vignette leaves alone — so they read
  * even when the frame's edges are crushed, as the tracked light used to ensure.
  *
- * A CYLINDER, not a sphere: only the fragment's world XZ is compared, so the exemption reaches
- * from the floor to the top of whatever stands there, rather than fading out up a wall.
+ * A CYLINDER, not a sphere: the fragment's world XZ decides how near the player it is, and its
+ * world Y only whether it falls under the cylinder's lid — so the exemption holds all the way up
+ * a wall beside them rather than fading out, but stops at `focusHeight` and spares no ceiling.
  */
 export function createVignetteFocus(): VignetteFocus {
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
@@ -93,6 +95,7 @@ export function createVignetteFocus(): VignetteFocus {
         const isBackground = viewZ.negate().greaterThan(camFar.mul(0.99));
 
         const worldXZ = vec2(0, 0).toVar();
+        const worldY = float(0).toVar();
 
         If(isBackground, () => {
           // nothing was drawn here, so take where this pixel's ray meets the ground instead
@@ -103,11 +106,16 @@ export function createVignetteFocus(): VignetteFocus {
         }).Else(() => {
           const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
           const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
-          worldXZ.assign(camWorldMatrix.mul(vec4(viewPos, 1.0)).xyz.xz);
+          const worldPos = camWorldMatrix.mul(vec4(viewPos, 1.0)).xyz;
+          worldXZ.assign(worldPos.xz);
+          worldY.assign(worldPos.y);
         });
 
         const dist = worldXZ.sub(centre.xy).length();
-        return smoothstep(focusRadius, focusRadius - focusFeather, dist).mul(centre.z);
+        const withinRadius = smoothstep(focusRadius, focusRadius - focusFeather, dist);
+        // eased over the last few centimetres, else the lid is a hard line across a wall
+        const underLid = smoothstep(focusHeight, focusHeight - focusLidFeather, worldY);
+        return withinRadius.mul(underLid).mul(centre.z);
       })();
     },
   };
@@ -116,3 +124,6 @@ export function createVignetteFocus(): VignetteFocus {
 /** Radius (metres) of the cylinder the vignette leaves alone, and how far its edge eases over */
 const focusRadius = 3;
 const focusFeather = 1.5;
+/** Its lid: just under the walls, so what stands beside the player is spared but no ceiling is */
+const focusHeight = wallHeight - 0.1;
+const focusLidFeather = 0.1;

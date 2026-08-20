@@ -7,7 +7,7 @@ import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import { attribute, instanceIndex, int, mix, texture, transformNormalToView, uniform, uv, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { emptyMapDef, MAX_GEOMORPH_INSTANCES } from "../const";
+import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -148,11 +148,10 @@ export default function Floor() {
         w.update();
       },
       async fadeOut() {
-        // the world folds onto the floor as its art goes
-        await Promise.all([state.fadeTo(0), w.foldTo(0)]);
-        // the folded world is held on screen whilst the next map loads, and the background
-        // goes black unseen beneath it, ready for the gaps in the next map's floor
-        w.view.freezeCanvas();
+        // a map change is a fade through black — the world stays standing, so there is no fold
+        // to play out and nothing to hold on screen whilst the next map loads
+        await w.view.veilCanvas(true, mapVeilMs);
+        // the background goes black unseen beneath it, ready for the gaps in the next map's floor
         void w.view.dimBackground(true, 0);
       },
       fadeTo(to, ms = floorFadeMs) {
@@ -195,19 +194,20 @@ export default function Floor() {
         if (state.drawnGmsHash === w.gmsHash) return;
         state.drawnGmsHash = w.gmsHash;
         if (state.drawnMapKey === w.mapKey) return;
+        // only the FIRST map unfolds; a change fades through black with the world left standing
+        const firstMap = state.drawnMapKey === null;
         state.drawnMapKey = w.mapKey;
 
-        state.fade.texAmount.value = 0; // arrives flat, whatever it was
-        w.setWorldFold(0); // with the rest of the world flat until the map has settled
+        if (firstMap === true) {
+          state.fade.texAmount.value = 0; // arrives flat, whatever it was
+          w.setWorldFold(0); // with the rest of the world flat until the map has settled
+        }
         state.drawHulls(w.gms);
-        // only once a frame holding them has been rendered, so they arrive whole. The first
-        // map has no held frame to cross-fade from, so it simply fades up from black
-        requestAnimationFrame(() =>
-          requestAnimationFrame(async () => {
-            await w.view.unfreezeCanvas();
-            await w.view.veilCanvas(false);
-          }),
-        );
+
+        if (firstMap === true) {
+          // only once a frame holding them has been rendered, so they arrive whole
+          requestAnimationFrame(() => requestAnimationFrame(() => void w.view.veilCanvas(false)));
+        }
       },
       /** Clear the shared canvas and put it in this geomorph's local coords */
       startGm(gmId, gms = w.gms) {
@@ -338,7 +338,8 @@ export type State = {
 const floorFadeMs = 300;
 
 /** What a map's floor fades to as it leaves, and arrives as — the page it sits on, so white */
-const fadeColor = vec3(1, 1, 1);
+/** What a folded map shows in place of its art: the hull as a flat black shape */
+const fadeColor = vec3(0, 0, 0);
 
 const tmpMat1 = new Mat();
 const tmpPoly = new Poly();

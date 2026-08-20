@@ -32,10 +32,12 @@
    */
   --pattern-fg: color(
     from var(--color-zinc-800) srgb-linear r g b /
-    calc(0.8 * (1 - var(--world-dim)) * var(--world-stripe))
+    calc(0.4 * (1 - var(--world-dim)) * var(--world-stripe))
   );
   background-image:
-    linear-gradient(rgb(255 255 255 / var(--world-dim)), rgb(255 255 255 / var(--world-dim))),
+    /* black whilst a map changes over, matching the hull each map arrives as — so the held frame
+     * cross-fades to the next one without either shape showing against a lit page */
+    linear-gradient(rgb(0 0 0 / var(--world-dim)), rgb(0 0 0 / var(--world-dim))),
     repeating-linear-gradient(45deg, var(--pattern-fg) 0, var(--pattern-fg) 1px, transparent 0, transparent 50%);
   background-size:
     auto,
@@ -79,7 +81,8 @@
 .world-veil {
   position: absolute;
   inset: 0;
-  background: #fff;
+  /* black, matching the hull the first map arrives as, so the veil hands over to it unseen */
+  background: #000;
   pointer-events: none;
   opacity: var(--world-veil, 1);
   transition: opacity var(--world-veil-duration, 300ms) ease-in-out;
