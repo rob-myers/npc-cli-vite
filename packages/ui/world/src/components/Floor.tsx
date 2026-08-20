@@ -88,7 +88,7 @@ export default function Floor() {
         // 🔔 draw nav mesh: gmId specific
         ct.lineJoin = "round";
         ct.lineWidth = 0.01;
-        const fillStyle = "#ffd1";
+        const fillStyle = "#fff1";
         const strokeStyle = w.getTheme().floor.navStroke;
         const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
         (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {

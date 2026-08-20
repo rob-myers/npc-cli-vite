@@ -89,9 +89,13 @@ class ExtraZoom {
   }
 
   /**
-   * Zooming all the way in locks there, so the view holds rather than tweening back out. It can
-   * only do so again once the zoom has backed off `autoLockReleaseFrom` of the way, or the manual
-   * unlock would be undone on the very next frame.
+   * A little way into the extra zoom the view locks itself, so it holds where it was put rather
+   * than tweening back out. Measured from the TOP of the range — going in at all is the intent,
+   * so the tween-back should stop fighting it straight away.
+   *
+   * Locked still zooms IN, see `dollyIn`; it is only the springing back that stops. Coming back
+   * out is the deliberate gesture that unlocks, and the lock cannot re-arm until the view has
+   * risen past `autoLockReleaseFrom`, or a manual unlock would be undone on the very next frame.
    */
   syncAutoLock(radius: number) {
     if (this.active === false) {
@@ -99,12 +103,12 @@ class ExtraZoom {
       return;
     }
     const range = this._ctrl.minDistance - this.minR;
-    if (radius <= this.minR + range * autoLockFrom) {
+    if (radius <= this._ctrl.minDistance - range * autoLockFrom) {
       if (this._autoLocked === false) {
         this._autoLocked = true;
         this.setTapLock(true);
       }
-    } else if (radius > this.minR + range * autoLockReleaseFrom) {
+    } else if (radius > this._ctrl.minDistance - range * autoLockReleaseFrom) {
       this._autoLocked = false;
     }
   }
@@ -212,6 +216,30 @@ class ExtraZoom {
     if (spherical.radius >= ctrl.minDistance) {
       this.setActive(false);
     }
+  }
+
+  /**
+   * Once locked the view carries on in to the FULL extra zoom by itself, the mirror of
+   * `applyTween`'s spring back out. Each frame dispatches a change, which invalidates the
+   * frameloop, so the dive keeps going whilst the world is paused — nothing else is rendering.
+   */
+  applyLockDive(spherical: THREE.Spherical, u: CameraControls["u"]) {
+    const ctrl = this._ctrl;
+    const remaining = spherical.radius - this.minR;
+    if (remaining <= lockDiveUntil) {
+      spherical.radius = this.minR; // arrived: no change dispatched, so the frames can stop
+      return;
+    }
+    const step = Math.max(remaining * lockDiveRate, lockDiveUntil);
+    if (u.dollyDirection.lengthSq() > 0) {
+      // wheel/mouse: drive via `handleZoomToCursor`, so it keeps diving towards the cursor
+      u.scale = (spherical.radius - step) / spherical.radius;
+      u.zoomingToCursor = true;
+    } else {
+      // touch: apply the step directly — `u.scale` is reset before the next run
+      spherical.radius = Math.max(this.minR, spherical.radius - step);
+    }
+    ctrl.dispatchEvent(changeEvent); // keep the frame chain alive through the dive
   }
 
   applyTween(spherical: THREE.Spherical, u: CameraControls["u"]) {
@@ -457,9 +485,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this._ez.clearTimers();
   }
 
-  /** Gated by `_ez.zoomLocked`, covering every zoom entry point. `applyTween` bypasses these. */
+  /**
+   * Zooming further IN stays open whilst locked — the lock arms almost as soon as the extra zoom
+   * begins, so gating this would strand the view at the top of the range. Zooming OUT is gated:
+   * it is the gesture that unlocks, accumulated by `advanceUnlock`. `applyTween` bypasses both.
+   */
   dollyIn(dollyScale: number) {
-    if (this._ez.zoomLocked === true) return;
     this.u.scale = this.u.scale * dollyScale;
   }
 
@@ -1288,13 +1319,14 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this._ez.setDeep(this._ez.active === true && this.spherical.radius <= deepFrom);
     this._ez.syncAutoLock(this.spherical.radius);
 
-    if (
-      this._ez.active &&
-      this._ez.zoomLocked === false &&
-      this._ez._activeTimer === undefined &&
-      this.pointers.length === 0
-    ) {
-      this._ez.applyTween(this.spherical, u);
+    // left alone mid-gesture: the spring back out and the dive in are both what happens once the
+    // user lets go — see `applyTween` and `applyLockDive`
+    if (this._ez.active && this._ez._activeTimer === undefined && this.pointers.length === 0) {
+      if (this._ez.zoomLocked === false) {
+        this._ez.applyTween(this.spherical, u);
+      } else {
+        this._ez.applyLockDive(this.spherical, u);
+      }
     }
 
     this.u.offset.setFromSpherical(this.spherical);
@@ -1371,10 +1403,14 @@ const unlockPinchLog = 0.25;
 /** A gap this long means the gesture stopped, so its travel no longer counts */
 const unlockPauseMs = 400;
 
-/** How near the limit the zoom must be to lock itself, as a fraction of the extra zoom range */
-const autoLockFrom = 0.02;
-/** And how far back out it must come before it may do so again */
-const autoLockReleaseFrom = 0.5;
+/** Per-frame share of the way to full extra zoom the lock's dive takes, and when it is done */
+const lockDiveRate = 0.05;
+const lockDiveUntil = 0.02;
+
+/** How far INTO the extra zoom the view must come to lock itself, as a fraction of its range */
+const autoLockFrom = 0.05;
+/** And how near the top it must return before it may do so again */
+const autoLockReleaseFrom = 0.01;
 
 /** How far through the extra zoom range before it counts as deep */
 const extraZoomDeepFrom = 0.5;
