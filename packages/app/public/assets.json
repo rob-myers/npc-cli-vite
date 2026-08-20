@@ -653,6 +653,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2
           }
@@ -14031,6 +14032,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2
           }
@@ -20208,6 +20210,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2,
             "transform": [1, 0, 0, 1, 9.0125, 1.5125]
@@ -36911,7 +36914,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -39753,6 +39756,7 @@
               "obstacle": true,
               "table": true,
               "y": 0.81,
+              "inset": 0.025,
               "symKey": "bridge--042",
               "origObstacleId": 2
             }
@@ -39771,6 +39775,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2
           }
@@ -46069,5 +46074,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 955039705}
+  "hash": {"obstacles": 213019411}
 }
