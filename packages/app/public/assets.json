@@ -46052,21 +46052,21 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-[#aaa]",
+      "background": "bg-[#fff]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#0002", "stroke": "#6662"}
+        "nonHull": {"fill": "#222", "stroke": "#000"}
       },
       "floor": {
         "hullFill": "#1110",
         "navStroke": "#000a",
-        "patternFill": "#666",
+        "patternFill": "#555",
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},
       "obstacles": {"brightness": 1.5},
       "doors": {"brightness": 1.5},
-      "walls": {"color": "#000", "opacity": 0.25}
+      "walls": {"color": "#000", "opacity": 0.35}
     }
   },
   "hash": {"obstacles": 955039705}

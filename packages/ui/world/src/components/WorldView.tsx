@@ -58,8 +58,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: 15,
-        maxDistance: 15,
+        minDistance: 13,
+        maxDistance: 13,
         extraZoom: 3,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
@@ -621,7 +621,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const litEffect = Fn(() => {
           const color = sceneColor.rgb.toVar();
 
-          color.assign(applyVignette(color, state.fx.vignette, state.vignetteFocus.amount(sceneDepth.r)));
+          // scaled by the fold, so it is out of the way whilst a map folds flat and changes over,
+          // and comes back as the next one rises — see `setWorldFold`
+          color.assign(
+            applyVignette(color, state.fx.vignette.mul(state.foldNode), state.vignetteFocus.amount(sceneDepth.r)),
+          );
 
           const alpha = sceneColor.a.toVar();
 
@@ -688,7 +692,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false } },
+    { reset: { ctrlOpts: true, initial: false, vignetteFocus: true } },
   );
 
   w.view = state;
@@ -764,13 +768,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <AnimatePresence>
         {w.disabled && (
           <motion.div
-            className="absolute inset-x-0 top-[60%] flex justify-center pointer-events-none"
+            className="absolute inset-x-0 top-[0%] flex justify-center pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="px-4 py-1.5 rounded-full bg-black text-white/80 border border-white/40 text-xs font-mono tracking-[0.3em] uppercase select-none">
+            <div className="px-4 py-1.5 bg-black/80 text-white/80 border border-white/40 text-xs font-mono tracking-[0.3em] uppercase select-none">
               paused
             </div>
           </motion.div>

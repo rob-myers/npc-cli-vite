@@ -128,6 +128,11 @@ export const wallHeight = 1.7;
 
 export const floorFadeDelayMs = 260;
 
+/** How long a map change fades to black, and back from it once the next map is up */
+export const mapVeilMs = 400;
+/** How long the FIRST map is held as a flat hull before the world rises out of it */
+export const unfoldDelayMs = 500;
+
 export const MAX_GEOMORPH_INSTANCES = 8;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
