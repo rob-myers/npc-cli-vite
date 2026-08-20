@@ -21,6 +21,7 @@ export default function Doors() {
       box: createDoorBox(),
       brightnessNode: uniform(1),
       builtMapKey: null,
+      builtGmsHash: 0,
       byKey: {},
       labelToLayer: new Map(),
       lastHmr: 0,
@@ -37,9 +38,14 @@ export default function Doors() {
 
       buildByKey() {
         // `gdKey` is positional, so another map's doors wear the same keys: carrying their live
-        // state over would lock doors nobody locked, and `persistLocks` would then save that
-        const prevByKey = state.builtMapKey === w.mapKey ? state.byKey : {};
+        // state over would lock doors nobody locked, and `persistLocks` would then save that.
+        // The GEOMORPHS decide that, not the map key alone — `w.mapKey` changes as soon as the
+        // menu picks a map, whilst `w.gms` still describe the old one, so a build lands in
+        // between with the new key over the old doors. Keying on both keeps it out of the next
+        const stale = state.builtMapKey !== w.mapKey || state.builtGmsHash !== w.gmsHash;
+        const prevByKey = stale === true ? {} : state.byKey;
         state.builtMapKey = w.mapKey;
+        state.builtGmsHash = w.gmsHash;
         state.byKey = {};
         const saved = getWorldMapStore(w.key, w.mapKey).read().doorLocks;
         const savedLocked = saved === null ? null : new Set(saved);
@@ -523,7 +529,8 @@ export default function Doors() {
     state.sendDataToGpu();
     state.syncLockTints();
     state.update();
-  }, [w.mapKey, w.hash, state.lastHmr, w.decor.ready]);
+    // `w.gmsHash`: the geomorphs arrive after the map key changes, and the doors are theirs
+  }, [w.mapKey, w.gmsHash, w.hash, state.lastHmr, w.decor.ready]);
 
   return (
     <instancedMesh
@@ -546,6 +553,8 @@ export type State = {
   brightnessNode: THREE.UniformNode<"float", number>;
   /** Which map `byKey` describes, so a rebuild knows whether its live state still applies */
   builtMapKey: null | string;
+  /** And which geomorphs, the map key alone changing a beat before they do */
+  builtGmsHash: number;
   byKey: { [gmDoorKey in Geomorph.GmDoorKey]: Geomorph.DoorState };
   inst: null | THREE.InstancedMesh;
   /** Total number of doors across all `w.gms`; also the InstancedMesh's instance count */
