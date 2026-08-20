@@ -125,5 +125,5 @@ export function createVignetteFocus(): VignetteFocus {
 const focusRadius = 3;
 const focusFeather = 1.5;
 /** Its lid: just under the walls, so what stands beside the player is spared but no ceiling is */
-const focusHeight = wallHeight - 0.1;
-const focusLidFeather = 0.1;
+const focusHeight = wallHeight + 0.5;
+const focusLidFeather = 0.0001;
