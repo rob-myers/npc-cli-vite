@@ -1,5 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
-import { Mat, Vect } from "@npc-cli/util/geom";
+import { Mat, Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import { color, float, frontFacing, fwidth, lights, mix, positionWorld, smoothstep, uniform } from "three/tsl";
@@ -98,17 +98,24 @@ export default function Walls() {
         const { instHullOuter: ws } = state;
         if (!ws) return;
 
+        // every geomorph's hull walls at once, in WORLD space and merged: where two geomorphs
+        // meet, the hull walls between them become interior to the union and drop out of its
+        // outline, so no skin is drawn across a junction. Per geomorph they would each still
+        // carry the wall they share, and the world would be striped through its own middle
+        const merged = Poly.union(
+          w.gms.flatMap(({ hullPoly, transform }) =>
+            hullPoly.map((x) => x.clone().applyMatrix(tmpMat1.setMatrixValue(transform))),
+          ),
+        );
+        // the outline alone, the holes being the geomorphs' own insides — an outset would grow
+        // those inwards over the rooms
+        const outer = merged.flatMap((x) => geomService.createOutset(new Poly(x.outline), hullOuterOutset));
+
         let instanceId = 0;
-        for (const [gmId, { transform, determinant }] of w.gms.entries()) {
-          // holes removed first: the ring's inner boundary is the rooms' side, and an outset
-          // would grow it inwards over them
-          const outer = w.gms[gmId].hullPoly.flatMap((x) =>
-            geomService.createOutset(x.clone().removeHoles(), hullOuterOutset),
-          );
-          for (const poly of outer) {
-            for (const seg of poly.lineSegs) {
-              ws.setMatrixAt(instanceId++, state.getWallMat(seg, transform, determinant));
-            }
+        for (const poly of outer) {
+          for (const seg of poly.lineSegs) {
+            // already world space, hence the identity transform
+            ws.setMatrixAt(instanceId++, state.getWallMat(seg, identityTransform, 1));
           }
         }
 
@@ -298,6 +305,8 @@ export type State = {
 };
 
 const tmpMat1 = new Mat();
+/** For segments already in world space — see `positionHullOuterInstances` */
+const identityTransform: Geom.AffineTransform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
