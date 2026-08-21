@@ -143,7 +143,7 @@ export function drawLightsIntoTexture(ct: CanvasRenderingContext2D, gm: Geomorph
     // clip to room
     auxCt.save();
     drawPolygons(auxCt, room, { fillStyle: null, strokeStyle: null, clip: true });
-    auxCt.fillStyle = "rgba(0,0,0,0.65)"; // blue tint
+    auxCt.fillStyle = "rgba(0,0,0,0.7)";
     auxCt.fill();
 
     // Punch out light circles with radial fade
@@ -152,7 +152,7 @@ export function drawLightsIntoTexture(ct: CanvasRenderingContext2D, gm: Geomorph
       // 🔔 must transform from world coords to local geomorph coords
       const { x: cx, y: cy } = gm.inverseMatrix.transformPoint({ x, y });
       const grad = auxCt.createRadialGradient(cx, cy, 0, cx, cy, radius);
-      grad.addColorStop(0, "rgba(0,0,0,0.15)");
+      grad.addColorStop(0, "rgba(0,0,0,0.5)");
       grad.addColorStop(0.75, "rgba(0,0,0,0.15)");
       grad.addColorStop(1, "rgba(0,0,0,0)");
       auxCt.fillStyle = grad;
