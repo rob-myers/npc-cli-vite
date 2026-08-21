@@ -1,13 +1,14 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
-import { Fn, float, If, instanceIndex, lights, mix, positionWorld, uniform, uniformArray, vec3 } from "three/tsl";
+import { color, float, frontFacing, fwidth, lights, mix, positionWorld, smoothstep, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
-import { createTwoSidedXyQuad } from "../service/geometry";
+import { createTwoSidedXyQuad, createXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
+import { bootstrapInstanceColor } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -16,9 +17,12 @@ export default function Walls() {
   const state = useStateRef(
     (): State => ({
       inst: null,
+      instHullOuter: null,
       instTrim: null,
-      lightsShown: true,
-      light: {} as State["light"],
+      hullOuterCount: 0,
+      // ONE winding, unlike the walls' `quad`: this material is `DoubleSide`, so a two-sided
+      // geometry would put a second face in the very same plane for it to fight with
+      hullOuterQuad: createXyQuad(),
       quad: createTwoSidedXyQuad(),
 
       decodeInstanceId(instanceId: number) {
@@ -84,6 +88,35 @@ export default function Walls() {
         instTrim.instanceMatrix.needsUpdate = true;
         if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
       },
+      /**
+       * The hull's outer skin: `hullPoly` — the UNION of the hull walls — outset by
+       * `hullOuterOutset` and its outline walked as wall segments. One polygon operation decides
+       * both which faces are on the outside and where they stand, so there is no per-segment
+       * normal to work out and nothing standing in a wall's own plane.
+       */
+      positionHullOuterInstances() {
+        const { instHullOuter: ws } = state;
+        if (!ws) return;
+
+        let instanceId = 0;
+        for (const [gmId, { transform, determinant }] of w.gms.entries()) {
+          // holes removed first: the ring's inner boundary is the rooms' side, and an outset
+          // would grow it inwards over them
+          const outer = w.gms[gmId].hullPoly.flatMap((x) =>
+            geomService.createOutset(x.clone().removeHoles(), hullOuterOutset),
+          );
+          for (const poly of outer) {
+            for (const seg of poly.lineSegs) {
+              ws.setMatrixAt(instanceId++, state.getWallMat(seg, transform, determinant));
+            }
+          }
+        }
+
+        ws.count = instanceId;
+        state.hullOuterCount = instanceId;
+        ws.computeBoundingSphere();
+        ws.instanceMatrix.needsUpdate = true;
+      },
       positionInstances() {
         const { inst: ws } = state;
         if (!ws) return;
@@ -112,11 +145,6 @@ export default function Walls() {
         ws.instanceMatrix.needsUpdate = true;
         if (ws.instanceColor) ws.instanceColor.needsUpdate = true;
       },
-      toggleLights(next = !state.lightsShown) {
-        state.light.wallLightsNode.value = next ? 1 : 0;
-        state.set({ lightsShown: next });
-        w.view.forceUpdate();
-      },
     }),
   );
 
@@ -131,37 +159,13 @@ export default function Walls() {
     const outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.wall);
 
     const baseColorUniform = uniform(new THREE.Color());
-    // Per wall: up to 2 nearest light world positions (sentinel y=-1000 → contributes 0)
-    // xyz = world position, w = radius (non-zero to avoid div-by-zero in shader)
-    const sentinel = new THREE.Vector4(0, -1000, 0, 1);
-    const light0Values = Array.from({ length: wallCount }, () => sentinel.clone());
-    const light1Values = Array.from({ length: wallCount }, () => sentinel.clone());
-    const lights0Node = uniformArray<"vec4">(light0Values, "vec4");
-    const lights1Node = uniformArray<"vec4">(light1Values, "vec4");
-    const wallLightsNode = uniform(1);
-    const factor = Fn(() => {
-      const f = float(0).toVar();
-      If(wallLightsNode.notEqual(0), () => {
-        const l0 = lights0Node.element(instanceIndex);
-        const l1 = lights1Node.element(instanceIndex);
-        const dist0 = positionWorld.sub(l0.xyz).length();
-        const dist1 = positionWorld.sub(l1.xyz).length();
-        const r0 = l0.w;
-        const r1 = l1.w;
-        f.assign(r0.sub(dist0).div(r0).clamp(0, 1).add(r1.sub(dist1).div(r1).clamp(0, 1)).clamp(0, 1));
-      });
-      return f;
-    })();
-    // reduce opacity where inside a sphere (more transparent = "lighter")
-    const litOpacity = opacityUniform.mul(float(1).sub(factor.mul(1)));
-
     const litOpacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores walls for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      litOpacity, // beauty render
+      opacityUniform, // beauty render
     );
 
-    const colorNode = mix(baseColorUniform, vec3(1, 1, 0.6), factor.mul(0.1));
+    const colorNode = baseColorUniform;
 
     return {
       opacityUniform,
@@ -169,14 +173,44 @@ export default function Walls() {
       colorNode,
       outputNode,
       baseColorUniform,
-      wallLightsNode,
-      light0Values,
-      light1Values,
       uuid: crypto.randomUUID(),
     };
   }, [wallCount]);
 
-  state.light = mat;
+  /**
+   * The skin outside the hull: white with the grey hatch the hull floor carries — see `Floor`'s
+   * `drawHullFloor`. Shaded rather than drawn, a wall having no texture: summing all three axes
+   * runs the lines at 45° across any face however it points, and keeps them going around a
+   * corner. A sine rather than `fract`, so `fwidth` can antialias it.
+   */
+  const hullOuterMaterial = useMemo(() => {
+    const m = new THREE.MeshStandardNodeMaterial({
+      side: THREE.DoubleSide, // seen from without, and from within through the hull's doorways
+      // discarded whilst picking rather than merely unpickable: opaque, it would otherwise stand
+      // in front of the walls it skins and swallow their picks
+      alphaTest: 0.5,
+    });
+    m.opacityNode = w.view.objectPick.equal(0).select(float(1), float(0));
+
+    const wave = positionWorld.x
+      .add(positionWorld.y)
+      .add(positionWorld.z)
+      .mul((2 * Math.PI) / hullOuterStripeGap)
+      .sin();
+    const width = fwidth(wave).max(0.0001);
+    const stripes = smoothstep(width.negate(), width, wave);
+    // the skin is one quad seen from both sides, and `frontFacing` is the side its own normal
+    // points at — which the outline's winding makes the INWARD one. So the world sees the dark
+    // grey, and only the rooms see the white
+    // `mix` off a 0/1 rather than `select` between the colours: selecting them directly makes a
+    // union TypeScript cannot represent
+    const inward = frontFacing.select(float(1), float(0));
+    const base = mix(color(hullOuterOutsideColor), color(hullOuterColor), inward);
+    const line = mix(color(hullOuterOutsideStripeColor), color(hullOuterStripeColor), inward);
+    m.colorNode = mix(base, line, stripes);
+    m.lightsNode = lights([new THREE.AmbientLight("#fff", 1)]); // flat, like the floor's own art
+    return m;
+  }, []);
 
   const trimMaterial = useMemo(() => {
     const m = new THREE.MeshStandardNodeMaterial({
@@ -191,41 +225,10 @@ export default function Walls() {
 
   useEffect(() => {
     state.positionInstances();
+    state.positionHullOuterInstances();
     state.positionTrimInstances();
     mat.opacityUniform.value = w.getTheme().walls.opacity;
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
-
-    if (!w.decor.ready) {
-      return;
-    }
-
-    // Collect all light world positions (xz plane) with per-light radius
-    const lights: { x: number; z: number; radius: number }[] = [];
-    for (const gm of w.gms) {
-      for (const p of getLightMetas(gm)) {
-        const wp = gm.matrix.transformPoint(p);
-        lights.push({ x: wp.x, z: wp.y, radius: p.radius });
-      }
-    }
-
-    // Per wall: find 2 nearest light world positions and store them
-    let instanceId = 0;
-    for (const { key: gmKey, transform } of w.gms) {
-      tmpMat1.setMatrixValue(transform);
-      for (const { seg } of w.gmsData.byKey[gmKey].wallSegs) {
-        const mx = (seg[0].x + seg[1].x) / 2;
-        const mz = (seg[0].y + seg[1].y) / 2;
-        const wp = tmpMat1.transformPoint({ x: mx, y: mz });
-        const sorted = lights
-          .map((lp) => ({ lp, dist: Math.hypot(wp.x - lp.x, wp.y - lp.z) }))
-          .sort((a, b) => a.dist - b.dist);
-        const l0 = sorted[0];
-        const l1 = sorted[1];
-        mat.light0Values[instanceId].set(l0 ? l0.lp.x : 0, l0 ? 0 : -1000, l0 ? l0.lp.z : 0, l0 ? l0.lp.radius : 1);
-        mat.light1Values[instanceId].set(l1 ? l1.lp.x : 0, l1 ? 0 : -1000, l1 ? l1.lp.z : 0, l1 ? l1.lp.radius : 1);
-        instanceId++;
-      }
-    }
 
     w.update(); // 🔔 must sync onchange theme
   }, [w.mapKey, w.hash, w.decor.ready]);
@@ -250,6 +253,15 @@ export default function Walls() {
         />
       </instancedMesh>
 
+      {/* stands just outside the hull walls — see `positionHullOuterInstances` */}
+      <instancedMesh
+        key={`${mat.uuid}-hull-outer`}
+        name="hull-walls-outer"
+        ref={state.ref("instHullOuter")}
+        args={[state.hullOuterQuad, hullOuterMaterial, wallCount]}
+        renderOrder={3}
+      />
+
       <instancedMesh
         key={`${mat.uuid}-trim`}
         name="walls-along-ceiling"
@@ -263,22 +275,15 @@ export default function Walls() {
 
 export type State = {
   inst: null | THREE.InstancedMesh;
+  /** The white, hatched skin standing just outside the hull walls */
+  instHullOuter: null | THREE.InstancedMesh;
+  /** Its geometry: a single-winding quad, the material being `DoubleSide` */
+  hullOuterQuad: THREE.BufferGeometry;
   instTrim: null | THREE.InstancedMesh;
-  lightsShown: boolean;
-  light: {
-    opacityUniform: THREE.UniformNode<"float", number>;
-    opacityNode: THREE.Node<"float">;
-    colorNode: THREE.Node<"vec3">;
-    outputNode: THREE.Node;
-    baseColorUniform: THREE.UniformNode<"color", THREE.Color>;
-    wallLightsNode: THREE.UniformNode<"float", number>;
-    light0Values: THREE.Vector4[];
-    light1Values: THREE.Vector4[];
-    uuid: `${string}-${string}-${string}-${string}-${string}`;
-  };
+  /** How many of `instHullOuter`'s instances are in use */
+  hullOuterCount: number;
   quad: THREE.BufferGeometry;
 
-  toggleLights(next?: boolean): void;
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
   getWallMat: (
     seg: [Geom.Vect, Geom.Vect],
@@ -288,6 +293,7 @@ export type State = {
     baseHeight?: number,
   ) => THREE.Matrix4;
   positionInstances: () => void;
+  positionHullOuterInstances: () => void;
   positionTrimInstances: () => void;
 };
 
@@ -295,5 +301,14 @@ const tmpMat1 = new Mat();
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
+/** The hull's outer skin: how far it stands off, how far out the inside test probes */
+const hullOuterOutset = 0.06;
+const hullOuterColor = "#ffffff";
+const hullOuterStripeColor = "#cfcfcf";
+const hullOuterStripeGap = 0.16;
+/** What the world sees of it: flat white, with no hatch — only the rooms' side is striped */
+const hullOuterOutsideColor = "#ffffff";
+const hullOuterOutsideStripeColor = "#ffffff";
+
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;

@@ -12,40 +12,24 @@
   initial-value: 1;
 }
 
-/*
- * Scales the stripes' alpha down whilst the camera moves, where they are busiest against the
- * world sliding past — see `fadeStripes`. `1` at rest.
- */
-@property --world-stripe {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
 .world-background {
   /*
    * Faded out whilst a map loads, so the stripes dissolve rather than being buried by the flat
-   * colour above them, and again whilst the camera moves — see `--world-stripe`. NOT dimmed by
-   * the ambient: the page is behind the canvas rather than part of the world, and following the
-   * ambient took the stripes away entirely at 0. Relative colour rather than `color-mix`, whose
-   * percentage argument rejects a `calc()` over a `var()`.
+   * colour above them. NOT dimmed by the ambient: the page is behind the canvas rather than part
+   * of the world, and following the ambient took the stripes away entirely at 0. Relative colour
+   * rather than `color-mix`, whose percentage argument rejects a `calc()` over a `var()`.
    */
-  --pattern-fg: color(
-    from var(--color-zinc-800) srgb-linear r g b /
-    calc(0.4 * (1 - var(--world-dim)) * var(--world-stripe))
-  );
-  background-image:
-    /* black whilst a map changes over, matching the hull each map arrives as — so the held frame
+  --pattern-fg: color(from var(--color-zinc-800) srgb-linear r g b / calc(0.8 * (1 - var(--world-dim))));
+  /* black whilst a map changes over, matching the hull each map arrives as — so the held frame
      * cross-fades to the next one without either shape showing against a lit page */
+  background-image:
     linear-gradient(rgb(0 0 0 / var(--world-dim)), rgb(0 0 0 / var(--world-dim))),
     repeating-linear-gradient(45deg, var(--pattern-fg) 0, var(--pattern-fg) 1px, transparent 0, transparent 50%);
   background-size:
     auto,
     8px 8px;
   background-attachment: fixed;
-  transition:
-    --world-dim var(--world-dim-duration, 300ms) ease-in-out,
-    --world-stripe var(--world-stripe-duration, 200ms) ease-out;
+  transition: --world-dim var(--world-dim-duration, 300ms) ease-in-out;
 }
 
 /*

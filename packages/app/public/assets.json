@@ -46060,12 +46060,12 @@
       "background": "bg-[#fff]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#222", "stroke": "#000"}
+        "nonHull": {"fill": "#000", "stroke": "#5559"}
       },
       "floor": {
-        "hullFill": "#1110",
+        "hullFill": "#fff",
         "navStroke": "#000a",
-        "patternFill": "#555",
+        "patternFill": "#999",
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},

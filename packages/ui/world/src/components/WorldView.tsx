@@ -68,8 +68,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
-      stripesFaded: false,
-      stripeTimer: 0,
       prevVignette: null,
       vignetteAnimId: 0,
       shiftDownMs: 0,
@@ -242,26 +240,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
         const camera = state.controls?.object ?? w.r3f.camera;
         state.vignetteFocus.update(camera);
-        state.fadeStripes();
       },
       syncVignetteFocus() {
         // the player, not the camera target: the vignette spares where they stand, wherever the
         // view happens to be pointed
         const player = w.n[w.player?.key ?? ""];
         state.vignetteFocus.setCentre(player === undefined ? null : player.position);
-      },
-      fadeStripes() {
-        // a timer rather than the controls' `end` event, so a programmatic pan — the intro, say —
-        // brings them back too. This runs per frame whilst the camera moves, hence the guard
-        if (state.stripesFaded === false) {
-          state.stripesFaded = true;
-          w.rootEl?.style.setProperty("--world-stripe", `${movingStripeAlpha}`);
-        }
-        clearTimeout(state.stripeTimer);
-        state.stripeTimer = window.setTimeout(() => {
-          state.stripesFaded = false;
-          w.rootEl?.style.setProperty("--world-stripe", "1");
-        }, stripeRestoreMs);
       },
       onCameraEnd() {
         const cameraInitial: PersistedCamera = {
@@ -856,12 +840,6 @@ export type State = {
   lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number; height?: number }): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
-  /** Are the background stripes currently faded down, the camera having moved? */
-  stripesFaded: boolean;
-  /** Pending restore, restarted by every camera change — see `fadeStripes` */
-  stripeTimer: number;
-  /** Fades the stripes down whilst the camera moves, and back once it has been still */
-  fadeStripes(): void;
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
   foldNode: THREE.UniformNode<"float", number>;
   /** Takes the page background to black and back, whilst a map loads */
@@ -890,11 +868,6 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
-
-/** What the background stripes' alpha is scaled by whilst the camera moves */
-const movingStripeAlpha = 0.3;
-/** How still the camera must be before they come back */
-const stripeRestoreMs = 250;
 
 /** How long the vignette takes to reach max whilst the extra zoom locks, and to come back */
 const vignetteFocusMs = 300;
