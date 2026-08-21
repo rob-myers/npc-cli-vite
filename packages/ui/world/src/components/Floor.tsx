@@ -70,7 +70,7 @@ export default function Floor() {
         if (layout === null) return;
 
         const hullFloor = state.getHullFloor(layout);
-        drawPolygons(ct, hullFloor, { fillStyle: w.getTheme().floor.hullFill, strokeStyle: null });
+        state.drawHullFloor(ct, hullFloor, layout);
 
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
@@ -133,10 +133,28 @@ export default function Floor() {
       drawHull(gmId, gms = w.gms) {
         const layout = state.startGm(gmId, gms);
         if (layout === null) return;
-        drawPolygons(w.texFloor.ct, state.getHullFloor(layout), {
-          fillStyle: w.getTheme().floor.hullFill,
-          strokeStyle: null,
-        });
+        state.drawHullFloor(w.texFloor.ct, state.getHullFloor(layout), layout);
+      },
+      drawHullFloor(ct, hullFloor, layout) {
+        drawPolygons(ct, hullFloor, { fillStyle: w.getTheme().floor.hullFill, strokeStyle: null });
+
+        // the stripes the page used to show through a transparent hull, drawn INTO the floor
+        // instead: they now lie on it, so they slide with the world rather than with the screen,
+        // and nothing behind the canvas has to be arranged to show through
+        ct.save();
+        drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#fff0", strokeStyle: null });
+        ct.beginPath();
+        const { x, y, width, height } = layout.bounds;
+        // 45°, so each line runs the height of the geomorph across; from `-height` so the ones
+        // crossing its top-left corner are drawn too
+        for (let d = -height; d < width; d += hullStripeGap) {
+          ct.moveTo(x + d, y);
+          ct.lineTo(x + d + height, y + height);
+        }
+        ct.lineWidth = hullStripeWidth;
+        ct.strokeStyle = hullStripeColor;
+        ct.stroke();
+        ct.restore();
       },
       drawHulls(gms) {
         state.transformInstances(gms);
@@ -328,6 +346,8 @@ export type State = {
   fadeOut(nextMapKey: string): Promise<void>;
   getGmsOf(mapKey: string): Geomorph.LayoutInstance[];
   getHullFloor(layout: Geomorph.Layout): Geom.Poly[];
+  /** The hull's own fill, plus the diagonal hatch that used to come from the page behind */
+  drawHullFloor(ct: CanvasRenderingContext2D, hullFloor: Geom.Poly[], layout: Geomorph.Layout): void;
   /** Draw map hulls, ahead of `draw` */
   onNewMap(): void;
   startGm(gmId: number, gms?: Geomorph.LayoutInstance[]): null | Geomorph.Layout;
@@ -338,6 +358,11 @@ export type State = {
 const floorFadeMs = 300;
 
 /** What a map's floor fades to as it leaves, and arrives as — the page it sits on, so white */
+/** The hatch drawn into the hull floor: spacing and width in METRES, so it lies on the world */
+const hullStripeGap = 0.16;
+const hullStripeWidth = 0.025;
+const hullStripeColor = "#0000001a";
+
 /** What a folded map shows in place of its art: the hull as a flat black shape */
 const fadeColor = vec3(0, 0, 0);
 

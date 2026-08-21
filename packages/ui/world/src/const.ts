@@ -107,7 +107,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     nonHull: { fill: "#444", stroke: "#000" },
   },
   floor: {
-    hullFill: "#111",
+    hullFill: "#fff",
     navStroke: "#000c",
     patternFill: "#222",
     tileStroke: "#0001",
