@@ -83,9 +83,6 @@ export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
 export const spawnPlayerAttempts = 10;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
-/** Default extent (0..1) of the vignette darkening the corners of the frame */
-export const defaultVignette = 0;
-
 export const defaultAmbientIntensity = 1;
 
 export const defaultCameraModeDesktop = "cardinal" satisfies import("./components/CameraControls").CameraModeType;

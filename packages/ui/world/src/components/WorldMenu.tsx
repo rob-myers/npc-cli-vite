@@ -7,7 +7,6 @@ import {
   ArrowsClockwiseIcon,
   CaretDownIcon,
   CaretRightIcon,
-  EyeIcon,
   GlobeStandIcon,
   GpsIcon,
   GpsSlashIcon,
@@ -25,7 +24,7 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import { defaultBrightness, defaultVignette } from "../const";
+import { defaultBrightness } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
@@ -353,29 +352,6 @@ export function WorldMenu() {
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
             <div className={cn("flex flex-wrap max-w-52", touch && "max-w-none items-stretch")}>
-              <div
-                className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                  touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
-                )}
-              >
-                <EyeIcon
-                  alt="focus"
-                  className="size-4 text-white cursor-pointer shrink-0"
-                  onClick={() => w.view.setFx("vignette", defaultVignette)}
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step="0.1"
-                  value={w.view.fx?.vignette.value ?? defaultVignette}
-                  onChange={(e) => w.view.setFx("vignette", Number(e.target.value))}
-                  onClick={(e) => e.stopPropagation()}
-                  className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
-                />
-              </div>
-
               <div
                 className={cn(
                   "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",

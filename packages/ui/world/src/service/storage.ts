@@ -1,7 +1,7 @@
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness, defaultVignette } from "../const";
+import { defaultBrightness } from "../const";
 
 /**
  * Everything a World persists lives under two keys, both scoped by `worldKey`
@@ -54,7 +54,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   introEnabled: true,
-  fx: { vignette: defaultVignette, npcOutline: 0 },
+  fx: { npcOutline: 0 },
   pickOpenDoors: true,
   gmGraphsFilter: "room",
   menuY: 40,
