@@ -19,7 +19,6 @@ import {
   defaultCameraModeMobile,
   defaultCardinalDirectionsDesktop,
   defaultCardinalDirectionsMobile,
-  defaultVignette,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   zoomSpeedDesktop,
@@ -31,7 +30,6 @@ import { applyNpcOutline } from "../service/npc-outline";
 import { decodePick } from "../service/pick";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
-import { applyVignette, createVignetteFocus, type VignetteFocus } from "../service/vignette";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -68,8 +66,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
-      prevVignette: null,
-      vignetteAnimId: 0,
       shiftDownMs: 0,
       lastPointer: {
         epochMs: 0,
@@ -90,7 +86,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // each is 0..1, driving a `mix` so 0 is exactly identity
       fx: mapValues(fxDefaults, (value, key) => uniform(saved.fx[key] ?? value)),
       raycaster: new THREE.Raycaster(),
-      vignetteFocus: createVignetteFocus(),
 
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
@@ -237,16 +232,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
-      onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
-        const camera = state.controls?.object ?? w.r3f.camera;
-        state.vignetteFocus.update(camera);
-      },
-      syncVignetteFocus() {
-        // the player, not the camera target: the vignette spares where they stand, wherever the
-        // view happens to be pointed
-        const player = w.n[w.player?.key ?? ""];
-        state.vignetteFocus.setCentre(player === undefined ? null : player.position);
-      },
+      onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {},
       onCameraEnd() {
         const cameraInitial: PersistedCamera = {
           azimuthal: state.controls.spherical.theta,
@@ -419,11 +405,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // next release would read as a very long tap
         window.addEventListener("keyup", onKeyUp);
 
-        const onExtraZoomChange = (e: Event) => {
-          const { locked } = (e as CustomEvent<{ locked: boolean }>).detail;
-          state.setVignetteFocus(locked);
-          w.menu?.update(); // the extra-zoom button reads it too
-        };
+        // the extra-zoom button reads the lock, so the menu redraws when it changes
+        const onExtraZoomChange = () => w.menu?.update();
         w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
 
         return () => {
@@ -556,29 +539,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.update();
       },
       setFx(key, next = state.fx[key].value === 0 ? 1 : 0) {
-        if (key === "vignette") state.prevVignette = null; // an explicit choice outranks the focus
         state.fx[key].value = next;
         store.patch({ fx: mapValues(state.fx, (u) => u.value) });
         state.setPostProcessingEnabled(true);
         state.forceUpdate();
-      },
-      setVignetteFocus(focus) {
-        const { vignette } = state.fx;
-        // `prevVignette` doubles as "currently focused", so unfocusing twice is a no-op
-        const to = focus === true ? 1 : state.prevVignette;
-        if (to === null) return;
-        state.prevVignette = focus === true ? (state.prevVignette ?? vignette.value) : null;
-
-        cancelAnimationFrame(state.vignetteAnimId);
-        const from = vignette.value;
-        const startEpochMs = performance.now();
-        const step = () => {
-          const ratio = Math.min(1, (performance.now() - startEpochMs) / vignetteFocusMs);
-          vignette.value = from + (to - from) * ratio;
-          state.forceUpdate();
-          if (ratio < 1) state.vignetteAnimId = requestAnimationFrame(step);
-        };
-        step();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
@@ -604,12 +568,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const litEffect = Fn(() => {
           const color = sceneColor.rgb.toVar();
-
-          // scaled by the fold, so it is out of the way whilst a map folds flat and changes over,
-          // and comes back as the next one rises — see `setWorldFold`
-          color.assign(
-            applyVignette(color, state.fx.vignette.mul(state.foldNode), state.vignetteFocus.amount(sceneDepth.r)),
-          );
 
           const alpha = sceneColor.a.toVar();
 
@@ -676,7 +634,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, vignetteFocus: true } },
+    { reset: { ctrlOpts: true, initial: false } },
   );
 
   w.view = state;
@@ -800,11 +758,6 @@ export type State = {
   fx: Record<FxKey, ReturnType<typeof uniform<"float", number>>>;
   /** Toggles (or sets) one of `fx` */
   setFx(key: FxKey, next?: number): void;
-  /** The vignette before the extra zoom lock forced it to max, else `null` */
-  prevVignette: null | number;
-  /** Whilst the extra zoom is locked the vignette tweens to max, focusing on the target */
-  setVignetteFocus(focus: boolean): void;
-  vignetteAnimId: number;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -822,10 +775,6 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
-  /** The cylinder of world the vignette leaves alone — see `createVignetteFocus` */
-  vignetteFocus: VignetteFocus;
-  /** Stands that cylinder on the player — called every tick from `World`'s `onTick` */
-  syncVignetteFocus(): void;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
   /** Debounced resize + key events */
@@ -868,9 +817,6 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
-
-/** How long the vignette takes to reach max whilst the extra zoom locks, and to come back */
-const vignetteFocusMs = 300;
 
 /** Shift held longer than this is a hold, not a tap — see `onKeyUp` */
 const shiftTapMs = 300;
@@ -936,7 +882,7 @@ function PostProcessing() {
 export type FxKey = keyof typeof fxDefaults;
 
 /** Add a key here, a branch in `setupPostProcessing`, and an entry in `debugItems` (`WorldMenu`) */
-const fxDefaults = { vignette: defaultVignette, npcOutline: 0 };
+const fxDefaults = { npcOutline: 0 };
 
 const tmpVect = new Vect();
 const _tmpRect = new Rect();
