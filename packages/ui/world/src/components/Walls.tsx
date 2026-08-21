@@ -310,14 +310,14 @@ const identityTransform: Geom.AffineTransform = { a: 1, b: 0, c: 0, d: 1, e: 0, 
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
-/** The hull's outer skin: how far it stands off, how far out the inside test probes */
+/** The hull's outer skin: how far it stands off, then what the ROOMS' side of it looks like */
 const hullOuterOutset = 0.06;
 const hullOuterColor = "#ffffff";
 const hullOuterStripeColor = "#cfcfcf";
 const hullOuterStripeGap = 0.16;
-/** What the world sees of it: flat white, with no hatch — only the rooms' side is striped */
+/** What the world sees of it — the same white and hatch as the rooms' side, for now */
 const hullOuterOutsideColor = "#ffffff";
-const hullOuterOutsideStripeColor = "#ffffff";
+const hullOuterOutsideStripeColor = "#cfcfcf";
 
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;

@@ -4,7 +4,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
+import { defaultDoorOpacity, lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -481,7 +481,19 @@ export default function Doors() {
   const materials = useMemo(() => {
     const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
 
-    const panelOpts = { metalness: 0.5, roughness: 0.25, side: THREE.FrontSide, transparent: false, depthWrite: true };
+    // see-through by COVERAGE rather than by blending: doors are one instanced mesh, so three can
+    // only sort them as a single object, and blended panels would draw in instance order and show
+    // through each other wrongly. Coverage needs no sorting — the material stays opaque and keeps
+    // writing depth, and MSAA turns each fragment's alpha into a fraction of its samples. The pass
+    // is already multisampled (`antialias: true` gives `renderer.samples = 4`), so this is free
+    const panelOpts = {
+      metalness: 0.5,
+      roughness: 0.25,
+      side: THREE.FrontSide,
+      transparent: false,
+      depthWrite: true,
+      alphaToCoverage: true,
+    };
     const front = new THREE.MeshStandardNodeMaterial(panelOpts);
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
 
@@ -494,6 +506,11 @@ export default function Doors() {
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
       mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
+    }
+
+    for (const mat of [front, back]) {
+      // full whilst picking, else a door could be picked through the samples coverage drops
+      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity), float(1));
     }
 
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));

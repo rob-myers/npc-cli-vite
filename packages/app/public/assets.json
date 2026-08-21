@@ -46057,10 +46057,10 @@
   },
   "theme": {
     "dark-theme": {
-      "background": "bg-[#fff]",
+      "background": "bg-[#000]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#666", "stroke": "#000"}
+        "nonHull": {"fill": "#000", "stroke": "#6666"}
       },
       "floor": {
         "hullFill": "#fff",

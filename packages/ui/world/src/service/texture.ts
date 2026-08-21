@@ -432,6 +432,9 @@ function loadSvgImage(src: string): Promise<HTMLImageElement> {
 
 let basePanelCanvas: HTMLCanvasElement | null = null;
 
+/** How strongly a door's label is drawn, against the part-transparent panel behind it */
+const doorLabelAlpha = 0.9;
+
 export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label: string) {
   const { ct } = texArray;
   ct.clearRect(0, 0, texW, texH);
@@ -445,7 +448,9 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
     ct.font = "36px sans-serif";
     ct.textAlign = "center";
     ct.textBaseline = "middle";
-    ct.globalAlpha = 0.5;
+    // the panel behind is part transparent now (see `Doors`' `alphaToCoverage`), which takes the
+    // label with it — so it is drawn at close to full strength to come back to white
+    ct.globalAlpha = doorLabelAlpha;
 
     const measured = ct.measureText(label);
     const padding = 12;
@@ -457,8 +462,8 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
       width: rw,
       height: rh,
       radius: 6,
-      fillStyle: "rgba(30, 30, 30, 255)",
-      strokeStyle: "rgba(220, 220, 220, 0.22)",
+      fillStyle: "rgba(24, 24, 24, 255)",
+      strokeStyle: "rgba(235, 235, 235, 0.34)",
       lineWidth: 3,
     });
 
