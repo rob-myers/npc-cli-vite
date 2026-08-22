@@ -51,9 +51,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
-        minAzimuthAngle: -Infinity,
-        maxAzimuthAngle: +Infinity,
-        minPolarAngle: Math.PI / 2 - Math.PI / 4,
+        minAzimuthAngle: Math.PI / 3 - Math.PI / 16,
+        maxAzimuthAngle: Math.PI / 3 + Math.PI / 16,
+        minPolarAngle: Math.PI / 2 - Math.PI / 3,
         maxPolarAngle: Math.PI / 2 - Math.PI / 6,
         // the two stops the zoom moves between — see `camera-controls`' `zoomProgress`
         minDistance: zoomNear,
@@ -938,8 +938,8 @@ function defaultInitialCamera(): State["initial"] {
 }
 
 /** The two stops the zoom moves between — `ctrlOpts` and `defaultInitialCamera` must agree */
-const zoomNear = 12;
-const zoomFar = 32;
+const zoomNear = 6;
+const zoomFar = 12;
 
 function PostProcessing() {
   const w = useContext(WorldContext);

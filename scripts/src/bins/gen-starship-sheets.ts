@@ -197,6 +197,7 @@ for (const [sheetId, bin] of bins.entries()) {
   maskCt.drawImage(canvas, 0, 0);
   maskCt.globalCompositeOperation = "source-in";
   maskCt.fillStyle = "#ffffff";
+  // maskCt.fillStyle = "#000000";
   maskCt.fillRect(0, 0, bin.width, bin.height);
   maskCt.globalCompositeOperation = "source-over";
   ct.globalCompositeOperation = "source-over";

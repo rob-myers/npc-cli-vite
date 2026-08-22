@@ -27457,8 +27457,7 @@
       {"id": "extra--018--table"},
       {"id": "empty-room--013"},
       {"id": "empty-room--039"},
-      {"id": "extra--006--desk"},
-      {"id": "medical--007"}
+      {"id": "extra--006--desk"}
     ],
     [
       {"id": "bed--003"},
@@ -27473,7 +27472,8 @@
       {"id": "fresher--002"},
       {"id": "couch-and-chairs--007"},
       {"id": "table--009"},
-      {"id": "fresher--025"}
+      {"id": "fresher--025"},
+      {"id": "medical--007"}
     ],
     [
       {"id": "bridge--042"},
