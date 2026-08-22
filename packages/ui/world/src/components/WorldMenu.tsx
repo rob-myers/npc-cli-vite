@@ -215,8 +215,6 @@ export function WorldMenu() {
         return w.view.objectPick?.value === 1;
       case "Post FX":
         return w.view.postProcessing ?? false;
-      case "Npc Outline":
-        return (w.view.fx?.npcOutline.value ?? 0) > 0;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
@@ -244,10 +242,6 @@ export function WorldMenu() {
         break;
       case "Post FX":
         w.view.setPostProcessingEnabled();
-        state.update();
-        break;
-      case "Npc Outline":
-        w.view.setFx("npcOutline");
         state.update();
         break;
       case "Room Hit":
@@ -1122,7 +1116,6 @@ const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",
-  "Npc Outline",
   "Room Hit",
   "Graphs",
   "Skins",
