@@ -114,8 +114,11 @@ export default function Walls() {
         let instanceId = 0;
         for (const poly of outer) {
           for (const seg of poly.lineSegs) {
-            // already world space, hence the identity transform
-            ws.setMatrixAt(instanceId++, state.getWallMat(seg, identityTransform, 1));
+            // already world space, hence the identity transform. Its height is given rather than
+            // left to `getWallMat`'s default, so the skin can be tucked under the ceiling — which
+            // sits at `wallHeight`, whilst the skin stands `hullOuterOutset` outside its edge and
+            // would otherwise show its top as a lip standing proud of the roofline
+            ws.setMatrixAt(instanceId++, state.getWallMat(seg, identityTransform, 1, hullOuterHeight));
           }
         }
 
@@ -232,7 +235,7 @@ export default function Walls() {
       transparent: true,
       depthWrite: false,
     });
-    m.opacityNode = w.view.objectPick.equal(0).select(float(0.75), float(0));
+    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0));
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
   }, []);
@@ -317,8 +320,10 @@ const identityTransform: Geom.AffineTransform = { a: 1, b: 0, c: 0, d: 1, e: 0, 
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
-/** The hull's outer skin: how far it stands off, then what the ROOMS' side of it looks like */
+/** The hull's outer skin: how far it stands off, how tall it stands, then what the ROOMS' side
+ * of it looks like */
 const hullOuterOutset = 0.06;
+const hullOuterHeight = wallHeight - 0.05;
 const hullOuterColor = "#ffffff";
 const hullOuterStripeColor = "#e8e8e8";
 const hullOuterStripeGap = 0.075;
