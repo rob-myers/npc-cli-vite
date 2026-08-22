@@ -183,36 +183,91 @@ export function drawRoomOutlines(
   ct.lineWidth = 0.08;
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
-  const insetAmount = 0.75;
-  const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
-  const gridPieceSize = geomorphGridMeters * 2;
-  const gridPieceGap = 0.05;
-  const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
   const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
+  const stripes = getStripePattern();
+  stripes.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
 
   for (const room of layout.rooms) {
     if (room.rect.area < 10) continue; // outline looks bad in small rooms
-    const noHoles = room.clone().removeHoles();
     pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
     ct.fillStyle = pattern;
-    const insetPolys = geomService.createInset(noHoles, insetAmount); // one room can yield several polygons
-    const wholePolys = insetPolys.filter((p) => p.rect.area < splitPolyMinArea);
-    const splitPieces = insetPolys
-      .filter((p) => p.rect.area >= splitPolyMinArea)
-      .flatMap((p) => splitIntoGridPieces(p, gridPieceSize, gridPieceGap, gridSmallPieceFrac));
-    fillRoundedPolys(ct, wholePolys, insetAmount);
-    fillStraightPolys(ct, splitPieces);
+    const { whole, pieces } = getRoomFloorPieces(room);
+    fillRoundedPolys(ct, whole, floorInsetAmount);
+    fillStraightPolys(ct, pieces);
+
+    // the same panels again, filled with the hatch and stroked no second time — no inset, so the
+    // stripes run right up to the outlines already drawn
+    ct.fillStyle = stripes;
+    fillRoundedPolys(ct, whole, floorInsetAmount, false);
+    fillStraightPolys(ct, pieces, false);
   }
   ct.restore();
 }
 
-function fillStraightPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[]) {
+/**
+ * The polygons a room's floor is drawn as: the room inset, then anything sizeable cut into grid
+ * pieces. Kept apart from the drawing so the inset and split numbers live in one place.
+ */
+export function getRoomFloorPieces(room: Geom.Poly) {
+  const insetPolys = geomService.createInset(room.clone().removeHoles(), floorInsetAmount);
+  return {
+    whole: insetPolys.filter((p) => p.rect.area < splitPolyMinArea),
+    pieces: insetPolys
+      .filter((p) => p.rect.area >= splitPolyMinArea)
+      .flatMap((p) => splitIntoGridPieces(p, gridPieceSize, gridPieceGap, gridSmallPieceFrac)),
+  };
+}
+
+const floorInsetAmount = 0.75;
+const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
+const gridPieceSize = geomorphGridMeters * 2;
+const gridPieceGap = 0.05;
+const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
+
+/** The hatch over the panels: stripe pitch and width in METRES, so it lies on the world, and its ink */
+const stripeGap = 0.14;
+const stripeWidth = 0.05;
+const stripeColor = "rgba(200, 200, 200, 0.15)";
+
+let cachedStripePattern: null | CanvasPattern = null;
+
+/**
+ * Diagonal stripes, as a pattern rather than as lines drawn per panel — one small tile repeated
+ * by the canvas, and `setTransform` puts its pitch in world metres. The tile is square and the
+ * stripes run at 45°, which is what lets it repeat without a seam.
+ */
+function getStripePattern(): CanvasPattern {
+  if (cachedStripePattern !== null) return cachedStripePattern;
+
+  const scale = worldToSguScale * gmFloorExtraScale;
+  const size = Math.round(stripeGap * scale);
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
+
+  ctx.strokeStyle = stripeColor;
+  ctx.lineWidth = stripeWidth * scale;
+  // three passes: the diagonal, and once either side of it, so the stripe crossing the tile's
+  // corners is unbroken where the tile repeats
+  for (const offset of [-size, 0, size]) {
+    ctx.beginPath();
+    ctx.moveTo(offset - size, size * 2);
+    ctx.lineTo(offset + size * 2, -size);
+    ctx.stroke();
+  }
+
+  cachedStripePattern = ctx.createPattern(c, "repeat") as CanvasPattern;
+  return cachedStripePattern;
+}
+
+function fillStraightPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], stroke = true) {
   for (const poly of polys) {
     if (poly.outline.length < 3) continue;
     ct.beginPath();
     poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
     ct.closePath();
-    ct.stroke();
+    stroke && ct.stroke();
     ct.fill();
   }
 }
@@ -286,7 +341,7 @@ function mergeSmallGridCells(cells: GridCell[], cellSize: number, smallAreaFrac:
   return rects;
 }
 
-function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number) {
+function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number, stroke = true) {
   for (const poly of polys) {
     // filter out points too close together so short edges don't prevent rounding
     const minDist = cornerRadius * 0.5;
@@ -324,7 +379,7 @@ function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], corn
       ct.quadraticCurveTo(curr.x, curr.y, bx, by);
     }
     ct.closePath();
-    ct.stroke();
+    stroke && ct.stroke();
     ct.fill();
   }
 }
