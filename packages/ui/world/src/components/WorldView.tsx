@@ -434,6 +434,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // faintly non-zero for ever — and the follow would sit here rather than ever following
         if (controls.u.panOffset.lengthSq() > followPanUntil * followPanUntil) {
           state.followOffset.set(target.x - player.position.x, target.z - player.position.z);
+          // dragged this far off them, the pan is no longer choosing a vantage on the player — it
+          // is going somewhere else, so the follow gets out of its way rather than tugging back
+          if (state.followOffset.length > followBreakAt) state.setCameraMode("free");
           return;
         }
 
@@ -891,6 +894,8 @@ const followRate = 6;
 const followUntil = 0.01;
 /** Below this much pan left to apply, the drag is over and the follow takes back over */
 const followPanUntil = 0.01;
+/** Panned further than this off the player (metres), the follow gives up and the view goes free */
+const followBreakAt = 6;
 
 /** An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped */
 const lookAtMinMs = 700;
