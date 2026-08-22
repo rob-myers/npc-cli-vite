@@ -17,8 +17,6 @@ import {
   cameraRefAspect,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
-  defaultCardinalDirectionsDesktop,
-  defaultCardinalDirectionsMobile,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   zoomSpeedDesktop,
@@ -46,8 +44,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     (): State => ({
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
-      cameraDirections:
-        saved.cameraDirections ?? (w.touchDevice ? defaultCardinalDirectionsMobile : defaultCardinalDirectionsDesktop),
       cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
       clickIds: [],
       controls: null as any,
@@ -394,6 +390,35 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.rootEl?.removeEventListener("keydown", onKeyDown);
         };
       },
+      /**
+       * In `follow` mode the view keeps the player centred: the target eases onto them and the
+       * camera is carried by the same amount, so the angle and distance the user chose are kept —
+       * `update` derives the spherical from `position - target`, so moving one alone would swing
+       * the camera instead of travelling with it.
+       *
+       * Left alone whilst they are dragging, else it would fight a pan.
+       */
+      followPlayer(deltaSecs) {
+        const { controls } = state;
+        const player = w.n[w.player?.key ?? ""];
+        if (state.cameraMode !== "follow" || controls === null || player === undefined) return;
+        if (controls.pointers.length > 0) return;
+
+        const { target } = controls;
+        const dx = player.position.x - target.x;
+        const dz = player.position.z - target.z;
+        if (Math.hypot(dx, dz) < followUntil) return;
+
+        // exponential approach, so it is frame-rate independent and has no end to overshoot
+        const alpha = 1 - Math.exp(-followRate * deltaSecs);
+        const moveX = dx * alpha;
+        const moveZ = dz * alpha;
+        target.x += moveX;
+        target.z += moveZ;
+        controls.object.position.x += moveX;
+        controls.object.position.z += moveZ;
+        w.r3f?.invalidate();
+      },
       setCameraMode(cameraMode) {
         store.patch({ cameraMode });
         state.set({ cameraMode });
@@ -425,7 +450,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
          */
         const applyTarget = (alpha: number) => {
           controls.target.copy(from).lerp(to, alpha);
-          // live `phi`/`theta`, so e.g. cardinal snapping still applies mid-pan
+          // live `phi`/`theta`, so a rotation underway still applies mid-pan
           const radius = fromRadius + (toRadius - fromRadius) * alpha;
           tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, controls.spherical.theta);
           controls.object.position.copy(controls.target).add(tmpLookAtOffset);
@@ -517,11 +542,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.controls.update();
           w.r3f?.invalidate();
         }
-      },
-      setNumCardinalDirections(n) {
-        store.patch({ cameraDirections: n });
-        state.set({ cameraDirections: n });
-        w.update();
       },
       setFx(key, next = state.fx[key].value === 0 ? 1 : 0) {
         state.fx[key].value = next;
@@ -661,9 +681,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         <CameraControls
           ref={state.ref("controls")}
-          cameraMode={state.cameraMode}
-          numCardinalDirections={state.cameraDirections}
-          fixedPolar={w.touchDevice && state.cameraMode === "cardinal"}
+          fixedPolar={false}
+          // whilst following, the target IS the player, so a zoom about it keeps them centred.
+          // Aiming at the pointer instead moves the target, which the follow would only undo
+          zoomToCursor={state.cameraMode !== "follow"}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -716,7 +737,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 export type State = {
   bounds: Geom.RectJson;
   cameraMode: CameraModeType;
-  cameraDirections: number;
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -764,6 +784,8 @@ export type State = {
   /** Debounced resize + key events */
   setupDom(): () => void;
   setCameraMode(cameraMode: CameraModeType): void;
+  /** Keeps the player centred whilst `cameraMode` is `follow` — called every tick from `World` */
+  followPlayer(deltaSecs: number): void;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
   /**
@@ -786,7 +808,6 @@ export type State = {
   /** Fades the held frame away, revealing whatever the world is now */
   unfreezeCanvas(durationMs?: number): Promise<void>;
   resetCamera(): void;
-  setNumCardinalDirections(n: number): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
@@ -818,6 +839,10 @@ function getCameraFov(aspect: number) {
 function getPixelRatio() {
   return Math.min(Math.max(1, window.devicePixelRatio), 2);
 }
+
+/** How quickly the follow camera closes on the player, and how near counts as arrived */
+const followRate = 6;
+const followUntil = 0.01;
 
 /** An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped */
 const lookAtMinMs = 700;

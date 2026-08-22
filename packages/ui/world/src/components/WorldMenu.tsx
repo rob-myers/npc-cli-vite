@@ -387,16 +387,6 @@ export function WorldMenu() {
             >
               <div>camera: {w.view.cameraMode}</div>
               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                <div className={cn(w.view.cameraMode === "free" && "pointer-events-none opacity-40")}>
-                  <MenuSelect
-                    side="bottom"
-                    value={String(w.view.cameraDirections)}
-                    items={cardinalDirItems}
-                    onValueChange={(v) => {
-                      if (v) w.view.setNumCardinalDirections(Number(v));
-                    }}
-                  />
-                </div>
                 <span title="reset camera" onClick={() => w.view.resetCamera()}>
                   <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
                 </span>
@@ -1115,8 +1105,7 @@ const spinnerMinMs = 300;
 
 /** Long press the intro button to disable it, since a click always replays it */
 const introLongPressMs = 500;
-const nextCameraMode = { free: "cardinal", cardinal: "free" } as const;
-const cardinalDirItems = [1, 2, 4, 8].map((n) => ({ key: String(n), value: String(n) }));
+const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",

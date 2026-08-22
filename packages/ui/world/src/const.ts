@@ -85,10 +85,8 @@ export const spawnPlayerAttempts = 10;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
 export const defaultAmbientIntensity = 1;
 
-export const defaultCameraModeDesktop = "cardinal" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraModeDesktop = "follow" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
-export const defaultCardinalDirectionsDesktop = 4;
-export const defaultCardinalDirectionsMobile = 4;
 
 /** Camera rotate speed: touch drags are much shorter than mouse drags, so they get more per-pixel */
 export const rotateSpeedDesktop = 1;
