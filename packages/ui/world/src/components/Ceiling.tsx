@@ -155,7 +155,7 @@ export default function Ceiling() {
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       opacityNode,
       pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
-      texNode: texNode.depth(uvTexIds),
+      texNode: w.view.playerLight.applyLightRgba(texNode.depth(uvTexIds)),
       uid: generateUUID(),
     };
   }, [w.texCeil.hash]);

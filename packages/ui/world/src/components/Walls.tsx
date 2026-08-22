@@ -187,7 +187,8 @@ export default function Walls() {
       opacityUniform, // beauty render
     );
 
-    const colorNode = baseColorUniform;
+    // tinted by what the player can see from where they stand — see `service/player-light`
+    const colorNode = w.view.playerLight.applyLight(baseColorUniform.rgb);
 
     return {
       opacityUniform,
@@ -237,7 +238,7 @@ export default function Walls() {
       // picks. A discard rather than a transparency, the pick target being single-sampled — the
       // coverage this is see-through by does nothing there
       Discard(w.view.objectPick.notEqual(0));
-      return mix(base, line, stripes);
+      return w.view.playerLight.applyLight(mix(base, line, stripes));
     })();
     // and the world's side of it is see-through, so a camera outside the hull looks in rather than
     // at a white wall. The rooms' side stays solid, which is what keeps them enclosed

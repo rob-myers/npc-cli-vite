@@ -287,7 +287,8 @@ export default function Floor() {
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1),
       // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`
-      texNode: vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a),
+      // tinted by what the player can see from where they stand — see `service/player-light`
+      texNode: w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
       uid: generateUUID(),
     };
   }, [w.texFloor.hash]);

@@ -18,6 +18,31 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 Per-instance uniform arrays hold the 2 nearest lights for each wall segment or obstacle skirt edge. Lights come from `getLightMetas(gm)` which returns `{ x, y, radius, roomId }` per `DecorCircle` with `meta.light === true`. Radius is per-light (not a global constant). Light data is packed into `Vector4` — `xyz` = world position, `w` = radius — and passed as `uniformArray(..., "vec4")`. The fixed `lightRadius` constant still exists in `texture.ts` but is only used by `drawLights` (canvas 2D); the shader uses per-light radius.
 
+## Player light (visibility sweep)
+
+`service/player-light.ts` answers "can the player see this?" once per frame instead of per fragment.
+A **compute pass** (`Fn(...)().compute(lightAngles)`, dispatched by `<PlayerLight>` in `WorldView`
+from a `useFrame(..., -2)` so it lands before the render) sweeps `lightAngles` directions from the
+player and writes the distance to the nearest occluder into a polar table — an `attributeArray`
+storage buffer. Materials then read one entry of that table:
+
+```
+v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
+```
+
+- **Occluders**: every wall segment (`gmsData.byKey[gmKey].wallSegs`, transformed to world on map
+  change by `syncWalls`) plus the **closed** part of each door, derived in-shader from its
+  `src`/`dst`, `gapAtHighLambda` and live `openRatio` — mirroring `Doors`' own `inGap` test.
+  Windows are excluded on purpose: light passes through glass.
+- **The table is created once** and never rebuilt, so materials reading it survive a map change.
+  Only the occluder buffers are refilled, and nothing but the sweep reads those.
+- **Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)` (or
+  `applyLightRgba` where the colour carries alpha). Unlit fragments are tinted towards black; a
+  `strength` of `0` — no player, or a WebGL fallback backend, which has no real compute — is exactly
+  identity, so wrapping is unconditional.
+- Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances
+  instead would put a shadow edge where neither surface is.
+
 ## Camera controls
 
 Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.
