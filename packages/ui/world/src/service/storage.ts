@@ -29,7 +29,6 @@ export type PersistedCamera = {
 export type WorldSettings = {
   brightness: number;
   cameraMode: null | CameraModeType;
-  cameraDirections: null | number;
   cameraInitial: null | PersistedCamera;
   postProcessing: boolean;
   introEnabled: boolean;
@@ -50,7 +49,6 @@ export type WorldSettings = {
 const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
   cameraMode: null,
-  cameraDirections: null,
   cameraInitial: null,
   postProcessing: true,
   introEnabled: true,

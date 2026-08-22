@@ -74,11 +74,9 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
     r3f.set({ controls });
     controls.setParams({
       fixedPolar: props.fixedPolar ?? false,
-      snapAzimuth: props.cameraMode === "cardinal",
-      numCardinalDirections: props.numCardinalDirections ?? 4,
     });
     return () => r3f.set({ controls: old });
-  }, [props.cameraMode, props.fixedPolar, props.numCardinalDirections, controls]);
+  }, [props.fixedPolar, controls]);
 
   useFrame(() => {
     controls.update();
@@ -107,8 +105,6 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
 
 /**
  * @typedef Props
- * @property {CameraModeType} [cameraMode]
- * @property {number} [numCardinalDirections]
  * @property {HTMLElement} domElement
  * @property {boolean} [fixedPolar] Pin the polar angle, leaving azimuth and zoom
  * @property {number} [initialAzimuthal]
@@ -128,7 +124,8 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [panSpeed]
  * @property {number} [rotateSpeed]
  * @property {number} [zoomSpeed]
- * @property {boolean} [zoomToCursor]
+ * @property {boolean} [zoomToCursor] Zoom towards the cursor or pinch, moving `target` with it.
+ * Off whilst following a player, whose zoom should stay centred on them
  */
 
 /**
@@ -140,5 +137,5 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  */
 
 /**
- * @typedef {"free" | "cardinal"} CameraModeType
+ * @typedef {"free" | "follow"} CameraModeType
  */

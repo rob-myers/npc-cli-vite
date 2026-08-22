@@ -107,7 +107,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   //#endregion
 
   //#region Custom
-  params = { fixedPolar: false, fixedAzimuth: false, snapAzimuth: false, numCardinalDirections: 4 };
+  params = { fixedPolar: false, fixedAzimuth: false };
 
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
   /** `(clientX, clientY)` of first pointerdown */
@@ -132,16 +132,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   _zoomAimed = false;
   /** Whether `zoomProgress` has been read off the camera it started at — see `update` */
   _zoomSeeded = false;
-
-  snapAzimuth = {
-    target: 0,
-    /** Cardinal direction we were at when the current gesture began */
-    start: 0,
-    /** `0` -> `1` as the snap animation eases in */
-    ramp: 0,
-    animating: false,
-    committed: false,
-  };
 
   /** Midpoint of the two fingers, whose motion rotates the camera */
   twoFingerCentroid = new THREE.Vector2();
@@ -279,32 +269,18 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const dTheta = (2 * Math.PI * this.u.rotateDelta.x) / element.clientHeight;
       const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
 
-      if (this.params.snapAzimuth) {
-        const hasModifier = event.shiftKey || event.ctrlKey || event.metaKey;
-        if (hasModifier && this.rotateAxis === "none") {
-          const ax = Math.abs(this.u.rotateDelta.x);
-          const ay = Math.abs(this.u.rotateDelta.y);
-          if (ax > 2 || ay > 2) this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
+      const isFree = !this.params.fixedPolar;
+      if (isFree && this.rotateAxis === "none") {
+        const ax = Math.abs(this.u.rotateDelta.x);
+        const ay = Math.abs(this.u.rotateDelta.y);
+        if (ax > 2 || ay > 2) {
+          this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
         }
-        if (this.rotateAxis === "vertical") {
-          this.rotateUp(dPhi);
-        } else {
-          this.rotateLeft(dTheta);
-        }
-      } else {
-        const isFree = !this.params.fixedPolar;
-        if (isFree && this.rotateAxis === "none") {
-          const ax = Math.abs(this.u.rotateDelta.x);
-          const ay = Math.abs(this.u.rotateDelta.y);
-          if (ax > 2 || ay > 2) {
-            this.rotateAxis = ax >= ay ? "horizontal" : "vertical";
-          }
-        }
-        const horiz = !isFree || this.rotateAxis !== "vertical";
-        const vert = isFree && this.rotateAxis !== "horizontal";
-        if (horiz) this.rotateLeft(dTheta);
-        if (vert) this.rotateUp(dPhi);
       }
+      const horiz = !isFree || this.rotateAxis !== "vertical";
+      const vert = isFree && this.rotateAxis !== "horizontal";
+      if (horiz) this.rotateLeft(dTheta);
+      if (vert) this.rotateUp(dPhi);
     }
     this.u.rotateStart.copy(this.u.rotateEnd);
     this.update();
@@ -463,9 +439,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         cy += pos?.y ?? p.pageY;
       }
       this.u.rotateStart.set(cx / this.pointers.length, cy / this.pointers.length);
-    }
-    if (this.params.snapAzimuth) {
-      this.snapAzimuth.committed = false;
     }
   }
 
@@ -673,10 +646,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.pointerFirstDown.x = event.clientX;
       this.pointerFirstDown.y = event.clientY;
       this.rotateAxis = "none";
-      this.snapAzimuth.committed = false;
-      this.snapAzimuth.start = this.snapAzimuth.animating
-        ? this.snapAzimuth.target
-        : this.nearestSnapAngle(this.spherical.theta);
     }
 
     this.addPointer(event);
@@ -727,26 +696,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       );
     }
 
-    if (this.params.snapAzimuth && !this.snapAzimuth.committed && !this.snapAzimuth.animating) {
-      // Snap to a compass direction on release
-      const snapStep = twoPI / this.params.numCardinalDirections;
-      const { start } = this.snapAzimuth;
-      const dragged = deltaAngle(start, this.spherical.theta);
-      let target: number;
-      if (Math.abs(dragged) < snapStep / 4) {
-        target = start; // too small to count — return to where we started
-      } else {
-        target = this.nearestSnapAngle(this.spherical.theta);
-        if (Math.abs(deltaAngle(start, target)) < 1e-6) {
-          target = normalizeAngle(start + Math.sign(dragged) * snapStep); // dragged a quarter step — go prev/next
-        }
-      }
-      if (Math.abs(deltaAngle(this.spherical.theta, target)) > 0.005) {
-        this.snapAzimuth.target = target;
-        this.snapAzimuth.animating = true;
-        this.snapAzimuth.ramp = 0;
-      }
-    }
     this.rotateAxis = "none";
 
     this.dispatchEvent(endEvent);
@@ -773,7 +722,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
     this.rotateAxis = "none";
-    this.snapAzimuth.animating = false;
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
   };
@@ -910,20 +858,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.state = this.STATE.NONE;
   }
 
-  /** Nearest cardinal direction to `theta` — see `snapAzimuthOffset` */
-  nearestSnapAngle(theta: number) {
-    const snapStep = twoPI / this.params.numCardinalDirections;
-    return normalizeAngle(Math.round((theta - snapAzimuthOffset) / snapStep) * snapStep + snapAzimuthOffset);
-  }
-
-  snapAzimuthBy(delta: number) {
-    if (this.snapAzimuth.animating || Math.abs(delta) < 0.01) return;
-    this.snapAzimuth.target = normalizeAngle(this.snapAzimuth.target + delta);
-    this.snapAzimuth.animating = true;
-    this.snapAzimuth.committed = true;
-    this.snapAzimuth.ramp = 0;
-  }
-
   rotateLeft(angle: number) {
     this.sphericalDelta.theta -= angle;
   }
@@ -996,24 +930,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
           this.spherical.theta > (min + max) / 2
             ? Math.max(min, this.spherical.theta)
             : Math.min(max, this.spherical.theta);
-      }
-    }
-
-    if (this.params.snapAzimuth && this.snapAzimuth.animating) {
-      // Rotation is free during drag; only animate towards nearest cardinal angle after release
-      const remaining = deltaAngle(this.spherical.theta, this.snapAzimuth.target);
-      if (Math.abs(remaining) < 0.005) {
-        this.spherical.theta = this.snapAzimuth.target;
-        this.sphericalDelta.theta = 0;
-        this.snapAzimuth.animating = false;
-        this.snapAzimuth.committed = false;
-      } else {
-        // ease the speed in, else a partial rotation lurches towards its cardinal angle on release
-        this.snapAzimuth.ramp = Math.min(1, this.snapAzimuth.ramp + this.azimuthalDampingFactor * snapAzimuthEaseIn);
-        const r = this.snapAzimuth.ramp;
-        const eased = r * r * (3 - 2 * r);
-        this.sphericalDelta.theta = Math.sign(remaining) * Math.max(Math.abs(remaining) * 0.6, 0.08) * eased;
-        this.dispatchEvent(changeEvent); // keep frame chain alive through the slow start
       }
     }
 
@@ -1098,13 +1014,6 @@ const endEvent = { type: "end" } as const;
 const changeEvent = { type: "change" } as const;
 
 const defaultDampingFactor = 0.05;
-/**
- * Where the cardinal directions sit. `0` puts 4 of them on n, s, e, w rather than the diagonals;
- * with 8 the two agree, since half a step of `2π / 8` lands on the same set either way.
- */
-const snapAzimuthOffset = 0;
-/** Per-frame growth of `snapAzimuth.ramp`, relative to `azimuthalDampingFactor` */
-const snapAzimuthEaseIn = 2;
 /** Per-event weight of the centroid and spread low-pass; lower is smoother but laggier */
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
@@ -1126,7 +1035,7 @@ const zoomRadiusEpsilon = 1e-4;
 
 const twoPI = 2 * Math.PI;
 
-function normalizeAngle(a: number) {
+function _normalizeAngle(a: number) {
   return a - Math.round(a / twoPI) * twoPI;
 }
 const tempVector3One = new THREE.Vector3();
