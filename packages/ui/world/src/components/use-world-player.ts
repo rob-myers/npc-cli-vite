@@ -53,6 +53,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           animate: true,
           height: npcfg.dist.height,
           azimuthal: onThem === true ? npc.rotation.y : undefined,
+          // they walk whilst we pan, and following means the camera is expected to be ON them —
+          // a destination fixed at the moment of the press lands behind
+          track: () => w.n[state.key]?.point,
         });
       },
       persist() {
