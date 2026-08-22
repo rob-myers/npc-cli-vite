@@ -56,17 +56,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 64,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: 13,
+        // the two stops the zoom moves between — see `camera-controls`' `zoomProgress`
+        minDistance: 5,
         maxDistance: 13,
-        extraZoom: 3,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
         zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
-      initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
+      initial: saved.cameraInitial ?? defaultInitialCamera(),
       lookAtAnimId: 0,
-      shiftDownMs: 0,
       lastPointer: {
         epochMs: 0,
         longPressTimer: 0,
@@ -254,24 +253,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.speech?.onResize();
       }, 100),
       onKeyDown(e) {
-        if (e.key === "Shift" && e.repeat === false) {
-          state.shiftDownMs = performance.now();
-        }
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
-        }
-      },
-      onKeyUp(e) {
-        // a tap toggles the extra zoom lock, where holding it down does nothing — as the
-        // button does on touch. `shiftDownMs` is when it went down, `0` once spent
-        if (e.key === "Shift") {
-          const tapped = state.shiftDownMs > 0 && performance.now() - state.shiftDownMs < shiftTapMs;
-          state.shiftDownMs = 0;
-          if (tapped === true) state.controls?.toggleExtraZoomLock();
         }
       },
       onPointerDown(e) {
@@ -399,21 +386,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
         ro.observe(w.rootEl);
 
-        const { onKeyDown, onKeyUp } = state;
+        const { onKeyDown } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
-        // on `window`, else a release after focus moved elsewhere never reaches us and the
-        // next release would read as a very long tap
-        window.addEventListener("keyup", onKeyUp);
-
-        // the extra-zoom button reads the lock, so the menu redraws when it changes
-        const onExtraZoomChange = () => w.menu?.update();
-        w.rootEl.addEventListener("extrazoomchange", onExtraZoomChange);
 
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
-          window.removeEventListener("keyup", onKeyUp);
-          w.rootEl?.removeEventListener("extrazoomchange", onExtraZoomChange);
         };
       },
       setCameraMode(cameraMode) {
@@ -454,9 +432,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.invalidate();
         };
 
+        // else the next frame's settle would pull the view off the radius just set
+        const syncZoomProgress = () => controls.setZoomFromRadius(controls.spherical.radius);
+
         if (opts.animate !== true) {
           applyTarget(1);
           controls.update(); // no frame to wait for
+          syncZoomProgress();
           return;
         }
 
@@ -471,6 +453,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         await new Promise<void>((resolve) => {
           const step = () => {
             if (controls.pointers.length > 0) {
+              syncZoomProgress();
               return resolve(); // interacting: leave the camera where they put it
             }
             const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
@@ -479,6 +462,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             if (ratio < 1) {
               state.lookAtAnimId = requestAnimationFrame(step);
             } else {
+              syncZoomProgress();
               resolve();
             }
           };
@@ -518,7 +502,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       resetCamera() {
-        const initial = defaultInitialCamera(w.touchDevice);
+        const initial = defaultInitialCamera();
         state.initial = initial;
         store.patch({ cameraInitial: initial });
         if (state.controls) {
@@ -529,6 +513,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             initial.azimuthal,
           );
           state.controls.object.position.copy(state.controls.target).add(delta);
+          state.controls.setZoomFromRadius(initial.position.y, true);
           state.controls.update();
           w.r3f?.invalidate();
         }
@@ -733,7 +718,7 @@ export type State = {
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
-  ctrlOpts: MapControlsProps & { extraZoom?: number };
+  ctrlOpts: MapControlsProps;
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
   lastPointer: {
@@ -763,9 +748,6 @@ export type State = {
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
-  onKeyUp(e: KeyboardEvent): void;
-  /** When Shift went down, so its release can tell a tap from a hold */
-  shiftDownMs: number;
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;
@@ -818,9 +800,6 @@ export type State = {
   setupPostProcessing(): () => void;
 };
 
-/** Shift held longer than this is a hold, not a tap — see `onKeyUp` */
-const shiftTapMs = 300;
-
 /**
  * `fov` is vertical, so a short wide viewport derives an ever wider horizontal one — 91° at
  * 16:9 but 127° at 3.5:1, where the edges smear. Keep `cameraFov` up to `cameraRefAspect`,
@@ -863,11 +842,12 @@ function createPickRT(count: 1 | 2) {
   return renderTarget;
 }
 
-function defaultInitialCamera(touchDevice: boolean): State["initial"] {
+function defaultInitialCamera(): State["initial"] {
   return {
     azimuthal: 0,
     polar: Math.PI / 4,
-    position: { x: 4, y: touchDevice ? 10 : 16, z: 4 },
+    // the far stop — see `ctrlOpts`' `maxDistance`
+    position: { x: 4, y: 13, z: 4 },
   };
 }
 

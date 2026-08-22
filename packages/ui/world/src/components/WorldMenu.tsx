@@ -11,8 +11,6 @@ import {
   GpsIcon,
   GpsSlashIcon,
   type Icon,
-  LockSimpleIcon,
-  MagnifyingGlassPlusIcon,
   PauseIcon,
   PlayIcon,
   SunIcon,
@@ -300,9 +298,6 @@ export function WorldMenu() {
   const spinnerKeys = useToastKeys(pendingKeys, spinnerMinMs);
   const toggleToastKeys = useToastTs(state.toastTs);
   const introEnabled = w.player.introEnabled;
-  const extraZoomActive = w.view.controls?.extraZoomActive === true;
-  const extraZoomDeep = w.view.controls?.extraZoomDeep === true;
-  const extraZoomLocked = w.view.controls?.extraZoomLocked === true;
   // click replays the intro, whereas long press disables it
   const introPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
     longPressed: false,
@@ -694,37 +689,6 @@ export function WorldMenu() {
               <GpsIcon className="size-5" alt="pan to the player (long press to disable on load)" weight="bold" />
             ) : (
               <GpsSlashIcon className="size-5 text-red-400" alt="pan to the player (disabled on load)" weight="bold" />
-            )}
-          </div>
-
-          {/* extra zoom: tap shift (desktop) or this button (touch) to lock it */}
-          <div
-            data-keep-menu-open
-            className={cn(
-              "outline-width-1 grid place-items-center bg-gray-800 size-9 select-none",
-              "relative touch-none origin-top-left transition duration-1000 ease-out",
-              // it sits at the very edge of the screen, so the tap area reaches beyond the
-              // icon — down and right only, else it would swallow taps meant for the button above
-              touch && "after:absolute after:content-[''] after:inset-0 after:-right-3 after:-bottom-3",
-              extraZoomActive ? "cursor-pointer text-white hover:bg-gray-700" : "text-gray-500",
-              // only once well in, so it doesn't twitch as the pinch begins
-              ((extraZoomDeep && touch) || extraZoomLocked) && "scale-150",
-              extraZoomLocked && "bg-gray-700",
-            )}
-            onPointerDown={(e) => {
-              e.stopPropagation(); // else the icon column starts dragging
-              w.view.controls?.toggleExtraZoomLock(); // re-renders via `extrazoomchange`
-            }}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            {extraZoomLocked ? (
-              <LockSimpleIcon className="size-5" alt="extra zoom locked (tap to unlock)" weight="bold" />
-            ) : (
-              <MagnifyingGlassPlusIcon
-                className="size-5"
-                alt={extraZoomActive ? "extra zoom (tap to lock)" : "extra zoom"}
-                weight="bold"
-              />
             )}
           </div>
         </div>

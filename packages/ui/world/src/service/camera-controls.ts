@@ -5,270 +5,6 @@ import { EventDispatcher, type PerspectiveCamera, TOUCH } from "three";
 
 type ControlsEventMap = { change: object; start: object; end: object };
 
-class ExtraZoom {
-  private _ctrl: CameraControls;
-  /** True while inside extra-zoom range (radius < minDistance) */
-  active = false;
-  /** True when camera is at minDistance — visual indicator only */
-  ready = false;
-  tapLocked = false;
-  /** True once `extraZoomDeepFrom` of the way into extra zoom */
-  deep = false;
-  _activeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-  _normalZoomTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-  _cooldownTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-  /** True once the zoom reached its limit and locked itself, until the view backs off again */
-  _autoLocked = false;
-  /** Zoom-out travel since the last pause, as a fraction of an unlock — see `advanceUnlock` */
-  _unlockProgress = 0;
-  _unlockLastMs = 0;
-
-  constructor(ctrl: CameraControls) {
-    this._ctrl = ctrl;
-  }
-
-  clearTimers() {
-    clearTimeout(this._activeTimer);
-    clearTimeout(this._normalZoomTimer);
-    clearTimeout(this._cooldownTimer);
-    this._activeTimer = undefined;
-    this._normalZoomTimer = undefined;
-    this._cooldownTimer = undefined;
-  }
-
-  get minR() {
-    const c = this._ctrl;
-    return this.active ? c.minDistance / c.extraZoom : c.minDistance;
-  }
-
-  get maxR() {
-    const c = this._ctrl;
-    return this.active ? c.minDistance : c.maxDistance;
-  }
-
-  /**
-   * Whilst locked we never tween back to `minDistance`, and the view holds the extra zoom it
-   * has: turning, tilting and panning stay free, only zoom does not — see `dollyIn`
-   */
-  get zoomLocked() {
-    return this.active === true && this.tapLocked === true;
-  }
-
-  emitChange() {
-    const detail = { active: this.active, locked: this.zoomLocked };
-    this._ctrl.domElement.dispatchEvent(new CustomEvent("extrazoomchange", { detail, bubbles: true }));
-  }
-
-  setDeep(deep: boolean) {
-    if (this.deep === deep) return;
-    this.deep = deep;
-    this.emitChange();
-  }
-
-  setActive(active: boolean) {
-    if (this.active === active) return;
-    this.active = active;
-    if (!active) {
-      this.tapLocked = false; // else stale lock applies to next extra zoom
-      this.startCooldown();
-      this.setReady(true);
-    }
-    this.emitChange();
-  }
-
-  toggleTapLock() {
-    this.setTapLock(!this.tapLocked);
-  }
-
-  setTapLock(tapLocked: boolean) {
-    if (this.active === false || this.tapLocked === tapLocked) return;
-    this._unlockProgress = 0; // the next zoom-out starts afresh, whichever way this went
-    this.tapLocked = tapLocked;
-    this.emitChange();
-    if (this.tapLocked === false) this._ctrl.dispatchEvent(changeEvent); // restart tween
-  }
-
-  /**
-   * A little way into the extra zoom the view locks itself, so it holds where it was put rather
-   * than tweening back out. Measured from the TOP of the range — going in at all is the intent,
-   * so the tween-back should stop fighting it straight away.
-   *
-   * Locked still zooms IN, see `dollyIn`; it is only the springing back that stops. Coming back
-   * out is the deliberate gesture that unlocks, and the lock cannot re-arm until the view has
-   * risen past `autoLockReleaseFrom`, or a manual unlock would be undone on the very next frame.
-   */
-  syncAutoLock(radius: number) {
-    if (this.active === false) {
-      this._autoLocked = false;
-      return;
-    }
-    const range = this._ctrl.minDistance - this.minR;
-    if (radius <= this._ctrl.minDistance - range * autoLockFrom) {
-      if (this._autoLocked === false) {
-        this._autoLocked = true;
-        this.setTapLock(true);
-      }
-    } else if (radius > this._ctrl.minDistance - range * autoLockReleaseFrom) {
-      this._autoLocked = false;
-    }
-  }
-
-  setReady(ready: boolean) {
-    if (this.ready === ready) return;
-    this.ready = ready;
-    this._ctrl.domElement.dispatchEvent(new CustomEvent("extrazoomready", { detail: { ready }, bubbles: true }));
-  }
-
-  startCooldown() {
-    clearTimeout(this._cooldownTimer);
-    this._cooldownTimer = setTimeout(() => {
-      this._cooldownTimer = undefined;
-    }, 150);
-  }
-
-  /** Returns false if blocked (tween-back in progress) */
-  handleWheelIn(event: WheelEvent, zoomScale: number): boolean {
-    const ctrl = this._ctrl;
-    if (this.active && this._activeTimer === undefined) return false;
-    if (ctrl.extraZoom > 1 && (this.active || ctrl.spherical.radius <= ctrl.minDistance * 1.05)) {
-      if (!this.active) ctrl.u.panOffset.set(0, 0, 0); // freeze target on entry
-      this.setActive(true);
-      this.setReady(false);
-      clearTimeout(this._normalZoomTimer);
-      ctrl.updateMouseParameters(event);
-      ctrl.dollyIn(zoomScale);
-      clearTimeout(this._activeTimer);
-      this._activeTimer = setTimeout(() => {
-        this._activeTimer = undefined;
-        ctrl.dispatchEvent(changeEvent); // kick frame chain in demand frameloop
-      }, 300);
-    } else {
-      ctrl.updateMouseParameters(event);
-      ctrl.dollyIn(zoomScale);
-      if (ctrl.extraZoom > 1) {
-        clearTimeout(this._normalZoomTimer);
-        this._normalZoomTimer = setTimeout(() => {
-          this._normalZoomTimer = undefined;
-          this.setReady(ctrl.spherical.radius <= ctrl.minDistance * 1.05);
-        }, 50);
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Zooming out is how the lock is undone, but it takes a deliberate gesture rather than a stray
-   * notch or a wobble: `amount` is that gesture's share of a whole unlock, accumulated whilst it
-   * continues and abandoned after a pause. `dollyIn`/`dollyOut` stay gated until it lands, so
-   * nothing moves meanwhile, and `_autoLocked` holds so it cannot re-lock until the view has
-   * backed off — see `syncAutoLock`
-   */
-  advanceUnlock(amount: number) {
-    if (this.zoomLocked === false) {
-      return;
-    }
-    const nowMs = performance.now();
-    this._unlockProgress = nowMs - this._unlockLastMs > unlockPauseMs ? 0 : this._unlockProgress;
-    this._unlockProgress += amount;
-    this._unlockLastMs = nowMs;
-    if (this._unlockProgress >= 1) {
-      this.setTapLock(false);
-    }
-  }
-
-  handleWheelOut(event: WheelEvent): void {
-    this.advanceUnlock(Math.abs(event.deltaY) / unlockWheelDelta);
-    clearTimeout(this._normalZoomTimer);
-    if (this.active) {
-      clearTimeout(this._activeTimer);
-      this._activeTimer = undefined;
-    }
-    if (this._cooldownTimer !== undefined) {
-      this.startCooldown(); // keep extending — delay showing "ready" indicator
-    } else {
-      this.setReady(false);
-    }
-  }
-
-  handleTouchDolly(ratio: number) {
-    const ctrl = this._ctrl;
-    if (ratio > 1) {
-      // spreading fingers (zoom in)
-      if (this.active || ctrl.spherical.radius / ratio <= ctrl.minDistance * 1.05) {
-        if (!this.active) {
-          ctrl.u.panOffset.set(0, 0, 0);
-          this.setActive(true);
-          this.setReady(false);
-        }
-      }
-    } else if (ratio < 1) {
-      // pinching fingers (zoom out) — in log space, so a given pinch counts the same wherever
-      // in the zoom range it happens
-      this.advanceUnlock(Math.abs(Math.log(ratio)) / unlockPinchLog);
-      this.setReady(false);
-    }
-  }
-
-  applyClamp(spherical: THREE.Spherical, u: CameraControls["u"]) {
-    const ctrl = this._ctrl;
-    const minR = ctrl.minDistance / ctrl.extraZoom;
-    spherical.radius = Math.max(minR, Math.min(ctrl.minDistance, spherical.radius * u.scale));
-    if (spherical.radius >= ctrl.minDistance) {
-      this.setActive(false);
-    }
-  }
-
-  /**
-   * Once locked the view carries on in to the FULL extra zoom by itself, the mirror of
-   * `applyTween`'s spring back out. Each frame dispatches a change, which invalidates the
-   * frameloop, so the dive keeps going whilst the world is paused — nothing else is rendering.
-   */
-  applyLockDive(spherical: THREE.Spherical, u: CameraControls["u"]) {
-    const ctrl = this._ctrl;
-    const remaining = spherical.radius - this.minR;
-    if (remaining <= lockDiveUntil) {
-      spherical.radius = this.minR; // arrived: no change dispatched, so the frames can stop
-      return;
-    }
-    const step = Math.max(remaining * lockDiveRate, lockDiveUntil);
-    if (u.dollyDirection.lengthSq() > 0) {
-      // wheel/mouse: drive via `handleZoomToCursor`, so it keeps diving towards the cursor
-      u.scale = (spherical.radius - step) / spherical.radius;
-      u.zoomingToCursor = true;
-    } else {
-      // touch: apply the step directly — `u.scale` is reset before the next run
-      spherical.radius = Math.max(this.minR, spherical.radius - step);
-    }
-    ctrl.dispatchEvent(changeEvent); // keep the frame chain alive through the dive
-  }
-
-  applyTween(spherical: THREE.Spherical, u: CameraControls["u"]) {
-    const ctrl = this._ctrl;
-    if (spherical.radius >= ctrl.minDistance) {
-      this.setActive(false);
-      return;
-    }
-    const tweenTarget = ctrl.minDistance * 1.06;
-    const remaining = tweenTarget - spherical.radius;
-    const step = remaining < 0.05 ? remaining : remaining * 0.05;
-    if (u.dollyDirection.lengthSq() > 0) {
-      // wheel/mouse: drive via handleZoomToCursor so cursor stays pinned
-      u.scale = (spherical.radius + step) / spherical.radius;
-      u.zoomingToCursor = true;
-    } else {
-      // touch: apply step directly — u.scale is reset before next run
-      spherical.radius = Math.min(tweenTarget, spherical.radius + step);
-    }
-    ctrl.dispatchEvent(changeEvent); // keep frame chain alive during slow tween
-  }
-
-  onPointerUp() {
-    if (this.active && this._activeTimer === undefined) {
-      this._ctrl.dispatchEvent(changeEvent);
-    }
-  }
-}
-
 /**
  * Based on:
  * > https://github.com/pmndrs/three-stdlib/blob/main/src/controls/OrbitControls.ts
@@ -354,9 +90,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     rotateEnd: new THREE.Vector2(),
     rotateDelta: new THREE.Vector2(),
     rotateStart: new THREE.Vector2(),
-    scale: 1,
     up: new THREE.Vector3(0, 1, 0),
-    zoomingToCursor: false,
   };
 
   pointers: PointerEvent[] = [];
@@ -382,9 +116,22 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   pointerLastUp = { x: 0, y: 0 };
   /** Length of "last" `|this.pointerLastUp - this.pointerFirstDown|` */
   lastPointerDistance = 0;
-  /** Allow zooming in beyond minDistance by this factor; tweens back when released */
-  extraZoom = 1;
-  _ez: ExtraZoom;
+  /**
+   * Where the view sits between its two stops: `0` at `maxDistance`, `1` at `minDistance`.
+   * Gestures ADD to this rather than scaling a radius, and `update` writes the radius from it —
+   * see `syncZoom`. Letting go settles it to whichever stop is nearer, so reversing cancels
+   */
+  zoomProgress = 0;
+  /** When zoom input last arrived, so `syncZoom` can tell a gesture in progress from one let go */
+  _zoomInputMs = 0;
+  /** Asks for the frame on which the settle begins — see `addZoomProgress` */
+  _zoomSettleTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  /** Which way the last input moved the zoom: `1` inwards, `-1` outwards */
+  _zoomDirection: 1 | -1 = 1;
+  /** Whether anything has aimed `u.dollyDirection` yet — see `setDollyTowards` */
+  _zoomAimed = false;
+  /** Whether `zoomProgress` has been read off the camera it started at — see `update` */
+  _zoomSeeded = false;
 
   snapAzimuth = {
     target: 0,
@@ -401,24 +148,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   /** Smoothed 0..1 measure of how much of the gesture is centroid motion, not pinch */
   twoFingerRotateRatio = 1;
 
-  get extraZoomActive() {
-    return this._ez.active;
-  }
-  /** True well into extra zoom, rather than merely inside it — see `extrazoomchange` */
-  get extraZoomDeep() {
-    return this._ez.deep;
-  }
-  get readyForExtraZoom() {
-    return this._ez.ready;
-  }
-  get extraZoomLocked() {
-    return this._ez.zoomLocked;
-  }
-  /** Tapped: the button on touch, a click that neither dragged nor lingered on desktop */
-  toggleExtraZoomLock() {
-    this._ez.toggleTapLock();
-  }
-
   minPanDistance = 0;
   //#endregion
 
@@ -431,7 +160,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.target0.copy(this.target);
     this.position0.copy(this.object.position);
     this.zoom0 = this.object.zoom;
-    this._ez = new ExtraZoom(this);
   }
 
   addPointer(event: PointerEvent) {
@@ -468,10 +196,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     window.addEventListener("blur", this.onWindowBlur);
   }
 
-  clampDistance(dist: number) {
-    return Math.max(this.minDistance, Math.min(this.maxDistance, dist));
-  }
-
   dispose() {
     this.domElement.style.touchAction = "auto"; // 🚧
     this.domElement.removeEventListener("contextmenu", this.onContextMenu);
@@ -482,21 +206,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.ownerDocument.removeEventListener("pointermove", this.onPointerMove);
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
     window.removeEventListener("blur", this.onWindowBlur);
-    this._ez.clearTimers();
-  }
-
-  /**
-   * Zooming further IN stays open whilst locked — the lock arms almost as soon as the extra zoom
-   * begins, so gating this would strand the view at the top of the range. Zooming OUT is gated:
-   * it is the gesture that unlocks, accumulated by `advanceUnlock`. `applyTween` bypasses both.
-   */
-  dollyIn(dollyScale: number) {
-    this.u.scale = this.u.scale * dollyScale;
-  }
-
-  dollyOut(dollyScale: number) {
-    if (this._ez.zoomLocked === true) return;
-    this.u.scale = this.u.scale / dollyScale;
+    clearTimeout(this._zoomSettleTimer);
   }
 
   getAzimuthalAngle() {
@@ -529,11 +239,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.pointerPositions[pointer.pointerId];
   }
 
-  getZoomScale() {
-    // closer to 1 is slower
-    return 0.95 ** this.zoomSpeed;
-  }
-
   handleMouseDownDolly(event: MouseEvent) {
     this.updateMouseParameters(event);
     this.u.dollyStart.set(event.clientX, event.clientY);
@@ -547,22 +252,16 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.u.rotateStart.set(event.clientX, event.clientY);
   }
 
+  /** Middle-button drag: the same trip between the stops the wheel makes, measured in pixels */
   handleMouseMoveDolly(event: MouseEvent) {
     this.u.dollyEnd.set(event.clientX, event.clientY);
     this.u.dollyDelta.subVectors(this.u.dollyEnd, this.u.dollyStart);
-
-    if (this.u.dollyDelta.y > 0) {
-      this.dollyOut(this.getZoomScale());
-    } else if (this.u.dollyDelta.y < 0) {
-      this.dollyIn(this.getZoomScale());
-    }
-
+    this.addZoomProgress(-this.u.dollyDelta.y / wheelDeltaPerStop);
     this.u.dollyStart.copy(this.u.dollyEnd);
     this.update();
   }
 
   handleMouseMovePan(event: MouseEvent) {
-    // if (this.extraZoomActive) return;
     this.u.panEnd.set(event.clientX, event.clientY);
     this.u.panDelta.subVectors(this.u.panEnd, this.u.panStart).multiplyScalar(this.panSpeed);
     this.pan(this.u.panDelta.x, this.u.panDelta.y);
@@ -571,7 +270,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleMouseMoveRotate(event: MouseEvent) {
-    if (this._ez.active) this.u.dollyDirection.set(0, 0, 0);
     this.u.rotateEnd.set(event.clientX, event.clientY);
     this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
 
@@ -612,40 +310,15 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.update();
   }
 
+  /**
+   * Each notch moves the view a share of the way between the two stops, rather than scaling the
+   * radius: reversing simply subtracts, so a half-finished zoom rewinds and settles back where it
+   * began — see `syncZoom`, which does the settling.
+   */
   handleMouseWheel(event: WheelEvent) {
-    const zoomScale = this.getZoomScale();
-    if (event.deltaY < 0) {
-      if (!this._ez.handleWheelIn(event, zoomScale)) return;
-    } else if (event.deltaY > 0) {
-      this._ez.handleWheelOut(event);
-      this.updateMouseParameters(event);
-      this.dollyOut(zoomScale);
-    }
+    this.updateMouseParameters(event); // aims `u.dollyDirection` at the cursor
+    this.addZoomProgress((-event.deltaY * this.zoomSpeed) / wheelDeltaPerStop);
     this.update();
-  }
-
-  handleTouchMoveDolly(event: PointerEvent) {
-    const position = this.getSecondPointerPosition(event);
-    const distance = Math.hypot(event.pageX - position.x, event.pageY - position.y);
-
-    this.u.dollyEnd.set(0, distance);
-    this.u.dollyDelta.set(0, (this.u.dollyEnd.y / this.u.dollyStart.y) ** this.zoomSpeed);
-    const ratio = this.u.dollyDelta.y;
-
-    if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
-
-    this.dollyOut(ratio);
-    this.u.dollyStart.copy(this.u.dollyEnd);
-  }
-
-  handleTouchMoveDollyPan(event: PointerEvent) {
-    if (this.enableZoom === true) this.handleTouchMoveDolly(event);
-    if (this.enablePan === true) this.handleTouchMovePan(event);
-  }
-
-  handleTouchMoveDollyRotate(event: PointerEvent) {
-    if (this.enableZoom === true) this.handleTouchMoveDolly(event);
-    if (this.enableRotate === true) this.handleTouchMoveRotate(event);
   }
 
   /**
@@ -695,15 +368,20 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     const prevDist = this.u.dollyStart.y;
     const nextDist = prevDist + (dist - prevDist) * twoFingerSmoothing;
     if (prevDist > 0 && nextDist > 0) {
-      const ratio = (nextDist / prevDist) ** this.zoomSpeed;
-      if (this.extraZoom > 1) this._ez.handleTouchDolly(ratio);
-      this.dollyOut(ratio);
+      // only a PURE pinch zooms: two fingers rotate and pan as well, and a gesture whose centroid
+      // is travelling is one of those — `twoFingerRotateRatio` is exactly that measure, smoothed,
+      // so a gesture that begins as a rotation still starts zooming once the pinch takes over
+      if (this.twoFingerRotateRatio < pinchPurity) {
+        // towards the pinch itself, as the wheel zooms towards the cursor. The centroid is in PAGE
+        // coordinates, where `setDollyTowards` measures against the element's client rect
+        this.setDollyTowards(this.twoFingerCentroid.x - window.scrollX, this.twoFingerCentroid.y - window.scrollY);
+        this.addZoomProgress(Math.log(nextDist / prevDist) / pinchLogPerStop);
+      }
       this.u.dollyStart.set(0, nextDist);
     }
   }
 
   handleTouchMovePan(event: PointerEvent) {
-    if (this._ez.active && this.pointers.length !== 1) return;
     if (this.pointers.length == 1) {
       this.u.panEnd.set(event.pageX, event.pageY);
     } else {
@@ -751,24 +429,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.u.rotateStart.copy(this.u.rotateEnd);
   }
 
-  handleTouchStartDollyRotate() {
-    if (this.enableZoom === true) {
-      this.handleTouchStartDolly();
-    }
-    if (this.enableRotate === true) {
-      this.handleTouchStartRotate();
-    }
-  }
-
-  handleTouchStartDollyPan() {
-    if (this.enableZoom === true) {
-      this.handleTouchStartDolly();
-    }
-    if (this.enablePan === true) {
-      this.handleTouchStartPan();
-    }
-  }
-
   handleTouchStartDolly() {
     const p0 = this.pointerPositions[this.pointers[0].pointerId];
     const p1 = this.pointerPositions[this.pointers[1].pointerId];
@@ -809,14 +469,83 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
   }
 
-  handleZoomToCursor() {
-    const prevRadius = this.u.offset.length();
-    const minR = this._ez.minR;
-    const maxR = this._ez.maxR;
-    const newRadius = Math.max(minR, Math.min(maxR, prevRadius * this.u.scale));
+  /**
+   * Where the view sits for a given progress: linear, so `setZoomFromRadius` can invert it.
+   *
+   * The stops arrive as props, which r3f applies AFTER the constructor — so until they do,
+   * `maxDistance` is still `Infinity` and the honest answer is the radius the camera already has.
+   */
+  getZoomRadius() {
+    if (Number.isFinite(this.maxDistance) === false) {
+      return this.spherical.radius;
+    }
+    return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
+  }
 
-    const radiusDelta = prevRadius - newRadius;
-    this.object.position.addScaledVector(this.u.dollyDirection, radiusDelta);
+  /** Moves the view between its stops, and marks the gesture as still going */
+  addZoomProgress(delta: number) {
+    if (delta !== 0) this._zoomDirection = delta > 0 ? 1 : -1;
+    this.zoomProgress = Math.max(0, Math.min(1, this.zoomProgress + delta));
+    this._zoomInputMs = performance.now();
+
+    // `syncZoom` waits `zoomSettleMs` before easing to a stop, and dispatches nothing whilst it
+    // waits — so with a paused world there is no frame left to notice the wait ending, and the
+    // zoom would sit wherever the gesture left it. This asks for that one frame
+    clearTimeout(this._zoomSettleTimer);
+    this._zoomSettleTimer = setTimeout(() => {
+      this._zoomSettleTimer = undefined;
+      this.dispatchEvent(changeEvent);
+    }, zoomSettleMs + 20);
+  }
+
+  /** Reads a radius back into `zoomProgress`, `snap` taking it to the nearer stop */
+  setZoomFromRadius(radius: number, snap = false) {
+    const span = this.maxDistance - this.minDistance;
+    if (Number.isFinite(span) === false) {
+      return; // the stops are not in yet — see `getZoomRadius`
+    }
+    const raw = span === 0 ? 0 : (this.maxDistance - radius) / span;
+    this.zoomProgress = Math.max(0, Math.min(1, raw));
+    if (snap === true) this.zoomProgress = this.zoomProgress < 0.5 ? 0 : 1;
+  }
+
+  /**
+   * A little travel is enough to commit, and once committed the view sets off for its stop THERE
+   * AND THEN — waiting for the gesture to stop first made a zoom feel like it needed permission.
+   * Further input in the same direction simply adds to it; reversing flips the direction, and the
+   * same small margin then sends it back where it came from, which is how a zoom is cancelled.
+   *
+   * Short of that margin there is nothing to commit to, so it waits: the gesture still owns the
+   * view, and only once that pauses does it fall back to the stop it set out from.
+   *
+   * The change dispatched per frame is what keeps it moving: under a demand frameloop nothing else
+   * would ask for the next frame, and a step below `EPS` would not trigger the check at the end of
+   * `update`. The arriving frame deliberately dispatches nothing, so the frames can stop.
+   */
+  syncZoom() {
+    const zoomingIn = this._zoomDirection === 1;
+    const committed = zoomingIn ? this.zoomProgress > zoomCommitIn : this.zoomProgress < zoomCommitOut;
+    if (committed === false && (this.pointers.length > 0 || performance.now() - this._zoomInputMs < zoomSettleMs)) {
+      return; // still theirs to move, and not yet far enough to go anywhere on its own
+    }
+    // committed: on to the stop it was heading for. Otherwise: back to the one it set out from
+    const target = zoomingIn === committed ? 1 : 0;
+    const remaining = target - this.zoomProgress;
+    if (Math.abs(remaining) < zoomSettleUntil) {
+      this.zoomProgress = target;
+      return;
+    }
+    this.zoomProgress += remaining * zoomSettleRate;
+    this.dispatchEvent(changeEvent);
+  }
+
+  /**
+   * Moves the camera along `u.dollyDirection` — aimed at the cursor or the pinch, see
+   * `setDollyTowards` — and re-derives `target`, which is what holds that point still whilst the
+   * view comes in. Given radii rather than a scale, so the two stops drive it.
+   */
+  applyZoomTowards(prevRadius: number, newRadius: number) {
+    this.object.position.addScaledVector(this.u.dollyDirection, prevRadius - newRadius);
     this.object.updateMatrixWorld();
 
     if (this.screenSpacePanning === true) {
@@ -1020,8 +749,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
     this.rotateAxis = "none";
 
-    this._ez.onPointerUp();
-
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
   };
@@ -1047,7 +774,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.domElement.ownerDocument.removeEventListener("pointerup", this.onPointerUp);
     this.rotateAxis = "none";
     this.snapAzimuth.animating = false;
-    this._ez.onPointerUp();
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
   };
@@ -1072,12 +798,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       case this.STATE.TOUCH_PAN:
         if (this.enablePan === false) return;
         this.handleTouchMovePan(event);
-        this.update();
-        break;
-
-      case this.STATE.TOUCH_DOLLY_PAN:
-        if (this.enableZoom === false && this.enablePan === false) return;
-        this.handleTouchMoveDollyPan(event);
         this.update();
         break;
 
@@ -1303,30 +1023,21 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     this.target.addScaledVector(this.u.panOffset, this.panDampingFactor);
 
-    if (this.zoomToCursor === true && this.u.zoomingToCursor === true) {
-      this.spherical.radius = Math.max(this._ez.minR, Math.min(this.maxDistance, this.spherical.radius));
-    } else if (this._ez.active) {
-      this._ez.applyClamp(this.spherical, u);
-    } else {
-      this.spherical.radius = Math.max(
-        this.minDistance,
-        Math.min(this.maxDistance, this.spherical.radius * this.u.scale),
-      );
+    // the camera opens whereever it was restored to, and the zoom takes its progress from that —
+    // once the stops are actually in, which is not the case whilst the constructor runs
+    if (this._zoomSeeded === false && Number.isFinite(this.maxDistance) === true) {
+      this.setZoomFromRadius(this.spherical.radius, true);
+      this._zoomSeeded = true;
     }
 
-    // every zoom path lands here, unlike `applyClamp` which the zoom-to-cursor branch skips
-    const deepFrom = this.minDistance - (this.minDistance - this._ez.minR) * extraZoomDeepFrom;
-    this._ez.setDeep(this._ez.active === true && this.spherical.radius <= deepFrom);
-    this._ez.syncAutoLock(this.spherical.radius);
-
-    // left alone mid-gesture: the spring back out and the dive in are both what happens once the
-    // user lets go — see `applyTween` and `applyLockDive`
-    if (this._ez.active && this._ez._activeTimer === undefined && this.pointers.length === 0) {
-      if (this._ez.zoomLocked === false) {
-        this._ez.applyTween(this.spherical, u);
-      } else {
-        this._ez.applyLockDive(this.spherical, u);
-      }
+    this.syncZoom();
+    const nextRadius = this.getZoomRadius();
+    // an aimed zoom is applied AFTER the position is rebuilt below, by moving the camera along the
+    // aim and letting `target` follow — so the radius is deliberately left alone here, else the
+    // view would first jump towards the centre of frame and then be dragged back
+    const zoomTowards = this.zoomToCursor === true && this._zoomAimed === true;
+    if (zoomTowards === false) {
+      this.spherical.radius = nextRadius;
     }
 
     this.u.offset.setFromSpherical(this.spherical);
@@ -1341,12 +1052,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.sphericalDelta.phi *= 1 - this.polarDampingFactor;
     this.u.panOffset.multiplyScalar(1 - this.panDampingFactor);
 
-    if (this.zoomToCursor === true && this.u.zoomingToCursor === true) {
-      this.handleZoomToCursor();
+    if (zoomTowards === true && Math.abs(nextRadius - this.spherical.radius) > zoomRadiusEpsilon) {
+      this.applyZoomTowards(this.spherical.radius, nextRadius);
     }
-
-    this.u.scale = 1;
-    this.u.zoomingToCursor = false;
 
     if (
       this.u.lastPosition.distanceToSquared(this.object.position) > this.EPS ||
@@ -1361,16 +1069,21 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return false;
   }
 
-  /** Update `u.zoomingToCursor`, `u.mouse`, `u.dollyDirection` */
+  /** Aims the zoom at the cursor — see `setDollyTowards` */
   updateMouseParameters(event: MouseEvent) {
+    this.setDollyTowards(event.clientX, event.clientY);
+  }
+
+  /** Aims it at a point on screen: the cursor, or the centre of a pinch */
+  setDollyTowards(clientX: number, clientY: number) {
     if (!this.zoomToCursor) {
       return;
     }
-    this.u.zoomingToCursor = true;
+    this._zoomAimed = true;
     const { left, top, width, height } = this.domElement.getBoundingClientRect();
     this.u.mouse.set(
-      2 * ((event.clientX - left) / width) - 1, // [-1, 1]
-      1 - 2 * ((event.clientY - top) / height), // [-1, 1]
+      2 * ((clientX - left) / width) - 1, // [-1, 1]
+      1 - 2 * ((clientY - top) / height), // [-1, 1]
     );
     this.u.dollyDirection
       .set(this.u.mouse.x, this.u.mouse.y, 1)
@@ -1396,24 +1109,20 @@ const snapAzimuthEaseIn = 2;
 const twoFingerSmoothing = 0.35;
 /** Per-event weight of the pinch-vs-rotate measure; lower is steadier but slower to adapt */
 const twoFingerRatioSmoothing = 0.25;
-/** Wheel travel needed to unlock, roughly 3 notches of a mouse — see `advanceUnlock` */
-const unlockWheelDelta = 300;
-/** And by pinch: `ln` of the ratio zoomed out through, where the whole extra zoom is `ln 2` */
-const unlockPinchLog = 0.25;
-/** A gap this long means the gesture stopped, so its travel no longer counts */
-const unlockPauseMs = 400;
-
-/** Per-frame share of the way to full extra zoom the lock's dive takes, and when it is done */
-const lockDiveRate = 0.05;
-const lockDiveUntil = 0.02;
-
-/** How far INTO the extra zoom the view must come to lock itself, as a fraction of its range */
-const autoLockFrom = 0.05;
-/** And how near the top it must return before it may do so again */
-const autoLockReleaseFrom = 0.01;
-
-/** How far through the extra zoom range before it counts as deep */
-const extraZoomDeepFrom = 0.5;
+/** Wheel travel for a whole trip between the stops, and the `ln` of the pinch spread for one */
+const wheelDeltaPerStop = 500;
+const pinchLogPerStop = 0.6;
+/** Under this much of a two-finger gesture being centroid motion, it counts as a pure pinch */
+const pinchPurity = 0.35;
+/** How far a zoom must travel to commit to its stop rather than falling back to the one it left */
+const zoomCommitIn = 0.1;
+const zoomCommitOut = 0.9;
+/** How long input must pause before the view settles, how fast it does, and when it has arrived */
+const zoomSettleMs = 120;
+const zoomSettleRate = 0.12;
+const zoomSettleUntil = 0.001;
+/** A radius change under this is not worth re-aiming the camera for */
+const zoomRadiusEpsilon = 1e-4;
 
 const twoPI = 2 * Math.PI;
 
