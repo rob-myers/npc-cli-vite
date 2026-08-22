@@ -47,6 +47,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       canvas: null as any,
       cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
       followOffset: new Vect(),
+      fHeld: false,
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
@@ -256,11 +257,25 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         } else if (e.key === "f" || e.key === "F") {
-          state.setCameraMode(state.cameraMode === "follow" ? "free" : "follow");
+          // the TOGGLE waits for the release, so that holding the key can mean something else. A
+          // held key repeats, which is the long press — no timer of our own, and a tap never gets
+          // there. Held whilst following it keeps the mode and simply goes back to the player,
+          // which is otherwise only reachable by leaving follow and returning to it
+          if (e.repeat === false) {
+            state.fHeld = false;
+          } else if (state.fHeld === false) {
+            state.fHeld = true;
+            state.cameraMode === "follow" ? state.lookAtPlayer() : state.setCameraMode("follow");
+          }
         } else if (e.key === "q" || e.key === "Q") {
           // what the look button does on a click: look at the player, and have it happen on load
           // too. Pressed again once on them, `panTo` swings round behind them
           w.player?.setIntroEnabled(true);
+        }
+      },
+      onKeyUp(e) {
+        if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
+          state.setCameraMode(state.cameraMode === "follow" ? "free" : "follow");
         }
       },
       onPointerDown(e) {
@@ -322,8 +337,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
+        // The hull's outer skin is see-through by dithering against the MSAA samples, and this
+        // target has none — so it would come out solid here and swallow the picks of the walls it
+        // skins. Simply not drawn, which no material trick can match: an `alphaTest` alongside
+        // `alphaToCoverage` rewrites the alpha rather than only discarding on it
+        const skin = w.wall?.instHullOuter ?? null;
+        if (skin !== null) skin.visible = false;
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
+        if (skin !== null) skin.visible = true;
         state.objectPick.value = 0;
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
@@ -376,12 +398,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
         ro.observe(w.rootEl);
 
-        const { onKeyDown } = state;
+        const { onKeyDown, onKeyUp } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
+        w.rootEl.addEventListener("keyup", onKeyUp);
 
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
+          w.rootEl?.removeEventListener("keyup", onKeyUp);
         };
       },
       /**
@@ -429,23 +453,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setCameraMode(cameraMode) {
         if (cameraMode === "follow") {
-          // back onto them: whatever vantage a pan chose belonged to the last spell of following
-          state.followOffset.set(0, 0);
-          // and the move onto them is a `lookAt` rather than being left to the follow, which runs
-          // on the world tick — a paused world runs none, and turning the follow on would appear
-          // to do nothing until it resumed. This animates on its own frames, paused or not
-          const player = w.n[w.player?.key ?? ""];
-          if (player !== undefined) {
-            void state.lookAt(player.point, {
-              animate: true,
-              height: npcConfig.dist.height,
-              track: () => w.n[w.player?.key ?? ""]?.point,
-            });
-          }
+          // onto them, clearing the vantage a pan chose — it belonged to the last spell of this
+          state.lookAtPlayer();
         }
         store.patch({ cameraMode });
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the look button
+      },
+      lookAtPlayer() {
+        const player = w.n[w.player?.key ?? ""];
+        if (player === undefined) return;
+
+        // asking to look AT them outranks wherever a pan last chose to stand: without this the
+        // follow eases straight back to that vantage and the pan appears to bounce
+        state.followOffset.set(0, 0);
+
+        // a `lookAt` rather than leaving it to the follow, which runs on the world tick — a paused
+        // world runs none, and the move onto them would wait until it resumed. This animates on
+        // its own frames, paused or not. Tracked, since they walk whilst it pans
+        void state.lookAt(player.point, {
+          animate: true,
+          height: npcConfig.dist.height,
+          track: () => w.n[w.player?.key ?? ""]?.point,
+        });
       },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
@@ -769,6 +799,11 @@ export type State = {
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
+  onKeyUp(e: KeyboardEvent): void;
+  /** Whether the `f` key has been held long enough to have done its long press */
+  fHeld: boolean;
+  /** Pans onto the player, following them as they walk — what turning `follow` on does */
+  lookAtPlayer(): void;
   onResize(): void;
   onPointerDown(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerLeave(e: React.PointerEvent<HTMLDivElement>): void;

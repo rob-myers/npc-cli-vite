@@ -193,11 +193,13 @@ export default function Walls() {
   const hullOuterMaterial = useMemo(() => {
     const m = new THREE.MeshStandardNodeMaterial({
       side: THREE.DoubleSide, // seen from without, and from within through the hull's doorways
-      // discarded whilst picking rather than merely unpickable: opaque, it would otherwise stand
-      // in front of the walls it skins and swallow their picks
-      alphaTest: 0.5,
+      // Dithered against the MSAA samples rather than blended, as the doors are: an instanced mesh
+      // cannot be sorted back to front, which is what blending a skin wrapped around the whole
+      // hull would need. It also gives the pick pass its discard for free — zero opacity covers no
+      // samples at all, so the skin cannot stand in front of the walls it skins and swallow their
+      // picks
+      alphaToCoverage: true,
     });
-    m.opacityNode = w.view.objectPick.equal(0).select(float(1), float(0));
 
     // height alone, so the lines run horizontally around the hull however a face is turned. A sine
     // rather than `fract`, whose discontinuity would defeat the `fwidth` antialiasing
@@ -216,6 +218,10 @@ export default function Walls() {
     const base = mix(color(hullOuterOutsideColor), color(hullOuterColor), inward);
     const line = mix(color(hullOuterOutsideStripeColor), color(hullOuterStripeColor), inward);
     m.colorNode = mix(base, line, stripes);
+    // and the world's side of it is see-through, so a camera outside the hull looks in rather than
+    // at a white wall. The rooms' side stays solid, which is what keeps them enclosed
+    const solidity = mix(float(hullOuterOutsideOpacity), float(1), inward);
+    m.opacityNode = w.view.objectPick.equal(0).select(solidity, float(0));
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 1)]); // flat, like the floor's own art
     return m;
   }, []);
@@ -318,9 +324,11 @@ const hullOuterStripeColor = "#e8e8e8";
 const hullOuterStripeGap = 0.075;
 /** What fraction of that spacing each line takes */
 const hullOuterStripeDuty = 0.22;
-/** What the world sees of it — the same white and hatch as the rooms' side, for now */
+/** What the world sees of it — the same white and hatch as the rooms' side, for now, and how
+ * much of it survives, looking in from out there */
 const hullOuterOutsideColor = "#ffffff";
 const hullOuterOutsideStripeColor = "#e8e8e8";
+const hullOuterOutsideOpacity = 0.1;
 
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;
