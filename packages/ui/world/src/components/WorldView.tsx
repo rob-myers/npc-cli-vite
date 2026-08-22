@@ -256,6 +256,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
+        } else if (e.key === "f" || e.key === "F") {
+          state.setCameraMode(state.cameraMode === "follow" ? "free" : "follow");
+        } else if (e.key === "q" || e.key === "Q") {
+          // what the look button does on a click: look at the player, and have it happen on load
+          // too. Pressed again once on them, `panTo` swings round behind them
+          w.player?.setIntroEnabled(true);
         }
       },
       onPointerDown(e) {
@@ -403,7 +409,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { controls } = state;
         const player = w.n[w.player?.key ?? ""];
         if (state.cameraMode !== "follow" || controls === null || player === undefined) return;
-        if (controls.pointers.length > 0) return;
+        // a `lookAt` owns the target whilst it runs, and tracks the player itself — two of us
+        // writing it would fight, and the pan would never arrive
+        if (controls.pointers.length > 0 || state.lookAtAnimId !== 0) return;
 
         const { target } = controls;
         const dx = player.position.x - target.x;
@@ -423,7 +431,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setCameraMode(cameraMode) {
         store.patch({ cameraMode });
         state.set({ cameraMode });
-        w.update(); // e.g. WorldMenu's "camera: {mode}" label reads this
+        w.update(); // the menu shows the mode, on its label and on the look button
       },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
@@ -442,8 +450,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ? fromRadius
             : THREE.MathUtils.clamp(opts.radius, controls.minDistance, controls.maxDistance);
 
-        // the shortest way round to the angle asked for, if one was — the camera is turned by
-        // rebuilding its offset below, `update` deriving the spherical from that
+        // the shortest way round to the angle asked for, if one was
         const fromTheta = controls.spherical.theta;
         const thetaDelta = opts.azimuthal === undefined ? 0 : deltaAngle(fromTheta, opts.azimuthal);
 
@@ -456,9 +463,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
          * before the render, and a second call would double its per-call damping.
          */
         const applyTarget = (alpha: number) => {
+          // `track` is where the destination is NOW, so a pan onto a walking npc lands on them
+          // rather than where they set off from. `from` stays put, so the lerp simply chases
+          const at = opts.track?.();
+          at !== undefined && to.set(at.x, opts.height ?? 0, at.y);
+
           controls.target.copy(from).lerp(to, alpha);
-          // live `phi`, so a tilt underway still applies mid-pan; `theta` likewise unless we are
-          // turning it ourselves
+          // live `phi`, so a tilt underway still applies mid-pan; `theta` likewise, unless we are
+          // the ones turning it
           const radius = fromRadius + (toRadius - fromRadius) * alpha;
           const theta = thetaDelta === 0 ? controls.spherical.theta : fromTheta + thetaDelta * alpha;
           tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, theta);
@@ -466,42 +478,39 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.invalidate();
         };
 
-        // else the next frame's settle would pull the view off the radius just set
-        const syncZoomProgress = () => controls.setZoomFromRadius(controls.spherical.radius);
+        try {
+          if (opts.animate !== true) {
+            applyTarget(1);
+            controls.update(); // no frame to wait for
+            return;
+          }
 
-        if (opts.animate !== true) {
-          applyTarget(1);
-          controls.update(); // no frame to wait for
-          syncZoomProgress();
-          return;
+          // a leftover gesture would otherwise keep decaying underneath the pan
+          controls.u.panOffset.set(0, 0, 0);
+          controls.sphericalDelta.set(0, 0, 0);
+
+          // further pans take longer, so the apparent speed stays similar
+          const durationMs = Math.min(lookAtMaxMs, lookAtMinMs + from.distanceTo(to) * lookAtMsPerUnit);
+          const startEpochMs = performance.now();
+
+          await new Promise<void>((resolve) => {
+            const step = () => {
+              if (controls.pointers.length > 0) {
+                return resolve(); // interacting: leave the camera where they put it
+              }
+              const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
+              // smootherstep: unlike smoothstep its acceleration is zero at both ends too
+              applyTarget(ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10));
+              ratio < 1 ? (state.lookAtAnimId = requestAnimationFrame(step)) : resolve();
+            };
+            step();
+          });
+        } finally {
+          // `followPlayer` stands down whilst this is non-zero, so every way out must clear it
+          state.lookAtAnimId = 0;
+          // else the next frame's settle would pull the view off the radius just reached
+          controls.setZoomFromRadius(controls.spherical.radius);
         }
-
-        // a leftover gesture would otherwise keep decaying underneath the pan
-        controls.u.panOffset.set(0, 0, 0);
-        controls.sphericalDelta.set(0, 0, 0);
-
-        // further pans take longer, so the apparent speed stays similar
-        const durationMs = Math.min(lookAtMaxMs, lookAtMinMs + from.distanceTo(to) * lookAtMsPerUnit);
-        const startEpochMs = performance.now();
-
-        await new Promise<void>((resolve) => {
-          const step = () => {
-            if (controls.pointers.length > 0) {
-              syncZoomProgress();
-              return resolve(); // interacting: leave the camera where they put it
-            }
-            const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
-            // smootherstep: unlike smoothstep its acceleration is zero at both ends too
-            applyTarget(ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10));
-            if (ratio < 1) {
-              state.lookAtAnimId = requestAnimationFrame(step);
-            } else {
-              syncZoomProgress();
-              resolve();
-            }
-          };
-          step();
-        });
       },
       dimBackground(darken, durationMs = bgDimMs) {
         w.rootEl?.style.setProperty("--world-dim-duration", `${durationMs}ms`);
@@ -803,7 +812,14 @@ export type State = {
    */
   lookAt(
     groundPoint: Geom.VectJson,
-    opts?: { animate?: boolean; radius?: number; height?: number; azimuthal?: number },
+    opts?: {
+      animate?: boolean;
+      radius?: number;
+      height?: number;
+      azimuthal?: number;
+      /** Where it is NOW, re-read each frame, for a destination that moves */
+      track?: () => undefined | Geom.VectJson;
+    },
   ): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
