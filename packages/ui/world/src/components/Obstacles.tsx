@@ -245,7 +245,9 @@ export default function Obstacles(_props: Props) {
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
-    mat.colorNode = vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1);
+    mat.colorNode = w.view.playerLight.applyLightRgba(
+      vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1),
+    );
     return mat;
   }, [skirtLightMeta]);
 

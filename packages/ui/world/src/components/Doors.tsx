@@ -2,9 +2,22 @@ import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, Discard, Fn, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
+import {
+  attribute,
+  color,
+  Discard,
+  Fn,
+  float,
+  lights,
+  positionLocal,
+  texture,
+  uniform,
+  uv,
+  vec2,
+  vec3,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultDoorOpacity, lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
+import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -479,7 +492,7 @@ export default function Doors() {
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
-    const edge = new THREE.MeshStandardNodeMaterial({ color: "#333" });
+    const edge = new THREE.MeshStandardNodeMaterial({ color: doorEdgeColor });
 
     // see-through by COVERAGE rather than by blending: doors are one instanced mesh, so three can
     // only sort them as a single object, and blended panels would draw in instance order and show
@@ -523,12 +536,18 @@ export default function Doors() {
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
 
     // `doorMeta` carries each face's layer already oriented, so there is no swap here
-    front.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
-      .depth(doorMeta.y.toInt())
-      .mul(vec3(state.brightnessNode));
-    back.colorNode = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
-      .depth(doorMeta.z.toInt())
-      .mul(vec3(state.brightnessNode));
+    // each tinted by what the player can see from where they stand — see `service/player-light`
+    front.colorNode = w.view.playerLight.applyLightRgba(
+      texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
+        .depth(doorMeta.y.toInt())
+        .mul(vec3(state.brightnessNode)),
+    );
+    back.colorNode = w.view.playerLight.applyLightRgba(
+      texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
+        .depth(doorMeta.z.toInt())
+        .mul(vec3(state.brightnessNode)),
+    );
+    edge.colorNode = w.view.playerLight.applyLight(color(doorEdgeColor).rgb);
 
     // only 3 groups in door box
     const output = [edge, front, back];
@@ -638,8 +657,8 @@ export type State = {
   syncLockTints: () => void;
 };
 
-/** Fixed InstancedMesh capacity so geometry attribute buffers are never recreated */
-const MAX_DOORS = 512;
+/** The door's rim, dark against its lit faces */
+const doorEdgeColor = "#333333";
 const doorHeight = wallHeight - 0.001;
 const doorSpeed = 4;
 const doorOpenTarget = 0.98;

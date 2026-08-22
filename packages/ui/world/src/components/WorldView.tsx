@@ -4,7 +4,7 @@ import { Rect, Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
-import { Canvas, type RootState } from "@react-three/fiber";
+import { Canvas, type RootState, useFrame } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
@@ -26,6 +26,7 @@ import {
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
+import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -50,10 +51,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
-        minAzimuthAngle: Math.PI / 3,
-        maxAzimuthAngle: Math.PI / 3,
-        minPolarAngle: Math.PI / 2 - Math.PI / 3,
-        maxPolarAngle: Math.PI / 2 - Math.PI / 6,
+        minAzimuthAngle: -Infinity,
+        maxAzimuthAngle: +Infinity,
+        minPolarAngle: 0,
+        maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         // the two stops the zoom moves between — see `camera-controls`' `zoomProgress`
         minDistance: zoomNear,
         maxDistance: zoomFar,
@@ -76,6 +77,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       freezeEl: null as any,
       frozen: false,
       objectPick: uniform(0),
+      playerLight: createPlayerLight(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
@@ -512,7 +514,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         };
 
         try {
-          if (opts.animate !== true) {
+          // Nothing to travel — pressing the look button whilst already on them, say. Taken as an
+          // instant move rather than animated: the taper below would give it a zero duration, and
+          // the first frame's `0 / 0` would lerp the target to NaN and take the camera with it
+          if (opts.animate !== true || from.distanceTo(to) < lookAtUntil) {
             applyTarget(1);
             controls.update(); // no frame to wait for
             return;
@@ -535,7 +540,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
               if (controls.pointers.length > 0) {
                 return resolve(); // interacting: leave the camera where they put it
               }
-              const ratio = Math.min(1, (performance.now() - startEpochMs) / durationMs);
+              const ratio = Math.min(1, (performance.now() - startEpochMs) / Math.max(1, durationMs));
               // smootherstep: unlike smoothstep its acceleration is zero at both ends too
               applyTarget(ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10));
               ratio < 1 ? (state.lookAtAnimId = requestAnimationFrame(step)) : resolve();
@@ -716,6 +721,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           {...state.ctrlOpts}
         />
 
+        <LightSweep />
+
         <NpcBubbles />
 
         {state.postProcessing && <PostProcessing />}
@@ -786,6 +793,8 @@ export type State = {
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<"float", number>;
+  /** What the player can see, swept on the GPU — every material tints itself by it */
+  playerLight: PlayerLight;
   /**
    * `1` whilst doors take part in picking, `0` whilst they discard themselves out of it — the
    * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it
@@ -899,6 +908,8 @@ const followBreakAt = 6;
  */
 const lookAtMinMs = 700;
 const lookAtShortUnits = 2.5;
+/** Below this much to travel (metres) a `lookAt` simply arrives, rather than animating */
+const lookAtUntil = 0.01;
 const lookAtMsPerUnit = 60;
 const lookAtMaxMs = 2500;
 /** How long the background takes to go black, or to come back */
@@ -931,6 +942,36 @@ function defaultInitialCamera(touchDevice: boolean): State["initial"] {
 /** The two stops the zoom moves between — `ctrlOpts` and `defaultInitialCamera` must agree */
 const zoomNear = 8;
 const zoomFar = 18;
+
+/**
+ * Sweeps the player's light polygon, once per rendered frame and before the render — a priority
+ * under the controls' own `-1`. Its own component rather than part of the tick, which stops
+ * whilst the world is paused: the view can still move then, and the light must keep up.
+ */
+function LightSweep() {
+  const w = useContext(WorldContext);
+
+  useEffect(() => {
+    // the walls never move, so they are read once per map — the doors are read per frame, being
+    // few and the only occluders that change
+    w.gms.length > 0 && w.gmsData !== undefined && w.view.playerLight.syncWalls(w.gms, w.gmsData);
+  }, [w.gmsHash, w.gmsData]);
+
+  useFrame((root) => {
+    const renderer = root.gl as unknown as THREE.WebGPURenderer;
+    const player = w.n[w.player?.key ?? ""];
+    w.view.playerLight.update(
+      renderer,
+      player?.position ?? null,
+      Object.values(w.d ?? {}),
+      w.door?.openRatioArray ?? emptyOpenRatios,
+    );
+  }, -2);
+
+  return null;
+}
+
+const emptyOpenRatios = new Float32Array(0);
 
 function PostProcessing() {
   const w = useContext(WorldContext);

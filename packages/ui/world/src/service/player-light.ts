@@ -1,0 +1,296 @@
+import { Mat, Vect } from "@npc-cli/util/geom";
+import {
+  abs,
+  atan,
+  attributeArray,
+  Break,
+  cos,
+  Fn,
+  float,
+  If,
+  instanceIndex,
+  int,
+  Loop,
+  min,
+  mix,
+  positionWorld,
+  sin,
+  smoothstep,
+  uniform,
+  vec3,
+  vec4,
+} from "three/tsl";
+import * as THREE from "three/webgpu";
+import { MAX_DOORS } from "../const";
+import type DerivedGmsData from "./DerivedGmsData";
+
+export type PlayerLight = {
+  /**
+   * Tints `color` towards black wherever the fragment cannot be seen from the light. Identity
+   * whilst the light is off, so a material can wrap its colour unconditionally.
+   */
+  applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
+  /** The same, for a material whose colour carries alpha — which is left alone */
+  applyLightRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  /** Re-reads the walls, which never move. Call on map change */
+  syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
+  /**
+   * Where the light stands and how open each door is, then the sweep itself. Call once per
+   * rendered frame, before the render. `origin` of `null` turns the light off.
+   */
+  update(
+    renderer: THREE.WebGPURenderer,
+    origin: null | { x: number; z: number },
+    doors: Geomorph.DoorState[],
+    openRatios: Float32Array,
+  ): void;
+};
+
+/**
+ * The player's light polygon: what can be seen from where they stand, bounded by the walls and by
+ * the closed part of each partially open door.
+ *
+ * Rather than asking that question per fragment — which is what made the old dynamic light
+ * expensive — a compute pass answers it once per frame for `lightAngles` directions, writing the
+ * distance to the nearest occluder into a polar table. Any material then reads one entry of that
+ * table to know whether it is lit, whatever it is and wherever it stands.
+ *
+ * The table is built once and never rebuilt, so the materials reading it survive a map change —
+ * only the occluder buffers, which nothing but the sweep looks at, are refilled.
+ */
+export function createPlayerLight(): PlayerLight {
+  /** Where the light stands, in world XZ */
+  const origin = uniform(new THREE.Vector2());
+  /** `0` disables it exactly, so every material is identity whilst there is no player */
+  const strength = uniform(0);
+
+  // the occluders. Fixed capacity, so the compute node never has to be rebuilt — the counts say
+  // how much of each is real, and the loops stop there
+  const wallValues = new Float32Array(maxLightSegs * 4);
+  const wallSegs = attributeArray(wallValues, "vec4");
+  const wallCount = uniform(0);
+
+  // a door is a fixed line with a moving gap, so only its open ratio changes per frame
+  const doorValues = new Float32Array(MAX_DOORS * 4);
+  const doorSegs = attributeArray(doorValues, "vec4");
+  /** Per door: `1` when its gap opens towards `dst`, else `0` — see `Doors`' `gapAtHighLambda` */
+  const doorGapValues = new Float32Array(MAX_DOORS);
+  const doorGaps = attributeArray(doorGapValues, "float");
+  const doorOpenValues = new Float32Array(MAX_DOORS);
+  const doorOpen = attributeArray(doorOpenValues, "float");
+  const doorCount = uniform(0);
+
+  /** Distance to the nearest occluder, per angle — what the sweep writes and materials read */
+  const table = attributeArray(new Float32Array(lightAngles), "float");
+
+  /**
+   * Nearest hit along `dir` from the light, over one segment `(a, b)`. Standard 2D ray-segment
+   * intersection: the ray reaches `t` along itself and `u` along the segment, and the hit counts
+   * whilst `u` lies within it. A near-parallel segment divides by nearly nothing, so the guard is
+   * on `denom` rather than on the results
+   */
+  const hitSegment = Fn(
+    ([dirX, dirY, ax, ay, bx, by, nearest]: [
+      THREE.Node<"float">,
+      THREE.Node<"float">,
+      THREE.Node<"float">,
+      THREE.Node<"float">,
+      THREE.Node<"float">,
+      THREE.Node<"float">,
+      THREE.Node<"float">,
+    ]) => {
+      const ex = bx.sub(ax);
+      const ey = by.sub(ay);
+      const denom = dirX.mul(ey).sub(dirY.mul(ex));
+      const safe = abs(denom).lessThan(parallelUntil).select(float(1), denom);
+      const ox = ax.sub(origin.x);
+      const oy = ay.sub(origin.y);
+      const t = ox.mul(ey).sub(oy.mul(ex)).div(safe);
+      const u = ox.mul(dirY).sub(oy.mul(dirX)).div(safe);
+
+      const closer = abs(denom)
+        .greaterThanEqual(parallelUntil)
+        .and(t.greaterThan(0))
+        .and(t.lessThan(nearest))
+        .and(u.greaterThanEqual(0))
+        .and(u.lessThanEqual(1));
+      return closer.select(t, nearest);
+    },
+  );
+
+  const sweep = Fn(() => {
+    const angle = float(instanceIndex).mul((2 * Math.PI) / lightAngles);
+    const dirX = cos(angle);
+    const dirY = sin(angle);
+    const nearest = float(lightRadius).toVar();
+
+    Loop(maxLightSegs, ({ i }: { i: THREE.Node<"int"> }) => {
+      If(i.toFloat().greaterThanEqual(wallCount), () => {
+        Break();
+      });
+      const seg = wallSegs.element(i);
+      nearest.assign(hitSegment(dirX, dirY, seg.x, seg.y, seg.z, seg.w, nearest));
+    });
+
+    Loop(MAX_DOORS, ({ i }: { i: THREE.Node<"int"> }) => {
+      If(i.toFloat().greaterThanEqual(doorCount), () => {
+        Break();
+      });
+      const seg = doorSegs.element(i);
+      const ratio = doorOpen.element(i);
+      // the CLOSED part of the door is what casts a shadow, and it shrinks from whichever end the
+      // gap opens at — mirroring the `inGap` test in `Doors`. A fully open door collapses to a
+      // point, whose zero-length edge the parallel guard above throws away
+      const gapAtHigh = doorGaps.element(i).greaterThan(0.5);
+      const lowX = mix(seg.x, seg.z, ratio);
+      const lowY = mix(seg.y, seg.w, ratio);
+      const highX = mix(seg.x, seg.z, ratio.oneMinus());
+      const highY = mix(seg.y, seg.w, ratio.oneMinus());
+      const ax = gapAtHigh.select(seg.x, lowX);
+      const ay = gapAtHigh.select(seg.y, lowY);
+      const bx = gapAtHigh.select(highX, seg.z);
+      const by = gapAtHigh.select(highY, seg.w);
+      nearest.assign(hitSegment(dirX, dirY, ax, ay, bx, by, nearest));
+    });
+
+    table.element(instanceIndex).assign(nearest);
+  })().compute(lightAngles);
+
+  function applyLight(color: THREE.Node<"vec3">) {
+    const away = positionWorld.xz.sub(origin);
+    const dist = away.length();
+
+    // The angle, as a position along the table. The sweep writes index `i` for `2π i / N`, so
+    // index 0 is angle 0 — and `atan` gives `[-π, π]`, whose negative half must WRAP to the top of
+    // the table rather than being shifted into its bottom, which would turn the polygon 180°
+    const at = atan(away.y, away.x)
+      .mul(1 / (2 * Math.PI))
+      .add(1)
+      .fract()
+      .mul(lightAngles);
+    const lower = at.floor();
+    const index = int(lower);
+    const along = at.sub(lower);
+    const near = table.element(index.mod(int(lightAngles)));
+    const far = table.element(index.add(1).mod(int(lightAngles)));
+
+    // How far apart two neighbouring angles are HERE. The table holds one distance per angle, so
+    // this arc is the error it can be out by, and it grows with distance — which is why the far
+    // end of a room shimmers whilst the near end does not
+    const arc = dist.mul((2 * Math.PI) / lightAngles);
+
+    // Across a flat wall the distance varies smoothly with angle, so interpolating the two samples
+    // lands the boundary on the wall rather than scalloping between buckets. Across a real shadow
+    // edge they belong to different surfaces, and the nearer of them is the honest answer
+    const smooth = mix(near, far, along);
+    const continuous = abs(far.sub(near)).lessThanEqual(arc.mul(discontinuityArcs).add(lightBias));
+    const reference = continuous.select(smooth, min(near, far));
+
+    // and the boundary is SOFTENED by that same arc rather than tested against: a hard edge can
+    // only land on one of the angles the table holds, so it snaps by an arc as the light moves,
+    // and no bias hides that. Graded over the width of the error, it simply reads as a penumbra
+    // that widens with distance — which is what a real one does
+    const width = arc.mul(penumbraArcs).add(lightBias);
+    const lit = smoothstep(reference.sub(width), reference.add(width), dist).oneMinus();
+
+    // and it fades over the last of its reach, so the light ends in a falloff rather than on a
+    // circle drawn across the floor
+    const reach = smoothstep(float(lightRadius), float(lightRadius - lightFalloff), dist);
+    const tint = float(unlitTint).mul(strength).mul(lit.mul(reach).oneMinus());
+    return mix(color, vec3(0, 0, 0), tint);
+  }
+
+  return {
+    applyLight,
+
+    applyLightRgba(color) {
+      return vec4(applyLight(color.rgb), color.a);
+    },
+
+    syncWalls(gms, gmsData) {
+      let count = 0;
+      const mat = new Mat();
+      const u = new Vect();
+      const v = new Vect();
+
+      for (const gm of gms) {
+        mat.setMatrixValue(gm.transform);
+        for (const { seg } of gmsData.byKey[gm.key].wallSegs) {
+          if (count >= maxLightSegs) break;
+          // `wallSegs` are in the layout's own space, and every instance of a layout shares them —
+          // so they are copied out before being transformed, never transformed in place
+          mat.transformPoint(u.copy(seg[0]));
+          mat.transformPoint(v.copy(seg[1]));
+          wallValues[count * 4 + 0] = u.x;
+          wallValues[count * 4 + 1] = u.y;
+          wallValues[count * 4 + 2] = v.x;
+          wallValues[count * 4 + 3] = v.y;
+          count++;
+        }
+      }
+
+      wallCount.value = count;
+      wallSegs.value.needsUpdate = true;
+    },
+
+    update(renderer, at, doors, openRatios) {
+      // the WebGL fallback runs "compute" through transform feedback, which this sweep's storage
+      // buffers are not going to survive — better an unlit world than a broken one
+      if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
+        strength.value = 0;
+        return;
+      }
+      if (at === null) {
+        strength.value = 0;
+        return;
+      }
+      strength.value = 1;
+      origin.value.set(at.x, at.z);
+
+      let count = 0;
+      for (const door of doors) {
+        if (count >= MAX_DOORS) break;
+        doorValues[count * 4 + 0] = door.src.x;
+        doorValues[count * 4 + 1] = door.src.y;
+        doorValues[count * 4 + 2] = door.dst.x;
+        doorValues[count * 4 + 3] = door.dst.y;
+        doorGapValues[count] = door.gapAtHighLambda === true ? 1 : 0;
+        // by the door's own instance id, which is what `openRatioArray` is indexed by
+        doorOpenValues[count] = openRatios[door.instanceId] ?? 0;
+        count++;
+      }
+
+      doorCount.value = count;
+      doorSegs.value.needsUpdate = true;
+      doorGaps.value.needsUpdate = true;
+      doorOpen.value.needsUpdate = true;
+
+      renderer.compute(sweep);
+    },
+  };
+}
+
+/**
+ * How many directions the sweep resolves. A shadow edge lands within one of these of the truth, so
+ * this is what stops the edges looking stepped at the far end of a long room
+ */
+const lightAngles = 4096;
+/** Per-instance cap on wall segments — the largest geomorph has under 400 */
+const maxLightSegs = 4096;
+
+/** How far the light reaches (metres), and over how much of that it fades away */
+const lightRadius = 24;
+const lightFalloff = 3;
+/** How black an unseen fragment goes */
+const unlitTint = 0.82;
+/**
+ * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
+ * part, and a part that grows with the arc between two angles, which is where the error lives
+ */
+const lightBias = 0.02;
+/** How many arcs wide the shadow boundary is softened over — under 1 it starts to snap again */
+const penumbraArcs = 1.5;
+/** Beyond this many arcs apart, two neighbouring samples are different surfaces, not one wall */
+const discontinuityArcs = 4;
+/** Below this the ray and the segment are parallel, and the intersection means nothing */
+const parallelUntil = 1e-6;

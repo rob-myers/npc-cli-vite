@@ -843,11 +843,14 @@ export default function Decor() {
       // Quads/points: colorNode=atlas texture (unchanged behavior).
       const shapeKindAttr = attribute<"vec3">("shapeParams", "vec3").x;
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
-      texMat.colorNode = (select as SelectAnyType)(
-        shapeKindAttr.greaterThan(1.5),
-        vec4(1, 1, 1, 1),
-        texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-      ) as THREE.Node<"vec4">;
+      // tinted by what the player can see from where they stand — see `service/player-light`
+      texMat.colorNode = w.view.playerLight.applyLightRgba(
+        (select as SelectAnyType)(
+          shapeKindAttr.greaterThan(1.5),
+          vec4(1, 1, 1, 1),
+          texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+        ) as THREE.Node<"vec4">,
+      );
 
       // transparent icon can be hard to pick so permit pick any place on cuboid
       // hide non-top faces for flat instances (points, rects, circles)
@@ -864,11 +867,13 @@ export default function Decor() {
       );
 
       const runtimeTexMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
-      runtimeTexMat.colorNode = (select as SelectAnyType)(
-        shapeKindAttr.greaterThan(1.5),
-        vec4(1, 1, 1, 1),
-        texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-      ) as THREE.Node<"vec4">;
+      runtimeTexMat.colorNode = w.view.playerLight.applyLightRgba(
+        (select as SelectAnyType)(
+          shapeKindAttr.greaterThan(1.5),
+          vec4(1, 1, 1, 1),
+          texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+        ) as THREE.Node<"vec4">,
+      );
       runtimeTexMat.outputNode = buildShapeOutputNode(
         OBJECT_PICK_KEY_TO_RED.runtimeDecor,
         w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),

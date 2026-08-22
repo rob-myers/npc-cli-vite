@@ -143,7 +143,11 @@ export default function NPCs() {
         });
         material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.1).mul(fold), float(0.9).mul(fold));
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
-        material.colorNode = (select as any)(isLabel, labelColor, mainColor);
+        // the BODY is tinted by what the player can see from where they stand, but the label is
+        // not: it is a billboard expanded in `vertexNode`, so its fragments' `positionWorld` is not
+        // where it appears — the light would sample a meaningless direction and flicker. It is a
+        // caption on the world rather than a part of it, so it stays lit either way
+        material.colorNode = (select as any)(isLabel, labelColor, w.view.playerLight.applyLightRgba(mainColor));
         material.outputNode = (select as SelectAnyType)(
           isPickMode,
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
