@@ -2,7 +2,19 @@ import { useStateRef } from "@npc-cli/util";
 import { Mat, Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
-import { color, float, frontFacing, fwidth, lights, mix, positionWorld, smoothstep, uniform } from "three/tsl";
+import {
+  color,
+  Discard,
+  Fn,
+  float,
+  frontFacing,
+  fwidth,
+  lights,
+  mix,
+  positionWorld,
+  smoothstep,
+  uniform,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -220,11 +232,16 @@ export default function Walls() {
     const inward = frontFacing.select(float(1), float(0));
     const base = mix(color(hullOuterOutsideColor), color(hullOuterColor), inward);
     const line = mix(color(hullOuterOutsideStripeColor), color(hullOuterStripeColor), inward);
-    m.colorNode = mix(base, line, stripes);
+    m.colorNode = Fn(() => {
+      // never picked: it stands in front of the walls it skins and would otherwise swallow their
+      // picks. A discard rather than a transparency, the pick target being single-sampled — the
+      // coverage this is see-through by does nothing there
+      Discard(w.view.objectPick.notEqual(0));
+      return mix(base, line, stripes);
+    })();
     // and the world's side of it is see-through, so a camera outside the hull looks in rather than
     // at a white wall. The rooms' side stays solid, which is what keeps them enclosed
-    const solidity = mix(float(hullOuterOutsideOpacity), float(1), inward);
-    m.opacityNode = w.view.objectPick.equal(0).select(solidity, float(0));
+    m.opacityNode = mix(float(hullOuterOutsideOpacity), float(1), inward);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 1)]); // flat, like the floor's own art
     return m;
   }, []);

@@ -33,6 +33,8 @@ export type WorldSettings = {
   postProcessing: boolean;
   introEnabled: boolean;
   pickOpenDoors: boolean;
+  /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
+  pickDoors: boolean;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
@@ -51,6 +53,7 @@ const defaultWorldSettings: WorldSettings = {
   postProcessing: true,
   introEnabled: true,
   pickOpenDoors: true,
+  pickDoors: true,
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,

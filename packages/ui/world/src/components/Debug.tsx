@@ -65,6 +65,7 @@ export function Debug() {
       doPointsShown: false,
       originShown: false,
       pickOpenDoors: getWorldStore(w.key).read().pickOpenDoors,
+      pickDoors: getWorldStore(w.key).read().pickDoors,
 
       physicsLines: new THREE.BufferGeometry(),
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
@@ -242,7 +243,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, pickOpenDoors: true, arrowGeo: false },
+      reset: { demoNavPathShown: true, originShown: true, pickOpenDoors: true, pickDoors: true, arrowGeo: false },
     },
   );
 
@@ -453,6 +454,8 @@ export type State = {
   doPointsShown: boolean;
   originShown: boolean;
   pickOpenDoors: boolean;
+  /** Whether the doors are drawn during object-picking, and so can be picked — see `pickObject` */
+  pickDoors: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
   physicsColliders: (WW.PhysicDebugItem & {
     parsedKey: WW.PhysicsParsedBodyKey;
