@@ -626,7 +626,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 
-  const [ref, bounds] = useMeasure();
+  const [ref, bounds] = useMeasure({ offsetSize: true }); // integers, as for the canvas below
   state.bounds = bounds;
 
   return (
@@ -645,7 +645,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
         dpr={getPixelRatio()}
-        resize={{ debounce: 0 }}
+        // `offsetSize`: measures with integers avoids rebuilding render target (`RenderTarget.setSize`),
+        // which makes the doors flicker, their see-through being a fraction of the MSAA samples
+        resize={{ debounce: 0, offsetSize: true }}
         flat // 🔔 hopefully fix sporadic colorspace issues on refresh
         tabIndex={0}
       >
