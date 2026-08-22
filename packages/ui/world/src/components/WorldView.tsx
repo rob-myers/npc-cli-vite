@@ -938,8 +938,8 @@ function defaultInitialCamera(touchDevice: boolean): State["initial"] {
 }
 
 /** The two stops the zoom moves between — `ctrlOpts` and `defaultInitialCamera` must agree */
-const zoomNear = 5;
-const zoomFar = 13;
+const zoomNear = 12;
+const zoomFar = 32;
 
 function PostProcessing() {
   const w = useContext(WorldContext);
