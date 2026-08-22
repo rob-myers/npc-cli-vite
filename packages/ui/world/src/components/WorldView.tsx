@@ -56,14 +56,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minPolarAngle: Math.PI / 2 - Math.PI / 4,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         // the two stops the zoom moves between — see `camera-controls`' `zoomProgress`
-        minDistance: 5,
-        maxDistance: 13,
+        minDistance: zoomNear,
+        maxDistance: zoomFar,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
         zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
-      initial: saved.cameraInitial ?? defaultInitialCamera(),
+      initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
       lastPointer: {
         epochMs: 0,
@@ -596,7 +596,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       resetCamera() {
-        const initial = defaultInitialCamera();
+        const initial = defaultInitialCamera(w.touchDevice);
         state.initial = initial;
         store.patch({ cameraInitial: initial });
         if (state.controls) {
@@ -720,9 +720,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           initialPolar={state.initial.polar}
           initialPosition={state.initial.position}
           minPanDistance={w.touchDevice ? 0.05 : 0}
-          // a pinch zooms continuously, so it keeps whatever distance it is let go at. The wheel
+          // a pinch zooms continuously, so it moves freely whilst the fingers are down — but it
+          // is a peek rather than a choice of distance, and springs back in on release. The wheel
           // has no such gesture, and keeps the two stops
           freeZoom={w.touchDevice}
+          zoomSpringsIn={w.touchDevice}
           onFrame={state.onCameraChange}
           onEnd={state.onCameraEnd}
           {...state.ctrlOpts}
@@ -927,14 +929,18 @@ function createPickRT() {
   return renderTarget;
 }
 
-function defaultInitialCamera(): State["initial"] {
+function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
     azimuthal: 0,
     polar: Math.PI / 4,
-    // the far stop — see `ctrlOpts`' `maxDistance`
-    position: { x: 4, y: 13, z: 4 },
+    // touch springs back to the near stop the moment a pinch is let go, so it starts there too
+    position: { x: 4, y: touchDevice ? zoomNear : zoomFar, z: 4 },
   };
 }
+
+/** The two stops the zoom moves between — `ctrlOpts` and `defaultInitialCamera` must agree */
+const zoomNear = 5;
+const zoomFar = 13;
 
 function PostProcessing() {
   const w = useContext(WorldContext);

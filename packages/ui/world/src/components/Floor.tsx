@@ -223,7 +223,8 @@ export default function Floor() {
 
         if (firstMap === true) {
           state.fade.texAmount.value = 0; // arrives flat, whatever it was
-          w.setWorldFold(0); // with the rest of the world flat until the map has settled
+          // a phone skips the fold and simply fades the art up — see the bootstrap's unfold
+          if (w.touchDevice === false) w.setWorldFold(0); // the rest of the world flat, until settled
         }
         state.drawHulls(w.gms);
 

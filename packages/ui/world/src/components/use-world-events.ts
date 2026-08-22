@@ -188,7 +188,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         } finally {
-          if (firstBootstrap === true) {
+          if (firstBootstrap === true && w.touchDevice === true) {
+            // a phone never folded the world flat, so there is nothing to raise — the art simply
+            // fades up over the hull it arrived as
+            await w.floor?.fadeTo(1);
+          } else if (firstBootstrap === true) {
             // the first map is on screen as a flat hull; hold it a beat, then unfold the world
             // with a delayed floor fade-in
             await pause(unfoldDelayMs);
