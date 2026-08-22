@@ -2,7 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
+import { attribute, Discard, Fn, float, lights, positionLocal, texture, uniform, uv, vec2, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { defaultDoorOpacity, lockedDoorTint, unlockedDoorTint, wallHeight } from "../const";
 import { createDoorBox } from "../service/geometry";
@@ -505,7 +505,13 @@ export default function Doors() {
 
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
-      mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
+      mat.outputNode = Fn(() => {
+        // out of the pick pass altogether whilst doors are unpickable, so a pick reaches whatever
+        // stands behind them. A discard rather than a transparency: the pick target is not
+        // multisampled, so the coverage the panels see through by does nothing there
+        Discard(w.view.objectPick.notEqual(0).and(w.view.pickDoors.equal(0)));
+        return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
+      })();
     }
 
     for (const mat of [front, back]) {

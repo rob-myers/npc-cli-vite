@@ -225,6 +225,8 @@ export function WorldMenu() {
         return w.debug?.navMeshShown ?? false;
       case "Toggle Doors":
         return w.debug?.pickOpenDoors ?? true;
+      case "Pick Doors":
+        return w.debug?.pickDoors ?? true;
       case "Door Normals":
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
@@ -271,8 +273,19 @@ export function WorldMenu() {
         break;
       case "Toggle Doors": {
         const next = !w.debug?.pickOpenDoors;
-        w.debug?.set({ pickOpenDoors: next });
-        store.patch({ pickOpenDoors: next });
+        // a door can only be opened by a pick that reaches it, so this brings picking with it
+        w.debug?.set({ pickOpenDoors: next, ...(next === true && { pickDoors: true }) });
+        store.patch({ pickOpenDoors: next, ...(next === true && { pickDoors: true }) });
+        if (next === true) w.view.pickDoors.value = 1;
+        state.update();
+        break;
+      }
+      case "Pick Doors": {
+        const next = !w.debug?.pickDoors;
+        // and without picking there is nothing left for the toggle to act on
+        w.debug?.set({ pickDoors: next, ...(next === false && { pickOpenDoors: false }) });
+        store.patch({ pickDoors: next, ...(next === false && { pickOpenDoors: false }) });
+        w.view.pickDoors.value = next ? 1 : 0; // the doors' own shader reads this
         state.update();
         break;
       }
@@ -1123,6 +1136,7 @@ const debugItems = [
   "Grid",
   "Light Tints",
   "Toggle Doors",
+  "Pick Doors",
   "Door Normals",
   "Decor Points",
   "NavMesh",

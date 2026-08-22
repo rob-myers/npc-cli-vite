@@ -77,6 +77,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       freezeEl: null as any,
       frozen: false,
       objectPick: uniform(0),
+      pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
@@ -337,15 +338,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
-        // The hull's outer skin is see-through by dithering against the MSAA samples, and this
-        // target has none — so it would come out solid here and swallow the picks of the walls it
-        // skins. Simply not drawn, which no material trick can match: an `alphaTest` alongside
-        // `alphaToCoverage` rewrites the alpha rather than only discarding on it
-        const skin = w.wall?.instHullOuter ?? null;
-        if (skin !== null) skin.visible = false;
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
-        if (skin !== null) skin.visible = true;
         state.objectPick.value = 0;
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
@@ -800,6 +794,11 @@ export type State = {
   pickRT: THREE.RenderTarget;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<"float", number>;
+  /**
+   * `1` whilst doors take part in picking, `0` whilst they discard themselves out of it — the
+   * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it
+   */
+  pickDoors: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
