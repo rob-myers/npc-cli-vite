@@ -681,6 +681,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         {props.children}
       </Canvas>
 
+      {/* Whilst following, the orbit target IS the centre of the viewport — so a crosshair there
+          marks where the view stands, and how far off it the player has been panned. In the HUD
+          rather than the world: nothing can occlude it and it cannot foreshorten */}
+      {state.cameraMode === "follow" && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          {/* a black bar under each, a pixel proud either side, so the white reads over pale floor */}
+          <div className="absolute h-[3px] w-6 bg-black/80" />
+          <div className="absolute h-6 w-[3px] bg-black/80" />
+          <div className="absolute h-px w-6 bg-white" />
+          <div className="absolute h-6 w-px bg-white" />
+        </div>
+      )}
+
       {/* the black, and over it the held frame that dips through it — see `world.css` */}
       <div className="world-veil" />
       <canvas

@@ -46065,7 +46065,7 @@
       "floor": {
         "hullFill": "#fff",
         "navStroke": "#000a",
-        "patternFill": "#444",
+        "patternFill": "#555",
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},
