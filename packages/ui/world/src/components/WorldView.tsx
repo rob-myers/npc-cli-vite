@@ -536,8 +536,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           controls.u.panOffset.set(0, 0, 0);
           controls.sphericalDelta.set(0, 0, 0);
 
-          // further pans take longer, so the apparent speed stays similar
-          const durationMs = Math.min(lookAtMaxMs, lookAtMinMs + from.distanceTo(to) * lookAtMsPerUnit);
+          // Further pans take longer, so the apparent speed stays similar. The floor tapers away
+          // over the last `lookAtShortUnits`, else a pan onto a player already under the crosshair
+          // takes the same beat as one across the map, and reads as the view hesitating
+          const distance = from.distanceTo(to);
+          const durationMs =
+            Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits);
           const startEpochMs = performance.now();
 
           await new Promise<void>((resolve) => {
@@ -897,8 +901,12 @@ const followPanUntil = 0.01;
 /** Panned further than this off the player (metres), the follow gives up and the view goes free */
 const followBreakAt = 6;
 
-/** An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped */
+/**
+ * An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped — and scaled down
+ * within `lookAtShortUnits` of its destination, so a short hop is not held to the full floor
+ */
 const lookAtMinMs = 700;
+const lookAtShortUnits = 2.5;
 const lookAtMsPerUnit = 60;
 const lookAtMaxMs = 2500;
 /** How long the background takes to go black, or to come back */
