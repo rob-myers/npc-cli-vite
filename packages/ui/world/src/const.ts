@@ -166,9 +166,9 @@ export const walkSeparationWeight = 0.5;
 export const idleSeparationWeight = 0.1; // Less pushable
 
 /**
- * NPC tuning: `npcfg.dist` in meters, `npcfg.time` in seconds.
+ * NPC tuning: `npcConfig.dist` in meters, `npcConfig.time` in seconds.
  */
-export const npcfg = {
+export const npcConfig = {
   dist: {
     /** Arrival radius, per `running` and whether we slow down beforehand */
     arrive: { walk: 0.15, run: 0.025 },

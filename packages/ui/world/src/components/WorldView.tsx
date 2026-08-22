@@ -18,6 +18,7 @@ import {
   cameraRefAspect,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
+  npcConfig,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   zoomSpeedDesktop,
@@ -427,8 +428,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.r3f?.invalidate();
       },
       setCameraMode(cameraMode) {
-        // back onto them: whatever vantage a pan chose belonged to the last spell of following
-        if (cameraMode === "follow") state.followOffset.set(0, 0);
+        if (cameraMode === "follow") {
+          // back onto them: whatever vantage a pan chose belonged to the last spell of following
+          state.followOffset.set(0, 0);
+          // and the move onto them is a `lookAt` rather than being left to the follow, which runs
+          // on the world tick — a paused world runs none, and turning the follow on would appear
+          // to do nothing until it resumed. This animates on its own frames, paused or not
+          const player = w.n[w.player?.key ?? ""];
+          if (player !== undefined) {
+            void state.lookAt(player.point, {
+              animate: true,
+              height: npcConfig.dist.height,
+              track: () => w.n[w.player?.key ?? ""]?.point,
+            });
+          }
+        }
         store.patch({ cameraMode });
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the look button
@@ -669,6 +683,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           initialPolar={state.initial.polar}
           initialPosition={state.initial.position}
           minPanDistance={w.touchDevice ? 0.05 : 0}
+          // a pinch zooms continuously, so it keeps whatever distance it is let go at. The wheel
+          // has no such gesture, and keeps the two stops
+          freeZoom={w.touchDevice}
           onFrame={state.onCameraChange}
           onEnd={state.onCameraEnd}
           {...state.ctrlOpts}
@@ -686,11 +703,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           rather than the world: nothing can occlude it and it cannot foreshorten */}
       {state.cameraMode === "follow" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          {/* a black bar under each, a pixel proud either side, so the white reads over pale floor */}
-          <div className="absolute h-[3px] w-6 bg-black/80" />
-          <div className="absolute h-6 w-[3px] bg-black/80" />
-          <div className="absolute h-px w-6 bg-white" />
-          <div className="absolute h-6 w-px bg-white" />
+          {/* the ring is a black outline a pixel proud, so the white reads over the pale floor too */}
+          <div className="absolute h-px w-6 bg-white ring-1 ring-black/80" />
+          <div className="absolute h-6 w-px bg-white ring-1 ring-black/80" />
         </div>
       )}
 

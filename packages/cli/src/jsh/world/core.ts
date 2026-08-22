@@ -1,4 +1,4 @@
-import { npcfg } from "@npc-cli/ui__world/const";
+import { npcConfig } from "@npc-cli/ui__world/const";
 import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
@@ -31,7 +31,7 @@ export async function at(
   const groundPoint = w.helper.parseGroundPoint(point);
 
   const results = w.decor.queryPoint(groundPoint, {
-    restrictByHeight: w.helper.parse3dHeight(point) ?? npcfg.dist.height / 2,
+    restrictByHeight: w.helper.parse3dHeight(point) ?? npcConfig.dist.height / 2,
     radius: 1.5 / 2,
   });
 

@@ -95,6 +95,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       minDistance={props.minDistance}
       maxDistance={props.maxDistance}
       minPanDistance={props.minPanDistance}
+      freeZoom={props.freeZoom}
       panSpeed={props.panSpeed}
       rotateSpeed={props.rotateSpeed}
       zoomSpeed={props.zoomSpeed}
@@ -117,6 +118,8 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [minPolarAngle]
  * @property {number} [maxPolarAngle]
  * @property {number} [minPanDistance] // 🚧 implement in controls (from patch to make mobile touch more precise)
+ * @property {boolean} [freeZoom] Let the zoom rest anywhere between the stops, rather than
+ * settling onto one of them. On by touch, whose pinch is a continuous gesture
  * @property {(e?: import('three').Event) => void} [onChange]
  * @property {() => void} [onEnd]
  * @property {(spherical: import('three').Spherical, target: import('three').Vector3) => void} [onFrame]
