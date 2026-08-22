@@ -9,7 +9,7 @@ import {
   idleAgentMaxSpeed,
   idleMaxAcceleration,
   idleSeparationWeight,
-  npcfg,
+  npcConfig,
   npcScale,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
@@ -261,18 +261,18 @@ export class NpcAnimation {
     const { position, last } = this.npc;
 
     // grace whilst accelerating away from standstill
-    if (worldSeconds - last.moveTime < npcfg.time.stuckGrace) {
+    if (worldSeconds - last.moveTime < npcConfig.time.stuckGrace) {
       return false;
     }
 
     const dx = position.x - last.point.x;
     const dz = position.z - last.point.y;
     const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < npcfg.dist.stuckEpsilon ? delta : 0;
+    this.stuckAccum += dist < npcConfig.dist.stuckEpsilon ? delta : 0;
     last.point.x = position.x;
     last.point.y = position.z;
 
-    return this.stuckAccum > npcfg.time.stuckDuration;
+    return this.stuckAccum > npcConfig.time.stuckDuration;
   }
 }
 

@@ -122,6 +122,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * see `syncZoom`. Letting go settles it to whichever stop is nearer, so reversing cancels
    */
   zoomProgress = 0;
+  /**
+   * Whether the zoom is free to rest anywhere between the two stops, rather than settling onto
+   * one of them. On by touch: a pinch is a continuous gesture and being pulled off wherever it
+   * ends reads as the view fighting the fingers
+   */
+  freeZoom = false;
   /** When zoom input last arrived, so `syncZoom` can tell a gesture in progress from one let go */
   _zoomInputMs = 0;
   /** Asks for the frame on which the settle begins — see `addZoomProgress` */
@@ -461,6 +467,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.zoomProgress = Math.max(0, Math.min(1, this.zoomProgress + delta));
     this._zoomInputMs = performance.now();
 
+    if (this.freeZoom === true) {
+      return; // nothing settles, so there is no later frame to ask for
+    }
+
     // `syncZoom` waits `zoomSettleMs` before easing to a stop, and dispatches nothing whilst it
     // waits — so with a paused world there is no frame left to notice the wait ending, and the
     // zoom would sit wherever the gesture left it. This asks for that one frame
@@ -496,6 +506,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * `update`. The arriving frame deliberately dispatches nothing, so the frames can stop.
    */
   syncZoom() {
+    if (this.freeZoom === true) {
+      return; // it rests wherever the gesture left it — see `freeZoom`
+    }
     const zoomingIn = this._zoomDirection === 1;
     const committed = zoomingIn ? this.zoomProgress > zoomCommitIn : this.zoomProgress < zoomCommitOut;
     if (committed === false && (this.pointers.length > 0 || performance.now() - this._zoomInputMs < zoomSettleMs)) {

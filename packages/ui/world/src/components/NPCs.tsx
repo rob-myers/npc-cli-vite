@@ -47,7 +47,7 @@ import {
   idleAgentMaxSpeed,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
-  npcfg,
+  npcConfig,
   walkMaxAcceleration,
 } from "../const";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
@@ -67,7 +67,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
-      crowd: crowdApi.create(npcfg.dist.maxAgentRadius),
+      crowd: crowdApi.create(npcConfig.dist.maxAgentRadius),
       gltf: null,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
@@ -319,10 +319,10 @@ export default function NPCs() {
             await state.spawn({ npcKey, at: to }); // respawn
           } else {
             // look when standing nearby
-            if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcfg.dist.doableLook) {
+            if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcConfig.dist.doableLook) {
               // else an npc interrupted mid-move keeps its momentum and slides through the look
               state.clearMomentum(npc);
-              await npc.look({ at: to, minMs: npcfg.time.look * 1000 });
+              await npc.look({ at: to, minMs: npcConfig.time.look * 1000 });
             }
 
             await npc.fadeSpawn({ at: to });
@@ -350,9 +350,9 @@ export default function NPCs() {
 
         if (unreachableResult !== null) {
           // destination unreachable
-          if (npc.distanceTo(unreachableResult.nearbyPoint) < npcfg.dist.blockedLook) {
+          if (npc.distanceTo(unreachableResult.nearbyPoint) < npcConfig.dist.blockedLook) {
             // too close: look instead of walk
-            await npc.look({ at: unreachableResult.nearbyPoint, minMs: npcfg.time.look * 1000 });
+            await npc.look({ at: unreachableResult.nearbyPoint, minMs: npcConfig.time.look * 1000 });
             return;
           }
           // change destination to point near eventual locked door
@@ -798,7 +798,7 @@ export type State = {
 
 /** Capped by the initial distance, so a short move need not start arrived */
 function getArriveDistance(npc: Npc) {
-  const { arrive, glide, arriveMin, arriveFraction } = npcfg.dist;
+  const { arrive, glide, arriveMin, arriveFraction } = npcConfig.dist;
   const base = (npc.anim.arrive ? arrive : glide)[npc.running ? "run" : "walk"];
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
 }
@@ -815,7 +815,7 @@ const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdAp
 function getAgentParams(): crowd.AgentParams {
   return {
     radius: 0.2,
-    height: npcfg.dist.height,
+    height: npcConfig.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
     // collisionQueryRange: 1,

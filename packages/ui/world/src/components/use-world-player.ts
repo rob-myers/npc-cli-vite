@@ -1,6 +1,6 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { defaultPlayerKey, npcfg, spawnPlayerAttempts } from "../const";
+import { defaultPlayerKey, npcConfig, spawnPlayerAttempts } from "../const";
 import { getWorldMapStore, getWorldStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 
@@ -55,7 +55,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // the camera settles on the npc rather than on the floor they stand on
         await w.view.lookAt(npc.point, {
           animate: true,
-          height: npcfg.dist.height,
+          height: npcConfig.dist.height,
           azimuthal: onThem === true ? npc.rotation.y : undefined,
           // they walk whilst we pan, and following means the camera is expected to be ON them —
           // a destination fixed at the moment of the press lands behind
