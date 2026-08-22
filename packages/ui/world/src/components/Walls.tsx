@@ -199,13 +199,14 @@ export default function Walls() {
     });
     m.opacityNode = w.view.objectPick.equal(0).select(float(1), float(0));
 
-    const wave = positionWorld.x
-      .add(positionWorld.y)
-      .add(positionWorld.z)
-      .mul((2 * Math.PI) / hullOuterStripeGap)
-      .sin();
+    // height alone, so the lines run horizontally around the hull however a face is turned. A sine
+    // rather than `fract`, whose discontinuity would defeat the `fwidth` antialiasing
+    const wave = positionWorld.y.mul((2 * Math.PI) / hullOuterStripeGap).sin();
     const width = fwidth(wave).max(0.0001);
-    const stripes = smoothstep(width.negate(), width, wave);
+    // the line is the CREST of each wave rather than half of it: crossing at zero, as before, makes
+    // the line and the gap the same width, which is as thick as a stripe can be
+    const threshold = Math.cos(Math.PI * hullOuterStripeDuty);
+    const stripes = smoothstep(width.negate().add(threshold), width.add(threshold), wave);
     // the skin is one quad seen from both sides, and `frontFacing` is the side its own normal
     // points at — which the outline's winding makes the INWARD one. So the world sees the dark
     // grey, and only the rooms see the white
@@ -313,11 +314,13 @@ const tmpMatFour1 = new THREE.Matrix4();
 /** The hull's outer skin: how far it stands off, then what the ROOMS' side of it looks like */
 const hullOuterOutset = 0.06;
 const hullOuterColor = "#ffffff";
-const hullOuterStripeColor = "#cfcfcf";
-const hullOuterStripeGap = 0.16;
+const hullOuterStripeColor = "#e8e8e8";
+const hullOuterStripeGap = 0.075;
+/** What fraction of that spacing each line takes */
+const hullOuterStripeDuty = 0.22;
 /** What the world sees of it — the same white and hatch as the rooms' side, for now */
 const hullOuterOutsideColor = "#ffffff";
-const hullOuterOutsideStripeColor = "#cfcfcf";
+const hullOuterOutsideStripeColor = "#e8e8e8";
 
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;

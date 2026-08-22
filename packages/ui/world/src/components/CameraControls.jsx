@@ -34,7 +34,10 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
     const polar = props.initialPolar ?? 0;
     // set initial position
     mc.target.copy({ x: props.initialPosition?.x ?? 0, y: 0, z: props.initialPosition?.z ?? 0 });
-    const delta = new THREE.Vector3().setFromSphericalCoords(props.initialPosition?.y ?? 20, polar, azimuthal);
+    // `update` seeds `zoomProgress` from this on its first run — it cannot be done here, the
+    // stops arriving as props only after this memo has built the controls
+    const radius = props.initialPosition?.y ?? 20;
+    const delta = new THREE.Vector3().setFromSphericalCoords(radius, polar, azimuthal);
     mc.object.position.copy(mc.target).add(delta);
     mc.update();
 
@@ -98,7 +101,6 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       rotateSpeed={props.rotateSpeed}
       zoomSpeed={props.zoomSpeed}
       zoomToCursor={props.zoomToCursor}
-      extraZoom={props.extraZoom ?? 1}
     />
   );
 });
@@ -108,7 +110,6 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {CameraModeType} [cameraMode]
  * @property {number} [numCardinalDirections]
  * @property {HTMLElement} domElement
- * @property {number} [extraZoom]
  * @property {boolean} [fixedPolar] Pin the polar angle, leaving azimuth and zoom
  * @property {number} [initialAzimuthal]
  * @property {number} [initialPolar]
