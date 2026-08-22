@@ -38,14 +38,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = w.n[state.key];
         if (npc === undefined) return;
 
-        // pressed again once already on them, it goes round BEHIND them instead: an npc turned to
-        // `atan2(vx, vz) + π` faces `(-sin y, -cos y)`, and the camera stands at `(sin θ, cos θ)`
-        // from its target, so behind them is `θ = rotation.y`. A one-off swing, not a follow —
-        // the view stays wherever this leaves it
-        const target = w.view.controls?.target;
-        const onThem =
-          target !== undefined && Math.hypot(target.x - npc.point.x, target.z - npc.point.y) < panBehindFrom;
-
         // asking to look AT them outranks wherever a pan last chose to stand: without this the
         // follow eases straight back to that vantage, and the pan appears to bounce
         w.view.followOffset.set(0, 0);
@@ -56,7 +48,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         await w.view.lookAt(npc.point, {
           animate: true,
           height: npcConfig.dist.height,
-          azimuthal: onThem === true ? npc.rotation.y : undefined,
           // they walk whilst we pan, and following means the camera is expected to be ON them —
           // a destination fixed at the moment of the press lands behind
           track: () => w.n[state.key]?.point,
@@ -210,6 +201,3 @@ export type State = {
   /** Spawns the player in a random room — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
-
-/** Within this of the player, the camera button swings behind them rather than panning */
-const panBehindFrom = 0.5;
