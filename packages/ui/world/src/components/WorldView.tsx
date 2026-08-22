@@ -63,7 +63,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
         zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
-      initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
+      initial: saved.cameraInitial ?? defaultInitialCamera(),
       lookAtAnimId: 0,
       lastPointer: {
         epochMs: 0,
@@ -590,7 +590,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       resetCamera() {
-        const initial = defaultInitialCamera(w.touchDevice);
+        const initial = defaultInitialCamera();
         state.initial = initial;
         store.patch({ cameraInitial: initial });
         if (state.controls) {
@@ -718,7 +718,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // is a peek rather than a choice of distance, and springs back in on release. The wheel
           // has no such gesture, and keeps the two stops
           freeZoom={w.touchDevice}
-          zoomSpringsIn={w.touchDevice}
+          zoomSpringsOut={w.touchDevice}
           onFrame={state.onCameraChange}
           onEnd={state.onCameraEnd}
           {...state.ctrlOpts}
@@ -928,12 +928,12 @@ function createPickRT() {
   return renderTarget;
 }
 
-function defaultInitialCamera(touchDevice: boolean): State["initial"] {
+function defaultInitialCamera(): State["initial"] {
   return {
     azimuthal: 0,
     polar: Math.PI / 4,
-    // touch springs back to the near stop the moment a pinch is let go, so it starts there too
-    position: { x: 4, y: touchDevice ? zoomNear : zoomFar, z: 4 },
+    // the far stop, which is also where touch springs back to once a pinch is let go
+    position: { x: 4, y: zoomFar, z: 4 },
   };
 }
 
