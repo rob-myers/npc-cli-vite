@@ -7,6 +7,7 @@ import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/dr
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
 import debounce from "debounce";
+import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
@@ -441,8 +442,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ? fromRadius
             : THREE.MathUtils.clamp(opts.radius, controls.minDistance, controls.maxDistance);
 
+        // the shortest way round to the angle asked for, if one was — the camera is turned by
+        // rebuilding its offset below, `update` deriving the spherical from that
+        const fromTheta = controls.spherical.theta;
+        const thetaDelta = opts.azimuthal === undefined ? 0 : deltaAngle(fromTheta, opts.azimuthal);
+
         /**
-         * Keeps the current orientation, moving the orbit target and (optionally) the zoom.
+         * Keeps the current orientation unless `azimuthal` asks otherwise, moving the orbit target
+         * and (optionally) the zoom.
          * The camera must be carried along explicitly: `update` derives `spherical` from
          * `position - target`, so moving the target alone would swing the camera instead.
          * We don't call `update` ourselves — `CameraControls` does so from a `useFrame` just
@@ -450,9 +457,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
          */
         const applyTarget = (alpha: number) => {
           controls.target.copy(from).lerp(to, alpha);
-          // live `phi`/`theta`, so a rotation underway still applies mid-pan
+          // live `phi`, so a tilt underway still applies mid-pan; `theta` likewise unless we are
+          // turning it ourselves
           const radius = fromRadius + (toRadius - fromRadius) * alpha;
-          tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, controls.spherical.theta);
+          const theta = thetaDelta === 0 ? controls.spherical.theta : fromTheta + thetaDelta * alpha;
+          tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, theta);
           controls.object.position.copy(controls.target).add(tmpLookAtOffset);
           w.r3f?.invalidate();
         };
@@ -792,7 +801,10 @@ export type State = {
    * Moves the camera's orbit target onto `groundPoint`, preserving its orientation.
    * Resolves on arrival. Zoom is preserved unless `radius` is given, which is tweened alongside.
    */
-  lookAt(groundPoint: Geom.VectJson, opts?: { animate?: boolean; radius?: number; height?: number }): Promise<void>;
+  lookAt(
+    groundPoint: Geom.VectJson,
+    opts?: { animate?: boolean; radius?: number; height?: number; azimuthal?: number },
+  ): Promise<void>;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */

@@ -36,12 +36,24 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       async panTo() {
         const npc = w.n[state.key];
-        if (npc !== undefined) {
-          // no `radius`, so the intro pans and turns without zooming — `lookAt` keeps the
-          // distance it finds, which on load is whatever view we restored. Their height, so
-          // the camera settles on the npc rather than on the floor they stand on
-          await w.view.lookAt(npc.point, { animate: true, height: npcfg.dist.height });
-        }
+        if (npc === undefined) return;
+
+        // pressed again once already on them, it goes round BEHIND them instead: an npc turned to
+        // `atan2(vx, vz) + π` faces `(-sin y, -cos y)`, and the camera stands at `(sin θ, cos θ)`
+        // from its target, so behind them is `θ = rotation.y`. A one-off swing, not a follow —
+        // the view stays wherever this leaves it
+        const target = w.view.controls?.target;
+        const onThem =
+          target !== undefined && Math.hypot(target.x - npc.point.x, target.z - npc.point.y) < panBehindFrom;
+
+        // no `radius`, so the intro pans and turns without zooming — `lookAt` keeps the
+        // distance it finds, which on load is whatever view we restored. Their height, so
+        // the camera settles on the npc rather than on the floor they stand on
+        await w.view.lookAt(npc.point, {
+          animate: true,
+          height: npcfg.dist.height,
+          azimuthal: onThem === true ? npc.rotation.y : undefined,
+        });
       },
       persist() {
         w.e.persistNpcs();
@@ -191,3 +203,6 @@ export type State = {
   /** Spawns the player in a random room — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
+
+/** Within this of the player, the camera button swings behind them rather than panning */
+const panBehindFrom = 0.5;
