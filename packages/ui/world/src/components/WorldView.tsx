@@ -54,7 +54,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
         minPolarAngle: Math.PI / 2 - Math.PI / 4,
-        maxPolarAngle: Math.PI / 2 - Math.PI / 8,
+        maxPolarAngle: Math.PI / 2 - Math.PI / 6,
         // the two stops the zoom moves between — see `camera-controls`' `zoomProgress`
         minDistance: zoomNear,
         maxDistance: zoomFar,
