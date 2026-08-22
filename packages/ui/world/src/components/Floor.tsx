@@ -212,9 +212,14 @@ export default function Floor() {
         if (state.drawnGmsHash === w.gmsHash) return;
         state.drawnGmsHash = w.gmsHash;
         if (state.drawnMapKey === w.mapKey) return;
-        // only the FIRST map unfolds; a change fades through black with the world left standing
-        const firstMap = state.drawnMapKey === null;
+        // Only the FIRST map unfolds; a change fades through black with the world left standing.
+        // An hmr must never count as one: this component can be remounted with no memory of the
+        // map it already drew, whilst the unfold that should follow lives in the bootstrap, which
+        // is not re-run — so the world would fold flat and stay there. `hot.data` survives an
+        // update and a reload clears it, which is exactly the distinction wanted
+        const firstMap = state.drawnMapKey === null && import.meta.hot?.data.__FLOOR_DREW_MAP__ !== true;
         state.drawnMapKey = w.mapKey;
+        if (import.meta.hot !== undefined) import.meta.hot.data.__FLOOR_DREW_MAP__ = true;
 
         if (firstMap === true) {
           state.fade.texAmount.value = 0; // arrives flat, whatever it was
