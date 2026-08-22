@@ -32,8 +32,6 @@ export type WorldSettings = {
   cameraInitial: null | PersistedCamera;
   postProcessing: boolean;
   introEnabled: boolean;
-  /** Post-processing effect strengths, keyed by `FxKey` */
-  fx: Record<string, number>;
   pickOpenDoors: boolean;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
@@ -52,7 +50,6 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   introEnabled: true,
-  fx: { npcOutline: 0 },
   pickOpenDoors: true,
   gmGraphsFilter: "room",
   menuY: 40,
