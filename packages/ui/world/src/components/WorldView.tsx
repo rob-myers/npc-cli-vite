@@ -7,7 +7,6 @@ import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/dr
 import { Canvas, type RootState } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
 import debounce from "debounce";
-import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
@@ -51,8 +50,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
-        minAzimuthAngle: Math.PI / 3 - Math.PI / 16,
-        maxAzimuthAngle: Math.PI / 3 + Math.PI / 16,
+        minAzimuthAngle: Math.PI / 3,
+        maxAzimuthAngle: Math.PI / 3,
         minPolarAngle: Math.PI / 2 - Math.PI / 3,
         maxPolarAngle: Math.PI / 2 - Math.PI / 6,
         // the two stops the zoom moves between — see `camera-controls`' `zoomProgress`
@@ -63,7 +62,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
         zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
-      initial: saved.cameraInitial ?? defaultInitialCamera(),
+      initial: saved.cameraInitial ?? defaultInitialCamera(w.touchDevice),
       lookAtAnimId: 0,
       lastPointer: {
         epochMs: 0,
@@ -491,13 +490,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ? fromRadius
             : THREE.MathUtils.clamp(opts.radius, controls.minDistance, controls.maxDistance);
 
-        // the shortest way round to the angle asked for, if one was
-        const fromTheta = controls.spherical.theta;
-        const thetaDelta = opts.azimuthal === undefined ? 0 : deltaAngle(fromTheta, opts.azimuthal);
-
         /**
-         * Keeps the current orientation unless `azimuthal` asks otherwise, moving the orbit target
-         * and (optionally) the zoom.
+         * Keeps the current orientation, moving the orbit target and (optionally) the zoom.
          * The camera must be carried along explicitly: `update` derives `spherical` from
          * `position - target`, so moving the target alone would swing the camera instead.
          * We don't call `update` ourselves — `CameraControls` does so from a `useFrame` just
@@ -510,11 +504,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           at !== undefined && to.set(at.x, opts.height ?? 0, at.y);
 
           controls.target.copy(from).lerp(to, alpha);
-          // live `phi`, so a tilt underway still applies mid-pan; `theta` likewise, unless we are
-          // the ones turning it
+          // live `phi` and `theta`, so a tilt or turn underway still applies mid-pan
           const radius = fromRadius + (toRadius - fromRadius) * alpha;
-          const theta = thetaDelta === 0 ? controls.spherical.theta : fromTheta + thetaDelta * alpha;
-          tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, theta);
+          tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, controls.spherical.theta);
           controls.object.position.copy(controls.target).add(tmpLookAtOffset);
           w.r3f?.invalidate();
         };
@@ -590,7 +582,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       resetCamera() {
-        const initial = defaultInitialCamera();
+        const initial = defaultInitialCamera(w.touchDevice);
         state.initial = initial;
         store.patch({ cameraInitial: initial });
         if (state.controls) {
@@ -715,10 +707,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           initialPosition={state.initial.position}
           minPanDistance={w.touchDevice ? 0.05 : 0}
           // a pinch zooms continuously, so it moves freely whilst the fingers are down — but it
-          // is a peek rather than a choice of distance, and springs back in on release. The wheel
-          // has no such gesture, and keeps the two stops
+          // is a peek rather than a choice of distance, and springs back in on release, so a wider
+          // view has to be held. The wheel has no such gesture, and keeps the two stops
           freeZoom={w.touchDevice}
-          zoomSpringsOut={w.touchDevice}
+          zoomSpringsIn={w.touchDevice}
           onFrame={state.onCameraChange}
           onEnd={state.onCameraEnd}
           {...state.ctrlOpts}
@@ -842,7 +834,6 @@ export type State = {
       animate?: boolean;
       radius?: number;
       height?: number;
-      azimuthal?: number;
       /** Where it is NOW, re-read each frame, for a destination that moves */
       track?: () => undefined | Geom.VectJson;
     },
@@ -928,18 +919,18 @@ function createPickRT() {
   return renderTarget;
 }
 
-function defaultInitialCamera(): State["initial"] {
+function defaultInitialCamera(touchDevice: boolean): State["initial"] {
   return {
     azimuthal: 0,
     polar: Math.PI / 4,
-    // the far stop, which is also where touch springs back to once a pinch is let go
-    position: { x: 4, y: zoomFar, z: 4 },
+    // touch springs back to the near stop the moment a pinch is let go, so it starts there too
+    position: { x: 4, y: touchDevice ? zoomNear : zoomFar, z: 4 },
   };
 }
 
 /** The two stops the zoom moves between — `ctrlOpts` and `defaultInitialCamera` must agree */
-const zoomNear = 6;
-const zoomFar = 12;
+const zoomNear = 8;
+const zoomFar = 18;
 
 function PostProcessing() {
   const w = useContext(WorldContext);
