@@ -734,8 +734,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       {state.cameraMode === "follow" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           {/* the ring is a black outline a pixel proud, so the white reads over the pale floor too */}
-          <div className="absolute h-px w-6 bg-white ring-1 ring-black/80" />
-          <div className="absolute h-6 w-px bg-white ring-1 ring-black/80" />
+          <div className="absolute h-px w-3.5 bg-white ring-1 ring-black/80" />
+          <div className="absolute h-3.5 w-px bg-white ring-1 ring-black/80" />
         </div>
       )}
 
