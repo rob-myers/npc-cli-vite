@@ -46,6 +46,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const onThem =
           target !== undefined && Math.hypot(target.x - npc.point.x, target.z - npc.point.y) < panBehindFrom;
 
+        // asking to look AT them outranks wherever a pan last chose to stand: without this the
+        // follow eases straight back to that vantage, and the pan appears to bounce
+        w.view.followOffset.set(0, 0);
+
         // no `radius`, so the intro pans and turns without zooming — `lookAt` keeps the
         // distance it finds, which on load is whatever view we restored. Their height, so
         // the camera settles on the npc rather than on the floor they stand on

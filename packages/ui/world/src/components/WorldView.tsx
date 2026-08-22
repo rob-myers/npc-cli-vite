@@ -46,6 +46,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
       cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
+      followOffset: new Vect(),
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
@@ -411,11 +412,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.cameraMode !== "follow" || controls === null || player === undefined) return;
         // a `lookAt` owns the target whilst it runs, and tracks the player itself — two of us
         // writing it would fight, and the pan would never arrive
-        if (controls.pointers.length > 0 || state.lookAtAnimId !== 0) return;
+        if (state.lookAtAnimId !== 0) return;
 
         const { target } = controls;
-        const dx = player.position.x - target.x;
-        const dz = player.position.z - target.z;
+
+        // A PAN is the user choosing where to stand relative to them, so it is adopted as the
+        // offset the follow then keeps — rather than being dragged back to centre, which is what
+        // suspending the follow for the gesture amounted to. Rotating and zooming leave the
+        // target where it is, so those simply carry on being followed, mid-gesture and all
+        // a THRESHOLD, not `> 0`: the offset decays multiplicatively, so after any pan it stays
+        // faintly non-zero for ever — and the follow would sit here rather than ever following
+        if (controls.u.panOffset.lengthSq() > followPanUntil * followPanUntil) {
+          state.followOffset.set(target.x - player.position.x, target.z - player.position.z);
+          return;
+        }
+
+        const dx = player.position.x + state.followOffset.x - target.x;
+        const dz = player.position.z + state.followOffset.y - target.z;
         if (Math.hypot(dx, dz) < followUntil) return;
 
         // exponential approach, so it is frame-rate independent and has no end to overshoot
@@ -429,6 +442,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.r3f?.invalidate();
       },
       setCameraMode(cameraMode) {
+        // back onto them: whatever vantage a pan chose belonged to the last spell of following
+        if (cameraMode === "follow") state.followOffset.set(0, 0);
         store.patch({ cameraMode });
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the look button
@@ -804,6 +819,8 @@ export type State = {
   setCameraMode(cameraMode: CameraModeType): void;
   /** Keeps the player centred whilst `cameraMode` is `follow` — called every tick from `World` */
   followPlayer(deltaSecs: number): void;
+  /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
+  followOffset: Vect;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
   /**
@@ -871,6 +888,8 @@ function getPixelRatio() {
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
 const followUntil = 0.01;
+/** Below this much pan left to apply, the drag is over and the follow takes back over */
+const followPanUntil = 0.01;
 
 /** An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped */
 const lookAtMinMs = 700;
