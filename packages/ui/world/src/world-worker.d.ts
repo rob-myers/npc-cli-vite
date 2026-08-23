@@ -6,7 +6,35 @@ declare namespace WW {
         mapKey: string;
         gmGeoms: WW.GmGeomForNav[];
       }
+    | RoomGraphMsgToWorker
     | PhysicsMsgToWorker;
+
+  type RoomGraphMsgToWorker =
+    | {
+        /** The room graph itself, on map change and on worker reload */
+        type: "request-room-graph";
+        mapKey: string;
+        roomGraph: RoomGraphForWorker;
+      }
+    | {
+        /** Can this npc reach `dstIndex` from `srcIndex`, given the doors they may pass? */
+        type: "request-unreachable";
+        uid: string;
+        srcIndex: number;
+        dstIndex: number;
+        /** Node indices of the doors this npc has been granted */
+        accessDoorIndices: number[];
+        /**
+         * Which doors are locked, and which stand open — a flag per NODE index, so a door's state
+         * is read at the same index the graph knows it by. Sent with every query rather than as it
+         * changes: doors open and close constantly, and this way nothing has to stay in step
+         */
+        locked: Uint8Array;
+        open: Uint8Array;
+      };
+
+  type RequestRoomGraph = Extract<RoomGraphMsgToWorker, { type: "request-room-graph" }>;
+  type RequestUnreachable = Extract<RoomGraphMsgToWorker, { type: "request-unreachable" }>;
 
   type PhysicsMsgToWorker =
     | {
@@ -95,6 +123,12 @@ declare namespace WW {
         toNavTris: import("./worker/nav-util").GmFloorNavTris;
       } & import("navcat/blocks").TiledNavMeshResult)
     | { type: "worker-hot-module-reload" }
+    | {
+        type: "unreachable-result";
+        uid: string;
+        /** `null` iff the npc can get there — the door node they'd be stopped by otherwise */
+        blocked: null | { doorIndex: number; roomIndex: number };
+      }
     | PhysicsMsgFromWorker;
 
   type PhysicsMsgFromWorker =
@@ -124,6 +158,27 @@ declare namespace WW {
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromWorker, { type: "tiled-navmesh-response" }>;
   type RaycastResultResponse = Extract<MsgFromWorker, { type: "raycast-result" }>;
+  type UnreachableResult = Extract<MsgFromWorker, { type: "unreachable-result" }>;
+
+  /**
+   * `gmRoomGraph` as plain arrays, indexed by each node's own `index`.
+   * - Carefully extracted so the worker shares no module with the main thread — see `GmGeomForNav`
+   * - Rooms, doors and windows are all nodes; a hull door also neighbours the door it meets
+   */
+  type RoomGraphForWorker = {
+    /** `RoomGraphNodeType` per node */
+    nodeType: Uint8Array;
+    /** `grKey` / `gdKey` / window key per node, so results can be spoken in main-thread terms */
+    nodeId: string[];
+    /** `x, y` per node — the centroids `findBlockingDoor` measures with */
+    centroid: Float32Array;
+    /** Neighbours of node `i` are `adjNode[adjOffset[i] .. adjOffset[i + 1]]` */
+    adjOffset: Int32Array;
+    adjNode: Int32Array;
+  };
+
+  /** Values of `RoomGraphForWorker["nodeType"]` */
+  type RoomGraphNodeType = 0 | 1 | 2;
 
   /**
    * Geomorph geometry for navigation mesh generation.

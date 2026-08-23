@@ -13,6 +13,7 @@ import {
   stepWorld,
 } from "./physics";
 import { sendRaycastResult } from "./ray-cast";
+import { findUnreachableResult, setRoomGraph } from "./room-graph";
 import { workerStore } from "./worker.store";
 
 self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
@@ -68,6 +69,22 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     case "ping":
       self.postMessage({ type: "pong" } satisfies WW.MsgFromWorker);
       break;
+    case "request-room-graph": {
+      setRoomGraph(msg);
+      break;
+    }
+    case "request-unreachable": {
+      let blocked: WW.UnreachableResult["blocked"] = null;
+      try {
+        blocked = findUnreachableResult(msg);
+      } catch (e) {
+        // answering "reachable" leaves the npc walking up to the door and stopping, where an
+        // unanswered query would leave `w.npc.move` waiting for a promise nothing can resolve
+        warn("🤖 worker: request-unreachable failed", e);
+      }
+      self.postMessage({ type: "unreachable-result", uid: msg.uid, blocked } satisfies WW.MsgFromWorker);
+      break;
+    }
     case "request-tiled-navmesh": {
       // remember last payload
       workerStore.setState({ gmGeoms: msg.gmGeoms });

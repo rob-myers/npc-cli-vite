@@ -785,9 +785,8 @@ export default function Decor() {
             state.inst.setMatrixAt(instanceId, mat4);
 
             if (typeof decor.meta.doorId === "number") {
-              // tint via un/locked doors
               const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
-              const { locked } = w.door.byKey[gdKey];
+              const locked = w.door.byKey[gdKey]?.locked === true;
               state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
               // build gdKey -> decorKeys
               (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);

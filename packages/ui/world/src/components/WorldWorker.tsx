@@ -7,6 +7,7 @@ import {
   getNavmeshPayload,
   getPhysicsDoorsPayload,
   getRaycastPayload,
+  getRoomGraphPayload,
   getRuntimeCollidersPayload,
 } from "../service/worker-data";
 import { WorldContext } from "./world-context";
@@ -81,6 +82,11 @@ export default function WorldWorker() {
             delete w.e.pendingRaycast[msg.uid];
             break;
           }
+          case "unreachable-result": {
+            w.e.pendingUnreachable[msg.uid]?.resolve(msg);
+            delete w.e.pendingUnreachable[msg.uid];
+            break;
+          }
           case "tiled-navmesh-response": {
             w.nav = { ...msg };
             w.events.next({ key: "nav-updated" });
@@ -122,6 +128,8 @@ export default function WorldWorker() {
     return () => {
       worker.removeEventListener("message", state.onWorkerMessage);
       worker.terminate();
+      // whatever it was still being asked, it can no longer answer
+      w.e.rejectPendingUnreachable(new Error("worker terminated"));
     };
   }, [w.threeReady, state.reloads]); // setup worker
 
@@ -139,6 +147,12 @@ export default function WorldWorker() {
       type: "request-tiled-navmesh",
       mapKey: w.mapKey,
       gmGeoms: getNavmeshPayload(w.gms),
+    } satisfies WW.MsgToWorker);
+
+    state.worker.postMessage({
+      type: "request-room-graph",
+      mapKey: w.mapKey,
+      roomGraph: getRoomGraphPayload(w.gmRoomGraph),
     } satisfies WW.MsgToWorker);
 
     state.worker.postMessage({

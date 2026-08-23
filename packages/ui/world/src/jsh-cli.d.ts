@@ -136,8 +136,6 @@ declare namespace JshCli {
     idleTime: number;
     /** World time (seconds) when the current move started */
     moveTime: number;
-    /** Seen nav node ref */
-    navNodeRef: number;
     /** Position (used in stuck detection)  */
     point: Geom.VectJson;
     /** Distance to `dst` when the current move started */
