@@ -349,7 +349,7 @@ export default function NPCs() {
         w.e.setNpcDo(npcKey, null); // in case do=stand
 
         // navigation unreachable relative to locked doors?
-        const unreachableResult = w.e.checkNpcTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
+        const unreachableResult = await w.e.testTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
         npc.last.unreachableResult = unreachableResult;
 
         if (unreachableResult !== null) {

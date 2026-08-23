@@ -89,20 +89,25 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
     return graph;
   }
 
-  findPath(
+  /**
+   * A path between two rooms, spread over as many turns of the event loop as it takes — see
+   * `AStar.searchAsync`, which also serialises these so two cannot corrupt each other's working
+   * state. There is deliberately no synchronous version: one could run inside another's yield and
+   * wipe the node state it resumes into
+   */
+  findPathAsync(
     src: Geomorph.GmRoomKey,
     dst: Geomorph.GmRoomKey,
     opts?: {
       setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
     },
-  ): AStarSearchResult<Graph.GmRoomGraphNode> {
+  ): Promise<AStarSearchResult<Graph.GmRoomGraphNode>> {
     const srcNode = this.getNode(src);
     const dstNode = this.getNode(dst);
     if (srcNode === null || dstNode === null) {
       throw Error(`srcNode and dstNode cannot be null: ${jsStringify({ srcNode, dstNode })}`);
     }
-    // currently failed results always terminate in a room node
-    return AStar.search({
+    return AStar.searchAsync({
       graph: this,
       start: srcNode,
       end: dstNode,
