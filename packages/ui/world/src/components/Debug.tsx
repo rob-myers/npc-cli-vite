@@ -319,9 +319,10 @@ export function Debug() {
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {
-        if (state.pickOpenDoors === true && event.key === "picked" && event.meta.type === "door") {
-          w.e.toggleDoor(event.meta.gdKey);
-        }
+        if (state.pickOpenDoors !== true) return;
+        if (!(event.key === "picked" && (event.meta.type === "door" || event.meta.type === "decor"))) return;
+        const { gdKey } = event.meta;
+        if (gdKey !== undefined && w.helper.isGmDoorKey(gdKey)) w.e.toggleDoor(gdKey);
       },
     });
     return () => sub.unsubscribe();
