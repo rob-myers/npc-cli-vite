@@ -31,6 +31,8 @@ export type WorldSettings = {
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
   postProcessing: boolean;
+  /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
+  postFade: boolean;
   introEnabled: boolean;
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
@@ -51,6 +53,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraMode: null,
   cameraInitial: null,
   postProcessing: true,
+  postFade: true,
   introEnabled: true,
   pickOpenDoors: true,
   pickDoors: true,

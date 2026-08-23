@@ -27,6 +27,7 @@ import type { CameraControls as BaseCameraControls } from "../service/camera-con
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
+import { createPostProcessing, type PostProcessing } from "../service/post-processing";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -80,10 +81,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       frozen: false,
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
+      postFx: createPostProcessing(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
+      postFade: saved.postFade,
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
 
@@ -232,7 +235,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
-      onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {},
+      onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
+        // the post pass measures depth against what is in focus, so it needs the camera that drew
+        // the frame — and this runs once per rendered frame, just before the render
+        if (state.controls !== null) {
+          const player = w.n[w.player?.key ?? ""];
+          state.postFx.update(state.controls.object, player?.position ?? null);
+        }
+      },
       onCameraEnd() {
         const cameraInitial: PersistedCamera = {
           azimuthal: state.controls.spherical.theta,
@@ -275,6 +285,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // what the look button does on a click: look at the player, and have it happen on load
           // too. Pressed again once on them, `panTo` swings round behind them
           w.player?.setIntroEnabled(true);
+        } else if (e.key === "e" || e.key === "E") {
+          // the fade beyond the player, as its button does — which also turns the post pass on,
+          // there being nothing to fade into otherwise
+          state.setPostFadeEnabled();
+          w.menu?.update();
         }
       },
       onKeyUp(e) {
@@ -605,6 +620,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.invalidate();
         }
       },
+      setPostFadeEnabled(next = !state.postFade) {
+        state.postFade = next;
+        state.postFx.setFadeEnabled(next);
+        store.patch({ postFade: next });
+        // it has nothing to draw into otherwise, so asking for it asks for the pass as well
+        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+      },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
         store.patch({ postProcessing: next });
@@ -613,9 +635,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
+        state.postFx.setFadeEnabled(state.postFade); // a fresh effect starts with it on
+        const sceneColor = scenePass.getTextureNode("output");
+        // raw logarithmic depth, which the grid inverts back into a world position
+        const sceneDepth = scenePass.getTextureNode("depth");
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = scenePass;
+        pipeline.outputNode = state.postFx.apply(sceneColor, sceneDepth);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -662,7 +688,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, playerLight: true } },
+    { reset: { ctrlOpts: true, initial: false, playerLight: true, postFx: true } },
   );
 
   w.view = state;
@@ -741,6 +767,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         </div>
       )}
 
+      {/* The view as something seen THROUGH a camera: brackets at the corners and ticks at the
+          edges. In the HUD rather than the post pass — they are graphics at device resolution, and
+          a shader would have to fight aliasing to draw a crisp two-pixel line */}
+      <div className="pointer-events-none absolute inset-0 text-white/30">
+        <div className="absolute top-3 left-3 size-8 border-t-2 border-l-2 border-current" />
+        <div className="absolute top-3 right-3 size-8 border-t-2 border-r-2 border-current" />
+        <div className="absolute bottom-3 left-3 size-8 border-b-2 border-l-2 border-current" />
+        <div className="absolute right-3 bottom-3 size-8 border-r-2 border-b-2 border-current" />
+        <div className="absolute top-3 left-1/2 h-3 w-px -translate-x-1/2 bg-current" />
+        <div className="absolute bottom-3 left-1/2 h-3 w-px -translate-x-1/2 bg-current" />
+        <div className="absolute top-1/2 left-3 h-px w-3 -translate-y-1/2 bg-current" />
+        <div className="absolute top-1/2 right-3 h-px w-3 -translate-y-1/2 bg-current" />
+      </div>
+
       {/* the black, and over it the held frame that dips through it — see `world.css` */}
       <div className="world-veil" />
       <canvas
@@ -795,6 +835,8 @@ export type State = {
   objectPick: THREE.UniformNode<"float", number>;
   /** What the player can see, swept on the GPU — every material tints itself by it */
   playerLight: PlayerLight;
+  /** What the post pass does to the finished frame — see `service/post-processing` */
+  postFx: PostProcessing;
   /**
    * `1` whilst doors take part in picking, `0` whilst they discard themselves out of it — the
    * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it
@@ -803,6 +845,8 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  /** Whether the post pass fades the world beyond the player */
+  postFade: boolean;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -874,6 +918,8 @@ export type State = {
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
+  /** Toggles that fade, turning the pass itself on if it is off */
+  setPostFadeEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
 
@@ -914,6 +960,7 @@ const lookAtMsPerUnit = 60;
 const lookAtMaxMs = 2500;
 /** How long the background takes to go black, or to come back */
 const bgDimMs = 300;
+
 /** How long the veil over the canvas takes to fade, either way */
 const veilMs = 250;
 /** How long the held frame takes to give way to the map beneath it */
@@ -972,7 +1019,9 @@ const emptyDoors: Record<string, Geomorph.DoorState> = {};
 
 function PostProcessing() {
   const w = useContext(WorldContext);
-  useEffect(() => w.view.setupPostProcessing(), []);
+  // the pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
+  // `reset` gives us one on hmr, and the uid is how we notice
+  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid]);
   return null;
 }
 
