@@ -291,7 +291,7 @@ export default function Floor() {
       texNode: w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
       uid: generateUUID(),
     };
-  }, [w.texFloor.hash]);
+  }, [w.texFloor.hash, w.view.playerLight.uid]);
 
   useEffect(() => {
     state.transformInstances();
