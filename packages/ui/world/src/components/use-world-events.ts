@@ -60,7 +60,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return [...closeNpcs.nearby].every((npcKey) => w.n[npcKey].isMoving() === false);
       },
-      checkNpcTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
+      async testTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
 
         if (grId === null || dstGrId === null || grId.grKey === dstGrId.grKey) {
@@ -69,7 +69,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         // search, taking account of npc's access to locked doors
         const npcKey = npc.key;
-        const npcResult = state.findPath(grId.grKey, dstGrId.grKey, {
+        const npcResult = await state.findPathAsync(grId.grKey, dstGrId.grKey, {
           setNodeWeights(nodes) {
             for (const node of nodes) {
               if (node.type === "door") {
@@ -85,7 +85,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         // search again freely to find a good prefix (no windows though)
-        const unblockedResult = state.findPath(grId.grKey, dstGrId.grKey, {
+        const unblockedResult = await state.findPathAsync(grId.grKey, dstGrId.grKey, {
           setNodeWeights(nodes) {
             for (const node of nodes) {
               if (node.type === "window") {
@@ -125,8 +125,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         return w.gmGraph.findGmIdContaining(helper.parseGroundPoint(input));
       },
-      findPath(srcGrKey, dstGrKey, opts) {
-        return w.gmRoomGraph.findPath(srcGrKey, dstGrKey, {
+      findPathAsync(srcGrKey, dstGrKey, opts) {
+        return w.gmRoomGraph.findPathAsync(srcGrKey, dstGrKey, {
           setNodeWeights: opts?.setNodeWeights,
         });
       },
@@ -814,15 +814,15 @@ export type State = {
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
   /** Defaults to the npc's current destination */
-  checkNpcTargetUnreachable(npc: Npc, dstGrId?: null | Geomorph.GmRoomId): null | JshCli.NpcUnreachableResult;
-  findPath(
+  testTargetUnreachable(npc: Npc, dstGrId?: null | Geomorph.GmRoomId): Promise<null | JshCli.NpcUnreachableResult>;
+  /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
+  findPathAsync(
     srcGrKey: Geomorph.GmRoomKey,
     dstGrKey: Geomorph.GmRoomKey,
     opts?: {
       setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
-      srcCentroid?: Geom.VectJson;
     },
-  ): AStarSearchResult<Graph.GmRoomGraphNode>;
+  ): Promise<AStarSearchResult<Graph.GmRoomGraphNode>>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
