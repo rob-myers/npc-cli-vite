@@ -214,13 +214,11 @@ export class NpcAnimation {
     // last.dst = groundPoint; // already set in `w.npc.move`
     last.dstGrId = this.w.e.findRoomContaining(groundPoint);
     last.blockingArea = -1;
-    last.navNodeRef = -1;
     last.point = this.npc.point;
     last.moveTime = this.w.timer.getElapsedTime();
     // arrival radius is relative to this, else a short move starts arrived
     last.targetDistance = this.npc.distanceTo(groundPoint);
 
-    this.npc.nodeCount = 0;
     this.stuckAccum = 0;
     this.arrive = arrive;
 

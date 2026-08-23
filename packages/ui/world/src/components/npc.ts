@@ -2,7 +2,16 @@ import type { UseStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
 import type { buildGraph } from "@react-three/fiber";
 import { deltaAngle } from "maath/misc";
-import { createDefaultQueryFilter, type FindNearestPolyResult, getNodeByRef, type QueryFilter } from "navcat";
+import {
+  createDefaultQueryFilter,
+  createFindNearestPolyResult,
+  type FindNearestPolyResult,
+  findNearestPoly,
+  getNodeByRef,
+  type NavMesh,
+  type QueryFilter,
+  type Vec3,
+} from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import type { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -27,6 +36,8 @@ export class Npc {
   pickId: number;
   /** navigation strategy */
   queryFilter!: QueryFilter;
+  /** As `queryFilter`, but without the exemption for the node they stand on */
+  strictQueryFilter!: QueryFilter;
 
   bubbleOffset = new THREE.Vector3(0, 0, 0);
   geometry: THREE.BufferGeometry;
@@ -62,8 +73,6 @@ export class Npc {
     look: { x: 0, y: 0 },
     /** World time (seconds) when the current move started */
     moveTime: 0,
-    /** Seen nav node ref */
-    navNodeRef: -1,
     /** Position (used in stuck detection)  */
     point: { x: 0, y: 0 },
     /** Distance to `dst` when the current move started */
@@ -71,13 +80,6 @@ export class Npc {
     /** Non-null iff `dst` was unreachable at time of plan  */
     unreachableResult: null,
   };
-  /**
-   * Number of times current nav node changed during current/last navigation.
-   *
-   * Inaccessible nav nodes (polygons of doorways of locked doors) are set
-   * initially accessible to prevent npc getting stuck just beyond locked door.
-   */
-  nodeCount = 0;
   spawns = 0;
 
   resolve = {
@@ -234,6 +236,42 @@ export class Npc {
   }
 
   /**
+   * Fades them onto the nearest ground `strictQueryFilter` allows, if they stand inside the area of
+   * a door they cannot pass — spawned in a doorway, or it locked whilst they stood there. No move
+   * can start until they are off it: the crowd will not steer an agent whose own node fails its
+   * filter.
+   *
+   * @returns whether they had to be moved
+   */
+  async ensureLegalPosition(): Promise<boolean> {
+    if (this.agentId === null) {
+      return false;
+    }
+
+    const { x, y, z } = this.position;
+    const allowed = findNearestPoly(
+      createFindNearestPolyResult(),
+      this.w.nav.navMesh,
+      [x, y, z],
+      legalPositionHalfExtents,
+      this.strictQueryFilter,
+    );
+
+    const dx = allowed.position[0] - x;
+    const dz = allowed.position[2] - z;
+    const dist = Math.hypot(dx, dz);
+
+    if (allowed.success !== true || dist < legalPositionEpsilon) {
+      return false; // nowhere legal within reach, or they are standing somewhere legal already
+    }
+
+    // a little beyond it, since the nearest allowed point is ON the edge they must leave
+    const beyond = (dist + legalPositionMargin) / dist;
+    await this.fadeSpawn({ at: { x: x + dx * beyond, y: z + dz * beyond } });
+    return true;
+  }
+
+  /**
    * An npc with an agent and a target has corners.
    * We provide: `[currentGroundPoint, ...cornerGroundPoints]`
    */
@@ -261,6 +299,33 @@ export class Npc {
     this.anim.mixer.update(0);
   };
 
+  /**
+   * Whether this npc may use a nav node — the door areas of doors they cannot pass are refused.
+   *
+   * `exemptStanding` keeps the node under their own feet passable: they can be standing inside
+   * such an area (spawned in a doorway, or a door locked whilst they stood in it) and the crowd
+   * refuses to move an agent whose own node fails its filter. Searches only ever filter
+   * NEIGHBOURS, so this lets them walk out of the doorway without letting them walk through it.
+   * `w.npc.move` uses `strictQueryFilter` — the same test without the exemption — to ask whether
+   * they are standing somewhere they should not be
+   */
+  canPassNode(nodeRef: number, navMesh: NavMesh, exemptStanding: boolean): boolean {
+    const node = getNodeByRef(navMesh, nodeRef);
+
+    if (isDoorAreaId(node.area) === true) {
+      const gmDoorId = decodeDoorAreaId(node.area);
+      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
+        if (exemptStanding === true && nodeRef === this.agent?.corridor.path[0]) {
+          return true;
+        }
+        this.last.blockingArea = node.area;
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   init() {
     this.skinnedMesh.computeBoundingSphere();
 
@@ -270,25 +335,12 @@ export class Npc {
 
     this.queryFilter = {
       ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, true),
+    };
 
-      passFilter: (nodeRef, navMesh) => {
-        const node = getNodeByRef(navMesh, nodeRef);
-        if (nodeRef !== this.last.navNodeRef) {
-          this.last.navNodeRef = nodeRef;
-          this.nodeCount++;
-        }
-
-        // if (this.nodeCount > 2 && isDoorAreaId(node.area) === true) {
-        if (isDoorAreaId(node.area) === true) {
-          const gmDoorId = decodeDoorAreaId(node.area);
-          if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
-            this.last.blockingArea = node.area;
-            return false;
-          }
-        }
-
-        return true;
-      },
+    this.strictQueryFilter = {
+      ...createDefaultQueryFilter(),
+      passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, false),
     };
 
     const skinKey = this.w.npc.getSkinKeyBySkinIndex(this.skinIndex) ?? defaultSkinKey;
@@ -428,6 +480,13 @@ export type NpcInit = {
   skinnedMesh: THREE.SkinnedMesh;
   skinIndexUniform: THREE.UniformNode<"float", number>;
 };
+
+/** How far `ensureLegalPosition` looks for ground the npc is allowed to stand on */
+const legalPositionHalfExtents: Vec3 = [1.5, 1, 1.5];
+/** Nearer than this and they are already standing legally */
+const legalPositionEpsilon = 0.01;
+/** How far past the edge `ensureLegalPosition` puts them */
+const legalPositionMargin = 0.05;
 
 /** Beyond this angle a look gets its own idle animation */
 const longLookAngle = 15 * (Math.PI / 180);

@@ -2,11 +2,11 @@ import { Mat } from "@npc-cli/util/geom/mat";
 import { Poly } from "@npc-cli/util/geom/poly";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { Vect } from "@npc-cli/util/geom/vect";
+import { geomService } from "@npc-cli/util/geom-service";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh, NavMeshTile } from "navcat";
 import * as THREE from "three";
 import { decompToXZGeometry } from "../service/geometry";
-import { geomService } from "@npc-cli/util/geom-service";
 
 export async function computeGmInstanceMeshes(gmGeoms: WW.GmGeomForNav[]) {
   const meshes = [] as THREE.Mesh[];
@@ -200,12 +200,15 @@ export function buildDoorwayGrid(
   tileSizeWorld: number,
 ): DoorwayGrid {
   // outset door polys to prevent npc intersecting locked door
-  const polys = doorways.map(door => geomService.createOutset(Poly.from(door.polygon), 0.1)[0]);
-  
+  const polys = doorways.map((door) => {
+    const [outsetDoorPoly] = geomService.createOutset(Poly.from(door.polygon), doorAreaOutsetAmount);
+    return outsetDoorPoly;
+  });
+
   const enrichedDoorways: EnrichedDoorway[] = doorways.map((door, i) => ({
     ...door,
     rect: polys[i].rect,
-    tris: polys[i].fastTriangulate()
+    tris: polys[i].fastTriangulate(),
   }));
 
   const grid: DoorwayGrid = {};
@@ -227,3 +230,9 @@ export function buildDoorwayGrid(
 const tmpRect = new Rect();
 const tmpMat3 = new Mat();
 const tmpMatrix4 = new THREE.Matrix4();
+
+// keep webworker isolated
+type NpcConfigDist = typeof import("../const")["npcConfig"]["dist"];
+const agentRadius: NpcConfigDist["agentRadius"] = 0.2;
+const shutDoorKeepOut: NpcConfigDist["shutDoorKeepOut"] = 0.05;
+const doorAreaOutsetAmount = agentRadius + shutDoorKeepOut;

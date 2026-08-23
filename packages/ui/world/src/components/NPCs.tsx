@@ -348,6 +348,8 @@ export default function NPCs() {
 
         w.e.setNpcDo(npcKey, null); // in case do=stand
 
+        await npc.ensureLegalPosition();
+
         // navigation unreachable relative to locked doors?
         const unreachableResult = await w.e.testTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
         npc.last.unreachableResult = unreachableResult;
@@ -820,7 +822,7 @@ const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdAp
 
 function getAgentParams(): crowd.AgentParams {
   return {
-    radius: 0.2,
+    radius: npcConfig.dist.agentRadius,
     height: npcConfig.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,

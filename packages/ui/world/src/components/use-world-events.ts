@@ -11,6 +11,7 @@ import {
   floorFadeDelayMs,
   MAX_NPCS,
   mapVeilMs,
+  npcConfig,
   unfoldDelayMs,
 } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
@@ -32,6 +33,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToDoors: {},
       npcToRoom: new Map(),
       pendingRaycast: {},
+      pendingUnreachable: {},
       roomToNpcs: [],
 
       addFrameCallback(cb) {
@@ -64,60 +66,82 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
 
         if (grId === null || dstGrId === null || grId.grKey === dstGrId.grKey) {
-          return null; // not moving or same room
+          return null; // invalid or same room
         }
 
-        // search, taking account of npc's access to locked doors
-        const npcKey = npc.key;
-        const npcResult = await state.findPathAsync(grId.grKey, dstGrId.grKey, {
-          setNodeWeights(nodes) {
-            for (const node of nodes) {
-              if (node.type === "door") {
-                node.astar.closed = !state.npcCanAccess(npcKey, node.gdKey);
-              } else if (node.type === "window") {
-                node.astar.closed = true;
-              }
-            }
-          },
-        });
-        if (npcResult.success === true) {
+        const srcNode = w.gmRoomGraph.getNode(grId.grKey);
+        const dstNode = w.gmRoomGraph.getNode(dstGrId.grKey);
+        if (srcNode === null || dstNode === null) {
           return null;
         }
 
-        // search again freely to find a good prefix (no windows though)
-        const unblockedResult = await state.findPathAsync(grId.grKey, dstGrId.grKey, {
-          setNodeWeights(nodes) {
-            for (const node of nodes) {
-              if (node.type === "window") {
-                node.astar.closed = true;
-              }
-            }
-          },
-        });
-        const firstBadDoorIndex = unblockedResult.path.findIndex(
-          (node) => node.type === "door" && state.npcCanAccess(npc.key, node.gdKey) === false,
-        );
-        // console.log({ unblockedResult, firstBadDoorIndex });
-
-        if (firstBadDoorIndex <= 0) {
-          return null; // no bad door or already in doorway
+        // the graph work itself runs in the worker — see `worker/room-graph.ts`
+        const blocked = await state.requestUnreachable(npc, srcNode.index, dstNode.index);
+        if (blocked === null) {
+          return null;
         }
 
-        const firstBadDoorNode = unblockedResult.path[firstBadDoorIndex] as Graph.GmRoomGraphNodeDoor;
-        const lastGoodRoomNode = unblockedResult.path[firstBadDoorIndex - 1] as Graph.GmRoomGraphNodeRoom;
-        const door = w.d[firstBadDoorNode.gdKey];
-        const indexOfRoomId = door.connector.roomIds.indexOf(lastGoodRoomNode.roomId);
+        const doorNode = w.gmRoomGraph.nodesArray[blocked.doorIndex] as Graph.GmRoomGraphNodeDoor;
+        const roomNode = w.gmRoomGraph.nodesArray[blocked.roomIndex] as Graph.GmRoomGraphNodeRoom;
+        const door = w.d[doorNode.gdKey];
+        const indexOfRoomId = door.connector.roomIds.indexOf(roomNode.roomId);
 
         if (indexOfRoomId === -1) {
-          return { blockingGdKey: door.gdKey, nearbyPoint: firstBadDoorNode.astar.centroid.clone() };
+          return { blockingGdKey: door.gdKey, nearbyPoint: doorNode.astar.centroid.clone() };
         }
 
         return {
           blockingGdKey: door.gdKey,
-          nearbyPoint: firstBadDoorNode.astar.centroid
+          nearbyPoint: doorNode.astar.centroid
             .clone()
-            .addScaled(door.normal, 0.15 * (indexOfRoomId === 0 ? 1 : -1)),
+            .addScaled(door.normal, shutDoorKeepOut * (indexOfRoomId === 0 ? 1 : -1)),
         };
+      },
+      async requestUnreachable(npc, srcIndex, dstIndex) {
+        if (w.worker?.worker === undefined) {
+          return null; // asked before the worker was up, e.g. a scripted move on bootstrap
+        }
+
+        // A flag per NODE, so the worker reads a door's state at the index it knows the door by.
+        // Sent with the query rather than kept in step as doors lock and swing: they change far
+        // more often than they are asked about, and this way there is nothing to go stale
+        const nodes = w.gmRoomGraph.nodesArray;
+        const locked = new Uint8Array(nodes.length);
+        const open = new Uint8Array(nodes.length);
+        for (const [index, node] of nodes.entries()) {
+          if (node.type !== "door") continue;
+          locked[index] = w.d[node.gdKey]?.locked === true ? 1 : 0;
+          open[index] = w.d[node.gdKey]?.open === true ? 1 : 0;
+        }
+
+        const uid = shortUuid.generate();
+        w.worker.worker.postMessage(
+          {
+            type: "request-unreachable",
+            uid,
+            srcIndex,
+            dstIndex,
+            // likewise: an npc holds few keys, and `grant` / `revoke` write straight to
+            // `npcToAccess`, so nothing needs telling when they change
+            accessDoorIndices: Object.entries(state.npcToAccess[npc.key] ?? {}).flatMap(([gdKey, granted]) =>
+              granted === true ? (w.gmRoomGraph.getNode(gdKey as Geomorph.GmDoorKey)?.index ?? []) : [],
+            ),
+            locked,
+            open,
+          } satisfies WW.MsgToWorker,
+          [locked.buffer, open.buffer],
+        );
+
+        try {
+          const result = await new Promise<WW.UnreachableResult>(
+            (resolve, reject) => (state.pendingUnreachable[uid] = { resolve, reject }),
+          );
+          return result.blocked;
+        } catch {
+          // the map changed or the worker reloaded whilst asking. Treating it as reachable simply
+          // lets them set off, and they stop at the door if it is shut after all
+          return null;
+        }
       },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
@@ -155,17 +179,26 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           meta: { npcKey, ...state.npcToRoom.get(npcKey) },
         };
       },
-      npcCanAccess(npcKey, gdKey) {
+      npcCanAccess(npcKey, gdKey, planning = true) {
         const door = w.d[gdKey];
         if (!door || door.locked === false) {
           return true; // absent onchange map
         }
-        // npc without access can only enter from very nearby while door open
-        if (door.open === true && state.doorToNpcs[door.gdKey]?.nearby.has(npcKey)) {
+        // An npc without access can slip through a locked door whilst it stands OPEN, but only
+        // from right beside it. Asked whether they could get somewhere — rather than whether they
+        // could step through from where they are standing — the proximity is beside the point:
+        // they would walk up to it first, and satisfy it on arrival
+        if (door.open === true && (planning === true || state.doorToNpcs[door.gdKey]?.nearby.has(npcKey))) {
           return true;
         }
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
+      },
+      rejectPendingUnreachable(err) {
+        for (const uid of Object.keys(state.pendingUnreachable)) {
+          state.pendingUnreachable[uid].reject(err);
+          delete state.pendingUnreachable[uid];
+        }
       },
       async onBootstrapMap() {
         const { player } = w;
@@ -255,6 +288,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.npcToRoom = new Map();
         state.roomToNpcs = [];
 
+        // anything still waiting on the worker asked about the old map's rooms
+        state.rejectPendingUnreachable(new Error("map changed"));
+
         // arm "map-settled" ahead of the world query
         w.setNextPending({ assets: true });
       },
@@ -318,8 +354,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-unlocked":
             state.tryCloseDoor(e.gdKey);
             break;
-          case "disabled":
           case "door-locked":
+            break;
+          case "disabled":
           case "enabled":
           case "nav-updated":
           case "picked":
@@ -708,7 +745,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
-        if (!door) return false; // onchange map
+        if (!door) {
+          warn(`${gdKey}: toggleDoor: no such door`); // e.g. onchange map, or a stale pick
+          return false;
+        }
 
         // clear if closed or no npc "inside" collider
         opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.inside.size > 0);
@@ -800,6 +840,9 @@ export type State = {
    */
   npcToRoom: Map<string, Geomorph.GmRoomId>;
   pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(): void } };
+  pendingUnreachable: {
+    [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };
+  };
   /**
    * The "inverse" of npcToRoom i.e. `roomToNpc[gmId][roomId]` is a set of `npcKey`s
    */
@@ -824,9 +867,22 @@ export type State = {
     },
   ): Promise<AStarSearchResult<Graph.GmRoomGraphNode>>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
+  /**
+   * Asks the worker whether this npc can get from one room node to another, and which shut door
+   * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there",
+   * and also when the answer is thrown away, e.g. by a map change mid-question
+   */
+  requestUnreachable(npc: Npc, srcIndex: number, dstIndex: number): Promise<WW.UnreachableResult["blocked"]>;
+  /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
+  rejectPendingUnreachable(err: Error): void;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
-  npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
+  /**
+   * @param planning asks whether they COULD pass it, rather than whether they could pass it from
+   * where they stand — a locked door standing open counts, since walking up to it is what grants
+   * them the crossing. For reachability and the like; leave it off to ask about this moment
+   */
+  npcCanAccess(npcKey: string, gdKey: Geomorph.GmDoorKey, planning?: boolean): boolean;
   /** Restore this map's npcs, place the player, then maybe run the intro */
   onBootstrapMap(): Promise<void>;
   /** Persist and remove every npc, whilst the outgoing map still exists */
@@ -871,5 +927,12 @@ export type State = {
   tryPutNpcIntoRoom(npc: Npc): void;
 };
 
-const emptySet = new Set();
+const emptySet = new Set<Geomorph.GmDoorKey>();
+
+/**
+ * How far CLEAR of a door an npc it cannot pass is kept: their own radius, and a margin on top.
+ * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor
+ */
+const shutDoorKeepOut = npcConfig.dist.agentRadius + npcConfig.dist.shutDoorKeepOut;
+
 const emptyMeta = {};

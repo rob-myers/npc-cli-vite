@@ -25,6 +25,34 @@ export function getNavmeshPayload(gms: Geomorph.LayoutInstance[]): WW.GmGeomForN
   }));
 }
 
+/**
+ * `gmRoomGraph` flattened into plain arrays for the worker, which answers reachability with it.
+ * Node order is `nodesArray`, i.e. each node's own `index`, so both threads can talk in indices.
+ */
+export function getRoomGraphPayload(gmRoomGraph: Graph.GmRoomGraph): WW.RoomGraphForWorker {
+  const nodes = gmRoomGraph.nodesArray;
+
+  const nodeType = new Uint8Array(nodes.length);
+  const nodeId = nodes.map((node) => node.id as string);
+  const centroid = new Float32Array(nodes.length * 2);
+  const adjOffset = new Int32Array(nodes.length + 1);
+  const adjNode = [] as number[];
+
+  for (const [index, node] of nodes.entries()) {
+    nodeType[index] = node.type === "room" ? 0 : node.type === "door" ? 1 : 2;
+    centroid[2 * index] = node.astar.centroid.x;
+    centroid[2 * index + 1] = node.astar.centroid.y;
+
+    adjOffset[index] = adjNode.length;
+    for (const other of gmRoomGraph.getSuccs(node)) {
+      adjNode.push(other.index);
+    }
+  }
+  adjOffset[nodes.length] = adjNode.length;
+
+  return { nodeType, nodeId, centroid, adjOffset, adjNode: Int32Array.from(adjNode) };
+}
+
 export function getPhysicsDoorsPayload(gms: Geomorph.LayoutInstance[]): WW.PhysicsDoorDef[] {
   return gms.flatMap((gm, gmId) =>
     gm.doors.map((door, doorId) => ({
