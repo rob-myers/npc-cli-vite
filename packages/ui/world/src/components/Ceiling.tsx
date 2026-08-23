@@ -155,7 +155,9 @@ export default function Ceiling() {
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       opacityNode,
       pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
-      texNode: w.view.playerLight.applyLightRgba(texNode.depth(uvTexIds)),
+      // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
+      // would light the lid of whatever room the player stands in — see `service/player-light`
+      texNode: w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
       uid: generateUUID(),
     };
   }, [w.texCeil.hash]);
