@@ -272,19 +272,18 @@ export function WorldMenu() {
         setTimeout(() => w.view.forceUpdate());
         break;
       case "Toggle Doors": {
+        // independent of "Pick Doors": a door's switches carry its `gdKey` too, so picking one of
+        // those opens it whilst the door itself stays out of the pick pass
         const next = !w.debug?.pickOpenDoors;
-        // a door can only be opened by a pick that reaches it, so this brings picking with it
-        w.debug?.set({ pickOpenDoors: next, ...(next === true && { pickDoors: true }) });
-        store.patch({ pickOpenDoors: next, ...(next === true && { pickDoors: true }) });
-        if (next === true) w.view.pickDoors.value = 1;
+        w.debug?.set({ pickOpenDoors: next });
+        store.patch({ pickOpenDoors: next });
         state.update();
         break;
       }
       case "Pick Doors": {
         const next = !w.debug?.pickDoors;
-        // and without picking there is nothing left for the toggle to act on
-        w.debug?.set({ pickDoors: next, ...(next === false && { pickOpenDoors: false }) });
-        store.patch({ pickDoors: next, ...(next === false && { pickOpenDoors: false }) });
+        w.debug?.set({ pickDoors: next });
+        store.patch({ pickDoors: next });
         w.view.pickDoors.value = next ? 1 : 0; // the doors' own shader reads this
         state.update();
         break;
