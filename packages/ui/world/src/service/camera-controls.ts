@@ -128,12 +128,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * ends reads as the view fighting the fingers
    */
   freeZoom = false;
-  /**
-   * Whether letting go springs the zoom all the way back in, rather than leaving it where the
-   * gesture ended. On by touch, whose pinch is a peek outwards rather than a choice of distance —
-   * so a wider view has to be held, and the view rests at the near stop
-   */
-  zoomSpringsIn = false;
   /** When zoom input last arrived, so `syncZoom` can tell a gesture in progress from one let go */
   _zoomInputMs = 0;
   /** Asks for the frame on which the settle begins — see `addZoomProgress` */
@@ -513,18 +507,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    */
   syncZoom() {
     if (this.freeZoom === true) {
-      if (this.zoomSpringsIn === false || this.pointers.length > 0) {
-        return; // theirs to move, and it rests wherever they leave it — see `freeZoom`
-      }
-      // let go: back to the near stop, however far out the pinch went — see `zoomSpringsIn`
-      const remaining = 1 - this.zoomProgress;
-      if (Math.abs(remaining) < zoomSettleUntil) {
-        this.zoomProgress = 1;
-        return;
-      }
-      this.zoomProgress += remaining * zoomSettleRate;
-      this.dispatchEvent(changeEvent);
-      return;
+      return; // it rests wherever the gesture left it — see `freeZoom`
     }
     const zoomingIn = this._zoomDirection === 1;
     const committed = zoomingIn ? this.zoomProgress > zoomCommitIn : this.zoomProgress < zoomCommitOut;
@@ -727,12 +710,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     this.rotateAxis = "none";
-
-    // the spring only runs once the fingers are off, and under a demand frameloop nothing else
-    // would ask for the frame it starts on — `syncZoom` sustains itself from there
-    if (this.zoomSpringsIn === true && this.pointers.length === 0 && this.zoomProgress < 1) {
-      this.dispatchEvent(changeEvent);
-    }
 
     this.dispatchEvent(endEvent);
     this.state = this.STATE.NONE;
