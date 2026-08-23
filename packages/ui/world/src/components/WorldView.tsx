@@ -27,7 +27,7 @@ import type { CameraControls as BaseCameraControls } from "../service/camera-con
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
-import { createPostProcessing, type PostProcessing } from "../service/post-processing";
+import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -59,7 +59,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // The two stops the zoom moves between — see `camera-controls`' `zoomProgress`. Touch
         // comes in closer: a phone shows far less of the world at a given distance, and its pinch
         // is free to rest anywhere between the two rather than settling on one
-        minDistance: w.touchDevice ? 5 : 8,
+        minDistance: w.touchDevice ? 5 : 7,
         maxDistance: 14,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
@@ -836,7 +836,7 @@ export type State = {
   /** What the player can see, swept on the GPU — every material tints itself by it */
   playerLight: PlayerLight;
   /** What the post pass does to the finished frame — see `service/post-processing` */
-  postFx: PostProcessing;
+  postFx: PostProcessingType;
   /**
    * `1` whilst doors take part in picking, `0` whilst they discard themselves out of it — the
    * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it
