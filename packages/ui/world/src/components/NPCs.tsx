@@ -695,7 +695,9 @@ export default function NPCs() {
 
   w.r3fStore = useReactThreeFiberStore();
 
-  useEffect(() => void (import.meta.env.DEV && state.devHotReload()), [queryData?.gltf]);
+  // `playerLight.uid`: every npc's material captured the light's nodes, so a rebooted light needs
+  // them built again — `devHotReload` is exactly that, and already exists
+  useEffect(() => void (import.meta.env.DEV && state.devHotReload()), [queryData?.gltf, w.view.playerLight.uid]);
 
   return (
     state.gltf &&

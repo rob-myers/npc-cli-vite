@@ -4,6 +4,7 @@ import {
   atan,
   attributeArray,
   Break,
+  Continue,
   cos,
   Fn,
   float,
@@ -26,6 +27,12 @@ import { MAX_DOORS } from "../const";
 import type DerivedGmsData from "./DerivedGmsData";
 
 export type PlayerLight = {
+  /**
+   * Changes whenever the light is rebuilt. Materials capture its nodes when they are constructed,
+   * so anything holding one must rebuild when this does — put it in the deps that make the
+   * material, and an hmr of this file reaches the screen. See `WorldView`'s `reset`
+   */
+  uid: string;
   /**
    * Tints `color` towards black wherever the fragment cannot be seen from the light. Identity
    * whilst the light is off, so a material can wrap its colour unconditionally.
@@ -160,6 +167,16 @@ export function createPlayerLight(): PlayerLight {
         Break();
       });
       const seg = doorSegs.element(i);
+      // the same reject the walls get: a door whose midpoint is out of reach by more than its own
+      // half length cannot be hit, and only a handful are ever within reach
+      const doorMidX = seg.x.add(seg.z).mul(0.5);
+      const doorMidY = seg.y.add(seg.w).mul(0.5);
+      const doorHalfLen = vec2(seg.z.sub(seg.x), seg.w.sub(seg.y)).length().mul(0.5);
+      const toDoorMid = vec2(doorMidX.sub(origin.x), doorMidY.sub(origin.y)).length();
+      If(toDoorMid.sub(doorHalfLen).greaterThan(lightRadius), () => {
+        Continue();
+      });
+
       const ratio = doorOpen.element(i);
       // the CLOSED part of the door is what casts a shadow, and it shrinks from whichever end the
       // gap opens at — mirroring the `inGap` test in `Doors`. A fully open door collapses to a
@@ -216,9 +233,10 @@ export function createPlayerLight(): PlayerLight {
     const width = arc.mul(penumbraArcs).add(lightBias);
     const lit = smoothstep(reference.sub(width), reference.add(width), dist).oneMinus();
 
-    // and it fades over the last of its reach, so the light ends in a falloff rather than on a
-    // circle drawn across the floor
-    const reach = smoothstep(float(lightRadius), float(lightRadius - lightFalloff), dist);
+    // and it fades across its reach, so the light ends in a falloff rather than on a circle drawn
+    // across the floor. Written low-to-high and inverted: `smoothstep` is undefined where its
+    // first edge is the greater, which is what a high-to-low pair would ask for
+    const reach = smoothstep(float(lightRadius - lightFalloff), float(lightRadius), dist).oneMinus();
     const tint = float(unlitTint).mul(strength).mul(lit.mul(reach).oneMinus());
     return mix(color, vec3(0, 0, 0), tint);
   }
@@ -258,6 +276,8 @@ export function createPlayerLight(): PlayerLight {
   }
 
   return {
+    uid: crypto.randomUUID(),
+
     applyLight,
 
     applyLightRgba(color) {
@@ -378,7 +398,7 @@ const cullMargin = 3;
 const lightRadius = 8;
 const lightFalloff = 8;
 /** How black an unseen fragment goes */
-const unlitTint = 0.9;
+const unlitTint = 0.8;
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives

@@ -245,7 +245,7 @@ export default function Walls() {
     m.opacityNode = mix(float(hullOuterOutsideOpacity), float(1), inward);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 1)]); // flat, like the floor's own art
     return m;
-  }, []);
+  }, [w.view.playerLight.uid]);
 
   const trimMaterial = useMemo(() => {
     const m = new THREE.MeshStandardNodeMaterial({
@@ -256,7 +256,7 @@ export default function Walls() {
     m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0));
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
-  }, []);
+  }, [w.view.playerLight.uid]);
 
   useEffect(() => {
     state.positionInstances();

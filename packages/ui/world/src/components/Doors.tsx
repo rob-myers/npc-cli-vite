@@ -557,7 +557,7 @@ export default function Doors() {
     return output;
     // `TexArray.resize` recreates `tex`, disposing the one these nodes captured — so the
     // materials must be rebuilt when it does, as `Decor.tsx` does via its query key
-  }, []);
+  }, [w.view.playerLight.uid]);
 
   useEffect(() => {
     if (import.meta.hot?.data.__JUST_HMR_DOORS__ === true) {

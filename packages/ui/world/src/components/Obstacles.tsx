@@ -215,7 +215,7 @@ export default function Obstacles(_props: Props) {
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),
     };
-  }, [w.texObs.hash]);
+  }, [w.texObs.hash, w.view.playerLight.uid]);
 
   const skirtCount = w.gmsData.count.obstacleSkirtEdges;
 
@@ -249,7 +249,7 @@ export default function Obstacles(_props: Props) {
       vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1),
     );
     return mat;
-  }, [skirtLightMeta]);
+  }, [skirtLightMeta, w.view.playerLight.uid]);
 
   state.images =
     useQuery({

@@ -160,7 +160,7 @@ export default function Ceiling() {
       texNode: w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
       uid: generateUUID(),
     };
-  }, [w.texCeil.hash]);
+  }, [w.texCeil.hash, w.view.playerLight.uid]);
 
   useEffect(() => {
     state.transformInstances();
