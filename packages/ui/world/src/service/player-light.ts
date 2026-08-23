@@ -17,6 +17,7 @@ import {
   sin,
   smoothstep,
   uniform,
+  vec2,
   vec3,
   vec4,
 } from "three/tsl";
@@ -32,6 +33,11 @@ export type PlayerLight = {
   applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
   /** The same, for a material whose colour carries alpha — which is left alone */
   applyLightRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  /**
+   * Tints as though nothing were ever lit, for a surface the light has no business reaching — the
+   * ceiling, which the sweep would otherwise light through the room below it
+   */
+  applyUnlitRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
   /** Re-reads the walls, which never move. Call on map change */
   syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
   /**
@@ -41,7 +47,7 @@ export type PlayerLight = {
   update(
     renderer: THREE.WebGPURenderer,
     origin: null | { x: number; z: number },
-    doors: Geomorph.DoorState[],
+    doors: Record<string, Geomorph.DoorState>,
     openRatios: Float32Array,
   ): void;
 };
@@ -64,11 +70,19 @@ export function createPlayerLight(): PlayerLight {
   /** `0` disables it exactly, so every material is identity whilst there is no player */
   const strength = uniform(0);
 
-  // the occluders. Fixed capacity, so the compute node never has to be rebuilt — the counts say
-  // how much of each is real, and the loops stop there
+  // The occluders. Fixed capacity, so the compute node never has to be rebuilt — the counts say
+  // how much of each is real, and the loops stop there.
+  // Every wall in the world, kept on the CPU: the sweep only ever sees the ones within reach
+  let sourceWalls = new Float32Array(0);
+  let sourceCount = 0;
   const wallValues = new Float32Array(maxLightSegs * 4);
   const wallSegs = attributeArray(wallValues, "vec4");
   const wallCount = uniform(0);
+  /** Where the light stood when that subset was last chosen, and whether it must be chosen again */
+  const culledAt = { x: Number.NaN, z: Number.NaN };
+  let cullDirty = true;
+  /** Whether the table has ever been written — until it has, an unchanged frame still needs one */
+  let swept = false;
 
   // a door is a fixed line with a moving gap, so only its open ratio changes per frame
   const doorValues = new Float32Array(MAX_DOORS * 4);
@@ -129,7 +143,16 @@ export function createPlayerLight(): PlayerLight {
         Break();
       });
       const seg = wallSegs.element(i);
-      nearest.assign(hitSegment(dirX, dirY, seg.x, seg.y, seg.z, seg.w, nearest));
+      // Cheap reject before the intersection: a segment whose midpoint is further than the light
+      // reaches, by more than its own half length, cannot be hit. Six operations against a dozen,
+      // and it covers whatever the culling left in that is out of reach from this angle
+      const midX = seg.x.add(seg.z).mul(0.5);
+      const midY = seg.y.add(seg.w).mul(0.5);
+      const halfLen = vec2(seg.z.sub(seg.x), seg.w.sub(seg.y)).length().mul(0.5);
+      const toMid = vec2(midX.sub(origin.x), midY.sub(origin.y)).length();
+      If(toMid.sub(halfLen).lessThanEqual(lightRadius), () => {
+        nearest.assign(hitSegment(dirX, dirY, seg.x, seg.y, seg.z, seg.w, nearest));
+      });
     });
 
     Loop(MAX_DOORS, ({ i }: { i: THREE.Node<"int"> }) => {
@@ -200,6 +223,40 @@ export function createPlayerLight(): PlayerLight {
     return mix(color, vec3(0, 0, 0), tint);
   }
 
+  /**
+   * Copies the walls within reach of `(x, z)` into the buffer the sweep reads, by distance from
+   * the segment rather than from its ends, so a long wall running past the light is kept. The
+   * margin is what lets the light move `cullRebuildDist` before this has to be done again.
+   */
+  function cullWalls(x: number, z: number) {
+    const reach = lightRadius + cullMargin;
+    let count = 0;
+
+    for (let i = 0; i < sourceCount && count < maxLightSegs; i++) {
+      const ax = sourceWalls[i * 4 + 0];
+      const ay = sourceWalls[i * 4 + 1];
+      const bx = sourceWalls[i * 4 + 2];
+      const by = sourceWalls[i * 4 + 3];
+      const ex = bx - ax;
+      const ey = by - ay;
+      const lengthSq = ex * ex + ey * ey;
+      const along = lengthSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - ax) * ex + (z - ay) * ey) / lengthSq));
+      if (Math.hypot(x - (ax + along * ex), z - (ay + along * ey)) > reach) continue;
+
+      wallValues[count * 4 + 0] = ax;
+      wallValues[count * 4 + 1] = ay;
+      wallValues[count * 4 + 2] = bx;
+      wallValues[count * 4 + 3] = by;
+      count++;
+    }
+
+    wallCount.value = count;
+    wallSegs.value.needsUpdate = true;
+    culledAt.x = x;
+    culledAt.z = z;
+    cullDirty = false;
+  }
+
   return {
     applyLight,
 
@@ -207,7 +264,16 @@ export function createPlayerLight(): PlayerLight {
       return vec4(applyLight(color.rgb), color.a);
     },
 
+    applyUnlitRgba(color) {
+      // the same tint the unseen parts of the world take, so a dark ceiling matches a dark room
+      // rather than being its own shade of black — and identity whilst the light is off
+      return vec4(mix(color.rgb, vec3(0, 0, 0), float(unlitTint).mul(strength)), color.a);
+    },
+
     syncWalls(gms, gmsData) {
+      const total = gms.reduce((sum, gm) => sum + gmsData.byKey[gm.key].wallSegs.length, 0);
+      if (sourceWalls.length < total * 4) sourceWalls = new Float32Array(total * 4);
+
       let count = 0;
       const mat = new Mat();
       const u = new Vect();
@@ -216,21 +282,20 @@ export function createPlayerLight(): PlayerLight {
       for (const gm of gms) {
         mat.setMatrixValue(gm.transform);
         for (const { seg } of gmsData.byKey[gm.key].wallSegs) {
-          if (count >= maxLightSegs) break;
           // `wallSegs` are in the layout's own space, and every instance of a layout shares them —
           // so they are copied out before being transformed, never transformed in place
           mat.transformPoint(u.copy(seg[0]));
           mat.transformPoint(v.copy(seg[1]));
-          wallValues[count * 4 + 0] = u.x;
-          wallValues[count * 4 + 1] = u.y;
-          wallValues[count * 4 + 2] = v.x;
-          wallValues[count * 4 + 3] = v.y;
+          sourceWalls[count * 4 + 0] = u.x;
+          sourceWalls[count * 4 + 1] = u.y;
+          sourceWalls[count * 4 + 2] = v.x;
+          sourceWalls[count * 4 + 3] = v.y;
           count++;
         }
       }
 
-      wallCount.value = count;
-      wallSegs.value.needsUpdate = true;
+      sourceCount = count;
+      cullDirty = true;
     },
 
     update(renderer, at, doors, openRatios) {
@@ -245,25 +310,48 @@ export function createPlayerLight(): PlayerLight {
         return;
       }
       strength.value = 1;
+
+      const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
       origin.value.set(at.x, at.z);
 
+      // Only the walls the light could possibly reach are handed to the sweep, which otherwise
+      // loops every wall in the world for every angle. Re-chosen when the light has wandered far
+      // enough that the margin no longer covers it, rather than every frame
+      if (cullDirty === true || Math.hypot(at.x - culledAt.x, at.z - culledAt.z) > cullRebuildDist) {
+        cullWalls(at.x, at.z);
+      }
+
       let count = 0;
-      for (const door of doors) {
+      let doorsMoved = false;
+      for (const gdKey in doors) {
         if (count >= MAX_DOORS) break;
+        const door = doors[gdKey];
+        const ratio = openRatios[door.instanceId] ?? 0;
+        doorsMoved ||= doorOpenValues[count] !== ratio || doorValues[count * 4] !== door.src.x;
         doorValues[count * 4 + 0] = door.src.x;
         doorValues[count * 4 + 1] = door.src.y;
         doorValues[count * 4 + 2] = door.dst.x;
         doorValues[count * 4 + 3] = door.dst.y;
         doorGapValues[count] = door.gapAtHighLambda === true ? 1 : 0;
         // by the door's own instance id, which is what `openRatioArray` is indexed by
-        doorOpenValues[count] = openRatios[door.instanceId] ?? 0;
+        doorOpenValues[count] = ratio;
         count++;
       }
 
+      const doorsChanged = doorsMoved === true || doorCount.value !== count;
       doorCount.value = count;
-      doorSegs.value.needsUpdate = true;
-      doorGaps.value.needsUpdate = true;
-      doorOpen.value.needsUpdate = true;
+      if (doorsChanged === true) {
+        doorSegs.value.needsUpdate = true;
+        doorGaps.value.needsUpdate = true;
+        doorOpen.value.needsUpdate = true;
+      }
+
+      // the table only depends on where the light stands and what the doors are doing, so with
+      // both still it already holds the answer — and standing still is the common case
+      if (swept === true && doorsChanged === false && moved < Number.EPSILON) {
+        return;
+      }
+      swept = true;
 
       renderer.compute(sweep);
     },
@@ -272,17 +360,25 @@ export function createPlayerLight(): PlayerLight {
 
 /**
  * How many directions the sweep resolves. A shadow edge lands within one of these of the truth, so
- * this is what stops the edges looking stepped at the far end of a long room
+ * this is what stops the edges looking stepped at the far end of a long room — 2048 and 2560 both
+ * still shimmered there, and the softening below cannot hide an arc that large without blurring
+ * the near shadows too
  */
-const lightAngles = 4096;
-/** Per-instance cap on wall segments — the largest geomorph has under 400 */
+const lightAngles = 2048 + 1024;
+/** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
 const maxLightSegs = 4096;
+/**
+ * How far the light may wander before the walls within reach are chosen again, and the margin the
+ * choice is made with — the second must exceed the first, or a wall can come into range unseen
+ */
+const cullRebuildDist = 2;
+const cullMargin = 3;
 
 /** How far the light reaches (metres), and over how much of that it fades away */
-const lightRadius = 24;
-const lightFalloff = 3;
+const lightRadius = 8;
+const lightFalloff = 8;
 /** How black an unseen fragment goes */
-const unlitTint = 0.82;
+const unlitTint = 0.9;
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives

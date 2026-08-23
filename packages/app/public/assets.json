@@ -46063,13 +46063,13 @@
         "nonHull": {"fill": "#6666", "stroke": "#000"}
       },
       "floor": {
-        "hullFill": "#fff",
+        "hullFill": "#777",
         "navStroke": "#000a",
-        "patternFill": "#555",
+        "patternFill": "#222",
         "tileStroke": "#0001"
       },
       "lights": {"ambientIntensity": 0.4},
-      "obstacles": {"brightness": 1.5},
+      "obstacles": {"brightness": 1},
       "doors": {"brightness": 1.5},
       "walls": {"color": "#000", "opacity": 0.35}
     }

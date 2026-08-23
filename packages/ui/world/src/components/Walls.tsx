@@ -342,15 +342,15 @@ const tmpMatFour1 = new THREE.Matrix4();
  * of it looks like */
 const hullOuterOutset = 0.06;
 const hullOuterHeight = wallHeight - 0.05;
-const hullOuterColor = "#ffffff";
-const hullOuterStripeColor = "#e8e8e8";
+const hullOuterColor = "#c8c8c8";
+const hullOuterStripeColor = "#a8a8a8";
 const hullOuterStripeGap = 0.075;
 /** What fraction of that spacing each line takes */
 const hullOuterStripeDuty = 0.22;
-/** What the world sees of it — the same white and hatch as the rooms' side, for now, and how
- * much of it survives, looking in from out there */
-const hullOuterOutsideColor = "#ffffff";
-const hullOuterOutsideStripeColor = "#e8e8e8";
+/** What the world sees of it — black, against the light grey the rooms see — and how much of it
+ * survives, looking in from out there */
+const hullOuterOutsideColor = "#080808";
+const hullOuterOutsideStripeColor = "#2e2e2e";
 const hullOuterOutsideOpacity = 0.1;
 
 const ceilTrimHeight = 0.2;

@@ -660,7 +660,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false } },
+    { reset: { ctrlOpts: true, initial: false, playerLight: true } },
   );
 
   w.view = state;
@@ -941,7 +941,7 @@ function defaultInitialCamera(touchDevice: boolean): State["initial"] {
 
 /** The two stops the zoom moves between — `ctrlOpts` and `defaultInitialCamera` must agree */
 const zoomNear = 8;
-const zoomFar = 18;
+const zoomFar = 14;
 
 /**
  * Sweeps the player's light polygon, once per rendered frame and before the render — a priority
@@ -963,7 +963,7 @@ function LightSweep() {
     w.view.playerLight.update(
       renderer,
       player?.position ?? null,
-      Object.values(w.d ?? {}),
+      w.d ?? emptyDoors,
       w.door?.openRatioArray ?? emptyOpenRatios,
     );
   }, -2);
@@ -972,6 +972,7 @@ function LightSweep() {
 }
 
 const emptyOpenRatios = new Float32Array(0);
+const emptyDoors: Record<string, Geomorph.DoorState> = {};
 
 function PostProcessing() {
   const w = useContext(WorldContext);
