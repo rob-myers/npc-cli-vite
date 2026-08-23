@@ -127,10 +127,11 @@ export class NpcAnimation {
 
   /** Undoes `startLookShuffle`, and only that — a walk or run is left alone */
   stopLookShuffle() {
+    this.mixer.timeScale = 1;
+
     if (this.moveClip !== this.npc.clips.shuffle) {
       return;
     }
-    this.mixer.timeScale = 1;
     this.moveClip = this.npc.clips.walk;
     this.playIdleClip(0.15);
   }
