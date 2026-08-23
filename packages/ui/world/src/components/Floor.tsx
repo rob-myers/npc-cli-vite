@@ -321,7 +321,7 @@ export default function Floor() {
         colorNode={material.texNode}
         normalNode={material.normalNode}
         outputNode={material.outputNode}
-        depthWrite={false}
+        depthWrite={true}
       />
     </instancedMesh>
   );

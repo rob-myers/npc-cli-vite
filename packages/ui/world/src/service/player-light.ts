@@ -38,6 +38,14 @@ export type PlayerLight = {
    * whilst the light is off, so a material can wrap its colour unconditionally.
    */
   applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
+  /**
+   * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
+   * and wants to ask. Ignores `strength`, so a caller decides for itself what an unlit light means.
+   * @param outset grows the polygon by this many metres, the boundary alone — the light's reach is
+   * unaffected. The polygon is star-shaped about the light, so asking about a point pulled that
+   * much nearer is exactly a dilation
+   */
+  litAt(worldXZ: THREE.Node<"vec2">, outset?: number): THREE.Node<"float">;
   /** The same, for a material whose colour carries alpha — which is left alone */
   applyLightRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
   /**
@@ -196,9 +204,19 @@ export function createPlayerLight(): PlayerLight {
     table.element(instanceIndex).assign(nearest);
   })().compute(lightAngles);
 
-  function applyLight(color: THREE.Node<"vec3">) {
-    const away = positionWorld.xz.sub(origin);
-    const dist = away.length();
+  /**
+   * How lit a world XZ is: `1` where the light reaches it, `0` where it does not, with the
+   * penumbra and the falloff in between. Taken as an argument rather than read off
+   * `positionWorld`, so that anything holding a world position can ask — the post pass recovers
+   * one from the depth buffer, and asks the same question of it
+   */
+  function litAt(worldXZ: THREE.Node<"vec2">, outset = 0) {
+    const away = worldXZ.sub(origin);
+    const trueDist = away.length();
+    // the occlusion test alone is asked about a nearer point, which grows the polygon outwards by
+    // `outset` — the radial falloff below still uses the honest distance, or the light's reach
+    // would grow with it
+    const dist = trueDist.sub(outset);
 
     // The angle, as a position along the table. The sweep writes index `i` for `2π i / N`, so
     // index 0 is angle 0 — and `atan` gives `[-π, π]`, whose negative half must WRAP to the top of
@@ -236,8 +254,12 @@ export function createPlayerLight(): PlayerLight {
     // and it fades across its reach, so the light ends in a falloff rather than on a circle drawn
     // across the floor. Written low-to-high and inverted: `smoothstep` is undefined where its
     // first edge is the greater, which is what a high-to-low pair would ask for
-    const reach = smoothstep(float(lightRadius - lightFalloff), float(lightRadius), dist).oneMinus();
-    const tint = float(unlitTint).mul(strength).mul(lit.mul(reach).oneMinus());
+    const reach = smoothstep(float(lightRadius - lightFalloff), float(lightRadius), trueDist).oneMinus();
+    return lit.mul(reach);
+  }
+
+  function applyLight(color: THREE.Node<"vec3">) {
+    const tint = float(unlitTint).mul(strength).mul(litAt(positionWorld.xz).oneMinus());
     return mix(color, vec3(0, 0, 0), tint);
   }
 
@@ -278,6 +300,7 @@ export function createPlayerLight(): PlayerLight {
   return {
     uid: crypto.randomUUID(),
 
+    litAt,
     applyLight,
 
     applyLightRgba(color) {

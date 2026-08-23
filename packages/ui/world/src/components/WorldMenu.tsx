@@ -8,6 +8,8 @@ import {
   ArrowsOutCardinalIcon,
   CaretDownIcon,
   CaretRightIcon,
+  CircleDashedIcon,
+  CircleIcon,
   CrosshairSimpleIcon,
   GlobeStandIcon,
   GpsIcon,
@@ -700,6 +702,25 @@ export function WorldMenu() {
               )}
             </div>
           </div>
+
+          {/* the world fading out beyond the player — see `service/post-processing`. It needs the
+              post pass to draw into, so switching it on switches that on too */}
+          <button
+            type="button"
+            data-keep-menu-open
+            title={`fade beyond the player: ${w.view.postFade ? "on" : "off"}`}
+            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
+            onClick={() => {
+              w.view.setPostFadeEnabled();
+              state.update();
+            }}
+          >
+            {w.view.postFade ? (
+              <CircleDashedIcon className="size-5 text-slate-200" alt="fade beyond the player" weight="bold" />
+            ) : (
+              <CircleIcon className="size-5 text-slate-400" alt="no fade beyond the player" weight="bold" />
+            )}
+          </button>
         </div>
 
         <div className="absolute top-full left-0 mt-1 w-max max-w-64 flex flex-col gap-0.5">
