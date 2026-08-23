@@ -500,7 +500,7 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
     ct.save();
     ct.translate(texW / 2, logoY);
     ct.scale(1, -1);
-    ct.font = "36px sans-serif";
+    ct.font = "32px sans-serif";
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     // the panel behind is part transparent now (see `Doors`' `alphaToCoverage`), which takes the
