@@ -227,7 +227,7 @@ const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merg
 /** The hatch over the panels: stripe pitch and width in METRES, so it lies on the world, and its ink */
 const stripeGap = 0.14;
 const stripeWidth = 0.05;
-const stripeColor = "rgba(200, 200, 200, 0.15)";
+const stripeColor = "rgba(10, 10, 10, 0.15)";
 
 let cachedStripePattern: null | CanvasPattern = null;
 
