@@ -24,7 +24,7 @@ export type PostProcessing = {
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
    */
-  apply(sceneColor: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  apply(sceneColor: THREE.TextureNode): THREE.Node<"vec4">;
   /** The camera the frame was drawn with, and where the player stands. Call every frame */
   update(camera: THREE.Camera, at: null | { x: number; z: number }): void;
   /** Whether the horizon is drawn at all. A uniform, so it costs no rebuild to change */
