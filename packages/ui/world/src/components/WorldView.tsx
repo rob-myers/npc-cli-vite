@@ -637,11 +637,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const scenePass = pass(scene, camera);
         state.postFx.setFadeEnabled(state.postFade); // a fresh effect starts with it on
         const sceneColor = scenePass.getTextureNode("output");
-        // raw logarithmic depth, which the grid inverts back into a world position
-        const sceneDepth = scenePass.getTextureNode("depth");
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = state.postFx.apply(sceneColor, sceneDepth);
+        pipeline.outputNode = state.postFx.apply(sceneColor);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
