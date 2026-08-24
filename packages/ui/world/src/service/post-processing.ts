@@ -1,4 +1,16 @@
-import { Fn, float, getViewPosition, screenUV, smoothstep, uniform, vec4 } from "three/tsl";
+import {
+  Fn,
+  float,
+  getViewPosition,
+  mix,
+  screenSize,
+  screenUV,
+  smoothstep,
+  step,
+  uniform,
+  vec3,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 
 export type PostProcessing = {
@@ -32,6 +44,11 @@ export type PostProcessing = {
  * Every pixel is placed where its view ray meets the ground, which is the plane the horizon is
  * drawn on — and needs no depth buffer, which suits a floor that does not write one (it would
  * z-fight in the hull doorways). Sky, whose rays never meet the ground, ends up far away and faded.
+ *
+ * What it fades INTO is a striped backdrop — the page's own pattern, moved inside the canvas so
+ * nothing shows through the doors that should not. That the pass decides is the point: a door at
+ * 0.8 with nothing behind it reads as solid against the stripes, which its own material could
+ * never arrange — it has no idea whether a room or the sky is behind it.
  */
 export function createPostProcessing(): PostProcessing {
   // to turn a pixel back into a view ray
@@ -84,11 +101,19 @@ export function createPostProcessing(): PostProcessing {
           .sub(near.mul(1 - horizonKneeAlpha).mul(fade))
           .sub(far.mul(horizonKneeAlpha).mul(fade));
 
-        // The canvas composites PREMULTIPLIED (`alpha: true` gives three `alphaMode:
-        // "premultiplied"`), so the colour must be scaled by the same alpha. Reducing alpha alone
-        // leaves the colour at full strength and merely adds the page beneath it, which reads as
-        // the world brightening rather than fading
-        return vec4(sceneColor.rgb.mul(alpha), sceneColor.a.mul(alpha));
+        // The backdrop: thin diagonal stripes, in DEVICE pixels rather than in the world, so they
+        // stay a hairline whatever the camera does — the page's pattern, now inside the canvas
+        const diagonal = screenUV.x.mul(screenSize.x).add(screenUV.y.mul(screenSize.y));
+        const alongStripe = diagonal.mul(1 / stripePeriodPx).fract();
+        const stripe = step(alongStripe, stripeWidthPx / stripePeriodPx).mul(stripeAlpha);
+        const backdrop = mix(backdropColor, stripeColor, stripe);
+
+        // ANY coverage counts as world, so a half-transparent door reads solid against the
+        // backdrop and gives way only as the horizon dissolves it. Smoothstep rather than a step,
+        // to keep the silhouettes MSAA resolved into partial alpha from turning ragged
+        const drawn = smoothstep(float(0), float(0.5), sceneColor.a);
+
+        return vec4(mix(backdrop, sceneColor.rgb, drawn.mul(alpha)), 1);
       })();
     },
   };
@@ -102,3 +127,11 @@ const horizonFrom = 6;
 const horizonKnee = 6.75;
 const horizonKneeAlpha = 0.5;
 const horizonTo = 8;
+
+/** What lies beyond the world: near-black, ruled with hairline diagonals */
+const backdropColor = vec3(0.0, 0.0, 0.0);
+const stripeColor = vec3(0.3, 0.22, 0.22);
+const stripeAlpha = 0.05;
+/** Both in device pixels, measured ALONG the diagonal — so the gap between stripes is `1 / √2` of it */
+const stripePeriodPx = 16;
+const stripeWidthPx = 1.5;

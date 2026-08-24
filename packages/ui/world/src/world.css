@@ -13,21 +13,11 @@
 }
 
 .world-background {
-  /*
-   * Faded out whilst a map loads, so the stripes dissolve rather than being buried by the flat
-   * colour above them. NOT dimmed by the ambient: the page is behind the canvas rather than part
-   * of the world, and following the ambient took the stripes away entirely at 0. Relative colour
-   * rather than `color-mix`, whose percentage argument rejects a `calc()` over a `var()`.
-   */
-  --pattern-fg: color(from var(--color-zinc-800) srgb-linear r g b / calc(0.4 * (1 - var(--world-dim))));
-  /* black whilst a map changes over, matching the hull each map arrives as — so the held frame
-     * cross-fades to the next one without either shape showing against a lit page */
-  background-image:
-    linear-gradient(rgb(0 0 0 / var(--world-dim)), rgb(0 0 0 / var(--world-dim))),
-    repeating-linear-gradient(45deg, var(--pattern-fg) 0, var(--pattern-fg) 1px, transparent 0, transparent 50%);
-  background-size:
-    auto,
-    8px 8px;
+  /* Black whilst a map changes over, matching the hull each map arrives as — so the held frame
+     * cross-fades to the next one without either shape showing against a lit page. Only ever seen
+     * where the canvas is transparent, which the starfield leaves nothing of once the post pass is
+     * running — see `post-processing`. */
+  background-image: linear-gradient(rgb(0 0 0 / var(--world-dim)), rgb(0 0 0 / var(--world-dim)));
   background-attachment: fixed;
   transition: --world-dim var(--world-dim-duration, 300ms) ease-in-out;
 }
