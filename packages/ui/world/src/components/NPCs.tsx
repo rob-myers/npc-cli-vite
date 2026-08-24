@@ -86,6 +86,27 @@ export default function NPCs() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = 64;
       },
+      warmCrowd() {
+        const rooms = w.gmRoomGraph.nodesArray.filter((node) => node.type === "room");
+        if (rooms.length < 2 || Object.keys(state.crowd.agents).length > 0) {
+          return;
+        }
+
+        const from = state.getClosestPoly(rooms[0].astar.centroid, "0.5");
+        const to = state.getClosestPoly(rooms[rooms.length - 1].astar.centroid, "0.5");
+        if (from.success === false || to.success === false) {
+          return;
+        }
+
+        const agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, from.position, getAgentParams());
+        crowdApi.requestMoveTarget(state.crowd, agentId, to.nodeRef, to.position);
+        // enough updates to carry the search through its quick pass and into the sliced one, which
+        // is where the cost lives
+        for (let i = 0; i < warmCrowdTicks; i++) {
+          crowdApi.update(state.crowd, w.nav.navMesh, 1 / 60);
+        }
+        crowdApi.removeAgent(state.crowd, agentId);
+      },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
         const pickIdNode = uniform(pickId);
@@ -730,6 +751,8 @@ export type State = {
   postCrowdTickEvents: JshCli.Event[];
 
   configureCrowd(): void;
+  /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
+  warmCrowd(): void;
   createMaterials(
     pickId: number,
     skinIndex: number,
@@ -854,6 +877,9 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
       return defaultIdleAnimationClipKey;
   }
 }
+
+/** How many crowd updates the warm-up runs, enough to reach the sliced search */
+const warmCrowdTicks = 4;
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const closePolygonDistance = 0.005;

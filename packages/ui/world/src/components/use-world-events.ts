@@ -366,6 +366,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "disabled":
           case "enabled":
           case "nav-updated":
+            // the crowd is empty at this point, which is what makes it safe to walk a spare agent
+            w.npc?.warmCrowd();
+            break;
           case "picked":
           case "spawned-many":
             break;
