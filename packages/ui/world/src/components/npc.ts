@@ -94,6 +94,7 @@ export class Npc {
     move: rejectNoop,
     scale: rejectNoop,
     look: rejectNoop,
+    worker: rejectNoop,
   };
 
   get agent() {
@@ -439,10 +440,17 @@ export class Npc {
 
   rejectAll(err: Error) {
     const { reject } = this;
-    this.reject = { spawn: rejectNoop, move: rejectNoop, scale: rejectNoop, look: rejectNoop };
+    this.reject = {
+      spawn: rejectNoop,
+      move: rejectNoop,
+      scale: rejectNoop,
+      look: rejectNoop,
+      worker: rejectNoop,
+    };
     // synchronously stop scale or look
     this.anim.fadeState.delta = 0;
     this.anim.lookState.active = false;
+    reject.worker(err); // stop waiting on the worker
     reject.spawn(err);
     reject.move(err);
     reject.scale(err);
@@ -515,4 +523,4 @@ export function npcLabelYShiftForClip(clipName: string): number {
   return 2.2;
 }
 
-function rejectNoop(_e: Error): void {}
+export function rejectNoop(_e: Error): void {}

@@ -19,7 +19,7 @@ import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import * as persisted from "../service/storage";
-import type { Npc } from "./npc";
+import { type Npc, rejectNoop } from "./npc";
 import type { State as WorldState } from "./World";
 
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
@@ -133,15 +133,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           [locked.buffer, open.buffer],
         );
 
+        let cancel = rejectNoop;
         try {
-          const result = await new Promise<WW.UnreachableResult>(
-            (resolve, reject) => (state.pendingUnreachable[uid] = { resolve, reject }),
-          );
+          const result = await new Promise<WW.UnreachableResult>((resolve, reject) => {
+            state.pendingUnreachable[uid] = { resolve, reject };
+            npc.reject.worker = cancel = reject;
+          });
           return result.blocked;
-        } catch {
-          // the map changed or the worker reloaded whilst asking. Treating it as reachable simply
-          // lets them set off, and they stop at the door if it is shut after all
-          return null;
+        } finally {
+          delete state.pendingUnreachable[uid];
+          if (npc.reject.worker === cancel) {
+            npc.reject.worker = rejectNoop;
+          }
         }
       },
       findGmIdContaining(input) {
@@ -860,7 +863,10 @@ export type State = {
    *   and the room is inaccessible (e.g. locked doors) we want to avoid
    *   the crowd system redirecting the npc to the "other side of the wall".
    */
-  /** Defaults to the npc's current destination */
+  /**
+   * Defaults to the npc's current destination. Rejects if the question is abandoned — see
+   * `requestUnreachable`, whose rejection it passes on unchanged
+   */
   testTargetUnreachable(npc: Npc, dstGrId?: null | Geomorph.GmRoomId): Promise<null | JshCli.NpcUnreachableResult>;
   /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
   findPathAsync(
@@ -873,8 +879,9 @@ export type State = {
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   /**
    * Asks the worker whether this npc can get from one room node to another, and which shut door
-   * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there",
-   * and also when the answer is thrown away, e.g. by a map change mid-question
+   * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there".
+   * REJECTS when the question is abandoned — `npc.rejectAll`, a map change, or a worker reload —
+   * so the caller abandons the move rather than setting off on an answer nobody waited for
    */
   requestUnreachable(npc: Npc, srcIndex: number, dstIndex: number): Promise<WW.UnreachableResult["blocked"]>;
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */

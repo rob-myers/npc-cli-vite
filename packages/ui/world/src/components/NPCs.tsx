@@ -313,7 +313,8 @@ export default function NPCs() {
           throw Error("occupied");
         }
 
-        npc.last.dst = helper.parseGroundPoint(to); // for doable or nav
+        // so can resume doable or nav
+        npc.last.dst = helper.parseGroundPoint(to);
 
         npc.rejectAll(new Error("move again"));
 
@@ -350,35 +351,37 @@ export default function NPCs() {
 
         await npc.ensureLegalPosition();
 
-        // navigation unreachable relative to locked doors?
-        const unreachableResult = await w.e.testTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
-        npc.last.unreachableResult = unreachableResult;
-
-        if (unreachableResult !== null) {
-          // destination unreachable
-          if (npc.distanceTo(unreachableResult.nearbyPoint) < npcConfig.dist.blockedLook) {
-            // too close: look instead of walk
-            await npc.look({ at: unreachableResult.nearbyPoint, minMs: npcConfig.time.look * 1000 });
-            return;
-          }
-          // change destination to point near eventual locked door
-          const result = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
-          groundPoint = helper.parseGroundPoint(result.position);
-        }
-
-        npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
-        npc.anim.startMoving(groundPoint, result, arrive);
-
-        state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
-
         try {
+          // everything interruptible by NEXT move...
+
+          // navigation unreachable relative to locked doors?
+          const unreachableResult = await w.e.testTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
+          npc.last.unreachableResult = unreachableResult;
+
+          if (unreachableResult !== null) {
+            // destination unreachable
+            if (npc.distanceTo(unreachableResult.nearbyPoint) < npcConfig.dist.blockedLook) {
+              // too close: look instead of walk
+              await npc.look({ at: unreachableResult.nearbyPoint, minMs: npcConfig.time.look * 1000 });
+              return;
+            }
+            // change destination to point near eventual locked door
+            const nearDoor = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
+            groundPoint = helper.parseGroundPoint(nearDoor.position);
+          }
+
+          npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
+          npc.anim.startMoving(groundPoint, result, arrive);
+
+          state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
+
           await new Promise<string>((resolve, reject) => {
             npc.resolve.move = resolve;
             npc.reject.move = reject;
           });
         } catch (e) {
           if (e instanceof Error && e.message === "move again") {
-            return;
+            return; // interrupting move owns npc now
           }
           npc.anim.startIdle({ force: true });
           throw e;
