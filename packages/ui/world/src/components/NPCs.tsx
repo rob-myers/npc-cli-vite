@@ -122,15 +122,23 @@ export default function NPCs() {
         // An npc keeps its height whilst a map changes over, darkening and fading out together
         // as the world folds around it — see `setWorldFold`
         const fold = w.view.foldNode;
-        const ndotv = normalWorld
-          .dot(cameraPosition.sub(positionWorld).normalize())
-          .clamp(0, 1)
-          .mul(brightness)
-          .mul(fold);
+
+        const facing = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1);
+        const ndotv = facing.mul(brightness).mul(fold);
+
+        // rim shading where the body turns away from the view: `1 - N·V` is largest exactly along the
+        const rim = facing.oneMinus().pow(rimPower).mul(rimAmount).mul(fold);
         // `alphaTestNode` below gives way with this, or the body would be discarded whole the
         // moment its alpha started dropping
         const mainColor = vec4(
-          mix(vec3(0).mul(positionLocal.y), skinTex.rgb.mul(ndotv), colorScale),
+          mix(
+            vec3(0).mul(positionLocal.y),
+            // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
+            // skin happened to be — a dark uniform takes a rim as readily as a pale one
+            skinTex.rgb.mul(ndotv).add(vec3(rimColor[0], rimColor[1], rimColor[2]).mul(rim)),
+            // skinTex.rgb.mul(ndotv),
+            colorScale,
+          ),
           skinTex.a.mul(fold),
         );
 
@@ -897,6 +905,14 @@ const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance:
   },
   "0.5": { halfExtents: [farPolygonDistance, farPolygonDistance, farPolygonDistance], distance: farPolygonDistance },
 };
+
+/**
+ * The rim around an npc: how tightly it hugs the silhouette (higher is narrower), how bright it
+ * gets, and what colour it glows
+ */
+const rimPower = 5;
+const rimAmount = 0.2;
+const rimColor = [0.55, 0.72, 0.7];
 
 const labelHw = 0.5;
 const labelHh = 0.125;
