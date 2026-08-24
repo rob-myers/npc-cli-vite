@@ -163,9 +163,16 @@ export default function Decor() {
 
             const center = poly.center.precision(3);
             const { baseRect } = geomService.polyToAngledRect(poly);
+            // half the rect's height back along its own "up". That direction is the transform's
+            // second column NORMALISED: `baseRect` is measured after the transform, so its height
+            // already carries the scale, and using the raw column would count it twice
+            const upLength = Math.hypot(transform[2], transform[3]) || 1;
             const topCenter = center
               .clone()
-              .translate(-(transform[2] * baseRect.height) / 2, -(transform[3] * baseRect.height) / 2)
+              .translate(
+                -((transform[2] / upLength) * baseRect.height) / 2,
+                -((transform[3] / upLength) * baseRect.height) / 2,
+              )
               .precision(3);
 
             d = {
@@ -531,7 +538,11 @@ export default function Decor() {
           let tiltMat4: THREE.Matrix4 | null = null;
           if (shouldTilt) {
             const { a, b, c, d } = tmpMat;
-            tiltMat4 = getRotAxisMatrix(a, 0, b, (a * d - b * c > 0 ? 1 : -1) * 90);
+            // NORMALISED: `makeRotationAxis` takes a unit axis, and this one is a column of the
+            // decor's own transform — so a scaled decor would hand it a longer vector, and what
+            // came back would not be a rotation at all
+            const axisLength = Math.hypot(a, b) || 1;
+            tiltMat4 = getRotAxisMatrix(a / axisLength, 0, b / axisLength, (a * d - b * c > 0 ? 1 : -1) * 90);
             setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
           }
           //biome-ignore format: preserve newlines
@@ -767,7 +778,9 @@ export default function Decor() {
             if (shouldTilt) {
               const { a, b, c, d } = tmpMat;
               const det = a * d - b * c;
-              tiltMat4 = getRotAxisMatrix(a, 0, b, (det > 0 ? 1 : -1) * 90);
+              // as above: a unit axis, or a scaled decor tilts into a skew
+              const axisLength = Math.hypot(a, b) || 1;
+              tiltMat4 = getRotAxisMatrix(a / axisLength, 0, b / axisLength, (det > 0 ? 1 : -1) * 90);
               setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
             }
 
