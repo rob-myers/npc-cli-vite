@@ -13,11 +13,14 @@ export function ImagePickerModal({
   onOpenChange,
   onSelect,
   decorManifest,
+  decorVersion,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (selection: ImagePickerSelection) => void;
   decorManifest: DecorManifest | null;
+  /** Changes when the decor sheets are rebuilt — see the thumbnails below */
+  decorVersion: number;
 }) {
   const state = useStateRef(() => {
     const groups = Object.entries(symbolByGroup);
@@ -86,7 +89,9 @@ export function ImagePickerModal({
                         title={key}
                       >
                         <img
-                          src={`/decor/${key}.thumbnail.png`}
+                          // versioned, or a decor whose art changed under an unchanged key keeps
+                          // the thumbnail the browser cached the first time it was drawn
+                          src={`/decor/${key}.thumbnail.png?v=${decorVersion}`}
                           alt={key}
                           className={cn(
                             "size-full object-contain bg-[repeating-linear-gradient(-45deg,#999_0,#999_10px,#dde_10px,#dde_20px)]",

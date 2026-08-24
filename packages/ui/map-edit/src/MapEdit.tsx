@@ -106,7 +106,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       });
     },
     onSuccess(_data, _vars, _onMutateResult, context) {
-      context.client.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+      context.client.invalidateQueries({ queryKey: ["map-edit-manifests"] });
     },
   });
 
@@ -120,7 +120,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       });
     },
     onSuccess(_data, _vars, _onMutateResult, context) {
-      context.client.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+      context.client.invalidateQueries({ queryKey: ["map-edit-manifests"] });
     },
   });
 
@@ -169,6 +169,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       symbolsManifest: null,
       pathManifest: null,
       decorManifest: null,
+      decorVersion: 0,
 
       pickImageForId: null,
       pickSymbolForId: null,
@@ -1546,11 +1547,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       return;
     }
 
+    // NOT `exact`: the query is keyed `["map-edit-manifests", symbolByGroupHash]`, so an exact
+    // match against the prefix alone never found it and the manifests were never refetched
     const onRecomputedPathManifest = () => {
-      queryClientApi.queryClient.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+      queryClientApi.queryClient.invalidateQueries({ queryKey: ["map-edit-manifests"] });
     };
     const onDecorSheetsRebuilt = () => {
-      queryClientApi.queryClient.invalidateQueries({ exact: true, queryKey: ["map-edit-manifests"] });
+      queryClientApi.queryClient.invalidateQueries({ queryKey: ["map-edit-manifests"] });
+      // the manifest may name the same keys as before whilst their art has changed — a decor
+      // resized, say — and the browser would serve the thumbnail it already holds for that URL
+      state.set({ decorVersion: state.decorVersion + 1 });
     };
     const onAssetsChanged = () => {
       // onchange assets updating localVersion updates thumbnails
@@ -1819,6 +1825,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           }
         }}
         decorManifest={state.decorManifest}
+        decorVersion={state.decorVersion}
       />
 
       <SymbolPickerModalMemo
@@ -1931,6 +1938,8 @@ export type State = {
   symbolsManifest: SymbolsManifest | null;
   pathManifest: PathManifest | null;
   decorManifest: DecorManifest | null;
+  /** Bumped whenever the decor sheets are rebuilt, to defeat the browser's thumbnail cache */
+  decorVersion: number;
 
   devForceReadOnly: boolean;
 
