@@ -37,6 +37,8 @@ export type WorldSettings = {
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
   pickDoors: boolean;
+  /** Whether the player light reaches the tops of obstacles — see the "Obstacles Lit" toggle */
+  obstaclesLit: boolean;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
@@ -57,6 +59,7 @@ const defaultWorldSettings: WorldSettings = {
   postFade: true,
   pickOpenDoors: true,
   pickDoors: true,
+  obstaclesLit: true,
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,
