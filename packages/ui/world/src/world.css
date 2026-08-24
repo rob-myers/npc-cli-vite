@@ -19,7 +19,7 @@
    * of the world, and following the ambient took the stripes away entirely at 0. Relative colour
    * rather than `color-mix`, whose percentage argument rejects a `calc()` over a `var()`.
    */
-  --pattern-fg: color(from var(--color-zinc-800) srgb-linear r g b / calc(0.8 * (1 - var(--world-dim))));
+  --pattern-fg: color(from var(--color-zinc-800) srgb-linear r g b / calc(0.4 * (1 - var(--world-dim))));
   /* black whilst a map changes over, matching the hull each map arrives as — so the held frame
      * cross-fades to the next one without either shape showing against a lit page */
   background-image:
