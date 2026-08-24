@@ -683,7 +683,7 @@ export function WorldMenu() {
           <button
             type="button"
             data-keep-menu-open
-            title={`fade beyond the player: ${w.view.postFade ? "on" : "off"}`}
+            title="fade"
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
             onClick={() => {
               w.view.setPostFadeEnabled();
@@ -691,9 +691,9 @@ export function WorldMenu() {
             }}
           >
             {w.view.postFade ? (
-              <CircleDashedIcon className="size-5 text-slate-200" alt="fade beyond the player" weight="bold" />
+              <CircleDashedIcon className="size-5 text-slate-200" alt="faded" weight="bold" />
             ) : (
-              <CircleIcon className="size-5 text-slate-400" alt="no fade beyond the player" weight="bold" />
+              <CircleIcon className="size-5 text-slate-400" alt="not faded" weight="bold" />
             )}
           </button>
         </div>
