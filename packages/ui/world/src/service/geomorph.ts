@@ -324,9 +324,12 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
 
     const center = poly.center.precision(3);
     const { baseRect } = geomService.polyToAngledRect(poly);
+    // half the rect's height back along its own "up" — see `Decor`'s copy: the direction is the
+    // transform's second column NORMALISED, since `baseRect` already carries the scale
+    const upLength = Math.hypot(transform[2], transform[3]) || 1;
     const topCenter = center
       .clone()
-      .translate(-(transform[2] * baseRect.height) / 2, -(transform[3] * baseRect.height) / 2)
+      .translate(-((transform[2] / upLength) * baseRect.height) / 2, -((transform[3] / upLength) * baseRect.height) / 2)
       .precision(3);
 
     return {
