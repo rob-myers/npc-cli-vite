@@ -650,16 +650,16 @@
     {
       "id": "d39f90de-c850-473c-94bb-8dc9af31a886",
       "name": "decor",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "c76b4551-605f-42a6-ab8e-a4ff26315d8a",
           "name": "decor quad screen y=1.35 tilt tint=#aaa",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
