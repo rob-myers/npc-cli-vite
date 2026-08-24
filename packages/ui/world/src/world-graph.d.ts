@@ -170,5 +170,7 @@ declare namespace Graph {
 
   type GmRoomGraphEdgeOpts = BaseEdgeOpts;
 
+  type GmRoomGraphJson = GraphJson<GmRoomGraphNode, GmRoomGraphEdgeOpts>;
+
   //#endregion
 }
