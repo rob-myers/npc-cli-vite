@@ -36,7 +36,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "a404c04f-1f5b-4b51-a048-323796e9bfd1",
@@ -189,11 +189,11 @@
     {
       "id": "0d8fc570-c964-4a4b-88b3-4a97fa8dae05",
       "name": "decor",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "21987218-1e5b-4b10-9e8f-b07a2141adbb",
@@ -220,28 +220,28 @@
           "baseRect": {"width": 10, "height": 10},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 90, 12)"
+        },
+        {
+          "id": "2de24072-a090-41d1-8893-b3ea8f56ef71",
+          "name": "decor quad screen y=1.4 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.7071,
+            "b": -0.7071,
+            "c": 0.7071,
+            "d": 0.7071,
+            "e": 15,
+            "f": 45.5
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "screen-0",
+          "baseRect": {"width": 44, "height": 32},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.7071067811865478, -0.7071067811865475, 0.7071067811865475, 0.7071067811865478, 15, 45.5)"
         }
       ]
-    },
-    {
-      "id": "2de24072-a090-41d1-8893-b3ea8f56ef71",
-      "name": "decor quad screen y=1.4 tilt",
-      "locked": true,
-      "visible": true,
-      "transform": {
-        "a": 0.7071,
-        "b": -0.7071,
-        "c": 0.7071,
-        "d": 0.7071,
-        "e": 15,
-        "f": 45.5
-      },
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "screen-0",
-      "baseRect": {"width": 44, "height": 32},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.7071067811865478, -0.7071067811865475, 0.7071067811865475, 0.7071067811865478, 15, 45.5)"
     }
   ],
   "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
