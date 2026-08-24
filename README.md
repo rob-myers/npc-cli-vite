@@ -80,6 +80,9 @@ magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
 
 ## Graphics
 
+Decor SVG `width` and `height` take precedence over `viewbox`.
+Ensure they are also changed on resize in Boxy SVG.
+
 `skia-canvas` function `loadImage` sporadically supports filters inside SVGs
   - seems to work for data-url `<image>` in skins
   - does not seem to work for decor with SVG paths even when rasterized as `<image>`
