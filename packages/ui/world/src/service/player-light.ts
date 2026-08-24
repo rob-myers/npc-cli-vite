@@ -259,8 +259,18 @@ export function createPlayerLight(): PlayerLight {
   }
 
   function applyLight(color: THREE.Node<"vec3">) {
-    const tint = float(unlitTint).mul(strength).mul(litAt(positionWorld.xz).oneMinus());
-    return mix(color, vec3(0, 0, 0), tint);
+    const lit = litAt(positionWorld.xz);
+    const shaded = mix(color, vec3(0, 0, 0), float(unlitTint).mul(strength).mul(lit.oneMinus()));
+
+    // WARM at their feet, COOL by the edge of the reach — orange through to blue across the
+    // polygon, so where a fragment stands is legible from its colour alone. Set deliberately
+    // strong: everything subtle tried here has been invisible, so this is meant to be dialled
+    // back from something you can plainly see rather than up from nothing
+    // the ramp begins at `warmUntil` rather than at their feet, so the warm holds the near half
+    // of the polygon and the cool is what the far edge turns into
+    const far = smoothstep(float(warmUntil), float(lightRadius), positionWorld.xz.sub(origin).length());
+    const temperature = mix(warmTint, coolTint, far);
+    return mix(shaded, shaded.mul(temperature), lit.mul(strength).mul(tintAmount));
   }
 
   /**
@@ -422,6 +432,12 @@ const lightRadius = 8;
 const lightFalloff = 8;
 /** How black an unseen fragment goes */
 const unlitTint = 0.8;
+/** How far the warm reaches before it begins to give way to the cool (metres) */
+const warmUntil = 2;
+/** The colour at the player's feet, at the edge of the reach, and how much of it is taken */
+const warmTint = vec3(1, 1, 1);
+const coolTint = vec3(0, 0, 1);
+const tintAmount = 1;
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives

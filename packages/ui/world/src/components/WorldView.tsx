@@ -694,7 +694,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
-    { reset: { ctrlOpts: true, initial: false, playerLight: false, postFx: true } },
+    {
+      reset: {
+        ctrlOpts: true,
+        initial: false,
+        playerLight: false, // 🔔 `true` causes decor rebuild on hmr
+        postFx: true,
+      },
+    },
   );
 
   w.view = state;
