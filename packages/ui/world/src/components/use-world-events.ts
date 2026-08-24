@@ -210,6 +210,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const firstBootstrap = player.prevMapPosition === null;
         if (firstBootstrap) {
           player.key = saved?.playerKey ?? defaultPlayerKey;
+          // The arrival is shown whole: folded (or flat, on a phone), then the horizon comes on,
+          // then the world rises. Left to itself the horizon would appear the moment the player
+          // spawns — which is before any of that, and hides all of it. Not `setPostFadeEnabled`,
+          // which would persist the answer: this is a beat in the intro, not a change of setting
+          w.view.postFx.setFadeEnabled(false);
         }
 
         try {
@@ -222,13 +227,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         } finally {
           if (firstBootstrap === true && w.touchDevice === true) {
-            // a phone never folded the world flat, so there is nothing to raise — the art simply
-            // fades up over the hull it arrived as
+            // a phone never folded the world flat, so there is nothing to raise — the hull is held
+            // a beat, then the art simply fades up over it
+            await pause(unfoldDelayMs);
+            w.view.postFx.setFadeEnabled(w.view.postFade);
             await w.floor?.fadeTo(1);
           } else if (firstBootstrap === true) {
             // the first map is on screen as a flat hull; hold it a beat, then unfold the world
             // with a delayed floor fade-in
             await pause(unfoldDelayMs);
+            w.view.postFx.setFadeEnabled(w.view.postFade);
             const rising = w.foldTo(1);
             await pause(floorFadeDelayMs);
             void w.floor?.fadeTo(1);
