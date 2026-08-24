@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="41px" height="14px" viewBox="0 0 41 14">
+  <g style="pointer-events: none;">
+    <rect x="0.5" y="0.5" width="40.0002" height="12.9915" rx="3.2" class="outer-monitor" style="stroke-linejoin: round; stroke: rgb(119, 119, 119);" ry="3.2"/>
+    <rect style="stroke: rgb(119, 119, 119); fill: rgb(119, 119, 119);" x="10" y="0.99537" width="1" height="12" rx="0" ry="0"/>
+    <rect style="stroke: rgb(119, 119, 119); fill: rgb(119, 119, 119);" x="20.0001" y="0.99537" width="1" height="12" rx="0" ry="0"/>
+    <rect style="stroke: rgb(119, 119, 119); fill: rgb(119, 119, 119);" x="30.0001" y="0.99537" width="1" height="12" rx="0" ry="0"/>
+  </g>
+</svg>

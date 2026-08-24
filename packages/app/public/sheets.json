@@ -171,100 +171,107 @@
       "originalWidth": 44,
       "originalHeight": 32
     },
+    "strut-0": {
+      "key": "strut-0",
+      "rect": {"x": 2, "y": 141, "width": 175, "height": 60},
+      "sheetId": 0,
+      "originalWidth": 41,
+      "originalHeight": 14
+    },
     "label": {
       "key": "label",
-      "rect": {"x": 2, "y": 141, "width": 171, "height": 64},
+      "rect": {"x": 192, "y": 2, "width": 171, "height": 64},
       "sheetId": 0,
       "originalWidth": 40,
       "originalHeight": 15
     },
     "circle-1": {
       "key": "circle-1",
-      "rect": {"x": 192, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 192, "y": 68, "width": 128, "height": 128},
       "sheetId": 0,
       "originalWidth": 60,
       "originalHeight": 60
     },
     "text---": {
       "key": "text---",
-      "rect": {"x": 2, "y": 207, "width": 86, "height": 86},
+      "rect": {"x": 2, "y": 203, "width": 86, "height": 86},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "text--ae": {
       "key": "text--ae",
-      "rect": {"x": 90, "y": 207, "width": 86, "height": 86},
+      "rect": {"x": 90, "y": 203, "width": 86, "height": 86},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "text-ab": {
       "key": "text-ab",
-      "rect": {"x": 192, "y": 132, "width": 86, "height": 86},
+      "rect": {"x": 178, "y": 203, "width": 86, "height": 86},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "text-ae": {
       "key": "text-ae",
-      "rect": {"x": 2, "y": 295, "width": 86, "height": 86},
+      "rect": {"x": 266, "y": 198, "width": 86, "height": 86},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 90, "y": 295, "width": 52, "height": 52},
+      "rect": {"x": 2, "y": 291, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 144, "y": 295, "width": 52, "height": 52},
+      "rect": {"x": 56, "y": 291, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 178, "y": 220, "width": 43, "height": 43},
+      "rect": {"x": 110, "y": 291, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 223, "y": 220, "width": 43, "height": 43},
+      "rect": {"x": 155, "y": 291, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "arrow-boxed": {
       "key": "arrow-boxed",
-      "rect": {"x": 178, "y": 265, "width": 26, "height": 26},
+      "rect": {"x": 322, "y": 68, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "axes-2d": {
       "key": "axes-2d",
-      "rect": {"x": 90, "y": 349, "width": 26, "height": 26},
+      "rect": {"x": 322, "y": 96, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 118, "y": 349, "width": 26, "height": 26},
+      "rect": {"x": 322, "y": 124, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 322, "height": 383}],
-  "maxDecorSheetDim": {"width": 322, "height": 383},
+  "decorSheetDims": [{"width": 365, "height": 345}],
+  "maxDecorSheetDim": {"width": 365, "height": 345},
   "skin": {
     "human-0": {
       "key": "human-0",
