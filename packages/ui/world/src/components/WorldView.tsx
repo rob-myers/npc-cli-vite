@@ -776,15 +776,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       {/* The view as something seen THROUGH a camera: brackets at the corners and ticks at the
           edges. In the HUD rather than the post pass — they are graphics at device resolution, and
           a shader would have to fight aliasing to draw a crisp two-pixel line */}
-      <div className="pointer-events-none absolute inset-0 text-white/30">
-        <div className="absolute top-3 left-3 size-8 border-t-2 border-l-2 border-current" />
-        <div className="absolute top-3 right-3 size-8 border-t-2 border-r-2 border-current" />
-        <div className="absolute bottom-3 left-3 size-8 border-b-2 border-l-2 border-current" />
-        <div className="absolute right-3 bottom-3 size-8 border-r-2 border-b-2 border-current" />
-        <div className="absolute top-3 left-1/2 h-3 w-px -translate-x-1/2 bg-current" />
-        <div className="absolute bottom-3 left-1/2 h-3 w-px -translate-x-1/2 bg-current" />
-        <div className="absolute top-1/2 left-3 h-px w-3 -translate-y-1/2 bg-current" />
-        <div className="absolute top-1/2 right-3 h-px w-3 -translate-y-1/2 bg-current" />
+      <div className="pointer-events-none absolute inset-0 text-white/30 *:absolute">
+        <div className="top-2 left-2 size-8 border-t-2 border-l-2 border-current" />
+        <div className="top-2 right-2 size-8 border-t-2 border-r-2 border-current" />
+        <div className="bottom-2 left-2 size-8 border-b-2 border-l-2 border-current" />
+        <div className="right-2 bottom-2 size-8 border-r-2 border-b-2 border-current" />
+        <div className="top-2 left-1/2 h-2 w-px -translate-x-1/2 bg-current" />
+        <div className="bottom-2 left-1/2 h-2 w-px -translate-x-1/2 bg-current" />
+        <div className="top-1/2 left-2 h-px w-2 -translate-y-1/2 bg-current" />
+        <div className="top-1/2 right-2 h-px w-2 -translate-y-1/2 bg-current" />
       </div>
 
       {/* the black, and over it the held frame that dips through it — see `world.css` */}
@@ -803,7 +803,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <AnimatePresence>
         {w.disabled && (
           <motion.div
-            className="absolute inset-x-0 top-[0%] flex justify-center pointer-events-none"
+            className="absolute inset-x-0 top-2 flex justify-center pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
