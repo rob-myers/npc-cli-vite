@@ -72,6 +72,14 @@
       "outputWidth": 188,
       "outputHeight": 137
     },
+    "strut-0": {
+      "key": "strut-0",
+      "filename": "strut-0.svg",
+      "width": 41,
+      "height": 14,
+      "outputWidth": 175,
+      "outputHeight": 60
+    },
     "switch": {
       "key": "switch",
       "filename": "switch.svg",
