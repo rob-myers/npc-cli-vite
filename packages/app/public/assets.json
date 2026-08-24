@@ -46116,10 +46116,10 @@
       "background": "bg-[#000]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
-        "nonHull": {"fill": "#6666", "stroke": "#000"}
+        "nonHull": {"fill": "#000", "stroke": "#6666"}
       },
       "floor": {
-        "hullFill": "#777",
+        "hullFill": "#444",
         "navStroke": "#000a",
         "patternFill": "#222",
         "tileStroke": "#0001"
