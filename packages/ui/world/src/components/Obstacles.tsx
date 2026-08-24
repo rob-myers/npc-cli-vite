@@ -209,8 +209,9 @@ export default function Obstacles(_props: Props) {
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     const texNodeFinal = texNode.depth(uvTexIds);
     const normalNode = transformNormalToView(vec3(0, 1, 0));
+    const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
     return {
-      colorNode: texNodeFinal.mul(vec3(state.brightnessNode), 1),
+      colorNode: mix(unlit, w.view.playerLight.applyLightRgba(unlit), w.view.obstaclesLit),
       normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),

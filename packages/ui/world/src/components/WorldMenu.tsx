@@ -228,6 +228,8 @@ export function WorldMenu() {
         return w.debug?.pickOpenDoors ?? true;
       case "Pick Doors":
         return w.debug?.pickDoors ?? true;
+      case "Obstacles Lit":
+        return w.view.obstaclesLit?.value === 1;
       case "Door Normals":
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
@@ -287,6 +289,14 @@ export function WorldMenu() {
         store.patch({ pickDoors: next });
         w.view.pickDoors.value = next ? 1 : 0; // the doors' own shader reads this
         state.update();
+        break;
+      }
+      case "Obstacles Lit": {
+        const next = w.view.obstaclesLit.value === 1 ? 0 : 1;
+        w.view.obstaclesLit.value = next; // the obstacles' own shader reads this
+        store.patch({ obstaclesLit: next === 1 });
+        state.update();
+        w.view.forceUpdate();
         break;
       }
       case "Door Normals":
@@ -1132,6 +1142,7 @@ const debugItems = [
   "Light Tints",
   "Toggle Doors",
   "Pick Doors",
+  "Obstacles Lit",
   "Door Normals",
   "Decor Points",
   "NavMesh",

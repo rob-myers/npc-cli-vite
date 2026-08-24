@@ -83,6 +83,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       playerLight: createPlayerLight(),
       postFx: createPostProcessing(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
+      obstaclesLit: uniform(saved.obstaclesLit === true ? 1 : 0),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
@@ -855,6 +856,11 @@ export type State = {
    * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it
    */
   pickDoors: THREE.UniformNode<"float", number>;
+  /**
+   * Whether an obstacle's TOP takes the player light — its skirt always does. A uniform, so the
+   * toggle costs no rebuild. See the "Obstacles Lit" debug item
+   */
+  obstaclesLit: THREE.UniformNode<"float", number>;
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
