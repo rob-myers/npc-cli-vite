@@ -82,30 +82,19 @@ export default function NPCs() {
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
       postCrowdTickEvents: [],
 
+      clearMomentum(npc) {
+        if (npc.agentId === null) {
+          return;
+        }
+        const result = state.getClosestPoly(npc.point, "0.5");
+        if (result.success === true) {
+          // a fresh agent at the same spot has no velocity, so nothing carries over
+          state.placeNpcAt(npc, result, npc.point);
+        }
+      },
       configureCrowd() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = 64;
-      },
-      warmCrowd() {
-        const rooms = w.gmRoomGraph.nodesArray.filter((node) => node.type === "room");
-        if (rooms.length < 2 || Object.keys(state.crowd.agents).length > 0) {
-          return;
-        }
-
-        const from = state.getClosestPoly(rooms[0].astar.centroid, "0.5");
-        const to = state.getClosestPoly(rooms[rooms.length - 1].astar.centroid, "0.5");
-        if (from.success === false || to.success === false) {
-          return;
-        }
-
-        const agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, from.position, getAgentParams());
-        crowdApi.requestMoveTarget(state.crowd, agentId, to.nodeRef, to.position);
-        // enough updates to carry the search through its quick pass and into the sliced one, which
-        // is where the cost lives
-        for (let i = 0; i < warmCrowdTicks; i++) {
-          crowdApi.update(state.crowd, w.nav.navMesh, 1 / 60);
-        }
-        crowdApi.removeAgent(state.crowd, agentId);
       },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
@@ -182,16 +171,6 @@ export default function NPCs() {
           skinIndexUniform,
           material,
         };
-      },
-      clearMomentum(npc) {
-        if (npc.agentId === null) {
-          return;
-        }
-        const result = state.getClosestPoly(npc.point, "0.5");
-        if (result.success === true) {
-          // a fresh agent at the same spot has no velocity, so nothing carries over
-          state.placeNpcAt(npc, result, npc.point);
-        }
       },
       createNpc(
         opts: Pick<NpcInit, "key" | "graph" | "geometry" | "pickId" | "position" | "rotation" | "skinnedMesh"> & {
@@ -625,6 +604,27 @@ export default function NPCs() {
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
       },
+      warmCrowd() {
+        const rooms = w.gmRoomGraph.nodesArray.filter((node) => node.type === "room");
+        if (rooms.length < 2 || Object.keys(state.crowd.agents).length > 0) {
+          return;
+        }
+
+        const from = state.getClosestPoly(rooms[0].astar.centroid, "0.5");
+        const to = state.getClosestPoly(rooms[rooms.length - 1].astar.centroid, "0.5");
+        if (from.success === false || to.success === false) {
+          return;
+        }
+
+        const agentId = crowdApi.addAgent(state.crowd, w.nav.navMesh, from.position, getAgentParams());
+        crowdApi.requestMoveTarget(state.crowd, agentId, to.nodeRef, to.position);
+        // enough updates to carry the search through its quick pass and into the sliced one, which
+        // is where the cost lives
+        for (let i = 0; i < warmCrowdTicks; i++) {
+          crowdApi.update(state.crowd, w.nav.navMesh, 1 / 60);
+        }
+        crowdApi.removeAgent(state.crowd, agentId);
+      },
     }),
   );
 
@@ -750,9 +750,9 @@ export type State = {
   physics: { positions: number[] } & PhysicsBijection;
   postCrowdTickEvents: JshCli.Event[];
 
+  /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
+  clearMomentum(npc: Npc): void;
   configureCrowd(): void;
-  /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
-  warmCrowd(): void;
   createMaterials(
     pickId: number,
     skinIndex: number,
@@ -772,8 +772,6 @@ export type State = {
     /** Non-existent on 1st spawn */
     npc?: Npc;
   }): number;
-  /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
-  clearMomentum(npc: Npc): void;
   createNpc(opts: {
     key: string;
     geometry: THREE.BufferGeometry;
@@ -828,6 +826,8 @@ export type State = {
     facing?: JshCli.PointAnyFormat;
   }): Npc;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
+  /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
+  warmCrowd(): void;
 };
 
 /** Capped by the initial distance, so a short move need not start arrived */
