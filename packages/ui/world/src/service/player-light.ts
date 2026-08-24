@@ -412,12 +412,10 @@ export function createPlayerLight(): PlayerLight {
 }
 
 /**
- * How many directions the sweep resolves. A shadow edge lands within one of these of the truth, so
- * this is what stops the edges looking stepped at the far end of a long room — 2048 and 2560 both
- * still shimmered there, and the softening below cannot hide an arc that large without blurring
- * the near shadows too
+ * How many directions the sweep resolves. A shadow edge lands within one of these of the truth.
+ * - Still some flicker but 2048 + 1024 would fix it
  */
-const lightAngles = 2048 + 1024;
+const lightAngles = 1024 + 512;
 /** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
 const maxLightSegs = 4096;
 /**
