@@ -13,7 +13,6 @@ import {
   CrosshairSimpleIcon,
   GlobeStandIcon,
   GpsIcon,
-  GpsSlashIcon,
   type Icon,
   PauseIcon,
   PlayIcon,
@@ -307,24 +306,6 @@ export function WorldMenu() {
   // held briefly, else a fast load just flickers the trigger
   const spinnerKeys = useToastKeys(pendingKeys, spinnerMinMs);
   const toggleToastKeys = useToastTs(state.toastTs);
-  const lookEnabled = w.player.introEnabled;
-  // click looks at the player, whereas long press stops it happening on load
-  const lookPress = useRef<{ timeoutId?: ReturnType<typeof setTimeout>; longPressed: boolean }>({
-    longPressed: false,
-  });
-  const onLookPressStart = () => {
-    lookPress.current.longPressed = false;
-    lookPress.current.timeoutId = setTimeout(() => {
-      lookPress.current.longPressed = true;
-      w.player.setIntroEnabled(false);
-    }, lookLongPressMs);
-  };
-  const onLookPressEnd = (cancelled = false) => {
-    clearTimeout(lookPress.current.timeoutId);
-    if (cancelled === false && lookPress.current.longPressed === false) {
-      w.player.setIntroEnabled(true);
-    }
-  };
 
   const menuTrigger = (
     <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
@@ -676,21 +657,15 @@ export function WorldMenu() {
             )}
           </button>
 
-          {/* look at the player: long press stops it happening on load. Its corner wears the
-              camera mode, which `f` also toggles — see `WorldView`'s `onKeyDown` */}
+          {/* look at the player. Its corner wears the camera mode, which `f` also toggles —
+              see `WorldView`'s `onKeyDown` */}
           <div
             data-keep-menu-open
             className="relative cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
-            onPointerDown={onLookPressStart}
-            onPointerUp={() => onLookPressEnd()}
-            onPointerLeave={() => onLookPressEnd(true)}
+            onClick={() => void w.player.panTo()}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {lookEnabled ? (
-              <GpsIcon className="size-5" alt="look at the player (long press to disable on load)" weight="bold" />
-            ) : (
-              <GpsSlashIcon className="size-5 text-red-400" alt="look at the player (disabled on load)" weight="bold" />
-            )}
+            <GpsIcon className="size-5" alt="look at the player" weight="bold" />
             <div
               className="absolute bottom-0 right-0 leading-none pointer-events-none"
               title={`camera: ${w.view.cameraMode} (press f)`}
@@ -1141,10 +1116,10 @@ const minMenuHeight = 120;
 /** How long a toast lingers after its pending key clears */
 const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
+const lookLongPressMs = 500;
 const spinnerMinMs = 300;
 
 /** Long press the look button to stop it happening on load, since a click always looks */
-const lookLongPressMs = 500;
 const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",

@@ -282,9 +282,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             state.cameraMode === "follow" ? state.lookAtPlayer() : state.setCameraMode("follow");
           }
         } else if (e.key === "q" || e.key === "Q") {
-          // what the look button does on a click: look at the player, and have it happen on load
-          // too. Pressed again once on them, `panTo` swings round behind them
-          w.player?.setIntroEnabled(true);
+          // what the look button does: pressed again once on them, `panTo` swings round behind them
+          void w.player?.panTo();
         } else if (e.key === "e" || e.key === "E") {
           // the fade beyond the player, as its button does — which also turns the post pass on,
           // there being nothing to fade into otherwise
@@ -550,14 +549,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           const distance = from.distanceTo(to);
           const durationMs =
             Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits);
-          const startEpochMs = performance.now();
+          let elapsedMs = 0;
+          let lastEpochMs = performance.now();
 
           await new Promise<void>((resolve) => {
             const step = () => {
               if (controls.pointers.length > 0) {
                 return resolve(); // interacting: leave the camera where they put it
               }
-              const ratio = Math.min(1, (performance.now() - startEpochMs) / Math.max(1, durationMs));
+              // Advanced by the frame rather than read off the clock: a hitch — a shader compiled,
+              // a texture uploaded, which is exactly what the pan on load runs amongst — would
+              // otherwise be a stretch of the pan nobody saw, and the camera arrives at the far
+              // side of it in one step. Capped, the pan simply takes longer than it meant to
+              const now = performance.now();
+              elapsedMs += Math.min(now - lastEpochMs, lookAtMaxStepMs);
+              lastEpochMs = now;
+
+              const ratio = Math.min(1, elapsedMs / Math.max(1, durationMs));
               // smootherstep: unlike smoothstep its acceleration is zero at both ends too
               applyTarget(ratio * ratio * ratio * (ratio * (ratio * 6 - 15) + 10));
               ratio < 1 ? (state.lookAtAnimId = requestAnimationFrame(step)) : resolve();
@@ -955,6 +963,8 @@ const lookAtShortUnits = 2.5;
 /** Below this much to travel (metres) a `lookAt` simply arrives, rather than animating */
 const lookAtUntil = 0.01;
 const lookAtMsPerUnit = 60;
+/** The most a single frame may advance a pan, so a stall is a slow pan rather than a jump */
+const lookAtMaxStepMs = 50;
 const lookAtMaxMs = 2500;
 /** How long the background takes to go black, or to come back */
 const bgDimMs = 300;

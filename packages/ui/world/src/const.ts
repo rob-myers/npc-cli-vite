@@ -127,6 +127,8 @@ export const floorFadeDelayMs = 260;
 export const mapVeilMs = 400;
 /** How long the FIRST map is held as a flat hull before the world rises out of it */
 export const unfoldDelayMs = 500;
+/** How long the risen world is left alone before the camera pans onto the player */
+export const introPanDelayMs = 350;
 
 export const MAX_GEOMORPH_INSTANCES = 8;
 
