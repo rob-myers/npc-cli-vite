@@ -1,14 +1,4 @@
-import {
-  Fn,
-  float,
-  getViewPosition,
-  logarithmicDepthToViewZ,
-  screenUV,
-  smoothstep,
-  uniform,
-  vec4,
-  viewZToPerspectiveDepth,
-} from "three/tsl";
+import { Fn, float, getViewPosition, screenUV, smoothstep, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 
 export type PostProcessing = {
@@ -21,9 +11,8 @@ export type PostProcessing = {
   /**
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
-   * @param sceneDepth the pass's `depth` — raw logarithmic, inverted here to a world position
    */
-  apply(sceneColor: THREE.Node<"vec4">, sceneDepth: THREE.TextureNode): THREE.Node<"vec4">;
+  apply(sceneColor: THREE.Node<"vec4">): THREE.Node<"vec4">;
   /** The camera the frame was drawn with, and where the player stands. Call every frame */
   update(camera: THREE.Camera, at: null | { x: number; z: number }): void;
   /** Whether the horizon is drawn at all. A uniform, so it costs no rebuild to change */
@@ -40,49 +29,49 @@ export type PostProcessing = {
  * view carries around, and it means the same thing whatever the camera does — which nothing
  * measured in screen space or along the view axis can manage.
  *
- * Every pixel's world position is recovered from the depth buffer, which is why the floor must
- * write depth. Anything that does not — the walls, and the sky — reads as the far plane and is
- * beyond the horizon by definition.
+ * Every pixel is placed where its view ray meets the ground, which is the plane the horizon is
+ * drawn on — and needs no depth buffer, which suits a floor that does not write one (it would
+ * z-fight in the hull doorways). Sky, whose rays never meet the ground, ends up far away and faded.
  */
 export function createPostProcessing(): PostProcessing {
-  // to invert the frame's depth back into a world position
+  // to turn a pixel back into a view ray
   const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
   const camWorldMatrix = uniform(new THREE.Matrix4());
-  const camNear = uniform(0.1);
-  const camFar = uniform(1000);
   /** Where the player stands, in world XZ — the centre of the horizon */
   const centre = uniform(new THREE.Vector2());
-  /** `0` leaves the frame exactly as it arrived — see `setFadeEnabled` */
-  const fade = uniform(1);
+  /** `0` leaves the frame exactly as it arrived */
+  const fade = uniform(0);
+  /** What `setFadeEnabled` was told — `update` also needs a player to centre the horizon on */
+  let fadeEnabled = true;
 
   return {
     uid: crypto.randomUUID(),
 
     setFadeEnabled(next) {
-      fade.value = next === true ? 1 : 0;
+      fadeEnabled = next === true;
     },
 
     update(camera, at) {
       camera.updateMatrixWorld(); // so it is this frame's, not the last one's
       camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
       camWorldMatrix.value.copy(camera.matrixWorld);
-      const perspective = camera as THREE.PerspectiveCamera;
-      camNear.value = perspective.near;
-      camFar.value = perspective.far;
       if (at !== null) centre.value.set(at.x, at.z);
+      // without a player it would be a circle about the world origin, hiding most of the map
+      fade.value = fadeEnabled === true && at !== null ? 1 : 0;
     },
 
-    apply(sceneColor, sceneDepth) {
+    apply(sceneColor) {
       return Fn(() => {
-        // the buffer holds a LOGARITHMIC depth, which has to be linearised before it can be turned
-        // back into a position
-        const viewZ = logarithmicDepthToViewZ(sceneDepth.r, camNear, camFar);
-        const ndcDepth = viewZToPerspectiveDepth(viewZ, camNear, camFar);
-        const viewPos = getViewPosition(screenUV, ndcDepth, camProjectionMatrixInverse);
-        const worldXZ = camWorldMatrix.mul(vec4(viewPos, 1)).xyz.xz;
+        // The camera is the origin in view space, so a point on the ray IS its direction. Where it
+        // meets the ground is where this pixel counts as standing — a wall is as near as the floor
+        // behind it, which is what a horizon drawn on the floor should mean
+        const onRay = getViewPosition(screenUV, float(1), camProjectionMatrixInverse);
+        const rayDir = camWorldMatrix.mul(vec4(onRay, 0)).xyz;
+        const camPos = camWorldMatrix.mul(vec4(0, 0, 0, 1)).xyz;
+        // the camera looks down, so `y` is negative; the cap keeps a ray along the horizon far away
+        // rather than sending it up behind us
+        const worldXZ = camPos.xz.add(rayDir.xz.mul(camPos.y.div(rayDir.y.min(-1e-4).negate())));
 
-        // across the GROUND, so a pixel high on a wall is as near as its feet are — the horizon
-        // is a circle drawn on the floor, not a sphere about the player's head
         const fromPlayer = worldXZ.sub(centre).length();
 
         // Two ramps rather than one: the first drops quickly to `horizonKneeAlpha` just past the

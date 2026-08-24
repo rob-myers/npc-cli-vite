@@ -321,7 +321,7 @@ export default function Floor() {
         colorNode={material.texNode}
         normalNode={material.normalNode}
         outputNode={material.outputNode}
-        depthWrite={true}
+        depthWrite={false} // avoid hull doorway z-fight
       />
     </instancedMesh>
   );
