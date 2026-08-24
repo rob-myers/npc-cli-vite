@@ -1,20 +1,12 @@
 /**
- * Room reachability, answered off the main thread.
+ * Room reachability via gmRoomGraph.
  *
- * The main thread sends `gmRoomGraph` as plain arrays (`getRoomGraphPayload`) and keeps this
- * module's idea of which doors are locked or open in step; in return it can ask whether an npc can
- * get from one room to another, and which door would stop them if not.
- *
- * 🔔 Imports nothing: a worker module which shares any `ui/world` module breaks after a couple of
- * hot reloads — the same reason the navmesh and physics take crafted payloads rather than geomorphs.
+ * 🔔 We share a ui/world module `gm-room-graph` with main thread, so avoid HMR said module.
  */
 
-/** `nodeType` values, matching `getRoomGraphPayload` */
-const ROOM = 0;
-const DOOR = 1;
-const WINDOW = 2;
+import { GmRoomGraph } from "../service/gm-room-graph";
 
-let graph: null | WW.RoomGraphForWorker = null;
+let graph: null | Graph.GmRoomGraph = null;
 /** Per NODE index, so a door's flags sit where the graph knows the door */
 let lockedByIndex: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
 let openByIndex: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
@@ -31,9 +23,9 @@ type Components = {
 };
 
 export function setRoomGraph(msg: WW.RequestRoomGraph): void {
-  graph = msg.roomGraph;
-  lockedByIndex = new Uint8Array(msg.roomGraph.nodeType.length);
-  openByIndex = new Uint8Array(msg.roomGraph.nodeType.length);
+  graph = new GmRoomGraph().plainFrom(msg.roomGraph);
+  lockedByIndex = new Uint8Array(graph.nodesArray.length);
+  openByIndex = new Uint8Array(graph.nodesArray.length);
   reachability = null;
 }
 
@@ -85,9 +77,9 @@ export function findUnreachableResult(msg: WW.RequestUnreachable): WW.Unreachabl
  * anyone may slip through whilst they last
  */
 function canAnyoneUseNode(index: number, unlockedOnly: boolean): boolean {
-  const type = (graph as WW.RoomGraphForWorker).nodeType[index];
-  if (type !== DOOR) {
-    return type === ROOM;
+  const { type } = (graph as Graph.GmRoomGraph).nodesArray[index];
+  if (type !== "door") {
+    return type === "room";
   }
   return lockedByIndex[index] === 0 || (unlockedOnly === false && openByIndex[index] === 1);
 }
@@ -99,23 +91,23 @@ function canAnyoneUseNode(index: number, unlockedOnly: boolean): boolean {
  * a locked door they were not heading for, the nearest door is not the one that stops them
  */
 function findBlockingDoor(
-  roomGraph: WW.RoomGraphForWorker,
+  roomGraph: Graph.GmRoomGraph,
   canUseNode: (index: number) => boolean,
   msg: WW.RequestUnreachable,
 ): WW.UnreachableResult["blocked"] {
-  const { nodeType } = roomGraph;
+  const nodes = roomGraph.nodesArray;
   const route = findRoute(roomGraph, msg.srcIndex, msg.dstIndex);
 
   for (let i = 1; i < route.length; i++) {
     const index = route[i];
-    if (nodeType[index] !== DOOR || canUseNode(index) === true) {
+    if (nodes[index].type !== "door" || canUseNode(index) === true) {
       continue;
     }
 
     // where they get to: the last room before it. Not simply `route[i - 1]`, since a hull door's
     // route runs room, door, door, room — the pair being the crossing between two geomorphs
     for (let j = i - 1; j >= 0; j--) {
-      if (nodeType[route[j]] === ROOM) {
+      if (nodes[route[j]].type === "room") {
         return { doorIndex: index, roomIndex: route[j] };
       }
     }
@@ -127,20 +119,21 @@ function findBlockingDoor(
 
 /**
  * The shortest way from one node to another with every door open — windows excluded, since they are
- * not a way through for anyone. Dijkstra over centroid distances, which for a couple of hundred
- * rooms is quicker than the machinery a heap would add. `[]` when there is no way at all
+ * not a way through for anyone. Dijkstra over `astar.centroid` distances, which for a couple of
+ * hundred rooms is quicker than the machinery a heap would add, and unlike `findPathAsync` it need
+ * not yield. `[]` when there is no way at all
  */
-function findRoute(roomGraph: WW.RoomGraphForWorker, srcIndex: number, dstIndex: number): number[] {
-  const { nodeType, centroid, adjOffset, adjNode } = roomGraph;
+function findRoute(roomGraph: Graph.GmRoomGraph, srcIndex: number, dstIndex: number): number[] {
+  const nodes = roomGraph.nodesArray;
 
-  const cost = new Float64Array(nodeType.length).fill(Infinity);
-  const cameFrom = new Int32Array(nodeType.length).fill(-1);
-  const done = new Uint8Array(nodeType.length);
+  const cost = new Float64Array(nodes.length).fill(Infinity);
+  const cameFrom = new Int32Array(nodes.length).fill(-1);
+  const done = new Uint8Array(nodes.length);
   cost[srcIndex] = 0;
 
   for (;;) {
     let at = -1;
-    for (let i = 0; i < nodeType.length; i++) {
+    for (let i = 0; i < nodes.length; i++) {
       if (done[i] === 0 && cost[i] < (at === -1 ? Infinity : cost[at])) at = i;
     }
     if (at === -1) {
@@ -151,11 +144,10 @@ function findRoute(roomGraph: WW.RoomGraphForWorker, srcIndex: number, dstIndex:
     }
     done[at] = 1;
 
-    for (let j = adjOffset[at]; j < adjOffset[at + 1]; j++) {
-      const next = adjNode[j];
-      if (done[next] === 1 || nodeType[next] === WINDOW) continue;
-      const stepCost =
-        cost[at] + distance(centroid[2 * at], centroid[2 * at + 1], centroid[2 * next], centroid[2 * next + 1]);
+    // `astar.neighbours` is the adjacency as node indices, filled by `GmRoomGraph.fromGmGraph`
+    for (const next of nodes[at].astar.neighbours) {
+      if (done[next] === 1 || nodes[next].type === "window") continue;
+      const stepCost = cost[at] + distance(nodes[at].astar.centroid, nodes[next].astar.centroid);
       if (stepCost < cost[next]) {
         cost[next] = stepCost;
         cameFrom[next] = at;
@@ -172,13 +164,13 @@ function findRoute(roomGraph: WW.RoomGraphForWorker, srcIndex: number, dstIndex:
  * Connected component node-partition, permitting efficient connectivity testing.
  * @param canUseNode `false` nodes become isolated singletons.
  */
-function connectedComponents(roomGraph: WW.RoomGraphForWorker, canUseNode: (index: number) => boolean): Components {
-  const { nodeType, adjOffset, adjNode } = roomGraph;
+function connectedComponents(roomGraph: Graph.GmRoomGraph, canUseNode: (index: number) => boolean): Components {
+  const nodes = roomGraph.nodesArray;
 
   // every node begins as its own component, and unions collapse them together
-  const parent = new Int32Array(nodeType.length);
+  const parent = new Int32Array(nodes.length);
   for (let i = 0; i < parent.length; i++) parent[i] = i;
-  const rank = new Uint8Array(nodeType.length);
+  const rank = new Uint8Array(nodes.length);
 
   /** The component's representative, flattening the chain it walked on the way */
   function find(i: number) {
@@ -197,10 +189,10 @@ function connectedComponents(roomGraph: WW.RoomGraphForWorker, canUseNode: (inde
     else (parent[rootB] = rootA), rank[rootA]++;
   }
 
-  for (let i = 0; i < nodeType.length; i++) {
+  for (let i = 0; i < nodes.length; i++) {
     if (canUseNode(i) === false) continue;
-    for (let j = adjOffset[i]; j < adjOffset[i + 1]; j++) {
-      if (canUseNode(adjNode[j]) === true) union(i, adjNode[j]);
+    for (const next of nodes[i].astar.neighbours) {
+      if (canUseNode(next) === true) union(i, next);
     }
   }
 
@@ -210,6 +202,6 @@ function connectedComponents(roomGraph: WW.RoomGraphForWorker, canUseNode: (inde
   };
 }
 
-function distance(ax: number, ay: number, bx: number, by: number) {
-  return Math.hypot(ax - bx, ay - by);
+function distance(a: Geom.VectJson, b: Geom.VectJson) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
