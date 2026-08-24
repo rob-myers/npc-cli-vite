@@ -30,10 +30,10 @@ export type WorldSettings = {
   brightness: number;
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
+  introEnabled: boolean;
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   postFade: boolean;
-  introEnabled: boolean;
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
   pickDoors: boolean;
@@ -52,9 +52,9 @@ const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
   cameraMode: null,
   cameraInitial: null,
+  introEnabled: true,
   postProcessing: true,
   postFade: true,
-  introEnabled: true,
   pickOpenDoors: true,
   pickDoors: true,
   gmGraphsFilter: "room",

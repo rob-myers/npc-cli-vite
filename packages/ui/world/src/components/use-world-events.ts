@@ -9,6 +9,7 @@ import {
   defaultPlayerKey,
   defaultSkinKey,
   floorFadeDelayMs,
+  introPanDelayMs,
   MAX_NPCS,
   mapVeilMs,
   npcConfig,
@@ -242,6 +243,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         if (introDone === false && player.introEnabled === true) {
+          await pause(introPanDelayMs);
           await player.panTo();
         }
       },

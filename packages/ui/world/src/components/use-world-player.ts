@@ -186,6 +186,7 @@ export type State = {
   ensure(): Promise<void>;
   /** Pans the camera onto the player */
   panTo(): Promise<void>;
+  setIntroEnabled(next: boolean): void;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
@@ -195,7 +196,6 @@ export type State = {
   /** Respawns the player near where they were on the previous map — `false` if we couldn't */
   restoreNearPrevMap(): Promise<boolean>;
   /** Enabling replays the intro immediately; disabling remembers the current view */
-  setIntroEnabled(next: boolean): void;
   /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
   setKey(npcKey: string): void;
   /** Spawns the player in a random room — `false` if every attempt failed */
