@@ -226,15 +226,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         } finally {
-          if (firstBootstrap === true && w.touchDevice === true) {
-            // a phone never folded the world flat, so there is nothing to raise — the hull is held
-            // a beat, then the art simply fades up over it
-            await pause(unfoldDelayMs);
-            w.view.postFx.setFadeEnabled(w.view.postFade);
-            await w.floor?.fadeTo(1);
-          } else if (firstBootstrap === true) {
-            // the first map is on screen as a flat hull; hold it a beat, then unfold the world
-            // with a delayed floor fade-in
+          if (firstBootstrap === true) {
+            // the first map is on screen as a flat hull; hold it a beat, bring the horizon on, then
+            // unfold the world with a delayed floor fade-in
             await pause(unfoldDelayMs);
             w.view.postFx.setFadeEnabled(w.view.postFade);
             const rising = w.foldTo(1);
