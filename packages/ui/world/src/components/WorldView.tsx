@@ -661,9 +661,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setNpcOutlineEnabled(next = !state.npcOutline) {
         state.npcOutline = next;
-        state.postFx.setNpcOutlineEnabled(next);
         store.patch({ npcOutline: next });
-        // it has nothing to draw into otherwise, so asking for it asks for the pass as well
         next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
@@ -674,33 +672,42 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
-        // a fresh effect starts with both on
-        state.postFx.setFadeEnabled(state.postFade);
-        state.postFx.setNpcOutlineEnabled(state.npcOutline);
+        state.postFx.setFadeEnabled(state.postFade); // a fresh effect starts with it on
 
-        // The silhouette the npc outlines grow from. One node shared by this pass and the pick
-        // pass, so both compile the same shader variant — and `setMRT` must precede the pipeline,
-        // which precompiles the pass. Only npcs opt in, see `NPCs.tsx`
+        // The silhouette the npc outlines grow from — declared only whilst they are wanted, so
+        // turning them off costs the frame nothing rather than writing an attachment nobody reads.
+        // One node shared by this pass and the pick pass, so both compile the same shader variant —
+        // and `setMRT` must precede the pipeline, which precompiles the pass. Only npcs opt in, see
+        // `NPCs.tsx`.
         // BLENDED, which no MRT output but `output` itself is by default — every other fragment
         // REPLACES what is there, and the walls (`renderOrder` 4 against the npcs' 0, both
         // transparent) were wiping the mask of anyone behind them. Solid geometry still occludes,
         // drawing BEFORE the npcs so that no mask is written behind it at all
-        state.npcMaskMrt = mrt({ output, npcMask: vec4(0, 0, 0, output.a) }).setBlendMode(
-          "npcMask",
-          createNpcMaskBlend(),
-        );
-        scenePass.setMRT(state.npcMaskMrt);
+        if (state.npcOutline === true) {
+          state.npcMaskMrt = mrt({ output, npcMask: vec4(0, 0, 0, output.a) }).setBlendMode(
+            "npcMask",
+            createNpcMaskBlend(),
+          );
+          scenePass.setMRT(state.npcMaskMrt);
+        } else {
+          state.npcMaskMrt = null;
+        }
         state.syncPickRT();
         w.npc?.syncOutlineMask();
 
         const sceneColor = scenePass.getTextureNode("output");
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = state.postFx.apply(sceneColor, {
-          mask: scenePass.getTextureNode("npcMask"),
-          // raw logarithmic depth — `applyNpcOutline` does its own log-depth inversion
-          depth: scenePass.getTextureNode("depth"),
-        });
+        pipeline.outputNode = state.postFx.apply(
+          sceneColor,
+          state.npcMaskMrt === null
+            ? null
+            : {
+                mask: scenePass.getTextureNode("npcMask"),
+                // raw logarithmic depth — `getNpcOutline` does its own log-depth inversion
+                depth: scenePass.getTextureNode("depth"),
+              },
+        );
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -1138,7 +1145,7 @@ function PostProcessing() {
   const w = useContext(WorldContext);
   // the pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
   // `reset` gives us one on hmr, and the uid is how we notice
-  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid]);
+  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid, w.view.npcOutline]);
   return null;
 }
 

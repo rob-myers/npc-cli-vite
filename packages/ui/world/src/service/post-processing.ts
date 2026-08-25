@@ -34,8 +34,6 @@ export type PostProcessing = {
   update(camera: THREE.Camera, at: null | { x: number; z: number }): void;
   /** Whether the horizon is drawn at all. A uniform, so it costs no rebuild to change */
   setFadeEnabled(next: boolean): void;
-  /** Whether the npcs are bordered at all. A uniform, so it costs no rebuild to change */
-  setNpcOutlineEnabled(next: boolean): void;
 };
 
 /**
@@ -65,8 +63,6 @@ export function createPostProcessing(): PostProcessing {
   const centre = uniform(new THREE.Vector2());
   /** `0` leaves the frame exactly as it arrived */
   const fade = uniform(0);
-  /** `0` draws no npc border, which is exactly identity — see `apply` */
-  const outline = uniform(1);
   /** What `setFadeEnabled` was told — `update` also needs a player to centre the horizon on */
   let fadeEnabled = true;
 
@@ -75,10 +71,6 @@ export function createPostProcessing(): PostProcessing {
 
     setFadeEnabled(next) {
       fadeEnabled = next === true;
-    },
-
-    setNpcOutlineEnabled(next) {
-      outline.value = next === true ? 1 : 0;
     },
 
     update(camera, at) {
@@ -137,7 +129,7 @@ export function createPostProcessing(): PostProcessing {
           // has claimed coverage where it falls on a gap in the floor. Source-over, so a
           // part-transparent border shows the floor through it and the stripes through it alike
           const edge = getNpcOutline(npc.mask, npc.depth);
-          const edgeAlpha = edge.a.mul(outline);
+          const edgeAlpha = edge.a;
           const behind = edgeAlpha.oneMinus();
           world.assign(edge.rgb.mul(edgeAlpha).add(world.mul(behind)));
           coverage.assign(edgeAlpha.add(coverage.mul(behind)));
