@@ -33,6 +33,7 @@ import {
   positionLocal,
   positionWorld,
   select,
+  smoothstep,
   texture as tslTexture,
   uniform,
   uv,
@@ -123,11 +124,20 @@ export default function NPCs() {
         // as the world folds around it — see `setWorldFold`
         const fold = w.view.foldNode;
 
-        const facing = normalWorld.dot(cameraPosition.sub(positionWorld).normalize()).clamp(0, 1);
+        const toEye = cameraPosition.sub(positionWorld).normalize();
+        const facing = normalWorld.dot(toEye).clamp(0, 1);
         const ndotv = facing.mul(brightness).mul(fold);
 
-        // rim shading where the body turns away from the view: `1 - N·V` is largest exactly along the
-        const rim = facing.oneMinus().pow(rimPower).mul(rimAmount).mul(fold);
+        // Rim shading where the body turns away from the view: `1 - N·V` is largest exactly along
+        // the silhouette. Eased off as the camera climbs overhead, where nearly every surface in
+        // sight is a flank turned edge-on and the rim would otherwise take the whole npc rather
+        // than outlining them — `toEye.y` is how much of the view is straight down
+        const overhead = smoothstep(float(rimOverheadFrom), float(rimOverheadTo), toEye.y);
+        const rim = facing
+          .oneMinus()
+          .pow(rimPower)
+          .mul(mix(float(rimAmount), float(rimOverheadAmount), overhead))
+          .mul(fold);
         // `alphaTestNode` below gives way with this, or the body would be discarded whole the
         // moment its alpha started dropping
         const mainColor = vec4(
@@ -913,6 +923,15 @@ const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance:
 const rimPower = 5;
 const rimAmount = 0.2;
 const rimColor = [0.55, 0.72, 0.7];
+
+/**
+ * How bright it is instead when looking straight down — where nearly every surface in sight is a
+ * flank turned edge-on, and a rim would take the whole npc — and the view elevations it eases
+ * between: `0` is level with them, `1` directly above
+ */
+const rimOverheadAmount = 0.05;
+const rimOverheadFrom = 0.45;
+const rimOverheadTo = 0.85;
 
 const labelHw = 0.5;
 const labelHh = 0.125;
