@@ -59,7 +59,7 @@ const defaultWorldSettings: WorldSettings = {
   postFade: true,
   pickOpenDoors: true,
   pickDoors: true,
-  obstaclesLit: true,
+  obstaclesLit: false,
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,
