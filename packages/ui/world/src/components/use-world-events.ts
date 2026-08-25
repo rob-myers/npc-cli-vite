@@ -206,9 +206,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       async onBootstrapMap() {
         const { player } = w;
-        const introDone = player.introMapKey === w.mapKey;
-        player.introMapKey = w.mapKey;
-
         const saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs;
 
         const firstBootstrap = player.prevMapPosition === null;
@@ -245,9 +242,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
 
-        if (introDone === false && player.introEnabled === true) {
+        if (firstBootstrap === false) {
+          // a map we asked for arrives on the player, wherever the last map left the camera
           await pause(introPanDelayMs);
           await player.panTo();
+        } else {
+          // on load the view is the one we restored, and is left alone: taking the camera off
+          // whatever we were looking at is a poor greeting. Instead it is offered — see WorldView
+          w.view.showCentreHint();
         }
       },
       async restoreFromWorld(fromWorldKey) {

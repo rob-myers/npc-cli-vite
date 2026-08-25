@@ -3,6 +3,7 @@ import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
 import { Rect, Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
+import { PersonSimpleCircleIcon } from "@phosphor-icons/react";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState, useFrame } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -47,6 +48,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
       cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
+      centreHint: false,
       followOffset: new Vect(),
       fHeld: false,
       clickIds: [],
@@ -466,6 +468,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         controls.object.position.z += moveZ;
         w.r3f?.invalidate();
       },
+      showCentreHint() {
+        state.set({ centreHint: true });
+      },
       setCameraMode(cameraMode) {
         if (cameraMode === "follow") {
           // onto them, clearing the vantage a pan chose — it belonged to the last spell of this
@@ -474,6 +479,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ cameraMode });
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the look button
+      },
+      hideCentreHint() {
+        state.centreHint === true && state.set({ centreHint: false });
       },
       lookAtPlayer() {
         const player = w.n[w.player?.key ?? ""];
@@ -781,12 +789,40 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         </div>
       )}
 
+      {/* On load the view is the one we restored, which need not be on the player. Rather than
+          take the camera off it, the centring is OFFERED: a target in the middle of the viewport
+          that fades of its own accord, and pans onto them if it is taken in time */}
+      <AnimatePresence>
+        {state.centreHint === true && (
+          <motion.button
+            type="button"
+            className={cn(
+              "absolute inset-0 m-auto grid size-16 place-items-center rounded-full border-2 border-white/20 bg-white/0",
+              "cursor-pointer",
+            )}
+            initial={{ opacity: 0, scale: centreHintSmall }}
+            // in with a slight overshoot, held, then away smaller than it came — one animation, so
+            // neither the fade nor the scale needs a timer of its own
+            animate={{ opacity: [0, 1, 1, 1, 0], scale: [centreHintSmall, 1.08, 1, 1, centreHintSmall] }}
+            transition={{ duration: centreHintSecs, times: [0, 0.12, 0.22, 0.6, 1], ease: "linear" }}
+            onAnimationComplete={state.hideCentreHint}
+            onClick={() => {
+              state.hideCentreHint();
+              void w.player?.panTo();
+            }}
+          >
+            {/* who the offer is about, rather than what pressing it does */}
+            <PersonSimpleCircleIcon className="size-12 text-[#ddf]/40" weight="duotone" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* sci-fi camera corners */}
       <div className="pointer-events-none absolute inset-0 text-white/30 *:absolute *:size-4">
-        <div className="top-1 left-1 border-t-1 border-l-1 border-current" />
-        <div className="top-1 right-1 border-t-1 border-r-1 border-current" />
-        <div className="bottom-1 left-1 border-b-1 border-l-1 border-current" />
-        <div className="right-1 bottom-1 border-r-1 border-b-1 border-current" />
+        <div className="top-1 left-1 border-t border-l border-current" />
+        <div className="top-1 right-1 border-t border-r border-current" />
+        <div className="bottom-1 left-1 border-b border-l border-current" />
+        <div className="right-1 bottom-1 border-r border-b border-current" />
       </div>
 
       {/* the black, and over it the held frame that dips through it — see `world.css` */}
@@ -811,7 +847,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="px-4 py-1.5 bg-black/80 text-white/80 border border-white/40 text-xs font-mono tracking-[0.3em] uppercase select-none">
+            <div className="px-4 py-1.5 bg-black/30 text-white/80 text-xs font-mono tracking-[0.4em] uppercase select-none">
               paused
             </div>
           </motion.div>
@@ -887,6 +923,8 @@ export type State = {
   /** Keeps the player centred whilst `cameraMode` is `follow` — called every tick from `World` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
+  /** Whether the "centre on the player" UI is shown */
+  centreHint: boolean;
   followOffset: Vect;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
@@ -904,6 +942,10 @@ export type State = {
       track?: () => undefined | Geom.VectJson;
     },
   ): Promise<void>;
+  /** Takes the centre offer down, whether it was taken or simply ran out */
+  hideCentreHint(): void;
+  /** Puts the centre offer up, for as long as it takes to fade */
+  showCentreHint(): void;
   /** Non-zero whilst `lookAt` is animating */
   lookAtAnimId: number;
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
@@ -980,6 +1022,10 @@ const bgDimMs = 300;
 const veilMs = 250;
 /** How long the held frame takes to give way to the map beneath it */
 const freezeFadeMs = 700;
+/** How long the offer to centre on the player is up for, fade and all, and how small it starts */
+const centreHintSecs = 4;
+const centreHintSmall = 0.6;
+
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
 /**
  * `MRTNode` maps its entries onto attachments by texture *name* (see `getTextureIndex`), which
