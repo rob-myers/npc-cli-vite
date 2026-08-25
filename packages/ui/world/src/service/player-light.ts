@@ -415,7 +415,8 @@ export function createPlayerLight(): PlayerLight {
  * How many directions the sweep resolves. A shadow edge lands within one of these of the truth.
  * - Still some flicker but 2048 + 1024 would fix it
  */
-const lightAngles = 1024 + 512;
+// const lightAngles = 1024 + 512;
+const lightAngles = 2048 + 1024;
 /** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
 const maxLightSegs = 4096;
 /**
