@@ -23,8 +23,14 @@ export async function loadExamples(): Promise<Record<string, string>> {
   return await response.json();
 }
 
+// biome-ignore format: emphasis
 /** Tab order; unlisted files follow, alphabetically */
-const categoryOrder = ["core", "shell"];
+const categoryOrder = [
+  "tldr",
+  "behave",
+  "world",
+  "shell"
+];
 
 export function parseCategories(byPath: Record<string, string>): ExampleCategory[] {
   return Object.entries(byPath)
