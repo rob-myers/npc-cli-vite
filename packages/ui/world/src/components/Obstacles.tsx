@@ -49,6 +49,29 @@ export default function Obstacles(_props: Props) {
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
       images: [] as HTMLImageElement[],
+      instanceCount: 0,
+      toInstanceId: [],
+      fromInstanceId: [],
+
+      buildInstanceIds() {
+        state.toInstanceId = [];
+        state.fromInstanceId = [];
+        let nextId = 0;
+        for (const [gmId, gm] of w.gms.entries()) {
+          state.toInstanceId[gmId] = [];
+          for (const [obstacleId] of gm.obstacles.entries()) {
+            if (nextId < MAX_OBSTACLE_QUAD_INSTANCES) {
+              state.toInstanceId[gmId][obstacleId] = nextId;
+              state.fromInstanceId[nextId] = { gmId, obstacleId };
+            }
+            nextId++;
+          }
+        }
+        if (nextId > MAX_OBSTACLE_QUAD_INSTANCES) {
+          warn(`Obstacles: ${nextId} exceeds MAX_OBSTACLE_QUAD_INSTANCES (${MAX_OBSTACLE_QUAD_INSTANCES})`);
+        }
+        return (state.instanceCount = Math.min(nextId, MAX_OBSTACLE_QUAD_INSTANCES));
+      },
 
       addUvs() {
         if (!w.sheets) return;
@@ -60,19 +83,19 @@ export default function Obstacles(_props: Props) {
         const uvTextureIds = state.quad.getAttribute("uvTextureIds");
         (uvTextureIds.array as Uint32Array).fill(0);
 
-        let [uvOffsetIdx, uvDimIdx, uvTexIdIdx] = [0, 0, 0];
-
         const worldToPngScale = worldToSguScale * sguScaleSvgToPngFactor;
 
-        // aligned to transforms
-        for (const [_gmId, { obstacles }] of w.gms.entries()) {
-          for (const { symbolKey, origSubRect, obstacleId: _obstacleId } of obstacles) {
+        // written AT the instance id rather than in step with it, so nothing here can drift out of
+        // line with `transformAndColorObstacles` or with what a pick decodes — see `buildInstanceIds`
+        for (const [gmId, { obstacles }] of w.gms.entries()) {
+          for (const [obstacleId, { symbolKey, origSubRect }] of obstacles.entries()) {
+            const instanceId = state.encodeInstanceId(gmId, obstacleId);
+            if (instanceId === null) {
+              continue; // past the cap, so it has no instance to describe
+            }
             const entry = w.sheets.symbol[symbolKey] as StarShipSymbolSheetEntry;
             if (!entry) {
               warn(`${symbolKey} not found in sheets.json`);
-              uvOffsetIdx++;
-              uvDimIdx++;
-              uvTexIdIdx++;
               continue;
             }
             const {
@@ -91,9 +114,9 @@ export default function Obstacles(_props: Props) {
             const uvDimW = subW / sheetWidth;
             const uvDimH = subH / sheetHeight;
 
-            uvOffsets.array.set([uvOffsetX, uvOffsetY], uvOffsetIdx++ * 2);
-            uvDimensions.array.set([uvDimW, uvDimH], uvDimIdx++ * 2);
-            uvTextureIds.array[uvTexIdIdx++] = sheetId;
+            uvOffsets.array.set([uvOffsetX, uvOffsetY], instanceId * 2);
+            uvDimensions.array.set([uvDimW, uvDimH], instanceId * 2);
+            uvTextureIds.array[instanceId] = sheetId;
           }
         }
       },
@@ -120,12 +143,14 @@ export default function Obstacles(_props: Props) {
         return embedXZMat4(mat, { mat4, yHeight: height });
       },
       decodeInstanceId(instanceId) {
-        // 🚧 more efficient decode
-        let id = instanceId;
-        const gmId = w.gms.findIndex((gm) => id < gm.obstacles.length || ((id -= gm.obstacles.length), false));
-        const gm = w.gms[gmId];
-        const obstacle = gm.obstacles[id];
-        return { gmId, obstacleId: id, ...obstacle.meta };
+        const found = state.fromInstanceId[instanceId];
+        const { gmId, obstacleId } = found;
+        const obstacle = w.gms[gmId]?.obstacles[obstacleId];
+        // 🔔 saw gmId 0 in obstacle.meta
+        return { ...obstacle.meta, gmId, obstacleId };
+      },
+      encodeInstanceId(gmId, obstacleId) {
+        return state.toInstanceId[gmId]?.[obstacleId] ?? null;
       },
       setBrightness(next) {
         state.brightnessNode.value = next;
@@ -143,18 +168,20 @@ export default function Obstacles(_props: Props) {
       transformAndColorObstacles() {
         if (!state.inst) return;
         const { inst: obsInst } = state;
-        let oId = 0;
 
         obsInst.instanceMatrix.array.fill(0);
 
-        w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }) => {
-          obstacles.forEach((o) => {
-            obsInst.setColorAt(oId, tmpColor.set(o.meta.tint ?? defaultObstacleTint));
-            obsInst.setMatrixAt(oId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
-            oId++;
+        w.gms.forEach(({ obstacles, transform: { a, b, c, d, e, f } }, gmId) => {
+          obstacles.forEach((o, obstacleId) => {
+            const instanceId = state.encodeInstanceId(gmId, obstacleId);
+            if (instanceId === null) return;
+            obsInst.setColorAt(instanceId, tmpColor.set(o.meta.tint ?? defaultObstacleTint));
+            obsInst.setMatrixAt(instanceId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
           });
         });
 
+        // the mesh is sized for the worst case, so the rest would be drawn as degenerate quads
+        obsInst.count = state.instanceCount;
         obsInst.computeBoundingSphere();
       },
       transformAndColorSkirts() {
@@ -217,6 +244,8 @@ export default function Obstacles(_props: Props) {
       uid: generateUUID(),
     };
   }, [w.texObs.hash, w.view.playerLight.uid]);
+
+  useMemo(() => state.buildInstanceIds(), [w.mapKey, w.hash]);
 
   const skirtCount = w.gmsData.count.obstacleSkirtEdges;
 
@@ -363,10 +392,21 @@ export type State = {
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
   images: HTMLImageElement[];
+  /** How many obstacle instances this map draws, `MAX_OBSTACLE_QUAD_INSTANCES` at most */
+  instanceCount: number;
+  /** `gmId` then `obstacleId` to instance id — the encoding every writer and the pick share */
+  toInstanceId: number[][];
+  /** ...and back again, which is all a pick has to go on */
+  fromInstanceId: { gmId: number; obstacleId: number }[];
+  /** Dense instance ids (`0..instanceCount-1`), rebuilt whenever the obstacles can change */
+  buildInstanceIds(): number;
   addUvs(): void;
   draw(): Promise<void>;
   createObstacleMatrix4(gmTransform: Geom.SixTuple, obstacle: Geomorph.LayoutObstacle): THREE.Matrix4;
+  /** `null` if no obstacle owns this instance id — see within */
   decodeInstanceId(instanceId: number): Meta<{ gmId: number; obstacleId: number }>;
+  /** `null` if this obstacle is past the cap and so has no instance */
+  encodeInstanceId(gmId: number, obstacleId: number): null | number;
   setBrightness(next: number): void;
   transformAndColorObstacles(): void;
   transformAndColorSkirts(): void;
