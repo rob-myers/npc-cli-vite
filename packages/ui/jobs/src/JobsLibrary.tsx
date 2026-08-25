@@ -320,14 +320,14 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
     <div
       className={cn(
         // `term-hover` is darker than the `term-fence` it sits on, so it vanishes in dark mode
-        "px-3 py-0 cursor-pointer hover:bg-term-hover-strong",
+        "px-3 py-1 cursor-pointer hover:bg-term-hover-strong",
         // bordered throughout, so gaining the colour shifts nothing
         "border border-transparent",
         example.id === state.ranId && "border-term-ok/50 bg-term-ok/10",
         example.blankBefore > 0 && "mt-0.5",
       )}
       // the blank lines this example follows in the file, so the fence reads as it is written
-      // style={example.blankBefore > 0 ? { marginTop: `${example.blankBefore * exampleLineHeight}em` } : undefined}
+      style={example.blankBefore > 0 ? { marginTop: `${example.blankBefore * exampleLineHeight}em` } : undefined}
       data-example-id={example.id}
       data-src={src}
       onClick={state.onExampleRun}
@@ -480,7 +480,7 @@ const noCategories: ExampleCategory[] = [];
 /** How far below the top of the view a section must start before it counts as current */
 const sectionSpyOffset = 8;
 /** Matches the `text-[13px]/[1.45]` of an example's `code`, so a gap is a whole number of lines */
-const exampleLineHeight = 1.45;
+const exampleLineHeight = 0.8;
 
 function getStorageKey(uiId: string) {
   return `jobs-library:${uiId}`;
