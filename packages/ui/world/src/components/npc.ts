@@ -13,10 +13,11 @@ import {
   type Vec3,
 } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
-import type { uniform } from "three/tsl";
+import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { defaultIdleAnimationClipKey, defaultSkinKey } from "../const";
 import { helper } from "../service/helper";
+import { packOutlineColor } from "../service/npc-outline";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import { NpcAnimation } from "./npc-animation";
@@ -44,6 +45,8 @@ export class Npc {
   graph: ReturnType<typeof buildGraph>;
   group: THREE.Group | null = null;
   material: THREE.MeshStandardNodeMaterial;
+  /** This npc's `npcMask` output, attached only whilst post-processing runs */
+  maskMrt: ReturnType<typeof mrt>;
   /** synced with crowd agent */
   position: THREE.Vector3;
   rotation: THREE.Euler;
@@ -55,6 +58,8 @@ export class Npc {
   labelLayerIndex: number;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  /** This npc's own outline colour, packed for the `npcMask` attachment — see `setOutlineColor` */
+  outlinePack: THREE.UniformNode<"vec2", THREE.Vector2>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
@@ -129,7 +134,9 @@ export class Npc {
     this.labelLayerIndex = init.labelLayerIndex;
     this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
+    this.maskMrt = init.maskMrt;
     this.material = init.material;
+    this.outlinePack = init.outlinePack;
     this.pickId = init.pickId;
     this.position = init.position;
     this.rotation = init.rotation;
@@ -461,6 +468,17 @@ export class Npc {
     this.bubbleOffset.y = y;
   }
 
+  /**
+   * Their border's colour, e.g. `"#f66"` or `0xff6666` — anything `THREE.Color.set` takes. Read by
+   * the post pass out of the `npcMask` attachment, so it needs no material rebuild; forced through
+   * in case the world is paused, when no frame would otherwise be drawn. Its hue arrives quantised
+   * — see `packOutlineColor`
+   */
+  setOutlineColor(color: THREE.ColorRepresentation) {
+    packOutlineColor(color, this.outlinePack.value);
+    this.w.view.forceUpdate();
+  }
+
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
   }
@@ -481,7 +499,9 @@ export type NpcInit = {
   labelLayerIndex: number;
   labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  maskMrt: ReturnType<typeof mrt>;
   material: THREE.MeshStandardNodeMaterial;
+  outlinePack: THREE.UniformNode<"vec2", THREE.Vector2>;
   pickId: number;
   position: THREE.Vector3;
   rotation: THREE.Euler;

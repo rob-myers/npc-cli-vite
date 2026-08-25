@@ -28,6 +28,7 @@ import {
   float,
   mix,
   modelWorldMatrix,
+  mrt,
   normalWorld,
   output,
   positionLocal,
@@ -49,10 +50,12 @@ import {
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   npcConfig,
+  npcOutlineColor,
   walkMaxAcceleration,
 } from "../const";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
 import { helper } from "../service/helper";
+import { packOutlineColor } from "../service/npc-outline";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
@@ -96,6 +99,17 @@ export default function NPCs() {
       configureCrowd() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = 64;
+      },
+      syncOutlineMask() {
+        // a material mrt *replaces* the colour output unless the scene pass declares one too,
+        // so this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`
+        for (const npc of Object.values(state.npc)) {
+          const next = w.view.npcMaskMrt === null ? null : npc.maskMrt;
+          if (npc.material.mrtNode !== next) {
+            npc.material.mrtNode = next;
+            npc.material.needsUpdate = true;
+          }
+        }
       },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
@@ -160,6 +174,21 @@ export default function NPCs() {
         const isPickMode = w.view.objectPick.notEqual(0);
         const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
 
+        // The silhouette the outline is grown from — see `service/npc-outline`. The BODY only:
+        // the label is a billboard, and a border around it would read as a box floating overhead.
+        // `r` marks them and their packed colour rides in `gb`, all three weighted by their
+        // coverage — which is also what everything drawn in front scales them by, so an npc fading
+        // out, or a world folding away, takes their border with them. See `createNpcMaskBlend`.
+        // Recoloured live by `npc.setOutlineColor`
+        const outlinePack = uniform(packOutlineColor(npcOutlineColor));
+        const maskMrt = mrt({
+          npcMask: (select as SelectAnyType)(
+            isMain,
+            vec4(1, outlinePack.x, outlinePack.y, colorScale.mul(fold)),
+            vec4(0, 0, 0, 0),
+          ),
+        });
+
         const material = new THREE.MeshStandardNodeMaterial({
           transparent: true,
           depthWrite: true,
@@ -181,11 +210,16 @@ export default function NPCs() {
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
           output,
         );
+        // attached only whilst the scene pass declares the extra output — see `syncOutlineMask`
+        material.mrtNode = w.view.npcMaskMrt === null ? null : maskMrt;
+
         return {
           brightness,
           colorScale,
           labelVisible,
           labelYShiftUniform: labelYShift,
+          maskMrt,
+          outlinePack,
           skinIndexUniform,
           material,
         };
@@ -771,12 +805,21 @@ export type State = {
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
   configureCrowd(): void;
+  /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
+  syncOutlineMask(): void;
   createMaterials(
     pickId: number,
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
+    | "brightness"
+    | "colorScale"
+    | "labelVisible"
+    | "labelYShiftUniform"
+    | "maskMrt"
+    | "outlinePack"
+    | "skinIndexUniform"
+    | "material"
   >;
   determineSpawnedAngle(opts: {
     /** Spawn destination */

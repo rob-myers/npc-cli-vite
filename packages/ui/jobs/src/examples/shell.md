@@ -179,4 +179,7 @@ declare -f narrate
 
 # async function narrate...
 call '({ lib }) => lib.util.narrate'
+
+# beware of same-line-comments
+echo foo # bar
 ```
