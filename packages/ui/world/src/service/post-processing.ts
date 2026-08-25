@@ -123,10 +123,10 @@ export function createPostProcessing(): PostProcessing {
  * The horizon, in metres from the player across the ground: full opacity to `from`, dropping
  * quickly to `kneeAlpha` by `knee`, then trailing away to nothing by `to`
  */
-const horizonFrom = 6;
-const horizonKnee = 6.75;
+const horizonFrom = 6.5;
+const horizonKnee = 7.25;
 const horizonKneeAlpha = 0.5;
-const horizonTo = 8;
+const horizonTo = 8.5;
 
 /** What lies beyond the world: near-black, ruled with hairline diagonals */
 const backdropColor = vec3(0.0, 0.0, 0.0);
