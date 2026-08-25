@@ -428,7 +428,7 @@ const cullMargin = 3;
 
 /** How far the light reaches (metres), and over how much of that it fades away */
 const lightRadius = 8;
-const lightFalloff = 8;
+const lightFalloff = 6;
 /** How black an unseen fragment goes */
 const unlitTint = 0.6;
 /** How far the warm reaches before it begins to give way to the cool (metres) */

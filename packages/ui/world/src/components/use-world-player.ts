@@ -27,10 +27,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
             (await state.spawnSomewhere());
         }
         state.prevMapPosition = null;
-
-        const npc = w.n[state.key];
-        if (npc !== undefined) {
-        }
       },
       async panTo() {
         const npc = w.n[state.key];
