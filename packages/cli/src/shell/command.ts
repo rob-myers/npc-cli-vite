@@ -994,7 +994,11 @@ class CmdService {
 
             ct.args = args.slice(2); // discard e.g. "core spawn"
 
-            if (functionOrAsync.includes(func.constructor.name)) {
+            if (
+              functionOrAsync.includes(func.constructor.name) &&
+              // 🔔 saw AsyncGenerator as Function in safari devtool
+              !("safari" in window && /^(?:async )function\*/.test(func.toString()))
+            ) {
               yield await func(ct);
             } else {
               yield* func(ct);
