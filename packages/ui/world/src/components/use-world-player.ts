@@ -1,7 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { defaultPlayerKey, npcConfig, spawnPlayerAttempts } from "../const";
-import { getWorldMapStore, getWorldStore } from "../service/storage";
+import { defaultPlayerKey, spawnPlayerAttempts } from "../const";
+import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 
 /**
@@ -14,8 +14,6 @@ import type { State as WorldState } from "./World";
 export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
-      introEnabled: getWorldStore(w.key).read().introEnabled,
-      introMapKey: null,
       key: defaultPlayerKey,
       prevMapPosition: null,
 
@@ -38,18 +36,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = w.n[state.key];
         if (npc === undefined) return;
 
-        // asking to look AT them outranks wherever a pan last chose to stand: without this the
-        // follow eases straight back to that vantage, and the pan appears to bounce
+        // asking to look AT them outranks wherever a pan last chose to stand, else the follow
+        // eases straight back to that vantage and the pan appears to bounce
         w.view.followOffset.set(0, 0);
 
-        // no `radius`, so the intro pans and turns without zooming — `lookAt` keeps the
-        // distance it finds, which on load is whatever view we restored. Their height, so
-        // the camera settles on the npc rather than on the floor they stand on
+        // no `radius`, so this pans and turns without zooming — `lookAt` keeps the distance it
+        // finds, which on load is whatever view we restored
         await w.view.lookAt(npc.point, {
           animate: true,
-          height: npcConfig.dist.height,
-          // they walk whilst we pan, and following means the camera is expected to be ON them —
-          // a destination fixed at the moment of the press lands behind
+          // they walk whilst we pan, and the point of it is to be ON them — a destination fixed at
+          // the moment of the press lands behind
           track: () => w.n[state.key]?.point,
         });
       },
@@ -136,19 +132,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.persist();
         void state.panTo(); // as on load
       },
-      setIntroEnabled(next) {
-        getWorldStore(w.key).patch({ introEnabled: next });
-        if (next === false) {
-          // on load we'll restore this view, rather than pan to the player
-          w.view.controls !== null && w.view.onCameraEnd();
-        }
-
-        state.set({ introEnabled: next });
-
-        if (next === true) {
-          void state.ensure().then(() => state.panTo());
-        }
-      },
       async spawnSomewhere() {
         for (let attempt = 0; attempt < spawnPlayerAttempts; attempt++) {
           const gm = w.gms[Math.floor(Math.random() * w.gms.length)];
@@ -173,10 +156,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 }
 
 export type State = {
-  /** Should we pan to the player, on load or on demand? */
-  introEnabled: boolean;
-  /** The map whose intro already ran, so hmr doesn't repeat it */
-  introMapKey: null | string;
   /** Key of the npc we consider the player — spawned on arrival if absent */
   key: string;
   /** Where they stood on the previous map, set by `w.e.onChangeMap` */
@@ -186,7 +165,6 @@ export type State = {
   ensure(): Promise<void>;
   /** Pans the camera onto the player */
   panTo(): Promise<void>;
-  setIntroEnabled(next: boolean): void;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
@@ -195,7 +173,6 @@ export type State = {
   restoreNearCamera(): Promise<boolean>;
   /** Respawns the player near where they were on the previous map — `false` if we couldn't */
   restoreNearPrevMap(): Promise<boolean>;
-  /** Enabling replays the intro immediately; disabling remembers the current view */
   /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
   setKey(npcKey: string): void;
   /** Spawns the player in a random room — `false` if every attempt failed */

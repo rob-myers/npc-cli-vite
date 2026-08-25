@@ -30,7 +30,6 @@ export type WorldSettings = {
   brightness: number;
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
-  introEnabled: boolean;
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   postFade: boolean;
@@ -54,7 +53,6 @@ const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
   cameraMode: null,
   cameraInitial: null,
-  introEnabled: true,
   postProcessing: true,
   postFade: true,
   pickOpenDoors: true,

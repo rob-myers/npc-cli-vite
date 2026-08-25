@@ -12,9 +12,9 @@ import {
   CircleIcon,
   CrosshairSimpleIcon,
   GlobeStandIcon,
-  GpsIcon,
   type Icon,
   PauseIcon,
+  PersonSimpleCircleIcon,
   PlayIcon,
   SunIcon,
   XIcon,
@@ -61,6 +61,8 @@ export function WorldMenu() {
       menuHeight: saved.menuHeight,
       armedState: null,
       armedTimeoutId: 0,
+      lookLongPressed: false,
+      lookTimeoutId: 0,
       resizing: false,
       stateSelectOpen: false,
 
@@ -98,6 +100,21 @@ export function WorldMenu() {
         window.clearTimeout(state.armedTimeoutId);
         if (state.armedState !== null) {
           state.set({ armedState: null });
+        }
+      },
+
+      onLookPressStart() {
+        state.lookLongPressed = false;
+        state.lookTimeoutId = window.setTimeout(() => {
+          state.lookLongPressed = true;
+          w.view.setCameraMode(nextCameraMode[w.view.cameraMode]);
+          state.update();
+        }, lookLongPressMs);
+      },
+      onLookPressEnd(cancelled = false) {
+        window.clearTimeout(state.lookTimeoutId);
+        if (cancelled === false && state.lookLongPressed === false) {
+          void w.player.panTo();
         }
       },
 
@@ -667,18 +684,20 @@ export function WorldMenu() {
             )}
           </button>
 
-          {/* look at the player. Its corner wears the camera mode, which `f` also toggles —
-              see `WorldView`'s `onKeyDown` */}
+          {/* look at the player, or long press to switch camera mode — which its own corner wears,
+              and which `f` also toggles. See `WorldView`'s `onKeyDown` */}
           <div
             data-keep-menu-open
             className="relative cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
-            onClick={() => void w.player.panTo()}
+            onPointerDown={() => state.onLookPressStart()}
+            onPointerUp={() => state.onLookPressEnd()}
+            onPointerLeave={() => state.onLookPressEnd(true)}
             onContextMenu={(e) => e.preventDefault()}
           >
-            <GpsIcon className="size-5" alt="look at the player" weight="bold" />
+            <PersonSimpleCircleIcon className="size-5" alt="look at the player (long press for camera mode)" />
             <div
-              className="absolute bottom-0 right-0 leading-none pointer-events-none"
-              title={`camera: ${w.view.cameraMode} (press f)`}
+              className="absolute bottom-0.5 right-0.5 leading-none pointer-events-none"
+              title={`camera: ${w.view.cameraMode} (press f, or long press)`}
             >
               {w.view.cameraMode === "follow" ? (
                 <CrosshairSimpleIcon className="size-2.5 text-emerald-400" weight="bold" />
@@ -1072,6 +1091,12 @@ export type State = {
   /** The `state` option clicked once, whose next click takes effect. `null` when none is armed */
   armedState: null | string;
   armedTimeoutId: number;
+  /** Whether the look button has been held long enough to have switched camera mode */
+  lookLongPressed: boolean;
+  lookTimeoutId: number;
+  /** A click looks at the player; a long press switches camera mode — the badge it wears */
+  onLookPressStart(): void;
+  onLookPressEnd(cancelled?: boolean): void;
   /** Controlled, so arming "confirm" can keep the popup open — see `onStateSelectOpenChange` */
   stateSelectOpen: boolean;
   /** Either restore this map's state from another world, or reset it — each after confirming */
@@ -1126,10 +1151,10 @@ const minMenuHeight = 120;
 /** How long a toast lingers after its pending key clears */
 const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
-const lookLongPressMs = 500;
 const spinnerMinMs = 300;
+/** How long the look button must be held before it switches camera mode rather than looking */
+const lookLongPressMs = 500;
 
-/** Long press the look button to stop it happening on load, since a click always looks */
 const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",
