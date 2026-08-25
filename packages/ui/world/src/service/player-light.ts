@@ -435,7 +435,7 @@ const unlitTint = 0.6;
 const warmUntil = 2;
 /** The colour at the player's feet, at the edge of the reach, and how much of it is taken */
 const warmTint = vec3(1, 1, 1);
-const coolTint = vec3(0, 0, 1);
+const coolTint = vec3(0.5, 0.5, 0);
 const tintAmount = 1;
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
