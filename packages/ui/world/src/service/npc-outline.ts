@@ -55,12 +55,22 @@ const tmpColor = /* @__PURE__ */ new THREE.Color();
  * @returns the border's colour, with how opaque it is here in `a`
  */
 export function getNpcOutline(npcMask: THREE.TextureNode, sceneDepth: THREE.TextureNode): THREE.Node<"vec4"> {
-  // ANY coverage counts as standing on an npc. The mask carries their fade as well as their
-  // silhouette, so a threshold near the middle would read a half-faded npc as background and paint
-  // the border straight across them — see `fadeSpawn`
-  const onNpcHere = step(onNpcAlpha, npcMask.r);
   const depthHere = sceneDepth.r;
-  const texel = vec2(1, 1).div(screenSize).mul(outlineWidthPx);
+  const onePx = vec2(1, 1).div(screenSize);
+  const texel = onePx.mul(outlineWidthPx);
+
+  // How much npc is HERE, which the border is what stands proud of — see the rim below.
+  // DILATED by a pixel, because the mask is stippled wherever a door stands in front of them: a
+  // door sees through by COVERAGE rather than by blending (see `Doors`' panel materials), so it
+  // writes depth on the samples it covers and the npc behind it is REJECTED on those rather than
+  // dimmed — and the coverage is dithered, so what survives is a pixel-wide checker of full
+  // coverage and none. Each of those holes read as background and took a border of its own, which
+  // is what painted an occluded npc solid. A wall never did this: it blends, which scales the
+  // whole mask evenly and leaves no hole. The border loses its innermost pixel in exchange
+  const onNpcHere = npcMask.r.toVar();
+  for (const [dx, dy] of dilateTaps) {
+    onNpcHere.assign(onNpcHere.max(npcMask.sample(screenUV.add(onePx.mul(vec2(dx, dy)))).r));
+  }
 
   // the strongest neighbour wins the colour, so two npcs side by side each keep their own. Kept
   // packed until the end, so only the winner is ever unpacked
@@ -85,11 +95,17 @@ export function getNpcOutline(npcMask: THREE.TextureNode, sceneDepth: THREE.Text
   const code = packed.x.mul(255).add(0.5).floor();
   const hue = vec3(code.div(32).floor(), code.div(4).floor().mod(8), code.mod(4)).div(vec3(7, 7, 3));
 
-  // only just *outside* the silhouette, so an npc is never painted over
-  return vec4(hue.mul(packed.y), strength.mul(onNpcHere.oneMinus()).mul(outlineAlpha));
+  // How much MORE npc there is beside us than here, which is `0` everywhere ON one and rises to
+  // their full coverage just outside them. RELATIVE, so it holds however faint the mask has been
+  // left by what stands in front: an absolute threshold reads an npc dimmed past it as background
+  // and paints the border straight across them — which is what a door did, its samples rejecting
+  // the npc's depth where a wall merely blends over them
+  const rim = strength.sub(onNpcHere).max(0);
+
+  return vec4(hue.mul(packed.y), rim.mul(outlineAlpha));
 }
 
-/** Above this much mask coverage we are on an npc rather than beside one — see `onNpcHere` */
+/** Guards the divide that recovers a border colour from its coverage — see `packOutlineColor` */
 const onNpcAlpha = 0.01;
 /** How opaque the border is — part-transparent, so what it sits on still reads through it */
 const outlineAlpha = 0.25;
@@ -97,6 +113,14 @@ const outlineAlpha = 0.25;
 const outlineWidthPx = 4;
 /** Guards the depth comparison against noise where the two surfaces nearly touch */
 const depthBias = 0.00002;
+
+/** The four immediate neighbours, whence `onNpcHere` is dilated over a stippled mask */
+const dilateTaps = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
 
 /** Eight neighbours, diagonals shortened so the border keeps an even width */
 const diag = Math.SQRT1_2;
