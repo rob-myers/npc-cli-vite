@@ -288,6 +288,14 @@ export default function Doors() {
           // if (w.disabled) w.view.forceUpdate();
         }
       },
+      snapOpen(door) {
+        if (door.sealed === true || door.open === true) return false;
+        state.animTargets.delete(door.instanceId);
+        state.onDoorChanged(door.instanceId, doorOpenTarget);
+        const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
+        if (attr) attr.needsUpdate = true;
+        return true;
+      },
       positionInstances() {
         const { inst } = state;
         if (!inst) return;
@@ -640,6 +648,11 @@ export type State = {
   onDoorChanged: (instanceId: number, target: number) => void;
   onTick: (delta: number) => void;
   positionInstances: () => void;
+  /**
+   * Opens the door with no animation, as though it had always been open — for a door that must
+   * already be open on the first drawn frame. Returns `false` for a sealed or already open door
+   */
+  snapOpen: (door: Geomorph.DoorState) => boolean;
   /** Sets `brightnessNode`'s value — called by `onChangeTheme` (see `use-world-events.ts`), never `.value` directly */
   setBrightness: (next: number) => void;
   /** Save which doors are locked for `w.mapKey`, so `buildByKey` can restore them */

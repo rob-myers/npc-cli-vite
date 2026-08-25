@@ -18,6 +18,7 @@ export default function WorldWorker() {
   const state = useStateRef(
     (): State => ({
       physicsRebuilds: 0,
+      pendingSettles: [],
       reloads: 0,
       worker: null as unknown as Worker,
 
@@ -75,6 +76,8 @@ export default function WorldWorker() {
             break;
           }
           case "pong":
+            // FIFO both ways, so everything posted before the ping has already been handled here
+            state.pendingSettles.shift()?.();
             break;
 
           case "raycast-result": {
@@ -108,6 +111,11 @@ export default function WorldWorker() {
       ping() {
         state.worker.postMessage({ type: "ping" } satisfies WW.MsgToWorker);
       },
+      settle() {
+        if (state.worker === null) return Promise.resolve(); // asked before the worker was up
+        state.ping();
+        return new Promise<void>((resolve) => state.pendingSettles.push(resolve));
+      },
     }),
   );
 
@@ -130,6 +138,9 @@ export default function WorldWorker() {
       worker.terminate();
       // whatever it was still being asked, it can no longer answer
       w.e.rejectPendingUnreachable(new Error("worker terminated"));
+      // no pong is coming; released rather than rejected, since a settle only ever means "as much
+      // as the worker was going to say has been said" and a dead worker has said all it will
+      for (const resolve of state.pendingSettles.splice(0)) resolve();
     };
   }, [w.threeReady, state.reloads]); // setup worker
 
@@ -175,9 +186,17 @@ export default function WorldWorker() {
 
 export type State = {
   physicsRebuilds: number;
+  /** Resolvers awaiting a `pong`, oldest first — see `settle` */
+  pendingSettles: (() => void)[];
   reloads: number;
   worker: Worker;
   handlePhysicsCollision(npcKey: string, otherKey: WW.PhysicsBodyKey, isEnter?: boolean): void;
   onWorkerMessage(e: MessageEvent<WW.MsgFromWorker>): void;
   ping(): void;
+  /**
+   * Resolves once the worker has answered everything posted before now, and we have handled its
+   * replies. A ping is the marker: messages keep their order in both directions, so a `pong` can
+   * only arrive after the responses to whatever went before it
+   */
+  settle(): Promise<void>;
 };

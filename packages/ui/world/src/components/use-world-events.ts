@@ -222,6 +222,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // the player goes first, else a restored npc would be adopted as them
           await player.ensure();
           await state.restoreNpcs(saved);
+          // a restored npc can be standing in a doorway — every door starts closed, so one would
+          // shut through them. Before the frame below, so it is never seen closed over them
+          await state.openDoorwaysWithNpcs();
           // spawning resolves on mount, which is not the same as drawn — without a rendered
           // frame in hand the npcs pop in a beat after the world has been revealed empty
           w.view.forceUpdate(0.01);
@@ -266,6 +269,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // the player goes first, else a restored npc would be adopted as them
         await w.player.ensure();
         await state.restoreNpcs(saved.npcs);
+        await state.openDoorwaysWithNpcs();
         w.view.forceUpdate();
       },
       async resetWorldState() {
@@ -276,6 +280,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null });
         // nothing saved to restore now, so the player respawns near the camera
         await w.player.ensure();
+        await state.openDoorwaysWithNpcs();
         state.persistNpcs();
         w.view.forceUpdate();
       },
@@ -797,6 +802,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return w.door.toggleLock(door, opts);
       },
+      async openDoorwaysWithNpcs() {
+        await w.worker?.settle();
+        for (const npcKey in w.n) {
+          const gdKey = state.npcToDoors[npcKey]?.inside;
+          if (gdKey === null || gdKey === undefined) continue;
+          const door = w.d[gdKey];
+          if (door === undefined || w.door.snapOpen(door) === false) continue;
+          state.tryCloseDoor(gdKey);
+        }
+      },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
         if (!door) return; // onchange map
@@ -939,6 +954,11 @@ export type State = {
     gdKey: Geomorph.GmDoorKey,
     opts: { npcKey?: string; point?: JshCli.PointAnyFormat } & Geomorph.ToggleLockOpts,
   ): boolean;
+  /**
+   * Snaps open every door an npc is standing in, so none is drawn closed through them — a door
+   * starts closed, whereas an npc's saved position can be in a doorway they stopped in
+   */
+  openDoorwaysWithNpcs(): Promise<void>;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };
