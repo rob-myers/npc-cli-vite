@@ -688,6 +688,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             "npcMask",
             createNpcMaskBlend(),
           );
+          // three's `MRTNode.merge` puts the merged blend modes on `blendings`, which nothing
+          // reads — `getBlendMode` looks at `blendModes` — so the merge every material with an
+          // `mrtNode` of its own goes through (i.e. every npc, see `NPCs.createMaterials`) drops
+          // the blend above and leaves `npcMask` unblended. Put back here rather than worked
+          // around downstream, so the attachment means the same thing whoever wrote it
+          const originalMerge = state.npcMaskMrt.merge.bind(state.npcMaskMrt);
+          state.npcMaskMrt.merge = (other: THREE.MRTNode) => {
+            const merged = originalMerge(other);
+            merged.blendModes = { ...state.npcMaskMrt?.blendModes, ...other.blendModes };
+            return merged;
+          };
           scenePass.setMRT(state.npcMaskMrt);
         } else {
           state.npcMaskMrt = null;

@@ -279,6 +279,9 @@ export default function NPCs() {
 
           // can overwrite materials while debugging
           const mat = state.createMaterials(npc.pickId, npc.skinIndex);
+          // fresh materials come with fresh uniforms, at whatever the defaults are — their border
+          // colour is only ever set from outside (`setOutlineColor`), so it is carried across
+          mat.outlinePack.value.copy(npc.outlinePack.value);
           Object.assign(npc, mat);
 
           npc.init();
