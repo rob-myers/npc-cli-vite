@@ -330,7 +330,7 @@ export function WorldMenu() {
         //   carry the popup rightwards with it
         // - above the popup's `z-50`, so the toasts below it are not covered. The drag
         //   transform makes this a stacking context, so a child cannot escape on its own
-        className="outline-none absolute top-0 left-0.5 z-[60] touch-none select-none flex flex-col items-start gap-0.5"
+        className="outline-none absolute top-0 left-1 z-60 touch-none select-none flex flex-col items-start gap-0.5"
         style={{ y }}
         drag="y"
         dragListener={false}
