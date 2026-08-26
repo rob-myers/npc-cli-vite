@@ -240,13 +240,13 @@ export function WorldSpeech() {
       </motion.div>
 
       {/* toasts — bottom-center, where subtitles usually go; non-interactive so they don't block World */}
-      <div className="absolute bottom-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col items-center gap-1 pointer-events-none">
+      <div className="absolute top-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col items-center gap-1 pointer-events-none">
         <AnimatePresence>
           {state.toasts.map(({ id, npcKey, words }) => (
             <motion.div
               key={id}
               className={cn(
-                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-sm p-3 py-1.5 max-w-md text-center",
+                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] p-3 py-1.5 max-w-md text-center",
                 big && "text-sm px-3 py-1.5 max-w-lg",
               )}
               initial={{ opacity: 0, y: 8 }}
