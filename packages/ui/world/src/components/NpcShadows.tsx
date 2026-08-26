@@ -11,7 +11,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_NPCS, npcScale } from "../const";
+import { MAX_NPCS, npcShadowRadius } from "../const";
 import { createXzQuad } from "../service/geometry";
 import type { SelectFloatType } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -55,15 +55,13 @@ export type State = {
   onTick(): void;
 };
 
-const shadowRadius = npcScale / 2.5;
-
 function createShadowResources(
   objectPick: THREE.UniformNode<"float", number>,
   fold: THREE.UniformNode<"float", number>,
 ) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
-  const quadSide = shadowRadius * 2;
+  const quadSide = npcShadowRadius * 2;
   for (let i = 0; i < pos.count; i++) {
     pos.setX(i, (pos.getX(i) - 0.5) * quadSide);
     pos.setZ(i, (pos.getZ(i) - 0.5) * quadSide);
@@ -84,9 +82,9 @@ function createShadowResources(
 
   // plain circle, solid out to (radius - edgeSoftness) then a thin fade
   const distToCenter = vec2(positionLocal.x, positionLocal.z).length();
-  const edgeSoftness = shadowRadius * 0.2;
+  const edgeSoftness = npcShadowRadius * 0.2;
   const baseAlpha = float(1)
-    .sub(distToCenter.sub(shadowRadius - edgeSoftness).div(edgeSoftness))
+    .sub(distToCenter.sub(npcShadowRadius - edgeSoftness).div(edgeSoftness))
     .clamp(0, 1)
     .mul(0.4)
     .mul(xzo.z);

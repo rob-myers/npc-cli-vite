@@ -473,7 +473,7 @@ export default function NPCs() {
         state.postCrowdTickEvents.length = 0;
 
         w.shadows?.onTick();
-        w.rings?.onTick(delta);
+        w.rings?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);

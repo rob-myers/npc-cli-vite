@@ -362,6 +362,12 @@ export class Npc {
     return this.anim.moving;
   }
 
+  /** Whether their current clip has them off their feet, i.e. `sit` or `lie` */
+  isNotStanding() {
+    const clipName = this.anim.moving === true ? this.anim.moveClip.name : this.anim.idleClip.name;
+    return clipName === "sit" || clipName === "lie";
+  }
+
   /**
    * Can look at `npcKey` or point.
    */
@@ -459,6 +465,16 @@ export class Npc {
 
   setBubbleHeight(y: number) {
     this.bubbleOffset.y = y;
+  }
+
+  /** Selector ring */
+  setRing(color?: THREE.ColorRepresentation) {
+    if (color) {
+      this.w.rings.showSelectRing(this.key, color);
+    } else {
+      this.w.rings.hideSelectRing(this.key);
+    }
+    this.w.view.forceUpdate();
   }
 
   setLabelYShift(shift: number) {
