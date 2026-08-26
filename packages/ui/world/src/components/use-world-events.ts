@@ -376,7 +376,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // the crowd is empty at this point, which is what makes it safe to walk a spare agent
             w.npc?.warmCrowd();
             break;
-          case "picked":
+          case "picked": {
+            if (w.view.lightNpcs.value === 1 && e.longDown === true && e.meta.type === "npc") {
+              w.n[(e.meta as { npcKey: string }).npcKey]?.setLit();
+            }
+            break;
+          }
           case "spawned-many":
             break;
           default:

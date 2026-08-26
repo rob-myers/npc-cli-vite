@@ -90,6 +90,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
       postFade: saved.postFade,
+      lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
 
@@ -627,6 +628,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ postProcessing: next });
         state.forceUpdate();
       },
+      setLightNpcsEnabled(next = state.lightNpcs.value !== 1) {
+        state.lightNpcs.value = next === true ? 1 : 0;
+        store.patch({ lightNpcs: next });
+        state.forceUpdate();
+        w.menu?.update();
+      },
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
@@ -851,6 +858,7 @@ export type State = {
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player */
   postFade: boolean;
+  lightNpcs: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -927,6 +935,8 @@ export type State = {
   /** Toggles that fade, turning the pass itself on if it is off */
   setPostFadeEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
+  /** Whether a long press on an npc lights them up */
+  setLightNpcsEnabled(next?: boolean): void;
 };
 
 /**
