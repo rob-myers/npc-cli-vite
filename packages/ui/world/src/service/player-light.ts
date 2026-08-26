@@ -430,7 +430,7 @@ const cullMargin = 3;
 const lightRadius = 8;
 const lightFalloff = 6;
 /** How black an unseen fragment goes */
-const unlitTint = 0.6;
+const unlitTint = 0.7;
 /** How far the warm reaches before it begins to give way to the cool (metres) */
 const warmUntil = 2;
 /** The colour at the player's feet, at the edge of the reach, and how much of it is taken */
