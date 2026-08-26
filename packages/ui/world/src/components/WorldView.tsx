@@ -1,5 +1,5 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
+import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Rect, Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
@@ -608,28 +608,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.rootEl?.style.setProperty("--world-dim", `${darken ? 1 : 0}`);
         return pause(durationMs);
       },
-      freezeCanvas() {
-        // the last presented image is still there to be read, WebGPU having no
-        // `preserveDrawingBuffer` caveat, so long as nothing has rendered since
-        const { canvas, freezeEl } = state;
-        freezeEl.width = canvas.width;
-        freezeEl.height = canvas.height;
-        freezeEl.getContext("2d")?.drawImage(canvas, 0, 0);
-        state.frozen = true;
-        w.rootEl?.style.setProperty("--world-freeze-duration", "0ms");
-        // it swallows the pointer whilst up, so the camera cannot be driven around a world
-        // that is not the one on screen
-        w.rootEl?.style.setProperty("--world-freeze-events", "auto");
-        w.rootEl?.style.setProperty("--world-freeze", "1");
-      },
-      unfreezeCanvas(durationMs = freezeFadeMs) {
-        if (state.frozen === false) return Promise.resolve();
-        state.frozen = false;
-        w.rootEl?.style.setProperty("--world-freeze-duration", `${durationMs}ms`);
-        w.rootEl?.style.setProperty("--world-freeze", "0");
-        // the pointer comes back only once the world beneath is fully on show
-        return pause(durationMs).then(() => w.rootEl?.style.setProperty("--world-freeze-events", "none"));
-      },
       veilCanvas(opaque, durationMs = veilMs) {
         w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
         w.rootEl?.style.setProperty("--world-veil", `${opaque ? 1 : 0}`);
@@ -892,16 +870,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
       {/* the black, and over it the held frame that dips through it — see `world.css` */}
       <div className="world-veil" />
-      <canvas
-        className="world-freeze"
-        ref={state.ref("freezeEl")}
-        // the capture is of the raw drawing buffer, so it needs the canvas's own filter to match
-        style={{ filter: `brightness(${w.brightness})` }}
-      />
-      {/* over the held frame: progress whilst it is up, a map swap being far from instant */}
-      <div className="world-spinner">
-        <Spinner className="size-16" />
-      </div>
 
       <AnimatePresence>
         {w.disabled && (
@@ -1026,10 +994,6 @@ export type State = {
   veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
   freezeEl: HTMLCanvasElement;
   frozen: boolean;
-  /** Holds the last rendered frame on screen, so the world can change unseen beneath it */
-  freezeCanvas(): void;
-  /** Fades the held frame away, revealing whatever the world is now */
-  unfreezeCanvas(durationMs?: number): Promise<void>;
   resetCamera(): void;
   syncRenderMode(): RootState["frameloop"];
   /**
