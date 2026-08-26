@@ -412,10 +412,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               cn(state.getTheme().background, "world-background")
             }
           >
-            {/* outside the fold, else it would swing the directional rig */}
             <Lights />
-            {/* the floor is the fold's floor, and lies flat regardless — see `setWorldFold` */}
             <Floor key="floor" />
+            {/* folded */}
             <group ref={state.ref("worldGroup")}>
               <Ceiling key="ceiling" />
               <Walls key="walls" />
@@ -426,7 +425,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <NpcRings key="npc-rings" />
               <Debug key="debug" />
             </group>
-            {/* outside the fold: an npc shrinks uniformly rather than squashing — `setWorldFold` */}
             <NPCs key="npcs" />
           </WorldView>
         )}
