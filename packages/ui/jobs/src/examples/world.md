@@ -85,7 +85,4 @@ demo_npc_ui npc:rob
 
 # whilst on navmesh
 w n.rob.agent.maxSpeed
-
- w n.rob.setOutlineColor red
- w n.rob.setOutlineColor gray
 ```
