@@ -826,26 +826,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           rather than the world: nothing can occlude it and it cannot foreshorten */}
       {state.cameraMode === "follow" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center *:absolute *:bg-white/30">
-          {/* the ring is a black outline a pixel proud, so the white reads over the pale floor too */}
           <div className="h-px w-3.5 ring-1 ring-black/40" />
           <div className="h-3.5 w-px ring-1 ring-black/40" />
         </div>
       )}
 
-      {/* On load the view is the one we restored, which need not be on the player. Rather than
-          take the camera off it, the centring is OFFERED: a target in the middle of the viewport
-          that fades of its own accord, and pans onto them if it is taken in time */}
+      {/* initial pan-to-player option */}
       <AnimatePresence>
         {state.centreHint === true && (
           <motion.button
             type="button"
-            className={cn(
-              "absolute inset-0 m-auto grid size-16 place-items-center rounded-full border-2 border-white/20 bg-white/0",
-              "cursor-pointer",
-            )}
+            className="cursor-pointer absolute inset-0 m-auto grid size-12 place-items-center rounded-full"
             initial={{ opacity: 0, scale: centreHintSmall }}
-            // in with a slight overshoot, held, then away smaller than it came — one animation, so
-            // neither the fade nor the scale needs a timer of its own
             animate={{ opacity: [0, 1, 1, 1, 0], scale: [centreHintSmall, 1.08, 1, 1, centreHintSmall] }}
             transition={{ duration: centreHintSecs, times: [0, 0.12, 0.22, 0.6, 1], ease: "linear" }}
             onAnimationComplete={state.hideCentreHint}
@@ -871,7 +863,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       {/* fade between maps */}
       <div className="world-veil" />
 
-      {/* paused indicator — kept mounted and faded by opacity, which is all it ever animated */}
+      {/* paused indicator */}
       <div
         className={cn(
           "pointer-events-none absolute top-1 left-1/2 -translate-x-1/2 select-none",
