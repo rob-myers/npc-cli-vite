@@ -868,24 +868,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         <div className="right-1 bottom-1 border-r border-b border-current" />
       </div>
 
-      {/* the black, and over it the held frame that dips through it — see `world.css` */}
+      {/* fade between maps */}
       <div className="world-veil" />
 
-      <AnimatePresence>
-        {w.disabled && (
-          <motion.div
-            className="absolute inset-x-0 top-1 flex justify-center pointer-events-none"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="px-4 py-1.5 bg-black/30 text-white/80 text-xs font-mono tracking-[0.4em] uppercase select-none">
-              paused
-            </div>
-          </motion.div>
+      {/* paused indicator — kept mounted and faded by opacity, which is all it ever animated */}
+      <div
+        className={cn(
+          "pointer-events-none absolute top-1 left-1/2 -translate-x-1/2 select-none",
+          "bg-black/30 px-4 py-1.5 font-mono text-white/80 text-xs uppercase tracking-[0.4em]",
+          "transition-opacity duration-500",
+          w.disabled ? "opacity-100" : "opacity-0",
         )}
-      </AnimatePresence>
+      >
+        paused
+      </div>
     </div>
   );
 }
