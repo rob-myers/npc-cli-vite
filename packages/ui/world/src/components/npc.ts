@@ -55,6 +55,8 @@ export class Npc {
   labelLayerIndex: number;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  /** `1` whilst they are lit up — see `setLit` and the `lit` getter */
+  npcLit: THREE.UniformNode<"float", number>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
@@ -117,6 +119,11 @@ export class Npc {
     return this.skinIndexUniform.value;
   }
 
+  /** Whether they are lit up — the uniform IS the state, so there is nothing to keep in step */
+  get lit() {
+    return this.npcLit.value === 1;
+  }
+
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
 
@@ -129,6 +136,7 @@ export class Npc {
     this.labelLayerIndex = init.labelLayerIndex;
     this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
+    this.npcLit = init.npcLit;
     this.material = init.material;
     this.pickId = init.pickId;
     this.position = init.position;
@@ -477,6 +485,11 @@ export class Npc {
     this.w.view.forceUpdate();
   }
 
+  setLit(next = !this.lit) {
+    this.npcLit.value = next === true ? 1 : 0;
+    this.w.view.forceUpdate();
+  }
+
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
   }
@@ -497,6 +510,7 @@ export type NpcInit = {
   labelLayerIndex: number;
   labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  npcLit: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   pickId: number;
   position: THREE.Vector3;

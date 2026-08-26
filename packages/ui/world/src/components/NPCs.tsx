@@ -103,6 +103,7 @@ export default function NPCs() {
         const colorScale = uniform(1);
         const labelVisible = uniform(1, "float");
         const brightness = uniform(1);
+        const npcLit = uniform(0);
 
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
@@ -175,7 +176,15 @@ export default function NPCs() {
         // not: it is a billboard expanded in `vertexNode`, so its fragments' `positionWorld` is not
         // where it appears — the light would sample a meaningless direction and flicker. It is a
         // caption on the world rather than a part of it, so it stays lit either way
-        material.colorNode = (select as any)(isLabel, labelColor, w.view.playerLight.applyLightRgba(mainColor));
+        // A lit npc is lit by their OWN light, so the player's sight is stepped around entirely:
+        // it neither dims them where it does not reach nor tints them where it does. They were
+        // picked out to BE seen, and darkening them to a third outside the polygon undoes that.
+        // MULTIPLIED, as light on a surface is, so the skin keeps its own contrast; and mixed
+        // rather than branched, so `npcLit` can be faded rather than only switched
+        const shaded = w.view.playerLight.applyLightRgba(mainColor);
+        const ownLit = vec4(mainColor.rgb.mul(npcLitBoost), mainColor.a);
+        const litAmount = npcLit.mul(w.view.lightNpcs);
+        material.colorNode = (select as any)(isLabel, labelColor, mix(shaded, ownLit, litAmount));
         material.outputNode = (select as SelectAnyType)(
           isPickMode,
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
@@ -187,6 +196,7 @@ export default function NPCs() {
           colorScale,
           labelVisible,
           labelYShiftUniform: labelYShift,
+          npcLit,
           skinIndexUniform,
           material,
         };
@@ -246,6 +256,7 @@ export default function NPCs() {
 
           // can overwrite materials while debugging
           const mat = state.createMaterials(npc.pickId, npc.skinIndex);
+          mat.npcLit.value = npc.lit === true ? 1 : 0;
           Object.assign(npc, mat);
 
           npc.init();
@@ -777,7 +788,7 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "skinIndexUniform" | "material"
+    "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "npcLit" | "skinIndexUniform" | "material"
   >;
   determineSpawnedAngle(opts: {
     /** Spawn destination */
@@ -931,6 +942,8 @@ const rimColor = [0.55, 0.72, 0.7];
  * between: `0` is level with them, `1` directly above
  */
 const rimOverheadAmount = 0.05;
+/** How much brighter a lit npc is than an unlit one — see `Npc.setLit` */
+const npcLitBoost = 1.2;
 const rimOverheadFrom = 0.45;
 const rimOverheadTo = 0.85;
 

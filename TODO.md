@@ -159,6 +159,10 @@
 
 - ✅ remove background color related code including stripes
 
+- 🚧 unclear how to light npcs "behind the scenes"
+  - ✅ can explicitly light npc via debug option + long-press
+  - 🚧 try extend postFx circular cut out with "used rooms"
+
 
 ## Other
 

@@ -33,6 +33,8 @@ export type WorldSettings = {
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   postFade: boolean;
+  /** Whether a long press on an npc lights them up — see `Npc.setLit` */
+  lightNpcs: boolean;
   /** Toggle doors via picking e.g. switches */
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
@@ -56,6 +58,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   postFade: true,
+  lightNpcs: false,
   pickOpenDoors: true,
   pickDoors: false,
   obstaclesLit: false,

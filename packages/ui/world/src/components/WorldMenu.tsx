@@ -233,6 +233,8 @@ export function WorldMenu() {
         return w.view.objectPick?.value === 1;
       case "Post FX":
         return w.view.postProcessing ?? false;
+      case "Light npcs":
+        return w.view.lightNpcs?.value === 1;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
@@ -264,6 +266,10 @@ export function WorldMenu() {
         break;
       case "Post FX":
         w.view.setPostProcessingEnabled();
+        state.update();
+        break;
+      case "Light npcs":
+        w.view.setLightNpcsEnabled();
         state.update();
         break;
       case "Room Hit":
@@ -1159,6 +1165,7 @@ const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",
+  "Light npcs",
   "Room Hit",
   "Graphs",
   "Skins",
