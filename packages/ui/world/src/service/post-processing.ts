@@ -12,7 +12,6 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { getNpcOutline } from "./npc-outline";
 
 export type PostProcessing = {
   /**
@@ -24,12 +23,8 @@ export type PostProcessing = {
   /**
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
-   * @param npc the pass's `npcMask` and `depth`, whence the npc outlines — `null` draws none
    */
-  apply(
-    sceneColor: THREE.TextureNode,
-    npc: null | { mask: THREE.TextureNode; depth: THREE.TextureNode },
-  ): THREE.Node<"vec4">;
+  apply(sceneColor: THREE.TextureNode): THREE.Node<"vec4">;
   /** The camera the frame was drawn with, and where the player stands. Call every frame */
   update(camera: THREE.Camera, at: null | { x: number; z: number }): void;
   /** Whether the horizon is drawn at all. A uniform, so it costs no rebuild to change */
@@ -82,7 +77,7 @@ export function createPostProcessing(): PostProcessing {
       fade.value = fadeEnabled === true && at !== null ? 1 : 0;
     },
 
-    apply(sceneColor, npc) {
+    apply(sceneColor) {
       return Fn(() => {
         // The camera is the origin in view space, so a point on the ray IS its direction. Where it
         // meets the ground is where this pixel counts as standing — a wall is as near as the floor
@@ -120,20 +115,8 @@ export function createPostProcessing(): PostProcessing {
 
         // What the world amounts to at this pixel, PREMULTIPLIED — colour already scaled by the
         // coverage beside it, which is what makes the composite below a plain sum
-        const world = sceneColor.rgb.mul(drawn).toVar();
-        const coverage = drawn.toVar();
-
-        if (npc !== null) {
-          // The npc outline is a layer of its own, laid over the world before the backdrop rather
-          // than mixed into the scene colour: it is drawn here rather than in the scene, so nothing
-          // has claimed coverage where it falls on a gap in the floor. Source-over, so a
-          // part-transparent border shows the floor through it and the stripes through it alike
-          const edge = getNpcOutline(npc.mask, npc.depth);
-          const edgeAlpha = edge.a;
-          const behind = edgeAlpha.oneMinus();
-          world.assign(edge.rgb.mul(edgeAlpha).add(world.mul(behind)));
-          coverage.assign(edgeAlpha.add(coverage.mul(behind)));
-        }
+        const world = sceneColor.rgb.mul(drawn);
+        const coverage = drawn;
 
         // `world` is premultiplied, so it goes in as it is rather than through the `mix`
         return vec4(backdrop.mul(coverage.mul(alpha).oneMinus()).add(world.mul(alpha)), 1);

@@ -11,7 +11,7 @@ import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
-import { float, instanceIndex, mrt, output, pass, select, uniform, vec4 } from "three/tsl";
+import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   cameraFov,
@@ -26,7 +26,6 @@ import {
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
-import { createNpcMaskBlend } from "../service/npc-outline";
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
@@ -88,11 +87,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       obstaclesLit: uniform(saved.obstaclesLit === true ? 1 : 0),
       objectPickScale: 0.5, // don't pick walls by default
-      pickRT: createPickRT(1),
-      npcMaskMrt: null,
+      pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
       postFade: saved.postFade,
-      npcOutline: saved.npcOutline,
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
 
@@ -361,13 +358,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
-        // the npc material declares an extra output whilst outlining, so this pass needs the same
-        // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
-        renderer.setMRT(state.npcMaskMrt);
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
         state.objectPick.value = 0;
-        renderer.setMRT(null);
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
@@ -411,14 +404,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
           ...point, // can provide as point with meta
         });
-      },
-      syncPickRT() {
-        // `RenderTarget` attachments must match what the materials output — see `pickObject`
-        const count = state.npcMaskMrt === null ? 1 : 2;
-        if (state.pickRT.textures.length !== count) {
-          state.pickRT.dispose();
-          state.pickRT = createPickRT(count);
-        }
       },
       setupDom() {
         const ro = new ResizeObserver(([entry]) => {
@@ -637,11 +622,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // it has nothing to draw into otherwise, so asking for it asks for the pass as well
         next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
       },
-      setNpcOutlineEnabled(next = !state.npcOutline) {
-        state.npcOutline = next;
-        store.patch({ npcOutline: next });
-        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
-      },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
         store.patch({ postProcessing: next });
@@ -652,51 +632,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const scenePass = pass(scene, camera);
         state.postFx.setFadeEnabled(state.postFade); // a fresh effect starts with it on
 
-        // The silhouette the npc outlines grow from — declared only whilst they are wanted, so
-        // turning them off costs the frame nothing rather than writing an attachment nobody reads.
-        // One node shared by this pass and the pick pass, so both compile the same shader variant —
-        // and `setMRT` must precede the pipeline, which precompiles the pass. Only npcs opt in, see
-        // `NPCs.tsx`.
-        // BLENDED, which no MRT output but `output` itself is by default — every other fragment
-        // REPLACES what is there, and the walls (`renderOrder` 4 against the npcs' 0, both
-        // transparent) were wiping the mask of anyone behind them. Solid geometry still occludes,
-        // drawing BEFORE the npcs so that no mask is written behind it at all
-        if (state.npcOutline === true) {
-          state.npcMaskMrt = mrt({ output, npcMask: vec4(0, 0, 0, output.a) }).setBlendMode(
-            "npcMask",
-            createNpcMaskBlend(),
-          );
-          // three's `MRTNode.merge` puts the merged blend modes on `blendings`, which nothing
-          // reads — `getBlendMode` looks at `blendModes` — so the merge every material with an
-          // `mrtNode` of its own goes through (i.e. every npc, see `NPCs.createMaterials`) drops
-          // the blend above and leaves `npcMask` unblended. Put back here rather than worked
-          // around downstream, so the attachment means the same thing whoever wrote it
-          const originalMerge = state.npcMaskMrt.merge.bind(state.npcMaskMrt);
-          state.npcMaskMrt.merge = (other: THREE.MRTNode) => {
-            const merged = originalMerge(other);
-            merged.blendModes = { ...state.npcMaskMrt?.blendModes, ...other.blendModes };
-            return merged;
-          };
-          scenePass.setMRT(state.npcMaskMrt);
-        } else {
-          state.npcMaskMrt = null;
-        }
-        state.syncPickRT();
-        w.npc?.syncOutlineMask();
-
-        const sceneColor = scenePass.getTextureNode("output");
-
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = state.postFx.apply(
-          sceneColor,
-          state.npcMaskMrt === null
-            ? null
-            : {
-                mask: scenePass.getTextureNode("npcMask"),
-                // raw logarithmic depth — `getNpcOutline` does its own log-depth inversion
-                depth: scenePass.getTextureNode("depth"),
-              },
-        );
+        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"));
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -714,9 +651,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return () => {
           gl.render = originalRender;
           pipeline.dispose();
-          state.npcMaskMrt = null;
-          state.syncPickRT();
-          w.npc?.syncOutlineMask();
           state.forceUpdate();
         };
       },
@@ -896,10 +830,6 @@ export type State = {
     rightPress: boolean;
   };
   pickRT: THREE.RenderTarget;
-  /** Non-null whilst post-processing runs, when npc materials write an extra `npcMask` output */
-  npcMaskMrt: null | ReturnType<typeof mrt>;
-  /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
-  syncPickRT(): void;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<"float", number>;
   /** What the player can see, swept on the GPU — every material tints itself by it */
@@ -921,7 +851,6 @@ export type State = {
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player */
   postFade: boolean;
-  npcOutline: boolean;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -997,7 +926,6 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   /** Toggles that fade, turning the pass itself on if it is off */
   setPostFadeEnabled(next?: boolean): void;
-  setNpcOutlineEnabled(next?: boolean): void;
   setupPostProcessing(): () => void;
 };
 
@@ -1050,18 +978,8 @@ const centreHintSecs = 4;
 const centreHintSmall = 0.6;
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
-/**
- * `MRTNode` maps its entries onto attachments by texture *name* (see `getTextureIndex`), which
- * `PassNode` sets for us but a hand-made target does not — leave them unnamed and the pick
- * colour never reaches attachment 0.
- */
-function createPickRT(count: 1 | 2) {
-  const renderTarget = new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat, count });
-  renderTarget.textures[0].name = "output";
-  if (renderTarget.textures[1]) {
-    renderTarget.textures[1].name = "npcMask";
-  }
-  return renderTarget;
+function createPickRT() {
+  return new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat });
 }
 
 function defaultInitialCamera(): State["initial"] {
@@ -1108,7 +1026,7 @@ function PostProcessing() {
   const w = useContext(WorldContext);
   // the pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
   // `reset` gives us one on hmr, and the uid is how we notice
-  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid, w.view.npcOutline]);
+  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid]);
   return null;
 }
 

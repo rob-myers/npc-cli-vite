@@ -143,9 +143,6 @@ export const MAX_DECOR_QUAD_INSTANCES = 1024;
 
 export const npcScale = 0.7;
 
-/** Silhouette drawn just outside every npc — what `npc.outlineColor` starts at */
-export const npcOutlineColor = "#555";
-
 export const MAX_NPCS = 256;
 /** Per-world cap on doors, sizing `Doors`' instanced mesh and `service/player-light`'s buffers */
 export const MAX_DOORS = 512;

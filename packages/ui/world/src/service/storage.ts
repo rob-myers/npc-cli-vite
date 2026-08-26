@@ -33,8 +33,7 @@ export type WorldSettings = {
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   postFade: boolean;
-  /** Whether the post pass borders the npcs — see `service/npc-outline` */
-  npcOutline: boolean;
+  /** Toggle doors via picking e.g. switches */
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
   pickDoors: boolean;
@@ -57,9 +56,8 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   postFade: true,
-  npcOutline: true,
   pickOpenDoors: true,
-  pickDoors: true,
+  pickDoors: false,
   obstaclesLit: false,
   gmGraphsFilter: "room",
   menuY: 40,
