@@ -184,7 +184,12 @@ export default function NPCs() {
         const maskMrt = mrt({
           npcMask: (select as SelectAnyType)(
             isMain,
-            vec4(1, outlinePack.x, outlinePack.y, colorScale.mul(fold)),
+            // PREMULTIPLIED, against an alpha of `1` — which under the blend is a replace, and the
+            // npc must replace rather than accumulate: an arm passing over the torso writes the
+            // mask twice, and blending sums it, so a half-faded npc came out lumpy along every
+            // limb that overlaps them. At full coverage the sum saturates and nothing shows, which
+            // is why only a fade ever revealed it
+            vec4(vec3(1, outlinePack.x, outlinePack.y).mul(colorScale).mul(fold), 1),
             vec4(0, 0, 0, 0),
           ),
         });
