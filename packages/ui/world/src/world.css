@@ -23,31 +23,6 @@
 }
 
 /*
- * The last rendered frame, held over the canvas whilst the next map loads and its floor is
- * drawn beneath — see `freezeCanvas`. Fading it out cross-fades to that new world, so the
- * switch is a genuine transition rather than a wait on black.
- */
-.world-freeze {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  /* `auto` whilst up, so the camera cannot be driven around an unseen world */
-  pointer-events: var(--world-freeze-events, none);
-  opacity: var(--world-freeze, 0);
-  transition: opacity var(--world-freeze-duration, 700ms) ease-in-out;
-}
-
-/* Over the held frame, and fading with it, so a slow map swap still looks alive */
-.world-spinner {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: var(--world-freeze, 0);
-  transition: opacity var(--world-freeze-duration, 700ms) ease-in-out;
-}
-
-/*
  * Over the canvas whilst the first map's floor arrives, so it fades up rather than appearing
  * whole. Above the canvas contents, unlike `--world-dim`, which is a layer of its background and
  * so cannot cover them. Opaque until then — see `veilCanvas`.
