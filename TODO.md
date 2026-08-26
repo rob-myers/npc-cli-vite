@@ -153,11 +153,12 @@
 
 - ✅ BUG rm: foo: only /home/* writable
 
-- improve between map consistency
-  - wrongly persisted locked doors on 301
-  - door should be initially open if npc in doorway
+- 🚧 improve between map consistency
+  - ✅ wrongly persisted locked doors on 301
+  - 🚧 door should be initially open if npc in doorway
 
-- remove background color related code including stripes
+- ✅ remove background color related code including stripes
+
 
 ## Other
 
