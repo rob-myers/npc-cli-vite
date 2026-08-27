@@ -90,6 +90,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
       postFade: saved.postFade,
+      fadeRooms: saved.fadeRooms,
       lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
@@ -616,9 +617,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.invalidate();
         }
       },
+      setFadeRoomsEnabled(next = !state.fadeRooms) {
+        state.fadeRooms = next;
+        store.patch({ fadeRooms: next });
+        state.syncPostFade();
+        state.forceUpdate();
+        w.menu?.update();
+      },
+      syncPostFade() {
+        // The two are alternatives rather than layers: the circle fades by distance from the
+        // player, the rooms by which room a thing stands in, and both at once would fade a room's
+        // far side for being far as well as for being out of view. So the rooms take precedence
+        state.postFx.setFadeEnabled(state.postFade === true && state.fadeRooms === false);
+      },
       setPostFadeEnabled(next = !state.postFade) {
         state.postFade = next;
-        state.postFx.setFadeEnabled(next);
+        state.syncPostFade();
         store.patch({ postFade: next });
         // it has nothing to draw into otherwise, so asking for it asks for the pass as well
         next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
@@ -637,7 +651,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
-        state.postFx.setFadeEnabled(state.postFade); // a fresh effect starts with it on
+        state.syncPostFade(); // a fresh effect starts with the fade on, whatever it should be
 
         const pipeline = new THREE.RenderPipeline(gl);
         pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"));
@@ -858,6 +872,8 @@ export type State = {
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player */
   postFade: boolean;
+  /** Whether the world is shown by ROOM rather than faded on a circle about the player */
+  fadeRooms: boolean;
   lightNpcs: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
@@ -934,6 +950,10 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   /** Toggles that fade, turning the pass itself on if it is off */
   setPostFadeEnabled(next?: boolean): void;
+  /** Whether the world is shown by room, which for now only means the circle is off */
+  setFadeRoomsEnabled(next?: boolean): void;
+  /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
+  syncPostFade(): void;
   setupPostProcessing(): () => void;
   /** Whether a long press on an npc lights them up */
   setLightNpcsEnabled(next?: boolean): void;

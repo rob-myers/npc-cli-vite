@@ -161,7 +161,11 @@
 
 - 🚧 unclear how to light npcs "behind the scenes"
   - ✅ can explicitly light npc via debug option + long-press
-  - 🚧 try extend postFx circular cut out with "used rooms"
+  - ✅ try extend postFx circular cut out with "used rooms"
+  - ✅ fade boundary -- also fixes "ray beyond rooms"
+  - 🚧 maybe include rooms with an npc
+  - 🚧 maybe include neighouring rooms
+  - 🚧 fade in/out over time
 
 
 ## Other

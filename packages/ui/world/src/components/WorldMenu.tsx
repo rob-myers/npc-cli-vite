@@ -233,6 +233,8 @@ export function WorldMenu() {
         return w.view.objectPick?.value === 1;
       case "Post FX":
         return w.view.postProcessing ?? false;
+      case "Fade Rooms":
+        return w.view.fadeRooms ?? false;
       case "Light npcs":
         return w.view.lightNpcs?.value === 1;
       case "Colliders":
@@ -266,6 +268,10 @@ export function WorldMenu() {
         break;
       case "Post FX":
         w.view.setPostProcessingEnabled();
+        state.update();
+        break;
+      case "Fade Rooms":
+        w.view.setFadeRoomsEnabled();
         state.update();
         break;
       case "Light npcs":
@@ -1165,6 +1171,7 @@ const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",
+  "Fade Rooms",
   "Light npcs",
   "Room Hit",
   "Graphs",
