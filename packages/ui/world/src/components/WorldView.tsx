@@ -30,6 +30,7 @@ import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geome
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
+import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -86,6 +87,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       playerLight: createPlayerLight(),
       postFx: createPostProcessing(),
       fadeRoomsFx: createFadeRooms(saved.fadeRooms),
+      roomSlots: createRoomSlots(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       obstaclesLit: uniform(saved.obstaclesLit === true ? 1 : 0),
       objectPickScale: 0.5, // don't pick walls by default
@@ -93,6 +95,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       postProcessing: saved.postProcessing,
       postFade: saved.postFade,
       fadeRooms: saved.fadeRooms,
+      fadeRoomOutlines: saved.fadeRoomOutlines,
       lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
@@ -410,6 +413,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
       },
       setupDom() {
+        if (veiled() === false) {
+          w.rootEl.style.setProperty("--world-veil-duration", "0ms");
+          w.rootEl.style.setProperty("--world-veil", "0");
+        }
+
         const ro = new ResizeObserver(([entry]) => {
           // only trigger when visible
           entry.contentRect.width && state.onResize();
@@ -598,6 +606,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       veilCanvas(opaque, durationMs = veilMs) {
+        setVeiled(opaque); // so a fresh root element can be given it back — see `setupDom`
         w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
         w.rootEl?.style.setProperty("--world-veil", `${opaque ? 1 : 0}`);
         return pause(durationMs);
@@ -621,10 +630,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setFadeRoomsEnabled(next = !state.fadeRooms) {
         state.fadeRooms = next;
-        state.fadeRoomsFx.enabled.value = next === true ? 1 : 0;
+        state.fadeRoomsFx.enabled = next;
         store.patch({ fadeRooms: next });
-        next === true && state.fadeRoomsFx.sync(w);
+        // either way: switching it OFF sends every room back towards fully shown, which is a fade
+        // of its own rather than a snap
+        state.fadeRoomsFx.sync(w);
         state.syncPostFade();
+        state.forceUpdate();
+        w.menu?.update();
+      },
+      setFadeRoomOutlines(next = !state.fadeRoomOutlines) {
+        state.fadeRoomOutlines = next;
+        state.fadeRoomsFx.outlines.value = next === true ? 1 : 0;
+        store.patch({ fadeRoomOutlines: next });
         state.forceUpdate();
         w.menu?.update();
       },
@@ -721,7 +739,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 
   // the rooms are read off whatever map is up now
-  useEffect(() => void (w.gms.length > 0 && state.fadeRoomsFx.sync(w)), [w.gmsHash]);
+  useEffect(() => {
+    if (w.gms.length === 0) return;
+    state.fadeRoomsFx.outlines.value = state.fadeRoomOutlines === true ? 1 : 0;
+    state.fadeRoomsFx.sync(w);
+  }, [w.gmsHash]);
 
   const [ref, bounds] = useMeasure({ offsetSize: true }); // integers, as for the canvas below
   state.bounds = bounds;
@@ -848,6 +870,7 @@ export type State = {
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
   ctrlOpts: MapControlsProps;
+  /** Avoid HMR veil */
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
   lastPointer: {
@@ -867,6 +890,8 @@ export type State = {
   postFx: PostProcessingType;
   /** Which rooms the world is shown in — see `service/fade-rooms` */
   fadeRoomsFx: FadeRooms;
+  /** Which room every part of the world stands in — see `service/room-slots` */
+  roomSlots: RoomSlots;
   /**
    * `1` whilst doors take part in picking, `0` whilst they discard themselves out of it — the
    * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it
@@ -884,6 +909,8 @@ export type State = {
   postFade: boolean;
   /** Whether the world is shown by ROOM rather than faded on a circle about the player */
   fadeRooms: boolean;
+  /** Whether the rooms in view are outlined over the finished frame */
+  fadeRoomOutlines: boolean;
   lightNpcs: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
@@ -962,6 +989,7 @@ export type State = {
   setPostFadeEnabled(next?: boolean): void;
   /** Whether the world is shown by room, which for now only means the circle is off */
   setFadeRoomsEnabled(next?: boolean): void;
+  setFadeRoomOutlines(next?: boolean): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
   syncPostFade(): void;
   setupPostProcessing(): () => void;
@@ -1016,6 +1044,23 @@ const freezeFadeMs = 700;
 /** How long the offer to centre on the player is up for, fade and all, and how small it starts */
 const centreHintSecs = 4;
 const centreHintSmall = 0.6;
+
+/**
+ * Whether the canvas is veiled.
+ *
+ * Kept on `hot.data` rather than in the state: an hmr can recreate the state AND the root element
+ * together, and a plain field would come back `true` — veiled, with nothing left to lift it. A full
+ * reload clears `hot.data`, which is right, since that genuinely does start behind the veil.
+ * `veiledFallback` is where it lives in production, `import.meta.hot` being a dev thing
+ */
+function veiled(): boolean {
+  return (import.meta.hot?.data.__WORLD_VEILED__ ?? veiledFallback) === true;
+}
+function setVeiled(next: boolean): void {
+  veiledFallback = next;
+  if (import.meta.hot !== undefined) import.meta.hot.data.__WORLD_VEILED__ = next;
+}
+let veiledFallback = true;
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
 function createPickRT() {

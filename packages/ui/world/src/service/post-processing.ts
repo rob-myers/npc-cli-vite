@@ -113,10 +113,14 @@ export function createPostProcessing(): PostProcessing {
         const stripe = step(alongStripe, stripeWidthPx / stripePeriodPx).mul(stripeAlpha);
         const backdrop = mix(backdropColor, stripeColor, stripe);
 
-        // ANY coverage counts as world, so a half-transparent door reads solid against the
-        // backdrop and gives way only as the horizon dissolves it. Smoothstep rather than a step,
-        // to keep the silhouettes MSAA resolved into partial alpha from turning ragged
-        const drawn = smoothstep(float(0), float(0.5), sceneColor.a);
+        // Coverage counts for MORE than it is, so a door at `defaultDoorOpacity` reads solid
+        // against the backdrop and gives way only as the world dissolves it. Smoothstep rather than
+        // a step, to keep silhouettes MSAA resolved into partial alpha from turning ragged.
+        //
+        // It saturates just short of full rather than at half: a room fading out under
+        // `service/fade-rooms` would otherwise be pinned solid for the first half of its fade and
+        // then drop away all at once, which reads as a snap rather than a fade
+        const drawn = smoothstep(float(0), float(coverageFull), sceneColor.a);
 
         // What the world amounts to at this pixel, PREMULTIPLIED — colour already scaled by the
         // coverage beside it, which is what makes the composite below a plain sum
@@ -135,6 +139,9 @@ export function createPostProcessing(): PostProcessing {
     },
   };
 }
+
+/** The coverage a fragment must carry to count as fully drawn — see `drawn` */
+const coverageFull = 0.85;
 
 /**
  * The horizon, in metres from the player across the ground: full opacity to `from`, dropping

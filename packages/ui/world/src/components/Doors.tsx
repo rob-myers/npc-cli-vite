@@ -21,6 +21,7 @@ import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHe
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import { getWorldMapStore } from "../service/storage";
 import { drawDoorLabelLayer } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -44,6 +45,9 @@ export default function Doors() {
       toInstanceId: [],
       fromInstanceId: {},
       openRatioArray: new Float32Array(MAX_DOORS),
+      // both rooms a door joins, so it is shown at the fuller of the two. Unused instances stand in
+      // no room at all — they carry a zero matrix and draw nothing, and must keep doing so
+      roomSlotsArray: new Float32Array(MAX_DOORS * 2).fill(alwaysShownSlot),
       /** Per-instance `[slideSign, frontLayer, backLayer]` */
       doorMetaArray: new Float32Array(MAX_DOORS * 3),
       /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
@@ -346,6 +350,12 @@ export default function Doors() {
 
             const instanceId = state.encodeGmDoorId(gmId, localId);
 
+            const [roomA, roomB] = (gm.doors[localId]?.roomIds ?? []).map((x) =>
+              typeof x === "number" ? slotOf(gmId, x) : alwaysShownSlot,
+            );
+            state.roomSlotsArray[instanceId * 2] = roomA ?? alwaysShownSlot;
+            state.roomSlotsArray[instanceId * 2 + 1] = roomB ?? alwaysShownSlot;
+
             const sd = gm.doors[localId]?.meta?.slide;
             if (Array.isArray(sd)) {
               tmpV1.set(sd[0], sd[1]);
@@ -500,7 +510,9 @@ export default function Doors() {
 
   // BoxGeometry groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z (front), 5 -z (back)
   const materials = useMemo(() => {
-    const edge = new THREE.MeshStandardNodeMaterial({ color: doorEdgeColor });
+    // `alphaToCoverage` for the same reason the panels have it, and so its own fade can be seen:
+    // an opaque material ignores opacity outright
+    const edge = new THREE.MeshStandardNodeMaterial({ color: doorEdgeColor, alphaToCoverage: true });
 
     // see-through by COVERAGE rather than by blending: doors are one instanced mesh, so three can
     // only sort them as a single object, and blended panels would draw in instance order and show
@@ -535,10 +547,14 @@ export default function Doors() {
       })();
     }
 
+    // a door belongs to the rooms on both sides, and is shown at the fuller of the two
+    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
+
     for (const mat of [front, back]) {
       // full whilst picking, else a door could be picked through the samples coverage drops
-      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity), float(1));
+      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity), float(1)).mul(fade);
     }
+    edge.opacityNode = fade;
 
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
@@ -565,7 +581,7 @@ export default function Doors() {
     return output;
     // `TexArray.resize` recreates `tex`, disposing the one these nodes captured — so the
     // materials must be rebuilt when it does, as `Decor.tsx` does via its query key
-  }, [w.view.playerLight.uid]);
+  }, [w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
   useEffect(() => {
     if (import.meta.hot?.data.__JUST_HMR_DOORS__ === true) {
@@ -593,6 +609,7 @@ export default function Doors() {
     >
       <instancedBufferAttribute attach="geometry-attributes-openRatio" args={[state.openRatioArray, 1]} />
       <instancedBufferAttribute attach="geometry-attributes-doorMeta" args={[state.doorMetaArray, 3]} />
+      <instancedBufferAttribute attach="geometry-attributes-roomSlots" args={[state.roomSlotsArray, 2]} />
     </instancedMesh>
   );
 }
@@ -618,6 +635,8 @@ export type State = {
   /** Bumped by an hmr of this file, so the effect below re-runs — see `__JUST_HMR_DOORS__` */
   lastHmr: number;
   openRatioArray: Float32Array;
+  /** Per instance, the slots of the two rooms it joins — see `service/room-slots` */
+  roomSlotsArray: Float32Array;
   /** Per-instance `[slideSign, frontLayer, backLayer]` */
   doorMetaArray: Float32Array;
   /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */

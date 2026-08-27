@@ -18,6 +18,7 @@ import {
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
+import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
 import { type Npc, rejectNoop } from "./npc";
 import type { State as WorldState } from "./World";
@@ -459,7 +460,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (state.roomToNpcs[e.gmRoomId.gmId]) {
               (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
             }
-            npc.key === w.player.key && state.syncFadeRooms();
+            state.syncFadeRooms();
 
             break;
           }
@@ -493,9 +494,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             state.npcToRoom.set(npc.key, { ...e.gmRoomId });
             (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(e.npcKey);
-            // a spawn is how the player ARRIVES somewhere: `fadeSpawn` and teleports land here
-            // rather than at `enter-room`, which only fires for one who walked there
-            npc.key === w.player.key && state.syncFadeRooms();
+            // a spawn is how an npc ARRIVES somewhere: `fadeSpawn` and teleports land here rather
+            // than at `enter-room`, which only fires for one who walked there
+            state.syncFadeRooms();
 
             break;
           }
@@ -824,8 +825,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       syncFadeRooms() {
-        // only whilst it is on: nothing else reads the rooms it collects
-        if (w.view.fadeRooms === false) return;
+        // Every npc, not just the player: an npc MOVES between rooms, so where they stand is a
+        // uniform of their own rather than an attribute fixed when the map loaded
+        for (const npc of Object.values(w.n)) {
+          const at = state.npcToRoom.get(npc.key);
+          npc.roomSlot.value = at === undefined ? alwaysShownSlot : slotOf(at.gmId, at.roomId);
+        }
         w.view.fadeRoomsFx.sync(w);
         w.view.forceUpdate();
       },

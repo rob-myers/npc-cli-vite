@@ -3,6 +3,7 @@ import { Mat, Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { useContext, useEffect, useMemo } from "react";
 import {
+  attribute,
   color,
   Discard,
   Fn,
@@ -20,6 +21,7 @@ import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createTwoSidedXyQuad, createXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -36,6 +38,9 @@ export default function Walls() {
       // geometry would put a second face in the very same plane for it to fight with
       hullOuterQuad: createXyQuad(),
       quad: createTwoSidedXyQuad(),
+      // its own, not `quad` shared: `roomSlots` lives on the GEOMETRY, so two meshes sharing one
+      // could not stand in different rooms
+      trimQuad: createTwoSidedXyQuad(),
 
       decodeInstanceId(instanceId: number) {
         let id = instanceId;
@@ -66,36 +71,49 @@ export default function Walls() {
       positionTrimInstances() {
         const { instTrim } = state;
         if (!instTrim) return;
+        const slots = ensureRoomSlots(
+          state.trimQuad,
+          w.gmsData.count.wall + w.gmsData.count.door + w.gmsData.count.window,
+        );
 
         // const color = new THREE.Color(w.getTheme().walls.color);
         const color = new THREE.Color("#222");
 
         let id = 0;
-        for (const [_gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
+        for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
           for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
             const wallH = typeof meta.h === "number" ? meta.h : wallHeight;
             const wallBase = typeof meta.y === "number" ? meta.y : 0;
+            state.setRoomSlots(slots, id, gmId, seg);
             instTrim.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilTrimHeight, wallBase + wallH - ceilTrimHeight),
             );
             instTrim.setColorAt(id++, color);
           }
-          for (const { seg } of w.gmsData.byKey[gmKey].doorSegs) {
+          // a connector's own trim takes the connector's rooms, which it already knows. These two
+          // walk exactly as `doorSegs` and `windowSegs` are built — one segment per door, but a
+          // window's whole outline — since the instances are counted from those
+          for (const { seg, roomIds } of w.gms[gmId].doors) {
+            state.setConnectorSlots(slots, id, gmId, roomIds);
             instTrim.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
             );
             instTrim.setColorAt(id++, color);
           }
-          for (const { seg } of w.gmsData.byKey[gmKey].windowSegs) {
-            instTrim.setMatrixAt(
-              id,
-              state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
-            );
-            instTrim.setColorAt(id++, color);
+          for (const { poly, roomIds } of w.gms[gmId].windows) {
+            for (const seg of poly.lineSegs) {
+              state.setConnectorSlots(slots, id, gmId, roomIds);
+              instTrim.setMatrixAt(
+                id,
+                state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
+              );
+              instTrim.setColorAt(id++, color);
+            }
           }
         }
+        slots.needsUpdate = true;
         instTrim.computeBoundingSphere();
         instTrim.instanceMatrix.needsUpdate = true;
         if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
@@ -139,15 +157,26 @@ export default function Walls() {
         ws.computeBoundingSphere();
         ws.instanceMatrix.needsUpdate = true;
       },
+      setRoomSlots(slots, instanceId, gmId, seg) {
+        const beside = w.view.roomSlots.roomsBeside(gmId, seg[0], seg[1]);
+        const [a, b] = beside === null ? [alwaysShownSlot, alwaysShownSlot] : beside.map((x) => slotOf(gmId, x));
+        slots.setXY(instanceId, a, b);
+      },
+      setConnectorSlots(slots, instanceId, gmId, roomIds) {
+        const [a, b] = roomIds.map((x) => (typeof x === "number" ? slotOf(gmId, x) : alwaysShownSlot));
+        slots.setXY(instanceId, a, b);
+      },
       positionInstances() {
         const { inst: ws } = state;
         if (!ws) return;
+        const slots = ensureRoomSlots(state.quad, w.gmsData.count.wall);
 
         let instanceId = 0;
         const color = new THREE.Color(w.getTheme().walls.color);
 
-        for (const [_gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
+        for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
           for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
+            state.setRoomSlots(slots, instanceId, gmId, seg);
             ws.setMatrixAt(
               instanceId,
               state.getWallMat(
@@ -163,6 +192,7 @@ export default function Walls() {
           }
         }
 
+        slots.needsUpdate = true;
         ws.computeBoundingSphere();
         ws.instanceMatrix.needsUpdate = true;
         if (ws.instanceColor) ws.instanceColor.needsUpdate = true;
@@ -174,6 +204,13 @@ export default function Walls() {
 
   const wallCount = w.gmsData.count.wall;
   const trimCount = wallCount + w.gmsData.count.door + w.gmsData.count.window;
+
+  // before the materials below, which read `roomSlots`: an attribute a shader names has to be on
+  // the geometry by the time it compiles, and `positionInstances` only fills it in an effect
+  useMemo(() => {
+    ensureRoomSlots(state.quad, wallCount);
+    ensureRoomSlots(state.trimQuad, trimCount);
+  }, [wallCount, trimCount]);
 
   const mat = useMemo(() => {
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
@@ -190,15 +227,19 @@ export default function Walls() {
     // tinted by what the player can see from where they stand — see `service/player-light`
     const colorNode = w.view.playerLight.applyLight(baseColorUniform.rgb);
 
+    // a wall belongs to the rooms on BOTH sides, and is shown at the fuller of the two — so a room
+    // in view keeps every wall that encloses it, whatever stands on the far side of them
+    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
+
     return {
       opacityUniform,
-      opacityNode: litOpacityNode,
+      opacityNode: litOpacityNode.mul(fade),
       colorNode,
       outputNode,
       baseColorUniform,
       uuid: crypto.randomUUID(),
     };
-  }, [wallCount]);
+  }, [wallCount, w.view.fadeRoomsFx.uid]);
 
   /**
    * The skin outside the hull: white with the grey hatch the hull floor carries — see `Floor`'s
@@ -253,10 +294,11 @@ export default function Walls() {
       transparent: true,
       depthWrite: false,
     });
-    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0));
+    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
+    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0)).mul(fade);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
-  }, [w.view.playerLight.uid]);
+  }, [w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
   useEffect(() => {
     state.positionInstances();
@@ -301,7 +343,7 @@ export default function Walls() {
         key={`${mat.uuid}-trim`}
         name="walls-along-ceiling"
         ref={state.ref("instTrim", bootstrapInstanceColor)}
-        args={[state.quad, trimMaterial, trimCount]}
+        args={[state.trimQuad, trimMaterial, trimCount]}
         renderOrder={4}
       />
     </>
@@ -315,6 +357,8 @@ export type State = {
   /** Its geometry: a single-winding quad, the material being `DoubleSide` */
   hullOuterQuad: THREE.BufferGeometry;
   instTrim: null | THREE.InstancedMesh;
+  /** The trim's own geometry — see `trimQuad` in the state */
+  trimQuad: THREE.BufferGeometry;
   /** How many of `instHullOuter`'s instances are in use */
   hullOuterCount: number;
   quad: THREE.BufferGeometry;
@@ -327,6 +371,20 @@ export type State = {
     height?: number,
     baseHeight?: number,
   ) => THREE.Matrix4;
+  /** Writes the rooms either side of a wall segment into its instance */
+  setRoomSlots: (
+    slots: THREE.InstancedBufferAttribute,
+    instanceId: number,
+    gmId: number,
+    seg: [Geom.Vect, Geom.Vect],
+  ) => void;
+  /** The same for a door or window, which knows its rooms already */
+  setConnectorSlots: (
+    slots: THREE.InstancedBufferAttribute,
+    instanceId: number,
+    gmId: number,
+    roomIds: (null | number)[],
+  ) => void;
   positionInstances: () => void;
   positionHullOuterInstances: () => void;
   positionTrimInstances: () => void;

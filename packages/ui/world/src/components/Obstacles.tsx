@@ -31,6 +31,7 @@ import type { StarShipSymbolSheetEntry } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -52,17 +53,24 @@ export default function Obstacles(_props: Props) {
       instanceCount: 0,
       toInstanceId: [],
       fromInstanceId: [],
+      roomSlotByInstanceId: [],
 
       buildInstanceIds() {
         state.toInstanceId = [];
         state.fromInstanceId = [];
+        state.roomSlotByInstanceId = [];
+        const roomIdsByGmKey: Partial<Record<Geomorph.StarShipGeomorphKey, (null | number)[]>> = {};
         let nextId = 0;
         for (const [gmId, gm] of w.gms.entries()) {
+          // avoid recompute roomId for multiple instances
+          const roomIds = (roomIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.roomIdOf(gmId, o)));
           state.toInstanceId[gmId] = [];
           for (const [obstacleId] of gm.obstacles.entries()) {
             if (nextId < MAX_OBSTACLE_QUAD_INSTANCES) {
+              const roomId = roomIds[obstacleId];
               state.toInstanceId[gmId][obstacleId] = nextId;
               state.fromInstanceId[nextId] = { gmId, obstacleId };
+              state.roomSlotByInstanceId[nextId] = roomId === null ? alwaysShownSlot : slotOf(gmId, roomId);
             }
             nextId++;
           }
@@ -165,9 +173,24 @@ export default function Obstacles(_props: Props) {
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
         if (state.skirtInst?.instanceColor) state.skirtInst.instanceColor.needsUpdate = true;
       },
+      roomIdOf(gmId, { origPoly, transform }) {
+        // Where it stands, from its centre in the geomorph's OWN space — which is what `roomSlots`
+        // is drawn in, so the answer belongs to the LAYOUT and any instance of it may be asked.
+        //
+        // Not stamped onto `obstacle.meta` as `instantiateDecor` does for decor: `createLayoutInstance`
+        // spreads `...layout`, so two instances of one geomorph key share these metas — a `gmId`
+        // written there would be whichever went last. Hence the lookup by instance id instead
+        const { rect } = origPoly;
+        const at = tmpMat2.setMatrixValue(transform).transformPoint({
+          x: rect.x + rect.width / 2,
+          y: rect.y + rect.height / 2,
+        });
+        return w.view.roomSlots.roomAt(gmId, at);
+      },
       transformAndColorObstacles() {
         if (!state.inst) return;
         const { inst: obsInst } = state;
+        const slots = ensureRoomSlots(state.quad, MAX_OBSTACLE_QUAD_INSTANCES);
 
         obsInst.instanceMatrix.array.fill(0);
 
@@ -175,10 +198,14 @@ export default function Obstacles(_props: Props) {
           obstacles.forEach((o, obstacleId) => {
             const instanceId = state.encodeInstanceId(gmId, obstacleId);
             if (instanceId === null) return;
+            const slot = state.roomSlotByInstanceId[instanceId] ?? alwaysShownSlot;
+            slots.setXY(instanceId, slot, slot);
             obsInst.setColorAt(instanceId, tmpColor.set(o.meta.tint ?? defaultObstacleTint));
             obsInst.setMatrixAt(instanceId, state.createObstacleMatrix4([a, b, c, d, e, f], o));
           });
         });
+
+        slots.needsUpdate = true;
 
         // the mesh is sized for the worst case, so the rest would be drawn as degenerate quads
         obsInst.count = state.instanceCount;
@@ -186,12 +213,17 @@ export default function Obstacles(_props: Props) {
       },
       transformAndColorSkirts() {
         if (!state.skirtInst) return;
+        const slots = ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
         let sId = 0;
 
         state.skirtInst.instanceMatrix.array.fill(0);
 
-        for (const { obstacles, transform: gmTransform, determinant } of w.gms) {
-          for (const { origPoly, transform: obTransform, height, meta } of obstacles) {
+        for (const [gmId, { obstacles, transform: gmTransform, determinant }] of w.gms.entries()) {
+          for (const [obstacleId, obstacle] of obstacles.entries()) {
+            const { origPoly, transform: obTransform, height, meta } = obstacle;
+            // a skirt stands where its obstacle does, which was worked out in `buildInstanceIds`
+            const instanceId = state.encodeInstanceId(gmId, obstacleId);
+            const slot = (instanceId !== null && state.roomSlotByInstanceId[instanceId]) || alwaysShownSlot;
             // skirts support numeric meta.inset
             // 🔔 this may increase the number of edges ~ instances
             tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
@@ -210,6 +242,7 @@ export default function Obstacles(_props: Props) {
               const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
               const skirtDimY = typeof meta.h === 'number' ? meta.h : skirtDepth;
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
+              slots.setXY(sId, slot, slot);
               state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
               state.skirtInst.setMatrixAt(sId++,
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
@@ -219,6 +252,7 @@ export default function Obstacles(_props: Props) {
         }
 
         // state.skirtInst.instanceMatrix.needsUpdate = true;
+        slots.needsUpdate = true;
         state.skirtInst.computeBoundingSphere();
       },
     }),
@@ -238,14 +272,24 @@ export default function Obstacles(_props: Props) {
     const normalNode = transformNormalToView(vec3(0, 1, 0));
     const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
     return {
-      colorNode: mix(unlit, w.view.playerLight.applyLightRgba(unlit), w.view.obstaclesLit),
+      colorNode: w.view.fadeRoomsFx.applyFadeRgba(
+        mix(unlit, w.view.playerLight.applyLightRgba(unlit), w.view.obstaclesLit),
+        w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x),
+      ),
       normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),
     };
-  }, [w.texObs.hash, w.view.playerLight.uid]);
+  }, [w.texObs.hash, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
   useMemo(() => state.buildInstanceIds(), [w.mapKey, w.hash]);
+
+  // the materials above name `roomSlots`, so it must be on the geometry before they compile —
+  // the effects that fill it run later
+  useMemo(() => {
+    ensureRoomSlots(state.quad, MAX_OBSTACLE_QUAD_INSTANCES);
+    ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
+  }, []);
 
   const skirtCount = w.gmsData.count.obstacleSkirtEdges;
 
@@ -271,15 +315,17 @@ export default function Obstacles(_props: Props) {
   const skirtMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardNodeMaterial({
       side: THREE.FrontSide, // 1 draw call
+      transparent: true,
     });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
-    mat.colorNode = w.view.playerLight.applyLightRgba(
-      vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1),
+    mat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+      w.view.playerLight.applyLightRgba(vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1)),
+      w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x),
     );
     return mat;
-  }, [skirtLightMeta, w.view.playerLight.uid]);
+  }, [skirtLightMeta, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
   state.images =
     useQuery({
@@ -359,7 +405,7 @@ export default function Obstacles(_props: Props) {
           key={material.uid}
           side={THREE.FrontSide} // 1 draw call
           transparent
-          alphaTest={0.5}
+          alphaTest={0.1}
           colorNode={material.colorNode}
           outputNode={material.outputNode}
           normalNode={material.normalNode}
@@ -398,6 +444,8 @@ export type State = {
   toInstanceId: number[][];
   /** ...and back again, which is all a pick has to go on */
   fromInstanceId: { gmId: number; obstacleId: number }[];
+  /** Which room each instance stands in, worked out once per map — see `roomSlotOf` */
+  roomSlotByInstanceId: number[];
   /** Dense instance ids (`0..instanceCount-1`), rebuilt whenever the obstacles can change */
   buildInstanceIds(): number;
   addUvs(): void;
@@ -407,6 +455,8 @@ export type State = {
   decodeInstanceId(instanceId: number): Meta<{ gmId: number; obstacleId: number }>;
   /** `null` if this obstacle is past the cap and so has no instance */
   encodeInstanceId(gmId: number, obstacleId: number): null | number;
+  /** Which room an obstacle stands in — a property of the layout, not of the instance. See within */
+  roomIdOf(gmId: number, obstacle: Geomorph.LayoutObstacle): null | number;
   setBrightness(next: number): void;
   transformAndColorObstacles(): void;
   transformAndColorSkirts(): void;

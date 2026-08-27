@@ -35,6 +35,7 @@ import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } 
 import { addToDecorGrid, queryDecorGridRect, removeFromDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -59,6 +60,8 @@ export default function Decor() {
         materials: [],
         shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
         uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
+        // decor knows its own room, so both components carry it — see `service/room-slots`
+        roomSlots: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2).fill(alwaysShownSlot),
       },
 
       instRuntime: null as any,
@@ -71,6 +74,7 @@ export default function Decor() {
         materials: [],
         shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
         uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
+        roomSlots: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2).fill(alwaysShownSlot),
         count: 0,
       },
 
@@ -112,6 +116,16 @@ export default function Decor() {
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
         runtime.box.getAttribute("uvData").needsUpdate = true;
         runtime.box.getAttribute("shapeParams").needsUpdate = true;
+        runtime.box.getAttribute("roomSlots").needsUpdate = true;
+      },
+      writeRoomSlot(slots, id, decor) {
+        const { gmId, roomId } = decor.meta;
+        const slot =
+          typeof gmId === "number" && typeof roomId === "number" && roomId >= 0
+            ? slotOf(gmId, roomId)
+            : alwaysShownSlot;
+        slots[id * 2] = slot;
+        slots[id * 2 + 1] = slot;
       },
       clearGridAndRoomLookup() {
         Object.values(state.grid).forEach((col) => col.clear());
@@ -459,6 +473,7 @@ export default function Decor() {
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
         runtime.box.getAttribute("uvData").needsUpdate = true;
         runtime.box.getAttribute("shapeParams").needsUpdate = true;
+        runtime.box.getAttribute("roomSlots").needsUpdate = true;
       },
       tintDecor(colorRep, ...decorKeys) {
         for (const decorKey of decorKeys) {
@@ -476,6 +491,7 @@ export default function Decor() {
         if (w.disabled) w.view.forceUpdate();
       },
       writeRuntimeSlot(id, decor) {
+        state.writeRoomSlot(state.runtime.roomSlots, id, decor);
         if (decor.type === "rect") {
           const h0 = decor.points[0].distanceTo(decor.points[1]);
           const w0 = decor.points[1].distanceTo(decor.points[2]);
@@ -823,6 +839,7 @@ export default function Decor() {
             state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
           }
 
+          state.writeRoomSlot(state.static.roomSlots, instanceId, decor);
           state.static.decorKeyToId[decor.key] = instanceId;
           state.static.idToDecorKey[instanceId] = decor.key;
           state.static.shapeParams[instanceId * 3] = decor.type === "point" ? 1 : 0;
@@ -838,6 +855,7 @@ export default function Decor() {
       const geo = state.inst.geometry;
       geo.getAttribute("uvData").needsUpdate = true;
       geo.getAttribute("shapeParams").needsUpdate = true;
+      geo.getAttribute("roomSlots").needsUpdate = true;
       state.inst.instanceMatrix.needsUpdate = true;
       if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
 
@@ -854,18 +872,25 @@ export default function Decor() {
       // Shapes (shapeParams.x >= 2): colorNode=white so `output` carries instanceColor (set via setColorAt).
       // Quads/points: colorNode=atlas texture (unchanged behavior).
       const shapeKindAttr = attribute<"vec3">("shapeParams", "vec3").x;
+      // decor stands in one room, so both components of `roomSlots` carry it and `.x` will do
+      const fade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
+
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
       // tinted by what the player can see from where they stand — see `service/player-light`
-      texMat.colorNode = w.view.playerLight.applyLightRgba(
-        (select as SelectAnyType)(
-          shapeKindAttr.greaterThan(1.5),
-          vec4(1, 1, 1, 1),
-          texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-        ) as THREE.Node<"vec4">,
+      texMat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+        w.view.playerLight.applyLightRgba(
+          (select as SelectAnyType)(
+            shapeKindAttr.greaterThan(1.5),
+            vec4(1, 1, 1, 1),
+            texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+          ) as THREE.Node<"vec4">,
+        ),
+        fade,
       );
 
       // transparent icon can be hard to pick so permit pick any place on cuboid
       // hide non-top faces for flat instances (points, rects, circles)
+      plainBlackMaterial.opacityNode = fade; // the black sides of a cuboid go with its art
       plainBlackMaterial.outputNode = (select as SelectAnyType)(
         shapeKindAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
@@ -879,12 +904,15 @@ export default function Decor() {
       );
 
       const runtimeTexMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
-      runtimeTexMat.colorNode = w.view.playerLight.applyLightRgba(
-        (select as SelectAnyType)(
-          shapeKindAttr.greaterThan(1.5),
-          vec4(1, 1, 1, 1),
-          texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-        ) as THREE.Node<"vec4">,
+      runtimeTexMat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+        w.view.playerLight.applyLightRgba(
+          (select as SelectAnyType)(
+            shapeKindAttr.greaterThan(1.5),
+            vec4(1, 1, 1, 1),
+            texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+          ) as THREE.Node<"vec4">,
+        ),
+        fade,
       );
       runtimeTexMat.outputNode = buildShapeOutputNode(
         OBJECT_PICK_KEY_TO_RED.runtimeDecor,
@@ -897,6 +925,7 @@ export default function Decor() {
         color: "#000",
         transparent: true,
       });
+      runtimeBlackMat.opacityNode = fade;
       runtimeBlackMat.outputNode = (select as SelectAnyType)(
         shapeKindAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
@@ -942,6 +971,7 @@ export default function Decor() {
         >
           <instancedBufferAttribute attach="attributes-uvData" args={[state.static.uvData, 4]} />
           <instancedBufferAttribute attach="attributes-shapeParams" args={[state.static.shapeParams, 3]} />
+          <instancedBufferAttribute attach="attributes-roomSlots" args={[state.static.roomSlots, 2]} />
         </bufferGeometry>
       </instancedMesh>
 
@@ -961,6 +991,7 @@ export default function Decor() {
         >
           <instancedBufferAttribute attach="attributes-uvData" args={[state.runtime.uvData, 4]} />
           <instancedBufferAttribute attach="attributes-shapeParams" args={[state.runtime.shapeParams, 3]} />
+          <instancedBufferAttribute attach="attributes-roomSlots" args={[state.runtime.roomSlots, 2]} />
         </bufferGeometry>
       </instancedMesh>
     </>
@@ -986,6 +1017,8 @@ export type State = {
     materials: THREE.MeshStandardNodeMaterial[];
     uvData: Float32Array;
     shapeParams: Float32Array;
+    /** Per instance, the slot of the room the decor stands in — see `service/room-slots` */
+    roomSlots: Float32Array;
   };
 
   instRuntime: THREE.InstancedMesh;
@@ -998,6 +1031,8 @@ export type State = {
     materials: THREE.MeshStandardNodeMaterial[];
     uvData: Float32Array;
     shapeParams: Float32Array;
+    /** Per instance, the slot of the room the decor stands in — see `service/room-slots` */
+    roomSlots: Float32Array;
     count: number;
   };
 
@@ -1032,6 +1067,8 @@ export type State = {
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
   removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
   setupRuntimeInstances(): void;
+  /** Writes where a decor stands into `slots`, both components alike */
+  writeRoomSlot(slots: Float32Array, id: number, decor: Geomorph.Decor): void;
   writeRuntimeSlot(
     id: number,
     decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle,
