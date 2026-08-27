@@ -25,13 +25,14 @@ import {
   erodeWalkableArea,
   filterLedgeSpans,
   filterLowHangingWalkableObstacles,
-  filterWalkableLowHeightSpans, markWalkableTriangles,
+  filterWalkableLowHeightSpans,
+  markConvexPolyArea,
+  markWalkableTriangles,
   type NavMeshTileParams,
   polyMeshDetailToTileDetailMesh,
   polyMeshToTilePolys,
   rasterizeTriangles,
   WALKABLE_AREA,
-  markConvexPolyArea
 } from "navcat";
 import {
   chunkyTriMesh,
@@ -198,7 +199,7 @@ const buildCustomNavMeshTile = ({
     //   compactHeightfield,
     // );
     markConvexPolyArea(
-      door.tris.vs.flatMap(v => [v.x, 0, v.y]),
+      door.tris.vs.flatMap((v) => [v.x, 0, v.y]),
       0,
       walkableHeightVoxels * cellHeight,
       encodeDoorAreaId(door.gmId, door.doorId),

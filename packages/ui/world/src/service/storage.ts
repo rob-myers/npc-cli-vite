@@ -33,6 +33,8 @@ export type WorldSettings = {
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   postFade: boolean;
+  /** Whether the world is shown by ROOM rather than faded on a circle about the player */
+  fadeRooms: boolean;
   /** Whether a long press on an npc lights them up — see `Npc.setLit` */
   lightNpcs: boolean;
   /** Toggle doors via picking e.g. switches */
@@ -58,6 +60,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   postFade: true,
+  fadeRooms: false,
   lightNpcs: false,
   pickOpenDoors: true,
   pickDoors: false,
