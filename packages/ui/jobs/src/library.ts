@@ -27,7 +27,7 @@ export async function loadExamples(): Promise<Record<string, string>> {
 /** Tab order; unlisted files follow, alphabetically */
 const categoryOrder = [
   "tldr",
-  "behave",
+  "piped",
   "world",
   "shell"
 ];
