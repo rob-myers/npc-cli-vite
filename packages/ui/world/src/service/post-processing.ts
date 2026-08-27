@@ -12,6 +12,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import type { FadeRooms } from "./fade-rooms";
 
 export type PostProcessing = {
   /**
@@ -24,7 +25,11 @@ export type PostProcessing = {
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
    */
-  apply(sceneColor: THREE.TextureNode): THREE.Node<"vec4">;
+  /**
+   * @param rooms when given, their outlines are drawn over the finished frame whilst `enabled` —
+   * see `service/fade-rooms`
+   */
+  apply(sceneColor: THREE.TextureNode, rooms?: FadeRooms): THREE.Node<"vec4">;
   /** The camera the frame was drawn with, and where the player stands. Call every frame */
   update(camera: THREE.Camera, at: null | { x: number; z: number }): void;
   /** Whether the horizon is drawn at all. A uniform, so it costs no rebuild to change */
@@ -77,7 +82,7 @@ export function createPostProcessing(): PostProcessing {
       fade.value = fadeEnabled === true && at !== null ? 1 : 0;
     },
 
-    apply(sceneColor) {
+    apply(sceneColor, rooms) {
       return Fn(() => {
         // The camera is the origin in view space, so a point on the ray IS its direction. Where it
         // meets the ground is where this pixel counts as standing — a wall is as near as the floor
@@ -119,7 +124,13 @@ export function createPostProcessing(): PostProcessing {
         const coverage = drawn;
 
         // `world` is premultiplied, so it goes in as it is rather than through the `mix`
-        return vec4(backdrop.mul(coverage.mul(alpha).oneMinus()).add(world.mul(alpha)), 1);
+        const composed = backdrop.mul(coverage.mul(alpha).oneMinus()).add(world.mul(alpha));
+
+        // 🚧 debug: the outlines of the rooms in view, laid OVER the finished frame rather than
+        // into the world, so they read wherever they fall
+        if (rooms === undefined) return vec4(composed, 1);
+        const onEdge = smoothstep(float(roomEdgeWidth), float(0), rooms.distanceAt(worldXZ));
+        return vec4(mix(composed, roomEdgeColor, onEdge), 1);
       })();
     },
   };
@@ -133,6 +144,10 @@ const horizonFrom = 6.5;
 const horizonKnee = 7.25;
 const horizonKneeAlpha = 0.5;
 const horizonTo = 8.5;
+
+/** 🚧 debug: the room outlines — how wide the line is, in metres, and its ink */
+const roomEdgeWidth = 0.06;
+const roomEdgeColor = /* @__PURE__ */ vec3(1, 0.1, 0.1);
 
 /** What lies beyond the world: near-black, ruled with hairline diagonals */
 const backdropColor = vec3(0.0, 0.0, 0.0);

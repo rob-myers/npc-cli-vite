@@ -25,6 +25,7 @@ import {
   zoomSpeedMobile,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
+import { createFadeRooms, type FadeRooms } from "../service/fade-rooms";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
@@ -84,6 +85,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
       postFx: createPostProcessing(),
+      fadeRoomsFx: createFadeRooms(saved.fadeRooms),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       obstaclesLit: uniform(saved.obstaclesLit === true ? 1 : 0),
       objectPickScale: 0.5, // don't pick walls by default
@@ -619,7 +621,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setFadeRoomsEnabled(next = !state.fadeRooms) {
         state.fadeRooms = next;
+        state.fadeRoomsFx.enabled.value = next === true ? 1 : 0;
         store.patch({ fadeRooms: next });
+        next === true && state.fadeRoomsFx.sync(w);
         state.syncPostFade();
         state.forceUpdate();
         w.menu?.update();
@@ -654,7 +658,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.syncPostFade(); // a fresh effect starts with the fade on, whatever it should be
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"));
+        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -707,6 +711,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         initial: false,
         playerLight: false, // 🔔 `true` causes decor rebuild on hmr
         postFx: true,
+        fadeRoomsFx: true, // the pipeline captured its nodes, so a fresh pass wants a fresh one
       },
     },
   );
@@ -714,6 +719,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   w.view = state;
 
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
+
+  // the rooms are read off whatever map is up now
+  useEffect(() => void (w.gms.length > 0 && state.fadeRoomsFx.sync(w)), [w.gmsHash]);
 
   const [ref, bounds] = useMeasure({ offsetSize: true }); // integers, as for the canvas below
   state.bounds = bounds;
@@ -857,6 +865,8 @@ export type State = {
   playerLight: PlayerLight;
   /** What the post pass does to the finished frame — see `service/post-processing` */
   postFx: PostProcessingType;
+  /** Which rooms the world is shown in — see `service/fade-rooms` */
+  fadeRoomsFx: FadeRooms;
   /**
    * `1` whilst doors take part in picking, `0` whilst they discard themselves out of it — the
    * shader's side of `Debug`'s `pickDoors`, which owns the setting and persists it

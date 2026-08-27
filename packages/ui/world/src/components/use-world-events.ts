@@ -319,6 +319,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         switch (e.key) {
           case "door-open":
             state.doorOpen[e.gdKey] = true;
+            state.syncFadeRooms();
             break;
           case "door-opening": {
             const door = w.d[e.gdKey];
@@ -330,6 +331,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "door-closed":
             state.doorOpen[e.gdKey] = false;
+            state.syncFadeRooms();
             break;
           case "door-closing": {
             const door = w.d[e.gdKey];
@@ -457,6 +459,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (state.roomToNpcs[e.gmRoomId.gmId]) {
               (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
             }
+            npc.key === w.player.key && state.syncFadeRooms();
 
             break;
           }
@@ -490,6 +493,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             state.npcToRoom.set(npc.key, { ...e.gmRoomId });
             (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(e.npcKey);
+            // a spawn is how the player ARRIVES somewhere: `fadeSpawn` and teleports land here
+            // rather than at `enter-room`, which only fires for one who walked there
+            npc.key === w.player.key && state.syncFadeRooms();
 
             break;
           }
@@ -817,6 +823,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryCloseDoor(gdKey);
         }
       },
+      syncFadeRooms() {
+        // only whilst it is on: nothing else reads the rooms it collects
+        if (w.view.fadeRooms === false) return;
+        w.view.fadeRoomsFx.sync(w);
+        w.view.forceUpdate();
+      },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
         if (!door) return; // onchange map
@@ -964,6 +976,8 @@ export type State = {
    * starts closed, whereas an npc's saved position can be in a doorway they stopped in
    */
   openDoorwaysWithNpcs(): Promise<void>;
+  /** Re-reads which rooms the world is shown in — a door swinging, or the player moving room */
+  syncFadeRooms(): void;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };
