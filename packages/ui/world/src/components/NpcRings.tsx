@@ -1,20 +1,10 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
-import {
-  attribute,
-  cameraProjectionMatrix,
-  cameraViewMatrix,
-  float,
-  mix,
-  positionLocal,
-  smoothstep,
-  time,
-  uv,
-  vec4,
-} from "three/tsl";
+import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, time, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale, npcShadowRadius } from "../const";
 import { createXzQuad } from "../service/geometry";
+import { arrivedAt, type Morph, morphNode, retarget, settled } from "../service/morph";
 import { WorldContext } from "./world-context";
 
 export default function NpcRings() {
@@ -143,41 +133,9 @@ export default function NpcRings() {
   return <primitive object={state.ringMesh} />;
 }
 
-/**
- * A value on its way from `from` to `to`, having set off at `at` on `time`'s clock.
- *
- * The whole journey is a pure function of that clock, so the shader draws it by itself and there
- * is nothing here to step: no per-frame easing, nothing that moves at the rate the ticks happen
- * to arrive, and the same curve however few frames it is drawn over. All the cpu does is say where
- * a value is headed, and only when that changes.
- */
-export type Morph = { from: number; to: number; at: number };
-
-/** A `Morph` that has nowhere to go */
-function arrivedAt(value: number, now: number): Morph {
-  return { from: value, to: value, at: now };
-}
-
-/** Where a morph stands right now — the same curve `morphNode` draws in the shader */
-function morphAt(m: Morph, secs: number, now: number): number {
-  const along = Math.min(Math.max((now - m.at) / secs, 0), 1);
-  return m.from + (m.to - m.from) * along * along * (3 - 2 * along);
-}
-
-/**
- * Sends a morph off towards `wanted` from wherever it has got to, so a change of mind part way
- * across carries on from there rather than snapping back. A no-op if it is already headed there
- */
-function retarget(m: Morph, wanted: number, secs: number, now: number): void {
-  if (m.to === wanted) return;
-  m.from = morphAt(m, secs, now);
-  m.to = wanted;
-  m.at = now;
-}
-
 /** Whether a fade has run all the way out, and the ring it belongs to can go */
 function faded(fade: Morph, now: number): boolean {
-  return fade.to === 0 && now - fade.at >= ringFadeSecs;
+  return fade.to === 0 && settled(fade, ringFadeSecs, now);
 }
 
 export type Ring = { fade: Morph };
@@ -317,12 +275,6 @@ function createRingResources(
   ringMesh.frustumCulled = false;
 
   return { ringGeo, ringMat, ringMesh, ringData, ringBuffer };
-}
-
-/** Where a `Morph` packed as `[from, to, at]` stands now — the same curve `morphAt` reads */
-function morphNode(packed: THREE.Node<"vec3">, secs: number): THREE.Node<"float"> {
-  const along = time.sub(packed.z).div(secs).clamp(0, 1);
-  return mix(packed.x, packed.y, smoothstep(float(0), float(1), along));
 }
 
 /** How thick the drawn line is, in metres — the same weight whatever radius it is drawn at */

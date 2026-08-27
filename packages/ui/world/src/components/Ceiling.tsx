@@ -157,10 +157,13 @@ export default function Ceiling() {
       pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`
-      texNode: w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
+      texNode: w.view.fadeRoomsFx.applyFadeRgba(
+        w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
+        w.view.fadeRoomsFx.getVisiblity(w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex)),
+      ),
       uid: generateUUID(),
     };
-  }, [w.texCeil.hash, w.view.playerLight.uid]);
+  }, [w.texCeil.hash, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
   useEffect(() => {
     state.transformInstances();

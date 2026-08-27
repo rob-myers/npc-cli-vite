@@ -54,6 +54,7 @@ import {
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { alwaysShownSlot } from "../service/room-slots";
 import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/worker.store";
@@ -104,6 +105,7 @@ export default function NPCs() {
         const labelVisible = uniform(1, "float");
         const brightness = uniform(1);
         const npcLit = uniform(0);
+        const roomSlot = uniform(alwaysShownSlot, "float");
 
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
@@ -184,7 +186,12 @@ export default function NPCs() {
         const shaded = w.view.playerLight.applyLightRgba(mainColor);
         const ownLit = vec4(mainColor.rgb.mul(npcLitBoost), mainColor.a);
         const litAmount = npcLit.mul(w.view.lightNpcs);
-        material.colorNode = (select as any)(isLabel, labelColor, mix(shaded, ownLit, litAmount));
+        // the label goes with the body: it is a caption on something that is no longer shown
+        const fade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
+        material.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+          (select as any)(isLabel, labelColor, mix(shaded, ownLit, litAmount)),
+          fade,
+        );
         material.outputNode = (select as SelectAnyType)(
           isPickMode,
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
@@ -197,6 +204,7 @@ export default function NPCs() {
           labelVisible,
           labelYShiftUniform: labelYShift,
           npcLit,
+          roomSlot,
           skinIndexUniform,
           material,
         };
@@ -257,6 +265,7 @@ export default function NPCs() {
           // can overwrite materials while debugging
           const mat = state.createMaterials(npc.pickId, npc.skinIndex);
           mat.npcLit.value = npc.lit === true ? 1 : 0;
+          mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
           Object.assign(npc, mat);
 
           npc.init();
@@ -788,7 +797,14 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    "brightness" | "colorScale" | "labelVisible" | "labelYShiftUniform" | "npcLit" | "skinIndexUniform" | "material"
+    | "brightness"
+    | "colorScale"
+    | "labelVisible"
+    | "labelYShiftUniform"
+    | "npcLit"
+    | "roomSlot"
+    | "skinIndexUniform"
+    | "material"
   >;
   determineSpawnedAngle(opts: {
     /** Spawn destination */

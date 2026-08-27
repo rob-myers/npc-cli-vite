@@ -163,9 +163,12 @@
   - ✅ can explicitly light npc via debug option + long-press
   - ✅ try extend postFx circular cut out with "used rooms"
   - ✅ fade boundary -- also fixes "ray beyond rooms"
+  - ✅ fade in/out over time
+  - ✅ fade by instance rather than fragment
+    - much better performance
+  - 🚧 pick does not restrict by room
   - 🚧 maybe include rooms with an npc
   - 🚧 maybe include neighouring rooms
-  - 🚧 fade in/out over time
 
 
 ## Other

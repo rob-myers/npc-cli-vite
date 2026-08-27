@@ -235,6 +235,8 @@ export function WorldMenu() {
         return w.view.postProcessing ?? false;
       case "Fade Rooms":
         return w.view.fadeRooms ?? false;
+      case "Room Outlines":
+        return w.view.fadeRoomOutlines ?? false;
       case "Light npcs":
         return w.view.lightNpcs?.value === 1;
       case "Colliders":
@@ -272,6 +274,10 @@ export function WorldMenu() {
         break;
       case "Fade Rooms":
         w.view.setFadeRoomsEnabled();
+        state.update();
+        break;
+      case "Room Outlines":
+        w.view.setFadeRoomOutlines();
         state.update();
         break;
       case "Light npcs":
@@ -1172,6 +1178,7 @@ const debugItems = [
   "View Pick",
   "Post FX",
   "Fade Rooms",
+  "Room Outlines",
   "Light npcs",
   "Room Hit",
   "Graphs",

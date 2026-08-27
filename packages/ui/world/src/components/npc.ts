@@ -57,6 +57,7 @@ export class Npc {
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   /** `1` whilst they are lit up — see `setLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
+  roomSlot: THREE.UniformNode<"float", number>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
@@ -137,6 +138,7 @@ export class Npc {
     this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
+    this.roomSlot = init.roomSlot;
     this.material = init.material;
     this.pickId = init.pickId;
     this.position = init.position;
@@ -511,6 +513,7 @@ export type NpcInit = {
   labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
+  roomSlot: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   pickId: number;
   position: THREE.Vector3;

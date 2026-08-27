@@ -287,10 +287,13 @@ export default function Floor() {
       // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`
       // tinted by what the player can see from where they stand — see `service/player-light`
-      texNode: w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
+      texNode: w.view.fadeRoomsFx.applyFadeRgba(
+        w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
+        w.view.fadeRoomsFx.getVisiblity(w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex)),
+      ),
       uid: generateUUID(),
     };
-  }, [w.texFloor.hash, w.view.playerLight.uid]);
+  }, [w.texFloor.hash, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
   useEffect(() => {
     state.transformInstances();
