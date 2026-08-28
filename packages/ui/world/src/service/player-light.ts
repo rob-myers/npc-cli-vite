@@ -462,7 +462,7 @@ const unlitTint = 0.7;
 const coneAmount = 0.7;
 const coneFrom = lightRadius * 0.2;
 /** Its half angle, and how many degrees either side that is softened over — enough to antialias */
-const coneHalfDeg = 45;
+const coneHalfDeg = 60;
 const coneSoftDeg = 3;
 const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
 const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
