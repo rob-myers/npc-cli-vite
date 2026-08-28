@@ -283,19 +283,13 @@ export function createPlayerLight(): PlayerLight {
     // What is not ahead of them is DIMMED, though not within `coneFrom`: close in a fragment's
     // bearing swings about wildly, and dimming there reads as a shadow they are standing in.
     //
-    // Taken off `lit` rather than off the colour, so `unlitTint` is the floor for both — the cone
-    // can never go darker than somewhere the light simply does not reach, and the temperature
-    // below, which `lit` also scales, gives way along with it
+    // Taken off `lit` rather than off the colour, so `unlitTint` is the floor for both: the cone
+    // can never go darker than somewhere the light simply does not reach
     const held = smoothstep(float(0), float(coneFrom), fromPlayer);
     const lit = litAt(positionWorld.xz).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
     // towards black by `unlitTint`, written as the multiply it is rather than as a `mix` against a
     // colour the compiler would have to carry three zeroes for
-    const shaded = color.mul(float(1).sub(float(unlitTint).mul(strength).mul(lit.oneMinus())));
-
-    // and the cone takes a colour of its own, so it reads by more than the light it kept. Written
-    // as a shift off WHITE rather than as a `mix` towards the tint, which is the same thing —
-    // `1 + (tint - 1) * amount` — for one multiply instead of a mix and a multiply
-    return shaded.mul(vec3(1, 1, 1).add(coneShift.mul(cone.mul(lit).mul(strength))));
+    return color.mul(float(1).sub(float(unlitTint).mul(strength).mul(lit.oneMinus())));
   }
 
   /**
@@ -461,20 +455,17 @@ const lightFalloff = 6;
 /** How black an unseen fragment goes */
 const unlitTint = 0.7;
 /**
- * The cone they see best down — see `coneAt`. How much of the light is lost outside it, the colour
- * the light inside it takes, and how far out the dimming takes hold: nearer than that the ground
- * they stand on keeps its light whichever way they turn
+ * The cone they see best down — see `coneAt`. How much of the light is lost outside it, and how far
+ * out the dimming takes hold: nearer than that the ground they stand on keeps its light whichever
+ * way they turn
  */
 const coneAmount = 0.7;
-const coneTint = [0.96, 0.92, 1] as const;
 const coneFrom = lightRadius * 0.2;
 /** Its half angle, and how many degrees either side that is softened over — enough to antialias */
 const coneHalfDeg = 45;
-const coneSoftDeg = 1.5;
+const coneSoftDeg = 3;
 const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
 const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
-/** `coneTint` again as a shift off WHITE, which is what makes it one multiply — see `applyLight` */
-const coneShift = /* @__PURE__ */ vec3(coneTint[0] - 1, coneTint[1] - 1, coneTint[2] - 1);
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives
