@@ -2,6 +2,7 @@ import { warn } from "@npc-cli/util/legacy/generic";
 import { Break, Fn, float, If, int, Loop, min, time, uniform, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type DerivedGmsData from "./DerivedGmsData";
+import type { GmGraph } from "./gm-graph";
 import { helper } from "./helper";
 import { arrivedAt, morphNode, retarget } from "./morph";
 import { alwaysShownSlot, broadWallSlotOf, slotOf, totalRoomSlots } from "./room-slots";
@@ -38,6 +39,7 @@ export type FadeRooms = {
 type WorldLike = {
   gms: Geomorph.LayoutInstance[];
   gmsData: DerivedGmsData;
+  gmGraph: GmGraph;
   d: Record<string, Geomorph.DoorState>;
   player?: { key: string };
   e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
@@ -221,39 +223,56 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
  * it sweeps, and why this must follow them too.
  *
  * The walk carries on from each room it reaches: light through a door into the next room goes on
- * through THAT room's window into a third. Breadth-first, so the cap keeps the nearest rooms.
+ * through THAT room's window into a third, and through hull doors into the next geomorph
+ * altogether. Breadth-first, so the cap keeps the nearest rooms.
  *
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
- *
- * 🚧 hull doors join two GEOMORPHS, and are not followed here
  */
 function roomsInView(w: WorldLike): null | Geomorph.GmRoomId[] {
   const at = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
-  const gm = at && w.gms[at.gmId];
-  if (at === undefined || gm === undefined) return null;
+  if (at === undefined || w.gms[at.gmId] === undefined) return null;
 
-  const joins = Object.values(w.d)
-    .filter((door) => door.open === true && door.gmId === at.gmId)
-    .map((door) => door.connector)
-    .concat(gm.windows ?? []);
+  const openDoors = Object.values(w.d).filter((door) => door.open === true);
 
   const out = [at];
   const seen = new Set([at.grKey]);
   // `out` is both the answer and the queue — appending whilst walking it is what makes this
   // breadth-first, since a room's neighbours land after every room already found
   for (let i = 0; i < out.length && out.length < maxFadeRooms; i++) {
-    for (const connector of joins) {
-      const roomId = otherRoom(gm, connector, out[i].roomId);
-      if (roomId === null) continue;
-      const grKey = helper.getGmRoomKey(at.gmId, roomId);
-      if (seen.has(grKey) === true) continue;
-      seen.add(grKey);
-      if (out.push({ gmId: at.gmId, roomId, grKey }) >= maxFadeRooms) break;
+    for (const next of roomsJoining(w, out[i], openDoors)) {
+      if (seen.has(next.grKey) === true) continue;
+      seen.add(next.grKey);
+      if (out.push(next) >= maxFadeRooms) break;
     }
   }
 
   return out;
+}
+
+/** What `from` is joined to: through its own geomorph's open doors and windows, and across a hull door */
+function* roomsJoining(w: WorldLike, from: Geomorph.GmRoomId, openDoors: Geomorph.DoorState[]) {
+  const gm = w.gms[from.gmId];
+  if (gm === undefined) return;
+
+  for (const door of openDoors) {
+    if (door.gmId !== from.gmId) continue;
+    if (door.hull === true) {
+      // a hull door's far side lies in the NEXT geomorph, which its own `roomIds` cannot name — it
+      // reads `null` there, and only the graph joining the geomorphs knows what is through it
+      if (door.connector.roomIds.includes(from.roomId) === false) continue;
+      const adj = w.gmGraph.getAdjacentRoomCtxt(from.gmId, door.doorId);
+      if (adj !== null) yield helper.getGmRoomId(adj.adjGmId, adj.adjRoomId);
+      continue;
+    }
+    const roomId = otherRoom(gm, door.connector, from.roomId);
+    if (roomId !== null) yield helper.getGmRoomId(from.gmId, roomId);
+  }
+
+  for (const window of gm.windows ?? []) {
+    const roomId = otherRoom(gm, window, from.roomId);
+    if (roomId !== null) yield helper.getGmRoomId(from.gmId, roomId);
+  }
 }
 
 /**

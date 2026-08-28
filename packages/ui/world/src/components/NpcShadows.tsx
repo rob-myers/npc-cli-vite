@@ -1,5 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
-import { useContext, useEffect } from "react";
+import { useContext, useMemo } from "react";
 import {
   attribute,
   cameraProjectionMatrix,
@@ -12,7 +12,6 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcShadowRadius } from "../const";
-import type { FadeRooms } from "../service/fade-rooms";
 import { createXzQuad } from "../service/geometry";
 import type { SelectFloatType } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -22,7 +21,7 @@ export default function NpcShadows() {
 
   const state = useStateRef(
     (): State => ({
-      shadow: createShadowResources(w.view.objectPick, w.view.foldNode, w.view.fadeRoomsFx),
+      shadow: createShadowResources(w.view.objectPick, w.view.foldNode),
       onTick() {
         const { xzoData, xzoAttr, geo } = state.shadow;
 
@@ -39,16 +38,14 @@ export default function NpcShadows() {
         xzoAttr.needsUpdate = true;
       },
     }),
-    { reset: { shadow: true } },
+    { reset: { shadow: false } },
   );
 
-  useEffect(() => {
-    w.shadows = state;
-    return () => {
-      state.shadow.geo.dispose();
-      state.shadow.mat.dispose();
-    };
-  }, []);
+  w.shadows = state;
+
+  useMemo(() => {
+    state.shadow.mat.colorNode = state.shadow.colorNode.mul(w.view.fadeRoomsFx.getVisiblity(state.shadow.xzo.w));
+  }, [w.view.fadeRoomsFx.uid]);
 
   return <primitive object={state.shadow.mesh} />;
 }
@@ -61,7 +58,6 @@ export type State = {
 function createShadowResources(
   objectPick: THREE.UniformNode<"float", number>,
   fold: THREE.UniformNode<"float", number>,
-  fadeRooms: FadeRooms,
 ) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
@@ -96,12 +92,11 @@ function createShadowResources(
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   mat.vertexNode = clipPos;
-  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold` — and with the
-  // room they stand in, so a shadow is never left behind on a floor that has gone
-  mat.colorNode = vec4(0, 0, 0, alpha.mul(fold).mul(fadeRooms.getVisiblity(xzo.w)));
+
+  const colorNode = vec4(0, 0, 0, alpha.mul(fold));
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
 
-  return { geo, mat, mesh, xzoData, xzoAttr };
+  return { geo, mat, mesh, xzoData, xzoAttr, colorNode, xzo };
 }

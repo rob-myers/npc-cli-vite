@@ -1,9 +1,8 @@
 import { useStateRef } from "@npc-cli/util";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, time, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale, npcShadowRadius } from "../const";
-import type { FadeRooms } from "../service/fade-rooms";
 import { createXzQuad } from "../service/geometry";
 import { arrivedAt, type Morph, morphNode, retarget, settled } from "../service/morph";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
@@ -14,7 +13,7 @@ export default function NpcRings() {
 
   const state = useStateRef(
     (): State => ({
-      ...createRingResources(w.view.objectPick, w.view.foldNode, w.view.fadeRoomsFx),
+      ...createRingResources(w.view.objectPick, w.view.foldNode),
       spawnRingByNpc: new Map(),
       selectRingByNpc: new Map(),
 
@@ -145,18 +144,13 @@ export default function NpcRings() {
         }
       },
     }),
-    {
-      reset: {
-        // ringGeo: true,
-        // ringMat: true,
-        // ringMesh: true,
-        // ringData: true,
-        // ringBuffer: true,
-      },
-    },
   );
 
   w.rings = state;
+
+  useMemo(() => {
+    state.ringMat.colorNode = state.colorNode.mul(w.view.fadeRoomsFx.getVisiblity(state.roomSlot));
+  }, [w.view.fadeRoomsFx.uid]);
 
   return <primitive object={state.ringMesh} />;
 }
@@ -182,6 +176,10 @@ export type State = {
   spawnRingByNpc: Map<string, Ring & { x: number; y: number; z: number; roomSlot: number }>;
   /** Per-npc selection ring, which follows them until taken down — keyed by npcKey */
   selectRingByNpc: Map<string, Ring & { color: THREE.Color; radius: Morph }>;
+
+  colorNode: THREE.VarNode<"vec4", THREE.JoinNode<"vec4">>;
+  roomSlot: THREE.AttributeNode<"float">;
+
   onTick(): void;
   /** Writes one instance and returns the next free index — both maps share the buffers */
   writeRing(
@@ -256,8 +254,7 @@ const selectRingMorphSecs = 0.35;
 function createRingResources(
   objectPick: THREE.UniformNode<"float", number>,
   fold: THREE.UniformNode<"float", number>,
-  fadeRooms: FadeRooms,
-): Pick<State, "ringGeo" | "ringMat" | "ringMesh" | "ringData" | "ringBuffer"> {
+): Pick<State, "ringGeo" | "ringMat" | "ringMesh" | "ringData" | "ringBuffer" | "colorNode" | "roomSlot"> {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
@@ -303,14 +300,22 @@ function createRingResources(
 
   const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   ringMat.vertexNode = clipPos;
-  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold` — and with the
-  // room it stands in, so a ring is never left behind on a floor that has gone
-  ringMat.colorNode = vec4(rgba.xyz, alpha.mul(fold).mul(fadeRooms.getVisiblity(roomSlot)));
+
+  const colorNode = vec4(rgba.xyz, alpha.mul(fold));
 
   const ringMesh = new THREE.Mesh(ringGeo, ringMat);
   ringMesh.frustumCulled = false;
 
-  return { ringGeo, ringMat, ringMesh, ringData, ringBuffer };
+  return {
+    ringGeo,
+    ringMat,
+    ringMesh,
+    ringData,
+    ringBuffer,
+    //
+    colorNode,
+    roomSlot,
+  };
 }
 
 /** How thick the drawn line is, in metres — the same weight whatever radius it is drawn at */
