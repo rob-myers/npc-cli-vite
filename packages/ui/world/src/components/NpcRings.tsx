@@ -150,6 +150,7 @@ export default function NpcRings() {
 
   useMemo(() => {
     state.ringMat.colorNode = state.colorNode.mul(w.view.fadeRoomsFx.getVisiblity(state.roomSlot));
+    state.ringMat.needsUpdate = true;
   }, [w.view.fadeRoomsFx.uid]);
 
   return <primitive object={state.ringMesh} />;
