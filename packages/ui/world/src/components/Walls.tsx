@@ -7,7 +7,7 @@ import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, slotOf } from "../service/room-slots";
+import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -100,8 +100,12 @@ export default function Walls() {
         instTrim.instanceMatrix.needsUpdate = true;
         if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
       },
-      setSegSlots(slots, instanceId, gmId, { seg, broadWallId }) {
-        if (broadWallId === null) {
+      setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }) {
+        if (meta.hull === true) {
+          // the hull is the ship's outside, which fade mode has nothing behind — and
+          // `neverShownSlot` is 1 whilst the fade is off, so this costs nothing there
+          slots.setXY(instanceId, neverShownSlot, neverShownSlot);
+        } else if (broadWallId === null) {
           // non-broad-wall seg slots (x, y) are adjacent room slots
           const beside = w.view.roomSlots.roomsBeside(gmId, seg[0], seg[1]);
           const [a, b] = beside === null ? [alwaysShownSlot, alwaysShownSlot] : beside.map((x) => slotOf(gmId, x));
@@ -113,7 +117,10 @@ export default function Walls() {
         }
       },
       setConnectorSlots(slots, instanceId, gmId, roomIds) {
-        const [a, b] = roomIds.map((x) => (typeof x === "number" ? slotOf(gmId, x) : alwaysShownSlot));
+        // a missing side is `neverShownSlot`, NOT `alwaysShownSlot`: the pair is read as a max, so
+        // an always-shown side would win outright — which is what kept every HULL door showing,
+        // its other side lying in the neighbouring geomorph and so reading as `null` here
+        const [a, b] = roomIds.map((x) => (typeof x === "number" ? slotOf(gmId, x) : neverShownSlot));
         slots.setXY(instanceId, a, b);
       },
       positionInstances() {

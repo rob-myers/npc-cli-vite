@@ -21,7 +21,7 @@ import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHe
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { alwaysShownSlot, slotOf } from "../service/room-slots";
+import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import { getWorldMapStore } from "../service/storage";
 import { drawDoorLabelLayer } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -350,11 +350,14 @@ export default function Doors() {
 
             const instanceId = state.encodeGmDoorId(gmId, localId);
 
+            // a missing side is `neverShownSlot`, NOT `alwaysShownSlot`: the pair is read as a
+            // max, so an always-shown side would win outright — which is what kept every HULL door
+            // showing, its other side lying in the neighbouring geomorph and so reading as `null`
             const [roomA, roomB] = (gm.doors[localId]?.roomIds ?? []).map((x) =>
-              typeof x === "number" ? slotOf(gmId, x) : alwaysShownSlot,
+              typeof x === "number" ? slotOf(gmId, x) : neverShownSlot,
             );
-            state.roomSlotsArray[instanceId * 2] = roomA ?? alwaysShownSlot;
-            state.roomSlotsArray[instanceId * 2 + 1] = roomB ?? alwaysShownSlot;
+            state.roomSlotsArray[instanceId * 2] = roomA ?? neverShownSlot;
+            state.roomSlotsArray[instanceId * 2 + 1] = roomB ?? neverShownSlot;
 
             const sd = gm.doors[localId]?.meta?.slide;
             if (Array.isArray(sd)) {
