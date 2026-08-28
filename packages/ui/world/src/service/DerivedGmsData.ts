@@ -13,6 +13,8 @@ import { RoomGraph } from "./room-graph";
 import { getContext2d } from "./tex-array";
 
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
+/** How far outside a broad wall's edge to look for a room, in metres — see `roomsTouching` */
+const broadWallProbe = 0.05;
 
 /**
  * Editing this file triggers World query HMR, which instantiates latest DerivedGmsData.
@@ -65,7 +67,18 @@ export default class DerivedGmsData {
      */
     gmData.windowSegs = gm.windows.flatMap(({ poly }) => poly.lineSegs.map((seg) => ({ seg })));
     gmData.polyDecals = gm.unsorted.filter((x) => x.meta.poly === true);
-    gmData.wallSegs = gm.walls.flatMap((x) => x.lineSegs.map((seg) => ({ seg, meta: x.meta })));
+
+    const broadWallIdByWallId: number[] = [];
+    gmData.broadWalls = [];
+    gm.walls.forEach((poly, wallId) => {
+      if (poly.meta.broad !== true) return;
+      broadWallIdByWallId[wallId] = gmData.broadWalls.length;
+      gmData.broadWalls.push({ poly, roomIds: [] });
+    });
+
+    gmData.wallSegs = gm.walls.flatMap((x, wallId) =>
+      x.lineSegs.map((seg) => ({ seg, meta: x.meta, broadWallId: broadWallIdByWallId[wallId] ?? null })),
+    );
 
     gmData.wallPolyCount = gm.walls.length;
 
@@ -131,9 +144,37 @@ export default class DerivedGmsData {
       ];
     }
 
+    for (const broadWall of gmData.broadWalls) {
+      broadWall.roomIds = this.roomsTouching(gm, broadWall.poly);
+    }
+
     gmData.roomGraph = RoomGraph.from(gm, `${gm.key}: `);
 
     gmData.unseen = false;
+  }
+
+  /**
+   * Which rooms `poly` abuts, probed just outside each of its edges. A broad wall can touch many —
+   * it is a piece of the ship's structure, not a partition between one room and the next
+   */
+  roomsTouching(gm: Geomorph.Layout, poly: Geom.Poly): number[] {
+    const roomIds = new Set<number>();
+    for (const [u, v] of poly.lineSegs) {
+      const dx = v.x - u.x;
+      const dy = v.y - u.y;
+      const len = Math.hypot(dx, dy);
+      if (len === 0) continue; // else the probe below is NaN, which the canvas lookup throws on
+      const nx = (-dy / len) * broadWallProbe;
+      const ny = (dx / len) * broadWallProbe;
+      const mx = (u.x + v.x) / 2;
+      const my = (u.y + v.y) / 2;
+      // both sides, the winding not being something to rely on
+      for (const sign of [1, -1]) {
+        const roomId = this.findRoomIdContaining(gm, { x: mx + nx * sign, y: my + ny * sign });
+        if (roomId !== null) roomIds.add(roomId);
+      }
+    }
+    return Array.from(roomIds);
   }
 
   /**
@@ -182,6 +223,7 @@ export default class DerivedGmsData {
 function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
   return {
     gmKey,
+    broadWalls: [],
     doorSegs: [],
     unseen: true,
     wallSegs: [],

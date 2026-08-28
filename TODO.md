@@ -166,9 +166,11 @@
   - ✅ fade in/out over time
   - ✅ fade by instance rather than fragment
     - much better performance
+  - ✅ show broad walls whenever adjacent to visible room
   - 🚧 pick does not restrict by room
   - 🚧 maybe include rooms with an npc
   - 🚧 maybe include neighouring rooms
+  - doors issue for 301-101-301
 
 
 ## Other

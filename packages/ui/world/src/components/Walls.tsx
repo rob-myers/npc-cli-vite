@@ -7,7 +7,7 @@ import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
+import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -62,10 +62,11 @@ export default function Walls() {
 
         let id = 0;
         for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
-          for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
+          for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
+            const { seg, meta } = wallSeg;
             const wallH = typeof meta.h === "number" ? meta.h : wallHeight;
             const wallBase = typeof meta.y === "number" ? meta.y : 0;
-            state.setRoomSlots(slots, id, gmId, seg);
+            state.setSegSlots(slots, id, gmId, wallSeg);
             instTrim.setMatrixAt(
               id,
               state.getWallMat(seg, transform, determinant, ceilTrimHeight, wallBase + wallH - ceilTrimHeight),
@@ -99,10 +100,17 @@ export default function Walls() {
         instTrim.instanceMatrix.needsUpdate = true;
         if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
       },
-      setRoomSlots(slots, instanceId, gmId, seg) {
-        const beside = w.view.roomSlots.roomsBeside(gmId, seg[0], seg[1]);
-        const [a, b] = beside === null ? [alwaysShownSlot, alwaysShownSlot] : beside.map((x) => slotOf(gmId, x));
-        slots.setXY(instanceId, a, b);
+      setSegSlots(slots, instanceId, gmId, { seg, broadWallId }) {
+        if (broadWallId === null) {
+          // non-broad-wall seg slots (x, y) are adjacent room slots
+          const beside = w.view.roomSlots.roomsBeside(gmId, seg[0], seg[1]);
+          const [a, b] = beside === null ? [alwaysShownSlot, alwaysShownSlot] : beside.map((x) => slotOf(gmId, x));
+          slots.setXY(instanceId, a, b);
+        } else {
+          // broad-wall seg slots are (broadWallSlot, broadWallSlot)
+          const slot = broadWallSlotOf(gmId, broadWallId);
+          slots.setXY(instanceId, slot, slot);
+        }
       },
       setConnectorSlots(slots, instanceId, gmId, roomIds) {
         const [a, b] = roomIds.map((x) => (typeof x === "number" ? slotOf(gmId, x) : alwaysShownSlot));
@@ -117,8 +125,9 @@ export default function Walls() {
         const color = new THREE.Color(w.getTheme().walls.color);
 
         for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
-          for (const { seg, meta } of w.gmsData.byKey[gmKey].wallSegs) {
-            state.setRoomSlots(slots, instanceId, gmId, seg);
+          for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
+            const { seg, meta } = wallSeg;
+            state.setSegSlots(slots, instanceId, gmId, wallSeg);
             ws.setMatrixAt(
               instanceId,
               state.getWallMat(
@@ -250,12 +259,12 @@ export type State = {
     height?: number,
     baseHeight?: number,
   ) => THREE.Matrix4;
-  /** Writes the rooms either side of a wall segment into its instance */
-  setRoomSlots: (
+  /** Writes the rooms either side of a wall segment into its instance — or its BROAD wall's slot */
+  setSegSlots: (
     slots: THREE.InstancedBufferAttribute,
     instanceId: number,
     gmId: number,
-    seg: [Geom.Vect, Geom.Vect],
+    wallSeg: Geomorph.GmData["wallSegs"][number],
   ) => void;
   /** The same for a door or window, which knows its rooms already */
   setConnectorSlots: (

@@ -150,6 +150,10 @@ export const MAX_NPCS = 256;
 export const MAX_DOORS = 512;
 
 export const MAX_ROOMS_PER_GEOMORPH = 32;
+
+/** Each takes a slot of its own and is shown whenever any adjacent room is. */
+export const MAX_BROAD_WALLS_PER_GEOMORPH = 16;
+
 export const MAX_DOOR_LABELS = 32;
 
 /** In meters, or equivalently 2 grid squares */

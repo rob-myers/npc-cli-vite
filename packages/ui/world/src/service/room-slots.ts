@@ -6,20 +6,22 @@ import * as THREE from "three/webgpu";
 import {
   floorTextureDimension,
   gmFloorExtraScale,
+  MAX_BROAD_WALLS_PER_GEOMORPH,
   MAX_GEOMORPH_INSTANCES,
   MAX_ROOMS_PER_GEOMORPH,
   roomHitTextureScaleDown,
   worldToSguScale,
 } from "../const";
+import type DerivedGmsData from "./DerivedGmsData";
 import { getContext2d, TexArray } from "./tex-array";
 
 export type RoomSlots = {
-  /** One layer per `gmId`, red carrying `roomId + 1` — see `drawGm` */
+  /** One layer per `gmId`: red carries `roomId + 1`, green a broad wall's `id + 1` — see `drawGm` */
   tex: TexArray;
   /**
    * Draws and uploads, if the map has changed since it last did.
    */
-  ensure(gms: Geomorph.LayoutInstance[], gmsHash: number): void;
+  ensure(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData, gmsHash: number): void;
   /**
    * Which room covers `local` — in the geomorph's OWN space, as `gm.rooms` and `wallSegs` are — or
    * `null` where nothing does. Reads the drawn pixels, so it sees the outset below
@@ -34,6 +36,8 @@ export type RoomSlots = {
    * The slot at `uvNode` of layer `gmIndex` — how the floor and the ceiling ask, being one instance
    * per GEOMORPH and so unable to carry a room in an attribute like everything else. Where nothing
    * was drawn this is `neverShownSlot` rather than some room's
+   *
+   * Also supports broad walls.
    */
   decodeUvVisibility(uvNode: THREE.Node<"vec2">, gmIndex: THREE.Node<"uint">): THREE.Node<"float">;
 };
@@ -43,13 +47,22 @@ export function slotOf(gmId: number, roomId: number): number {
   return gmId * MAX_ROOMS_PER_GEOMORPH + roomId;
 }
 
-/** A slot for every room the world can hold, then one always shown and one never */
+/**
+ * The broad wall's slot, which may be adjacent to many rooms.
+ */
+export function broadWallSlotOf(gmId: number, broadWallId: number): number {
+  return broadSlotBase + gmId * MAX_BROAD_WALLS_PER_GEOMORPH + broadWallId;
+}
+
+/** A slot for every room the world can hold, then every broad wall, then one always and one never */
 export const roomSlotCount = MAX_GEOMORPH_INSTANCES * MAX_ROOMS_PER_GEOMORPH;
-/** For geometry belonging to no room — the hull's outer skin, a door instance nobody is using */
-export const alwaysShownSlot = roomSlotCount;
+const broadSlotBase = roomSlotCount;
+const broadSlotCount = MAX_GEOMORPH_INSTANCES * MAX_BROAD_WALLS_PER_GEOMORPH;
+/** For geometry belonging to no room — a door instance nobody is using */
+export const alwaysShownSlot = broadSlotBase + broadSlotCount;
 /** For a fragment belonging to no room at all, which the texture here reads as a blank */
-export const neverShownSlot = roomSlotCount + 1;
-export const totalRoomSlots = roomSlotCount + 2;
+export const neverShownSlot = alwaysShownSlot + 1;
+export const totalRoomSlots = neverShownSlot + 1;
 
 /**
  * Which room every part of the world belongs to, so nothing has to work it out per fragment.
@@ -80,28 +93,44 @@ export function createRoomSlots(): RoomSlots {
   return {
     tex,
 
-    ensure(gms, gmsHash) {
+    ensure(gms, gmsData, gmsHash) {
       if (gmsHash === drawnHash) return;
       drawnHash = gmsHash;
       drawn.length = 0;
 
-      const ct = getContext2d("room-slots", {
-        willReadFrequently: true,
-        width: slotTextureDimension,
-        height: slotTextureDimension,
-      });
+      const opts = { willReadFrequently: true, width: slotTextureDimension, height: slotTextureDimension } as const;
+      const ct = getContext2d("room-slots", opts);
+      // Its OWN canvas rather than another pass over the first: canvas cannot write one channel,
+      // and a fill would take the room with it — which the floor reads, and the floor under a wall
+      // must still go with its room. The two are merged below instead
+      const broadCt = getContext2d("room-slots-broad", opts);
 
       for (const [gmId, gm] of gms.entries()) {
         if (gmId >= MAX_GEOMORPH_INSTANCES) break;
         if (gm.rooms.length > MAX_ROOMS_PER_GEOMORPH) {
           warn(`room-slots: ${gm.key} has too many rooms: ${gm.rooms.length} (max ${MAX_ROOMS_PER_GEOMORPH})`);
         }
+        const broadWalls = gmsData.byKey[gm.key]?.broadWalls ?? [];
+        if (broadWalls.length > MAX_BROAD_WALLS_PER_GEOMORPH) {
+          warn(`room-slots: ${gm.key} has too many broad walls: ${broadWalls.length}`);
+        }
         drawGm(ct, gm);
+        drawBroadWalls(broadCt, gm, broadWalls);
+
         const { data } = ct.getImageData(0, 0, slotTextureDimension, slotTextureDimension, { colorSpace: "srgb" });
-        tex.updateIndex(gmId, new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+        const broad = broadCt.getImageData(0, 0, slotTextureDimension, slotTextureDimension, {
+          colorSpace: "srgb",
+        }).data;
 
         const red = new Uint8Array(slotTextureDimension * slotTextureDimension);
-        for (let i = 0; i < red.length; i++) red[i] = data[i * 4];
+        for (let i = 0; i < red.length; i++) {
+          red[i] = data[i * 4];
+          // by COVERAGE, not by the green itself: `getImageData` is unpremultiplied, so an edge
+          // pixel carries the exact id at a partial alpha, and half-covered is where it stops
+          data[i * 4 + 1] = broad[i * 4 + 3] >= 128 ? broad[i * 4 + 1] : 0;
+        }
+
+        tex.updateIndex(gmId, new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
         drawn[gmId] = { red, bounds: gm.bounds };
       }
     },
@@ -129,10 +158,20 @@ export function createRoomSlots(): RoomSlots {
 
     decodeUvVisibility(uvNode, gmIndex) {
       // red carries `roomId + 1`, so a zero is nothing at all rather than room zero. Nearest
-      // filtered — a `DataArrayTexture` is by default, and interpolating room ids means nothing
-      const code = texture(tex.tex, uvNode).depth(gmIndex).r.mul(255).round();
+      // filtered — a `DataArrayTexture` is by default, and interpolating ids means nothing.
+      // Sampled ONCE, both channels off the one texel
+      const texel = texture(tex.tex, uvNode).depth(gmIndex);
+      const code = texel.r.mul(255).round();
       const roomSlot = gmIndex.toFloat().mul(MAX_ROOMS_PER_GEOMORPH).add(code).sub(1);
-      return mix(float(neverShownSlot), roomSlot, step(0.5, code));
+      const slot = mix(float(neverShownSlot), roomSlot, step(0.5, code));
+
+      // and green a broad wall's `id + 1`, whose slot stands for ALL the rooms it abuts
+      const broadCode = texel.g.mul(255).round();
+      const broadSlot = float(broadSlotBase)
+        .add(gmIndex.toFloat().mul(MAX_BROAD_WALLS_PER_GEOMORPH))
+        .add(broadCode)
+        .sub(1);
+      return mix(slot, broadSlot, step(0.5, broadCode));
     },
   };
 
@@ -199,7 +238,24 @@ function drawGm(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance) {
   }
 }
 
-/** `rgba(roomId + 1, 0, 0, 1)` — a red of `0` meaning no room, so room zero is not mistaken for it */
+/**
+ * Which broad wall stands where, as `id + 1` in green — the ceiling reads it in place of the room
+ * beneath, so a broad wall's lid survives whilst ANY of the rooms it abuts is shown.
+ */
+function drawBroadWalls(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance, broadWalls: BroadWall[]) {
+  ct.resetTransform();
+  ct.clearRect(0, 0, slotTextureDimension, slotTextureDimension);
+  ct.setTransform(slotScale, 0, 0, slotScale, -gm.bounds.x * slotScale, -gm.bounds.y * slotScale);
+
+  for (const [broadWallId, { poly }] of broadWalls.entries()) {
+    if (broadWallId >= MAX_BROAD_WALLS_PER_GEOMORPH) break;
+    drawPolygons(ct, [poly], { fillStyle: `rgba(0, ${broadWallId + 1}, 0, 1)`, strokeStyle: null });
+  }
+}
+
+type BroadWall = Geomorph.GmData["broadWalls"][number];
+
+/** `rgba(roomId + 1, 0, 0, 1)` — a red of `0` meaning no room, so room zero is not mistaken for it. Green is `drawGm`'s always-shown flag */
 function encodeRoom(roomId: number) {
   return `rgba(${roomId + 1}, 0, 0, 1)` as const;
 }

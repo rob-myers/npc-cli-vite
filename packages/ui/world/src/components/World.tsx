@@ -375,7 +375,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.hash = hashJson(state.assets);
       state.gmsHash = hashJson(state.gms);
 
-      state.view.roomSlots.ensure(state.gms, state.gmsHash);
+      state.view.roomSlots.ensure(state.gms, state.gmsData, state.gmsHash);
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
       state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph);
