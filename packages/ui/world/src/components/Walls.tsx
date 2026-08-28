@@ -218,7 +218,7 @@ export default function Walls() {
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
 
     w.update(); // 🔔 must sync onchange theme
-  }, [w.mapKey, w.hash, w.decor.ready]);
+  }, [w.mapKey, w.hash, w.decor.ready, mat.uuid]);
 
   return wallCount ? (
     <>
