@@ -12,6 +12,7 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcShadowRadius } from "../const";
+import type { FadeRooms } from "../service/fade-rooms";
 import { createXzQuad } from "../service/geometry";
 import type { SelectFloatType } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -21,15 +22,17 @@ export default function NpcShadows() {
 
   const state = useStateRef(
     (): State => ({
-      shadow: createShadowResources(w.view.objectPick, w.view.foldNode),
+      shadow: createShadowResources(w.view.objectPick, w.view.foldNode, w.view.fadeRoomsFx),
       onTick() {
         const { xzoData, xzoAttr, geo } = state.shadow;
 
         let i = 0;
         for (const npc of Object.values(w.n)) {
-          xzoData[i * 3] = npc.position.x;
-          xzoData[i * 3 + 1] = npc.position.z;
-          xzoData[i * 3 + 2] = 1;
+          xzoData[i * 4] = npc.position.x;
+          xzoData[i * 4 + 1] = npc.position.z;
+          xzoData[i * 4 + 2] = 1;
+          // a shadow goes where the npc casting it goes, faded room and all
+          xzoData[i * 4 + 3] = npc.roomSlot.value;
           i++;
         }
         geo.instanceCount = i;
@@ -58,6 +61,7 @@ export type State = {
 function createShadowResources(
   objectPick: THREE.UniformNode<"float", number>,
   fold: THREE.UniformNode<"float", number>,
+  fadeRooms: FadeRooms,
 ) {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
@@ -70,12 +74,13 @@ function createShadowResources(
   geo.setAttribute("position", pos);
   geo.setAttribute("uv", base.getAttribute("uv"));
   geo.setIndex(base.getIndex());
-  const xzoData = new Float32Array(MAX_NPCS * 3);
-  const xzoAttr = new THREE.InstancedBufferAttribute(xzoData, 3);
+  // per instance: world `xz`, an opacity, then the slot of the room its npc stands in
+  const xzoData = new Float32Array(MAX_NPCS * 4);
+  const xzoAttr = new THREE.InstancedBufferAttribute(xzoData, 4);
   geo.setAttribute("shadowXZO", xzoAttr);
   geo.instanceCount = 0;
 
-  const xzo = attribute<"vec3">("shadowXZO", "vec3");
+  const xzo = attribute<"vec4">("shadowXZO", "vec4");
 
   const worldPos = vec4(positionLocal.x.add(xzo.x), 0.01, positionLocal.z.add(xzo.y), 1.0);
   const clipPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos));
@@ -91,8 +96,9 @@ function createShadowResources(
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
   const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   mat.vertexNode = clipPos;
-  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold`
-  mat.colorNode = vec4(0, 0, 0, alpha.mul(fold));
+  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold` — and with the
+  // room they stand in, so a shadow is never left behind on a floor that has gone
+  mat.colorNode = vec4(0, 0, 0, alpha.mul(fold).mul(fadeRooms.getVisiblity(xzo.w)));
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;

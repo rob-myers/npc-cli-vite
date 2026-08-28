@@ -3,8 +3,10 @@ import { useContext } from "react";
 import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, time, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS, npcScale, npcShadowRadius } from "../const";
+import type { FadeRooms } from "../service/fade-rooms";
 import { createXzQuad } from "../service/geometry";
 import { arrivedAt, type Morph, morphNode, retarget, settled } from "../service/morph";
+import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import { WorldContext } from "./world-context";
 
 export default function NpcRings() {
@@ -12,7 +14,7 @@ export default function NpcRings() {
 
   const state = useStateRef(
     (): State => ({
-      ...createRingResources(w.view.objectPick, w.view.foldNode),
+      ...createRingResources(w.view.objectPick, w.view.foldNode, w.view.fadeRoomsFx),
       spawnRingByNpc: new Map(),
       selectRingByNpc: new Map(),
 
@@ -26,7 +28,17 @@ export default function NpcRings() {
             state.spawnRingByNpc.delete(npcKey);
             continue;
           }
-          j = state.writeRing(j, ring.x, ring.y, ring.z, ring.fade, spawnRingRadius, spawnRingColor, spawnRingStyle);
+          j = state.writeRing(
+            j,
+            ring.x,
+            ring.y,
+            ring.z,
+            ring.fade,
+            spawnRingRadius,
+            spawnRingColor,
+            spawnRingStyle,
+            ring.roomSlot,
+          );
         }
 
         // selector rings are persistent
@@ -40,7 +52,18 @@ export default function NpcRings() {
           retarget(ring.radius, wanted, selectRingMorphSecs, now);
 
           const { x, y, z } = npc.position;
-          j = state.writeRing(j, x, y + selectRingLift, z, ring.fade, ring.radius, ring.color, selectRingStyle);
+          // read every tick, unlike a spawn ring's: an npc walks from one room to the next
+          j = state.writeRing(
+            j,
+            x,
+            y + selectRingLift,
+            z,
+            ring.fade,
+            ring.radius,
+            ring.color,
+            selectRingStyle,
+            npc.roomSlot.value,
+          );
         }
 
         // Only the instances actually written go to the gpu. Without a range three uploads the
@@ -53,7 +76,7 @@ export default function NpcRings() {
           state.ringBuffer.needsUpdate = true;
         }
       },
-      writeRing(index, x, y, z, fade, radius, color, style) {
+      writeRing(index, x, y, z, fade, radius, color, style, roomSlot) {
         if (index >= MAX_RINGS) return index;
         // one contiguous run into the interleaved buffer — see `ringStride`
         const at = index * ringStride;
@@ -72,11 +95,16 @@ export default function NpcRings() {
         data[at + 11] = color.g;
         data[at + 12] = color.b;
         data[at + 13] = style.alpha;
+        data[at + 14] = roomSlot;
         return index + 1;
       },
       showSpawnRing(npcKey, at, y = spawnRingDefaultHeight) {
+        // it marks a patch of FLOOR, so its room is settled once here rather than read per tick as
+        // a select ring's is — and the npc it is for may not have arrived to be asked
+        const gmRoomId = w.e.findRoomContaining({ x: at.x, y: at.y }, true);
+        const roomSlot = gmRoomId === null ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
         // it is put up on a destination already chosen, so it is simply there
-        state.spawnRingByNpc.set(npcKey, { x: at.x, y, z: at.y, fade: arrivedAt(1, time.value) });
+        state.spawnRingByNpc.set(npcKey, { x: at.x, y, z: at.y, roomSlot, fade: arrivedAt(1, time.value) });
       },
       fadeOutSpawnRing(npcKey) {
         state.fadeRing(state.spawnRingByNpc.get(npcKey), 0);
@@ -151,7 +179,7 @@ export type State = {
   ringData: Float32Array;
   ringBuffer: THREE.InstancedInterleavedBuffer;
   /** Per-npc spawn-destination ring shown during `fadeSpawn`, keyed by npcKey */
-  spawnRingByNpc: Map<string, Ring & { x: number; y: number; z: number }>;
+  spawnRingByNpc: Map<string, Ring & { x: number; y: number; z: number; roomSlot: number }>;
   /** Per-npc selection ring, which follows them until taken down — keyed by npcKey */
   selectRingByNpc: Map<string, Ring & { color: THREE.Color; radius: Morph }>;
   onTick(): void;
@@ -165,6 +193,7 @@ export type State = {
     radius: Morph,
     color: THREE.Color,
     style: RingStyle,
+    roomSlot: number,
   ): number;
   /** Show ring at ground point `at` (`at.y` is world z) and world-height `y`, fully visible */
   showSpawnRing(npcKey: string, at: { x: number; y: number }, y?: number): void;
@@ -191,8 +220,11 @@ const ringFadeSecs = 0.4;
 const spawnRingDefaultHeight = 0.02;
 /** Both kinds share the instance buffer, and an npc can have one of each */
 const MAX_RINGS = MAX_NPCS * 2;
-/** Floats per instance: `ringPos` 4, `ringFade` 3, `ringRadius` 3, `ringRGBA` 4 — see `writeRing` */
-const ringStride = 14;
+/**
+ * Floats per instance: `ringPos` 4, `ringFade` 3, `ringRadius` 3, `ringRGBA` 4, `ringRoomSlot` 1 —
+ * see `writeRing`
+ */
+const ringStride = 15;
 /** How far a select ring floats above the npc's own feet, so it does not z-fight the floor */
 const selectRingLift = 0.02;
 
@@ -224,6 +256,7 @@ const selectRingMorphSecs = 0.35;
 function createRingResources(
   objectPick: THREE.UniformNode<"float", number>,
   fold: THREE.UniformNode<"float", number>,
+  fadeRooms: FadeRooms,
 ): Pick<State, "ringGeo" | "ringMat" | "ringMesh" | "ringData" | "ringBuffer"> {
   const base = createXzQuad();
   const pos = base.getAttribute("position") as THREE.BufferAttribute;
@@ -236,20 +269,22 @@ function createRingResources(
   ringGeo.setAttribute("uv", base.getAttribute("uv"));
   ringGeo.setIndex(base.getIndex());
 
-  // INTERLEAVED, so an instance is one contiguous run and the four attributes are one buffer to
-  // upload rather than four. `writeRing` is what fills it
+  // INTERLEAVED, so an instance is one contiguous run and the attributes are one buffer to upload
+  // rather than five. `writeRing` is what fills it
   const ringData = new Float32Array(MAX_RINGS * ringStride);
   const ringBuffer = new THREE.InstancedInterleavedBuffer(ringData, ringStride, 1);
   ringGeo.setAttribute("ringPos", new THREE.InterleavedBufferAttribute(ringBuffer, 4, 0));
   ringGeo.setAttribute("ringFade", new THREE.InterleavedBufferAttribute(ringBuffer, 3, 4));
   ringGeo.setAttribute("ringRadius", new THREE.InterleavedBufferAttribute(ringBuffer, 3, 7));
   ringGeo.setAttribute("ringRGBA", new THREE.InterleavedBufferAttribute(ringBuffer, 4, 10));
+  ringGeo.setAttribute("ringRoomSlot", new THREE.InterleavedBufferAttribute(ringBuffer, 1, 14));
   ringGeo.instanceCount = 0;
 
   const ringPos = attribute<"vec4">("ringPos", "vec4");
   const ringFade = attribute<"vec3">("ringFade", "vec3");
   const ringRadius = attribute<"vec3">("ringRadius", "vec3");
   const rgba = attribute<"vec4">("ringRGBA", "vec4");
+  const roomSlot = attribute<"float">("ringRoomSlot", "float");
 
   const worldPos = vec4(positionLocal.x.add(ringPos.x), ringPos.y, positionLocal.z.add(ringPos.z), 1.0);
   const clipPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos));
@@ -268,8 +303,9 @@ function createRingResources(
 
   const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
   ringMat.vertexNode = clipPos;
-  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold`
-  ringMat.colorNode = vec4(rgba.xyz, alpha.mul(fold));
+  // fades with the npc it belongs to whilst a map changes over — see `setWorldFold` — and with the
+  // room it stands in, so a ring is never left behind on a floor that has gone
+  ringMat.colorNode = vec4(rgba.xyz, alpha.mul(fold).mul(fadeRooms.getVisiblity(roomSlot)));
 
   const ringMesh = new THREE.Mesh(ringGeo, ringMat);
   ringMesh.frustumCulled = false;
