@@ -56,12 +56,14 @@ export type PlayerLight = {
   /** Re-reads the walls, which never move. Call on map change */
   syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
   /**
-   * Where the light stands and how open each door is, then the sweep itself. Call once per
-   * rendered frame, before the render. `origin` of `null` turns the light off.
+   * Where the light stands, which way it looks, and how open each door is, then the sweep itself.
+   * Call once per rendered frame, before the render. `origin` of `null` turns the light off.
+   * @param rotationY three's, as `npc.rotation.y` gives it — what is not ahead of it is dimmed
    */
   update(
     renderer: THREE.WebGPURenderer,
     origin: null | { x: number; z: number },
+    rotationY: number,
     doors: Record<string, Geomorph.DoorState>,
     openRatios: Float32Array,
   ): void;
@@ -84,6 +86,8 @@ export function createPlayerLight(): PlayerLight {
   const origin = uniform(new THREE.Vector2());
   /** `0` disables it exactly, so every material is identity whilst there is no player */
   const strength = uniform(0);
+  /** Which way they look, in world XZ — what falls outside the cone about it is dimmed */
+  const facing = uniform(new THREE.Vector2(1, 0));
 
   // The occluders. Fixed capacity, so the compute node never has to be rebuilt — the counts say
   // how much of each is real, and the loops stop there.
@@ -258,19 +262,40 @@ export function createPlayerLight(): PlayerLight {
     return lit.mul(reach);
   }
 
-  function applyLight(color: THREE.Node<"vec3">) {
-    const lit = litAt(positionWorld.xz);
-    const shaded = mix(color, vec3(0, 0, 0), float(unlitTint).mul(strength).mul(lit.oneMinus()));
+  /**
+   * How far inside the cone they are looking down this fragment lies, `1` within it and `0` beyond.
+   *
+   * Softened over `coneSoftDeg` either side rather than cut at the edge: a hard one is a straight
+   * line drawn across the floor, and it crawls as they turn
+   */
+  function coneAt(away: THREE.Node<"vec2">, fromPlayer: THREE.Node<"float">) {
+    // `max` before the divide — at their very feet `away` is nought, and normalising it is a NaN
+    // that nothing downstream swallows
+    const ahead = away.div(fromPlayer.max(parallelUntil)).dot(facing);
+    return smoothstep(float(coneOuterCos), float(coneInnerCos), ahead);
+  }
 
-    // WARM at their feet, COOL by the edge of the reach — orange through to blue across the
-    // polygon, so where a fragment stands is legible from its colour alone. Set deliberately
-    // strong: everything subtle tried here has been invisible, so this is meant to be dialled
-    // back from something you can plainly see rather than up from nothing
-    // the ramp begins at `warmUntil` rather than at their feet, so the warm holds the near half
-    // of the polygon and the cool is what the far edge turns into
-    const far = smoothstep(float(warmUntil), float(lightRadius), positionWorld.xz.sub(origin).length());
-    const temperature = mix(warmTint, coolTint, far);
-    return mix(shaded, shaded.mul(temperature), lit.mul(strength).mul(tintAmount));
+  function applyLight(color: THREE.Node<"vec3">) {
+    const away = positionWorld.xz.sub(origin);
+    const fromPlayer = away.length();
+    const cone = coneAt(away, fromPlayer);
+
+    // What is not ahead of them is DIMMED, though not within `coneFrom`: close in a fragment's
+    // bearing swings about wildly, and dimming there reads as a shadow they are standing in.
+    //
+    // Taken off `lit` rather than off the colour, so `unlitTint` is the floor for both — the cone
+    // can never go darker than somewhere the light simply does not reach, and the temperature
+    // below, which `lit` also scales, gives way along with it
+    const held = smoothstep(float(0), float(coneFrom), fromPlayer);
+    const lit = litAt(positionWorld.xz).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
+    // towards black by `unlitTint`, written as the multiply it is rather than as a `mix` against a
+    // colour the compiler would have to carry three zeroes for
+    const shaded = color.mul(float(1).sub(float(unlitTint).mul(strength).mul(lit.oneMinus())));
+
+    // and the cone takes a colour of its own, so it reads by more than the light it kept. Written
+    // as a shift off WHITE rather than as a `mix` towards the tint, which is the same thing —
+    // `1 + (tint - 1) * amount` — for one multiply instead of a mix and a multiply
+    return shaded.mul(vec3(1, 1, 1).add(coneShift.mul(cone.mul(lit).mul(strength))));
   }
 
   /**
@@ -351,7 +376,7 @@ export function createPlayerLight(): PlayerLight {
       cullDirty = true;
     },
 
-    update(renderer, at, doors, openRatios) {
+    update(renderer, at, rotationY, doors, openRatios) {
       // the WebGL fallback runs "compute" through transform feedback, which this sweep's storage
       // buffers are not going to survive — better an unlit world than a broken one
       if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
@@ -366,6 +391,10 @@ export function createPlayerLight(): PlayerLight {
 
       const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
       origin.value.set(at.x, at.z);
+      // three's rotation-Y back to a direction in world XZ — the inverse of `getThreeRotationY`.
+      // A direction rather than an angle, so the test above is a dot rather than another `atan`
+      const lookAngle = -rotationY - Math.PI / 2;
+      facing.value.set(Math.cos(lookAngle), Math.sin(lookAngle));
 
       // Only the walls the light could possibly reach are handed to the sweep, which otherwise
       // loops every wall in the world for every angle. Re-chosen when the light has wandered far
@@ -431,12 +460,21 @@ const lightRadius = 8;
 const lightFalloff = 6;
 /** How black an unseen fragment goes */
 const unlitTint = 0.7;
-/** How far the warm reaches before it begins to give way to the cool (metres) */
-const warmUntil = 2;
-/** The colour at the player's feet, at the edge of the reach, and how much of it is taken */
-const warmTint = vec3(1, 1, 1);
-const coolTint = vec3(0.5, 0.5, 0);
-const tintAmount = 1;
+/**
+ * The cone they see best down — see `coneAt`. How much of the light is lost outside it, the colour
+ * the light inside it takes, and how far out the dimming takes hold: nearer than that the ground
+ * they stand on keeps its light whichever way they turn
+ */
+const coneAmount = 0.7;
+const coneTint = [0.96, 0.92, 1] as const;
+const coneFrom = lightRadius * 0.2;
+/** Its half angle, and how many degrees either side that is softened over — enough to antialias */
+const coneHalfDeg = 45;
+const coneSoftDeg = 1.5;
+const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
+const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
+/** `coneTint` again as a shift off WHITE, which is what makes it one multiply — see `applyLight` */
+const coneShift = /* @__PURE__ */ vec3(coneTint[0] - 1, coneTint[1] - 1, coneTint[2] - 1);
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives

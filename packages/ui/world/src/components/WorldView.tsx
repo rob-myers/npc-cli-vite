@@ -1084,6 +1084,7 @@ function LightSweep() {
     w.view.playerLight.update(
       renderer,
       player?.position ?? null,
+      player?.rotation.y ?? 0,
       w.d ?? emptyDoors,
       w.door?.openRatioArray ?? emptyOpenRatios,
     );
