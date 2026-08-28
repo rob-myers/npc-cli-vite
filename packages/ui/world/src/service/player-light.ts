@@ -19,7 +19,6 @@ import {
   smoothstep,
   uniform,
   vec2,
-  vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -40,7 +39,8 @@ export type PlayerLight = {
   applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
   /**
    * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
-   * and wants to ask. Ignores `strength`, so a caller decides for itself what an unlit light means.
+   * and wants to ask. Ignores whether the light is on, so a caller decides what an unlit light
+   * means for itself.
    * @param outset grows the polygon by this many metres. It is star-shaped about the light, so
    * asking about a point pulled that much nearer is exactly a dilation
    */
@@ -83,8 +83,12 @@ export type PlayerLight = {
 export function createPlayerLight(): PlayerLight {
   /** Where the light stands, in world XZ */
   const origin = uniform(new THREE.Vector2());
-  /** `0` disables it exactly, so every material is identity whilst there is no player */
-  const strength = uniform(0);
+  /**
+   * How black an unseen fragment goes: `unlitTint` whilst there is a player, `0` otherwise. The two
+   * are folded into one uniform, so every material is exactly identity with the light off and none
+   * of them multiplies a constant by a uniform per fragment
+   */
+  const unlitAmount = uniform(0);
   /** Which way they look, in world XZ — what falls outside the cone about it is dimmed */
   const facing = uniform(new THREE.Vector2(1, 0));
 
@@ -217,8 +221,15 @@ export function createPlayerLight(): PlayerLight {
     const away = worldXZ.sub(origin);
     // asked about a point pulled `outset` nearer, which grows the polygon outwards. Branched in js
     // rather than in the shader, so the usual case emits no subtract at all
-    const dist = outset === 0 ? away.length() : away.length().sub(outset);
+    return litFrom(away, outset === 0 ? away.length() : away.length().sub(outset));
+  }
 
+  /**
+   * The same, for a caller that has already worked out where it stands relative to the light —
+   * `applyLight` has, for the cone, and recomputing the pair here cost it a vec2 subtract and a
+   * `length` per fragment in every material that lights anything
+   */
+  function litFrom(away: THREE.Node<"vec2">, dist: THREE.Node<"float">) {
     // The angle, as a position along the table. The sweep writes index `i` for `2π i / N`, so
     // index 0 is angle 0 — and `atan` gives `[-π, π]`, whose negative half must WRAP to the top of
     // the table rather than being shifted into its bottom, which would turn the polygon 180°
@@ -260,9 +271,10 @@ export function createPlayerLight(): PlayerLight {
    * line drawn across the floor, and it crawls as they turn
    */
   function coneAt(away: THREE.Node<"vec2">, fromPlayer: THREE.Node<"float">) {
-    // `max` before the divide — at their very feet `away` is nought, and normalising it is a NaN
-    // that nothing downstream swallows
-    const ahead = away.div(fromPlayer.max(parallelUntil)).dot(facing);
+    // The dot BEFORE the divide: `dot(v / d, f)` is `dot(v, f) / d`, and one scalar divide is
+    // cheaper than a vec2 one. `max` guards it — at their very feet `d` is nought, and what comes
+    // out is a NaN that nothing downstream swallows
+    const ahead = away.dot(facing).div(fromPlayer.max(parallelUntil));
     return smoothstep(float(coneOuterCos), float(coneInnerCos), ahead);
   }
 
@@ -277,10 +289,10 @@ export function createPlayerLight(): PlayerLight {
     // Taken off `lit` rather than off the colour, so `unlitTint` is the floor for both: the cone
     // can never go darker than somewhere the light simply does not reach
     const held = smoothstep(float(0), float(coneFrom), fromPlayer);
-    const lit = litAt(positionWorld.xz).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
-    // towards black by `unlitTint`, written as the multiply it is rather than as a `mix` against a
-    // colour the compiler would have to carry three zeroes for
-    return color.mul(float(1).sub(float(unlitTint).mul(strength).mul(lit.oneMinus())));
+    const lit = litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
+    // towards black, written as the multiply it is rather than as a `mix` against a colour the
+    // compiler would have to carry three zeroes for
+    return color.mul(float(1).sub(unlitAmount.mul(lit.oneMinus())));
   }
 
   /**
@@ -330,7 +342,7 @@ export function createPlayerLight(): PlayerLight {
     applyUnlitRgba(color) {
       // the same tint the unseen parts of the world take, so a dark ceiling matches a dark room
       // rather than being its own shade of black — and identity whilst the light is off
-      return vec4(mix(color.rgb, vec3(0, 0, 0), float(unlitTint).mul(strength)), color.a);
+      return vec4(color.rgb.mul(unlitAmount.oneMinus()), color.a);
     },
 
     syncWalls(gms, gmsData) {
@@ -365,14 +377,14 @@ export function createPlayerLight(): PlayerLight {
       // the WebGL fallback runs "compute" through transform feedback, which this sweep's storage
       // buffers are not going to survive — better an unlit world than a broken one
       if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
-        strength.value = 0;
+        unlitAmount.value = 0;
         return;
       }
       if (at === null) {
-        strength.value = 0;
+        unlitAmount.value = 0;
         return;
       }
-      strength.value = 1;
+      unlitAmount.value = unlitTint;
 
       const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
       origin.value.set(at.x, at.z);
