@@ -270,6 +270,6 @@ const slotScale = roomHitTextureScaleDown * worldToSguScale * gmFloorExtraScale;
 const roomOutset = 0.16;
 
 /** How far either side of a wall segment `roomsBeside` looks, in metres, and in what steps */
-const probeFrom = 0.02;
+const probeFrom = 0.08;
 const probeTo = 0.5;
 const probeStep = 0.03;
