@@ -273,15 +273,18 @@ export default function Obstacles(_props: Props) {
     const normalNode = transformNormalToView(vec3(0, 1, 0));
     const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
     return {
+      // NOT tinted by `service/player-light`: an obstacle's top is a sprite seen from above, and
+      // the light only ever muddied it. Its SKIRT still takes the light — that stands up, and is
+      // what reads the room it is in
       colorNode: w.view.fadeRoomsFx.applyFadeRgba(
-        mix(unlit, w.view.playerLight.applyLightRgba(unlit), w.view.obstaclesLit),
+        unlit,
         w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x),
       ),
       normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
       uid: generateUUID(),
     };
-  }, [w.texObs.hash, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
+  }, [w.texObs.hash, w.view.fadeRoomsFx.uid]);
 
   useMemo(() => state.buildInstanceIds(), [w.mapKey, w.hash]);
 
