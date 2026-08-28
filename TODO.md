@@ -167,10 +167,19 @@
   - ✅ fade by instance rather than fragment
     - much better performance
   - ✅ show broad walls whenever adjacent to visible room
-  - 🚧 pick does not restrict by room
-  - 🚧 maybe include rooms with an npc
-  - 🚧 maybe include neighouring rooms
-  - doors issue for 301-101-301
+  - ✅ fix map 301-101-301
+  - ✅ fix some outlying obstacle skirts
+  - 🚧 fix inaccuracies
+    - ✅ find more neighbouring rooms
+    - 🚧 avoid partial walls
+    - invisible instancedmesh occlusions
+  - npcs should not be suddenly visible
+  - include neighouring rooms at lower opacity
+    - only walls and floor?
+  - pick does not restrict by room
+  - move "Light npcs" (long-press-light) into sub-icon of fade button
+    - can enable/disable via long press of fade button
+  - try extend fade rooms by all lit npcs
 
 
 ## Other
