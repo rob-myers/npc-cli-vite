@@ -586,7 +586,16 @@ export default function Decor() {
 
   const { data: materials } = useQuery({
     // 🔔 force recompute decor mutations on run world query
-    queryKey: ["decor-setup", w.mapKey, w.gmsHash, w.texDecor.hash, state.lastHmr, w.lastQuery, w.view.playerLight.uid],
+    queryKey: [
+      "decor-setup",
+      w.mapKey,
+      w.gmsHash,
+      w.texDecor.hash,
+      state.lastHmr,
+      w.lastQuery,
+      w.view.playerLight.uid,
+      w.view.fadeRoomsFx.uid,
+    ],
     async queryFn() {
       if (import.meta.hot?.data.__JUST_HMR_DECOR__) {
         import.meta.hot.data.__JUST_HMR_DECOR__ = false;
