@@ -182,9 +182,6 @@ export default function Walls() {
       opacityUniform, // beauty render
     );
 
-    // tinted by what the player can see from where they stand — see `service/player-light`
-    const colorNode = w.view.playerLight.applyLight(baseColorUniform.rgb);
-
     // a wall belongs to the rooms on BOTH sides, and is shown at the fuller of the two — so a room
     // in view keeps every wall that encloses it, whatever stands on the far side of them
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
@@ -192,7 +189,9 @@ export default function Walls() {
     return {
       opacityUniform,
       opacityNode: litOpacityNode.mul(fade),
-      colorNode,
+      // NOT tinted by `service/player-light`: a wall is flat colour at half opacity, so the light
+      // only ever muddied what was behind it — and this runs on every wall fragment in the world
+      colorNode: baseColorUniform.rgb,
       outputNode,
       baseColorUniform,
       uuid: crypto.randomUUID(),
@@ -209,7 +208,7 @@ export default function Walls() {
     m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0)).mul(fade);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
-  }, [w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
+  }, [w.view.fadeRoomsFx.uid]);
 
   useEffect(() => {
     state.positionInstances();
