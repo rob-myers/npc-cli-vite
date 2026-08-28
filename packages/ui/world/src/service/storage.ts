@@ -32,7 +32,6 @@ export type WorldSettings = {
   cameraInitial: null | PersistedCamera;
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
-  postFade: boolean;
   /** Whether the world is shown by ROOM rather than faded on a circle about the player */
   fadeRooms: boolean;
   /** Whether the rooms in view are outlined over the finished frame — see `service/fade-rooms` */
@@ -61,7 +60,6 @@ const defaultWorldSettings: WorldSettings = {
   cameraMode: null,
   cameraInitial: null,
   postProcessing: true,
-  postFade: true,
   fadeRooms: false,
   fadeRoomOutlines: false,
   lightNpcs: false,
