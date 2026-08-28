@@ -718,7 +718,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         initial: false,
         playerLight: false, // 🔔 `true` causes decor rebuild on hmr
         postFx: true,
-        fadeRoomsFx: true, // the pipeline captured its nodes, so a fresh pass wants a fresh one
+        fadeRoomsFx: true,
       },
     },
   );
