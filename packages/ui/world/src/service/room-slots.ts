@@ -16,7 +16,10 @@ import type DerivedGmsData from "./DerivedGmsData";
 import { getContext2d, TexArray } from "./tex-array";
 
 export type RoomSlots = {
-  /** One layer per `gmId`: red carries `roomId + 1`, green a broad wall's `id + 1` — see `drawGm` */
+  /**
+   * One layer per `gmId`: red carries `roomId + 1`, green a broad wall's `id + 1`, and blue marks
+   * where a HULL wall stands — see `drawGm`, `drawBroadWalls` and `drawHullWalls`
+   */
   tex: TexArray;
   /**
    * Draws and uploads, if the map has changed since it last did.
@@ -35,7 +38,10 @@ export type RoomSlots = {
   /**
    * The slot at `uvNode` of layer `gmIndex` — how the floor and the ceiling ask, being one instance
    * per GEOMORPH and so unable to carry a room in an attribute like everything else. Where nothing
-   * was drawn this is `neverShownSlot` rather than some room's
+   * was drawn this is `neverShownSlot` rather than some room's — and so is wherever a HULL wall
+   * stands, whatever room lies beneath it: the hull is thicker than the rooms are grown by, so part
+   * of its footprint belongs to no room and the art over it comes out as a line along the rim of the
+   * geomorph. `neverShownSlot` is `1` whilst the fade is off, so this costs nothing there.
    *
    * Also supports broad walls.
    */
@@ -104,6 +110,7 @@ export function createRoomSlots(): RoomSlots {
       // and a fill would take the room with it — which the floor reads, and the floor under a wall
       // must still go with its room. The two are merged below instead
       const broadCt = getContext2d("room-slots-broad", opts);
+      const hullCt = getContext2d("room-slots-hull", opts);
 
       for (const [gmId, gm] of gms.entries()) {
         if (gmId >= MAX_GEOMORPH_INSTANCES) break;
@@ -116,9 +123,13 @@ export function createRoomSlots(): RoomSlots {
         }
         drawGm(ct, gm);
         drawBroadWalls(broadCt, gm, broadWalls);
+        drawHullWalls(hullCt, gm);
 
         const { data } = ct.getImageData(0, 0, slotTextureDimension, slotTextureDimension, { colorSpace: "srgb" });
         const broad = broadCt.getImageData(0, 0, slotTextureDimension, slotTextureDimension, {
+          colorSpace: "srgb",
+        }).data;
+        const hull = hullCt.getImageData(0, 0, slotTextureDimension, slotTextureDimension, {
           colorSpace: "srgb",
         }).data;
 
@@ -128,6 +139,7 @@ export function createRoomSlots(): RoomSlots {
           // by COVERAGE, not by the green itself: `getImageData` is unpremultiplied, so an edge
           // pixel carries the exact id at a partial alpha, and half-covered is where it stops
           data[i * 4 + 1] = broad[i * 4 + 3] >= 128 ? broad[i * 4 + 1] : 0;
+          data[i * 4 + 2] = hull[i * 4 + 3] >= 128 ? 255 : 0;
         }
 
         tex.updateIndex(gmId, new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
@@ -171,7 +183,10 @@ export function createRoomSlots(): RoomSlots {
         .add(gmIndex.toFloat().mul(MAX_BROAD_WALLS_PER_GEOMORPH))
         .add(broadCode)
         .sub(1);
-      return mix(slot, broadSlot, step(0.5, broadCode));
+      const withBroad = mix(slot, broadSlot, step(0.5, broadCode));
+
+      // and blue marks the HULL, which is nobody's floor and nobody's lid — last, so it wins
+      return mix(withBroad, float(neverShownSlot), step(0.5, texel.b));
     },
   };
 
@@ -255,6 +270,33 @@ function drawBroadWalls(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstanc
 
 type BroadWall = Geomorph.GmData["broadWalls"][number];
 
+/**
+ * Where the HULL stands, in blue. The floor and the ceiling drop whatever they were going to draw
+ * there: it belongs to no room, so growing the rooms out to reach it means guessing how thick the
+ * wall happens to be — and guessing short leaves the strip that shows as a line along the rim.
+ *
+ * Grown a little, to take the stroke the art puts around its own edge with it
+ */
+function drawHullWalls(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance) {
+  ct.resetTransform();
+  ct.clearRect(0, 0, slotTextureDimension, slotTextureDimension);
+  ct.setTransform(slotScale, 0, 0, slotScale, -gm.bounds.x * slotScale, -gm.bounds.y * slotScale);
+
+  const hull = gm.walls.flatMap((x) => (x.meta.hull === true ? geomService.createOutset(x, hullMargin) : []));
+  drawPolygons(ct, hull, { fillStyle: "rgba(0, 0, 255, 1)", strokeStyle: null });
+
+  // and the DOORWAYS are cut back out of it. A hull door is a way through rather than a piece of
+  // hull, and the floor and the ceiling have to go on drawing it — marked, the doorway would come
+  // out as a gap in the very place the two geomorphs are joined
+  ct.globalCompositeOperation = "destination-out";
+  drawPolygons(
+    ct,
+    gm.hullDoors.map((x) => x.poly),
+    { fillStyle: "rgba(0, 0, 0, 1)", strokeStyle: null },
+  );
+  ct.globalCompositeOperation = "source-over";
+}
+
 /** `rgba(roomId + 1, 0, 0, 1)` — a red of `0` meaning no room, so room zero is not mistaken for it. Green is `drawGm`'s always-shown flag */
 function encodeRoom(roomId: number) {
   return `rgba(${roomId + 1}, 0, 0, 1)` as const;
@@ -268,6 +310,8 @@ const slotScale = roomHitTextureScaleDown * worldToSguScale * gmFloorExtraScale;
  * to the room it encloses rather than to nothing
  */
 const roomOutset = 0.16;
+/** How much wider than itself the hull is marked, in metres — enough to take the art's own stroke */
+const hullMargin = 0.04;
 
 /** How far either side of a wall segment `roomsBeside` looks, in metres, and in what steps */
 const probeFrom = 0.08;
