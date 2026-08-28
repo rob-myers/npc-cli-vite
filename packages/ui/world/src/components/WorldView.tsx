@@ -93,7 +93,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
-      postFade: saved.postFade,
       fadeRooms: saved.fadeRooms,
       fadeRoomOutlines: saved.fadeRoomOutlines,
       lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
@@ -246,11 +245,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
       onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
-        // the post pass measures depth against what is in focus, so it needs the camera that drew
+        // the post pass places its room outlines on the ground, so it needs the camera that drew
         // the frame — and this runs once per rendered frame, just before the render
         if (state.controls !== null) {
-          const player = w.n[w.player?.key ?? ""];
-          state.postFx.update(state.controls.object, player?.position ?? null);
+          state.postFx.update(state.controls.object);
         }
       },
       onCameraEnd() {
@@ -295,9 +293,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // what the look button does: pressed again once on them, `panTo` swings round behind them
           void w.player?.panTo();
         } else if (e.key === "e" || e.key === "E") {
-          // the fade beyond the player, as its button does — which also turns the post pass on,
+          // the world shown by room, as the fade button does — which also turns the post pass on,
           // there being nothing to fade into otherwise
-          state.setPostFadeEnabled();
+          state.setFadeRoomsEnabled();
           w.menu?.update();
         }
       },
@@ -630,14 +628,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setFadeRoomsEnabled(next = !state.fadeRooms) {
         state.fadeRooms = next;
-        state.fadeRoomsFx.enabled = next;
         store.patch({ fadeRooms: next });
-        // either way: switching it OFF sends every room back towards fully shown, which is a fade
-        // of its own rather than a snap
-        state.fadeRoomsFx.sync(w);
-        state.syncPostFade();
-        state.forceUpdate();
+        state.setFadeRoomsActive(next);
+        // the rooms fade INTO the post pass's backdrop, so asking for them asks for the pass too
+        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
         w.menu?.update();
+      },
+      setFadeRoomsActive(active) {
+        // Not `setFadeRoomsEnabled`, which would persist the answer — this is also how the intro
+        // holds the fade off whilst the world arrives, which is a beat rather than a setting.
+        // Either way it SYNCS: switching off sends every room back towards fully shown, which is a
+        // fade of its own rather than a snap
+        state.fadeRoomsFx.enabled = active;
+        state.fadeRoomsFx.sync(w);
       },
       setFadeRoomOutlines(next = !state.fadeRoomOutlines) {
         state.fadeRoomOutlines = next;
@@ -645,19 +648,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ fadeRoomOutlines: next });
         state.forceUpdate();
         w.menu?.update();
-      },
-      syncPostFade() {
-        // The two are alternatives rather than layers: the circle fades by distance from the
-        // player, the rooms by which room a thing stands in, and both at once would fade a room's
-        // far side for being far as well as for being out of view. So the rooms take precedence
-        state.postFx.setFadeEnabled(state.postFade === true && state.fadeRooms === false);
-      },
-      setPostFadeEnabled(next = !state.postFade) {
-        state.postFade = next;
-        state.syncPostFade();
-        store.patch({ postFade: next });
-        // it has nothing to draw into otherwise, so asking for it asks for the pass as well
-        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
@@ -673,7 +663,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
-        state.syncPostFade(); // a fresh effect starts with the fade on, whatever it should be
 
         const pipeline = new THREE.RenderPipeline(gl);
         pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx);
@@ -906,7 +895,6 @@ export type State = {
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player */
-  postFade: boolean;
   /** Whether the world is shown by ROOM rather than faded on a circle about the player */
   fadeRooms: boolean;
   /** Whether the rooms in view are outlined over the finished frame */
@@ -986,12 +974,12 @@ export type State = {
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
   /** Toggles that fade, turning the pass itself on if it is off */
-  setPostFadeEnabled(next?: boolean): void;
   /** Whether the world is shown by room, which for now only means the circle is off */
   setFadeRoomsEnabled(next?: boolean): void;
+  /** Turns the room fade on or off WITHOUT persisting it — see within */
+  setFadeRoomsActive(active: boolean): void;
   setFadeRoomOutlines(next?: boolean): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
-  syncPostFade(): void;
   setupPostProcessing(): () => void;
   /** Whether a long press on an npc lights them up */
   setLightNpcsEnabled(next?: boolean): void;

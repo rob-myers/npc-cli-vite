@@ -37,7 +37,7 @@ export type FadeRooms = {
 type WorldLike = {
   gms: Geomorph.LayoutInstance[];
   d: Record<string, Geomorph.DoorState>;
-  player: { key: string };
+  player?: { key: string };
   e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
   r3f?: null | { invalidate(): void };
 };
@@ -129,14 +129,21 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
 
     sync(w) {
       // whatever `enabled` says, since the debug outlines are switched on separately
+      const inView = roomsInView(w);
       rooms.length = 0;
-      rooms.push(...roomsInView(w));
+      if (inView !== null) rooms.push(...inView);
       packOutlines(w);
+
+      // With nobody to see from, the world is shown WHOLE rather than hidden entirely: `null` is
+      // "we do not know where the player is" — before they have spawned, or between maps — which
+      // is not the same as "they can see nothing". Hiding it then would fade the world out and
+      // straight back in as the player arrives, over the top of the intro
+      const showAll = this.enabled === false || inView === null;
 
       const now = time.value;
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
       for (let slot = 0; slot < totalRoomSlots; slot++) {
-        const wanted = this.enabled === false || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
+        const wanted = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
         retarget(morphs[slot], wanted, fadeSecs, now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
       }
@@ -204,12 +211,15 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
  * The walk carries on from each room it reaches: light through a door into the next room goes on
  * through THAT room's window into a third. Breadth-first, so the cap keeps the nearest rooms.
  *
+ * `null` where there is no player to see from — which is not the same as an empty answer, and is
+ * why this does not give one. See `sync`
+ *
  * 🚧 hull doors join two GEOMORPHS, and are not followed here
  */
-function roomsInView(w: WorldLike): Geomorph.GmRoomId[] {
-  const at = w.e.npcToRoom.get(w.player.key);
+function roomsInView(w: WorldLike): null | Geomorph.GmRoomId[] {
+  const at = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
   const gm = at && w.gms[at.gmId];
-  if (at === undefined || gm === undefined) return [];
+  if (at === undefined || gm === undefined) return null;
 
   const joins = Object.values(w.d)
     .filter((door) => door.open === true && door.gmId === at.gmId)

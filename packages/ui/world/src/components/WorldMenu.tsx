@@ -233,8 +233,6 @@ export function WorldMenu() {
         return w.view.objectPick?.value === 1;
       case "Post FX":
         return w.view.postProcessing ?? false;
-      case "Fade Rooms":
-        return w.view.fadeRooms ?? false;
       case "Room Outlines":
         return w.view.fadeRoomOutlines ?? false;
       case "Light npcs":
@@ -270,10 +268,6 @@ export function WorldMenu() {
         break;
       case "Post FX":
         w.view.setPostProcessingEnabled();
-        state.update();
-        break;
-      case "Fade Rooms":
-        w.view.setFadeRoomsEnabled();
         state.update();
         break;
       case "Room Outlines":
@@ -725,19 +719,20 @@ export function WorldMenu() {
             </div>
           </div>
 
-          {/* the world fading out beyond the player — see `service/post-processing`. It needs the
-              post pass to draw into, so switching it on switches that on too */}
+          {/* the world shown by room, everything the player cannot see into faded away — see
+              `service/fade-rooms`. The rooms fade INTO the post pass's backdrop, so switching this
+              on switches that on too */}
           <button
             type="button"
             data-keep-menu-open
             title="fade"
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
             onClick={() => {
-              w.view.setPostFadeEnabled();
+              w.view.setFadeRoomsEnabled();
               state.update();
             }}
           >
-            {w.view.postFade ? (
+            {w.view.fadeRooms ? (
               <CircleDashedIcon className="size-5 text-slate-200" alt="faded" weight="bold" />
             ) : (
               <CircleIcon className="size-5 text-slate-400" alt="not faded" weight="bold" />
@@ -1177,7 +1172,6 @@ const nextCameraMode = { free: "follow", follow: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",
-  "Fade Rooms",
   "Room Outlines",
   "Light npcs",
   "Room Hit",

@@ -375,10 +375,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.hash = hashJson(state.assets);
       state.gmsHash = hashJson(state.gms);
 
-      // which room every part of the world stands in, drawn once the geomorphs are settled and
-      // AFTER `computeRoot`, which is what gives the connectors the `roomIds` it reads. Everything
-      // that asks — walls, obstacles, the floor's texture — runs off an effect keyed on what this
-      // query produces, so by then it is already there
       state.view.roomSlots.ensure(state.gms, state.gmsHash);
 
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
