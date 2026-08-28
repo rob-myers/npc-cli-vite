@@ -41,9 +41,8 @@ export type PlayerLight = {
   /**
    * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
    * and wants to ask. Ignores `strength`, so a caller decides for itself what an unlit light means.
-   * @param outset grows the polygon by this many metres, the boundary alone — the light's reach is
-   * unaffected. The polygon is star-shaped about the light, so asking about a point pulled that
-   * much nearer is exactly a dilation
+   * @param outset grows the polygon by this many metres. It is star-shaped about the light, so
+   * asking about a point pulled that much nearer is exactly a dilation
    */
   litAt(worldXZ: THREE.Node<"vec2">, outset?: number): THREE.Node<"float">;
   /** The same, for a material whose colour carries alpha — which is left alone */
@@ -209,18 +208,16 @@ export function createPlayerLight(): PlayerLight {
   })().compute(lightAngles);
 
   /**
-   * How lit a world XZ is: `1` where the light reaches it, `0` where it does not, with the
-   * penumbra and the falloff in between. Taken as an argument rather than read off
-   * `positionWorld`, so that anything holding a world position can ask — the post pass recovers
-   * one from the depth buffer, and asks the same question of it
+   * How lit a world XZ is: `1` where the light reaches it, `0` where it does not, with the penumbra
+   * in between. There is no falloff with distance — the polygon simply ends where the sweep's own
+   * `lightRadius` cap put it. Taken as an argument rather than read off `positionWorld`, so that
+   * anything holding a world position can ask
    */
   function litAt(worldXZ: THREE.Node<"vec2">, outset = 0) {
     const away = worldXZ.sub(origin);
-    const trueDist = away.length();
-    // the occlusion test alone is asked about a nearer point, which grows the polygon outwards by
-    // `outset` — the radial falloff below still uses the honest distance, or the light's reach
-    // would grow with it
-    const dist = trueDist.sub(outset);
+    // asked about a point pulled `outset` nearer, which grows the polygon outwards. Branched in js
+    // rather than in the shader, so the usual case emits no subtract at all
+    const dist = outset === 0 ? away.length() : away.length().sub(outset);
 
     // The angle, as a position along the table. The sweep writes index `i` for `2π i / N`, so
     // index 0 is angle 0 — and `atan` gives `[-π, π]`, whose negative half must WRAP to the top of
@@ -253,13 +250,7 @@ export function createPlayerLight(): PlayerLight {
     // and no bias hides that. Graded over the width of the error, it simply reads as a penumbra
     // that widens with distance — which is what a real one does
     const width = arc.mul(penumbraArcs).add(lightBias);
-    const lit = smoothstep(reference.sub(width), reference.add(width), dist).oneMinus();
-
-    // and it fades across its reach, so the light ends in a falloff rather than on a circle drawn
-    // across the floor. Written low-to-high and inverted: `smoothstep` is undefined where its
-    // first edge is the greater, which is what a high-to-low pair would ask for
-    const reach = smoothstep(float(lightRadius - lightFalloff), float(lightRadius), trueDist).oneMinus();
-    return lit.mul(reach);
+    return smoothstep(reference.sub(width), reference.add(width), dist).oneMinus();
   }
 
   /**
@@ -449,9 +440,8 @@ const maxLightSegs = 4096;
 const cullRebuildDist = 2;
 const cullMargin = 3;
 
-/** How far the light reaches (metres), and over how much of that it fades away */
+/** How far the light reaches (metres) — the sweep stops there, and so does the polygon */
 const lightRadius = 8;
-const lightFalloff = 6;
 /** How black an unseen fragment goes */
 const unlitTint = 0.7;
 /**
