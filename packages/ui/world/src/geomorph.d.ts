@@ -27,8 +27,14 @@ declare namespace Geomorph {
       nonHullWall: Geom.Poly[];
       window: Geom.Poly[];
     };
+    /**
+     * The `meta.broad` walls, each with the rooms it abuts — MORE than two, a broad wall being
+     * structure rather than a partition between one room and the next
+     */
+    broadWalls: { poly: Geom.Poly; roomIds: number[] }[];
     unseen: boolean;
-    wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta }[];
+    /** `broadWallId` indexes `broadWalls` */
+    wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta; broadWallId: null | number }[];
     wallPolyCount: number;
     wallPolySegCounts: number[];
     /** `poly.lineSegs` rather than `connector.seg`  */

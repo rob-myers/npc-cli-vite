@@ -1,9 +1,10 @@
 import { warn } from "@npc-cli/util/legacy/generic";
 import { Break, Fn, float, If, int, Loop, min, time, uniform, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import type DerivedGmsData from "./DerivedGmsData";
 import { helper } from "./helper";
 import { arrivedAt, morphNode, retarget } from "./morph";
-import { alwaysShownSlot, slotOf, totalRoomSlots } from "./room-slots";
+import { alwaysShownSlot, broadWallSlotOf, slotOf, totalRoomSlots } from "./room-slots";
 
 export type FadeRooms = {
   /**
@@ -36,6 +37,7 @@ export type FadeRooms = {
 /** What this reads — a subset of `World`, so the service need not import it */
 type WorldLike = {
   gms: Geomorph.LayoutInstance[];
+  gmsData: DerivedGmsData;
   d: Record<string, Geomorph.DoorState>;
   player?: { key: string };
   e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
@@ -142,6 +144,16 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
 
       const now = time.value;
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
+
+      // Broad walls may abut may rooms and is shown whilst any of them is
+      for (const [gmId, gm] of w.gms.entries()) {
+        for (const [broadWallId, { roomIds }] of (w.gmsData.byKey[gm.key]?.broadWalls ?? []).entries()) {
+          if (roomIds.some((roomId) => shown.has(slotOf(gmId, roomId)))) {
+            shown.add(broadWallSlotOf(gmId, broadWallId));
+          }
+        }
+      }
+
       for (let slot = 0; slot < totalRoomSlots; slot++) {
         const wanted = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
         retarget(morphs[slot], wanted, fadeSecs, now);
