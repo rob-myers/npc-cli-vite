@@ -45,6 +45,7 @@ export default function NpcShadows() {
 
   useMemo(() => {
     state.shadow.mat.colorNode = state.shadow.colorNode.mul(w.view.fadeRoomsFx.getVisiblity(state.shadow.xzo.w));
+    state.shadow.mat.needsUpdate = true;
   }, [w.view.fadeRoomsFx.uid]);
 
   return <primitive object={state.shadow.mesh} />;
