@@ -223,7 +223,8 @@ export default function Obstacles(_props: Props) {
             const { origPoly, transform: obTransform, height, meta } = obstacle;
             // a skirt stands where its obstacle does, which was worked out in `buildInstanceIds`
             const instanceId = state.encodeInstanceId(gmId, obstacleId);
-            const slot = (instanceId !== null && state.roomSlotByInstanceId[instanceId]) || alwaysShownSlot;
+            const slot =
+              instanceId === null ? alwaysShownSlot : (state.roomSlotByInstanceId[instanceId] ?? alwaysShownSlot);
             // skirts support numeric meta.inset
             // 🔔 this may increase the number of edges ~ instances
             tmpMat1.setMatrixValue(obTransform).postMultiply(gmTransform);
