@@ -1,7 +1,6 @@
 import { time, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import type DerivedGmsData from "./DerivedGmsData";
-import type { GmRoomGraph } from "./gm-room-graph";
+import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
 import { arrivedAt, morphNode, retarget } from "./morph";
 import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slots";
@@ -23,7 +22,7 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
   let framesRaf = 0;
 
   function fadeAt(slot: THREE.Node<"float">) {
-    return morphNode(morphArray.element(slot.toInt()), fadeSecs);
+    return morphNode(morphArray.element(slot.toInt()), ROOM_FADE_SECS);
   }
 
   return {
@@ -42,19 +41,15 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
 
     sync(w) {
       const inView = roomsInView(w);
+
       rooms.length = 0;
       if (inView !== null) rooms.push(...inView);
 
-      // With nobody to see from, the world is shown WHOLE rather than hidden entirely: `null` is
-      // "we do not know where the player is" — before they have spawned, or between maps — which
-      // is not the same as "they can see nothing". Hiding it then would fade the world out and
-      // straight back in as the player arrives, over the top of the intro
       const showAll = this.enabled === false || inView === null;
-
       const now = time.value;
-      const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
 
-      // Broad walls may abut may rooms and is shown whilst any of them is
+      const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
+      // Broad walls are shown whenever an adjacent room is visible
       for (const [gmId, gm] of w.gms.entries()) {
         for (const [broadWallId, { roomIds }] of (w.gmsData.byKey[gm.key]?.broadWalls ?? []).entries()) {
           if (roomIds.some((roomId) => shown.has(slotOf(gmId, roomId)))) {
@@ -64,8 +59,8 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
       }
 
       for (let slot = 0; slot < totalSlots; slot++) {
-        const wanted = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
-        retarget(morphs[slot], wanted, fadeSecs, now);
+        const next = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
+        retarget(morphs[slot], next, ROOM_FADE_SECS, now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
       }
 
@@ -80,8 +75,8 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
    * Its own loop rather than `World.onTick`, which stops with the world: a door opened whilst
    * everything is paused must still be seen to open
    */
-  function keepFramesComing(w: WorldLike) {
-    framesUntilMs = performance.now() + fadeSecs * 1000 + 100;
+  function keepFramesComing(w: WorldType) {
+    framesUntilMs = performance.now() + ROOM_FADE_SECS * 1000 + 100;
     if (framesRaf !== 0) return;
     const tick = () => {
       w.r3f?.invalidate();
@@ -107,13 +102,13 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
  */
-function roomsInView(w: WorldLike): null | Geomorph.GmRoomId[] {
-  const at = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
-  if (at === undefined || w.gms[at.gmId] === undefined) return null;
+function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
+  const gmRoomId = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
+  if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) return null;
 
   let roomsSeen = 0;
   return w.gmRoomGraph
-    .getReachableUpTo(at.grKey, (node) => {
+    .getReachableUpTo(gmRoomId.grKey, (node) => {
       if (node.type === "room") return ++roomsSeen >= MAX_FADED_IN_ROOMS;
       return node.type === "door" && w.d[node.gdKey]?.open !== true;
     })
@@ -122,7 +117,7 @@ function roomsInView(w: WorldLike): null | Geomorph.GmRoomId[] {
 }
 
 /** How long a room takes to fade in or out, in seconds */
-const fadeSecs = 1;
+const ROOM_FADE_SECS = 1;
 
 const MAX_FADED_IN_ROOMS = 12;
 
@@ -147,16 +142,5 @@ export type FadeRooms = {
   /** `color` with its alpha taken by `fade` */
   applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
   /** Re-reads which rooms are in view and sends their fades off. Cheap, but not per frame */
-  sync(w: WorldLike): void;
-};
-
-/** What this reads — a subset of `World`, so the service need not import it */
-type WorldLike = {
-  gms: Geomorph.LayoutInstance[];
-  gmsData: DerivedGmsData;
-  gmRoomGraph: GmRoomGraph;
-  d: Record<string, Geomorph.DoorState>;
-  player?: { key: string };
-  e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
-  r3f?: null | { invalidate(): void };
+  sync(w: WorldType): void;
 };
