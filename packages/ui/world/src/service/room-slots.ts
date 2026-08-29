@@ -33,7 +33,7 @@ const broadSlotCount = MAX_GEOMORPH_INSTANCES * MAX_BROAD_WALLS_PER_GEOMORPH;
 export const alwaysShownSlot = broadSlotBase + broadSlotCount;
 /** For a fragment belonging to no room at all, which the texture here reads as a blank */
 export const neverShownSlot = alwaysShownSlot + 1;
-export const totalRoomSlots = neverShownSlot + 1;
+export const totalSlots = neverShownSlot + 1;
 
 /**
  * Which room each part of the world belongs to, precomputed before fragment.

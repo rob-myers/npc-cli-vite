@@ -643,7 +643,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setFadeRoomOutlines(next = !state.fadeRoomOutlines) {
         state.fadeRoomOutlines = next;
-        state.fadeRoomsFx.outlines.value = next === true ? 1 : 0;
+        state.fadeRoomsFx.debugOutlines.value = next === true ? 1 : 0;
         store.patch({ fadeRoomOutlines: next });
         state.forceUpdate();
         w.menu?.update();
@@ -729,7 +729,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   // the rooms are read off whatever map is up now
   useEffect(() => {
     if (w.gms.length === 0) return;
-    state.fadeRoomsFx.outlines.value = state.fadeRoomOutlines === true ? 1 : 0;
+    state.fadeRoomsFx.debugOutlines.value = state.fadeRoomOutlines === true ? 1 : 0;
     state.fadeRoomsFx.sync(w);
   }, [w.gmsHash]);
 

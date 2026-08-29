@@ -5,71 +5,27 @@ import type DerivedGmsData from "./DerivedGmsData";
 import type { GmGraph } from "./gm-graph";
 import { helper } from "./helper";
 import { arrivedAt, morphNode, retarget } from "./morph";
-import { alwaysShownSlot, broadWallSlotOf, slotOf, totalRoomSlots } from "./room-slots";
-
-export type FadeRooms = {
-  /**
-   * Changes whenever this is rebuilt. Anything that captured its nodes must be rebuilt with it —
-   * see `PostProcessing`'s own `uid`, and every material that fades
-   */
-  uid: string;
-  /**
-   * Whether the world is shown by room rather than faded on a circle about the player. A plain
-   * boolean, NOT a uniform: switching it off sends every room to `1`, so the shader is the same
-   * handful of instructions either way and there is nothing per-fragment to switch on
-   */
-  enabled: boolean;
-  /** `1` whilst the rooms in view are outlined over the finished frame — a debug option */
-  outlines: THREE.UniformNode<"float", number>;
-  /** The rooms in view, in the order their outlines are packed. Kept up to date whatever `enabled` says */
-  rooms: Geomorph.GmRoomId[];
-  /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
-  getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
-  /** The FULLER of two slots, for what stands between two rooms: a wall, a door */
-  fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
-  /** `color` with its alpha taken by `fade` */
-  applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
-  /** How far `worldXZ` lies from the nearest edge of any room in view — the debug outline */
-  distanceAt(worldXZ: THREE.Node<"vec2">): THREE.Node<"float">;
-  /** Re-reads which rooms are in view and sends their fades off. Cheap, but not per frame */
-  sync(w: WorldLike): void;
-};
-
-/** What this reads — a subset of `World`, so the service need not import it */
-type WorldLike = {
-  gms: Geomorph.LayoutInstance[];
-  gmsData: DerivedGmsData;
-  gmGraph: GmGraph;
-  d: Record<string, Geomorph.DoorState>;
-  player?: { key: string };
-  e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
-  r3f?: null | { invalidate(): void };
-};
+import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slots";
 
 /**
- * Which rooms the world is shown in: the ones the player's light reaches, as opposed to the circle
- * `service/post-processing` otherwise fades on. A circle knows nothing about the walls, so it cuts
- * across rooms; fading on rooms lands every edge of the fade where a wall already is.
+ * During fade mode this computes faded in/out rooms.
  *
- * The fade itself is PER ROOM, not per fragment. Every instance in the world carries the slot of
- * the room it stands in as a static attribute — see `service/room-slots` — so a material reads one
- * entry of the small array here and is done. An earlier attempt walked the room polygons per
- * fragment in every material, and the cost of that is what sank it.
+ * Per-room fade rather then per-fragment. Each instance of an instancedMesh in the world carries the slot of
+ * the room it stands in as a static attribute — so a material reads an small array entry and is done.
  */
 export function createFadeRooms(enabledInitially = false): FadeRooms {
-  /** One per room in the world, plus the two that stand for no room */
-  const morphs = Array.from({ length: totalRoomSlots }, () => arrivedAt(1, 0));
-  const morphValues = Array.from({ length: totalRoomSlots }, () => new THREE.Vector3(1, 1, 0));
+  const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, 0));
+  const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
 
   /** Per room in view: `x` where its outline's verts start, `y` how many */
-  const infoValues = Array.from({ length: maxFadeRooms }, () => new THREE.Vector4());
+  const infoValues = Array.from({ length: MAX_FADED_IN_ROOMS }, () => new THREE.Vector4());
   const infos = uniformArray<"vec4">(infoValues, "vec4");
   /** Every room's outline, one after another, in world XZ */
-  const vertValues = Array.from({ length: maxFadeVerts }, () => new THREE.Vector2());
+  const vertValues = Array.from({ length: MAX_FADED_IN_ROOMS_VERTICES }, () => new THREE.Vector2());
   const verts = uniformArray<"vec2">(vertValues, "vec2");
   const roomCount = uniform(0);
-  const outlines = uniform(0);
+  const debugOutlines = uniform(0);
 
   const rooms: Geomorph.GmRoomId[] = [];
   /** Whilst set, frames are asked for — see `keepFramesComing` */
@@ -82,8 +38,8 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
     // An `If` around the work, not a `mix` at the call site — a shader evaluates BOTH sides of a
     // `mix`, so every pixel would pay for this walk with the outlines off. Not an early `Return`
     // either: tsl emits a bare `return;`, which wgsl will not have in a function returning `f32`
-    If(outlines.greaterThan(0.5), () => {
-      Loop(maxFadeRooms, ({ i }: { i: THREE.Node<"int"> }) => {
+    If(debugOutlines.greaterThan(0.5), () => {
+      Loop(MAX_FADED_IN_ROOMS, ({ i }: { i: THREE.Node<"int"> }) => {
         If(i.toFloat().greaterThanEqual(roomCount), () => {
           Break();
         });
@@ -92,7 +48,7 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
         const start = int(infos.element(i).x).toVar();
         const vertCount = int(infos.element(i).y).toVar();
 
-        Loop(maxRoomVerts, ({ i: j }: { i: THREE.Node<"int"> }) => {
+        Loop(MAX_FADED_IN_ROOM_VERTICES, ({ i: j }: { i: THREE.Node<"int"> }) => {
           If(j.greaterThanEqual(vertCount), () => {
             Break();
           });
@@ -115,7 +71,7 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
   return {
     uid: crypto.randomUUID(),
     enabled: enabledInitially === true,
-    outlines,
+    debugOutlines,
     rooms,
     getVisiblity: fadeAt,
 
@@ -156,7 +112,7 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
         }
       }
 
-      for (let slot = 0; slot < totalRoomSlots; slot++) {
+      for (let slot = 0; slot < totalSlots; slot++) {
         const wanted = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
         retarget(morphs[slot], wanted, fadeSecs, now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
@@ -177,12 +133,12 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
 
       // truncating would chop a RUN of vertices out, the outline then closing straight from the
       // last kept back to the first — which reads as a corner simply missing. So it is said
-      if (outline.length > maxRoomVerts) {
-        warn(`fade-rooms: room ${gmId}-${roomId} has ${outline.length} verts, over ${maxRoomVerts}`);
+      if (outline.length > MAX_FADED_IN_ROOM_VERTICES) {
+        warn(`fade-rooms: room ${gmId}-${roomId} has ${outline.length} verts, over ${MAX_FADED_IN_ROOM_VERTICES}`);
       }
-      const vertCount = Math.min(outline.length, maxRoomVerts);
-      if (total + vertCount > maxFadeVerts) {
-        warn(`fade-rooms: over ${maxFadeVerts} verts in view; room ${gmId}-${roomId} is dropped`);
+      const vertCount = Math.min(outline.length, MAX_FADED_IN_ROOM_VERTICES);
+      if (total + vertCount > MAX_FADED_IN_ROOMS_VERTICES) {
+        warn(`fade-rooms: over ${MAX_FADED_IN_ROOMS_VERTICES} verts in view; room ${gmId}-${roomId} is dropped`);
         continue;
       }
 
@@ -239,11 +195,11 @@ function roomsInView(w: WorldLike): null | Geomorph.GmRoomId[] {
   const seen = new Set([at.grKey]);
   // `out` is both the answer and the queue — appending whilst walking it is what makes this
   // breadth-first, since a room's neighbours land after every room already found
-  for (let i = 0; i < out.length && out.length < maxFadeRooms; i++) {
+  for (let i = 0; i < out.length && out.length < MAX_FADED_IN_ROOMS; i++) {
     for (const next of roomsJoining(w, out[i], openDoors)) {
       if (seen.has(next.grKey) === true) continue;
       seen.add(next.grKey);
-      if (out.push(next) >= maxFadeRooms) break;
+      if (out.push(next) >= MAX_FADED_IN_ROOMS) break;
     }
   }
 
@@ -291,8 +247,8 @@ function otherRoom(gm: Geomorph.LayoutInstance, connector: Geomorph.Connector, r
 
 /** Which room holds `entry`, looked for a little further on from `from` than the entry itself */
 function roomAt(gm: Geomorph.LayoutInstance, from: Geom.VectJson, entry: Geom.VectJson): null | number {
-  const x = entry.x + (entry.x - from.x) * entryReachOn;
-  const y = entry.y + (entry.y - from.y) * entryReachOn;
+  const x = entry.x + (entry.x - from.x) * ENTRY_REACH_EXTRA;
+  const y = entry.y + (entry.y - from.y) * ENTRY_REACH_EXTRA;
   // the polygons, not `findRoomIdContaining` — that reads a canvas and throws on a non-integer
   const roomId = gm.rooms.findIndex((room) => room.contains({ x, y }));
   return roomId === -1 ? null : roomId;
@@ -301,11 +257,49 @@ function roomAt(gm: Geomorph.LayoutInstance, from: Geom.VectJson, entry: Geom.Ve
 /** How long a room takes to fade in or out, in seconds */
 const fadeSecs = 1;
 
-/** Caps on the outlines drawn at once, the vertices any one room contributes, and the total */
-const maxFadeRooms = 12;
-const maxRoomVerts = 64;
-const maxFadeVerts = 640;
+const MAX_FADED_IN_ROOMS = 12;
+const MAX_FADED_IN_ROOM_VERTICES = 64;
+const MAX_FADED_IN_ROOMS_VERTICES = 640;
 /** How much further past a connector's entry to look for its room, relative to its own depth */
-const entryReachOn = 0.5;
+const ENTRY_REACH_EXTRA = 0.5;
 /** Further than anything is from a room edge, which is what `distanceAt` says when there are none */
 const farAway = 1e6;
+
+export type FadeRooms = {
+  /**
+   * Changes whenever this is rebuilt. Anything that captured its nodes must be rebuilt with it —
+   * see `PostProcessing`'s own `uid`, and every material that fades
+   */
+  uid: string;
+  /**
+   * Whether the world is shown by room rather than faded on a circle about the player. A plain
+   * boolean, NOT a uniform: switching it off sends every room to `1`, so the shader is the same
+   * handful of instructions either way and there is nothing per-fragment to switch on
+   */
+  enabled: boolean;
+  /** `1` whilst the rooms in view are outlined over the finished frame — a debug option */
+  debugOutlines: THREE.UniformNode<"float", number>;
+  /** The rooms in view, in the order their outlines are packed. Kept up to date whatever `enabled` says */
+  rooms: Geomorph.GmRoomId[];
+  /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
+  getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
+  /** The FULLER of two slots, for what stands between two rooms: a wall, a door */
+  fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
+  /** `color` with its alpha taken by `fade` */
+  applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
+  /** How far `worldXZ` lies from the nearest edge of any room in view — the debug outline */
+  distanceAt(worldXZ: THREE.Node<"vec2">): THREE.Node<"float">;
+  /** Re-reads which rooms are in view and sends their fades off. Cheap, but not per frame */
+  sync(w: WorldLike): void;
+};
+
+/** What this reads — a subset of `World`, so the service need not import it */
+type WorldLike = {
+  gms: Geomorph.LayoutInstance[];
+  gmsData: DerivedGmsData;
+  gmGraph: GmGraph;
+  d: Record<string, Geomorph.DoorState>;
+  player?: { key: string };
+  e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
+  r3f?: null | { invalidate(): void };
+};
