@@ -1,7 +1,7 @@
 import { time, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type DerivedGmsData from "./DerivedGmsData";
-import type { GmGraph } from "./gm-graph";
+import type { GmRoomGraph } from "./gm-room-graph";
 import { helper } from "./helper";
 import { arrivedAt, morphNode, retarget } from "./morph";
 import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slots";
@@ -92,15 +92,17 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
 }
 
 /**
- * Which rooms the player's light reaches: their own, and whatever they can see into from it.
+ * Which rooms the player's light reaches: their own, and whatever they could see from it.
  *
- * An OPEN door joins two rooms and a shut one does not. A WINDOW always joins them, whatever it is
- * doing, since it is glass — which is why `service/player-light` leaves windows out of the occluders
- * it sweeps, and why this must follow them too.
+ * `gmRoomGraph` already joins a room to its doors and windows, and a hull door to the one facing it
+ * in the next geomorph — so this is that graph walked outwards, stopping at any door that is SHUT.
+ * A window is never stopped at, whatever it is doing, since it is glass — which is why
+ * `service/player-light` leaves windows out of the occluders it sweeps, and why this must too.
  *
- * The walk carries on from each room it reaches: light through a door into the next room goes on
- * through THAT room's window into a third, and through hull doors into the next geomorph
- * altogether. Breadth-first, so the cap keeps the nearest rooms.
+ * `getReachableUpTo` keeps the node it stops on and takes none of its successors, so a shut door is
+ * reached and not passed through. Rooms are counted as they are met and the walk gives up once
+ * `MAX_FADED_IN_ROOMS` have been, rather than expanding the whole reachable map and slicing after —
+ * with every door on a large map open, that is every room in it.
  *
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
@@ -109,77 +111,20 @@ function roomsInView(w: WorldLike): null | Geomorph.GmRoomId[] {
   const at = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
   if (at === undefined || w.gms[at.gmId] === undefined) return null;
 
-  const openDoors = Object.values(w.d).filter((door) => door.open === true);
-
-  const out = [at];
-  const seen = new Set([at.grKey]);
-  // `out` is both the answer and the queue — appending whilst walking it is what makes this
-  // breadth-first, since a room's neighbours land after every room already found
-  for (let i = 0; i < out.length && out.length < MAX_FADED_IN_ROOMS; i++) {
-    for (const next of roomsJoining(w, out[i], openDoors)) {
-      if (seen.has(next.grKey) === true) continue;
-      seen.add(next.grKey);
-      if (out.push(next) >= MAX_FADED_IN_ROOMS) break;
-    }
-  }
-
-  return out;
-}
-
-/** What `from` is joined to: through its own geomorph's open doors and windows, and across a hull door */
-function* roomsJoining(w: WorldLike, from: Geomorph.GmRoomId, openDoors: Geomorph.DoorState[]) {
-  const gm = w.gms[from.gmId];
-  if (gm === undefined) return;
-
-  for (const door of openDoors) {
-    if (door.gmId !== from.gmId) continue;
-    if (door.hull === true) {
-      // a hull door's far side lies in the NEXT geomorph, which its own `roomIds` cannot name — it
-      // reads `null` there, and only the graph joining the geomorphs knows what is through it
-      if (door.connector.roomIds.includes(from.roomId) === false) continue;
-      const adj = w.gmGraph.getAdjacentRoomCtxt(from.gmId, door.doorId);
-      if (adj !== null) yield helper.getGmRoomId(adj.adjGmId, adj.adjRoomId);
-      continue;
-    }
-    const roomId = otherRoom(gm, door.connector, from.roomId);
-    if (roomId !== null) yield helper.getGmRoomId(from.gmId, roomId);
-  }
-
-  for (const window of gm.windows ?? []) {
-    const roomId = otherRoom(gm, window, from.roomId);
-    if (roomId !== null) yield helper.getGmRoomId(from.gmId, roomId);
-  }
-}
-
-/**
- * The room on the far side of `connector` from `roomId`, or `null` if it joins somewhere else — or
- * nowhere, as a window onto the outside of the hull does.
- *
- * `roomIds` comes from `findRoomIdContaining` on the two entries, and a side can read `null` where
- * a room does exist — an entry landing on a threshold. So a `null` is asked of the polygons again.
- */
-function otherRoom(gm: Geomorph.LayoutInstance, connector: Geomorph.Connector, roomId: number): null | number {
-  const [a, b] = connector.roomIds;
-  if (a === roomId) return b ?? roomAt(gm, connector.center, connector.entries[1]);
-  if (b === roomId) return a ?? roomAt(gm, connector.center, connector.entries[0]);
-  return null;
-}
-
-/** Which room holds `entry`, looked for a little further on from `from` than the entry itself */
-function roomAt(gm: Geomorph.LayoutInstance, from: Geom.VectJson, entry: Geom.VectJson): null | number {
-  const x = entry.x + (entry.x - from.x) * ENTRY_REACH_EXTRA;
-  const y = entry.y + (entry.y - from.y) * ENTRY_REACH_EXTRA;
-  // the polygons, not `findRoomIdContaining` — that reads a canvas and throws on a non-integer
-  const roomId = gm.rooms.findIndex((room) => room.contains({ x, y }));
-  return roomId === -1 ? null : roomId;
+  let roomsSeen = 0;
+  return w.gmRoomGraph
+    .getReachableUpTo(at.grKey, (node) => {
+      if (node.type === "room") return ++roomsSeen >= MAX_FADED_IN_ROOMS;
+      return node.type === "door" && w.d[node.gdKey]?.open !== true;
+    })
+    .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []))
+    .slice(0, MAX_FADED_IN_ROOMS);
 }
 
 /** How long a room takes to fade in or out, in seconds */
 const fadeSecs = 1;
 
 const MAX_FADED_IN_ROOMS = 12;
-/** How much further past a connector's entry to look for its room, relative to its own depth */
-const ENTRY_REACH_EXTRA = 0.5;
 
 export type FadeRooms = {
   /**
@@ -197,7 +142,7 @@ export type FadeRooms = {
   rooms: Geomorph.GmRoomId[];
   /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
   getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
-  /** The FULLER of two slots, for what stands between two rooms: a wall, a door */
+  /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /** `color` with its alpha taken by `fade` */
   applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
@@ -209,7 +154,7 @@ export type FadeRooms = {
 type WorldLike = {
   gms: Geomorph.LayoutInstance[];
   gmsData: DerivedGmsData;
-  gmGraph: GmGraph;
+  gmRoomGraph: GmRoomGraph;
   d: Record<string, Geomorph.DoorState>;
   player?: { key: string };
   e: { npcToRoom: Map<string, Geomorph.GmRoomId> };
