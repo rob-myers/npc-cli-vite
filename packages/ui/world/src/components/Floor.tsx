@@ -289,7 +289,10 @@ export default function Floor() {
       // tinted by what the player can see from where they stand — see `service/player-light`
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
-        w.view.fadeRoomsFx.getVisiblity(w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex)),
+        // shown where it lies inside a room in view, a doorway, or a BROAD wall — and nowhere else
+        w.view.fadeRoomsFx.getVisiblity(
+          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+        ),
       ),
       uid: generateUUID(),
     };

@@ -7,7 +7,7 @@ import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
 import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
+import { broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -105,14 +105,16 @@ export default function Walls() {
           // the hull is the ship's outside, which fade mode has nothing behind — and
           // `neverShownSlot` is 1 whilst the fade is off, so this costs nothing there
           slots.setXY(instanceId, neverShownSlot, neverShownSlot);
-        } else if (broadWallId === null) {
-          // non-broad-wall seg slots (x, y) are adjacent room slots
-          const beside = w.view.roomSlots.roomsBeside(gmId, seg[0], seg[1]);
-          const [a, b] = beside === null ? [alwaysShownSlot, alwaysShownSlot] : beside.map((x) => slotOf(gmId, x));
-          slots.setXY(instanceId, a, b);
-        } else {
-          // broad-wall seg slots are (broadWallSlot, broadWallSlot)
+        } else if (broadWallId !== null) {
+          // A BROAD wall goes on its own slot, whole: it is one piece of structure, and the ceiling
+          // draws one lid over the lot on that same slot.
           const slot = broadWallSlotOf(gmId, broadWallId);
+          slots.setXY(instanceId, slot, slot);
+        } else {
+          // otherwise at most one room whose outline this segment lies on, so
+          // room show inner walls only; when no room exists use `neverShownSlot`
+          const roomId = w.view.roomSlots.roomOfSeg(gmId, seg[0], seg[1]);
+          const slot = roomId === null ? neverShownSlot : slotOf(gmId, roomId);
           slots.setXY(instanceId, slot, slot);
         }
       },
@@ -184,7 +186,8 @@ export default function Walls() {
 
     // a wall belongs to the rooms on BOTH sides, and is shown at the fuller of the two — so a room
     // in view keeps every wall that encloses it, whatever stands on the far side of them
-    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
+    const slots = attribute<"vec2">("roomSlots", "vec2");
+    const fade = w.view.fadeRoomsFx.fadeAtPair(slots);
 
     return {
       opacityUniform,

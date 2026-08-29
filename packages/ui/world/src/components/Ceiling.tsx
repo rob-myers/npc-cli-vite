@@ -159,7 +159,9 @@ export default function Ceiling() {
       // would light the lid of whatever room the player stands in — see `service/player-light`
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
-        w.view.fadeRoomsFx.getVisiblity(w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex)),
+        w.view.fadeRoomsFx.getVisiblity(
+          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+        ),
       ),
       uid: generateUUID(),
     };
