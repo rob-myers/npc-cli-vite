@@ -1,18 +1,5 @@
-import {
-  Fn,
-  float,
-  getViewPosition,
-  mix,
-  screenSize,
-  screenUV,
-  smoothstep,
-  step,
-  uniform,
-  vec3,
-  vec4,
-} from "three/tsl";
-import * as THREE from "three/webgpu";
-import type { FadeRooms } from "./fade-rooms";
+import { Fn, float, mix, screenSize, screenUV, smoothstep, step, vec3, vec4 } from "three/tsl";
+import type * as THREE from "three/webgpu";
 
 export type PostProcessing = {
   /**
@@ -25,13 +12,7 @@ export type PostProcessing = {
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
    */
-  /**
-   * @param rooms when given, their outlines are drawn over the finished frame whilst its own
-   * debug option is on — see `service/fade-rooms`
-   */
-  apply(sceneColor: THREE.TextureNode, rooms?: FadeRooms): THREE.Node<"vec4">;
-  /** The camera the frame was drawn with, which the outlines are placed against. Call every frame */
-  update(camera: THREE.Camera): void;
+  apply(sceneColor: THREE.TextureNode): THREE.Node<"vec4">;
 };
 
 /**
@@ -49,19 +30,10 @@ export type PostProcessing = {
  * circle knows nothing about the walls and cut across the rooms it was hiding.
  */
 export function createPostProcessing(): PostProcessing {
-  // to turn a pixel back into a view ray
-  const camProjectionMatrixInverse = uniform(new THREE.Matrix4());
-  const camWorldMatrix = uniform(new THREE.Matrix4());
   return {
     uid: crypto.randomUUID(),
 
-    update(camera) {
-      camera.updateMatrixWorld(); // so it is this frame's, not the last one's
-      camProjectionMatrixInverse.value.copy(camera.projectionMatrixInverse);
-      camWorldMatrix.value.copy(camera.matrixWorld);
-    },
-
-    apply(sceneColor, rooms) {
+    apply(sceneColor) {
       return Fn(() => {
         // The backdrop: thin diagonal stripes, in DEVICE pixels rather than in the world, so they
         // stay a hairline whatever the camera does — the page's pattern, now inside the canvas
@@ -83,23 +55,7 @@ export function createPostProcessing(): PostProcessing {
         // coverage beside it, which is what makes the composite a plain sum rather than a `mix`
         const composed = backdrop.mul(drawn.oneMinus()).add(sceneColor.rgb.mul(drawn));
 
-        if (rooms === undefined) return vec4(composed, 1);
-
-        // debug: the outlines of the rooms in view, laid OVER the finished frame rather than into
-        // the world, so they read wherever they fall.
-        //
-        // The camera is the origin in view space, so a point on the ray IS its direction; where it
-        // meets the ground is where this pixel counts as standing. No depth buffer needed, which
-        // suits a floor that does not write one (it would z-fight in the hull doorways). The camera
-        // looks down, so `y` is negative — the cap keeps a ray along the horizon far away rather
-        // than sending it up behind us
-        const onRay = getViewPosition(screenUV, float(1), camProjectionMatrixInverse);
-        const rayDir = camWorldMatrix.mul(vec4(onRay, 0)).xyz;
-        const camPos = camWorldMatrix.mul(vec4(0, 0, 0, 1)).xyz;
-        const worldXZ = camPos.xz.add(rayDir.xz.mul(camPos.y.div(rayDir.y.min(-1e-4).negate())));
-
-        const onEdge = smoothstep(float(roomEdgeWidth), float(0), rooms.distanceAt(worldXZ));
-        return vec4(mix(composed, roomEdgeColor, onEdge), 1);
+        return vec4(composed, 1);
       })();
     },
   };
@@ -107,10 +63,6 @@ export function createPostProcessing(): PostProcessing {
 
 /** The coverage a fragment must carry to count as fully drawn — see `drawn` */
 const coverageFull = 0.85;
-
-/** debug: the room outlines — how wide the line is, in metres, and its ink */
-const roomEdgeWidth = 0.06;
-const roomEdgeColor = /* @__PURE__ */ vec3(1, 0.1, 0.1);
 
 /** What lies beyond the world: near-black, ruled with hairline diagonals */
 const backdropColor = vec3(0.0, 0.0, 0.0);

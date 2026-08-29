@@ -234,7 +234,7 @@ export function WorldMenu() {
       case "Post FX":
         return w.view.postProcessing ?? false;
       case "Room Outlines":
-        return w.view.fadeRoomOutlines ?? false;
+        return w.debug?.fadeRoomOutlines ?? false;
       case "Light npcs":
         return w.view.lightNpcs?.value === 1;
       case "Colliders":
@@ -269,7 +269,9 @@ export function WorldMenu() {
         state.update();
         break;
       case "Room Outlines":
-        w.view.setFadeRoomOutlines();
+        w.debug?.set({ fadeRoomOutlines: !w.debug.fadeRoomOutlines });
+        store.patch({ fadeRoomOutlines: w.debug?.fadeRoomOutlines === true });
+        w.floor?.drawAll();
         state.update();
         break;
       case "Light npcs":
