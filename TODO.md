@@ -169,13 +169,13 @@
   - ✅ show broad walls whenever adjacent to visible room
   - ✅ fix map 301-101-301
   - ✅ fix some outlying obstacle skirts
-  - 🚧 fix inaccuracies
+  - ✅ fix inaccuracies
     - ✅ find more neighbouring rooms
     - ✅ avoid partial walls
-    - invisible instancedmesh occlusions
-  - npcs should not be suddenly visible
-  - include neighouring rooms at lower opacity
+    - ✅ invisible decor instancedmesh occlusions
+  - 🚧  include neighouring rooms at lower opacity
     - only walls and floor?
+  - npcs should not be suddenly visible
   - ❌ pick does not restrict by room
   - move "Light npcs" (long-press-light) into sub-icon of fade button
     - can enable/disable via long press of fade button
