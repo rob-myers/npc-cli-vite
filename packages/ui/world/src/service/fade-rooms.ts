@@ -1,5 +1,4 @@
-import { warn } from "@npc-cli/util/legacy/generic";
-import { Break, Fn, float, If, int, Loop, min, time, uniform, uniformArray, vec4 } from "three/tsl";
+import { time, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type DerivedGmsData from "./DerivedGmsData";
 import type { GmGraph } from "./gm-graph";
@@ -18,51 +17,10 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
   const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
 
-  /** Per room in view: `x` where its outline's verts start, `y` how many */
-  const infoValues = Array.from({ length: MAX_FADED_IN_ROOMS }, () => new THREE.Vector4());
-  const infos = uniformArray<"vec4">(infoValues, "vec4");
-  /** Every room's outline, one after another, in world XZ */
-  const vertValues = Array.from({ length: MAX_FADED_IN_ROOMS_VERTICES }, () => new THREE.Vector2());
-  const verts = uniformArray<"vec2">(vertValues, "vec2");
-  const roomCount = uniform(0);
-  const debugOutlines = uniform(0);
-
   const rooms: Geomorph.GmRoomId[] = [];
   /** Whilst set, frames are asked for — see `keepFramesComing` */
   let framesUntilMs = 0;
   let framesRaf = 0;
-
-  const distanceAtFn = Fn(([worldXZ]: [THREE.Node<"vec2">]) => {
-    const nearest = float(farAway).toVar();
-
-    // An `If` around the work, not a `mix` at the call site — a shader evaluates BOTH sides of a
-    // `mix`, so every pixel would pay for this walk with the outlines off. Not an early `Return`
-    // either: tsl emits a bare `return;`, which wgsl will not have in a function returning `f32`
-    If(debugOutlines.greaterThan(0.5), () => {
-      Loop(MAX_FADED_IN_ROOMS, ({ i }: { i: THREE.Node<"int"> }) => {
-        If(i.toFloat().greaterThanEqual(roomCount), () => {
-          Break();
-        });
-        // `toVar` materialises these: a bare `infos.element(i)` re-reads `i` wherever it is used,
-        // and tsl gives both loops the same index name, so the inner one would fetch another room
-        const start = int(infos.element(i).x).toVar();
-        const vertCount = int(infos.element(i).y).toVar();
-
-        Loop(MAX_FADED_IN_ROOM_VERTICES, ({ i: j }: { i: THREE.Node<"int"> }) => {
-          If(j.greaterThanEqual(vertCount), () => {
-            Break();
-          });
-          // to the nearest point ON the edge, so a corner measures to its vertex
-          const a = verts.element(start.add(j));
-          const edge = verts.element(start.add(j.add(1).mod(vertCount))).sub(a);
-          const along = worldXZ.sub(a).dot(edge).div(edge.dot(edge).max(1e-6)).clamp(0, 1);
-          nearest.assign(min(nearest, worldXZ.sub(a.add(edge.mul(along))).length()));
-        });
-      });
-    });
-
-    return nearest;
-  });
 
   function fadeAt(slot: THREE.Node<"float">) {
     return morphNode(morphArray.element(slot.toInt()), fadeSecs);
@@ -71,7 +29,6 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
   return {
     uid: crypto.randomUUID(),
     enabled: enabledInitially === true,
-    debugOutlines,
     rooms,
     getVisiblity: fadeAt,
 
@@ -83,16 +40,10 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
       return vec4(color.rgb, color.a.mul(fade));
     },
 
-    distanceAt(worldXZ) {
-      return distanceAtFn(worldXZ) as THREE.Node<"float">;
-    },
-
     sync(w) {
-      // whatever `enabled` says, since the debug outlines are switched on separately
       const inView = roomsInView(w);
       rooms.length = 0;
       if (inView !== null) rooms.push(...inView);
-      packOutlines(w);
 
       // With nobody to see from, the world is shown WHOLE rather than hidden entirely: `null` is
       // "we do not know where the player is" — before they have spawned, or between maps — which
@@ -121,37 +72,6 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
       keepFramesComing(w);
     },
   };
-
-  function packOutlines(w: WorldLike) {
-    let total = 0;
-    let count = 0;
-    for (const { gmId, roomId } of rooms) {
-      const gm = w.gms[gmId];
-      // only `outline`, so a room's holes are dropped rather than read as inside
-      const outline = gm?.rooms[roomId]?.outline;
-      if (outline === undefined || outline.length === 0) continue;
-
-      // truncating would chop a RUN of vertices out, the outline then closing straight from the
-      // last kept back to the first — which reads as a corner simply missing. So it is said
-      if (outline.length > MAX_FADED_IN_ROOM_VERTICES) {
-        warn(`fade-rooms: room ${gmId}-${roomId} has ${outline.length} verts, over ${MAX_FADED_IN_ROOM_VERTICES}`);
-      }
-      const vertCount = Math.min(outline.length, MAX_FADED_IN_ROOM_VERTICES);
-      if (total + vertCount > MAX_FADED_IN_ROOMS_VERTICES) {
-        warn(`fade-rooms: over ${MAX_FADED_IN_ROOMS_VERTICES} verts in view; room ${gmId}-${roomId} is dropped`);
-        continue;
-      }
-
-      infoValues[count].set(total, vertCount, 0, 0);
-      for (let v = 0; v < vertCount; v++, total++) {
-        // `gm.rooms` are in the layout's own space, as `wallSegs` are
-        const at = gm.matrix.transformPoint({ x: outline[v].x, y: outline[v].y });
-        vertValues[total].set(at.x, at.y); // `y` is world Z
-      }
-      count++;
-    }
-    roomCount.value = count;
-  }
 
   /**
    * The morphs are drawn from tsl's clock, which only moves when something renders — and the
@@ -258,12 +178,8 @@ function roomAt(gm: Geomorph.LayoutInstance, from: Geom.VectJson, entry: Geom.Ve
 const fadeSecs = 1;
 
 const MAX_FADED_IN_ROOMS = 12;
-const MAX_FADED_IN_ROOM_VERTICES = 64;
-const MAX_FADED_IN_ROOMS_VERTICES = 640;
 /** How much further past a connector's entry to look for its room, relative to its own depth */
 const ENTRY_REACH_EXTRA = 0.5;
-/** Further than anything is from a room edge, which is what `distanceAt` says when there are none */
-const farAway = 1e6;
 
 export type FadeRooms = {
   /**
@@ -277,9 +193,7 @@ export type FadeRooms = {
    * handful of instructions either way and there is nothing per-fragment to switch on
    */
   enabled: boolean;
-  /** `1` whilst the rooms in view are outlined over the finished frame — a debug option */
-  debugOutlines: THREE.UniformNode<"float", number>;
-  /** The rooms in view, in the order their outlines are packed. Kept up to date whatever `enabled` says */
+  /** The rooms in view, whatever `enabled` says — what the debug outlines are drawn for */
   rooms: Geomorph.GmRoomId[];
   /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
   getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
@@ -287,8 +201,6 @@ export type FadeRooms = {
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /** `color` with its alpha taken by `fade` */
   applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
-  /** How far `worldXZ` lies from the nearest edge of any room in view — the debug outline */
-  distanceAt(worldXZ: THREE.Node<"vec2">): THREE.Node<"float">;
   /** Re-reads which rooms are in view and sends their fades off. Cheap, but not per frame */
   sync(w: WorldLike): void;
 };

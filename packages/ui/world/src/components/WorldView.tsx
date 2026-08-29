@@ -93,7 +93,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
       fadeRooms: saved.fadeRooms,
-      fadeRoomOutlines: saved.fadeRoomOutlines,
       lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
@@ -242,13 +241,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
-      },
-      onCameraChange(_spherical: THREE.Spherical, _target: THREE.Vector3) {
-        // the post pass places its room outlines on the ground, so it needs the camera that drew
-        // the frame — and this runs once per rendered frame, just before the render
-        if (state.controls !== null) {
-          state.postFx.update(state.controls.object);
-        }
       },
       onCameraEnd() {
         const cameraInitial: PersistedCamera = {
@@ -641,13 +633,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.fadeRoomsFx.enabled = active;
         state.fadeRoomsFx.sync(w);
       },
-      setFadeRoomOutlines(next = !state.fadeRoomOutlines) {
-        state.fadeRoomOutlines = next;
-        state.fadeRoomsFx.debugOutlines.value = next === true ? 1 : 0;
-        store.patch({ fadeRoomOutlines: next });
-        state.forceUpdate();
-        w.menu?.update();
-      },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
         store.patch({ postProcessing: next });
@@ -664,7 +649,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const scenePass = pass(scene, camera);
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx);
+        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"));
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -729,7 +714,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   // the rooms are read off whatever map is up now
   useEffect(() => {
     if (w.gms.length === 0) return;
-    state.fadeRoomsFx.debugOutlines.value = state.fadeRoomOutlines === true ? 1 : 0;
     state.fadeRoomsFx.sync(w);
   }, [w.gmsHash]);
 
@@ -780,7 +764,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // a pinch zooms continuously and keeps whatever distance it is let go at. The wheel has
           // no such gesture, and keeps the two stops
           freeZoom={w.touchDevice}
-          onFrame={state.onCameraChange}
           onEnd={state.onCameraEnd}
           {...state.ctrlOpts}
         />
@@ -892,7 +875,6 @@ export type State = {
   /** Whether the world is shown by ROOM rather than faded on a circle about the player */
   fadeRooms: boolean;
   /** Whether the rooms in view are outlined over the finished frame */
-  fadeRoomOutlines: boolean;
   lightNpcs: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
@@ -912,7 +894,6 @@ export type State = {
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
-  onCameraChange(spherical: THREE.Spherical, target: THREE.Vector3): void;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
   /** Debounced resize + key events */
@@ -972,7 +953,6 @@ export type State = {
   setFadeRoomsEnabled(next?: boolean): void;
   /** Turns the room fade on or off WITHOUT persisting it — see within */
   setFadeRoomsActive(active: boolean): void;
-  setFadeRoomOutlines(next?: boolean): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
   setupPostProcessing(): () => void;
   /** Whether a long press on an npc lights them up */

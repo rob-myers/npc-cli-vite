@@ -54,6 +54,7 @@ export function Debug() {
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
       doorNormalsShown: false,
+      fadeRoomOutlines: getWorldStore(w.key).read().fadeRoomOutlines,
       gridShown: false,
       lightSpheres: null,
       lightSpheresShown: false,
@@ -444,6 +445,8 @@ export type State = {
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
   doorNormalsShown: boolean;
+  /** Ring the rooms in view — drawn into the floor texture, see `Floor.drawGm` */
+  fadeRoomOutlines: boolean;
   gridShown: boolean;
   lightSpheres: null | THREE.InstancedMesh;
   lightSpheresShown: boolean;

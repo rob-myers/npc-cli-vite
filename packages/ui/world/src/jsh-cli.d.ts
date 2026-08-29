@@ -28,6 +28,10 @@ declare namespace JshCli {
         key: "try-close-door";
         gdKey: Geomorph.GmDoorKey;
         meta?: Meta;
+      }
+    | {
+        /** The rooms in view have changed — `Floor` draws its debug outlines off this */
+        key: "update-faded-rooms";
       };
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;

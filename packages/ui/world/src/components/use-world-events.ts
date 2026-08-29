@@ -386,6 +386,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "spawned-many":
             break;
+          case "update-faded-rooms":
+            if (w.debug?.fadeRoomOutlines === true) w.floor.drawAll();
+            break;
           default:
             throw new ExhaustiveError(e);
         }
@@ -832,6 +835,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         w.view.fadeRoomsFx.sync(w);
         w.view.forceUpdate();
+        w.events.next({ key: "update-faded-rooms" });
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];

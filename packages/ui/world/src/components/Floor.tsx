@@ -45,6 +45,9 @@ export default function Floor() {
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
       },
+      drawAll() {
+        void state.draw().then(() => w.update());
+      },
       async draw() {
         w.setNextPending({ floor: true });
 
@@ -77,6 +80,15 @@ export default function Floor() {
 
         // room outlines
         drawRoomOutlines(ct, layout, w.getTheme().floor);
+
+        if (w.debug?.fadeRoomOutlines === true) {
+          const inView = w.view.fadeRoomsFx.rooms.filter((x) => x.gmId === gmId);
+          drawPolygons(
+            ct,
+            inView.flatMap(({ roomId }) => layout.rooms[roomId] ?? []),
+            { fillStyle: null, strokeStyle: debugRoomEdgeColor, lineWidth: debugRoomEdgeWidth },
+          );
+        }
 
         // fix curved walls aliasing 🚧 prefer meta.curved
         drawPolygons(
@@ -301,9 +313,15 @@ export default function Floor() {
   useEffect(() => {
     state.transformInstances();
     state.addUvs();
-    state.onNewMap(); // in the same tick as the transforms above, else they disagree
+    // same tick as transforms above, else they disagree
+    state.onNewMap();
+
     // render initially or once decor has gmRoomIds
-    (w.decor.ready || !w.isReady()) && state.draw().then(() => w.update());
+    if (!w.decor.ready && w.isReady()) {
+      return;
+    }
+
+    state.drawAll();
   }, [w.hash, w.nav, w.gmsData, w.decor.ready]);
 
   return (
@@ -349,6 +367,8 @@ export type State = {
   };
   addUvs(gms?: Geomorph.LayoutInstance[]): void;
   draw(): Promise<void>;
+  /** `draw`, then show it — what anything outside this file wants */
+  drawAll(): void;
   drawGm(gmId: number): void;
   /** Just the hull, as a stand-in until `drawGm` lands */
   drawHull(gmId: number, gms?: Geomorph.LayoutInstance[]): void;
@@ -377,6 +397,10 @@ const hullStripeColor = "#0000001a";
 
 /** What a folded map shows in place of its art: the hull as a flat black shape */
 const fadeColor = vec3(0, 0, 0);
+
+/** debug: every room outlined — how wide the line is, in metres, and its ink */
+const debugRoomEdgeWidth = 0.06;
+const debugRoomEdgeColor = "rgba(255, 100, 100, 1)";
 
 const tmpMat1 = new Mat();
 const tmpPoly = new Poly();
