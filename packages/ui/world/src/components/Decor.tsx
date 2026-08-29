@@ -884,7 +884,7 @@ export default function Decor() {
       // decor stands in one room, so both components of `roomSlots` carry it and `.x` will do
       const fade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
 
-      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
+      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest });
       // tinted by what the player can see from where they stand — see `service/player-light`
       texMat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyLightRgba(
@@ -912,7 +912,11 @@ export default function Decor() {
         w.view.objectPick,
       );
 
-      const runtimeTexMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true });
+      const runtimeTexMat = new THREE.MeshStandardNodeMaterial({
+        side: THREE.DoubleSide,
+        transparent: true,
+        alphaTest,
+      });
       runtimeTexMat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyLightRgba(
           (select as SelectAnyType)(
@@ -933,6 +937,7 @@ export default function Decor() {
         side: THREE.DoubleSide,
         color: "#000",
         transparent: true,
+        alphaTest,
       });
       runtimeBlackMat.opacityNode = fade;
       runtimeBlackMat.outputNode = (select as SelectAnyType)(
@@ -1165,10 +1170,18 @@ function buildShapeOutputNode(
   return (select as SelectAnyType)(isShape, shapeOutput, texPickOutput);
 }
 
+/**
+ * Faded decor is transparent but still DEPTH WRITES, so a quad in a faded room goes on hiding what
+ * is behind it — the outline of a cuboid stamped over an npc. Discarded instead, at a threshold low
+ * enough that the fade reads as a fade rather than a pop
+ */
+const alphaTest = 0.1;
+
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({
   side: THREE.DoubleSide,
   color: "#000",
   transparent: true,
+  alphaTest,
 });
 
 // used to ignore stale queryFn and trigger fresh one
