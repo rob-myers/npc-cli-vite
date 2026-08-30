@@ -1,5 +1,5 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
-import { useStateRef } from "@npc-cli/util";
+import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
@@ -12,11 +12,13 @@ import {
   attribute,
   cameraPosition,
   color,
+  Discard,
   Fn,
   instanceIndex,
   int,
   mix,
   normalWorld,
+  positionLocal,
   positionWorld,
   texture,
   transformNormalToView,
@@ -28,11 +30,12 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
-import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
+import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, wallHeight, worldToSguScale } from "../const";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
+import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -214,6 +217,7 @@ export default function Obstacles(_props: Props) {
       transformAndColorSkirts() {
         if (!state.skirtInst) return;
         const slots = ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
+        const sinks = ensureSinks(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
         let sId = 0;
 
         state.skirtInst.instanceMatrix.array.fill(0);
@@ -244,6 +248,7 @@ export default function Obstacles(_props: Props) {
               const skirtDimY = typeof meta.h === 'number' ? meta.h : skirtDepth;
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
               slots.setXY(sId, slot, slot);
+              sinks.setX(sId, wallHeight / skirtDimY); // its own scale, so it drops the same distance
               state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
               state.skirtInst.setMatrixAt(sId++,
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
@@ -254,6 +259,7 @@ export default function Obstacles(_props: Props) {
 
         // state.skirtInst.instanceMatrix.needsUpdate = true;
         slots.needsUpdate = true;
+        sinks.needsUpdate = true;
         state.skirtInst.computeBoundingSphere();
       },
     }),
@@ -274,15 +280,20 @@ export default function Obstacles(_props: Props) {
     const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
     const topFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     return {
+      // in `focus` mode it drops away as its room goes, and rises back as it returns
+      positionNode: sinkNode(w, topFade, wallHeight),
       // NOT tinted by `service/player-light`: an obstacle's top is a sprite seen from above, and
       // the light only ever muddied it. Its SKIRT still takes the light — that stands up, and is
       // what reads the room it is in
       // never quite black, unlike everything else that hides: a top is a sprite seen from above and
       // keeping a little of it leaves the room's furniture readable as shapes — see `hiddenTopTint`
-      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(hiddenTopTint)),
-        topFade,
-        w.view.objectPick,
+      // and whatever of it has sunk below the floor discarded — see `dropBelowFloor`
+      colorNode: dropBelowFloor(
+        w.view.fadeRoomsFx.dropPickWhenHidden(
+          w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(hiddenTopTint)),
+          topFade,
+          w.view.objectPick,
+        ),
       ),
       normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
@@ -292,11 +303,12 @@ export default function Obstacles(_props: Props) {
 
   useMemo(() => state.buildInstanceIds(), [w.mapKey, w.hash]);
 
-  // the materials above name `roomSlots`, so it must be on the geometry before they compile —
-  // the effects that fill it run later
+  // the materials above name `roomSlots`, and the skirts' also `sinkScale`, so both must be on the
+  // geometry before they compile — the effects that fill them run later
   useMemo(() => {
     ensureRoomSlots(state.quad, MAX_OBSTACLE_QUAD_INSTANCES);
     ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
+    ensureSinks(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
   }, []);
 
   const skirtCount = w.gmsData.count.obstacleSkirtEdges;
@@ -329,13 +341,17 @@ export default function Obstacles(_props: Props) {
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
     const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
-    mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
-      w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1)),
+    // dropping away with the obstacle it wraps, at its own scale
+    mat.positionNode = sinkNode(w, skirtFade, attribute<"float">("sinkScale", "float"));
+    mat.colorNode = dropBelowFloor(
+      w.view.fadeRoomsFx.dropPickWhenHidden(
+        w.view.fadeRoomsFx.applyFadeRgba(
+          w.view.playerLight.applyLightRgba(vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1)),
+          skirtFade,
+        ),
         skirtFade,
+        w.view.objectPick,
       ),
-      skirtFade,
-      w.view.objectPick,
     );
     return mat;
   }, [skirtLightMeta, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
@@ -422,6 +438,7 @@ export default function Obstacles(_props: Props) {
           colorNode={material.colorNode}
           outputNode={material.outputNode}
           normalNode={material.normalNode}
+          positionNode={material.positionNode}
         />
       </instancedMesh>
 
@@ -484,6 +501,49 @@ const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 /** How much of an obstacle's top is left once its room is hidden — a shape rather than nothing */
+/**
+ * `node`, with whatever has sunk below the FLOOR discarded.
+ *
+ * Both of these are transparent, so they are drawn in an order settled per MESH rather than per
+ * fragment — sink one and it goes on drawing over floors it now stands under, its own and the next
+ * room's alike. Underground it is not to be seen at all, which settles the question outright
+ */
+function dropBelowFloor<T extends THREE.Node<"vec3"> | THREE.Node<"vec4">>(node: T): T {
+  return Fn(() => {
+    Discard(positionWorld.y.lessThan(floorY));
+    return node;
+  })() as T;
+}
+
+/** Where the floor lies, a hair above it so nothing skims along the top of it */
+const floorY = 0.01;
+
+/**
+ * How far, in the GEOMETRY's own units, one `wallHeight` is for each SKIRT — `wallHeight/yScale`.
+ *
+ * A `positionNode` runs BEFORE the instance matrix, so an offset written there is in geometry units
+ * and comes out multiplied by whatever that instance is scaled by in y. Skirts each take their own
+ * depth, so each needs its own; tops are not scaled at all and take `wallHeight` flat
+ */
+function ensureSinks(geo: THREE.BufferGeometry, count: number) {
+  const existing = geo.getAttribute("sinkScale") as undefined | THREE.InstancedBufferAttribute;
+  if (existing !== undefined && existing.count >= count) return existing;
+  const attr = new THREE.InstancedBufferAttribute(new Float32Array(count).fill(1), 1);
+  geo.setAttribute("sinkScale", attr);
+  return attr;
+}
+
+/**
+ * Dropped by one `wallHeight` as `fade` goes to 0, and nothing at all outside `"focus"` mode.
+ *
+ * `scale` is that height in the instance's own units — a flat number where every instance is scaled
+ * alike, and an attribute where they are not. See `ensureSinks`
+ */
+function sinkNode(w: UseStateRef<WorldState>, fade: THREE.Node<"float">, scale: number | THREE.Node<"float">) {
+  const drop = fade.oneMinus().mul(w.view.fadeRoomsFx.focusNode).mul(scale);
+  return positionLocal.sub(vec3(0, drop, 0));
+}
+
 const hiddenTopTint = 0.1;
 
 const obstaclesSkirtBaseColor = "#555";
