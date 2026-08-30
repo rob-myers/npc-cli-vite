@@ -26,13 +26,16 @@ export function morphAt(m: Morph, secs: number, now: number): number {
 
 /**
  * Sends a morph off towards `wanted` from wherever it has got to, so a change of mind part way
- * across carries on from there rather than snapping back. A no-op if it is already headed there
+ * across carries on from there rather than snapping back. A no-op if it is already headed there.
+ *
+ * `startAt` in the future holds it where it is until then — both `morphAt` and `morphNode` clamp
+ * how far along it is, so a journey that has not begun reads as `from`
  */
-export function retarget(m: Morph, wanted: number, secs: number, now: number): void {
+export function retarget(m: Morph, wanted: number, secs: number, now: number, startAt = now): void {
   if (m.to === wanted) return;
   m.from = morphAt(m, secs, now);
   m.to = wanted;
-  m.at = now;
+  m.at = startAt;
 }
 
 /** Whether a morph has arrived, and so has nothing left to draw */
