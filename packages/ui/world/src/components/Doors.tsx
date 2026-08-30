@@ -539,42 +539,50 @@ export default function Doors() {
     const cs = float(1).sub(openRatio);
     const collapsedX = positionLocal.x.mul(cs).add(slideSign.mul(openRatio).mul(0.5));
 
+    // a door belongs to the rooms on both sides, and is shown at the fuller of the two. Declared
+    // ahead of the materials: the `Fn` below reads it, and tsl may run that body straight away
+    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
+
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
       mat.outputNode = Fn(() => {
         // out of the pick pass altogether whilst doors are unpickable, so a pick reaches whatever
         // stands behind them. A discard rather than a transparency: the pick target is not
         // multisampled, so the coverage the panels see through by does nothing there
-        Discard(w.view.objectPick.notEqual(0).and(w.view.pickDoors.equal(0)));
+        // and whilst its rooms are hidden, so a click reaches the floor behind it
+        Discard(w.view.objectPick.notEqual(0).and(w.view.pickDoors.equal(0).or(fade.lessThan(0.5))));
         return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
       })();
     }
 
-    // a door belongs to the rooms on both sides, and is shown at the fuller of the two
-    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-
     for (const mat of [front, back]) {
       // full whilst picking, else a door could be picked through the samples coverage drops
-      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity), float(1)).mul(fade);
+      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity), float(1));
     }
-    edge.opacityNode = fade;
 
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
 
     // `doorMeta` carries each face's layer already oriented, so there is no swap here
     // each tinted by what the player can see from where they stand — see `service/player-light`
-    front.colorNode = w.view.playerLight.applyLightRgba(
-      texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
-        .depth(doorMeta.y.toInt())
-        .mul(vec3(state.brightnessNode)),
+    // black whilst its rooms are hidden rather than transparent — see `applyFadeRgba`
+    front.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+      w.view.playerLight.applyLightRgba(
+        texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
+          .depth(doorMeta.y.toInt())
+          .mul(vec3(state.brightnessNode)),
+      ),
+      fade,
     );
-    back.colorNode = w.view.playerLight.applyLightRgba(
-      texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
-        .depth(doorMeta.z.toInt())
-        .mul(vec3(state.brightnessNode)),
+    back.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+      w.view.playerLight.applyLightRgba(
+        texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
+          .depth(doorMeta.z.toInt())
+          .mul(vec3(state.brightnessNode)),
+      ),
+      fade,
     );
-    edge.colorNode = w.view.playerLight.applyLight(color(doorEdgeColor).rgb);
+    edge.colorNode = w.view.playerLight.applyLight(color(doorEdgeColor).rgb).mul(fade);
 
     // only 3 groups in door box
     const output = [edge, front, back];

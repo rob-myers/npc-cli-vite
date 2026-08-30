@@ -107,6 +107,14 @@ export default function NPCs() {
         const npcLit = uniform(0);
         const roomSlot = uniform(alwaysShownSlot, "float");
 
+        const roomFade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
+        const bodyFade = roomFade.div(npcFadeShare).clamp(0, 1);
+        // colour drained by the time the sphere starts fading and symmetrically
+        const bodyTint = roomFade
+          .sub(npcFadeShare)
+          .div(1 - npcFadeShare)
+          .clamp(0, 1);
+
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
         const isLabel = groupIdAttr.greaterThan(0.5);
@@ -172,25 +180,38 @@ export default function NPCs() {
           metalness: 0,
           roughness: 1,
         });
-        material.alphaTestNode = (select as SelectAnyType)(isLabel, float(0.1).mul(fold), float(0.9).mul(fold));
+        // - label/body fade in during unfold
+        // - label fades in/out with room, whereas the body is cut away rather than faded
+        material.alphaTestNode = (select as SelectAnyType)(
+          isLabel,
+          float(0.1).mul(fold).mul(roomFade),
+          float(0.9).mul(fold),
+        );
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
-        // the BODY is tinted by what the player can see from where they stand, but the label is
-        // not: it is a billboard expanded in `vertexNode`, so its fragments' `positionWorld` is not
-        // where it appears — the light would sample a meaningless direction and flicker. It is a
-        // caption on the world rather than a part of it, so it stays lit either way
-        // A lit npc is lit by their OWN light, so the player's sight is stepped around entirely:
-        // it neither dims them where it does not reach nor tints them where it does. They were
-        // picked out to BE seen, and darkening them to a third outside the polygon undoes that.
-        // MULTIPLIED, as light on a surface is, so the skin keeps its own contrast; and mixed
-        // rather than branched, so `npcLit` can be faded rather than only switched
+        // - playerLight affects body but not label
+        // - lit npc is lit independently
         const shaded = w.view.playerLight.applyLightRgba(mainColor);
         const ownLit = vec4(mainColor.rgb.mul(npcLitBoost), mainColor.a);
         const litAmount = npcLit.mul(w.view.lightNpcs);
-        // the label goes with the body: it is a caption on something that is no longer shown
-        const fade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
-        material.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-          (select as any)(isLabel, labelColor, mix(shaded, ownLit, litAmount)),
-          fade,
+        // black first then sphere fade
+        const body = w.view.fadeRoomsFx.applySphereFade(
+          w.view.fadeRoomsFx.applyFadeRgba(mix(shaded, ownLit, litAmount), bodyTint),
+          bodyFade,
+          npcSphereY,
+          npcSphereRadius,
+          isMain, // body only
+        );
+        // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
+        // fade, well before and after the body's own share of it, and eased at both ends
+        const labelFade = smoothstep(float(0), float(1), roomFade);
+        const label = w.view.fadeRoomsFx.applyFadeRgba(
+          w.view.fadeRoomsFx.applyFadeAlpha(labelColor, labelFade),
+          labelFade,
+        );
+        material.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
+          (select as any)(isLabel, label, body),
+          roomFade,
+          w.view.objectPick,
         );
         material.outputNode = (select as SelectAnyType)(
           isPickMode,
@@ -960,6 +981,20 @@ const rimColor = [0.55, 0.72, 0.7];
  */
 const rimOverheadAmount = 0.05;
 /** How much brighter a lit npc is than an unlit one — see `Npc.setLit` */
+/**
+ * How much of an npc's room fade their own takes, at the near end of it — the stretch over which
+ * their sphere closes or opens and their colour drains or returns. `1` is the whole of it
+ */
+const npcFadeShare = 0.3;
+
+/**
+ * The sphere an npc fades in and out of, in MODEL units — `npcScale` is applied to the group they
+ * hang off, so these are not metres. The model stands ~1.93 tall, hence a middle at ~0.96 and a
+ * reach far enough to take in a head, a foot and an outstretched arm
+ */
+const npcSphereY = 0.96;
+const npcSphereRadius = 1.15;
+
 const npcLitBoost = 1.2;
 const rimOverheadFrom = 0.45;
 const rimOverheadTo = 0.85;

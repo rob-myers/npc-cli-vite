@@ -1,4 +1,4 @@
-import { time, uniformArray, vec4 } from "three/tsl";
+import { Discard, Fn, positionLocal, time, uniformArray, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
@@ -36,7 +36,33 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
     },
 
     applyFadeRgba(color, fade) {
+      return vec4(color.rgb.mul(fade), color.a);
+    },
+
+    applyFadeAlpha(color, fade) {
       return vec4(color.rgb, color.a.mul(fade));
+    },
+
+    applySphereFade(node: never, fade: THREE.Node<"float">, centerY: number, radius: number, where?: never) {
+      // A SPHERE about a point in the object's own space, growing with `fade`: everything outside
+      // it is hidden, so a thing comes in from its middle outwards and goes back the same way.
+      // Local rather than world, so it goes where the object goes — and for a skinned mesh
+      // `positionLocal` is the skinned position, so it follows the pose rather than the bind
+      return Fn(() => {
+        const outside = positionLocal
+          .sub(vec3(0, centerY, 0))
+          .length()
+          .greaterThan(fade.mul(radius));
+        Discard(where === undefined ? outside : outside.and(where));
+        return node;
+      })();
+    },
+
+    dropPickWhenHidden(node: never, fade: THREE.Node<"float">, objectPick: THREE.Node<"float">) {
+      return Fn(() => {
+        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)));
+        return node;
+      })();
     },
 
     sync(w) {
@@ -95,9 +121,8 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
  * `service/player-light` leaves windows out of the occluders it sweeps, and why this must too.
  *
  * `getReachableUpTo` keeps the node it stops on and takes none of its successors, so a shut door is
- * reached and not passed through. Rooms are counted as they are met and the walk gives up once
- * `MAX_FADED_IN_ROOMS` have been, rather than expanding the whole reachable map and slicing after —
- * with every door on a large map open, that is every room in it.
+ * reached and not passed through. Nothing else stops it: the shut doors decide how far the light
+ * gets, which is what being able to see amounts to, over a graph of a couple of hundred nodes.
  *
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
@@ -106,20 +131,13 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
   const gmRoomId = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
   if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) return null;
 
-  let roomsSeen = 0;
   return w.gmRoomGraph
-    .getReachableUpTo(gmRoomId.grKey, (node) => {
-      if (node.type === "room") return ++roomsSeen >= MAX_FADED_IN_ROOMS;
-      return node.type === "door" && w.d[node.gdKey]?.open !== true;
-    })
-    .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []))
-    .slice(0, MAX_FADED_IN_ROOMS);
+    .getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)
+    .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []));
 }
 
 /** How long a room takes to fade in or out, in seconds */
-const ROOM_FADE_SECS = 1;
-
-const MAX_FADED_IN_ROOMS = 12;
+const ROOM_FADE_SECS = 0.7;
 
 export type FadeRooms = {
   /**
@@ -139,8 +157,55 @@ export type FadeRooms = {
   getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
   /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
-  /** `color` with its alpha taken by `fade` */
+  /**
+   * `color` with its COLOUR taken by `fade` — black where a room is hidden, its own where it is
+   * shown, and its alpha untouched either way.
+   *
+   * Nothing changes how solid it is, so nothing half-covers anything: no sorting, no blending, no
+   * depth written by something that is barely there. A hidden room goes black rather than absent,
+   * which against the near-black backdrop reads as absent anyway
+   */
   applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
+  /**
+   * `color` with its ALPHA taken by `fade` instead — for the FLOOR, which lies under everything and
+   * so can go without hiding anything behind it. Blacking it out would leave a black floor where
+   * the backdrop should be showing through
+   */
+  applyFadeAlpha(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
+  /**
+   * `node`, with whatever lies outside a GROWING SPHERE discarded — centred `centerY` up the
+   * object's own space and reaching `radius` at a `fade` of 1, so a thing arrives from its middle
+   * outwards and leaves inwards.
+   *
+   * Measured in LOCAL space, so it moves with the object rather than standing still in the world
+   */
+  applySphereFade<T extends THREE.Node<"float"> | THREE.Node<"vec3"> | THREE.Node<"vec4">>(
+    node: T,
+    fade: THREE.Node<"float">,
+    centerY: number,
+    radius: number,
+    /**
+     * Where the cut applies, for a material whose fragments are not all the same thing. A discard
+     * takes the fragment whatever branch of a `select` it sits in, so anything else sharing the
+     * material — a billboarded label, say — must be excluded here or it goes with the body
+     */
+    where?: THREE.Node<"bool">,
+  ): T;
+  /**
+   * `node`, with the fragment discarded whilst PICKING if its room is hidden — so a click passes
+   * through a room it cannot see and lands on whatever is behind, which is the floor.
+   *
+   * Needed because a hidden room is blacked out rather than made transparent: its alpha is what it
+   * always was, so without this it would go on writing pick ids as solidly as ever. A discard
+   * rather than a zero alpha: the pick target is not multisampled, so coverage does nothing there.
+   *
+   * Wrap whichever node a material already has; the value comes back untouched
+   */
+  dropPickWhenHidden<T extends THREE.Node<"float"> | THREE.Node<"vec3"> | THREE.Node<"vec4">>(
+    node: T,
+    fade: THREE.Node<"float">,
+    objectPick: THREE.Node<"float">,
+  ): T;
   /** Re-reads which rooms are in view and sends their fades off. Cheap, but not per frame */
   sync(w: WorldType): void;
 };

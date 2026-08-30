@@ -827,13 +827,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       syncFadeRooms() {
+        w.view.fadeRoomsFx.sync(w);
+
         // Every npc, not just the player: an npc MOVES between rooms, so where they stand is a
         // uniform of their own rather than an attribute fixed when the map loaded
         for (const npc of Object.values(w.n)) {
           const at = state.npcToRoom.get(npc.key);
           npc.roomSlot.value = at === undefined ? alwaysShownSlot : slotOf(at.gmId, at.roomId);
         }
-        w.view.fadeRoomsFx.sync(w);
         w.view.forceUpdate();
         w.events.next({ key: "update-faded-rooms" });
       },

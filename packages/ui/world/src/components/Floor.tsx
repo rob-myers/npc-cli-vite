@@ -5,7 +5,19 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { attribute, instanceIndex, int, mix, texture, transformNormalToView, uniform, uv, vec3, vec4 } from "three/tsl";
+import {
+  attribute,
+  float,
+  instanceIndex,
+  int,
+  mix,
+  texture,
+  transformNormalToView,
+  uniform,
+  uv,
+  vec3,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
@@ -290,6 +302,17 @@ export default function Floor() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     const texel = texNode.depth(instanceIndex);
+
+    // Shown in room, doorway, or broad wall
+    const floorFade = w.view.objectPick
+      .notEqual(0)
+      .select(
+        float(1),
+        w.view.fadeRoomsFx.getVisiblity(
+          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+        ),
+      );
+
     return {
       // fix InstancedMesh non-uniform scaling
       normalNode: transformNormalToView(vec3(0, 1, 0)),
@@ -299,12 +322,11 @@ export default function Floor() {
       // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`
       // tinted by what the player can see from where they stand — see `service/player-light`
+      // DARKENED rather than faded, as everything else is — and never quite to black, so a hidden
+      // room still reads as ground rather than as a hole. See `hiddenFloorTint`
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
-        // shown where it lies inside a room in view, a doorway, or a BROAD wall — and nowhere else
-        w.view.fadeRoomsFx.getVisiblity(
-          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
-        ),
+        floorFade.max(fadedRoomFloorTint),
       ),
       uid: generateUUID(),
     };
@@ -397,6 +419,8 @@ const hullStripeColor = "#0000001a";
 
 /** What a folded map shows in place of its art: the hull as a flat black shape */
 const fadeColor = vec3(0, 0, 0);
+
+const fadedRoomFloorTint = 0.1;
 
 /** debug: every room outlined — how wide the line is, in metres, and its ink */
 const debugRoomEdgeWidth = 0.06;
