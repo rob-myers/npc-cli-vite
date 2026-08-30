@@ -10,6 +10,7 @@ import {
   CaretRightIcon,
   CircleDashedIcon,
   CircleIcon,
+  CircleNotchIcon,
   CrosshairSimpleIcon,
   GlobeStandIcon,
   type Icon,
@@ -712,22 +713,25 @@ export function WorldMenu() {
           </div>
 
           {/* the world shown by room, everything the player cannot see into faded away — see
-              `service/fade-rooms`. The rooms fade INTO the post pass's backdrop, so switching this
-              on switches that on too */}
+              `service/fade-rooms`. Cycles `focus` to `map` to `gm`, the same three the keys `1`,
+              `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
+              either fading mode switches that on too */}
           <button
             type="button"
             data-keep-menu-open
-            title="fade"
+            title={`fade: ${w.view.fadeRoomsMode}`}
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
             onClick={() => {
-              w.view.setFadeRoomsEnabled();
+              w.view.setFadeRoomsMode();
               state.update();
             }}
           >
-            {w.view.fadeRooms ? (
-              <CircleDashedIcon className="size-5 text-slate-200" alt="faded" weight="bold" />
+            {w.view.fadeRoomsMode === "focus" ? (
+              <CircleNotchIcon className="size-5 text-slate-200" alt="focus: only what the player sees" weight="bold" />
+            ) : w.view.fadeRoomsMode === "map" ? (
+              <CircleDashedIcon className="size-5 text-slate-200" alt="map: the rest black" weight="bold" />
             ) : (
-              <CircleIcon className="size-5 text-slate-400" alt="not faded" weight="bold" />
+              <CircleIcon className="size-5 text-slate-400" alt="gm: all of it" weight="bold" />
             )}
           </button>
         </div>

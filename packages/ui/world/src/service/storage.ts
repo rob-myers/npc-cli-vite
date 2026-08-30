@@ -2,6 +2,7 @@ import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
 import { defaultBrightness } from "../const";
+import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
  * Everything a World persists lives under two keys, both scoped by `worldKey`
@@ -32,8 +33,8 @@ export type WorldSettings = {
   cameraInitial: null | PersistedCamera;
   postProcessing: boolean;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
-  /** Whether the world is shown by ROOM rather than faded on a circle about the player */
-  fadeRooms: boolean;
+  /** How much of the world is shown by ROOM — see `service/fade-rooms` */
+  fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame — see `service/fade-rooms` */
   fadeRoomOutlines: boolean;
   /** Whether a long press on an npc lights them up — see `Npc.setLit` */
@@ -58,7 +59,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraMode: null,
   cameraInitial: null,
   postProcessing: true,
-  fadeRooms: false,
+  fadeRoomsMode: "gm",
   fadeRoomOutlines: false,
   lightNpcs: false,
   pickOpenDoors: true,

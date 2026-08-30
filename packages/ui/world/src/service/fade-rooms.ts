@@ -11,7 +11,7 @@ import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slo
  * Per-room fade rather then per-fragment. Each instance of an instancedMesh in the world carries the slot of
  * the room it stands in as a static attribute — so a material reads an small array entry and is done.
  */
-export function createFadeRooms(enabledInitially = false): FadeRooms {
+export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, 0));
   const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
@@ -27,7 +27,7 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
 
   return {
     uid: crypto.randomUUID(),
-    enabled: enabledInitially === true,
+    mode: initialMode,
     rooms,
     getVisiblity: fadeAt,
 
@@ -71,7 +71,8 @@ export function createFadeRooms(enabledInitially = false): FadeRooms {
       rooms.length = 0;
       if (inView !== null) rooms.push(...inView);
 
-      const showAll = this.enabled === false || inView === null;
+      // `focus` is `map` for now: both fade what the player cannot see, and only `gm` shows all
+      const showAll = this.mode === "gm" || inView === null;
       const now = time.value;
 
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
@@ -136,6 +137,31 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
     .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []));
 }
 
+/**
+ * How much of the world is shown, cycled by the fade button and bound to keys `1`, `2` and `3`:
+ * - `focus` — only what the player can see. FOR NOW the same as `map`
+ * - `map` — what they cannot see goes black and stays, so the world still reads as a floorplan
+ * - `gm` — all of it, all the time, as a game master sees it
+ */
+export type FadeRoomsMode = "focus" | "map" | "gm";
+
+/** Which key selects which mode */
+export const fadeRoomsModeByKey: Record<string, FadeRoomsMode> = {
+  "1": "focus",
+  "2": "map",
+  "3": "gm",
+};
+
+/** The next mode round, for the fade button: `1` to `2` to `3` and back */
+export function nextFadeRoomsMode(mode: FadeRoomsMode): FadeRoomsMode {
+  return mode === "focus" ? "map" : mode === "map" ? "gm" : "focus";
+}
+
+/** `mode` if it is one, else the default — stored settings are not to be trusted */
+export function parseFadeRoomsMode(mode: unknown): FadeRoomsMode {
+  return mode === "focus" || mode === "map" || mode === "gm" ? mode : "gm";
+}
+
 /** How long a room takes to fade in or out, in seconds */
 const ROOM_FADE_SECS = 0.7;
 
@@ -146,12 +172,12 @@ export type FadeRooms = {
    */
   uid: string;
   /**
-   * Whether the world is shown by room rather than faded on a circle about the player. A plain
-   * boolean, NOT a uniform: switching it off sends every room to `1`, so the shader is the same
-   * handful of instructions either way and there is nothing per-fragment to switch on
+   * How much of the world is shown. Plain CPU state, NOT a uniform: `sync` reads it and sends every
+   * room where it belongs, so the shader is the same handful of instructions whichever mode it is
+   * in and there is nothing per-fragment to switch on
    */
-  enabled: boolean;
-  /** The rooms in view, whatever `enabled` says — what the debug outlines are drawn for */
+  mode: FadeRoomsMode;
+  /** The rooms in view, whatever `mode` says — what the debug outlines are drawn for */
   rooms: Geomorph.GmRoomId[];
   /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
   getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
