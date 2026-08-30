@@ -150,6 +150,10 @@ export default function Ceiling() {
       0.7, // beauty render
     );
 
+    const ceilFade = w.view.fadeRoomsFx.getVisiblity(
+      w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+    );
+
     return {
       // fix InstancedMesh non-uniform scaling
       normalNode: transformNormalToView(vec3(0, 1, 0)),
@@ -157,11 +161,10 @@ export default function Ceiling() {
       pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`
-      texNode: w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
-        w.view.fadeRoomsFx.getVisiblity(
-          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
-        ),
+      // and in `focus` mode gone altogether rather than black — see `focusAlpha`
+      texNode: w.view.fadeRoomsFx.applyFadeAlpha(
+        w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)), ceilFade),
+        w.view.fadeRoomsFx.focusAlpha(ceilFade),
       ),
       uid: generateUUID(),
     };

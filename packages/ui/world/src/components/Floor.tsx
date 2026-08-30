@@ -324,9 +324,14 @@ export default function Floor() {
       // tinted by what the player can see from where they stand — see `service/player-light`
       // DARKENED rather than faded, as everything else is — and never quite to black, so a hidden
       // room still reads as ground rather than as a hole. See `hiddenFloorTint`
-      texNode: w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
-        floorFade.max(fadedRoomFloorTint),
+      // and in `focus` mode gone altogether rather than dark — `floorFade` is already full whilst
+      // picking, so a click still lands on the floor of a room that has gone
+      texNode: w.view.fadeRoomsFx.applyFadeAlpha(
+        w.view.fadeRoomsFx.applyFadeRgba(
+          w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
+          floorFade.max(fadedRoomFloorTint),
+        ),
+        w.view.fadeRoomsFx.focusAlpha(floorFade),
       ),
       uid: generateUUID(),
     };

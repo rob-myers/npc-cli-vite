@@ -1,4 +1,4 @@
-import { Discard, Fn, positionLocal, time, uniformArray, vec3, vec4 } from "three/tsl";
+import { Discard, Fn, float, mix, positionLocal, uniform, uniformArray, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
@@ -12,9 +12,23 @@ import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slo
  * the room it stands in as a static attribute — so a material reads an small array entry and is done.
  */
 export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
-  const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, 0));
+  /**
+   * The clock every fade here is drawn against. Ours, not tsl's, which advances by the wall time
+   * between RENDERS — so a fade begun after an idle spell would be handed all of it on its first
+   * frame and arrive already over
+   */
+  const clockValue = uniform(nowSecs());
+  const clockNode = float(clockValue);
+
+  const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, nowSecs()));
   const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
+
+  // `1` in `"focus"` mode, where a room out of view goes rather than merely going black. A morph
+  // rather than a plain uniform, so switching mode is a fade of its own
+  const focusMorph = arrivedAt(initialMode === "focus" ? 1 : 0, nowSecs());
+  const focusValue = uniform(new THREE.Vector3(focusMorph.from, focusMorph.to, focusMorph.at));
+  const focusAmount = morphNode(focusValue, MODE_FADE_SECS, clockNode);
 
   const rooms: Geomorph.GmRoomId[] = [];
   /** Whilst set, frames are asked for — see `keepFramesComing` */
@@ -22,7 +36,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   let framesRaf = 0;
 
   function fadeAt(slot: THREE.Node<"float">) {
-    return morphNode(morphArray.element(slot.toInt()), ROOM_FADE_SECS);
+    return morphNode(morphArray.element(slot.toInt()), ROOM_FADE_SECS, clockNode);
   }
 
   return {
@@ -30,6 +44,13 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
     mode: initialMode,
     rooms,
     getVisiblity: fadeAt,
+
+    focusNode: focusAmount,
+
+    focusAlpha(fade) {
+      // `1` outside `"focus"`, so wrapping a material in this costs the other modes nothing
+      return mix(float(1), fade, focusAmount);
+    },
 
     fadeAtPair(slots) {
       return fadeAt(slots.x).max(fadeAt(slots.y));
@@ -73,7 +94,14 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
 
       // `focus` is `map` for now: both fade what the player cannot see, and only `gm` shows all
       const showAll = this.mode === "gm" || inView === null;
-      const now = time.value;
+      const now = tick();
+
+      // `gm` shows everything anyway, so it keeps whichever answer it had — and coming back out of
+      // it, the floors are already where the mode returned to wants them
+      if (this.mode !== "gm") {
+        retarget(focusMorph, this.mode === "focus" ? 1 : 0, MODE_FADE_SECS, now);
+        focusValue.value.set(focusMorph.from, focusMorph.to, focusMorph.at);
+      }
 
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
       // Broad walls are shown whenever an adjacent room is visible
@@ -105,11 +133,18 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   function keepFramesComing(w: WorldType) {
     framesUntilMs = performance.now() + ROOM_FADE_SECS * 1000 + 100;
     if (framesRaf !== 0) return;
-    const tick = () => {
+    const frame = () => {
+      tick(); // moved on before the frame that reads it
       w.r3f?.invalidate();
-      framesRaf = performance.now() < framesUntilMs ? requestAnimationFrame(tick) : 0;
+      framesRaf = performance.now() < framesUntilMs ? requestAnimationFrame(frame) : 0;
     };
-    framesRaf = requestAnimationFrame(tick);
+    framesRaf = requestAnimationFrame(frame);
+  }
+
+  /** Moves the clock up to the wall, and gives what it now reads */
+  function tick() {
+    clockValue.value = nowSecs();
+    return clockValue.value;
   }
 }
 
@@ -162,6 +197,13 @@ export function parseFadeRoomsMode(mode: unknown): FadeRoomsMode {
   return mode === "focus" || mode === "map" || mode === "gm" ? mode : "gm";
 }
 
+/** The wall clock, in seconds */
+function nowSecs() {
+  return performance.now() / 1000;
+}
+
+/** How long the switch between `"focus"` and `"map"` takes to play out, in seconds */
+const MODE_FADE_SECS = 0.7;
 /** How long a room takes to fade in or out, in seconds */
 const ROOM_FADE_SECS = 0.7;
 
@@ -181,6 +223,13 @@ export type FadeRooms = {
   rooms: Geomorph.GmRoomId[];
   /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
   getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
+  /** `1` in `"focus"` mode and `0` in the others, easing between the two as the mode changes */
+  focusNode: THREE.Node<"float">;
+  /**
+   * What a room's ALPHA is taken by as it goes: `fade` in `"focus"`, where it leaves altogether,
+   * and `1` in the others, where it goes black and stays put
+   */
+  focusAlpha(fade: THREE.Node<"float">): THREE.Node<"float">;
   /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /**
