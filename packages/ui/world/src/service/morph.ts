@@ -40,8 +40,17 @@ export function settled(m: Morph, secs: number, now: number): boolean {
   return now - m.at >= secs;
 }
 
-/** Where a `Morph` packed as `[from, to, at]` stands now — the same curve `morphAt` reads */
-export function morphNode(packed: THREE.Node<"vec3">, secs: number): THREE.Node<"float"> {
-  const along = time.sub(packed.z).div(secs).clamp(0, 1);
+/**
+ * Where a `Morph` packed as `[from, to, at]` stands now — the same curve `morphAt` reads.
+ *
+ * `clock` defaults to tsl's, which only advances when something renders. Anything that must play
+ * out whilst the world is still passes its own — see `service/fade-rooms`
+ */
+export function morphNode(
+  packed: THREE.Node<"vec3">,
+  secs: number,
+  clock: THREE.Node<"float"> = time,
+): THREE.Node<"float"> {
+  const along = clock.sub(packed.z).div(secs).clamp(0, 1);
   return mix(packed.x, packed.y, smoothstep(float(0), float(1), along));
 }
