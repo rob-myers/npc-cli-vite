@@ -173,9 +173,12 @@
     - ✅ find more neighbouring rooms
     - ✅ avoid partial walls
     - ✅ invisible decor instancedmesh occlusions
-  - 🚧  include neighouring rooms at lower opacity
-    - only walls and floor?
   - npcs should not be suddenly visible
+  - focus mode hides faded rooms
+    - keep darkened mode for map
+  - in focus mode can see neighouring rooms
+  - onchange map seeing isolated doors and decor quads
+  - nearby door to large room should not show whole room?
   - ❌ pick does not restrict by room
   - move "Light npcs" (long-press-light) into sub-icon of fade button
     - can enable/disable via long press of fade button
