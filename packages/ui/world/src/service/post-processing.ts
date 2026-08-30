@@ -65,10 +65,12 @@ export function createPostProcessing(): PostProcessing {
 const coverageFull = 0.85;
 
 /** What lies beyond the world: near-black, ruled with hairline diagonals */
-const backdropColor = vec3(0.0, 0.0, 0.0);
+// const backdropColor = vec3(0.0, 0.0, 0.0);
 // const backdropColor = vec3(1.0, 0.0, 0.0);
+const backdropColor = vec3(0.006, 0.006, 0.006);
 
-const stripeColor = vec3(0.3, 0.22, 0.22);
+// const stripeColor = vec3(0.3, 0.22, 0.22);
+const stripeColor = vec3(0, 0, 0);
 const stripeAlpha = 0.05;
 /** Both in device pixels, measured ALONG the diagonal — so the gap between stripes is `1 / √2` of it */
 const stripePeriodPx = 16;

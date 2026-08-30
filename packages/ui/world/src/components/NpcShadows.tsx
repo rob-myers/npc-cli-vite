@@ -44,7 +44,10 @@ export default function NpcShadows() {
   w.shadows = state;
 
   useMemo(() => {
-    state.shadow.mat.colorNode = state.shadow.colorNode.mul(w.view.fadeRoomsFx.getVisiblity(state.shadow.xzo.w));
+    // the same fade the npc casting it reads, so the two keep step
+    const { vertexNode, colorNode } = shadowNodes(state.shadow, w.view.fadeRoomsFx.getVisiblity(state.shadow.xzo.w));
+    state.shadow.mat.vertexNode = vertexNode;
+    state.shadow.mat.colorNode = colorNode;
     state.shadow.mat.needsUpdate = true;
   }, [w.view.fadeRoomsFx.uid]);
 
@@ -79,8 +82,22 @@ function createShadowResources(
 
   const xzo = attribute<"vec4">("shadowXZO", "vec4");
 
+  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+
+  return { geo, mat, mesh, xzoData, xzoAttr, xzo, objectPick, fold };
+}
+
+/**
+ * What the shadow draws, given how much of its npc's room is shown — it simply goes with them.
+ *
+ * Rebuilt whenever `fade-rooms` is, since it captures that service's nodes — hence a function
+ * rather than something settled once with the geometry
+ */
+function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THREE.Node<"float">) {
+  const { xzo, objectPick, fold } = shadow;
   const worldPos = vec4(positionLocal.x.add(xzo.x), 0.01, positionLocal.z.add(xzo.y), 1.0);
-  const clipPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos));
 
   // plain circle, solid out to (radius - edgeSoftness) then a thin fade
   const distToCenter = vec2(positionLocal.x, positionLocal.z).length();
@@ -91,13 +108,9 @@ function createShadowResources(
     .mul(0.4)
     .mul(xzo.z);
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
-  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
-  mat.vertexNode = clipPos;
 
-  const colorNode = vec4(0, 0, 0, alpha.mul(fold));
-
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.frustumCulled = false;
-
-  return { geo, mat, mesh, xzoData, xzoAttr, colorNode, xzo };
+  return {
+    vertexNode: cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos)),
+    colorNode: vec4(0, 0, 0, alpha.mul(fold).mul(fade)),
+  };
 }

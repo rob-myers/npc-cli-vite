@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, lights, uniform } from "three/tsl";
+import { attribute, float, lights, uniform, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -191,10 +191,13 @@ export default function Walls() {
 
     return {
       opacityUniform,
-      opacityNode: litOpacityNode.mul(fade),
+      // as solid as ever whilst hidden: only its COLOUR goes — see `applyFadeRgba`
+      opacityNode: litOpacityNode,
       // NOT tinted by `service/player-light`: a wall is flat colour at half opacity, so the light
       // only ever muddied what was behind it — and this runs on every wall fragment in the world
-      colorNode: baseColorUniform.rgb,
+      // BLACK whilst its room is hidden rather than transparent — see `applyFadeRgba` — and out of
+      // the pick pass altogether whilst it is, so a click reaches the floor behind it
+      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(baseColorUniform.rgb.mul(fade), fade, w.view.objectPick),
       outputNode,
       baseColorUniform,
       uuid: crypto.randomUUID(),
@@ -208,7 +211,9 @@ export default function Walls() {
       depthWrite: false,
     });
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0)).mul(fade);
+    // blacked out with the wall it trims — its own colour is white
+    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0));
+    m.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(vec3(1, 1, 1).mul(fade), fade, w.view.objectPick);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
   }, [w.view.fadeRoomsFx.uid]);

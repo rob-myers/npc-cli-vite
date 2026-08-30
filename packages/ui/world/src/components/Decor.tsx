@@ -886,20 +886,26 @@ export default function Decor() {
 
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest });
       // tinted by what the player can see from where they stand — see `service/player-light`
-      texMat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(
-          (select as SelectAnyType)(
-            shapeKindAttr.greaterThan(1.5),
-            vec4(1, 1, 1, 1),
-            texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-          ) as THREE.Node<"vec4">,
+      // unpickable whilst its room is hidden, so a click reaches the floor behind it
+      texMat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
+        w.view.fadeRoomsFx.applyFadeRgba(
+          w.view.playerLight.applyLightRgba(
+            (select as SelectAnyType)(
+              shapeKindAttr.greaterThan(1.5),
+              vec4(1, 1, 1, 1),
+              texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+            ) as THREE.Node<"vec4">,
+          ),
+          fade,
         ),
         fade,
+        w.view.objectPick,
       );
 
       // transparent icon can be hard to pick so permit pick any place on cuboid
       // hide non-top faces for flat instances (points, rects, circles)
-      plainBlackMaterial.opacityNode = fade; // the black sides of a cuboid go with its art
+      // the black sides of a cuboid are black either way — the fade only takes them out of the pick
+      plainBlackMaterial.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
       plainBlackMaterial.outputNode = (select as SelectAnyType)(
         shapeKindAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
@@ -917,15 +923,19 @@ export default function Decor() {
         transparent: true,
         alphaTest,
       });
-      runtimeTexMat.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(
-          (select as SelectAnyType)(
-            shapeKindAttr.greaterThan(1.5),
-            vec4(1, 1, 1, 1),
-            texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-          ) as THREE.Node<"vec4">,
+      runtimeTexMat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
+        w.view.fadeRoomsFx.applyFadeRgba(
+          w.view.playerLight.applyLightRgba(
+            (select as SelectAnyType)(
+              shapeKindAttr.greaterThan(1.5),
+              vec4(1, 1, 1, 1),
+              texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
+            ) as THREE.Node<"vec4">,
+          ),
+          fade,
         ),
         fade,
+        w.view.objectPick,
       );
       runtimeTexMat.outputNode = buildShapeOutputNode(
         OBJECT_PICK_KEY_TO_RED.runtimeDecor,
@@ -939,7 +949,7 @@ export default function Decor() {
         transparent: true,
         alphaTest,
       });
-      runtimeBlackMat.opacityNode = fade;
+      runtimeBlackMat.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
       runtimeBlackMat.outputNode = (select as SelectAnyType)(
         shapeKindAttr.greaterThan(0.5),
         vec4(0, 0, 0, 0),
