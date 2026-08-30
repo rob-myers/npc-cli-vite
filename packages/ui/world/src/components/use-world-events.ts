@@ -215,7 +215,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // The arrival is shown whole: folded (or flat, on a phone), then the fade comes on, then
           // the world rises. Left to itself the fade would arrive the moment the player spawns —
           // which is before any of that, and would hide all of it but the one room they are in
-          w.view.setFadeRoomsActive(false);
+          w.view.setFadeRoomsActive("gm");
         }
 
         try {
@@ -234,7 +234,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // the first map is on screen as a flat hull; hold it a beat, bring the fade on, then
             // unfold the world with a delayed floor fade-in
             await pause(unfoldDelayMs);
-            w.view.setFadeRoomsActive(w.view.fadeRooms);
+            w.view.setFadeRoomsActive(w.view.fadeRoomsMode);
             const rising = w.foldTo(1);
             await pause(floorFadeDelayMs);
             void w.floor?.fadeTo(1);

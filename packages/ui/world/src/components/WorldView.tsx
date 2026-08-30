@@ -25,7 +25,14 @@ import {
   zoomSpeedMobile,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
-import { createFadeRooms, type FadeRooms } from "../service/fade-rooms";
+import {
+  createFadeRooms,
+  type FadeRooms,
+  type FadeRoomsMode,
+  fadeRoomsModeByKey,
+  nextFadeRoomsMode,
+  parseFadeRoomsMode,
+} from "../service/fade-rooms";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
@@ -86,13 +93,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
       postFx: createPostProcessing(),
-      fadeRoomsFx: createFadeRooms(saved.fadeRooms),
+      fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
       roomSlots: createRoomSlots(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
-      fadeRooms: saved.fadeRooms,
+      fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
@@ -286,8 +293,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         } else if (e.key === "e" || e.key === "E") {
           // the world shown by room, as the fade button does — which also turns the post pass on,
           // there being nothing to fade into otherwise
-          state.setFadeRoomsEnabled();
+          state.setFadeRoomsMode();
           w.menu?.update();
+        } else if (fadeRoomsModeByKey[e.key] !== undefined) {
+          // `1`, `2` and `3` go straight to a mode, where the button and `e` cycle round them
+          if (e.repeat === false) {
+            state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
+            w.menu?.update();
+          }
         }
       },
       onKeyUp(e) {
@@ -617,20 +630,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.invalidate();
         }
       },
-      setFadeRoomsEnabled(next = !state.fadeRooms) {
-        state.fadeRooms = next;
-        store.patch({ fadeRooms: next });
+      setFadeRoomsMode(next = nextFadeRoomsMode(state.fadeRoomsMode)) {
+        state.fadeRoomsMode = next;
+        store.patch({ fadeRoomsMode: next });
         state.setFadeRoomsActive(next);
         // the rooms fade INTO the post pass's backdrop, so asking for them asks for the pass too
-        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+        next !== "gm" && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
         w.menu?.update();
       },
-      setFadeRoomsActive(active) {
-        // Not `setFadeRoomsEnabled`, which would persist the answer — this is also how the intro
-        // holds the fade off whilst the world arrives, which is a beat rather than a setting.
-        // Either way it SYNCS: switching off sends every room back towards fully shown, which is a
+      setFadeRoomsActive(mode) {
+        // Not `setFadeRoomsMode`, which would persist the answer — this is also how the intro holds
+        // the fade off whilst the world arrives, which is a beat rather than a setting.
+        // Either way it SYNCS: going back to `gm` sends every room towards fully shown, which is a
         // fade of its own rather than a snap
-        state.fadeRoomsFx.enabled = active;
+        state.fadeRoomsFx.mode = mode;
         state.fadeRoomsFx.sync(w);
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
@@ -871,9 +884,8 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
-  /** Whether the post pass fades the world beyond the player */
-  /** Whether the world is shown by ROOM rather than faded on a circle about the player */
-  fadeRooms: boolean;
+  /** How much of the world is shown by ROOM — see `service/fade-rooms` */
+  fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame */
   lightNpcs: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
@@ -948,11 +960,10 @@ export type State = {
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
-  /** Toggles that fade, turning the pass itself on if it is off */
-  /** Whether the world is shown by room, which for now only means the circle is off */
-  setFadeRoomsEnabled(next?: boolean): void;
-  /** Turns the room fade on or off WITHOUT persisting it — see within */
-  setFadeRoomsActive(active: boolean): void;
+  /** How much of the world is shown by room, cycling round when asked for no mode in particular */
+  setFadeRoomsMode(next?: FadeRoomsMode): void;
+  /** Puts the world into `mode` WITHOUT persisting it — see within */
+  setFadeRoomsActive(mode: FadeRoomsMode): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
   setupPostProcessing(): () => void;
   /** Whether a long press on an npc lights them up */
