@@ -1,4 +1,16 @@
-import { Discard, Fn, float, mix, positionLocal, uniform, uniformArray, vec3, vec4 } from "three/tsl";
+import {
+  Discard,
+  Fn,
+  float,
+  mix,
+  positionLocal,
+  positionWorld,
+  uniform,
+  uniformArray,
+  vec2,
+  vec3,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
@@ -30,6 +42,15 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   const focusValue = uniform(new THREE.Vector3(focusMorph.from, focusMorph.to, focusMorph.at));
   const focusAmount = morphNode(focusValue, MODE_FADE_SECS, clockNode);
 
+  // where each slot's wipe is centred and how far it reaches: world `xz` of the door the room is
+  // seen through, then one over the way to its furthest corner. See `setWipeFrom`
+  const wipeValues = Array.from({ length: totalSlots }, () => new THREE.Vector4(0, 0, 0, 0));
+  const wipeArray = uniformArray<"vec4">(wipeValues, "vec4");
+  /** How many rooms off the player each slot last stood — the order they go and come back in */
+  const hopsBySlot = new Int32Array(totalSlots);
+  /** Which map the fallback wipes were worked out for, they being static within one */
+  let wipesFor = 0;
+
   const rooms: Geomorph.GmRoomId[] = [];
   /** Whilst set, frames are asked for — see `keepFramesComing` */
   let framesUntilMs = 0;
@@ -46,6 +67,18 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
     getVisiblity: fadeAt,
 
     focusNode: focusAmount,
+
+    applyWipe(node: never, fade: THREE.Node<"float">, slot: THREE.Node<"float">) {
+      return Fn(() => {
+        const wipe = wipeArray.element(slot.toInt());
+        // 0 at the way into the room and 1 at its furthest corner
+        const reach = vec2(positionWorld.x, positionWorld.z).sub(wipe.xy).length().mul(wipe.z);
+        // shown only within `fade` of that way in, as light through a doorway would be. Outside
+        // `"focus"` mode `focusAlpha` is 1, which is past the whole room
+        Discard(reach.greaterThan(this.focusAlpha(fade)));
+        return node;
+      })();
+    },
 
     focusAlpha(fade) {
       // `1` outside `"focus"`, so wrapping a material in this costs the other modes nothing
@@ -90,7 +123,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
       const inView = roomsInView(w);
 
       rooms.length = 0;
-      if (inView !== null) rooms.push(...inView);
+      if (inView !== null) rooms.push(...inView.map(({ room }) => room));
 
       // `focus` is `map` for now: both fade what the player cannot see, and only `gm` shows all
       const showAll = this.mode === "gm" || inView === null;
@@ -103,6 +136,15 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
         focusValue.value.set(focusMorph.from, focusMorph.to, focusMorph.at);
       }
 
+      if (wipesFor !== w.gmsHash) syncWipes(w);
+      // Only what is IN VIEW gets a fresh way in and a fresh place in the order. One on its way out
+      // keeps the door it was last seen through, which is the door that has just shut on it
+      for (const seen of inView ?? []) {
+        const slot = slotOf(seen.room.gmId, seen.room.roomId);
+        hopsBySlot[slot] = seen.hops;
+        setWipeFrom(wipeValues[slot], w, seen);
+      }
+
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
       // Broad walls are shown whenever an adjacent room is visible
       for (const [gmId, gm] of w.gms.entries()) {
@@ -113,13 +155,25 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
         }
       }
 
+      // the furthest room off the player that is going, so the going can be ordered from there back
+      let farthest = 0;
       for (let slot = 0; slot < totalSlots; slot++) {
-        const next = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
-        retarget(morphs[slot], next, ROOM_FADE_SECS, now);
+        if (shown.has(slot) === false) farthest = Math.max(farthest, hopsBySlot[slot]);
+      }
+
+      let longestWait = 0;
+      for (let slot = 0; slot < totalSlots; slot++) {
+        const show = showAll === true || slot === alwaysShownSlot || shown.has(slot);
+        // A room waits its turn either way: coming in they arrive NEAREST first, so the world opens
+        // outwards from the player, and going out they leave FURTHEST first, so it folds back
+        // towards them rather than stranding the near ones
+        const waits = (show === true ? hopsBySlot[slot] : Math.max(farthest - hopsBySlot[slot], 0)) * ROOM_STAGGER_SECS;
+        longestWait = Math.max(longestWait, waits);
+        retarget(morphs[slot], show === true ? 1 : 0, ROOM_FADE_SECS, now, now + waits);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
       }
 
-      keepFramesComing(w);
+      keepFramesComing(w, longestWait);
     },
   };
 
@@ -130,8 +184,31 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
    * Its own loop rather than `World.onTick`, which stops with the world: a door opened whilst
    * everything is paused must still be seen to open
    */
-  function keepFramesComing(w: WorldType) {
-    framesUntilMs = performance.now() + ROOM_FADE_SECS * 1000 + 100;
+  /** Where a room's wipe is centred once we know the door it is seen through */
+  function setWipeFrom(out: THREE.Vector4, w: WorldType, { room, via }: RoomInView) {
+    const gm = w.gms[room.gmId];
+    if (via === null || gm === undefined) return; // their own room keeps the middle it was given
+    const origin = via.astar.centroid;
+    const outline = gm.rooms[room.roomId].outline.map((p) => gm.matrix.transformPoint(p.clone()));
+    const reach = Math.max(...outline.map((p) => p.distanceTo(origin)), minWipeReach) * wipeOvershoot;
+    out.set(origin.x, origin.y, 1 / reach, 0);
+  }
+
+  /** Where a room wipes from BEFORE anybody has seen it — its middle, for want of a door */
+  function syncWipes(w: WorldType) {
+    wipesFor = w.gmsHash;
+    for (const [gmId, gm] of w.gms.entries()) {
+      for (const [roomId, room] of gm.rooms.entries()) {
+        const centre = gm.matrix.transformPoint(room.center);
+        const outline = room.outline.map((p) => gm.matrix.transformPoint(p.clone()));
+        const reach = Math.max(...outline.map((p) => p.distanceTo(centre)), minWipeReach) * wipeOvershoot;
+        wipeValues[slotOf(gmId, roomId)].set(centre.x, centre.y, 1 / reach, 0);
+      }
+    }
+  }
+
+  function keepFramesComing(w: WorldType, waitingSecs = 0) {
+    framesUntilMs = performance.now() + (ROOM_FADE_SECS + waitingSecs) * 1000 + 100;
     if (framesRaf !== 0) return;
     const frame = () => {
       tick(); // moved on before the frame that reads it
@@ -156,22 +233,59 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
  * A window is never stopped at, whatever it is doing, since it is glass — which is why
  * `service/player-light` leaves windows out of the occluders it sweeps, and why this must too.
  *
- * `getReachableUpTo` keeps the node it stops on and takes none of its successors, so a shut door is
- * reached and not passed through. Nothing else stops it: the shut doors decide how far the light
- * gets, which is what being able to see amounts to, over a graph of a couple of hundred nodes.
+ * A walk of our own rather than `getReachableUpTo`, which gives the rooms but not the way IN to
+ * each — and the way in is what a room's obstacles wipe from. Breadth first, so it is the shortest
+ * way in, which is the one the player is looking through, and so that the count of rooms crossed to
+ * reach it comes out with it. A shut door is reached and not passed through, so the shut doors
+ * decide how far the light gets, over a graph of a couple of hundred nodes.
  *
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
  */
-function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
+function roomsInView(w: WorldType): null | RoomInView[] {
   const gmRoomId = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
   if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) return null;
 
-  return w.gmRoomGraph
-    .getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)
-    .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []));
+  const graph = w.gmRoomGraph;
+  const root = graph.getNode(gmRoomId.grKey);
+  if (root === null) return null;
+
+  const seen = new Set([root]);
+  const found: RoomInView[] = [{ room: gmRoomId, via: null, hops: 0 }];
+
+  for (let frontier = [root], hops = 0; frontier.length > 0; hops++) {
+    const next: Graph.GmRoomGraphNode[] = [];
+    for (const node of frontier) {
+      // a shut door is as far as the light gets: it is reached, and nothing beyond it is
+      if (node.type === "door" && w.d[node.gdKey]?.open !== true) continue;
+      for (const succ of graph.getSuccs(node)) {
+        if (seen.has(succ) === true) continue;
+        seen.add(succ);
+        next.push(succ);
+        if (succ.type === "room") {
+          const room = helper.getGmRoomId(succ.gmId, succ.roomId);
+          found.push({ room, via: node.type === "room" ? null : node, hops: Math.ceil((hops + 1) / 2) });
+        }
+      }
+    }
+    frontier = next;
+  }
+
+  return found;
 }
 
+/**
+ * A room the player can see: the connector they see it through — `null` for the one they stand in —
+ * and how many rooms off it stands, which is the order the rooms go and come back in
+ */
+type RoomInView = {
+  room: Geomorph.GmRoomId;
+  via: null | Graph.GmRoomGraphNodeDoor | Graph.GmRoomGraphNodeWindow;
+  hops: number;
+};
+
+/** How long the switch between `"focus"` and `"map"` takes to play out, in seconds */
+const MODE_FADE_SECS = 0.7;
 /**
  * How much of the world is shown, cycled by the fade button and bound to keys `1`, `2` and `3`:
  * - `focus` — only what the player can see. FOR NOW the same as `map`
@@ -202,8 +316,12 @@ function nowSecs() {
   return performance.now() / 1000;
 }
 
-/** How long the switch between `"focus"` and `"map"` takes to play out, in seconds */
-const MODE_FADE_SECS = 0.7;
+/** How much later each room off the player goes or comes than the one before it, in seconds */
+const ROOM_STAGGER_SECS = 0.2;
+/** How small a room's wipe may be, so nothing divides by nothing */
+const minWipeReach = 0.5;
+/** How far past its furthest corner a wipe reaches, so it takes the whole room */
+const wipeOvershoot = 1.05;
 /** How long a room takes to fade in or out, in seconds */
 const ROOM_FADE_SECS = 0.7;
 
@@ -223,6 +341,18 @@ export type FadeRooms = {
   rooms: Geomorph.GmRoomId[];
   /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
   getVisiblity(slot: THREE.Node<"float">): THREE.Node<"float">;
+  /**
+   * `node`, with whatever stands beyond `slot`'s WIPE discarded — a circle about the door the room
+   * is seen through, growing as the room comes into view and shrinking back to that door as it
+   * goes. Nothing at all outside `"focus"` mode, where the circle takes in the whole room.
+   *
+   * Only for what has a meaningful `positionWorld`: a billboard expanded in a `vertexNode` does not
+   */
+  applyWipe<T extends THREE.Node<"float"> | THREE.Node<"vec3"> | THREE.Node<"vec4">>(
+    node: T,
+    fade: THREE.Node<"float">,
+    slot: THREE.Node<"float">,
+  ): T;
   /** `1` in `"focus"` mode and `0` in the others, easing between the two as the mode changes */
   focusNode: THREE.Node<"float">;
   /**
