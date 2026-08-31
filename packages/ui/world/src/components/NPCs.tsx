@@ -993,7 +993,12 @@ const npcFadeShare = 0.3;
  * reach far enough to take in a head, a foot and an outstretched arm
  */
 const npcSphereY = 0.96;
-const npcSphereRadius = 1.15;
+/**
+ * Big enough to hold the model in ANY pose, not just standing: it is measured from a point up the
+ * npc's own axis, and lying down puts head and feet much further from that point than standing
+ * does. Too small and parts of somebody lying down are cut whilst they are fully shown
+ */
+const npcSphereRadius = 2.2;
 
 const npcLitBoost = 1.2;
 const rimOverheadFrom = 0.45;
