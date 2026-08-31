@@ -412,6 +412,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             npcIntention: npc.getCornersPath() ?? undefined,
           });
         }
+
+        if (e.type === "inside") {
+          const gmRoomId = state.npcToRoom.get(npc.key) as Geomorph.GmRoomId;
+          const nextGmRoomId = w.gmGraph.getOtherGmRoomId(door, gmRoomId.roomId);
+          nextGmRoomId !== null && w.events.next({ key: "enter-doorway", npcKey: npc.key, gmRoomId, nextGmRoomId });
+        }
       },
       onExitCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
@@ -523,6 +529,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           }
+          case "enter-doorway":
           case "speech":
             break;
           default:
