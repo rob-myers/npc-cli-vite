@@ -1,5 +1,5 @@
-import { Fn, float, mix, screenSize, screenUV, smoothstep, step, vec3, vec4 } from "three/tsl";
-import type * as THREE from "three/webgpu";
+import { Fn, float, smoothstep, uniform, vec3, vec4 } from "three/tsl";
+import * as THREE from "three/webgpu";
 
 export type PostProcessing = {
   /**
@@ -8,6 +8,11 @@ export type PostProcessing = {
    * file reaches the screen. See `WorldView`'s `reset`
    */
   uid: string;
+  /**
+   * What lies beyond the world, from `theme.post.background`. A uniform, so a change of theme is a
+   * value written rather than the pipeline rebuilt
+   */
+  background: THREE.UniformNode<"color", THREE.Color>;
   /**
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
@@ -20,27 +25,28 @@ export type PostProcessing = {
  * pipeline and the `gl.render` it hangs off, so an effect can be rewritten without touching any
  * of that.
  *
- * What it does is compose the frame over a striped backdrop — the page's own pattern, moved inside
- * the canvas so nothing shows through the doors that should not. That the pass decides is the
- * point: a door at 0.8 with nothing behind it reads as solid against the stripes, which its own
- * material could never arrange — it has no idea whether a room or the sky is behind it.
+ * What it does is put BLACK behind everything the frame drew — a door at part coverage included —
+ * and the theme's background everywhere else, then compose the frame over that. So the world reads
+ * as a silhouette on the page, and a door at 0.8 with nothing behind it comes out solid, which its
+ * own material could never arrange: it has no idea whether a room or the sky is behind it.
  *
  * What the world fades out INTO, in other words. The fading itself is `service/fade-rooms`' job and
  * happens per room, in the materials: a circle about the player used to do it here instead, but a
  * circle knows nothing about the walls and cut across the rooms it was hiding.
  */
 export function createPostProcessing(): PostProcessing {
+  const background = uniform(new THREE.Color(defaultBackground));
+
   return {
     uid: crypto.randomUUID(),
+    background,
 
     apply(sceneColor) {
       return Fn(() => {
-        // The backdrop: thin diagonal stripes, in DEVICE pixels rather than in the world, so they
-        // stay a hairline whatever the camera does — the page's pattern, now inside the canvas
-        const diagonal = screenUV.x.mul(screenSize.x).add(screenUV.y.mul(screenSize.y));
-        const alongStripe = diagonal.mul(1 / stripePeriodPx).fract();
-        const stripe = step(alongStripe, stripeWidthPx / stripePeriodPx).mul(stripeAlpha);
-        const backdrop = mix(backdropColor, stripeColor, stripe);
+        // What lies BEHIND the world at this pixel: black wherever anything at all was drawn, even
+        // a door at part coverage, and the theme's own colour where nothing was. Every silhouette
+        // gets its own dark edge, and what the world fades out into is the page
+        const backdrop = sceneColor.a.greaterThan(0).select(vec3(0), background);
 
         // Coverage counts for MORE than it is, so a door at `defaultDoorOpacity` reads solid
         // against the backdrop and gives way only as the world dissolves it. Smoothstep rather than
@@ -64,14 +70,5 @@ export function createPostProcessing(): PostProcessing {
 /** The coverage a fragment must carry to count as fully drawn — see `drawn` */
 const coverageFull = 0.85;
 
-/** What lies beyond the world: near-black, ruled with hairline diagonals */
-// const backdropColor = vec3(0.0, 0.0, 0.0);
-// const backdropColor = vec3(1.0, 0.0, 0.0);
-const backdropColor = vec3(0.006, 0.006, 0.006);
-
-// const stripeColor = vec3(0.3, 0.22, 0.22);
-const stripeColor = vec3(0, 0, 0);
-const stripeAlpha = 0.05;
-/** Both in device pixels, measured ALONG the diagonal — so the gap between stripes is `1 / √2` of it */
-const stripePeriodPx = 16;
-const stripeWidthPx = 1.5;
+/** Until a theme says otherwise — see `theme.post.background` */
+const defaultBackground = "#ffffff";

@@ -148,6 +148,12 @@ export const AssetsSymbolLookupSchema = z.partialRecord(StarShipSymbolImageKeySc
 export type AssetsSymbolLookup = z.infer<typeof AssetsSymbolLookupSchema>;
 
 export const WorldThemeSchema = z.object({
+  post: z
+    .object({
+      /** What lies beyond the world, where nothing at all was drawn — see `service/post-processing` */
+      background: z.string().default("#ffffff"),
+    })
+    .default({ background: "#ffffff" }),
   background: z.string(),
   ceiling: z.object({
     hull: z.object({ fill: z.string(), stroke: z.string() }),
