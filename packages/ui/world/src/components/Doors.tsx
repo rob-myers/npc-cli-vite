@@ -427,8 +427,10 @@ export default function Doors() {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         const openRatioAttr = state.box.getAttribute("openRatio");
         const doorMetaAttr = state.box.getAttribute("doorMeta");
+        const roomSlotsAttr = state.box.getAttribute("roomSlots");
         if (openRatioAttr) openRatioAttr.needsUpdate = true;
         if (doorMetaAttr) doorMetaAttr.needsUpdate = true;
+        if (roomSlotsAttr) roomSlotsAttr.needsUpdate = true;
       },
       toggleDoor(door, opts = {}) {
         if (door.sealed === true) {
