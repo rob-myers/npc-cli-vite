@@ -100,7 +100,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
-      lightNpcs: uniform(saved.lightNpcs === true ? 1 : 0),
+      litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
+      litNpcsEditable: saved.litNpcsEditable === true,
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
 
@@ -651,10 +652,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ postProcessing: next });
         state.forceUpdate();
       },
-      setLightNpcsEnabled(next = state.lightNpcs.value !== 1) {
-        state.lightNpcs.value = next === true ? 1 : 0;
-        store.patch({ lightNpcs: next });
-        state.forceUpdate();
+      setLitNpcsEnabled(next = state.litNpcsEnabled.value !== 1) {
+        state.litNpcsEnabled.value = next === true ? 1 : 0;
+        store.patch({ litNpcsEnabled: next });
+        w.e.syncFadeRooms();
+        w.menu?.update();
+      },
+      setLitNpcsEditable(next = state.litNpcsEditable === false) {
+        state.litNpcsEditable = next;
+        store.patch({ litNpcsEditable: next });
         w.menu?.update();
       },
       setupPostProcessing() {
@@ -888,7 +894,10 @@ export type State = {
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame */
-  lightNpcs: THREE.UniformNode<"float", number>;
+  /** Whether being lit shows at all — the shader's side of it, and `service/fade-rooms`' */
+  litNpcsEnabled: THREE.UniformNode<"float", number>;
+  /** Whether a long press lights or unlights an npc */
+  litNpcsEditable: boolean;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -967,8 +976,10 @@ export type State = {
   setFadeRoomsActive(mode: FadeRoomsMode): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
   setupPostProcessing(): () => void;
-  /** Whether a long press on an npc lights them up */
-  setLightNpcsEnabled(next?: boolean): void;
+  /** Whether being lit shows at all — see `Npc.setLit` */
+  setLitNpcsEnabled(next?: boolean): void;
+  /** Whether a long press lights or unlights an npc */
+  setLitNpcsEditable(next?: boolean): void;
 };
 
 /**

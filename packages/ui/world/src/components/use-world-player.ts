@@ -123,6 +123,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (npcKey === state.key || w.n[npcKey] === undefined) {
           return;
         }
+        w.n[npcKey].setLit(false);
         state.set({ key: npcKey });
         // retargets the dynamic light, snapping it so it shows whilst paused
         state.persist();

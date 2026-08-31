@@ -37,8 +37,10 @@ export type WorldSettings = {
   fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame — see `service/fade-rooms` */
   fadeRoomOutlines: boolean;
-  /** Whether a long press on an npc lights them up — see `Npc.setLit` */
-  lightNpcs: boolean;
+  /** Whether a long press lights or unlights an npc — see `Npc.setLit` */
+  litNpcsEditable: boolean;
+  /** Whether being lit shows at all: the npc themself, and the room they stand in */
+  litNpcsEnabled: boolean;
   /** Toggle doors via picking e.g. switches */
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
@@ -61,7 +63,8 @@ const defaultWorldSettings: WorldSettings = {
   postProcessing: true,
   fadeRoomsMode: "gm",
   fadeRoomOutlines: false,
-  lightNpcs: false,
+  litNpcsEditable: false,
+  litNpcsEnabled: true,
   pickOpenDoors: true,
   pickDoors: false,
   gmGraphsFilter: "room",
@@ -104,6 +107,8 @@ export type PersistedNpc = {
   skinKey: string;
   /** Set when the npc was doing something e.g. sitting */
   decorKey?: string;
+  /** Set whilst they were lit up — absent in an older save, which restores nobody lit */
+  lit?: boolean;
 };
 
 const worldStores = {} as Record<string, LocalStore<WorldSettings>>;

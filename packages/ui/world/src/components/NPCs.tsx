@@ -107,13 +107,18 @@ export default function NPCs() {
         const npcLit = uniform(0);
         const roomSlot = uniform(alwaysShownSlot, "float");
 
+        // - has value 1 iff lit and lighting shown
+        // - lit npcs will not be faded with their rooms
+        const litAmount = npcLit.mul(w.view.litNpcsEnabled);
+
         const roomFade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
-        const bodyFade = roomFade.div(npcFadeShare).clamp(0, 1);
+        const bodyFade = roomFade.div(npcFadeShare).clamp(0, 1).max(litAmount);
         // colour drained by the time the sphere starts fading and symmetrically
         const bodyTint = roomFade
           .sub(npcFadeShare)
           .div(1 - npcFadeShare)
-          .clamp(0, 1);
+          .clamp(0, 1)
+          .max(litAmount);
 
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
@@ -144,11 +149,14 @@ export default function NPCs() {
         // sight is a flank turned edge-on and the rim would otherwise take the whole npc rather
         // than outlining them — `toEye.y` is how much of the view is straight down
         const overhead = smoothstep(float(rimOverheadFrom), float(rimOverheadTo), toEye.y);
+        // ...and a lit npc's is brighter, and its own colour, whatever the view angle
+        const rimBright = mix(float(rimAmount), float(rimOverheadAmount), overhead);
         const rim = facing
           .oneMinus()
           .pow(rimPower)
-          .mul(mix(float(rimAmount), float(rimOverheadAmount), overhead))
+          .mul(mix(rimBright, float(litRimAmount), litAmount))
           .mul(fold);
+        const rimTint = mix(rimColor, litRimColor, litAmount);
         // `alphaTestNode` below gives way with this, or the body would be discarded whole the
         // moment its alpha started dropping
         const mainColor = vec4(
@@ -156,7 +164,7 @@ export default function NPCs() {
             vec3(0).mul(positionLocal.y),
             // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
             // skin happened to be — a dark uniform takes a rim as readily as a pale one
-            skinTex.rgb.mul(ndotv).add(vec3(rimColor[0], rimColor[1], rimColor[2]).mul(rim)),
+            skinTex.rgb.mul(ndotv).add(rimTint.mul(rim)),
             // skinTex.rgb.mul(ndotv),
             colorScale,
           ),
@@ -189,10 +197,11 @@ export default function NPCs() {
         );
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         // - playerLight affects body but not label
-        // - lit npc is lit independently
+        // - a LIT npc is never darker than `npcLitUnseen`, and takes the player's light where it
+        //   reaches them: the MAX of the two, so being lit is a floor under them rather than a
+        //   light of its own that would dim them wherever the player's already fell
         const shaded = w.view.playerLight.applyLightRgba(mainColor);
-        const ownLit = vec4(mainColor.rgb.mul(npcLitBoost), mainColor.a);
-        const litAmount = npcLit.mul(w.view.lightNpcs);
+        const ownLit = vec4(shaded.rgb.max(mainColor.rgb.mul(npcLitUnseen)), mainColor.a);
         // black first then sphere fade
         const body = w.view.fadeRoomsFx.applySphereFade(
           w.view.fadeRoomsFx.applyFadeRgba(mix(shaded, ownLit, litAmount), bodyTint),
@@ -203,7 +212,7 @@ export default function NPCs() {
         );
         // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
         // fade, well before and after the body's own share of it, and eased at both ends
-        const labelFade = smoothstep(float(0), float(1), roomFade);
+        const labelFade = smoothstep(float(0), float(1), roomFade).max(litAmount);
         const label = w.view.fadeRoomsFx.applyFadeRgba(
           w.view.fadeRoomsFx.applyFadeAlpha(labelColor, labelFade),
           labelFade,
@@ -975,7 +984,14 @@ const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance:
  */
 const rimPower = 5;
 const rimAmount = 0.2;
-const rimColor = [0.55, 0.72, 0.7];
+const rimColor = vec3(0.55, 0.72, 0.7);
+
+/**
+ * ...and what it becomes whilst they are LIT — brighter, and its own colour, so that being picked
+ * out reads as an outline rather than as somebody standing under a lamp. See `Npc.setLit`
+ */
+const litRimAmount = 0.75;
+const litRimColor = vec3(0.125, 0.21, 0.25);
 
 /**
  * How bright it is instead when looking straight down — where nearly every surface in sight is a
@@ -983,7 +999,6 @@ const rimColor = [0.55, 0.72, 0.7];
  * between: `0` is level with them, `1` directly above
  */
 const rimOverheadAmount = 0.05;
-/** How much brighter a lit npc is than an unlit one — see `Npc.setLit` */
 /**
  * How much of an npc's room fade their own takes, at the near end of it — the stretch over which
  * their sphere closes or opens and their colour drains or returns. `1` is the whole of it
@@ -1003,7 +1018,12 @@ const npcSphereY = 0.96;
  */
 const npcSphereRadius = 2.2;
 
-const npcLitBoost = 1.2;
+/**
+ * How much of their own colour a LIT npc keeps where the player's light does not reach them — the
+ * least they are ever seen at, the player's light being taken over it wherever it is brighter.
+ * See `Npc.setLit`
+ */
+const npcLitUnseen = 0.5;
 const rimOverheadFrom = 0.45;
 const rimOverheadTo = 0.85;
 

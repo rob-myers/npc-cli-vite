@@ -95,7 +95,10 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
       const inView = roomsInView(w);
 
       rooms.length = 0;
-      if (inView !== null) rooms.push(...inView);
+      if (inView !== null) {
+        rooms.push(...inView);
+        if (w.view.litNpcsEnabled.value === 1) rooms.push(...w.e.litRooms.values());
+      }
 
       // `focus` is `map` for now: both fade what the player cannot see, and only `gm` shows all
       const showAll = this.mode === "gm" || inView === null;
