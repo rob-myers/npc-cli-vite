@@ -236,8 +236,10 @@ export function WorldMenu() {
         return w.view.postProcessing ?? false;
       case "Room Outlines":
         return w.debug?.fadeRoomOutlines ?? false;
-      case "Light npcs":
-        return w.view.lightNpcs?.value === 1;
+      case "Lit npcs":
+        return w.view.litNpcsEnabled?.value === 1;
+      case "Lit npcs editable":
+        return w.view.litNpcsEditable ?? false;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
@@ -275,8 +277,12 @@ export function WorldMenu() {
         w.floor?.drawAll();
         state.update();
         break;
-      case "Light npcs":
-        w.view.setLightNpcsEnabled();
+      case "Lit npcs":
+        w.view.setLitNpcsEnabled();
+        state.update();
+        break;
+      case "Lit npcs editable":
+        w.view.setLitNpcsEditable();
         state.update();
         break;
       case "Room Hit":
@@ -1169,7 +1175,8 @@ const debugItems = [
   "View Pick",
   "Post FX",
   "Room Outlines",
-  "Light npcs",
+  "Lit npcs",
+  "Lit npcs editable",
   "Room Hit",
   "Graphs",
   "Skins",

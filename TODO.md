@@ -180,9 +180,9 @@
   - ✅ onchange map seeing isolated doors and decor quads
   - ❌ nearby door to large room should not show whole room?
   - ❌ pick does not restrict by room
-  - move "Light npcs" (long-press-light) into sub-icon of fade button
-    - can enable/disable via long press of fade button
-  - try extend fade rooms by all lit npcs
+  - ✅ try extend fade rooms by all lit npcs
+  - move "Light npcs" (long-press-light) into sub-icon of mode button
+    - can enable/disable edit via long press of mode button
 
 
 ## Other

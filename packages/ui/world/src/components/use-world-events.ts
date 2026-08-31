@@ -33,6 +33,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToAccess: {},
       npcToDoable: {},
       npcToDoors: {},
+      litRooms: new Map(),
       npcToRoom: new Map(),
       pendingRaycast: {},
       pendingUnreachable: {},
@@ -299,6 +300,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.npcToAccess = {};
         state.npcToDoable = {};
         state.npcToDoors = {};
+        state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
         state.npcToRoom = new Map();
         state.roomToNpcs = [];
 
@@ -385,7 +387,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.npc?.warmCrowd();
             break;
           case "picked": {
-            if (w.view.lightNpcs.value === 1 && e.longDown === true && e.meta.type === "npc") {
+            if (w.view.litNpcsEditable === true && e.longDown === true && e.meta.type === "npc") {
               w.n[(e.meta as { npcKey: string }).npcKey]?.setLit();
             }
             break;
@@ -465,6 +467,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               state.externalNpcs.delete(npc.key);
             }
             state.npcToRoom.set(npc.key, e.gmRoomId);
+            state.syncLitRoom(npc);
             if (state.roomToNpcs[e.gmRoomId.gmId]) {
               (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
             }
@@ -631,6 +634,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               angle: npc.rotation.y,
               skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
               decorKey: state.npcToDoable[npc.key] ?? undefined,
+              lit: npc.lit === true ? true : undefined,
             })),
           },
         });
@@ -640,7 +644,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return;
         }
 
-        for (const { key, at, angle, skinKey, decorKey } of saved.npcs) {
+        for (const { key, at, angle, skinKey, decorKey, lit } of saved.npcs) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
@@ -652,6 +656,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               angle,
               as: skinKey,
             });
+            if (lit === true) w.npc.npc[key]?.setLit(true);
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
           }
@@ -709,6 +714,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           delete w.npc.byPickId[npc.pickId];
           delete w.n[npc.key];
           w.e.setNpcDo(npc.key, null);
+          state.litRooms.delete(npc.key);
           npc.rejectAll(new Error("removed npc"));
         }
 
@@ -832,6 +838,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryCloseDoor(gdKey);
         }
       },
+      syncLitRoom(npc) {
+        const at = npc.lit === true ? state.npcToRoom.get(npc.key) : undefined;
+        if (at === undefined) state.litRooms.delete(npc.key);
+        else state.litRooms.set(npc.key, at);
+      },
       syncFadeRooms() {
         w.view.fadeRoomsFx.sync(w);
         state.syncNpcRoomSlots();
@@ -904,6 +915,13 @@ export type State = {
   npcToAccess: { [npcKey: string]: { [gdKey: string]: boolean } };
   npcToDoable: { [npcKey: string]: string | null };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
+  /**
+   * Where each LIT npc stands, by npc key — the rooms `service/fade-rooms` shows on their account.
+   * By npc rather than by room, so one moving or going out is an entry rewritten or dropped
+   */
+  litRooms: Map<string, Geomorph.GmRoomId>;
+  /** Puts `npc` into `litRooms`, or takes them out of it — see `Npc.setLit` */
+  syncLitRoom(npc: Npc): void;
   /**
    * Relates `npcKey` to current room.
    */

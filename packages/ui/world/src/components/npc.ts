@@ -488,8 +488,10 @@ export class Npc {
   }
 
   setLit(next = !this.lit) {
+    if (this.key === this.w.player.key) return;
     this.npcLit.value = next === true ? 1 : 0;
-    this.w.view.forceUpdate();
+    this.w.e.syncLitRoom(this);
+    this.w.e.syncFadeRooms();
   }
 
   setLabelYShift(shift: number) {
