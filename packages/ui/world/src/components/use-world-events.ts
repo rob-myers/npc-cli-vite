@@ -433,13 +433,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (gmRoomId === undefined || nextGmRoomId === null) {
             return;
           }
-          if (nextGmRoomId.grKey === gmRoomId.grKey) {
-            // entered collider then turned around and exited
-            return;
-          }
 
-          // trigger enter-room on exit inside-collider and changed room
-          w.events.next({ key: "enter-room", npcKey: npc.key, gmRoomId: nextGmRoomId });
+          w.events.next({
+            key: "enter-room",
+            npcKey: npc.key,
+            gmRoomId: nextGmRoomId,
+            reEntered: nextGmRoomId.grKey === gmRoomId.grKey,
+          });
         }
 
         if (e.type === "nearby") {
@@ -466,6 +466,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "enter-room": {
+            if (e.reEntered === true) {
+              return;
+            }
+
             const gmRoomId = state.npcToRoom.get(npc.key);
             if (gmRoomId) {
               state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npc.key);

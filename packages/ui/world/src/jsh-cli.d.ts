@@ -10,7 +10,13 @@ declare namespace JshCli {
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
     | { key: "enter-doorway"; npcKey: string; gmRoomId: Geomorph.GmRoomId; nextGmRoomId: Geomorph.GmRoomId }
-    | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | {
+        key: "enter-room";
+        npcKey: string;
+        gmRoomId: Geomorph.GmRoomId;
+        /** Turned around in doorway and re-entered? */
+        reEntered: boolean;
+      }
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
     | {
         /** The map's pending keys have stopped changing i.e. it is ready */
