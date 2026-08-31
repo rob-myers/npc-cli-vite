@@ -11,6 +11,7 @@ import {
   instanceIndex,
   int,
   mix,
+  select,
   texture,
   transformNormalToView,
   uniform,
@@ -23,6 +24,7 @@ import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import type { SelectAnyType } from "../service/texture";
 import { drawFloorGrid, drawLightsIntoTexture, drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -318,15 +320,21 @@ export default function Floor() {
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       // - force alpha 1 to avoid object-pick having rgb scaled by alpha
       // - can pick texture alpha < 1 because floor can be partially transparent
-      outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1),
+      // - in focus-mode we scale rgb towards black here to ensure complete darkness
+      outputNode: (() => {
+        const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1) as THREE.Node<"vec4">;
+        const shown = floorFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+      })(),
       // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`
       // tinted by what the player can see from where they stand — see `service/player-light`
-      // DARKENED rather than faded, as everything else is — and never quite to black, so a hidden
-      // room still reads as ground rather than as a hole. See `hiddenFloorTint`
+      // DARKENED rather than faded, as everything else is — and in `map` mode never quite to
+      // black, so a room out of view still reads as ground rather than as a hole. `focus` takes
+      // that floor away and the room goes black outright, eased by `focusNode` as the mode changes
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
-        floorFade.max(fadedRoomFloorTint),
+        floorFade.max(float(fadedRoomFloorTint).mul(w.view.fadeRoomsFx.focusNode.oneMinus())),
       ),
       uid: generateUUID(),
     };

@@ -13,11 +13,14 @@ import {
   cameraPosition,
   color,
   Fn,
+  float,
   instanceIndex,
   int,
   mix,
   normalWorld,
+  output,
   positionWorld,
+  select,
   texture,
   transformNormalToView,
   uniform,
@@ -32,7 +35,7 @@ import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguSc
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
-import { bootstrapInstanceColor, getLightMetas } from "../service/texture";
+import { bootstrapInstanceColor, getLightMetas, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -274,18 +277,24 @@ export default function Obstacles(_props: Props) {
     const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
     const topFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     return {
-      // NOT tinted by `service/player-light`: an obstacle's top is a sprite seen from above, and
-      // the light only ever muddied it. Its SKIRT still takes the light — that stands up, and is
-      // what reads the room it is in
-      // never quite black, unlike everything else that hides: a top is a sprite seen from above and
-      // keeping a little of it leaves the room's furniture readable as shapes — see `hiddenTopTint`
+      // - obstacles tops are not tinted by playerLight, although obstacle skirts are
+      // - map-mode tints them darker
+      // - focus-mode tints them completely black
       colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(hiddenTopTint)),
+        w.view.fadeRoomsFx.applyFadeRgba(
+          unlit,
+          topFade.max(float(hiddenTopTint).mul(w.view.fadeRoomsFx.focusNode.oneMinus())),
+        ),
         topFade,
         w.view.objectPick,
       ),
       normalNode,
-      outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
+      // focus-mode forces completely black
+      outputNode: (() => {
+        const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle) as THREE.Node<"vec4">;
+        const shown = topFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+      })(),
       uid: generateUUID(),
     };
   }, [w.texObs.hash, w.view.fadeRoomsFx.uid]);
@@ -337,6 +346,8 @@ export default function Obstacles(_props: Props) {
       skirtFade,
       w.view.objectPick,
     );
+    // focus-mode forces completely black
+    mat.outputNode = vec4(output.rgb.mul(skirtFade.max(w.view.fadeRoomsFx.focusNode.oneMinus())), output.a);
     return mat;
   }, [skirtLightMeta, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 

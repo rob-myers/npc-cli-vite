@@ -20,6 +20,12 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   const clockValue = uniform(nowSecs());
   const clockNode = float(clockValue);
 
+  // `1` in `"focus"` mode and `0` in the others. A morph rather than a plain uniform, so that
+  // switching between the two is a fade of its own rather than a snap
+  const focusMorph = arrivedAt(initialMode === "focus" ? 1 : 0, nowSecs());
+  const focusValue = uniform(new THREE.Vector3(focusMorph.from, focusMorph.to, focusMorph.at));
+  const focusAmount = morphNode(focusValue, MODE_FADE_SECS, clockNode);
+
   const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, nowSecs()));
   const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
@@ -38,6 +44,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
     mode: initialMode,
     rooms,
     getVisiblity: fadeAt,
+    focusNode: focusAmount,
 
     isArriving(slot) {
       // heading for shown and not there yet — the room part way in that an npc walks into
@@ -93,6 +100,13 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
       // `focus` is `map` for now: both fade what the player cannot see, and only `gm` shows all
       const showAll = this.mode === "gm" || inView === null;
       const now = tick();
+
+      // `gm` shows everything anyway, so it keeps whichever answer it had — and coming back out of
+      // it, the rooms are already as dark as the mode returned to wants them
+      if (this.mode !== "gm") {
+        retarget(focusMorph, this.mode === "focus" ? 1 : 0, MODE_FADE_SECS, now);
+        focusValue.value.set(focusMorph.from, focusMorph.to, focusMorph.at);
+      }
 
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
       // Broad walls are shown whenever an adjacent room is visible
@@ -188,6 +202,9 @@ export function parseFadeRoomsMode(mode: unknown): FadeRoomsMode {
   return mode === "focus" || mode === "map" || mode === "gm" ? mode : "gm";
 }
 
+/** How long the switch between `"focus"` and `"map"` takes to play out, in seconds */
+const MODE_FADE_SECS = 0.7;
+
 /** The wall clock, in seconds */
 function nowSecs() {
   return performance.now() / 1000;
@@ -216,6 +233,12 @@ export type FadeRooms = {
   isArriving(slot: number): boolean;
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
+  /**
+   * `1` in `"focus"` mode and `0` in the others, easing between the two as the mode changes — for
+   * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `focus`
+   * takes all the way to black
+   */
+  focusNode: THREE.Node<"float">;
   /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /**
