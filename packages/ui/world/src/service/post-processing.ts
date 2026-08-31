@@ -1,5 +1,6 @@
-import { Fn, float, smoothstep, uniform, vec3, vec4 } from "three/tsl";
+import { Fn, float, mix, select, smoothstep, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import type { SelectAnyType } from "./texture";
 
 export type PostProcessing = {
   /**
@@ -9,15 +10,21 @@ export type PostProcessing = {
    */
   uid: string;
   /**
-   * What lies beyond the world, from `theme.post.background`. A uniform, so a change of theme is a
-   * value written rather than the pipeline rebuilt
+   * The two the frame is composed between, from `theme.post`: `lightBg` where nothing at all was
+   * drawn, `darkBg` behind everything that was. Uniforms, so a change of theme is a pair of values
+   * written rather than the pipeline rebuilt.
+   *
+   * What a room out of view comes to, as well — the page in `"map"` mode and the dark in
+   * `"focus"`, so a hidden room is either a floorplan or simply not there. See `Floor`
    */
-  background: THREE.UniformNode<"color", THREE.Color>;
+  lightBg: THREE.UniformNode<"color", THREE.Color>;
+  darkBg: THREE.UniformNode<"color", THREE.Color>;
   /**
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
+   * @param focus `1` in `"focus"` mode and `0` in the others — see `service/fade-rooms`
    */
-  apply(sceneColor: THREE.TextureNode): THREE.Node<"vec4">;
+  apply(sceneColor: THREE.TextureNode, focus: THREE.Node<"float">): THREE.Node<"vec4">;
 };
 
 /**
@@ -35,18 +42,25 @@ export type PostProcessing = {
  * circle knows nothing about the walls and cut across the rooms it was hiding.
  */
 export function createPostProcessing(): PostProcessing {
-  const background = uniform(new THREE.Color(defaultBackground));
+  const lightBg = uniform(new THREE.Color(defaultLightBg));
+  const darkBg = uniform(new THREE.Color(defaultDarkBg));
 
   return {
     uid: crypto.randomUUID(),
-    background,
+    lightBg,
+    darkBg,
 
-    apply(sceneColor) {
+    apply(sceneColor, focus) {
       return Fn(() => {
-        // What lies BEHIND the world at this pixel: black wherever anything at all was drawn, even
-        // a door at part coverage, and the theme's own colour where nothing was. Every silhouette
-        // gets its own dark edge, and what the world fades out into is the page
-        const backdrop = sceneColor.a.greaterThan(0).select(vec3(0), background);
+        // What lies BEHIND the world at this pixel: the dark wherever anything at all was drawn,
+        // even a door at part coverage, so every silhouette gets its own dark edge. BEYOND the
+        // world it is the page in `"map"` mode, which the ship then reads as a floorplan on — and
+        // the dark in `"focus"`, where what the player cannot see is not there and the space
+        // around the world is no different from it
+        const beyond = mix(lightBg, darkBg, focus);
+        const backdrop = (select as SelectAnyType)(sceneColor.a.greaterThan(0), darkBg, beyond) as THREE.Node<
+          "color" | "vec3"
+        >;
 
         // Coverage counts for MORE than it is, so a door at `defaultDoorOpacity` reads solid
         // against the backdrop and gives way only as the world dissolves it. Smoothstep rather than
@@ -70,5 +84,6 @@ export function createPostProcessing(): PostProcessing {
 /** The coverage a fragment must carry to count as fully drawn — see `drawn` */
 const coverageFull = 0.85;
 
-/** Until a theme says otherwise — see `theme.post.background` */
-const defaultBackground = "#ffffff";
+/** Until a theme says otherwise — see `theme.post` */
+const defaultLightBg = "#ffffff";
+const defaultDarkBg = "#000000";

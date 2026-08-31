@@ -13,7 +13,6 @@ import {
   cameraPosition,
   color,
   Fn,
-  float,
   instanceIndex,
   int,
   mix,
@@ -48,6 +47,7 @@ export default function Obstacles(_props: Props) {
       quad: createTwoSidedXzQuad(), // 2-sided handles flipped obstacles
       skirtQuad: createTwoSidedXyQuad(),
       brightnessNode: uniform(1),
+      fadedTint: uniform(0.1),
 
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
@@ -166,6 +166,9 @@ export default function Obstacles(_props: Props) {
       setBrightness(next) {
         state.brightnessNode.value = next;
       },
+      setFadedTint(next) {
+        state.fadedTint.value = next;
+      },
       sendDataToGpu() {
         state.quad.getAttribute("uvOffsets").needsUpdate = true;
         state.quad.getAttribute("uvDimensions").needsUpdate = true;
@@ -281,15 +284,13 @@ export default function Obstacles(_props: Props) {
       // - map-mode tints them darker
       // - focus-mode tints them completely black
       colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.applyFadeRgba(
-          unlit,
-          topFade.max(float(hiddenTopTint).mul(w.view.fadeRoomsFx.focusNode.oneMinus())),
-        ),
+        w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(state.fadedTint)),
         topFade,
         w.view.objectPick,
       ),
       normalNode,
-      // focus-mode forces completely black
+      // taken to black in `focus` mode HERE rather than in `colorNode`, which is only the albedo —
+      // see `Floor`, whose floor it stands on and whose fate it shares
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle) as THREE.Node<"vec4">;
         const shown = topFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
@@ -346,7 +347,7 @@ export default function Obstacles(_props: Props) {
       skirtFade,
       w.view.objectPick,
     );
-    // focus-mode forces completely black
+    // and to black in `focus` mode past the lighting, as the tops are — see their `outputNode`
     mat.outputNode = vec4(output.rgb.mul(skirtFade.max(w.view.fadeRoomsFx.focusNode.oneMinus())), output.a);
     return mat;
   }, [skirtLightMeta, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
@@ -458,6 +459,8 @@ export type State = {
   quad: THREE.BufferGeometry;
   skirtQuad: THREE.BufferGeometry;
   brightnessNode: THREE.UniformNode<"float", number>;
+  /** How much of a top is left once its room is out of view — from `theme.post.fadedObstacleTint` */
+  fadedTint: THREE.UniformNode<"float", number>;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
@@ -482,6 +485,7 @@ export type State = {
   /** Which room an obstacle stands in — a property of the layout, not of the instance. See within */
   roomIdOf(gmId: number, obstacle: Geomorph.LayoutObstacle): null | number;
   setBrightness(next: number): void;
+  setFadedTint(next: number): void;
   transformAndColorObstacles(): void;
   transformAndColorSkirts(): void;
   sendDataToGpu(): void;
@@ -494,8 +498,6 @@ const tmpVec1 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
 const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
-/** How much of an obstacle's top is left once its room is hidden — a shape rather than nothing */
-const hiddenTopTint = 0.1;
 
 const obstaclesSkirtBaseColor = "#555";
 const defaultObstacleTint = "#666";

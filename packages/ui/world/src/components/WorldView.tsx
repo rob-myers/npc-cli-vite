@@ -662,7 +662,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const scenePass = pass(scene, camera);
 
         const pipeline = new THREE.RenderPipeline(gl);
-        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"));
+        // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
+        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.focusNode);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -1084,8 +1085,9 @@ const emptyDoors: Record<string, Geomorph.DoorState> = {};
 function PostProcessing() {
   const w = useContext(WorldContext);
   // the pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
-  // `reset` gives us one on hmr, and the uid is how we notice
-  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid]);
+  // `reset` gives us one on hmr, and the uids are how we notice. `fadeRoomsFx` too, whose mode node
+  // the pass reads
+  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid, w.view.fadeRoomsFx.uid]);
   return null;
 }
 

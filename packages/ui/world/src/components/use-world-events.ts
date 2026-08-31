@@ -309,9 +309,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.setNextPending({ assets: true });
       },
       onChangeTheme() {
-        w.obs.setBrightness(w.getTheme().obstacles.brightness);
-        w.door.setBrightness(w.getTheme().doors.brightness);
-        w.view.postFx.background.value.set(w.getTheme().post.background);
+        const { obstacles, doors, post } = w.getTheme();
+        w.obs.setBrightness(obstacles.brightness);
+        w.door.setBrightness(doors.brightness);
+        w.floor.setFadedTint(post.fadedFloorTint);
+        w.obs.setFadedTint(post.fadedObstacleTint);
+        w.view.postFx.lightBg.value.set(post.lightBg);
+        w.view.postFx.darkBg.value.set(post.darkBg);
         // w.view.forceUpdate();
       },
       onEvent(e) {

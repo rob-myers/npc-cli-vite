@@ -96,7 +96,7 @@ export const zoomSpeedDesktop = 0.3;
 export const zoomSpeedMobile = 0.8;
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
-  post: { background: "#ffffff" },
+  post: { lightBg: "#ffffff", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
   background: "bg-[#000]", // seeing initial flicker
   ceiling: {
     hull: { fill: "#000", stroke: "#666" },

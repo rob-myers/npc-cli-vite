@@ -41,6 +41,7 @@ export default function Floor() {
       drawnMapKey: null,
 
       fade: { texAmount: uniform(0), animId: 0, resolve: null }, // initially `fadeColor`
+      fadedTint: uniform(0.1),
 
       addUvs(gms = w.gms) {
         const uvOffsets = state.quad.getAttribute("uvOffsets");
@@ -258,6 +259,9 @@ export default function Floor() {
           requestAnimationFrame(() => requestAnimationFrame(() => void w.view.veilCanvas(false)));
         }
       },
+      setFadedTint(next) {
+        state.fadedTint.value = next;
+      },
       /** Clear the shared canvas and put it in this geomorph's local coords */
       startGm(gmId, gms = w.gms) {
         const gmKey = gms[gmId]?.key;
@@ -320,7 +324,10 @@ export default function Floor() {
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       // - force alpha 1 to avoid object-pick having rgb scaled by alpha
       // - can pick texture alpha < 1 because floor can be partially transparent
-      // - in focus-mode we scale rgb towards black here to ensure complete darkness
+      // - in `focus` mode a room out of view goes to black HERE rather than in `colorNode`, which
+      //   is only the albedo: a standard material still adds a little specular off the scene's
+      //   lights to an albedo of nothing, enough to make out a floor that has gone. `map` mode is
+      //   untouched, and so is the pick branch, which carries the pick id and must arrive whole
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1) as THREE.Node<"vec4">;
         const shown = floorFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
@@ -329,12 +336,11 @@ export default function Floor() {
       // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`
       // tinted by what the player can see from where they stand — see `service/player-light`
-      // DARKENED rather than faded, as everything else is — and in `map` mode never quite to
-      // black, so a room out of view still reads as ground rather than as a hole. `focus` takes
-      // that floor away and the room goes black outright, eased by `focusNode` as the mode changes
+      // DARKENED rather than faded, as everything else is — and never quite to black, so what the
+      // player half sees keeps its shape. Where it ENDS UP is `outputNode`'s business
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
         w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
-        floorFade.max(float(fadedRoomFloorTint).mul(w.view.fadeRoomsFx.focusNode.oneMinus())),
+        floorFade.max(state.fadedTint),
       ),
       uid: generateUUID(),
     };
@@ -395,6 +401,9 @@ export type State = {
     animId: number;
     resolve: null | (() => void);
   };
+  /** How much of a floor is left once its room is out of view — from `theme.post.fadedFloorTint` */
+  fadedTint: THREE.UniformNode<"float", number>;
+
   addUvs(gms?: Geomorph.LayoutInstance[]): void;
   draw(): Promise<void>;
   /** `draw`, then show it — what anything outside this file wants */
@@ -412,6 +421,7 @@ export type State = {
   drawHullFloor(ct: CanvasRenderingContext2D, hullFloor: Geom.Poly[], layout: Geomorph.Layout): void;
   /** Draw map hulls, ahead of `draw` */
   onNewMap(): void;
+  setFadedTint(next: number): void;
   startGm(gmId: number, gms?: Geomorph.LayoutInstance[]): null | Geomorph.Layout;
   transformInstances(gms?: Geomorph.LayoutInstance[]): void;
 };
@@ -427,8 +437,6 @@ const hullStripeColor = "#0000001a";
 
 /** What a folded map shows in place of its art: the hull as a flat black shape */
 const fadeColor = vec3(0, 0, 0);
-
-const fadedRoomFloorTint = 0.1;
 
 /** debug: every room outlined — how wide the line is, in metres, and its ink */
 const debugRoomEdgeWidth = 0.06;

@@ -151,9 +151,15 @@ export const WorldThemeSchema = z.object({
   post: z
     .object({
       /** What lies beyond the world, where nothing at all was drawn — see `service/post-processing` */
-      background: z.string().default("#ffffff"),
+      lightBg: z.string().default("#ffffff"),
+      /** What lies BEHIND the world, wherever anything was drawn over it */
+      darkBg: z.string().default("#000000"),
+      /** How much of a floor is left once its room is out of view — see `Floor` */
+      fadedFloorTint: z.number().min(0).max(1).default(0.1),
+      /** How much of an obstacle's top is left once its room is — a shape rather than nothing */
+      fadedObstacleTint: z.number().min(0).max(1).default(0.1),
     })
-    .default({ background: "#ffffff" }),
+    .default({ lightBg: "#ffffff", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 }),
   background: z.string(),
   ceiling: z.object({
     hull: z.object({ fill: z.string(), stroke: z.string() }),
