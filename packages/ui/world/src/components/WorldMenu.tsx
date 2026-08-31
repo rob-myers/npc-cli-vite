@@ -6,14 +6,14 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   ArrowsOutCardinalIcon,
+  BugIcon,
   CaretDownIcon,
   CaretRightIcon,
-  CircleDashedIcon,
-  CircleIcon,
-  CircleNotchIcon,
   CrosshairSimpleIcon,
+  FlashlightIcon,
   GlobeStandIcon,
   type Icon,
+  MapTrifoldIcon,
   PauseIcon,
   PersonSimpleCircleIcon,
   PlayIcon,
@@ -727,11 +727,11 @@ export function WorldMenu() {
             }}
           >
             {w.view.fadeRoomsMode === "focus" ? (
-              <CircleNotchIcon className="size-5 text-slate-200" alt="focus: only what the player sees" weight="bold" />
+              <FlashlightIcon className="size-5 text-slate-200" alt="focus: only what the player sees" weight="bold" />
             ) : w.view.fadeRoomsMode === "map" ? (
-              <CircleDashedIcon className="size-5 text-slate-200" alt="map: the rest black" weight="bold" />
+              <MapTrifoldIcon className="size-5 text-slate-200" alt="map: the rest black" weight="bold" />
             ) : (
-              <CircleIcon className="size-5 text-slate-400" alt="gm: all of it" weight="bold" />
+              <BugIcon className="size-5 text-slate-400" alt="gm: all of it" weight="bold" />
             )}
           </button>
         </div>
