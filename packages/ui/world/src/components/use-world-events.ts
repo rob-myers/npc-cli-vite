@@ -828,15 +828,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       syncFadeRooms() {
         w.view.fadeRoomsFx.sync(w);
-
+        state.syncNpcRoomSlots();
+        w.view.forceUpdate();
+        w.events.next({ key: "update-faded-rooms" });
+      },
+      syncNpcRoomSlots() {
+        const fx = w.view.fadeRoomsFx;
         // Every npc, not just the player: an npc MOVES between rooms, so where they stand is a
         // uniform of their own rather than an attribute fixed when the map loaded
         for (const npc of Object.values(w.n)) {
           const at = state.npcToRoom.get(npc.key);
-          npc.roomSlot.value = at === undefined ? alwaysShownSlot : slotOf(at.gmId, at.roomId);
+          const next = at === undefined ? alwaysShownSlot : slotOf(at.gmId, at.roomId);
+          if (next === npc.roomSlot.value) continue;
+          // Somebody walking INTO a room that is still arriving keeps the room they came from,
+          // which is all there — else they would dim on the threshold, waiting on a room they are
+          // already standing in. They take the new one the moment it lands, which is why this runs
+          // on the tick as well as on the events that move people between rooms
+          if (fx.isArriving(next) === true && fx.hasArrived(npc.roomSlot.value) === true) continue;
+          npc.roomSlot.value = next;
         }
-        w.view.forceUpdate();
-        w.events.next({ key: "update-faded-rooms" });
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
@@ -987,6 +997,8 @@ export type State = {
   openDoorwaysWithNpcs(): Promise<void>;
   /** Re-reads which rooms the world is shown in — a door swinging, or the player moving room */
   syncFadeRooms(): void;
+  /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
+  syncNpcRoomSlots(): void;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };
