@@ -4,12 +4,13 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { attribute, instanceIndex, int, texture, transformNormalToView, uv, vec3 } from "three/tsl";
+import { attribute, instanceIndex, int, select, texture, transformNormalToView, uv, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import type { SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Ceiling() {
@@ -150,19 +151,23 @@ export default function Ceiling() {
       0.7, // beauty render
     );
 
+    const ceilFade = w.view.fadeRoomsFx.getVisiblity(
+      w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+    );
+
     return {
       // fix InstancedMesh non-uniform scaling
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       opacityNode,
-      pickNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling),
+      // focus-mode: ensure totally black
+      pickNode: (() => {
+        const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling) as THREE.Node<"vec4">;
+        const shown = ceilFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+      })(),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`
-      texNode: w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)),
-        w.view.fadeRoomsFx.getVisiblity(
-          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
-        ),
-      ),
+      texNode: w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)), ceilFade),
       uid: generateUUID(),
     };
   }, [w.texCeil.hash, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
