@@ -767,7 +767,7 @@ export function WorldMenu() {
             ) : (
               <BugIcon className="size-5 text-slate-400" alt="gm: all of it" weight="bold" />
             )}
-            {/* whether a long press in the WORLD lights an npc — see `Npc.setLit`. Only shown
+            {/* whether a long press in the WORLD lights an npc — see `setNpcLit`. Only shown
                 whilst on: the corner is the mode's own, and an off pen would read as another mode */}
             {w.view.litNpcsEditable === true && (
               <div

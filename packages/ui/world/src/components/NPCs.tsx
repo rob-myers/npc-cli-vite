@@ -988,7 +988,7 @@ const rimColor = vec3(0.55, 0.72, 0.7);
 
 /**
  * ...and what it becomes whilst they are LIT — brighter, and its own colour, so that being picked
- * out reads as an outline rather than as somebody standing under a lamp. See `Npc.setLit`
+ * out reads as an outline rather than as somebody standing under a lamp. See `setNpcLit`
  */
 const litRimAmount = 0.75;
 const litRimColor = vec3(0.125, 0.21, 0.25);
@@ -1021,7 +1021,7 @@ const npcSphereRadius = 2.2;
 /**
  * How much of their own colour a LIT npc keeps where the player's light does not reach them — the
  * least they are ever seen at, the player's light being taken over it wherever it is brighter.
- * See `Npc.setLit`
+ * See `setNpcLit`
  */
 const npcLitUnseen = 0.5;
 const rimOverheadFrom = 0.45;

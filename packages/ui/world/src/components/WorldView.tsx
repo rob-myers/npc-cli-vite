@@ -1012,7 +1012,7 @@ export type State = {
   setFadeRoomsActive(mode: FadeRoomsMode): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
   setupPostProcessing(): () => void;
-  /** Whether being lit shows at all — see `Npc.setLit` */
+  /** Whether being lit shows at all — see `setNpcLit` */
   setLitNpcsEnabled(next?: boolean): void;
   /** Whether a long press lights or unlights an npc */
   setLitNpcsEditable(next?: boolean): void;

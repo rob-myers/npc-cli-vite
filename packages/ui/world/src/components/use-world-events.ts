@@ -388,7 +388,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "picked": {
             if (w.view.litNpcsEditable === true && e.longDown === true && e.meta.type === "npc") {
-              w.n[(e.meta as { npcKey: string }).npcKey]?.setLit();
+              if (typeof e.meta.npcKey === "string") {
+                state.setNpcLit(w.n[e.meta.npcKey]);
+              }
             }
             break;
           }
@@ -466,22 +468,23 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "enter-room": {
-            if (e.reEntered === true) {
-              return;
+            if (e.reEntered === false) {
+              // changed room
+              const gmRoomId = state.npcToRoom.get(npc.key);
+              if (gmRoomId) {
+                state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npc.key);
+              } else {
+                state.externalNpcs.delete(npc.key);
+              }
+              state.npcToRoom.set(npc.key, e.gmRoomId);
+              if (state.roomToNpcs[e.gmRoomId.gmId]) {
+                (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
+              }
             }
 
-            const gmRoomId = state.npcToRoom.get(npc.key);
-            if (gmRoomId) {
-              state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npc.key);
-            } else {
-              state.externalNpcs.delete(npc.key);
+            if (state.syncLitRoom(npc) === true) {
+              state.syncFadeRooms();
             }
-            state.npcToRoom.set(npc.key, e.gmRoomId);
-            state.syncLitRoom(npc);
-            if (state.roomToNpcs[e.gmRoomId.gmId]) {
-              (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
-            }
-            state.syncFadeRooms();
 
             break;
           }
@@ -534,6 +537,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "enter-doorway":
+            // a doorway belongs to two rooms, and a lit npc standing in one lights both
+            if (state.syncLitRoom(npc, e.nextGmRoomId) === true) {
+              state.syncFadeRooms();
+            }
+            break;
           case "speech":
             break;
           default:
@@ -667,7 +675,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               angle,
               as: skinKey,
             });
-            if (lit === true) w.npc.npc[key]?.setLit(true);
+            const spawned = w.npc.npc[key];
+            if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
           }
@@ -849,10 +858,22 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryCloseDoor(gdKey);
         }
       },
-      syncLitRoom(npc) {
+      setNpcLit(npc, next = npc.lit === false) {
+        if (npc.key === w.player.key) {
+          return;
+        }
+        npc.npcLit.value = next === true ? 1 : 0;
+        if (state.syncLitRoom(npc) === true) {
+          state.syncFadeRooms();
+        }
+      },
+      syncLitRoom(npc, alsoAt) {
         const at = npc.lit === true ? state.npcToRoom.get(npc.key) : undefined;
-        if (at === undefined) state.litRooms.delete(npc.key);
-        else state.litRooms.set(npc.key, at);
+        if (at === undefined) {
+          return state.litRooms.delete(npc.key);
+        }
+        state.litRooms.set(npc.key, alsoAt === undefined ? [at] : [at, alsoAt]);
+        return true;
       },
       syncFadeRooms() {
         w.view.fadeRoomsFx.sync(w);
@@ -927,12 +948,20 @@ export type State = {
   npcToDoable: { [npcKey: string]: string | null };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
   /**
-   * Where each LIT npc stands, by npc key — the rooms `service/fade-rooms` shows on their account.
-   * By npc rather than by room, so one moving or going out is an entry rewritten or dropped
+   * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
+   * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
+   * going out is an entry rewritten or dropped
    */
-  litRooms: Map<string, Geomorph.GmRoomId>;
-  /** Puts `npc` into `litRooms`, or takes them out of it — see `Npc.setLit` */
-  syncLitRoom(npc: Npc): void;
+  litRooms: Map<string, Geomorph.GmRoomId[]>;
+  /** Lights `npc` or puts them out. Toggles when `next` is omitted */
+  setNpcLit(npc: Npc, next?: boolean): void;
+  /**
+   * Puts `npc` into `litRooms`, or takes them out of it — see `setNpcLit`.
+   *
+   * Returns `true` iff npc lit and something was deleted or set.
+   * @param alsoAt the far side of the doorway they stand in, if they stand in one
+   */
+  syncLitRoom(npc: Npc, alsoAt?: Geomorph.GmRoomId): boolean;
   /**
    * Relates `npcKey` to current room.
    */

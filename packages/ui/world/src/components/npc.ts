@@ -55,7 +55,7 @@ export class Npc {
   labelLayerIndex: number;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
-  /** `1` whilst they are lit up — see `setLit` and the `lit` getter */
+  /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   /** skin selection */
@@ -485,13 +485,6 @@ export class Npc {
       this.w.rings.hideSelectRing(this.key);
     }
     this.w.view.forceUpdate();
-  }
-
-  setLit(next = !this.lit) {
-    if (this.key === this.w.player.key) return;
-    this.npcLit.value = next === true ? 1 : 0;
-    this.w.e.syncLitRoom(this);
-    this.w.e.syncFadeRooms();
   }
 
   setLabelYShift(shift: number) {
