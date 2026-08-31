@@ -380,6 +380,9 @@ export default function Doors() {
             const ds = state.byKey[helper.getGmDoorKey(gmId, localId)];
             state.flipped[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
             ds.gapAtHighLambda = determinant > 0 === state.doorMetaArray[instanceId * 3 + SLIDE_SIGN] > 0;
+
+            // A door that WAS open is put back open
+            if (ds.open === true) state.openRatioArray[instanceId] = doorOpenTarget;
           }
         }
 
