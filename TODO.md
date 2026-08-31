@@ -181,8 +181,8 @@
   - ❌ nearby door to large room should not show whole room?
   - ❌ pick does not restrict by room
   - ✅ try extend fade rooms by all lit npcs
-  - move "Light npcs" (long-press-light) into sub-icon of mode button
-    - can enable/disable edit via long press of mode button
+  - move "Lit npcs editable" (long-press-light) into sub-icon of mode button
+    - show little pen icon bottom-right
 
 
 ## Other

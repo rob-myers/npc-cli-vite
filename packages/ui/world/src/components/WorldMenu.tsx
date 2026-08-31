@@ -28,6 +28,7 @@ import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
 import { defaultBrightness } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { demoPostFxKeys } from "../service/demo-post-process";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { WorldContext } from "./world-context";
@@ -491,6 +492,22 @@ export function WorldMenu() {
                       {item}
                     </button>
                   ))}
+                </div>
+
+                {/* whatever is hung off the end of the post pass, which needs "Post FX" on to show */}
+                <div
+                  className={cn("px-2 pb-1 flex items-center gap-1", touch && "px-3 pb-2 gap-2")}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className={cn("text-xs text-slate-400", touch && "text-sm")}>demo fx:</div>
+                  <MenuSelect
+                    side="bottom"
+                    className="border rounded border-white/30"
+                    label={w.view.demoPostFx}
+                    value={w.view.demoPostFx}
+                    items={demoPostFxKeys.map((key) => ({ key, value: key }))}
+                    onValueChange={(v) => v && w.view.setDemoPostFx(v)}
+                  />
                 </div>
 
                 <div className={cn("px-2 pb-1", touch && "px-3 pb-2")}>
