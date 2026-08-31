@@ -25,6 +25,7 @@ import {
   zoomSpeedMobile,
 } from "../const";
 import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
+import { createDemoPostFx, type DemoPostFx, type DemoPostFxKey, warpCrtUv } from "../service/demo-post-process";
 import {
   createFadeRooms,
   type FadeRooms,
@@ -93,18 +94,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
       postFx: createPostProcessing(),
+      demoFx: createDemoPostFx(),
       fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
       roomSlots: createRoomSlots(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(),
       postProcessing: saved.postProcessing,
+      demoPostFx: saved.demoPostFx,
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
       litNpcsEditable: saved.litNpcsEditable === true,
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
 
+      computePixelUv(e) {
+        // handle fractional device pixel ratio e.g. 2.625 on Pixel
+        const glPixelRatio = w.r3f.gl.getPixelRatio();
+        const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
+        const u = ((e.clientX - left) * glPixelRatio) / state.canvas.width;
+        const v = ((e.clientY - top) * glPixelRatio) / state.canvas.height;
+        // `crt` bends the frame under the pointer, so where we clicked is not what we clicked on
+        return state.demoPostFx === "crt" ? warpCrtUv(u, v) : { u, v };
+      },
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
 
@@ -198,14 +210,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       getRaycastIntersection(e, picked) {
         let mesh: THREE.Mesh;
 
-        // handle fractional device pixel ratio e.g. 2.625 on Pixel
-        const glPixelRatio = w.r3f.gl.getPixelRatio();
-        const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
-
-        const normalizedDeviceCoords = new THREE.Vector2(
-          -1 + 2 * (((e.clientX - left) * glPixelRatio) / w.view.canvas.width),
-          +1 - 2 * (((e.clientY - top) * glPixelRatio) / w.view.canvas.height),
-        );
+        const uv = state.computePixelUv(e);
+        if (uv === null) {
+          return null; // warped uvs needn't cover pixels
+        }
+        const normalizedDeviceCoords = new THREE.Vector2(-1 + 2 * uv.u, +1 - 2 * uv.v);
         w.view.raycaster.setFromCamera(normalizedDeviceCoords, state.controls?.object ?? w.r3f.camera);
 
         switch (picked.type) {
@@ -358,13 +367,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { gl, scene, camera } = w.r3f;
         const renderer = gl as unknown as THREE.WebGPURenderer;
 
-        const x = Math.floor(e.nativeEvent.offsetX * gl.getPixelRatio());
-        const y = Math.floor(e.nativeEvent.offsetY * gl.getPixelRatio());
+        const uv = state.computePixelUv(e.nativeEvent);
+        if (uv === null) {
+          return; // the `crt` bulge pushes the corners off-frame, where there is nothing to pick
+        }
 
         const rt = state.pickRT;
         const rtCamera = camera;
         const size = new THREE.Vector2();
         renderer.getDrawingBufferSize(size);
+        const x = Math.min(Math.floor(uv.u * size.x), size.x - 1);
+        const y = Math.min(Math.floor(uv.v * size.y), size.y - 1);
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
@@ -652,6 +665,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ postProcessing: next });
         state.forceUpdate();
       },
+      setDemoPostFx(next) {
+        state.demoPostFx = next;
+        store.patch({ demoPostFx: next });
+        // rebuilding the pipeline is `PostProcessing`'s job — this is one of its deps, so it has
+        // to be re-rendered for the change to be noticed. It only exists whilst the post pass does,
+        // so with that off the choice simply waits
+        state.update();
+        w.menu?.update();
+      },
       setLitNpcsEnabled(next = state.litNpcsEnabled.value !== 1) {
         state.litNpcsEnabled.value = next === true ? 1 : 0;
         store.patch({ litNpcsEnabled: next });
@@ -669,7 +691,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
-        pipeline.outputNode = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.focusNode);
+        const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.focusNode);
+        // then whatever is being tried out on top of it, which is usually nothing at all
+        pipeline.outputNode = state.demoFx.apply(composed, state.demoPostFx);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -719,10 +743,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     {
       reset: {
         ctrlOpts: true,
+        /**
+         * ℹ️ can set items below true whilst editing respective systems
+         */
         initial: false,
+        demoFx: true,
+        fadeRoomsFx: false,
         playerLight: false, // 🔔 `true` causes decor rebuild on hmr
-        postFx: true,
-        fadeRoomsFx: true,
+        postFx: false,
       },
     },
   );
@@ -879,6 +907,8 @@ export type State = {
   playerLight: PlayerLight;
   /** What the post pass does to the finished frame — see `service/post-processing` */
   postFx: PostProcessingType;
+  /** The shelf of effects we can hang off the end of it — see `service/demo-post-process` */
+  demoFx: DemoPostFx;
   /** Which rooms the world is shown in — see `service/fade-rooms` */
   fadeRoomsFx: FadeRooms;
   /** Which room every part of the world stands in — see `service/room-slots` */
@@ -891,6 +921,8 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  /** Which effect is hung off the end of the post pass, `"none"` for the pass on its own */
+  demoPostFx: DemoPostFxKey;
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame */
@@ -914,6 +946,8 @@ export type State = {
   onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
+  /** Where on the frame a pointer landed, `null` if off it — see `warpCrtUv` */
+  computePixelUv: (e: PointerEvent) => null | { u: number; v: number };
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
@@ -970,6 +1004,8 @@ export type State = {
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
+  /** Which stock effect runs after the post pass — takes hold whenever that pass is on */
+  setDemoPostFx(next: DemoPostFxKey): void;
   /** How much of the world is shown by room, cycling round when asked for no mode in particular */
   setFadeRoomsMode(next?: FadeRoomsMode): void;
   /** Puts the world into `mode` WITHOUT persisting it — see within */
@@ -1098,7 +1134,10 @@ function PostProcessing() {
   // the pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
   // `reset` gives us one on hmr, and the uids are how we notice. `fadeRoomsFx` too, whose mode node
   // the pass reads
-  useEffect(() => w.view.setupPostProcessing(), [w.view.postFx.uid, w.view.fadeRoomsFx.uid]);
+  useEffect(
+    () => w.view.setupPostProcessing(),
+    [w.view.postFx.uid, w.view.fadeRoomsFx.uid, w.view.demoFx.uid, w.view.demoPostFx],
+  );
   return null;
 }
 

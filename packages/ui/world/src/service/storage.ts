@@ -2,6 +2,7 @@ import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
 import { defaultBrightness } from "../const";
+import type { DemoPostFxKey } from "./demo-post-process";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
@@ -32,6 +33,8 @@ export type WorldSettings = {
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
   postProcessing: boolean;
+  /** Which stock effect runs after the backdrop composite — see `service/demo-post-process` */
+  demoPostFx: DemoPostFxKey;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
@@ -61,6 +64,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraMode: null,
   cameraInitial: null,
   postProcessing: true,
+  demoPostFx: "none",
   fadeRoomsMode: "gm",
   fadeRoomOutlines: false,
   litNpcsEditable: false,
