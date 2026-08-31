@@ -513,6 +513,9 @@ export default function NPCs() {
         for (const event of state.postCrowdTickEvents) w.events.next(event);
         state.postCrowdTickEvents.length = 0;
 
+        // before the shadows, which read the slot it settles — and every tick, since an npc waiting
+        // on a room to arrive takes it the moment it lands rather than at the next door event
+        w.e.syncNpcRoomSlots();
         w.shadows?.onTick();
         w.rings?.onTick();
       },

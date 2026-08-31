@@ -272,23 +272,17 @@ export default function Obstacles(_props: Props) {
     const texNodeFinal = texNode.depth(uvTexIds);
     const normalNode = transformNormalToView(vec3(0, 1, 0));
     const unlit = texNodeFinal.mul(vec3(state.brightnessNode), 1);
-    const topSlot = attribute<"vec2">("roomSlots", "vec2").x;
-    const topFade = w.view.fadeRoomsFx.getVisiblity(topSlot);
+    const topFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     return {
       // NOT tinted by `service/player-light`: an obstacle's top is a sprite seen from above, and
       // the light only ever muddied it. Its SKIRT still takes the light — that stands up, and is
       // what reads the room it is in
       // never quite black, unlike everything else that hides: a top is a sprite seen from above and
       // keeping a little of it leaves the room's furniture readable as shapes — see `hiddenTopTint`
-      // and in `focus` mode wiped away from the door its room is seen through — see `applyWipe`
-      colorNode: w.view.fadeRoomsFx.applyWipe(
-        w.view.fadeRoomsFx.dropPickWhenHidden(
-          w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(hiddenTopTint)),
-          topFade,
-          w.view.objectPick,
-        ),
+      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
+        w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(hiddenTopTint)),
         topFade,
-        topSlot,
+        w.view.objectPick,
       ),
       normalNode,
       outputNode: w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle),
@@ -334,19 +328,14 @@ export default function Obstacles(_props: Props) {
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
-    const skirtSlot = attribute<"vec2">("roomSlots", "vec2").x;
-    const skirtFade = w.view.fadeRoomsFx.getVisiblity(skirtSlot);
-    mat.colorNode = w.view.fadeRoomsFx.applyWipe(
-      w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.applyFadeRgba(
-          w.view.playerLight.applyLightRgba(vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1)),
-          skirtFade,
-        ),
+    const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
+    mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
+      w.view.fadeRoomsFx.applyFadeRgba(
+        w.view.playerLight.applyLightRgba(vec4(mix(baseColor, vec3(1, 1, 1), skirtLightMeta.factor.mul(1)), 1)),
         skirtFade,
-        w.view.objectPick,
       ),
       skirtFade,
-      skirtSlot,
+      w.view.objectPick,
     );
     return mat;
   }, [skirtLightMeta, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
