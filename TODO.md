@@ -184,6 +184,14 @@
   - ✅ move "Lit npcs editable" (long-press-light) into sub-icon of mode button
     - show little pen icon bottom-right
 
+- 🚧 lit npc extras
+  - ✅ npc in doorway lights both rooms
+  - refine playerLight reachable via window
+    - ✅ can relate window to door (line of sight)
+      - window symbol: name=window
+      - door symbol: sees=window
+    - 🚧 parser generate binary relation sees
+    - otherwise only traverse windows in player current room
 
 ## Other
 
