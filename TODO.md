@@ -192,6 +192,8 @@
       - door symbol: sees=window
     - 🚧 parser generate binary relation sees
     - otherwise only traverse windows in player current room
+  - cannot visually detect un/light npc anymore
+  - light npc in doorway should light both rooms
 
 ## Other
 
