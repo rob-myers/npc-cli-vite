@@ -165,13 +165,13 @@ export default function JobsLibrary(props: Props) {
           "border-b border-term-border-subtle",
         )}
       >
-        <nav className="min-w-0 flex flex-1 items-end -mb-px py-1">
+        <nav className="min-w-0 flex flex-1 items-end -mb-px py-1 overflow-auto">
           {categories.map(({ key, label }) => (
             <button
               key={key}
               type="button"
               className={cn(
-                "px-2 py-1 cursor-pointer border-b transition-colors",
+                "px-2 py-1 cursor-pointer border-b transition-colors text-nowrap",
                 key === category?.key
                   ? "text-term-accent border-term-accent"
                   : "text-term-muted border-transparent hover:text-term-foreground",
