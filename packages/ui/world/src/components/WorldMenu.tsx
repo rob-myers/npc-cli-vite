@@ -15,6 +15,7 @@ import {
   type Icon,
   MapTrifoldIcon,
   PauseIcon,
+  PencilSimpleIcon,
   PersonSimpleCircleIcon,
   PlayIcon,
   SunIcon,
@@ -63,6 +64,8 @@ export function WorldMenu() {
       menuHeight: saved.menuHeight,
       armedState: null,
       armedTimeoutId: 0,
+      fadeLongPressed: false,
+      fadeTimeoutId: 0,
       lookLongPressed: false,
       lookTimeoutId: 0,
       resizing: false,
@@ -105,6 +108,21 @@ export function WorldMenu() {
         }
       },
 
+      onFadePressStart() {
+        state.fadeLongPressed = false;
+        state.fadeTimeoutId = window.setTimeout(() => {
+          state.fadeLongPressed = true;
+          w.view.setLitNpcsEditable();
+          state.update();
+        }, lookLongPressMs);
+      },
+      onFadePressEnd(cancelled = false) {
+        window.clearTimeout(state.fadeTimeoutId);
+        if (cancelled === false && state.fadeLongPressed === false) {
+          w.view.setFadeRoomsMode();
+          state.update();
+        }
+      },
       onLookPressStart() {
         state.lookLongPressed = false;
         state.lookTimeoutId = window.setTimeout(() => {
@@ -239,8 +257,6 @@ export function WorldMenu() {
         return w.debug?.fadeRoomOutlines ?? false;
       case "Lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
-      case "Lit npcs editable":
-        return w.view.litNpcsEditable ?? false;
       case "Colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
@@ -280,10 +296,6 @@ export function WorldMenu() {
         break;
       case "Lit npcs":
         w.view.setLitNpcsEnabled();
-        state.update();
-        break;
-      case "Lit npcs editable":
-        w.view.setLitNpcsEditable();
         state.update();
         break;
       case "Room Hit":
@@ -739,15 +751,14 @@ export function WorldMenu() {
               `service/fade-rooms`. Cycles `focus` to `map` to `gm`, the same three the keys `1`,
               `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
               either fading mode switches that on too */}
-          <button
-            type="button"
+          <div
             data-keep-menu-open
-            title={`fade: ${w.view.fadeRoomsMode}`}
-            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
-            onClick={() => {
-              w.view.setFadeRoomsMode();
-              state.update();
-            }}
+            title={`fade: ${w.view.fadeRoomsMode} (long press to light npcs by hand)`}
+            className="relative cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            onPointerDown={() => state.onFadePressStart()}
+            onPointerUp={() => state.onFadePressEnd()}
+            onPointerLeave={() => state.onFadePressEnd(true)}
+            onContextMenu={(e) => e.preventDefault()}
           >
             {w.view.fadeRoomsMode === "focus" ? (
               <FlashlightIcon className="size-5 text-slate-200" alt="focus: only what the player sees" weight="bold" />
@@ -756,7 +767,17 @@ export function WorldMenu() {
             ) : (
               <BugIcon className="size-5 text-slate-400" alt="gm: all of it" weight="bold" />
             )}
-          </button>
+            {/* whether a long press in the WORLD lights an npc — see `Npc.setLit`. Only shown
+                whilst on: the corner is the mode's own, and an off pen would read as another mode */}
+            {w.view.litNpcsEditable === true && (
+              <div
+                className="absolute bottom-0.5 right-0.5 leading-none pointer-events-none"
+                title="long press an npc to light them"
+              >
+                <PencilSimpleIcon className="size-2.5 text-emerald-400" weight="bold" />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="absolute top-full left-0 mt-1 w-max max-w-64 flex flex-col gap-0.5">
@@ -1124,9 +1145,15 @@ export type State = {
   armedState: null | string;
   armedTimeoutId: number;
   /** Whether the look button has been held long enough to have switched camera mode */
+  /** Whether the fade button's press has already done its long press — see `onFadePressStart` */
+  fadeLongPressed: boolean;
+  fadeTimeoutId: number;
   lookLongPressed: boolean;
   lookTimeoutId: number;
   /** A click looks at the player; a long press switches camera mode — the badge it wears */
+  /** Cycles the fade mode, or on a long press toggles whether npcs can be lit by hand */
+  onFadePressStart(): void;
+  onFadePressEnd(cancelled?: boolean): void;
   onLookPressStart(): void;
   onLookPressEnd(cancelled?: boolean): void;
   /** Controlled, so arming "confirm" can keep the popup open — see `onStateSelectOpenChange` */
@@ -1193,7 +1220,6 @@ const debugItems = [
   "Post FX",
   "Room Outlines",
   "Lit npcs",
-  "Lit npcs editable",
   "Room Hit",
   "Graphs",
   "Skins",
