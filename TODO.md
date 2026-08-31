@@ -159,7 +159,7 @@
 
 - ✅ remove background color related code including stripes
 
-- 🚧 unclear how to light npcs "behind the scenes"
+- ✅ unclear how to light npcs "behind the scenes"
   - ✅ can explicitly light npc via debug option + long-press
   - ✅ try extend postFx circular cut out with "used rooms"
   - ✅ fade boundary -- also fixes "ray beyond rooms"
@@ -181,7 +181,7 @@
   - ❌ nearby door to large room should not show whole room?
   - ❌ pick does not restrict by room
   - ✅ try extend fade rooms by all lit npcs
-  - move "Lit npcs editable" (long-press-light) into sub-icon of mode button
+  - ✅ move "Lit npcs editable" (long-press-light) into sub-icon of mode button
     - show little pen icon bottom-right
 
 
