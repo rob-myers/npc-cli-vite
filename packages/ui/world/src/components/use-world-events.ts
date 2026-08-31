@@ -311,6 +311,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onChangeTheme() {
         w.obs.setBrightness(w.getTheme().obstacles.brightness);
         w.door.setBrightness(w.getTheme().doors.brightness);
+        w.view.postFx.background.value.set(w.getTheme().post.background);
+        // w.view.forceUpdate();
       },
       onEvent(e) {
         if ("npcKey" in e) {
