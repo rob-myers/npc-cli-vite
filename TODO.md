@@ -153,9 +153,9 @@
 
 - ✅ BUG rm: foo: only /home/* writable
 
-- 🚧 improve between map consistency
+- ✅ improve between map consistency
   - ✅ wrongly persisted locked doors on 301
-  - 🚧 door should be initially open if npc in doorway
+  - ✅ door should be initially open if npc in doorway
 
 - ✅ remove background color related code including stripes
 
@@ -186,14 +186,17 @@
 
 - 🚧 lit npc extras
   - ✅ npc in doorway lights both rooms
-  - refine playerLight reachable via window
+  - ✅ light npc in doorway should light both rooms
+  - 🚧 refine playerLight reachable via window
     - ✅ can relate window to door (line of sight)
       - window symbol: name=window
       - door symbol: sees=window
-    - 🚧 parser generate binary relation sees
-    - otherwise only traverse windows in player current room
-  - cannot visually detect un/light npc anymore
-  - light npc in doorway should light both rooms
+    - ✅ parser generate binary relation sees
+    - playerLight: only traverse windows in player's current room or reachable from open doors via `relation.sees`
+  - need visual indicator when light npc under all modes
+
+- follow cam rethink
+  - don't like zoom into crosshari
 
 ## Other
 
