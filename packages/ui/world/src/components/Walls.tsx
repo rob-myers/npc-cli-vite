@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, lights, uniform, vec3 } from "three/tsl";
+import { attribute, float, lights, mix, uniform, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -178,26 +178,28 @@ export default function Walls() {
     const outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.wall);
 
     const baseColorUniform = uniform(new THREE.Color());
-    const litOpacityNode = w.view.objectPick.notEqual(0).select(
-      // objectPick 0.5 ignores walls for easier picking
-      w.view.objectPick.notEqual(1).select(0, 1),
-      opacityUniform, // beauty render
-    );
 
     // a wall belongs to the rooms on BOTH sides, and is shown at the fuller of the two — so a room
     // in view keeps every wall that encloses it, whatever stands on the far side of them
     const slots = attribute<"vec2">("roomSlots", "vec2");
     const fade = w.view.fadeRoomsFx.fadeAtPair(slots);
+    // `focus` fades the ALPHA out; the other modes keep it solid and take its COLOUR to black
+    const [alphaFade, colorFade] = fadeSplit(w.view.fadeRoomsFx.focusNode, fade);
+
+    const litOpacityNode = w.view.objectPick.notEqual(0).select(
+      // objectPick 0.5 ignores walls for easier picking
+      w.view.objectPick.notEqual(1).select(0, 1),
+      opacityUniform.mul(alphaFade), // beauty render
+    );
 
     return {
       opacityUniform,
-      // as solid as ever whilst hidden: only its COLOUR goes — see `applyFadeRgba`
+      // faded via alpha in `focus` only, so the pick pass stays binary
       opacityNode: litOpacityNode,
       // NOT tinted by `service/player-light`: a wall is flat colour at half opacity, so the light
       // only ever muddied what was behind it — and this runs on every wall fragment in the world
-      // BLACK whilst its room is hidden rather than transparent — see `applyFadeRgba` — and out of
-      // the pick pass altogether whilst it is, so a click reaches the floor behind it
-      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(baseColorUniform.rgb.mul(fade), fade, w.view.objectPick),
+      // out of the pick pass whilst hidden, so a click reaches the floor behind it
+      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(baseColorUniform.rgb.mul(colorFade), fade, w.view.objectPick),
       outputNode,
       baseColorUniform,
       uuid: crypto.randomUUID(),
@@ -211,9 +213,10 @@ export default function Walls() {
       depthWrite: false,
     });
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    // blacked out with the wall it trims — its own colour is white
-    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5), float(0));
-    m.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(vec3(1, 1, 1).mul(fade), fade, w.view.objectPick);
+    const [alphaFade, colorFade] = fadeSplit(w.view.fadeRoomsFx.focusNode, fade);
+    // fades out with the wall it trims — its own colour is white
+    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5).mul(alphaFade), float(0));
+    m.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(vec3(1, 1, 1).mul(colorFade), fade, w.view.objectPick);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
   }, [w.view.fadeRoomsFx.uid]);
@@ -295,6 +298,11 @@ const tmpMat1 = new Mat();
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
+
+/** `[alphaFade, colorFade]`: `focus` fades alpha out, the other modes fade colour to black */
+function fadeSplit(focus: THREE.Node<"float">, fade: THREE.Node<"float">) {
+  return [mix(float(1), fade, focus), mix(fade, float(1), focus)] as const;
+}
 
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;
