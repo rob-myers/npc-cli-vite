@@ -1,5 +1,5 @@
 import { BaseGraph, createBaseAstar } from "@npc-cli/graph";
-import { jsStringify } from "@npc-cli/util/legacy/generic";
+import { jsStringify, warn } from "@npc-cli/util/legacy/generic";
 import { AStar, type AStarSearchResult } from "../pathfinding/AStar";
 import { helper } from "./helper";
 
@@ -86,6 +86,8 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
 
     graph.edgesArray.forEach(({ src, dst }) => src.astar.neighbours.push(dst.index));
 
+    gmGraph.gms.forEach((gm, gmId) => decorateLineOfSight(graph, gm, gmId));
+
     return graph;
   }
 
@@ -127,6 +129,50 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
 
     const dstSucc = this.succ.get(dst) ?? emptySuccMap;
     return this.getSuccs(src).filter((node): node is Graph.GmRoomGraphNodeDoor => dstSucc.has(node) ?? false);
+  }
+}
+
+/**
+ * Resolve tag `rel=sees:{name}` against tag `name={name}`, over this geomorph's doors ⋃ windows,
+ * i.e. either end can be a door or a window. `service/geomorph` numbers each name per symbol file
+ * and per copy of that symbol, so a name means one thing only.
+ *
+ * Recorded as `node.lineOfSight` rather than edges: `astar.neighbours` is built from EVERY edge, so
+ * an edge here would let a path walk through a window it can only see through
+ */
+function decorateLineOfSight(graph: GmRoomGraph, gm: Geomorph.LayoutInstance, gmId: number) {
+  const connectors = [
+    ...gm.doors.map((x, doorId) => ({ meta: x.meta, key: helper.getGmDoorKey(gmId, doorId) })),
+    ...gm.windows.map((x, windowId) => ({ meta: x.meta, key: helper.getGmWindowKey(gmId, windowId) })),
+  ];
+
+  const byName = new Map<string, Geomorph.SeesKey[]>();
+  for (const { meta, key } of connectors) {
+    typeof meta.name === "string" && (byName.get(meta.name)?.push(key) ?? byName.set(meta.name, [key]));
+  }
+
+  const see = (from: Geomorph.SeesKey, to: Geomorph.SeesKey) => {
+    const node = graph.getNode(from);
+    if (node === null) return;
+    const seen = (node.lineOfSight ??= []);
+    seen.includes(to) === false && seen.push(to);
+  };
+
+  for (const { meta, key } of connectors) {
+    // `meta.rel` is `{relation}:{name}` — only `sees` for now
+    const name = typeof meta.rel === "string" && meta.rel.startsWith("sees:") ? meta.rel.slice(5) : null;
+    if (name === null) continue;
+    // exclude self i.e. `name=x sees=x`
+    const dsts = (byName.get(name) ?? []).filter((dst) => dst !== key);
+    if (dsts.length === 0) {
+      warn(`${gm.key}: rel=sees:${name}: no connector has tag name=${name}`);
+      continue;
+    }
+    // seeing is mutual, so only one end need say so
+    for (const dst of dsts) {
+      see(key, dst);
+      see(dst, key);
+    }
   }
 }
 

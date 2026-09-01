@@ -45,7 +45,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "c73c7d92-fb57-46f7-a36e-caf59d246541",
@@ -367,7 +367,7 @@
         },
         {
           "id": "bd678555-de9d-4029-a06d-b43920825967",
-          "name": "window--001",
+          "name": "window--001 name=window-left",
           "locked": true,
           "visible": true,
           "transform": {
@@ -375,18 +375,18 @@
             "b": 0,
             "c": 0,
             "d": -1,
-            "e": 510.5255,
-            "f": 669.3257
+            "e": 510.5,
+            "f": 669.5
           },
           "type": "symbol",
           "srcKey": "window--001",
           "baseRect": {"width": 60, "height": 12},
           "offset": {"x": 0.9744532165843843, "y": 0.17433995149806275},
-          "cssTransform": "matrix(-1, 0, 0, -1, 511.5, 669.5)"
+          "cssTransform": "matrix(-1, 0, 0, -1, 511.4745, 669.6743)"
         },
         {
           "id": "f299bba3-04d9-46e3-90c0-2933b0d6b1d3",
-          "name": "window--001",
+          "name": "window--001 name=window-right",
           "locked": true,
           "visible": true,
           "transform": {
@@ -499,7 +499,7 @@
         {
           "id": "afc84f94-850b-45b9-a268-c16561ff0aa5",
           "name": "fresher--025",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -518,7 +518,7 @@
         {
           "id": "ca3225f0-26d4-4087-9f72-a454403453bc",
           "name": "fresher--025",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -537,7 +537,7 @@
         {
           "id": "0691bd78-2baa-4b90-956c-4c63167eaa53",
           "name": "medical--007 doors=[]",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,
@@ -811,7 +811,7 @@
         },
         {
           "id": "0823c19d-b238-4bc4-a852-17f50e84b2c9",
-          "name": "door auto slide=[1,0]",
+          "name": "door auto slide=[1,0] rel=sees:window-left",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 548, "f": 537.5},
@@ -821,7 +821,7 @@
         },
         {
           "id": "8f0fa97b-48c5-4881-ad8d-58b71525c361",
-          "name": "door auto slide=[1,0]",
+          "name": "door auto slide=[1,0] rel=sees:window-right",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 604, "f": 537.5},

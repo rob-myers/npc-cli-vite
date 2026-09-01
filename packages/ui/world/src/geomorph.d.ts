@@ -44,6 +44,9 @@ declare namespace Geomorph {
     roomGraph: import("./service/room-graph").RoomGraph;
   };
 
+  /** Either end of a line of sight — see `GmRoomGraphNode.lineOfSight` */
+  type SeesKey = GmDoorKey | GmWindowKey;
+
   interface GmRoomId {
     /** gmRoomKey `g{gmId}r${roomId}` */
     grKey: Geomorph.GmRoomKey;
