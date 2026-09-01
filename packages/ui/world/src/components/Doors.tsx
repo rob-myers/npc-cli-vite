@@ -17,7 +17,15 @@ import {
   vec3,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHeight } from "../const";
+import {
+  defaultDoorOpacity,
+  doorwayClearance,
+  lockedDoorTint,
+  MAX_DOORS,
+  npcConfig,
+  unlockedDoorTint,
+  wallHeight,
+} from "../const";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -53,6 +61,16 @@ export default function Doors() {
       /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
       flipped: new Uint8Array(MAX_DOORS),
 
+      blocksDoorway(point, door) {
+        const [dx, dy] = [door.dst.x - door.src.x, door.dst.y - door.src.y];
+        const len = Math.hypot(dx, dy);
+        // How far ALONG the door, and how far THROUGH it — in the way only when inside both. Just
+        // past a jamb `along` falls outside, so the wall BESIDE a door is clear to stand against
+        const along = ((point.x - door.src.x) * dx + (point.y - door.src.y) * dy) / len;
+        const through = (point.x - door.src.x) * door.normal.x + (point.y - door.src.y) * door.normal.y;
+        const r = npcConfig.dist.agentRadius;
+        return along > -r && along < len + r && Math.abs(through) < doorwayClearance;
+      },
       buildByKey() {
         // `gdKey` is positional, so another map's doors wear the same keys: carrying their live
         // state over would lock doors nobody locked, and `persistLocks` would then save that.
@@ -657,6 +675,11 @@ export type State = {
   doorMetaArray: Float32Array;
   /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
   flipped: Uint8Array;
+  /**
+   * Whether `point` is in the way of the traffic through `door` — the band a body walking through
+   * would need, rather than the doorway itself. See the `park` command
+   */
+  blocksDoorway(point: Geom.VectJson, door: Geomorph.DoorState): boolean;
   buildByKey: () => void;
   /** (Re)builds `toInstanceId`/`fromInstanceId`/`instanceCount`; returns `instanceCount` */
   buildInstanceIds: () => number;

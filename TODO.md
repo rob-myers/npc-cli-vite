@@ -197,7 +197,7 @@
     - ✅ fade-rooms: only traverse windows in player's current room or reachable from open doors via `relation.sees`
   - 🚧 need visual indicator when light npc under all modes
     - ❌ maybe npc bubble button
-    - try using "say ui" instead
+    - 🚧 try using "say ui" instead
   - ✅ mode 2 should show npcs as black
   - ✅ handle unlit npcs in same room as lit npc
 
@@ -207,7 +207,7 @@
   - variant which only moves player
 - focus-mode: fade-wiped npcs are not visible (no draw call)
 
-- park can avoid doorways somehow?
+- ✅ park can avoid doorways somehow?
 - onchange playground preserve npc position
   - should also work in other maps
   - fix error on remove room containing player
