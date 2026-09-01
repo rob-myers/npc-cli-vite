@@ -42,6 +42,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   return {
     uid: crypto.randomUUID(),
     mode: initialMode,
+    snapNext: true,
     rooms,
     getVisiblity: fadeAt,
     focusNode: focusAmount,
@@ -106,10 +107,18 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
       const showAll = this.mode === "gm" || inView === null;
       const now = tick();
 
+      // A new map is ARRIVED at rather than faded to: there is nothing to fade from, and loading it
+      // starves the fade of frames anyway, so it played out as a flash of the whole map followed by
+      // a snap. Held until a player says which rooms are in view — see `roomsInView`
+      const snap = this.snapNext;
+      if (snap === true && inView !== null) this.snapNext = false;
+
       // `gm` shows everything anyway, so it keeps whichever answer it had — and coming back out of
       // it, the rooms are already as dark as the mode returned to wants them
       if (this.mode !== "gm") {
-        retarget(focusMorph, this.mode === "focus" ? 1 : 0, MODE_FADE_SECS, now);
+        const wanted = this.mode === "focus" ? 1 : 0;
+        if (snap === true) Object.assign(focusMorph, arrivedAt(wanted, now));
+        else retarget(focusMorph, wanted, MODE_FADE_SECS, now);
         focusValue.value.set(focusMorph.from, focusMorph.to, focusMorph.at);
       }
 
@@ -125,7 +134,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
 
       for (let slot = 0; slot < totalSlots; slot++) {
         const next = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
-        retarget(morphs[slot], next, ROOM_FADE_SECS, now);
+        if (snap === true) Object.assign(morphs[slot], arrivedAt(next, now));
+        else retarget(morphs[slot], next, ROOM_FADE_SECS, now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
       }
 
@@ -230,6 +240,11 @@ export type FadeRooms = {
    * in and there is nothing per-fragment to switch on
    */
   mode: FadeRoomsMode;
+  /**
+   * Whilst set, the next `sync` that knows which rooms are in view ARRIVES at its answer instead of
+   * fading to it. Set on map change, where there is nothing to fade from
+   */
+  snapNext: boolean;
   /** The rooms in view, whatever `mode` says — what the debug outlines are drawn for */
   rooms: Geomorph.GmRoomId[];
   /** How much of a thing in `slot` is shown, `1` being all of it — see `service/room-slots` */
