@@ -40,8 +40,6 @@ export type WorldSettings = {
   fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame — see `service/fade-rooms` */
   fadeRoomOutlines: boolean;
-  /** Whether a long press lights or unlights an npc — see `setNpcLit` */
-  litNpcsEditable: boolean;
   /** Whether being lit shows at all: the npc themself, and the room they stand in */
   litNpcsEnabled: boolean;
   /** Toggle doors via picking e.g. switches */
@@ -67,7 +65,6 @@ const defaultWorldSettings: WorldSettings = {
   demoPostFx: "none",
   fadeRoomsMode: "gm",
   fadeRoomOutlines: false,
-  litNpcsEditable: false,
   litNpcsEnabled: true,
   pickOpenDoors: true,
   pickDoors: false,

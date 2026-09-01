@@ -184,10 +184,10 @@
   - ✅ move "Lit npcs editable" (long-press-light) into sub-icon of mode button
     - show little pen icon bottom-right
 
-- 🚧 lit npc extras
+- ✅ lit npc extras
   - ✅ npc in doorway lights both rooms
   - ✅ light npc in doorway should light both rooms
-  - 🚧 refine playerLight reachable via window
+  - ✅ refine playerLight reachable via window
     - ✅ can relate window to door (line of sight)
       - window symbol: name=window
       - door symbol: sees=window
@@ -195,9 +195,9 @@
     - ✅ move relation.sees into client-side GmRoomGraph node.lineOfSight
     - ✅ show in debug modal
     - ✅ fade-rooms: only traverse windows in player's current room or reachable from open doors via `relation.sees`
-  - 🚧 need visual indicator when light npc under all modes
+  - ✅ need visual indicator when light npc under all modes
     - ❌ maybe npc bubble button
-    - 🚧 try using "say ui" instead
+    - ✅ try using "say ui" instead
   - ✅ mode 2 should show npcs as black
   - ✅ handle unlit npcs in same room as lit npc
 
@@ -216,6 +216,8 @@
 
 - window obstacles have meta.gwKey
 - robot-0 may need replacing
+  - maybe head just needs shading
+- flatten WorldMenu
 
 ## Other
 

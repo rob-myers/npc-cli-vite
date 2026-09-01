@@ -1,7 +1,9 @@
+import { Menu } from "@base-ui/react/menu";
 import { cn, useStateRef } from "@npc-cli/util";
-import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import { ChatCircleTextIcon, PersonArmsSpreadIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
+import { npcConfig } from "../const";
 import { getWorldStore } from "../service/storage";
 import { WorldContext } from "./world-context";
 
@@ -20,6 +22,7 @@ export function WorldSpeech() {
       history: [],
       minY: 40,
       nextId: 0,
+      pinnedId: null,
       toasts: [],
       y: saved.speechY,
       historyHeight: saved.speechHeight ?? (big ? 384 : 288),
@@ -112,8 +115,25 @@ export function WorldSpeech() {
         // ticks only advance while the world is unpaused (see World.tsx), so this doesn't drain
         // away in real-time while paused
         const n = state.toasts.length;
-        state.toasts = state.toasts.filter((t) => (t.secs -= delta) > 0);
+        state.toasts = state.toasts.filter((t) => t.id === state.pinnedId || (t.secs -= delta) > 0);
         if (state.toasts.length !== n) state.update();
+      },
+      removeNpcToasts(...npcKeys) {
+        // dropping them from `toasts` is what fades them: `AnimatePresence` plays their exit
+        const keys = new Set(npcKeys);
+        state.toasts = state.toasts.filter((t) => keys.has(t.npcKey) === false);
+        if (state.toasts.some((t) => t.id === state.pinnedId) === false) state.pinnedId = null;
+        state.update();
+      },
+      pinToast(id, pinned) {
+        // a toast must not fade out from under an open menu, so it stops counting down whilst
+        // one is up — and is given its full time back on the way out, not whatever was left
+        state.pinnedId = pinned === true ? id : null;
+        if (pinned === false) {
+          const toast = state.toasts.find((t) => t.id === id);
+          if (toast !== undefined) toast.secs = defaultToastSecs;
+        }
+        state.update();
       },
       say(npcKey, words, secs) {
         const epochMs = Date.now();
@@ -122,7 +142,10 @@ export function WorldSpeech() {
         state.history.push(entry);
         if (state.history.length > maxHistory) state.history.shift();
 
-        state.toasts.push({ ...entry, secs: secs ?? defaultToastSecs });
+        const last = state.toasts.at(-1);
+        if (last?.npcKey === npcKey && last.words === words) last.secs = secs ?? defaultToastSecs;
+        else state.toasts.push({ ...entry, secs: secs ?? defaultToastSecs });
+
         state.update();
 
         w.events.next({ key: "speech", npcKey, words, epochMs });
@@ -215,7 +238,7 @@ export function WorldSpeech() {
                         big && "px-3 py-1.5 text-sm",
                       )}
                     >
-                      <span className="shrink-0 font-medium text-sky-300">{entry.npcKey}:</span>
+                      <NpcKeyMenu npcKey={entry.npcKey} />
                       <span className="break-words">{entry.words}</span>
                     </div>
                   ))}
@@ -254,7 +277,7 @@ export function WorldSpeech() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <span className="shrink-0 font-medium text-sky-300">{npcKey}:</span>
+              <NpcKeyMenu npcKey={npcKey} onOpenChange={(open) => state.pinToast(id, open)} />
               <span className="wrap-break-word">{words}</span>
             </motion.div>
           ))}
@@ -263,6 +286,78 @@ export function WorldSpeech() {
     </>
   );
 }
+
+/**
+ * The npc's key, as a menu: it is the only handle onto an npc the speech UI has, so what you can do
+ * to them hangs off it. `onOpenChange` lets a toast hold itself open whilst the menu is up
+ */
+function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (open: boolean) => void }) {
+  const w = useContext(WorldContext);
+  /** `remove` is armed by its first click and takes effect on the second, in the same place */
+  const [armed, setArmed] = useState(false);
+
+  const npc = w.n[npcKey];
+  // `setNpcLit` refuses the player, so the item would silently do nothing for them
+  const canLead = npc !== undefined && npc.key !== w.player?.key;
+
+  return (
+    <Menu.Root
+      onOpenChange={(open) => {
+        setArmed(false); // never opens already armed
+        onOpenChange?.(open);
+      }}
+    >
+      {/* `pointer-events-auto`: the toast strip is click-through, so only the key itself takes a click */}
+      <Menu.Trigger className="pointer-events-auto shrink-0 inline-flex items-center gap-1 font-medium text-sky-300 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100">
+        {/* a lead is picked out HERE rather than in the world — see `setNpcLit` */}
+        {npc?.lit === true && <PersonArmsSpreadIcon className="size-3.5 text-amber-300" weight="fill" />}
+        {npcKey}:
+      </Menu.Trigger>
+      <Menu.Portal container={w.rootEl}>
+        <Menu.Positioner className="z-50" side="bottom" sideOffset={4} align="start">
+          <Menu.Popup className="select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-36">
+            {canLead === true && (
+              <Menu.Item
+                className={speechMenuItemClassName}
+                // `setNpcLit` writes a uniform, so nothing here re-renders on its own
+                onClick={() => (w.e.setNpcLit(npc), w.speech.update())}
+              >
+                {npc.lit === true ? "make an extra" : "make a lead"}
+              </Menu.Item>
+            )}
+            {npc !== undefined && (
+              <Menu.Item
+                className={speechMenuItemClassName}
+                // tracked, since they may walk whilst it pans — and it animates on its own frames,
+                // so it works with the world paused. See `lookAtPlayer`, which does the same
+                onClick={() =>
+                  void w.view.lookAt(npc.point, {
+                    animate: true,
+                    height: npcConfig.dist.height,
+                    track: () => w.n[npcKey]?.point,
+                  })
+                }
+              >
+                pan to
+              </Menu.Item>
+            )}
+            <Menu.Item
+              className={cn(speechMenuItemClassName, armed === true && "text-red-300")}
+              // stays open on the 1st click, so "confirm" replaces it where it already is
+              closeOnClick={armed}
+              onClick={() => (armed === true ? w.e.removeNpcs(npcKey) : setArmed(true))}
+            >
+              {armed === true ? "confirm" : "remove npc"}
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+const speechMenuItemClassName =
+  "px-3 py-1.5 text-xs cursor-pointer text-slate-300 data-highlighted:bg-slate-700 data-highlighted:text-slate-100";
 
 export type SpeechEntry = {
   id: number;
@@ -277,6 +372,8 @@ export type State = {
   history: SpeechEntry[];
   minY: number;
   nextId: number;
+  /** The toast held open by an `NpcKeyMenu`, which must not fade whilst it is up */
+  pinnedId: null | number;
   /** `secs` ticks down in `onTick` (see `World`'s `onTick`) — only while the world is unpaused */
   toasts: (SpeechEntry & { secs: number })[];
   y: number;
@@ -294,11 +391,16 @@ export type State = {
   getClampedHistoryWidth(width: number): number;
   /** Ticks down each toast's `secs`, removing expired ones — called from `World`'s `onTick` while unpaused */
   onTick(delta: number): void;
+  /** Holds a toast open, or lets it start counting down again with its full time */
+  pinToast(id: number, pinned: boolean): void;
+  /** Fades out whatever these npcs are currently saying — see `removeNpcs`. History is kept */
+  removeNpcToasts(...npcKeys: string[]): void;
   onResize(): void;
   onResizeMouseDown(e: React.MouseEvent): void;
   onResizeTouchStart(e: React.TouchEvent): void;
   persistY(): void;
   persistHistorySize(): void;
+  /** Their last toast is refreshed rather than duplicated when it already says this — see below */
   say(npcKey: string, words: string, secs?: number): void;
 };
 

@@ -157,14 +157,8 @@ export default function NPCs() {
         // sight is a flank turned edge-on and the rim would otherwise take the whole npc rather
         // than outlining them — `toEye.y` is how much of the view is straight down
         const overhead = smoothstep(float(rimOverheadFrom), float(rimOverheadTo), toEye.y);
-        // ...and a lit npc's is brighter, and its own colour, whatever the view angle
         const rimBright = mix(float(rimAmount), float(rimOverheadAmount), overhead);
-        const rim = facing
-          .oneMinus()
-          .pow(rimPower)
-          .mul(mix(rimBright, float(litRimAmount), litAmount))
-          .mul(fold);
-        const rimTint = mix(rimColor, litRimColor, litAmount);
+        const rim = facing.oneMinus().pow(rimPower).mul(rimBright).mul(fold);
         // `alphaTestNode` below gives way with this, or the body would be discarded whole the
         // moment its alpha started dropping
         const mainColor = vec4(
@@ -172,7 +166,7 @@ export default function NPCs() {
             vec3(0).mul(positionLocal.y),
             // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
             // skin happened to be — a dark uniform takes a rim as readily as a pale one
-            skinTex.rgb.mul(ndotv).add(rimTint.mul(rim)),
+            skinTex.rgb.mul(ndotv).add(rimColor.mul(rim)),
             // skinTex.rgb.mul(ndotv),
             colorScale,
           ),
@@ -996,13 +990,6 @@ const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance:
 const rimPower = 5;
 const rimAmount = 0.2;
 const rimColor = vec3(0.55, 0.72, 0.7);
-
-/**
- * ...and what it becomes whilst they are LIT — brighter, and its own colour, so that being picked
- * out reads as an outline rather than as somebody standing under a lamp. See `setNpcLit`
- */
-const litRimAmount = 0.75;
-const litRimColor = vec3(0.125, 0.21, 0.25);
 
 /**
  * How bright it is instead when looking straight down — where nearly every surface in sight is a

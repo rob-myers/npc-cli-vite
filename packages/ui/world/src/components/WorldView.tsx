@@ -104,7 +104,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       demoPostFx: saved.demoPostFx,
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
-      litNpcsEditable: saved.litNpcsEditable === true,
       // each is 0..1, driving a `mix` so 0 is exactly identity
       raycaster: new THREE.Raycaster(),
 
@@ -680,11 +679,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.e.syncFadeRooms();
         w.menu?.update();
       },
-      setLitNpcsEditable(next = state.litNpcsEditable === false) {
-        state.litNpcsEditable = next;
-        store.patch({ litNpcsEditable: next });
-        w.menu?.update();
-      },
       setupPostProcessing() {
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
@@ -929,8 +923,6 @@ export type State = {
   /** Whether the rooms in view are outlined over the finished frame */
   /** Whether being lit shows at all — the shader's side of it, and `service/fade-rooms`' */
   litNpcsEnabled: THREE.UniformNode<"float", number>;
-  /** Whether a long press lights or unlights an npc */
-  litNpcsEditable: boolean;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -1015,8 +1007,6 @@ export type State = {
   setupPostProcessing(): () => void;
   /** Whether being lit shows at all — see `setNpcLit` */
   setLitNpcsEnabled(next?: boolean): void;
-  /** Whether a long press lights or unlights an npc */
-  setLitNpcsEditable(next?: boolean): void;
 };
 
 /**
