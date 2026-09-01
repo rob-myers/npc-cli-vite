@@ -565,6 +565,8 @@ export async function pad(
 }
 
 /**
+ * Stand npc against a nearby wall, out of the way — clear of any doorway, which is the one place
+ * a parked npc blocks everybody.
  * ```sh
  * park npc:kate
  * park kate
@@ -578,46 +580,63 @@ export async function park(
   const agent = npc.agent;
   if (!agent) throw Error("no agent");
 
-  // handle too far from boundary or just spawned
-  if (agent.boundary.segments.length === 0) {
-    const extendedCollisionQueryRange = 2;
-    const result = w.npc.getClosestPoly(npc.position);
-    localBoundary.updateLocalBoundary(
-      agent.boundary,
-      result.nodeRef,
-      w.helper.groundPointToTuple(npc.point),
-      extendedCollisionQueryRange,
-      w.nav.navMesh,
-      npc.queryFilter,
-    );
-  }
+  // Always, rather than only when empty: the crowd asks within 0.6m and keeps the 8 nearest
+  // segments, so an npc stood IN a doorway would otherwise have nothing but its frame to choose
+  // from — and the whole point is to get round the corner from it
+  localBoundary.updateLocalBoundary(
+    agent.boundary,
+    w.npc.getClosestPoly(npc.position).nodeRef,
+    w.helper.groundPointToTuple(npc.point),
+    parkQueryRange,
+    w.nav.navMesh,
+    npc.queryFilter,
+  );
 
-  const [seg] = agent.boundary.segments;
-  if (seg === undefined) {
+  const segments = agent.boundary.segments;
+  if (segments.length === 0) {
     throw Error("boundary too far");
   }
 
-  const currentPoint = npc.point;
-
-  // assume 1st segment closest i.e. `seg.d` minimal
-  const closest = geomService.getClosestOnSeg(
-    currentPoint,
-    { x: seg.s[0 + 0], y: seg.s[0 + 2] },
-    { x: seg.s[3 + 0], y: seg.s[3 + 2] },
+  const src = npc.point;
+  // Only the doors of the room they are in — a handful, and one on the far side of a wall is
+  // nothing to them anyway. An npc stood IN a doorway resolves to one of its two rooms, which
+  // owns that door either way
+  const grId = w.e.npcToRoom.get(npc.key) ?? w.e.findRoomContaining(src, true);
+  const roomNode = grId === null ? null : w.gmRoomGraph.getNode(grId.grKey);
+  const doors = (roomNode === null ? [] : w.gmRoomGraph.getSuccs(roomNode)).flatMap((node) =>
+    node.type === "door" ? (w.d[node.gdKey] ?? []) : [],
   );
 
-  // seems to always face outwards 🤞
-  const facing = { x: currentPoint.x + (seg.s[3 + 2] - seg.s[2]), y: currentPoint.y + (seg.s[0] - seg.s[3]) };
+  // Nearest-first, so the first segment with a clear point is the closest place to stand
+  let chosen: null | { at: Geom.VectJson; seg: (typeof segments)[number] } = null;
+  for (const seg of segments) {
+    const at = w.e.findClearPointOnSeg(src, seg, doors);
+    if (at !== null) {
+      chosen = { at, seg };
+      break;
+    }
+  }
 
-  if (seg.d > 0.0005) {
-    await npc.fadeSpawn({
-      at: closest,
-      facing,
-    });
+  // Nothing clear anywhere: only 8 segments are kept, and in a tight doorway they can all be frame.
+  // Park as we always did rather than refusing
+  const seg = chosen?.seg ?? segments[0];
+  const at = chosen?.at ?? geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
+
+  // The walkable side: navcat winds its poly outlines clockwise in the ground plane, so the inside
+  // lies along `(dz, -dx)`
+  const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
+
+  if (Math.hypot(at.x - src.x, at.y - src.y) > parkMinMove) {
+    await npc.fadeSpawn({ at, facing });
   } else {
     await npc.look({ at: facing });
   }
 }
+
+/** How far out `park` looks for a wall to stand against */
+const parkQueryRange = 2;
+/** Below this much of a move, `park` turns them on the spot instead */
+const parkMinMove = 0.02;
 
 export function pause({ w }: JshCli.RunArg) {
   w.setDisabled(true);

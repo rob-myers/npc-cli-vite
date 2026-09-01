@@ -150,6 +150,24 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
+      findClearPointOnSeg(src, seg, doors) {
+        const [ux, uy, vx, vy] = [seg.s[0], seg.s[2], seg.s[3], seg.s[5]];
+        // Sampled rather than solved: a boundary segment is short, and this is a handful of lines
+        const steps = Math.ceil(Math.hypot(vx - ux, vy - uy) / npcConfig.dist.agentRadius);
+        let best = null as null | Geom.VectJson;
+        let bestDst = Number.POSITIVE_INFINITY;
+
+        for (let i = 0; i <= steps; i++) {
+          const lambda = steps === 0 ? 0 : i / steps;
+          const at = { x: ux + lambda * (vx - ux), y: uy + lambda * (vy - uy) };
+          const dst = Math.hypot(at.x - src.x, at.y - src.y);
+          if (dst < bestDst && doors.every((door) => w.door.blocksDoorway(at, door) === false)) {
+            [best, bestDst] = [at, dst];
+          }
+        }
+
+        return best;
+      },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
@@ -1047,6 +1065,16 @@ export type State = {
       setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
     },
   ): Promise<AStarSearchResult<Graph.GmRoomGraphNode>>;
+  /**
+   * The point on navmesh boundary segment `seg` nearest `src` that no door's traffic runs through,
+   * or `null` where the whole of it is in the way — see the `park` command
+   */
+  findClearPointOnSeg(
+    src: Geom.VectJson,
+    /** A navcat `LocalBoundarySegment`, whose `s` is `[x1, y1, z1, x2, y2, z2]` */
+    seg: { s: number[] },
+    doors: Geomorph.DoorState[],
+  ): null | Geom.VectJson;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   /**
    * Asks the worker whether this npc can get from one room node to another, and which shut door

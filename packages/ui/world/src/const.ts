@@ -37,6 +37,8 @@ export const specialWallMetaKeys = ["y", "h", "broad", "hollow"] as const;
 export const doorDepth = 20 * sguToWorldScale;
 /** Depth of doorway along line walking through hull door */
 export const hullDoorDepth = 40 * sguToWorldScale;
+/** How far clear of a door somebody must stand to be out of the traffic through it */
+export const doorwayClearance = 0.6;
 /**
  * Smaller than @see {offMeshConnectionHalfDepth}
  */
