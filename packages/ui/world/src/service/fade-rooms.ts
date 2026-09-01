@@ -103,13 +103,10 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
         }
       }
 
-      // `focus` is `map` for now: both fade what the player cannot see, and only `gm` shows all
       const showAll = this.mode === "gm" || inView === null;
       const now = tick();
 
-      // A new map is ARRIVED at rather than faded to: there is nothing to fade from, and loading it
-      // starves the fade of frames anyway, so it played out as a flash of the whole map followed by
-      // a snap. Held until a player says which rooms are in view — see `roomsInView`
+      // A new map is arrived at rather than faded to
       const snap = this.snapNext;
       if (snap === true && inView !== null) this.snapNext = false;
 
@@ -184,8 +181,14 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
  * why this does not give one. See `sync`
  */
 function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
-  const gmRoomId = w.player === undefined ? undefined : w.e.npcToRoom.get(w.player.key);
-  if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) return null;
+  if (w.player === undefined) {
+    return null;
+  }
+
+  const gmRoomId = w.e.npcToRoom.get(w.player.key);
+  if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) {
+    return null;
+  }
 
   return w.gmRoomGraph
     .getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)
