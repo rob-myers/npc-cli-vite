@@ -112,12 +112,20 @@ export default function NPCs() {
         const litAmount = npcLit.mul(w.view.litNpcsEnabled);
 
         const roomFade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
-        const bodyFade = roomFade.div(npcFadeShare).clamp(0, 1).max(litAmount);
-        // colour drained by the time the sphere starts fading and symmetrically
-        const bodyTint = roomFade
+        const focus = w.view.fadeRoomsFx.focusNode;
+        // `focus` fades an npc in two phases: colour drained by the time the sphere starts closing,
+        // and symmetrically. `map` only drains the colour, over the whole fade, leaving a black
+        // figure we can still watch move about
+        const focusTint = roomFade
           .sub(npcFadeShare)
           .div(1 - npcFadeShare)
-          .clamp(0, 1)
+          .clamp(0, 1);
+        const bodyTint = mix(roomFade, focusTint, focus).max(litAmount);
+        // switched rather than eased, else leaving `focus` plays the wipe in reverse. Switching in
+        // waits for `focus` to arrive, by when the body is black anyway
+        const bodyFade = focus
+          .greaterThan(0.999)
+          .select(roomFade.div(npcFadeShare).clamp(0, 1), float(1))
           .max(litAmount);
 
         // Per-vertex groupId: 0=body, 1=label
@@ -202,9 +210,9 @@ export default function NPCs() {
         //   light of its own that would dim them wherever the player's already fell
         const shaded = w.view.playerLight.applyLightRgba(mainColor);
         const ownLit = vec4(shaded.rgb.max(mainColor.rgb.mul(npcLitUnseen)), mainColor.a);
-        // black first then sphere fade
+        // the wipe only — `bodyTint` is applied at the output, see below
         const body = w.view.fadeRoomsFx.applySphereFade(
-          w.view.fadeRoomsFx.applyFadeRgba(mix(shaded, ownLit, litAmount), bodyTint),
+          mix(shaded, ownLit, litAmount),
           bodyFade,
           npcSphereY,
           npcSphereRadius,
@@ -222,10 +230,13 @@ export default function NPCs() {
           roomFade,
           w.view.objectPick,
         );
+        // blacked out at the OUTPUT: `colorNode` is only the albedo, and a standard material still
+        // adds specular off the scene lights to an albedo of zero
+        const beauty = (select as SelectAnyType)(isMain, vec4(output.rgb.mul(bodyTint), output.a), output);
         material.outputNode = (select as SelectAnyType)(
           isPickMode,
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
-          output,
+          beauty,
         );
 
         return {
