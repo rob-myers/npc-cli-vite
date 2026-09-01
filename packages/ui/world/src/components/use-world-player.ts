@@ -32,10 +32,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = w.n[state.key];
         if (npc === undefined) return;
 
-        // asking to look AT them outranks wherever a pan last chose to stand, else the follow
-        // eases straight back to that vantage and the pan appears to bounce
-        w.view.followOffset.set(0, 0);
-
         // no `radius`, so this pans and turns without zooming — `lookAt` keeps the distance it
         // finds, which on load is whatever view we restored
         await w.view.lookAt(npc.point, {

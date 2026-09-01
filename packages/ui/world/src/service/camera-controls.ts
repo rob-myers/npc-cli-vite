@@ -594,12 +594,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
         }
         break;
       case THREE.MOUSE.PAN:
-        if (event.ctrlKey === true || event.metaKey === true || event.shiftKey === true) {
+        // with panning off the primary drag ROTATES rather than doing nothing — see `enablePan`
+        if (event.ctrlKey === true || event.metaKey === true || event.shiftKey === true || this.enablePan === false) {
           if (this.enableRotate === false) return;
           this.handleMouseDownRotate(event);
           this.state = this.STATE.ROTATE;
         } else {
-          if (this.enablePan === false) return;
           this.handleMouseDownPan(event);
           this.state = this.STATE.PAN;
         }
@@ -783,7 +783,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
           this.state = this.STATE.TOUCH_ROTATE;
           break;
         case TOUCH.PAN:
-          if (this.enablePan === false) return;
+          // as for the mouse: one finger rotates whilst panning is off
+          if (this.enablePan === false) {
+            if (this.enableRotate === false) return;
+            this.handleTouchStartRotate();
+            this.state = this.STATE.TOUCH_ROTATE;
+            break;
+          }
           this.handleTouchStartPan();
           this.state = this.STATE.TOUCH_PAN;
           break;
