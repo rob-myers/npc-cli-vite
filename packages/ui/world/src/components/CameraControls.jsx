@@ -95,6 +95,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       minDistance={props.minDistance}
       maxDistance={props.maxDistance}
       minPanDistance={props.minPanDistance}
+      enablePan={props.enablePan}
       freeZoom={props.freeZoom}
       panSpeed={props.panSpeed}
       rotateSpeed={props.rotateSpeed}
@@ -118,6 +119,8 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [minPolarAngle]
  * @property {number} [maxPolarAngle]
  * @property {number} [minPanDistance] // 🚧 implement in controls (from patch to make mobile touch more precise)
+ * @property {boolean} [enablePan] Off whilst following a player: the target is the follow's alone,
+ * so a zoom is always towards them
  * @property {boolean} [freeZoom] Let the zoom rest anywhere between the stops, rather than
  * settling onto one of them. On by touch, whose pinch is a continuous gesture
  * @property {(e?: import('three').Event) => void} [onChange]

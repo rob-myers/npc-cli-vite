@@ -59,7 +59,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       canvas: null as any,
       cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
       centreHint: false,
-      followOffset: new Vect(),
       fHeld: false,
       clickIds: [],
       controls: null as any,
@@ -455,7 +454,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        * `update` derives the spherical from `position - target`, so moving one alone would swing
        * the camera instead of travelling with it.
        *
-       * Left alone whilst they are dragging, else it would fight a pan.
+       * Panning is off in this mode (see `enablePan` below), so the target is ours alone: nothing
+       * else moves it, and a zoom is always towards the player.
        */
       followPlayer(deltaSecs) {
         const { controls } = state;
@@ -466,23 +466,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.lookAtAnimId !== 0) return;
 
         const { target } = controls;
-
-        // A PAN is the user choosing where to stand relative to them, so it is adopted as the
-        // offset the follow then keeps — rather than being dragged back to centre, which is what
-        // suspending the follow for the gesture amounted to. Rotating and zooming leave the
-        // target where it is, so those simply carry on being followed, mid-gesture and all
-        // a THRESHOLD, not `> 0`: the offset decays multiplicatively, so after any pan it stays
-        // faintly non-zero for ever — and the follow would sit here rather than ever following
-        if (controls.u.panOffset.lengthSq() > followPanUntil * followPanUntil) {
-          state.followOffset.set(target.x - player.position.x, target.z - player.position.z);
-          // dragged this far off them, the pan is no longer choosing a vantage on the player — it
-          // is going somewhere else, so the follow gets out of its way rather than tugging back
-          if (state.followOffset.length > followBreakAt) state.setCameraMode("free");
-          return;
-        }
-
-        const dx = player.position.x + state.followOffset.x - target.x;
-        const dz = player.position.z + state.followOffset.y - target.z;
+        const dx = player.position.x - target.x;
+        const dz = player.position.z - target.z;
         if (Math.hypot(dx, dz) < followUntil) return;
 
         // exponential approach, so it is frame-rate independent and has no end to overshoot
@@ -500,7 +485,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setCameraMode(cameraMode) {
         if (cameraMode === "follow") {
-          // onto them, clearing the vantage a pan chose — it belonged to the last spell of this
           state.lookAtPlayer();
         }
         store.patch({ cameraMode });
@@ -513,10 +497,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       lookAtPlayer() {
         const player = w.n[w.player?.key ?? ""];
         if (player === undefined) return;
-
-        // asking to look AT them outranks wherever a pan last chose to stand: without this the
-        // follow eases straight back to that vantage and the pan appears to bounce
-        state.followOffset.set(0, 0);
 
         // a `lookAt` rather than leaving it to the follow, which runs on the world tick — a paused
         // world runs none, and the move onto them would wait until it resumed. This animates on
@@ -797,8 +777,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ref={state.ref("controls")}
           fixedPolar={false}
           // whilst following, the target IS the player, so a zoom about it keeps them centred.
-          // Aiming at the pointer instead moves the target, which the follow would only undo
+          // Aiming at the pointer instead moves the target, which the follow would only undo —
+          // and a pan would do the same, so it is simply off for the duration
           zoomToCursor={state.cameraMode !== "follow"}
+          enablePan={state.cameraMode !== "follow"}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -819,16 +801,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         {props.children}
       </Canvas>
-
-      {/* Whilst following, the orbit target IS the centre of the viewport — so a crosshair there
-          marks where the view stands, and how far off it the player has been panned. In the HUD
-          rather than the world: nothing can occlude it and it cannot foreshorten */}
-      {state.cameraMode === "follow" && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center *:absolute *:bg-white/30">
-          <div className="h-px w-3.5 ring-1 ring-black/40" />
-          <div className="h-3.5 w-px ring-1 ring-black/40" />
-        </div>
-      )}
 
       {/* initial pan-to-player option */}
       <AnimatePresence>
@@ -953,7 +925,6 @@ export type State = {
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
   /** Whether the "centre on the player" UI is shown */
   centreHint: boolean;
-  followOffset: Vect;
   /** What two fingers do; one finger always pans */
   /** Restores `initial` to its default and immediately re-applies it to the live camera/controls */
   /**
@@ -1029,10 +1000,6 @@ function getPixelRatio() {
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
 const followUntil = 0.01;
-/** Below this much pan left to apply, the drag is over and the follow takes back over */
-const followPanUntil = 0.01;
-/** Panned further than this off the player (metres), the follow gives up and the view goes free */
-const followBreakAt = 6;
 
 /**
  * An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped — and scaled down
