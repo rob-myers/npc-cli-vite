@@ -31,6 +31,16 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
 
   const rooms: Geomorph.GmRoomId[] = [];
+  /** Which slots `focus` has wiped away entirely — see `isWipedOut` */
+  const wiped = new Set<number>();
+  /**
+   * The slots on their way OUT and not wiped yet, each by the clock time its fade lands on. The
+   * only ones `syncWiped` has to look at, so it can run every frame — the rest are settled either
+   * way. Outside `focus` nothing drains it, and switching INTO focus wipes the lot at once
+   */
+  const fadingOut = new Map<number, number>();
+  /** `this.mode` as `sync` last saw it, for what runs between syncs — see `keepFramesComing` */
+  let syncedMode = initialMode;
   /** Whilst set, frames are asked for — see `keepFramesComing` */
   let framesUntilMs = 0;
   let framesRaf = 0;
@@ -56,6 +66,10 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
     hasArrived(slot) {
       const morph = morphs[slot];
       return morph !== undefined && morph.to === 1 && settled(morph, ROOM_FADE_SECS, nowSecs()) === true;
+    },
+
+    isWipedOut(slot) {
+      return wiped.has(slot);
     },
 
     fadeAtPair(slots) {
@@ -101,10 +115,13 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
         if (w.view.litNpcsEnabled.value === 1) {
           for (const lit of w.e.litRooms.values()) rooms.push(...lit);
         }
+        // and whatever was lit by hand, which nothing about the player decides — see `setRoomLit`
+        for (const grKey of w.e.handLitRooms) rooms.push(helper.getGmRoomId(grKey));
       }
 
       const showAll = this.mode === "gm" || inView === null;
       const now = tick();
+      syncedMode = this.mode;
 
       // A new map is arrived at rather than faded to
       const snap = this.snapNext;
@@ -134,8 +151,17 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
         if (snap === true) Object.assign(morphs[slot], arrivedAt(next, now));
         else retarget(morphs[slot], next, ROOM_FADE_SECS, now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
+
+        // a room going out is wiped once its fade lands; coming back it is given back at once
+        if (next === 0) {
+          if (wiped.has(slot) === false) fadingOut.set(slot, snap === true ? now : morphs[slot].at + ROOM_FADE_SECS);
+        } else {
+          fadingOut.delete(slot);
+          wiped.delete(slot);
+        }
       }
 
+      syncWiped(now);
       keepFramesComing(w);
     },
   };
@@ -151,11 +177,41 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
     framesUntilMs = performance.now() + ROOM_FADE_SECS * 1000 + 100;
     if (framesRaf !== 0) return;
     const frame = () => {
-      tick(); // moved on before the frame that reads it
+      const now = tick(); // moved on before the frame that reads it
+      // a fade plays out over frames rather than syncs, and does so whilst the world is paused —
+      // so the wipe lands here rather than waiting on a tick that may not come. Rooms first: an
+      // npc changing room reads the answer this settles
+      syncWiped(now);
+      w.e?.syncNpcRoomSlots();
+      // both drop the instances of whoever is wiped, so they are rewritten when that changes —
+      // here rather than on the tick, since a fade plays out whilst the world is paused
+      w.shadows?.onTick();
+      w.rings?.onTick();
       w.r3f?.invalidate();
       framesRaf = performance.now() < framesUntilMs ? requestAnimationFrame(frame) : 0;
     };
     framesRaf = requestAnimationFrame(frame);
+  }
+
+  /**
+   * Brings `wiped` up to the clock: rooms join it as their fades land, and leaving `focus` gives
+   * every one of them back at once. Only `fadingOut` is walked — the rest are settled either way —
+   * so this is cheap enough for every frame of a fade
+   */
+  function syncWiped(now: number) {
+    // the wipe only begins once the mode itself has arrived — see `bodyFade` in `NPCs`
+    const wiping = syncedMode === "focus" && focusMorph.to === 1 && settled(focusMorph, MODE_FADE_SECS, now);
+
+    if (wiping === false) {
+      wiped.clear();
+      return;
+    }
+
+    for (const [slot, at] of fadingOut) {
+      if (now < at) continue;
+      fadingOut.delete(slot);
+      wiped.add(slot);
+    }
   }
 
   /** Moves the clock up to the wall, and gives what it now reads */
@@ -274,6 +330,11 @@ export type FadeRooms = {
   isArriving(slot: number): boolean;
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
+  /**
+   * Whether `focus` has wiped `slot` away entirely: the mode arrived, the room's fade fully out.
+   * Nothing in it can be seen, so nothing in it need be DRAWN — see `syncNpcVisibility`
+   */
+  isWipedOut(slot: number): boolean;
   /**
    * `1` in `"focus"` mode and `0` in the others, easing between the two as the mode changes — for
    * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `focus`

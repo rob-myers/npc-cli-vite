@@ -47,6 +47,10 @@ export default function NpcRings() {
             state.selectRingByNpc.delete(npcKey);
             continue;
           }
+          // kept, but not drawn whilst the npc it picks out is wiped away. A SPAWN ring has no
+          // npc to ask — it marks a destination they have yet to reach — so it keeps its instance
+          // and is simply faded out by its room, as it always was
+          if (npc.hidden === true) continue;
           const wanted = npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
           retarget(ring.radius, wanted, selectRingMorphSecs, now);
 
@@ -69,6 +73,7 @@ export default function NpcRings() {
         // WHOLE buffer — every slot up to `MAX_RINGS`, whether or not a ring is in it — so a lone
         // ring cost the same as a world full of them. Three clears the ranges once it has uploaded
         state.ringGeo.instanceCount = j;
+        state.ringMesh.visible = j > 0; // no rings up: no draw call at all
         state.ringBuffer.clearUpdateRanges();
         if (j > 0) {
           state.ringBuffer.addUpdateRange(0, j * ringStride);
