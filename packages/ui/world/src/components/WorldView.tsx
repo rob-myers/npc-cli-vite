@@ -759,9 +759,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 
-  // the rooms are read off whatever map is up now
+  // the rooms are read off whatever map is up now, and arrived at rather than faded to
   useEffect(() => {
     if (w.gms.length === 0) return;
+    state.fadeRoomsFx.snapNext = true;
     state.fadeRoomsFx.sync(w);
   }, [w.gmsHash]);
 
