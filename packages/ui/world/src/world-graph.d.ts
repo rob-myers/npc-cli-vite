@@ -148,6 +148,11 @@ declare namespace Graph {
   interface BaseGmRoomGraphNode extends AStarNode {
     index: number;
     gmId: number;
+    /**
+     * We may relate doors/windows to other doors/windows if they are opposite one another.
+     * A window opposite a door should be part of the set, even if not directly adjacent to player.
+     */
+    lineOfSight?: Geomorph.SeesKey[];
   }
 
   type GmRoomGraphNodeRoom = BaseGmRoomGraphNode & {

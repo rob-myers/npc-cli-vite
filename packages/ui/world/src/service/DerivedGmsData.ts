@@ -1,6 +1,8 @@
-import { geomorphKeys, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
+import { geomorphKeys, getGeomorphNumber, type StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
+import { isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { Poly } from "@npc-cli/util/geom/poly";
 import { geomService } from "@npc-cli/util/geom-service";
+import { entries } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import {
   floorTextureDimension,
@@ -34,21 +36,30 @@ export default class DerivedGmsData {
     Geomorph.GmData
   >;
 
+  /** Excludes playgrounds e.g. "g-301--bridge", "g-301--playground" share numeric identifier 301 */
+  byNum = Object.fromEntries(
+    entries(this.byKey).flatMap(([gmKey, gmData]) =>
+      isPlaygroundSymbolKey(gmKey) ? [] : [[getGeomorphNumber(gmKey), gmData]],
+    ),
+  );
+
   /** Geomorph key to 1st geomorph instance. Only defined for `seenGmKeys` */
   gmKeyToFirst = {} as Record<StarShipGeomorphKey, Geomorph.LayoutInstance>;
 
   computeRoot(gms: Geomorph.LayoutInstance[]) {
-    this.count.door = gms.reduce((sum, { key }) => sum + this.byKey[key].doorSegs.length, 0);
-    this.count.wall = gms.reduce((sum, { key }) => sum + this.byKey[key].wallSegs.length, 0);
-    this.count.window = gms.reduce((sum, { key }) => sum + this.byKey[key].windowSegs.length, 0);
-    this.count.obstacles = gms.reduce((sum, { obstacles }) => sum + obstacles.length, 0);
-    this.count.obstacleSkirtEdges = gms.reduce(
-      (sum, { obstacles }) => sum + obstacles.reduce((s, o) => s + o.origPoly.outline.length, 0),
-      0,
-    );
-    this.count.wallPolySegs = gms.map(({ key: gmKey }) =>
-      this.byKey[gmKey].wallPolySegCounts.reduce((sum, count) => sum + count, 0),
-    );
+    this.count = {
+      door: gms.reduce((sum, { key }) => sum + this.byKey[key].doorSegs.length, 0),
+      wall: gms.reduce((sum, { key }) => sum + this.byKey[key].wallSegs.length, 0),
+      window: gms.reduce((sum, { key }) => sum + this.byKey[key].windowSegs.length, 0),
+      obstacles: gms.reduce((sum, { obstacles }) => sum + obstacles.length, 0),
+      obstacleSkirtEdges: gms.reduce(
+        (sum, { obstacles }) => sum + obstacles.reduce((s, o) => s + o.origPoly.outline.length, 0),
+        0,
+      ),
+      wallPolySegs: gms.map(({ key: gmKey }) =>
+        this.byKey[gmKey].wallPolySegCounts.reduce((sum, count) => sum + count, 0),
+      ),
+    };
 
     this.gmKeyToFirst = gms.reduce(
       (agg, gm) => ((agg[gm.key] ??= gm), agg),

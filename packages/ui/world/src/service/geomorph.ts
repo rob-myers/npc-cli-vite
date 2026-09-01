@@ -16,7 +16,7 @@ import {
   type SymbolMapNode,
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
-import type { AssetsType, GeomorphRelationSeesRef, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
+import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
@@ -56,13 +56,16 @@ function computeFlatDoorsDecorObstacles(
 
   // ensure `decor.meta.doorId` points to correct doorId
   let doorIdOffset = symbol.doors.length;
-  const flatDoors = symbol.doors.concat(
-    flats.flatMap((flat) => {
-      flat.decor.forEach((d) => typeof d.meta.doorId === "number" && (d.meta.doorId += doorIdOffset));
-      doorIdOffset += flat.doors.length;
-      return flat.doors;
-    }),
-  );
+  // 🔔 cloned, so `numberRelatedNames` cannot write back into `assets.symbol`
+  const flatDoors = symbol.doors
+    .map((x) => x.cleanClone())
+    .concat(
+      flats.flatMap((flat) => {
+        flat.decor.forEach((d) => typeof d.meta.doorId === "number" && (d.meta.doorId += doorIdOffset));
+        doorIdOffset += flat.doors.length;
+        return flat.doors;
+      }),
+    );
 
   // detect coinciding doors e.g. from 102
   const centers = flatDoors.map((d) => d.center);
@@ -271,66 +274,23 @@ export function createLayout(
     }
   });
 
-  // ensure hull doors are 1st
-  const orderedDoors = doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull));
-
   return {
     key: gmKey,
     bounds: flat.bounds,
     num: getGeomorphNumber(gmKey),
 
     decor,
-    doors: orderedDoors,
+    // ensure hull doors are 1st
+    doors: doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull)),
     hullPoly,
     obstacles,
     rooms: rooms.map((x) => x.precision(precision)),
     unsorted: flat.unsorted.map((x) => x.precision(precision)),
     walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map((x) => x.precision(precision)),
     windows,
-    relation: computeGeomorphRelations(gmKey, orderedDoors, windows),
 
     ...decomposeLayoutNav(navPolyWithDoors, doors),
   };
-}
-
-/**
- * Currently only one relation i.e. sees.
- *
- * Resolve tag `sees={name}` against tag `name={name}`, over doors ⋃ windows,
- * i.e. either endpoint of the relation can be a door or a window.
- * - a name may match several connectors; we induce one pair per match
- * - only done here, where doorIds/windowIds are final
- */
-function computeGeomorphRelations(
-  gmKey: StarShipGeomorphKey,
-  doors: Connector[],
-  windows: Connector[],
-): Geomorph.Layout["relation"] {
-  // doors ⋃ windows, indexed by position i.e. `i < doors.length` iff a door
-  const cs = (doors as Connector[]).concat(windows);
-  const refOf = (i: number): GeomorphRelationSeesRef =>
-    i < doors.length ? { doorId: i } : { windowId: i - doors.length };
-
-  const byName = new Map<string, number[]>();
-  cs.forEach(({ meta }, i) => {
-    typeof meta.name === "string" && (byName.get(meta.name)?.push(i) ?? byName.set(meta.name, [i]));
-  });
-
-  const sees = [] as NonNullable<Geomorph.Layout["relation"]>["sees"];
-  cs.forEach(({ meta }, i) => {
-    for (const name of Array.isArray(meta.sees) ? meta.sees : [meta.sees]) {
-      if (typeof name !== "string") continue;
-      const dstIds = byName.get(name);
-      if (dstIds === undefined) {
-        warn(`${gmKey}: sees=${name}: no connector has tag name=${name}`);
-        continue;
-      }
-      // `j !== i` ignores self-reference i.e. `name=x sees=x`
-      for (const j of dstIds) j !== i && sees.push({ src: refOf(i), dst: refOf(j) });
-    }
-  });
-
-  return sees.length > 0 ? { sees } : undefined;
 }
 
 /**
@@ -524,6 +484,45 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
   return poly;
 }
 
+/** The suffix `numberRelatedNames` adds, e.g. `window#12` */
+const relatedNameRegex = /#\d+$/;
+let nextRelId = 0;
+
+/**
+ * A tag `name={name}` and the `rel={relation}:{name}` pointing at it are authored in ONE symbol's
+ * file, so the name is given a number the moment we leave that file — else two symbols both using
+ * `name=window` would be identified. `instantiateFlatSymbol` re-issues the number per copy, so two
+ * copies of one symbol in a geomorph cannot see each other's names either.
+ *
+ * `only` says which names a pass owns: `"bare"` those written in the file being left, `"numbered"`
+ * those a deeper level has already dealt with. Within one pass a name keeps one number.
+ */
+function numberRelatedNames(polys: Poly[], only: "bare" | "numbered"): void {
+  const issued = new Map<string, string>();
+
+  const renumber = (name: string): null | string => {
+    if (relatedNameRegex.test(name) !== (only === "numbered")) return null;
+    const seen = issued.get(name);
+    if (seen !== undefined) return seen;
+    const next = `${name.replace(relatedNameRegex, "")}#${nextRelId++}`;
+    issued.set(name, next);
+    return next;
+  };
+
+  for (const { meta } of polys) {
+    if (typeof meta.name === "string") {
+      const next = renumber(meta.name);
+      next !== null && (meta.name = next);
+    }
+    if (typeof meta.rel === "string") {
+      // `meta.rel` is `{relation}:{name}`
+      const at = meta.rel.indexOf(":");
+      const next = renumber(meta.rel.slice(at + 1));
+      next !== null && (meta.rel = `${meta.rel.slice(0, at + 1)}${next}`);
+    }
+  }
+}
+
 /**
  * - Mutates `flattened`
  * - Returns flattened symbol.
@@ -542,6 +541,11 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
   });
 
   const { flatDoors, flatDecor } = computeFlatDoorsDecorObstacles(symbol.key, symbol, flats);
+  const flatWindows = windows.map((x) => x.cleanClone()).concat(flats.flatMap((x) => x.windows));
+
+  // the last level at which a name written in THIS file is still bare, and where the `rel`
+  // pointing at it sits alongside — so where the two are tied together
+  numberRelatedNames(flatDoors.concat(flatWindows), "bare");
 
   return (flattened[key] = {
     key,
@@ -560,7 +564,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     obstacles: obstacles.concat(flats.flatMap((x) => x.obstacles)),
     unsorted: unsorted.concat(flats.flatMap((x) => x.unsorted)),
     walls: walls.concat(flats.flatMap((x) => x.walls)),
-    windows: windows.concat(flats.flatMap((x) => x.windows)),
+    windows: flatWindows,
   });
 }
 
@@ -682,9 +686,15 @@ export function instantiateFlatSymbol(
     if (!doorIdsToRemove.has(i)) doorIdRemap.set(i, newDoorId++);
   }
 
-  /** a sub-symbol tagged `name=x` names all of its doors/windows `x`, unless already named */
-  const nameOf = (poly: Poly): Meta | undefined =>
-    typeof meta.name === "string" && poly.meta.name === undefined ? { name: meta.name } : undefined;
+  /**
+   * A sub-symbol node tagged `name=x` or `rel=sees:x` applies it to ALL of its doors and windows
+   * that lack their own — which is how a parent relates a connector buried in one sub-symbol to one
+   * buried in another, neither being nameable from outside otherwise
+   */
+  const relatedOf = (poly: Poly): Meta => ({
+    ...(typeof meta.name === "string" && poly.meta.name === undefined && { name: meta.name }),
+    ...(typeof meta.rel === "string" && poly.meta.rel === undefined && { rel: meta.rel }),
+  });
 
   const decor = sym.decor.flatMap((d) => {
     if (typeof d.meta.doorId === "number") {
@@ -697,6 +707,22 @@ export function instantiateFlatSymbol(
     return d.cleanClone(mat, transformDecorMeta(d.meta, mat, meta.y));
   });
 
+  const doors = sym.doors
+    .filter((_, doorId) => !doorIdsToRemove.has(doorId))
+    .map((poly) => {
+      const sd = poly.meta.slide;
+      if (!Array.isArray(sd)) return poly.cleanClone(mat, relatedOf(poly));
+      // transform meta.slide
+      const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
+      return poly.cleanClone(mat, { ...relatedOf(poly), slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
+    });
+
+  const windows = sym.windows.map((poly) => poly.cleanClone(tmpMat1, relatedOf(poly)));
+
+  // a fresh number per copy, so one copy's `rel` cannot reach another's `name`. A name
+  // `relatedOf` has only just stamped stays bare, for the parent's `flattenSymbol` to number
+  numberRelatedNames(doors.concat(windows), "numbered");
+
   return {
     key: sym.key,
     isHull: sym.isHull,
@@ -704,15 +730,7 @@ export function instantiateFlatSymbol(
     height: sym.height,
     bounds: sym.bounds,
     decor,
-    doors: sym.doors
-      .filter((_, doorId) => !doorIdsToRemove.has(doorId))
-      .map((poly) => {
-        const sd = poly.meta.slide;
-        if (!Array.isArray(sd)) return poly.cleanClone(mat, nameOf(poly));
-        // transform meta.slide
-        const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
-        return poly.cleanClone(mat, { ...nameOf(poly), slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
-      }),
+    doors,
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {
         // aggregate height-off-floor from MapEdit symbols
@@ -734,7 +752,7 @@ export function instantiateFlatSymbol(
     ),
     unsorted: sym.unsorted.map((poly) => poly.cleanClone(mat)),
     walls: sym.walls.concat(wallsToAdd).map((poly) => poly.cleanClone(tmpMat1)),
-    windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1, nameOf(poly))),
+    windows,
 
     // not aggregated
     removableDoors: [],

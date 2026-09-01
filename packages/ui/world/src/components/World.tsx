@@ -1,4 +1,5 @@
 import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
+import { isPlaygroundMapKey, isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
@@ -187,9 +188,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
       isPlaygroundMap() {
-        if (state.mapKey.endsWith("-playground")) return true;
+        if (isPlaygroundMapKey(state.mapKey)) return true;
         const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
-        return mapDef.gms.some(({ gmKey }) => gmKey.endsWith("--playground"));
+        return mapDef.gms.some(({ gmKey }) => isPlaygroundSymbolKey(gmKey));
       },
       isReady(_connectionKey) {
         return !!state.assets && state.nav !== emptyTiledNavmeshResponse;

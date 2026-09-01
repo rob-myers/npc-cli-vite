@@ -121,6 +121,8 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
   }, [w.gmRoomGraph.nodesArray, w.gms, nodeRadius, fontSize, showRoom]);
 
   const roomColor = "#60a5fa";
+  /** `lineOfSight` edges — neither a door's colour nor a window's, being neither */
+  const seesColor = "#22d3ee";
   const toggleClass = "px-2 py-0.5 text-xs rounded cursor-pointer";
 
   return (
@@ -259,6 +261,29 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
                   strokeWidth={strokeWidth * 0.3}
                 />
               ))}
+              {/* `lineOfSight`: what a door/window can SEE through, as opposed to reach */}
+              {showRoom &&
+                w.gmRoomGraph.nodesArray.flatMap((node) =>
+                  (node.lineOfSight ?? []).flatMap((seesId) => {
+                    const other = w.gmRoomGraph.getNode(seesId);
+                    // symmetric, so draw each pair once
+                    if (other === null || other.index < node.index) return [];
+                    return (
+                      <line
+                        key={`${node.id}-sees-${seesId}`}
+                        x1={node.astar.centroid.x}
+                        y1={node.astar.centroid.y}
+                        x2={other.astar.centroid.x}
+                        y2={other.astar.centroid.y}
+                        stroke={seesColor}
+                        strokeWidth={strokeWidth * 0.7}
+                        strokeDasharray={`${strokeWidth * 2} ${strokeWidth}`}
+                        opacity={0.9}
+                      />
+                    );
+                  }),
+                )}
+
               {/* Gm Graph nodes */}
               {gmLabels.map(({ cx, cy, color }, i) => (
                 <circle key={i} cx={cx} cy={cy} r={nodeRadius} fill={color} opacity={0.85} />

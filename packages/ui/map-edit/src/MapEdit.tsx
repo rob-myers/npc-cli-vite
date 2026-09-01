@@ -37,6 +37,8 @@ import {
   type DecorManifest,
   DecorManifestSchema,
   type ImageMapNode,
+  isPlaygroundMapKey,
+  isPlaygroundSymbolKey,
   type MapEditFileSpecifier,
   type MapEditSavedFile,
   MapEditSavedFileSchema,
@@ -194,8 +196,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       isPlaygroundFile() {
         return (
-          (state.currentFile.type === "symbol" && state.currentFile.key.endsWith("--playground")) ||
-          (state.currentFile.type === "map" && state.currentFile.key.endsWith("-playground"))
+          (state.currentFile.type === "symbol" && isPlaygroundSymbolKey(state.currentFile.key)) ||
+          (state.currentFile.type === "map" && isPlaygroundMapKey(state.currentFile.key))
         );
       },
 

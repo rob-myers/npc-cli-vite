@@ -164,3 +164,11 @@ export type SymbolsManifest = z.infer<typeof SymbolsManifestSchema>;
 export type MapsManifest = z.infer<typeof MapsManifestSchema>;
 export type PathManifest = z.infer<typeof PathManifestSchema>;
 export type DecorManifest = z.infer<typeof DecorManifestSchema>;
+
+export function isPlaygroundSymbolKey(symbolKey: string) {
+  return symbolKey.endsWith("--playground");
+}
+
+export function isPlaygroundMapKey(mapKey: string) {
+  return mapKey.endsWith("-playground");
+}
