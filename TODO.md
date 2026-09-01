@@ -196,7 +196,8 @@
     - ✅ show in debug modal
     - ✅ fade-rooms: only traverse windows in player's current room or reachable from open doors via `relation.sees`
   - 🚧 need visual indicator when light npc under all modes
-    - maybe npc bubble button
+    - ❌ maybe npc bubble button
+    - try using "say ui" instead
   - ✅ mode 2 should show npcs as black
   - ✅ handle unlit npcs in same room as lit npc
 
@@ -214,6 +215,7 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
 
 - window obstacles have meta.gwKey
+- robot-0 may need replacing
 
 ## Other
 
