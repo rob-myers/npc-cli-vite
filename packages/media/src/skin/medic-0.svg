@@ -15,6 +15,32 @@
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
     <bx:grid x="0" y="0" width="16" height="16"/>
+    <filter id="spot-light-filter-1" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 29 #ffffff 48 0.76 0.14 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <filter id="spot-light-filter-2" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 29 #ffffff 46 1.17 0.01 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="1.17" specularExponent="46">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.01">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
   </defs>
   <g style="pointer-events: none;">
     <title>meta prefix=medic firstSeen=NoneType_ doctor mask brightness=0.2</title>
@@ -213,13 +239,13 @@
   </g>
   <g style="pointer-events: none;">
     <title>head</title>
-    <rect width="32" height="32" style="filter: none; stroke: rgb(0, 0, 0); fill: none; stroke-opacity: 0.5;" x="31.4486">
+    <rect width="32" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="31.4486">
       <title>top</title>
     </rect>
     <rect x="32" width="32" height="32" style="fill: rgb(255, 255, 255); filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light;" y="32">
       <title>front</title>
     </rect>
-    <rect width="32" height="32" style="filter: none; opacity: 0.2;" y="32" x="96">
+    <rect width="32" height="32" style="mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-2&quot;); opacity: 0.5;" y="32" x="96">
       <title>back</title>
     </rect>
     <rect x="64" width="32" height="32" style="filter: none; mix-blend-mode: hard-light; fill: none; stroke-width: 2px; opacity: 0.5;" y="32">
