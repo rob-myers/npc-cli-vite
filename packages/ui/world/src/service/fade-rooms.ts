@@ -170,8 +170,13 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
  *
  * `gmRoomGraph` already joins a room to its doors and windows, and a hull door to the one facing it
  * in the next geomorph — so this is that graph walked outwards, stopping at any door that is SHUT.
- * A window is never stopped at, whatever it is doing, since it is glass — which is why
- * `service/player-light` leaves windows out of the occluders it sweeps, and why this must too.
+ *
+ * The player's own room's windows are always seen through; any further off only where an
+ * open door already reached declares a line of sight to it (tag `rel=sees:{name}`).
+ *
+ * Vouching works in one pass because the walk is breadth-first and a room's DOORS are connected
+ * before its windows in `GmRoomGraph.fromGmGraph`, so a door has had its say before the window it
+ * names is tested.
  *
  * `getReachableUpTo` keeps the node it stops on and takes none of its successors, so a shut door is
  * reached and not passed through. Nothing else stops it: the shut doors decide how far the light
@@ -190,8 +195,21 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
     return null;
   }
 
+  /** Windows vouched for by an open door already reached — see `node.lineOfSight` */
+  const vouched = new Set<Geomorph.SeesKey>();
+
   return w.gmRoomGraph
-    .getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)
+    .getReachableUpTo(gmRoomId.grKey, (node, depth) => {
+      if (node.type === "door") {
+        if (w.d[node.gdKey]?.open !== true) return true;
+        // an open door we have reached vouches for whatever it says it can see
+        for (const key of node.lineOfSight ?? []) vouched.add(key);
+        return false;
+      }
+      // glass in the player's OWN room is seen through (`depth` 1 being its connectors); further off
+      // only where a door said so, else one window onto a corridor lights the whole ship
+      return node.type === "window" && depth > 1 && vouched.has(node.id) === false;
+    })
     .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []));
 }
 

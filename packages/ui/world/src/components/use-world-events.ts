@@ -868,6 +868,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       syncLitRoom(npc, alsoAt) {
+        if (npc.key === w.player.key) {
+          return true; // player must sync
+        }
         const at = npc.lit === true ? state.npcToRoom.get(npc.key) : undefined;
         if (at === undefined) {
           return state.litRooms.delete(npc.key);

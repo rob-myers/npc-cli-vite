@@ -192,11 +192,28 @@
       - window symbol: name=window
       - door symbol: sees=window
     - ✅ parser generate binary relation sees
-    - playerLight: only traverse windows in player's current room or reachable from open doors via `relation.sees`
-  - need visual indicator when light npc under all modes
+    - ✅ move relation.sees into client-side GmRoomGraph node.lineOfSight
+    - ✅ show in debug modal
+    - ✅ fade-rooms: only traverse windows in player's current room or reachable from open doors via `relation.sees`
+  - 🚧 need visual indicator when light npc under all modes
+    - maybe npc bubble button
+  - ✅ mode 2 should show npcs as black
+  - ✅ handle unlit npcs in same room as lit npc
 
 - follow cam rethink
-  - don't like zoom into crosshari
+  - don't like zoom into crosshair
+- basic script to only move selected npc
+  - variant which only moves player
+- focus-mode: fade-wiped npcs are not visible (no draw call)
+
+- park can avoid doorways somehow?
+- onchange playground preserve npc position
+  - should also work in other maps
+  - fix error on remove room containing player
+    - TypeError: Cannot read properties of null (reading 'type')
+    - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
+
+- window obstacles have meta.gwKey
 
 ## Other
 
