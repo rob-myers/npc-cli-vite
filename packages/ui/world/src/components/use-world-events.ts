@@ -407,10 +407,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.npc?.warmCrowd();
             break;
           case "picked": {
-            if (w.view.litNpcsEditable === true && e.longDown === true && e.meta.type === "npc") {
-              if (typeof e.meta.npcKey === "string") {
-                state.setNpcLit(w.n[e.meta.npcKey]);
-              }
+            // a long press is how you get at an npc: they say "...", and the speech's own npcKey
+            // is the handle onto everything else — see `WorldSpeech`
+            if (e.longDown === true && e.meta.type === "npc" && typeof e.meta.npcKey === "string") {
+              w.speech.say(e.meta.npcKey, "...");
             }
             break;
           }
@@ -771,7 +771,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick();
         w.rings?.onTick();
+        w.speech?.removeNpcToasts(...npcKeys);
         w.npc.update();
+        // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
+        // draws on demand — so nothing would draw the world without them, and it goes on showing
+        // the npc in its bind pose (the mixer having been stopped). Ask once the commit is in, and
+        // again after: one demand frame is not enough here, as spawning found too — see the two
+        // `requestAnimationFrame`s in `restoreNpcs`
+        requestAnimationFrame(() => {
+          w.view.forceUpdate();
+          requestAnimationFrame(() => w.view.forceUpdate());
+        });
         w.events.next({ key: "removed-npcs", npcKeys });
       },
       setNpcDo(npcKey, decorKey) {
