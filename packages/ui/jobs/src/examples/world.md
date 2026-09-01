@@ -85,4 +85,8 @@ demo_npc_ui npc:rob
 
 # whilst on navmesh
 w n.rob.agent.maxSpeed
+
+w e.setRoomLit g0r2
+w e.setRoomLit g0r2 # toggle
+w e.clearHandLitRooms
 ```

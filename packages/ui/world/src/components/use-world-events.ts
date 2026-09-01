@@ -33,6 +33,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToAccess: {},
       npcToDoable: {},
       npcToDoors: {},
+      handLitRooms: new Set(),
       litRooms: new Map(),
       npcToRoom: new Map(),
       pendingRaycast: {},
@@ -300,6 +301,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.npcToAccess = {};
         state.npcToDoable = {};
         state.npcToDoors = {};
+        state.handLitRooms = new Set(); // a `grKey` means nothing to the map coming in
         state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
         state.npcToRoom = new Map();
         state.roomToNpcs = [];
@@ -522,6 +524,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // than at `enter-room`, which only fires for one who walked there
             state.syncFadeRooms();
 
+            break;
+          }
+          case "npc-hidden":
+          case "npc-shown": {
+            npc.hidden = e.hidden;
+            // the whole group, so their label goes with them
+            if (npc.group !== null) npc.group.visible = e.hidden === false;
             break;
           }
           case "started-moving": {
@@ -858,6 +867,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.tryCloseDoor(gdKey);
         }
       },
+      setRoomLit(input, next) {
+        const { grKey, gmId, roomId } = typeof input === "string" ? helper.getGmRoomId(input) : input;
+        if (w.gms[gmId]?.rooms[roomId] === undefined) {
+          warn(`${grKey}: setRoomLit: no such room`); // e.g. onchange map, or a malformed key
+          return;
+        }
+        // syncing where nothing changed costs nothing: every morph is already headed where it goes
+        if (next ?? state.handLitRooms.has(grKey) === false) state.handLitRooms.add(grKey);
+        else state.handLitRooms.delete(grKey);
+        state.syncFadeRooms();
+      },
+      clearHandLitRooms() {
+        state.handLitRooms.clear();
+        state.syncFadeRooms();
+      },
       setNpcLit(npc, next = npc.lit === false) {
         if (npc.key === w.player.key) {
           return;
@@ -898,6 +922,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // on the tick as well as on the events that move people between rooms
           if (fx.isArriving(next) === true && fx.hasArrived(npc.roomSlot.value) === true) continue;
           npc.roomSlot.value = next;
+        }
+        state.syncNpcVisibility();
+      },
+      syncNpcVisibility() {
+        const fx = w.view.fadeRoomsFx;
+        for (const npc of Object.values(w.n)) {
+          // their own slot, not the room they stand in: whilst a room they have walked into is
+          // still arriving they keep the one they came from — see above
+          const hidden = fx.isWipedOut(npc.roomSlot.value);
+          if (hidden === npc.hidden) continue;
+          w.events.next({ key: hidden === true ? "npc-hidden" : "npc-shown", npcKey: npc.key, hidden });
         }
       },
       tryCloseDoor(gdKey) {
@@ -950,6 +985,19 @@ export type State = {
   npcToAccess: { [npcKey: string]: { [gdKey: string]: boolean } };
   npcToDoable: { [npcKey: string]: string | null };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
+  /**
+   * Rooms lit BY HAND, shown whatever the player can see — see `setRoomLit`. Distinct from
+   * `litRooms`, which is what lit NPCS light, and not gated on `litNpcsEnabled`. Emptied on a map
+   * change, a `grKey` meaning nothing to the map coming in
+   */
+  handLitRooms: Set<Geomorph.GmRoomKey>;
+  /**
+   * Lights a room by hand, or puts it out; toggles when `next` is omitted. Takes a `grKey` or a
+   * `GmRoomId`, and warns rather than throwing where there is no such room
+   */
+  setRoomLit(input: Geomorph.GmRoomKey | Geomorph.GmRoomId, next?: boolean): void;
+  /** Puts out every room lit by hand, leaving what the player can see and the lit npcs */
+  clearHandLitRooms(): void;
   /**
    * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
    * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
@@ -1066,6 +1114,11 @@ export type State = {
   syncFadeRooms(): void;
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
   syncNpcRoomSlots(): void;
+  /**
+   * Fires `npc-hidden` / `npc-shown` for whoever `focus` has just wiped away or given back — see
+   * `onNpcEvent`, which is where the draw calls are actually given up
+   */
+  syncNpcVisibility(): void;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };

@@ -23,10 +23,12 @@ export default function NpcShadows() {
     (): State => ({
       shadow: createShadowResources(w.view.objectPick, w.view.foldNode),
       onTick() {
-        const { xzoData, xzoAttr, geo } = state.shadow;
+        const { xzoData, xzoAttr, geo, mesh } = state.shadow;
 
         let i = 0;
         for (const npc of Object.values(w.n)) {
+          // one `focus` has wiped away casts nothing, so they take their instance with them
+          if (npc.hidden === true) continue;
           xzoData[i * 4] = npc.position.x;
           xzoData[i * 4 + 1] = npc.position.z;
           xzoData[i * 4 + 2] = 1;
@@ -35,6 +37,7 @@ export default function NpcShadows() {
           i++;
         }
         geo.instanceCount = i;
+        mesh.visible = i > 0; // nobody to shade: no draw call at all
         xzoAttr.needsUpdate = true;
       },
     }),
