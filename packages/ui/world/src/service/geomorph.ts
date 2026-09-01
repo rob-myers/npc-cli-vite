@@ -16,7 +16,7 @@ import {
   type SymbolMapNode,
 } from "@npc-cli/ui__map-edit/editor.schema";
 import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
-import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
+import type { AssetsType, GeomorphRelationSeesRef, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
@@ -271,23 +271,66 @@ export function createLayout(
     }
   });
 
+  // ensure hull doors are 1st
+  const orderedDoors = doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull));
+
   return {
     key: gmKey,
     bounds: flat.bounds,
     num: getGeomorphNumber(gmKey),
 
     decor,
-    // ensure hull doors are 1st
-    doors: doors.filter((x) => x.meta.hull).concat(doors.filter((x) => !x.meta.hull)),
+    doors: orderedDoors,
     hullPoly,
     obstacles,
     rooms: rooms.map((x) => x.precision(precision)),
     unsorted: flat.unsorted.map((x) => x.precision(precision)),
     walls: [...joinedHullWalls, ...joinedWalls, ...unjoinedWalls].map((x) => x.precision(precision)),
     windows,
+    relation: computeGeomorphRelations(gmKey, orderedDoors, windows),
 
     ...decomposeLayoutNav(navPolyWithDoors, doors),
   };
+}
+
+/**
+ * Currently only one relation i.e. sees.
+ *
+ * Resolve tag `sees={name}` against tag `name={name}`, over doors ⋃ windows,
+ * i.e. either endpoint of the relation can be a door or a window.
+ * - a name may match several connectors; we induce one pair per match
+ * - only done here, where doorIds/windowIds are final
+ */
+function computeGeomorphRelations(
+  gmKey: StarShipGeomorphKey,
+  doors: Connector[],
+  windows: Connector[],
+): Geomorph.Layout["relation"] {
+  // doors ⋃ windows, indexed by position i.e. `i < doors.length` iff a door
+  const cs = (doors as Connector[]).concat(windows);
+  const refOf = (i: number): GeomorphRelationSeesRef =>
+    i < doors.length ? { doorId: i } : { windowId: i - doors.length };
+
+  const byName = new Map<string, number[]>();
+  cs.forEach(({ meta }, i) => {
+    typeof meta.name === "string" && (byName.get(meta.name)?.push(i) ?? byName.set(meta.name, [i]));
+  });
+
+  const sees = [] as NonNullable<Geomorph.Layout["relation"]>["sees"];
+  cs.forEach(({ meta }, i) => {
+    for (const name of Array.isArray(meta.sees) ? meta.sees : [meta.sees]) {
+      if (typeof name !== "string") continue;
+      const dstIds = byName.get(name);
+      if (dstIds === undefined) {
+        warn(`${gmKey}: sees=${name}: no connector has tag name=${name}`);
+        continue;
+      }
+      // `j !== i` ignores self-reference i.e. `name=x sees=x`
+      for (const j of dstIds) j !== i && sees.push({ src: refOf(i), dst: refOf(j) });
+    }
+  });
+
+  return sees.length > 0 ? { sees } : undefined;
 }
 
 /**
@@ -639,6 +682,10 @@ export function instantiateFlatSymbol(
     if (!doorIdsToRemove.has(i)) doorIdRemap.set(i, newDoorId++);
   }
 
+  /** a sub-symbol tagged `name=x` names all of its doors/windows `x`, unless already named */
+  const nameOf = (poly: Poly): Meta | undefined =>
+    typeof meta.name === "string" && poly.meta.name === undefined ? { name: meta.name } : undefined;
+
   const decor = sym.decor.flatMap((d) => {
     if (typeof d.meta.doorId === "number") {
       if (doorIdsToRemove.has(d.meta.doorId)) return [];
@@ -661,10 +708,10 @@ export function instantiateFlatSymbol(
       .filter((_, doorId) => !doorIdsToRemove.has(doorId))
       .map((poly) => {
         const sd = poly.meta.slide;
-        if (!Array.isArray(sd)) return poly.cleanClone(mat);
+        if (!Array.isArray(sd)) return poly.cleanClone(mat, nameOf(poly));
         // transform meta.slide
         const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
-        return poly.cleanClone(mat, { slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
+        return poly.cleanClone(mat, { ...nameOf(poly), slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
       }),
     obstacles: sym.obstacles.map((poly) =>
       poly.cleanClone(mat, {
@@ -687,7 +734,7 @@ export function instantiateFlatSymbol(
     ),
     unsorted: sym.unsorted.map((poly) => poly.cleanClone(mat)),
     walls: sym.walls.concat(wallsToAdd).map((poly) => poly.cleanClone(tmpMat1)),
-    windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1)),
+    windows: sym.windows.map((poly) => poly.cleanClone(tmpMat1, nameOf(poly))),
 
     // not aggregated
     removableDoors: [],

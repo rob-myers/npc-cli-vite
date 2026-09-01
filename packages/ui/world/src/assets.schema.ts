@@ -112,6 +112,10 @@ export const GeomorphLayoutObstacleSchema = z.object({
 });
 export type GeomorphLayoutObstacle = z.infer<typeof GeomorphLayoutObstacleSchema>;
 
+/** A member of `GeomorphLayout.relation.sees` i.e. a door or a window, by layout index */
+const relationSeesRef = z.union([z.object({ doorId: z.number() }), z.object({ windowId: z.number() })]);
+export type GeomorphRelationSeesRef = z.infer<typeof relationSeesRef>;
+
 export const GeomorphLayoutSchema = z.object({
   key: StarShipGeomorphKeySchema,
   num: StarShipGeomorphNumberSchema,
@@ -126,6 +130,9 @@ export const GeomorphLayoutSchema = z.object({
   unsorted: z.array(polyCodec),
   walls: z.array(polyCodec),
   windows: z.array(connectorCodec),
+
+  /** Derived from tags `name={name}` and `sees={name}`, where `src` can see `dst` */
+  relation: z.object({ sees: z.array(z.object({ src: relationSeesRef, dst: relationSeesRef })) }).optional(),
 
   navDecomp: TriangulationSchema,
   /** AABBs of `navPolyWithDoors` i.e. original nav-poly */
