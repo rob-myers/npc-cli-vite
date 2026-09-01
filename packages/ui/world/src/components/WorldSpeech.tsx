@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { cn, useStateRef } from "@npc-cli/util";
-import { ChatCircleTextIcon, PersonArmsSpreadIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useState } from "react";
 import { npcConfig } from "../const";
@@ -263,13 +263,13 @@ export function WorldSpeech() {
       </motion.div>
 
       {/* toasts — bottom-center, where subtitles usually go; non-interactive so they don't block World */}
-      <div className="absolute top-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col items-center gap-1 pointer-events-none">
+      <div className="absolute top-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col gap-1 pointer-events-none">
         <AnimatePresence>
           {state.toasts.map(({ id, npcKey, words }) => (
             <motion.div
               key={id}
               className={cn(
-                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] p-3 py-1.5 max-w-md text-center",
+                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] p-3 py-1.5 max-w-md",
                 big && "text-sm px-3 py-1.5 max-w-lg",
               )}
               initial={{ opacity: 0, y: 8 }}
@@ -308,10 +308,14 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
       }}
     >
       {/* `pointer-events-auto`: the toast strip is click-through, so only the key itself takes a click */}
-      <Menu.Trigger className="pointer-events-auto shrink-0 inline-flex items-center gap-1 font-medium text-sky-300 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100">
-        {/* a lead is picked out HERE rather than in the world — see `setNpcLit` */}
-        {npc?.lit === true && <PersonArmsSpreadIcon className="size-3.5 text-amber-300" weight="fill" />}
-        {npcKey}:
+      <Menu.Trigger
+        className={cn(
+          "pointer-events-auto shrink-0 pr-0.5 inline-flex items-center gap-1 font-medium tracking-wider text-blue-200/80 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100",
+
+          npc?.lit === true && "text-yellow-200/80",
+        )}
+      >
+        {npcKey}
       </Menu.Trigger>
       <Menu.Portal container={w.rootEl}>
         <Menu.Positioner className="z-50" side="bottom" sideOffset={4} align="start">
