@@ -25,63 +25,19 @@ import * as THREE from "three/webgpu";
 import { MAX_DOORS } from "../const";
 import type DerivedGmsData from "./DerivedGmsData";
 
-export type PlayerLight = {
-  /**
-   * Changes whenever the light is rebuilt. Materials capture its nodes when they are constructed,
-   * so anything holding one must rebuild when this does — put it in the deps that make the
-   * material, and an hmr of this file reaches the screen. See `WorldView`'s `reset`
-   */
-  uid: string;
-  /**
-   * Tints `color` towards black wherever the fragment cannot be seen from the light. Identity
-   * whilst the light is off, so a material can wrap its colour unconditionally.
-   */
-  applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
-  /**
-   * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
-   * and wants to ask. Ignores whether the light is on, so a caller decides what an unlit light
-   * means for itself.
-   * @param outset grows the polygon by this many metres. It is star-shaped about the light, so
-   * asking about a point pulled that much nearer is exactly a dilation
-   */
-  litAt(worldXZ: THREE.Node<"vec2">, outset?: number): THREE.Node<"float">;
-  /** The same, for a material whose colour carries alpha — which is left alone */
-  applyLightRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
-  /**
-   * Tints as though nothing were ever lit, for a surface the light has no business reaching — the
-   * ceiling, which the sweep would otherwise light through the room below it
-   */
-  applyUnlitRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
-  /** Re-reads the walls, which never move. Call on map change */
-  syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
-  /**
-   * Where the light stands, which way it looks, and how open each door is, then the sweep itself.
-   * Call once per rendered frame, before the render. `origin` of `null` turns the light off.
-   * @param rotationY three's, as `npc.rotation.y` gives it — what is not ahead of it is dimmed
-   */
-  update(
-    renderer: THREE.WebGPURenderer,
-    origin: null | { x: number; z: number },
-    rotationY: number,
-    doors: Record<string, Geomorph.DoorState>,
-    openRatios: Float32Array,
-  ): void;
-};
-
 /**
  * The player's light polygon: what can be seen from where they stand, bounded by the walls and by
- * the closed part of each partially open door.
+ * the closed part of each possibly-partially open door.
  *
- * Rather than asking that question per fragment — which is what made the old dynamic light
- * expensive — a compute pass answers it once per frame for `lightAngles` directions, writing the
- * distance to the nearest occluder into a polar table. Any material then reads one entry of that
- * table to know whether it is lit, whatever it is and wherever it stands.
+ * Rather than asking that question per fragment, a compute pass answers it once per frame for
+ * `lightAngles` directions, writing the distance to the nearest occluder into a polar table.
+ * Any material then reads an entry of that table to know whether it is lit.
  *
  * The table is built once and never rebuilt, so the materials reading it survive a map change —
- * only the occluder buffers, which nothing but the sweep looks at, are refilled.
+ * only the occluder buffers (which only the sweep looks at) are refilled.
  */
 export function createPlayerLight(): PlayerLight {
-  /** Where the light stands, in world XZ */
+  /** Where the light stands in world XZ */
   const origin = uniform(new THREE.Vector2());
   /**
    * How black an unseen fragment goes: `unlitTint` whilst there is a player, `0` otherwise. The two
@@ -89,7 +45,8 @@ export function createPlayerLight(): PlayerLight {
    * of them multiplies a constant by a uniform per fragment
    */
   const unlitAmount = uniform(0);
-  /** Which way they look, in world XZ — what falls outside the cone about it is dimmed */
+
+  /** Look direction in world XZ — the light falling outside this cone is dimmed a bit */
   const facing = uniform(new THREE.Vector2(1, 0));
 
   // The occluders. Fixed capacity, so the compute node never has to be rebuilt — the counts say
@@ -479,3 +436,46 @@ const penumbraArcs = 1.5;
 const discontinuityArcs = 4;
 /** Below this the ray and the segment are parallel, and the intersection means nothing */
 const parallelUntil = 1e-6;
+
+export type PlayerLight = {
+  /**
+   * Changes whenever the light is rebuilt. Materials capture its nodes when they are constructed,
+   * so anything holding one must rebuild when this does — put it in the deps that make the
+   * material, and an hmr of this file reaches the screen. See `WorldView`'s `reset`
+   */
+  uid: string;
+  /**
+   * Tints `color` towards black wherever the fragment cannot be seen from the light. Identity
+   * whilst the light is off, so a material can wrap its colour unconditionally.
+   */
+  applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
+  /**
+   * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
+   * and wants to ask. Ignores whether the light is on, so a caller decides what an unlit light
+   * means for itself.
+   * @param outset grows the polygon by this many metres. It is star-shaped about the light, so
+   * asking about a point pulled that much nearer is exactly a dilation
+   */
+  litAt(worldXZ: THREE.Node<"vec2">, outset?: number): THREE.Node<"float">;
+  /** The same, for a material whose colour carries alpha — which is left alone */
+  applyLightRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  /**
+   * Tints as though nothing were ever lit, for a surface the light has no business reaching — the
+   * ceiling, which the sweep would otherwise light through the room below it
+   */
+  applyUnlitRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  /** Re-reads the walls, which never move. Call on map change */
+  syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
+  /**
+   * Where the light stands, which way it looks, and how open each door is, then the sweep itself.
+   * Call once per rendered frame, before the render. `origin` of `null` turns the light off.
+   * @param rotationY three's, as `npc.rotation.y` gives it — what is not ahead of it is dimmed
+   */
+  update(
+    renderer: THREE.WebGPURenderer,
+    origin: null | { x: number; z: number },
+    rotationY: number,
+    doors: Record<string, Geomorph.DoorState>,
+    openRatios: Float32Array,
+  ): void;
+};
