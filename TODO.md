@@ -212,7 +212,7 @@
 - ✅ window obstacles have meta.{window,windowId,gwKey}
 - ✅ obstacles skirts can be picked as their associated top
 
-- can pick inside faded-rooms normally in map-mode
+- ✅ can pick inside faded-rooms normally in map-mode
 
 - basic script to only move selected npc
   - variant which only moves player
@@ -224,6 +224,7 @@
 - robot-0 may need replacing
   - maybe head just needs shading
 - flatten WorldMenu
+- modes rename
 
 ## Other
 

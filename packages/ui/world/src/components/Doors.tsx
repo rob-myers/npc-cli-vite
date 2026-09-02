@@ -577,7 +577,14 @@ export default function Doors() {
         // stands behind them. A discard rather than a transparency: the pick target is not
         // multisampled, so the coverage the panels see through by does nothing there
         // and whilst its rooms are hidden, so a click reaches the floor behind it
-        Discard(w.view.objectPick.notEqual(0).and(w.view.pickDoors.equal(0).or(fade.lessThan(0.5))));
+        Discard(
+          w.view.objectPick.notEqual(0).and(
+            w.view.pickDoors
+              .equal(0)
+              // `focus` only, as `dropPickWhenHidden` — `map` leaves a hidden door pickable
+              .or(fade.lessThan(0.5).and(w.view.fadeRoomsFx.focusNode.greaterThan(0.5))),
+          ),
+        );
         return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
       })();
     }
