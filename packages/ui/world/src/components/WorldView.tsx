@@ -228,21 +228,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "door":
             mesh = getTempInstanceMesh(w.door.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          case "obstacle": {
-            const top = getTempInstanceMesh(w.obs.inst, picked.instanceId);
-            if (state.raycaster.intersectObject(top).length > 0) {
-              mesh = top;
-              break;
-            }
+          case "obstacle":
+            mesh = getTempInstanceMesh(w.obs.inst, picked.instanceId);
             // a skirt carries its OBSTACLE's pick id, so the ray may have gone through one of those
-            // rather than the top — see `Obstacles`' `obstacleIds`
-            const hit = state.raycaster
-              .intersectObject(w.obs.skirtInst)
-              .find((x) => w.obs.skirtObstacleIds[x.instanceId as number] === picked.instanceId);
-            if (hit === undefined) return null;
-            mesh = getTempInstanceMesh(w.obs.skirtInst, hit.instanceId as number);
+            // and miss the top — fall back to the top's centre, the obstacle being what was picked
+            // either way. `center` is in the geomorph's space, hence the matrix
+            if (state.raycaster.intersectObject(mesh).length === 0) {
+              const gm = w.gms[picked.gmId];
+              const { center, height } = gm.obstacles[picked.obstacleId];
+              const at = gm.matrix.transformPoint({ x: center.x, y: center.y });
+              const point = new THREE.Vector3(at.x, height, at.y);
+              return { distance: point.distanceTo(state.raycaster.ray.origin), point, object: mesh, normal: up };
+            }
             break;
-          }
           case "ceiling":
             mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
             break;
@@ -1115,6 +1113,8 @@ const tmpVect = new Vect();
 const _tmpRect = new Rect();
 const _tmpVector3 = new THREE.Vector3();
 const tmpLookAtOffset = new THREE.Vector3();
+/** The normal of an obstacle's top, for a pick that landed on it without hitting a face */
+const up = new THREE.Vector3(0, 1, 0);
 
 export type Picked = {
   instanceId: number;
