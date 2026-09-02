@@ -883,6 +883,16 @@ export default function Decor() {
       const shapeKindAttr = attribute<"vec3">("shapeParams", "vec3").x;
       // decor stands in one room, so both components of `roomSlots` carry it and `.x` will do
       const fade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
+      // `1` outside `focus`, which alone blacks hidden decor out
+      const shown = fade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+
+      /** Black at the OUTPUT: `colorNode` is albedo alone, which specular survives. Not whilst picking */
+      const blackWhenHidden = (node: THREE.Node<"vec4">) =>
+        (select as SelectAnyType)(
+          w.view.objectPick.notEqual(0),
+          node,
+          vec4(node.rgb.mul(shown), node.a),
+        ) as THREE.Node<"vec4">;
 
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest });
       // tinted by what the player can see from where they stand — see `service/player-light`
@@ -906,16 +916,20 @@ export default function Decor() {
       // hide non-top faces for flat instances (points, rects, circles)
       // the black sides of a cuboid are black either way — the fade only takes them out of the pick
       plainBlackMaterial.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
-      plainBlackMaterial.outputNode = (select as SelectAnyType)(
-        shapeKindAttr.greaterThan(0.5),
-        vec4(0, 0, 0, 0),
-        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
+      plainBlackMaterial.outputNode = blackWhenHidden(
+        (select as SelectAnyType)(
+          shapeKindAttr.greaterThan(0.5),
+          vec4(0, 0, 0, 0),
+          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
+        ) as THREE.Node<"vec4">,
       );
 
-      texMat.outputNode = buildShapeOutputNode(
-        OBJECT_PICK_KEY_TO_RED.decor,
-        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
-        w.view.objectPick,
+      texMat.outputNode = blackWhenHidden(
+        buildShapeOutputNode(
+          OBJECT_PICK_KEY_TO_RED.decor,
+          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
+          w.view.objectPick,
+        ) as THREE.Node<"vec4">,
       );
 
       const runtimeTexMat = new THREE.MeshStandardNodeMaterial({
@@ -937,10 +951,12 @@ export default function Decor() {
         fade,
         w.view.objectPick,
       );
-      runtimeTexMat.outputNode = buildShapeOutputNode(
-        OBJECT_PICK_KEY_TO_RED.runtimeDecor,
-        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
-        w.view.objectPick,
+      runtimeTexMat.outputNode = blackWhenHidden(
+        buildShapeOutputNode(
+          OBJECT_PICK_KEY_TO_RED.runtimeDecor,
+          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+          w.view.objectPick,
+        ) as THREE.Node<"vec4">,
       );
 
       const runtimeBlackMat = new THREE.MeshStandardNodeMaterial({
@@ -950,10 +966,12 @@ export default function Decor() {
         alphaTest,
       });
       runtimeBlackMat.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
-      runtimeBlackMat.outputNode = (select as SelectAnyType)(
-        shapeKindAttr.greaterThan(0.5),
-        vec4(0, 0, 0, 0),
-        w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+      runtimeBlackMat.outputNode = blackWhenHidden(
+        (select as SelectAnyType)(
+          shapeKindAttr.greaterThan(0.5),
+          vec4(0, 0, 0, 0),
+          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+        ) as THREE.Node<"vec4">,
       );
 
       state.ready = true;

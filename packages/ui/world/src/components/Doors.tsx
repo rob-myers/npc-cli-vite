@@ -9,6 +9,7 @@ import {
   Fn,
   float,
   lights,
+  mix,
   positionLocal,
   texture,
   uniform,
@@ -565,6 +566,9 @@ export default function Doors() {
     // a door belongs to the rooms on both sides, and is shown at the fuller of the two. Declared
     // ahead of the materials: the `Fn` below reads it, and tsl may run that body straight away
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
+    // `focus` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches
+    // 0 when both are hidden
+    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.focusNode);
 
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
@@ -580,8 +584,10 @@ export default function Doors() {
 
     for (const mat of [front, back]) {
       // full whilst picking, else a door could be picked through the samples coverage drops
-      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity), float(1));
+      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity).mul(alphaFade), float(1));
     }
+    // opaque by default, so it needs its own or the frame is left behind
+    edge.opacityNode = w.view.objectPick.equal(0).select(alphaFade, float(1));
 
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
