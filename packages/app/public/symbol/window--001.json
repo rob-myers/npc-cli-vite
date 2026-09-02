@@ -17,8 +17,8 @@
       "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
     },
     {
-      "id": "0193deff-2fe1-4f33-a27d-7772a750305a",
-      "name": "obstacle window y=0.8 max-h",
+      "id": "b95a2c8e-0d9a-497d-9d87-ce1018f4357a",
+      "name": "window",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": -0.5},
@@ -27,8 +27,8 @@
       "cssTransform": "matrix(1, 0, 0, 1, -1, -0.5)"
     },
     {
-      "id": "b95a2c8e-0d9a-497d-9d87-ce1018f4357a",
-      "name": "window",
+      "id": "0193deff-2fe1-4f33-a27d-7772a750305a",
+      "name": "obstacle window y=0.8 max-h",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": -0.5},

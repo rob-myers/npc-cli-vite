@@ -154,7 +154,6 @@ export default function Obstacles(_props: Props) {
         const found = state.fromInstanceId[instanceId];
         const { gmId, obstacleId } = found;
         const obstacle = w.gms[gmId]?.obstacles[obstacleId];
-        // 🔔 saw gmId 0 in obstacle.meta
         return { ...obstacle.meta, gmId, obstacleId };
       },
       encodeInstanceId(gmId, obstacleId) {
@@ -180,9 +179,8 @@ export default function Obstacles(_props: Props) {
         // Where it stands, from its centre in the geomorph's OWN space — which is what `roomSlots`
         // is drawn in, so the answer belongs to the LAYOUT and any instance of it may be asked.
         //
-        // Not stamped onto `obstacle.meta` as `instantiateDecor` does for decor: `createLayoutInstance`
-        // spreads `...layout`, so two instances of one geomorph key share these metas — a `gmId`
-        // written there would be whichever went last. Hence the lookup by instance id instead
+        // Kept off `obstacle.meta`, unlike the `gmId` `instantiateDecor` stamps onto decor: a room
+        // is a property of the LAYOUT, so it would be the same answer written once per instance
         const { rect } = origPoly;
         const at = tmpMat2.setMatrixValue(transform).transformPoint({
           x: rect.x + rect.width / 2,
