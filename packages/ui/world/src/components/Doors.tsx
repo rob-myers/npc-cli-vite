@@ -566,9 +566,9 @@ export default function Doors() {
     // a door belongs to the rooms on both sides, and is shown at the fuller of the two. Declared
     // ahead of the materials: the `Fn` below reads it, and tsl may run that body straight away
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    // `focus` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches
+    // `prod` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches
     // 0 when both are hidden
-    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.focusNode);
+    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.prodNode);
 
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
@@ -581,8 +581,8 @@ export default function Doors() {
           w.view.objectPick.notEqual(0).and(
             w.view.pickDoors
               .equal(0)
-              // `focus` only, as `dropPickWhenHidden` — `map` leaves a hidden door pickable
-              .or(fade.lessThan(0.5).and(w.view.fadeRoomsFx.focusNode.greaterThan(0.5))),
+              // `prod` only, as `dropPickWhenHidden` — `dev` leaves a hidden door pickable
+              .or(fade.lessThan(0.5).and(w.view.fadeRoomsFx.prodNode.greaterThan(0.5))),
           ),
         );
         return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);

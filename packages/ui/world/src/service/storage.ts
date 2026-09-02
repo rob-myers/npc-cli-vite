@@ -63,7 +63,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraInitial: null,
   postProcessing: true,
   demoPostFx: "none",
-  fadeRoomsMode: "gm",
+  fadeRoomsMode: "qa",
   fadeRoomOutlines: false,
   litNpcsEnabled: true,
   pickOpenDoors: true,

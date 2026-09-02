@@ -325,13 +325,13 @@ export default function Floor() {
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       // - force alpha 1 to avoid object-pick having rgb scaled by alpha
       // - can pick texture alpha < 1 because floor can be partially transparent
-      // - in `focus` mode a room out of view goes to black HERE rather than in `colorNode`, which
+      // - in `prod` mode a room out of view goes to black HERE rather than in `colorNode`, which
       //   is only the albedo: a standard material still adds a little specular off the scene's
       //   lights to an albedo of nothing, enough to make out a floor that has gone. `map` mode is
       //   untouched, and so is the pick branch, which carries the pick id and must arrive whole
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1) as THREE.Node<"vec4">;
-        const shown = floorFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+        const shown = floorFade.max(w.view.fadeRoomsFx.prodNode.oneMinus());
         return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
       })(),
       // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map

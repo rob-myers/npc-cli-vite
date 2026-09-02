@@ -235,7 +235,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // The arrival is shown whole: folded (or flat, on a phone), then the fade comes on, then
           // the world rises. Left to itself the fade would arrive the moment the player spawns —
           // which is before any of that, and would hide all of it but the one room they are in
-          w.view.setFadeRoomsActive("gm");
+          w.view.setFadeRoomsActive("qa");
         }
 
         try {
@@ -1156,7 +1156,7 @@ export type State = {
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
   syncNpcRoomSlots(): void;
   /**
-   * Fires `npc-hidden` / `npc-shown` for whoever `focus` has just wiped away or given back — see
+   * Fires `npc-hidden` / `npc-shown` for whoever `prod` has just wiped away or given back — see
    * `onNpcEvent`, which is where the draw calls are actually given up
    */
   syncNpcVisibility(): void;

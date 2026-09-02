@@ -159,10 +159,10 @@ export default function Ceiling() {
       // fix InstancedMesh non-uniform scaling
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       opacityNode,
-      // focus-mode: ensure totally black
+      // prod-mode: ensure totally black
       pickNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling) as THREE.Node<"vec4">;
-        const shown = ceilFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+        const shown = ceilFade.max(w.view.fadeRoomsFx.prodNode.oneMinus());
         return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
       })(),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it

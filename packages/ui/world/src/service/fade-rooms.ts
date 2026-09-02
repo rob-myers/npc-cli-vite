@@ -11,7 +11,7 @@ import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slo
  * Per-room fade rather then per-fragment. Each instance of an instancedMesh in the world carries the slot of
  * the room it stands in as a static attribute — so a material reads an small array entry and is done.
  */
-export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
+export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
   /**
    * The clock every fade here is drawn against. Ours, not tsl's, which advances by the wall time
    * between RENDERS — so a fade begun after an idle spell would be handed all of it on its first
@@ -20,23 +20,23 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   const clockValue = uniform(nowSecs());
   const clockNode = float(clockValue);
 
-  // `1` in `"focus"` mode and `0` in the others. A morph rather than a plain uniform, so that
+  // `1` in `"prod"` mode and `0` in the others. A morph rather than a plain uniform, so that
   // switching between the two is a fade of its own rather than a snap
-  const focusMorph = arrivedAt(initialMode === "focus" ? 1 : 0, nowSecs());
-  const focusValue = uniform(new THREE.Vector3(focusMorph.from, focusMorph.to, focusMorph.at));
-  const focusAmount = morphNode(focusValue, MODE_FADE_SECS, clockNode);
+  const prodMorph = arrivedAt(initialMode === "prod" ? 1 : 0, nowSecs());
+  const prodValue = uniform(new THREE.Vector3(prodMorph.from, prodMorph.to, prodMorph.at));
+  const prodAmount = morphNode(prodValue, MODE_FADE_SECS, clockNode);
 
   const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, nowSecs()));
   const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
 
   const rooms: Geomorph.GmRoomId[] = [];
-  /** Which slots `focus` has wiped away entirely — see `isWipedOut` */
+  /** Which slots `prod` has wiped away entirely — see `isWipedOut` */
   const wiped = new Set<number>();
   /**
    * The slots on their way OUT and not wiped yet, each by the clock time its fade lands on. The
    * only ones `syncWiped` has to look at, so it can run every frame — the rest are settled either
-   * way. Outside `focus` nothing drains it, and switching INTO focus wipes the lot at once
+   * way. Outside `prod` nothing drains it, and switching INTO prod wipes the lot at once
    */
   const fadingOut = new Map<number, number>();
   /** `this.mode` as `sync` last saw it, for what runs between syncs — see `keepFramesComing` */
@@ -55,7 +55,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
     snapNext: true,
     rooms,
     getVisiblity: fadeAt,
-    focusNode: focusAmount,
+    prodNode: prodAmount,
 
     isArriving(slot) {
       // heading for shown and not there yet — the room part way in that an npc walks into
@@ -101,8 +101,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
 
     dropPickWhenHidden(node: never, fade: THREE.Node<"float">, objectPick: THREE.Node<"float">) {
       return Fn(() => {
-        // `focus` only: `map` blacks a hidden room out but leaves it there to be picked
-        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)).and(focusAmount.greaterThan(0.5)));
+        // `prod` only: `dev` blacks a hidden room out but leaves it there to be picked
+        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)).and(prodAmount.greaterThan(0.5)));
         return node;
       })();
     },
@@ -120,7 +120,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
         for (const grKey of w.e.handLitRooms) rooms.push(helper.getGmRoomId(grKey));
       }
 
-      const showAll = this.mode === "gm" || inView === null;
+      const showAll = this.mode === "qa" || inView === null;
       const now = tick();
       syncedMode = this.mode;
 
@@ -128,13 +128,13 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
       const snap = this.snapNext;
       if (snap === true && inView !== null) this.snapNext = false;
 
-      // `gm` shows everything anyway, so it keeps whichever answer it had — and coming back out of
+      // `qa` shows everything anyway, so it keeps whichever answer it had — and coming back out of
       // it, the rooms are already as dark as the mode returned to wants them
-      if (this.mode !== "gm") {
-        const wanted = this.mode === "focus" ? 1 : 0;
-        if (snap === true) Object.assign(focusMorph, arrivedAt(wanted, now));
-        else retarget(focusMorph, wanted, MODE_FADE_SECS, now);
-        focusValue.value.set(focusMorph.from, focusMorph.to, focusMorph.at);
+      if (this.mode !== "qa") {
+        const wanted = this.mode === "prod" ? 1 : 0;
+        if (snap === true) Object.assign(prodMorph, arrivedAt(wanted, now));
+        else retarget(prodMorph, wanted, MODE_FADE_SECS, now);
+        prodValue.value.set(prodMorph.from, prodMorph.to, prodMorph.at);
       }
 
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
@@ -195,13 +195,13 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
   }
 
   /**
-   * Brings `wiped` up to the clock: rooms join it as their fades land, and leaving `focus` gives
+   * Brings `wiped` up to the clock: rooms join it as their fades land, and leaving `prod` gives
    * every one of them back at once. Only `fadingOut` is walked — the rest are settled either way —
    * so this is cheap enough for every frame of a fade
    */
   function syncWiped(now: number) {
     // the wipe only begins once the mode itself has arrived — see `bodyFade` in `NPCs`
-    const wiping = syncedMode === "focus" && focusMorph.to === 1 && settled(focusMorph, MODE_FADE_SECS, now);
+    const wiping = syncedMode === "prod" && prodMorph.to === 1 && settled(prodMorph, MODE_FADE_SECS, now);
 
     if (wiping === false) {
       wiped.clear();
@@ -272,30 +272,30 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
 
 /**
  * How much of the world is shown, cycled by the fade button and bound to keys `1`, `2` and `3`:
- * - `focus` — only what the player can see. FOR NOW the same as `map`
- * - `map` — what they cannot see goes black and stays, so the world still reads as a floorplan
- * - `gm` — all of it, all the time, as a game master sees it
+ * - `prod` — only what the player can see. FOR NOW the same as `dev`
+ * - `dev` — what they cannot see goes black and stays, so the world still reads as a floorplan
+ * - `qa` — all of it, all the time, as a game master sees it
  */
-export type FadeRoomsMode = "focus" | "map" | "gm";
+export type FadeRoomsMode = "prod" | "dev" | "qa";
 
 /** Which key selects which mode */
 export const fadeRoomsModeByKey: Record<string, FadeRoomsMode> = {
-  "1": "focus",
-  "2": "map",
-  "3": "gm",
+  "1": "prod",
+  "2": "dev",
+  "3": "qa",
 };
 
 /** The next mode round, for the fade button: `1` to `2` to `3` and back */
 export function nextFadeRoomsMode(mode: FadeRoomsMode): FadeRoomsMode {
-  return mode === "focus" ? "map" : mode === "map" ? "gm" : "focus";
+  return mode === "prod" ? "dev" : mode === "dev" ? "qa" : "prod";
 }
 
 /** `mode` if it is one, else the default — stored settings are not to be trusted */
 export function parseFadeRoomsMode(mode: unknown): FadeRoomsMode {
-  return mode === "focus" || mode === "map" || mode === "gm" ? mode : "gm";
+  return mode === "prod" || mode === "dev" || mode === "qa" ? mode : "qa";
 }
 
-/** How long the switch between `"focus"` and `"map"` takes to play out, in seconds */
+/** How long the switch between `"prod"` and `"dev"` takes to play out, in seconds */
 const MODE_FADE_SECS = 0.7;
 
 /** The wall clock, in seconds */
@@ -332,16 +332,16 @@ export type FadeRooms = {
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
   /**
-   * Whether `focus` has wiped `slot` away entirely: the mode arrived, the room's fade fully out.
+   * Whether `prod` has wiped `slot` away entirely: the mode arrived, the room's fade fully out.
    * Nothing in it can be seen, so nothing in it need be DRAWN — see `syncNpcVisibility`
    */
   isWipedOut(slot: number): boolean;
   /**
-   * `1` in `"focus"` mode and `0` in the others, easing between the two as the mode changes — for
-   * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `focus`
+   * `1` in `"prod"` mode and `0` in the others, easing between the two as the mode changes — for
+   * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `prod`
    * takes all the way to black
    */
-  focusNode: THREE.Node<"float">;
+  prodNode: THREE.Node<"float">;
   /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /**

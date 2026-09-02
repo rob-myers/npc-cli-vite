@@ -279,19 +279,19 @@ export default function Obstacles(_props: Props) {
     const topFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     return {
       // - obstacles tops are not tinted by playerLight, although obstacle skirts are
-      // - map-mode tints them darker
-      // - focus-mode tints them completely black
+      // - dev-mode tints them darker
+      // - prod-mode tints them completely black
       colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
         w.view.fadeRoomsFx.applyFadeRgba(unlit, topFade.max(state.fadedTint)),
         topFade,
         w.view.objectPick,
       ),
       normalNode,
-      // taken to black in `focus` mode HERE rather than in `colorNode`, which is only the albedo —
+      // taken to black in `prod` mode HERE rather than in `colorNode`, which is only the albedo —
       // see `Floor`, whose floor it stands on and whose fate it shares
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle) as THREE.Node<"vec4">;
-        const shown = topFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+        const shown = topFade.max(w.view.fadeRoomsFx.prodNode.oneMinus());
         return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
       })(),
       uid: generateUUID(),
@@ -324,12 +324,12 @@ export default function Obstacles(_props: Props) {
       w.view.objectPick,
     );
     // a skirt carries its OBSTACLE's pick id, so picking one is picking the thing it belongs to —
-    // and to black in `focus` mode past the lighting, as the tops are — see their `outputNode`
+    // and to black in `prod` mode past the lighting, as the tops are — see their `outputNode`
     const lit = w.view.withPickOutputId(
       OBJECT_PICK_KEY_TO_RED.obstacle,
       attribute<"float">("obstacleIds", "float"),
     ) as THREE.Node<"vec4">;
-    const shown = skirtFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+    const shown = skirtFade.max(w.view.fadeRoomsFx.prodNode.oneMinus());
     mat.outputNode = (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
     return mat;
   }, [w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);

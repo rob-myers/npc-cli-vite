@@ -113,18 +113,18 @@ export default function NPCs() {
         const litAmount = npcLit.mul(w.view.litNpcsEnabled);
 
         const roomFade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
-        const focus = w.view.fadeRoomsFx.focusNode;
-        // `focus` fades an npc in two phases: colour drained by the time the sphere starts closing,
+        const prod = w.view.fadeRoomsFx.prodNode;
+        // `prod` fades an npc in two phases: colour drained by the time the sphere starts closing,
         // and symmetrically. `map` only drains the colour, over the whole fade, leaving a black
         // figure we can still watch move about
-        const focusTint = roomFade
+        const prodTint = roomFade
           .sub(npcFadeShare)
           .div(1 - npcFadeShare)
           .clamp(0, 1);
-        const bodyTint = mix(roomFade, focusTint, focus).max(litAmount);
-        // switched rather than eased, else leaving `focus` plays the wipe in reverse. Switching in
-        // waits for `focus` to arrive, by when the body is black anyway
-        const bodyFade = focus
+        const bodyTint = mix(roomFade, prodTint, prod).max(litAmount);
+        // switched rather than eased, else leaving `prod` plays the wipe in reverse. Switching in
+        // waits for `prod` to arrive, by when the body is black anyway
+        const bodyFade = prod
           .greaterThan(0.999)
           .select(roomFade.div(npcFadeShare).clamp(0, 1), float(1))
           .max(litAmount);
