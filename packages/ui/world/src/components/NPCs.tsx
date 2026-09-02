@@ -1032,16 +1032,16 @@ const npcFadeShare = 0.3;
 
 /**
  * The sphere an npc fades in and out of, in MODEL units — `npcScale` is applied to the group they
- * hang off, so these are not metres. The model stands ~1.93 tall, hence a middle at ~0.96 and a
- * reach far enough to take in a head, a foot and an outstretched arm
+ * hang off, so these are not metres. Centred at their FEET, so the last of them to go is what they
+ * stand on and the wipe reads top to bottom; centred at their middle it closed on the waist instead
  */
-const npcSphereY = 0.96;
+const npcSphereY = 0;
 /**
- * Big enough to hold the model in ANY pose, not just standing: it is measured from a point up the
- * npc's own axis, and lying down puts head and feet much further from that point than standing
- * does. Too small and parts of somebody lying down are cut whilst they are fully shown
+ * Big enough to hold the model in ANY pose, not just standing: measured from the feet, and lying
+ * down puts the head as far off horizontally as standing puts it vertically. Too small and parts of
+ * somebody lying down are cut whilst they are fully shown; too large and the wipe is over early
  */
-const npcSphereRadius = 2.2;
+const npcSphereRadius = 2.4;
 
 /**
  * How much of their own colour a LIT npc keeps where the player's light does not reach them — the
