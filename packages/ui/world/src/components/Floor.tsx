@@ -41,6 +41,7 @@ export default function Floor() {
       drawnMapKey: null,
 
       fade: { texAmount: uniform(0), animId: 0, resolve: null }, // initially `fadeColor`
+      fadeColor: vec3(0, 0, 0),
       fadedTint: uniform(0.1),
 
       addUvs(gms = w.gms) {
@@ -129,7 +130,7 @@ export default function Floor() {
 
         // door shadow
         // 🔔 gaps in doorways should be fixed by adjusting door relative to wall
-        for (const door of layout.doors.concat(layout.windows.filter((x) => x.meta.curved !== true))) {
+        for (const door of layout.doors) {
           ct.lineWidth = door.meta.hull ? 0.225 : 0.125;
           tmpPoly.outline = door.seg;
           ct.lineJoin = "miter";
@@ -339,7 +340,7 @@ export default function Floor() {
       // DARKENED rather than faded, as everything else is — and never quite to black, so what the
       // player half sees keeps its shape. Where it ENDS UP is `outputNode`'s business
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(vec4(mix(fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
+        w.view.playerLight.applyLightRgba(vec4(mix(state.fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
         floorFade.max(state.fadedTint),
       ),
       uid: generateUUID(),
@@ -401,6 +402,8 @@ export type State = {
     animId: number;
     resolve: null | (() => void);
   };
+  /** What a folded map shows in place of its art: the hull as a flat black shape */
+  fadeColor: THREE.Node<"vec3">;
   /** How much of a floor is left once its room is out of view — from `theme.post.fadedFloorTint` */
   fadedTint: THREE.UniformNode<"float", number>;
 
@@ -434,9 +437,6 @@ const floorFadeMs = 300;
 const hullStripeGap = 0.16;
 const hullStripeWidth = 0.025;
 const hullStripeColor = "#0000001a";
-
-/** What a folded map shows in place of its art: the hull as a flat black shape */
-const fadeColor = vec3(0, 0, 0);
 
 /** debug: every room outlined — how wide the line is, in metres, and its ink */
 const debugRoomEdgeWidth = 0.06;

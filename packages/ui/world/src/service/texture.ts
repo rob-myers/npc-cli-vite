@@ -122,7 +122,7 @@ export function drawRoomOutlines(
   ct.save();
   ct.lineJoin = "round";
   ct.lineCap = "round";
-  ct.lineWidth = 0.08;
+  ct.lineWidth = 0.04;
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
   const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
@@ -152,18 +152,31 @@ export function drawRoomOutlines(
  */
 export function getRoomFloorPieces(room: Geom.Poly) {
   const insetPolys = geomService.createInset(room.clone().removeHoles(), floorInsetAmount);
+  // a curved room is left whole: a grid of rectangles inside it reads as a mistake
+  const split = (p: Geom.Poly) => p.rect.area >= splitPolyMinArea && isCurved(p) === false;
   return {
-    whole: insetPolys.filter((p) => p.rect.area < splitPolyMinArea),
+    whole: insetPolys.filter((p) => split(p) === false),
     pieces: insetPolys
-      .filter((p) => p.rect.area >= splitPolyMinArea)
+      .filter(split)
       .flatMap((p) => splitIntoGridPieces(p, gridPieceSize, gridPieceGap, gridSmallPieceFrac)),
   };
 }
 
+/** Curves arrive tessellated, so many SHORT edges is what tells one from a rectilinear room */
+function isCurved(poly: Geom.Poly): boolean {
+  const { outline } = poly;
+  const short = outline.filter((p, i) => p.distanceTo(outline[(i + 1) % outline.length]) < curvedEdgeMax);
+  return short.length >= curvedEdgeCount;
+}
+
+/** An edge this short (metres), and this many of them, means a curve rather than a corner */
+const curvedEdgeMax = 0.5;
+const curvedEdgeCount = 8;
+
 const floorInsetAmount = 0.75;
 const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
 const gridPieceSize = geomorphGridMeters * 2;
-const gridPieceGap = 0.05;
+const gridPieceGap = 0;
 const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
 
 /** The hatch over the panels: stripe pitch and width in METRES, so it lies on the world, and its ink */
