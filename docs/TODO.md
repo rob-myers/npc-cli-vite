@@ -214,9 +214,11 @@
 
 - ✅ can pick inside faded-rooms normally in map-mode
 
-- 🚧 modes rename: prod/dev/qa
-- 🚧 robot-0 may need replacing
-  - maybe head just needs shading
+- ✅ modes rename: prod/dev/qa
+- ❌ robot-0 may need replacing
+  - ✅ maybe head just needs shading
+
+- initial spawn fade bug
 
 - basic script to only move selected npc
   - variant which only moves player
@@ -227,7 +229,7 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
 - flatten WorldMenu
 
-## Other
+
 
 - on hmr recreate tty session `move` stops working?
 - lock too small to pick?
