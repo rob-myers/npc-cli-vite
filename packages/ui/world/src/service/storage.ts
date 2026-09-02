@@ -67,7 +67,7 @@ const defaultWorldSettings: WorldSettings = {
   demoPostFx: "none",
   fadeRoomsMode: "qa",
   fadeRoomOutlines: false,
-  npcOutline: true,
+  npcOutline: false,
   litNpcsEnabled: true,
   pickOpenDoors: true,
   pickDoors: false,
