@@ -31,6 +31,7 @@ import {
 } from "../const";
 import { Connector } from "./Connector";
 import { embedXZMat4 } from "./geometry";
+import { helper } from "./helper";
 
 /**
  * Compute flattened doors, decor, obstacles,
@@ -52,6 +53,14 @@ function computeFlatDoorsDecorObstacles(
   flats.forEach((flat) => {
     flat.decor.forEach((d) => typeof d.meta.obstacleId === "number" && (d.meta.obstacleId += obstacleIdOffset));
     obstacleIdOffset += flat.obstacles.length;
+  });
+
+  // ensure obstacle `windowId={windowId}` points to correct `windowId`
+  // windows are only ever concatenated — never removed, deduped or reordered
+  let windowIdOffset = symbol.windows.length;
+  flats.forEach((flat) => {
+    flat.obstacles.forEach((o) => typeof o.meta.windowId === "number" && (o.meta.windowId += windowIdOffset));
+    windowIdOffset += flat.windows.length;
   });
 
   // ensure `decor.meta.doorId` points to correct doorId
@@ -251,9 +260,12 @@ export function createLayout(
     // e.g. fix lower apron of window with variable height lintel
     if (typeof o.meta["force-y"] === "number") heightOffFloor = o.meta["force-y"];
 
+    // cloning `o.meta` would include flattening bookkeeping the fields above already
+    // carry, and `decorIds` below writes here — which would reach the source symbol if shared
     const meta = deepClone(origPoly.meta);
     // can set heightAsDimension to be heightOffFloor
     if (o.meta["max-h"] === true) meta.h = heightOffFloor;
+    if (typeof o.meta.windowId === "number") meta.windowId = o.meta.windowId;
 
     return {
       symbolKey,
@@ -402,6 +414,15 @@ export function createLayoutInstance(
     determinant: matrix.determinant,
 
     decor: layout.decor.map((d, decorId) => instantiateDecor(d, matrix, gmId, decorId)),
+
+    // its own metas: the layout's are shared by every instance of that geomorph key, so anything
+    obstacles: layout.obstacles.map((o) => ({
+      ...o,
+      meta: {
+        ...o.meta,
+        ...(typeof o.meta.windowId === "number" && { gwKey: helper.getGmWindowKey(gmId, o.meta.windowId) }),
+      },
+    })),
 
     // use refs because we'll add roomIds
     hullDoors: layout.doors.filter((d) => d.meta.hull === true),
@@ -854,6 +875,9 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
       meta.symKey = savedFile.key;
       // local id inside SVG symbol
       meta.origObstacleId = polysLookup.obstacles.length - 1;
+      if (meta.window === true && polysLookup.windows.length > 0) {
+        meta.windowId = polysLookup.windows.length - 1;
+      }
       if (typeof meta.inset === "number") {
         // convert inset to world coords
         meta.inset = toPrecision(meta.inset * sguToWorldScale, 6);

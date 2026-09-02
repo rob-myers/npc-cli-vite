@@ -4180,7 +4180,8 @@
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 0
           }
         },
         {
@@ -4199,7 +4200,8 @@
             "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
-            "origObstacleId": 1
+            "origObstacleId": 1,
+            "windowId": 0
           }
         }
       ],
@@ -6197,7 +6199,8 @@
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 0
           }
         }
       ],
@@ -6617,7 +6620,8 @@
             "obstacle": true,
             "window": true,
             "symKey": "window--005",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 0
           }
         }
       ],
@@ -9754,7 +9758,7 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left#1",
+            "rel": "sees:window-left#0",
             "label": "common"
           }
         },
@@ -9767,7 +9771,7 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-right#2",
+            "rel": "sees:window-right#1",
             "label": "common"
           }
         },
@@ -11273,6 +11277,7 @@
             "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0,
+            "windowId": 1,
             "transform": [-1, 0, 0, -1, 12.7625, 16.7375]
           }
         },
@@ -11293,6 +11298,7 @@
             "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0,
+            "windowId": 2,
             "transform": [-1, 0, 0, -1, 18.725638, 16.745642]
           }
         },
@@ -12753,7 +12759,7 @@
               [12.7875, 16.75]
             ]
           ],
-          "meta": {"window": true, "name": "window-left#1"}
+          "meta": {"window": true, "name": "window-left#0"}
         },
         {
           "type": "Polygon",
@@ -12765,7 +12771,7 @@
               [18.7506, 16.7581]
             ]
           ],
-          "meta": {"window": true, "name": "window-right#2"}
+          "meta": {"window": true, "name": "window-right#1"}
         }
       ],
       "removableDoors": [],
@@ -13966,6 +13972,7 @@
             "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0,
+            "windowId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 4.5, 7.5125]
           }
@@ -13982,6 +13989,7 @@
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1,
+            "windowId": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 4.5, 7.5125]
           }
@@ -19265,7 +19273,7 @@
             "door": true,
             "slide": [1, 0],
             "auto": true,
-            "rel": "sees:window#3",
+            "rel": "sees:window#2",
             "label": "bridge",
             "det": 1
           }
@@ -20076,6 +20084,7 @@
             "inset": 0.05,
             "symKey": "window--007",
             "origObstacleId": 0,
+            "windowId": 1,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 13.5125, 9.025]
           }
@@ -20097,6 +20106,7 @@
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1,
+            "windowId": 1,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 13.5125, 9.025]
           }
@@ -22128,7 +22138,7 @@
               [13.5, 9.0125]
             ]
           ],
-          "meta": {"window": true, "name": "window#3"}
+          "meta": {"window": true, "name": "window#2"}
         }
       ],
       "removableDoors": [],
@@ -22649,7 +22659,8 @@
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 0
           }
         },
         {
@@ -22668,7 +22679,8 @@
             "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
-            "origObstacleId": 1
+            "origObstacleId": 1,
+            "windowId": 0
           }
         }
       ],
@@ -25134,7 +25146,8 @@
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 0
           }
         }
       ],
@@ -25720,7 +25733,8 @@
             "obstacle": true,
             "window": true,
             "symKey": "window--005",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 0
           }
         }
       ],
@@ -29105,7 +29119,7 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-left#1",
+              "rel": "sees:window-left#0",
               "label": "common"
             }
           },
@@ -29127,7 +29141,7 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-right#2",
+              "rel": "sees:window-right#1",
               "label": "common"
             }
           },
@@ -31829,7 +31843,8 @@
               "y": 0.8,
               "max-h": true,
               "symKey": "window--001",
-              "origObstacleId": 0
+              "origObstacleId": 0,
+              "windowId": 0
             }
           },
           "origSubRect": {"x": -0.01, "y": 0.01, "width": 1.55, "height": 0.34},
@@ -31849,6 +31864,7 @@
             "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0,
+            "windowId": 1,
             "h": 0.8
           }
         },
@@ -31872,7 +31888,8 @@
               "y": 0.8,
               "max-h": true,
               "symKey": "window--001",
-              "origObstacleId": 0
+              "origObstacleId": 0,
+              "windowId": 0
             }
           },
           "origSubRect": {"x": -0.01, "y": 0.01, "width": 1.55, "height": 0.34},
@@ -31892,6 +31909,7 @@
             "max-h": true,
             "symKey": "window--001",
             "origObstacleId": 0,
+            "windowId": 2,
             "h": 0.8
           }
         },
@@ -33887,7 +33905,7 @@
                 [12.7875, 16.75]
               ]
             ],
-            "meta": {"window": true, "name": "window-left#1"}
+            "meta": {"window": true, "name": "window-left#0"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -33903,7 +33921,7 @@
                 [18.7506, 16.7581]
               ]
             ],
-            "meta": {"window": true, "name": "window-right#2"}
+            "meta": {"window": true, "name": "window-right#1"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -36412,7 +36430,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": -180,
+          "orient": 180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -38147,7 +38165,7 @@
               "door": true,
               "slide": [1, 0],
               "auto": true,
-              "rel": "sees:window#3",
+              "rel": "sees:window#2",
               "label": "bridge",
               "det": 1
             }
@@ -39616,7 +39634,8 @@
               "h": 0.2,
               "inset": 0.05,
               "symKey": "window--007",
-              "origObstacleId": 0
+              "origObstacleId": 0,
+              "windowId": 0
             }
           },
           "origSubRect": {"x": -0.01, "y": 0.01, "width": 4.54, "height": 0.33},
@@ -39636,7 +39655,8 @@
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
-            "origObstacleId": 0
+            "origObstacleId": 0,
+            "windowId": 1
           }
         },
         {
@@ -39659,7 +39679,8 @@
               "window": true,
               "force-y": 0.4,
               "symKey": "window--007",
-              "origObstacleId": 1
+              "origObstacleId": 1,
+              "windowId": 0
             }
           },
           "origSubRect": {"x": -0.01, "y": 0.01, "width": 4.54, "height": 0.33},
@@ -39678,7 +39699,8 @@
             "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
-            "origObstacleId": 1
+            "origObstacleId": 1,
+            "windowId": 1
           }
         },
         {
@@ -43013,7 +43035,7 @@
                 [13.5, 9.0125]
               ]
             ],
-            "meta": {"window": true, "name": "window#3"}
+            "meta": {"window": true, "name": "window#2"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -45604,5 +45626,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 894757844}
+  "hash": {"obstacles": -1563970382}
 }

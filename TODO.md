@@ -209,6 +209,11 @@
   - force center
   - remove crosshair
 
+- ✅ window obstacles have meta.{window,windowId,gwKey}
+- obstacles skirts can be picked as their associated top
+
+- can pick inside faded-rooms normally in map-mode
+
 - basic script to only move selected npc
   - variant which only moves player
 - onchange playground preserve npc position
@@ -216,7 +221,6 @@
   - fix error on remove room containing player
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
-- window obstacles have meta.gwKey
 - robot-0 may need replacing
   - maybe head just needs shading
 - flatten WorldMenu
