@@ -25,7 +25,7 @@ import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
-import { drawFloorGrid, drawLightsIntoTexture, drawRoomOutlines, worldToCanvas } from "../service/texture";
+import { drawFloorGrid, drawRoomOutlines, worldToCanvas } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -136,8 +136,8 @@ export default function Floor() {
           drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000c" });
         }
 
-        // light circles
-        drawLightsIntoTexture(ct, gm);
+        // every room dimmed, originally for lighting
+        drawPolygons(ct, layout.rooms, { fillStyle: "rgba(0,0,0,0.7)", strokeStyle: null });
 
         // obstacle drop shadows
         drawPolygons(

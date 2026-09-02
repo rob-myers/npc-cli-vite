@@ -1,6 +1,6 @@
 import { Poly, Rect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { drawPolygons, drawRoundedRect } from "@npc-cli/util/service/canvas";
+import { drawRoundedRect } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
@@ -113,64 +113,6 @@ const cornerLen = 20;
 // --- floor texture ---
 
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
-
-/**
- * We require a geomorph instance:
- * - we'll restrict Lights to rooms but `roomId` only available in instantiated decor.
- * - want to support dynamically added lights.
- */
-export function getLightMetas(gm: Geomorph.LayoutInstance) {
-  return gm.decor
-    .filter((d): d is Geomorph.DecorCircle => d.type === "circle" && d.meta.light === true)
-    .map((d) => ({ ...d.center, radius: d.radius, roomId: d.meta.roomId }));
-}
-
-export function drawLightsIntoTexture(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance) {
-  const lights = getLightMetas(gm);
-  // if (lights.length === 0) return;
-
-  // Auxiliary canvas: dark overlay with light holes punched out, then composited onto main
-  const aux = document.createElement("canvas");
-  aux.width = ct.canvas.width;
-  aux.height = ct.canvas.height;
-  const auxCt = aux.getContext("2d") as CanvasRenderingContext2D;
-  auxCt.setTransform(ct.getTransform());
-  auxCt.strokeStyle = "#f00";
-  auxCt.lineWidth = 0.01;
-
-  // 🔔 "isolated room in room" unsupported -- connect it to hull somehow
-  for (const [roomId, room] of gm.rooms.entries()) {
-    // clip to room
-    auxCt.save();
-    drawPolygons(auxCt, room, { fillStyle: null, strokeStyle: null, clip: true });
-    auxCt.fillStyle = "rgba(0,0,0,0.7)";
-    auxCt.fill();
-
-    // Punch out light circles with radial fade
-    auxCt.globalCompositeOperation = "destination-out";
-    for (const { x, y, radius } of lights.filter((l) => l.roomId === roomId)) {
-      // 🔔 must transform from world coords to local geomorph coords
-      const { x: cx, y: cy } = gm.inverseMatrix.transformPoint({ x, y });
-      const grad = auxCt.createRadialGradient(cx, cy, 0, cx, cy, radius);
-      grad.addColorStop(0, "rgba(0,0,0,0.5)");
-      grad.addColorStop(0.75, "rgba(0,0,0,0.15)");
-      grad.addColorStop(1, "rgba(0,0,0,0)");
-      auxCt.fillStyle = grad;
-      auxCt.beginPath();
-      auxCt.arc(cx, cy, radius, 0, Math.PI * 2);
-      auxCt.fill();
-      // auxCt.stroke();
-    }
-
-    auxCt.restore();
-  }
-
-  // Composite offscreen onto main canvas
-  const transform = ct.getTransform();
-  ct.resetTransform();
-  ct.drawImage(aux, 0, 0);
-  ct.setTransform(transform);
-}
 
 export function drawRoomOutlines(
   ct: CanvasRenderingContext2D,

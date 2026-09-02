@@ -1,34 +1,15 @@
 import { useStateRef } from "@npc-cli/util";
-import { Vect } from "@npc-cli/util/geom/vect";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo, useRef } from "react";
-import {
-  attribute,
-  Break,
-  Fn,
-  float,
-  If,
-  instanceIndex,
-  int,
-  Loop,
-  normalView,
-  positionWorld,
-  pow,
-  select,
-  texture,
-  uniformArray,
-  uv,
-  vec2,
-} from "three/tsl";
+import { attribute, select, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
-import { getLightMetas } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
@@ -56,10 +37,6 @@ export function Debug() {
       doorNormalsShown: false,
       fadeRoomOutlines: getWorldStore(w.key).read().fadeRoomOutlines,
       gridShown: false,
-      lightSpheres: null,
-      lightSpheresShown: false,
-      lightSpherePolyInfo: Array.from({ length: maxLightSpheres }, () => new THREE.Vector4()),
-      lightSpherePolyVerts: Array.from({ length: maxTotalPolyVerts }, () => new THREE.Vector2()),
       logGPUInfo: false,
       navMeshHelper: null,
       navMeshShown: false,
@@ -115,38 +92,6 @@ export function Debug() {
         } else {
           pause().then(() => w.view.forceUpdate());
         }
-      },
-      updateLightSpheres() {
-        const inst = state.lightSpheres;
-        if (!inst) return;
-        const positions: THREE.Vector3[] = [];
-        const radii: number[] = [];
-        let totalVerts = 0;
-        let instanceIdx = 0;
-        for (const gm of w.gms) {
-          for (const p of getLightMetas(gm)) {
-            const wp = gm.matrix.transformPoint(p);
-            positions.push(new THREE.Vector3(wp.x, lightSphereHeight, wp.y));
-            radii.push(p.radius);
-
-            const roomId = typeof p.roomId === "number" ? p.roomId : -1;
-            const room = roomId >= 0 ? gm.rooms[roomId] : null;
-            const verts = room?.outline ?? [];
-            const count = Math.min(verts.length, MAX_ROOM_POLY_VERTS);
-            state.lightSpherePolyInfo[instanceIdx].set(totalVerts, count, 0, 0);
-            for (let v = 0; v < count && totalVerts < maxTotalPolyVerts; v++, totalVerts++) {
-              const wv = gm.matrix.transformPoint(tmpVect.copy(verts[v])); // must not mutate underlying rooms
-              state.lightSpherePolyVerts[totalVerts].set(wv.x, wv.y); // wv.y = world Z
-            }
-            instanceIdx++;
-          }
-        }
-        inst.count = Math.min(positions.length, maxLightSpheres);
-        for (let i = 0; i < inst.count; i++) {
-          tmpMat4.makeTranslation(positions[i]).scale(new THREE.Vector3(radii[i], radii[i], radii[i]));
-          inst.setMatrixAt(i, tmpMat4);
-        }
-        inst.instanceMatrix.needsUpdate = true;
       },
       updateDoorNormals() {
         const inst = doorNormalsRef.current;
@@ -250,50 +195,6 @@ export function Debug() {
 
   w.debug = state;
 
-  const lightSphereMat = useMemo(() => {
-    const polyInfoNode = uniformArray<"vec4">(state.lightSpherePolyInfo, "vec4"); // (offset, count, 0, 0) per instance
-    const polyVertsNode = uniformArray<"vec2">(state.lightSpherePolyVerts, "vec2"); // flat world XZ verts
-
-    // Ray-casting point-in-polygon. Returns 1.0 inside room, 0.0 outside.
-    // count == 0 (no roomId) → unclipped (returns 1.0).
-    const clipFactor = Fn(() => {
-      const info = polyInfoNode.element(instanceIndex);
-      const count = info.y.toInt();
-      const inside = int(0).toVar("pipInside");
-
-      If(count.greaterThan(0), () => {
-        const offset = info.x.toInt();
-        const px = positionWorld.x;
-        const pz = positionWorld.z;
-        Loop(MAX_ROOM_POLY_VERTS, ({ i }) => {
-          If(i.greaterThanEqual(count), () => {
-            Break();
-          });
-          const a = polyVertsNode.element(offset.add(i));
-          const b = polyVertsNode.element(offset.add(i.add(1).mod(count)));
-          // horizontal ray from (px, pz) in +x direction — XOR via float comparison
-          const yCross = a.y.greaterThan(pz).toFloat().notEqual(b.y.greaterThan(pz).toFloat());
-          const t = b.x.sub(a.x).mul(pz.sub(a.y)).div(b.y.sub(a.y)).add(a.x);
-          If(yCross.and(px.lessThan(t)), () => {
-            inside.assign(inside.bitXor(int(1)));
-          });
-        });
-      });
-
-      return count.equal(0).select(float(1), inside.toFloat());
-    })();
-
-    const mat = new THREE.MeshBasicNodeMaterial({
-      color: "white",
-      transparent: true,
-      depthWrite: false,
-      side: THREE.FrontSide,
-    });
-    const fresnel = pow(float(1).sub(normalView.z), float(3)).mul(float(0.8));
-    mat.opacityNode = w.view.objectPick.greaterThan(0).select(0, fresnel.mul(clipFactor));
-    return mat;
-  }, []);
-
   useFrame((root) => {
     const gl = root.gl as unknown as THREE.WebGPURenderer;
     gl.info.autoReset = false;
@@ -310,7 +211,6 @@ export function Debug() {
   }, [w.nav]);
 
   useEffect(() => {
-    state.updateLightSpheres();
     state.updateDoorNormals();
     state.updateDecorPoints();
     state.update();
@@ -380,17 +280,6 @@ export function Debug() {
       </instancedMesh>
 
       <instancedMesh
-        ref={state.ref("lightSpheres")}
-        args={[undefined, undefined, maxLightSpheres]}
-        frustumCulled={false}
-        visible={state.lightSpheresShown}
-        renderOrder={6}
-      >
-        <sphereGeometry args={[1, 32, 32, undefined, undefined, undefined, Math.PI / 2]} />
-        <primitive object={lightSphereMat} attach="material" />
-      </instancedMesh>
-
-      <instancedMesh
         ref={doorNormalsRef}
         args={[state.arrowGeo, undefined, maxDoorNormals]}
         frustumCulled={false}
@@ -425,18 +314,13 @@ export function Debug() {
 
 const pathWidth = 0.02;
 const maxPathSegments = 256;
-const maxLightSpheres = 1024;
-const MAX_ROOM_POLY_VERTS = 64;
-const maxTotalPolyVerts = 4096;
 const maxDecorPoints = 1024;
 const maxDoorNormals = 512;
 const onPointHeight = 0.005;
-const lightSphereHeight = 0;
 const arrowLen = 0.5;
 const arrowWidth = 0.25;
 const doorNormalHeight = 0.05;
 const tmpMat4 = new THREE.Matrix4();
-const tmpVect = new Vect();
 
 export type State = {
   arrowGeo: THREE.BufferGeometry;
@@ -448,10 +332,6 @@ export type State = {
   /** Ring the rooms in view — drawn into the floor texture, see `Floor.drawGm` */
   fadeRoomOutlines: boolean;
   gridShown: boolean;
-  lightSpheres: null | THREE.InstancedMesh;
-  lightSpheresShown: boolean;
-  lightSpherePolyInfo: THREE.Vector4[];
-  lightSpherePolyVerts: THREE.Vector2[];
   logGPUInfo: boolean;
   navMeshHelper: null | NavMeshHelperObject;
   navMeshShown: boolean;
@@ -471,6 +351,5 @@ export type State = {
   updateDecorPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
-  updateLightSpheres(): void;
   updateNavPathInstances(): void;
 };
