@@ -4176,6 +4176,7 @@
           "meta": {
             "obstacle": true,
             "lintel": true,
+            "window": true,
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
@@ -4195,6 +4196,7 @@
           "meta": {
             "obstacle": true,
             "apron": true,
+            "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1
@@ -6191,6 +6193,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "window": true,
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
@@ -11265,6 +11268,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "window": true,
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
@@ -11284,6 +11288,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "window": true,
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
@@ -13956,6 +13961,7 @@
           "meta": {
             "obstacle": true,
             "lintel": true,
+            "window": true,
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
@@ -13972,6 +13978,7 @@
           "meta": {
             "obstacle": true,
             "apron": true,
+            "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -20064,6 +20071,7 @@
           "meta": {
             "obstacle": true,
             "lintel": true,
+            "window": true,
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
@@ -20085,6 +20093,7 @@
           "meta": {
             "obstacle": true,
             "apron": true,
+            "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -22636,6 +22645,7 @@
           "meta": {
             "obstacle": true,
             "lintel": true,
+            "window": true,
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
@@ -22655,6 +22665,7 @@
           "meta": {
             "obstacle": true,
             "apron": true,
+            "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1
@@ -25119,6 +25130,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "window": true,
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
@@ -31813,6 +31825,7 @@
             ],
             "meta": {
               "obstacle": true,
+              "window": true,
               "y": 0.8,
               "max-h": true,
               "symKey": "window--001",
@@ -31831,6 +31844,7 @@
           "center": {"x": 12.01, "y": 16.58},
           "meta": {
             "obstacle": true,
+            "window": true,
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
@@ -31854,6 +31868,7 @@
             ],
             "meta": {
               "obstacle": true,
+              "window": true,
               "y": 0.8,
               "max-h": true,
               "symKey": "window--001",
@@ -31872,6 +31887,7 @@
           "center": {"x": 17.98, "y": 16.59},
           "meta": {
             "obstacle": true,
+            "window": true,
             "y": 0.8,
             "max-h": true,
             "symKey": "window--001",
@@ -39596,6 +39612,7 @@
             "meta": {
               "obstacle": true,
               "lintel": true,
+              "window": true,
               "h": 0.2,
               "inset": 0.05,
               "symKey": "window--007",
@@ -39615,6 +39632,7 @@
           "meta": {
             "obstacle": true,
             "lintel": true,
+            "window": true,
             "h": 0.2,
             "inset": 0.05,
             "symKey": "window--007",
@@ -39638,6 +39656,7 @@
             "meta": {
               "obstacle": true,
               "apron": true,
+              "window": true,
               "force-y": 0.4,
               "symKey": "window--007",
               "origObstacleId": 1
@@ -39656,6 +39675,7 @@
           "meta": {
             "obstacle": true,
             "apron": true,
+            "window": true,
             "force-y": 0.4,
             "symKey": "window--007",
             "origObstacleId": 1
@@ -45584,5 +45604,5 @@
       "walls": {"color": "#000", "opacity": 0.35}
     }
   },
-  "hash": {"obstacles": 396145210}
+  "hash": {"obstacles": 894757844}
 }
