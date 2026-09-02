@@ -700,6 +700,28 @@ export function WorldMenu() {
             )}
           </button>
 
+          {/* the world shown by room, everything the player cannot see into faded away — see
+              `service/fade-rooms`. Cycles `prod` to `dev` to `qa`, the same three the keys `1`,
+              `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
+              either fading mode switches that on too */}
+          <div
+            data-keep-menu-open
+            title={`fade: ${w.view.fadeRoomsMode}`}
+            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            onClick={() => {
+              w.view.setFadeRoomsMode();
+              state.update();
+            }}
+          >
+            {w.view.fadeRoomsMode === "prod" ? (
+              <RocketLaunchIcon className="size-5 text-slate-200" alt="prod" weight="bold" />
+            ) : w.view.fadeRoomsMode === "dev" ? (
+              <CodeIcon className="size-5 text-slate-200" alt="dev" weight="bold" />
+            ) : (
+              <TestTubeIcon className="size-5 text-slate-200" alt="qa" weight="bold" />
+            )}
+          </div>
+
           {/* look at the player, or long press to switch camera mode — which its own corner wears,
               and which `f` also toggles. See `WorldView`'s `onKeyDown` */}
           <div
@@ -721,28 +743,6 @@ export function WorldMenu() {
                 <ArrowsOutCardinalIcon className="size-2.5 text-slate-400" weight="bold" />
               )}
             </div>
-          </div>
-
-          {/* the world shown by room, everything the player cannot see into faded away — see
-              `service/fade-rooms`. Cycles `prod` to `dev` to `qa`, the same three the keys `1`,
-              `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
-              either fading mode switches that on too */}
-          <div
-            data-keep-menu-open
-            title={`fade: ${w.view.fadeRoomsMode}`}
-            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
-            onClick={() => {
-              w.view.setFadeRoomsMode();
-              state.update();
-            }}
-          >
-            {w.view.fadeRoomsMode === "prod" ? (
-              <RocketLaunchIcon className="size-5 text-slate-200" alt="prod" weight="bold" />
-            ) : w.view.fadeRoomsMode === "dev" ? (
-              <CodeIcon className="size-5 text-slate-200" alt="dev" weight="bold" />
-            ) : (
-              <TestTubeIcon className="size-5 text-slate-200" alt="qa" weight="bold" />
-            )}
           </div>
         </div>
 
