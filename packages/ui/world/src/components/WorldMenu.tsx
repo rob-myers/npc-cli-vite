@@ -243,8 +243,6 @@ export function WorldMenu() {
         return w.debug?.physicsCollidersShown ?? false;
       case "Grid":
         return w.debug?.gridShown ?? false;
-      case "Light Tints":
-        return w.debug?.lightSpheresShown ?? true;
       case "NavMesh":
         return w.debug?.navMeshShown ?? false;
       case "Toggle Doors":
@@ -296,10 +294,6 @@ export function WorldMenu() {
       case "Grid":
         w.debug?.set({ gridShown: !w.debug.gridShown });
         void w.floor?.draw().then(() => w.update());
-        break;
-      case "Light Tints":
-        w.debug?.set({ lightSpheresShown: !w.debug.lightSpheresShown });
-        w.update();
         break;
       case "NavMesh":
         w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
@@ -1191,7 +1185,6 @@ const debugItems = [
   "Skins",
   "Colliders",
   "Grid",
-  "Light Tints",
   "Toggle Doors",
   "Pick Doors",
   "Door Normals",
