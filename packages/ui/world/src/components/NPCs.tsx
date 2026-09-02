@@ -28,6 +28,7 @@ import {
   float,
   mix,
   modelWorldMatrix,
+  mrt,
   normalWorld,
   output,
   positionLocal,
@@ -97,6 +98,17 @@ export default function NPCs() {
       configureCrowd() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = 64;
+      },
+      syncOutlineMask() {
+        // a material mrt *replaces* the colour output unless the scene pass declares one too, so
+        // this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`, the
+        // only caller. UNCONDITIONALLY, since it is also how a material compiled against the last
+        // pipeline's pass is recompiled against this one's, and the node it holds is the same
+        // object either way
+        for (const npc of Object.values(state.npc)) {
+          npc.material.mrtNode = w.view.npcMaskMrt === null ? null : npc.maskMrt;
+          npc.material.needsUpdate = true;
+        }
       },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
@@ -182,6 +194,17 @@ export default function NPCs() {
         const isPickMode = w.view.objectPick.notEqual(0);
         const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdUniform);
 
+        // The silhouette the border is grown from — see `service/npc-outline`. The BODY only: the
+        // label is a billboard, and a border around it would read as a box floating overhead.
+        // PREMULTIPLIED, against an alpha of `1` — which under the blend is a replace, and the npc
+        // must replace rather than accumulate: an arm passing over the torso writes the mask twice,
+        // and blending would sum it. `bodyTint` takes the border with it as they black out, and it
+        // reaches `0` before the wipe does, so nothing outlines a figure that is no longer there
+        const maskAmount = colorScale.mul(fold).mul(bodyTint);
+        const maskMrt = mrt({
+          npcMask: (select as SelectAnyType)(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 0, 0, 0)),
+        });
+
         const material = new THREE.MeshStandardNodeMaterial({
           transparent: true,
           depthWrite: true,
@@ -233,12 +256,15 @@ export default function NPCs() {
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
           beauty,
         );
+        // attached only whilst the scene pass declares the extra output — see `syncOutlineMask`
+        material.mrtNode = w.view.npcMaskMrt === null ? null : maskMrt;
 
         return {
           brightness,
           colorScale,
           labelVisible,
           labelYShiftUniform: labelYShift,
+          maskMrt,
           npcLit,
           pickIdUniform,
           roomSlot,
@@ -847,6 +873,8 @@ export type State = {
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
   configureCrowd(): void;
+  /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
+  syncOutlineMask(): void;
   createMaterials(
     pickId: number,
     skinIndex: number,
@@ -856,6 +884,7 @@ export type State = {
     | "colorScale"
     | "labelVisible"
     | "labelYShiftUniform"
+    | "maskMrt"
     | "npcLit"
     | "pickIdUniform"
     | "roomSlot"

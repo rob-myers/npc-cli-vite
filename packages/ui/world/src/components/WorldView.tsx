@@ -35,6 +35,13 @@ import {
   parseFadeRoomsMode,
 } from "../service/fade-rooms";
 import { computeIntersectionNormal, getTempInstanceMesh } from "../service/geometry";
+import {
+  applyNpcOutline,
+  createNpcMaskMrt,
+  type NpcMaskMrt,
+  npcOutlineUid,
+  syncNpcOutlineWidth,
+} from "../service/npc-outline";
 import { decodePick } from "../service/pick";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
@@ -98,8 +105,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       roomSlots: createRoomSlots(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
       objectPickScale: 0.5, // don't pick walls by default
-      pickRT: createPickRT(),
+      pickRT: createPickRT(1),
+      npcMaskMrt: null,
       postProcessing: saved.postProcessing,
+      npcOutline: saved.npcOutline,
       demoPostFx: saved.demoPostFx,
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
@@ -389,9 +398,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
+        // the npc material declares an extra output whilst bordering, so this pass needs the same
+        // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
+        renderer.setMRT(state.npcMaskMrt);
         renderer.setRenderTarget(rt);
         renderer.render(scene, rtCamera);
         state.objectPick.value = 0;
+        renderer.setMRT(null);
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
@@ -435,6 +448,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
           ...point, // can provide as point with meta
         });
+      },
+      syncPickRT() {
+        // `RenderTarget` attachments must match what the materials output — see `pickObject`
+        const count = state.npcMaskMrt === null ? 1 : 2;
+        if (state.pickRT.textures.length !== count) {
+          state.pickRT.dispose();
+          state.pickRT = createPickRT(count);
+        }
       },
       setupDom() {
         if (veiled() === false) {
@@ -649,6 +670,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.fadeRoomsFx.mode = mode;
         state.fadeRoomsFx.sync(w);
       },
+      setNpcOutlineEnabled(next = !state.npcOutline) {
+        state.npcOutline = next;
+        store.patch({ npcOutline: next });
+        // it is drawn by the post pass, so asking for it asks for that pass as well
+        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+      },
       setPostProcessingEnabled(next = !state.postProcessing) {
         state.postProcessing = next;
         store.patch({ postProcessing: next });
@@ -673,11 +700,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { gl, scene, camera } = w.r3f;
         const scenePass = pass(scene, camera);
 
+        // the silhouette the npc borders grow from, declared only whilst they are wanted — off, no
+        // npc shader writes it. Shared with the pick pass, so both compile the same variant
+        state.npcMaskMrt = state.npcOutline === true ? createNpcMaskMrt() : null;
+        state.npcMaskMrt !== null && scenePass.setMRT(state.npcMaskMrt);
+        state.syncPickRT();
+        w.npc?.syncOutlineMask();
+
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
         const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.prodNode);
+        // then the npc borders over the finished frame — see `service/npc-outline`
+        const bordered =
+          state.npcMaskMrt === null
+            ? composed
+            : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
         // then whatever is being tried out on top of it, which is usually nothing at all
-        pipeline.outputNode = state.demoFx.apply(composed, state.demoPostFx);
+        pipeline.outputNode = state.demoFx.apply(bordered, state.demoPostFx);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -695,6 +734,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return () => {
           gl.render = originalRender;
           pipeline.dispose();
+          state.npcMaskMrt = null;
+          state.syncPickRT();
+          w.npc?.syncOutlineMask();
           state.forceUpdate();
         };
       },
@@ -878,6 +920,10 @@ export type State = {
     rightPress: boolean;
   };
   pickRT: THREE.RenderTarget;
+  /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */
+  npcMaskMrt: null | NpcMaskMrt;
+  /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
+  syncPickRT(): void;
   raycaster: THREE.Raycaster;
   objectPick: THREE.UniformNode<"float", number>;
   /** What the player can see, swept on the GPU — every material tints itself by it */
@@ -898,6 +944,8 @@ export type State = {
   /** `0` (force off), `0.5` (when on ignore walls), `1` (when on pick walls too) */
   objectPickScale: 0 | 0.5 | 1;
   postProcessing: boolean;
+  /** Whether the post pass borders the npcs — see `service/npc-outline` */
+  npcOutline: boolean;
   /** Which effect is hung off the end of the post pass, `"none"` for the pass on its own */
   demoPostFx: DemoPostFxKey;
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
@@ -978,6 +1026,8 @@ export type State = {
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
   withPickOutputId(typeId: number, idUniform: THREE.Node<"float">): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
+  /** Borders the npcs, turning the post pass itself on if it is off */
+  setNpcOutlineEnabled(next?: boolean): void;
   /** Which stock effect runs after the post pass — takes hold whenever that pass is on */
   setDemoPostFx(next: DemoPostFxKey): void;
   /** How much of the world is shown by room, cycling round when asked for no mode in particular */
@@ -1052,8 +1102,18 @@ function setVeiled(next: boolean): void {
 let veiledFallback = true;
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
-function createPickRT() {
-  return new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat });
+/**
+ * `MRTNode` maps its entries onto attachments by texture *name* (see `getTextureIndex`), which
+ * `PassNode` sets for us but a hand-made target does not — leave them unnamed and the pick colour
+ * never reaches attachment 0.
+ */
+function createPickRT(count: 1 | 2) {
+  const renderTarget = new THREE.RenderTarget(1, 1, { format: THREE.RGBAFormat, count });
+  renderTarget.textures[0].name = "output";
+  if (renderTarget.textures[1] !== undefined) {
+    renderTarget.textures[1].name = "npcMask";
+  }
+  return renderTarget;
 }
 
 function defaultInitialCamera(): State["initial"] {
@@ -1099,13 +1159,17 @@ const emptyDoors: Record<string, Geomorph.DoorState> = {};
 
 function PostProcessing() {
   const w = useContext(WorldContext);
-  // the pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
+  // The pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
   // `reset` gives us one on hmr, and the uids are how we notice. `fadeRoomsFx` too, whose mode node
-  // the pass reads
+  // the pass reads. `npcOutlineUid` is a MODULE constant rather than one of ours: an hmr of that
+  // file re-runs this one, and `setupPostProcessing` — a function, so `useStateRef` swaps it in
+  // whilst rendering — is already the new one by the time this effect looks
   useEffect(
     () => w.view.setupPostProcessing(),
-    [w.view.postFx.uid, w.view.fadeRoomsFx.uid, w.view.demoFx.uid, w.view.demoPostFx],
+    [w.view.postFx.uid, w.view.fadeRoomsFx.uid, w.view.demoFx.uid, w.view.demoPostFx, w.view.npcOutline, npcOutlineUid],
   );
+  // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`
+  useFrame(() => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1), -2);
   return null;
 }
 
