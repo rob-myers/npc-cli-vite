@@ -6,18 +6,18 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   ArrowsOutCardinalIcon,
-  BugIcon,
   CaretDownIcon,
   CaretRightIcon,
+  CodeIcon,
   CrosshairSimpleIcon,
-  FlashlightIcon,
   GlobeStandIcon,
   type Icon,
-  MapTrifoldIcon,
   PauseIcon,
   PersonSimpleCircleIcon,
   PlayIcon,
+  RocketLaunchIcon,
   SunIcon,
+  TestTubeIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -724,7 +724,7 @@ export function WorldMenu() {
           </div>
 
           {/* the world shown by room, everything the player cannot see into faded away — see
-              `service/fade-rooms`. Cycles `focus` to `map` to `gm`, the same three the keys `1`,
+              `service/fade-rooms`. Cycles `prod` to `dev` to `qa`, the same three the keys `1`,
               `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
               either fading mode switches that on too */}
           <div
@@ -736,12 +736,12 @@ export function WorldMenu() {
               state.update();
             }}
           >
-            {w.view.fadeRoomsMode === "focus" ? (
-              <FlashlightIcon className="size-5 text-slate-200" alt="focus: only what the player sees" weight="bold" />
-            ) : w.view.fadeRoomsMode === "map" ? (
-              <MapTrifoldIcon className="size-5 text-slate-200" alt="map: the rest black" weight="bold" />
+            {w.view.fadeRoomsMode === "prod" ? (
+              <RocketLaunchIcon className="size-5 text-slate-200" alt="prod" weight="bold" />
+            ) : w.view.fadeRoomsMode === "dev" ? (
+              <CodeIcon className="size-5 text-slate-200" alt="dev" weight="bold" />
             ) : (
-              <BugIcon className="size-5 text-slate-400" alt="gm: all of it" weight="bold" />
+              <TestTubeIcon className="size-5 text-slate-200" alt="qa" weight="bold" />
             )}
           </div>
         </div>

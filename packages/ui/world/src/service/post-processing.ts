@@ -14,17 +14,17 @@ export type PostProcessing = {
    * drawn, `darkBg` behind everything that was. Uniforms, so a change of theme is a pair of values
    * written rather than the pipeline rebuilt.
    *
-   * What a room out of view comes to, as well — the page in `"map"` mode and the dark in
-   * `"focus"`, so a hidden room is either a floorplan or simply not there. See `Floor`
+   * What a room out of view comes to, as well — the page in `"dev"` mode and the dark in
+   * `"prod"`, so a hidden room is either a floorplan or simply not there. See `Floor`
    */
   lightBg: THREE.UniformNode<"color", THREE.Color>;
   darkBg: THREE.UniformNode<"color", THREE.Color>;
   /**
    * What reaches the canvas.
    * @param sceneColor the pass's `output`
-   * @param focus `1` in `"focus"` mode and `0` in the others — see `service/fade-rooms`
+   * @param prod `1` in `"prod"` mode and `0` in the others — see `service/fade-rooms`
    */
-  apply(sceneColor: THREE.TextureNode, focus: THREE.Node<"float">): THREE.Node<"vec4">;
+  apply(sceneColor: THREE.TextureNode, prod: THREE.Node<"float">): THREE.Node<"vec4">;
 };
 
 /**
@@ -50,14 +50,14 @@ export function createPostProcessing(): PostProcessing {
     lightBg,
     darkBg,
 
-    apply(sceneColor, focus) {
+    apply(sceneColor, prod) {
       return Fn(() => {
         // What lies BEHIND the world at this pixel: the dark wherever anything at all was drawn,
         // even a door at part coverage, so every silhouette gets its own dark edge. BEYOND the
-        // world it is the page in `"map"` mode, which the ship then reads as a floorplan on — and
-        // the dark in `"focus"`, where what the player cannot see is not there and the space
+        // world it is the page in `"dev"` mode, which the ship then reads as a floorplan on — and
+        // the dark in `"prod"`, where what the player cannot see is not there and the space
         // around the world is no different from it
-        const beyond = mix(lightBg, darkBg, focus);
+        const beyond = mix(lightBg, darkBg, prod);
         const backdrop = (select as SelectAnyType)(sceneColor.a.greaterThan(0), darkBg, beyond) as THREE.Node<
           "color" | "vec3"
         >;

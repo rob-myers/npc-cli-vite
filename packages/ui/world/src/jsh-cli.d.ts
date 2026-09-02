@@ -25,7 +25,7 @@ declare namespace JshCli {
     | { key: "nav-updated" }
     | {
         /**
-         * `focus` has wiped an npc away entirely, or given them back — see `syncNpcVisibility`.
+         * `prod` has wiped an npc away entirely, or given them back — see `syncNpcVisibility`.
          * Nothing of a hidden npc is drawn, so anything that assumed they were there must let go
          */
         key: "npc-hidden" | "npc-shown";

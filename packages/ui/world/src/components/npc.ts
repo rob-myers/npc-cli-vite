@@ -44,7 +44,7 @@ export class Npc {
   graph: ReturnType<typeof buildGraph>;
   group: THREE.Group | null = null;
   /**
-   * Whether `focus` has wiped them away, so their group is not drawn at all — set by the
+   * Whether `prod` has wiped them away, so their group is not drawn at all — set by the
    * `npc-hidden` / `npc-shown` events rather than written to directly
    */
   hidden = false;

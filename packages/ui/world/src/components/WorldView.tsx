@@ -638,13 +638,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ fadeRoomsMode: next });
         state.setFadeRoomsActive(next);
         // the rooms fade INTO the post pass's backdrop, so asking for them asks for the pass too
-        next !== "gm" && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+        next !== "qa" && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
         w.menu?.update();
       },
       setFadeRoomsActive(mode) {
         // Not `setFadeRoomsMode`, which would persist the answer — this is also how the intro holds
         // the fade off whilst the world arrives, which is a beat rather than a setting.
-        // Either way it SYNCS: going back to `gm` sends every room towards fully shown, which is a
+        // Either way it SYNCS: going back to `qa` sends every room towards fully shown, which is a
         // fade of its own rather than a snap
         state.fadeRoomsFx.mode = mode;
         state.fadeRoomsFx.sync(w);
@@ -675,7 +675,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
-        const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.focusNode);
+        const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.prodNode);
         // then whatever is being tried out on top of it, which is usually nothing at all
         pipeline.outputNode = state.demoFx.apply(composed, state.demoPostFx);
 
