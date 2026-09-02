@@ -42,8 +42,8 @@ export type PostProcessing = {
  * circle knows nothing about the walls and cut across the rooms it was hiding.
  */
 export function createPostProcessing(): PostProcessing {
-  const lightBg = uniform(new THREE.Color(defaultLightBg));
-  const darkBg = uniform(new THREE.Color(defaultDarkBg));
+  const lightBg = uniform(new THREE.Color("#444"));
+  const darkBg = uniform(new THREE.Color("#000"));
 
   return {
     uid: crypto.randomUUID(),
@@ -83,7 +83,3 @@ export function createPostProcessing(): PostProcessing {
 
 /** The coverage a fragment must carry to count as fully drawn — see `drawn` */
 const coverageFull = 0.85;
-
-/** Until a theme says otherwise — see `theme.post` */
-const defaultLightBg = "#ffffff";
-const defaultDarkBg = "#000000";

@@ -13,7 +13,7 @@ import {
   type Vec3,
 } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
-import type { uniform } from "three/tsl";
+import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { defaultIdleAnimationClipKey, defaultSkinKey } from "../const";
 import { helper } from "../service/helper";
@@ -49,6 +49,8 @@ export class Npc {
    */
   hidden = false;
   material: THREE.MeshStandardNodeMaterial;
+  /** npc outlines only i.e. `npcMask` output */
+  maskMrt: ReturnType<typeof mrt>;
   /** synced with crowd agent */
   position: THREE.Vector3;
   rotation: THREE.Euler;
@@ -152,6 +154,7 @@ export class Npc {
     this.npcLit = init.npcLit;
     this.roomSlot = init.roomSlot;
     this.material = init.material;
+    this.maskMrt = init.maskMrt;
     this.pickIdUniform = init.pickIdUniform;
     this.position = init.position;
     this.rotation = init.rotation;
@@ -522,6 +525,7 @@ export type NpcInit = {
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
+  maskMrt: ReturnType<typeof mrt>;
   /** Object-picking id, which also indexes the label texture array */
   pickIdUniform: THREE.UniformNode<"float", number>;
   position: THREE.Vector3;
