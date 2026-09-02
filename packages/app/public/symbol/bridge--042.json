@@ -919,7 +919,7 @@
     {
       "id": "3fd0f7d0-1817-4259-9e91-2c963e9dd91f",
       "name": "obstacle table y=0.6 inset=1",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 1},
       "type": "path",
