@@ -414,8 +414,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           }
-          case "spawned-many":
+          case "spawned-many": {
+            // `spawnMany` goes via `rawSpawn`, which does not fire `spawned` — so this is where its
+            // npcs are put into the rooms they stand in, as that would have done
+            for (const npcKey of e.npcKeys) {
+              if (w.n[npcKey] !== undefined) state.tryPutNpcIntoRoom(w.n[npcKey]);
+            }
+            state.syncFadeRooms();
             break;
+          }
           case "update-faded-rooms":
             if (w.debug?.fadeRoomOutlines === true) w.floor.drawAll();
             break;
@@ -765,10 +772,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           npc.rejectAll(new Error("removed npc"));
         }
 
-        if (Object.keys(w.n).length === 0) {
-          w.npc.nextPickId = 0;
-        }
-
         w.shadows?.onTick();
         w.rings?.onTick();
         w.speech?.removeNpcToasts(...npcKeys);
@@ -841,7 +844,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           ),
         );
 
-        w.events.next({ key: "spawned-many" });
+        w.events.next({ key: "spawned-many", npcKeys });
       },
       toggleDoor(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];

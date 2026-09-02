@@ -100,7 +100,8 @@ export default function NPCs() {
       },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
-        const pickIdNode = uniform(pickId);
+        // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
+        const pickIdUniform = uniform(pickId);
         const colorScale = uniform(1);
         const labelVisible = uniform(1, "float");
         const brightness = uniform(1);
@@ -173,13 +174,13 @@ export default function NPCs() {
           skinTex.a.mul(fold),
         );
 
-        const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(uniform(pickId));
+        const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(pickIdUniform);
         // a label is unlit, so fading the body would leave it hanging there — it goes first
         const labelColor = vec4(labelTex.rgb, labelTex.a.mul(labelVisible).mul(fold));
 
         // Output node: encode NPC pick ID for body; suppress label during picking
         const isPickMode = w.view.objectPick.notEqual(0);
-        const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdNode);
+        const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdUniform);
 
         const material = new THREE.MeshStandardNodeMaterial({
           transparent: true,
@@ -239,13 +240,15 @@ export default function NPCs() {
           labelVisible,
           labelYShiftUniform: labelYShift,
           npcLit,
+          pickIdUniform,
           roomSlot,
           skinIndexUniform,
           material,
         };
       },
       createNpc(
-        opts: Pick<NpcInit, "key" | "graph" | "geometry" | "pickId" | "position" | "rotation" | "skinnedMesh"> & {
+        opts: Pick<NpcInit, "key" | "graph" | "geometry" | "position" | "rotation" | "skinnedMesh"> & {
+          pickId: number;
           skinIndex: number;
         },
       ) {
@@ -253,8 +256,6 @@ export default function NPCs() {
           key: opts.key,
           graph: opts.graph,
           geometry: opts.geometry,
-          labelLayerIndex: opts.pickId,
-          pickId: opts.pickId,
           position: opts.position,
           rotation: opts.rotation,
           skinnedMesh: opts.skinnedMesh,
@@ -267,6 +268,24 @@ export default function NPCs() {
         state.npc[opts.key] = npc;
         state.byPickId[npc.pickId] = npc;
         return npc;
+      },
+      compactPickIds() {
+        state.byPickId = {};
+        state.nextPickId = 0;
+        for (const npc of Object.values(state.npc)) {
+          const pickId = state.nextPickId++;
+          state.byPickId[pickId] = npc;
+          if (npc.pickId === pickId) continue;
+          npc.pickIdUniform.value = pickId; // `pickId` and `labelLayerIndex` both read off it
+          npc.drawLabel(); // into its new layer
+        }
+      },
+      resetMaterials(npc) {
+        const mat = state.createMaterials(npc.pickId, npc.skinIndex);
+        mat.npcLit.value = npc.lit === true ? 1 : 0;
+        mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
+        Object.assign(npc, mat);
+        npc.epochMs = Date.now(); // invalidate React.Memo
       },
       determineSpawnedAngle(opts) {
         let angle = opts.angle;
@@ -295,14 +314,7 @@ export default function NPCs() {
           Object.setPrototypeOf(npc, Npc.prototype);
           Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
 
-          npc.epochMs = Date.now(); // invalidate React.Memo
-
-          // can overwrite materials while debugging
-          const mat = state.createMaterials(npc.pickId, npc.skinIndex);
-          mat.npcLit.value = npc.lit === true ? 1 : 0;
-          mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
-          Object.assign(npc, mat);
-
+          state.resetMaterials(npc); // can overwrite materials while debugging
           npc.init();
           npc.drawLabel();
         }
@@ -584,6 +596,10 @@ export default function NPCs() {
         });
 
         if (!npc) {
+          if (state.nextPickId > compactPickIdsAt && Object.keys(state.npc).length < compactPickIdsAt) {
+            state.compactPickIds();
+          }
+
           const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
           const graph = buildGraph(clone);
           const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
@@ -841,10 +857,18 @@ export type State = {
     | "labelVisible"
     | "labelYShiftUniform"
     | "npcLit"
+    | "pickIdUniform"
     | "roomSlot"
     | "skinIndexUniform"
     | "material"
   >;
+  /**
+   * Renumbers every npc's `pickId` from `0`, closing the gaps removals leave — so `nextPickId`,
+   * and the label texture array it indexes, stay small
+   */
+  compactPickIds(): void;
+  /** Fresh materials for `npc`, carrying over the uniforms that hold live state. Bumps `epochMs` */
+  resetMaterials(npc: Npc): void;
   determineSpawnedAngle(opts: {
     /** Spawn destination */
     groundPoint: JshCli.GroundPoint;
@@ -965,6 +989,9 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
 
 /** How many crowd updates the warm-up runs, enough to reach the sliced search */
 const warmCrowdTicks = 4;
+
+/** Past this many pick ids handed out, a spawn renumbers them — see `compactPickIds` */
+const compactPickIdsAt = 200;
 
 const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
 const closePolygonDistance = 0.005;
