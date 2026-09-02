@@ -228,9 +228,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "door":
             mesh = getTempInstanceMesh(w.door.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          case "obstacle":
-            mesh = getTempInstanceMesh(w.obs.inst as THREE.InstancedMesh, picked.instanceId);
+          case "obstacle": {
+            const top = getTempInstanceMesh(w.obs.inst, picked.instanceId);
+            if (state.raycaster.intersectObject(top).length > 0) {
+              mesh = top;
+              break;
+            }
+            // a skirt carries its OBSTACLE's pick id, so the ray may have gone through one of those
+            // rather than the top — see `Obstacles`' `obstacleIds`
+            const hit = state.raycaster
+              .intersectObject(w.obs.skirtInst)
+              .find((x) => w.obs.skirtObstacleIds[x.instanceId as number] === picked.instanceId);
+            if (hit === undefined) return null;
+            mesh = getTempInstanceMesh(w.obs.skirtInst, hit.instanceId as number);
             break;
+          }
           case "ceiling":
             mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
             break;
@@ -966,7 +978,7 @@ export type State = {
    */
   withPickOutput(typeId: number, forceAlpha?: number): THREE.Node;
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
-  withPickOutputId(typeId: number, idUniform: THREE.UniformNode<"float", number>): THREE.Node;
+  withPickOutputId(typeId: number, idUniform: THREE.Node<"float">): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
   /** Which stock effect runs after the post pass — takes hold whenever that pass is on */
   setDemoPostFx(next: DemoPostFxKey): void;

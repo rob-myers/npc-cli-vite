@@ -210,7 +210,7 @@
   - remove crosshair
 
 - ✅ window obstacles have meta.{window,windowId,gwKey}
-- obstacles skirts can be picked as their associated top
+- ✅ obstacles skirts can be picked as their associated top
 
 - can pick inside faded-rooms normally in map-mode
 

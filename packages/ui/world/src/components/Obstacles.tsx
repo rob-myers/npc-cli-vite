@@ -15,7 +15,6 @@ import {
   instanceIndex,
   int,
   normalWorld,
-  output,
   positionWorld,
   select,
   texture,
@@ -49,6 +48,7 @@ export default function Obstacles(_props: Props) {
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
+      skirtObstacleIds: new Float32Array(MAX_OBSTACLE_SKIRT_INSTANCES),
       images: [] as HTMLImageElement[],
       instanceCount: 0,
       toInstanceId: [],
@@ -172,6 +172,8 @@ export default function Obstacles(_props: Props) {
 
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
+        state.skirtQuad.getAttribute("obstacleIds").needsUpdate = true;
+
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
         if (state.skirtInst?.instanceColor) state.skirtInst.instanceColor.needsUpdate = true;
       },
@@ -245,6 +247,7 @@ export default function Obstacles(_props: Props) {
               const skirtDimY = typeof meta.h === 'number' ? meta.h : skirtDepth;
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
               slots.setXY(sId, slot, slot);
+              state.skirtObstacleIds[sId] = instanceId ?? 0; // a pick on a skirt picks its obstacle
               state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
               state.skirtInst.setMatrixAt(sId++,
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
@@ -302,6 +305,8 @@ export default function Obstacles(_props: Props) {
   useMemo(() => {
     ensureRoomSlots(state.quad, MAX_OBSTACLE_QUAD_INSTANCES);
     ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
+    // which obstacle each skirt edge belongs to, so a pick on one lands on that obstacle
+    state.skirtQuad.setAttribute("obstacleIds", new THREE.InstancedBufferAttribute(state.skirtObstacleIds, 1));
   }, []);
 
   const skirtMaterial = useMemo(() => {
@@ -318,8 +323,14 @@ export default function Obstacles(_props: Props) {
       skirtFade,
       w.view.objectPick,
     );
+    // a skirt carries its OBSTACLE's pick id, so picking one is picking the thing it belongs to —
     // and to black in `focus` mode past the lighting, as the tops are — see their `outputNode`
-    mat.outputNode = vec4(output.rgb.mul(skirtFade.max(w.view.fadeRoomsFx.focusNode.oneMinus())), output.a);
+    const lit = w.view.withPickOutputId(
+      OBJECT_PICK_KEY_TO_RED.obstacle,
+      attribute<"float">("obstacleIds", "float"),
+    ) as THREE.Node<"vec4">;
+    const shown = skirtFade.max(w.view.fadeRoomsFx.focusNode.oneMinus());
+    mat.outputNode = (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
     return mat;
   }, [w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
@@ -397,6 +408,8 @@ export type State = {
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
   uvTextureIds: Uint32Array;
+  /** Which obstacle instance each skirt edge belongs to — see `transformAndColorSkirts` */
+  skirtObstacleIds: Float32Array;
   images: HTMLImageElement[];
   /** How many obstacle instances this map draws, `MAX_OBSTACLE_QUAD_INSTANCES` at most */
   instanceCount: number;
