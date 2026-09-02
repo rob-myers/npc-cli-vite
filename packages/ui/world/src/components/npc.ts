@@ -32,8 +32,8 @@ export class Npc {
   agentId: string | null = null;
   /** physics body */
   bodyUid: number;
-  /** object-picking id*/
-  pickId: number;
+  /** Object-picking id, which also indexes the label texture array. The UNIFORM is the state */
+  pickIdUniform: THREE.UniformNode<"float", number>;
   /** navigation strategy */
   queryFilter!: QueryFilter;
   /** As `queryFilter`, but without the exemption for the node they stand on */
@@ -56,8 +56,6 @@ export class Npc {
 
   brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
-  /** points into ArrayTexture */
-  labelLayerIndex: number;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
@@ -130,6 +128,16 @@ export class Npc {
     return this.npcLit.value === 1;
   }
 
+  /** ...likewise their pick id, which `compactPickIds` renumbers */
+  get pickId() {
+    return this.pickIdUniform.value;
+  }
+
+  /** Which layer of the label texture array is theirs — the same number */
+  get labelLayerIndex() {
+    return this.pickIdUniform.value;
+  }
+
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
     this.w = w;
 
@@ -139,13 +147,12 @@ export class Npc {
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
-    this.labelLayerIndex = init.labelLayerIndex;
     this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
     this.roomSlot = init.roomSlot;
     this.material = init.material;
-    this.pickId = init.pickId;
+    this.pickIdUniform = init.pickIdUniform;
     this.position = init.position;
     this.rotation = init.rotation;
     this.skinnedMesh = init.skinnedMesh;
@@ -510,13 +517,13 @@ export type NpcInit = {
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
-  labelLayerIndex: number;
   labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
-  pickId: number;
+  /** Object-picking id, which also indexes the label texture array */
+  pickIdUniform: THREE.UniformNode<"float", number>;
   position: THREE.Vector3;
   rotation: THREE.Euler;
   skinnedMesh: THREE.SkinnedMesh;
