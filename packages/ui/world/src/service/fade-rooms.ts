@@ -101,7 +101,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "gm"): FadeRooms {
 
     dropPickWhenHidden(node: never, fade: THREE.Node<"float">, objectPick: THREE.Node<"float">) {
       return Fn(() => {
-        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)));
+        // `focus` only: `map` blacks a hidden room out but leaves it there to be picked
+        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)).and(focusAmount.greaterThan(0.5)));
         return node;
       })();
     },
