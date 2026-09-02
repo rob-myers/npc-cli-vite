@@ -346,6 +346,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
         state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
+        if (state.otherPointerDown(e) === true) {
+          return; // a second finger is the camera being pinched or rotated, never a pick
+        }
+
         last.longPressTimer = window.setTimeout(() => {
           last.longPress = true;
           if (state.isPointDiffDrag(last.down, last.move) === true) {
@@ -369,6 +373,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.canvas.style.cursor = "";
         e.currentTarget.focus();
 
+        // another finger still down, or this one was never the gesture's first — the camera's, not
+        // a pick. A pinch usually lifts one finger before the other, and the first of those ups
+        // would otherwise pick wherever the second still rests
+        if (state.otherPointerDown(e) === true || e.isPrimary === false) {
+          return;
+        }
         if (last.longPress === true) {
           return; // already picked
         }
@@ -376,6 +386,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return; // drag is not a pick
         }
         state.pickObject(e);
+      },
+      otherPointerDown(e) {
+        return (state.controls?.pointers ?? []).some((p) => p.pointerId !== e.pointerId);
       },
       async pickObject(e) {
         if (w.settledMapKey !== w.mapKey) {
@@ -806,6 +819,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}
         onCreated={state.onCreated}
+        onPointerCancel={state.onPointerLeave}
         onPointerDown={state.onPointerDown}
         onPointerLeave={state.onPointerLeave}
         onPointerMove={state.onPointerMove}
@@ -955,6 +969,8 @@ export type State = {
   litNpcsEnabled: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
+  /** Whether a pointer OTHER than `e`'s is down, i.e. the gesture belongs to the camera */
+  otherPointerDown(e: React.PointerEvent<HTMLDivElement>): boolean;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
