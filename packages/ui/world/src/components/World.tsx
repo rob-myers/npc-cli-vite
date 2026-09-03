@@ -309,6 +309,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
     cancelClearWorldFlags(meta.worldKey); // an HMR bounce keeps the veil/fold flags
+    // `rootEl` lands via ref AFTER the first render, and a runtime-added world in PROD gets no
+    // other re-render (the shared queries answer from cache, synchronously) — without this,
+    // `state.rootEl && <WorldView/>` never mounts and the pane sits blank
+    state.update();
     return () => {
       queryClientApi.remove([meta.worldKey]);
       // deferred, so only a REAL pane removal clears — a re-added world must arrive flat,
