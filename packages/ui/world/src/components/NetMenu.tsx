@@ -138,11 +138,12 @@ export function NetMenu() {
     );
   }
 
-  // a world that is itself a client cannot be joined
+  // a world that is itself a client cannot be joined; nor can one that is not LIVE — e.g. in
+  // a never-viewed tab it exists in `uiStore` but is unmounted, and a join would go nowhere
   const joinable = [
     ...samePageWorldKeys.flatMap((worldKey) => {
       const other = queryClientApi.get([worldKey]) as undefined | WorldState;
-      if (other?.net?.mode === "client") return [];
+      if (other === undefined || other.net?.mode === "client") return [];
       return { key: worldKey, value: worldKey };
     }),
     // other tabs — same-page worlds also announce on the ws, so drop them here

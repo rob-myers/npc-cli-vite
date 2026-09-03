@@ -365,7 +365,13 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         const uid = typeof target === "string" ? uidOf(target) : target.uid;
         const worldKey = typeof target === "string" ? target : target.worldKey;
         if (uid === state.pageUid()) throw Error("cannot join self");
-        if (state.mode === "server") throw Error("already serving clients");
+        if (state.mode === "server") {
+          // an explicit join outranks serving — the clients are told and restore themselves.
+          // Also unwedges a PHANTOM client (a refreshed/closed tab lingers here until the
+          // peer connection times out), which otherwise blocks joining in one direction
+          state.sendToAll({ key: "server-closed" });
+          for (const clientUid of [...state.clients.keys()]) state.dropClient(clientUid);
+        }
         if (state.mode === "client") await state.leave();
         state.reconnect = null;
 
