@@ -57,8 +57,8 @@ export default function Doors() {
       // both rooms a door joins, so it is shown at the fuller of the two. Unused instances stand in
       // no room at all — they carry a zero matrix and draw nothing, and must keep doing so
       roomSlotsArray: new Float32Array(MAX_DOORS * 2).fill(alwaysShownSlot),
-      /** Per-instance `[slideSign, frontLayer, backLayer]` */
-      doorMetaArray: new Float32Array(MAX_DOORS * 3),
+      /** Per-instance `[slideSign, frontLayer, backLayer, isHull]` */
+      doorMetaArray: new Float32Array(MAX_DOORS * doorMetaSize),
       /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
       flipped: new Uint8Array(MAX_DOORS),
 
@@ -233,8 +233,8 @@ export default function Doors() {
         let nextLabelIdx = LAYER_PLAIN + 1;
         const count = state.instanceCount;
         for (let i = 0; i < count; i++) {
-          state.doorMetaArray[i * 3 + FRONT_LAYER] = LAYER_PLAIN;
-          state.doorMetaArray[i * 3 + BACK_LAYER] = LAYER_PLAIN;
+          state.doorMetaArray[i * doorMetaSize + FRONT_LAYER] = LAYER_PLAIN;
+          state.doorMetaArray[i * doorMetaSize + BACK_LAYER] = LAYER_PLAIN;
         }
 
         /** A face shows its label if it has one, else the plain panel */
@@ -246,7 +246,7 @@ export default function Doors() {
             state.labelToLayer.set(label, nextLabelIdx);
             drawDoorLabelLayer(w.texDoorLabel, nextLabelIdx++, label);
           }
-          state.doorMetaArray[instanceId * 3 + metaOffset] = state.labelToLayer.get(label) ?? LAYER_PLAIN;
+          state.doorMetaArray[instanceId * doorMetaSize + metaOffset] = state.labelToLayer.get(label) ?? LAYER_PLAIN;
         };
 
         for (const { instanceId, connector, hull } of Object.values(state.byKey)) {
@@ -331,7 +331,7 @@ export default function Doors() {
         zeroMat4.makeScale(0, 0, 0);
         for (let i = 0; i < count; i++) {
           inst.setMatrixAt(i, zeroMat4);
-          state.doorMetaArray[i * 3 + SLIDE_SIGN] = 1;
+          state.doorMetaArray[i * doorMetaSize + SLIDE_SIGN] = 1;
           state.flipped[i] = 0;
         }
 
@@ -369,20 +369,24 @@ export default function Doors() {
 
             const instanceId = state.encodeGmDoorId(gmId, localId);
 
-            // a missing side is `neverShownSlot`, NOT `alwaysShownSlot`: the pair is read as a
-            // max, so an always-shown side would win outright — which is what kept every HULL door
-            // showing, its other side lying in the neighbouring geomorph and so reading as `null`
+            // a HULL door's other side lies in the neighbouring geomorph, which draws its own copy
+            // of the same door — so both read the same pair and black out together
+            const adj = hull === true ? w.gmGraph.getAdjacentRoomCtxt(gmId, localId) : null;
+            const adjSlot = adj === null ? null : slotOf(adj.adjGmId, adj.adjRoomId);
+            // a side missing even then is `neverShownSlot`, NOT `alwaysShownSlot`: the pair is read
+            // as a max, so an always-shown side would win outright
             const [roomA, roomB] = (gm.doors[localId]?.roomIds ?? []).map((x) =>
-              typeof x === "number" ? slotOf(gmId, x) : neverShownSlot,
+              typeof x === "number" ? slotOf(gmId, x) : adjSlot,
             );
             state.roomSlotsArray[instanceId * 2] = roomA ?? neverShownSlot;
             state.roomSlotsArray[instanceId * 2 + 1] = roomB ?? neverShownSlot;
+            state.doorMetaArray[instanceId * doorMetaSize + IS_HULL] = hull === true ? 1 : 0;
 
             const sd = gm.doors[localId]?.meta?.slide;
             if (Array.isArray(sd)) {
               tmpV1.set(sd[0], sd[1]);
               tmpMat.transformSansTranslate(tmpV1);
-              state.doorMetaArray[instanceId * 3 + SLIDE_SIGN] = tmpV1.x * nx + tmpV1.y * nz >= 0 ? 1 : -1;
+              state.doorMetaArray[instanceId * doorMetaSize + SLIDE_SIGN] = tmpV1.x * nx + tmpV1.y * nz >= 0 ? 1 : -1;
             }
 
             // biome-ignore format: matrix layout
@@ -398,7 +402,7 @@ export default function Doors() {
             // box local -z maps to world 2D (nz, -nx); flip when door.normal points the other way
             const ds = state.byKey[helper.getGmDoorKey(gmId, localId)];
             state.flipped[instanceId] = ds.normal.x * nz - ds.normal.y * nx < 0 ? 1 : 0;
-            ds.gapAtHighLambda = determinant > 0 === state.doorMetaArray[instanceId * 3 + SLIDE_SIGN] > 0;
+            ds.gapAtHighLambda = determinant > 0 === state.doorMetaArray[instanceId * doorMetaSize + SLIDE_SIGN] > 0;
 
             // A door that WAS open is put back open
             if (ds.open === true) state.openRatioArray[instanceId] = doorOpenTarget;
@@ -558,17 +562,20 @@ export default function Doors() {
     const back = new THREE.MeshStandardNodeMaterial(panelOpts);
 
     const openRatio = attribute<"float">("openRatio", "float");
-    const doorMeta = attribute<"vec3">("doorMeta", "vec3");
+    const doorMeta = attribute<"vec4">("doorMeta", "vec4");
     const slideSign = doorMeta.x;
+    const isHull = doorMeta.w;
     const cs = float(1).sub(openRatio);
     const collapsedX = positionLocal.x.mul(cs).add(slideSign.mul(openRatio).mul(0.5));
 
     // a door belongs to the rooms on both sides, and is shown at the fuller of the two. Declared
     // ahead of the materials: the `Fn` below reads it, and tsl may run that body straight away
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    // `prod` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches
-    // 0 when both are hidden
-    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.prodNode);
+    // `prod` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches 0
+    // when both are hidden — and never for a HULL door, which merely blacks out. Nothing is drawn
+    // behind one, so its coverage reaching zero flips the pixel from the dark behind the world to
+    // the page beyond it in a single frame: the flash at either end of a mode change
+    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.prodNode.mul(isHull.oneMinus()));
 
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
@@ -655,7 +662,7 @@ export default function Doors() {
       visible={instanceCount > 0}
     >
       <instancedBufferAttribute attach="geometry-attributes-openRatio" args={[state.openRatioArray, 1]} />
-      <instancedBufferAttribute attach="geometry-attributes-doorMeta" args={[state.doorMetaArray, 3]} />
+      <instancedBufferAttribute attach="geometry-attributes-doorMeta" args={[state.doorMetaArray, doorMetaSize]} />
       <instancedBufferAttribute attach="geometry-attributes-roomSlots" args={[state.roomSlotsArray, 2]} />
     </instancedMesh>
   );
@@ -684,7 +691,7 @@ export type State = {
   openRatioArray: Float32Array;
   /** Per instance, the slots of the two rooms it joins — see `service/room-slots` */
   roomSlotsArray: Float32Array;
-  /** Per-instance `[slideSign, frontLayer, backLayer]` */
+  /** Per-instance `[slideSign, frontLayer, backLayer, isHull]` */
   doorMetaArray: Float32Array;
   /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
   flipped: Uint8Array;
@@ -749,11 +756,15 @@ const doorOpenTarget = 0.98;
 const doorOpenTest = 0.8;
 const panelDepth = 0.08;
 const hullPanelDepth = 0.2;
-/** Offsets within each instance's `doorMetaArray` triple */
+/** How many floats each instance has in `doorMetaArray` */
+const doorMetaSize = 4;
+/** Offsets within each instance's `doorMetaArray` entry */
 const SLIDE_SIGN = 0;
 /** These are the +z and -z faces, already oriented — see `state.flipped` */
 const FRONT_LAYER = 1;
 const BACK_LAYER = 2;
+/** `1` for a hull door, which never alpha-fades — see `alphaFade` */
+const IS_HULL = 3;
 /** Layers of `w.texDoorLabel` which every door shares */
 const LAYER_PLAIN = 0;
 const tmpMat = new Mat();

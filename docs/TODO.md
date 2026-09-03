@@ -218,7 +218,9 @@
 - ❌ robot-0 may need replacing
   - ✅ maybe head just needs shading
 
-- initial spawn fade bug
+- ✅ hull door flicker on switch modes 1 <-> 2
+
+- can improve look when ambient light too bright
 
 - basic script to only move selected npc
   - variant which only moves player
@@ -228,8 +230,8 @@
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
 - flatten WorldMenu
-
-
+- initial spawn fade bug
+- improve load perf
 
 - on hmr recreate tty session `move` stops working?
 - lock too small to pick?
