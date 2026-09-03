@@ -427,6 +427,7 @@ export function WorldMenu() {
                 onValueChange={async (key) => {
                   if (!key || key === w.mapKey) return;
                   state.set({ menuOpen: false }); // nothing over the transition
+                  await w.net?.leave(); // a manual map switch ends any mirror session first
                   await w.floor?.fadeOut(key);
                   w.e.onChangeMap(); // persist + remove whilst the old map still exists
                   uiStoreApi.setUiMeta(w.id, (draft) => (draft.mapKey = key));
@@ -647,10 +648,10 @@ export function WorldMenu() {
                       });
                       if (!res.ok) throw new Error(`HTTP ${res.status}`);
                       await queryClientApi.queryClient.invalidateQueries({
-                        queryKey: [...w.worldQueryPrefix, "sheets"],
+                        queryKey: ["sheets"],
                       });
                       await queryClientApi.queryClient.invalidateQueries({
-                        queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+                        queryKey: ["obstacle-images"],
                       });
                     } catch (err) {
                       console.error("Failed to update obstacles:", err);
@@ -1209,7 +1210,7 @@ const selectItemClassName = (touch: boolean) =>
     touch && "px-3 py-2.5 text-sm",
   );
 
-function MenuSelect<T extends string>({
+export function MenuSelect<T extends string>({
   className,
   items,
   label,

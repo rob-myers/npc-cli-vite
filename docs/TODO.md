@@ -220,7 +220,9 @@
 
 - ✅ hull door flicker on switch modes 1 <-> 2
 
-- can improve look when ambient light too bright
+- ✅ world instances should share more queries
+- ✅ cannot connect one world to another but works if I try other way around
+- ✅ initialisation animation issue on add world tab
 
 - basic script to only move selected npc
   - variant which only moves player
@@ -233,6 +235,8 @@
 - initial spawn fade bug
 - improve load perf
 
+- ask Fable for playwright test suite
+- demo_auto_nudge should avoid being nudged on become idle
 - on hmr recreate tty session `move` stops working?
 - lock too small to pick?
 - ❌ idle-left with left-leg forward

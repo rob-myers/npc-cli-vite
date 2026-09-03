@@ -67,6 +67,7 @@ export default function Decor() {
       instRuntime: null as any,
       runtime: {
         byKey: {},
+        defByKey: {},
         decorKeyToId: {},
         idToDecorKey: [] as string[],
 
@@ -279,6 +280,7 @@ export default function Decor() {
 
         state.byKey[d.key] = d;
         state.runtime.byKey[d.key] = d;
+        state.runtime.defByKey[d.key] = def;
 
         if (state.hasInstance(d)) {
           state.addRuntimeInstance(d);
@@ -287,6 +289,8 @@ export default function Decor() {
         if (d.meta.collider === true && (def.type === "circle" || def.type === "rect")) {
           state.addDecorColliders(def);
         }
+
+        w.events.next({ key: "decor-created", decorKeys: [d.key] });
 
         return d;
       },
@@ -397,15 +401,18 @@ export default function Decor() {
         const inst = state.instRuntime;
         if (!inst) return;
 
+        const removed = [] as string[];
         for (const decorKey of decorKeys) {
           const d = runtime.byKey[decorKey];
           if (!d) {
             decorKey in state.byKey && warn(`cannot remove static decor: ${decorKey}`);
             continue;
           }
+          removed.push(decorKey);
 
           removeFromDecorGrid(d, state.grid);
           delete runtime.byKey[decorKey];
+          delete runtime.defByKey[decorKey];
           delete state.byKey[decorKey];
           state.byRoom[d.meta.gmId]?.[d.meta.roomId]?.delete(d);
 
@@ -437,6 +444,10 @@ export default function Decor() {
           if (d.meta.collider === true && (d.type === "circle" || d.type === "rect")) {
             state.removeDecorColliders(d); // 🚧 prefer batch
           }
+        }
+
+        if (removed.length > 0) {
+          w.events.next({ key: "decor-removed", decorKeys: removed });
         }
 
         w.view.forceUpdate();
@@ -588,6 +599,8 @@ export default function Decor() {
     // 🔔 force recompute decor mutations on run world query
     queryKey: [
       "decor-setup",
+      // the queryFn draws into THIS world's `texDecor` — two worlds on one map must not share
+      w.key,
       w.mapKey,
       w.gmsHash,
       w.texDecor.hash,
@@ -1066,6 +1079,8 @@ export type State = {
   instRuntime: THREE.InstancedMesh;
   runtime: {
     byKey: Record<string, Geomorph.Decor>;
+    /** The original defs, for persistence and replication — see `w.e.persistDecor` */
+    defByKey: Record<string, Geomorph.DecorDef>;
     decorKeyToId: Record<string, number>;
     idToDecorKey: string[];
 

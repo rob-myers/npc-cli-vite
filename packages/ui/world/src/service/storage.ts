@@ -57,6 +57,12 @@ export type WorldSettings = {
   speechY: number;
   speechWidth: null | number;
   speechHeight: null | number;
+  /**
+   * The server world we were a client of — drives auto-reconnect on load. `remote` scopes the
+   * search: a same-page parent never resolves to another tab's world of the same key, nor
+   * vice versa (worldKeys are only unique within a page)
+   */
+  netParent: null | { worldKey: string; remote: boolean };
 };
 
 const defaultWorldSettings: WorldSettings = {
@@ -79,6 +85,7 @@ const defaultWorldSettings: WorldSettings = {
   speechY: 40,
   speechWidth: null,
   speechHeight: null,
+  netParent: null,
 };
 
 /** What we left behind on some map, restored on returning to it */
@@ -89,11 +96,14 @@ export type WorldMapState = {
    * — even one whose `meta.locked` says otherwise. `null` means never saved.
    */
   doorLocks: null | string[];
+  /** Runtime decor defs, replayed via `w.decor.create` on restore. `null` means never saved */
+  decor: null | Geomorph.DecorDef[];
 };
 
 const defaultWorldMapState: WorldMapState = {
   npcs: null,
   doorLocks: null,
+  decor: null,
 };
 
 /** The npcs of some map, as left by the previous session */
