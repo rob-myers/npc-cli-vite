@@ -44,33 +44,59 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
+/**
+ * Iterate over on-mesh idle npcs with a nearby non-idle neighbour,
+ * nudging them if other was not recently nudged, with cool-down.
+ */
 export async function demo_auto_nudge(ct: JshCli.RunArg) {
   const { api, w } = ct;
-  const nudgedEpoch = {} as { [npcKey: string]: number };
+  const npcToNudge = {} as { [npcKey: string]: { next: number; last: number } };
 
   const handled = api.handleStatus({
     cleanup: w.e.addFrameCallback(() => {
       if (w.disabled === true) {
         return;
       }
-      const epoch = Date.now();
+
+      const epochMs = Date.now();
+      const { byAgentId } = w.npc;
+      let other: JshCli.Npc | undefined;
+
       for (const npc of Object.values(w.n)) {
+        // only consider on-mesh idle
         if (npc.agent === null || npc.isMoving() === true) {
           continue;
         }
-        const [closestNei] = npc.agent.neis;
 
-        if (closestNei?.dist < 0.5 && (nudgedEpoch[npc.key] === undefined || epoch - nudgedEpoch[npc.key] > 3000)) {
-          // idle npc on navmesh has nearby moving neighbour
-          nudgedEpoch[npc.key] = Date.now();
-          void nudge(ct, { npcKey: npc.key, src: w.npc.byAgentId[closestNei.agentId].key });
+        // nearest must be moving
+        const [closestNei] = npc.agent.neis;
+        if (
+          closestNei === undefined ||
+          closestNei.dist > 0.5 ||
+          (other = byAgentId[closestNei.agentId]).isMoving() === false
+        ) {
+          continue;
+        }
+
+        let entry = npcToNudge[npc.key];
+        if (entry === undefined || epochMs - entry.last > 1000) {
+          // if last nudge at least ... ago schedule in ...
+          entry = npcToNudge[npc.key] ??= { last: 0, next: 0 };
+          entry.next = entry.last = Date.now() + 500;
+        } else if (epochMs > entry.next) {
+          // perform nudge if other wasn't recently nudged
+          if (npcToNudge[other.key] === undefined || epochMs - npcToNudge[other.key].last > 1000) {
+            void nudge(ct, { npcKey: npc.key, from: other.key });
+            entry.last = Date.now();
+            entry.next = Infinity;
+          }
         }
       }
     }),
   });
 
+  // run until killed
   try {
-    // run until killed
     await api.sleep(Number.MAX_SAFE_INTEGER);
   } finally {
     handled.dispose();
