@@ -36,14 +36,19 @@ export function createNpcMaskMrt(): NpcMaskMrt {
  * from `npcMask` rather than from edge-detecting the colour buffer, which cannot tell an npc from a
  * similarly coloured wall behind them.
  *
- * A `Fn`, because the `var`s below need a function scope to be assigned in — outside one the
- * assignments are dropped silently and no border appears at all.
+ * Wrapped in a `Fn`, because the `var`s below need a function scope to be assigned in — outside
+ * one the assignments are dropped silently and no border appears at all. A NULLARY one closing over
+ * the arguments: typing them as a tuple parameter instead blows the compiler's union budget (2590)
  *
  * @param npcMask `r` is how much npc is here, after anything see-through in front of them
  * @param sceneDepth raw depth, only ever compared — never linearized
  */
-export const applyNpcOutline = /* @__PURE__ */ Fn(
-  ([frame, npcMask, sceneDepth]: [THREE.Node<"vec4">, THREE.TextureNode, THREE.TextureNode]) => {
+export function applyNpcOutline(
+  frame: THREE.Node<"vec4">,
+  npcMask: THREE.TextureNode,
+  sceneDepth: THREE.TextureNode,
+): THREE.Node<"vec4"> {
+  return Fn(() => {
     const onePx = vec2(1, 1).div(screenSize);
 
     // How much npc is HERE. DILATED by a pixel because a door sees through by dithered COVERAGE
@@ -73,8 +78,8 @@ export const applyNpcOutline = /* @__PURE__ */ Fn(
     // `strength` again for the alpha: the border dims exactly as the npc does, and stays away where
     // there is no npc within reach — `rim` being 1 out there
     return vec4(mix(frame.rgb, outlineColor, rim.mul(strength).mul(outlineAlpha)), frame.a);
-  },
-);
+  })();
+}
 
 /**
  * Thinner as the view pulls back: the border is a fixed count of PIXELS, so an npc half the size on
