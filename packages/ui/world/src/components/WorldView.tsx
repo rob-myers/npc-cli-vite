@@ -909,7 +909,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <div
         className={cn(
           "pointer-events-none absolute top-1 left-1/2 -translate-x-1/2 select-none",
-          "bg-black/30 px-4 py-1.5 font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
+          "bg-black/20 rounded backdrop-blur-xs px-4 py-1.5 font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
           "transition-opacity duration-500",
           w.disabled ? "opacity-100" : "opacity-0",
         )}
