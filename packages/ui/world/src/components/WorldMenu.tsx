@@ -648,10 +648,10 @@ export function WorldMenu() {
                       });
                       if (!res.ok) throw new Error(`HTTP ${res.status}`);
                       await queryClientApi.queryClient.invalidateQueries({
-                        queryKey: [...w.worldQueryPrefix, "sheets"],
+                        queryKey: ["sheets"],
                       });
                       await queryClientApi.queryClient.invalidateQueries({
-                        queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+                        queryKey: ["obstacle-images"],
                       });
                     } catch (err) {
                       console.error("Failed to update obstacles:", err);

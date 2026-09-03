@@ -254,12 +254,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }],
           [devMessageFromServer.decorSheetsRebuilt, async () => {
             debug("[World] decor sheets rebuilt: refetching");
-            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
             // ensure `state.sheets` reflects the refetch before dependants redraw from it
-            const freshSheets = queryClientApi.queryClient.getQueryData<SheetsType>([
-              ...state.worldQueryPrefix,
-              "sheets",
-            ]);
+            const freshSheets = queryClientApi.queryClient.getQueryData<SheetsType>(["sheets"]);
             if (freshSheets) state.sheets = freshSheets;
 
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
@@ -276,13 +273,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           [devMessageFromServer.skinSheetsRebuilt, async () => {
             debug("[World] skin sheets rebuilt: refetching");
             // await pause(100);
-            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
-            queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
           }],
           [devMessageFromServer.skinSvgsChanged, async () => {
             debug("[World] skin svgs changed");
-            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
-            queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
           }],
         ];
 
@@ -324,7 +321,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   state.sheets =
     useQuery({
-      queryKey: [...state.worldQueryPrefix, "sheets"],
+      // a pure fetch, identical for every world — one query, not one per instance
+      queryKey: ["sheets"],
       async queryFn() {
         return await fetchParsed(`/sheets.json${getDevCacheBustQueryParam()}`, SheetsSchema);
       },
