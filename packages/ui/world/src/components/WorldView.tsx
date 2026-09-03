@@ -436,9 +436,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // npc might lack gmId
         const gmRoomId = "gmId" in picked ? w.e.findRoomContaining(point, true) : null;
 
-        w.events.next({
+        const pickEvent: JshCli.PickEvent = {
           key: "picked",
           ...(clickId && { clickId: clickId.id }),
+          srcWorld: w.key,
           meta: {
             ...picked,
             ...gmRoomId,
@@ -460,7 +461,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           rightDown: state.lastPointer.rightPress,
 
           ...point, // can provide as point with meta
-        });
+        };
+
+        w.events.next(pickEvent);
+        w.net?.forwardPick(pickEvent);
       },
       syncPickRT() {
         // `RenderTarget` attachments must match what the materials output — see `pickObject`
@@ -471,7 +475,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       setupDom() {
-        if (veiled() === false) {
+        if (veiled(w.key) === false) {
           w.rootEl.style.setProperty("--world-veil-duration", "0ms");
           w.rootEl.style.setProperty("--world-veil", "0");
         }
@@ -645,7 +649,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       veilCanvas(opaque, durationMs = veilMs) {
-        setVeiled(opaque); // so a fresh root element can be given it back — see `setupDom`
+        setVeiled(w.key, opaque); // so a fresh root element can be given it back — see `setupDom`
         w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
         w.rootEl?.style.setProperty("--world-veil", `${opaque ? 1 : 0}`);
         return pause(durationMs);
@@ -1101,21 +1105,21 @@ const centreHintSecs = 4;
 const centreHintSmall = 0.6;
 
 /**
- * Whether the canvas is veiled.
+ * Whether this world's canvas is veiled — per `worldKey`, since each instance veils its own canvas.
  *
  * Kept on `hot.data` rather than in the state: an hmr can recreate the state AND the root element
  * together, and a plain field would come back `true` — veiled, with nothing left to lift it. A full
  * reload clears `hot.data`, which is right, since that genuinely does start behind the veil.
  * `veiledFallback` is where it lives in production, `import.meta.hot` being a dev thing
  */
-function veiled(): boolean {
-  return (import.meta.hot?.data.__WORLD_VEILED__ ?? veiledFallback) === true;
+function veiled(worldKey: string): boolean {
+  return (import.meta.hot?.data[`__WORLD_VEILED__:${worldKey}`] ?? veiledFallback[worldKey] ?? true) === true;
 }
-function setVeiled(next: boolean): void {
-  veiledFallback = next;
-  if (import.meta.hot !== undefined) import.meta.hot.data.__WORLD_VEILED__ = next;
+function setVeiled(worldKey: string, next: boolean): void {
+  veiledFallback[worldKey] = next;
+  if (import.meta.hot !== undefined) import.meta.hot.data[`__WORLD_VEILED__:${worldKey}`] = next;
 }
-let veiledFallback = true;
+const veiledFallback: Record<string, boolean> = {};
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
 /**

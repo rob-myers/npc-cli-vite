@@ -1,5 +1,7 @@
 declare namespace JshCli {
   type Event =
+    | { key: "decor-created"; decorKeys: string[] }
+    | { key: "decor-removed"; decorKeys: string[] }
     | { key: "disabled" }
     | ({ key: "door-open" | "door-closed" | "door-opening" | "door-closing"; open: boolean } & ReturnType<
         import("./components/Doors").State["decodeInstanceId"]
@@ -23,6 +25,12 @@ declare namespace JshCli {
         key: "map-settled";
       }
     | { key: "nav-updated" }
+    | {
+        /** This world's multiplayer role or connection phase changed — see `use-world-net` */
+        key: "net-changed";
+        mode: "idle" | "server" | "client";
+        phase: string;
+      }
     | {
         /**
          * `prod` has wiped an npc away entirely, or given them back — see `syncNpcVisibility`.
@@ -61,6 +69,8 @@ declare namespace JshCli {
   type PickEvent = {
     key: "picked";
     clickId?: string;
+    /** Which world the pick happened in — a client's forwarded picks carry its key */
+    srcWorld?: `world-${number}`;
     meta: import("./components/WorldView").Picked & { nav: boolean; do: boolean };
     gmRoomId: Geomorph.GmRoomId | null;
 

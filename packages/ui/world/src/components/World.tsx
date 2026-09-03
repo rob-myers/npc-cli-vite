@@ -47,6 +47,7 @@ import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import useWorldEvents from "./use-world-events";
+import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
@@ -63,6 +64,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     (): State => ({
       id: meta.id,
       key: meta.worldKey,
+      client: false,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
       themeKey: "dark-theme",
@@ -132,6 +134,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       player: null as any,
       floor: null as any,
       menu: {} as State["menu"],
+      net: null as any,
       npc: null as any,
       n: null as any,
       obs: null as any,
@@ -207,6 +210,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.timer.update();
         const delta = state.timer.getDelta();
         state.door.onTick(delta);
+        state.net?.onTick(delta); // mirrors move before the npc tick animates them
         state.npc.onTick(delta);
         state.speech?.onTick(delta);
         state.view.followPlayer(delta);
@@ -328,6 +332,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useWorldEvents(state);
   useWorldPlayer(state);
+  useWorldNet(state);
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
@@ -442,6 +447,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 export type State = {
   id: string;
   key: WorldUiMeta["worldKey"];
+  /** `w.net.isClient()` as a field — kept in sync by `use-world-net`'s `setPhase`/`teardown` */
+  client: boolean;
   disabled: boolean;
   mapKey: string;
   readonly themeKey: "dark-theme";
@@ -509,6 +516,7 @@ export type State = {
   floor: UseStateRef<import("./Floor").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   n: UseStateRef<import("./NPCs").State>["npc"];
+  net: UseStateRef<import("./use-world-net").State>;
   npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;

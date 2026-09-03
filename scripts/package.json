@@ -5,7 +5,8 @@
   "exports": {
     "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
-    "./vite-plugin-watch-assets": "./src/vite-plugin-watch-assets.ts"
+    "./vite-plugin-watch-assets": "./src/vite-plugin-watch-assets.ts",
+    "./vite-plugin-world-rtc": "./src/vite-plugin-world-rtc.ts"
   },
   "bin": {
     "extract-starship-pngs": "./src/bins/extract-starship-pngs.ts",

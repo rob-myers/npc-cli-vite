@@ -245,9 +245,10 @@ export default function Floor() {
         // map it already drew, whilst the unfold that should follow lives in the bootstrap, which
         // is not re-run — so the world would fold flat and stay there. `hot.data` survives an
         // update and a reload clears it, which is exactly the distinction wanted
-        const firstMap = state.drawnMapKey === null && import.meta.hot?.data.__FLOOR_DREW_MAP__ !== true;
+        // per world: each instance unveils its own canvas, so two booting together cannot race
+        const firstMap = state.drawnMapKey === null && import.meta.hot?.data[`__FLOOR_DREW_MAP__:${w.key}`] !== true;
         state.drawnMapKey = w.mapKey;
-        if (import.meta.hot !== undefined) import.meta.hot.data.__FLOOR_DREW_MAP__ = true;
+        if (import.meta.hot !== undefined) import.meta.hot.data[`__FLOOR_DREW_MAP__:${w.key}`] = true;
 
         if (firstMap === true) {
           state.fade.texAmount.value = 0; // arrives flat, whatever it was

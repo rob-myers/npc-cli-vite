@@ -239,6 +239,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         try {
+          // decor first: a restored npc's `decorKey` may reference it (e.g. sitting)
+          state.restoreDecor();
           // the player goes first, else a restored npc would be adopted as them
           await player.ensure();
           await state.restoreNpcs(saved);
@@ -285,6 +287,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.setPostProcessingEnabled(true);
 
         state.removeNpcs(...Object.keys(w.n));
+        w.decor.remove(...Object.keys(w.decor.runtime.byKey));
+        state.restoreDecor(saved.decor);
         w.player.key = saved.npcs?.playerKey ?? w.player.key;
         // the player goes first, else a restored npc would be adopted as them
         await w.player.ensure();
@@ -297,7 +301,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.setPostProcessingEnabled(true);
 
         state.removeNpcs(...Object.keys(w.n));
-        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null });
+        w.decor.remove(...Object.keys(w.decor.runtime.byKey));
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, decor: null });
         // nothing saved to restore now, so the player respawns near the camera
         await w.player.ensure();
         await state.openDoorwaysWithNpcs();
@@ -307,10 +312,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onChangeMap() {
         // whilst the outgoing map still exists
         state.persistNpcs();
+        state.persistDecor();
         const player = w.n[w.player.key];
         w.player.prevMapPosition = player === undefined ? null : { ...player.point };
 
         state.removeNpcs(...Object.keys(w.n));
+        // runtime decor is per-map, like the npcs — the incoming map restores its own
+        w.decor.remove(...Object.keys(w.decor.runtime.byKey));
 
         state.doableToNpc = {};
         state.doorOpen = {};
@@ -345,13 +353,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return state.onNpcEvent(e);
         }
         switch (e.key) {
+          case "decor-created":
+          case "decor-removed":
+            break;
           case "door-open":
             state.doorOpen[e.gdKey] = true;
             state.syncFadeRooms();
             break;
           case "door-opening": {
             const door = w.d[e.gdKey];
-            if (door.hull === true) {
+            // clients skip: the server sends both sides of a hull door
+            if (door.hull === true && w.client === false) {
               const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
               adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
             }
@@ -363,7 +375,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-closing": {
             const door = w.d[e.gdKey];
-            if (door.hull === true) {
+            if (door.hull === true && w.client === false) {
               const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
               adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: false, access: true });
             }
@@ -389,27 +401,41 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "try-close-door": {
-            state.tryCloseDoor(e.gdKey);
+            // clients have no door policy — the server decides and its events mirror over
+            if (w.client === false) state.tryCloseDoor(e.gdKey);
             break;
           }
           case "map-settled":
-            void state.onBootstrapMap();
+            if (w.client === true) w.net.onMapSettledAsClient();
+            // a persisted parent world takes over the boot — see `maybeAutoReconnect`
+            else if (w.net?.maybeAutoReconnect() !== true) void state.onBootstrapMap();
             break;
           case "door-unlocked":
-            state.tryCloseDoor(e.gdKey);
+            if (w.client === false) state.tryCloseDoor(e.gdKey);
             break;
           case "door-locked":
             break;
+          case "net-changed":
+            break;
           case "disabled":
           case "enabled":
+            w.net?.syncPause(e.key === "disabled"); // clients route play/pause via the server
+            w.npc?.warmCrowd();
+            break;
           case "nav-updated":
             // the crowd is empty at this point, which is what makes it safe to walk a spare agent
             w.npc?.warmCrowd();
             break;
           case "picked": {
             // a long press is how you get at an npc: they say "...", and the speech's own npcKey
-            // is the handle onto everything else — see `WorldSpeech`
-            if (e.longDown === true && e.meta.type === "npc" && typeof e.meta.npcKey === "string") {
+            // is the handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
+            // forwarded, and the server's mirrored speech comes back instead
+            if (
+              e.longDown === true &&
+              e.meta.type === "npc" &&
+              typeof e.meta.npcKey === "string" &&
+              w.client === false
+            ) {
               w.speech.say(e.meta.npcKey, "...");
             }
             break;
@@ -530,11 +556,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "spawned": {
             if (npc.spawns === 1) {
-              const { x, y, z } = npc.position;
-              w.worker.worker.postMessage({
-                type: "add-physics-npcs",
-                npcs: [{ npcKey: e.npcKey, position: { x, y, z } }],
-              } satisfies WW.MsgToWorker);
+              if (w.client === false) {
+                const { x, y, z } = npc.position;
+                w.worker.worker.postMessage({
+                  type: "add-physics-npcs",
+                  npcs: [{ npcKey: e.npcKey, position: { x, y, z } }],
+                } satisfies WW.MsgToWorker);
+              }
             } else {
               // respawn
               const prevGrId = state.npcToRoom.get(npc.key);
@@ -677,7 +705,26 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           rooms: grIds.map(({ grKey }) => grKey),
         };
       },
+      persistDecor() {
+        if (w.client === true) return; // mirrors must never clobber our own save
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({
+          decor: Object.values(w.decor.runtime.defByKey),
+        });
+      },
+      restoreDecor(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().decor) {
+        if (saved === null) {
+          return;
+        }
+        for (const def of saved) {
+          try {
+            w.decor.create(def);
+          } catch (e) {
+            warn(`decor ${def.key}: could not restore`, e);
+          }
+        }
+      },
       persistNpcs() {
+        if (w.client === true) return; // mirrors must never clobber our own save
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
           npcs: {
             playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
@@ -1110,8 +1157,12 @@ export type State = {
   onBootstrapMap(): Promise<void>;
   /** Persist and remove every npc, whilst the outgoing map still exists */
   onChangeMap(): void;
+  /** Persist the runtime decor defs for `w.mapKey`, so `restoreDecor` can bring them back */
+  persistDecor(): void;
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
   persistNpcs(): void;
+  /** Recreate the runtime decor persisted for `w.mapKey` */
+  restoreDecor(saved?: null | Geomorph.DecorDef[]): void;
   /** Adopt another world's npcs, lit rooms and locked doors for `w.mapKey`, and apply them */
   restoreFromWorld(fromWorldKey: string): Promise<void>;
   /** Forget this map's saved state, leaving only the player, spawned near the camera */

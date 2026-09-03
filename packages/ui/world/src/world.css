@@ -36,3 +36,26 @@
   opacity: var(--world-veil, 1);
   transition: opacity var(--world-veil-duration, 300ms) ease-in-out;
 }
+
+/* a pulsing dot, so a veiled world is distinguishable from a plain black screen */
+.world-veil::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+  animation: world-veil-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes world-veil-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
