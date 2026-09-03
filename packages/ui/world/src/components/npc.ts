@@ -215,10 +215,13 @@ export class Npc {
 
   async fadeSpawn({
     at,
+    angle,
     facing,
     facingTarget,
   }: {
     at: MaybeMeta<JshCli.PointAnyFormat>;
+    /** Explicit spawn angle — overrides `facingTarget` */
+    angle?: number;
     facing?: JshCli.PointAnyFormat;
     facingTarget?: boolean;
   }) {
@@ -237,9 +240,11 @@ export class Npc {
       await this.w.npc.spawn({
         npcKey: this.key,
         at,
-        angle: facingTarget
-          ? geomService.getThreeRotationY(groundTarget.y - this.position.z, groundTarget.x - this.position.x)
-          : undefined,
+        angle:
+          angle ??
+          (facingTarget
+            ? geomService.getThreeRotationY(groundTarget.y - this.position.z, groundTarget.x - this.position.x)
+            : undefined),
         facing,
       });
 

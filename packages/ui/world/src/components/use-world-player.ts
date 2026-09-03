@@ -43,6 +43,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       persist() {
         w.e.persistNpcs();
+        w.e.persistDecor();
       },
       async restore() {
         const saved = getWorldMapStore(w.key, w.mapKey)

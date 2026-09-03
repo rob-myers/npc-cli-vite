@@ -500,7 +500,7 @@ export default function NPCs() {
         }
       },
       onTick(delta) {
-        crowdApi.update(state.crowd, w.nav.navMesh, delta);
+        if (w.client === false) crowdApi.update(state.crowd, w.nav.navMesh, delta);
         const { positions } = state.physics;
         const worldSeconds = w.timer.getElapsedTime();
 
@@ -573,6 +573,14 @@ export default function NPCs() {
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
+
+        if (w.client === true) {
+          // mirror npcs get no crowd agent or physics body — the server world drives them
+          w.e.removeAgents([npc], { keepPhysics: true });
+          npc.position.x = groundPoint.x;
+          npc.position.z = groundPoint.y;
+          return;
+        }
 
         if (!closePolyResult.success) {
           // do not throw in case of hot reload with changing geometry
@@ -716,7 +724,7 @@ export default function NPCs() {
           w.view.forceUpdate(0.01);
         }
 
-        if (!playerExisted) {
+        if (!playerExisted && w.client === false) {
           w.player.key = npcKey;
           await w.player.ensure();
         }
@@ -724,6 +732,7 @@ export default function NPCs() {
         w.events.next({ key: "spawned", npcKey, gmRoomId });
       },
       warmCrowd() {
+        if (w.client === true) return; // clients never path-find
         const rooms = w.gmRoomGraph.nodesArray.filter((node) => node.type === "room");
         if (rooms.length < 2 || Object.keys(state.crowd.agents).length > 0) {
           return;

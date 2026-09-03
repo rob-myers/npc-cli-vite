@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion
 import { useContext, useState } from "react";
 import { npcConfig } from "../const";
 import { getWorldStore } from "../service/storage";
+import { NetBadge, NetMenu } from "./NetMenu";
 import { WorldContext } from "./world-context";
 
 export function WorldSpeech() {
@@ -177,7 +178,7 @@ export function WorldSpeech() {
       >
         <div
           className={cn(
-            "grid touch-none place-items-center cursor-pointer bg-gray-800 text-white",
+            "relative grid touch-none place-items-center cursor-pointer bg-gray-800 text-white",
             big ? "size-12" : "size-9",
           )}
           onPointerDown={(e) => dragControls.start(e)}
@@ -187,6 +188,7 @@ export function WorldSpeech() {
           }}
         >
           <ChatCircleTextIcon className={big ? "size-6" : "size-5"} weight="bold" />
+          <NetBadge />
         </div>
 
         <AnimatePresence>
@@ -202,6 +204,8 @@ export function WorldSpeech() {
               )}
               style={{ width: state.historyWidth }}
             >
+              <NetMenu />
+
               <div
                 className={cn(
                   "flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300",
