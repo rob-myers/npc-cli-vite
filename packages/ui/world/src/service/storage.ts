@@ -61,7 +61,7 @@ export type WorldSettings = {
 
 const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
-  cameraMode: null,
+  cameraMode: "free",
   cameraInitial: null,
   postProcessing: true,
   demoPostFx: "none",
