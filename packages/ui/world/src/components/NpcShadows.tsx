@@ -47,8 +47,10 @@ export default function NpcShadows() {
   w.shadows = state;
 
   useMemo(() => {
-    // the same fade the npc casting it reads, so the two keep step
-    const { vertexNode, colorNode } = shadowNodes(state.shadow, w.view.fadeRoomsFx.getVisiblity(state.shadow.xzo.w));
+    // the same fade the npc casting it reads, so the two keep step — except in `dev`, where the npc
+    // stays blacked out rather than going, and a shadowless figure reads as floating
+    const fade = w.view.fadeRoomsFx.getVisiblity(state.shadow.xzo.w).max(w.view.fadeRoomsFx.prodNode.oneMinus());
+    const { vertexNode, colorNode } = shadowNodes(state.shadow, fade);
     state.shadow.mat.vertexNode = vertexNode;
     state.shadow.mat.colorNode = colorNode;
     state.shadow.mat.needsUpdate = true;

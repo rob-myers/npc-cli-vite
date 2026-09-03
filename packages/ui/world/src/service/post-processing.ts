@@ -53,10 +53,11 @@ export function createPostProcessing(): PostProcessing {
     apply(sceneColor, prod) {
       return Fn(() => {
         // What lies BEHIND the world at this pixel: the dark wherever anything at all was drawn,
-        // even a door at part coverage, so every silhouette gets its own dark edge. BEYOND the
-        // world it is the page in `"dev"` mode, which the ship then reads as a floorplan on — and
-        // the dark in `"prod"`, where what the player cannot see is not there and the space
-        // around the world is no different from it
+        // even a door at part coverage, so every silhouette gets its own dark edge. A step rather
+        // than a ramp on the coverage, which would let the page through anything half-covered — the
+        // hull walls at their `0.5` included. BEYOND the world it is the page in `"dev"` mode, which
+        // the ship then reads as a floorplan on — and the dark in `"prod"`, where what the player
+        // cannot see is not there and the space around the world is no different from it
         const beyond = mix(lightBg, darkBg, prod);
         const backdrop = (select as SelectAnyType)(sceneColor.a.greaterThan(0), darkBg, beyond) as THREE.Node<
           "color" | "vec3"
