@@ -2,6 +2,7 @@ import { npcConfig } from "@npc-cli/ui__world/const";
 import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
+import { moveAlongSurface } from "navcat";
 import { localBoundary } from "navcat/blocks";
 
 /**
@@ -484,15 +485,15 @@ export async function move_next(
 /**
  * ```sh
  * nudge npc:kate
- * nudge npc:kate src:rob
- * nudge npc:kate src:$( pick 1 ) by:1
+ * nudge npc:kate from:rob
+ * nudge npc:kate from:$( pick 1 ) by:1
  * ```
  */
 export async function nudge(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; src?: string | JshCli.PointAnyFormat; by?: number } = ct.api.jsArg(ct.args, {
+  opts: { npcKey: string; from?: string | JshCli.PointAnyFormat; by?: number } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
-    from: "src",
+    src: "from",
   }),
 ) {
   const { w } = ct;
@@ -500,22 +501,43 @@ export async function nudge(
 
   opts.by ??= 0.5;
 
-  if (!opts.src) {
+  if (!opts.from) {
+    // nudge from a random angle
     const angle = Math.random() * Math.PI * 2;
-    opts.src = { x: npc.point.x + opts.by * Math.cos(angle), y: npc.point.y + opts.by * Math.sin(angle) };
+    opts.from = { x: npc.point.x + opts.by * Math.cos(angle), y: npc.point.y + opts.by * Math.sin(angle) };
   }
 
-  if (typeof opts.src === "string") {
-    opts.src = w.npc.get(opts.src).point;
+  if (typeof opts.from === "string") {
+    opts.from = w.npc.get(opts.from).point;
   }
 
   const src = npc.point;
-  const delta = Vect.from(src).sub(w.helper.parseGroundPoint(opts.src)).normalize(opts.by);
-  await w.npc.move({
-    npcKey: npc.key,
-    to: { x: src.x + delta.x, y: src.y + delta.y },
-  });
+  const delta = Vect.from(src).sub(w.helper.parseGroundPoint(opts.from)).normalize(opts.by);
+
+  // slide along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
+  // rather than crossing it — `npc.queryFilter` refuses door areas they lack access to
+  const clamped = moveAlongSurface(
+    w.nav.navMesh,
+    w.npc.getClosestPoly(npc.position).nodeRef,
+    [src.x, 0, src.y],
+    [src.x + delta.x, 0, src.y + delta.y],
+    npc.queryFilter,
+  );
+
+  if (clamped.success === false) {
+    return;
+  }
+
+  const to = { x: clamped.position[0], y: clamped.position[2] };
+  if (Math.hypot(to.x - src.x, to.y - src.y) < nudgeMinMove) {
+    return; // nowhere to go i.e. backed against something
+  }
+
+  await w.npc.move({ npcKey: npc.key, to });
 }
+
+/** Below this much of a clamped nudge, we do not move at all */
+const nudgeMinMove = 0.05;
 
 /**
  * ```sh
