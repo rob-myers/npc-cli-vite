@@ -128,10 +128,13 @@ const bordered = state.npcMaskMrt === null
 pipeline.outputNode = state.demoFx.apply(bordered, state.demoPostFx);
 ```
 
-**`applyNpcOutline` IS a TSL `Fn`.** The rim is built in `var`s, and outside a function there is no
-scope for the assignments to land in — they are dropped silently and the border simply never
-appears. This went unnoticed for as long as the composite lived inside `postFx.apply`'s own `Fn`,
-and cost an hour when it moved out.
+**`applyNpcOutline` wraps its body in a TSL `Fn`.** The rim is built in `var`s, and outside a
+function there is no scope for the assignments to land in — they are dropped silently and the border
+simply never appears. This went unnoticed for as long as the composite lived inside `postFx.apply`'s
+own `Fn`, and cost an hour when it moved out.
+
+The `Fn` is **nullary**, closing over the arguments, rather than taking them as a tuple parameter:
+`Fn(([a, b, c]: [...]) => ...)` overloads into a union too complex for tsc to represent (TS2590).
 
 ## 5. Turning it off, and hmr
 
