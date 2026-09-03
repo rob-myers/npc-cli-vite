@@ -78,7 +78,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // The two stops the zoom moves between — see `camera-controls`' `zoomProgress`. Touch
         // comes in closer: a phone shows far less of the world at a given distance, and its pinch
         // is free to rest anywhere between the two rather than settling on one
-        minDistance: 10,
+        minDistance: w.touchDevice ? 6 : 10,
         maxDistance: 20,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
