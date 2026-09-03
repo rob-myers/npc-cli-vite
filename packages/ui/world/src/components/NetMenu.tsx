@@ -154,7 +154,13 @@ export function NetMenu() {
     ),
   ];
 
-  if (joinable.length === 0) return null;
+  if (joinable.length === 0) {
+    return (
+      <div className={rowClassName}>
+        <span className="text-slate-500 italic">no worlds to join</span>
+      </div>
+    );
+  }
 
   return (
     <div className={rowClassName}>

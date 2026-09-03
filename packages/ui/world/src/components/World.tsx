@@ -36,6 +36,7 @@ import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
+import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
@@ -307,7 +308,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
-    return () => queryClientApi.remove([meta.worldKey]);
+    cancelClearWorldFlags(meta.worldKey); // an HMR bounce keeps the veil/fold flags
+    return () => {
+      queryClientApi.remove([meta.worldKey]);
+      // deferred, so only a REAL pane removal clears — a re-added world must arrive flat,
+      // behind the veil, rather than flashing unfolded before the bootstrap
+      scheduleClearWorldFlags(meta.worldKey);
+    };
   }, []); // cache world
 
   useEffect(() => {

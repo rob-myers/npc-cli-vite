@@ -26,6 +26,7 @@ import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
 import { drawFloorGrid, drawRoomOutlines, worldToCanvas } from "../service/texture";
+import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { WorldContext } from "./world-context";
 
 export default function Floor() {
@@ -245,10 +246,11 @@ export default function Floor() {
         // map it already drew, whilst the unfold that should follow lives in the bootstrap, which
         // is not re-run — so the world would fold flat and stay there. `hot.data` survives an
         // update and a reload clears it, which is exactly the distinction wanted
-        // per world: each instance unveils its own canvas, so two booting together cannot race
-        const firstMap = state.drawnMapKey === null && import.meta.hot?.data[`__FLOOR_DREW_MAP__:${w.key}`] !== true;
+        // per world: each instance unveils its own canvas, so two booting together cannot race;
+        // the flag resets with the pane (see `world-flags`), so a re-added world arrives flat too
+        const firstMap = state.drawnMapKey === null && getWorldFlag("floorDrewMap", w.key) === false;
         state.drawnMapKey = w.mapKey;
-        if (import.meta.hot !== undefined) import.meta.hot.data[`__FLOOR_DREW_MAP__:${w.key}`] = true;
+        setWorldFlag("floorDrewMap", w.key, true);
 
         if (firstMap === true) {
           state.fade.texAmount.value = 0; // arrives flat, whatever it was

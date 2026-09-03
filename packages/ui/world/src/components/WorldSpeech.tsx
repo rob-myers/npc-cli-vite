@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { cn, useStateRef } from "@npc-cli/util";
 import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { npcConfig } from "../const";
 import { getWorldStore } from "../service/storage";
 import { NetBadge, NetMenu } from "./NetMenu";
@@ -20,6 +20,7 @@ export function WorldSpeech() {
     (): State => ({
       dragged: false,
       panelOpen: false,
+      panelTab: "speech",
       history: [],
       minY: 40,
       nextId: 0,
@@ -156,6 +157,18 @@ export function WorldSpeech() {
 
   w.speech = state;
 
+  useEffect(() => {
+    // joining a world is done from the panel — once connected, it gets out of the way
+    const sub = w.events.subscribe({
+      next: (e) => {
+        if (e.key === "net-changed" && e.mode === "client" && e.phase === "connected") {
+          state.set({ panelOpen: false });
+        }
+      },
+    });
+    return () => sub.unsubscribe();
+  }, []);
+
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
 
@@ -204,20 +217,31 @@ export function WorldSpeech() {
               )}
               style={{ width: state.historyWidth }}
             >
-              <NetMenu />
-
               <div
-                className={cn(
-                  "flex items-center justify-between gap-2 px-2 py-1 text-xs text-slate-300",
-                  big && "px-3 py-2 text-sm",
-                )}
+                className={cn("flex items-center gap-3 px-2 py-1 text-xs text-slate-300", big && "px-3 py-2 text-sm")}
               >
-                <span>speech history</span>
-                <div className="flex items-center gap-2">
-                  <TrashIcon
-                    className={cn("size-4 cursor-pointer text-slate-500 hover:text-red-300", big && "size-5")}
-                    onClick={() => state.clear()}
-                  />
+                {speechPanelTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={cn(
+                      "cursor-pointer",
+                      state.panelTab === tab
+                        ? "text-slate-100 underline underline-offset-4"
+                        : "text-slate-500 hover:text-slate-300",
+                    )}
+                    onClick={() => state.set({ panelTab: tab })}
+                  >
+                    {tab}
+                  </button>
+                ))}
+                <div className="ml-auto flex items-center gap-2">
+                  {state.panelTab === "speech" && (
+                    <TrashIcon
+                      className={cn("size-4 cursor-pointer text-slate-500 hover:text-red-300", big && "size-5")}
+                      onClick={() => state.clear()}
+                    />
+                  )}
                   <XIcon
                     className={cn("size-4 cursor-pointer text-slate-500 hover:text-slate-300", big && "size-5")}
                     onClick={() => state.set({ panelOpen: false })}
@@ -225,28 +249,32 @@ export function WorldSpeech() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
-                {state.history.length === 0 && (
-                  <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>
-                    nothing said yet
-                  </div>
-                )}
-                {state.history
-                  .slice()
-                  .reverse()
-                  .map((entry) => (
-                    <div
-                      key={entry.id}
-                      className={cn(
-                        "flex gap-2 px-2 py-1 text-xs rounded bg-slate-900/60 text-slate-300",
-                        big && "px-3 py-1.5 text-sm",
-                      )}
-                    >
-                      <NpcKeyMenu npcKey={entry.npcKey} />
-                      <span className="break-words">{entry.words}</span>
+              {state.panelTab === "worlds" && <NetMenu />}
+
+              {state.panelTab === "speech" && (
+                <div className="flex flex-col gap-1 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
+                  {state.history.length === 0 && (
+                    <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>
+                      nothing said yet
                     </div>
-                  ))}
-              </div>
+                  )}
+                  {state.history
+                    .slice()
+                    .reverse()
+                    .map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={cn(
+                          "flex gap-2 px-2 py-1 text-xs rounded bg-slate-900/60 text-slate-300",
+                          big && "px-3 py-1.5 text-sm",
+                        )}
+                      >
+                        <NpcKeyMenu npcKey={entry.npcKey} />
+                        <span className="wrap-break-word">{entry.words}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
 
               {/* drag to resize the panel — bottom-left corner, since the panel is right-anchored */}
               <div
@@ -377,6 +405,7 @@ export type SpeechEntry = {
 export type State = {
   dragged: boolean;
   panelOpen: boolean;
+  panelTab: (typeof speechPanelTabs)[number];
   history: SpeechEntry[];
   minY: number;
   nextId: number;
@@ -411,6 +440,8 @@ export type State = {
   /** Their last toast is refreshed rather than duplicated when it already says this — see below */
   say(npcKey: string, words: string, secs?: number): void;
 };
+
+const speechPanelTabs = ["worlds", "speech"] as const;
 
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
