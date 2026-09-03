@@ -4,7 +4,7 @@ One `World` can join another as a **client**: an extra camera into the **server*
 
 ## Architecture
 
-- **`w.net`** (`use-world-net.ts`) is the per-World networking sub-state, `mode: "idle" | "server" | "client"`. A World becomes a server lazily when its first client says hello; a client via `w.net.join(target)` from the WorldSpeech panel.
+- **`w.net`** (`use-world-net.ts`) is the per-World networking sub-state, `mode: "idle" | "server" | "client"`. A World becomes a server lazily when its first client says hello; a client via `w.net.join(target)` from the WorldSpeech panel. An explicit join outranks serving: the clients are dismissed (`server-closed`) and restore themselves — which also unwedges a phantom client left by a refreshed/closed tab.
 - **Two DataChannels** per peer: `"events"` (reliable ordered, JSON `WorldNetMessage`) and `"transforms"` (unordered, no retransmits, binary).
 - **Client = mirror mode**: no navcat crowd, no physics npcs, no door policy, no persistence of its own. Mirrored npcs are agent-less (`npc.agentId === null` — `w.npc.onTick` already animates those without touching position); the transform stream drives `position`/`rotation.y`.
 - **Joining adopts the server**: mapKey (via ui meta), full snapshot (npcs + playerKey, door open/locked, runtime decor, paused), and the client's persisted map store is overwritten with the server's state — so a refresh (or a failed reconnect) boots into it. The persist gates stop the client drifting from that save whilst connected.
@@ -49,8 +49,8 @@ Dev signaling relay on Vite's HMR websocket: announce → roster broadcast, sign
 | `npc-animation.ts` | `startMovingMirror(run)` — the non-crowd tail of `startMoving`, for agent-less mirrors |
 | `Decor.tsx` | runtime decor keeps its original defs (`runtime.defByKey`) and fires `decor-created`/`decor-removed` — feeds both persistence and replication |
 | `WorldView.tsx` | every `picked` event carries `srcWorld: w.key`; clients also `w.net.forwardPick`; `veiled`/`setVeiled` keyed per `worldKey` |
-| `Floor.tsx` | first-map unveil flag keyed per `worldKey` — two Worlds booting together no longer race (the loser used to keep its veil) |
-| `WorldSpeech.tsx` | renders `<NetMenu />` at the top of its panel, `<NetBadge />` on the toggle icon |
+| `Floor.tsx` | first-map unveil flag keyed per `worldKey` — two Worlds booting together no longer race (the loser used to keep its veil). Both this and the veil flag live in `service/world-flags.ts`: they survive HMR but reset with the pane, so a re-added World arrives flat behind the veil rather than flashing unfolded |
+| `WorldSpeech.tsx` | tabbed panel — "worlds" (`<NetMenu />`) and "speech" (history); auto-closes on connect; `<NetBadge />` on the toggle icon |
 | `WorldMenu.tsx` | `MenuSelect` exported; a manual map switch ends any session first |
 | `use-world-player.ts` | `persist()` also persists decor |
 | `storage.ts` | `WorldMapState.decor` (runtime decor defs, per map); `WorldSettings.netParent` (`{ worldKey, remote }`, auto-reconnect) |
