@@ -599,6 +599,8 @@ export default function Decor() {
     // 🔔 force recompute decor mutations on run world query
     queryKey: [
       "decor-setup",
+      // the queryFn draws into THIS world's `texDecor` — two worlds on one map must not share
+      w.key,
       w.mapKey,
       w.gmsHash,
       w.texDecor.hash,

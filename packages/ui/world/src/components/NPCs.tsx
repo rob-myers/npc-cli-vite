@@ -76,7 +76,6 @@ export default function NPCs() {
         manifest: { byKey: {} } as AssetsSkinManifestType,
         entries: [] as SkinSheetEntry[],
       },
-      lastHmr: 0,
 
       byAgentId: {},
       byPickId: {},
@@ -761,16 +760,11 @@ export default function NPCs() {
 
   const queryData =
     useQuery({
-      queryKey: [...w.worldQueryPrefix, "skins-and-gltf", state.lastHmr],
+      // the shareable half — gltf, sheet images, manifest + svg overlays — one query for every
+      // world. The per-world half (drawing skins into `w.texSkin`) lives in the memo below.
+      // The epoch changes the key on the post-HMR re-render, so the refetch runs the NEW queryFn
+      queryKey: ["skins-and-gltf", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
       queryFn: async () => {
-        if (import.meta.hot?.data.__JUST_HMR_NPCS__) {
-          import.meta.hot.data.__JUST_HMR_NPCS__ = false;
-          state.set({ lastHmr: Date.now() });
-          return null; // ignore 1st stale invoke after HMR
-        }
-
-        w.setNextPending({ gltf: true });
-
         // 🚧 avoid SVG load in prod
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
@@ -794,24 +788,9 @@ export default function NPCs() {
             };
           }),
         ]);
-
-        const skinEntries = Object.values(w.sheets.skin);
-        const { width: tw, height: th } = w.texSkin.opts;
-        const { ct } = w.texSkin;
-
-        ct.imageSmoothingEnabled = false;
-        skinEntries.forEach(({ sheetId, rect }, i) => {
-          ct.clearRect(0, 0, tw, th);
-          const svgImage = skinKeyToSvgOverride[skinEntries[i].key];
-          if (svgImage) {
-            ct.drawImage(svgImage, 0, 0, tw, th);
-          } else {
-            ct.drawImage(sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
-          }
-          w.texSkin.updateIndex(i);
-        });
-        return { gltf, skinEntries, skinManifest };
+        return { gltf, sheetImages, skinKeyToSvgOverride, skinManifest };
       },
+      enabled: !!w.sheets,
       gcTime: 0,
     }).data ?? null;
 
@@ -819,6 +798,22 @@ export default function NPCs() {
     state.configureCrowd();
 
     if (!queryData) return;
+
+    // draw the skins into THIS world's texture array
+    const skinEntries = Object.values(w.sheets.skin);
+    const { width: tw, height: th } = w.texSkin.opts;
+    const { ct } = w.texSkin;
+    ct.imageSmoothingEnabled = false;
+    skinEntries.forEach(({ sheetId, rect }, i) => {
+      ct.clearRect(0, 0, tw, th);
+      const svgImage = queryData.skinKeyToSvgOverride[skinEntries[i].key];
+      if (svgImage) {
+        ct.drawImage(svgImage, 0, 0, tw, th);
+      } else {
+        ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+      }
+      w.texSkin.updateIndex(i);
+    });
 
     state.gltf = queryData.gltf;
 
@@ -843,7 +838,7 @@ export default function NPCs() {
       }
     }
 
-    state.skin = { entries: queryData.skinEntries, manifest: queryData.skinManifest };
+    state.skin = { entries: skinEntries, manifest: queryData.skinManifest };
     w.setNextPending({ gltf: false, skins: false });
   }, [queryData]);
 
@@ -870,7 +865,6 @@ export type State = {
     manifest: AssetsSkinManifestType;
     entries: SkinSheetEntry[];
   };
-  lastHmr: number;
 
   byAgentId: Record<string, Npc>;
   byPickId: Record<number, Npc>;
@@ -1098,7 +1092,8 @@ const emptyMeta = {};
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));
   if (import.meta.hot && updatedThisFile) {
-    // used to ignore stale queryFn and trigger fresh one
-    import.meta.hot.data.__JUST_HMR_NPCS__ = true;
+    // a fresh epoch changes the query key on the post-HMR re-render, so the refetch runs the
+    // NEW queryFn — no stale first invoke to guard against
+    import.meta.hot.data.__NPCS_HMR_EPOCH__ = ((import.meta.hot.data.__NPCS_HMR_EPOCH__ ?? 0) as number) + 1;
   }
 });

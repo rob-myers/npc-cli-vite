@@ -336,7 +336,9 @@ export default function Obstacles(_props: Props) {
 
   state.images =
     useQuery({
-      queryKey: [...w.worldQueryPrefix, "obstacle-images"],
+      // pure image loads off the shared sheets — one query for every world; the count refetches
+      // when the sheets change shape
+      queryKey: ["obstacle-images", w.sheets?.symbolSheetDims.length ?? 0],
       async queryFn() {
         return await loadObstacleImages(w.sheets.symbolSheetDims.length, getDevCacheBustQueryParam());
       },
