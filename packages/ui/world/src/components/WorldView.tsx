@@ -48,6 +48,7 @@ import { createPostProcessing, type PostProcessing as PostProcessingType } from 
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
+import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
@@ -77,8 +78,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // The two stops the zoom moves between — see `camera-controls`' `zoomProgress`. Touch
         // comes in closer: a phone shows far less of the world at a given distance, and its pinch
         // is free to rest anywhere between the two rather than settling on one
-        minDistance: w.touchDevice ? 5 : 7,
-        maxDistance: 14,
+        minDistance: 10,
+        maxDistance: 20,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
@@ -436,9 +437,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // npc might lack gmId
         const gmRoomId = "gmId" in picked ? w.e.findRoomContaining(point, true) : null;
 
-        w.events.next({
+        const pickEvent: JshCli.PickEvent = {
           key: "picked",
           ...(clickId && { clickId: clickId.id }),
+          srcWorld: w.key,
           meta: {
             ...picked,
             ...gmRoomId,
@@ -460,7 +462,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           rightDown: state.lastPointer.rightPress,
 
           ...point, // can provide as point with meta
-        });
+        };
+
+        w.events.next(pickEvent);
+        w.net?.forwardPick(pickEvent);
       },
       syncPickRT() {
         // `RenderTarget` attachments must match what the materials output — see `pickObject`
@@ -471,7 +476,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       setupDom() {
-        if (veiled() === false) {
+        if (veiled(w.key) === false) {
           w.rootEl.style.setProperty("--world-veil-duration", "0ms");
           w.rootEl.style.setProperty("--world-veil", "0");
         }
@@ -645,7 +650,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       veilCanvas(opaque, durationMs = veilMs) {
-        setVeiled(opaque); // so a fresh root element can be given it back — see `setupDom`
+        setVeiled(w.key, opaque); // so a fresh root element can be given it back — see `setupDom`
         w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
         w.rootEl?.style.setProperty("--world-veil", `${opaque ? 1 : 0}`);
         return pause(durationMs);
@@ -1101,21 +1106,19 @@ const centreHintSecs = 4;
 const centreHintSmall = 0.6;
 
 /**
- * Whether the canvas is veiled.
+ * Whether this world's canvas is veiled — per `worldKey`, since each instance veils its own canvas.
  *
- * Kept on `hot.data` rather than in the state: an hmr can recreate the state AND the root element
- * together, and a plain field would come back `true` — veiled, with nothing left to lift it. A full
- * reload clears `hot.data`, which is right, since that genuinely does start behind the veil.
- * `veiledFallback` is where it lives in production, `import.meta.hot` being a dev thing
+ * Kept in `world-flags` rather than in the state: an hmr can recreate the state AND the root
+ * element together, and a plain field would come back `true` — veiled, with nothing left to lift
+ * it. The flag resets with the pane (see `clearWorldFlags` in `World`) and on a full reload,
+ * which is right, since both genuinely do start behind the veil
  */
-function veiled(): boolean {
-  return (import.meta.hot?.data.__WORLD_VEILED__ ?? veiledFallback) === true;
+function veiled(worldKey: string): boolean {
+  return getWorldFlag("unveiled", worldKey) === false;
 }
-function setVeiled(next: boolean): void {
-  veiledFallback = next;
-  if (import.meta.hot !== undefined) import.meta.hot.data.__WORLD_VEILED__ = next;
+function setVeiled(worldKey: string, next: boolean): void {
+  setWorldFlag("unveiled", worldKey, next === false);
 }
-let veiledFallback = true;
 
 /** The intro pans from here to the player, via `w.player.panToPlayer` */
 /**

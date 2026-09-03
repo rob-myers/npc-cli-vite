@@ -36,6 +36,7 @@ import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
+import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
@@ -47,6 +48,7 @@ import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import useWorldEvents from "./use-world-events";
+import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
 import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
@@ -63,6 +65,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     (): State => ({
       id: meta.id,
       key: meta.worldKey,
+      client: false,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
       themeKey: "dark-theme",
@@ -132,6 +135,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       player: null as any,
       floor: null as any,
       menu: {} as State["menu"],
+      net: null as any,
       npc: null as any,
       n: null as any,
       obs: null as any,
@@ -207,6 +211,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.timer.update();
         const delta = state.timer.getDelta();
         state.door.onTick(delta);
+        state.net?.onTick(delta); // mirrors move before the npc tick animates them
         state.npc.onTick(delta);
         state.speech?.onTick(delta);
         state.view.followPlayer(delta);
@@ -250,12 +255,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           }],
           [devMessageFromServer.decorSheetsRebuilt, async () => {
             debug("[World] decor sheets rebuilt: refetching");
-            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
             // ensure `state.sheets` reflects the refetch before dependants redraw from it
-            const freshSheets = queryClientApi.queryClient.getQueryData<SheetsType>([
-              ...state.worldQueryPrefix,
-              "sheets",
-            ]);
+            const freshSheets = queryClientApi.queryClient.getQueryData<SheetsType>(["sheets"]);
             if (freshSheets) state.sheets = freshSheets;
 
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["decor-setup"] });
@@ -272,13 +274,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           [devMessageFromServer.skinSheetsRebuilt, async () => {
             debug("[World] skin sheets rebuilt: refetching");
             // await pause(100);
-            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
-            queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
           }],
           [devMessageFromServer.skinSvgsChanged, async () => {
             debug("[World] skin svgs changed");
-            await queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "sheets"] });
-            queryClientApi.queryClient.invalidateQueries({ queryKey: [...state.worldQueryPrefix, "skins-and-gltf"] });
+            await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
           }],
         ];
 
@@ -306,7 +308,17 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
-    return () => queryClientApi.remove([meta.worldKey]);
+    cancelClearWorldFlags(meta.worldKey); // an HMR bounce keeps the veil/fold flags
+    // `rootEl` lands via ref AFTER the first render, and a runtime-added world in PROD gets no
+    // other re-render (the shared queries answer from cache, synchronously) — without this,
+    // `state.rootEl && <WorldView/>` never mounts and the pane sits blank
+    state.update();
+    return () => {
+      queryClientApi.remove([meta.worldKey]);
+      // deferred, so only a REAL pane removal clears — a re-added world must arrive flat,
+      // behind the veil, rather than flashing unfolded before the bootstrap
+      scheduleClearWorldFlags(meta.worldKey);
+    };
   }, []); // cache world
 
   useEffect(() => {
@@ -320,7 +332,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   state.sheets =
     useQuery({
-      queryKey: [...state.worldQueryPrefix, "sheets"],
+      // a pure fetch, identical for every world — one query, not one per instance
+      queryKey: ["sheets"],
       async queryFn() {
         return await fetchParsed(`/sheets.json${getDevCacheBustQueryParam()}`, SheetsSchema);
       },
@@ -328,6 +341,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useWorldEvents(state);
   useWorldPlayer(state);
+  useWorldNet(state);
 
   // distinct query per World instance even if same map
   state.lastQuery = useQuery({
@@ -442,6 +456,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 export type State = {
   id: string;
   key: WorldUiMeta["worldKey"];
+  /** `w.net.isClient()` as a field — kept in sync by `use-world-net`'s `setPhase`/`teardown` */
+  client: boolean;
   disabled: boolean;
   mapKey: string;
   readonly themeKey: "dark-theme";
@@ -509,6 +525,7 @@ export type State = {
   floor: UseStateRef<import("./Floor").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   n: UseStateRef<import("./NPCs").State>["npc"];
+  net: UseStateRef<import("./use-world-net").State>;
   npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;

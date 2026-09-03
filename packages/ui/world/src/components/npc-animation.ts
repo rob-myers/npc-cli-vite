@@ -235,6 +235,27 @@ export class NpcAnimation {
     this.mixer.clipAction(this.moveClip).reset().fadeIn(fade).play();
   }
 
+  /**
+   * The non-crowd tail of `startMoving`, for a mirror npc (no agent) whose movement arrives
+   * over the network — see `use-world-net`. Position/rotation come from the transform stream.
+   */
+  startMovingMirror(run: boolean) {
+    this.moveClip = run ? this.w.npc.clips.run : this.w.npc.clips.walk;
+    this.arrive = true; // so the eventual `startIdle` crossfades
+
+    if (this.moving) {
+      return;
+    }
+
+    this.moving = true;
+    this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
+    this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
+
+    const fade = this.getFadeSecs(this.idleClip, this.moveClip);
+    this.mixer.existingAction(this.idleClip)?.fadeOut(fade);
+    this.mixer.clipAction(this.moveClip).reset().fadeIn(fade).play();
+  }
+
   getFadeSecs(src: THREE.AnimationClip, dst: THREE.AnimationClip) {
     const srcKey = src.name as AnimationClipKey;
     const dstKey = dst.name as AnimationClipKey;
