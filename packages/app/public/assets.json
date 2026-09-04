@@ -45604,7 +45604,7 @@
   "theme": {
     "dark-theme": {
       "post": {
-        "lightBg": "#222",
+        "lightBg": "#444",
         "darkBg": "#000",
         "fadedFloorTint": 0.5,
         "fadedObstacleTint": 0.1
