@@ -141,10 +141,7 @@ export default function Floor() {
           drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000c" });
         }
 
-        // every room dimmed, originally for lighting
-        drawPolygons(ct, layout.rooms, { fillStyle: "rgba(0,0,0,0.7)", strokeStyle: null });
-
-        // ...and darker again at the walls, inside each room's whole outline
+        // darker again at walls, inside each room's whole outline
         if (shading === true) {
           const edge = toEdgeOpts(softEdges.roomEdge);
           for (const room of layout.rooms) drawBlurredEdge(ct, room, room, edge);

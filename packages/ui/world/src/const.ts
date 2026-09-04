@@ -79,7 +79,7 @@ export const cameraFov = 30;
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;
 
-export const defaultBrightness = 2;
+export const defaultBrightness = 1;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */

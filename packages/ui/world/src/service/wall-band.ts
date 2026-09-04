@@ -34,9 +34,9 @@ export function createWallBandMaterial(w: World) {
 }
 
 /** What every band instance is coloured, and how tall one stands */
-export const wallBandColor = "#222";
+export const wallBandColor = "#444";
 export const wallBandHeight = 0.2;
 /** Its opacity, and what `prod` lifts that and its colour to */
-const wallBandOpacity = 0.5;
+const wallBandOpacity = 0.6;
 const wallBandProdOpacity = 0.5;
-const wallBandProdBright = 1.5;
+const wallBandProdBright = 1;

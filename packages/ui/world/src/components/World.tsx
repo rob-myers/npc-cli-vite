@@ -42,7 +42,6 @@ import { Debug } from "./Debug";
 import Decor from "./Decor";
 import Doors from "./Doors";
 import Floor from "./Floor";
-import Lights from "./Lights";
 import NPCs from "./NPCs";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
@@ -190,6 +189,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
+      },
+      getTrimCount() {
+        return state.gmsData.count.wall + state.gmsData.count.door + state.gmsData.count.window;
       },
       isPlaygroundMap() {
         if (isPlaygroundMapKey(state.mapKey)) return true;
@@ -429,7 +431,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               cn(state.getTheme().background, "world-background")
             }
           >
-            <Lights />
+            <ambientLight intensity={ambientLightIntensity} color="#fff" />
             <Floor key="floor" />
             {/* folded */}
             <group ref={state.ref("worldGroup")}>
@@ -546,23 +548,26 @@ export type State = {
     animId: number;
     resolve: null | (() => void);
   };
-  setWorldFold(amount: number): void;
-  foldTo(amount: number, ms?: number): Promise<void>;
 
-  setDisabled(nextDisabled?: boolean): void;
-  setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
-  mapSettled: () => void;
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
-  setupDevAssetsSync(): () => void;
+
+  foldTo(amount: number, ms?: number): Promise<void>;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
+  /** One band per wall segment, per door, and per segment of a window's outline */
+  getTrimCount(): number;
   /** Either playground map or mentions a playground hull-symbol */
   isPlaygroundMap(): boolean;
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
+  mapSettled: () => void;
   onTick(): void;
+  setupDevAssetsSync(): () => void;
   setupDraftAssetsSync(): () => void;
+  setDisabled(nextDisabled?: boolean): void;
+  setNextPending(next: Partial<Record<PendingKey, boolean>>): void;
+  setWorldFold(amount: number): void;
   stopTick(): void;
 };
 
@@ -606,3 +611,9 @@ const worldFoldMs = 400;
 const touchDevice = isTouchDevice();
 
 type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins";
+
+/**
+ * Cancel MeshStandardMaterial 1/π factor.
+ * https://github.com/mrdoob/three.js/issues/26668
+ */
+const ambientLightIntensity = Math.PI;
