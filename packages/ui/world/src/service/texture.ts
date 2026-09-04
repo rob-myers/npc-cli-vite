@@ -117,9 +117,9 @@ export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 /** The soft dark edges the floor is drawn with, whilst `Debug`'s `floorShading` is on. METRES */
 export const softEdges = {
   /** Inside each room's outline, and each doorway's — see `Floor`'s `drawGm` */
-  roomEdge: { width: 0.15, blur: 0.015, ink: "rgba(0, 0, 0, 0.45)" },
+  roomEdge: { width: 0.15, blur: 0.15, ink: "rgba(0, 0, 0, 0.45)" },
   /** Inside each floor panel — see `drawRoomOutlines` */
-  outlineEdge: { width: 0.12, blur: 0.04, ink: "rgba(0, 0, 0, 0.4)" },
+  outlineEdge: { width: 0.12, blur: 0.08, ink: "rgba(0, 0, 10, 0.8)" },
 };
 
 /** One of `softEdges`' entries as `drawBlurredEdge` wants it, its blur in CANVAS pixels */
@@ -201,7 +201,7 @@ const curvedEdgeCount = 8;
 const floorInsetAmount = 0.75;
 const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
 const gridPieceSize = geomorphGridMeters * 2;
-const gridPieceGap = 0.2;
+const gridPieceGap = 0.05;
 const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
 
 /** The hatch over the panels: stripe pitch and width in METRES, so it lies on the world, and its ink */

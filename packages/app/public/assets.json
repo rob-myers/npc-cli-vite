@@ -45615,12 +45615,12 @@
         "nonHull": {"fill": "#000", "stroke": "#6666"}
       },
       "floor": {
-        "hullFill": "#4446",
+        "hullFill": "#6664",
         "navStroke": "#000a",
-        "patternFill": "#222",
+        "patternFill": "#444",
         "tileStroke": "#0001"
       },
-      "lights": {"ambientIntensity": 0.4},
+      "lights": {"ambientIntensity": 1},
       "obstacles": {"brightness": 1},
       "doors": {"brightness": 1.5},
       "walls": {"color": "#000", "opacity": 0.25}

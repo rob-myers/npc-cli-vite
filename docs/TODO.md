@@ -224,19 +224,28 @@
 - ✅ cannot connect one world to another but works if I try other way around
 - ✅ initialisation animation issue on add world tab
 
+- ✅ demo_auto_nudge should avoid being nudged on become idle
+- ✅ improve Floor
+- ✅ try improve Walls: no prod-mode door half-seg + add wall skirts
+
+- ✅ brightness 2 --> 1
+  - remove directional lights
+  - ambient light brightness now `π`
+  - remove `rgba(0, 0, 0, 0.7)` Floor overlay
+  - adjust WorldMenu brightness control
+
 - basic script to only move selected npc
   - variant which only moves player
+- improve load perf
+
+- flatten WorldMenu
+- Jobs: indicate stale processes after hmr
 - onchange playground preserve npc position
   - should also work in other maps
   - fix error on remove room containing player
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
-- flatten WorldMenu
-- initial spawn fade bug
-- improve load perf
-
 - ask Fable for playwright test suite
-- demo_auto_nudge should avoid being nudged on become idle
 - on hmr recreate tty session `move` stops working?
 - lock too small to pick?
 - ❌ idle-left with left-leg forward
