@@ -198,10 +198,10 @@ function isCurved(poly: Geom.Poly): boolean {
 const curvedEdgeMax = 0.5;
 const curvedEdgeCount = 8;
 
-const floorInsetAmount = 0.75;
+const floorInsetAmount = 0.5;
 const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
 const gridPieceSize = geomorphGridMeters * 2;
-const gridPieceGap = 0;
+const gridPieceGap = 0.04;
 const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
 
 /** The hatch over the panels: stripe pitch and width in METRES, so it lies on the world, and its ink */
