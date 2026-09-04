@@ -213,10 +213,14 @@ export default function Walls() {
       depthWrite: false,
     });
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    const [alphaFade, colorFade] = fadeSplit(w.view.fadeRoomsFx.prodNode, fade);
-    // fades out with the wall it trims — its own colour is white
-    m.opacityNode = w.view.objectPick.equal(0).select(float(0.5).mul(alphaFade), float(0));
-    m.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(vec3(1, 1, 1).mul(colorFade), fade, w.view.objectPick);
+    const prod = w.view.fadeRoomsFx.prodNode;
+    const [alphaFade, colorFade] = fadeSplit(prod, fade);
+    // white, and fading out with the wall it trims — but lifted in `prod`, where the world ends in
+    // BLACK and a half-opaque grey band over that is all but gone
+    const bright = mix(float(1), float(trimProdBright), prod);
+    const opacity = mix(float(trimOpacity), float(trimProdOpacity), prod);
+    m.opacityNode = w.view.objectPick.equal(0).select(opacity.mul(alphaFade), float(0));
+    m.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(vec3(bright).mul(colorFade), fade, w.view.objectPick);
     m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
     return m;
   }, [w.view.fadeRoomsFx.uid]);
@@ -303,6 +307,11 @@ const tmpMatFour1 = new THREE.Matrix4();
 function fadeSplit(focus: THREE.Node<"float">, fade: THREE.Node<"float">) {
   return [mix(float(1), fade, focus), mix(fade, float(1), focus)] as const;
 }
+
+/** The trim's opacity, and what `prod` lifts it and its colour to — see `trimMaterial` */
+const trimOpacity = 0.5;
+const trimProdOpacity = 0.5;
+const trimProdBright = 1.5;
 
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;
