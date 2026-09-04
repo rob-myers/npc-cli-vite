@@ -89,11 +89,11 @@ export function syncNpcOutlineWidth(zoomProgress: number): void {
   outlineWidth.value = outlineWidthFarPx + (outlineWidthPx - outlineWidthFarPx) * zoomProgress;
 }
 
-const outlineColor = /* @__PURE__ */ color("#555");
+const outlineColor = /* @__PURE__ */ color("#000");
 /** How opaque the border is — part-transparent, so what it sits on still reads through it */
-const outlineAlpha = 0.25;
+const outlineAlpha = 0.75;
 /** Half-width (px) of the border at the near zoom stop, i.e. how far out we look for npc pixels */
-const outlineWidthPx = 5;
+const outlineWidthPx = 6;
 /** ...and at the far one */
 const outlineWidthFarPx = 3;
 const outlineWidth = /* @__PURE__ */ uniform(outlineWidthPx);
