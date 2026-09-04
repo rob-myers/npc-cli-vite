@@ -411,7 +411,7 @@ const cullMargin = 3;
 /** How far the light reaches (metres) — the sweep stops there, and so does the polygon */
 const lightRadius = 8;
 /** How black an unseen fragment goes */
-const unlitTint = 0.7;
+const unlitTint = 0.8;
 /**
  * The cone they see best down — see `coneAt`. How much of the light is lost outside it, and how far
  * out the dimming takes hold: nearer than that the ground they stand on keeps its light whichever
