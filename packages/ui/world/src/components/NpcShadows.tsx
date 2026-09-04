@@ -87,7 +87,25 @@ function createShadowResources(
 
   const xzo = attribute<"vec4">("shadowXZO", "vec4");
 
-  const mat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.FrontSide });
+  const mat = new THREE.MeshBasicNodeMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.FrontSide,
+    // A shadow DARKENS what is already there and contributes nothing of its own. Normal blending
+    // over black does the darkening well enough — `dst * (1 - a)` — but it writes the ALPHA channel
+    // too, and the floor is only part opaque (`floor.hullFill` carries its own alpha). The shadow
+    // would then fill that transparency in, reading as a solid disc laid on a see-through floor
+    // rather than a shadow cast upon it.
+    //
+    // So: rgb multiplied down by the coverage, and the destination's alpha left exactly as it was.
+    // Where nothing was drawn at all, `dst` is already nought and this leaves it there — the
+    // shadow cannot stain the backdrop beyond the hull
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.ZeroFactor,
+    blendDst: THREE.OneMinusSrcAlphaFactor,
+    blendSrcAlpha: THREE.ZeroFactor,
+    blendDstAlpha: THREE.OneFactor,
+  });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
 
@@ -120,4 +138,8 @@ function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THR
   };
 }
 
+/**
+ * How much of what lies beneath a shadow it takes away — see the blending above, which makes this
+ * a share of what is there rather than an amount of black laid over it
+ */
 const npcShadowAlphaFactor = 0.5;
