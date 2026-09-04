@@ -1167,6 +1167,7 @@ function LightSweep() {
       player?.rotation.y ?? 0,
       w.d ?? emptyDoors,
       w.door?.openRatioArray ?? emptyOpenRatios,
+      w.view.fadeRoomsFx.mode === "prod",
     );
   }, -2);
 

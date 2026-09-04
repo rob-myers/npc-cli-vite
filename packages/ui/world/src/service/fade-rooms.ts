@@ -296,7 +296,7 @@ export function parseFadeRoomsMode(mode: unknown): FadeRoomsMode {
 }
 
 /** How long the switch between `"prod"` and `"dev"` takes to play out, in seconds */
-const MODE_FADE_SECS = 0.7;
+export const MODE_FADE_SECS = 0.7;
 
 /** The wall clock, in seconds */
 function nowSecs() {
