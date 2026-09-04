@@ -36,6 +36,7 @@ export function Debug() {
       demoNavPathShown: false,
       doorNormalsShown: false,
       fadeRoomOutlines: getWorldStore(w.key).read().fadeRoomOutlines,
+      floorShading: getWorldStore(w.key).read().floorShading,
       gridShown: false,
       logGPUInfo: false,
       navMeshHelper: null,
@@ -331,6 +332,8 @@ export type State = {
   doorNormalsShown: boolean;
   /** Ring the rooms in view — drawn into the floor texture, see `Floor.drawGm` */
   fadeRoomOutlines: boolean;
+  /** Soft dark edges inside rooms, doorways and floor panels — also drawn into that texture */
+  floorShading: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;
   navMeshHelper: null | NavMeshHelperObject;
