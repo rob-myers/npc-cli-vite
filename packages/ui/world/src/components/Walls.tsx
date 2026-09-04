@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, float, lights, mix, uniform, vec3 } from "three/tsl";
+import { attribute, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const";
 import * as geometry from "../service/geometry";
@@ -9,6 +9,9 @@ import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
+import { fadeSplit } from "../service/wall-band";
+import WallSkirts from "./WallSkirts";
+import WallTrims from "./WallTrims";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -17,13 +20,7 @@ export default function Walls() {
   const state = useStateRef(
     (): State => ({
       inst: null,
-      instTrim: null,
-      instSkirt: null,
       quad: createTwoSidedXyQuad(),
-      // its own, not `quad` shared: `roomSlots` lives on the GEOMETRY, so two meshes sharing one
-      // could not stand in different rooms
-      trimQuad: createTwoSidedXyQuad(),
-      skirtQuad: createTwoSidedXyQuad(),
 
       decodeInstanceId(instanceId: number) {
         let id = instanceId;
@@ -50,100 +47,6 @@ export default function Walls() {
           { a: len * Math.cos(rad), b: len * Math.sin(rad), c: -Math.sin(rad), d: Math.cos(rad), e: tmpVec1.x, f: tmpVec1.y },
           { yScale: height ?? wallHeight, yHeight: baseHeight, mat4: tmpMatFour1 },
         );
-      },
-      positionTrimInstances() {
-        const { instTrim } = state;
-        if (!instTrim) return;
-        const slots = ensureRoomSlots(
-          state.trimQuad,
-          w.gmsData.count.wall + w.gmsData.count.door + w.gmsData.count.window,
-        );
-
-        // const color = new THREE.Color(w.getTheme().walls.color);
-        const color = new THREE.Color(trimColor);
-
-        let id = 0;
-        for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
-          for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
-            const { seg, meta } = wallSeg;
-            const wallH = typeof meta.h === "number" ? meta.h : wallHeight;
-            const wallBase = typeof meta.y === "number" ? meta.y : 0;
-            state.setSegSlots(slots, id, gmId, wallSeg);
-            instTrim.setMatrixAt(
-              id,
-              state.getWallMat(seg, transform, determinant, ceilTrimHeight, wallBase + wallH - ceilTrimHeight),
-            );
-            instTrim.setColorAt(id++, color);
-          }
-          // a connector's own trim takes the connector's rooms, which it already knows. These two
-          // walk exactly as `doorSegs` and `windowSegs` are built — one segment per door, but a
-          // window's whole outline — since the instances are counted from those
-          for (const { seg, roomIds } of w.gms[gmId].doors) {
-            state.setConnectorSlots(slots, id, gmId, roomIds);
-            instTrim.setMatrixAt(
-              id,
-              state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
-            );
-            instTrim.setColorAt(id++, color);
-          }
-          for (const { poly, roomIds } of w.gms[gmId].windows) {
-            for (const seg of poly.lineSegs) {
-              state.setConnectorSlots(slots, id, gmId, roomIds);
-              instTrim.setMatrixAt(
-                id,
-                state.getWallMat(seg, transform, determinant, ceilDoorTrimHeight, wallHeight - ceilDoorTrimHeight),
-              );
-              instTrim.setColorAt(id++, color);
-            }
-          }
-        }
-        slots.needsUpdate = true;
-        instTrim.computeBoundingSphere();
-        instTrim.instanceMatrix.needsUpdate = true;
-        if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
-      },
-      /** The trim's twin at the foot of a wall — the same set, the same style, the other end */
-      positionSkirtInstances() {
-        const { instSkirt } = state;
-        if (!instSkirt) return;
-        const slots = ensureRoomSlots(
-          state.skirtQuad,
-          w.gmsData.count.wall + w.gmsData.count.door + w.gmsData.count.window,
-        );
-
-        const color = new THREE.Color("#333");
-
-        let id = 0;
-        for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
-          for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
-            const { seg, meta } = wallSeg;
-            const wallBase = typeof meta.y === "number" ? meta.y : 0;
-            // by ROOM even across a broad wall. The wall itself is one piece of structure and is
-            // shown whole, but a line of skirting along the floor belongs to the room it runs
-            // through — left on the broad slot it outlives the very room you are standing in
-            state.setSegSlots(slots, id, gmId, wallSeg, true);
-            instSkirt.setMatrixAt(id, state.getWallMat(seg, transform, determinant, skirtHeight, wallBase));
-            instSkirt.setColorAt(id++, color);
-          }
-          // as in `positionTrimInstances`, these two walk exactly as `doorSegs` and `windowSegs`
-          // are built, since the instances are counted from those
-          for (const { seg, roomIds } of w.gms[gmId].doors) {
-            state.setConnectorSlots(slots, id, gmId, roomIds);
-            instSkirt.setMatrixAt(id, state.getWallMat(seg, transform, determinant, skirtDoorHeight, 0));
-            instSkirt.setColorAt(id++, color);
-          }
-          for (const { poly, roomIds } of w.gms[gmId].windows) {
-            for (const seg of poly.lineSegs) {
-              state.setConnectorSlots(slots, id, gmId, roomIds);
-              instSkirt.setMatrixAt(id, state.getWallMat(seg, transform, determinant, skirtDoorHeight, 0));
-              instSkirt.setColorAt(id++, color);
-            }
-          }
-        }
-        slots.needsUpdate = true;
-        instSkirt.computeBoundingSphere();
-        instSkirt.instanceMatrix.needsUpdate = true;
-        if (instSkirt.instanceColor) instSkirt.instanceColor.needsUpdate = true;
       },
       setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }, ignoreBroadWall) {
         if (meta.hull === true) {
@@ -208,15 +111,12 @@ export default function Walls() {
   w.wall = state;
 
   const wallCount = w.gmsData.count.wall;
-  const trimCount = wallCount + w.gmsData.count.door + w.gmsData.count.window;
 
   // before the materials below, which read `roomSlots`: an attribute a shader names has to be on
   // the geometry by the time it compiles, and `positionInstances` only fills it in an effect
   useMemo(() => {
     ensureRoomSlots(state.quad, wallCount);
-    ensureRoomSlots(state.trimQuad, trimCount);
-    ensureRoomSlots(state.skirtQuad, trimCount);
-  }, [wallCount, trimCount]);
+  }, [wallCount]);
 
   const mat = useMemo(() => {
     // 🔔 objectPick.value 0.5 ignores walls for easier picking
@@ -252,29 +152,8 @@ export default function Walls() {
     };
   }, [wallCount, w.view.fadeRoomsFx.uid]);
 
-  const trimMaterial = useMemo(() => {
-    const m = new THREE.MeshStandardNodeMaterial({
-      side: THREE.FrontSide, // 1 draw call
-      transparent: true,
-      depthWrite: false,
-    });
-    const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    const prod = w.view.fadeRoomsFx.prodNode;
-    const [alphaFade, colorFade] = fadeSplit(prod, fade);
-    // white, and fading out with the wall it trims — but lifted in `prod`, where the world ends in
-    // BLACK and a half-opaque grey band over that is all but gone
-    const bright = mix(float(1), float(trimProdBright), prod);
-    const opacity = mix(float(trimOpacity), float(trimProdOpacity), prod);
-    m.opacityNode = w.view.objectPick.equal(0).select(opacity.mul(alphaFade), float(0));
-    m.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(vec3(bright).mul(colorFade), fade, w.view.objectPick);
-    m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
-    return m;
-  }, [w.view.fadeRoomsFx.uid]);
-
   useEffect(() => {
     state.positionInstances();
-    state.positionTrimInstances();
-    state.positionSkirtInstances();
     mat.opacityUniform.value = w.getTheme().walls.opacity;
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
 
@@ -301,34 +180,16 @@ export default function Walls() {
         />
       </instancedMesh>
 
-      <instancedMesh
-        key={`${mat.uuid}-trim`}
-        name="walls-along-ceiling"
-        ref={state.ref("instTrim", bootstrapInstanceColor)}
-        args={[state.trimQuad, trimMaterial, trimCount]}
-        renderOrder={4}
-      />
-
-      {/* `trimMaterial` shared, so the two cannot drift apart in style or colour */}
-      <instancedMesh
-        key={`${mat.uuid}-skirt`}
-        name="walls-along-floor"
-        ref={state.ref("instSkirt", bootstrapInstanceColor)}
-        args={[state.skirtQuad, trimMaterial, trimCount]}
-        renderOrder={4}
-      />
+      {/* Inside `Walls`, which sets `w.wall` in its own body — so both are free to use its
+          `getWallMat` and slot writers the moment they render */}
+      <WallTrims />
+      <WallSkirts />
     </>
   ) : null;
 }
 
 export type State = {
   inst: null | THREE.InstancedMesh;
-  instTrim: null | THREE.InstancedMesh;
-  instSkirt: null | THREE.InstancedMesh;
-  /** The trim's own geometry — see `trimQuad` in the state */
-  trimQuad: THREE.BufferGeometry;
-  /** and the skirting's, for the same reason */
-  skirtQuad: THREE.BufferGeometry;
   quad: THREE.BufferGeometry;
 
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
@@ -356,30 +217,9 @@ export type State = {
     roomIds: (null | number)[],
   ) => void;
   positionInstances: () => void;
-  positionTrimInstances: () => void;
-  positionSkirtInstances: () => void;
 };
 
 const tmpMat1 = new Mat();
 const tmpVec1 = new Vect();
 const tmpVec2 = new Vect();
 const tmpMatFour1 = new THREE.Matrix4();
-
-/** `[alphaFade, colorFade]`: `prod` fades alpha out, the other modes fade colour to black */
-function fadeSplit(focus: THREE.Node<"float">, fade: THREE.Node<"float">) {
-  return [mix(float(1), fade, focus), mix(fade, float(1), focus)] as const;
-}
-
-/** The trim's opacity, and what `prod` lifts it and its colour to — see `trimMaterial` */
-const trimOpacity = 0.5;
-const trimProdOpacity = 0.5;
-const trimProdBright = 1.5;
-
-const ceilTrimHeight = 0.2;
-const ceilDoorTrimHeight = 0.2;
-
-/** The trim's colour, which the skirting at the foot of a wall wears too */
-const trimColor = "#222";
-/** and how tall that skirting stands, against a wall and across a connector */
-const skirtHeight = 0.2;
-const skirtDoorHeight = 0.2;
