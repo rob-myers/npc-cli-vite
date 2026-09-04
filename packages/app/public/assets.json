@@ -45623,7 +45623,7 @@
       "lights": {"ambientIntensity": 0.4},
       "obstacles": {"brightness": 1},
       "doors": {"brightness": 1.5},
-      "walls": {"color": "#000", "opacity": 0.35}
+      "walls": {"color": "#000", "opacity": 0.25}
     }
   },
   "hash": {"obstacles": -1563970382}
