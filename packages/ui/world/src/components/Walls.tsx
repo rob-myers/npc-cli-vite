@@ -18,10 +18,12 @@ export default function Walls() {
     (): State => ({
       inst: null,
       instTrim: null,
+      instSkirt: null,
       quad: createTwoSidedXyQuad(),
       // its own, not `quad` shared: `roomSlots` lives on the GEOMETRY, so two meshes sharing one
       // could not stand in different rooms
       trimQuad: createTwoSidedXyQuad(),
+      skirtQuad: createTwoSidedXyQuad(),
 
       decodeInstanceId(instanceId: number) {
         let id = instanceId;
@@ -58,7 +60,7 @@ export default function Walls() {
         );
 
         // const color = new THREE.Color(w.getTheme().walls.color);
-        const color = new THREE.Color("#222");
+        const color = new THREE.Color(trimColor);
 
         let id = 0;
         for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
@@ -100,12 +102,55 @@ export default function Walls() {
         instTrim.instanceMatrix.needsUpdate = true;
         if (instTrim.instanceColor) instTrim.instanceColor.needsUpdate = true;
       },
-      setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }) {
+      /** The trim's twin at the foot of a wall — the same set, the same style, the other end */
+      positionSkirtInstances() {
+        const { instSkirt } = state;
+        if (!instSkirt) return;
+        const slots = ensureRoomSlots(
+          state.skirtQuad,
+          w.gmsData.count.wall + w.gmsData.count.door + w.gmsData.count.window,
+        );
+
+        const color = new THREE.Color("#333");
+
+        let id = 0;
+        for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
+          for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
+            const { seg, meta } = wallSeg;
+            const wallBase = typeof meta.y === "number" ? meta.y : 0;
+            // by ROOM even across a broad wall. The wall itself is one piece of structure and is
+            // shown whole, but a line of skirting along the floor belongs to the room it runs
+            // through — left on the broad slot it outlives the very room you are standing in
+            state.setSegSlots(slots, id, gmId, wallSeg, true);
+            instSkirt.setMatrixAt(id, state.getWallMat(seg, transform, determinant, skirtHeight, wallBase));
+            instSkirt.setColorAt(id++, color);
+          }
+          // as in `positionTrimInstances`, these two walk exactly as `doorSegs` and `windowSegs`
+          // are built, since the instances are counted from those
+          for (const { seg, roomIds } of w.gms[gmId].doors) {
+            state.setConnectorSlots(slots, id, gmId, roomIds);
+            instSkirt.setMatrixAt(id, state.getWallMat(seg, transform, determinant, skirtDoorHeight, 0));
+            instSkirt.setColorAt(id++, color);
+          }
+          for (const { poly, roomIds } of w.gms[gmId].windows) {
+            for (const seg of poly.lineSegs) {
+              state.setConnectorSlots(slots, id, gmId, roomIds);
+              instSkirt.setMatrixAt(id, state.getWallMat(seg, transform, determinant, skirtDoorHeight, 0));
+              instSkirt.setColorAt(id++, color);
+            }
+          }
+        }
+        slots.needsUpdate = true;
+        instSkirt.computeBoundingSphere();
+        instSkirt.instanceMatrix.needsUpdate = true;
+        if (instSkirt.instanceColor) instSkirt.instanceColor.needsUpdate = true;
+      },
+      setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }, ignoreBroadWall) {
         if (meta.hull === true) {
           // the hull is the ship's outside, which fade mode has nothing behind — and
           // `neverShownSlot` is 1 whilst the fade is off, so this costs nothing there
           slots.setXY(instanceId, neverShownSlot, neverShownSlot);
-        } else if (broadWallId !== null) {
+        } else if (broadWallId !== null && ignoreBroadWall !== true) {
           // A BROAD wall goes on its own slot, whole: it is one piece of structure, and the ceiling
           // draws one lid over the lot on that same slot.
           const slot = broadWallSlotOf(gmId, broadWallId);
@@ -170,6 +215,7 @@ export default function Walls() {
   useMemo(() => {
     ensureRoomSlots(state.quad, wallCount);
     ensureRoomSlots(state.trimQuad, trimCount);
+    ensureRoomSlots(state.skirtQuad, trimCount);
   }, [wallCount, trimCount]);
 
   const mat = useMemo(() => {
@@ -228,6 +274,7 @@ export default function Walls() {
   useEffect(() => {
     state.positionInstances();
     state.positionTrimInstances();
+    state.positionSkirtInstances();
     mat.opacityUniform.value = w.getTheme().walls.opacity;
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
 
@@ -261,6 +308,15 @@ export default function Walls() {
         args={[state.trimQuad, trimMaterial, trimCount]}
         renderOrder={4}
       />
+
+      {/* `trimMaterial` shared, so the two cannot drift apart in style or colour */}
+      <instancedMesh
+        key={`${mat.uuid}-skirt`}
+        name="walls-along-floor"
+        ref={state.ref("instSkirt", bootstrapInstanceColor)}
+        args={[state.skirtQuad, trimMaterial, trimCount]}
+        renderOrder={4}
+      />
     </>
   ) : null;
 }
@@ -268,8 +324,11 @@ export default function Walls() {
 export type State = {
   inst: null | THREE.InstancedMesh;
   instTrim: null | THREE.InstancedMesh;
+  instSkirt: null | THREE.InstancedMesh;
   /** The trim's own geometry — see `trimQuad` in the state */
   trimQuad: THREE.BufferGeometry;
+  /** and the skirting's, for the same reason */
+  skirtQuad: THREE.BufferGeometry;
   quad: THREE.BufferGeometry;
 
   decodeInstanceId: (instanceId: number) => { gmId: number; seg: [Geom.Vect, Geom.Vect]; meta: Meta };
@@ -286,6 +345,8 @@ export type State = {
     instanceId: number,
     gmId: number,
     wallSeg: Geomorph.GmData["wallSegs"][number],
+    /** Takes a broad wall by its ROOM as any other segment, rather than by its own slot */
+    ignoreBroadWall?: boolean,
   ) => void;
   /** The same for a door or window, which knows its rooms already */
   setConnectorSlots: (
@@ -296,6 +357,7 @@ export type State = {
   ) => void;
   positionInstances: () => void;
   positionTrimInstances: () => void;
+  positionSkirtInstances: () => void;
 };
 
 const tmpMat1 = new Mat();
@@ -315,3 +377,9 @@ const trimProdBright = 1.5;
 
 const ceilTrimHeight = 0.2;
 const ceilDoorTrimHeight = 0.2;
+
+/** The trim's colour, which the skirting at the foot of a wall wears too */
+const trimColor = "#222";
+/** and how tall that skirting stands, against a wall and across a connector */
+const skirtHeight = 0.2;
+const skirtDoorHeight = 0.2;
