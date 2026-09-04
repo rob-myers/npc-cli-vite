@@ -45607,7 +45607,7 @@
         "lightBg": "#444",
         "darkBg": "#000",
         "fadedFloorTint": 0.5,
-        "fadedObstacleTint": 0.1
+        "fadedObstacleTint": 0.5
       },
       "background": "bg-[#000]",
       "ceiling": {
