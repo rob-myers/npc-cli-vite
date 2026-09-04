@@ -110,7 +110,7 @@ function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THR
   const baseAlpha = float(1)
     .sub(distToCenter.sub(npcShadowRadius - edgeSoftness).div(edgeSoftness))
     .clamp(0, 1)
-    .mul(0.4)
+    .mul(npcShadowAlphaFactor)
     .mul(xzo.z);
   const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
 
@@ -119,3 +119,5 @@ function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THR
     colorNode: vec4(0, 0, 0, alpha.mul(fold).mul(fade)),
   };
 }
+
+const npcShadowAlphaFactor = 0.5;
