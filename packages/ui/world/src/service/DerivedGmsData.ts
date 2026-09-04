@@ -111,7 +111,7 @@ export default class DerivedGmsData {
         (poly.meta.h === undefined || poly.meta.y + poly.meta.h === wallHeight), // touches ceiling
     );
     gmData.tops = {
-      broad: gm.walls.filter((x) => x.meta.broad === true).flatMap((x) => geomService.createInset(x, 0.05)),
+      broad: gm.walls.filter((x) => x.meta.broad === true).flatMap((x) => geomService.createInset(x, 0.02)),
       nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.05))),
       hullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? door.computeThinPoly(0.15) : [])),
       hullWall: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
