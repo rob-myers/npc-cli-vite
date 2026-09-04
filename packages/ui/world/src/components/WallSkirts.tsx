@@ -5,7 +5,6 @@ import { createTwoSidedXyQuad } from "../service/geometry";
 import { ensureRoomSlots } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
 import { createWallBandMaterial, wallBandColor, wallBandHeight } from "../service/wall-band";
-import { getTrimCount } from "./WallTrims";
 import { WorldContext } from "./world-context";
 
 /**
@@ -25,10 +24,13 @@ export default function WallSkirts() {
       // sharing one could not stand in different rooms
       quad: createTwoSidedXyQuad(),
 
+      getCount() {
+        return w.gmsData.count.wall;
+      },
       positionInstances() {
         const { inst } = state;
         if (!inst) return;
-        const slots = ensureRoomSlots(state.quad, getTrimCount(w));
+        const slots = ensureRoomSlots(state.quad, state.getCount());
         const color = new THREE.Color(wallBandColor);
 
         let id = 0;
@@ -43,20 +45,6 @@ export default function WallSkirts() {
             inst.setMatrixAt(id, w.wall.getWallMat(seg, transform, determinant, wallBandHeight, wallBase));
             inst.setColorAt(id++, color);
           }
-          // as in `WallTrims`, these two walk exactly as `doorSegs` and `windowSegs` are built,
-          // since the instances are counted from those
-          for (const { seg, roomIds } of w.gms[gmId].doors) {
-            w.wall.setConnectorSlots(slots, id, gmId, roomIds);
-            inst.setMatrixAt(id, w.wall.getWallMat(seg, transform, determinant, wallBandHeight, 0));
-            inst.setColorAt(id++, color);
-          }
-          for (const { poly, roomIds } of w.gms[gmId].windows) {
-            for (const seg of poly.lineSegs) {
-              w.wall.setConnectorSlots(slots, id, gmId, roomIds);
-              inst.setMatrixAt(id, w.wall.getWallMat(seg, transform, determinant, wallBandHeight, 0));
-              inst.setColorAt(id++, color);
-            }
-          }
         }
         slots.needsUpdate = true;
         inst.computeBoundingSphere();
@@ -66,7 +54,7 @@ export default function WallSkirts() {
     }),
   );
 
-  const count = getTrimCount(w);
+  const count = w.gmsData.count.wall;
 
   // before the material below, which reads `roomSlots`: an attribute a shader names has to be on
   // the geometry by the time it compiles, and `positionInstances` only fills it in an effect
@@ -93,5 +81,6 @@ export type State = {
   inst: null | THREE.InstancedMesh;
   /** Its own geometry — see `quad` in the state */
   quad: THREE.BufferGeometry;
+  getCount(): number;
   positionInstances: () => void;
 };

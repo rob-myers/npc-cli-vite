@@ -43,7 +43,7 @@ export default function Obstacles(_props: Props) {
       quad: createTwoSidedXzQuad(), // 2-sided handles flipped obstacles
       skirtQuad: createTwoSidedXyQuad(),
       brightnessNode: uniform(1),
-      fadedTint: uniform(0.1),
+      fadedTint: uniform(0.25),
 
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),

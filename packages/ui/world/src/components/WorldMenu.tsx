@@ -395,8 +395,8 @@ export function WorldMenu() {
                 />
                 <input
                   type="range"
-                  min="1"
-                  max="4"
+                  min="0.5"
+                  max="2"
                   step="0.1"
                   value={w.brightness}
                   onChange={(e) => {

@@ -94,20 +94,20 @@ export default function NPCs() {
           state.placeNpcAt(npc, result, npc.point);
         }
       },
+      compactPickIds() {
+        state.byPickId = {};
+        state.nextPickId = 0;
+        for (const npc of Object.values(state.npc)) {
+          const pickId = state.nextPickId++;
+          state.byPickId[pickId] = npc;
+          if (npc.pickId === pickId) continue;
+          npc.pickIdUniform.value = pickId; // `pickId` and `labelLayerIndex` both read off it
+          npc.drawLabel(); // into its new layer
+        }
+      },
       configureCrowd() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = 64;
-      },
-      syncOutlineMask() {
-        // a material mrt *replaces* the colour output unless the scene pass declares one too, so
-        // this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`, the
-        // only caller. UNCONDITIONALLY, since it is also how a material compiled against the last
-        // pipeline's pass is recompiled against this one's, and the node it holds is the same
-        // object either way
-        for (const npc of Object.values(state.npc)) {
-          npc.material.mrtNode = w.view.npcMaskMrt === null ? null : npc.maskMrt;
-          npc.material.needsUpdate = true;
-        }
       },
       createMaterials(pickId: number, skinIndex: number) {
         const skinIndexUniform = uniform(skinIndex);
@@ -293,24 +293,6 @@ export default function NPCs() {
         state.npc[opts.key] = npc;
         state.byPickId[npc.pickId] = npc;
         return npc;
-      },
-      compactPickIds() {
-        state.byPickId = {};
-        state.nextPickId = 0;
-        for (const npc of Object.values(state.npc)) {
-          const pickId = state.nextPickId++;
-          state.byPickId[pickId] = npc;
-          if (npc.pickId === pickId) continue;
-          npc.pickIdUniform.value = pickId; // `pickId` and `labelLayerIndex` both read off it
-          npc.drawLabel(); // into its new layer
-        }
-      },
-      resetMaterials(npc) {
-        const mat = state.createMaterials(npc.pickId, npc.skinIndex);
-        mat.npcLit.value = npc.lit === true ? 1 : 0;
-        mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
-        Object.assign(npc, mat);
-        npc.epochMs = Date.now(); // invalidate React.Memo
       },
       determineSpawnedAngle(opts) {
         let angle = opts.angle;
@@ -679,6 +661,14 @@ export default function NPCs() {
 
         return npc;
       },
+
+      resetMaterials(npc) {
+        const mat = state.createMaterials(npc.pickId, npc.skinIndex);
+        mat.npcLit.value = npc.lit === true ? 1 : 0;
+        mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
+        Object.assign(npc, mat);
+        npc.epochMs = Date.now(); // invalidate React.Memo
+      },
       async spawn({ npcKey, at, as, angle, facing }) {
         if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
           throw Error(`opts.npcKey must match: ${npcKeyPattern}`);
@@ -729,6 +719,17 @@ export default function NPCs() {
         }
 
         w.events.next({ key: "spawned", npcKey, gmRoomId });
+      },
+      syncOutlineMask() {
+        // a material mrt *replaces* the colour output unless the scene pass declares one too, so
+        // this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`, the
+        // only caller. UNCONDITIONALLY, since it is also how a material compiled against the last
+        // pipeline's pass is recompiled against this one's, and the node it holds is the same
+        // object either way
+        for (const npc of Object.values(state.npc)) {
+          npc.material.mrtNode = w.view.npcMaskMrt === null ? null : npc.maskMrt;
+          npc.material.needsUpdate = true;
+        }
       },
       warmCrowd() {
         if (w.client === true) return; // clients never path-find

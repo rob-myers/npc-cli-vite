@@ -28,7 +28,7 @@ export default function WallTrims() {
       positionInstances() {
         const { inst } = state;
         if (!inst) return;
-        const slots = ensureRoomSlots(state.quad, getTrimCount(w));
+        const slots = ensureRoomSlots(state.quad, w.getTrimCount());
         const color = new THREE.Color(wallBandColor);
 
         let id = 0;
@@ -74,7 +74,7 @@ export default function WallTrims() {
     }),
   );
 
-  const count = getTrimCount(w);
+  const count = w.getTrimCount();
 
   // before the material below, which reads `roomSlots`: an attribute a shader names has to be on
   // the geometry by the time it compiles, and `positionInstances` only fills it in an effect
@@ -95,11 +95,6 @@ export default function WallTrims() {
       renderOrder={4}
     />
   ) : null;
-}
-
-/** One band per wall segment, per door, and per segment of a window's outline */
-export function getTrimCount(w: import("@npc-cli/util").UseStateRef<import("./World").State>) {
-  return w.gmsData.count.wall + w.gmsData.count.door + w.gmsData.count.window;
 }
 
 export type State = {
