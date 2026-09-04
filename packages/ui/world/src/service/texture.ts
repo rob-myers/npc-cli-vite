@@ -1,6 +1,6 @@
 import { Poly, Rect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { drawRoundedRect } from "@npc-cli/util/service/canvas";
+import { drawBlurredEdge, drawRoundedRect } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
@@ -114,10 +114,25 @@ const cornerLen = 20;
 
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
+/** The soft dark edges the floor is drawn with, whilst `Debug`'s `floorShading` is on. METRES */
+export const softEdges = {
+  /** Inside each room's outline, and each doorway's — see `Floor`'s `drawGm` */
+  roomEdge: { width: 0.15, blur: 0.015, ink: "rgba(0, 0, 0, 0.45)" },
+  /** Inside each floor panel — see `drawRoomOutlines` */
+  outlineEdge: { width: 0.12, blur: 0.04, ink: "rgba(0, 0, 0, 0.4)" },
+};
+
+/** One of `softEdges`' entries as `drawBlurredEdge` wants it, its blur in CANVAS pixels */
+export function toEdgeOpts({ width, blur, ink }: (typeof softEdges)["roomEdge"]) {
+  return { blurPx: blur * worldToCanvas, lineWidth: width, strokeStyle: ink };
+}
+
 export function drawRoomOutlines(
   ct: CanvasRenderingContext2D,
   layout: Geomorph.Layout,
   floorTheme: { patternFill: string; tileStroke: string } = { patternFill: "#222", tileStroke: "#0001" },
+  /** Whether each panel wears an inner shadow — see `Debug`'s `floorShading` */
+  shading = true,
 ) {
   ct.save();
   ct.lineJoin = "round";
@@ -142,6 +157,16 @@ export function drawRoomOutlines(
     ct.fillStyle = stripes;
     fillRoundedPolys(ct, whole, floorInsetAmount, false);
     fillStraightPolys(ct, pieces, false);
+
+    // an inner shadow on each, so a panel reads as raised. The ROUNDED path for `whole`, else it
+    // traces corners the fill does not have
+    if (shading === true) {
+      const edge = toEdgeOpts(softEdges.outlineEdge);
+      for (const path of whole.flatMap((p) => getRoundedPolyPath(p, floorInsetAmount) ?? [])) {
+        drawBlurredEdge(ct, path, path, edge);
+      }
+      for (const piece of pieces) drawBlurredEdge(ct, piece, piece, edge);
+    }
   }
   ct.restore();
 }
@@ -297,46 +322,51 @@ function mergeSmallGridCells(cells: GridCell[], cellSize: number, smallAreaFrac:
 }
 
 function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number, stroke = true) {
-  for (const poly of polys) {
-    // filter out points too close together so short edges don't prevent rounding
-    const minDist = cornerRadius * 0.5;
-    const pts: Geom.Vect[] = [];
-    for (const p of poly.outline) {
-      const last = pts[pts.length - 1];
-      if (!last || Math.hypot(p.x - last.x, p.y - last.y) >= minDist) {
-        pts.push(p);
-      }
-    }
-    // also check last-to-first
-    while (pts.length > 3 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < minDist) {
-      pts.pop();
-    }
-    if (pts.length < 3) continue;
-    ct.beginPath();
-    const n = pts.length;
-    for (let i = 0; i < n; i++) {
-      const prev = pts[(i - 1 + n) % n];
-      const curr = pts[i];
-      const next = pts[(i + 1) % n];
-      const toPrevX = prev.x - curr.x,
-        toPrevY = prev.y - curr.y;
-      const toNextX = next.x - curr.x,
-        toNextY = next.y - curr.y;
-      const lenPrev = Math.hypot(toPrevX, toPrevY);
-      const lenNext = Math.hypot(toNextX, toNextY);
-      const r = Math.min(cornerRadius, lenPrev / 2, lenNext / 2);
-      const ax = curr.x + (toPrevX / lenPrev) * r;
-      const ay = curr.y + (toPrevY / lenPrev) * r;
-      const bx = curr.x + (toNextX / lenNext) * r;
-      const by = curr.y + (toNextY / lenNext) * r;
-      if (i === 0) ct.moveTo(ax, ay);
-      else ct.lineTo(ax, ay);
-      ct.quadraticCurveTo(curr.x, curr.y, bx, by);
-    }
-    ct.closePath();
-    stroke && ct.stroke();
-    ct.fill();
+  for (const path of polys.flatMap((poly) => getRoundedPolyPath(poly, cornerRadius) ?? [])) {
+    stroke && ct.stroke(path);
+    ct.fill(path);
   }
+}
+
+/** `poly` with rounded corners — the fill and its shadow share the path */
+function getRoundedPolyPath(poly: Geom.Poly, cornerRadius: number): null | Path2D {
+  // filter out points too close together so short edges don't prevent rounding
+  const minDist = cornerRadius * 0.5;
+  const pts: Geom.Vect[] = [];
+  for (const p of poly.outline) {
+    const last = pts[pts.length - 1];
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) >= minDist) {
+      pts.push(p);
+    }
+  }
+  // also check last-to-first
+  while (pts.length > 3 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < minDist) {
+    pts.pop();
+  }
+  if (pts.length < 3) return null;
+
+  const path = new Path2D();
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const prev = pts[(i - 1 + n) % n];
+    const curr = pts[i];
+    const next = pts[(i + 1) % n];
+    const toPrevX = prev.x - curr.x;
+    const toPrevY = prev.y - curr.y;
+    const toNextX = next.x - curr.x;
+    const toNextY = next.y - curr.y;
+    const lenPrev = Math.hypot(toPrevX, toPrevY);
+    const lenNext = Math.hypot(toNextX, toNextY);
+    const r = Math.min(cornerRadius, lenPrev / 2, lenNext / 2);
+    const ax = curr.x + (toPrevX / lenPrev) * r;
+    const ay = curr.y + (toPrevY / lenPrev) * r;
+    const bx = curr.x + (toNextX / lenNext) * r;
+    const by = curr.y + (toNextY / lenNext) * r;
+    i === 0 ? path.moveTo(ax, ay) : path.lineTo(ax, ay);
+    path.quadraticCurveTo(curr.x, curr.y, bx, by);
+  }
+  path.closePath();
+  return path;
 }
 
 let cachedFloorPattern: CanvasPattern | null = null;

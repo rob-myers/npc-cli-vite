@@ -239,6 +239,8 @@ export function WorldMenu() {
         return w.view.npcOutline ?? false;
       case "Room Outlines":
         return w.debug?.fadeRoomOutlines ?? false;
+      case "Floor Shading":
+        return w.debug?.floorShading ?? false;
       case "Lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
       case "Colliders":
@@ -278,6 +280,12 @@ export function WorldMenu() {
         w.debug?.set({ fadeRoomOutlines: !w.debug.fadeRoomOutlines });
         store.patch({ fadeRoomOutlines: w.debug?.fadeRoomOutlines === true });
         w.floor?.drawAll();
+        state.update();
+        break;
+      case "Floor Shading":
+        w.debug?.set({ floorShading: !w.debug.floorShading });
+        store.patch({ floorShading: w.debug?.floorShading === true });
+        w.floor?.drawAll(); // it is baked into the floor texture
         state.update();
         break;
       case "Lit npcs":
@@ -1187,6 +1195,7 @@ const debugItems = [
   "Post FX",
   "Npc Outline",
   "Room Outlines",
+  "Floor Shading",
   "Lit npcs",
   "Room Hit",
   "Graphs",

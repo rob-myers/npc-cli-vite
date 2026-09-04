@@ -2,7 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { Mat, Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { pause } from "@npc-cli/util/legacy/generic";
-import { drawPolygons } from "@npc-cli/util/service/canvas";
+import { drawBlurredEdge, drawPolygons, getPolysPath } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
 import {
@@ -25,7 +25,7 @@ import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
-import { drawFloorGrid, drawRoomOutlines, worldToCanvas } from "../service/texture";
+import { drawFloorGrid, drawRoomOutlines, softEdges, toEdgeOpts, worldToCanvas } from "../service/texture";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { WorldContext } from "./world-context";
 
@@ -89,6 +89,9 @@ export default function Floor() {
         const layout = state.startGm(gmId);
         if (layout === null) return;
 
+        // baked in rather than shaded per fragment, so toggling it redraws us
+        const shading = w.debug?.floorShading === true;
+
         const hullFloor = state.getHullFloor(layout);
         state.drawHullFloor(ct, hullFloor, layout);
 
@@ -96,7 +99,7 @@ export default function Floor() {
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
         // room outlines
-        drawRoomOutlines(ct, layout, w.getTheme().floor);
+        drawRoomOutlines(ct, layout, w.getTheme().floor, shading);
 
         if (w.debug?.fadeRoomOutlines === true) {
           const inView = w.view.fadeRoomsFx.rooms.filter((x) => x.gmId === gmId);
@@ -140,6 +143,16 @@ export default function Floor() {
 
         // every room dimmed, originally for lighting
         drawPolygons(ct, layout.rooms, { fillStyle: "rgba(0,0,0,0.7)", strokeStyle: null });
+
+        // ...and darker again at the walls, inside each room's whole outline
+        if (shading === true) {
+          const edge = toEdgeOpts(softEdges.roomEdge);
+          for (const room of layout.rooms) drawBlurredEdge(ct, room, room, edge);
+          // doorways darken at their SIDES, so the outline must run through them rather than across
+          // — hence the union. One pass for the lot: per doorway, each would walk it all again
+          const walkable = Poly.union([...layout.rooms, ...layout.doors.map((x) => x.poly)]);
+          drawBlurredEdge(ct, getPolysPath(layout.doors.map((x) => x.poly)), walkable, edge);
+        }
 
         // obstacle drop shadows
         drawPolygons(
