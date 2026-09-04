@@ -23,6 +23,8 @@ import {
 import * as THREE from "three/webgpu";
 import { MAX_DOORS } from "../const";
 import type DerivedGmsData from "./DerivedGmsData";
+import { MODE_FADE_SECS } from "./fade-rooms";
+import { arrivedAt, morphAt, retarget } from "./morph";
 
 /**
  * The player's light polygon: what can be seen from where they stand, bounded by the walls and by
@@ -39,11 +41,16 @@ export function createPlayerLight(): PlayerLight {
   /** Where the light stands in world XZ */
   const origin = uniform(new THREE.Vector2());
   /**
-   * How black an unseen fragment goes: `unlitTint` whilst there is a player, `0` otherwise. The two
-   * are folded into one uniform, so every material is exactly identity with the light off and none
-   * of them multiplies a constant by a uniform per fragment
+   * How black an unseen fragment goes: the mode's tint whilst there is a player, `0` otherwise. The
+   * two are folded into one uniform, so every material is exactly identity with the light off and
+   * none of them multiplies a constant by a uniform per fragment
    */
   const unlitAmount = uniform(0);
+  /**
+   * That tint on its way between modes. On the CPU, since it ends in a uniform either way and
+   * `createPlayerLight` runs before there is a `prodNode` to hang it off
+   */
+  const tintMorph = arrivedAt(unlitTintOther, nowSecs());
 
   /** Look direction in world XZ — the light falling outside this cone is dimmed a bit */
   const facing = uniform(new THREE.Vector2(1, 0));
@@ -329,7 +336,7 @@ export function createPlayerLight(): PlayerLight {
       cullDirty = true;
     },
 
-    update(renderer, at, rotationY, doors, openRatios) {
+    update(renderer, at, rotationY, doors, openRatios, prod) {
       // the WebGL fallback runs "compute" through transform feedback, which this sweep's storage
       // buffers are not going to survive — better an unlit world than a broken one
       if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
@@ -340,7 +347,10 @@ export function createPlayerLight(): PlayerLight {
         unlitAmount.value = 0;
         return;
       }
-      unlitAmount.value = unlitTint;
+      // eased rather than switched, or the mode change lands as a flash
+      const now = nowSecs();
+      retarget(tintMorph, prod === true ? unlitTintProd : unlitTintOther, MODE_FADE_SECS, now);
+      unlitAmount.value = morphAt(tintMorph, MODE_FADE_SECS, now);
 
       const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
       origin.value.set(at.x, at.z);
@@ -393,47 +403,6 @@ export function createPlayerLight(): PlayerLight {
   };
 }
 
-/**
- * How many directions the sweep resolves. A shadow edge lands within one of these of the truth.
- * - Still some flicker but 2048 + 1024 would fix it
- */
-// const lightAngles = 1024 + 512;
-const lightAngles = 2048 + 1024;
-/** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
-const maxLightSegs = 4096;
-/**
- * How far the light may wander before the walls within reach are chosen again, and the margin the
- * choice is made with — the second must exceed the first, or a wall can come into range unseen
- */
-const cullRebuildDist = 2;
-const cullMargin = 3;
-
-/** How far the light reaches (metres) — the sweep stops there, and so does the polygon */
-const lightRadius = 8;
-/** How black an unseen fragment goes */
-const unlitTint = 0.8;
-/**
- * The cone they see best down — see `coneAt`. How much of the light is lost outside it, and how far
- * out the dimming takes hold: nearer than that the ground they stand on keeps its light whichever
- * way they turn
- */
-const coneAmount = 0.7;
-const coneFrom = lightRadius * 0.2;
-/** Its half angle, and how many degrees either side that is softened over — enough to antialias */
-const coneHalfDeg = 60;
-const coneSoftDeg = 3;
-const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
-const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
-/**
- * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
- * part, and a part that grows with the arc between two angles, which is where the error lives
- */
-const lightBias = 0.02;
-/** How many arcs wide the shadow boundary is softened over — under 1 it starts to snap again */
-const penumbraArcs = 1.5;
-/** Below this the ray and the segment are parallel, and the intersection means nothing */
-const parallelUntil = 1e-6;
-
 export type PlayerLight = {
   /**
    * Changes whenever the light is rebuilt. Materials capture its nodes when they are constructed,
@@ -474,5 +443,56 @@ export type PlayerLight = {
     rotationY: number,
     doors: Record<string, Geomorph.DoorState>,
     openRatios: Float32Array,
+    /** Whether `fade-rooms` is in `prod`, which goes darker outside the light */
+    prod: boolean,
   ): void;
 };
+
+/**
+ * How many directions the sweep resolves. A shadow edge lands within one of these of the truth.
+ * - Still some flicker but 2048 + 1024 would fix it
+ */
+// const lightAngles = 1024 + 512;
+const lightAngles = 2048 + 1024;
+/** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
+const maxLightSegs = 4096;
+/**
+ * How far the light may wander before the walls within reach are chosen again, and the margin the
+ * choice is made with — the second must exceed the first, or a wall can come into range unseen
+ */
+const cullRebuildDist = 2;
+const cullMargin = 3;
+
+/** How far the light reaches (metres) — the sweep stops there, and so does the polygon */
+const lightRadius = 8;
+
+/** How black an unseen fragment goes: `prod` hides it, the other two keep it legible */
+const unlitTintProd = 0.8;
+const unlitTintOther = 0.6;
+
+/**
+ * The cone they see best down — see `coneAt`. How much of the light is lost outside it, and how far
+ * out the dimming takes hold: nearer than that the ground they stand on keeps its light whichever
+ * way they turn
+ */
+const coneAmount = 0.7;
+const coneFrom = lightRadius * 0.2;
+/** Its half angle, and how many degrees either side that is softened over — enough to antialias */
+const coneHalfDeg = 60;
+const coneSoftDeg = 3;
+const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
+const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
+/**
+ * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
+ * part, and a part that grows with the arc between two angles, which is where the error lives
+ */
+const lightBias = 0.02;
+/** How many arcs wide the shadow boundary is softened over — under 1 it starts to snap again */
+const penumbraArcs = 1.5;
+/** Below this the ray and the segment are parallel, and the intersection means nothing */
+const parallelUntil = 1e-6;
+
+/** The tint morph's own clock, only ever compared with itself */
+function nowSecs() {
+  return performance.now() / 1000;
+}
