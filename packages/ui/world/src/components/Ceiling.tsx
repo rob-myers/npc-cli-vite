@@ -81,8 +81,8 @@ export default function Ceiling() {
         // door/wall tops
         const { ceiling: tc } = w.getTheme();
         drawPolygons(ct, tops.nonHullDoor, {
-          fillStyle: tc.nonHull.fill,
-          strokeStyle: tc.nonHull.stroke,
+          fillStyle: tc.hull.stroke,
+          strokeStyle: tc.hull.stroke,
           lineWidth: thinLineWidth,
         });
         drawPolygons(ct, tops.hullDoor, {
@@ -108,7 +108,7 @@ export default function Ceiling() {
         drawPolygons(ct, tops.broad, {
           fillStyle: tc.hull.fill,
           strokeStyle: "rgba(30, 30, 30, 1)",
-          lineWidth: thickerLineWidth,
+          lineWidth: thinLineWidth,
         });
 
         for (const decal of polyDecals) {
