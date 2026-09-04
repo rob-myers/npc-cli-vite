@@ -4,7 +4,19 @@ import { pause } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
 import { useContext, useEffect, useMemo } from "react";
 import { generateUUID } from "three/src/math/MathUtils.js";
-import { attribute, instanceIndex, int, select, texture, transformNormalToView, uv, vec3, vec4 } from "three/tsl";
+import {
+  attribute,
+  float,
+  instanceIndex,
+  int,
+  mix,
+  select,
+  texture,
+  transformNormalToView,
+  uv,
+  vec3,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight, worldToSguScale } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
@@ -145,14 +157,17 @@ export default function Ceiling() {
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
 
+    const ceilFade = w.view.fadeRoomsFx.getVisiblity(
+      w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+    );
+    // `prod` alone fades a lid away; the other modes keep it and take its colour to black.
+    // `alphaTest` finishes the job, dropping it once what is left falls under `0.1`
+    const alphaFade = mix(float(1), ceilFade, w.view.fadeRoomsFx.prodNode);
+
     const opacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores ceiling for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      0.7, // beauty render
-    );
-
-    const ceilFade = w.view.fadeRoomsFx.getVisiblity(
-      w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
+      float(0.7).mul(alphaFade), // beauty render
     );
 
     return {
