@@ -79,7 +79,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // comes in closer: a phone shows far less of the world at a given distance, and its pinch
         // is free to rest anywhere between the two rather than settling on one
         minDistance: w.touchDevice ? 6 : 10,
-        maxDistance: 20,
+        maxDistance: 24,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
