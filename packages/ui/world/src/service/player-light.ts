@@ -12,7 +12,6 @@ import {
   instanceIndex,
   int,
   Loop,
-  min,
   mix,
   positionWorld,
   sin,
@@ -201,24 +200,24 @@ export function createPlayerLight(): PlayerLight {
     const near = table.element(index.mod(int(lightAngles)));
     const far = table.element(index.add(1).mod(int(lightAngles)));
 
-    // How far apart two neighbouring angles are HERE. The table holds one distance per angle, so
-    // this arc is the error it can be out by, and it grows with distance — which is why the far
-    // end of a room shimmers whilst the near end does not
-    const arc = dist.mul((2 * Math.PI) / lightAngles);
+    // How far apart two neighbouring angles are HERE — the error the table can be out by, growing
+    // with distance, which is why the far end of a room shimmers whilst the near end does not. The
+    // boundary is SOFTENED over it rather than tested against: a hard edge can only land on one of
+    // the angles the table holds, so it snaps by an arc as the light moves, and no bias hides that
+    const width = dist
+      .mul((2 * Math.PI) / lightAngles)
+      .mul(penumbraArcs)
+      .add(lightBias);
 
-    // Across a flat wall the distance varies smoothly with angle, so interpolating the two samples
-    // lands the boundary on the wall rather than scalloping between buckets. Across a real shadow
-    // edge they belong to different surfaces, and the nearer of them is the honest answer
-    const smooth = mix(near, far, along);
-    const continuous = abs(far.sub(near)).lessThanEqual(arc.mul(discontinuityArcs).add(lightBias));
-    const reference = continuous.select(smooth, min(near, far));
-
-    // and the boundary is SOFTENED by that same arc rather than tested against: a hard edge can
-    // only land on one of the angles the table holds, so it snaps by an arc as the light moves,
-    // and no bias hides that. Graded over the width of the error, it simply reads as a penumbra
-    // that widens with distance — which is what a real one does
-    const width = arc.mul(penumbraArcs).add(lightBias);
-    return smoothstep(reference.sub(width), reference.add(width), dist).oneMinus();
+    // The two ANSWERS are blended, never the two distances: where the samples straddle a shadow
+    // edge they belong to different surfaces and a distance halfway between lies on neither. A
+    // surface the light grazes — a door being walked PAST — is that case along its whole length,
+    // which is why choosing between the samples there flickered as the angles slid beneath it
+    return mix(
+      smoothstep(near.sub(width), near.add(width), dist).oneMinus(),
+      smoothstep(far.sub(width), far.add(width), dist).oneMinus(),
+      along,
+    );
   }
 
   /**
@@ -432,8 +431,6 @@ const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
 const lightBias = 0.02;
 /** How many arcs wide the shadow boundary is softened over — under 1 it starts to snap again */
 const penumbraArcs = 1.5;
-/** Beyond this many arcs apart, two neighbouring samples are different surfaces, not one wall */
-const discontinuityArcs = 4;
 /** Below this the ray and the segment are parallel, and the intersection means nothing */
 const parallelUntil = 1e-6;
 
