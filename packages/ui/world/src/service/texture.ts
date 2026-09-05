@@ -1,6 +1,6 @@
-import { Poly, Rect } from "@npc-cli/util/geom";
+import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { drawBlurredEdge, drawRoundedRect } from "@npc-cli/util/service/canvas";
+import { drawRoundedRect } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
 import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
@@ -115,8 +115,6 @@ export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 export const softEdges = {
   /** Inside each room's outline, and each doorway's — see `Floor`'s `drawGm` */
   roomEdge: { width: 0.15, blur: 0.15, ink: "rgba(0, 0, 0, 0.45)" },
-  /** Inside each floor panel — see `drawRoomOutlines` */
-  outlineEdge: { width: 0.12, blur: 0.08, ink: "rgba(0, 0, 10, 0.8)" },
 };
 
 /** One of `softEdges`' entries as `drawBlurredEdge` wants it, its blur in CANVAS pixels */
@@ -138,185 +136,157 @@ export function drawRoomOutlines(
   ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
   const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
-  const stripes = getStripePattern();
-  stripes.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
 
-  for (const room of layout.rooms) {
+  for (const [roomId, room] of layout.rooms.entries()) {
     if (room.rect.area < 10) continue; // outline looks bad in small rooms
     pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
     ct.fillStyle = pattern;
-    const { whole, pieces } = getRoomFloorPieces(room);
-    fillRoundedPolys(ct, whole, floorInsetAmount);
-    fillStraightPolys(ct, pieces);
+    const insetPolys = geomService.createInset(room.clone().removeHoles(), floorInsetAmount);
+    fillRoundedPolys(ct, insetPolys, floorInsetAmount);
 
-    // the same panels again, filled with the hatch and stroked no second time — no inset, so the
-    // stripes run right up to the outlines already drawn
-    ct.fillStyle = stripes;
-    fillRoundedPolys(ct, whole, floorInsetAmount, false);
-    fillStraightPolys(ct, pieces, false);
-
-    // an inner shadow on each, so a panel reads as raised. The ROUNDED path for `whole`, else it
-    // traces corners the fill does not have
+    // the join as a CRISP seam rather than a blurred inner shadow: a hard line reads as
+    // engineering, and holds its shape under mipmapping where a soft gradient turns to mush
     if (shading === true) {
-      const edge = toEdgeOpts(softEdges.outlineEdge);
-      for (const path of whole.flatMap((p) => getRoundedPolyPath(p, floorInsetAmount) ?? [])) {
-        drawBlurredEdge(ct, path, path, edge);
+      ct.strokeStyle = seamInk;
+      ct.lineWidth = seamWidth;
+      for (const path of insetPolys.flatMap((p) => getRoundedPolyPath(p, floorInsetAmount) ?? [])) {
+        ct.stroke(path);
       }
-      for (const piece of pieces) drawBlurredEdge(ct, piece, piece, edge);
     }
+
+    drawDeckMarkings(ct, room, roomId, layout);
   }
   ct.restore();
 }
 
 /**
- * The polygons a room's floor is drawn as: the room inset, then anything sizeable cut into grid
- * pieces. Kept apart from the drawing so the inset and split numbers live in one place.
+ * What a ship paints on its floor: a walkway stripe inset from the walls, hazard chevrons across
+ * each doorway, and the room's designator stencilled on the larger rooms. The strongest cue we
+ * have for the theme, and all of it additive over the panels
  */
-export function getRoomFloorPieces(room: Geom.Poly) {
-  const insetPolys = geomService.createInset(room.clone().removeHoles(), floorInsetAmount);
-  // a curved room is left whole: a grid of rectangles inside it reads as a mistake
-  const split = (p: Geom.Poly) => p.rect.area >= splitPolyMinArea && isCurved(p) === false;
-  return {
-    whole: insetPolys.filter((p) => split(p) === false),
-    pieces: insetPolys
-      .filter(split)
-      .flatMap((p) => splitIntoGridPieces(p, gridPieceSize, gridPieceGap, gridSmallPieceFrac)),
-  };
-}
+function drawDeckMarkings(ct: CanvasRenderingContext2D, room: Geom.Poly, roomId: number, layout: Geomorph.Layout) {
+  const { area } = room.rect;
+  if (area < deckMarkings.minRoomArea) return;
 
-/** Curves arrive tessellated, so many SHORT edges is what tells one from a rectilinear room */
-function isCurved(poly: Geom.Poly): boolean {
-  const { outline } = poly;
-  const short = outline.filter((p, i) => p.distanceTo(outline[(i + 1) % outline.length]) < curvedEdgeMax);
-  return short.length >= curvedEdgeCount;
-}
+  ct.save();
+  ct.lineJoin = "round";
+  ct.lineCap = "butt";
 
-/** An edge this short (metres), and this many of them, means a curve rather than a corner */
-const curvedEdgeMax = 0.5;
-const curvedEdgeCount = 8;
-
-const floorInsetAmount = 0.75;
-const splitPolyMinArea = 20; // polygons at/above this area get split into grid pieces
-const gridPieceSize = geomorphGridMeters * 2;
-const gridPieceGap = 0.05;
-const gridSmallPieceFrac = 0.3; // cells below this fraction of a full cell merge into a neighbour
-
-/** The hatch over the panels: stripe pitch and width in METRES, so it lies on the world, and its ink */
-const stripeGap = 0.14;
-const stripeWidth = 0.05;
-const stripeColor = "rgba(10, 10, 10, 0.15)";
-
-let cachedStripePattern: null | CanvasPattern = null;
-
-/**
- * Diagonal stripes, as a pattern rather than as lines drawn per panel — one small tile repeated
- * by the canvas, and `setTransform` puts its pitch in world metres. The tile is square and the
- * stripes run at 45°, which is what lets it repeat without a seam.
- */
-function getStripePattern(): CanvasPattern {
-  if (cachedStripePattern !== null) return cachedStripePattern;
-
-  const scale = worldToSguScale * gmFloorExtraScale;
-  const size = Math.round(stripeGap * scale);
-  const c = document.createElement("canvas");
-  c.width = size;
-  c.height = size;
-  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-
-  ctx.strokeStyle = stripeColor;
-  ctx.lineWidth = stripeWidth * scale;
-  // three passes: the diagonal, and once either side of it, so the stripe crossing the tile's
-  // corners is unbroken where the tile repeats
-  for (const offset of [-size, 0, size]) {
-    ctx.beginPath();
-    ctx.moveTo(offset - size, size * 2);
-    ctx.lineTo(offset + size * 2, -size);
-    ctx.stroke();
+  // walkway demarcation: a stripe following the walls, a little inside the panels' own inset
+  const stripeInset = floorInsetAmount + deckMarkings.stripeInset;
+  ct.strokeStyle = deckMarkings.stripeInk;
+  ct.lineWidth = deckMarkings.stripeWidth;
+  for (const poly of geomService.createInset(room.clone().removeHoles(), stripeInset)) {
+    if (poly.rect.area >= deckMarkings.minRoomArea) strokePoly(ct, poly);
   }
 
-  cachedStripePattern = ctx.createPattern(c, "repeat") as CanvasPattern;
-  return cachedStripePattern;
+  // hazard chevrons across every doorway onto this room, drawn along the door's own segment so
+  // they sit square in the opening whichever way it faces
+  for (const door of layout.doors) {
+    if (door.roomIds.includes(roomId) === true) drawDoorChevrons(ct, door);
+  }
+
+  if (area >= deckMarkings.minStencilArea) {
+    drawRoomStencil(ct, room);
+  }
+  ct.restore();
 }
 
-function fillStraightPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], stroke = true) {
-  for (const poly of polys) {
-    if (poly.outline.length < 3) continue;
+/** Diagonal hazard bars across a doorway, painted on the floor just inside it */
+function drawDoorChevrons(ct: CanvasRenderingContext2D, door: Geomorph.Connector) {
+  const [u, v] = door.seg;
+  const along = tmpVectA.copy(v).sub(u);
+  const length = along.length;
+  if (length < deckMarkings.minDoorWidth) return;
+  along.scale(1 / length);
+  // into the room, by the door's own normal — the band lies across the threshold
+  const depth = deckMarkings.chevronDepth;
+
+  ct.save();
+  ct.beginPath();
+  ct.moveTo(u.x - door.normal.x * depth, u.y - door.normal.y * depth);
+  ct.lineTo(v.x - door.normal.x * depth, v.y - door.normal.y * depth);
+  ct.lineTo(v.x + door.normal.x * depth, v.y + door.normal.y * depth);
+  ct.lineTo(u.x + door.normal.x * depth, u.y + door.normal.y * depth);
+  ct.closePath();
+  ct.clip();
+
+  ct.strokeStyle = deckMarkings.chevronInk;
+  ct.lineWidth = deckMarkings.chevronWidth;
+  // bars at 45° to the threshold, so they read as hazard striping rather than a ladder
+  const step = deckMarkings.chevronGap;
+  const reach = depth * 2;
+  for (let d = -reach; d <= length + reach; d += step) {
+    const x = u.x + along.x * d;
+    const y = u.y + along.y * d;
     ct.beginPath();
-    poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
-    ct.closePath();
-    stroke && ct.stroke();
-    ct.fill();
+    ct.moveTo(x - door.normal.x * depth - along.x * depth, y - door.normal.y * depth - along.y * depth);
+    ct.lineTo(x + door.normal.x * depth + along.x * depth, y + door.normal.y * depth + along.y * depth);
+    ct.stroke();
   }
+  ct.restore();
 }
 
-type GridCell = { gx: number; gy: number; rect: Rect; area: number };
+/** The room's designator, stencilled large and faint along its longer axis */
+function drawRoomStencil(ct: CanvasRenderingContext2D, room: Geom.Poly) {
+  const label = typeof room.meta?.label === "string" ? room.meta.label : null;
+  if (label === null) return;
 
-/** Clip `poly` into a grid of pieces, merging slivers into a neighbour, then gap-shrink each piece */
-function splitIntoGridPieces(poly: Geom.Poly, cellSize: number, gap: number, smallAreaFrac: number): Geom.Poly[] {
-  const cells = computeGridCells(poly, cellSize);
-  const rects = mergeSmallGridCells(cells, cellSize, smallAreaFrac);
-  const pieces: Geom.Poly[] = [];
-  for (const rect of rects) {
-    const shrunk = Poly.fromRect(new Rect(rect.x + gap, rect.y + gap, rect.width - gap * 2, rect.height - gap * 2));
-    pieces.push(...Poly.intersect([poly], [shrunk]).filter((piece) => piece.rect.area > 0.01));
-  }
-  return pieces;
+  const { center, rect } = room;
+  const vertical = rect.height > rect.width;
+  const fontSize = Math.min(deckMarkings.stencilMaxSize, Math.min(rect.width, rect.height) * 0.3);
+  if (fontSize < deckMarkings.stencilMinSize) return;
+
+  ct.save();
+  ct.translate(center.x, center.y);
+  // the canvas y-axis runs opposite the world's, so text is flipped back to read the right way up
+  ct.rotate(vertical === true ? -Math.PI / 2 : 0);
+  ct.scale(1, -1);
+  ct.font = `${fontSize}px sans-serif`;
+  ct.textAlign = "center";
+  ct.textBaseline = "middle";
+  ct.fillStyle = deckMarkings.stencilInk;
+  ct.fillText(label.toUpperCase(), 0, 0);
+  ct.restore();
 }
 
-/** Occupied (area > 0) cells of a `cellSize`-spaced grid covering `poly`'s bounds */
-function computeGridCells(poly: Geom.Poly, cellSize: number): GridCell[] {
-  const bounds = poly.rect;
-  const gxMin = Math.floor(bounds.x / cellSize);
-  const gxMax = Math.ceil((bounds.x + bounds.width) / cellSize);
-  const gyMin = Math.floor(bounds.y / cellSize);
-  const gyMax = Math.ceil((bounds.y + bounds.height) / cellSize);
-  const cells: GridCell[] = [];
-  for (let gx = gxMin; gx < gxMax; gx++) {
-    for (let gy = gyMin; gy < gyMax; gy++) {
-      const rect = new Rect(gx * cellSize, gy * cellSize, cellSize, cellSize);
-      const area = Poly.intersect([poly], [Poly.fromRect(rect)]).reduce((sum, p) => sum + p.rect.area, 0);
-      if (area > 0.01) cells.push({ gx, gy, rect, area });
-    }
-  }
-  return cells;
+function strokePoly(ct: CanvasRenderingContext2D, poly: Geom.Poly) {
+  if (poly.outline.length < 3) return;
+  ct.beginPath();
+  poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
+  ct.closePath();
+  ct.stroke();
 }
 
-/** Merge each small cell into one orthogonally-adjacent occupied cell, forming a 2-cell rect */
-function mergeSmallGridCells(cells: GridCell[], cellSize: number, smallAreaFrac: number): Rect[] {
-  const key = (gx: number, gy: number) => `${gx},${gy}`;
-  const smallThreshold = cellSize * cellSize * smallAreaFrac;
-  const byKey = new Map(cells.map((c) => [key(c.gx, c.gy), c]));
-  const used = new Set<string>();
-  const rects: Rect[] = [];
-  const neighborOffsets = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ] as const;
+/** The seam around a room's floor. METRES */
+const seamInk = "rgba(0, 0, 0, 0.55)";
+const seamWidth = 0.03;
 
-  for (const cell of cells) {
-    if (used.has(key(cell.gx, cell.gy)) || cell.area >= smallThreshold) continue;
-    for (const [dx, dy] of neighborOffsets) {
-      const neighbor = byKey.get(key(cell.gx + dx, cell.gy + dy));
-      if (!neighbor || used.has(key(neighbor.gx, neighbor.gy))) continue;
-      used.add(key(cell.gx, cell.gy));
-      used.add(key(neighbor.gx, neighbor.gy));
-      const minGx = Math.min(cell.gx, neighbor.gx);
-      const minGy = Math.min(cell.gy, neighbor.gy);
-      const w = (Math.max(cell.gx, neighbor.gx) - minGx + 1) * cellSize;
-      const h = (Math.max(cell.gy, neighbor.gy) - minGy + 1) * cellSize;
-      rects.push(new Rect(minGx * cellSize, minGy * cellSize, w, h));
-      break;
-    }
-  }
+/** What the deck has painted on it. Widths and insets in METRES, so they lie on the world */
+const deckMarkings = {
+  /** Rooms below this (m²) get no markings at all — they would only crowd the space */
+  minRoomArea: 12,
+  /** …and below this, no stencil */
+  minStencilArea: 30,
+  stripeInset: 0.35,
+  stripeWidth: 0.08,
+  stripeInk: "rgba(190, 200, 210, 0.22)",
+  /** How far either side of a threshold the hazard band reaches */
+  chevronDepth: 0.34,
+  chevronWidth: 0.11,
+  chevronGap: 0.34,
+  chevronInk: "rgba(184, 184, 184, 0.4)",
+  /** Doorways narrower than this are too small to stripe */
+  minDoorWidth: 0.8,
+  stencilInk: "rgba(190, 200, 210, 0.12)",
+  stencilMinSize: 0.6,
+  stencilMaxSize: 2.2,
+} as const;
 
-  for (const cell of cells) {
-    if (!used.has(key(cell.gx, cell.gy))) rects.push(cell.rect);
-  }
+const tmpVectA = new Vect();
 
-  return rects;
-}
+/** How far the floor is held back from the walls */
+const floorInsetAmount = 0.75;
 
 function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number, stroke = true) {
   for (const path of polys.flatMap((poly) => getRoundedPolyPath(poly, cornerRadius) ?? [])) {
