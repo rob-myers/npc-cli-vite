@@ -23,6 +23,7 @@ import * as THREE from "three/webgpu";
 import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
+import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
 import { deckConfig, drawFloorGrid, drawRoomFloors, softEdges, toEdgeOpts, worldToCanvas } from "../service/texture";
@@ -98,8 +99,16 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
+        // room labels, read exactly as `RoomLabels` reads them — off the instantiated decor, so
+        // `meta.roomId` is already resolved. Only `deckConfig.wiring` uses them
+        const labelOfRoom: (undefined | string)[] = [];
+        for (const decor of Object.values(w.decor.byKey)) {
+          if (helper.isRoomLabel(decor) === false || decor.meta.gmId !== gmId) continue;
+          labelOfRoom[decor.meta.roomId] = decor.meta.label;
+        }
+
         // the deck itself — plated, with a line inside each room's walls. See `deckConfig`
-        drawRoomFloors(ct, layout);
+        drawRoomFloors(ct, layout, labelOfRoom);
 
         if (w.debug?.fadeRoomOutlines === true) {
           const inView = w.view.fadeRoomsFx.rooms.filter((x) => x.gmId === gmId);

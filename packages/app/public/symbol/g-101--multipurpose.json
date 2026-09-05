@@ -644,6 +644,19 @@
           "cssTransform": "matrix(1, 0, 0, 1, 902, -6)"
         },
         {
+          "id": "9f5a15f0-3632-4338-bc5e-fd9dc7bde4b8",
+          "name": "decor point label=corridor",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 964, "f": 242},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 964, 242)"
+        },
+        {
           "id": "913fe69b-e36b-4c56-ace2-6e46e4b22de7",
           "name": "decor quad key=switch",
           "locked": true,

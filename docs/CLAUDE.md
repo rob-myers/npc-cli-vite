@@ -43,6 +43,11 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 - Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances
   instead would put a shadow edge where neither surface is.
 
+## Floor
+
+See `docs/FLOOR.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
+object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
+
 ## Camera controls
 
 Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.
