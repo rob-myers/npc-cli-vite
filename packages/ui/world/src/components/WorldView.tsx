@@ -1092,6 +1092,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // and a pan would do the same, so it is simply off for the duration
           // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
           zoomToCursor={state.cameraMode === "free"}
+          // `canonical`'s azimuth is a compass dial you turn by shift-dragging, and turning it
+          // about the point under the cursor keeps what you are looking at where you put it
+          rotateToCursor={state.cameraMode === "canonical"}
           enablePan={state.cameraMode !== "follow"}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}

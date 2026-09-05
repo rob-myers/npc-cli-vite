@@ -101,6 +101,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
       rotateSpeed={props.rotateSpeed}
       zoomSpeed={props.zoomSpeed}
       zoomToCursor={props.zoomToCursor}
+      rotateToCursor={props.rotateToCursor}
     />
   );
 });
@@ -132,6 +133,8 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @property {number} [zoomSpeed]
  * @property {boolean} [zoomToCursor] Zoom towards the cursor or pinch, moving `target` with it.
  * Off whilst following a player, whose zoom should stay centred on them
+ * @property {boolean} [rotateToCursor] Turn about the ground under the cursor rather than about
+ * `target`. Mouse only — touch has no cursor to aim at, and rotates with two fingers
  */
 
 /**
