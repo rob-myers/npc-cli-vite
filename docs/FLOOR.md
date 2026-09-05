@@ -4,7 +4,7 @@ Everything about how the floor is drawn. Nothing about it lives in another doc.
 
 | file | what it holds |
 |---|---|
-| `service/texture.ts` | `deckConfig`, `drawRoomFloors`, the wiring router, the grates, the plate pattern, `softEdges` / `toEdgeOpts` |
+| `service/texture.ts` | `deckConfig`, `drawRoomFloors`, the wiring router, the plate pattern, `softEdges` / `toEdgeOpts` |
 | `components/Floor.tsx` | `drawGm` — the draw order, the nav mesh, the hull, and the `floorShading` flag |
 | `util/service/canvas.ts` | `drawPolygons`, `getPolysPath`, `drawBlurredEdge` |
 | `components/Debug.tsx`, `service/storage.ts`, `components/WorldMenu.tsx` | the `floorShading` flag |
@@ -16,29 +16,29 @@ the world's — text and anything else with a handedness has to be flipped back)
 ## `deckConfig` — the one place to tune
 
 The look is deliberately quiet: a flat tone, square plates of decking with a seam and a rivet at
-each corner, a line held off each room's walls, a bright conduit bundle in some rooms, small
-metallic grates in others, and the nav mesh over the top. All of it comes from **one
-mutable object**, `deckConfig` in `service/texture.ts`. Change a value from the console and call
-`w.floor.drawAll()`; the plate pattern notices and rebuilds itself.
+each corner, a line held off each room's walls, a bright conduit bundle in some rooms, and the nav
+mesh over the top. All of it comes from **one mutable object**, `deckConfig` in
+`service/texture.ts`. Change a value from the console and call `w.floor.drawAll()`; the plate
+pattern notices and rebuilds itself.
 
 ```ts
 deckConfig.plate.seamWidth = 0.05;
 deckConfig.rivet.shown = false;
 deckConfig.wiring.rooms = "all";
-deckConfig.grate.max = 8;
 deckConfig.nav.ink = "rgba(255,120,120,0.2)";
 w.floor.drawAll();
 ```
 
-Seven parts: `tone`, `plate`, `rivet`, `outline`, `wiring`, `grate`, `nav`. Each of the last
-five but `nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
+Six parts: `tone`, `plate`, `rivet`, `outline`, `wiring`, `nav`. Each but `tone` and `nav` has a
+`shown` flag that turns it off outright. Lengths are in METRES.
 
-`wiring` and `grate` are the two that read a room's **label** — `wiring.rooms` and `grate.rooms`,
-each a list of labels or `"all"`. Nothing else on the floor is label-driven.
+`wiring` is the only one that reads a room's **label** — `wiring.rooms`, a list of labels or
+`"all"`. Nothing else on the floor is label-driven.
 
 `wiring` is a bundle of conduits — one line per colour in `wiring.inks`, on a dark backing, with
-clamp brackets across them. Two of them: more starts to read as a painted stripe rather than cabling. Add or remove an ink to change the count; the bundle stays centred on
-its route, so it widens evenly either side.
+clamp brackets across them. Two of them: more starts to read as a painted stripe rather than
+cabling. Add or remove an ink to change the count; the bundle stays centred on its route, so it
+widens evenly either side.
 
 The route **follows the room's own walls**, `wallOffset` inside them, from `geomService.createInset`
 — so it turns exactly the corners the room turns, which a straight line through the bbox cannot do
@@ -71,35 +71,6 @@ default `rooms: ["common"]` draws nothing anywhere. Use `"all"` when tuning the 
 
 The theme keeps only `floor.hullFill`, the structural ground between rooms that `drawHullFloor`
 paints. The deck laid on top of it is `deckConfig`, so there is one place to tune, not two.
-
-`grate` drops metallic lids into the deck, over whatever electronics live under it: a bevelled
-frame with the grating recessed into it, slotted the short way with a rib across, and countersunk at
-each corner. The slots are the point — a bar drawn as a plain line reads as paint, whereas a dark
-void with a lit lip along its upper-left edge reads as a hole you could drop a bolt through.
-
-Its **config surface is deliberately small** — `rooms`, `perArea`, `max`, the footprint in cells,
-and `ink`, the lid's own tone. Everything else is fixed beside the drawing: `grateLid` holds the
-bevel, slots, ribs and bolts, and `grateFit` holds the clearances. Neither is worth tuning per
-project, and in `deckConfig` they buried the handful of values that are.
-
-Each lid is snapped to `grateFit.snap` — half a geomorph grid square, which is what the deck plating
-itself is laid on — so it lands square on the plates instead of straddling a seam, and reads as
-plates lifted out rather than a panel dropped over them. Its footprint is given in those cells
-(`cellsAlong` × `cellsAcross`), the `along` side lying along the wall it sits by, which `nearestWall`
-settles from the closest edge. It also sits near a wall, between `wallClearance` and `wallBand` of
-the room's outline.
-
-`placeGrates` picks the spots by rejection sampling from a hash of `<gmKey>:<roomId>`, so a redraw
-puts them back exactly where they were. `perArea` and `max` set how many are wanted, then `attempts`
-candidates are snapped and tested for: **every corner** on the deck (not just the middle, or one
-hangs off the inside corner of an L-shaped room), `doorClearance` from any threshold, `spacing` from
-each other, `wireClearance` from the room's own conduit, and `obstacleClearance` from every obstacle
-footprint — a lid under a table cannot be seen, so it is not worth placing.
-
-Because the grates must clear the conduit, `drawRoomFloors` routes the wiring **once** and hands the
-same `RunPoint[][]` to both — a room set to carry both features would otherwise draw them over each
-other. It likewise transforms the obstacle footprints once for the whole layout rather than per room,
-and each room takes only the ones its bounds reach.
 
 ## Draw order (`Floor.drawGm`)
 
