@@ -1,8 +1,7 @@
-import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { drawRoundedRect } from "@npc-cli/util/service/canvas";
+import { drawRoundedRect, getPolysPath } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
-import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
+import { gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
 
 const texW = 256;
@@ -122,284 +121,163 @@ export function toEdgeOpts({ width, blur, ink }: (typeof softEdges)["roomEdge"])
   return { blurPx: blur * worldToCanvas, lineWidth: width, strokeStyle: ink };
 }
 
-export function drawRoomOutlines(
-  ct: CanvasRenderingContext2D,
-  layout: Geomorph.Layout,
-  floorTheme: { patternFill: string; tileStroke: string } = { patternFill: "#222", tileStroke: "#0001" },
-  /** Whether each panel wears an inner shadow — see `Debug`'s `floorShading` */
-  shading = true,
-) {
+/**
+ * Everything the deck is drawn from, in ONE MUTABLE place: change a value from the console, call
+ * `w.floor.drawAll()`, and it redraws — the plate pattern rebuilds itself when this changes.
+ * Lengths are in METRES, since the canvas is already in world units (100 px/m)
+ */
+export const deckConfig = {
+  /** The deck's own colour, under everything else */
+  tone: "#2a2e33",
+
+  /** One square plate of decking */
+  plate: {
+    shown: true,
+    size: 1.5 / 2,
+    /**
+     * A seam is a dark groove PLUS a lit lip just beyond it — the pair is what reads as recessed
+     * metal rather than a drawn line. Keep both at least two texels (0.02 m) wide, or they crawl
+     */
+    seamWidth: 0.03,
+    seamInk: "rgba(0, 0, 0, 0.55)",
+    lipWidth: 0.02,
+    lipInk: "rgba(190, 205, 225, 0.16)",
+  },
+
+  /** A rivet at each plate corner, lit from the upper-left like the seams */
+  rivet: {
+    shown: true,
+    radius: 0.03,
+    inset: 0.09,
+    ink: "rgba(0, 0, 0, 0.5)",
+    lipInk: "rgba(205, 220, 240, 0.3)",
+  },
+
+  /** A line following the room's walls, held off them */
+  outline: {
+    shown: true,
+    inset: 0.35,
+    width: 0.025,
+    ink: "rgba(190, 200, 210, 0.1)",
+    /** Rooms below this (m²) get none: it would only crowd them */
+    minRoomArea: 4,
+  },
+
+  /** The nav mesh over the deck — see `Floor`'s `drawNavMesh` */
+  nav: {
+    /** The walkable area, lifted a shade */
+    fill: "rgba(255, 255, 255, 0.045)",
+    ink: "rgba(120, 190, 235, 0.05)",
+    /** Two texels at least, else it beats against every seam it crosses */
+    lineWidth: 0.02,
+  },
+};
+
+/** Every room's deck, the doorways between them, and a line inside each room's walls */
+export function drawRoomFloors(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
   ct.save();
   ct.lineJoin = "round";
   ct.lineCap = "round";
-  ct.lineWidth = 0.04;
-  ct.strokeStyle = "rgba(0, 0, 0, 1)";
 
-  const pattern = getFloorPattern(floorTheme.patternFill, floorTheme.tileStroke);
+  // a doorway is not a room, and the deck reaches the bulkhead, so without this the structural
+  // `hullFill` shows through between the decks either side
+  for (const door of layout.doors) drawDeck(ct, door.poly);
 
-  for (const [roomId, room] of layout.rooms.entries()) {
-    if (room.rect.area < 10) continue; // outline looks bad in small rooms
-    pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
-    ct.fillStyle = pattern;
-    const insetPolys = geomService.createInset(room.clone().removeHoles(), floorInsetAmount);
-    fillRoundedPolys(ct, insetPolys, floorInsetAmount);
-
-    // the join as a CRISP seam rather than a blurred inner shadow: a hard line reads as
-    // engineering, and holds its shape under mipmapping where a soft gradient turns to mush
-    if (shading === true) {
-      ct.strokeStyle = seamInk;
-      ct.lineWidth = seamWidth;
-      for (const path of insetPolys.flatMap((p) => getRoundedPolyPath(p, floorInsetAmount) ?? [])) {
-        ct.stroke(path);
-      }
-    }
-
-    drawDeckMarkings(ct, room, roomId, layout);
+  for (const room of layout.rooms) {
+    drawDeck(ct, room);
+    drawRoomOutline(ct, room);
   }
+
   ct.restore();
 }
 
-/**
- * What a ship paints on its floor: a walkway stripe inset from the walls, hazard chevrons across
- * each doorway, and the room's designator stencilled on the larger rooms. The strongest cue we
- * have for the theme, and all of it additive over the panels
- */
-function drawDeckMarkings(ct: CanvasRenderingContext2D, room: Geom.Poly, roomId: number, layout: Geomorph.Layout) {
-  const { area } = room.rect;
-  if (area < deckMarkings.minRoomArea) return;
+function drawDeck(ct: CanvasRenderingContext2D, poly: Geom.Poly) {
+  const outline = poly.clone().removeHoles();
+  const { rect } = outline;
+  if (rect.width <= 0 || rect.height <= 0) return;
 
   ct.save();
-  ct.lineJoin = "round";
-  ct.lineCap = "butt";
+  ct.clip(getPolysPath([outline]));
 
-  // walkway demarcation: a stripe following the walls, a little inside the panels' own inset
-  const stripeInset = floorInsetAmount + deckMarkings.stripeInset;
-  ct.strokeStyle = deckMarkings.stripeInk;
-  ct.lineWidth = deckMarkings.stripeWidth;
-  for (const poly of geomService.createInset(room.clone().removeHoles(), stripeInset)) {
-    if (poly.rect.area >= deckMarkings.minRoomArea) strokePoly(ct, poly);
+  ct.fillStyle = deckConfig.tone;
+  ct.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+  if (deckConfig.plate.shown === true) {
+    ct.fillStyle = getPlatePattern();
+    ct.fillRect(rect.x, rect.y, rect.width, rect.height);
   }
 
-  // hazard chevrons across every doorway onto this room, drawn along the door's own segment so
-  // they sit square in the opening whichever way it faces
-  for (const door of layout.doors) {
-    if (door.roomIds.includes(roomId) === true) drawDoorChevrons(ct, door);
-  }
-
-  if (area >= deckMarkings.minStencilArea) {
-    drawRoomStencil(ct, room);
-  }
   ct.restore();
 }
 
-/** Diagonal hazard bars across a doorway, painted on the floor just inside it */
-function drawDoorChevrons(ct: CanvasRenderingContext2D, door: Geomorph.Connector) {
-  const [u, v] = door.seg;
-  const along = tmpVectA.copy(v).sub(u);
-  const length = along.length;
-  if (length < deckMarkings.minDoorWidth) return;
-  along.scale(1 / length);
-  // into the room, by the door's own normal — the band lies across the threshold
-  const depth = deckMarkings.chevronDepth;
+function drawRoomOutline(ct: CanvasRenderingContext2D, room: Geom.Poly) {
+  const { outline: opts } = deckConfig;
+  if (opts.shown === false) return;
+
+  const whole = room.clone().removeHoles();
+  if (whole.rect.area < opts.minRoomArea) return;
 
   ct.save();
-  ct.beginPath();
-  ct.moveTo(u.x - door.normal.x * depth, u.y - door.normal.y * depth);
-  ct.lineTo(v.x - door.normal.x * depth, v.y - door.normal.y * depth);
-  ct.lineTo(v.x + door.normal.x * depth, v.y + door.normal.y * depth);
-  ct.lineTo(u.x + door.normal.x * depth, u.y + door.normal.y * depth);
-  ct.closePath();
-  ct.clip();
-
-  ct.strokeStyle = deckMarkings.chevronInk;
-  ct.lineWidth = deckMarkings.chevronWidth;
-  // bars at 45° to the threshold, so they read as hazard striping rather than a ladder
-  const step = deckMarkings.chevronGap;
-  const reach = depth * 2;
-  for (let d = -reach; d <= length + reach; d += step) {
-    const x = u.x + along.x * d;
-    const y = u.y + along.y * d;
+  ct.strokeStyle = opts.ink;
+  ct.lineWidth = opts.width;
+  for (const poly of geomService.createInset(whole, opts.inset)) {
+    if (poly.outline.length < 3) continue;
     ct.beginPath();
-    ct.moveTo(x - door.normal.x * depth - along.x * depth, y - door.normal.y * depth - along.y * depth);
-    ct.lineTo(x + door.normal.x * depth + along.x * depth, y + door.normal.y * depth + along.y * depth);
+    poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
+    ct.closePath();
     ct.stroke();
   }
   ct.restore();
 }
 
-/** The room's designator, stencilled large and faint along its longer axis */
-function drawRoomStencil(ct: CanvasRenderingContext2D, room: Geom.Poly) {
-  const label = typeof room.meta?.label === "string" ? room.meta.label : null;
-  if (label === null) return;
+let cachedPlate: null | { key: string; pattern: CanvasPattern } = null;
 
-  const { center, rect } = room;
-  const vertical = rect.height > rect.width;
-  const fontSize = Math.min(deckMarkings.stencilMaxSize, Math.min(rect.width, rect.height) * 0.3);
-  if (fontSize < deckMarkings.stencilMinSize) return;
-
-  ct.save();
-  ct.translate(center.x, center.y);
-  // the canvas y-axis runs opposite the world's, so text is flipped back to read the right way up
-  ct.rotate(vertical === true ? -Math.PI / 2 : 0);
-  ct.scale(1, -1);
-  ct.font = `${fontSize}px sans-serif`;
-  ct.textAlign = "center";
-  ct.textBaseline = "middle";
-  ct.fillStyle = deckMarkings.stencilInk;
-  ct.fillText(label.toUpperCase(), 0, 0);
-  ct.restore();
+/** Rebuilt whenever `deckConfig` changes, so mutating it and redrawing is all it takes */
+function getPlatePattern(): CanvasPattern {
+  const key = JSON.stringify([deckConfig.plate, deckConfig.rivet]);
+  if (cachedPlate === null || cachedPlate.key !== key) {
+    cachedPlate = { key, pattern: createPlatePattern() };
+  }
+  // the pattern canvas is in PIXELS whilst `ct` is in metres
+  cachedPlate.pattern.setTransform(new DOMMatrix().scaleSelf(1 / worldToCanvas, 1 / worldToCanvas));
+  return cachedPlate.pattern;
 }
 
-function strokePoly(ct: CanvasRenderingContext2D, poly: Geom.Poly) {
-  if (poly.outline.length < 3) return;
-  ct.beginPath();
-  poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
-  ct.closePath();
-  ct.stroke();
-}
+function createPlatePattern(): CanvasPattern {
+  const { plate, rivet } = deckConfig;
+  const side = Math.max(1, Math.round(plate.size * worldToCanvas));
+  const canvas = document.createElement("canvas");
+  canvas.width = side;
+  canvas.height = side;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-/** The seam around a room's floor. METRES */
-const seamInk = "rgba(0, 0, 0, 0.55)";
-const seamWidth = 0.03;
+  // only the top and left edges: the plate to the right and the one below draw the others
+  const seamPx = Math.max(1, Math.round(plate.seamWidth * worldToCanvas));
+  const lipPx = Math.max(1, Math.round(plate.lipWidth * worldToCanvas));
+  ctx.fillStyle = plate.seamInk;
+  ctx.fillRect(0, 0, side, seamPx);
+  ctx.fillRect(0, 0, seamPx, side);
+  ctx.fillStyle = plate.lipInk;
+  ctx.fillRect(0, seamPx, side, lipPx);
+  ctx.fillRect(seamPx, 0, lipPx, side);
 
-/** What the deck has painted on it. Widths and insets in METRES, so they lie on the world */
-const deckMarkings = {
-  /** Rooms below this (m²) get no markings at all — they would only crowd the space */
-  minRoomArea: 12,
-  /** …and below this, no stencil */
-  minStencilArea: 30,
-  stripeInset: 0.35,
-  stripeWidth: 0.08,
-  stripeInk: "rgba(190, 200, 210, 0.22)",
-  /** How far either side of a threshold the hazard band reaches */
-  chevronDepth: 0.34,
-  chevronWidth: 0.11,
-  chevronGap: 0.34,
-  chevronInk: "rgba(184, 184, 184, 0.4)",
-  /** Doorways narrower than this are too small to stripe */
-  minDoorWidth: 0.8,
-  stencilInk: "rgba(190, 200, 210, 0.12)",
-  stencilMinSize: 0.6,
-  stencilMaxSize: 2.2,
-} as const;
-
-const tmpVectA = new Vect();
-
-/** How far the floor is held back from the walls */
-const floorInsetAmount = 0.75;
-
-function fillRoundedPolys(ct: CanvasRenderingContext2D, polys: Geom.Poly[], cornerRadius: number, stroke = true) {
-  for (const path of polys.flatMap((poly) => getRoundedPolyPath(poly, cornerRadius) ?? [])) {
-    stroke && ct.stroke(path);
-    ct.fill(path);
-  }
-}
-
-/** `poly` with rounded corners — the fill and its shadow share the path */
-function getRoundedPolyPath(poly: Geom.Poly, cornerRadius: number): null | Path2D {
-  // filter out points too close together so short edges don't prevent rounding
-  const minDist = cornerRadius * 0.5;
-  const pts: Geom.Vect[] = [];
-  for (const p of poly.outline) {
-    const last = pts[pts.length - 1];
-    if (!last || Math.hypot(p.x - last.x, p.y - last.y) >= minDist) {
-      pts.push(p);
-    }
-  }
-  // also check last-to-first
-  while (pts.length > 3 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < minDist) {
-    pts.pop();
-  }
-  if (pts.length < 3) return null;
-
-  const path = new Path2D();
-  const n = pts.length;
-  for (let i = 0; i < n; i++) {
-    const prev = pts[(i - 1 + n) % n];
-    const curr = pts[i];
-    const next = pts[(i + 1) % n];
-    const toPrevX = prev.x - curr.x;
-    const toPrevY = prev.y - curr.y;
-    const toNextX = next.x - curr.x;
-    const toNextY = next.y - curr.y;
-    const lenPrev = Math.hypot(toPrevX, toPrevY);
-    const lenNext = Math.hypot(toNextX, toNextY);
-    const r = Math.min(cornerRadius, lenPrev / 2, lenNext / 2);
-    const ax = curr.x + (toPrevX / lenPrev) * r;
-    const ay = curr.y + (toPrevY / lenPrev) * r;
-    const bx = curr.x + (toNextX / lenNext) * r;
-    const by = curr.y + (toNextY / lenNext) * r;
-    i === 0 ? path.moveTo(ax, ay) : path.lineTo(ax, ay);
-    path.quadraticCurveTo(curr.x, curr.y, bx, by);
-  }
-  path.closePath();
-  return path;
-}
-
-let cachedFloorPattern: CanvasPattern | null = null;
-let cachedPatternFill = "";
-let cachedTileStroke = "";
-
-function getFloorPattern(patternFill: string, tileStroke: string): CanvasPattern {
-  if (cachedFloorPattern && cachedPatternFill === patternFill && cachedTileStroke === tileStroke) {
-    return cachedFloorPattern;
-  }
-
-  const tileWorld = geomorphGridMeters;
-  const scale = worldToSguScale * gmFloorExtraScale;
-  const size = Math.round(tileWorld * scale);
-  const c = document.createElement("canvas");
-  c.width = size * 2;
-  c.height = size * 2;
-  const s = c.width;
-  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-
-  ctx.fillStyle = patternFill;
-  ctx.fillRect(0, 0, s, s);
-
-  ctx.strokeStyle = tileStroke;
-  ctx.lineWidth = 4;
-  ctx.strokeRect(0, 0, size, size);
-  ctx.strokeRect(size, 0, size, size);
-  ctx.strokeRect(0, size, size, size);
-  ctx.strokeRect(size, size, size, size);
-
-  const m = 4;
-  ctx.strokeStyle = tileStroke;
-  ctx.lineWidth = 1;
-  for (const [ox, oy] of [
-    [0, 0],
-    [size, 0],
-    [0, size],
-    [size, size],
-  ]) {
-    ctx.strokeRect(ox + m, oy + m, size - m * 2, size - m * 2);
-  }
-
-  ctx.fillStyle = tileStroke;
-  const d = 6;
-  for (const [ox, oy] of [
-    [0, 0],
-    [size, 0],
-    [0, size],
-    [size, size],
-  ]) {
-    for (const [rx, ry] of [
-      [d, d],
-      [size - d, d],
-      [d, size - d],
-      [size - d, size - d],
-    ]) {
+  if (rivet.shown === true) {
+    const radius = rivet.radius * worldToCanvas;
+    const inset = rivet.inset * worldToCanvas;
+    // biome-ignore format: one rivet per plate corner
+    for (const [x, y] of [[inset, inset], [side - inset, inset], [inset, side - inset], [side - inset, side - inset]]) {
+      ctx.fillStyle = rivet.ink;
       ctx.beginPath();
-      ctx.arc(ox + rx, oy + ry, 1.5, 0, Math.PI * 2);
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = rivet.lipInk;
+      ctx.beginPath();
+      ctx.arc(x - radius * 0.28, y - radius * 0.28, radius * 0.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  cachedFloorPattern = ctx.createPattern(c, "repeat") as CanvasPattern;
-  cachedPatternFill = patternFill;
-  cachedTileStroke = tileStroke;
-  return cachedFloorPattern;
+  return ctx.createPattern(canvas, "repeat") as CanvasPattern;
 }
 
 export async function fetchSkinOverlay(svgPath: string, cacheBust: string): Promise<HTMLCanvasElement> {

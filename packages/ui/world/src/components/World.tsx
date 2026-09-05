@@ -91,7 +91,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 3, // can change
         width: floorTextureDimension,
         height: floorTextureDimension,
-        srgb: true, // drawn in display colours e.g. the theme's `patternFill`
+        srgb: true, // drawn in display colours e.g. `deckConfig`'s inks
+        // nearest-filtered with no mipmaps, a seam and a nav edge one texel apart pop in and out as
+        // the camera moves. Same size and same reason as `texCeil` just below
+        anisotropy: touchDevice ? undefined : 4,
       }),
       texCeil: new TexArray({
         ctKey: "ceil-tex",
