@@ -419,6 +419,19 @@
           "cssTransform": "matrix(1, 0, 0, 1, 308, 147)"
         },
         {
+          "id": "f9c6167e-0ddc-4153-a0e9-ad112c39065e",
+          "name": "decor point label=locker",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 50, "f": 266},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 50, 266)"
+        },
+        {
           "id": "c3772c73-a93f-4815-94fb-ba486e8bad74",
           "name": "door slide=[0,-1]",
           "locked": true,
@@ -430,7 +443,7 @@
         },
         {
           "id": "1707348a-2cb9-49c7-a27f-422df7b239c3",
-          "name": "decor point label=bridge corridor",
+          "name": "decor point label=corridor corridor",
           "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 230, "f": 234},

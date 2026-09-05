@@ -84,13 +84,13 @@
       "name": "decor point label=fresher",
       "locked": true,
       "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 20, "f": 40},
+      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 20, "f": 20},
       "type": "image",
       "srcType": "decor",
       "srcKey": "label",
       "baseRect": {"width": 40, "height": 15},
       "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.5, 0, 0, 0.5, 20, 40)"
+      "cssTransform": "matrix(0.5, 0, 0, 0.5, 20, 20)"
     },
     {
       "id": "bbe0bcd0-1a9e-4ca6-af55-cc3de3d205ab",
