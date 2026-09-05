@@ -1,5 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
-import { Mat, Poly, Vect } from "@npc-cli/util/geom";
+import { Mat, Poly } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { drawBlurredEdge, drawPolygons, getPolysPath } from "@npc-cli/util/service/canvas";
@@ -25,7 +25,7 @@ import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
-import { drawFloorGrid, drawRoomOutlines, softEdges, toEdgeOpts, worldToCanvas } from "../service/texture";
+import { deckConfig, drawFloorGrid, drawRoomFloors, softEdges, toEdgeOpts, worldToCanvas } from "../service/texture";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { WorldContext } from "./world-context";
 
@@ -98,8 +98,8 @@ export default function Floor() {
         // wall bases
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
-        // room outlines
-        drawRoomOutlines(ct, layout, w.getTheme().floor, shading);
+        // the deck itself — plated, with a line inside each room's walls. See `deckConfig`
+        drawRoomFloors(ct, layout);
 
         if (w.debug?.fadeRoomOutlines === true) {
           const inView = w.view.fadeRoomsFx.rooms.filter((x) => x.gmId === gmId);
@@ -117,20 +117,10 @@ export default function Floor() {
           { fillStyle: null, strokeStyle: "#000", lineWidth: 0.1 },
         );
 
-        // 🔔 draw nav mesh: gmId specific
-        ct.lineJoin = "round";
-        ct.lineWidth = 0.01;
-        const fillStyle = "#fff1";
-        const strokeStyle = w.getTheme().floor.navStroke;
-        const triangle = new Poly([new Vect(), new Vect(), new Vect()]);
-        (w.nav?.toNavTris[gmId] ?? []).forEach(([positions]) => {
-          for (let i = 0; i < positions.length; i += 9) {
-            triangle.outline[0].set(positions[i], positions[i + 2]);
-            triangle.outline[1].set(positions[i + 3], positions[i + 5]);
-            triangle.outline[2].set(positions[i + 6], positions[i + 8]);
-            drawPolygons(ct, [triangle], { fillStyle, strokeStyle });
-          }
-        });
+        // draw nav mesh: gmId specific. Two paths rather than one call per triangle — adjacent
+        // triangles share an edge, and stroking each in turn draws every interior edge TWICE, which
+        // over a textured deck reads as patchy rather than as a mesh
+        state.drawNavMesh(ct, gmId);
 
         // door shadow
         // 🔔 gaps in doorways should be fixed by adjusting door relative to wall
@@ -203,6 +193,37 @@ export default function Floor() {
           w.texFloor.updateIndex(gmId);
         }
         w.update();
+      },
+      drawNavMesh(ct, gmId) {
+        const tris = w.nav?.toNavTris[gmId] ?? [];
+        if (tris.length === 0) return;
+
+        const faces = new Path2D();
+        const edges = new Path2D();
+        const seen = new Set<string>();
+
+        for (const [positions] of tris) {
+          for (let i = 0; i < positions.length; i += 9) {
+            const [ax, ay] = [positions[i], positions[i + 2]];
+            const [bx, by] = [positions[i + 3], positions[i + 5]];
+            const [cx, cy] = [positions[i + 6], positions[i + 8]];
+            faces.moveTo(ax, ay);
+            faces.lineTo(bx, by);
+            faces.lineTo(cx, cy);
+            faces.closePath();
+            addNavEdge(edges, seen, ax, ay, bx, by);
+            addNavEdge(edges, seen, bx, by, cx, cy);
+            addNavEdge(edges, seen, cx, cy, ax, ay);
+          }
+        }
+
+        // the walkable area lifted a shade, then the mesh itself as a hairline over it
+        ct.fillStyle = deckConfig.nav.fill;
+        ct.fill(faces);
+        ct.lineJoin = "round";
+        ct.lineWidth = deckConfig.nav.lineWidth;
+        ct.strokeStyle = deckConfig.nav.ink;
+        ct.stroke(edges);
       },
       async fadeOut() {
         // a map change is a fade through black — the world stays standing, so there is no fold
@@ -425,6 +446,8 @@ export type State = {
   /** `draw`, then show it — what anything outside this file wants */
   drawAll(): void;
   drawGm(gmId: number): void;
+  /** Every nav triangle filled once, then every DISTINCT edge stroked once */
+  drawNavMesh(ct: CanvasRenderingContext2D, gmId: number): void;
   /** Just the hull, as a stand-in until `drawGm` lands */
   drawHull(gmId: number, gms?: Geomorph.LayoutInstance[]): void;
   /** Place, uv and hull-fill every geomorph of `gms` */
@@ -449,7 +472,18 @@ const floorFadeMs = 300;
 /** The hatch drawn into the hull floor: spacing and width in METRES, so it lies on the world */
 const hullStripeGap = 0.16;
 const hullStripeWidth = 0.025;
-const hullStripeColor = "#0000001a";
+const hullStripeColor = "rgba(190, 205, 225, 0.05)";
+
+/** One line per edge: an interior edge belongs to two triangles, and stroking it twice shows */
+function addNavEdge(path: Path2D, seen: Set<string>, ax: number, ay: number, bx: number, by: number) {
+  const a = `${ax.toFixed(3)},${ay.toFixed(3)}`;
+  const b = `${bx.toFixed(3)},${by.toFixed(3)}`;
+  const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+  if (seen.has(key) === true) return;
+  seen.add(key);
+  path.moveTo(ax, ay);
+  path.lineTo(bx, by);
+}
 
 /** debug: every room outlined — how wide the line is, in metres, and its ink */
 const debugRoomEdgeWidth = 0.06;

@@ -129,10 +129,12 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     nonHull: { fill: "#444", stroke: "#000" },
   },
   floor: {
-    hullFill: "#fff",
-    navStroke: "#000c",
-    patternFill: "#222",
-    tileStroke: "#0001",
+    /**
+     * The structural ground inside the hull, between rooms — see `Floor`'s `drawHullFloor`. The
+     * deck laid on top of it is `deckConfig` in `service/texture`, not part of the theme, so that
+     * it is one mutable object to tune against
+     */
+    hullFill: "#0b0d10",
   },
   lights: {
     ambientIntensity: defaultAmbientIntensity,
