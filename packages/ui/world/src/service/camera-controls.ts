@@ -44,6 +44,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   panSpeed = 1.0;
   keyPanSpeed = 7.0;
   zoomToCursor = true;
+  /**
+   * Turn about the ground under the CURSOR rather than about `target`. Mouse only: it needs a
+   * cursor to aim at, and touch rotates with two fingers — see `setRotateAbout`
+   */
+  rotateToCursor = false;
 
   target0 = new THREE.Vector3();
   position0 = new THREE.Vector3();
@@ -90,6 +95,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     rotateEnd: new THREE.Vector2(),
     rotateDelta: new THREE.Vector2(),
     rotateStart: new THREE.Vector2(),
+    /** Ground point a cursor-aimed turn goes about — see `setRotateAbout` */
+    rotatePivot: new THREE.Vector3(),
     up: new THREE.Vector3(0, 1, 0),
   };
 
@@ -145,6 +152,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   _zoomAimed = false;
   /** Whether `zoomProgress` has been read off the camera it started at — see `update` */
   _zoomSeeded = false;
+  /** Whether `u.rotatePivot` holds a point this drag aimed at — see `setRotateAbout` */
+  _rotateAimed = false;
 
   /** Midpoint of the two fingers, whose motion rotates the camera */
   twoFingerCentroid = new THREE.Vector2();
@@ -253,6 +262,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   handleMouseDownRotate(event: MouseEvent) {
     this.u.rotateStart.set(event.clientX, event.clientY);
+    this.setRotateAbout(event.clientX, event.clientY);
   }
 
   /** Middle-button drag: the same trip between the stops the wheel makes, measured in pixels */
@@ -441,6 +451,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTouchStartRotate() {
+    this._rotateAimed = false; // no cursor to turn about
     if (this.pointers.length === 1) {
       this.u.rotateStart.set(this.pointers[0].pageX, this.pointers[0].pageY);
     } else {
@@ -880,6 +891,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   reset() {
+    this._rotateAimed = false; // whatever it was aimed at is not where we are going
     this.target.copy(this.target0);
     this.object.position.copy(this.position0);
     this.object.zoom = this.zoom0;
@@ -943,6 +955,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
     // (x, y, z) -> { r, theta, phi }
     this.spherical.setFromVector3(u.offset);
+    const thetaBefore = this.spherical.theta;
 
     // approach target via damped delta
     this.spherical.theta += this.sphericalDelta.theta * this.azimuthalDampingFactor;
@@ -993,6 +1006,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.u.offset.setFromSpherical(this.spherical);
     position.copy(this.target).add(this.u.offset);
 
+    // turning about the cursor and turning about `target` leave `position - target` identical, so
+    // the two differ by a pure translation — apply the turn as usual, then slide the rig by it
+    if (this.rotateToCursor === true && this._rotateAimed === true) {
+      this.slideAboutPivot(this.spherical.theta - thetaBefore);
+    }
+
     if (this.object.matrixAutoUpdate === false) {
       this.object.updateMatrix();
     }
@@ -1017,6 +1036,54 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     }
 
     return false;
+  }
+
+  /**
+   * Slides the rig so `u.rotatePivot` sits where it did through a turn of `dTheta` about `target`.
+   * `three`'s `theta` is `atan2(x, z)`, which is the rotation matched here
+   */
+  slideAboutPivot(dTheta: number) {
+    if (dTheta === 0) return;
+    const pivot = this.u.rotatePivot;
+    const cos = Math.cos(dTheta);
+    const sin = Math.sin(dTheta);
+    const vx = this.target.x - pivot.x;
+    const vz = this.target.z - pivot.z;
+    const shiftX = pivot.x + (vx * cos + vz * sin) - this.target.x;
+    const shiftZ = pivot.z + (vz * cos - vx * sin) - this.target.z;
+
+    this.target.x += shiftX;
+    this.target.z += shiftZ;
+    this.object.position.x += shiftX;
+    this.object.position.z += shiftZ;
+  }
+
+  /**
+   * Aims the turn at the ground under the cursor, on the level `target` sits at. Leaves the aim
+   * unset — so the turn goes about `target`, as it always did — if the ray never meets that ground
+   */
+  setRotateAbout(clientX: number, clientY: number) {
+    this._rotateAimed = false;
+    if (this.rotateToCursor === false) return;
+
+    const { left, top, width, height } = this.domElement.getBoundingClientRect();
+    this.u.mouse.set(2 * ((clientX - left) / width) - 1, 1 - 2 * ((clientY - top) / height));
+    this.ray.origin.copy(this.object.position);
+    this.ray.direction
+      .set(this.u.mouse.x, this.u.mouse.y, 1)
+      .unproject(this.object)
+      .sub(this.object.position)
+      .normalize();
+    this.plane.setFromNormalAndCoplanarPoint(this.object.up, this.target);
+    if (this.ray.intersectPlane(this.plane, this.u.rotatePivot) === null) return;
+
+    // a shallow ray meets the ground hundreds of metres out, and a lever that long swings the view
+    // off the map — keep the pivot to what is actually in front of us
+    const reach = Number.isFinite(this.maxDistance) === true ? this.maxDistance : this.spherical.radius;
+    if (this.u.rotatePivot.distanceTo(this.target) > reach) {
+      this.u.rotatePivot.sub(this.target).setLength(reach).add(this.target);
+    }
+    this._rotateAimed = true;
   }
 
   /** Aims the zoom at the cursor — see `setDollyTowards` */

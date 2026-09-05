@@ -56,6 +56,8 @@ Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `Worl
 
 The radius is **not** persistent state — `update()` re-derives it from `position - target` each frame, so zoom must be written inside `update()`. Anything that moves the camera itself (e.g. `WorldView.lookAt`) must call `setZoomFromRadius` afterwards, else the next settle undoes it.
 
+**Turns can aim at a point too**, when `rotateToCursor` is on — it is, for `canonical`, whose azimuth is a compass dial you shift-drag. `setRotateAbout(clientX, clientY)` meets the cursor's ray with the ground plane through `target` on mouse-down (clamped to `maxDistance`, since a shallow ray lands hundreds of metres out), and `update` then slides the whole rig by `slideAboutPivot`. Turning about the pivot and turning about `target` leave `position - target` identical, so they differ by a pure translation — which is all that helper applies. Mouse only: `handleTouchStartRotate` clears the aim, as touch has no cursor.
+
 Zooms aim at a point: `setDollyTowards(clientX, clientY)` from the cursor (wheel) or the pinch centroid, then `applyZoomTowards(prev, next)` moves the camera along that aim and re-derives `target`. Only a **pure** pinch zooms — two fingers also rotate and pan, so `twoFingerRotateRatio` (smoothed centroid-motion share) must be under `pinchPurity`.
 
 ## Navigation / crowd
