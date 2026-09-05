@@ -24,6 +24,7 @@ import {
   MAX_DOOR_LABELS,
   MAX_NPCS,
   mapEditSymbolSavedEvent,
+  roomLabelTexOpts,
 } from "../const";
 import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
@@ -46,6 +47,7 @@ import NPCs from "./NPCs";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
+import RoomLabels from "./RoomLabels";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
@@ -105,7 +107,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         height: 1,
         anisotropy: touchDevice ? undefined : 4,
       }),
-      texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 16 }),
+      texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 4 }),
       texDoorLabel: new TexArray({
         ctKey: "door-labels",
         width: 256,
@@ -114,6 +116,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         srgb: true, // likewise colour: the panel reads as it was drawn
       }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
+      texRoomLabel: new TexArray(roomLabelTexOpts),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 256, height: 256, numTextures: MAX_NPCS }),
 
       assets: null as any,
@@ -146,6 +149,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       n: null as any,
       obs: null as any,
       rings: null as any,
+      roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
       view: null as any,
@@ -448,6 +452,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Obstacles key="obstacles" />
               <Decor key="decor" />
               <NpcShadows key="npc-shadows" />
+              <RoomLabels key="room-labels" />
               <NpcRings key="npc-rings" />
               <Debug key="debug" />
             </group>
@@ -519,6 +524,7 @@ export type State = {
   texObs: TexArray;
   texDecor: TexArray;
   texDoorLabel: TexArray;
+  texRoomLabel: TexArray;
   texNpcLabel: TexArray;
   texSkin: TexArray;
 
@@ -539,6 +545,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
+  roomLabels: UseStateRef<import("./RoomLabels").State>;
   speech: UseStateRef<import("./WorldSpeech").State>;
   view: UseStateRef<import("./WorldView").State>;
   wall: UseStateRef<import("./Walls").State>;

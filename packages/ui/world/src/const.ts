@@ -183,6 +183,26 @@ export const MAX_BROAD_WALLS_PER_GEOMORPH = 16;
 
 export const MAX_DOOR_LABELS = 32;
 
+/**
+ * Room labels are drawn once per DISTINCT text ("stateroom", "bridge", …) and shared by every
+ * room saying it, so this bounds the vocabulary of a map rather than its room count
+ */
+export const MAX_ROOM_LABELS = 32;
+/** Cap on the billboards themselves — one per labelled decor point */
+export const MAX_ROOM_LABEL_INSTANCES = 256;
+/** How big a room label stands in the world (metres) */
+export const roomLabelWidth = 1.6;
+export const roomLabelHeight = 0.4;
+/** The texture array behind them — see `RoomLabels` */
+export const roomLabelTexOpts = {
+  ctKey: "room-labels",
+  width: 256,
+  height: 64,
+  numTextures: MAX_ROOM_LABELS,
+  srgb: true,
+  anisotropy: 4,
+};
+
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;
 
