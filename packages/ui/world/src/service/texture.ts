@@ -1,8 +1,7 @@
-import { Mat } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { drawRoundedRect, getPolysPath } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
-import { geomorphGridMeters, gmFloorExtraScale, worldToSguScale } from "../const";
+import { gmFloorExtraScale, worldToSguScale } from "../const";
 import type { TexArray } from "./tex-array";
 
 const texW = 256;
@@ -208,21 +207,6 @@ export const deckConfig = {
     minRoomArea: 6,
   },
 
-  /** Metallic lids let into the deck, over whatever electronics live under it */
-  grate: {
-    shown: true,
-    /** Which rooms get them, by label — or `"all"` */
-    rooms: ["corridor"] as "all" | string[],
-    /** One per this much deck (m²), never more than `max` */
-    perArea: 16,
-    max: 4,
-    /** Its footprint in half-grid cells: the `along` side lies along the wall it sits by */
-    cellsAlong: 2,
-    cellsAcross: 1,
-    /** The lid's own tone, under its bevel and slots */
-    ink: "#222",
-  },
-
   /** The nav mesh over the deck — see `Floor`'s `drawNavMesh` */
   nav: {
     /** The walkable area, lifted a shade */
@@ -248,29 +232,16 @@ export function drawRoomFloors(
   // `hullFill` shows through between the decks either side
   for (const door of layout.doors) drawDeck(ct, door.poly);
 
-  // once for the layout, not once per room: nothing on the deck may hide under one of these
-  const obstacles = layout.obstacles.map((o) =>
-    o.origPoly.clone().applyMatrix(tmpObstacleMat.setMatrixValue(o.transform)).rect.clone(),
-  );
-
   for (const [roomId, room] of layout.rooms.entries()) {
     drawDeck(ct, room);
     drawRoomOutline(ct, room);
 
-    const label = labelOfRoom[roomId];
-    const { wiring, grate } = deckConfig;
-    const wantsWiring = wantsFeature(wiring.rooms, wiring.shown, label);
-    const wantsGrates = wantsFeature(grate.rooms, grate.shown, label);
-    if (wantsWiring === false && wantsGrates === false) continue;
+    const { wiring } = deckConfig;
+    if (wantsFeature(wiring.rooms, wiring.shown, labelOfRoom[roomId]) === false) continue;
 
-    // both want them, and the filter is not free — see `DerivedGmsData`, which fills `roomIds` in
+    // the filter is not free — see `DerivedGmsData`, which fills `roomIds` in
     const roomDoors = layout.doors.filter((door) => door.roomIds.includes(roomId) === true);
-    // routed once and shared: the grates need to know where the conduit is so as not to sit on it
-    const runs = wantsWiring === true ? wiringRuns(room.clone().removeHoles(), roomDoors) : [];
-    if (wantsWiring === true) drawWiring(ct, room, runs);
-    if (wantsGrates === true) {
-      for (const g of placeGrates(room, roomDoors, runs, obstacles, `${layout.key}:${roomId}`)) drawGrate(ct, g);
-    }
+    drawWiring(ct, room, wiringRuns(room.clone().removeHoles(), roomDoors));
   }
 
   ct.restore();
@@ -499,311 +470,6 @@ function wantsFeature(rooms: "all" | string[], shown: boolean, label: undefined 
   if (shown === false) return false;
   if (rooms === "all") return true;
   return label !== undefined && rooms.includes(label);
-}
-
-/**
- * Where a grate may go. METRES, and fixed — `deckConfig.grate` keeps only what is worth tuning,
- * and none of this is
- */
-const grateFit = {
-  /** Snapped to half a geomorph grid square, which is what the deck plating itself is laid on */
-  snap: geomorphGridMeters / 2,
-  wallClearance: 0.45,
-  wallBand: 1.25,
-  doorClearance: 0.9,
-  spacing: 0.6,
-  wireClearance: 0.25,
-  obstacleClearance: 0.1,
-  /** How many placements to try before settling for however many landed */
-  attempts: 64,
-} as const;
-
-/**
- * The metallic lid itself, over `deckConfig.grate.ink`: a bevelled frame with the grating recessed
- * into it, slotted the short way with a rib across, and countersunk at each corner. Lit from the
- * upper-left, as every seam and rivet on this deck is. METRES
- */
-const grateLid = {
-  frameWidth: 0.075,
-  bevelWidth: 0.045,
-  bevelLight: "rgba(225, 238, 252, 0.3)",
-  bevelDark: "rgba(0, 0, 0, 0.35)",
-  edgeInk: "rgba(0, 0, 0, 0.3)",
-  edgeWidth: 0.03,
-  /** The shadow the frame casts into the opening */
-  recessInk: "rgba(0, 0, 0, 0.55)",
-  recessWidth: 0.05,
-  /**
-   * The slots. A bar drawn as a plain line reads as paint; a dark void with a lit lip on its
-   * upper-left edge reads as a hole you could drop a bolt through
-   */
-  slotPitch: 0.1,
-  slotWidth: 0.055,
-  slotInk: "rgba(0, 0, 0, 0.72)",
-  slotLipWidth: 0.02,
-  slotLipInk: "rgba(225, 238, 252, 0.25)",
-  /** Ribs across the bars, so the grating reads as one piece */
-  ribCount: 1,
-  ribWidth: 0.05,
-  ribInk: "rgba(120, 134, 148, 0.35)",
-  boltRadius: 0.026,
-  boltInset: 0.075,
-  boltInk: "rgba(0, 0, 0, 0.65)",
-  boltLipInk: "rgba(230, 242, 255, 0.35)",
-} as const;
-
-type Grate = { x: number; y: number; width: number; height: number };
-
-/**
- * Where the metallic grates go: each NEAR a wall and turned to lie along it, snapped to the
- * half-grid so it lands square on the deck plating rather than straddling a seam. Rejection
- * sampling from a hash, so a redraw puts them back exactly where they were
- */
-function placeGrates(
-  room: Geom.Poly,
-  doors: Geomorph.Connector[],
-  runs: RunPoint[][],
-  /** Every obstacle's footprint in the layout — a grate under one could not be seen */
-  obstacles: Geom.Rect[],
-  /** Seeds the placement, so a redraw is identical */
-  seed: string,
-): Grate[] {
-  const cfg = deckConfig.grate;
-  const fit = grateFit;
-  const whole = room.clone().removeHoles();
-  const { rect } = whole;
-
-  const wanted = Math.min(cfg.max, Math.floor(rect.area / cfg.perArea));
-  if (wanted < 1 || fit.snap <= 0) return [];
-
-  // the deck they may sit on: held off the walls, so a grate never overhangs one
-  const region = geomService.createInset(whole, fit.wallClearance);
-  if (region.length === 0) return [];
-
-  // the ones that could possibly reach this room, so the tests below stay cheap
-  const nearObstacles = obstacles.filter((o) => o.intersects(rect) === true);
-
-  const base = hashString(seed);
-  const placed: Grate[] = [];
-  for (let attempt = 0; attempt < fit.attempts && placed.length < wanted; attempt++) {
-    const h = hash2(base, attempt, 0x5f);
-    const x = rect.x + ((h & 0xffff) / 0xffff) * rect.width;
-    const y = rect.y + (((h >>> 16) & 0xffff) / 0xffff) * rect.height;
-
-    // near a wall, and turned to lie ALONG it rather than across it
-    const near = nearestWall(x, y, whole);
-    if (near.distance > fit.wallBand) continue;
-    const along = Math.abs(near.dx) > Math.abs(near.dy);
-    const width = (along === true ? cfg.cellsAlong : cfg.cellsAcross) * fit.snap;
-    const height = (along === true ? cfg.cellsAcross : cfg.cellsAlong) * fit.snap;
-    // snapped to the half-grid the deck plating itself is laid on, so a grate reads as plates
-    // lifted out rather than a panel dropped over them
-    const box = {
-      x: Math.round((x - width / 2) / fit.snap) * fit.snap,
-      y: Math.round((y - height / 2) / fit.snap) * fit.snap,
-      width,
-      height,
-    };
-
-    // every corner on the deck, not just the middle, or it hangs off a corner of an L-shaped room
-    const corners = [
-      { x: box.x, y: box.y },
-      { x: box.x + width, y: box.y },
-      { x: box.x, y: box.y + height },
-      { x: box.x + width, y: box.y + height },
-    ];
-    if (corners.every((c) => region.some((poly) => poly.contains(c) === true)) === false) continue;
-    if (nearestDoorGap({ x: box.x + width / 2, y: box.y + height / 2 }, doors) < fit.doorClearance) continue;
-    if (placed.some((q) => overlapping(q, box, fit.spacing) === true)) continue;
-    if (runsNearBox(runs, box, fit.wireClearance) === true) continue;
-    if (nearObstacles.some((o) => overlappingRect(o, box, fit.obstacleClearance) === true)) continue;
-
-    placed.push(box);
-  }
-
-  return placed;
-}
-
-/**
- * One grate: a bevelled frame with the grating recessed into it, slotted the short way with a rib
- * across, and countersunk at each corner. The slots are the point — a bar drawn as a plain line
- * reads as paint, whereas a dark void with a lit lip on its upper edge reads as a hole you could
- * drop a bolt through
- */
-function drawGrate(ct: CanvasRenderingContext2D, grate: Grate) {
-  const cfg = deckConfig.grate;
-  const lid = grateLid;
-  const { x, y, width, height } = grate;
-
-  ct.save();
-  ct.lineJoin = "miter";
-  ct.lineCap = "butt";
-
-  // the frame the grating drops into, lit from the upper-left like every seam on this deck
-  ct.fillStyle = cfg.ink;
-  ct.fillRect(x, y, width, height);
-  const bevel = lid.bevelWidth / 2;
-  for (const [ink, pts] of [
-    [lid.bevelLight, [x + bevel, y + height - bevel, x + bevel, y + bevel, x + width - bevel, y + bevel]],
-    [
-      lid.bevelDark,
-      [x + width - bevel, y + bevel, x + width - bevel, y + height - bevel, x + bevel, y + height - bevel],
-    ],
-  ] as const) {
-    ct.strokeStyle = ink;
-    ct.lineWidth = lid.bevelWidth;
-    ct.beginPath();
-    ct.moveTo(pts[0], pts[1]);
-    ct.lineTo(pts[2], pts[3]);
-    ct.lineTo(pts[4], pts[5]);
-    ct.stroke();
-  }
-
-  const f = lid.frameWidth;
-  const [ix, iy, iw, ih] = [x + f, y + f, width - f * 2, height - f * 2];
-  if (iw > 0 && ih > 0) {
-    ct.save();
-    ct.beginPath();
-    ct.rect(ix, iy, iw, ih);
-    ct.clip();
-
-    ct.fillStyle = cfg.ink;
-    ct.fillRect(ix, iy, iw, ih);
-
-    // slots run across the SHORT way, as grating does — so they read as bars spanning the opening
-    const lengthways = iw >= ih;
-    const span = lengthways === true ? iw : ih;
-    ct.lineWidth = lid.slotWidth;
-    for (let d = lid.slotPitch; d < span; d += lid.slotPitch) {
-      for (const [offset, ink, lineWidth] of [
-        [0, lid.slotInk, lid.slotWidth],
-        [-(lid.slotWidth + lid.slotLipWidth) / 2, lid.slotLipInk, lid.slotLipWidth],
-      ] as const) {
-        ct.strokeStyle = ink;
-        ct.lineWidth = lineWidth;
-        ct.beginPath();
-        if (lengthways === true) {
-          ct.moveTo(ix + d + offset, iy);
-          ct.lineTo(ix + d + offset, iy + ih);
-        } else {
-          ct.moveTo(ix, iy + d + offset);
-          ct.lineTo(ix + iw, iy + d + offset);
-        }
-        ct.stroke();
-      }
-    }
-
-    // ribs the other way, holding the bars — they cross every slot, so the grating reads as one piece
-    ct.strokeStyle = lid.ribInk;
-    ct.lineWidth = lid.ribWidth;
-    ct.beginPath();
-    const ribSpan = lengthways === true ? ih : iw;
-    const ribPitch = ribSpan / (lid.ribCount + 1);
-    for (let k = 1; k <= lid.ribCount; k++) {
-      if (lengthways === true) {
-        ct.moveTo(ix, iy + ribPitch * k);
-        ct.lineTo(ix + iw, iy + ribPitch * k);
-      } else {
-        ct.moveTo(ix + ribPitch * k, iy);
-        ct.lineTo(ix + ribPitch * k, iy + ih);
-      }
-    }
-    ct.stroke();
-    ct.restore();
-
-    // the shadow the frame casts into the opening
-    ct.strokeStyle = lid.recessInk;
-    ct.lineWidth = lid.recessWidth;
-    ct.strokeRect(ix, iy, iw, ih);
-  }
-
-  // countersunk into the frame, one at each corner
-  const b = lid.boltInset;
-  for (const [bx, by] of [
-    [x + b, y + b],
-    [x + width - b, y + b],
-    [x + b, y + height - b],
-    [x + width - b, y + height - b],
-  ]) {
-    ct.fillStyle = lid.boltInk;
-    ct.beginPath();
-    ct.arc(bx, by, lid.boltRadius, 0, Math.PI * 2);
-    ct.fill();
-    ct.fillStyle = lid.boltLipInk;
-    ct.beginPath();
-    ct.arc(bx - lid.boltRadius * 0.28, by - lid.boltRadius * 0.28, lid.boltRadius * 0.5, 0, Math.PI * 2);
-    ct.fill();
-  }
-
-  ct.strokeStyle = lid.edgeInk;
-  ct.lineWidth = lid.edgeWidth;
-  ct.strokeRect(x, y, width, height);
-  ct.restore();
-}
-
-/** The nearest point of the room's outline, and the direction that stretch of wall runs in */
-function nearestWall(px: number, py: number, room: Geom.Poly) {
-  let best = { distance: Number.POSITIVE_INFINITY, dx: 1, dy: 0 };
-  const ring = room.outline;
-  for (let i = 0; i < ring.length; i++) {
-    const [u, v] = [ring[i], ring[(i + 1) % ring.length]];
-    const distance = distanceToSegment(px, py, u.x, u.y, v.x, v.y);
-    if (distance < best.distance) best = { distance, dx: v.x - u.x, dy: v.y - u.y };
-  }
-  return best;
-}
-
-/** Whether any conduit passes within `clearance` of `box` */
-function runsNearBox(
-  runs: RunPoint[][],
-  box: { x: number; y: number; width: number; height: number },
-  clearance: number,
-) {
-  for (const run of runs) {
-    for (const p of run) {
-      if (
-        p.x > box.x - clearance &&
-        p.x < box.x + box.width + clearance &&
-        p.y > box.y - clearance &&
-        p.y < box.y + box.height + clearance
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function overlappingRect(a: Geom.Rect, b: { x: number; y: number; width: number; height: number }, pad: number) {
-  return (
-    a.x - pad < b.x + b.width && b.x < a.x + a.width + pad && a.y - pad < b.y + b.height && b.y < a.y + a.height + pad
-  );
-}
-
-function overlapping(
-  a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number },
-  spacing: number,
-) {
-  return (
-    a.x - spacing < b.x + b.width &&
-    b.x - spacing < a.x + a.width &&
-    a.y - spacing < b.y + b.height &&
-    b.y - spacing < a.y + a.height
-  );
-}
-
-function hashString(text: string) {
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
-function hash2(base: number, x: number, y: number) {
-  let h = Math.imul(base ^ Math.imul(x, 374761393), 668265263);
-  h = Math.imul(h ^ Math.imul(y, 2246822519), 3266489917);
-  h ^= h >>> 15;
-  return h >>> 0;
 }
 
 /** How near the closest doorway passes this point */
@@ -1100,6 +766,3 @@ export function drawFloorGrid(
     }
   }
 }
-
-/** Reused for every obstacle footprint — see `drawRoomFloors` */
-const tmpObstacleMat = new Mat();
