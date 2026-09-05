@@ -63,6 +63,11 @@ export const helper = {
       : helper.isVectJson(input); // could test z numeric when exists
   },
 
+  /** A decor point naming the room it stands in — see `RoomLabels` */
+  isRoomLabel(decor: Geomorph.Decor): decor is Geomorph.DecorPoint & { meta: { label: string } } {
+    return decor.type === "point" && typeof decor.meta.label === "string";
+  },
+
   isVectJson(input: any): input is Geom.VectJson {
     return !!input && typeof input.x === "number" && typeof input.y === "number";
   },
