@@ -530,7 +530,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "c76b4551-605f-42a6-ab8e-a4ff26315d8a",
@@ -551,6 +551,32 @@
           "baseRect": {"width": 44, "height": 32},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, -0.7727, 0.7727, 0, 244, 407.9988)"
+        },
+        {
+          "id": "1ea2509a-2b69-48ad-818c-6d572ac19b02",
+          "name": "decor point label=corridor corridor",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 228, "f": 296},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 228, 296)"
+        },
+        {
+          "id": "0b06ce18-23d4-4989-90df-314649bcb2a8",
+          "name": "decor point label=corridor corridor",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 940, "f": 300},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 940, 300)"
         }
       ]
     }
