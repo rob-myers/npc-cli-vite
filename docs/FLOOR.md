@@ -72,33 +72,29 @@ default `rooms: ["common"]` draws nothing anywhere. Use `"all"` when tuning the 
 The theme keeps only `floor.hullFill`, the structural ground between rooms that `drawHullFloor`
 paints. The deck laid on top of it is `deckConfig`, so there is one place to tune, not two.
 
-`grate` puts metallic grates into the deck — a bevelled plate, grating bars, a lit bolt at each
-corner — over whatever electronics live under it. They are drawn **deliberately loud**: a bright
-`fill` against the deck's `tone`, a strong bevel and a bold lead, so they are easy to pick out at
-playing distance. Each sits **near a wall** (between `wallClearance` and `wallBand` of the room's
-outline) and is **turned to lie along** that wall, its long side parallel to it, which `nearestWall`
-settles from the closest edge.
+`grate` drops metallic lids into the deck, over whatever electronics live under it: a bevelled
+frame with the grating recessed into it, slotted the short way with a rib across, and countersunk at
+each corner. The slots are the point — a bar drawn as a plain line reads as paint, whereas a dark
+void with a lit lip along its upper-left edge reads as a hole you could drop a bolt through.
+
+Its **config surface is deliberately small** — `rooms`, `perArea`, `max`, the footprint in cells,
+and `ink`, the lid's own tone. Everything else is fixed beside the drawing: `grateLid` holds the
+bevel, slots, ribs and bolts, and `grateFit` holds the clearances. Neither is worth tuning per
+project, and in `deckConfig` they buried the handful of values that are.
+
+Each lid is snapped to `grateFit.snap` — half a geomorph grid square, which is what the deck plating
+itself is laid on — so it lands square on the plates instead of straddling a seam, and reads as
+plates lifted out rather than a panel dropped over them. Its footprint is given in those cells
+(`cellsAlong` × `cellsAcross`), the `along` side lying along the wall it sits by, which `nearestWall`
+settles from the closest edge. It also sits near a wall, between `wallClearance` and `wallBand` of
+the room's outline.
 
 `placeGrates` picks the spots by rejection sampling from a hash of `<gmKey>:<roomId>`, so a redraw
 puts them back exactly where they were. `perArea` and `max` set how many are wanted, then `attempts`
-candidates are tested for: **every corner** on the deck (not just the middle, or one hangs off the
-inside corner of an L-shaped room), `doorClearance` from any threshold, `spacing` from each other,
-`wireClearance` from the room's own conduit, and `obstacleClearance` from every obstacle footprint —
-a grate under a table cannot be seen, so it is not worth placing.
-
-**Every grate has a straight lead** running out of it into the nearest wall — never a doorway,
-because a wire crossing a threshold is the one thing the conduit is at pains to avoid. Because the
-lead goes to the *closest* point on the outline, it already meets that wall at a right angle,
-straight out of the grate. Having nowhere to run it is therefore a reason not to place the grate at
-all, rather than a grate without one.
-
-The lead must clear the obstacles too — `segmentHitsRect` (Liang-Barsky, so exactly rather than by
-sampling) rejects any target it would reach only by disappearing under one.
-
-The lead **may** cross the room's conduit, and runs under it. That is why `placeGrates` only picks
-the spots and the drawing is the caller's: `drawRoomFloors` lays the leads down first, draws the
-conduit over them, then the plates over the ends of their own leads. The `wireClearance` test still
-applies to the plate — a grate does not sit ON the bundle, it only passes beneath it.
+candidates are snapped and tested for: **every corner** on the deck (not just the middle, or one
+hangs off the inside corner of an L-shaped room), `doorClearance` from any threshold, `spacing` from
+each other, `wireClearance` from the room's own conduit, and `obstacleClearance` from every obstacle
+footprint — a lid under a table cannot be seen, so it is not worth placing.
 
 Because the grates must clear the conduit, `drawRoomFloors` routes the wiring **once** and hands the
 same `RunPoint[][]` to both — a room set to carry both features would otherwise draw them over each
