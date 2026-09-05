@@ -37,7 +37,7 @@ five but `nav` has a `shown` flag that turns it off outright. Lengths are in MET
 each a list of labels or `"all"`. Nothing else on the floor is label-driven.
 
 `wiring` is a bundle of conduits — one line per colour in `wiring.inks`, on a dark backing, with
-clamp brackets across them. Add or remove an ink to change the count; the bundle stays centred on
+clamp brackets across them. Two of them: more starts to read as a painted stripe rather than cabling. Add or remove an ink to change the count; the bundle stays centred on
 its route, so it widens evenly either side.
 
 The route **follows the room's own walls**, `wallOffset` inside them, from `geomService.createInset`

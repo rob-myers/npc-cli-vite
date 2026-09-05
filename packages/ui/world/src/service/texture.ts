@@ -235,13 +235,13 @@ export const deckConfig = {
     attempts: 64,
 
     /** Deliberately loud: a bright plate against a deck of `tone`, so it is easy to pick out */
-    fill: "#5b6672",
+    fill: "#3b4652",
     /** Bevelled light over dark, lit from the upper-left like every seam on this deck */
-    bevelLight: "rgba(225, 238, 252, 0.7)",
+    bevelLight: "rgba(225, 238, 252, 0.5)",
     bevelDark: "rgba(0, 0, 0, 0.65)",
-    bevelWidth: 0.045,
+    bevelWidth: 0.035,
     edgeInk: "rgba(0, 0, 0, 0.7)",
-    edgeWidth: 0.03,
+    edgeWidth: 0.01,
     /** The grating across the plate */
     ventCount: 4,
     ventInk: "rgba(0, 0, 0, 0.62)",
@@ -260,7 +260,7 @@ export const deckConfig = {
     leadBackingInk: "rgba(0, 0, 0, 0.55)",
     leadBackingOutset: 0.025,
     /** Further than this from a wall it does not bother */
-    leadMaxLength: 4,
+    leadMaxLength: 0.75,
   },
 
   /** The nav mesh over the deck — see `Floor`'s `drawNavMesh` */
