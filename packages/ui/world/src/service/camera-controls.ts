@@ -128,6 +128,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * ends reads as the view fighting the fingers
    */
   freeZoom = false;
+  /**
+   * How fast the zoom settles, per SECOND — per instance, so a mode can slow its own zoom down
+   * e.g. `canonical`, whose aimed zoom-in carries a pan and a tilt with it
+   */
+  zoomSettleRate = defaultZoomSettleRate;
+  /** When `syncZoom` last ran, so its ease can be measured in time rather than frames */
+  _zoomSettleMs = performance.now();
   /** When zoom input last arrived, so `syncZoom` can tell a gesture in progress from one let go */
   _zoomInputMs = 0;
   /** Asks for the frame on which the settle begins — see `addZoomProgress` */
@@ -506,12 +513,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * `update`. The arriving frame deliberately dispatches nothing, so the frames can stop.
    */
   syncZoom() {
+    // measured in TIME, not frames: this is a demand frameloop, whose frame gaps vary — an equal
+    // step per frame reads as jitter. Before any early return, else the first settling frame
+    // would take the whole pause as its step
+    const now = performance.now();
+    const deltaSecs = Math.min((now - this._zoomSettleMs) / 1000, maxZoomSettleStep);
+    this._zoomSettleMs = now;
+
     if (this.freeZoom === true) {
       return; // it rests wherever the gesture left it — see `freeZoom`
     }
     const zoomingIn = this._zoomDirection === 1;
     const committed = zoomingIn ? this.zoomProgress > zoomCommitIn : this.zoomProgress < zoomCommitOut;
-    if (committed === false && (this.pointers.length > 0 || performance.now() - this._zoomInputMs < zoomSettleMs)) {
+    if (committed === false && (this.pointers.length > 0 || now - this._zoomInputMs < zoomSettleMs)) {
       return; // still theirs to move, and not yet far enough to go anywhere on its own
     }
     // committed: on to the stop it was heading for. Otherwise: back to the one it set out from
@@ -521,7 +535,8 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.zoomProgress = target;
       return;
     }
-    this.zoomProgress += remaining * zoomSettleRate;
+    // exponential approach, so it is frame-rate independent and has no end to overshoot
+    this.zoomProgress += remaining * (1 - Math.exp(-this.zoomSettleRate * deltaSecs));
     this.dispatchEvent(changeEvent);
   }
 
@@ -1047,8 +1062,11 @@ const zoomCommitIn = 0.1;
 const zoomCommitOut = 0.9;
 /** How long input must pause before the view settles, how fast it does, and when it has arrived */
 const zoomSettleMs = 120;
-const zoomSettleRate = 0.12;
+/** Per SECOND — the remaining zoom decays by `exp(-rate * dt)`; ~7.7 matches the old per-frame 0.12 at 60fps */
+export const defaultZoomSettleRate = 7.7;
 const zoomSettleUntil = 0.001;
+/** Caps a settle step, so a long gap between frames cannot arrive as one jump */
+const maxZoomSettleStep = 1 / 30;
 /** A radius change under this is not worth re-aiming the camera for */
 const zoomRadiusEpsilon = 1e-4;
 

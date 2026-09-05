@@ -1189,7 +1189,7 @@ const spinnerMinMs = 300;
 /** How long the look button must be held before it switches camera mode rather than looking */
 const lookLongPressMs = 500;
 
-const nextCameraMode = { free: "follow", follow: "free" } as const;
+const nextCameraMode = { free: "follow", follow: "canonical", canonical: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",

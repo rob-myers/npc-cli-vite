@@ -17,6 +17,13 @@ interface TexArrayOpts {
    * neighbours in an atlas bleed into each other at the coarsest levels.
    */
   anisotropy?: number;
+  /**
+   * Whether the texels carry sRGB-encoded COLOUR, decoded into the linear working space on
+   * sampling. Off by default, since an array holding DATA must arrive exactly as written —
+   * but without it a colour authored as `#444` is lifted to about `#8d` by the pipeline's
+   * own sRGB encode, having never taken the matching decode
+   */
+  srgb?: boolean;
 }
 
 export interface TextureItem {
@@ -62,7 +69,7 @@ export class TexArray {
     const { tex, opts } = this;
     tex.format = THREE.RGBAFormat;
     tex.type = opts.type ?? THREE.UnsignedByteType;
-    tex.colorSpace = THREE.NoColorSpace;
+    tex.colorSpace = opts.srgb === true ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     tex.anisotropy = opts.anisotropy ?? THREE.Texture.DEFAULT_ANISOTROPY;
 
     if (tex.anisotropy > 1) {
