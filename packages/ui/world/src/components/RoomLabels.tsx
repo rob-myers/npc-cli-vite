@@ -11,7 +11,7 @@ import { WorldContext } from "./world-context";
 /**
  * What each room is called, as a billboard at its labelled decor point. Drawn over everything
  * (`depthTest: false`) so no obstacle can swallow a name — painting into the floor was tried
- * first, see `docs/FLOOR-LOOK.md`. One texture layer per DISTINCT text, not per room.
+ * first, see `docs/FLOOR.md`. One texture layer per DISTINCT text, not per room.
  */
 export default function RoomLabels() {
   const w = useContext(WorldContext);
