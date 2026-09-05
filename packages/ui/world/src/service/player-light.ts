@@ -467,8 +467,8 @@ const cullMargin = 3;
 const lightRadius = 8;
 
 /** How black an unseen fragment goes: `prod` hides it, the other two keep it legible */
-const unlitTintProd = 0.8;
-const unlitTintOther = 0.6;
+const unlitTintProd = 0.6;
+const unlitTintOther = 0.4;
 
 /**
  * The cone they see best down — see `coneAt`. How much of the light is lost outside it, and how far

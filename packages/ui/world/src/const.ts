@@ -74,7 +74,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 /** Vertical field of view (degrees) of the world camera, up to `cameraRefAspect` */
-export const cameraFov = 30;
+export const cameraFov = 50;
 
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;
@@ -89,6 +89,30 @@ export const defaultAmbientIntensity = 1;
 
 export const defaultCameraModeDesktop = "follow" satisfies import("./components/CameraControls").CameraModeType;
 export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
+
+/**
+ * `canonical` camera mode: how far out — as a fraction of the travel between the zoom's stops —
+ * the polar starts easing towards birdseye. See `WorldView`'s `onCameraFrame`
+ */
+export const canonicalFlattenFrom = 0.4;
+/** Birdseye polar — just off `0`, which sits exactly on the orbit pole */
+export const canonicalBirdseyePolar = 0.01;
+/** `canonical` azimuth is a detented compass dial: turn past this to advance to the next point */
+export const canonicalSnapArm = (10 * Math.PI) / 180;
+/**
+ * The polar `canonical` holds close in: a zoom-in arrives at it, looking down on the point it
+ * aimed for, and a tilt by hand eases back to it
+ */
+export const canonicalZoomInPolar = Math.PI / 4;
+/**
+ * Fully out, a `canonical` ctrl-zoom reaches this much beyond the outer stop whilst staying
+ * birdseye — leaving the plain zoom's two stops as they are
+ */
+export const birdseyeExtraDistance = 5;
+/** How much of that reach one wheel tick covers */
+export const birdseyeExtraStep = 0.1;
+/** How fast a `canonical` aimed zoom-in settles, per second — see `CameraControls.zoomSettleRate` */
+export const canonicalZoomInRate = 2.8;
 
 /** Camera rotate speed: touch drags are much shorter than mouse drags, so they get more per-pixel */
 export const rotateSpeedDesktop = 1;

@@ -8,14 +8,22 @@ import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/dr
 import { Canvas, type RootState, useFrame } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
 import debounce from "debounce";
+import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
+  birdseyeExtraDistance,
+  birdseyeExtraStep,
   cameraFov,
   cameraRefAspect,
+  canonicalBirdseyePolar,
+  canonicalFlattenFrom,
+  canonicalSnapArm,
+  canonicalZoomInPolar,
+  canonicalZoomInRate,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   npcConfig,
@@ -24,7 +32,7 @@ import {
   zoomSpeedDesktop,
   zoomSpeedMobile,
 } from "../const";
-import type { CameraControls as BaseCameraControls } from "../service/camera-controls";
+import { type CameraControls as BaseCameraControls, defaultZoomSettleRate } from "../service/camera-controls";
 import { createDemoPostFx, type DemoPostFx, type DemoPostFxKey, warpCrtUv } from "../service/demo-post-process";
 import {
   createFadeRooms,
@@ -66,6 +74,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
       cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
+      canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera()).polar,
+      canonicalTheta: nearestCompass((saved.cameraInitial ?? defaultInitialCamera()).azimuthal),
+      canonicalDragging: false,
+      zoomPan: null,
+      zoomCrossEl: null,
+      zoomCrossFadeMs: 0,
+      birdseyeExtra: 0,
+      birdseyeExtraOut: 0,
+      zoomInSlow: false,
       centreHint: false,
       fHeld: false,
       clickIds: [],
@@ -75,11 +92,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        // The two stops the zoom moves between — see `camera-controls`' `zoomProgress`. Touch
-        // comes in closer: a phone shows far less of the world at a given distance, and its pinch
-        // is free to rest anywhere between the two rather than settling on one
-        minDistance: w.touchDevice ? 6 : 10,
-        maxDistance: 24,
+        minDistance: w.touchDevice ? 6 : 8,
+        maxDistance: 12,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
@@ -284,6 +298,211 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           position: { x: state.controls.target.x, y: state.controls.spherical.radius, z: state.controls.target.z },
         };
         store.patch({ cameraInitial });
+        // a drag released without momentum dispatches no further change: `canonical`'s detent
+        // needs a frame to see the release at all — see `onCameraFrame`
+        w.r3f?.invalidate();
+      },
+      onZoomWheel(e) {
+        if (state.cameraMode !== "canonical") return;
+        const { controls } = state;
+        if (controls === null || state.canvas === null) return;
+
+        // ctrl whilst fully out: a zoom of its own, rising up to `birdseyeExtraDistance` past
+        // the outer stop and staying birdseye. Apart from `zoomProgress`, whose stops are its own
+        if (e.ctrlKey === true && controls.zoomProgress <= zoomOutStopEpsilon) {
+          e.preventDefault();
+          e.stopPropagation(); // the controls must not zoom on this wheel too
+          const next = state.birdseyeExtra + Math.sign(e.deltaY) * birdseyeExtraStep;
+          state.birdseyeExtra = Math.min(birdseyeExtraDistance, Math.max(0, next));
+          state.birdseyeExtraOut = state.birdseyeExtra; // the height to come back out to
+          w.r3f?.invalidate();
+          return;
+        }
+
+        // a zoom-in aims at the cursor's ground point and pans onto it, ending up CENTRED rather
+        // than merely held still as `zoomToCursor` does. Aimed ONCE per gesture: re-aiming would
+        // raycast from the already-panned camera, and a still cursor would name a new point each
+        // time. The pan rides the zoom, so it also needs zoom left to ride
+        if (e.deltaY >= 0 || state.zoomPan !== null) return;
+        if (1 - controls.zoomProgress < zoomPanMinSpan) return;
+
+        const rect = state.canvas.getBoundingClientRect();
+        tmpNdc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+        state.raycaster.setFromCamera(tmpNdc, controls.object as THREE.PerspectiveCamera);
+        if (state.raycaster.ray.intersectPlane(groundPlane, tmpGroundHit) === null) return;
+
+        // a shallow ray meets the ground hundreds of metres out — keep the aim to what is in view
+        const maxPan = state.ctrlOpts.maxDistance ?? 20;
+        if (tmpGroundHit.distanceTo(controls.target) > maxPan) {
+          tmpGroundHit.sub(controls.target).setLength(maxPan).add(controls.target);
+        }
+
+        state.zoomPan = {
+          from: controls.target.clone(),
+          to: tmpGroundHit.clone(),
+          lastTarget: controls.target.clone(),
+          fromProgress: controls.zoomProgress,
+          fromPolar: controls.spherical.phi,
+          fromExtra: state.birdseyeExtra,
+        };
+        state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
+        state.setCrosshair(tmpGroundHit);
+        w.r3f?.invalidate();
+      },
+      setCrosshair(at) {
+        const el = state.zoomCrossEl;
+        if (el === null) return;
+        el.position.set(at.x, crosshairY, at.z);
+        el.visible = true;
+        (el.material as THREE.MeshBasicMaterial).opacity = 1;
+        state.zoomCrossFadeMs = 0; // a fresh aim cancels any fade underway
+      },
+      /**
+       * Rebuild the camera about `target` at `phi` and re-aim it. `update` has already aimed at
+       * the target it had BEFORE our writes, so without this each frame renders a new position
+       * through the last one's orientation — seen as jitter
+       */
+      placeCamera(spherical, phi) {
+        const { controls } = state;
+        tmpLookAtOffset.setFromSphericalCoords(spherical.radius + state.birdseyeExtra, phi, spherical.theta);
+        controls.object.position.copy(controls.target).add(tmpLookAtOffset);
+        controls.object.lookAt(controls.target);
+        controls.object.updateMatrixWorld();
+      },
+      onCameraFrame(spherical) {
+        // the crosshair fades once its zoom has arrived — outside the mode check, so a fade
+        // underway still finishes if the mode changes beneath it
+        if (state.zoomCrossFadeMs !== 0 && state.zoomCrossEl !== null) {
+          const ratio = (performance.now() - state.zoomCrossFadeMs) / crosshairFadeMs;
+          if (ratio >= 1) {
+            state.zoomCrossFadeMs = 0;
+            state.zoomCrossEl.visible = false;
+          } else {
+            (state.zoomCrossEl.material as THREE.MeshBasicMaterial).opacity = 1 - ratio;
+            w.r3f?.invalidate();
+          }
+        }
+
+        if (state.cameraMode !== "canonical") return;
+        const { controls, ctrlOpts, zoomPan } = state;
+        const min = ctrlOpts.minDistance ?? 10;
+        const max = ctrlOpts.maxDistance ?? 20;
+        const t = Math.min(1, Math.max(0, (spherical.radius - min) / (max - min)));
+
+        // the aimed zoom-in eases slower, a pan and a tilt riding on it — held until the ZOOM
+        // ends rather than the pan, since speeding up for its last few percent is felt as a jolt
+        if (state.zoomInSlow === true && controls.zoomProgress >= 1 - zoomOutStopEpsilon) {
+          state.zoomInSlow = false;
+        }
+        controls.zoomSettleRate = state.zoomInSlow === true ? canonicalZoomInRate : defaultZoomSettleRate;
+
+        if (zoomPan !== null) {
+          // pan, tilt and height are FUNCTIONS of the zoom's progress, so they arrive exactly
+          // when it does and a reversal walks them back. Measured against `zoomPanDoneAlpha`,
+          // where we let go, so none of them is left a few percent short
+          const alpha = Math.min(
+            1,
+            Math.max(0, (controls.zoomProgress - zoomPan.fromProgress) / (1 - zoomPan.fromProgress)),
+          );
+          const beta = Math.min(1, alpha / zoomPanDoneAlpha);
+          state.birdseyeExtra = zoomPan.fromExtra * (1 - beta);
+
+          // whatever else moved the target is the user panning: carried into both ends, so a
+          // drag mid-flight steers where the zoom is going rather than being overwritten
+          tmpDrift.copy(controls.target).sub(zoomPan.lastTarget);
+          if (tmpDrift.lengthSq() > 0) {
+            zoomPan.from.add(tmpDrift);
+            zoomPan.to.add(tmpDrift);
+            state.setCrosshair(zoomPan.to);
+          }
+
+          controls.target.copy(zoomPan.from).lerp(zoomPan.to, beta);
+          // pinned, so the zoom's own flattening cannot fight the tilt whilst the pan owns it
+          const phi = zoomPan.fromPolar + (canonicalZoomInPolar - zoomPan.fromPolar) * beta;
+          controls.minPolarAngle = phi;
+          controls.maxPolarAngle = phi;
+          state.placeCamera(spherical, phi);
+          zoomPan.lastTarget.copy(controls.target); // anything else moving it is a pan, see above
+
+          if (alpha >= zoomPanDoneAlpha) {
+            // arrived: the zoom's tail is not worth holding the view unsteerable for
+            state.zoomPan = null;
+            state.canonicalPolar = canonicalZoomInPolar;
+            state.zoomCrossFadeMs = performance.now();
+          } else if (controls.zoomProgress <= zoomPan.fromProgress) {
+            state.zoomPan = null; // zoomed back out: the aim is let go where it began
+            state.canonicalPolar = zoomPan.fromPolar;
+            state.zoomInSlow = false;
+            state.zoomCrossFadeMs = performance.now();
+          } else {
+            w.r3f?.invalidate();
+          }
+        } else if (t <= canonicalFlattenFrom) {
+          // close in the polar is the user's own — birdseye included, kept from a zoom-out
+          controls.minPolarAngle = ctrlOpts.minPolarAngle ?? 0;
+          controls.maxPolarAngle = ctrlOpts.maxPolarAngle ?? Math.PI / 2;
+          state.canonicalPolar = spherical.phi;
+        } else {
+          // further out it is a function of the zoom, eased to birdseye. Pinning both clamps
+          // drives phi outright, which also blocks the drag's polar input — only azimuth turns
+          const u = (t - canonicalFlattenFrom) / (1 - canonicalFlattenFrom);
+          const s = u * u * (3 - 2 * u);
+          const phi = state.canonicalPolar * (1 - s) + canonicalBirdseyePolar * s;
+          controls.minPolarAngle = phi;
+          controls.maxPolarAngle = phi;
+          if (s > 0.99) state.canonicalPolar = canonicalBirdseyePolar; // fully flat: kept for the way in
+          state.birdseyeExtra = state.birdseyeExtraOut * s; // back to the height we set off from
+
+          // applied now rather than by the clamps next update, which would tilt a frame behind
+          // the zoom driving it. `birdseyeExtra` likewise: `update` rebuilds the position from
+          // `zoomProgress`, which knows nothing of it. Only an unsettled phi needs a next frame
+          const settled = Math.abs(spherical.phi - phi) <= phiSettledEpsilon;
+          if (settled === false || state.birdseyeExtra > 0) {
+            state.placeCamera(spherical, phi);
+            if (settled === false) w.r3f?.invalidate();
+          }
+        }
+
+        // azimuth is a detented compass dial at EVERY zoom: free whilst dragging, then on release
+        // it advances a point per `canonicalSnapArm` turned, or springs back inside the arm
+        if (controls.pointers.length > 0) {
+          state.canonicalDragging = true;
+          return;
+        }
+        if (state.lookAtAnimId !== 0) return; // `lookAt` owns the camera whilst it runs
+
+        if (state.canonicalDragging === true) {
+          // ON RELEASE ONLY: measuring every frame would measure against a detent the camera is
+          // still travelling to, land beyond the arm on the far side, and oscillate forever
+          state.canonicalDragging = false;
+          const turned = deltaAngle(state.canonicalTheta, spherical.theta);
+          if (Math.abs(turned) > canonicalSnapArm) {
+            // at least one point, else however many quarters were actually turned
+            const points = Math.max(1, Math.round(Math.abs(turned) / halfPi));
+            state.canonicalTheta = normalizeAngle(state.canonicalTheta + Math.sign(turned) * points * halfPi);
+          }
+        }
+
+        const diff = deltaAngle(spherical.theta, state.canonicalTheta);
+        if (Math.abs(diff) > detentSettleUntil) {
+          // the FULL remaining turn, as `setAzimuthalAngle` seeds it: `update` applies
+          // `delta * damping` and decays the rest. Overwriting also swallows leftover rotate
+          // momentum — a detented dial must not coast
+          controls.sphericalDelta.theta = diff;
+          w.r3f?.invalidate();
+        }
+
+        // the polar is detented too, but on ONE point: close in it eases back to the tilt a
+        // zoom-in arrives at, so tilting by hand is a look around rather than a new resting place
+        if (zoomPan === null && t <= canonicalFlattenFrom) {
+          const polarDiff = canonicalZoomInPolar - spherical.phi;
+          if (Math.abs(polarDiff) > detentSettleUntil) {
+            // a FRACTION of the remaining tilt, unlike the azimuth's whole: re-seeded each frame
+            // against what is left, so it still converges — just more gently than a snap
+            controls.sphericalDelta.phi = polarDiff * polarDetentRate;
+            w.r3f?.invalidate();
+          }
+        }
       },
       onCreated(rootState) {
         w.threeReady = true;
@@ -487,14 +706,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
         ro.observe(w.rootEl);
 
-        const { onKeyDown, onKeyUp } = state;
+        const { onKeyDown, onKeyUp, onZoomWheel } = state;
         w.rootEl.addEventListener("keydown", onKeyDown);
         w.rootEl.addEventListener("keyup", onKeyUp);
+        // CAPTURE, so the aim is taken from the zoom progress BEFORE the controls advance it
+        w.rootEl.addEventListener("wheel", onZoomWheel, { capture: true, passive: false });
 
         return () => {
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
           w.rootEl?.removeEventListener("keyup", onKeyUp);
+          w.rootEl?.removeEventListener("wheel", onZoomWheel, { capture: true });
         };
       },
       /**
@@ -536,9 +758,27 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (cameraMode === "follow") {
           state.lookAtPlayer();
         }
+        if (cameraMode === "canonical") {
+          state.canonicalPolar = state.controls?.spherical.phi ?? state.initial.polar;
+          // entering turns you onto the nearest compass point
+          state.canonicalTheta = nearestCompass(state.controls?.spherical.theta ?? state.initial.azimuthal);
+        } else if (state.cameraMode === "canonical" && state.controls !== null) {
+          // leaving: give the polar clamps and the zoom's own pace back — r3f leaves our direct
+          // writes alone, so nothing else would
+          state.controls.minPolarAngle = state.ctrlOpts.minPolarAngle ?? 0;
+          state.controls.maxPolarAngle = state.ctrlOpts.maxPolarAngle ?? Math.PI / 2;
+          state.controls.zoomSettleRate = defaultZoomSettleRate;
+          state.zoomPan = null;
+          state.zoomCrossFadeMs = 0;
+          state.birdseyeExtra = 0; // only `canonical` reaches past the outer stop
+          state.birdseyeExtraOut = 0;
+          state.zoomInSlow = false;
+          if (state.zoomCrossEl !== null) state.zoomCrossEl.visible = false;
+        }
         store.patch({ cameraMode });
         state.set({ cameraMode });
         w.update(); // the menu shows the mode, on its label and on the look button
+        w.r3f?.invalidate();
       },
       hideCentreHint() {
         state.centreHint === true && state.set({ centreHint: false });
@@ -850,7 +1090,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // whilst following, the target IS the player, so a zoom about it keeps them centred.
           // Aiming at the pointer instead moves the target, which the follow would only undo —
           // and a pan would do the same, so it is simply off for the duration
-          zoomToCursor={state.cameraMode !== "follow"}
+          // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
+          zoomToCursor={state.cameraMode === "free"}
           enablePan={state.cameraMode !== "follow"}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
@@ -861,10 +1102,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // no such gesture, and keeps the two stops
           freeZoom={w.touchDevice}
           onEnd={state.onCameraEnd}
+          onFrame={state.onCameraFrame}
           {...state.ctrlOpts}
         />
 
         <LightSweep />
+
+        {/* where a `canonical` zoom-in is heading — see `onZoomWheel` */}
+        <mesh
+          ref={state.ref("zoomCrossEl")}
+          visible={false}
+          renderOrder={10}
+          geometry={groundCrosshairGeometry}
+          position={[0, crosshairY, 0]}
+        >
+          <meshBasicMaterial color="white" transparent depthTest={false} side={THREE.DoubleSide} />
+        </mesh>
 
         <NpcBubbles />
 
@@ -923,6 +1176,36 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 export type State = {
   bounds: Geom.RectJson;
   cameraMode: CameraModeType;
+  /** The polar `canonical`'s zoom-out flattens from — birdseye itself once fully out */
+  canonicalPolar: number;
+  /** The compass point (multiple of π/2) `canonical`'s azimuth is currently detented at */
+  canonicalTheta: number;
+  /** Whether a drag is underway — the detent is decided on its release, once */
+  canonicalDragging: boolean;
+  /** The pan a `canonical` zoom-in is carrying out, keyed to the zoom's progress */
+  zoomPan: null | {
+    from: THREE.Vector3;
+    to: THREE.Vector3;
+    /** The target as WE last left it — anything else that moved it is the user panning */
+    lastTarget: THREE.Vector3;
+    fromProgress: number;
+    fromPolar: number;
+    /** Birdseye height at the outset, eased away as the pan comes in */
+    fromExtra: number;
+  };
+  /** Marks where a `canonical` zoom-in is heading */
+  zoomCrossEl: null | THREE.Mesh;
+  /** When the crosshair began fading out, or `0` whilst it is not */
+  zoomCrossFadeMs: number;
+  /**
+   * How far beyond the outer zoom stop a `canonical` birdseye currently sits, in metres — the
+   * ctrl-zoom's own reach, added on top of the radius `zoomProgress` asks for
+   */
+  birdseyeExtra: number;
+  /** The birdseye height a zoom-out returns to — what a ctrl-zoom last settled on */
+  birdseyeExtraOut: number;
+  /** Whether an aimed zoom-in is still running, so its slower settle is kept to the end */
+  zoomInSlow: boolean;
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
@@ -996,6 +1279,14 @@ export type State = {
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
   onCameraEnd(): void;
+  /** Per rendered frame — in `canonical` mode drives the polar, the detent and any aimed zoom */
+  onCameraFrame(spherical: THREE.Spherical): void;
+  /** Puts the crosshair on a ground point and shows it at full strength */
+  setCrosshair(at: THREE.Vector3): void;
+  /** Rebuilds the camera about `target` at `phi`, `birdseyeExtra` included, and re-aims it */
+  placeCamera(spherical: THREE.Spherical, phi: number): void;
+  /** Aims a `canonical` zoom-in at the cursor's ground point, or ctrl-zooms the birdseye */
+  onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
   setupDom(): () => void;
   setCameraMode(cameraMode: CameraModeType): void;
@@ -1197,6 +1488,53 @@ const tmpVect = new Vect();
 const _tmpRect = new Rect();
 const _tmpVector3 = new THREE.Vector3();
 const tmpLookAtOffset = new THREE.Vector3();
+const tmpNdc = new THREE.Vector2();
+const tmpDrift = new THREE.Vector3();
+const tmpGroundHit = new THREE.Vector3();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+/**
+ * A crosshair lying FLAT on the ground, marking where a `canonical` zoom-in is heading:
+ * four arms about a gap, as one geometry so a single material fades the lot
+ */
+function createGroundCrosshairGeometry(gap = 0.08, len = 0.22, thickness = 0.03) {
+  const half = thickness / 2;
+  const pos = [] as number[];
+  const addArm = (xMin: number, zMin: number, xMax: number, zMax: number) =>
+    pos.push(xMin, 0, zMin, xMax, 0, zMin, xMax, 0, zMax, xMin, 0, zMin, xMax, 0, zMax, xMin, 0, zMax);
+
+  addArm(gap, -half, gap + len, half);
+  addArm(-gap - len, -half, -gap, half);
+  addArm(-half, gap, half, gap + len);
+  addArm(-half, -gap - len, half, -gap);
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  return geometry;
+}
+
+const groundCrosshairGeometry = createGroundCrosshairGeometry();
+/** Just off the floor, so it is not in the floor's own plane */
+const crosshairY = 0.01;
+/** How long the crosshair takes to fade once the zoom-in has arrived */
+const crosshairFadeMs = 450;
+
+/** The zoom headroom a `canonical` zoom-in pan needs, as a fraction of the whole travel */
+const zoomPanMinSpan = 0.1;
+/** How much of the pan counts as arrived — the zoom's tail is not worth holding the view for */
+const zoomPanDoneAlpha = 0.97;
+/** Near enough the outer stop to count as fully zoomed out */
+const zoomOutStopEpsilon = 0.001;
+/** Near enough the polar it is easing to, so no further frame is asked for */
+const phiSettledEpsilon = 0.0001;
+/** Near enough its compass point that the detent stops turning */
+const detentSettleUntil = 0.002;
+/** How much of the remaining tilt the polar detent takes each frame — gentler than the azimuth's */
+const polarDetentRate = 0.25;
+
+const halfPi = Math.PI / 2;
+const normalizeAngle = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
+const nearestCompass = (theta: number) => normalizeAngle(Math.round(theta / halfPi) * halfPi);
 /** The normal of an obstacle's top, for a pick that landed on it without hitting a face */
 const up = new THREE.Vector3(0, 1, 0);
 

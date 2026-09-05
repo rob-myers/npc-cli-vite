@@ -17,19 +17,25 @@ function drawDoorBasePanel() {
   const w = texW;
   const h = texH;
 
-  ct.fillStyle = "#000";
+  // metal, not a silhouette: it needs an albedo of its own, the player light only ever tinting
+  // what is here DOWN (see `service/player-light`) — near black would stay near black
+  const base = ct.createLinearGradient(0, 0, 0, h);
+  base.addColorStop(0, doorPanelTop);
+  base.addColorStop(1, doorPanelBottom);
+  ct.fillStyle = base;
   ct.fillRect(0, 0, w, h);
 
-  // 4 recessed panels with bevels
+  // 4 recessed panels: sunk a shade below the face, then bevelled light over dark
   for (const p of panels) {
-    // ct.fillStyle = "rgba(255,255,255,0.03)";
-    // ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
+    ct.fillStyle = doorPanelRecess;
+    ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
 
-    ct.strokeStyle = "rgba(160,180,200,0.05)";
+    ct.strokeStyle = "rgba(150,170,190,0.25)";
     ct.lineWidth = 5;
     ct.strokeRect(panelInset, p.y, w - panelInset * 2, p.h);
 
-    ct.strokeStyle = "rgba(180,200,220,0.1)";
+    // top-left catches the light
+    ct.strokeStyle = "rgba(205,225,245,0.35)";
     ct.lineWidth = 5;
     ct.beginPath();
     ct.moveTo(panelInset + 1, p.y + p.h);
@@ -37,7 +43,8 @@ function drawDoorBasePanel() {
     ct.lineTo(w - panelInset - 1, p.y + 1);
     ct.stroke();
 
-    ct.strokeStyle = "rgba(0,0,0,0.15)";
+    // bottom-right falls into shadow
+    ct.strokeStyle = "rgba(0,0,0,0.45)";
     ct.lineWidth = 5;
     ct.beginPath();
     ct.moveTo(w - panelInset - 1, p.y + 1);
@@ -46,29 +53,14 @@ function drawDoorBasePanel() {
     ct.stroke();
   }
 
-  // // horizontal dividers between panels
-  // ct.lineWidth = 20;
-  // for (const lineY of [texH * 0.24, texH * 0.5, texH * 0.74]) {
-  //   ct.strokeStyle = "rgba(160,180,200,0.1)";
-  //   ct.beginPath();
-  //   ct.moveTo(4, lineY);
-  //   ct.lineTo(w - 4, lineY);
-  //   ct.stroke();
-  //   ct.strokeStyle = "rgba(0,0,0,0.5)";
-  //   ct.beginPath();
-  //   ct.moveTo(4, lineY + 2);
-  //   ct.lineTo(w - 4, lineY + 2);
-  //   ct.stroke();
-  // }
-
   // rivets along edges
   for (const rx of [8, w - 8]) {
     for (let ry = 16; ry < h; ry += 28) {
-      ct.fillStyle = "rgba(140,160,180,0.1)";
+      ct.fillStyle = "rgba(110,130,150,0.55)";
       ct.beginPath();
       ct.arc(rx, ry, 3, 0, Math.PI * 2);
       ct.fill();
-      ct.fillStyle = "rgba(200,220,240,0.3)";
+      ct.fillStyle = "rgba(225,240,255,0.85)";
       ct.beginPath();
       ct.arc(rx - 0.5, ry - 0.5, 1.5, 0, Math.PI * 2);
       ct.fill();
@@ -76,12 +68,12 @@ function drawDoorBasePanel() {
   }
 
   // outer border
-  ct.strokeStyle = "rgba(160,180,200,0.1)";
+  ct.strokeStyle = "rgba(160,180,200,0.35)";
   ct.lineWidth = 5;
   ct.strokeRect(0, 0, w, h);
 
   // corner accents
-  ct.strokeStyle = "rgba(180,200,220,0.4)";
+  ct.strokeStyle = "rgba(195,215,240,0.7)";
   ct.lineWidth = 3;
   for (const [cx, cy, sx, sy] of [
     [5, 5, 1, 1],
@@ -100,6 +92,11 @@ function drawDoorBasePanel() {
 }
 
 // --- panel layout constants ---
+
+/** The door's own colour, lit down from here by `player-light` — see `drawDoorBasePanel` */
+const doorPanelTop = "#3f464e";
+const doorPanelBottom = "#2f353b";
+const doorPanelRecess = "#343a41";
 
 const panelInset = 14;
 const panels = [
@@ -488,8 +485,7 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
     ct.font = "32px sans-serif";
     ct.textAlign = "center";
     ct.textBaseline = "middle";
-    // the panel behind is part transparent now (see `Doors`' `alphaToCoverage`), which takes the
-    // label with it — so it is drawn at close to full strength to come back to white
+    // the PLATE only — the letters below get their own alpha
     ct.globalAlpha = doorLabelAlpha;
 
     const measured = ct.measureText(label);
@@ -507,6 +503,8 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
       lineWidth: 3,
     });
 
+    // white is the one value a colour-space round trip leaves alone, so the letters take it
+    ct.globalAlpha = 1;
     ct.fillStyle = "#fff";
     ct.fillText(label, 0, 0);
     ct.restore();

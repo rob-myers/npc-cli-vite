@@ -89,6 +89,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 3, // can change
         width: floorTextureDimension,
         height: floorTextureDimension,
+        srgb: true, // drawn in display colours e.g. the theme's `patternFill`
       }),
       texCeil: new TexArray({
         ctKey: "ceil-tex",
@@ -105,7 +106,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         anisotropy: touchDevice ? undefined : 4,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 16 }),
-      texDoorLabel: new TexArray({ ctKey: "door-labels", width: 256, height: 512, numTextures: MAX_DOOR_LABELS }),
+      texDoorLabel: new TexArray({
+        ctKey: "door-labels",
+        width: 256,
+        height: 512,
+        numTextures: MAX_DOOR_LABELS,
+        srgb: true, // likewise colour: the panel reads as it was drawn
+      }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 256, height: 256, numTextures: MAX_NPCS }),
 
