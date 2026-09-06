@@ -104,7 +104,7 @@ const outlineAlpha = 0.8;
 /** Half-width (px) of the border at the near zoom stop, i.e. how far out we look for npc pixels */
 const outlineWidthPx = 6;
 /** ...and at the far one */
-const outlineWidthFarPx = 4;
+const outlineWidthFarPx = 2;
 const outlineWidth = /* @__PURE__ */ uniform(outlineWidthPx);
 /** How much fainter the mask must be here than nearby to count as outside an npc */
 const relativeCut = 0.25;
