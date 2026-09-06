@@ -111,7 +111,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "80d10dec-5db7-4eb1-9ff2-0f4a2388f081",
@@ -306,7 +306,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "bdedb3e2-c5cb-440a-a7c9-58cf8356bbb4",
@@ -330,7 +330,7 @@
         {
           "id": "b675c0f9-02f8-49bb-a043-3390620e7c9e",
           "name": "iris-valves--006",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1150, "f": 238},
           "type": "symbol",
