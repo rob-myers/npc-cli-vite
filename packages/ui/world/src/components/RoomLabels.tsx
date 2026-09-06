@@ -1,6 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, select, texture, uv, vec4 } from "three/tsl";
+import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, mrt, select, texture, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabelHeight, roomLabelWidth, wallHeight } from "../const";
 import { helper } from "../service/helper";
@@ -20,6 +20,7 @@ export default function RoomLabels() {
     (): State => ({
       res: createRoomLabelResources(),
       layerOfLabel: {},
+      maskMrt: null,
 
       draw() {
         const { ct } = w.texRoomLabel;
@@ -49,14 +50,6 @@ export default function RoomLabels() {
             m = ct.measureText(label);
           }
 
-          // the plate hugs the words: the quad is the same size whatever it says, so a full-width
-          // one would leave `office` adrift in a box built for `cartography`
-          const glyphHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
-          const plateWidth = Math.min(width, boxWidth() + roomLabelPadding * 2);
-          const plateHeight = Math.min(height, glyphHeight + roomLabelPaddingY * 2);
-          ct.fillStyle = roomLabelPlateInk;
-          ct.fillRect((width - plateWidth) / 2, (height - plateHeight) / 2, plateWidth, plateHeight);
-
           // centred on the glyphs, both ways — `middle` centres the em box, which sits off the
           // optical centre of a word with no descenders
           ct.fillStyle = roomLabelInk;
@@ -69,6 +62,11 @@ export default function RoomLabels() {
           w.texRoomLabel.updateIndex(layer);
           state.layerOfLabel[label] = layer++;
         }
+      },
+      syncOutlineMask() {
+        const { mat } = state.res;
+        mat.mrtNode = w.view.npcMaskMrt === null || state.maskMrt === null ? null : state.maskMrt;
+        mat.needsUpdate = true;
       },
       position() {
         const { instData, instAttr, slotData, slotAttr, geo, mesh } = state.res;
@@ -119,7 +117,10 @@ export default function RoomLabels() {
       tex.a.mul(w.view.foldNode).mul(fade),
     ) as THREE.Node<"float">;
     mat.colorNode = vec4(tex.rgb, alpha);
-    mat.needsUpdate = true;
+    // a name is drawn OVER the world, so the border round an npc must not creep onto it: the label
+    // marks itself a caption in `npcMask.g`, by however much of it is there — see `npc-outline`
+    state.maskMrt = mrt({ npcMask: vec4(0, 1, 0, alpha) });
+    state.syncOutlineMask();
   }, [w.view.fadeRoomsFx.uid, w.texRoomLabel.hash]);
 
   useEffect(() => {
@@ -137,6 +138,10 @@ export type State = {
   res: ReturnType<typeof createRoomLabelResources>;
   /** Which texture layer holds each distinct label */
   layerOfLabel: Record<string, number>;
+  /** Marks the label a caption the npc border may not paint over, whilst those borders run */
+  maskMrt: null | THREE.MRTNode;
+  /** Keeps `mrtNode` in step with `w.view.npcMaskMrt` — see `NPCs.syncOutlineMask` */
+  syncOutlineMask(): void;
   /** Draw each distinct label once, into its own layer */
   draw(): void;
   /** Put a billboard at every labelled decor point */
@@ -198,11 +203,8 @@ function createRoomLabelResources() {
 }
 
 const roomLabelInk = "rgba(226, 236, 248, 0.92)";
-/** The plate behind the words, so they read over a busy floor */
-const roomLabelPlateInk = "rgba(0, 0, 0, 0.65)";
 const roomLabelFontSize = 28;
-/** Around the glyphs, in texture pixels — the plate is grown from what they measure */
+/** Kept clear either side, in texture pixels — a longer name shrinks rather than reaching it */
 const roomLabelPadding = 24;
-const roomLabelPaddingY = 14;
 /** Off the floor, so it is not in the floor's own plane */
 const roomLabelLift = wallHeight;
