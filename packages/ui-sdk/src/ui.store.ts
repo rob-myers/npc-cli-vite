@@ -91,9 +91,6 @@ export const uiStoreApi = {
 
     ui.meta.onRemoveUi?.(ui.meta);
   },
-  resetLayout() {
-    uiStoreApi.clearUis();
-  },
   setUiMeta(id: string, uiMetaDraft: (state: Draft<UiInstanceMeta>) => void) {
     uiStore.setState((draft) => void uiMetaDraft(draft.byId[id].meta));
   },
@@ -187,7 +184,8 @@ export type PersistedPaneNode =
       hiddenIds?: number[];
     };
 
-function getDefaultPanes(): PersistedPanesLayout {
+/** The layout a first visit gets, with fresh uis — see `resetPanes` for going back to it */
+export function getDefaultPanes(): PersistedPanesLayout {
   const { tabs, toUi } = getDefaultTabs();
   return {
     root: {
