@@ -194,6 +194,16 @@ export const MAX_ROOM_LABEL_INSTANCES = 256;
 /** How big a room label stands in the world (metres) */
 export const roomLabelWidth = 1.6;
 export const roomLabelHeight = 0.4;
+/** How long the room labels take to come in, once the first boot's reveal has settled */
+export const roomLabelRevealMs = 0;
+/**
+ * A room label fades with the zoom: down to `roomLabelNearAlpha` at the near stop, and fully back
+ * by this far out of the travel between the stops. Close in the room is plain to see and its name
+ * is mostly in the way
+ */
+export const roomLabelFadeBy = 0.5;
+/** How much of a room label is left at the near stop */
+export const roomLabelNearAlpha = 0;
 /** The texture array behind them — see `RoomLabels` */
 export const roomLabelTexOpts = {
   ctKey: "room-labels",

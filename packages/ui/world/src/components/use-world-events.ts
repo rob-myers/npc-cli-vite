@@ -13,9 +13,11 @@ import {
   MAX_NPCS,
   mapVeilMs,
   npcConfig,
+  roomLabelRevealMs,
   unfoldDelayMs,
 } from "../const";
 import type { AStarSearchResult } from "../pathfinding/AStar";
+import { MODE_FADE_SECS } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
@@ -236,6 +238,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // the world rises. Left to itself the fade would arrive the moment the player spawns —
           // which is before any of that, and would hide all of it but the one room they are in
           w.view.setFadeRoomsActive("qa");
+          // ...but the NAMES do not join that: shown whole means every room's, and they would then
+          // go out again as the fade lands, which reads as a fault rather than a reveal
+          w.view.revealRoomLabels(0);
         }
 
         try {
@@ -261,6 +266,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             await pause(floorFadeDelayMs);
             void w.floor?.fadeTo(1);
             await rising;
+            // the names come back once the fade the unfold started has settled — by then only the
+            // rooms that stay are still shown, so only their labels appear. Not awaited: the intro
+            // pan below has nothing to do with it
+            w.view.revealRoomLabels(1, roomLabelRevealMs, MODE_FADE_SECS * 1000);
           } else {
             // a map change has been behind black since `fadeOut`, and simply comes back from it
             await w.view.veilCanvas(false, mapVeilMs);

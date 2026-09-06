@@ -27,6 +27,8 @@ import {
   defaultCameraMaxDistance,
   defaultCameraMode,
   npcConfig,
+  roomLabelFadeBy,
+  roomLabelNearAlpha,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   zoomSpeedDesktop,
@@ -114,6 +116,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       foldNode: uniform(1),
       freezeEl: null as any,
       frozen: false,
+      labelReveal: uniform(1),
+      labelRevealAnimId: 0,
+      labelZoomFade: uniform(1),
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
       postFx: createPostProcessing(),
@@ -363,12 +368,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // outside the mode check, so a fade underway still finishes if the mode changes beneath it
         state.fadeCrosshair();
 
-        if (state.cameraMode !== "canonical") return;
         const { controls, ctrlOpts } = state;
         const min = ctrlOpts.minDistance ?? 10;
         const max = ctrlOpts.maxDistance ?? 20;
         /** `0` at the inner zoom stop, `1` at the outer one */
         const t = clamp01((spherical.radius - min) / (max - min));
+
+        // a room label thins out as the view comes in: close in the room speaks for itself and its
+        // name is mostly in the way. Its SIZE is left alone — being fixed in metres it grows with
+        // the room, which is what keeps it attached to the floor rather than floating over it.
+        // Measured off the radius rather than `zoomProgress`, which a free (touch) zoom does not
+        // keep. Every mode, unlike what follows
+        const u = clamp01(t / roomLabelFadeBy);
+        const eased = u * u * (3 - 2 * u); // eased, so it neither snaps out nor lingers
+        state.labelZoomFade.value = roomLabelNearAlpha + (1 - roomLabelNearAlpha) * eased;
+
+        if (state.cameraMode !== "canonical") return;
 
         // the aimed zoom-in eases slower, a pan and a tilt riding on it — held until the ZOOM
         // ends rather than the pan, since speeding up for its last few percent is felt as a jolt
@@ -385,6 +400,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
         state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
         state.detentCanonicalAzimuth(spherical);
+      },
+      /**
+       * Room labels in or out, over `ms`. Only the first boot uses it: the world is REVEALED there
+       * — shown whole, then faded down to the room the player is in as it rises (see
+       * `onBootstrapMap`) — and a name that appears with the ship only to go out again a moment
+       * later reads as a fault. So they are held back and brought in once that has settled
+       */
+      revealRoomLabels(to, ms = 0, delayMs = 0) {
+        cancelAnimationFrame(state.labelRevealAnimId);
+        const from = state.labelReveal.value;
+        const startMs = performance.now() + delayMs;
+        const step = () => {
+          const elapsed = performance.now() - startMs;
+          if (elapsed < 0) {
+            state.labelRevealAnimId = requestAnimationFrame(step);
+            return; // still waiting for the fade it follows
+          }
+          const t = ms > 0 ? Math.min(1, elapsed / ms) : 1;
+          state.labelReveal.value = from + (to - from) * t;
+          state.labelRevealAnimId = t < 1 ? requestAnimationFrame(step) : 0;
+          w.r3f?.invalidate();
+        };
+        step();
       },
       /** The crosshair's fade-out, once whatever raised it has arrived */
       fadeCrosshair() {
@@ -1204,7 +1242,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         title="resume"
         onClick={() => w.setDisabled(false)}
         className={cn(
-          "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
+          "absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
           "flex items-center gap-3 bg-black/20 rounded backdrop-blur-xs px-5 py-2",
           "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
           "transition-opacity duration-500",
@@ -1382,6 +1420,13 @@ export type State = {
   lookAtAnimId: number;
   /** `0` the world is folded flat, `1` full height — for anything that folds in its shader */
   foldNode: THREE.UniformNode<"float", number>;
+  /** How much of the room labels is shown — the first boot holds them back, see `revealRoomLabels` */
+  labelReveal: THREE.UniformNode<"float", number>;
+  labelRevealAnimId: number;
+  /** Fade the room labels to `to` over `ms`, after waiting `delayMs` */
+  revealRoomLabels(to: number, ms?: number, delayMs?: number): void;
+  /** How much of a label the ZOOM leaves: `1` from `roomLabelFadeBy` out, `roomLabelNearAlpha` in */
+  labelZoomFade: THREE.UniformNode<"float", number>;
   /** Takes the page background to black and back, whilst a map loads */
   dimBackground(darken: boolean, durationMs?: number): Promise<void>;
   /** Black over the canvas contents, hiding a floor swap — see `world.css` */

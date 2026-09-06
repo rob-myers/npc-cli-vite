@@ -114,7 +114,7 @@ export default function RoomLabels() {
     const alpha = (select as SelectAnyType)(
       w.view.objectPick.notEqual(0),
       float(0), // never pickable: it is an annotation, not a thing in the world
-      tex.a.mul(w.view.foldNode).mul(fade),
+      tex.a.mul(w.view.foldNode).mul(w.view.labelReveal).mul(w.view.labelZoomFade).mul(fade),
     ) as THREE.Node<"float">;
     mat.colorNode = vec4(tex.rgb, alpha);
     // a name is drawn OVER the world, so the border round an npc must not creep onto it: the label
