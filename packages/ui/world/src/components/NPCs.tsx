@@ -200,9 +200,6 @@ export default function NPCs() {
         // and blending would sum it. `bodyTint` takes the border with it as they black out, and it
         // reaches `0` before the wipe does, so nothing outlines a figure that is no longer there
         const maskAmount = colorScale.mul(fold).mul(bodyTint);
-        const maskMrt = mrt({
-          npcMask: (select as SelectAnyType)(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 0, 0, 0)),
-        });
 
         const material = new THREE.MeshStandardNodeMaterial({
           transparent: true,
@@ -255,6 +252,14 @@ export default function NPCs() {
           (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
           beauty,
         );
+        // The label writes no silhouette — it is not part of the figure — but marks itself in `g`
+        // as a caption the border may not paint over: it sits a few pixels above the head, well
+        // inside the border's reach. Keyed to the label's OWN alpha, so a faded one protects
+        // nothing; that alpha also scales `r` back under it, which only ever costs mask the
+        // caption is covering anyway
+        const maskMrt = mrt({
+          npcMask: (select as SelectAnyType)(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 1, 0, label.a)),
+        });
         // attached only whilst the scene pass declares the extra output — see `syncOutlineMask`
         material.mrtNode = w.view.npcMaskMrt === null ? null : maskMrt;
 

@@ -8,7 +8,8 @@ export const npcOutlineUid = crypto.randomUUID();
 
 /**
  * The scene pass's extra output, whence the borders — npcs write their coverage into `r`, everyone
- * else writes nothing (see `NPCs.createMaterials`).
+ * else writes nothing — bar an npc's own label, which marks itself in `g` as a caption the
+ * border may not paint over (see `NPCs.createMaterials`).
  *
  * BLENDED, which no MRT output but `output` itself is by default: unblended each fragment REPLACES
  * what is there and the walls, drawn after the npcs, simply wiped them. Blended, everything else
@@ -40,7 +41,8 @@ export function createNpcMaskMrt(): NpcMaskMrt {
  * one the assignments are dropped silently and no border appears at all. A NULLARY one closing over
  * the arguments: typing them as a tuple parameter instead blows the compiler's union budget (2590)
  *
- * @param npcMask `r` is how much npc is here, after anything see-through in front of them
+ * @param npcMask `r` is how much npc is here, after anything see-through in front of them, and
+ * `g` how much caption — which the border must leave alone
  * @param sceneDepth raw depth, only ever compared — never linearized
  */
 export function applyNpcOutline(
@@ -55,8 +57,14 @@ export function applyNpcOutline(
     // rather than by blending, so it leaves the mask a pixel-wide checker rather than dimming it —
     // and every hole in that checker would take a border of its own
     const here = npcMask.r.toVar();
+    // …and how much CAPTION: a label is drawn over the npcs as a caption on them, so a border
+    // creeping onto it reads as the text being scribbled on. Dilated alongside `here`, which also
+    // keeps the border from hugging the label's edge
+    const caption = npcMask.g.toVar();
     for (const [dx, dy] of crossTaps) {
-      here.assign(here.max(npcMask.sample(screenUV.add(onePx.mul(vec2(dx, dy)))).r));
+      const tap = npcMask.sample(screenUV.add(onePx.mul(vec2(dx, dy))));
+      here.assign(here.max(tap.r));
+      caption.assign(caption.max(tap.g));
     }
 
     // The most npc within reach, unrolled so no loop reaches the shader. A tap is IGNORED where
@@ -77,7 +85,8 @@ export function applyNpcOutline(
     const rim = step(here.div(strength.max(maskFloor)), relativeCut);
     // `strength` again for the alpha: the border dims exactly as the npc does, and stays away where
     // there is no npc within reach — `rim` being 1 out there
-    return vec4(mix(frame.rgb, outlineColor, rim.mul(strength).mul(outlineAlpha)), frame.a);
+    const amount = rim.mul(strength).mul(outlineAlpha).mul(caption.oneMinus());
+    return vec4(mix(frame.rgb, outlineColor, amount), frame.a);
   })();
 }
 
