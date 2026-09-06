@@ -34,7 +34,11 @@ import {
   zoomSpeedDesktop,
   zoomSpeedMobile,
 } from "../const";
-import { type CameraControls as BaseCameraControls, defaultZoomSettleRate } from "../service/camera-controls";
+import {
+  type CameraControls as BaseCameraControls,
+  defaultZoomSettleRate,
+  zoomCommitIn,
+} from "../service/camera-controls";
 import { createDemoPostFx, type DemoPostFx, type DemoPostFxKey, warpCrtUv } from "../service/demo-post-process";
 import {
   createFadeRooms,
@@ -339,10 +343,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (controls === null || state.canvas === null) return;
 
         // a zoom-in aims at the cursor's ground point and pans onto it, ending up CENTRED rather
-        // than merely held still as `zoomToCursor` does. Aimed ONCE per gesture: re-aiming would
-        // raycast from the already-panned camera, and a still cursor would name a new point each
-        // time. The pan rides the zoom, so it also needs zoom left to ride
-        if (e.deltaY >= 0 || state.zoomPan !== null) return;
+        // than merely held still as `zoomToCursor` does. Aimed once the zoom has COMMITTED:
+        // re-aiming then would raycast from the already-panned camera. Before that the camera has
+        // barely moved, and the cursor may well have — so a wheel elsewhere re-aims at once, rather
+        // than waiting on the settle back out and the crosshair's fade. Only the destination
+        // moves, so the pan keeps its progress. It rides the zoom, so it also needs zoom left
+        if (e.deltaY >= 0) return;
+        if (state.zoomPan !== null && controls.zoomProgress > zoomCommitIn) return;
         if (1 - controls.zoomProgress < zoomPanMinSpan) return;
 
         const rect = state.canvas.getBoundingClientRect();
@@ -356,14 +363,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           tmpGroundHit.sub(controls.target).setLength(maxPan).add(controls.target);
         }
 
-        state.zoomPan = {
-          from: controls.target.clone(),
-          to: tmpGroundHit.clone(),
-          lastTarget: controls.target.clone(),
-          fromProgress: controls.zoomProgress,
-          fromPolar: controls.spherical.phi,
-          toPolar: state.canonicalPolar, // the tilt we were last at close in, restored by the way in
-        };
+        if (state.zoomPan !== null) {
+          state.zoomPan.to.copy(tmpGroundHit); // re-aimed, see above
+        } else {
+          state.zoomPan = {
+            from: controls.target.clone(),
+            to: tmpGroundHit.clone(),
+            lastTarget: controls.target.clone(),
+            fromProgress: controls.zoomProgress,
+            fromPolar: controls.spherical.phi,
+            toPolar: state.canonicalPolar, // the tilt we were last at close in, restored by the way in
+          };
+        }
         state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
         state.setCrosshair(tmpGroundHit);
         w.r3f?.invalidate();
