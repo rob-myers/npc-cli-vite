@@ -350,6 +350,9 @@ export function WorldMenu() {
   // held briefly, else a fast load just flickers the trigger
   const spinnerKeys = useToastKeys(pendingKeys, spinnerMinMs);
   const toggleToastKeys = useToastTs(state.toastTs);
+  // a flash over the look button whenever follow is toggled — by this button, by the row in the
+  // debug list, or by `f`. Any of them lands here, since it watches the VALUE
+  const followFlash = useChangeCount(w.view.cameraFollow);
 
   const menuTrigger = (
     <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
@@ -798,7 +801,23 @@ export function WorldMenu() {
             onPointerLeave={() => state.onLookPressEnd(true)}
             onContextMenu={(e) => e.preventDefault()}
           >
-            <PersonSimpleCircleIcon className="size-5" alt="look at the player (long press for camera mode)" />
+            {followFlash > 0 && (
+              // keyed by the count, so each toggle remounts it and replays the fade from the top
+              <motion.div
+                key={followFlash}
+                className={cn(
+                  "absolute inset-0 pointer-events-none",
+                  w.view.cameraFollow === true ? "bg-emerald-400" : "bg-slate-400",
+                )}
+                initial={{ opacity: 0.55 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
+              />
+            )}
+            <PersonSimpleCircleIcon
+              className={cn("size-5 relative", w.view.cameraFollow === true && "text-emerald-400")}
+              alt="look at the player (long press for camera mode)"
+            />
             <div
               className="absolute bottom-0.5 right-0.5 leading-none pointer-events-none"
               title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (press f, or long press for the mode)`}
@@ -1239,6 +1258,8 @@ const toastLingerMs = 2000;
 const spinnerMinMs = 300;
 /** How long the look button must be held before it switches camera mode rather than looking */
 const lookLongPressMs = 500;
+/** How long the look button's flash takes to fade, when follow is turned on or off */
+const followFlashMs = 550;
 
 const nextCameraMode = { free: "canonical", canonical: "free" } as const;
 const debugItems = [
@@ -1334,6 +1355,20 @@ export function MenuSelect<T extends string>({
       </Select.Portal>
     </Select.Root>
   );
+}
+
+/** How many times `value` has changed since mount — `0` until the first, so nothing flashes on load */
+function useChangeCount(value: unknown): number {
+  const [count, setCount] = useState(0);
+  const previous = useRef(value);
+
+  useEffect(() => {
+    if (previous.current === value) return;
+    previous.current = value;
+    setCount((x) => x + 1);
+  }, [value]);
+
+  return count;
 }
 
 function useToastTs(tsRecord: Record<string, number>, delayMs = 2000): string[] {
