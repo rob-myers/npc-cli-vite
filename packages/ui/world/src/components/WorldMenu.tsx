@@ -52,24 +52,24 @@ export function WorldMenu() {
 
   const state = useStateRef(
     (): State => ({
+      armedState: null,
+      armedTimeoutId: 0,
       debugHitOpen: false,
       dragged: false,
       gmGraphsOpen: false,
-      skinDebugOpen: false,
-      menuOpen: false,
+      lookLongPressed: false,
+      lookTimeoutId: 0,
+      menuWidth: saved.menuWidth,
       minY: 40,
+      menuOpen: false,
+      menuHeight: saved.menuHeight,
       openSection: saved.menuSection,
+      resizing: false,
+      skinDebugOpen: false,
+      stateSelectOpen: false,
       themeEditorRef: null as any,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
-      menuWidth: saved.menuWidth,
-      menuHeight: saved.menuHeight,
-      armedState: null,
-      armedTimeoutId: 0,
-      lookLongPressed: false,
-      lookTimeoutId: 0,
-      resizing: false,
-      stateSelectOpen: false,
 
       onSelectState(value) {
         if (value === null) {
@@ -108,18 +108,19 @@ export function WorldMenu() {
         }
       },
 
+      // what each press means is `WorldView`'s `onLookGesture`, which `f` runs too
       onLookPressStart() {
         state.lookLongPressed = false;
         state.lookTimeoutId = window.setTimeout(() => {
           state.lookLongPressed = true;
-          w.view.setCameraMode(nextCameraMode[w.view.cameraMode]);
+          w.view.onLookGesture(true);
           state.update();
         }, lookLongPressMs);
       },
       onLookPressEnd(cancelled = false) {
         window.clearTimeout(state.lookTimeoutId);
         if (cancelled === false && state.lookLongPressed === false) {
-          void w.player.panTo();
+          w.view.onLookGesture(false);
         }
       },
 
@@ -791,8 +792,9 @@ export function WorldMenu() {
             )}
           </div>
 
-          {/* look at the player, or long press to switch camera mode — which its own corner wears,
-              and which `f` also toggles. See `WorldView`'s `onKeyDown` */}
+          {/* look at the player, long press to follow them — which its own corner wears — and
+              either one to stop following. `f` is the same gesture on a key, and the camera MODE is
+              the menu row above. See `WorldView`'s `onLookGesture` */}
           <div
             data-keep-menu-open
             className="relative cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
@@ -816,11 +818,13 @@ export function WorldMenu() {
             )}
             <PersonSimpleCircleIcon
               className={cn("size-5 relative", w.view.cameraFollow === true && "text-emerald-400")}
-              alt="look at the player (long press for camera mode)"
+              alt={
+                w.view.cameraFollow === true ? "stop following the player" : "look at the player (long press to follow)"
+              }
             />
             <div
               className="absolute bottom-0.5 right-0.5 leading-none pointer-events-none"
-              title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (press f, or long press for the mode)`}
+              title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (long press or f to toggle)`}
             >
               {w.view.cameraFollow === true ? (
                 <CrosshairSimpleIcon className="size-2.5 text-emerald-400" weight="bold" />

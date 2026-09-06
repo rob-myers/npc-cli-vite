@@ -567,6 +567,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.texFloor.update();
         w.update();
       },
+      onLookGesture(held) {
+        if (state.cameraFollow === true) {
+          // either press leaves the follow: looking is what it already does every frame, so a press
+          // that only looked would do nothing at all
+          state.setCameraFollow(false);
+        } else if (held === true) {
+          state.setCameraFollow(true);
+        } else {
+          void w.player?.panTo();
+        }
+      },
       onResize: debounce(() => {
         w.menu?.onResize();
         w.speech?.onResize();
@@ -579,15 +590,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         } else if (e.key === "f" || e.key === "F") {
-          // the TOGGLE waits for the release, so that holding the key can mean something else. A
-          // held key repeats, which is the long press — no timer of our own, and a tap never gets
-          // there. HELD goes back to the player without touching the option, which is otherwise
-          // only reachable by turning the follow off and on again
+          // the look button's gesture on a key: a held key REPEATS, which is the long press — no
+          // timer of our own, and a tap never gets there. The short press waits for the release,
+          // since only by then is it known not to have been a hold
           if (e.repeat === false) {
             state.fHeld = false;
           } else if (state.fHeld === false) {
             state.fHeld = true;
-            state.lookAtPlayer();
+            state.onLookGesture(true);
           }
         } else if (e.key === "q" || e.key === "Q") {
           // what the look button does: pressed again once on them, `panTo` swings round behind them
@@ -607,7 +617,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       onKeyUp(e) {
         if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
-          state.setCameraFollow(state.cameraFollow === false);
+          state.onLookGesture(false);
         }
       },
       onPointerDown(e) {
@@ -1349,6 +1359,11 @@ export type State = {
   onKeyUp(e: KeyboardEvent): void;
   /** Whether the `f` key has been held long enough to have done its long press */
   fHeld: boolean;
+  /**
+   * The look BUTTON's gesture and `f`'s alike, so the two cannot drift apart: a press looks, a hold
+   * takes up the follow, and whilst following either one leaves it. See `WorldMenu`'s look button
+   */
+  onLookGesture(held: boolean): void;
   /** Pans onto the player, following them as they walk — what turning `follow` on does */
   lookAtPlayer(): void;
   onResize(): void;
