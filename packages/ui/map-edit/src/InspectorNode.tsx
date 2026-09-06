@@ -34,7 +34,10 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
     rowEl: null as HTMLDivElement | null,
     closestEdge: null as Edge | null,
     dropInside: false,
+    /** The prop as of the latest render — a reload or undo hands the same id a fresh object */
+    node,
   }));
+  state.node = node;
 
   const isSelected = root.selectedIds.has(node.id);
   const isEditing = root.editingId === node.id;
@@ -58,18 +61,22 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
         canDrop: ({ source }) => !root.isReadOnly() && source.data.type === "map-node" && source.data.id !== id,
         getData: ({ input }) => attachClosestEdge({ id }, { element: el, input, allowedEdges: ["top", "bottom"] }),
         onDrag: ({ self, location }) => {
-          const edge = extractClosestEdge(self.data);
           if (isGroup) {
+            // a folder row mostly means "into the folder": a thin band at the top reorders before
+            // it, and the band at the bottom reorders after it — or, once its children show, puts
+            // the drop FIRST among them, so the line under the folder means the same as the line
+            // over its first child, rather than an append sitting a few pixels above a prepend
             const rect = el.getBoundingClientRect();
             const y = location.current.input.clientY;
-            const relY = (y - rect.top) / rect.height;
-            const inCenter = relY > 0.25 && relY < 0.75;
-            state.set({ closestEdge: inCenter ? null : edge, dropInside: inCenter });
-            if (inCenter && node.type === "group" && !node.expanded) {
+            const bottomBand = isOpenGroup(state.node) ? rect.height * groupFirstFrac : groupEdgePx;
+            const edge = y - rect.top <= groupEdgePx ? "top" : rect.bottom - y <= bottomBand ? "bottom" : null;
+            state.set({ closestEdge: edge, dropInside: edge === null });
+            if (edge === null) {
               if (!root.expandTimer) {
                 root.expandTimer = setTimeout(() => {
-                  if (node.type === "group") {
-                    node.expanded = true;
+                  const group = state.node;
+                  if (group.type === "group" && !group.expanded) {
+                    group.expanded = true;
                     root.update();
                   }
                   root.expandTimer = null;
@@ -80,7 +87,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
               root.expandTimer = null;
             }
           } else {
-            state.set({ closestEdge: edge, dropInside: false });
+            state.set({ closestEdge: extractClosestEdge(self.data), dropInside: false });
           }
         },
         onDragLeave: () => {
@@ -93,9 +100,12 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           const dropInside = state.dropInside;
           state.set({ closestEdge: null, dropInside: false });
           const ids = source.data.ids as string[];
-          const targetEdge = dropInside && isGroup ? "inside" : edge;
-          if (targetEdge === "top" || targetEdge === "bottom" || targetEdge === "inside") {
-            root.moveNodes(ids, id, targetEdge);
+          if (dropInside && isGroup) {
+            root.moveNodes(ids, id, "inside");
+          } else if (edge === "bottom" && isOpenGroup(state.node)) {
+            root.moveNodes(ids, id, "inside-first");
+          } else if (edge === "top" || edge === "bottom") {
+            root.moveNodes(ids, id, edge);
           }
         },
       }),
@@ -190,6 +200,16 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
     </div>
   );
 };
+
+/** How far from a folder row's top or bottom a drop reorders around it rather than into it */
+const groupEdgePx = 5;
+/** The share of an OPEN folder row, from its bottom, where a drop goes first among its children */
+const groupFirstFrac = 0.4;
+
+/** Whether the folder's children are on show beneath it */
+function isOpenGroup(node: MapNode): boolean {
+  return node.type === "group" && node.expanded === true && node.children.length > 0;
+}
 
 interface TreeItemProps {
   node: MapNode;
