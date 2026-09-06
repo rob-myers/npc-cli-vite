@@ -11399,7 +11399,7 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left#0",
+            "rel": "sees:window-left#1",
             "label": "common"
           }
         },
@@ -11412,7 +11412,7 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-right#1",
+            "rel": "sees:window-right#2",
             "label": "common"
           }
         },
@@ -14400,7 +14400,7 @@
               [12.7875, 16.75]
             ]
           ],
-          "meta": {"window": true, "name": "window-left#0"}
+          "meta": {"window": true, "name": "window-left#1"}
         },
         {
           "type": "Polygon",
@@ -14412,7 +14412,7 @@
               [18.7506, 16.7581]
             ]
           ],
-          "meta": {"window": true, "name": "window-right#1"}
+          "meta": {"window": true, "name": "window-right#2"}
         }
       ],
       "removableDoors": [],
@@ -21027,7 +21027,7 @@
             "door": true,
             "slide": [1, 0],
             "auto": true,
-            "rel": "sees:window#2",
+            "rel": "sees:window#3",
             "label": "bridge",
             "det": 1
           }
@@ -23892,7 +23892,7 @@
               [13.5, 9.0125]
             ]
           ],
-          "meta": {"window": true, "name": "window#2"}
+          "meta": {"window": true, "name": "window#3"}
         }
       ],
       "removableDoors": [],
@@ -31897,7 +31897,7 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-left#0",
+              "rel": "sees:window-left#1",
               "label": "common"
             }
           },
@@ -31919,7 +31919,7 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-right#1",
+              "rel": "sees:window-right#2",
               "label": "common"
             }
           },
@@ -36683,7 +36683,7 @@
                 [12.7875, 16.75]
               ]
             ],
-            "meta": {"window": true, "name": "window-left#0"}
+            "meta": {"window": true, "name": "window-left#1"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -36699,7 +36699,7 @@
                 [18.7506, 16.7581]
               ]
             ],
-            "meta": {"window": true, "name": "window-right#1"}
+            "meta": {"window": true, "name": "window-right#2"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -39273,7 +39273,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -41008,7 +41008,7 @@
               "door": true,
               "slide": [1, 0],
               "auto": true,
-              "rel": "sees:window#2",
+              "rel": "sees:window#3",
               "label": "bridge",
               "det": 1
             }
@@ -45878,7 +45878,7 @@
                 [13.5, 9.0125]
               ]
             ],
-            "meta": {"window": true, "name": "window#2"}
+            "meta": {"window": true, "name": "window#3"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
