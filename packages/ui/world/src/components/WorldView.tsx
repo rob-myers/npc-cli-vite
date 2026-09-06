@@ -370,6 +370,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             from: controls.target.clone(),
             to: tmpGroundHit.clone(),
             lastTarget: controls.target.clone(),
+            lastTheta: controls.spherical.theta,
+            lastBeta: 0,
             fromProgress: controls.zoomProgress,
             fromPolar: controls.spherical.phi,
             toPolar: state.canonicalPolar, // the tilt we were last at close in, restored by the way in
@@ -378,6 +380,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
         state.setCrosshair(tmpGroundHit);
         w.r3f?.invalidate();
+      },
+      getCrosshairPivot() {
+        const el = state.zoomCrossEl;
+        return el !== null && el.visible === true ? el.position : null;
       },
       setCrosshair(at) {
         const el = state.zoomCrossEl;
@@ -429,8 +435,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         // zoomed out there is nothing to steer, so a drag can only pan. The azimuth is PRESERVED
         // rather than driven anywhere: the detent below simply holds the compass point we were on,
-        // and it is waiting when the zoom comes back in. Mouse and touch both honour this
-        controls.enableRotate = t <= canonicalFlattenFrom;
+        // and it is waiting when the zoom comes back in. Mouse and touch both honour this.
+        // A COMMITTED zoom-in counts as in already: the controls decide on mouse-down, and a
+        // shift-drag begun whilst the radius was still easing in would otherwise be refused whole
+        controls.enableRotate = t <= canonicalFlattenFrom || controls.isZoomingInCommitted();
 
         // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
         state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
@@ -482,14 +490,27 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const alpha = clamp01((controls.zoomProgress - zoomPan.fromProgress) / (1 - zoomPan.fromProgress));
         const beta = Math.min(1, alpha / zoomPanDoneAlpha);
 
-        // whatever else moved the target is the user panning: carried into both ends, so a
-        // drag mid-flight steers where the zoom is going rather than being overwritten
-        tmpDrift.copy(controls.target).sub(zoomPan.lastTarget);
-        if (tmpDrift.lengthSq() > 0) {
-          zoomPan.from.add(tmpDrift);
-          zoomPan.to.add(tmpDrift);
-          state.setCrosshair(zoomPan.to);
+        const rest = 1 - zoomPan.lastBeta;
+        if (spherical.theta !== zoomPan.lastTheta) {
+          // a TURN slid the rig about its pivot — the crosshair, usually — but `to` is a point on
+          // the ground and stays put, so the path is redrawn from wherever the turn left the target
+          // as of the progress it had made: the remaining way still ends on the crosshair. Arrived,
+          // `from` no longer matters
+          if (rest > 1e-3) {
+            zoomPan.from.copy(controls.target).addScaledVector(zoomPan.to, -zoomPan.lastBeta).divideScalar(rest);
+          }
+        } else {
+          // whatever else moved the target is the user panning: carried into both ends, so a
+          // drag mid-flight steers where the zoom is going rather than being overwritten
+          tmpDrift.copy(controls.target).sub(zoomPan.lastTarget);
+          if (tmpDrift.lengthSq() > 0) {
+            zoomPan.from.add(tmpDrift);
+            zoomPan.to.add(tmpDrift);
+            state.setCrosshair(zoomPan.to);
+          }
         }
+        zoomPan.lastTheta = spherical.theta;
+        zoomPan.lastBeta = beta;
 
         controls.target.copy(zoomPan.from).lerp(zoomPan.to, beta);
         // pinned, so the zoom's own flattening cannot fight the tilt whilst the pan owns it
@@ -1214,6 +1235,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // `canonical`'s azimuth is a compass dial you turn by shift-dragging, and turning it
           // about the point under the cursor keeps what you are looking at where you put it
           rotateToCursor={state.cameraMode === "canonical" && state.cameraFollow === false}
+          // and about the zoom crosshair whilst it shows: what the zoom is heading for stays put
+          rotateAbout={state.getCrosshairPivot}
           enablePan={state.cameraFollow === false}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
@@ -1340,6 +1363,10 @@ export type State = {
     to: THREE.Vector3;
     /** The target as WE last left it — anything else that moved it is the user panning */
     lastTarget: THREE.Vector3;
+    /** The azimuth as of the last frame — a change is a turn, which slid the target about a pivot */
+    lastTheta: number;
+    /** How far along the pan was as of the last frame — see `advanceZoomPan` */
+    lastBeta: number;
     fromProgress: number;
     fromPolar: number;
     /** The tilt to arrive at — `canonicalPolar`, as it stood when the zoom was aimed */
@@ -1347,6 +1374,8 @@ export type State = {
   };
   /** Marks where a `canonical` zoom-in is heading */
   zoomCrossEl: null | THREE.Mesh;
+  /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
+  getCrosshairPivot(): THREE.Vector3 | null;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
   /** Whether an aimed zoom-in is still running, so its slower settle is kept to the end */
