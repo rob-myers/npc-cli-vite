@@ -215,7 +215,7 @@ export const deckConfig = {
      * per SIDE: the ticks lie in the room they mark, so a corridor door gets them on the corridor
      * side and nothing in the cabin opposite
      */
-    rooms: "all",
+    rooms: "all" as const,
     /** Off the doorway's own edge, where the box's near corners sit */
     gap: 0.1,
     /** How far the box reaches into the room */
