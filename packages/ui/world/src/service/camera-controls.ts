@@ -45,14 +45,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   keyPanSpeed = 7.0;
   zoomToCursor = true;
   /**
-   * Turn about the ground under the CURSOR rather than about `target`. Mouse only: it needs a
-   * cursor to aim at, and touch rotates with two fingers — see `setRotateAbout`
-   */
-  rotateToCursor = false;
-  /**
-   * A point to turn about in preference to the ground under the cursor, whilst it gives one —
-   * the view names its zoom crosshair, so a turn goes about where the zoom is heading. Consulted
-   * as a turn begins, mouse or touch, and honoured whilst `rotateToCursor` is
+   * A point to turn about instead of `target`, whilst it gives one — the view names its zoom
+   * crosshair, so a turn goes about where the zoom is heading. Consulted as a turn begins, mouse
+   * or touch — see `setRotateAbout`
    */
   rotateAbout: null | (() => THREE.Vector3 | null) = null;
 
@@ -268,7 +263,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   handleMouseDownRotate(event: MouseEvent) {
     this.u.rotateStart.set(event.clientX, event.clientY);
-    this.setRotateAbout(event.clientX, event.clientY);
+    this.setRotateAbout();
   }
 
   /** Middle-button drag: the same trip between the stops the wheel makes, measured in pixels */
@@ -457,7 +452,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTouchStartRotate() {
-    this.takeRotateAbout(); // no cursor to turn about, so only a named point can aim it
+    this.setRotateAbout();
     if (this.pointers.length === 1) {
       this.u.rotateStart.set(this.pointers[0].pageX, this.pointers[0].pageY);
     } else {
@@ -1017,9 +1012,9 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.u.offset.setFromSpherical(this.spherical);
     position.copy(this.target).add(this.u.offset);
 
-    // turning about the cursor and turning about `target` leave `position - target` identical, so
+    // turning about the pivot and turning about `target` leave `position - target` identical, so
     // the two differ by a pure translation — apply the turn as usual, then slide the rig by it
-    if (this.rotateToCursor === true && this._rotateAimed === true) {
+    if (this._rotateAimed === true) {
       this.slideAboutPivot(this.spherical.theta - thetaBefore);
     }
 
@@ -1069,44 +1064,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.object.position.z += shiftZ;
   }
 
-  /**
-   * Aims the turn at whatever `rotateAbout` names, else at the ground under the cursor, on the
-   * level `target` sits at. Leaves the aim unset — so the turn goes about `target`, as it always
-   * did — if the ray never meets that ground
-   */
-  setRotateAbout(clientX: number, clientY: number) {
-    if (this.takeRotateAbout() === true) return;
-    if (this.rotateToCursor === false) return;
-
-    const { left, top, width, height } = this.domElement.getBoundingClientRect();
-    this.u.mouse.set(2 * ((clientX - left) / width) - 1, 1 - 2 * ((clientY - top) / height));
-    this.ray.origin.copy(this.object.position);
-    this.ray.direction
-      .set(this.u.mouse.x, this.u.mouse.y, 1)
-      .unproject(this.object)
-      .sub(this.object.position)
-      .normalize();
-    this.plane.setFromNormalAndCoplanarPoint(this.object.up, this.target);
-    if (this.ray.intersectPlane(this.plane, this.u.rotatePivot) === null) return;
-
-    // a shallow ray meets the ground hundreds of metres out, and a lever that long swings the view
-    // off the map — keep the pivot to what is actually in front of us
-    const reach = Number.isFinite(this.maxDistance) === true ? this.maxDistance : this.spherical.radius;
-    if (this.u.rotatePivot.distanceTo(this.target) > reach) {
-      this.u.rotatePivot.sub(this.target).setLength(reach).add(this.target);
-    }
-    this._rotateAimed = true;
-  }
-
-  /** Aims the turn at whatever `rotateAbout` names, and says whether it named anything */
-  takeRotateAbout(): boolean {
-    this._rotateAimed = false;
-    if (this.rotateToCursor === false) return false;
+  /** Aims the turn at whatever `rotateAbout` names — or at nothing, so it goes about `target` */
+  setRotateAbout() {
     const point = this.rotateAbout?.() ?? null;
-    if (point === null) return false;
-    this.u.rotatePivot.copy(point);
-    this._rotateAimed = true;
-    return true;
+    this._rotateAimed = point !== null;
+    if (point !== null) this.u.rotatePivot.copy(point);
   }
 
   /** Aims the zoom at the cursor — see `setDollyTowards` */

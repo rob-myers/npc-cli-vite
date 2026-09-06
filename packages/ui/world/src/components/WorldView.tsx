@@ -383,7 +383,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       getCrosshairPivot() {
         const el = state.zoomCrossEl;
-        return el !== null && el.visible === true ? el.position : null;
+        // not whilst following: the target is the player's, and a slide of it would only be undone
+        return state.cameraFollow === false && el !== null && el.visible === true ? el.position : null;
       },
       setCrosshair(at) {
         const el = state.zoomCrossEl;
@@ -1232,10 +1233,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // and a pan would do the same, so it is simply off for the duration
           // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
           zoomToCursor={state.cameraMode === "free" && state.cameraFollow === false}
-          // `canonical`'s azimuth is a compass dial you turn by shift-dragging, and turning it
-          // about the point under the cursor keeps what you are looking at where you put it
-          rotateToCursor={state.cameraMode === "canonical" && state.cameraFollow === false}
-          // and about the zoom crosshair whilst it shows: what the zoom is heading for stays put
+          // a turn goes about the zoom crosshair whilst it shows: what the zoom is heading for
+          // stays put. Otherwise, and whilst following, about `target`
           rotateAbout={state.getCrosshairPivot}
           enablePan={state.cameraFollow === false}
           domElement={state.canvas}
