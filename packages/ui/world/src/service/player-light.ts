@@ -1,4 +1,5 @@
 import { Mat, Vect } from "@npc-cli/util/geom";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
   abs,
   atan,
@@ -467,7 +468,7 @@ const cullMargin = 3;
 const lightRadius = 8;
 
 /** How black an unseen fragment goes: `prod` hides it, the other two keep it legible */
-const unlitTintProd = 0.6;
+const unlitTintProd = isTouchDevice() ? 0.8 : 0.6;
 const unlitTintOther = 0.4;
 
 /**
