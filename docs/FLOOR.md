@@ -4,7 +4,7 @@ Everything about how the floor is drawn. Nothing about it lives in another doc.
 
 | file | what it holds |
 |---|---|
-| `service/texture.ts` | `deckConfig`, `drawRoomFloors`, the wiring router, the plate pattern, `softEdges` / `toEdgeOpts` |
+| `service/texture.ts` | `deckConfig`, `drawRoomFloors`, `drawDoorTicks`, the wiring router, the plate pattern, `softEdges` / `toEdgeOpts` |
 | `components/Floor.tsx` | `drawGm` — the draw order, the nav mesh, the hull, and the `floorShading` flag |
 | `util/service/canvas.ts` | `drawPolygons`, `getPolysPath`, `drawBlurredEdge` |
 | `components/Debug.tsx`, `service/storage.ts`, `components/WorldMenu.tsx` | the `floorShading` flag |
@@ -29,10 +29,10 @@ deckConfig.nav.ink = "rgba(255,120,120,0.2)";
 w.floor.drawAll();
 ```
 
-Six parts: `tone`, `plate`, `rivet`, `outline`, `wiring`, `nav`. Each but `tone` and `nav` has a
-`shown` flag that turns it off outright. Lengths are in METRES.
+Seven parts: `tone`, `plate`, `rivet`, `outline`, `wiring`, `doorTicks`, `nav`. Each but `tone` and
+`nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
 
-`wiring` is the only one that reads a room's **label** — `wiring.rooms`, a list of labels or
+Two of them read a room's **label** — `wiring.rooms` and `doorTicks.rooms`, each a list of labels or
 `"all"`. Nothing else on the floor is label-driven.
 
 `wiring` is a bundle of conduits — one line per colour in `wiring.inks`, on a dark backing, with
@@ -63,11 +63,56 @@ A room whose ring never comes near a door keeps the whole loop, unbroken and wit
 `wiring.rooms` is the one thing that reads a room's **label** — the `meta.label` of its labelled
 decor point, gathered in `Floor.drawGm` the same way `RoomLabels` gathers it (`helper.isRoomLabel`
 over `w.decor.byKey`, where `Decor`'s ready pass has already resolved `meta.gmId` / `meta.roomId`).
-Set it to `"all"` for every room, or list labels. Nothing else on the floor is label-driven.
+Set it to `"all"` for every room, or list labels. `doorTicks.rooms` reads the same list, and
+nothing else does.
 
 **Beware how few rooms a label can name.** `common` names exactly ONE room in the whole asset set
 (`g-101--multipurpose` room 14, 8.9 × 10.5 m); `g-301--bridge` has none at all, so on a 301 map the
 default `rooms: ["common"]` draws nothing anywhere. Use `"all"` when tuning the look.
+
+## `doorTicks` — the mark in front of a doorway
+
+The floor kept clear in front of every door, marked at **two corners** — four short arms, no closed
+box. Drawn by `drawDoorTicks`, and the gaps are the whole point: a full rectangle is one more square
+on a deck already plated in squares, and it would fight the nav mesh under it, whereas ticks leave
+the approach empty.
+
+`corners` picks the pair and `atMouth` says where it stands. The default is the FAR pair — whose
+arms run back towards the door and inwards across it — placed at the doorway's own mouth: the box
+simply slides back by its own `depth`, so those corners land on the door with their arms unchanged.
+`corners: "all"` gives the full keep-clear box back, and `atMouth: false` leaves each pair at its
+own end of the box.
+
+Each arm is a groove with a lit lip beside it — **a seam is two lines** — lit the way every other
+seam on the floor is. That is one `translate` between two strokes of the same path, so the lip lands
+on the light's side of every arm however the door happens to be turned. The deck brightens
+towards `+x, +y` on this canvas, which is what `createPlatePattern` means by putting each seam's lip
+just below-right of its groove.
+
+`doorTicks.rooms` says which rooms get them, by label, exactly as `wiring.rooms` does — it defaults
+to `["corridor", "common"]`. It is judged per SIDE, not per door: the ticks lie in the room they
+mark, so a door off a corridor is marked on the corridor side and left bare in the cabin opposite.
+
+Placement comes off the door's own `Connector`, so nothing measures the doorway a second time:
+
+- **`poly`**, projected onto `normal`, gives where the doorway ends on this side — the near corners
+  sit `gap` off that, and the box reaches `depth` in. A hull doorway is twice the depth of an
+  ordinary one, and this meets both without knowing which it has.
+- **`seg`** gives the doorway's width, which the box spans less `widthInset` at each end.
+- **`roomIds`** says which sides have a room at all, and `normal` points at the room of `roomIds[0]`
+  — so the far side takes it reversed. A HULL door's outward `roomId` is `null`: it gets one set of
+  ticks, and the geomorph next door draws the other.
+
+Each set is **clipped to its room** (one `Path2D` per room, built on first use), so ticks near a
+corner are cut by the wall rather than crossing it.
+
+**Everything smaller than this failed.** A filled triangle pointing at the door, then the same as a
+stencilled dart with a notch, a cut edge and a kerf, then a circle. At playing distance each is
+about fifteen pixels of detail competing with the plate seams under it and the nav mesh over it, and
+each reads as a smudge. A full threshold plate — chamfered, gradient-filled, bevelled towards the
+light — was tried next and read as a rug laid in front of the door, cartoonish however it was
+shaded. What works at this range is **width and emptiness**: something as wide as the doorway, that
+does not try to be a picture.
 
 The theme keeps only `floor.hullFill`, the structural ground between rooms that `drawHullFloor`
 paints. The deck laid on top of it is `deckConfig`, so there is one place to tune, not two.
@@ -75,8 +120,10 @@ paints. The deck laid on top of it is `deckConfig`, so there is one place to tun
 ## Draw order (`Floor.drawGm`)
 
 Hull fill and its 45° hatch → wall bases (`#000`) → `drawRoomFloors` → broad-wall aliasing fix →
-nav mesh → door shadows → the blurred edges, if `floorShading` → obstacle drop shadows → the debug
-grid, if `gridShown`.
+nav mesh → door shadows → door ticks → the blurred edges, if `floorShading` → obstacle drop shadows
+→ the debug grid, if `gridShown`.
+
+The ticks go **after** the nav mesh on purpose: its translucent fill would otherwise wash them out.
 
 ## Floor shading — the soft dark edges
 
@@ -139,6 +186,9 @@ There used to be a third, an inner shadow on every floor panel. It went with the
   leaves the blur either invisible or enormous.
 - **Blur follows the clip, not the path.** A blurred draw costs roughly its clipped area. The
   doorway pass is the one to watch: its clip is small but its path spans the geomorph.
+- **A clip beats a containment test.** `drawDoorTicks` clips to its room rather than probing it
+  with `Poly.contains`, which triangulates: one cached `Path2D` per room is cheaper, and it degrades
+  better — a tick near a corner is cut by the wall instead of the set vanishing.
 - **`gm.rooms[i].meta` is empty `{}`** — rooms are the holes of a `Poly.union`, so there is no
   `room.meta.label` to read. Anything room-scoped joins via the labelled decor point.
 

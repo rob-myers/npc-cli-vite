@@ -26,7 +26,15 @@ import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
-import { deckConfig, drawFloorGrid, drawRoomFloors, softEdges, toEdgeOpts, worldToCanvas } from "../service/texture";
+import {
+  deckConfig,
+  drawDoorTicks,
+  drawFloorGrid,
+  drawRoomFloors,
+  softEdges,
+  toEdgeOpts,
+  worldToCanvas,
+} from "../service/texture";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { WorldContext } from "./world-context";
 
@@ -100,7 +108,7 @@ export default function Floor() {
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
         // room labels, read exactly as `RoomLabels` reads them — off the instantiated decor, so
-        // `meta.roomId` is already resolved. Only `deckConfig.wiring` uses them
+        // `meta.roomId` is already resolved. `deckConfig`'s `wiring` and `doorTicks` use them
         const labelOfRoom: (undefined | string)[] = [];
         for (const decor of Object.values(w.decor.byKey)) {
           if (helper.isRoomLabel(decor) === false || decor.meta.gmId !== gmId) continue;
@@ -139,6 +147,11 @@ export default function Floor() {
           ct.lineJoin = "miter";
           drawPolygons(ct, tmpPoly, { fillStyle: null, strokeStyle: "#000c" });
         }
+
+        // the floor kept clear in front of each doorway, marked at its corners. OVER the nav mesh,
+        // whose translucent fill would else wash it out, and before any shading, so it darkens at a
+        // wall along with the deck it is cut into
+        drawDoorTicks(ct, layout, labelOfRoom);
 
         // darker again at walls, inside each room's whole outline
         if (shading === true) {
