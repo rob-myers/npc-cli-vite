@@ -13,3 +13,21 @@
 html {
   overscroll-behavior: none;
 }
+
+/* A thin scrollbar in the theme's colours, with no track — the `::-webkit-` rules only reach
+   browsers without `scrollbar-color`, which ignore them otherwise */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-scrollbar) transparent;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: var(--color-scrollbar);
+  }
+}

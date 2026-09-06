@@ -3,6 +3,8 @@
   --color-on-background: var(--color-black);
   --color-button-background: var(--color-zinc-100);
   --color-spinner: var(--color-zinc-400);
+  /* Thumb of a `scrollbar-thin` scrollbar, against `--color-background` */
+  --color-scrollbar: var(--color-zinc-400);
 
   /* Terminal-flavoured surfaces, from recessed (inset) to raised (surface) */
   --color-term-inset: #ffffff;
@@ -44,6 +46,7 @@
   --color-on-background: #dddddd;
   --color-button-background: var(--color-zinc-800);
   --color-spinner: var(--color-blue-400);
+  --color-scrollbar: var(--color-zinc-600);
 
   --color-term-inset: #000000;
   --color-term-fence: #131313;
