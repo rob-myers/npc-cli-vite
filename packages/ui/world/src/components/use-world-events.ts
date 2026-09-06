@@ -48,10 +48,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
 
-        if (door.auto === false && door.locked === true) {
-          // never auto-close manual locked doors
-          return false;
-        }
+        // if (door.auto === false && door.locked === true) {
+        //   // never auto-close manual locked doors
+        //   return false;
+        // }
 
         if (closeNpcs === undefined || closeNpcs.nearby.size === 0) {
           // auto or unlocked manual doors auto-close when no nearby npcs
