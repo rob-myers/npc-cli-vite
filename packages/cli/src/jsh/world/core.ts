@@ -182,9 +182,13 @@ export function label(
 /**
  * ```sh
  * lock g0d29 g0d30
+ * lock $( pick 3 as:meta.gdKey )
  * lock door:g0d30
- * lock doors:['g0d29','g0d30']
+ * lock doors:'["g0d29","g0d30"]'
+ * lock doors:$( pick 3 as:meta.gdKey | sponge )
  * ```
+ *
+ * NOTE `pick | lock` unsupported because lock/unlock would toggle under debug option "Toggle Doors"
  */
 export function lock(
   ct: JshCli.RunArg,

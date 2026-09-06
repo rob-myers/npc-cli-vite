@@ -43,7 +43,7 @@ export function Debug() {
       navMeshShown: false,
       doPointsShown: false,
       originShown: false,
-      pickOpenDoors: getWorldStore(w.key).read().pickOpenDoors,
+      pickGdkeyOpensDoors: getWorldStore(w.key).read().pickOpenDoors,
       pickDoors: getWorldStore(w.key).read().pickDoors,
 
       physicsLines: new THREE.BufferGeometry(),
@@ -190,7 +190,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, pickOpenDoors: true, pickDoors: true, arrowGeo: false },
+      reset: { demoNavPathShown: true, originShown: true, pickGdkeyOpensDoors: true, pickDoors: true, arrowGeo: false },
     },
   );
 
@@ -217,18 +217,23 @@ export function Debug() {
     state.update();
   }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
 
-  // option "Toggle Doors"
+  // "Toggle Doors"
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {
-        if (state.pickOpenDoors !== true) return;
-        if (!(event.key === "picked" && (event.meta.type === "door" || event.meta.type === "decor"))) return;
-        const { gdKey } = event.meta;
-        if (gdKey !== undefined && w.helper.isGmDoorKey(gdKey)) w.e.toggleDoor(gdKey);
+        if (
+          state.pickGdkeyOpensDoors === true &&
+          event.key === "picked" &&
+          (event.meta.type === "door" || event.meta.type === "decor") &&
+          event.clickId === undefined // ignore e.g. `pick 1`
+        ) {
+          const { gdKey } = event.meta;
+          if (gdKey !== undefined && w.helper.isGmDoorKey(gdKey)) w.e.toggleDoor(gdKey);
+        }
       },
     });
     return () => sub.unsubscribe();
-  }, [state.pickOpenDoors]);
+  }, [state.pickGdkeyOpensDoors]);
 
   useEffect(() => {
     const navMeshHelper = createNavMeshHelper(w.nav?.navMesh);
@@ -340,7 +345,7 @@ export type State = {
   navMeshShown: boolean;
   doPointsShown: boolean;
   originShown: boolean;
-  pickOpenDoors: boolean;
+  pickGdkeyOpensDoors: boolean;
   /** Whether the doors are drawn during object-picking, and so can be picked — see `pickObject` */
   pickDoors: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;

@@ -254,7 +254,7 @@ export function WorldMenu() {
       case "NavMesh":
         return w.debug?.navMeshShown ?? false;
       case "Toggle Doors":
-        return w.debug?.pickOpenDoors ?? true;
+        return w.debug?.pickGdkeyOpensDoors ?? true;
       case "Pick Doors":
         return w.debug?.pickDoors ?? true;
       case "Door Normals":
@@ -320,8 +320,8 @@ export function WorldMenu() {
       case "Toggle Doors": {
         // independent of "Pick Doors": a door's switches carry its `gdKey` too, so picking one of
         // those opens it whilst the door itself stays out of the pick pass
-        const next = !w.debug?.pickOpenDoors;
-        w.debug?.set({ pickOpenDoors: next });
+        const next = !w.debug?.pickGdkeyOpensDoors;
+        w.debug?.set({ pickGdkeyOpensDoors: next });
         store.patch({ pickOpenDoors: next });
         state.update();
         break;
