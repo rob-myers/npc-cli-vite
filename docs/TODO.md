@@ -235,9 +235,10 @@
   - adjust WorldMenu brightness control
 
 - ✅ need a "room labels" instancedMesh for top-down view
-- move camera-mode follow inside camera-mode canonical
+- ✅ move camera-mode follow inside camera-mode canonical
 
-- saw npc can stuck on another shake direction back-and-forth unnaturally
+- `park` should avoid blocking a choke point
+- saw npc can stuck on another shake turn back-and-forth unnaturally
 - basic script to only move selected npc
   - variant which only moves player
 - improve load perf

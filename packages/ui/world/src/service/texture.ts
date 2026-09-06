@@ -207,6 +207,43 @@ export const deckConfig = {
     minRoomArea: 6,
   },
 
+  /** Four corner ticks marking the floor kept clear in front of a doorway — see `drawDoorTicks` */
+  doorTicks: {
+    shown: true,
+    /**
+     * Which rooms get them, by the `meta.label` of their labelled decor point — or `"all"`. Judged
+     * per SIDE: the ticks lie in the room they mark, so a corridor door gets them on the corridor
+     * side and nothing in the cabin opposite
+     */
+    rooms: "all",
+    /** Off the doorway's own edge, where the box's near corners sit */
+    gap: 0.1,
+    /** How far the box reaches into the room */
+    depth: 0.1,
+    /** Held in from the doorway's own width at each end */
+    widthInset: 0.1,
+    /** Which corners are marked — `"all"` gives the full keep-clear box back */
+    corners: "far" as "far" | "near" | "all",
+    /**
+     * Whether the marked pair sits at the doorway's own mouth rather than at its end of the box.
+     * With `corners: "far"` that keeps the far corners' bracket — arms running back towards the
+     * door and inwards across it — but stands it AT the door, which is where it reads best
+     */
+    atMouth: true,
+    /** How long each of a corner's two arms is — never more than half the edge it runs along */
+    arm: 0.08,
+    /** A groove and its lit lip, the deck's own rule that a seam is two lines */
+    grooveInk: "rgba(0, 0, 0, 0.55)",
+    grooveWidth: 0.03,
+    lipInk: "rgba(190, 205, 225, 0.22)",
+    lipWidth: 0.02,
+    /**
+     * How far the lip sits from the groove, towards the light. The deck brightens towards `+x, +y`
+     * on this canvas — see `createPlatePattern`, which puts each seam's lip just below-right of it
+     */
+    lipOffset: 0.025,
+  },
+
   /** The nav mesh over the deck — see `Floor`'s `drawNavMesh` */
   nav: {
     /** The walkable area, lifted a shade */
@@ -245,6 +282,115 @@ export function drawRoomFloors(
   }
 
   ct.restore();
+}
+
+/**
+ * The floor kept clear in front of every doorway, marked at its FOUR CORNERS only — eight short
+ * arms, no closed box. The gaps are what read as a deliberate marking: a full rectangle is just
+ * another square on a deck already plated in squares, and it would fight the nav mesh drawn beneath
+ * it, whereas ticks leave the middle of the approach empty.
+ *
+ * Each arm is a groove with a lit lip beside it, the deck's own rule that a seam is two lines, lit
+ * the way every other seam on the floor is. The near corners sit `gap` off the doorway, found from
+ * `door.poly` projected onto the normal rather than assumed — a hull doorway is twice the depth of
+ * an ordinary one. `roomIds` says which sides have a room at all: a hull door's normal points out
+ * of the geomorph and its outward side is `null`, so the geomorph next door marks that one.
+ */
+export function drawDoorTicks(
+  ct: CanvasRenderingContext2D,
+  layout: Geomorph.Layout,
+  /** The room's `meta.label` by roomId, which `doorTicks.rooms` names. See `Floor`'s `drawGm` */
+  labelOfRoom: (undefined | string)[] = [],
+) {
+  const opts = deckConfig.doorTicks;
+  if (opts.shown === false) return;
+
+  /** Clipped to its room, so ticks near a corner are cut by the wall rather than crossing it */
+  const roomPaths: (undefined | Path2D)[] = [];
+  const lightX = opts.lipOffset * Math.SQRT1_2;
+  const lightY = opts.lipOffset * Math.SQRT1_2;
+
+  ct.save();
+  ct.lineCap = "butt";
+
+  for (const door of layout.doors) {
+    const halfWidth = door.seg[0].distanceTo(door.seg[1]) / 2 - opts.widthInset;
+    if (halfWidth <= 0) continue;
+
+    for (const [i, roomId] of door.roomIds.entries()) {
+      if (roomId === null) continue;
+      if (wantsFeature(opts.rooms, opts.shown, labelOfRoom[roomId]) === false) continue;
+      const room = layout.rooms[roomId];
+      if (room === undefined) continue;
+
+      // `normal` points at the room of `roomIds[0]`, so the other side takes it reversed
+      const sign = i === 0 ? 1 : -1;
+      const dx = door.normal.x * sign;
+      const dy = door.normal.y * sign;
+      /** `along` runs into the room from the door's CENTRE, `across` runs along the doorway */
+      const at = (along: number, across: number) => ({
+        x: door.center.x + dx * along - dy * across,
+        y: door.center.y + dy * along + dx * across,
+      });
+      // where the doorway itself ends on this side, off its own polygon rather than assumed
+      let mouth = 0;
+      for (const p of door.poly.outline) {
+        mouth = Math.max(mouth, (p.x - door.center.x) * dx + (p.y - door.center.y) * dy);
+      }
+      // the box slides back by its own depth when the FAR pair is wanted at the mouth, so those
+      // corners land on the doorway with their arms unchanged — the near pair is already there
+      const shift = opts.atMouth === true && opts.corners === "far" ? -opts.depth : 0;
+      const near = mouth + opts.gap + shift;
+      const far = near + opts.depth;
+
+      // ordered near, far, far, near — which is what `corners` selects from
+      const ticks = cornerTicks(
+        [at(near, halfWidth), at(far, halfWidth), at(far, -halfWidth), at(near, -halfWidth)],
+        opts.arm,
+        opts.corners,
+      );
+
+      ct.save();
+      roomPaths[roomId] ??= getPolysPath([room.clone().removeHoles()]);
+      ct.clip(roomPaths[roomId]);
+
+      ct.strokeStyle = opts.grooveInk;
+      ct.lineWidth = opts.grooveWidth;
+      ct.stroke(ticks);
+      // the lip beside it rather than under it: one translate, so it lands on the light's side of
+      // every arm however the door is turned
+      ct.translate(lightX, lightY);
+      ct.strokeStyle = opts.lipInk;
+      ct.lineWidth = opts.lipWidth;
+      ct.stroke(ticks);
+
+      ct.restore();
+    }
+  }
+
+  ct.restore();
+}
+
+/**
+ * Two arms at each corner `which` selects, one running along each edge that meets there, `arm` long
+ * or half the edge — whichever is shorter, so a short edge cannot have its two ticks meet in the
+ * middle. `corners` runs near, far, far, near; an unmarked corner is still a neighbour, so the arms
+ * beside it keep their direction and length.
+ */
+function cornerTicks(corners: Geom.VectJson[], arm: number, which: "far" | "near" | "all"): Path2D {
+  const path = new Path2D();
+  const n = corners.length;
+  for (let i = 0; i < n; i++) {
+    if (which !== "all" && (i === 1 || i === 2) !== (which === "far")) continue;
+    const p = corners[i];
+    for (const q of [corners[(i + n - 1) % n], corners[(i + 1) % n]]) {
+      const len = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+      const t = Math.min(arm, len / 2) / len;
+      path.moveTo(p.x, p.y);
+      path.lineTo(p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t);
+    }
+  }
+  return path;
 }
 
 /**
