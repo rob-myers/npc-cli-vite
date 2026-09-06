@@ -748,21 +748,25 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         insertArray.splice(insertIndex, 0, newGroup);
         state.set({ selectedIds: new Set([newGroup.id]), selectionBox: null });
       },
-      moveNodes(srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside") {
+      moveNodes(srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside" | "inside-first") {
         if (state.isReadOnly()) return;
         const ordered: MapNode[] = [];
         traverseNodesSync(state.nodes, (node) => {
-          if (srcIds.includes(node.id) && !findNodeById([node], dstId)[0]) ordered.push(node);
+          if (!srcIds.includes(node.id) || findNodeById([node], dstId)[0]) return;
+          // pre-order, so an ancestor already here carries this node with it
+          if (findNodeById(ordered, node.id)[0]) return;
+          ordered.push(node);
         });
         if (!ordered.length) return;
         const [dstNode, dstParent] = findNodeById(state.nodes, dstId);
         if (!dstNode) return;
+        state.pushHistory();
         for (const node of ordered) {
           const [, srcParent] = findNodeById(state.nodes, node.id);
           removeNodeFromParent(srcParent?.children ?? state.nodes, node.id);
         }
-        if (edge === "inside" && dstNode.type === "group") {
-          dstNode.children.push(...ordered);
+        if ((edge === "inside" || edge === "inside-first") && dstNode.type === "group") {
+          dstNode.children.splice(edge === "inside" ? dstNode.children.length : 0, 0, ...ordered);
         } else {
           const siblings = dstParent?.children ?? state.nodes;
           const idx = siblings.findIndex((n) => n.id === dstId);
@@ -2007,7 +2011,8 @@ export type State = {
   pasteFromClipboard: (shiftKey?: boolean) => Promise<void>;
   rotateNode: (nodeId: string, degrees: -90 | 90 | -5 | 5) => void;
   rotateSelected: (degrees: -90 | 90 | -5 | 5) => void;
-  moveNodes: (srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside") => void;
+  /** `"inside"` appends to the folder `dstId`, `"inside-first"` prepends */
+  moveNodes: (srcIds: string[], dstId: string, edge: "top" | "bottom" | "inside" | "inside-first") => void;
   moveNode: (srcId: string, dstId: string, edge: "top" | "bottom" | "inside") => void;
   reflectNode: (nodeId: string, type: "horizontal" | "vertical") => void;
   reflectSelected: (type: "horizontal" | "vertical") => void;
