@@ -23,9 +23,9 @@ import {
   canonicalSnapArm,
   canonicalZoomInPolar,
   canonicalZoomInRate,
+  defaultCameraFollow,
   defaultCameraMaxDistance,
-  defaultCameraModeDesktop,
-  defaultCameraModeMobile,
+  defaultCameraMode,
   npcConfig,
   rotateSpeedDesktop,
   rotateSpeedMobile,
@@ -73,7 +73,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     (): State => ({
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
-      cameraMode: saved.cameraMode ?? (w.touchDevice ? defaultCameraModeMobile : defaultCameraModeDesktop),
+      // `follow` used to be a mode of its own: one stored from before becomes `free` with the
+      // follow option ON, which is what it meant
+      cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
+      cameraFollow: (saved.cameraMode as string) === "follow" ? true : (saved.cameraFollow ?? defaultCameraFollow),
       canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera()).polar,
       canonicalTheta: nearestCompass((saved.cameraInitial ?? defaultInitialCamera()).azimuthal),
       canonicalDragging: false,
@@ -514,13 +517,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         } else if (e.key === "f" || e.key === "F") {
           // the TOGGLE waits for the release, so that holding the key can mean something else. A
           // held key repeats, which is the long press — no timer of our own, and a tap never gets
-          // there. Held whilst following it keeps the mode and simply goes back to the player,
-          // which is otherwise only reachable by leaving follow and returning to it
+          // there. HELD goes back to the player without touching the option, which is otherwise
+          // only reachable by turning the follow off and on again
           if (e.repeat === false) {
             state.fHeld = false;
           } else if (state.fHeld === false) {
             state.fHeld = true;
-            state.cameraMode === "follow" ? state.lookAtPlayer() : state.setCameraMode("follow");
+            state.lookAtPlayer();
           }
         } else if (e.key === "q" || e.key === "Q") {
           // what the look button does: pressed again once on them, `panTo` swings round behind them
@@ -540,7 +543,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       onKeyUp(e) {
         if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
-          state.setCameraMode(state.cameraMode === "follow" ? "free" : "follow");
+          state.setCameraFollow(state.cameraFollow === false);
         }
       },
       onPointerDown(e) {
@@ -708,18 +711,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         };
       },
       /**
-       * In `follow` mode the view keeps the player centred: the target eases onto them and the
-       * camera is carried by the same amount, so the angle and distance the user chose are kept —
-       * `update` derives the spherical from `position - target`, so moving one alone would swing
-       * the camera instead of travelling with it.
+       * With the follow option on — in EITHER mode — the view keeps the player centred: the target
+       * eases onto them and the camera is carried by the same amount, so the angle and distance the
+       * user chose are kept. `update` derives the spherical from `position - target`, so moving one
+       * alone would swing the camera instead of travelling with it.
        *
-       * Panning is off in this mode (see `enablePan` below), so the target is ours alone: nothing
+       * Panning is off whilst it runs (see `enablePan` below), so the target is ours alone: nothing
        * else moves it, and a zoom is always towards the player.
        */
       followPlayer(deltaSecs) {
         const { controls } = state;
         const player = w.n[w.player?.key ?? ""];
-        if (state.cameraMode !== "follow" || controls === null || player === undefined) return;
+        if (state.cameraFollow === false || controls === null || player === undefined) return;
         // a `lookAt` owns the target whilst it runs, and tracks the player itself — two of us
         // writing it would fight, and the pan would never arrive
         if (state.lookAtAnimId !== 0) return;
@@ -751,15 +754,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // so the view follows the slider without one. A React re-render per pointermove would drag
         // the whole World tree along with it, which is what made a drag stutter
         if (state.controls !== null) state.controls.maxDistance = next;
-        state.persistMaxDistance(next);
+        store.patch({ cameraMaxDistance: next });
         w.r3f?.invalidate();
       },
-      /** localStorage is synchronous, and a write per pointermove is felt — see `setCameraMaxDistance` */
-      persistMaxDistance: debounce((cameraMaxDistance: number) => store.patch({ cameraMaxDistance }), 200),
+      setCameraFollow(cameraFollow) {
+        // turning it on goes to the player at once rather than waiting for them to move
+        if (cameraFollow === true) state.lookAtPlayer();
+        store.patch({ cameraFollow });
+        state.set({ cameraFollow });
+        w.update(); // the look button shows it
+        w.r3f?.invalidate();
+      },
       setCameraMode(cameraMode) {
-        if (cameraMode === "follow") {
-          state.lookAtPlayer();
-        }
         if (cameraMode === "canonical") {
           state.canonicalPolar = state.controls?.spherical.phi ?? state.initial.polar;
           // entering turns you onto the nearest compass point
@@ -1092,11 +1098,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // Aiming at the pointer instead moves the target, which the follow would only undo —
           // and a pan would do the same, so it is simply off for the duration
           // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
-          zoomToCursor={state.cameraMode === "free"}
+          zoomToCursor={state.cameraMode === "free" && state.cameraFollow === false}
           // `canonical`'s azimuth is a compass dial you turn by shift-dragging, and turning it
           // about the point under the cursor keeps what you are looking at where you put it
-          rotateToCursor={state.cameraMode === "canonical"}
-          enablePan={state.cameraMode !== "follow"}
+          rotateToCursor={state.cameraMode === "canonical" && state.cameraFollow === false}
+          enablePan={state.cameraFollow === false}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -1180,6 +1186,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 export type State = {
   bounds: Geom.RectJson;
   cameraMode: CameraModeType;
+  /** Whether the view keeps the player centred — an option of EITHER mode */
+  cameraFollow: boolean;
   /** The polar `canonical`'s zoom-out flattens from — birdseye itself once fully out */
   canonicalPolar: number;
   /** The compass point (multiple of π/2) `canonical`'s azimuth is currently detented at */
@@ -1286,9 +1294,9 @@ export type State = {
   setupDom(): () => void;
   /** The outer zoom stop, clamped to `cameraMaxDistanceRange` and persisted */
   setCameraMaxDistance(maxDistance: number): void;
-  persistMaxDistance(cameraMaxDistance: number): void;
+  setCameraFollow(cameraFollow: boolean): void;
   setCameraMode(cameraMode: CameraModeType): void;
-  /** Keeps the player centred whilst `cameraMode` is `follow` — called every tick from `World` */
+  /** Keeps the player centred whilst `cameraFollow` is on — called every tick from `World` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
   /** Whether the "centre on the player" UI is shown */
