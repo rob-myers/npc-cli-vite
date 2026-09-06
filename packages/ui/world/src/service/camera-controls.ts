@@ -49,6 +49,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * cursor to aim at, and touch rotates with two fingers — see `setRotateAbout`
    */
   rotateToCursor = false;
+  /**
+   * A point to turn about in preference to the ground under the cursor, whilst it gives one —
+   * the view names its zoom crosshair, so a turn goes about where the zoom is heading. Consulted
+   * as a turn begins, mouse or touch, and honoured whilst `rotateToCursor` is
+   */
+  rotateAbout: null | (() => THREE.Vector3 | null) = null;
 
   target0 = new THREE.Vector3();
   position0 = new THREE.Vector3();
@@ -451,7 +457,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleTouchStartRotate() {
-    this._rotateAimed = false; // no cursor to turn about
+    this.takeRotateAbout(); // no cursor to turn about, so only a named point can aim it
     if (this.pointers.length === 1) {
       this.u.rotateStart.set(this.pointers[0].pageX, this.pointers[0].pageY);
     } else {
@@ -477,6 +483,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       return this.spherical.radius;
     }
     return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
+  }
+
+  /** Whether a zoom-in has passed the point of no return, so it is on its way to the inner stop */
+  isZoomingInCommitted(): boolean {
+    return this._zoomDirection === 1 && this.zoomProgress > zoomCommitIn;
   }
 
   /** Moves the view between its stops, and marks the gesture as still going */
@@ -1059,11 +1070,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   /**
-   * Aims the turn at the ground under the cursor, on the level `target` sits at. Leaves the aim
-   * unset — so the turn goes about `target`, as it always did — if the ray never meets that ground
+   * Aims the turn at whatever `rotateAbout` names, else at the ground under the cursor, on the
+   * level `target` sits at. Leaves the aim unset — so the turn goes about `target`, as it always
+   * did — if the ray never meets that ground
    */
   setRotateAbout(clientX: number, clientY: number) {
-    this._rotateAimed = false;
+    if (this.takeRotateAbout() === true) return;
     if (this.rotateToCursor === false) return;
 
     const { left, top, width, height } = this.domElement.getBoundingClientRect();
@@ -1084,6 +1096,17 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       this.u.rotatePivot.sub(this.target).setLength(reach).add(this.target);
     }
     this._rotateAimed = true;
+  }
+
+  /** Aims the turn at whatever `rotateAbout` names, and says whether it named anything */
+  takeRotateAbout(): boolean {
+    this._rotateAimed = false;
+    if (this.rotateToCursor === false) return false;
+    const point = this.rotateAbout?.() ?? null;
+    if (point === null) return false;
+    this.u.rotatePivot.copy(point);
+    this._rotateAimed = true;
+    return true;
   }
 
   /** Aims the zoom at the cursor — see `setDollyTowards` */
