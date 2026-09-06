@@ -92,8 +92,9 @@ export const spawnPlayerAttempts = 10;
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
 export const defaultAmbientIntensity = 1;
 
-export const defaultCameraModeDesktop = "follow" satisfies import("./components/CameraControls").CameraModeType;
-export const defaultCameraModeMobile = "free" satisfies import("./components/CameraControls").CameraModeType;
+export const defaultCameraMode = "free" satisfies import("./components/CameraControls").CameraModeType;
+/** Whether the camera keeps the player centred — an option of EITHER mode, not a mode of its own */
+export const defaultCameraFollow = true;
 
 /**
  * `canonical` camera mode: how far out — as a fraction of the travel between the zoom's stops —

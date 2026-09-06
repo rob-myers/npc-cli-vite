@@ -459,6 +459,17 @@ export function WorldMenu() {
             >
               <div>camera: {w.view.cameraMode}</div>
               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <span
+                  title={`follow the player: ${w.view.cameraFollow ? "on" : "off"}`}
+                  onClick={() => w.view.setCameraFollow(w.view.cameraFollow === false)}
+                >
+                  <CrosshairSimpleIcon
+                    className={cn(
+                      "size-3.5 cursor-pointer",
+                      w.view.cameraFollow === true ? "text-emerald-400" : "hover:text-white",
+                    )}
+                  />
+                </span>
                 <span title="reset camera" onClick={() => w.view.resetCamera()}>
                   <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
                 </span>
@@ -790,9 +801,9 @@ export function WorldMenu() {
             <PersonSimpleCircleIcon className="size-5" alt="look at the player (long press for camera mode)" />
             <div
               className="absolute bottom-0.5 right-0.5 leading-none pointer-events-none"
-              title={`camera: ${w.view.cameraMode} (press f, or long press)`}
+              title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (press f, or long press for the mode)`}
             >
-              {w.view.cameraMode === "follow" ? (
+              {w.view.cameraFollow === true ? (
                 <CrosshairSimpleIcon className="size-2.5 text-emerald-400" weight="bold" />
               ) : (
                 <ArrowsOutCardinalIcon className="size-2.5 text-slate-400" weight="bold" />
@@ -1229,7 +1240,7 @@ const spinnerMinMs = 300;
 /** How long the look button must be held before it switches camera mode rather than looking */
 const lookLongPressMs = 500;
 
-const nextCameraMode = { free: "follow", follow: "canonical", canonical: "free" } as const;
+const nextCameraMode = { free: "canonical", canonical: "free" } as const;
 const debugItems = [
   "View Pick",
   "Post FX",
