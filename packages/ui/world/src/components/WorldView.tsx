@@ -15,15 +15,15 @@ import useMeasure from "react-use-measure";
 import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
-  birdseyeExtraDistance,
-  birdseyeExtraStep,
   cameraFov,
+  cameraMaxDistanceRange,
   cameraRefAspect,
   canonicalBirdseyePolar,
   canonicalFlattenFrom,
   canonicalSnapArm,
   canonicalZoomInPolar,
   canonicalZoomInRate,
+  defaultCameraMaxDistance,
   defaultCameraModeDesktop,
   defaultCameraModeMobile,
   npcConfig,
@@ -80,8 +80,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       zoomPan: null,
       zoomCrossEl: null,
       zoomCrossFadeMs: 0,
-      birdseyeExtra: 0,
-      birdseyeExtraOut: 0,
       zoomInSlow: false,
       centreHint: false,
       fHeld: false,
@@ -93,7 +91,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         minDistance: w.touchDevice ? 6 : 8,
-        maxDistance: 12,
+        maxDistance: saved.cameraMaxDistance ?? defaultCameraMaxDistance,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
@@ -307,18 +305,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { controls } = state;
         if (controls === null || state.canvas === null) return;
 
-        // ctrl whilst fully out: a zoom of its own, rising up to `birdseyeExtraDistance` past
-        // the outer stop and staying birdseye. Apart from `zoomProgress`, whose stops are its own
-        if (e.ctrlKey === true && controls.zoomProgress <= zoomOutStopEpsilon) {
-          e.preventDefault();
-          e.stopPropagation(); // the controls must not zoom on this wheel too
-          const next = state.birdseyeExtra + Math.sign(e.deltaY) * birdseyeExtraStep;
-          state.birdseyeExtra = Math.min(birdseyeExtraDistance, Math.max(0, next));
-          state.birdseyeExtraOut = state.birdseyeExtra; // the height to come back out to
-          w.r3f?.invalidate();
-          return;
-        }
-
         // a zoom-in aims at the cursor's ground point and pans onto it, ending up CENTRED rather
         // than merely held still as `zoomToCursor` does. Aimed ONCE per gesture: re-aiming would
         // raycast from the already-panned camera, and a still cursor would name a new point each
@@ -343,7 +329,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           lastTarget: controls.target.clone(),
           fromProgress: controls.zoomProgress,
           fromPolar: controls.spherical.phi,
-          fromExtra: state.birdseyeExtra,
         };
         state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
         state.setCrosshair(tmpGroundHit);
@@ -364,7 +349,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        */
       placeCamera(spherical, phi) {
         const { controls } = state;
-        tmpLookAtOffset.setFromSphericalCoords(spherical.radius + state.birdseyeExtra, phi, spherical.theta);
+        tmpLookAtOffset.setFromSphericalCoords(spherical.radius, phi, spherical.theta);
         controls.object.position.copy(controls.target).add(tmpLookAtOffset);
         controls.object.lookAt(controls.target);
         controls.object.updateMatrixWorld();
@@ -396,6 +381,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
         controls.zoomSettleRate = state.zoomInSlow === true ? canonicalZoomInRate : defaultZoomSettleRate;
 
+        // zoomed out there is nothing to steer, so a drag can only pan. The azimuth is PRESERVED
+        // rather than driven anywhere: the detent below simply holds the compass point we were on,
+        // and it is waiting when the zoom comes back in. Mouse and touch both honour this
+        controls.enableRotate = t <= canonicalFlattenFrom;
+
         if (zoomPan !== null) {
           // pan, tilt and height are FUNCTIONS of the zoom's progress, so they arrive exactly
           // when it does and a reversal walks them back. Measured against `zoomPanDoneAlpha`,
@@ -405,7 +395,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             Math.max(0, (controls.zoomProgress - zoomPan.fromProgress) / (1 - zoomPan.fromProgress)),
           );
           const beta = Math.min(1, alpha / zoomPanDoneAlpha);
-          state.birdseyeExtra = zoomPan.fromExtra * (1 - beta);
 
           // whatever else moved the target is the user panning: carried into both ends, so a
           // drag mid-flight steers where the zoom is going rather than being overwritten
@@ -443,28 +432,27 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           controls.maxPolarAngle = ctrlOpts.maxPolarAngle ?? Math.PI / 2;
           state.canonicalPolar = spherical.phi;
         } else {
-          // further out it is a function of the zoom, eased to birdseye. Pinning both clamps
-          // drives phi outright, which also blocks the drag's polar input — only azimuth turns
+          // further out the POLAR is a function of the zoom, eased to birdseye. Pinning both clamps
+          // drives phi outright, which also blocks the drag's polar input. The azimuth is left
+          // exactly where it was — `enableRotate` above is what stops it turning out here
           const u = (t - canonicalFlattenFrom) / (1 - canonicalFlattenFrom);
           const s = u * u * (3 - 2 * u);
           const phi = state.canonicalPolar * (1 - s) + canonicalBirdseyePolar * s;
           controls.minPolarAngle = phi;
           controls.maxPolarAngle = phi;
           if (s > 0.99) state.canonicalPolar = canonicalBirdseyePolar; // fully flat: kept for the way in
-          state.birdseyeExtra = state.birdseyeExtraOut * s; // back to the height we set off from
 
           // applied now rather than by the clamps next update, which would tilt a frame behind
-          // the zoom driving it. `birdseyeExtra` likewise: `update` rebuilds the position from
-          // `zoomProgress`, which knows nothing of it. Only an unsettled phi needs a next frame
-          const settled = Math.abs(spherical.phi - phi) <= phiSettledEpsilon;
-          if (settled === false || state.birdseyeExtra > 0) {
+          // the zoom driving it. Only an unsettled phi needs a next frame
+          if (Math.abs(spherical.phi - phi) > phiSettledEpsilon) {
             state.placeCamera(spherical, phi);
-            if (settled === false) w.r3f?.invalidate();
+            w.r3f?.invalidate();
           }
         }
 
-        // azimuth is a detented compass dial at EVERY zoom: free whilst dragging, then on release
-        // it advances a point per `canonicalSnapArm` turned, or springs back inside the arm
+        // azimuth is a detented compass dial: free whilst dragging, then on release it advances a
+        // point per `canonicalSnapArm` turned, or springs back inside the arm. It runs at EVERY
+        // zoom — out there `enableRotate` is off, so it simply holds the point we were left on
         if (controls.pointers.length > 0) {
           state.canonicalDragging = true;
           return;
@@ -754,6 +742,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       showCentreHint() {
         state.set({ centreHint: true });
       },
+      setCameraMaxDistance(maxDistance) {
+        const { min, max } = cameraMaxDistanceRange;
+        const next = Math.min(max, Math.max(min, maxDistance));
+        state.ctrlOpts.maxDistance = next;
+        // straight onto the controls as well as into `ctrlOpts`: r3f only applies the prop on a
+        // render, and `update` re-derives the radius from `zoomProgress` and the stops every frame,
+        // so the view follows the slider without one. A React re-render per pointermove would drag
+        // the whole World tree along with it, which is what made a drag stutter
+        if (state.controls !== null) state.controls.maxDistance = next;
+        state.persistMaxDistance(next);
+        w.r3f?.invalidate();
+      },
+      /** localStorage is synchronous, and a write per pointermove is felt — see `setCameraMaxDistance` */
+      persistMaxDistance: debounce((cameraMaxDistance: number) => store.patch({ cameraMaxDistance }), 200),
       setCameraMode(cameraMode) {
         if (cameraMode === "follow") {
           state.lookAtPlayer();
@@ -767,11 +769,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // writes alone, so nothing else would
           state.controls.minPolarAngle = state.ctrlOpts.minPolarAngle ?? 0;
           state.controls.maxPolarAngle = state.ctrlOpts.maxPolarAngle ?? Math.PI / 2;
+          state.controls.enableRotate = true; // only `canonical` ever takes it away
           state.controls.zoomSettleRate = defaultZoomSettleRate;
           state.zoomPan = null;
           state.zoomCrossFadeMs = 0;
-          state.birdseyeExtra = 0; // only `canonical` reaches past the outer stop
-          state.birdseyeExtraOut = 0;
           state.zoomInSlow = false;
           if (state.zoomCrossEl !== null) state.zoomCrossEl.visible = false;
         }
@@ -1193,20 +1194,11 @@ export type State = {
     lastTarget: THREE.Vector3;
     fromProgress: number;
     fromPolar: number;
-    /** Birdseye height at the outset, eased away as the pan comes in */
-    fromExtra: number;
   };
   /** Marks where a `canonical` zoom-in is heading */
   zoomCrossEl: null | THREE.Mesh;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
-  /**
-   * How far beyond the outer zoom stop a `canonical` birdseye currently sits, in metres — the
-   * ctrl-zoom's own reach, added on top of the radius `zoomProgress` asks for
-   */
-  birdseyeExtra: number;
-  /** The birdseye height a zoom-out returns to — what a ctrl-zoom last settled on */
-  birdseyeExtraOut: number;
   /** Whether an aimed zoom-in is still running, so its slower settle is kept to the end */
   zoomInSlow: boolean;
   canvas: HTMLCanvasElement;
@@ -1286,12 +1278,15 @@ export type State = {
   onCameraFrame(spherical: THREE.Spherical): void;
   /** Puts the crosshair on a ground point and shows it at full strength */
   setCrosshair(at: THREE.Vector3): void;
-  /** Rebuilds the camera about `target` at `phi`, `birdseyeExtra` included, and re-aims it */
+  /** Rebuilds the camera about `target` at `phi` and re-aims it */
   placeCamera(spherical: THREE.Spherical, phi: number): void;
-  /** Aims a `canonical` zoom-in at the cursor's ground point, or ctrl-zooms the birdseye */
+  /** Aims a `canonical` zoom-in at the cursor's ground point */
   onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
   setupDom(): () => void;
+  /** The outer zoom stop, clamped to `cameraMaxDistanceRange` and persisted */
+  setCameraMaxDistance(maxDistance: number): void;
+  persistMaxDistance(cameraMaxDistance: number): void;
   setCameraMode(cameraMode: CameraModeType): void;
   /** Keeps the player centred whilst `cameraMode` is `follow` — called every tick from `World` */
   followPlayer(deltaSecs: number): void;

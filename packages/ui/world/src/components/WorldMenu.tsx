@@ -12,6 +12,7 @@ import {
   CrosshairSimpleIcon,
   GlobeStandIcon,
   type Icon,
+  MagnifyingGlassIcon,
   PauseIcon,
   PersonSimpleCircleIcon,
   PlayIcon,
@@ -26,7 +27,7 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import { defaultBrightness } from "../const";
+import { cameraMaxDistanceRange, defaultBrightness, defaultCameraMaxDistance } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { demoPostFxKeys } from "../service/demo-post-process";
 import { queryClientApi } from "../service/query-client";
@@ -46,6 +47,8 @@ export function WorldMenu() {
   const saved = store.read();
   /** Worlds we could restore this map's npcs, lit rooms and locked doors from */
   const otherWorldKeys = listWorldKeysWithMap(w.mapKey, w.key);
+  /** The camera's outer zoom stop, held here whilst its slider is dragged — see the debug section */
+  const [maxDistance, setMaxDistance] = useState(w.view.ctrlOpts.maxDistance ?? defaultCameraMaxDistance);
 
   const state = useStateRef(
     (): State => ({
@@ -403,6 +406,43 @@ export function WorldMenu() {
                     w.brightness = Number(e.target.value);
                     w.update();
                     store.patch({ brightness: w.brightness });
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
+                />
+              </div>
+
+              {/* how far the camera's outer zoom stop sits — `canonical` is birdseye at it */}
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+                  touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
+                )}
+              >
+                <button
+                  type="button"
+                  title={`zoom out distance: ${maxDistance.toFixed(1)} — click to reset`}
+                  className="shrink-0 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMaxDistance(defaultCameraMaxDistance);
+                    w.view.setCameraMaxDistance(defaultCameraMaxDistance);
+                  }}
+                >
+                  <MagnifyingGlassIcon className="size-4" />
+                </button>
+                <input
+                  type="range"
+                  min={cameraMaxDistanceRange.min}
+                  max={cameraMaxDistanceRange.max}
+                  step={cameraMaxDistanceRange.step}
+                  value={maxDistance}
+                  onChange={(e) => {
+                    // held HERE rather than read back off the view: the camera follows without a
+                    // React render, so a controlled input waiting on one would lag its own drag
+                    const next = Number(e.target.value);
+                    setMaxDistance(next);
+                    w.view.setCameraMaxDistance(next);
                   }}
                   onClick={(e) => e.stopPropagation()}
                   className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
