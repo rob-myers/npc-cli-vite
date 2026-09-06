@@ -614,7 +614,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (state.selectedIds.size === 0) return;
         const nodesToCopy = [...state.ensureSelectionDescendants(state.selectedIds)];
         const clipboardData = JSON.stringify({ mapEditNodes: nodesToCopy });
-        void navigator.clipboard.writeText(clipboardData);
+        // the clipboard is async and can refuse, so the toast waits for its answer
+        navigator.clipboard.writeText(clipboardData).then(
+          () => state.toast(`copied ${nodesToCopy.length} node${nodesToCopy.length === 1 ? "" : "s"}`),
+          () => state.toast("copy failed"),
+        );
+      },
+      toast(key) {
+        state.set({ toastTs: { ...state.toastTs, [key]: Date.now() } });
       },
       async pasteFromClipboard(shiftKey = false) {
         if (state.isReadOnly()) return;
@@ -1406,13 +1413,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         );
 
         const alreadyKnown = state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier));
-        const toastKey = state.isPlaygroundFile() ? "draft saved" : "saved to file";
         state.set({
           currentFile: fileSpecifier,
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
-          toastTs: { ...state.toastTs, [toastKey]: Date.now() },
         });
+        state.toast(state.isPlaygroundFile() ? "draft saved" : "saved to file");
 
         if (state.isPlaygroundFile()) {
           // notify World(s) to recompute layouts from localStorage drafts
@@ -1996,6 +2002,8 @@ export type State = {
   duplicateSelected: () => void;
   ensureSelectionDescendants: (selectedIds: Set<string>) => Set<MapNode>;
   copySelected: () => void;
+  /** Show `key` as a toast for a moment — it is the text, so the same one shown again just lingers */
+  toast: (key: string) => void;
   pasteFromClipboard: (shiftKey?: boolean) => Promise<void>;
   rotateNode: (nodeId: string, degrees: -90 | 90 | -5 | 5) => void;
   rotateSelected: (degrees: -90 | 90 | -5 | 5) => void;
