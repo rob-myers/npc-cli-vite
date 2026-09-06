@@ -1125,7 +1125,8 @@ const pinchLogPerStop = 0.6;
 /** Under this much of a two-finger gesture being centroid motion, it counts as a pure pinch */
 const pinchPurity = 0.35;
 /** How far a zoom must travel to commit to its stop rather than falling back to the one it left */
-const zoomCommitIn = 0.1;
+/** Progress a zoom-in must pass to be committed — under it, letting go settles back out */
+export const zoomCommitIn = 0.1;
 const zoomCommitOut = 0.9;
 /** How long input must pause before the view settles, how fast it does, and when it has arrived */
 const zoomSettleMs = 120;
