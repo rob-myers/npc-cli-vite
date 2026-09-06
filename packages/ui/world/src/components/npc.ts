@@ -375,7 +375,7 @@ export class Npc {
       passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, false),
     };
 
-    this.brightness.value = 0.5;
+    this.brightness.value = 0.4;
   }
 
   isFading() {
