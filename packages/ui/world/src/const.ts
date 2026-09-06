@@ -80,6 +80,11 @@ export const cameraFov = 50;
 export const cameraRefAspect = 1.8;
 
 export const defaultBrightness = 1;
+
+/** How far out the camera's outer zoom stop sits, in metres — tunable in `WorldMenu`'s debug list */
+export const defaultCameraMaxDistance = 12;
+/** …and the range that slider offers */
+export const cameraMaxDistanceRange = { min: 10, max: 20, step: 0.1 };
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
@@ -104,13 +109,6 @@ export const canonicalSnapArm = (10 * Math.PI) / 180;
  * aimed for, and a tilt by hand eases back to it
  */
 export const canonicalZoomInPolar = Math.PI / 4;
-/**
- * Fully out, a `canonical` ctrl-zoom reaches this much beyond the outer stop whilst staying
- * birdseye — leaving the plain zoom's two stops as they are
- */
-export const birdseyeExtraDistance = 5;
-/** How much of that reach one wheel tick covers */
-export const birdseyeExtraStep = 0.1;
 /** How fast a `canonical` aimed zoom-in settles, per second — see `CameraControls.zoomSettleRate` */
 export const canonicalZoomInRate = 2.8;
 

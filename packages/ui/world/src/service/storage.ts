@@ -1,7 +1,7 @@
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness } from "../const";
+import { defaultBrightness, defaultCameraMaxDistance } from "../const";
 import type { DemoPostFxKey } from "./demo-post-process";
 import type { FadeRoomsMode } from "./fade-rooms";
 
@@ -32,6 +32,8 @@ export type WorldSettings = {
   brightness: number;
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
+  /** The camera's outer zoom stop, in metres — see `WorldView`'s `ctrlOpts` */
+  cameraMaxDistance: number;
   postProcessing: boolean;
   /** Which stock effect runs after the backdrop composite — see `service/demo-post-process` */
   demoPostFx: DemoPostFxKey;
@@ -71,6 +73,7 @@ const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
   cameraMode: "free",
   cameraInitial: null,
+  cameraMaxDistance: defaultCameraMaxDistance,
   postProcessing: true,
   demoPostFx: "none",
   fadeRoomsMode: "qa",
