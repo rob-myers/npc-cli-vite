@@ -3,7 +3,7 @@ import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Rect, Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
-import { PersonSimpleCircleIcon } from "@phosphor-icons/react";
+import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
 import { Canvas, type RootState, useFrame } from "@react-three/fiber";
 import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/core/renderer";
@@ -1197,17 +1197,27 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       {/* fade between maps */}
       <div className="world-veil" />
 
-      {/* paused indicator */}
-      <div
+      {/* paused indicator, which is also how you resume: the menu's play button is a long way from
+          where the eye is whilst playing, and the world's own centre is not */}
+      <button
+        type="button"
+        title="resume"
+        onClick={() => w.setDisabled(false)}
         className={cn(
-          "pointer-events-none absolute top-1 left-1/2 -translate-x-1/2 select-none",
-          "bg-black/20 rounded backdrop-blur-xs px-4 py-1.5 font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
+          "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
+          "flex items-center gap-3 bg-black/20 rounded backdrop-blur-xs px-5 py-2",
+          "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
           "transition-opacity duration-500",
-          w.disabled ? "opacity-100" : "opacity-0",
+          // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
+          // paused — else an invisible button sits over the middle of a running world
+          w.disabled === true
+            ? "cursor-pointer opacity-100 hover:bg-black/30 hover:text-yellow-100"
+            : "pointer-events-none opacity-0",
         )}
       >
+        <PlayIcon className="size-4 shrink-0" weight="fill" />
         paused
-      </div>
+      </button>
     </div>
   );
 }
