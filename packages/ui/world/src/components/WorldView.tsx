@@ -129,6 +129,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       objectPickScale: 0.5, // don't pick walls by default
       pickRT: createPickRT(1),
       npcMaskMrt: null,
+      busy: null,
       postProcessing: saved.postProcessing,
       npcOutline: saved.npcOutline,
       demoPostFx: saved.demoPostFx,
@@ -178,6 +179,24 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.npc?.onTick(delta);
         w.r3f?.invalidate();
         w.update();
+      },
+      async runBusy(text, task) {
+        const shownAt = Date.now();
+        state.busy = text;
+        state.update();
+        await awaitPaint(); // the overlay is on screen before the work blocks the thread
+        try {
+          task();
+        } finally {
+          // the work itself is usually a shader compile, which lands in the NEXT frame — so ask for
+          // one and wait until it has been painted
+          w.r3f?.invalidate();
+          await awaitPaint();
+          // a quick task would otherwise flicker the overlay, so it stays up a while regardless
+          await pause(Math.max(0, busyMinMs - (Date.now() - shownAt)));
+          state.busy = null;
+          state.update();
+        }
       },
       getPickedFromPixel([r, g, b, _a]) {
         // console.log(`pixel`, { r, g, b, a: _a });
@@ -1252,10 +1271,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         title="resume"
         onClick={() => w.setDisabled(false)}
         className={cn(
-          "absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
-          "flex items-center gap-3 bg-black/20 rounded backdrop-blur-xs px-5 py-2",
-          "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
-          "transition-opacity duration-500",
+          indicatorClassName,
+          "top-[40%] transition-opacity duration-500",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
           // paused — else an invisible button sits over the middle of a running world
           w.disabled === true
@@ -1266,6 +1283,23 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         <PlayIcon className="size-4 shrink-0" weight="fill" />
         paused
       </button>
+
+      {/* busy indicator: something heavy is running e.g. a shader recompile — see `runBusy`.
+          Informative only, so it takes no pointer events */}
+      <AnimatePresence>
+        {state.busy !== null && (
+          <motion.div
+            className={cn(indicatorClassName, "pointer-events-none top-6")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="size-3 shrink-0 rounded-full border-2 border-current border-b-transparent animate-spin" />
+            {state.busy}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1318,6 +1352,8 @@ export type State = {
   pickRT: THREE.RenderTarget;
   /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */
   npcMaskMrt: null | NpcMaskMrt;
+  /** What the busy overlay says, or `null` whilst nothing heavy is running — see `runBusy` */
+  busy: null | string;
   /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
   syncPickRT(): void;
   raycaster: THREE.Raycaster;
@@ -1351,6 +1387,11 @@ export type State = {
   litNpcsEnabled: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
+  /**
+   * Runs `task` behind an overlay saying `text`, e.g. a toggle whose shader recompile would
+   * otherwise freeze the world unannounced (noticeable on mobile). Pointer events still go through
+   */
+  runBusy(text: string, task: () => void): Promise<void>;
   /** Whether a pointer OTHER than `e`'s is down, i.e. the gesture belongs to the camera */
   otherPointerDown(e: React.PointerEvent<HTMLDivElement>): boolean;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -1513,11 +1554,17 @@ const bgDimMs = 300;
 
 /** How long the veil over the canvas takes to fade, either way */
 const veilMs = 250;
-/** How long the held frame takes to give way to the map beneath it */
-const freezeFadeMs = 700;
 /** How long the offer to centre on the player is up for, fade and all, and how small it starts */
+/** Shared by the paused and busy indicators, which only differ in where they sit */
+const indicatorClassName = cn(
+  "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
+  "flex items-center gap-3 bg-black/20 rounded backdrop-blur-xs px-5 py-2",
+  "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
+);
 const centreHintSecs = 4;
 const centreHintSmall = 0.6;
+/** The least time the busy overlay is shown for, so a quick task does not flicker it */
+const busyMinMs = 2000;
 
 /**
  * Whether this world's canvas is veiled — per `worldKey`, since each instance veils its own canvas.
@@ -1605,6 +1652,11 @@ function PostProcessing() {
   // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`
   useFrame(() => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1), -2);
   return null;
+}
+
+/** Resolves once the browser has painted what is currently pending */
+function awaitPaint(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 }
 
 const tmpVect = new Vect();
