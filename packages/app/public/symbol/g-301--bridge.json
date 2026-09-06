@@ -555,7 +555,7 @@
         {
           "id": "1ea2509a-2b69-48ad-818c-6d572ac19b02",
           "name": "decor point label=corridor corridor",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 228, "f": 296},
           "type": "image",
