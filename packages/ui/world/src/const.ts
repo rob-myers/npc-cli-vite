@@ -110,11 +110,6 @@ export const canonicalSnapArm = (10 * Math.PI) / 180;
  * the dial returns to the point it set out from, however far round it got on the way
  */
 export const canonicalSnapCancel = (4 * Math.PI) / 180;
-/**
- * The polar `canonical` holds close in: a zoom-in arrives at it, looking down on the point it
- * aimed for, and a tilt by hand eases back to it
- */
-export const canonicalZoomInPolar = Math.PI / 4;
 /** How fast a `canonical` aimed zoom-in settles, per second — see `CameraControls.zoomSettleRate` */
 export const canonicalZoomInRate = 2.8;
 

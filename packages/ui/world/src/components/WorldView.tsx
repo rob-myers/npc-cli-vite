@@ -22,7 +22,6 @@ import {
   canonicalFlattenFrom,
   canonicalSnapArm,
   canonicalSnapCancel,
-  canonicalZoomInPolar,
   canonicalZoomInRate,
   defaultCameraFollow,
   defaultCameraMaxDistance,
@@ -334,6 +333,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           lastTarget: controls.target.clone(),
           fromProgress: controls.zoomProgress,
           fromPolar: controls.spherical.phi,
+          toPolar: state.canonicalPolar, // the tilt we were last at close in, restored by the way in
         };
         state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
         state.setCrosshair(tmpGroundHit);
@@ -382,19 +382,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // and it is waiting when the zoom comes back in. Mouse and touch both honour this
         controls.enableRotate = t <= canonicalFlattenFrom;
 
-        // read BEFORE the advance, which may finish the pan and clear it: the polar detent below
-        // must not take over on the very frame the pan hands back
-        const zoomPanning = state.zoomPan !== null;
-        zoomPanning === true ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
+        // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
+        state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
         state.detentCanonicalAzimuth(spherical);
-
-        // the polar is detented too, but on ONE point: close in it eases back to the tilt a
-        // zoom-in arrives at, so tilting by hand is a look around rather than a new resting place
-        if (zoomPanning === false && t <= canonicalFlattenFrom) {
-          // a FRACTION of the remaining tilt, unlike the azimuth's whole: re-seeded each frame
-          // against what is left, so it still converges — just more gently than a snap
-          state.seedDetent("phi", (canonicalZoomInPolar - spherical.phi) * polarDetentRate);
-        }
       },
       /** The crosshair's fade-out, once whatever raised it has arrived */
       fadeCrosshair() {
@@ -430,27 +420,28 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         controls.target.copy(zoomPan.from).lerp(zoomPan.to, beta);
         // pinned, so the zoom's own flattening cannot fight the tilt whilst the pan owns it
-        const phi = zoomPan.fromPolar + (canonicalZoomInPolar - zoomPan.fromPolar) * beta;
+        const phi = zoomPan.fromPolar + (zoomPan.toPolar - zoomPan.fromPolar) * beta;
         state.pinPolar(phi);
         state.placeCamera(spherical, phi);
         zoomPan.lastTarget.copy(controls.target); // anything else moving it is a pan, see above
 
-        if (alpha >= zoomPanDoneAlpha) {
-          // arrived: the zoom's tail is not worth holding the view unsteerable for
-          state.canonicalPolar = canonicalZoomInPolar;
-        } else if (controls.zoomProgress <= zoomPan.fromProgress) {
-          state.canonicalPolar = zoomPan.fromPolar; // zoomed back out: let go where it began
-          state.zoomInSlow = false;
-        } else {
-          return void w.r3f?.invalidate(); // still on its way
+        // `canonicalPolar` is left alone throughout: the pan only ever travels TO it, whether it
+        // arrives or is zoomed back out of, and it is what the next way in returns to
+        if (alpha < zoomPanDoneAlpha) {
+          if (controls.zoomProgress > zoomPan.fromProgress) {
+            return void w.r3f?.invalidate(); // still on its way
+          }
+          state.zoomInSlow = false; // zoomed back out: let go where it began
         }
+        // arrived — the zoom's tail is not worth holding the view unsteerable for — or back out
         state.zoomPan = null;
         state.zoomCrossFadeMs = performance.now();
       },
       /**
-       * Close in the polar is the user's own — birdseye included, kept from a zoom-out. Further out
-       * it is a function of the zoom, eased to birdseye and pinned, which also blocks the drag's
-       * polar input. The azimuth is left exactly where it was: `enableRotate` stops it turning
+       * Close in the polar is the user's own and is REMEMBERED as `canonicalPolar`. Further out it
+       * is a function of the zoom, eased from that tilt to birdseye and pinned, which also blocks
+       * the drag's polar input — so the way back in restores exactly the tilt the way out left.
+       * The azimuth is left exactly where it was: `enableRotate` stops it turning
        */
       shapeCanonicalPolar(spherical, t) {
         const { controls, ctrlOpts } = state;
@@ -463,8 +454,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const u = (t - canonicalFlattenFrom) / (1 - canonicalFlattenFrom);
         const s = u * u * (3 - 2 * u);
         const phi = state.canonicalPolar * (1 - s) + canonicalBirdseyePolar * s;
-        if (s > 0.99) state.canonicalPolar = canonicalBirdseyePolar; // fully flat: kept for the way in
-
         state.pinPolar(phi);
         // applied now rather than by the clamps next update, which would tilt a frame behind the
         // zoom driving it. Only an unsettled phi needs placing, or a next frame
@@ -523,7 +512,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return deltaAngle(state.canonicalTheta, spherical.theta + sphericalDelta.theta);
       },
       /**
-       * Seeds a detent's remaining turn or tilt, and asks for the frame to spend it on. `update`
+       * Seeds the detent's remaining turn, and asks for the frame to spend it on. `update`
        * applies `delta * damping` and decays the rest, so overwriting also swallows leftover
        * momentum — a detented dial must not coast
        */
@@ -942,6 +931,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       resetCamera() {
         const initial = defaultInitialCamera();
         state.initial = initial;
+        state.canonicalPolar = initial.polar; // else a reset zoomed out keeps the old tilt
         store.patch({ cameraInitial: initial });
         if (state.controls) {
           state.controls.target.set(initial.position.x, 0, initial.position.z);
@@ -1225,7 +1215,7 @@ export type State = {
   cameraMode: CameraModeType;
   /** Whether the view keeps the player centred — an option of EITHER mode */
   cameraFollow: boolean;
-  /** The polar `canonical`'s zoom-out flattens from — birdseye itself once fully out */
+  /** `canonical`'s polar close in: what a zoom-out flattens FROM and a zoom-in returns TO */
   canonicalPolar: number;
   /** The compass point (multiple of π/2) `canonical`'s azimuth is currently detented at */
   canonicalTheta: number;
@@ -1241,6 +1231,8 @@ export type State = {
     lastTarget: THREE.Vector3;
     fromProgress: number;
     fromPolar: number;
+    /** The tilt to arrive at — `canonicalPolar`, as it stood when the zoom was aimed */
+    toPolar: number;
   };
   /** Marks where a `canonical` zoom-in is heading */
   zoomCrossEl: null | THREE.Mesh;
@@ -1336,7 +1328,7 @@ export type State = {
   /** How far the azimuth is from its detent, where the turn is HEADING rather than damped to */
   getCanonicalHeading(): number;
   /** Seeds a detent's remaining turn or tilt, and asks for the frame to spend it on */
-  seedDetent(axis: "theta" | "phi", remaining: number): void;
+  seedDetent(axis: "theta", remaining: number): void;
   /** Puts the crosshair on a ground point and shows it at full strength */
   setCrosshair(at: THREE.Vector3): void;
   /** Rebuilds the camera about `target` at `phi` and re-aims it */
@@ -1589,8 +1581,6 @@ const phiSettledEpsilon = 0.0001;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 /** Near enough its compass point that the detent stops turning */
 const detentSettleUntil = 0.002;
-/** How much of the remaining tilt the polar detent takes each frame — gentler than the azimuth's */
-const polarDetentRate = 0.25;
 
 const halfPi = Math.PI / 2;
 const normalizeAngle = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
