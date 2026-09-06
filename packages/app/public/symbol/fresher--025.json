@@ -19,11 +19,11 @@
     {
       "id": "efe98a90-08e0-4788-aaca-e5e47f162a6c",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "78f8aac3-6e2d-4cc9-9d52-70bdfba64788",
@@ -76,7 +76,7 @@
         {
           "id": "0ec039f5-d834-446d-b5e3-3fa7603638f9",
           "name": "counter--010 y=0.71",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 34.5, "f": 4.8},
           "type": "symbol",
@@ -88,7 +88,7 @@
         {
           "id": "42b14699-0333-4a7b-8c38-130aad01f4fb",
           "name": "counter--010 y=0.71",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 4.5, "f": 4.8},
           "type": "symbol",

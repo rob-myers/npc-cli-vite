@@ -60,33 +60,20 @@
           "baseRect": {"width": 40, "height": 24},
           "offset": {"x": -0.7, "y": -0.7},
           "cssTransform": "matrix(1, 0, 0, 1, 80, 0)"
+        },
+        {
+          "id": "1894dbbf-4db3-46d0-ad04-b122e0160f20",
+          "name": "counter--010 y=0.705",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 4},
+          "type": "symbol",
+          "srcKey": "counter--010",
+          "baseRect": {"width": 20, "height": 18},
+          "offset": {"x": 0, "y": -0.3},
+          "cssTransform": "matrix(1, 0, 0, 1, 90, 3.7)"
         }
       ]
-    },
-    {
-      "id": "1894dbbf-4db3-46d0-ad04-b122e0160f20",
-      "name": "counter--010 y=0.705",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 4},
-      "type": "symbol",
-      "srcKey": "counter--010",
-      "baseRect": {"width": 20, "height": 18},
-      "offset": {"x": 0, "y": -0.3},
-      "cssTransform": "matrix(1, 0, 0, 1, 90, 3.7)"
-    },
-    {
-      "id": "96b6c724-3334-4a03-b83f-6d92c3c087c1",
-      "name": "decor point label=fresher",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 50, "f": 84},
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.5, 0, 0, 0.5, 50, 84)"
     },
     {
       "id": "0559f055-40ba-4ed0-ab41-741a15ecfa85",
@@ -95,8 +82,21 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
+        {
+          "id": "96b6c724-3334-4a03-b83f-6d92c3c087c1",
+          "name": "decor point label=fresher",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 50, "f": 84},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 50, 84)"
+        },
         {
           "id": "dde0ae4f-9d2a-4b51-a257-4042772f580b",
           "name": "door slide=[0,-1]",

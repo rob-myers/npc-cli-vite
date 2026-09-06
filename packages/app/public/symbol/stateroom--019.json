@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "651c38bc-7ced-4b2b-9fbc-6d52a50e83b0",
-      "name": "stateroom--019 1",
+      "name": "stateroom--019",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
@@ -77,7 +77,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "390bfed6-a445-4c2e-865c-69fd3c3cfaf4",
