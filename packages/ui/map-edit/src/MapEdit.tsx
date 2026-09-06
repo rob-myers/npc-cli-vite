@@ -1802,7 +1802,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         </div>
 
         {/* inspector must scroll */}
-        <div className={cn("overflow-auto pl-1 pb-8")}>
+        <div className="overflow-auto scrollbar-thin pl-1 pb-8">
           {state.nodes.map((node) => (
             <InspectorNode key={node.id} node={node} level={0} root={state} />
           ))}
