@@ -106,6 +106,11 @@ export const canonicalBirdseyePolar = 0.01;
 /** `canonical` azimuth is a detented compass dial: turn past this to advance to the next point */
 export const canonicalSnapArm = (10 * Math.PI) / 180;
 /**
+ * …but turning BACK by this much, within the same held drag, reads as a peek rather than a turn:
+ * the dial returns to the point it set out from, however far round it got on the way
+ */
+export const canonicalSnapCancel = (4 * Math.PI) / 180;
+/**
  * The polar `canonical` holds close in: a zoom-in arrives at it, looking down on the point it
  * aimed for, and a tilt by hand eases back to it
  */
