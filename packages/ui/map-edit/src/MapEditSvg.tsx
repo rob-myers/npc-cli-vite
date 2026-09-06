@@ -109,7 +109,12 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <image
             key={node.id}
             data-node-id={node.id}
-            href={node.srcType === "decor" ? `/decor/${node.srcKey}.svg` : `/starship-symbol/${node.srcKey}.png`}
+            // versioned as the picker's thumbnails are: rebuilt decor art keeps its key and url
+            href={
+              node.srcType === "decor"
+                ? `/decor/${node.srcKey}.svg?v=${root.decorVersion}`
+                : `/starship-symbol/${node.srcKey}.png`
+            }
             x={0}
             y={0}
             width={baseRect.width}
