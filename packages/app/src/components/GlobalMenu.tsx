@@ -1,11 +1,20 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
-import { useStateRef } from "@npc-cli/util";
+import { cn, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
-import { ArrowsInIcon, GearIcon, MoonIcon, SquareHalfBottomIcon, SquareHalfIcon, SunIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  ArrowsInIcon,
+  GearIcon,
+  MoonIcon,
+  SquareHalfBottomIcon,
+  SquareHalfIcon,
+  SunIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useState } from "react";
-import { splitRoot } from "./pane-service";
+import { resetPanes, splitRoot } from "./pane-service";
 
 const storageKey = "allotment-menu-y";
 const minY = 120;
@@ -20,6 +29,8 @@ export function GlobalMenu() {
     y,
     dragged: false,
     menuOpen: false,
+    /** Whether reset has been clicked once, so the next click is the confirmation */
+    resetArmed: false,
     vpOffset,
     theme,
 
@@ -34,7 +45,16 @@ export function GlobalMenu() {
         menu.dragged = false;
         return;
       }
-      menu.set({ menuOpen: open });
+      // a reset half-asked-for is forgotten with the menu
+      menu.set({ menuOpen: open, resetArmed: false });
+    },
+    onReset() {
+      if (menu.resetArmed === false) {
+        menu.set({ resetArmed: true });
+        return;
+      }
+      resetPanes();
+      menu.set({ menuOpen: false, resetArmed: false });
     },
   }));
 
@@ -71,6 +91,25 @@ export function GlobalMenu() {
               >
                 {menu.theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
                 {menu.theme === "dark" ? "Light" : "Dark"}
+              </Menu.Item>
+              <Menu.Item
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-slate-700 cursor-pointer",
+                  menu.resetArmed ? "text-red-300" : "text-slate-300",
+                )}
+                closeOnClick={false}
+                onClick={menu.onReset}
+              >
+                {menu.resetArmed ? (
+                  <WarningIcon className="size-4" />
+                ) : (
+                  <ArrowCounterClockwiseIcon className="size-4" />
+                )}
+                {/* both labels share a cell, so the item is as wide as the wider whichever shows */}
+                <span className="grid *:col-start-1 *:row-start-1">
+                  <span className={cn(menu.resetArmed && "invisible")}>Reset layout</span>
+                  <span className={cn(!menu.resetArmed && "invisible")}>Confirm reset</span>
+                </span>
               </Menu.Item>
               <div className="flex justify-evenly">
                 <Menu.Item

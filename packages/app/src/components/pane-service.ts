@@ -1,5 +1,5 @@
 import type { UiInstanceMeta } from "@npc-cli/ui-sdk";
-import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
+import { getDefaultPanes, uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 
 export type PaneNode =
   | { type: "leaf"; id: number; uiId?: string }
@@ -63,6 +63,23 @@ export function closePane(targetId: number) {
     setRoot(() => newRoot);
   }
   persistPanesToUi();
+}
+
+/** Set whilst `resetPanes` is under way, so the unload does not persist over its work */
+let resetting = false;
+
+/**
+ * Back to the layout a first visit gets, discarding every ui — tabs and their contents alike.
+ * By RELOADING: the fresh uis reuse keys such as `tty-0` and `world-0`, so starting them whilst
+ * the old ones tear down races their sessions and stores. The store persists synchronously, so
+ * the new layout is on disk before the page goes
+ */
+export function resetPanes() {
+  resetting = true;
+  uiStore.setState((draft) => {
+    draft.persistedPanes = getDefaultPanes();
+  });
+  location.reload();
 }
 
 export function ensureLeafUis(node: PaneNode) {
@@ -246,6 +263,7 @@ export function removeNode(node: PaneNode, targetId: number): PaneNode | null {
 }
 
 export function persistPanesToUi() {
+  if (resetting === true) return; // else the unload would rebuild `toUi` from the uis being discarded
   uiStore.setState((draft) => {
     const toUi: Record<string, UiInstanceMeta> = {};
     function collect(node: PaneNode) {
