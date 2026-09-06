@@ -110,7 +110,7 @@ const cornerLen = 20;
 
 export const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 
-/** The soft dark edges the floor is drawn with, whilst `Debug`'s `floorShading` is on. METRES */
+/** The soft dark edges the floor is drawn with. METRES */
 export const softEdges = {
   /** Inside each room's outline, and each doorway's — see `Floor`'s `drawGm` */
   roomEdge: { width: 0.15, blur: 0.15, ink: "rgba(0, 0, 0, 0.45)" },
