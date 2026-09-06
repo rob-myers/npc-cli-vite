@@ -98,9 +98,6 @@ export default function Floor() {
         const layout = state.startGm(gmId);
         if (layout === null) return;
 
-        // baked in rather than shaded per fragment, so toggling it redraws us
-        const shading = w.debug?.floorShading === true;
-
         const hullFloor = state.getHullFloor(layout);
         state.drawHullFloor(ct, hullFloor, layout);
 
@@ -153,15 +150,14 @@ export default function Floor() {
         // wall along with the deck it is cut into
         drawDoorTicks(ct, layout, labelOfRoom);
 
-        // darker again at walls, inside each room's whole outline
-        if (shading === true) {
-          const edge = toEdgeOpts(softEdges.roomEdge);
-          for (const room of layout.rooms) drawBlurredEdge(ct, room, room, edge);
-          // doorways darken at their SIDES, so the outline must run through them rather than across
-          // — hence the union. One pass for the lot: per doorway, each would walk it all again
-          const walkable = Poly.union([...layout.rooms, ...layout.doors.map((x) => x.poly)]);
-          drawBlurredEdge(ct, getPolysPath(layout.doors.map((x) => x.poly)), walkable, edge);
-        }
+        // darker again at walls, inside each room's whole outline — baked in rather than shaded
+        // per fragment
+        const edge = toEdgeOpts(softEdges.roomEdge);
+        for (const room of layout.rooms) drawBlurredEdge(ct, room, room, edge);
+        // doorways darken at their SIDES, so the outline must run through them rather than across
+        // — hence the union. One pass for the lot: per doorway, each would walk it all again
+        const walkable = Poly.union([...layout.rooms, ...layout.doors.map((x) => x.poly)]);
+        drawBlurredEdge(ct, getPolysPath(layout.doors.map((x) => x.poly)), walkable, edge);
 
         // obstacle drop shadows
         drawPolygons(

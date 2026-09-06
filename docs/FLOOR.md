@@ -5,9 +5,8 @@ Everything about how the floor is drawn. Nothing about it lives in another doc.
 | file | what it holds |
 |---|---|
 | `service/texture.ts` | `deckConfig`, `drawRoomFloors`, `drawDoorTicks`, the wiring router, the plate pattern, `softEdges` / `toEdgeOpts` |
-| `components/Floor.tsx` | `drawGm` — the draw order, the nav mesh, the hull, and the `floorShading` flag |
+| `components/Floor.tsx` | `drawGm` — the draw order, the nav mesh, the hull, the soft edges |
 | `util/service/canvas.ts` | `drawPolygons`, `getPolysPath`, `drawBlurredEdge` |
-| `components/Debug.tsx`, `service/storage.ts`, `components/WorldMenu.tsx` | the `floorShading` flag |
 
 The floor is one `DataArrayTexture` layer per `gmId`, **3030² at 100 px/m**, drawn with canvas 2D in
 world metres (`ct.setTransform(worldToCanvas, …)` in `startGm`, so the canvas y-axis runs opposite
@@ -120,7 +119,7 @@ paints. The deck laid on top of it is `deckConfig`, so there is one place to tun
 ## Draw order (`Floor.drawGm`)
 
 Hull fill and its 45° hatch → wall bases (`#000`) → `drawRoomFloors` → broad-wall aliasing fix →
-nav mesh → door shadows → door ticks → the blurred edges, if `floorShading` → obstacle drop shadows
+nav mesh → door shadows → door ticks → the blurred edges → obstacle drop shadows
 → the debug grid, if `gridShown`.
 
 The ticks go **after** the nav mesh on purpose: its translucent fill would otherwise wash them out.
@@ -128,9 +127,8 @@ The ticks go **after** the nav mesh on purpose: its translucent fill would other
 ## Floor shading — the soft dark edges
 
 Rooms and doorways each wear a soft dark edge, drawn INTO the texture rather than shaded per
-fragment. Under the **"Floor Shading"** row in `WorldMenu`'s debug list, persisted as `floorShading`
-and read by `drawGm` off `w.debug`. Toggling it redraws the floor — nothing about it reaches a
-shader.
+fragment — nothing about it reaches a shader. Always on: it began behind a debug flag, since
+removed, see History.
 
 A stroke, blurred, clipped to the shape it traces — the clip keeps the inner half of the line and
 throws the outer half away, which is an inner shadow:
@@ -195,9 +193,9 @@ There used to be a third, an inner shadow on every floor panel. It went with the
 ## Cost
 
 All of it is in `drawGm`: once per geomorph on map load, on `w.hash`, or on `decor.ready`, with an
-existing `pause()` between geomorphs. Nothing is per frame. With `floorShading` off there is not a
-single filtered draw, and it also skips the `Poly.union` for `walkable` — the heaviest CPU item in
-the group, ~62 polygons through polygon clipping per geomorph.
+existing `pause()` between geomorphs. Nothing is per frame. The shading is the only filtered draw,
+and the `Poly.union` for `walkable` the heaviest CPU item in the group — ~62 polygons through
+polygon clipping per geomorph.
 
 ## History
 
@@ -210,6 +208,7 @@ groove in the deck's own inks and became brightly coloured conduit lying on top 
 
 Earlier still, `0aa50fa7 feat: tweak room outlines + decided against room/room-outline shadow blur`
 records the decision to drop the shading, not the code, which was never committed. It came back
-behind the debug flag so the two looks could be compared. Things tried and not kept, all of which
+behind a debug flag so the two looks could be compared, then stayed on and the flag went. Things
+tried and not kept, all of which
 read worse than a plain doorway: filling the doorway with the shadow ink, hatching it, and hatch
 plus a rectangular outline.
