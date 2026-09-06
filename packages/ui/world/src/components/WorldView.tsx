@@ -180,6 +180,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.r3f?.invalidate();
         w.update();
       },
+      forwardWheel(e) {
+        // overlays are siblings of the canvas, so their wheel events never reach the controls
+        e.stopPropagation();
+        state.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
+      },
       async runBusy(text, task) {
         const shownAt = Date.now();
         state.busy = text;
@@ -1270,6 +1275,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         type="button"
         title="resume"
         onClick={() => w.setDisabled(false)}
+        onWheel={state.forwardWheel}
         className={cn(
           indicatorClassName,
           "top-[40%] transition-opacity duration-500",
@@ -1387,6 +1393,8 @@ export type State = {
   litNpcsEnabled: THREE.UniformNode<"float", number>;
   createRenderer(props: DefaultGLProps): Promise<THREE.WebGPURenderer>;
   forceUpdate(delta?: number): void;
+  /** Hands an overlay's wheel event to the canvas, so the camera still zooms beneath it */
+  forwardWheel(e: React.WheelEvent): void;
   /**
    * Runs `task` behind an overlay saying `text`, e.g. a toggle whose shader recompile would
    * otherwise freeze the world unannounced (noticeable on mobile). Pointer events still go through

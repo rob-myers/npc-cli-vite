@@ -78,11 +78,6 @@ export class SpeechBubbleApi {
     this.w.bubble.update();
   }
 
-  forwardWheelEvents(e: React.WheelEvent) {
-    e.stopPropagation();
-    this.w.view.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
-  }
-
   getBubbleCssVars(): Record<string, string> {
     const rootDiv = this.html3d?.rootDiv;
     return Object.fromEntries(
@@ -198,7 +193,7 @@ export class SpeechBubbleApi {
   };
 
   onWheel = (e: React.WheelEvent) => {
-    this.forwardWheelEvents(e);
+    this.w.view.forwardWheel(e);
   };
 
   pauseInteractiveTimer() {
