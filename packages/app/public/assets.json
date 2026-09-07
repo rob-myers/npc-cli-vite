@@ -6507,6 +6507,7 @@
           "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -11399,7 +11400,7 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left#0",
+            "rel": "sees:window-left#1",
             "label": "common"
           }
         },
@@ -11412,7 +11413,7 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-right#1",
+            "rel": "sees:window-right#2",
             "label": "common"
           }
         },
@@ -12844,6 +12845,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -12859,6 +12861,7 @@
           "coordinates": [[[22.1, 0.2], [22.1, 1.3], [21, 1.3], [21, 0.2]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -12874,6 +12877,7 @@
           "coordinates": [[[29.8, 21], [29.8, 22.1], [28.7, 22.1], [28.7, 21]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -12891,6 +12895,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -14400,7 +14405,7 @@
               [12.7875, 16.75]
             ]
           ],
-          "meta": {"window": true, "name": "window-left#0"}
+          "meta": {"window": true, "name": "window-left#1"}
         },
         {
           "type": "Polygon",
@@ -14412,7 +14417,7 @@
               [18.7506, 16.7581]
             ]
           ],
-          "meta": {"window": true, "name": "window-right#1"}
+          "meta": {"window": true, "name": "window-right#2"}
         }
       ],
       "removableDoors": [],
@@ -21027,7 +21032,7 @@
             "door": true,
             "slide": [1, 0],
             "auto": true,
-            "rel": "sees:window#2",
+            "rel": "sees:window#3",
             "label": "bridge",
             "det": 1
           }
@@ -21286,6 +21291,7 @@
           "coordinates": [[[1.3, 7.9], [1.3, 9], [0.2, 9], [0.2, 7.9]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -21303,6 +21309,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -21320,6 +21327,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -21335,6 +21343,7 @@
           "coordinates": [[[29.85, 6], [29.85, 7.1], [28.75, 7.1], [28.75, 6]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -23892,7 +23901,7 @@
               [13.5, 9.0125]
             ]
           ],
-          "meta": {"window": true, "name": "window#2"}
+          "meta": {"window": true, "name": "window#3"}
         }
       ],
       "removableDoors": [],
@@ -25871,6 +25880,7 @@
           ],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -26509,6 +26519,7 @@
           "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -31897,7 +31908,7 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-left#0",
+              "rel": "sees:window-left#1",
               "label": "common"
             }
           },
@@ -31919,7 +31930,7 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-right#1",
+              "rel": "sees:window-right#2",
               "label": "common"
             }
           },
@@ -34482,6 +34493,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -34496,6 +34508,7 @@
           "center": {"x": 0.75, "y": 8.47},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -34514,6 +34527,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -34528,6 +34542,7 @@
           "center": {"x": 21.55, "y": 0.75},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -34546,6 +34561,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -34560,6 +34576,7 @@
           "center": {"x": 29.25, "y": 21.55},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -34578,6 +34595,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -34592,6 +34610,7 @@
           "center": {"x": 8.5, "y": 29.25},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -36683,7 +36702,7 @@
                 [12.7875, 16.75]
               ]
             ],
-            "meta": {"window": true, "name": "window-left#0"}
+            "meta": {"window": true, "name": "window-left#1"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -36699,7 +36718,7 @@
                 [18.7506, 16.7581]
               ]
             ],
-            "meta": {"window": true, "name": "window-right#1"}
+            "meta": {"window": true, "name": "window-right#2"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -39273,7 +39292,7 @@
           "type": "point",
           "x": 16.775,
           "y": 10.7625,
-          "orient": 180,
+          "orient": -180,
           "transform": [-1, 0, 0, -1, 16.849999999999998, 10.837499999999999],
           "det": 1
         },
@@ -41008,7 +41027,7 @@
               "door": true,
               "slide": [1, 0],
               "auto": true,
-              "rel": "sees:window#2",
+              "rel": "sees:window#3",
               "label": "bridge",
               "det": 1
             }
@@ -41472,6 +41491,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -41486,6 +41506,7 @@
           "center": {"x": 0.75, "y": 8.45},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -41504,6 +41525,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -41518,6 +41540,7 @@
           "center": {"x": 8.5, "y": 14.25},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -41536,6 +41559,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -41550,6 +41574,7 @@
           "center": {"x": 23.5, "y": 14.25},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -41568,6 +41593,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -41582,6 +41608,7 @@
           "center": {"x": 29.3, "y": 6.55},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -45878,7 +45905,7 @@
                 [13.5, 9.0125]
               ]
             ],
-            "meta": {"window": true, "name": "window#2"}
+            "meta": {"window": true, "name": "window#3"}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -47322,6 +47349,7 @@
             "coordinates": [[[1.1, 0], [1.1, 1.1], [0, 1.1], [0, 0]]],
             "meta": {
               "obstacle": true,
+              "floor": true,
               "permit-nav": true,
               "no-shadow": true,
               "y": 0,
@@ -47336,6 +47364,7 @@
           "center": {"x": 29.3, "y": 6.5},
           "meta": {
             "obstacle": true,
+            "floor": true,
             "permit-nav": true,
             "no-shadow": true,
             "y": 0,
@@ -48464,5 +48493,5 @@
       "walls": {"color": "#000", "opacity": 0.25}
     }
   },
-  "hash": {"obstacles": 1567467516}
+  "hash": {"obstacles": 2105312128}
 }
