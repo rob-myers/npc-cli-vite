@@ -1,3 +1,4 @@
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
@@ -71,13 +72,13 @@ export type WorldSettings = {
 
 const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
-  cameraMode: "free",
+  cameraMode: isTouchDevice() ? "free" : "canonical",
   cameraInitial: null,
   cameraFollow: defaultCameraFollow,
   cameraMaxDistance: defaultCameraMaxDistance,
   postProcessing: true,
   demoPostFx: "none",
-  fadeRoomsMode: "qa",
+  fadeRoomsMode: "dev",
   fadeRoomOutlines: false,
   npcOutline: false,
   litNpcsEnabled: true,

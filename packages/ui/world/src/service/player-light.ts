@@ -67,8 +67,13 @@ export function createPlayerLight(): PlayerLight {
   /** Where the light stood when that subset was last chosen, and whether it must be chosen again */
   const culledAt = { x: Number.NaN, z: Number.NaN };
   let cullDirty = true;
-  /** Whether the table has ever been written — until it has, an unchanged frame still needs one */
-  let swept = false;
+  /** How many times the table has been written — `0` until it has, when an unchanged frame still needs one */
+  let sweeps = 0;
+  /** The renderer `update` last ran with, which `readTable` reads through, or `null` whilst off */
+  let sweeper: null | THREE.WebGPURenderer = null;
+  /** ONE readback buffer, kept: a fresh one per read was sixty allocations a second whilst walking */
+  const readback = new THREE.ReadbackBuffer(lightAngles * 4);
+  let reading = false;
 
   // a door is a fixed line with a moving gap, so only its open ratio changes per frame
   const doorValues = new Float32Array(MAX_DOORS * 4);
@@ -177,9 +182,10 @@ export function createPlayerLight(): PlayerLight {
 
   /**
    * How lit a world XZ is: `1` where the light reaches it, `0` where it does not, with the penumbra
-   * in between. There is no falloff with distance — the polygon simply ends where the sweep's own
-   * `lightRadius` cap put it. Taken as an argument rather than read off `positionWorld`, so that
-   * anything holding a world position can ask
+   * in between. Full strength until `edgeFalloff` short of `lightRadius`, then dying away to
+   * nothing there — where the sweep's own cap ends the polygon, which would otherwise be a hard
+   * circle. Taken as an argument rather than read off `positionWorld`, so that anything holding a
+   * world position can ask
    */
   function litAt(worldXZ: THREE.Node<"vec2">, outset = 0) {
     const away = worldXZ.sub(origin);
@@ -221,11 +227,13 @@ export function createPlayerLight(): PlayerLight {
     // edge they belong to different surfaces and a distance halfway between lies on neither. A
     // surface the light grazes — a door being walked PAST — is that case along its whole length,
     // which is why choosing between the samples there flickered as the angles slid beneath it
-    return mix(
+    const shadowed = mix(
       smoothstep(near.sub(width), near.add(width), dist).oneMinus(),
       smoothstep(far.sub(width), far.add(width), dist).oneMinus(),
       along,
     );
+    // and the falloff at the edge — see above
+    return shadowed.mul(smoothstep(float(lightRadius - edgeFalloff), float(lightRadius), dist).oneMinus());
   }
 
   /**
@@ -303,6 +311,24 @@ export function createPlayerLight(): PlayerLight {
       return vec4(applyLight(color.rgb), color.a);
     },
 
+    getSweeps() {
+      return sweeper === null ? 0 : sweeps;
+    },
+    readTable(into) {
+      if (sweeper === null || sweeps === 0 || reading === true) return null;
+      reading = true;
+      return sweeper
+        .getArrayBufferAsync(table.value, readback)
+        .then(() => {
+          // copied out whilst mapped: the mapping is only ours until `release`
+          into.set(new Float32Array(readback.buffer as ArrayBuffer, 0, lightAngles));
+        })
+        .finally(() => {
+          readback.release();
+          reading = false;
+        });
+    },
+
     applyUnlitRgba(color) {
       // the same tint the unseen parts of the world take, so a dark ceiling matches a dark room
       // rather than being its own shade of black — and identity whilst the light is off
@@ -310,27 +336,31 @@ export function createPlayerLight(): PlayerLight {
     },
 
     syncWalls(gms, gmsData) {
-      const total = gms.reduce((sum, gm) => sum + gmsData.byKey[gm.key].wallSegs.length, 0);
+      const total = gms.reduce((sum, gm) => sum + gmsData.byKey[gm.key].wallSegs.length + gm.windows.length, 0);
       if (sourceWalls.length < total * 4) sourceWalls = new Float32Array(total * 4);
 
       let count = 0;
       const mat = new Mat();
       const u = new Vect();
       const v = new Vect();
+      const push = (seg: [Geom.Vect, Geom.Vect]) => {
+        // in the layout's own space, and every instance of a layout shares them — so they are
+        // copied out before being transformed, never transformed in place
+        mat.transformPoint(u.copy(seg[0]));
+        mat.transformPoint(v.copy(seg[1]));
+        sourceWalls[count * 4 + 0] = u.x;
+        sourceWalls[count * 4 + 1] = u.y;
+        sourceWalls[count * 4 + 2] = v.x;
+        sourceWalls[count * 4 + 3] = v.y;
+        count++;
+      };
 
       for (const gm of gms) {
         mat.setMatrixValue(gm.transform);
-        for (const { seg } of gmsData.byKey[gm.key].wallSegs) {
-          // `wallSegs` are in the layout's own space, and every instance of a layout shares them —
-          // so they are copied out before being transformed, never transformed in place
-          mat.transformPoint(u.copy(seg[0]));
-          mat.transformPoint(v.copy(seg[1]));
-          sourceWalls[count * 4 + 0] = u.x;
-          sourceWalls[count * 4 + 1] = u.y;
-          sourceWalls[count * 4 + 2] = v.x;
-          sourceWalls[count * 4 + 3] = v.y;
-          count++;
-        }
+        for (const { seg } of gmsData.byKey[gm.key].wallSegs) push(seg);
+        // light passes through glass — but not out through the hull, where a window looks onto
+        // nothing the light has any business reaching
+        for (const window of gm.windows) window.meta.hull === true && push(window.seg);
       }
 
       sourceCount = count;
@@ -342,12 +372,15 @@ export function createPlayerLight(): PlayerLight {
       // buffers are not going to survive — better an unlit world than a broken one
       if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
         unlitAmount.value = 0;
+        sweeper = null;
         return;
       }
       if (at === null) {
         unlitAmount.value = 0;
+        sweeper = null;
         return;
       }
+      sweeper = renderer;
       // eased rather than switched, or the mode change lands as a flash
       const now = nowSecs();
       retarget(tintMorph, prod === true ? unlitTintProd : unlitTintOther, MODE_FADE_SECS, now);
@@ -363,7 +396,10 @@ export function createPlayerLight(): PlayerLight {
       // Only the walls the light could possibly reach are handed to the sweep, which otherwise
       // loops every wall in the world for every angle. Re-chosen when the light has wandered far
       // enough that the margin no longer covers it, rather than every frame
-      if (cullDirty === true || Math.hypot(at.x - culledAt.x, at.z - culledAt.z) > cullRebuildDist) {
+      // Re-chosen too when the walls themselves have changed — a new map — which must reach the
+      // table whether or not the light has moved
+      const reculled = cullDirty === true || Math.hypot(at.x - culledAt.x, at.z - culledAt.z) > cullRebuildDist;
+      if (reculled === true) {
         cullWalls(at.x, at.z);
       }
 
@@ -394,10 +430,10 @@ export function createPlayerLight(): PlayerLight {
 
       // the table only depends on where the light stands and what the doors are doing, so with
       // both still it already holds the answer — and standing still is the common case
-      if (swept === true && doorsChanged === false && moved < Number.EPSILON) {
+      if (sweeps > 0 && doorsChanged === false && reculled === false && moved < Number.EPSILON) {
         return;
       }
-      swept = true;
+      sweeps++;
 
       renderer.compute(sweep);
     },
@@ -431,6 +467,14 @@ export type PlayerLight = {
    * ceiling, which the sweep would otherwise light through the room below it
    */
   applyUnlitRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  /**
+   * Reads the sweep's table back off the GPU into `into`, of `lightAngles`: the distance to the
+   * nearest occluder in each direction, `lightRadius` where there is none. `null` whilst the light
+   * is off, has yet to sweep, or a read is already in flight. See `service/player-frontier`
+   */
+  readTable(into: Float32Array): null | Promise<void>;
+  /** How many sweeps the table has had, `0` whilst the light is off — a reader need only read after a new one */
+  getSweeps(): number;
   /** Re-reads the walls, which never move. Call on map change */
   syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
   /**
@@ -454,7 +498,7 @@ export type PlayerLight = {
  * - Still some flicker but 2048 + 1024 would fix it
  */
 // const lightAngles = 1024 + 512;
-const lightAngles = 2048 + 1024;
+export const lightAngles = 2048 + 1024;
 /** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
 const maxLightSegs = 4096;
 /**
@@ -465,7 +509,9 @@ const cullRebuildDist = 2;
 const cullMargin = 3;
 
 /** How far the light reaches (metres) — the sweep stops there, and so does the polygon */
-const lightRadius = 8;
+export const lightRadius = 8;
+/** Over how much of that, at the edge, the light dies away to nothing — see `litAt` */
+const edgeFalloff = lightRadius * 0.35;
 
 /** How black an unseen fragment goes: `prod` hides it, the other two keep it legible */
 const unlitTintProd = isTouchDevice() ? 0.8 : 0.6;
