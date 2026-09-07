@@ -510,6 +510,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // steerable at every zoom: the azimuth is the detented dial below throughout, and the polar
         // is the user's own close in, and a spring-back peek zoomed out — see `shapeCanonicalPolar`
         controls.enableRotate = true;
+        // a drag locks to the axis it set off along only whilst ZOOMED OUT, where the peek and the
+        // dial share it and the lock keeps them apart. Once a zoom-in is under way the polar is
+        // pinned, and a turn begun a little up or down would lock vertical and do nothing at all —
+        // and close in the polar is the user's own, so a diagonal drag may simply do both
+        controls.lockRotateAxis = t > canonicalFlattenFrom && state.zoomPan === null;
 
         // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
         state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
@@ -1065,6 +1070,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.controls.minPolarAngle = state.ctrlOpts.minPolarAngle ?? 0;
           state.controls.maxPolarAngle = state.ctrlOpts.maxPolarAngle ?? Math.PI / 2;
           state.controls.zoomSettleRate = defaultZoomSettleRate;
+          state.controls.lockRotateAxis = true; // only `canonical` ever takes it away
           // see `easeFrontier`, which has been easing both stops
           state.controls.maxDistance = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
           state.controls.minDistance = state.ctrlOpts.minDistance ?? 10;
