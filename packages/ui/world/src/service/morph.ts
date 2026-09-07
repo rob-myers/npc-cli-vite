@@ -51,7 +51,8 @@ export function settled(m: Morph, secs: number, now: number): boolean {
  */
 export function morphNode(
   packed: THREE.Node<"vec3">,
-  secs: number,
+  /** A node where each instance has its own — see `NpcRings` */
+  secs: number | THREE.Node<"float">,
   clock: THREE.Node<"float"> = time,
 ): THREE.Node<"float"> {
   const along = clock.sub(packed.z).div(secs).clamp(0, 1);

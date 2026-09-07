@@ -436,6 +436,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.npc?.warmCrowd();
             break;
           case "picked": {
+            if (e.meta.type === "floor") {
+              w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
+            }
             // a long press is how you get at an npc: they say "...", and the speech's own npcKey
             // is the handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
             // forwarded, and the server's mirrored speech comes back instead
