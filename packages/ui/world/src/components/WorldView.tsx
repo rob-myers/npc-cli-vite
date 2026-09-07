@@ -1328,6 +1328,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         initial: false,
         demoFx: true,
         fadeRoomsFx: false,
+        playerFrontier: false,
         playerLight: false, // 🔔 `true` causes decor rebuild on hmr
         postFx: false,
       },

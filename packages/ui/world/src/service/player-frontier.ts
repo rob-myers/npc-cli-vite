@@ -1,4 +1,4 @@
-import { frontierHalfDeg, frontierReadMinMs, frontierSmoothRate } from "../const";
+import { frontierHalfDeg, frontierReadMinMs } from "../const";
 import { lightAngles, type PlayerLight } from "./player-light";
 
 /**
@@ -26,7 +26,7 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       out.z = eased.z;
       return true;
     },
-    update(rotationY, deltaSecs) {
+    update(rotationY, deltaSecs, rate) {
       const lookAngle = -rotationY - Math.PI / 2; // three's rotation-Y to an angle in world XZ
       const sweeps = getLight().getSweeps();
       if (sweeps === 0) {
@@ -69,7 +69,7 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
         eased = { x, z };
       } else {
         // exponential approach, so it is frame-rate independent and has no end to overshoot
-        const alpha = 1 - Math.exp(-frontierSmoothRate * deltaSecs);
+        const alpha = 1 - Math.exp(-rate * deltaSecs);
         eased.x += (x - eased.x) * alpha;
         eased.z += (z - eased.z) * alpha;
       }
@@ -83,6 +83,9 @@ export type PlayerFrontier = {
   reach: null | number;
   /** The eased vector from the player to their frontier, into `out` — `false`, and untouched, whilst unread */
   ahead(out: { x: number; z: number }): boolean;
-  /** Reads the sweep when there is a fresh one, and eases the vector. Call once per frame, after the sweep */
-  update(rotationY: number, deltaSecs: number): void;
+  /**
+   * Reads the sweep when there is a fresh one, and eases the vector at `rate` per second. Call
+   * once per frame, after the sweep
+   */
+  update(rotationY: number, deltaSecs: number, rate: number): void;
 };

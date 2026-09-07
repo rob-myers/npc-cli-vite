@@ -82,7 +82,7 @@ export const cameraRefAspect = 1.8;
 export const defaultBrightness = 1;
 
 /** How far out the camera's outer zoom stop sits, in metres */
-export const defaultCameraMaxDistance = 18;
+export const defaultCameraMaxDistance = 20;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
@@ -131,6 +131,11 @@ export const frontierHalfDeg = 15;
 export const frontierRate = 2;
 /** How fast the frontier vector itself is eased, per second — the reading leaps, and a turn swings it */
 export const frontierSmoothRate = 3;
+/**
+ * …and whilst the player is off the mesh or mid fade-spawn, when their facing changes twice in
+ * quick succession — turned to face a doable, then set by it — which the camera should glide over
+ */
+export const frontierCalmRate = 0.8;
 /** The least time between two reads of the sweep — the ease above hides anything quicker */
 export const frontierReadMinMs = 50;
 export const frontierNearFrac = 0.05; // not `0`: `t` divides by the travel that would leave
