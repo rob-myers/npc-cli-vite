@@ -81,10 +81,8 @@ export const cameraRefAspect = 1.8;
 
 export const defaultBrightness = 1;
 
-/** How far out the camera's outer zoom stop sits, in metres — tunable in `WorldMenu`'s debug list */
-export const defaultCameraMaxDistance = 12;
-/** …and the range that slider offers */
-export const cameraMaxDistanceRange = { min: 10, max: 20, step: 0.1 };
+/** How far out the camera's outer zoom stop sits, in metres */
+export const defaultCameraMaxDistance = 18;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */

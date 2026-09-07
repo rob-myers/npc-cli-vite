@@ -16,7 +16,6 @@ import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three
 import * as THREE from "three/webgpu";
 import {
   cameraFov,
-  cameraMaxDistanceRange,
   cameraRefAspect,
   canonicalBirdseyePolar,
   canonicalFlattenFrom,
@@ -113,7 +112,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
         minDistance: w.touchDevice ? 6 : 8,
-        maxDistance: saved.cameraMaxDistance ?? defaultCameraMaxDistance,
+        maxDistance: defaultCameraMaxDistance,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
@@ -1040,18 +1039,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       showCentreHint() {
         state.set({ centreHint: true });
       },
-      setCameraMaxDistance(maxDistance) {
-        const { min, max } = cameraMaxDistanceRange;
-        const next = Math.min(max, Math.max(min, maxDistance));
-        state.ctrlOpts.maxDistance = next;
-        // straight onto the controls as well as into `ctrlOpts`: r3f only applies the prop on a
-        // render, and `update` re-derives the radius from `zoomProgress` and the stops every frame,
-        // so the view follows the slider without one. A React re-render per pointermove would drag
-        // the whole World tree along with it, which is what made a drag stutter
-        if (state.controls !== null) state.controls.maxDistance = next;
-        store.patch({ cameraMaxDistance: next });
-        w.r3f?.invalidate();
-      },
       setCameraFollow(cameraFollow) {
         state.frontierHold = false; // superseded either way
         state.cameraFollow = cameraFollow; // before the look, whose goal is the follow's
@@ -1667,8 +1654,6 @@ export type State = {
   onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
   setupDom(): () => void;
-  /** The outer zoom stop, clamped to `cameraMaxDistanceRange` and persisted */
-  setCameraMaxDistance(maxDistance: number): void;
   setCameraFollow(cameraFollow: boolean): void;
   setCameraMode(cameraMode: CameraModeType): void;
   /** Keeps the player centred whilst `cameraFollow` is on — called every tick from `World` */
