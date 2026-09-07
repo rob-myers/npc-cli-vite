@@ -16,6 +16,7 @@ import { WorldContext } from "./world-context";
 export function Debug() {
   const w = useContext(WorldContext);
   const navPathRef = useRef<THREE.InstancedMesh>(null);
+  const boundaryRef = useRef<THREE.InstancedMesh>(null);
 
   const doorNormalsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
@@ -34,6 +35,7 @@ export function Debug() {
       debugPointInstanceIdToDecorId: [],
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
+      localBoundary: [] as XZSeg[],
       doorNormalsShown: false,
       fadeRoomOutlines: getWorldStore(w.key).read().fadeRoomOutlines,
       gridShown: false,
@@ -167,25 +169,12 @@ export function Debug() {
         decorPointsGeo.getAttribute("uvTextureIds").needsUpdate = true;
       },
       updateNavPathInstances() {
-        const inst = navPathRef.current;
-        if (!inst) return;
         const { demoNavPath: ps } = state;
-        inst.count = Math.max(0, ps.length - 1);
-
-        for (let i = 0; i + 1 < ps.length; i++) {
-          const dx = ps[i + 1][0] - ps[i][0];
-          const dz = ps[i + 1][2] - ps[i][2];
-          const len = Math.sqrt(dx * dx + dz * dz);
-          const nx = len > 0 ? dx / len : 1;
-          const nz = len > 0 ? dz / len : 0;
-
-          embedXZMat4(
-            { a: dx, b: dz, c: -pathWidth * nz, d: pathWidth * nx, e: ps[i][0], f: ps[i][2] },
-            { yHeight: 0.01, mat4: tmpMat4 },
-          );
-          inst.setMatrixAt(i, tmpMat4);
-        }
-        inst.instanceMatrix.needsUpdate = true;
+        const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][2], p[0], p[2]]);
+        writeSegmentInstances(navPathRef.current, segs, 0.01);
+      },
+      setLocalBoundary(segs) {
+        state.set({ localBoundary: segs }); // drawn by the effect below, once the mesh has mounted
       },
     }),
     {
@@ -209,6 +198,11 @@ export function Debug() {
     state.computeDemoPath();
     state.updateNavPathInstances();
   }, [w.nav]);
+
+  useEffect(() => {
+    writeSegmentInstances(boundaryRef.current, state.localBoundary, 0.02);
+    w.view.forceUpdate(); // nothing else asks for a frame
+  }, [state.localBoundary]);
 
   useEffect(() => {
     state.updateDoorNormals();
@@ -284,6 +278,18 @@ export function Debug() {
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
 
+      {/* an npc's local navmesh boundary, as `park` sees it — mounted only whilst shown */}
+      {state.localBoundary.length > 0 && (
+        <instancedMesh
+          ref={boundaryRef}
+          args={[quad, undefined, maxBoundarySegments]}
+          frustumCulled={false}
+          renderOrder={-6}
+        >
+          <meshBasicMaterial color="red" side={THREE.DoubleSide} depthTest={false} />
+        </instancedMesh>
+      )}
+
       <instancedMesh
         ref={doorNormalsRef}
         args={[state.arrowGeo, undefined, maxDoorNormals]}
@@ -319,6 +325,26 @@ export function Debug() {
 
 const pathWidth = 0.02;
 const maxPathSegments = 256;
+const maxBoundarySegments = 64;
+
+/** A ground segment `[x1, z1, x2, z2]` */
+type XZSeg = [number, number, number, number];
+
+/** One thin quad per segment, `yHeight` off the floor */
+function writeSegmentInstances(inst: THREE.InstancedMesh | null, segs: XZSeg[], yHeight: number) {
+  if (inst === null) return;
+  inst.count = segs.length;
+  for (const [i, [x1, z1, x2, z2]] of segs.entries()) {
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const len = Math.hypot(dx, dz);
+    const nx = len > 0 ? dx / len : 1;
+    const nz = len > 0 ? dz / len : 0;
+    embedXZMat4({ a: dx, b: dz, c: -pathWidth * nz, d: pathWidth * nx, e: x1, f: z1 }, { yHeight, mat4: tmpMat4 });
+    inst.setMatrixAt(i, tmpMat4);
+  }
+  inst.instanceMatrix.needsUpdate = true;
+}
 const maxDecorPoints = 1024;
 const maxDoorNormals = 512;
 const onPointHeight = 0.005;
@@ -333,6 +359,8 @@ export type State = {
   debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
+  /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_local_boundary` */
+  localBoundary: XZSeg[];
   doorNormalsShown: boolean;
   /** Ring the rooms in view — drawn into the floor texture, see `Floor.drawGm` */
   fadeRoomOutlines: boolean;
@@ -357,4 +385,5 @@ export type State = {
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
   updateNavPathInstances(): void;
+  setLocalBoundary(segs: XZSeg[]): void;
 };
