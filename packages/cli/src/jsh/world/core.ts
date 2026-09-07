@@ -1,4 +1,4 @@
-import { npcConfig } from "@npc-cli/ui__world/const";
+import { npcConfig, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const";
 import { Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
@@ -1099,6 +1099,88 @@ export async function warp(
   const npc = w.npc.get(opts.npcKey);
   await npc.fadeSpawn({ at: opts.to });
 }
+
+/**
+ * A nearby navigable target near the npc, emitted whilst `w`, `a`, `s` or `d` is held over the
+ * world — up, left, down or right AS SEEN, i.e. along the camera's axes flattened onto the ground,
+ * and between two for a pair. It sits a little further than they get before the next one, so a
+ * held key walks them on without arriving, and nothing is emitted where the mesh ends — see
+ * `moveAlongSurface`. Meant for
+ * ```sh
+ * wasd_delta npc:rob | move npc:rob
+ * wasd_delta npc:rob fast:true | move npc:rob fast:true
+ * ```
+ */
+export async function* wasd_delta(
+  ct: JshCli.RunArg,
+  opts: { npcKey: string; fast?: boolean } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+) {
+  const { api, w } = ct;
+  const { keysDown } = w.view;
+  const length = (opts.fast === true ? runAgentMaxSpeed : walkAgentMaxSpeed) * wasdStepSecs;
+  // idle costs nothing: with no key held we wait on the next. A kill aborts the wait, which must
+  // REJECT rather than simply lose its listener — the shell waits on us returning
+  const abort = new AbortController();
+  const handlers = api.handleStatus({ cleanup: () => abort.abort() });
+  const nextKey = () =>
+    new Promise<void>((resolve, reject) => {
+      w.rootEl.addEventListener("keydown", () => resolve(), { once: true, signal: abort.signal });
+      abort.signal.addEventListener("abort", () => reject(api.getKillError()), { once: true });
+    });
+
+  try {
+    while (true) {
+      if (api.isRunning() === false) await api.awaitResume();
+      if (wasdKeys.some((key) => keysDown.has(key)) === false) {
+        await nextKey();
+        continue;
+      }
+      const to = wasdStep(w, w.npc.get(opts.npcKey), keysDown, length);
+      if (to !== null) yield { ...to, meta: { floor: true, nav: true } };
+      await api.sleep(wasdIntervalSecs); // paced whilst held: each is a fresh step ahead
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
+/**
+ * A step of `length` from the npc along the screen's `wasd` axes, slid along the navmesh — `null`
+ * off the mesh, or where the slide left it at the mesh's edge
+ */
+function wasdStep(w: JshCli.RunArg["w"], npc: JshCli.Npc, keysDown: Set<string>, length: number) {
+  const poly = w.npc.getClosestPoly(npc.position);
+  if (poly.success === false) return null;
+
+  // screen-right and screen-up on the ground: the camera's x and y axes, flattened — the y axis
+  // rather than the forward, which at birdseye points straight down and flattens away
+  const right = (keysDown.has("d") ? 1 : 0) - (keysDown.has("a") ? 1 : 0);
+  const up = (keysDown.has("w") ? 1 : 0) - (keysDown.has("s") ? 1 : 0);
+  const m = w.view.controls.object.matrixWorld.elements;
+  const delta = new Vect(right * m[0] + up * m[4], right * m[2] + up * m[6]).normalize(length);
+
+  // a step into a wall — or a door they cannot pass — stops at it
+  const src = npc.point;
+  const clamped = moveAlongSurface(
+    w.nav.navMesh,
+    poly.nodeRef,
+    [src.x, 0, src.y],
+    [src.x + delta.x, 0, src.y + delta.y],
+    npc.queryFilter,
+  );
+  if (clamped.success === false) return null;
+
+  const to = { x: clamped.position[0], y: clamped.position[2] };
+  return Math.hypot(to.x - src.x, to.y - src.y) < wasdMinMove ? null : to;
+}
+
+const wasdKeys = ["w", "a", "s", "d"];
+/** How often the held keys are read, in seconds */
+const wasdIntervalSecs = 0.1;
+/** How far ahead the target sits, as seconds of travel — well past the next read, so they never arrive */
+const wasdStepSecs = 0.4;
+/** Below this much of a clamped step, they are at the boundary and nothing is emitted */
+const wasdMinMove = 0.05;
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
