@@ -1,4 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
+import { useFrame } from "@react-three/fiber";
 import { useContext, useMemo } from "react";
 import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, time, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -16,34 +17,26 @@ export default function NpcRings() {
       ...createRingResources(w.view.objectPick, w.view.foldNode),
       spawnRingByNpc: new Map(),
       selectRingByNpc: new Map(),
+      pickRings: [],
 
       onTick() {
         const now = time.value;
         let j = 0;
 
-        // these rings are only shown during fade spawn
+        // spawn rings mark a destination during a fade spawn, and go once faded out
         for (const [npcKey, ring] of state.spawnRingByNpc) {
-          if (faded(ring.fade, now) === true) {
-            state.spawnRingByNpc.delete(npcKey);
-            continue;
-          }
-          j = state.writeRing(
-            j,
-            ring.x,
-            ring.y,
-            ring.z,
-            ring.fade,
-            spawnRingRadius,
-            spawnRingColor,
-            spawnRingStyle,
-            ring.roomSlot,
-          );
+          if (faded(ring, now) === true) state.spawnRingByNpc.delete(npcKey);
+          else j = state.writeRing(j, ring);
         }
 
-        // selector rings are persistent
+        // pick rings mark picks: the latest stays up, and the rest fade once superseded
+        state.pickRings = state.pickRings.filter((ring) => faded(ring, now) === false);
+        for (const ring of state.pickRings) j = state.writeRing(j, ring);
+
+        // select rings follow their npc until taken down
         for (const [npcKey, ring] of state.selectRingByNpc) {
           const npc = w.n[npcKey];
-          if (npc === undefined || faded(ring.fade, now) === true) {
+          if (npc === undefined || faded(ring, now) === true) {
             state.selectRingByNpc.delete(npcKey);
             continue;
           }
@@ -53,20 +46,12 @@ export default function NpcRings() {
           if (npc.hidden === true) continue;
           const wanted = npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
           retarget(ring.radius, wanted, selectRingMorphSecs, now);
-
-          const { x, y, z } = npc.position;
-          // read every tick, unlike a spawn ring's: an npc walks from one room to the next
-          j = state.writeRing(
-            j,
-            x,
-            y + selectRingLift,
-            z,
-            ring.fade,
-            ring.radius,
-            ring.color,
-            selectRingStyle,
-            npc.roomSlot.value,
-          );
+          // read every tick, unlike the others': an npc walks from one room to the next
+          ring.x = npc.position.x;
+          ring.y = npc.position.y + selectRingLift;
+          ring.z = npc.position.z;
+          ring.roomSlot = npc.roomSlot.value;
+          j = state.writeRing(j, ring);
         }
 
         // Only the instances actually written go to the gpu. Without a range three uploads the
@@ -80,26 +65,27 @@ export default function NpcRings() {
           state.ringBuffer.needsUpdate = true;
         }
       },
-      writeRing(index, x, y, z, fade, radius, color, style, roomSlot) {
+      writeRing(index, ring) {
         if (index >= MAX_RINGS) return index;
         // one contiguous run into the interleaved buffer — see `ringStride`
         const at = index * ringStride;
         const data = state.ringData;
-        data[at + 0] = x;
-        data[at + 1] = y;
-        data[at + 2] = z;
-        data[at + 3] = style.expand;
-        data[at + 4] = fade.from;
-        data[at + 5] = fade.to;
-        data[at + 6] = fade.at;
-        data[at + 7] = radius.from;
-        data[at + 8] = radius.to;
-        data[at + 9] = radius.at;
-        data[at + 10] = color.r;
-        data[at + 11] = color.g;
-        data[at + 12] = color.b;
-        data[at + 13] = style.alpha;
-        data[at + 14] = roomSlot;
+        data[at + 0] = ring.x;
+        data[at + 1] = ring.y;
+        data[at + 2] = ring.z;
+        data[at + 3] = ring.style.expand;
+        data[at + 4] = ring.fade.from;
+        data[at + 5] = ring.fade.to;
+        data[at + 6] = ring.fade.at;
+        data[at + 7] = ring.fadeSecs;
+        data[at + 8] = ring.radius.from;
+        data[at + 9] = ring.radius.to;
+        data[at + 10] = ring.radius.at;
+        data[at + 11] = ring.color.r;
+        data[at + 12] = ring.color.g;
+        data[at + 13] = ring.color.b;
+        data[at + 14] = ring.style.alpha;
+        data[at + 15] = ring.roomSlot;
         return index + 1;
       },
       showSpawnRing(npcKey, at, y = spawnRingDefaultHeight) {
@@ -108,13 +94,57 @@ export default function NpcRings() {
         const gmRoomId = w.e.findRoomContaining({ x: at.x, y: at.y }, true);
         const roomSlot = gmRoomId === null ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
         // it is put up on a destination already chosen, so it is simply there
-        state.spawnRingByNpc.set(npcKey, { x: at.x, y, z: at.y, roomSlot, fade: arrivedAt(1, time.value) });
+        state.spawnRingByNpc.set(npcKey, {
+          ...spawnRingLook,
+          x: at.x,
+          y,
+          z: at.y,
+          roomSlot,
+          fade: arrivedAt(1, time.value),
+        });
       },
       fadeOutSpawnRing(npcKey) {
         state.fadeRing(state.spawnRingByNpc.get(npcKey), 0);
       },
       removeSpawnRing(npcKey) {
         state.spawnRingByNpc.delete(npcKey);
+      },
+      showPickRing(pick) {
+        const now = time.value;
+        const at = state.pickRingPoint(pick);
+        // the oldest gives way to a burst of picks, rather than the newest going unmarked
+        if (state.pickRings.length >= MAX_PICK_RINGS) state.pickRings.shift();
+        // the one that was latest is no longer, so it starts out — and not snapped whilst paused,
+        // as `fadeRing` would: the frame hook below sees it out
+        const previous = state.pickRings.at(-1);
+        if (previous !== undefined) retarget(previous.fade, 0, previous.fadeSecs, now);
+        // the new one simply stays, until it is superseded in turn. It marks where the pick
+        // landed, faded room or not, so it is not given that room's slot
+        state.pickRings.push({
+          ...pickRingLook,
+          x: at.x,
+          y: at.y + pickRingLift,
+          z: at.z,
+          roomSlot: alwaysShownSlot,
+          fade: arrivedAt(1, now),
+        });
+        // drawn at once: the tick that would otherwise write it does not run whilst the world is
+        // paused
+        state.onTick();
+        w.r3f?.invalidate();
+      },
+      pickRingPoint(pick) {
+        const { meta } = pick;
+        if (meta.type === "npc") {
+          // on the floor beneath them, rather than wherever on them the pick landed
+          const npc = w.n[meta.npcKey];
+          if (npc !== undefined) return { x: npc.position.x, y: npc.position.y, z: npc.position.z };
+        } else if (meta.type === "door") {
+          // in the doorway, whichever leaf or edge of the door was hit
+          const door = w.d[meta.gdKey];
+          if (door !== undefined) return { x: (door.src.x + door.dst.x) / 2, y: 0, z: (door.src.y + door.dst.y) / 2 };
+        }
+        return { x: pick.point[0], y: pick.point[1], z: pick.point[2] };
       },
       showSelectRing(npcKey, color) {
         const now = time.value;
@@ -127,9 +157,19 @@ export default function NpcRings() {
         }
         // from nothing, so it CLOSES onto them: the shader widens a ring as its opacity drops, so
         // fading one in draws it inwards — which reads as picking them out rather than appearing.
-        // Its radius starts at whatever they are already doing, else it would slide into place too
+        // Its radius starts at whatever they are already doing, else it would slide into place too.
+        // Where it is, and whose room, are read every tick
         const radius = w.n[npcKey]?.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
-        const next = { color: new THREE.Color(color), fade: arrivedAt(0, now), radius: arrivedAt(radius, now) };
+        const next: RingInstance = {
+          ...selectRingLook,
+          x: 0,
+          y: 0,
+          z: 0,
+          roomSlot: alwaysShownSlot,
+          fade: arrivedAt(0, now),
+          radius: arrivedAt(radius, now),
+          color: new THREE.Color(color),
+        };
         state.selectRingByNpc.set(npcKey, next);
         state.fadeRing(next, 1);
       },
@@ -142,7 +182,7 @@ export default function NpcRings() {
       fadeRing(ring, to) {
         if (ring === undefined) return;
         const now = time.value;
-        retarget(ring.fade, to, ringFadeSecs, now);
+        retarget(ring.fade, to, ring.fadeSecs, now);
         if (w.disabled === true) {
           ring.fade.from = ring.fade.to;
           ring.fade.at = now;
@@ -153,6 +193,16 @@ export default function NpcRings() {
 
   w.rings = state;
 
+  // a paused world runs no tick, yet a pick ring superseded whilst paused must still fade out —
+  // so whilst any is FADING, the frames write them instead, and ask for the next. The latest stays
+  // up for good, which must not keep the frames coming
+  useFrame(() => {
+    if (w.disabled === true && state.pickRings.some((ring) => ring.fade.to === 0)) {
+      state.onTick();
+      w.r3f?.invalidate();
+    }
+  });
+
   useMemo(() => {
     state.ringMat.colorNode = state.colorNode.mul(w.view.fadeRoomsFx.getVisiblity(state.roomSlot));
     state.ringMat.needsUpdate = true;
@@ -161,15 +211,30 @@ export default function NpcRings() {
   return <primitive object={state.ringMesh} />;
 }
 
-/** Whether a fade has run all the way out, and the ring it belongs to can go */
-function faded(fade: Morph, now: number): boolean {
-  return fade.to === 0 && settled(fade, ringFadeSecs, now);
+/** Whether a ring has faded all the way out, and can go */
+function faded(ring: RingInstance, now: number): boolean {
+  return ring.fade.to === 0 && settled(ring.fade, ring.fadeSecs, now);
 }
 
-export type Ring = { fade: Morph };
-
-/** What tells the two kinds of ring apart, in the `uv` the quad is measured in */
+/** What tells the kinds of ring apart, in the `uv` the quad is measured in */
 export type RingStyle = { alpha: number; expand: number };
+
+/** What a kind of ring is drawn with, which every ring of that kind starts from — see `RingInstance` */
+type RingLook = Pick<RingInstance, "style" | "color" | "radius" | "fadeSecs">;
+
+/** One ring, of any kind: exactly what `writeRing` puts in the buffer */
+export type RingInstance = {
+  x: number;
+  y: number;
+  z: number;
+  roomSlot: number;
+  fade: Morph;
+  /** How long its fade takes — each ring carries its own, the floor's being slow */
+  fadeSecs: number;
+  radius: Morph;
+  color: THREE.Color;
+  style: RingStyle;
+};
 
 export type State = {
   ringGeo: THREE.InstancedBufferGeometry;
@@ -179,32 +244,28 @@ export type State = {
   ringData: Float32Array;
   ringBuffer: THREE.InstancedInterleavedBuffer;
   /** Per-npc spawn-destination ring shown during `fadeSpawn`, keyed by npcKey */
-  spawnRingByNpc: Map<string, Ring & { x: number; y: number; z: number; roomSlot: number }>;
+  spawnRingByNpc: Map<string, RingInstance>;
   /** Per-npc selection ring, which follows them until taken down — keyed by npcKey */
-  selectRingByNpc: Map<string, Ring & { color: THREE.Color; radius: Morph }>;
+  selectRingByNpc: Map<string, RingInstance>;
+  /** Where picks have landed, oldest first — the latest stays up, the rest fade once superseded */
+  pickRings: RingInstance[];
 
   colorNode: THREE.VarNode<"vec4", THREE.JoinNode<"vec4">>;
   roomSlot: THREE.AttributeNode<"float">;
 
   onTick(): void;
-  /** Writes one instance and returns the next free index — both maps share the buffers */
-  writeRing(
-    index: number,
-    x: number,
-    y: number,
-    z: number,
-    fade: Morph,
-    radius: Morph,
-    color: THREE.Color,
-    style: RingStyle,
-    roomSlot: number,
-  ): number;
+  /** Writes one instance and returns the next free index — every kind shares the buffer */
+  writeRing(index: number, ring: RingInstance): number;
   /** Show ring at ground point `at` (`at.y` is world z) and world-height `y`, fully visible */
   showSpawnRing(npcKey: string, at: { x: number; y: number }, y?: number): void;
   /** Start fading the ring out; it is auto-removed once fully faded */
   fadeOutSpawnRing(npcKey: string): void;
   /** Remove the ring immediately e.g. on teleport failure */
   removeSpawnRing(npcKey: string): void;
+  /** Mark where a pick landed with a ring — it stays until the next pick, then fades. See `pickRingPoint` */
+  showPickRing(pick: JshCli.PickEvent): void;
+  /** Where a pick's ring goes: the floor beneath an npc, a door's doorway, else where the pick hit */
+  pickRingPoint(pick: JshCli.PickEvent): { x: number; y: number; z: number };
   /**
    * Pick this npc out with a ring of their own, in any colour `THREE.Color.set` takes — it follows
    * them until `hideSelectRing`. Naming one already selected recolours it in place
@@ -215,22 +276,26 @@ export type State = {
   /** The same for every select ring that is up */
   clearSelectRings(): void;
   /** Sends a ring's opacity towards `to`, or straight there whilst the world is paused */
-  fadeRing(ring: undefined | Ring, to: number): void;
+  fadeRing(ring: undefined | RingInstance, to: number): void;
 };
 
 /** How long a ring takes to fade all the way in or out */
 const ringFadeSecs = 0.4;
 /** Default ring height when target isn't doable (just above floor, avoids z-fighting) */
 const spawnRingDefaultHeight = 0.02;
-/** Both kinds share the instance buffer, and an npc can have one of each */
-const MAX_RINGS = MAX_NPCS * 2;
+/** How many picks are marked at once — the oldest gives way */
+const MAX_PICK_RINGS = 8;
+/** All kinds share the instance buffer, and an npc can have a spawn ring and a select ring */
+const MAX_RINGS = MAX_NPCS * 2 + MAX_PICK_RINGS;
 /**
- * Floats per instance: `ringPos` 4, `ringFade` 3, `ringRadius` 3, `ringRGBA` 4, `ringRoomSlot` 1 —
+ * Floats per instance: `ringPos` 4, `ringFade` 4, `ringRadius` 3, `ringRGBA` 4, `ringRoomSlot` 1 —
  * see `writeRing`
  */
-const ringStride = 15;
+const ringStride = 16;
 /** How far a select ring floats above the npc's own feet, so it does not z-fight the floor */
 const selectRingLift = 0.02;
+/** How far a pick ring floats above whatever it marks, likewise */
+const pickRingLift = 0.02;
 
 /** The quad every ring is drawn on, whose `uv` is what the shader measures its radii in */
 const ringQuadSide = npcScale * 1.6;
@@ -242,17 +307,46 @@ const perMetre = 1 / ringQuadSide;
  * a spawn ring — but it stays TRANSLUCENT either way: it is a mark laid over the floor and whoever
  * stands on it, and a solid colour would read as a painted disc rather than as a highlight.
  * `expand` is what each gains by the time it has faded away.
+ *
+ * A spawn ring marks a patch of floor, and sits well within the npc arriving on it
  */
-const spawnRingStyle: RingStyle = { alpha: 0.28 * 0.5, expand: 0.25 * perMetre };
-const selectRingStyle: RingStyle = { alpha: 0.1, expand: 0.13 * perMetre };
-const spawnRingColor = /* @__PURE__ */ new THREE.Color(0.4, 0.4, 0.4);
-/** A spawn ring marks a patch of floor, and sits well within the npc arriving on it */
-const spawnRingRadius: Morph = /* @__PURE__ */ arrivedAt(0.18 * perMetre, 0);
+const spawnRingLook: RingLook = {
+  style: { alpha: 0.28 * 0.5, expand: 0.25 * perMetre },
+  color: /* @__PURE__ */ new THREE.Color(0.4, 0.4, 0.4),
+  radius: /* @__PURE__ */ arrivedAt(0.18 * perMetre, 0),
+  fadeSecs: ringFadeSecs,
+};
 /**
- * What a select ring settles at, either side of the shadow: drawn well within it whilst they are
- * off their feet (`sit`, `lie`), and opened just past its edge whilst they are on them. `Secs` is
- * how long it takes to cross between the two, which the shader does by itself
+ * A pick ring marks where the last pick landed, and stays until the next pick — then it fades, in
+ * alpha alone. Its look, all in one place:
  */
+const pickRingConfig = {
+  /** Metres, on the ground */
+  radius: 0.025,
+  /** How opaque it is whilst up, `0..1` */
+  alpha: 0.1,
+  color: /* @__PURE__ */ new THREE.Color(0.95, 0.95, 0.95),
+  /** How long a superseded ring takes to fade away — its own pace, not `ringFadeSecs` */
+  fadeSecs: 1,
+};
+const pickRingLook: RingLook = {
+  style: { alpha: pickRingConfig.alpha, expand: 0 },
+  color: pickRingConfig.color,
+  radius: /* @__PURE__ */ arrivedAt(pickRingConfig.radius * perMetre, 0),
+  fadeSecs: pickRingConfig.fadeSecs,
+};
+/**
+ * A select ring's colour and radius are its own — see `showSelectRing` — so these are placeholders.
+ * It settles either side of the shadow: drawn well within it whilst they are off their feet
+ * (`sit`, `lie`), and opened just past its edge whilst they are on them. `MorphSecs` is how long
+ * it takes to cross between the two, which the shader does by itself
+ */
+const selectRingLook: RingLook = {
+  style: { alpha: 0.1, expand: 0.13 * perMetre },
+  color: /* @__PURE__ */ new THREE.Color(),
+  radius: /* @__PURE__ */ arrivedAt(0, 0),
+  fadeSecs: ringFadeSecs,
+};
 const selectRingSeatedRadius = npcShadowRadius * 0.7 * perMetre;
 const selectRingStandingRadius = npcShadowRadius * 1.15 * perMetre;
 const selectRingMorphSecs = 0.35;
@@ -277,14 +371,15 @@ function createRingResources(
   const ringData = new Float32Array(MAX_RINGS * ringStride);
   const ringBuffer = new THREE.InstancedInterleavedBuffer(ringData, ringStride, 1);
   ringGeo.setAttribute("ringPos", new THREE.InterleavedBufferAttribute(ringBuffer, 4, 0));
-  ringGeo.setAttribute("ringFade", new THREE.InterleavedBufferAttribute(ringBuffer, 3, 4));
-  ringGeo.setAttribute("ringRadius", new THREE.InterleavedBufferAttribute(ringBuffer, 3, 7));
-  ringGeo.setAttribute("ringRGBA", new THREE.InterleavedBufferAttribute(ringBuffer, 4, 10));
-  ringGeo.setAttribute("ringRoomSlot", new THREE.InterleavedBufferAttribute(ringBuffer, 1, 14));
+  ringGeo.setAttribute("ringFade", new THREE.InterleavedBufferAttribute(ringBuffer, 4, 4));
+  ringGeo.setAttribute("ringRadius", new THREE.InterleavedBufferAttribute(ringBuffer, 3, 8));
+  ringGeo.setAttribute("ringRGBA", new THREE.InterleavedBufferAttribute(ringBuffer, 4, 11));
+  ringGeo.setAttribute("ringRoomSlot", new THREE.InterleavedBufferAttribute(ringBuffer, 1, 15));
   ringGeo.instanceCount = 0;
 
   const ringPos = attribute<"vec4">("ringPos", "vec4");
-  const ringFade = attribute<"vec3">("ringFade", "vec3");
+  // `[from, to, at, secs]` — a `Morph`, and how long it takes, which is each ring's own
+  const ringFade = attribute<"vec4">("ringFade", "vec4");
   const ringRadius = attribute<"vec3">("ringRadius", "vec3");
   const rgba = attribute<"vec4">("ringRGBA", "vec4");
   const roomSlot = attribute<"float">("ringRoomSlot", "float");
@@ -293,7 +388,7 @@ function createRingResources(
   const clipPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos));
 
   // Both animations, drawn from the clock rather than stepped by anyone — see `Morph`
-  const opacity = morphNode(ringFade, ringFadeSecs);
+  const opacity = morphNode(ringFade.xyz, ringFade.w);
   const settledRadius = morphNode(ringRadius, selectRingMorphSecs);
   // and the radius grows further, by up to `expand`, as the ring fades out
   const expandedRadius = opacity.oneMinus().mul(ringPos.w).add(settledRadius);
