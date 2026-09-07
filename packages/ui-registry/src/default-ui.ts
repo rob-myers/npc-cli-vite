@@ -35,7 +35,7 @@ export function getDefaultTabs() {
 
   const mapEditMeta = MapEdit.schema.decode({
     id: uid(),
-    title: "map-edit-0",
+    title: "mapedit-0",
     uiKey: "MapEdit",
   });
 
