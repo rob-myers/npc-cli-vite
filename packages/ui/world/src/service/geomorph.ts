@@ -621,6 +621,9 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
       const groundPoint = { x: toPrecision(p.x), y: toPrecision(p.y) };
       meta.orient = orient; // expose to object-pick
       meta.groundPoint = groundPoint;
+      // as a quad's: `Decor` draws a shown point's face from this alone, so left in the layout's
+      // own space it would be drawn where the point sits BEFORE the geomorph is placed
+      const transform = tmpMat1.setMatrixValue(matrix).preMultiply(d.transform).toArray();
 
       return {
         ...d,
@@ -628,6 +631,8 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
         bounds,
         ...groundPoint,
         orient,
+        transform,
+        det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
       };
     }
     case "quad": {

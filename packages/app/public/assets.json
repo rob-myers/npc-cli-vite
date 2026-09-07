@@ -3663,13 +3663,15 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[2.5, 0.95], [2.5, 1.2], [2.25, 1.2], [2.25, 0.95]]],
+          "coordinates": [
+            [[2.625, 1.2375], [2.625, 1.4875], [2.375, 1.4875], [2.375, 1.2375]]
+          ],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-zero",
-            "transform": [1, 0, 0, 1, 2.25, 0.95],
+            "transform": [1, 0, 0, 1, 2.375, 1.2375],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -17711,13 +17713,15 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[2.5, 0.95], [2.5, 1.2], [2.25, 1.2], [2.25, 0.95]]],
+          "coordinates": [
+            [[2.625, 1.2375], [2.625, 1.4875], [2.375, 1.4875], [2.375, 1.2375]]
+          ],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-zero",
-            "transform": [1, 0, 0, 1, 2.25, 0.95],
+            "transform": [1, 0, 0, 1, 2.375, 1.2375],
             "direction": {"x": 1, "y": 0}
           }
         },
@@ -18257,14 +18261,19 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[26.5, 3.95], [26.5, 4.2], [26.25, 4.2], [26.25, 3.95]]
+            [
+              [26.625, 4.2375],
+              [26.625, 4.4875],
+              [26.375, 4.4875],
+              [26.375, 4.2375]
+            ]
           ],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-zero",
-            "transform": [1, 0, 0, 1, 26.25, 3.95],
+            "transform": [1, 0, 0, 1, 26.375, 4.2375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -20805,13 +20814,15 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[3.75, 3.95], [3.75, 4.2], [3.5, 4.2], [3.5, 3.95]]],
+          "coordinates": [
+            [[3.625, 4.2375], [3.625, 4.4875], [3.375, 4.4875], [3.375, 4.2375]]
+          ],
           "meta": {
             "decor": true,
             "point": true,
             "shown": true,
             "img": "number-zero",
-            "transform": [-1, 0, 0, 1, 3.75, 3.95],
+            "transform": [-1, 0, 0, 1, 3.625, 4.2375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -37998,18 +38009,18 @@
             "point": true,
             "shown": true,
             "img": "number-zero",
-            "transform": [1, 0, 0, 1, 26.25, 3.95],
+            "transform": [1, 0, 0, 1, 26.375, 4.2375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 26.2, "y": 3.9, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 26.325, "y": 4.1875, "width": 0.35, "height": 0.35},
           "type": "point",
-          "x": 26.375,
-          "y": 4.075,
+          "x": 26.5,
+          "y": 4.3625,
           "orient": 0,
-          "transform": [1, 0, 0, 1, 26.25, 3.95],
+          "transform": [1, 0, 0, 1, 26.375, 4.2375],
           "det": 1
         },
         {
@@ -40721,18 +40732,18 @@
             "point": true,
             "shown": true,
             "img": "number-zero",
-            "transform": [-1, 0, 0, 1, 3.75, 3.95],
+            "transform": [-1, 0, 0, 1, 3.625, 4.2375],
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 3.45, "y": 3.9, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 3.325, "y": 4.1875, "width": 0.35, "height": 0.35},
           "type": "point",
-          "x": 3.625,
-          "y": 4.075,
+          "x": 3.5,
+          "y": 4.3625,
           "orient": 180,
-          "transform": [-1, 0, 0, 1, 3.75, 3.95],
+          "transform": [-1, 0, 0, 1, 3.625, 4.2375],
           "det": -1
         },
         {

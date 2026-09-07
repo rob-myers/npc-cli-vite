@@ -196,17 +196,17 @@
       "expanded": true,
       "children": [
         {
-          "id": "21987218-1e5b-4b10-9e8f-b07a2141adbb",
+          "id": "e98701ab-8a05-410c-9e40-4359e9d90911",
           "name": "decor point shown",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 38},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 95, "f": 49.5},
           "type": "image",
           "srcType": "decor",
           "srcKey": "number-zero",
           "baseRect": {"width": 10, "height": 10},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 90, 38)"
+          "cssTransform": "matrix(1, 0, 0, 1, 95, 49.5)"
         },
         {
           "id": "f85b5fed-f93a-4ffb-9709-138c5c5e3f8b",
