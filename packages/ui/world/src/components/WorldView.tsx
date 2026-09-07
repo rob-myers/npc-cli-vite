@@ -737,8 +737,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.canonicalDragging = false;
           const turned = state.getCanonicalHeading();
           // turning back within the same drag is a PEEK: they went to look and thought better of
-          // it, so the dial returns to where it set out from however far round it got
-          const cameBack = Math.abs(state.canonicalPeak) - Math.abs(turned) > canonicalSnapCancel;
+          // it, so the dial returns to where it set out from — but only within the first point:
+          // past a quarter turn the dial has been turned, and turning back is steering, not a peek
+          const cameBack =
+            Math.abs(state.canonicalPeak) < halfPi &&
+            Math.abs(state.canonicalPeak) - Math.abs(turned) > canonicalSnapCancel;
           if (cameBack === false && Math.abs(turned) > canonicalSnapArm) {
             // at least one point, else however many quarters were actually turned
             const points = Math.max(1, Math.round(Math.abs(turned) / halfPi));
