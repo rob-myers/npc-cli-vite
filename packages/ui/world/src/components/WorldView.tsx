@@ -64,6 +64,7 @@ import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
+import type { Npc } from "./npc";
 import NpcBubbles from "./NpcBubbles";
 import { WorldContext } from "./world-context";
 
@@ -352,15 +353,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.zoomPan !== null && controls.zoomProgress > zoomCommitIn) return;
         if (1 - controls.zoomProgress < zoomPanMinSpan) return;
 
-        const rect = state.canvas.getBoundingClientRect();
-        tmpNdc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
-        state.raycaster.setFromCamera(tmpNdc, controls.object as THREE.PerspectiveCamera);
-        if (state.raycaster.ray.intersectPlane(groundPlane, tmpGroundHit) === null) return;
+        const followed = state.getFollowedPlayer();
+        if (followed !== undefined) {
+          // following, the zoom is theirs: it heads for them wherever the cursor is
+          tmpGroundHit.set(followed.position.x, 0, followed.position.z);
+        } else {
+          const rect = state.canvas.getBoundingClientRect();
+          tmpNdc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+          state.raycaster.setFromCamera(tmpNdc, controls.object as THREE.PerspectiveCamera);
+          if (state.raycaster.ray.intersectPlane(groundPlane, tmpGroundHit) === null) return;
 
-        // a shallow ray meets the ground hundreds of metres out — keep the aim to what is in view
-        const maxPan = state.ctrlOpts.maxDistance ?? 20;
-        if (tmpGroundHit.distanceTo(controls.target) > maxPan) {
-          tmpGroundHit.sub(controls.target).setLength(maxPan).add(controls.target);
+          // a shallow ray meets the ground hundreds of metres out — keep the aim to what is in view
+          const maxPan = state.ctrlOpts.maxDistance ?? 20;
+          if (tmpGroundHit.distanceTo(controls.target) > maxPan) {
+            tmpGroundHit.sub(controls.target).setLength(maxPan).add(controls.target);
+          }
         }
 
         if (state.zoomPan !== null) {
@@ -380,6 +387,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
         state.setCrosshair(tmpGroundHit);
         w.r3f?.invalidate();
+      },
+      getFollowedPlayer() {
+        const player = w.n[w.player?.key ?? ""];
+        return state.cameraFollow === true ? player : undefined;
       },
       getCrosshairPivot() {
         const el = state.zoomCrossEl;
@@ -492,7 +503,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const beta = Math.min(1, alpha / zoomPanDoneAlpha);
 
         const rest = 1 - zoomPan.lastBeta;
-        if (spherical.theta !== zoomPan.lastTheta) {
+        const followed = state.getFollowedPlayer();
+        if (followed !== undefined) {
+          // following, the aim IS the player, so it goes where they go — and the follow's own move
+          // of the target this tick is neither a turn nor a pan, and is simply overwritten below
+          zoomPan.to.set(followed.position.x, 0, followed.position.z);
+          state.setCrosshair(zoomPan.to);
+        } else if (spherical.theta !== zoomPan.lastTheta) {
           // a TURN slid the rig about its pivot — the crosshair, usually — but `to` is a point on
           // the ground and stays put, so the path is redrawn from wherever the turn left the target
           // as of the progress it had made: the remaining way still ends on the crosshair. Arrived,
@@ -656,16 +673,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             state.fHeld = true;
             state.onLookGesture(true);
           }
-        } else if (e.key === "q" || e.key === "Q") {
-          // what the look button does: pressed again once on them, `panTo` swings round behind them
-          void w.player?.panTo();
-        } else if (e.key === "e" || e.key === "E") {
-          // the world shown by room, as the fade button does — which also turns the post pass on,
-          // there being nothing to fade into otherwise
-          state.setFadeRoomsMode();
-          w.menu?.update();
         } else if (fadeRoomsModeByKey[e.key] !== undefined) {
-          // `1`, `2` and `3` go straight to a mode, where the button and `e` cycle round them
+          // `1`, `2` and `3` go straight to a mode, where the button cycles round them
           if (e.repeat === false) {
             state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
             w.menu?.update();
@@ -1375,6 +1384,8 @@ export type State = {
   zoomCrossEl: null | THREE.Mesh;
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
+  /** The player, whilst the view follows them and they exist */
+  getFollowedPlayer(): Npc | undefined;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
   /** Whether an aimed zoom-in is still running, so its slower settle is kept to the end */
