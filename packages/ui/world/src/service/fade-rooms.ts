@@ -1,8 +1,8 @@
-import { Discard, Fn, float, positionLocal, uniform, uniformArray, vec3, vec4 } from "three/tsl";
+import { Discard, float, Fn, positionLocal, select, uniform, uniformArray, vec3, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
-import { arrivedAt, morphNode, retarget, settled } from "./morph";
+import { arrivedAt, morphNode, retarget, settled, type Morph } from "./morph";
 import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slots";
 
 /**
@@ -46,7 +46,10 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
   let framesRaf = 0;
 
   function fadeAt(slot: THREE.Node<"float">) {
-    return morphNode(morphArray.element(slot.toInt()), ROOM_FADE_SECS, clockNode);
+    const packed = morphArray.element(slot.toInt());
+    // heading up is a fade IN, which is the quicker — see `fadeSecsOf`
+    const secs = select(packed.y.greaterThan(packed.x), float(ROOM_FADE_IN_SECS), float(ROOM_FADE_OUT_SECS));
+    return morphNode(packed, secs, clockNode);
   }
 
   return {
@@ -65,7 +68,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
 
     hasArrived(slot) {
       const morph = morphs[slot];
-      return morph !== undefined && morph.to === 1 && settled(morph, ROOM_FADE_SECS, nowSecs()) === true;
+      return morph !== undefined && morph.to === 1 && settled(morph, fadeSecsOf(morph), nowSecs()) === true;
     },
 
     isWipedOut(slot) {
@@ -150,12 +153,14 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
       for (let slot = 0; slot < totalSlots; slot++) {
         const next = showAll === true || slot === alwaysShownSlot || shown.has(slot) ? 1 : 0;
         if (snap === true) Object.assign(morphs[slot], arrivedAt(next, now));
-        else retarget(morphs[slot], next, ROOM_FADE_SECS, now);
+        // measured against the fade UNDER WAY, whose pace decides where it has got to
+        else retarget(morphs[slot], next, fadeSecsOf(morphs[slot]), now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
 
         // a room going out is wiped once its fade lands; coming back it is given back at once
         if (next === 0) {
-          if (wiped.has(slot) === false) fadingOut.set(slot, snap === true ? now : morphs[slot].at + ROOM_FADE_SECS);
+          if (wiped.has(slot) === false)
+            fadingOut.set(slot, snap === true ? now : morphs[slot].at + ROOM_FADE_OUT_SECS);
         } else {
           fadingOut.delete(slot);
           wiped.delete(slot);
@@ -175,7 +180,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
    * everything is paused must still be seen to open
    */
   function keepFramesComing(w: WorldType) {
-    framesUntilMs = performance.now() + ROOM_FADE_SECS * 1000 + 100;
+    framesUntilMs = performance.now() + ROOM_FADE_OUT_SECS * 1000 + 100;
     if (framesRaf !== 0) return;
     const frame = () => {
       const now = tick(); // moved on before the frame that reads it
@@ -303,8 +308,17 @@ function nowSecs() {
   return performance.now() / 1000;
 }
 
-/** How long a room takes to fade in or out, in seconds */
-const ROOM_FADE_SECS = 0.7;
+/**
+ * How long a room takes to fade in, and to fade out, in seconds — in is the quicker: a room
+ * arriving is wanted at once, whilst one leaving may go at its leisure
+ */
+const ROOM_FADE_IN_SECS = 0.35;
+const ROOM_FADE_OUT_SECS = 0.7;
+
+/** The pace of the fade a morph is on — heading up is a fade in. The shader's `fadeAt` agrees */
+function fadeSecsOf(morph: Morph): number {
+  return morph.to > morph.from ? ROOM_FADE_IN_SECS : ROOM_FADE_OUT_SECS;
+}
 
 export type FadeRooms = {
   /**
