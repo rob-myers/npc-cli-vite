@@ -144,6 +144,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       ),
       frontierMs: 0,
       frontierHold: false,
+      keysDown: new Set(),
       postFx: createPostProcessing(),
       demoFx: createDemoPostFx(),
       fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
@@ -805,6 +806,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onKeyDown(e) {
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        state.keysDown.add(e.key.toLowerCase());
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
@@ -828,6 +830,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       onKeyUp(e) {
+        state.keysDown.delete(e.key.toLowerCase());
         if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
           state.onLookGesture(false);
         }
@@ -984,8 +987,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         ro.observe(w.rootEl);
 
         const { onKeyDown, onKeyUp, onZoomWheel } = state;
+        // a key released after focus has gone elsewhere never reaches `onKeyUp`
+        const onBlur = () => state.keysDown.clear();
         w.rootEl.addEventListener("keydown", onKeyDown);
         w.rootEl.addEventListener("keyup", onKeyUp);
+        w.rootEl.addEventListener("focusout", onBlur);
+        window.addEventListener("blur", onBlur);
         // CAPTURE, so the aim is taken from the zoom progress BEFORE the controls advance it
         w.rootEl.addEventListener("wheel", onZoomWheel, { capture: true, passive: false });
 
@@ -993,6 +1000,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           ro.disconnect();
           w.rootEl?.removeEventListener("keydown", onKeyDown);
           w.rootEl?.removeEventListener("keyup", onKeyUp);
+          w.rootEl?.removeEventListener("focusout", onBlur);
+          window.removeEventListener("blur", onBlur);
           w.rootEl?.removeEventListener("wheel", onZoomWheel, { capture: true });
         };
       },
@@ -1564,6 +1573,8 @@ export type State = {
   frontierMs: number;
   /** Whether a short look press is holding the view on the player and their frontier, not following */
   frontierHold: boolean;
+  /** The keys held down over the world, lowercased — `wasd_delta` reads them */
+  keysDown: Set<string>;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
   holdFrontier(): void;
   /** Draws `canonical`'s zoom stops in by how little the player sees ahead — see within */

@@ -17,27 +17,27 @@
       "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
     },
     {
-      "id": "27a21bc7-ded7-416f-a9eb-9c9183a3499a",
-      "name": "decor point label=office",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 61, "f": 91.5},
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.5, 0, 0, 0.5, 61, 91.5)"
-    },
-    {
       "id": "74706ce1-5cfd-4db3-9a51-362a1b1e6e7c",
       "name": "doors",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
+        {
+          "id": "27a21bc7-ded7-416f-a9eb-9c9183a3499a",
+          "name": "decor point label=office",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 61, "f": 91.5},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 61, 91.5)"
+        },
         {
           "id": "a404c04f-1f5b-4b51-a048-323796e9bfd1",
           "name": "door e optional slide=[0,-1]",
@@ -193,7 +193,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "21987218-1e5b-4b10-9e8f-b07a2141adbb",
