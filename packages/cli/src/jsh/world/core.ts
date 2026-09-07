@@ -660,7 +660,7 @@ export async function park(
 }
 
 /** How far out `park` looks for a wall to stand against */
-const parkQueryRange = 2;
+export const parkQueryRange = 2;
 /** Below this much of a move, `park` turns them on the spot instead */
 const parkMinMove = 0.02;
 
