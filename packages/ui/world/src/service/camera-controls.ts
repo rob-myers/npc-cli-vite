@@ -118,6 +118,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   params = { fixedPolar: false, fixedAzimuth: false };
 
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
+  /**
+   * Whether a mouse rotate LOCKS to the axis its first pixels favoured, for the rest of the drag.
+   * `canonical` takes it away whilst its polar is pinned, when a turn begun a little up or down
+   * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
+   */
+  lockRotateAxis = true;
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -294,7 +300,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
 
       const isFree = !this.params.fixedPolar;
-      if (isFree && this.rotateAxis === "none") {
+      if (isFree && this.lockRotateAxis === true && this.rotateAxis === "none") {
         const ax = Math.abs(this.u.rotateDelta.x);
         const ay = Math.abs(this.u.rotateDelta.y);
         if (ax > 2 || ay > 2) {
@@ -480,9 +486,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
   }
 
-  /** Whether a zoom-in has passed the point of no return, so it is on its way to the inner stop */
-  isZoomingInCommitted(): boolean {
-    return this._zoomDirection === 1 && this.zoomProgress > zoomCommitIn;
+  /** Whether a drag is turning the camera — the mouse's rotate, or a touch's */
+  isRotating(): boolean {
+    return (
+      this.state === this.STATE.ROTATE ||
+      this.state === this.STATE.TOUCH_ROTATE ||
+      this.state === this.STATE.TOUCH_DOLLY_ROTATE
+    );
   }
 
   /** Moves the view between its stops, and marks the gesture as still going */

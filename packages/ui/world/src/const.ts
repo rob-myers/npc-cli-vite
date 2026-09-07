@@ -103,6 +103,12 @@ export const defaultCameraFollow = true;
 export const canonicalFlattenFrom = 0.4;
 /** Birdseye polar — just off `0`, which sits exactly on the orbit pole */
 export const canonicalBirdseyePolar = 0.01;
+/**
+ * The least a zoomed-out peek may tilt up to — see `WorldView`'s `shapeCanonicalPolar`. The
+ * close-in tilt is its ceiling when steeper, but that is remembered from wherever the camera
+ * last was, birdseye included, which would leave the peek nowhere to go
+ */
+export const canonicalPeekPolar = (55 * Math.PI) / 180;
 /** `canonical` azimuth is a detented compass dial: turn past this to advance to the next point */
 export const canonicalSnapArm = (10 * Math.PI) / 180;
 /**
@@ -112,6 +118,28 @@ export const canonicalSnapArm = (10 * Math.PI) / 180;
 export const canonicalSnapCancel = (4 * Math.PI) / 180;
 /** How fast a `canonical` aimed zoom-in settles, per second — see `CameraControls.zoomSettleRate` */
 export const canonicalZoomInRate = 2.8;
+/** The zoom crosshair sits this far off the floor, so it is not in the floor's own plane */
+export const crosshairY = 0.01;
+/**
+ * `canonical` zoomed out: the view FRAMES the player and their frontier — the point ahead their
+ * light reaches — panning between them and drawing the outer zoom stop in until both are in view.
+ * See `service/player-frontier`, and `WorldView`'s `easeFrontier` and `followPlayer`.
+ * Half the fan of directions that is read, in degrees; how fast the stop eases, per second; the
+ * nearest it comes, as a share of the travel between the stops; the slack the fit is given, as a
+ * factor; and how far from the player towards the frontier the follow holds the view — `0.5`
+ * is the midpoint, `0` the player as ever
+ */
+export const frontierHalfDeg = 15;
+export const frontierRate = 2;
+/** How fast the frontier vector itself is eased, per second — the reading leaps, and a turn swings it */
+export const frontierSmoothRate = 3;
+/** The least time between two reads of the sweep — the ease above hides anything quicker */
+export const frontierReadMinMs = 50;
+export const frontierNearFrac = 0.05; // not `0`: `t` divides by the travel that would leave
+export const frontierMargin = 1.3;
+export const frontierPanFrac = 0.5;
+/** The nearest the INNER stop comes, in metres, when the frontier is close — see `easeFrontier` */
+export const frontierNearest = 4;
 
 /** Camera rotate speed: touch drags are much shorter than mouse drags, so they get more per-pixel */
 export const rotateSpeedDesktop = 1;

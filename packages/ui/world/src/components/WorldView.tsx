@@ -1,6 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
-import { Rect, Vect } from "@npc-cli/util/geom";
+import { Vect } from "@npc-cli/util/geom";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
 import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
@@ -20,12 +20,19 @@ import {
   cameraRefAspect,
   canonicalBirdseyePolar,
   canonicalFlattenFrom,
+  canonicalPeekPolar,
   canonicalSnapArm,
   canonicalSnapCancel,
   canonicalZoomInRate,
+  crosshairY,
   defaultCameraFollow,
   defaultCameraMaxDistance,
   defaultCameraMode,
+  frontierMargin,
+  frontierNearest,
+  frontierNearFrac,
+  frontierPanFrac,
+  frontierRate,
   npcConfig,
   roomLabelFadeBy,
   roomLabelNearAlpha,
@@ -57,6 +64,7 @@ import {
   syncNpcOutlineWidth,
 } from "../service/npc-outline";
 import { decodePick } from "../service/pick";
+import { createPlayerFrontier, type PlayerFrontier } from "../service/player-frontier";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
@@ -64,8 +72,10 @@ import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
-import type { Npc } from "./npc";
+import CrossHair from "./CrossHair";
+import LightSweep from "./LightSweep";
 import NpcBubbles from "./NpcBubbles";
+import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
@@ -88,6 +98,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       canonicalTheta: nearestCompass((saved.cameraInitial ?? defaultInitialCamera()).azimuthal),
       canonicalDragging: false,
       canonicalPeak: 0,
+      canonicalTilting: false,
       zoomPan: null,
       zoomCrossEl: null,
       zoomCrossFadeMs: 0,
@@ -126,6 +137,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       labelZoomFade: uniform(1),
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
+      // by getter: an hmr of the light rebuilds it — see `reset` — and this must follow. A reading
+      // asks for a frame, so the camera adapts to a door opening ahead of a player standing still
+      playerFrontier: createPlayerFrontier(
+        () => state.playerLight,
+        () => w.r3f?.invalidate(),
+      ),
+      frontierMs: 0,
+      frontierHold: false,
       postFx: createPostProcessing(),
       demoFx: createDemoPostFx(),
       fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
@@ -327,6 +346,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       isPointDiffDrag(pointA, pointB) {
         return tmpVect.copy(pointA).distanceTo(pointB) > (w.touchDevice === true ? 20 : 5);
       },
+      onCameraStart() {
+        state.frontierHold = false; // the view is theirs again
+      },
       onCameraEnd() {
         const cameraInitial: PersistedCamera = {
           azimuthal: state.controls.spherical.theta,
@@ -353,10 +375,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.zoomPan !== null && controls.zoomProgress > zoomCommitIn) return;
         if (1 - controls.zoomProgress < zoomPanMinSpan) return;
 
-        const followed = state.getFollowedPlayer();
-        if (followed !== undefined) {
+        if (state.getFollowGoal(tmpGoal) === true) {
           // following, the zoom is theirs: it heads for them wherever the cursor is
-          tmpGroundHit.set(followed.position.x, 0, followed.position.z);
+          tmpGroundHit.set(tmpGoal.x, 0, tmpGoal.z);
         } else {
           const rect = state.canvas.getBoundingClientRect();
           tmpNdc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
@@ -390,12 +411,50 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       getFollowedPlayer() {
         const player = w.n[w.player?.key ?? ""];
-        return state.cameraFollow === true ? player : undefined;
+        return state.cameraFollow === true || state.frontierHold === true ? player : undefined;
+      },
+      getFollowGoal(out) {
+        const player = state.getFollowedPlayer();
+        if (player === undefined) return false;
+        out.x = player.position.x;
+        out.z = player.position.z;
+        // in `canonical` the view is held part way towards the frontier, so what is ahead is in
+        // view too — at every zoom, the inner stop being drawn in to suit as the outer is
+        if (state.cameraMode === "canonical" && state.playerFrontier.ahead(tmpAhead) === true) {
+          let offsetX = tmpAhead.x * frontierPanFrac;
+          let offsetZ = tmpAhead.z * frontierPanFrac;
+          // but never so far that the PLAYER leaves the frame: the fit is clamped by the persisted
+          // stops, and where the zoom cannot open up to suit, the offset gives way instead. They
+          // are PROJECTED as they would sit once the target is at the goal — the rig moves with
+          // the target, so only their offset from it matters, and the camera's current matrices
+          // answer for any tilt: the near side of a tilted view is foreshortened, which no planar
+          // estimate gets right. Perspective makes it a few refinements rather than one scale
+          const { controls } = state;
+          const camera = controls.object as THREE.PerspectiveCamera;
+          const limit = 1 / frontierMargin; // of the half-screen, the same margin the fit is given
+          for (let i = 0; i < 4; i++) {
+            // their feet AND their head: on a tilted view the head projects further, and a player
+            // standing at the bottom edge with only their feet in shot is what this is for
+            tmpProjected.set(controls.target.x - offsetX, 0, controls.target.z - offsetZ).project(camera);
+            const feet = Math.max(Math.abs(tmpProjected.x), Math.abs(tmpProjected.y));
+            tmpProjected
+              .set(controls.target.x - offsetX, npcConfig.dist.height, controls.target.z - offsetZ)
+              .project(camera);
+            const head = Math.max(Math.abs(tmpProjected.x), Math.abs(tmpProjected.y));
+            const over = Math.max(feet, head) / limit;
+            if (over <= 1) break;
+            offsetX /= over;
+            offsetZ /= over;
+          }
+          out.x += offsetX;
+          out.z += offsetZ;
+        }
+        return true;
       },
       getCrosshairPivot() {
         const el = state.zoomCrossEl;
         // not whilst following: the target is the player's, and a slide of it would only be undone
-        return state.cameraFollow === false && el !== null && el.visible === true ? el.position : null;
+        return state.getFollowedPlayer() === undefined && el !== null && el.visible === true ? el.position : null;
       },
       setCrosshair(at) {
         const el = state.zoomCrossEl;
@@ -421,9 +480,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // outside the mode check, so a fade underway still finishes if the mode changes beneath it
         state.fadeCrosshair();
 
-        const { controls, ctrlOpts } = state;
-        const min = ctrlOpts.minDistance ?? 10;
-        const max = ctrlOpts.maxDistance ?? 20;
+        const { controls } = state;
+        // the LIVE stops rather than the persisted ones: `easeFrontier` draws both in, and the
+        // view is no less zoomed out, or in, for standing at a wall
+        const min = controls.minDistance;
+        const max = controls.maxDistance;
         /** `0` at the inner zoom stop, `1` at the outer one */
         const t = clamp01((spherical.radius - min) / (max - min));
 
@@ -444,13 +505,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.zoomInSlow = false;
         }
         controls.zoomSettleRate = state.zoomInSlow === true ? canonicalZoomInRate : defaultZoomSettleRate;
+        state.easeFrontier();
 
-        // zoomed out there is nothing to steer, so a drag can only pan. The azimuth is PRESERVED
-        // rather than driven anywhere: the detent below simply holds the compass point we were on,
-        // and it is waiting when the zoom comes back in. Mouse and touch both honour this.
-        // A COMMITTED zoom-in counts as in already: the controls decide on mouse-down, and a
-        // shift-drag begun whilst the radius was still easing in would otherwise be refused whole
-        controls.enableRotate = t <= canonicalFlattenFrom || controls.isZoomingInCommitted();
+        // steerable at every zoom: the azimuth is the detented dial below throughout, and the polar
+        // is the user's own close in, and a spring-back peek zoomed out — see `shapeCanonicalPolar`
+        controls.enableRotate = true;
+        // a drag locks to the axis it set off along only whilst ZOOMED OUT, where the peek and the
+        // dial share it and the lock keeps them apart. Once a zoom-in is under way the polar is
+        // pinned, and a turn begun a little up or down would lock vertical and do nothing at all —
+        // and close in the polar is the user's own, so a diagonal drag may simply do both
+        controls.lockRotateAxis = t > canonicalFlattenFrom && state.zoomPan === null;
 
         // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
         state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
@@ -503,11 +567,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const beta = Math.min(1, alpha / zoomPanDoneAlpha);
 
         const rest = 1 - zoomPan.lastBeta;
-        const followed = state.getFollowedPlayer();
-        if (followed !== undefined) {
+        if (state.getFollowGoal(tmpGoal) === true) {
           // following, the aim IS the player, so it goes where they go — and the follow's own move
           // of the target this tick is neither a turn nor a pan, and is simply overwritten below
-          zoomPan.to.set(followed.position.x, 0, followed.position.z);
+          zoomPan.to.set(tmpGoal.x, 0, tmpGoal.z);
           state.setCrosshair(zoomPan.to);
         } else if (spherical.theta !== zoomPan.lastTheta) {
           // a TURN slid the rig about its pivot — the crosshair, usually — but `to` is a point on
@@ -550,6 +613,55 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.zoomCrossFadeMs = performance.now();
       },
       /**
+       * The outer zoom stop is the nearest radius that still shows both the player and their
+       * frontier, with `frontierMargin` to spare — the view held between them by `followPlayer`
+       * — up to the persisted stop, so open floor is seen from as far as ever and a wall ahead is
+       * seen from close. Eased, since the frontier jumps as they turn past a doorway, and eased
+       * BACK to the persisted stop whenever there is no player to read. `update` re-derives the
+       * radius from the stops each frame, so moving the stop is all that moving the camera takes
+       */
+      easeFrontier() {
+        const { controls } = state;
+        const min = state.ctrlOpts.minDistance ?? 10;
+        const outer = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
+        const player = w.n[w.player?.key ?? ""];
+        let wanted = outer;
+        let wantedMin = min;
+        if (player !== undefined && state.playerFrontier.ahead(tmpAhead) === true) {
+          // the segment's extent along each screen axis, on the ground — the camera's own x and y
+          // axes, which lie flat at birdseye — and the radius at which that fits the frustum
+          const camera = controls.object as THREE.PerspectiveCamera;
+          const m = camera.matrixWorld.elements;
+          const alongX = Math.abs(tmpAhead.x * m[0] + tmpAhead.z * m[2]);
+          const alongY = Math.abs(tmpAhead.x * m[4] + tmpAhead.z * m[6]);
+          const halfTan = Math.tan((camera.fov * Math.PI) / 360);
+          // the view sits `frontierPanFrac` of the way along, so the far end is what must fit
+          const far = Math.max(frontierPanFrac, 1 - frontierPanFrac) * frontierMargin;
+          const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
+          wanted = Math.min(outer, Math.max(min + (outer - min) * frontierNearFrac, fit));
+          // and zoomed in, the same fit draws the INNER stop in — only ever nearer than persisted,
+          // so open floor is seen from the usual distance and a wall ahead from closer still
+          wantedMin = Math.min(min, Math.max(frontierNearest, fit));
+        }
+
+        // measured in time: a demand frameloop's frame gaps vary
+        const now = performance.now();
+        const deltaSecs = Math.min((now - state.frontierMs) / 1000, 0.1);
+        state.frontierMs = now;
+        const alpha = 1 - Math.exp(-frontierRate * deltaSecs);
+
+        const remaining = wanted - controls.maxDistance;
+        const remainingMin = wantedMin - controls.minDistance;
+        if (Math.abs(remaining) < frontierSettleUntil && Math.abs(remainingMin) < frontierSettleUntil) {
+          controls.maxDistance = wanted;
+          controls.minDistance = wantedMin;
+          return;
+        }
+        controls.maxDistance += remaining * alpha;
+        controls.minDistance += remainingMin * alpha;
+        w.r3f?.invalidate(); // still on its way
+      },
+      /**
        * Close in the polar is the user's own and is REMEMBERED as `canonicalPolar`. Further out it
        * is a function of the zoom, eased from that tilt to birdseye and pinned, which also blocks
        * the drag's polar input — so the way back in restores exactly the tilt the way out left.
@@ -566,6 +678,29 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const u = (t - canonicalFlattenFrom) / (1 - canonicalFlattenFrom);
         const s = u * u * (3 - 2 * u);
         const phi = state.canonicalPolar * (1 - s) + canonicalBirdseyePolar * s;
+
+        // a shift-drag may TILT up from this, to peek — as far as the close-in tilt, or
+        // `canonicalPeekPolar` if that is flatter — and on release it springs back: a detent at the
+        // shaped polar. The clamps are opened for the drag and the spring, and pinned again once it
+        // has landed. Pinned, a drag's polar input is simply clamped away, which is how the zoom
+        // keeps the polar to itself the rest of the time
+        const peekTo = Math.max(phi, state.canonicalPolar, canonicalPeekPolar);
+        if (controls.isRotating() === true) {
+          state.canonicalTilting = true;
+          controls.minPolarAngle = phi;
+          controls.maxPolarAngle = peekTo;
+          return;
+        }
+        if (state.canonicalTilting === true) {
+          if (Math.abs(spherical.phi - phi) > detentSettleUntil) {
+            controls.minPolarAngle = phi;
+            controls.maxPolarAngle = peekTo;
+            state.seedDetent("phi", phi - spherical.phi);
+            return;
+          }
+          state.canonicalTilting = false; // landed
+        }
+
         state.pinPolar(phi);
         // applied now rather than by the clamps next update, which would tilt a frame behind the
         // zoom driving it. Only an unsettled phi needs placing, or a next frame
@@ -649,8 +784,17 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         } else if (held === true) {
           state.setCameraFollow(true);
         } else {
-          void w.player?.panTo();
+          state.holdFrontier();
         }
+      },
+      holdFrontier() {
+        if (w.n[w.player?.key ?? ""] === undefined) return;
+        // the follow's framing — the player and their frontier — without the follow: held until
+        // the camera is next touched, see `onCameraStart`. A `lookAt` takes it there rather than
+        // leaving it to the follow, which runs on the world tick — a paused world runs none. It
+        // tracks the goal, since they walk, and the goal moves with their frontier
+        state.frontierHold = true;
+        state.lookAtPlayer();
       },
       onResize: debounce(() => {
         w.menu?.onResize();
@@ -862,14 +1006,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       followPlayer(deltaSecs) {
         const { controls } = state;
         const player = w.n[w.player?.key ?? ""];
-        if (state.cameraFollow === false || controls === null || player === undefined) return;
+        if (
+          (state.cameraFollow === false && state.frontierHold === false) ||
+          controls === null ||
+          player === undefined
+        ) {
+          return;
+        }
         // a `lookAt` owns the target whilst it runs, and tracks the player itself — two of us
         // writing it would fight, and the pan would never arrive
         if (state.lookAtAnimId !== 0) return;
 
+        state.getFollowGoal(tmpGoal); // the player, or part way to their frontier — see it
+
         const { target } = controls;
-        const dx = player.position.x - target.x;
-        const dz = player.position.z - target.z;
+        const dx = tmpGoal.x - target.x;
+        const dz = tmpGoal.z - target.z;
         if (Math.hypot(dx, dz) < followUntil) return;
 
         // exponential approach, so it is frame-rate independent and has no end to overshoot
@@ -898,6 +1050,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.r3f?.invalidate();
       },
       setCameraFollow(cameraFollow) {
+        state.frontierHold = false; // superseded either way
+        state.cameraFollow = cameraFollow; // before the look, whose goal is the follow's
         // turning it on goes to the player at once rather than waiting for them to move
         if (cameraFollow === true) state.lookAtPlayer();
         store.patch({ cameraFollow });
@@ -915,8 +1069,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // writes alone, so nothing else would
           state.controls.minPolarAngle = state.ctrlOpts.minPolarAngle ?? 0;
           state.controls.maxPolarAngle = state.ctrlOpts.maxPolarAngle ?? Math.PI / 2;
-          state.controls.enableRotate = true; // only `canonical` ever takes it away
           state.controls.zoomSettleRate = defaultZoomSettleRate;
+          state.controls.lockRotateAxis = true; // only `canonical` ever takes it away
+          // see `easeFrontier`, which has been easing both stops
+          state.controls.maxDistance = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
+          state.controls.minDistance = state.ctrlOpts.minDistance ?? 10;
           state.zoomPan = null;
           state.zoomCrossFadeMs = 0;
           state.zoomInSlow = false;
@@ -931,17 +1088,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.centreHint === true && state.set({ centreHint: false });
       },
       lookAtPlayer() {
-        const player = w.n[w.player?.key ?? ""];
-        if (player === undefined) return;
-
         // a `lookAt` rather than leaving it to the follow, which runs on the world tick — a paused
         // world runs none, and the move onto them would wait until it resumed. This animates on
-        // its own frames, paused or not. Tracked, since they walk whilst it pans
-        void state.lookAt(player.point, {
-          animate: true,
-          height: npcConfig.dist.height,
-          track: () => w.n[w.player?.key ?? ""]?.point,
-        });
+        // its own frames, paused or not. Tracked, since they walk whilst it pans. And at the
+        // follow's own GOAL — the player offset towards their frontier — rather than at them: else
+        // it centres them and the follow then slides off to the goal, which reads as two motions
+        const track = () => (state.getFollowGoal(tmpGoal) === true ? { x: tmpGoal.x, y: tmpGoal.z } : undefined);
+        const at = track();
+        if (at === undefined) return;
+        void state.lookAt(at, { animate: true, height: npcConfig.dist.height, track });
       },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
@@ -1254,6 +1409,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // a pinch zooms continuously and keeps whatever distance it is let go at. The wheel has
           // no such gesture, and keeps the two stops
           freeZoom={w.touchDevice}
+          onStart={state.onCameraStart}
           onEnd={state.onCameraEnd}
           onFrame={state.onCameraFrame}
           {...state.ctrlOpts}
@@ -1261,16 +1417,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         <LightSweep />
 
-        {/* where a `canonical` zoom-in is heading — see `onZoomWheel` */}
-        <mesh
-          ref={state.ref("zoomCrossEl")}
-          visible={false}
-          renderOrder={10}
-          geometry={groundCrosshairGeometry}
-          position={[0, crosshairY, 0]}
-        >
-          <meshBasicMaterial color="white" transparent depthTest={false} side={THREE.DoubleSide} />
-        </mesh>
+        <CrossHair />
 
         <NpcBubbles />
 
@@ -1363,6 +1510,8 @@ export type State = {
   canonicalTheta: number;
   /** Whether a drag is underway — the detent is decided on its release, once */
   canonicalDragging: boolean;
+  /** Whether a zoomed-out peek is tilting the polar, or springing back from one — see `shapeCanonicalPolar` */
+  canonicalTilting: boolean;
   /** The furthest this drag has turned from its detent, signed — see `canonicalSnapCancel` */
   canonicalPeak: number;
   /** The pan a `canonical` zoom-in is carrying out, keyed to the zoom's progress */
@@ -1384,8 +1533,10 @@ export type State = {
   zoomCrossEl: null | THREE.Mesh;
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
-  /** The player, whilst the view follows them and they exist */
+  /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
   getFollowedPlayer(): Npc | undefined;
+  /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
+  getFollowGoal(out: { x: number; z: number }): boolean;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
   /** Whether an aimed zoom-in is still running, so its slower settle is kept to the end */
@@ -1416,6 +1567,16 @@ export type State = {
   objectPick: THREE.UniformNode<"float", number>;
   /** What the player can see, swept on the GPU — every material tints itself by it */
   playerLight: PlayerLight;
+  /** How far the player can see ahead — see `service/player-frontier` */
+  playerFrontier: PlayerFrontier;
+  /** When `easeFrontier` last ran, so its ease is measured in time */
+  frontierMs: number;
+  /** Whether a short look press is holding the view on the player and their frontier, not following */
+  frontierHold: boolean;
+  /** Frames the player and their frontier, as the follow would, until the camera is next touched */
+  holdFrontier(): void;
+  /** Draws `canonical`'s zoom stops in by how little the player sees ahead — see within */
+  easeFrontier(): void;
   /** What the post pass does to the finished frame — see `service/post-processing` */
   postFx: PostProcessingType;
   /** The shelf of effects we can hang off the end of it — see `service/demo-post-process` */
@@ -1476,6 +1637,8 @@ export type State = {
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
+  /** The camera has been touched: a drag, a pinch or the wheel */
+  onCameraStart(): void;
   onCameraEnd(): void;
   /** Per rendered frame — in `canonical` mode drives the polar, the detent and any aimed zoom */
   onCameraFrame(spherical: THREE.Spherical): void;
@@ -1492,7 +1655,7 @@ export type State = {
   /** How far the azimuth is from its detent, where the turn is HEADING rather than damped to */
   getCanonicalHeading(): number;
   /** Seeds a detent's remaining turn or tilt, and asks for the frame to spend it on */
-  seedDetent(axis: "theta", remaining: number): void;
+  seedDetent(axis: "theta" | "phi", remaining: number): void;
   /** Puts the crosshair on a ground point and shows it at full strength */
   setCrosshair(at: THREE.Vector3): void;
   /** Rebuilds the camera about `target` at `phi` and re-aims it */
@@ -1594,6 +1757,8 @@ function getPixelRatio() {
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
 const followUntil = 0.01;
+/** Near enough the outer stop it is easing to that it simply lands there */
+const frontierSettleUntil = 0.001;
 
 /**
  * An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped — and scaled down
@@ -1668,34 +1833,6 @@ function defaultInitialCamera(): State["initial"] {
  * under the controls' own `-1`. Its own component rather than part of the tick, which stops
  * whilst the world is paused: the view can still move then, and the light must keep up.
  */
-function LightSweep() {
-  const w = useContext(WorldContext);
-
-  useEffect(() => {
-    // the walls never move, so they are read once per map — the doors are read per frame, being
-    // few and the only occluders that change
-    w.gms.length > 0 && w.gmsData !== undefined && w.view.playerLight.syncWalls(w.gms, w.gmsData);
-  }, [w.gmsHash, w.gmsData]);
-
-  useFrame((root) => {
-    const renderer = root.gl as unknown as THREE.WebGPURenderer;
-    const player = w.n[w.player?.key ?? ""];
-    w.view.playerLight.update(
-      renderer,
-      player?.position ?? null,
-      player?.rotation.y ?? 0,
-      w.d ?? emptyDoors,
-      w.door?.openRatioArray ?? emptyOpenRatios,
-      w.view.fadeRoomsFx.mode === "prod",
-    );
-  }, -2);
-
-  return null;
-}
-
-const emptyOpenRatios = new Float32Array(0);
-const emptyDoors: Record<string, Geomorph.DoorState> = {};
-
 function PostProcessing() {
   const w = useContext(WorldContext);
   // The pipeline captured the effect's node graph, so a rebooted effect needs a fresh pipeline —
@@ -1718,37 +1855,18 @@ function awaitPaint(): Promise<void> {
 }
 
 const tmpVect = new Vect();
-const _tmpRect = new Rect();
-const _tmpVector3 = new THREE.Vector3();
 const tmpLookAtOffset = new THREE.Vector3();
 const tmpNdc = new THREE.Vector2();
 const tmpDrift = new THREE.Vector3();
+/** From the player to their frontier — see `service/player-frontier` */
+const tmpAhead = { x: 0, z: 0 };
+/** Where the follow is holding the target — see `getFollowGoal` */
+const tmpGoal = { x: 0, z: 0 };
+/** The player on screen, were the target at the goal — see `getFollowGoal` */
+const tmpProjected = new THREE.Vector3();
 const tmpGroundHit = new THREE.Vector3();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-/**
- * A crosshair lying FLAT on the ground, marking where a `canonical` zoom-in is heading:
- * four arms about a gap, as one geometry so a single material fades the lot
- */
-function createGroundCrosshairGeometry(gap = 0.08, len = 0.22, thickness = 0.03) {
-  const half = thickness / 2;
-  const pos = [] as number[];
-  const addArm = (xMin: number, zMin: number, xMax: number, zMax: number) =>
-    pos.push(xMin, 0, zMin, xMax, 0, zMin, xMax, 0, zMax, xMin, 0, zMin, xMax, 0, zMax, xMin, 0, zMax);
-
-  addArm(gap, -half, gap + len, half);
-  addArm(-gap - len, -half, -gap, half);
-  addArm(-half, gap, half, gap + len);
-  addArm(-half, -gap - len, half, -gap);
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  return geometry;
-}
-
-const groundCrosshairGeometry = createGroundCrosshairGeometry();
-/** Just off the floor, so it is not in the floor's own plane */
-const crosshairY = 0.01;
 /** How long the crosshair takes to fade once the zoom-in has arrived */
 const crosshairFadeMs = 450;
 

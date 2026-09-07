@@ -454,3 +454,23 @@ export function createUnitBox(opts?: { singleFaceGroup?: boolean }) {
 
   return geo;
 }
+
+/**
+ * A crosshair lying FLAT on the ground, marking where a `canonical` zoom-in is heading:
+ * four arms about a gap, as one geometry so a single material fades the lot
+ */
+export function createGroundCrosshairGeometry(gap = 0.04, len = 0.12, thickness = 0.015) {
+  const half = thickness / 2;
+  const pos = [] as number[];
+  const addArm = (xMin: number, zMin: number, xMax: number, zMax: number) =>
+    pos.push(xMin, 0, zMin, xMax, 0, zMin, xMax, 0, zMax, xMin, 0, zMin, xMax, 0, zMax, xMin, 0, zMax);
+
+  addArm(gap, -half, gap + len, half);
+  addArm(-gap - len, -half, -gap, half);
+  addArm(-half, gap, half, gap + len);
+  addArm(-half, -gap - len, half, -gap);
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  return geometry;
+}
