@@ -480,9 +480,13 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
   }
 
-  /** Whether a zoom-in has passed the point of no return, so it is on its way to the inner stop */
-  isZoomingInCommitted(): boolean {
-    return this._zoomDirection === 1 && this.zoomProgress > zoomCommitIn;
+  /** Whether a drag is turning the camera — the mouse's rotate, or a touch's */
+  isRotating(): boolean {
+    return (
+      this.state === this.STATE.ROTATE ||
+      this.state === this.STATE.TOUCH_ROTATE ||
+      this.state === this.STATE.TOUCH_DOLLY_ROTATE
+    );
   }
 
   /** Moves the view between its stops, and marks the gesture as still going */
