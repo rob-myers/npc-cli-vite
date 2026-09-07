@@ -118,6 +118,12 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   params = { fixedPolar: false, fixedAzimuth: false };
 
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
+  /**
+   * Whether a mouse rotate LOCKS to the axis its first pixels favoured, for the rest of the drag.
+   * `canonical` takes it away whilst its polar is pinned, when a turn begun a little up or down
+   * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
+   */
+  lockRotateAxis = true;
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -294,7 +300,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const dPhi = (2 * Math.PI * this.u.rotateDelta.y) / element.clientHeight;
 
       const isFree = !this.params.fixedPolar;
-      if (isFree && this.rotateAxis === "none") {
+      if (isFree && this.lockRotateAxis === true && this.rotateAxis === "none") {
         const ax = Math.abs(this.u.rotateDelta.x);
         const ay = Math.abs(this.u.rotateDelta.y);
         if (ax > 2 || ay > 2) {
