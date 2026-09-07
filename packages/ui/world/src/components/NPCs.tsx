@@ -334,33 +334,33 @@ export default function NPCs() {
         state.update();
       },
       findFreeDoMeta(meta, npcKey) {
-        const currentDecorKey = w.e.npcToDoable[npcKey];
+        const currentDecorKey = w.e.npcToDoable[npcKey] ?? null;
 
         if (typeof meta.do === "string") {
-          const otherNpcKey = w.e.doableToNpc[meta.decorKey];
-          if (otherNpcKey && otherNpcKey !== npcKey) {
-            return { type: "occupied", meta };
-          }
-          return { type: meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta };
+          const otherNpcKey = w.e.doableToNpc[meta.decorKey] ?? null;
+          return otherNpcKey !== null && otherNpcKey !== npcKey
+            ? { type: "occupied", meta }
+            : { type: meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta };
         }
 
-        if (meta.obstacle === true && Array.isArray(meta.decorIds)) {
+        if (meta.obstacle === true && Array.isArray(meta.decorIds) === true) {
           const gm = w.gms[meta.gmId];
           const ds = (meta.decorIds as number[]).map((decorId) => gm.decor[decorId] as Geomorph.DecorPoint);
           // 🔔 clarify precedence
-          const found = ds.find((d) => !w.e.doableToNpc[d.key] || w.e.doableToNpc[d.key] === npcKey) ?? null;
-          if (!found) {
-            return { type: "occupied", meta };
-          }
-          return { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
+          const found =
+            ds.find((d) => {
+              const otherNpcKey = w.e.doableToNpc[d.key] ?? null;
+              return otherNpcKey == null || otherNpcKey === npcKey;
+            }) ?? null;
+          return found === null
+            ? { type: "occupied", meta }
+            : { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
         }
 
-        if (currentDecorKey && meta.npcKey === npcKey && w.e.npcToDoable[npcKey] !== null) {
-          // can respawn onto self whilst doing
-          return { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta };
-        }
-
-        return { type: "none", meta };
+        return currentDecorKey !== null && meta.npcKey === npcKey && w.e.npcToDoable[npcKey] !== null
+          ? // can respawn onto self whilst doing
+            { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
+          : { type: "none", meta };
       },
       get(npcKey) {
         const npc = state.npc[npcKey];
@@ -683,16 +683,19 @@ export default function NPCs() {
         }
 
         const groundAt = helper.parseGroundPoint(at);
-        const gmRoomId = w.e.findRoomContaining(at, true);
-        if (gmRoomId === null) throw Error("must be in some room");
 
-        // testing early avoids creating unspawnable npc
+        // test early to avoid creating unspawnable npc
         // - throw if doable but occupied
         // - throw if not doable and not navigable
         const doResult = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
         if (doResult.type === "occupied") {
           throw Error("occupied");
         }
+
+        const gmRoomId = // doable meta is gmRoomId
+          doResult.type === "none" ? w.e.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
+        if (gmRoomId === null) throw Error("must be in some room");
+
         const closePolyResult = state.getClosestPoly(groundAt);
         if (closePolyResult.success === false && doResult.type === "none") {
           throw Error("not placable");

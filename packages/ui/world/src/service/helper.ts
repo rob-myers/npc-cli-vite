@@ -72,6 +72,13 @@ export const helper = {
     return !!input && typeof input.x === "number" && typeof input.y === "number";
   },
 
+  /**
+   * Extract if exists else null
+   */
+  maybeGmRoomId(input: any): Geomorph.GmRoomId | null {
+    return helper.isGmRoomId(input) ? { gmId: input.gmId, roomId: input.roomId, grKey: input.grKey } : null;
+  },
+
   parse3dHeight(input: JshCli.PointAnyFormat): number | undefined {
     if ("z" in input) {
       return input.y;
