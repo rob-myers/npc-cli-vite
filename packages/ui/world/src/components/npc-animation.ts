@@ -222,17 +222,12 @@ export class NpcAnimation {
     this.stuckAccum = 0;
     this.arrive = arrive;
 
-    if (this.moving) {
-      return;
+    if (this.moving === true && this.moveClipInView() === true) {
+      return; // the walk runs on into the new leg
     }
 
     this.moving = true;
-    this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
-    this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
-
-    const fade = this.getFadeSecs(this.idleClip, this.moveClip);
-    this.mixer.existingAction(this.idleClip)?.fadeOut(fade);
-    this.mixer.clipAction(this.moveClip).reset().fadeIn(fade).play();
+    this.playMoveClip();
   }
 
   /**
@@ -243,16 +238,34 @@ export class NpcAnimation {
     this.moveClip = run ? this.w.npc.clips.run : this.w.npc.clips.walk;
     this.arrive = true; // so the eventual `startIdle` crossfades
 
-    if (this.moving) {
+    if (this.moving === true && this.moveClipInView() === true) {
       return;
     }
 
     this.moving = true;
+    this.playMoveClip();
+  }
+
+  /**
+   * Whether the move clip is still on screen at all. `moving` says the crowd is driving them, but
+   * cannot say what the mixer is showing: a move interrupted by another leaves it set on purpose,
+   * so that a following move walks straight on — and if a look or a spawn has put idle on in
+   * between, the walk must be played again or they slide
+   */
+  moveClipInView() {
+    return (this.mixer.existingAction(this.moveClip)?.getEffectiveWeight() ?? 0) > 0;
+  }
+
+  /** Crossfades onto the move clip from whatever is playing — idle, a shuffle, or the other gait */
+  playMoveClip() {
     this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
     this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
 
     const fade = this.getFadeSecs(this.idleClip, this.moveClip);
-    this.mixer.existingAction(this.idleClip)?.fadeOut(fade);
+    for (const clip of Object.values(this.npc.clips)) {
+      if (clip === this.moveClip) continue;
+      this.mixer.existingAction(clip)?.fadeOut(fade);
+    }
     this.mixer.clipAction(this.moveClip).reset().fadeIn(fade).play();
   }
 
