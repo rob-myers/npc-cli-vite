@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "29acbe5e-2192-4b3e-bf9e-f6ea2078956a",
-      "name": "iris-valves--006 1",
+      "name": "iris-valves--006",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
@@ -18,7 +18,7 @@
     },
     {
       "id": "d8b91cbb-6529-4626-8318-452f53c7f994",
-      "name": "obstacle permit-nav no-shadow y=0 h=0 tint=#888",
+      "name": "obstacle floor permit-nav no-shadow y=0 h=0 tint=#888",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
