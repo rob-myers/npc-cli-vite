@@ -5,7 +5,6 @@ import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
-  ArrowsOutCardinalIcon,
   CaretDownIcon,
   CaretRightIcon,
   CodeIcon,
@@ -750,12 +749,13 @@ export function WorldMenu() {
             )}
           </div>
 
-          {/* look at the player, long press to follow them — which its own corner wears — and
-              either one to stop following. `f` is the same gesture on a key, and the camera MODE is
-              the menu row above. See `WorldView`'s `onLookGesture` */}
+          {/* look at the player, long press to follow them — which turns it green — and either one
+              to stop following. `f` is the same gesture on a key, and the camera MODE is the menu
+              row above. See `WorldView`'s `onLookGesture` */}
           <div
             data-keep-menu-open
             className="relative cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (long press or f to toggle)`}
             onPointerDown={() => state.onLookPressStart()}
             onPointerUp={() => state.onLookPressEnd()}
             onPointerLeave={() => state.onLookPressEnd(true)}
@@ -780,16 +780,6 @@ export function WorldMenu() {
                 w.view.cameraFollow === true ? "stop following the player" : "look at the player (long press to follow)"
               }
             />
-            <div
-              className="absolute bottom-0.5 right-0.5 leading-none pointer-events-none"
-              title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (long press or f to toggle)`}
-            >
-              {w.view.cameraFollow === true ? (
-                <CrosshairSimpleIcon className="size-2.5 text-emerald-400" weight="bold" />
-              ) : (
-                <ArrowsOutCardinalIcon className="size-2.5 text-slate-400" weight="bold" />
-              )}
-            </div>
           </div>
         </div>
 
