@@ -994,6 +994,9 @@ const movingUpdateFlags =
   crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
 
 /** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
+/** Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2` */
+const avoidanceWeightCurVel = 2;
+
 const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.SEPARATION;
 
 function getAgentParams(): crowd.AgentParams {
@@ -1009,6 +1012,10 @@ function getAgentParams(): crowd.AgentParams {
     collisionQueryRange: 0.5 + 0.1,
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
+    // head-on to an idle agent, the two ways round score alike and avoidance can flip between
+    // them every tick — the walker jerks in place until `updateStuck` gives up. Deviating from the
+    // CURRENT velocity is penalised more, so a side once taken is kept
+    obstacleAvoidance: { ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS, weightCurVel: avoidanceWeightCurVel },
     // crowdApi.CrowdUpdateFlags.OPTIMIZE_TOPO |
     // crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS,
     queryFilter: ANY_QUERY_FILTER,
