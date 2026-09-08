@@ -329,6 +329,11 @@ export default function NPCs() {
           state.resetMaterials(npc); // can overwrite materials while debugging
           npc.init();
           npc.drawLabel();
+
+          if (npc.agent) {
+            const { radius, height, collisionQueryRange, obstacleAvoidance } = getAgentParams();
+            Object.assign(npc.agent, { radius, height, collisionQueryRange, obstacleAvoidance });
+          }
         }
 
         state.update();
