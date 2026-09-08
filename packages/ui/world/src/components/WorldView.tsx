@@ -26,6 +26,7 @@ import {
   crosshairY,
   defaultCameraFollow,
   defaultCameraMaxDistance,
+  defaultCameraMinDistance,
   defaultCameraMode,
   frontierMargin,
   frontierNearest,
@@ -111,7 +112,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         maxAzimuthAngle: +Infinity,
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: w.touchDevice ? 6 : 8,
+        minDistance: defaultCameraMinDistance,
         maxDistance: defaultCameraMaxDistance,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
@@ -617,14 +618,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        * frontier, with `frontierMargin` to spare — the view held between them by `followPlayer`
        * — up to the persisted stop, so open floor is seen from as far as ever and a wall ahead is
        * seen from close. Eased, since the frontier jumps as they turn past a doorway, and eased
-       * BACK to the persisted stop whenever there is no player to read. `update` re-derives the
-       * radius from the stops each frame, so moving the stop is all that moving the camera takes
+       * BACK to the persisted stops whenever the view is not on the player — no player, or not
+       * following nor holding — since then the framing is of nothing in view, and a free look is
+       * as high as ever. `update` re-derives the radius from the stops each frame, so moving the
+       * stop is all that moving the camera takes
        */
       easeFrontier() {
         const { controls } = state;
         const min = state.ctrlOpts.minDistance ?? 10;
         const outer = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
-        const player = w.n[w.player?.key ?? ""];
+        const player = state.getFollowedPlayer();
         let wanted = outer;
         let wantedMin = min;
         if (player !== undefined && state.playerFrontier.ahead(tmpAhead) === true) {
