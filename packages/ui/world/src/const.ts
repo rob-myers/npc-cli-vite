@@ -293,7 +293,8 @@ export const npcConfig = {
     /** Sizes the crowd */
     maxAgentRadius: 0.5,
     /** Radius of an npc's crowd agent */
-    agentRadius: 0.2,
+    // agentRadius: 0.2,
+    agentRadius: 0.18,
     /** Margin, on top of an npc's radius */
     shutDoorKeepOut: 0.05,
   },
