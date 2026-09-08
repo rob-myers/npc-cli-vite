@@ -1116,6 +1116,14 @@ export type State = {
    */
   roomToNpcs: { [roomId: number]: Set<string> }[];
 
+  /**
+   * Example usage:
+   * ```tsx
+   * const handled = api.handleStatus({
+   *   cleanup: w.e.addFrameCallback(() => { ... }),
+   * });
+   * ```
+   */
   addFrameCallback(cb: () => void): () => void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
   /**
