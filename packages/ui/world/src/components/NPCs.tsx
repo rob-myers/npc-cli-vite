@@ -50,6 +50,7 @@ import {
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   npcConfig,
+  walkAgentMaxSpeed,
   walkMaxAcceleration,
 } from "../const";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
@@ -528,8 +529,10 @@ export default function NPCs() {
 
           npc.anim.syncAnimation(Math.max(speed, 0.5));
 
+          // turning as fast as they walk: a stuck npc's creeping velocity swings about, and
+          // turning to face each swing looks like a jerk
           if (speed > 0.05) {
-            npc.anim.rotateTowards(vx, vz, delta);
+            npc.anim.rotateTowards(vx, vz, delta * Math.min(1, speed / walkAgentMaxSpeed));
           }
 
           const stuck = npc.anim.updateStuck(delta, worldSeconds);
