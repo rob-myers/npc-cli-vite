@@ -295,7 +295,7 @@ export const sessionApi = {
     getTtyStore(sessionKey).patch({ history: ttyShell.getHistory() });
   },
   persistHome(sessionKey: string) {
-    const { PWD, OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } = sessionApi.getSession(sessionKey).var;
+    const { OLDPWD, CACHE_SHORTCUTS, ...persistedVarLookup } = sessionApi.getSession(sessionKey).var;
     getTtyStore(sessionKey).patch({ vars: jsStringify(persistedVarLookup, false, true) });
   },
   persistShared() {
