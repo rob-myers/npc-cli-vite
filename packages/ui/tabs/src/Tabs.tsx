@@ -51,6 +51,17 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           },
         });
       },
+      /** Focus the current tab's content — a focusable inside it, else the content itself */
+      focusCurrent() {
+        const content = rootRef.current?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
+        if (!content) return;
+        (content.querySelector<HTMLElement>('[tabindex]:not([tabindex="-1"])') ?? content).focus();
+      },
+      onFocusCapture() {
+        if (uiStore.getState().persistedPanes.focusedTabsUiId !== meta.id) {
+          uiStore.setState((draft) => void (draft.persistedPanes.focusedTabsUiId = meta.id));
+        }
+      },
       onClickTab(tab: UiInstanceMeta) {
         uiStore.setState((draft) => {
           (draft.byId[meta.id].meta as TabsUiMeta).currentTabId = tab.id;
@@ -152,18 +163,25 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   useEffect(() => {
     if (!hasMounted.current) {
       hasMounted.current = true;
+      // the Tabs focused before a reload takes focus again — once its content has had a moment to
+      // mount, and once more after the page's fade in, for content that arrives late
+      if (uiStore.getState().persistedPanes.focusedTabsUiId === meta.id) {
+        const timeouts = [0, 400].map((ms) => setTimeout(state.focusCurrent, ms));
+        return () => timeouts.forEach(clearTimeout);
+      }
       return;
     }
-    const content = rootRef.current?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
-    if (!content) return;
-    const focusTarget = content.querySelector<HTMLElement>('[tabindex]:not([tabindex="-1"])') ?? content;
-    focusTarget.focus();
+    state.focusCurrent();
   }, [meta.currentTabId]); // focus e.g. key events
 
   const tabs = meta.items.map((itemId) => byId[itemId]?.meta).filter(Boolean);
 
   return (
-    <div ref={rootRef} className="flex flex-col size-full overflow-auto font-mono">
+    <div
+      ref={rootRef}
+      className="flex flex-col size-full overflow-auto font-mono"
+      onFocusCapture={state.onFocusCapture}
+    >
       <div
         className="flex justify-between min-h-10 w-full border-b border-on-background/30 border-outline"
         onContextMenu={state.onContextMenu}

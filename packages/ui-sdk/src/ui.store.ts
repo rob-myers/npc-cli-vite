@@ -171,6 +171,8 @@ export type UiStoreByIdEntry<T extends UiInstanceMeta = UiInstanceMeta> = {
 export type PersistedPanesLayout = {
   root: PersistedPaneNode;
   toUi: { [uiId: string]: UiInstanceMeta };
+  /** The Tabs last focused, so a reload can focus it again */
+  focusedTabsUiId?: string;
 };
 
 export type PersistedPaneNode =
