@@ -1,3 +1,4 @@
+import { geomService } from "@npc-cli/util/geom-service";
 import { localBoundary } from "navcat/blocks";
 import { events, nudge, parkQueryRange } from "./core";
 
@@ -118,7 +119,8 @@ export async function demo_auto_nudge(ct: JshCli.RunArg) {
         } else if (epochMs > entry.next) {
           // perform nudge if other wasn't recently nudged
           if (npcToNudge[other.key] === undefined || epochMs - npcToNudge[other.key].last > 1000) {
-            void nudge(ct, { npcKey: npc.key, from: other.key });
+            const from = nudgeFrom(w, npc, npc.agent, other);
+            if (from !== null) void nudge(ct, { npcKey: npc.key, from, by: autoNudgeBy });
             entry.last = Date.now();
             entry.next = Infinity;
           }
@@ -134,6 +136,50 @@ export async function demo_auto_nudge(ct: JshCli.RunArg) {
     handled.dispose();
   }
 }
+
+/**
+ * Where to be nudged FROM, so the nudge is square to the walker's course and away from it — dead
+ * ahead, away from the nearest wall instead. `null` when a wall on that side leaves nowhere to go
+ */
+function nudgeFrom(
+  w: JshCli.RunArg["w"],
+  npc: JshCli.Npc,
+  agent: NonNullable<JshCli.Npc["agent"]>,
+  other: JshCli.Npc,
+): null | Geom.VectJson {
+  const v = other.agent?.desiredVelocity ?? [0, 0, 0];
+  const [px, py] = [-v[2], v[0]];
+  if (Math.hypot(px, py) < 1e-3) {
+    return other.point; // no course to be square to
+  }
+
+  localBoundary.updateLocalBoundary(
+    agent.boundary,
+    w.npc.getClosestPoly(npc.position).nodeRef,
+    w.helper.groundPointToTuple(npc.point),
+    parkQueryRange,
+    w.nav.navMesh,
+    npc.queryFilter,
+  );
+  const src = npc.point;
+  let wall: null | Geom.VectJson = null;
+  let wallDst = Number.POSITIVE_INFINITY;
+  for (const { s } of agent.boundary.segments) {
+    const at = geomService.getClosestOnSeg(src, { x: s[0], y: s[2] }, { x: s[3], y: s[5] });
+    if (at.dst < wallDst) [wall, wallDst] = [at, at.dst];
+  }
+
+  const wallSide = wall === null ? 0 : Math.sign((wall.x - src.x) * px + (wall.y - src.y) * py);
+  const pathSide = Math.sign((src.x - other.point.x) * px + (src.y - other.point.y) * py);
+  const sign = pathSide !== 0 ? pathSide : wallSide === 0 ? 1 : -wallSide;
+  if (sign === wallSide && wallDst < autoNudgeBy) {
+    return null;
+  }
+  return { x: src.x - sign * px, y: src.y - sign * py };
+}
+
+/** How far `demo_auto_nudge` nudges */
+const autoNudgeBy = 0.5;
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {
   for await (const e of events(ct, {
