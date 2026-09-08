@@ -6,6 +6,7 @@ import { type ITheme, Terminal as XTermTerminal } from "@xterm/xterm";
 import React from "react";
 import { scrollback } from "../shell/const";
 import { type Session, sessionApi } from "../shell/session";
+import { getSharedStore, getTtyStore } from "../shell/storage";
 import { stripAnsi } from "../shell/util";
 import { TtyXterm } from "../shell/xterm";
 import { LinkProvider } from "./xterm-link-provider";
@@ -112,13 +113,13 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     xterm.textarea?.setAttribute("enterkeyhint", "send");
 
     return () => {
-      // 🚧 hack
       if (!state.session) {
         return console.warn("BaseTty: session already removed");
       }
 
       sessionApi.persistHistory(props.sessionKey);
       sessionApi.persistHome(props.sessionKey);
+      getTtyStore(props.sessionKey).flush(); // the store's write is debounced
       sessionApi.removeSession(props.sessionKey);
 
       state.xterm.dispose();
@@ -140,6 +141,8 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
     sessionApi.persistHistory(props.sessionKey);
     sessionApi.persistHome(props.sessionKey);
     sessionApi.persistShared();
+    getTtyStore(props.sessionKey).flush();
+    getSharedStore().flush();
   });
 
   return (
