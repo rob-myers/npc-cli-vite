@@ -248,7 +248,7 @@ export const deckConfig = {
   nav: {
     /** The walkable area, lifted a shade */
     fill: "rgba(255, 255, 255, 0.045)",
-    ink: "rgba(120, 190, 235, 0.05)",
+    ink: "rgba(120, 190, 235, 0.15)",
     /** Two texels at least, else it beats against every seam it crosses */
     lineWidth: 0.02,
   },
