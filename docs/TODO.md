@@ -237,8 +237,12 @@
 - ✅ need a "room labels" instancedMesh for top-down view
 - ✅ move camera-mode follow inside camera-mode canonical
 
-- `park` should avoid blocking a choke point
-- saw npc can stuck on another shake turn back-and-forth unnaturally
+- 🚧 `park` should avoid blocking a choke point
+  - ✅ stash changes to be restored after local boundary pixel-lookup
+  - 🚧 nav boundary canvas-per-gmId for fast parking-reasoning
+  - restore and rewrite
+
+- ✅ saw npc can stuck on another shake turn back-and-forth unnaturally
 - basic script to only move selected npc
   - variant which only moves player
 - improve load perf

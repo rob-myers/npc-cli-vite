@@ -1,3 +1,5 @@
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+
 export const precision = 4;
 
 /** Size of starship geomorphs grid side in meters */
@@ -81,8 +83,10 @@ export const cameraRefAspect = 1.8;
 
 export const defaultBrightness = 1;
 
+export const defaultCameraMinDistance = isTouchDevice() ? 6 : 8;
+
 /** How far out the camera's outer zoom stop sits, in metres */
-export const defaultCameraMaxDistance = 20;
+export const defaultCameraMaxDistance = isTouchDevice() ? 14 : 16;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
