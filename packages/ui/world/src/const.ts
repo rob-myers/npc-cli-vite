@@ -263,7 +263,8 @@ export const idleAgentMaxSpeed = 0.5;
 export const idleSeparatingMaxSpeed = 0.005;
 export const walkAgentMaxSpeed = 1.5;
 export const runAgentMaxSpeed = 2.5;
-export const walkSeparationWeight = 0.5;
+/** Keeps npc away from parked npc at choke point */
+export const walkSeparationWeight = 2.5;
 export const idleSeparationWeight = 0.1; // Less pushable
 
 /**
@@ -300,7 +301,8 @@ export const npcConfig = {
     /** Grace after a move starts, before stuck detection applies */
     stuckGrace: 0.5,
     /** How long an npc must stay motionless to count as stuck */
-    stuckDuration: 0.4,
+    /** try fix choke point slow down */
+    stuckDuration: 0.8,
     /** Minimum look duration before teleporting onto a nearby doable */
     look: 0.5,
   },
