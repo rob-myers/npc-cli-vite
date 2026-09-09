@@ -1,7 +1,7 @@
 import { ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
-import { crowd as crowdApi } from "navcat/blocks";
+import { crowd as crowdApi, localBoundary } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import {
@@ -13,6 +13,8 @@ import {
   MAX_NPCS,
   mapVeilMs,
   npcConfig,
+  parkMinMove,
+  parkQueryRange,
   roomLabelRevealMs,
   unfoldDelayMs,
 } from "../const";
@@ -38,6 +40,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToDoable: {},
       npcToDoors: {},
       npcToRoom: new Map(),
+      parked: new Map(),
       pendingRaycast: {},
       pendingUnreachable: {},
       roomToNpcs: [],
@@ -152,23 +155,114 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
-      findClearPointOnSeg(src, seg, doors) {
-        const [ux, uy, vx, vy] = [seg.s[0], seg.s[2], seg.s[3], seg.s[5]];
-        // Sampled rather than solved: a boundary segment is short, and this is a handful of lines
-        const steps = Math.ceil(Math.hypot(vx - ux, vy - uy) / npcConfig.dist.agentRadius);
-        let best = null as null | Geom.VectJson;
-        let bestDst = Number.POSITIVE_INFINITY;
+      findClearPointOnSeg(src, seg, doors, others) {
+        const a = { x: seg.s[0], y: seg.s[2] };
+        const len = Math.hypot(seg.s[3] - a.x, seg.s[5] - a.y);
+        if (len === 0) return null;
+        const d = { x: (seg.s[3] - a.x) / len, y: (seg.s[5] - a.y) / len };
+        const along = (p: Geom.VectJson) => (p.x - a.x) * d.x + (p.y - a.y) * d.y;
 
-        for (let i = 0; i <= steps; i++) {
-          const lambda = steps === 0 ? 0 : i / steps;
-          const at = { x: ux + lambda * (vx - ux), y: uy + lambda * (vy - uy) };
-          const dst = Math.hypot(at.x - src.x, at.y - src.y);
-          if (dst < bestDst && doors.every((door) => w.door.blocksDoorway(at, door) === false)) {
-            [best, bestDst] = [at, dst];
-          }
+        // the stretches of wall, as `t` along it, cut out by each doorway and by each parked npc —
+        // a body's width for one along this wall, further for one across the way (a choke)
+        const spans: [number, number][] = [
+          ...doors.flatMap((door) => {
+            const span = w.door.doorwayInterval(a, d, door);
+            return span === null ? [] : [span];
+          }),
+          ...others.flatMap((o) => {
+            const across = (o.seg[3] - o.seg[0]) * d.x + (o.seg[5] - o.seg[2]) * d.y < 0;
+            const radius = across ? parkNpcClearance : parkNpcBesideClearance;
+            const t0 = along(o.point);
+            const half = Math.sqrt(
+              radius ** 2 - Math.hypot(a.x + d.x * t0 - o.point.x, a.y + d.y * t0 - o.point.y) ** 2,
+            );
+            return Number.isNaN(half) ? [] : [[t0 - half, t0 + half] as [number, number]]; // NaN: too far off
+          }),
+        ];
+
+        // the free point nearest where they stand: that point, else the nearest end of a span,
+        // nudged a hair clear — only such points can be nearest, and there are few
+        const target = Math.max(0, Math.min(len, along(src)));
+        const free = (t: number) => t >= 0 && t <= len && spans.every(([lo, hi]) => t <= lo || t >= hi);
+        const t = [target, ...spans.flatMap(([lo, hi]) => [lo - parkSlack, hi + parkSlack])]
+          .filter(free)
+          .sort((u, v) => Math.abs(u - target) - Math.abs(v - target))[0];
+        return t === undefined ? null : { x: a.x + d.x * t, y: a.y + d.y * t };
+      },
+      getParkedSeg(npc) {
+        const entry = state.parked.get(npc.key);
+        if (entry === undefined) {
+          return null;
+        }
+        const { s } = entry;
+        const still =
+          npc.agent !== null &&
+          npc.isMoving() === false &&
+          geomService.getClosestOnSeg(npc.point, { x: s[0], y: s[2] }, { x: s[3], y: s[5] }).dst < parkedWithin;
+        if (still === false) state.parked.delete(npc.key);
+        return still ? s : null;
+      },
+      async park(npc) {
+        const agent = npc.agent;
+        if (!agent) throw Error("no agent");
+
+        // Always, rather than only when empty: the crowd asks within 0.6m and keeps the 8 nearest
+        // segments, so an npc stood IN a doorway would otherwise have nothing but its frame to
+        // choose from — and the whole point is to get round the corner from it
+        localBoundary.updateLocalBoundary(
+          agent.boundary,
+          w.npc.getClosestPoly(npc.position).nodeRef,
+          helper.groundPointToTuple(npc.point),
+          parkQueryRange,
+          w.nav.navMesh,
+          npc.queryFilter,
+        );
+        const segments = agent.boundary.segments;
+        if (segments.length === 0) {
+          throw Error("boundary too far");
         }
 
-        return best;
+        const src = npc.point;
+        // Only the doors of the room they are in — a handful, and one on the far side of a wall
+        // is nothing to them anyway. An npc stood IN a doorway resolves to one of its two rooms,
+        // which owns that door either way
+        const grId = state.npcToRoom.get(npc.key) ?? state.findRoomContaining(src, true);
+        const roomNode = grId === null ? null : w.gmRoomGraph.getNode(grId.grKey);
+        const doors = (roomNode === null ? [] : w.gmRoomGraph.getSuccs(roomNode)).flatMap((node) =>
+          node.type === "door" ? (w.d[node.gdKey] ?? []) : [],
+        );
+        // and the room's other parked npcs, to keep clear of
+        const others = [...(grId === null ? [] : (state.roomToNpcs[grId.gmId]?.[grId.roomId] ?? []))].flatMap(
+          (npcKey) => {
+            const seg = npcKey === npc.key ? null : state.getParkedSeg(w.n[npcKey]);
+            return seg === null ? [] : [{ point: w.n[npcKey].point, seg }];
+          },
+        );
+
+        // Nearest-first, so the first segment with a clear point is the closest place to stand
+        let chosen: null | { at: Geom.VectJson; seg: (typeof segments)[number] } = null;
+        for (const seg of segments) {
+          const at = state.findClearPointOnSeg(src, seg, doors, others);
+          if (at !== null) {
+            chosen = { at, seg };
+            break;
+          }
+        }
+        // Nothing clear anywhere: only 8 segments are kept, and in a tight doorway they can all be
+        // frame. Park as we always did rather than refusing
+        const seg = chosen?.seg ?? segments[0];
+        const at =
+          chosen?.at ?? geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
+        state.parked.set(npc.key, { s: seg.s });
+
+        // The walkable side: navcat winds its poly outlines clockwise in the ground plane, so the
+        // inside lies along `(dz, -dx)`
+        const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
+        if (Math.hypot(at.x - src.x, at.y - src.y) > parkMinMove) {
+          await npc.fadeSpawn({ at, facing });
+        } else {
+          await npc.look({ at: facing });
+        }
       },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
@@ -339,6 +433,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.handLitRooms = new Set(); // a `grKey` means nothing to the map coming in
         state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
         state.npcToRoom = new Map();
+        state.parked = new Map();
         state.roomToNpcs = [];
 
         // anything still waiting on the worker asked about the old map's rooms
@@ -828,6 +923,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           delete w.n[npc.key];
           w.e.setNpcDo(npc.key, null);
           state.litRooms.delete(npc.key);
+          state.parked.delete(npc.key);
           npc.rejectAll(new Error("removed npc"));
         }
 
@@ -1107,6 +1203,8 @@ export type State = {
    * Relates `npcKey` to current room.
    */
   npcToRoom: Map<string, Geomorph.GmRoomId>;
+  /** By npcKey, the boundary segment `park` last stood them against — see `getParkedSeg` */
+  parked: Map<string, { s: number[] }>;
   pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(): void } };
   pendingUnreachable: {
     [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };
@@ -1154,8 +1252,23 @@ export type State = {
     /** A navcat `LocalBoundarySegment`, whose `s` is `[x1, y1, z1, x2, y2, z2]` */
     seg: { s: number[] },
     doors: Geomorph.DoorState[],
+    /**
+     * The room's other PARKED npcs, each with the segment they stand against: a body's width is
+     * kept from one along this wall, and more from one across the way, which would make a choke
+     */
+    others: { point: Geom.VectJson; seg: number[] }[],
   ): null | Geom.VectJson;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
+  /**
+   * The boundary segment `[x1, y1, z1, x2, y2, z2]` `park` stood this npc against, if they are
+   * still idle and still against it — else `null`, and they are forgotten
+   */
+  getParkedSeg(npc: Npc): null | number[];
+  /**
+   * Stand them against a nearby wall, out of the way: clear of the room's doorways and of its
+   * other parked npcs, and remembered in `parked`
+   */
+  park(npc: Npc): Promise<void>;
   /**
    * Asks the worker whether this npc can get from one room node to another, and which shut door
    * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there".
@@ -1242,5 +1355,13 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
  * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor
  */
 const shutDoorKeepOut = npcConfig.dist.agentRadius + npcConfig.dist.shutDoorKeepOut;
+/** How far a parked npc keeps from parked npcs ACROSS from them, centre to centre */
+const parkNpcClearance = 6 * npcConfig.dist.agentRadius;
+/** …and from those parked along the same wall: a body's width, and a little */
+const parkNpcBesideClearance = 2 * npcConfig.dist.agentRadius + 0.05;
+/** Beyond this from the wall they were parked against, an npc is no longer parked */
+const parkedWithin = npcConfig.dist.agentRadius + 0.1;
+/** A parked point sits this far clear of what cut its span, so a point test agrees */
+const parkSlack = 1e-3;
 
 const emptyMeta = {};

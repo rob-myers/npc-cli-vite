@@ -1,5 +1,6 @@
+import { parkQueryRange } from "@npc-cli/ui__world/const";
 import { localBoundary } from "navcat/blocks";
-import { events, parkQueryRange } from "./core";
+import { events } from "./core";
 
 /**
  * Draw an npc's local navmesh boundary — the segments `park` chooses from, as of now — in red.

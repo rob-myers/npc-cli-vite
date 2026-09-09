@@ -62,15 +62,36 @@ export default function Doors() {
       /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
       flipped: new Uint8Array(MAX_DOORS),
 
-      blocksDoorway(point, door) {
+      doorwayInterval(a, d, door) {
         const [dx, dy] = [door.dst.x - door.src.x, door.dst.y - door.src.y];
         const len = Math.hypot(dx, dy);
-        // How far ALONG the door, and how far THROUGH it — in the way only when inside both. Just
-        // past a jamb `along` falls outside, so the wall BESIDE a door is clear to stand against
-        const along = ((point.x - door.src.x) * dx + (point.y - door.src.y) * dy) / len;
-        const through = (point.x - door.src.x) * door.normal.x + (point.y - door.src.y) * door.normal.y;
         const r = npcConfig.dist.agentRadius;
-        return along > -r && along < len + r && Math.abs(through) < doorwayClearance;
+        // The band is a box in the door's frame: how far ALONG the door, a body's radius past
+        // either jamb, and how far THROUGH it, `doorwayClearance` either side. Just past a jamb
+        // `along` falls outside, so the wall BESIDE a door is clear to stand against. Both are
+        // linear in `t` for the point `a + d·t`, so each bound is a half-line of `t`:
+        // `c0 + c1·t within (lo, hi)`
+        const bounds: [c0: number, c1: number, lo: number, hi: number][] = [
+          [((a.x - door.src.x) * dx + (a.y - door.src.y) * dy) / len, (d.x * dx + d.y * dy) / len, -r, len + r],
+          [
+            (a.x - door.src.x) * door.normal.x + (a.y - door.src.y) * door.normal.y,
+            d.x * door.normal.x + d.y * door.normal.y,
+            -doorwayClearance,
+            doorwayClearance,
+          ],
+        ];
+        let tLo = Number.NEGATIVE_INFINITY;
+        let tHi = Number.POSITIVE_INFINITY;
+        for (const [c0, c1, lo, hi] of bounds) {
+          if (Math.abs(c1) < 1e-9) {
+            if (c0 <= lo || c0 >= hi) return null; // parallel, and outside
+            continue;
+          }
+          const [u, v] = [(lo - c0) / c1, (hi - c0) / c1];
+          tLo = Math.max(tLo, Math.min(u, v));
+          tHi = Math.min(tHi, Math.max(u, v));
+        }
+        return tLo < tHi ? [tLo, tHi] : null;
       },
       buildByKey() {
         // `gdKey` is positional, so another map's doors wear the same keys: carrying their live
@@ -696,10 +717,13 @@ export type State = {
   /** Does this door's +z face show its BACK label? Cpu-only, so the shader needs no swap */
   flipped: Uint8Array;
   /**
-   * Whether `point` is in the way of the traffic through `door` — the band a body walking through
-   * would need, rather than the doorway itself. See the `park` command
+   * Where a line crosses the band of traffic through `door` — the band a body walking through
+   * would need, rather than the doorway itself. Points on the line are `a + d·t` with `d` a unit
+   * vector, so `t` is a distance along it from `a`. Returns the range `[tLo, tHi]` of those points
+   * in the band — every point of the line between them is, none outside — or `null` if none is.
+   * `park` uses this on each wall segment to cut out the stretch a door's traffic needs
    */
-  blocksDoorway(point: Geom.VectJson, door: Geomorph.DoorState): boolean;
+  doorwayInterval(a: Geom.VectJson, d: Geom.VectJson, door: Geomorph.DoorState): null | [number, number];
   buildByKey: () => void;
   /** (Re)builds `toInstanceId`/`fromInstanceId`/`instanceCount`; returns `instanceCount` */
   buildInstanceIds: () => number;

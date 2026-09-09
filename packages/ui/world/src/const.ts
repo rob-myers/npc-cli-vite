@@ -41,6 +41,10 @@ export const doorDepth = 20 * sguToWorldScale;
 export const hullDoorDepth = 40 * sguToWorldScale;
 /** How far clear of a door somebody must stand to be out of the traffic through it */
 export const doorwayClearance = 0.6;
+/** How far out `park` looks for a wall to stand against */
+export const parkQueryRange = 2;
+/** Below this much of a move, `park` turns them on the spot instead */
+export const parkMinMove = 0.02;
 /**
  * Smaller than @see {offMeshConnectionHalfDepth}
  */
