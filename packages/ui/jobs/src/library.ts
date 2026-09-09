@@ -226,7 +226,7 @@ const keyRe = /([A-Za-z_][\w-]*):/g;
 /** A line that is a comment, indented or not */
 const commentLineRe = /^[ \t]*#.*$/gm;
 
-/** Editable `key:value` args e.g. `npc:rob`, `at:$( pick 1 )` — none inside a `#` comment line */
+/** Editable `key:value` args e.g. `npc:rob` — literals only, and none inside a `#` comment line */
 export function parseArgTokens(src: string): ArgToken[] {
   const tokens: ArgToken[] = [];
   const comments = [...src.matchAll(commentLineRe)].map((m) => [m.index, m.index + m[0].length]);
@@ -245,6 +245,9 @@ export function parseArgTokens(src: string): ArgToken[] {
     keyRe.lastIndex = valueEnd; // skip nested `key:value` inside a subshell
     if (valueEnd === valueStart) {
       continue; // e.g. `{ foo: 42 }` is not an arg
+    }
+    if (src[valueStart] === "$") {
+      continue; // `npc:$( ... )` and `npc:$foo` are the shell's to fill in, not ours
     }
     tokens.push({ key: match[1], value: src.slice(valueStart, valueEnd), keyStart, valueStart, valueEnd });
   }
