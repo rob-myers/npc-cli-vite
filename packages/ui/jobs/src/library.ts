@@ -166,7 +166,8 @@ function trimBlankEnds(lines: string[]): string[] {
 }
 
 /**
- * A new example starts at a blank line, or at a `#` comment following code.
+ * A new example starts at a blank line, or at a `#` comment following code — one at column 0,
+ * an INDENTED comment being part of the command, e.g. inside a `while` body.
  * Leading `#` lines become the example's comment.
  */
 function splitExamples(blockKey: string, lines: string[]): Example[] {
@@ -192,7 +193,7 @@ function splitExamples(blockKey: string, lines: string[]): Example[] {
       blankRun++;
       continue;
     }
-    const isComment = line.trimStart().startsWith("#");
+    const isComment = line.startsWith("#");
     if (isComment === true && sawCode === true) {
       flush();
     }
@@ -204,7 +205,7 @@ function splitExamples(blockKey: string, lines: string[]): Example[] {
   flush();
 
   return chunks.flatMap(({ lines: ls, blankBefore }, index) => {
-    const at = ls.findIndex((x) => !x.trimStart().startsWith("#"));
+    const at = ls.findIndex((x) => !x.startsWith("#"));
     const src = (at === -1 ? [] : ls.slice(at)).join("\n").trim();
     if (src === "") {
       return [];
@@ -222,16 +223,22 @@ function splitExamples(blockKey: string, lines: string[]): Example[] {
 }
 
 const keyRe = /([A-Za-z_][\w-]*):/g;
+/** A line that is a comment, indented or not */
+const commentLineRe = /^[ \t]*#.*$/gm;
 
-/** Editable `key:value` args e.g. `npc:rob`, `at:$( pick 1 )` */
+/** Editable `key:value` args e.g. `npc:rob`, `at:$( pick 1 )` — none inside a `#` comment line */
 export function parseArgTokens(src: string): ArgToken[] {
   const tokens: ArgToken[] = [];
+  const comments = [...src.matchAll(commentLineRe)].map((m) => [m.index, m.index + m[0].length]);
   keyRe.lastIndex = 0;
 
   for (let match = keyRe.exec(src); match !== null; match = keyRe.exec(src)) {
     const keyStart = match.index;
     if (keyStart > 0 && /[^\s;|&(]/.test(src[keyStart - 1])) {
       continue; // must start a word
+    }
+    if (comments.some(([from, to]) => from <= keyStart && keyStart < to)) {
+      continue; // commented out
     }
     const valueStart = keyStart + match[0].length;
     const valueEnd = readValueEnd(src, valueStart);
