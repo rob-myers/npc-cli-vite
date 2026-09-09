@@ -244,21 +244,22 @@ export default function JobsLibrary(props: Props) {
           {/* shared by every example, so editing here rewrites them all */}
           {[...sharedArgKeys].map((key) => (
             // takes the space left beside the select, so it cannot overflow
-            <label
-              key={key}
-              className="ml-auto min-w-0 flex-1 max-w-28 flex items-center gap-1 font-mono text-term-accent"
-            >
+            <label key={key} className="ml-auto min-w-24 flex-1 flex items-center gap-1 font-mono text-term-accent">
               <span className="shrink-0">{`${key}:`}</span>
-              <input
+              {/* a textarea, so a long value wraps and shows whole; sized to its content, one line at least */}
+              <textarea
                 data-edit-key={key}
                 value={state.edits[key] ?? ""}
+                rows={1}
                 spellCheck={false}
                 autoComplete="off"
                 className={cn(
                   "w-full min-w-0 px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
-                  "text-sh-command outline-none focus:border-term-focus",
+                  "text-sh-command text-xs outline-none focus:border-term-focus",
+                  "field-sizing-content resize-none break-all",
                 )}
                 onChange={state.onEditArg}
+                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()} // one value, no newlines
               />
             </label>
           ))}
@@ -517,7 +518,7 @@ type State = {
   /** `preview` reads like the markdown file; `compact` lists one section tersely */
   view: "compact" | "preview";
 
-  onEditArg: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onEditArg: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   /** Each of these reads the example from `data-*` — see `getExampleData` */
   onExampleCopy: (e: React.MouseEvent<HTMLElement>) => void;
   onExampleRun: (e: React.MouseEvent<HTMLElement>) => void;
