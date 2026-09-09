@@ -239,8 +239,9 @@
 
 - 🚧 `park` should avoid blocking a choke point
   - ✅ stash changes to be restored after local boundary pixel-lookup
-  - 🚧 nav boundary canvas-per-gmId for fast parking-reasoning
-  - restore and rewrite
+  - ❌ nav boundary canvas-per-gmId for fast parking-reasoning
+    - became a worker change but will try other approach
+  - 🚧 restore and rewrite
 
 - ✅ saw npc can stuck on another shake turn back-and-forth unnaturally
 - basic script to only move selected npc
