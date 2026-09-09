@@ -2,37 +2,6 @@ import { parkQueryRange } from "@npc-cli/ui__world/const";
 import { localBoundary } from "navcat/blocks";
 import { events } from "./core";
 
-/**
- * Draw an npc's local navmesh boundary — the segments `park` chooses from, as of now — in red.
- * Sans npc, takes it down.
- * ```sh
- * demo_local_boundary npc:rob
- * demo_local_boundary
- * ```
- */
-export function demo_local_boundary(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
-) {
-  if (opts.npcKey === undefined) {
-    w.debug.setLocalBoundary([]);
-    return;
-  }
-  const npc = w.npc.get(opts.npcKey);
-  if (!npc.agent) throw Error("no agent");
-
-  // exactly as `park` asks, so what is drawn is what it would see
-  localBoundary.updateLocalBoundary(
-    npc.agent.boundary,
-    w.npc.getClosestPoly(npc.position).nodeRef,
-    w.helper.groundPointToTuple(npc.point),
-    parkQueryRange,
-    w.nav.navMesh,
-    npc.queryFilter,
-  );
-  w.debug.setLocalBoundary(npc.agent.boundary.segments.map(({ s }) => [s[0], s[2], s[3], s[5]]));
-}
-
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
     type: "circle",
@@ -77,6 +46,37 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
+/**
+ * Draw an npc's local navmesh boundary — the segments `park` chooses from, as of now — in red.
+ * Sans npc, takes it down.
+ * ```sh
+ * demo_local_boundary npc:rob
+ * demo_local_boundary
+ * ```
+ */
+export function demo_local_boundary(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  if (opts.npcKey === undefined) {
+    w.debug.setLocalBoundary([]);
+    return;
+  }
+  const npc = w.npc.get(opts.npcKey);
+  if (!npc.agent) throw Error("no agent");
+
+  // exactly as `park` asks, so what is drawn is what it would see
+  localBoundary.updateLocalBoundary(
+    npc.agent.boundary,
+    w.npc.getClosestPoly(npc.position).nodeRef,
+    w.helper.groundPointToTuple(npc.point),
+    parkQueryRange,
+    w.nav.navMesh,
+    npc.queryFilter,
+  );
+  w.debug.setLocalBoundary(npc.agent.boundary.segments.map(({ s }) => [s[0], s[2], s[3], s[5]]));
+}
+
 export async function* demo_log_speech(ct: JshCli.RunArg) {
   for await (const e of events(ct, {
     where: (e) => e.key === "speech",
@@ -84,10 +84,6 @@ export async function* demo_log_speech(ct: JshCli.RunArg) {
     // console.log({ e });
     yield `${ct.api.ansi.Blue}${e.npcKey}${ct.api.ansi.Reset}: ${e.words}`;
   }
-}
-
-export function demo_remove_decor(ct: JshCli.RunArg) {
-  ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
 /**
@@ -102,6 +98,10 @@ export function demo_npc_ui(
 ) {
   const npc = w.npc.get(opts.npcKey ?? args[0]);
   w.bubble.ensure(npc.key);
+}
+
+export function demo_remove_decor(ct: JshCli.RunArg) {
+  ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
 export async function demo_spawn_many({ w }: JshCli.RunArg) {
@@ -128,12 +128,4 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
     ats: pointsWithMeta,
     skins: pointsWithMeta.map(() => skinKeys[Math.floor(skinCount * Math.random())]),
   });
-}
-
-export async function demo_toggle_doors(ct: JshCli.RunArg) {
-  for await (const e of events(ct, { where: (e) => e.key === "picked" })) {
-    if (e.meta.type === "door") {
-      ct.w.e.toggleDoor(e.meta.gdKey);
-    }
-  }
 }
