@@ -261,6 +261,8 @@ export class TtyShell implements Device {
       by: "&" | "|" | "()" | "$()" | "function" | "root" | "source" | "source-external";
       cleanups?: (() => void)[];
       localVar?: boolean;
+      /** `term`'s source as it was given — see `ProcessMeta.origSrc` */
+      origSrc?: string;
       posPositionals?: string[];
       /** Process tags overriding those inherited from parent */
       ptags?: Ptags;
@@ -300,6 +302,7 @@ export class TtyShell implements Device {
         pgid,
         sessionKey,
         src: computeJShSource.src(term),
+        origSrc: opts.origSrc,
         posPositionals: opts.posPositionals || parent.positionals.slice(1),
         ptags: applyPtagUpdates({ ...parent.ptags }, opts.ptags ?? {}),
       });
@@ -444,13 +447,14 @@ export class TtyShell implements Device {
     this.provideContextToParsed(term);
 
     if (opts.background !== true) {
-      return await this.spawn(term, { by: "source-external" });
+      return await this.spawn(term, { by: "source-external", origSrc: src });
     }
 
     // own process group so it leads and emits external events
     term.meta.pgid = sessionApi.getSession(this.sessionKey).nextPid;
     await this.spawn(term, {
       by: "source-external",
+      origSrc: src,
       localVar: true,
       ptags: { [ProcessTag.interactive]: undefined },
     });
@@ -482,6 +486,7 @@ export class TtyShell implements Device {
       switch (result.key) {
         case "complete":
           {
+            const origSrc = this.buffer.join("\n");
             this.buffer.length = 0;
 
             const singleLineSrc = computeJShSource.src(result.parsed);
@@ -491,8 +496,9 @@ export class TtyShell implements Device {
 
             // Run command
             this.process.src = singleLineSrc;
+            this.process.origSrc = origSrc;
             this.provideContextToParsed(result.parsed);
-            await this.spawn(result.parsed, { by: "root" });
+            await this.spawn(result.parsed, { by: "root", origSrc });
 
             this.prompt("$");
           }

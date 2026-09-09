@@ -49,6 +49,8 @@ export const sessionApi = {
     ppid: number;
     pgid: number;
     src: string;
+    /** Defaults to `src` */
+    origSrc?: string;
     posPositionals?: string[];
     ptags: Meta;
   }) {
@@ -62,6 +64,7 @@ export const sessionApi = {
       sessionKey: def.sessionKey,
       status: toProcessStatus.Running,
       src: def.src,
+      origSrc: def.origSrc ?? def.src,
       positionals: ["jsh", ...(def.posPositionals ?? [])],
       cleanups: [],
       onSignals: [],
@@ -492,8 +495,10 @@ export type ProcessMeta = {
   sessionKey: string;
   /** `0` is suspended, `1` is running, `2` is killed */
   status: ProcessStatus;
-  /** Source of code defining this process. */
+  /** Source of code defining this process, as the parser writes it out again. */
   src: string;
+  /** The same as it was given, e.g. with its comments and layout — what a caller can compare against */
+  origSrc: string;
   /**
    * Executed:
    * - on process finished
