@@ -233,6 +233,6 @@ const tmpMatrix4 = new THREE.Matrix4();
 
 // keep webworker isolated
 type NpcConfigDist = typeof import("../const")["npcConfig"]["dist"];
-const agentRadius: NpcConfigDist["agentRadius"] = 0.2;
+const agentRadius: NpcConfigDist["agentRadius"] = 0.18;
 const shutDoorKeepOut: NpcConfigDist["shutDoorKeepOut"] = 0.05;
 const doorAreaOutsetAmount = agentRadius + shutDoorKeepOut;
