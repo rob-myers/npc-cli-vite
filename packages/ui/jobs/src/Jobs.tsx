@@ -572,7 +572,9 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                   return (
                     <motion.div
                       key={p.uid}
-                      layout
+                      // position only: a size animation would scale the card, text and all, as the
+                      // source cell grows — that cell eases its own height instead
+                      layout="position"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -638,11 +640,12 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                             // `min-w-0` lets it shrink past its content, so `truncate` bites
                             "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
                             "dark:border-l dark:border-term-border-subtle",
+                            "transition-[max-height] duration-200",
                             expanded
                               ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
-                                "max-h-12 overflow-auto [scrollbar-width:thin] break-words"
+                                "max-h-12 overflow-auto scrollbar-thin break-words"
                               : // one line, however long the source
-                                "truncate",
+                                "max-h-7 truncate",
                             killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
                           )}
                         >
