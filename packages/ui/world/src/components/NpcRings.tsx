@@ -15,10 +15,28 @@ export default function NpcRings() {
   const state = useStateRef(
     (): State => ({
       ...createRingResources(w.view.objectPick, w.view.foldNode),
-      spawnRingByNpc: new Map(),
-      selectRingByNpc: new Map(),
       pickRings: [],
+      selectRingByNpc: new Map(),
+      spawnRingByNpc: new Map(),
 
+      clearSelectRings() {
+        for (const ring of state.selectRingByNpc.values()) state.fadeRing(ring, 0);
+      },
+      fadeOutSpawnRing(npcKey) {
+        state.fadeRing(state.spawnRingByNpc.get(npcKey), 0);
+      },
+      fadeRing(ring, to) {
+        if (ring === undefined) return;
+        const now = time.value;
+        retarget(ring.fade, to, ring.fadeSecs, now);
+        if (w.disabled === true) {
+          ring.fade.from = ring.fade.to;
+          ring.fade.at = now;
+        }
+      },
+      hideSelectRing(npcKey) {
+        state.fadeRing(state.selectRingByNpc.get(npcKey), 0);
+      },
       onTick() {
         const now = time.value;
         let j = 0;
@@ -65,46 +83,18 @@ export default function NpcRings() {
           state.ringBuffer.needsUpdate = true;
         }
       },
-      writeRing(index, ring) {
-        if (index >= MAX_RINGS) return index;
-        // one contiguous run into the interleaved buffer — see `ringStride`
-        const at = index * ringStride;
-        const data = state.ringData;
-        data[at + 0] = ring.x;
-        data[at + 1] = ring.y;
-        data[at + 2] = ring.z;
-        data[at + 3] = ring.style.expand;
-        data[at + 4] = ring.fade.from;
-        data[at + 5] = ring.fade.to;
-        data[at + 6] = ring.fade.at;
-        data[at + 7] = ring.fadeSecs;
-        data[at + 8] = ring.radius.from;
-        data[at + 9] = ring.radius.to;
-        data[at + 10] = ring.radius.at;
-        data[at + 11] = ring.color.r;
-        data[at + 12] = ring.color.g;
-        data[at + 13] = ring.color.b;
-        data[at + 14] = ring.style.alpha;
-        data[at + 15] = ring.roomSlot;
-        return index + 1;
-      },
-      showSpawnRing(npcKey, at, y = spawnRingDefaultHeight) {
-        // it marks a patch of FLOOR, so its room is settled once here rather than read per tick as
-        // a select ring's is — and the npc it is for may not have arrived to be asked
-        const gmRoomId = w.e.findRoomContaining({ x: at.x, y: at.y }, true);
-        const roomSlot = gmRoomId === null ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
-        // it is put up on a destination already chosen, so it is simply there
-        state.spawnRingByNpc.set(npcKey, {
-          ...spawnRingLook,
-          x: at.x,
-          y,
-          z: at.y,
-          roomSlot,
-          fade: arrivedAt(1, time.value),
-        });
-      },
-      fadeOutSpawnRing(npcKey) {
-        state.fadeRing(state.spawnRingByNpc.get(npcKey), 0);
+      pickRingPoint(pick) {
+        const { meta } = pick;
+        if (meta.type === "npc") {
+          // on the floor beneath them, rather than wherever on them the pick landed
+          const npc = w.n[meta.npcKey];
+          if (npc !== undefined) return { x: npc.position.x, y: npc.position.y, z: npc.position.z };
+        } else if (meta.type === "door") {
+          // in the doorway, whichever leaf or edge of the door was hit
+          const door = w.d[meta.gdKey];
+          if (door !== undefined) return { x: (door.src.x + door.dst.x) / 2, y: 0, z: (door.src.y + door.dst.y) / 2 };
+        }
+        return { x: pick.point[0], y: pick.point[1], z: pick.point[2] };
       },
       removeSpawnRing(npcKey) {
         state.spawnRingByNpc.delete(npcKey);
@@ -133,19 +123,6 @@ export default function NpcRings() {
         state.onTick();
         w.r3f?.invalidate();
       },
-      pickRingPoint(pick) {
-        const { meta } = pick;
-        if (meta.type === "npc") {
-          // on the floor beneath them, rather than wherever on them the pick landed
-          const npc = w.n[meta.npcKey];
-          if (npc !== undefined) return { x: npc.position.x, y: npc.position.y, z: npc.position.z };
-        } else if (meta.type === "door") {
-          // in the doorway, whichever leaf or edge of the door was hit
-          const door = w.d[meta.gdKey];
-          if (door !== undefined) return { x: (door.src.x + door.dst.x) / 2, y: 0, z: (door.src.y + door.dst.y) / 2 };
-        }
-        return { x: pick.point[0], y: pick.point[1], z: pick.point[2] };
-      },
       showSelectRing(npcKey, color) {
         const now = time.value;
         const ring = state.selectRingByNpc.get(npcKey);
@@ -173,20 +150,43 @@ export default function NpcRings() {
         state.selectRingByNpc.set(npcKey, next);
         state.fadeRing(next, 1);
       },
-      hideSelectRing(npcKey) {
-        state.fadeRing(state.selectRingByNpc.get(npcKey), 0);
+      showSpawnRing(npcKey, at, y = spawnRingDefaultHeight) {
+        // it marks a patch of FLOOR, so its room is settled once here rather than read per tick as
+        // a select ring's is — and the npc it is for may not have arrived to be asked
+        const gmRoomId = w.e.findRoomContaining({ x: at.x, y: at.y }, true);
+        const roomSlot = gmRoomId === null ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
+        // it is put up on a destination already chosen, so it is simply there
+        state.spawnRingByNpc.set(npcKey, {
+          ...spawnRingLook,
+          x: at.x,
+          y,
+          z: at.y,
+          roomSlot,
+          fade: arrivedAt(1, time.value),
+        });
       },
-      clearSelectRings() {
-        for (const ring of state.selectRingByNpc.values()) state.fadeRing(ring, 0);
-      },
-      fadeRing(ring, to) {
-        if (ring === undefined) return;
-        const now = time.value;
-        retarget(ring.fade, to, ring.fadeSecs, now);
-        if (w.disabled === true) {
-          ring.fade.from = ring.fade.to;
-          ring.fade.at = now;
-        }
+      writeRing(index, ring) {
+        if (index >= MAX_RINGS) return index;
+        // one contiguous run into the interleaved buffer — see `ringStride`
+        const at = index * ringStride;
+        const data = state.ringData;
+        data[at + 0] = ring.x;
+        data[at + 1] = ring.y;
+        data[at + 2] = ring.z;
+        data[at + 3] = ring.style.expand;
+        data[at + 4] = ring.fade.from;
+        data[at + 5] = ring.fade.to;
+        data[at + 6] = ring.fade.at;
+        data[at + 7] = ring.fadeSecs;
+        data[at + 8] = ring.radius.from;
+        data[at + 9] = ring.radius.to;
+        data[at + 10] = ring.radius.at;
+        data[at + 11] = ring.color.r;
+        data[at + 12] = ring.color.g;
+        data[at + 13] = ring.color.b;
+        data[at + 14] = ring.style.alpha;
+        data[at + 15] = ring.roomSlot;
+        return index + 1;
       },
     }),
   );
