@@ -253,7 +253,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             if (state.resetPids.delete(msg.pid)) {
               // interactive becomes a new background item, others keep theirs
               msg.pid !== 0 && state.resetting.set(item.src, item);
-              void state.rerunProcess(item.src);
+              void state.rerunProcess(item.origSrc);
             }
             msg.pid === 0 ? state.debouncedUpdate() : state.update();
             break;
@@ -269,9 +269,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           case "started": {
             item.status = toProcessStatus.Running;
             item.src = process.src;
+            item.origSrc = process.origSrc;
             // a reset reuses the item, so its window restarts too
             item.startedAt = Date.now();
-            if (state.spawning.src !== null && toComparableSrc(process.src) === toComparableSrc(state.spawning.src)) {
+            if (process.origSrc === state.spawning.src) {
               state.clearSpawning(); // it's ours: the process leader is now listed
             }
             state.debouncedUpdate();
@@ -282,9 +283,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         state.reorder();
       },
       isRunning(src) {
-        const key = toComparableSrc(src);
         // paused counts as running, so only a killed process may be re-run
-        return state.processes.some((p) => p.status !== toProcessStatus.Killed && toComparableSrc(p.src) === key);
+        return state.processes.some((p) => p.status !== toProcessStatus.Killed && p.origSrc === src);
       },
       onChangeSessionKey(sessionKey) {
         if (sessionKey === null) {
@@ -305,7 +305,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           return;
         }
         if (item.status === toProcessStatus.Killed) {
-          void state.rerunProcess(item.src);
+          void state.rerunProcess(item.origSrc);
           return;
         }
 
@@ -726,13 +726,6 @@ const minProcessesHeight = 48;
 /** Most of the pane the process leaders may take */
 const maxProcessesFraction = 0.4;
 
-/**
- * A process's `src` is re-printed from its parse tree, so it can differ in
- * whitespace from the `src` we sent — compare them leniently.
- */
-function toComparableSrc(src: string) {
-  return src.replace(/\s+/g, " ").trim();
-}
 /** How often we check whether a queued `src` can run yet */
 const pendingPollMs = 250;
 /** How long a queued `src` waits for its session, e.g. a tty which never boots */
@@ -757,7 +750,7 @@ type State = {
   rerunProcess: (src: string) => Promise<void>;
   /** Run `src`, first connecting (and mounting the tty) if we aren't ready */
   runSrc: (src: string) => void;
-  /** Does a process lead `src` and remain unkilled? Then `runSrc` won't duplicate it */
+  /** Does a process lead `src` — as given, not as the shell re-prints it — and remain unkilled? */
   isRunning: (src: string) => boolean;
   /** A clicked `src` whose process has yet to start, shown as a spinner in the header */
   spawning: {
@@ -823,6 +816,8 @@ type ProcessLeader = {
   uid: number;
   pid: number;
   src: string;
+  /** As given, e.g. with its comments — see `ProcessMeta.origSrc` */
+  origSrc: string;
   status: ProcessStatus;
   ptagsText: string;
   /** When the current run started, so we don't clean up too soon */
@@ -850,11 +845,12 @@ function compareProcessLeaders(p: ProcessLeader, q: ProcessLeader) {
   return p.ptagsText < q.ptagsText || p.src < q.src ? -1 : +1;
 }
 
-function processMetaToProcessLeader({ key: pid, src, status, ptags }: ProcessMeta): ProcessLeader {
+function processMetaToProcessLeader({ key: pid, src, origSrc, status, ptags }: ProcessMeta): ProcessLeader {
   return {
     uid: pid,
     pid,
     src,
+    origSrc,
     status,
     ptagsText: getPtagsPreview(ptags).join(""),
     startedAt: Date.now(),
