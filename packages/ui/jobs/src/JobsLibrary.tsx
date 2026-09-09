@@ -128,8 +128,12 @@ export default function JobsLibrary(props: Props) {
     const syncSection = () => {
       frameId = 0;
       const top = article.getBoundingClientRect().top + sectionSpyOffset;
-      // the last section to have started above the top of the view
-      const active = sections.filter((el) => el.getBoundingClientRect().top <= top).at(-1) ?? sections[0];
+      // the last section to have started above the top of the view — or the last of all once
+      // scrolled to the bottom, which a short final section may never bring up that far
+      const atBottom = article.scrollTop + article.clientHeight >= article.scrollHeight - 1;
+      const active = atBottom
+        ? sections.at(-1)
+        : (sections.filter((el) => el.getBoundingClientRect().top <= top).at(-1) ?? sections[0]);
       const sectionKey = active?.dataset.sectionKey;
       if (sectionKey !== undefined && state.sectionKeys[category.key] !== sectionKey) {
         state.sectionKeys[category.key] = sectionKey;
