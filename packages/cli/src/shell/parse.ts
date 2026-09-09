@@ -50,9 +50,7 @@ export class ParseShService {
       const src = `${buffer.join("\n")}\n`;
       const { parsed } = await this.interactiveParse(src);
 
-      return parsed === null
-        ? ({ key: "incomplete" } as const)
-        : ({ key: "complete", parsed, src } as const);
+      return parsed === null ? ({ key: "incomplete" } as const) : ({ key: "complete", parsed, src } as const);
     } catch (e) {
       error(e);
       return { key: "failed", error: `${(e as any).Error()}` } as const;
