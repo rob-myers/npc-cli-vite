@@ -787,6 +787,20 @@ export async function ray(
 }
 
 /**
+ * Put a coloured ring round an npc, or take it away
+ * ```sh
+ * ring npc:rob color:#33f
+ * ring npc:rob
+ * ```
+ */
+export function ring(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; color?: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  w.npc.get(opts.npcKey ?? args[0]).setRing(opts.color);
+}
+
+/**
  * remove npc(s) or runtime decor, assuming no name collisions
  *
  * This is an example of a function we wouldn't invoke via JS.
