@@ -1,24 +1,54 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { cn } from "@npc-cli/util";
+import { Rect } from "@npc-cli/util/geom/rect";
 import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import { gmFloorExtraScale, roomHitTextureScaleDown, worldToSguScale } from "../const";
 import { WorldContext } from "../components/world-context";
 import { getWorldStore } from "./storage";
 
 export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void; container?: HTMLElement | null };
 
+/** A popup that pans and zooms: the page must not scroll or pinch-zoom under it */
+function preventPopupGestures(el: HTMLElement | null) {
+  if (!el) return;
+  const preventTouch = (e: TouchEvent) => {
+    if (e.touches.length >= 2) e.preventDefault();
+  };
+  el.addEventListener("touchstart", preventTouch, { passive: false });
+  el.addEventListener("touchmove", preventTouch, { passive: false });
+  el.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+}
+
+/** The live `roomHitCt` canvases in a row, in metres, panned and zoomed like the graphs */
 export function RoomHitModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
+
+  const { items, bounds } = useMemo(() => {
+    const scale = roomHitTextureScaleDown * worldToSguScale * gmFloorExtraScale;
+    let x = 0;
+    const items = w.seenGmKeys.map((gmKey) => {
+      const { canvas } = w.gmsData.byKey[gmKey].roomHitCt;
+      const rect = new Rect(x, 0, canvas.width / scale, canvas.height / scale);
+      x += rect.width + 1; // a metre apart
+      return { gmKey, canvas, rect };
+    });
+    const r = items.length === 0 ? new Rect(0, 0, 10, 10) : Rect.fromRects(...items.map((item) => item.rect)).outset(1);
+    return { items, bounds: { minX: r.x, minY: r.y, width: r.width, height: r.height } };
+  }, [w.seenGmKeys, w.gmsData]);
+  const svgZoom = useSvgZoom(bounds);
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal container={container}>
         <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
         <Dialog.Popup
           className={cn(
-            "absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+            "absolute left-1/2 top-[5%] z-50 -translate-x-1/2",
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
-            "max-w-3xl w-[90%] max-h-[90%] flex flex-col",
+            "max-w-4xl w-[90%] h-[90%] flex flex-col touch-none",
           )}
+          ref={preventPopupGestures}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
             <Dialog.Title className="text-sm font-semibold text-slate-200">Room Hit Canvases</Dialog.Title>
@@ -26,20 +56,36 @@ export function RoomHitModal({ open, onOpenChange, container }: DebugModalProps)
               <XIcon className="size-5 text-slate-400" />
             </Dialog.Close>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 flex flex-wrap justify-center gap-4">
-            {w.seenGmKeys.map((gmKey) => (
-              <div key={gmKey} className="flex flex-col items-center gap-1">
-                <span className="text-xs text-slate-400">{gmKey}</span>
-                <div
-                  className="*:h-100 *:border *:border-white"
-                  ref={(el) => {
-                    if (!el) return;
-                    const canvas = w.gmsData.byKey[gmKey].roomHitCt.canvas;
-                    el.replaceChildren(canvas);
-                  }}
-                />
-              </div>
-            ))}
+          <div className="flex-1 min-h-0 overflow-hidden p-2">
+            <svg
+              viewBox={svgZoom.viewBox}
+              onWheel={svgZoom.onWheel}
+              onPointerDown={svgZoom.onPointerDown}
+              onPointerMove={svgZoom.onPointerMove}
+              onPointerUp={svgZoom.onPointerUp}
+              onTouchStart={svgZoom.onTouchStart}
+              onTouchMove={svgZoom.onTouchMove}
+              onTouchEnd={svgZoom.onTouchEnd}
+              className="size-full touch-none"
+            >
+              {items.map(({ gmKey, canvas, rect }) => (
+                <g key={gmKey}>
+                  <foreignObject x={rect.x} y={rect.y} width={rect.width} height={rect.height}>
+                    <div
+                      className="size-full"
+                      ref={(el) => {
+                        canvas.className = "size-full block";
+                        el?.replaceChildren(canvas);
+                      }}
+                    />
+                  </foreignObject>
+                  <rect {...rect.json} fill="none" stroke="white" vectorEffect="non-scaling-stroke" />
+                  <text x={rect.x} y={rect.y - 0.3} fontSize={0.8} fill="#94a3b8">
+                    {gmKey}
+                  </text>
+                </g>
+              ))}
+            </svg>
           </div>
         </Dialog.Popup>
       </Dialog.Portal>
@@ -135,15 +181,7 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
             "bg-slate-900 border border-slate-700 rounded-lg shadow-2xl",
             "max-w-4xl w-[90%] h-[90%] flex flex-col touch-none",
           )}
-          ref={(el) => {
-            if (!el) return;
-            const preventTouch = (e: TouchEvent) => {
-              if (e.touches.length >= 2) e.preventDefault();
-            };
-            el.addEventListener("touchstart", preventTouch, { passive: false });
-            el.addEventListener("touchmove", preventTouch, { passive: false });
-            el.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
-          }}
+          ref={preventPopupGestures}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
             <Dialog.Title className="text-sm font-semibold text-slate-200">Geomorph Graphs</Dialog.Title>
