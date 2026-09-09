@@ -632,24 +632,31 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                           </div>
                         </div>
 
-                        <div
-                          title={p.src}
-                          data-uid={p.uid}
-                          onClick={state.toggleExpanded}
-                          className={cn(
-                            // `min-w-0` lets it shrink past its content, so `truncate` bites
-                            "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
-                            "dark:border-l dark:border-term-border-subtle",
-                            "transition-[max-height] duration-200",
-                            expanded
-                              ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
-                                "max-h-12 overflow-auto scrollbar-thin break-words"
-                              : // one line, however long the source
-                                "max-h-7 truncate",
-                            killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
-                          )}
-                        >
-                          {p.src || "[empty]"}
+                        {/* `data-more` whilst the source scrolls on below, which the fade shows */}
+                        <div className="group relative grow min-w-0 flex">
+                          <div
+                            title={p.src}
+                            data-uid={p.uid}
+                            onClick={state.toggleExpanded}
+                            ref={(el) => syncMoreBelow(el, expanded)}
+                            onScroll={(e) => syncMoreBelow(e.currentTarget, expanded)}
+                            onTransitionEnd={(e) => syncMoreBelow(e.currentTarget, expanded)}
+                            className={cn(
+                              // `min-w-0` lets it shrink past its content, so `truncate` bites
+                              "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
+                              "dark:border-l dark:border-term-border-subtle",
+                              "transition-[max-height] duration-200",
+                              expanded
+                                ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
+                                  "max-h-12 overflow-auto scrollbar-thin break-words"
+                                : // one line, however long the source
+                                  "max-h-7 truncate",
+                              killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
+                            )}
+                          >
+                            {p.src || "[empty]"}
+                          </div>
+                          <div className={moreBelowFadeCss} />
                         </div>
                       </div>
                     </motion.div>
@@ -681,6 +688,18 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
     </div>
   );
 }
+
+/** Sets `data-more` on the wrapper: whether the expanded source scrolls on below */
+function syncMoreBelow(el: null | HTMLElement, expanded: boolean) {
+  const more = expanded === true && el !== null && el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+  el?.parentElement?.setAttribute("data-more", String(more));
+}
+
+/** A fade in the cell's own colour along its foot, shown by `data-more` */
+const moreBelowFadeCss = cn(
+  "pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-linear-to-t from-term-inset to-transparent",
+  "opacity-0 transition-opacity group-data-[more=true]:opacity-100",
+);
 
 const controlCss = cn(
   "flex items-center justify-center w-7 px-2 py-0.5 cursor-pointer transition-colors hover:bg-term-hover-strong",
