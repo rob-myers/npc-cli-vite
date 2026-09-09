@@ -165,7 +165,7 @@ export default function JobsLibrary(props: Props) {
           "border-b border-term-border-subtle",
         )}
       >
-        <nav className="min-w-0 flex flex-1 items-end -mb-px py-1 overflow-auto">
+        <nav className="min-w-0 flex flex-1 items-end -mb-px py-1 overflow-auto scrollbar-thin">
           {categories.map(({ key, label }) => (
             <button
               key={key}
@@ -265,7 +265,7 @@ export default function JobsLibrary(props: Props) {
         <article
           ref={state.ref("articleEl")}
           className={cn(
-            "flex-1 min-h-0 overflow-auto [scrollbar-width:thin] flex flex-col px-3 py-3",
+            "flex-1 min-h-0 overflow-auto scrollbar-thin flex flex-col px-3 py-3",
             state.view === "preview" ? "gap-4" : "gap-1",
           )}
         >
