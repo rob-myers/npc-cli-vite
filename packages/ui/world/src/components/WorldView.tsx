@@ -278,7 +278,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           }
           case "npc": {
             const npc = w.npc.byPickId[pick.instanceId];
-            if (npc) return { ...pick, npcKey: npc.key, ...w.e.npcToRoom.get(npc.key) };
+            if (npc) return { ...pick, npcKey: npc.key, npc: true, ...w.e.npcToRoom.get(npc.key) };
             return null;
           }
           default:
