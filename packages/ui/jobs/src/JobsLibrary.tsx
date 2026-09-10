@@ -243,10 +243,10 @@ export default function JobsLibrary(props: Props) {
 
           {/* shared by every example, so editing here rewrites them all */}
           {[...sharedArgKeys].map((key) => (
-            // takes the space left beside the select, so it cannot overflow
-            <label key={key} className="ml-auto min-w-24 flex-1 flex items-center gap-1 font-mono text-term-accent">
+            // only as wide as its value, up to half the row — then the value wraps
+            <label key={key} className="ml-auto min-w-0 max-w-1/2 flex items-center gap-1 font-mono text-term-accent">
               <span className="shrink-0">{`${key}:`}</span>
-              {/* a textarea, so a long value wraps and shows whole; sized to its content, one line at least */}
+              {/* a textarea sized to its content both ways: as wide as the value, then wrapping onto more lines */}
               <textarea
                 data-edit-key={key}
                 value={state.edits[key] ?? ""}
@@ -254,7 +254,7 @@ export default function JobsLibrary(props: Props) {
                 spellCheck={false}
                 autoComplete="off"
                 className={cn(
-                  "w-full min-w-0 px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
+                  "min-w-16 max-w-full px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
                   "text-sh-command text-xs outline-none focus:border-term-focus",
                   "field-sizing-content resize-none break-all",
                 )}
