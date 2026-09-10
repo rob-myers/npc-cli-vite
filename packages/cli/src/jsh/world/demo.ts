@@ -104,6 +104,17 @@ export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
 
+export function demo_selector(
+  { api, args, w }: JshCli.RunArg,
+  opts: { path: string; prevPath: string } = api.jsArg(args),
+) {
+  const npc = w.n[api.get(opts.path, true)];
+  npc.setRing(npc.hasRing() ? undefined : "#99f");
+  const prevNpc = w.n[api.get(opts.prevPath, true)];
+  if (npc !== prevNpc) prevNpc?.setRing();
+  api.set(opts.prevPath, npc.key);
+}
+
 export async function demo_spawn_many({ w }: JshCli.RunArg) {
   const pointsWithMeta = [] as WithMeta<JshCli.GroundPoint>[];
   for (const [_gmId, gmRooms] of w.decor.byRoom.entries()) {

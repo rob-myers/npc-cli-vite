@@ -19,6 +19,7 @@ declare namespace JshCli {
       WORLD_KEY: "__WORLD_KEY_VALUE__";
     };
     lib: ProcessContext["lib"];
+    shared: ProcessContext["shared"];
 
     datum: Datum;
   }
