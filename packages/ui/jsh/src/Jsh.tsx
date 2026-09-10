@@ -20,26 +20,23 @@ import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { useContext } from "react";
 import type { JshUiMeta } from "./schema";
-import { shellFunctionFiles } from "./sources";
+import { shellActsList, shellFunctionFiles } from "./sources";
 
-export default function Jsh(props: { meta: JshUiMeta }) {
+export default function Jsh({ meta }: { meta: JshUiMeta }) {
   const { uiStoreApi } = useContext(UiContext);
 
   return (
     <Tty
-      sessionKey={props.meta.sessionKey}
-      disabled={props.meta.disabled}
-      env={props.meta.env}
+      disabled={meta.disabled}
+      env={meta.env}
       modules={modules} // actual JS
+      onBooted={() => uiStoreApi.setUiMeta(meta.id, (draft) => ((draft as JshUiMeta).sessionBootedAt = Date.now()))}
       originalProfileKey={
-        typeof props.meta.env.PROFILE_KEY === "string"
-          ? props.meta.env.PROFILE_KEY
-          : ("default_profile" satisfies ProfileKey)
+        typeof meta.env.PROFILE_KEY === "string" ? meta.env.PROFILE_KEY : ("default_profile" satisfies ProfileKey)
       }
+      sessionKey={meta.sessionKey}
+      shellActsList={shellActsList}
       shFiles={shellFunctionFiles} // JS wrapped as shell functions
-      onBooted={() =>
-        uiStoreApi.setUiMeta(props.meta.id, (draft) => ((draft as JshUiMeta).sessionBootedAt = Date.now()))
-      }
     />
   );
 }

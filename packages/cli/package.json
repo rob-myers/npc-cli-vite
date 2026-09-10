@@ -8,8 +8,9 @@
     "./jsh/profiles": "./src/jsh/profiles.js",
     "./jsh/scripts": "./src/jsh/scripts.js",
     "./shell/const": "./src/shell/const.ts",
-    "./shell/storage": "./src/shell/storage.ts",
+    "./shell/js-to-shell": "./src/shell/js-to-shell.ts",
     "./shell/query-client": "./src/shell/query-client.ts",
+    "./shell/storage": "./src/shell/storage.ts",
     "./legacy/npc.d.ts": {
       "types": "./src/legacy/npc.d.ts"
     }

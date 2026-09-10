@@ -423,11 +423,13 @@ export const sessionApi = {
   },
 };
 
+export const sharedFolder = rehydrateShared();
+
 export const useSession = create<State>()(
   (_set, _get): State => ({
     device: {},
     session: {},
-    shared: rehydrateShared(),
+    shared: sharedFolder,
   }),
 );
 
