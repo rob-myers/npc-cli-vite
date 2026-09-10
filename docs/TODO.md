@@ -247,8 +247,20 @@
 - ✅ basic script to only move selected npc
   - ✅ variant which only moves player
   - ✅ use `demo_selector path:/shared/selected prevPath:/shared/selected-prev`
-- new approach via predicates.ts
+
+- 🚧 new approach via jsh/world/pred.ts
+  - ✅ jsh modules can export const SHELL_ACTS of type `Partial<JshCli.SHELL_ACTS>`
+  - ✅ inferred shellActsList is executed on HMR
+  - ✅ pred.ts stores event callback at `/shared/pred/event`
+    - ✅ hmr stable
+  - 🚧 useWorldEvents supports key-callback-pair handlers
+    - key for idempotency
+    - callback for separation e.g. resolve `/shared/pred/event`
+  - 🚧 `predicates` tells useWorldEvents to use key-callback-pair
+
 - improve load perf
+
+# FUTURE
 
 - flatten WorldMenu
 - Jobs: indicate stale processes after hmr
