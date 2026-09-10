@@ -130,8 +130,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rightPress: false,
       },
       foldNode: uniform(1),
-      freezeEl: null as any,
-      frozen: false,
       labelReveal: uniform(1),
       labelRevealAnimId: 0,
       labelZoomFade: uniform(1),
@@ -1711,8 +1709,6 @@ export type State = {
   dimBackground(darken: boolean, durationMs?: number): Promise<void>;
   /** Black over the canvas contents, hiding a floor swap — see `world.css` */
   veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
-  freezeEl: HTMLCanvasElement;
-  frozen: boolean;
   resetCamera(): void;
   syncRenderMode(): RootState["frameloop"];
   /**
