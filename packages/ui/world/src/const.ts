@@ -90,7 +90,7 @@ export const defaultBrightness = 1;
 export const defaultCameraMinDistance = isTouchDevice() ? 6 : 8;
 
 /** How far out the camera's outer zoom stop sits, in metres */
-export const defaultCameraMaxDistance = isTouchDevice() ? 14 : 16;
+export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
