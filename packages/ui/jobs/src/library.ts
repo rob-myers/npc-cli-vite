@@ -246,8 +246,8 @@ export function parseArgTokens(src: string): ArgToken[] {
     if (valueEnd === valueStart) {
       continue; // e.g. `{ foo: 42 }` is not an arg
     }
-    if (src[valueStart] === "$") {
-      continue; // `npc:$( ... )` and `npc:$foo` are the shell's to fill in, not ours
+    if (src[valueStart] === "$" || src[valueStart] === "/") {
+      continue;
     }
     tokens.push({ key: match[1], value: src.slice(valueStart, valueEnd), keyStart, valueStart, valueEnd });
   }

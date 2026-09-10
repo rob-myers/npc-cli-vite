@@ -358,6 +358,10 @@ export class Npc {
     return true;
   }
 
+  hasRing() {
+    return this.w.rings.selectRingByNpc.has(this.key);
+  }
+
   init() {
     this.skinnedMesh.computeBoundingSphere();
 
