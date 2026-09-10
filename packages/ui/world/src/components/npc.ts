@@ -548,7 +548,7 @@ const legalPositionEpsilon = 0.01;
 const legalPositionMargin = 0.05;
 
 /** Beyond this angle a look gets its own idle animation */
-const longLookAngle = 15 * (Math.PI / 180);
+const longLookAngle = 30 * (Math.PI / 180);
 
 /**
  * No look is quicker than this, however small the angle. The turn's peak rate is `2 * arc /
