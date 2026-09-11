@@ -730,7 +730,7 @@ export default function NPCs() {
         }
 
         if (!playerExisted && w.client === false) {
-          w.player.key = npcKey;
+          w.player.assign(npcKey);
           await w.player.ensure();
         }
 

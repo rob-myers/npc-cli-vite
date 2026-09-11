@@ -606,7 +606,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             if ((w.disabled === true) !== msg.paused) w.setDisabled(msg.paused);
             break;
           case "set-player":
-            w.player.key = msg.npcKey;
+            w.player.assign(msg.npcKey);
             break;
           case "server-closed":
             await state.leave({ remote: true });
@@ -667,7 +667,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         await state.applySpawns(msg.npcs);
 
         // adopt the server's player — the mirrored npc, e.g. for camera follow and speech UI
-        if (msg.playerKey !== null) w.player.key = msg.playerKey;
+        if (msg.playerKey !== null) w.player.assign(msg.playerKey);
 
         // the server's state becomes our save for this map (the persist gates stop us drifting
         // from it whilst connected), so a refresh — or a failed reconnect — boots into it
@@ -919,7 +919,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         saved.doorLocks !== null ? w.door.applyLocks(saved.doorLocks) : w.door.resetLocks();
 
         w.e.restoreDecor();
-        w.player.key = saved.npcs?.playerKey ?? w.player.key;
+        w.player.assign(saved.npcs?.playerKey ?? w.player.key);
         await w.player.ensure();
         await w.e.restoreNpcs();
         await w.e.openDoorwaysWithNpcs();

@@ -116,12 +116,17 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return false;
         }
       },
+      assign(npcKey) {
+        state.key = npcKey;
+        w.events.next({ key: "set-player", playerKey: npcKey });
+      },
       setKey(npcKey) {
         if (npcKey === state.key || w.n[npcKey] === undefined) {
           return;
         }
         w.e.setNpcLit(w.n[npcKey], false);
-        state.set({ key: npcKey });
+        state.assign(npcKey);
+        state.update();
         // retargets the dynamic light, snapping it so it shows whilst paused
         state.persist();
         void state.panTo(); // as on load
@@ -168,6 +173,8 @@ export type State = {
   /** Respawns the player near where they were on the previous map — `false` if we couldn't */
   restoreNearPrevMap(): Promise<boolean>;
   /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
+  /** Make them the player, telling everyone — the bare act, without `setKey`'s lit, persist and pan */
+  assign(npcKey: string): void;
   setKey(npcKey: string): void;
   /** Spawns the player in a random room — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;

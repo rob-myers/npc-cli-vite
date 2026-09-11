@@ -57,6 +57,10 @@ export const helper = {
     return !!input && typeof input.grKey === "string" && input.roomId >= 0;
   },
 
+  isNpcPickEvent(event: JshCli.Event): event is JshCli.NpcPickEvent {
+    return event.key === "picked" && event.meta.type === "npc";
+  },
+
   isPointAnyFormat(input: any): input is JshCli.PointAnyFormat {
     return !!input && Array.isArray(input)
       ? input.length >= 2 && input.every(Number.isFinite)

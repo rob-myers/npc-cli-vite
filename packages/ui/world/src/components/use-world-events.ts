@@ -49,8 +49,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
       },
-      addKeyedListener(key, getListener) {
-        state.keyedListener.set(key, getListener);
+      addKeyedListener(key, listener) {
+        state.keyedListener.set(key, listener);
       },
       canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
@@ -78,6 +78,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      dispatchToKeyedListeners(e) {
+        for (const listener of state.keyedListener.values()) {
+          listener(e, w);
+        }
       },
       findClearPointOnSeg(src, seg, doors, others) {
         const a = { x: seg.s[0], y: seg.s[2] };
@@ -193,7 +198,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         const firstBootstrap = player.prevMapPosition === null;
         if (firstBootstrap) {
-          player.key = saved?.playerKey ?? defaultPlayerKey;
+          player.assign(saved?.playerKey ?? defaultPlayerKey);
           // The arrival is shown whole: folded (or flat, on a phone), then the fade comes on, then
           // the world rises. Left to itself the fade would arrive the moment the player spawns —
           // which is before any of that, and would hide all of it but the one room they are in
@@ -306,8 +311,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onEvent(e) {
         if ("npcKey" in e) {
-          return state.onNpcEvent(e);
+          state.onNpcEvent(e);
+          state.dispatchToKeyedListeners(e);
+          return;
         }
+
         switch (e.key) {
           case "decor-created":
           case "decor-removed":
@@ -378,6 +386,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.net?.syncPause(e.key === "disabled"); // clients route play/pause via the server
             w.npc?.warmCrowd();
             break;
+          case "set-player":
+            break;
           case "nav-updated":
             // the crowd is empty at this point, which is what makes it safe to walk a spare agent
             w.npc?.warmCrowd();
@@ -415,7 +425,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             throw new ExhaustiveError(e);
         }
 
-        for (const listener of state.keyedListener.values()) listener(e);
+        state.dispatchToKeyedListeners(e);
       },
       onExitCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
@@ -552,8 +562,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           default:
             throw new ExhaustiveError(e);
         }
-
-        for (const listener of state.keyedListener.values()) listener(e);
       },
       async park(npc) {
         const agent = npc.agent;
@@ -801,7 +809,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.removeNpcs(...Object.keys(w.n));
         w.decor.remove(...Object.keys(w.decor.runtime.byKey));
         state.restoreDecor(saved.decor);
-        w.player.key = saved.npcs?.playerKey ?? w.player.key;
+        w.player.assign(saved.npcs?.playerKey ?? w.player.key);
         // the player goes first, else a restored npc would be adopted as them
         await w.player.ensure();
         await state.restoreNpcs(saved.npcs);
@@ -904,6 +912,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           requestAnimationFrame(() => w.view.forceUpdate());
         });
         w.events.next({ key: "removed-npcs", npcKeys });
+        if (npcKeys.includes(w.player.key)) w.events.next({ key: "set-player", playerKey: null });
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
         if (saved === null) {
@@ -1185,7 +1194,7 @@ export type State = {
    * change, a `grKey` meaning nothing to the map coming in
    */
   handLitRooms: Set<Geomorph.GmRoomKey>;
-  keyedListener: Map<string, (event: JshCli.Event) => void>;
+  keyedListener: Map<string, (event: JshCli.Event, world: JshCli.WorldState) => void>;
   /**
    * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
    * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
@@ -1199,6 +1208,7 @@ export type State = {
   setRoomLit(input: Geomorph.GmRoomKey | Geomorph.GmRoomId, next?: boolean): void;
   /** Puts out every room lit by hand, leaving what the player can see and the lit npcs */
   clearHandLitRooms(): void;
+  dispatchToKeyedListeners(e: JshCli.Event): void;
   /** Lights `npc` or puts them out. Toggles when `next` is omitted */
   setNpcLit(npc: Npc, next?: boolean): void;
   /**
@@ -1235,7 +1245,7 @@ export type State = {
   /**
    * Can use `key` to avoid duplication
    */
-  addKeyedListener(key: string, listener: (event: JshCli.Event) => void): void;
+  addKeyedListener(key: string, listener: (event: JshCli.Event, w: JshCli.WorldState) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
   /**
    * - When an npc is moving its destination should be inside a room.
