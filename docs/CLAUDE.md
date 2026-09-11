@@ -14,10 +14,6 @@ Pnpm monorepo. Key packages:
 
 Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Use TSL imports (`three/tsl`) for shader nodes — not GLSL strings.
 
-## Lighting (Walls / Obstacles)
-
-Per-instance uniform arrays hold the 2 nearest lights for each wall segment or obstacle skirt edge. Lights come from `getLightMetas(gm)` which returns `{ x, y, radius, roomId }` per `DecorCircle` with `meta.light === true`. Radius is per-light (not a global constant). Light data is packed into `Vector4` — `xyz` = world position, `w` = radius — and passed as `uniformArray(..., "vec4")`. The fixed `lightRadius` constant still exists in `texture.ts` but is only used by `drawLights` (canvas 2D); the shader uses per-light radius.
-
 ## Player light (visibility sweep)
 
 `service/player-light.ts` answers "can the player see this?" once per frame instead of per fragment.
@@ -114,6 +110,5 @@ Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DE
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
-- Sentinel for "no light": `Vector4(0, -1000, 0, 1)` — far enough that the clamped factor is always 0.
 
 - const.ts only contains constants, no methods
