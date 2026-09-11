@@ -91,6 +91,8 @@ export const defaultCameraMinDistance = isTouchDevice() ? 6 : 8;
 
 /** How far out the camera's outer zoom stop sits, in metres */
 export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
+/** An npc's label, unless `label` or the predicates say otherwise */
+export const defaultNpcLabelColor = "#ff9";
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */

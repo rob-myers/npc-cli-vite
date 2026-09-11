@@ -2,7 +2,6 @@ export const default_profile = `
 # default profile
 source /etc/util.sh
 source /etc/{util,core,demo,pred}.js.sh
-
 awaitWorld
 predicates
 
