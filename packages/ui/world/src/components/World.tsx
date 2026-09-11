@@ -95,6 +95,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         // nearest-filtered with no mipmaps, a seam and a nav edge one texel apart pop in and out as
         // the camera moves. Same size and same reason as `texCeil` just below
         anisotropy: touchDevice ? undefined : 4,
+        gpu: true, // this big, reading the canvas back was most of the boot's blocking time
       }),
       texCeil: new TexArray({
         ctKey: "ceil-tex",
@@ -102,6 +103,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: floorTextureDimension,
         height: floorTextureDimension,
         anisotropy: touchDevice ? undefined : 4,
+        gpu: true,
       }),
       texObs: new TexArray({
         ctKey: "obs-tex",
@@ -109,6 +111,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         width: 1,
         height: 1,
         anisotropy: touchDevice ? undefined : 4,
+        gpu: true,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 4 }),
       texDoorLabel: new TexArray({
@@ -299,7 +302,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           [devMessageFromServer.skinSvgsChanged, async () => {
             debug("[World] skin svgs changed");
             await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
-            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] }); // the manifest
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skin-overlays"] });
           }],
         ];
 
@@ -406,7 +410,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.e.onChangeTheme();
       }
 
-      state.hash = hashJson(state.assets);
+      state.hash = hashJson(state.assets, false); // pretty-printing this much was 40ms of the boot
       state.gmsHash = hashJson(state.gms);
 
       state.view.roomSlots.ensure(state.gms, state.gmsData, state.gmsHash);

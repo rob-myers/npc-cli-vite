@@ -1,5 +1,6 @@
 import { hashJson, warn } from "@npc-cli/util/legacy/generic";
 import * as THREE from "three";
+import type { WebGPURenderer } from "three/webgpu";
 
 interface TexArrayOpts {
   numTextures: number;
@@ -24,6 +25,14 @@ interface TexArrayOpts {
    * own sRGB encode, having never taken the matching decode
    */
   srgb?: boolean;
+  /**
+   * Write each layer by copying the canvas GPU-side, rather than reading its pixels back and
+   * keeping a CPU mirror. For the big arrays: at the floor's size `getImageData` and the copy
+   * into the mirror were hundreds of ms of the boot. Needs `renderer` before the first
+   * `updateIndex`. The layers then live only on the GPU: `update` cannot re-upload them, and
+   * `tex.image.data` stays zero
+   */
+  gpu?: boolean;
 }
 
 export interface TextureItem {
@@ -40,6 +49,10 @@ export class TexArray {
   ct: CanvasRenderingContext2D;
   tex: THREE.DataArrayTexture;
   hash = 0;
+  /** The canvas as a texture, the source of a `gpu` copy */
+  src: null | THREE.CanvasTexture = null;
+  /** Set once there is one, for `gpu` */
+  renderer: null | WebGPURenderer = null;
 
   constructor(opts: TexArrayOpts) {
     if (opts.numTextures === 0) {
@@ -47,7 +60,8 @@ export class TexArray {
     }
 
     this.opts = opts;
-    this.ct = getContext2d(opts.ctKey, { willReadFrequently: true });
+    // a `gpu` canvas is never read back, and GPU-backed the browser can blit it to the texture
+    this.ct = getContext2d(opts.ctKey, { willReadFrequently: opts.gpu !== true });
 
     // 🔔 avoid overwrite named canvas dimensions via `opts.width === opts.height === 1`
     // - can happen during hot-reload of World useStateRef
@@ -62,6 +76,17 @@ export class TexArray {
     this.applyOpts();
 
     this.hash = hashJson(opts);
+  }
+
+  /** Shared by the constructor and `recreate`, since a source is bound to the canvas's size */
+  createSrc() {
+    const src = new THREE.CanvasTexture(this.ct.canvas);
+    src.flipY = false; // top row first, as `getImageData` gave the mirror
+    src.generateMipmaps = false;
+    src.minFilter = THREE.NearestFilter;
+    src.magFilter = THREE.NearestFilter;
+    src.colorSpace = this.tex.colorSpace; // the same texel format, so the copy is exact
+    return src;
   }
 
   /** Shared by the constructor and `recreate`, whose settings would otherwise drift apart */
@@ -79,18 +104,28 @@ export class TexArray {
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.generateMipmaps = true;
     }
+
+    this.src?.dispose();
+    this.src = opts.gpu === true ? this.createSrc() : null;
+    if (this.src !== null) {
+      // until an upload is asked for three stands in a 1x1, so ask now: it is then created at
+      // full size on first use — though the zero mirror need never go up: the copies fill it
+      tex.source.dataReady = false;
+      tex.needsUpdate = true;
+    }
   }
 
   dispose() {
     // We don't `this.ct.canvas.{width,height} = 0`,
     // because context is cached under `opts.ctKey`.
     this.tex.dispose();
+    this.src?.dispose();
   }
 
   refresh() {
     // currently unused
     this.ct = getContext2d(this.opts.ctKey, {
-      willReadFrequently: true,
+      willReadFrequently: this.opts.gpu !== true,
       force: true,
       width: this.opts.width,
       height: this.opts.height,
@@ -138,7 +173,9 @@ export class TexArray {
     this.recreate();
   }
 
+  /** Re-upload every layer from the mirror. A `gpu` array has no mirror: its owner must redraw */
   update() {
+    if (this.src !== null) return;
     for (let i = 0; i < this.opts.numTextures; i++) {
       this.tex.addLayerUpdate(i); // fix double draw on Cmd+Shift+T in Chrome
     }
@@ -146,6 +183,16 @@ export class TexArray {
   }
 
   updateIndex(index: number, data?: Uint8Array | Float32Array, rowOffset = 0) {
+    if (this.src !== null && data === undefined) {
+      if (this.renderer === null) {
+        warn("gpu copy needs a renderer, so read back instead", this.opts.ctKey);
+      } else {
+        this.src.needsUpdate = true; // the canvas has been drawn on since its last upload
+        this.renderer.copyTextureToTexture(this.src, this.tex, null, dstLayer.set(0, 0, index));
+        return;
+      }
+    }
+
     const offset = index * (4 * this.opts.width * this.opts.height) + rowOffset * 4 * this.opts.width;
     const imageData = data ?? this.ct.getImageData(0, 0, this.opts.width, this.opts.height).data;
     (this.tex.image.data as Uint8Array | Float32Array).set(imageData, offset);
@@ -167,6 +214,9 @@ export function getContext2d(
   if (opts?.height) canvas.height = opts.height;
   return canvas.getContext("2d", opts) as CanvasRenderingContext2D;
 }
+
+/** Reused: only `z`, the layer, changes */
+const dstLayer = new THREE.Vector3();
 
 /** Cache to avoid re-creation on HMR */
 const canvasLookup: Record<string, HTMLCanvasElement> = {};

@@ -281,7 +281,19 @@
     - can move last picked
     - otherwise leave blue selectors
 
-- improve load perf
+- 🚧 improve load perf
+
+- remaining issues
+  - shell error handling: `api.get(path)` when process has already terminated
+  - obstacles should not reach below floor: floor depthWrite false causes issue
+  - `spawn` should snap to mesh by default
+  - npc sphere wipe should happen after rest of room darkens
+  - pick spot should be dark
+  - mobile initial touch delay
+  - flatten WorldMenu
+  - maybe free azimuthal
+  - saw npc intersect unlocked door
+
 
 # FUTURE
 
