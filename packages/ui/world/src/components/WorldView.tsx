@@ -1781,7 +1781,7 @@ const veilMs = 250;
 /** Shared by the paused and busy indicators, which only differ in where they sit */
 const indicatorClassName = cn(
   "absolute left-1/2 -translate-x-1/2 -translate-y-1/2 select-none",
-  "flex items-center gap-3 bg-black/20 rounded backdrop-blur-xs px-5 py-2",
+  "flex items-center gap-3 bg-black/20 rounded px-5 py-2",
   "font-mono text-yellow-200/80 text-xs uppercase tracking-[0.4em]",
 );
 const centreHintSecs = 4;
