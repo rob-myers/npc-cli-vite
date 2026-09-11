@@ -995,11 +995,13 @@ function getArriveDistance(npc: Npc) {
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
 }
 
-/** Avoidance is what makes npcs part around each other, and what spoils an arrival */
-const movingUpdateFlags =
-  crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
-  crowdApi.CrowdUpdateFlags.SEPARATION |
-  crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
+/**
+ * Avoidance is what makes npcs part around each other, and what spoils an arrival. No separation
+ * whilst walking: with one neighbour in range it is a fixed 1 m/s shove, on or off at
+ * `collisionQueryRange`, blind to walls — at a corner it argues with avoidance, and the walker
+ * wavers. Avoidance plans round the neighbour anyway
+ */
+const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
 
 /** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
 /** Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2` */
@@ -1013,11 +1015,10 @@ function getAgentParams(): crowd.AgentParams {
     height: npcConfig.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
-    // collisionQueryRange: 1,
-    // collisionQueryRange: 0.75,
     // cannot be smaller; maybe should be larger
     // collisionQueryRange: 0.5,
-    collisionQueryRange: 0.5 + 0.1,
+    // collisionQueryRange: 0.5 + 0.1,
+    collisionQueryRange: 1,
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
     // head-on to an idle agent, the two ways round score alike and avoidance can flip between
