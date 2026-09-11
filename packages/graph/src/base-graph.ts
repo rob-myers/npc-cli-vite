@@ -280,10 +280,9 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
   }
 
   /**
-   * @param subGraphNodes e.g. given graph with edges
-   * symbols -> sub-symbols and a subset of changed symbols,
-   * the co-reachable nodes would be all effected nodes,
-   * and `stratify(coReachableNodes)` would stratify them
+   * @param subGraphNodes This optional parameters permits
+   * restricting the stratification to part of the graph.
+   * `subGraphNodes` must be closed under co-reachability.
    */
   stratify(subGraphNodes?: Set<NodeType>): NodeType[][] {
     let frontier: NodeType[] = [];
