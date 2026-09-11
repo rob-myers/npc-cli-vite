@@ -31,7 +31,7 @@ pred.setHandler(function onWorldEvent(e, w) {
       pred.get().player = e.playerKey;
       break;
     case "map-settled":
-      pred.restore(w.mapKey); // the new map's own, restored from an earlier visit if there was one
+      pred.restore(w.mapKey);
       break;
     default:
       return; // otherwise stack overflow
@@ -75,5 +75,6 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
  */
 export function predicates(ct: JshCli.RunArg) {
   pred.restore(ct.w.mapKey);
+  pred.get().player = ct.w.player.key;
   ct.w.e.addKeyedListener("pred", pred.handle);
 }
