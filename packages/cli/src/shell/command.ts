@@ -134,6 +134,9 @@ class CmdService {
     const root = this.provideProcessCtxt(node);
     const pwd = root.home.PWD;
     const process = sessionApi.getProcess(meta);
+    if (process === undefined) {
+      throw Error(`process ${meta.pid} no longer exists`);
+    }
 
     const outputs = args.map((arg) => {
       // basic tilde expansion
