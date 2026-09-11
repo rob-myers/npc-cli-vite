@@ -3,40 +3,39 @@ import "./vendors/wasm_exec.js";
 import type { MvdanSh } from "./mvdan-sh.d";
 import { LangVariant, ParseResultSchema, type ShOptions } from "./mvdan-sh.model.js";
 
-export async function loadWasm() {
-  const go = new Go();
-
-  // source https://github.com/un-ts/sh-syntax/blob/d90f699c02b802adde9c32555de56b5fec695cc6/src/processor.ts#L156
-  if (!wasm.ready) {
-    console.log("Loading WASM from", wasm.url);
-    // compile a fresh module while it downloads, rather than after
-    wasm.module = await (wasm.promise ??= WebAssembly.compileStreaming(fetch(wasm.url)).catch(
-      // e.g. server sent the wrong Content-Type, which makes streaming throw
-      async () => WebAssembly.compile(await fetch(wasm.url).then((resp) => resp.arrayBuffer())),
-    ));
-    wasm.ready = true;
-  }
-
-  const wasmInstance = await WebAssembly.instantiate(wasm.module as WebAssembly.Module, go.importObject).then(
-    (instance) => {
-      go.run(instance);
+/**
+ * The one instance, made on first use and kept: a fresh instance per parse cost an instantiation
+ * of the 2.6 MB module every time, several of them on the main thread whilst the tty ran its profile
+ */
+export function loadWasm(): Promise<WasmInstance> {
+  return (wasm.instance ??= (async () => {
+    try {
+      console.log("Loading WASM from", wasm.url);
+      // compiled while it downloads, rather than after
+      const module = await (wasm.module ??= WebAssembly.compileStreaming(fetch(wasm.url)).catch(
+        // e.g. server sent the wrong Content-Type, which makes streaming throw
+        async () => WebAssembly.compile(await fetch(wasm.url).then((resp) => resp.arrayBuffer())),
+      ));
+      const go = new Go();
+      const instance = (await WebAssembly.instantiate(module, go.importObject)) as WasmInstance;
+      // runs `main` synchronously; the promise is for the program's exit, which needn't come
+      void go.run(instance);
       return instance;
-    },
-  );
-
-  return {
-    go,
-    wasm: wasmInstance as WebAssembly.Instance & { exports: WasmInstanceExports },
-  };
+    } catch (e) {
+      wasm.instance = null; // so a later parse can try again
+      throw e;
+    }
+  })());
 }
 
 const wasm = {
-  /** Compiled once, then instantiated per `loadWasm` */
-  module: null as null | WebAssembly.Module,
-  promise: null as null | Promise<WebAssembly.Module>,
-  ready: false,
+  /** Compiled once */
+  module: null as null | Promise<WebAssembly.Module>,
+  instance: null as null | Promise<WasmInstance>,
   url: new URL("../main.wasm", import.meta.url).href,
 };
+
+type WasmInstance = WebAssembly.Instance & { exports: WasmInstanceExports };
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -59,22 +58,13 @@ export async function parse(
   file: MvdanSh.File;
   message: string;
 }> {
-  const { go, wasm } = await loadWasm();
-
-  /**
-   * Do not await this promise, because it only resolves once the go main()
-   * function has exited. But we need the main function to stay alive to be
-   * able to call the `parse` function.
-   */
-  void go.run(wasm);
-
   const {
     memory,
     wasmAlloc,
     wasmFree,
     parse: transpiledParse,
     interactiveParse: transpiledInteractiveParse,
-  } = wasm.exports;
+  } = (await loadWasm()).exports;
 
   const filePath = encoder.encode(filepath);
   const textBuffer = encoder.encode(text);
