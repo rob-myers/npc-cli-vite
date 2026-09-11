@@ -3,7 +3,7 @@ import { sharedFolder } from "../../shell/session";
 /**
  * Ensure `/shared/pred` object and return it.
  */
-const getPredicates = () =>
+const getPred = () =>
   (sharedFolder.pred ??= {}) as {
     everPicked: Set<string>;
     lastPicked: null | string;
@@ -12,32 +12,46 @@ const getPredicates = () =>
     onEvent(e: JshCli.Event, w: JshCli.WorldState): void;
   };
 
+/**
+ * Ensure `/shared/event` object and return it.
+ */
+const getEvent = () =>
+  (sharedFolder.event ??= {}) as {
+    pred(e: JshCli.Event, w: JshCli.WorldState): void;
+  };
+
+/**
+ * ensure `/shared/pred`
+ */
 {
-  // ensure /shared/pred and update onEvent on HMR
-  const pred = getPredicates();
+  const pred = getPred();
   pred.everPicked ??= new Set();
   pred.lastPicked ??= null;
   pred.picked ??= new Set();
   pred.player ??= null;
-  pred.onEvent = function onWorldEvent(e: JshCli.Event, w: JshCli.WorldState) {
-    switch (e.key) {
-      case "picked": {
-        if (w.helper.isNpcPickEvent(e) === true) {
-          onPickNpc(e);
-        }
-        break;
-      }
-      case "set-player":
-        getPredicates().player = e.playerKey;
-        break;
-    }
-    // 🚧 graphical representation e.g. selector rings
-  };
 }
+
+/**
+ * ensure `/shared/event/pred` and update on HMR
+ */
+getEvent().pred = function onWorldEvent(e: JshCli.Event, w: JshCli.WorldState) {
+  switch (e.key) {
+    case "picked": {
+      if (w.helper.isNpcPickEvent(e) === true) {
+        onPickNpc(e);
+      }
+      break;
+    }
+    case "set-player":
+      getPred().player = e.playerKey;
+      break;
+  }
+  // 🚧 graphical representation e.g. selector rings
+};
 
 function onPickNpc(e: JshCli.NpcPickEvent) {
   const { npcKey } = e.meta;
-  const pred = getPredicates();
+  const pred = getPred();
 
   pred.everPicked.add(npcKey);
 
@@ -53,5 +67,5 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
 }
 
 export function predicates(ct: JshCli.RunArg) {
-  ct.w.e.addKeyedListener("pred", (e: JshCli.Event, w: JshCli.WorldState) => getPredicates().onEvent?.(e, w));
+  ct.w.e.addKeyedListener("pred", (e: JshCli.Event, w: JshCli.WorldState) => getEvent().pred?.(e, w));
 }
