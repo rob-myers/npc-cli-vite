@@ -275,7 +275,8 @@
     - `/shared/map/{mapKey}/pred`
     - copy from onchange map
     - copy to onchange
-  - derive selector rings from /shared/pred
+  - ✅ derive selector rings from /shared/pred
+  - 🚧 clarify multi-selector meaning relative to controls
 
 - improve load perf
 

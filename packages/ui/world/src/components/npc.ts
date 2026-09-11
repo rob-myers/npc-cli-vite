@@ -15,7 +15,7 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultIdleAnimationClipKey } from "../const";
+import { defaultIdleAnimationClipKey, defaultNpcLabelColor } from "../const";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -67,7 +67,7 @@ export class Npc {
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
 
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
-  labelStyle: JshCli.NpcLabelStyle = { color: "#ff9", speaking: false };
+  labelStyle: JshCli.NpcLabelStyle = { color: defaultNpcLabelColor, speaking: false };
   last: JshCli.NpcLast = {
     /** Seen blocking area in navmesh */
     blockingArea: -1,
