@@ -253,10 +253,12 @@
   - ✅ inferred shellActsList is executed on HMR
   - ✅ pred.ts stores event callback at `/shared/pred/event`
     - ✅ hmr stable
-  - 🚧 useWorldEvents supports key-callback-pair handlers
+  - ✅ remove SHELL_ACTS approach and use sharedFolder instead
+  - ✅ useWorldEvents supports key-callback-pair handlers
     - key for idempotency
     - callback for separation e.g. resolve `/shared/pred/event`
-  - 🚧 `predicates` tells useWorldEvents to use key-callback-pair
+  - 🚧 `pred` tells useWorldEvents to use key-callback-pair
+    - idempotent e.g. can be run in shell profile
 
 - improve load perf
 

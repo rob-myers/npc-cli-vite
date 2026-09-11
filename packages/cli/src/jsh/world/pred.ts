@@ -1,3 +1,9 @@
+import { sharedFolder } from "../../shell/session";
+
+export function pred(ct: JshCli.RunArg) {
+  ct.w.e.addKeyedListener("pred", (e: JshCli.Event) => sharedFolder.pred?.event?.(e));
+}
+
 // 🚧 WIP
 function onWorldEvent(event: JshCli.Event) {
   if (event.key === "disabled") {
@@ -5,8 +11,4 @@ function onWorldEvent(event: JshCli.Event) {
   }
 }
 
-export const SHELL_ACTS: JshCli.SHELL_ACTS = {
-  extend_shared(shared: JshCli.ProcessContext["shared"]) {
-    (shared.pred ??= {}).event = onWorldEvent;
-  },
-};
+(sharedFolder.pred ??= {}).event = onWorldEvent;
