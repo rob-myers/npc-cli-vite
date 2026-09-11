@@ -960,6 +960,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
           longDown: state.lastPointer.longPress,
           rightDown: state.lastPointer.rightPress,
+          shiftKey: e.shiftKey,
 
           ...point, // can provide as point with meta
         };

@@ -257,8 +257,19 @@
   - ✅ useWorldEvents supports key-callback-pair handlers
     - key for idempotency
     - callback for separation e.g. resolve `/shared/pred/event`
-  - 🚧 `pred` tells useWorldEvents to use key-callback-pair
-    - idempotent e.g. can be run in shell profile
+  - ✅ `pred` tells useWorldEvents to use key-callback-pair
+    - ✅ idempotent e.g. can be run in shell profile
+    - ✅ set-player event
+    - ✅ track various predicates
+      - everPicked: `Set`
+      - lastPicked: `null | string`
+      - picked: `Set`
+      - player: `null | string`
+  - 🚧 auto-add listener on connect
+    - remove `pred`
+    - remove `source` from profile
+    - put event listener at `/shared/onevent/pred`
+  - 🚧 derive selector rings from /shared/pred
 
 - improve load perf
 

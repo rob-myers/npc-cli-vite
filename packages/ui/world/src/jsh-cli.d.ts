@@ -42,6 +42,11 @@ declare namespace JshCli {
       }
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }
+    | {
+        /** Somebody was made the player, or the player's npc was removed (`null`) */
+        key: "set-player";
+        playerKey: null | string;
+      }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
     | { key: "spawned-many"; npcKeys: string[] }
     | { key: "speech"; npcKey: string; words: string; epochMs: number }
@@ -78,9 +83,13 @@ declare namespace JshCli {
     longDown: boolean;
     /** Was right mouse button being pressed?  */
     rightDown: boolean;
+    /** Was shift key being pressed?  */
+    shiftKey: boolean;
   } & ({ x: number; y: number; z: number } & Pick<import("three").Intersection, "distance" | "faceIndex" | "normal"> & {
       point: import("three").Vector3Tuple;
     });
+
+  type NpcPickEvent = PickEvent & { meta: JshCli.PickEvent["meta"] & { type: "npc" } };
 
   type EnterColliderEvent = Extract<Event, { key: "enter-collider" }>;
   type ExitColliderEvent = Extract<Event, { key: "exit-collider" }>;
