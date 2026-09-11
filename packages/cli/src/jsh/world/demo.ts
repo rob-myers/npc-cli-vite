@@ -46,6 +46,13 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
+/** The process no longer exists when we attempt to resolve */
+export function demo_bad_resolve({ api }: JshCli.RunArg) {
+  setTimeout(() => {
+    api.get("/shared");
+  }, 1000);
+}
+
 /**
  * Draw an npc's local navmesh boundary — the segments `park` chooses from, as of now — in red.
  * Sans npc, takes it down.
