@@ -777,37 +777,42 @@ export default function NPCs() {
 
   const queryData =
     useQuery({
-      // the shareable half — gltf, sheet images, manifest + svg overlays — one query for every
-      // world. The per-world half (drawing skins into `w.texSkin`) lives in the memo below.
+      // the shareable half — gltf, sheet images, manifest — one query for every world. The
+      // per-world half (drawing skins into `w.texSkin`) lives in the memo below.
       // The epoch changes the key on the post-HMR re-render, so the refetch runs the NEW queryFn
       queryKey: ["skins-and-gltf", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
       queryFn: async () => {
-        // 🚧 avoid SVG load in prod
         const cacheBust = getDevCacheBustQueryParam();
-        const [gltf, sheetImages, { manifest: skinManifest, skinKeyToSvgOverride }] = await Promise.all([
+        const [gltf, sheetImages, skinManifest] = await Promise.all([
           new GLTFLoader().loadAsync(url.templateMoreAnimsWipGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
-          fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => {
-            /**
-             * Faster hot-reloads than if we applied SVG overlays to spritesheet.
-             */
-            const manifest = AssetsSkinManifestSchema.parse(await r.json());
-            return {
-              manifest,
-              skinKeyToSvgOverride: Object.fromEntries(
-                await Promise.all(
-                  Object.entries(manifest.byKey).map(
-                    async ([key, { svgPath }]) =>
-                      [key, svgPath ? await fetchSkinOverlay(svgPath, cacheBust) : null] as const,
-                  ),
-                ),
-              ),
-            };
-          }),
+          fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
-        return { gltf, sheetImages, skinKeyToSvgOverride, skinManifest };
+        return { gltf, sheetImages, skinManifest };
       },
       enabled: !!w.sheets,
+      gcTime: 0,
+    }).data ?? null;
+
+  // the svg overlays — a skin at 256px with its effects, over the sheet's 64px cell — come AFTER
+  // the first frame: fetched and rasterised off the critical path, then drawn over the sheet's
+  // cells below. Faster hot-reloads too, than baking them into the spritesheet
+  const skinOverlays =
+    useQuery({
+      queryKey: ["skin-overlays", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
+      queryFn: async () => {
+        const cacheBust = getDevCacheBustQueryParam();
+        const entries = Object.entries(queryData?.skinManifest.byKey ?? {});
+        return Object.fromEntries(
+          await Promise.all(
+            entries.map(async ([key, { svgPath }]) => [
+              key,
+              svgPath ? await fetchSkinOverlay(svgPath, cacheBust) : null,
+            ]),
+          ),
+        ) as Record<string, null | HTMLCanvasElement>;
+      },
+      enabled: queryData !== null,
       gcTime: 0,
     }).data ?? null;
 
@@ -823,12 +828,7 @@ export default function NPCs() {
     ct.imageSmoothingEnabled = false;
     skinEntries.forEach(({ sheetId, rect }, i) => {
       ct.clearRect(0, 0, tw, th);
-      const svgImage = queryData.skinKeyToSvgOverride[skinEntries[i].key];
-      if (svgImage) {
-        ct.drawImage(svgImage, 0, 0, tw, th);
-      } else {
-        ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
-      }
+      ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
       w.texSkin.updateIndex(i);
     });
 
@@ -858,6 +858,22 @@ export default function NPCs() {
     state.skin = { entries: skinEntries, manifest: queryData.skinManifest };
     w.setNextPending({ gltf: false, skins: false });
   }, [queryData]);
+
+  useEffect(() => {
+    // the overlays land: redraw their skins over the sheet's cells
+    if (queryData === null || skinOverlays === null) return;
+    const { width: tw, height: th } = w.texSkin.opts;
+    const { ct } = w.texSkin;
+    ct.imageSmoothingEnabled = false;
+    Object.values(w.sheets.skin).forEach(({ key }, i) => {
+      const svgImage = skinOverlays[key];
+      if (!svgImage) return;
+      ct.clearRect(0, 0, tw, th);
+      ct.drawImage(svgImage, 0, 0, tw, th);
+      w.texSkin.updateIndex(i);
+    });
+    w.view.forceUpdate();
+  }, [queryData, skinOverlays]);
 
   w.r3fStore = useReactThreeFiberStore();
 

@@ -776,8 +776,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.threeReady = true;
         // override THREE.WebGPURenderer
         w.r3f = rootState as Omit<typeof rootState, "gl"> as typeof w.r3f;
-        // re-upload textures on new GPU context (e.g. Chrome cmd+shift+t double init)
-        w.texFloor.update();
+        w.texFloor.renderer = w.texCeil.renderer = w.texObs.renderer = w.r3f.gl;
+        // a new GPU context (e.g. Chrome cmd+shift+t double init) has lost their layers, which
+        // live only there — three re-uploads the rest from their mirrors, these are redrawn
+        if (w.floor?.drawnMapKey != null) {
+          w.floor.drawAll();
+          void Promise.all([w.ceil.draw(), w.obs.draw()]).then(() => w.update());
+        }
         w.update();
       },
       onLookGesture(held) {
