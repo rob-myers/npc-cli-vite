@@ -291,6 +291,8 @@
   - pick spot should be dark
   - mobile initial touch delay
   - flatten WorldMenu
+  - maybe free azimuthal
+  - saw npc intersect unlocked door
 
 
 # FUTURE
