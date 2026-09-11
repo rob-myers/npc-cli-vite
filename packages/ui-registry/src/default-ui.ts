@@ -13,7 +13,7 @@ export function getDefaultTabs() {
   const uid = () => `ui-${crypto.randomUUID()}`;
 
   const jobsKey = "jobs-0";
-  const profileKey: ProfileKey = "world_profile_v0";
+  const profileKey: ProfileKey = "default_profile";
   const ttyKey = "tty-0";
   const worldKey = "world-0";
 
