@@ -913,6 +913,8 @@ function MenuShell({
   return (
     <Menu.Root
       open={state.menuOpen}
+      // not modal: a click on the world whilst the menu is up both closes it and lands, as a pick
+      modal={false}
       onOpenChange={(open, { reason, event }) => {
         if (open) {
           state.set({ menuOpen: true });
