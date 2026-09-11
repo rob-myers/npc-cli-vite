@@ -8,6 +8,9 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
     />
     <title>NPC CLI</title>
+    <!-- fetched by the world as soon as it mounts: on their way whilst the scripts still evaluate -->
+    <link rel="preload" href="/assets.json" as="fetch" crossorigin />
+    <link rel="preload" href="/sheets.json" as="fetch" crossorigin />
     <link href="/src/styles/main.css" rel="stylesheet">
     <script>
       (function themeInitialization() {
