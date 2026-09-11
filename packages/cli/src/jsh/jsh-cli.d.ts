@@ -23,9 +23,4 @@ declare namespace JshCli {
 
     datum: Datum;
   }
-
-  type SHELL_ACTS = {
-    extend_shared(shared: JshCli.ProcessContext["shared"]): void;
-  };
-  type ShellActsList = Partial<SHELL_ACTS>[];
 }

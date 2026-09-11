@@ -7,6 +7,8 @@ export function jsFunctionToShellFunction(opts: {
 }) {
   const module = opts.modules[opts.moduleKey] as ModuleMaybeMeta;
 
+  opts.moduleKey === "pred" && console.log({ opts });
+
   return `${opts.fnAliasKey ?? opts.fnKey}() ${
     generatorConstructorNames.includes(opts.fn.constructor.name)
       ? // function* foo { bar }
@@ -33,14 +35,3 @@ export type ModuleMaybeMeta = { meta?: { map: Meta } };
 function isMapFunc(module: ModuleMaybeMeta, fn: (...args: any[]) => any) {
   return Object.values(module.meta?.map ?? {}).some((x) => x === fn);
 }
-
-export function isPartialShellActs(input: any): input is JshCli.SHELL_ACTS {
-  return (
-    typeof input === "object" &&
-    Object.keys(input).every((key) => key in fromShellActsKeys && typeof input[key] === "function")
-  );
-}
-
-const fromShellActsKeys: Record<keyof JshCli.SHELL_ACTS, true> = {
-  extend_shared: true,
-};

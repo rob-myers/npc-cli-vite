@@ -1,7 +1,7 @@
 import * as modules from "@npc-cli/cli/jsh/modules";
 /** Each keyed value is a string i.e. shell code. */
 import * as scripts from "@npc-cli/cli/jsh/scripts";
-import { isPartialShellActs, jsFunctionToShellFunction } from "@npc-cli/cli/shell/js-to-shell";
+import { jsFunctionToShellFunction } from "@npc-cli/cli/shell/js-to-shell";
 
 export type TtyJsModules = typeof modules;
 
@@ -41,10 +41,3 @@ export const shellFunctionFiles = {
     {} as Record<EtcBasename, string>,
   ),
 };
-
-/**
- * All valid constant exports named "SHELL_ACTS" from jsh modules.
- */
-export const shellActsList: JshCli.ShellActsList = Object.values(modules).flatMap((module) =>
-  "SHELL_ACTS" in module && isPartialShellActs(module.SHELL_ACTS) ? module.SHELL_ACTS : [],
-);

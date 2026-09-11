@@ -35,6 +35,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       doorToNpcs: {},
       externalNpcs: new Set(),
       handLitRooms: new Set(),
+      keyedListener: new Map(),
       litRooms: new Map(),
       npcToAccess: {},
       npcToDoable: {},
@@ -47,6 +48,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
+      },
+      addKeyedListener(key, getListener) {
+        state.keyedListener.set(key, getListener);
       },
       canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
@@ -410,6 +414,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           default:
             throw new ExhaustiveError(e);
         }
+
+        for (const listener of state.keyedListener.values()) listener(e);
       },
       onExitCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
@@ -546,6 +552,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           default:
             throw new ExhaustiveError(e);
         }
+
+        for (const listener of state.keyedListener.values()) listener(e);
       },
       async park(npc) {
         const agent = npc.agent;
@@ -1177,6 +1185,13 @@ export type State = {
    * change, a `grKey` meaning nothing to the map coming in
    */
   handLitRooms: Set<Geomorph.GmRoomKey>;
+  keyedListener: Map<string, (event: JshCli.Event) => void>;
+  /**
+   * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
+   * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
+   * going out is an entry rewritten or dropped
+   */
+  litRooms: Map<string, Geomorph.GmRoomId[]>;
   /**
    * Lights a room by hand, or puts it out; toggles when `next` is omitted. Takes a `grKey` or a
    * `GmRoomId`, and warns rather than throwing where there is no such room
@@ -1184,12 +1199,6 @@ export type State = {
   setRoomLit(input: Geomorph.GmRoomKey | Geomorph.GmRoomId, next?: boolean): void;
   /** Puts out every room lit by hand, leaving what the player can see and the lit npcs */
   clearHandLitRooms(): void;
-  /**
-   * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
-   * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
-   * going out is an entry rewritten or dropped
-   */
-  litRooms: Map<string, Geomorph.GmRoomId[]>;
   /** Lights `npc` or puts them out. Toggles when `next` is omitted */
   setNpcLit(npc: Npc, next?: boolean): void;
   /**
@@ -1223,6 +1232,10 @@ export type State = {
    * ```
    */
   addFrameCallback(cb: () => void): () => void;
+  /**
+   * Can use `key` to avoid duplication
+   */
+  addKeyedListener(key: string, listener: (event: JshCli.Event) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
   /**
    * - When an npc is moving its destination should be inside a room.
@@ -1350,11 +1363,6 @@ export type State = {
 
 const emptySet = new Set<Geomorph.GmDoorKey>();
 
-/**
- * How far CLEAR of a door an npc it cannot pass is kept: their own radius, and a margin on top.
- * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor
- */
-const shutDoorKeepOut = npcConfig.dist.agentRadius + npcConfig.dist.shutDoorKeepOut;
 /** How far a parked npc keeps from parked npcs ACROSS from them, centre to centre */
 const parkNpcClearance = 6.5 * npcConfig.dist.agentRadius;
 /** …and from those parked along the same wall: a body's width, and a little */
@@ -1363,5 +1371,10 @@ const parkNpcBesideClearance = 2 * npcConfig.dist.agentRadius + 0.05;
 const parkedWithin = npcConfig.dist.agentRadius + 0.1;
 /** A parked point sits this far clear of what cut its span, so a point test agrees */
 const parkSlack = 1e-3;
+/**
+ * How far CLEAR of a door an npc it cannot pass is kept: their own radius, and a margin on top.
+ * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor
+ */
+const shutDoorKeepOut = npcConfig.dist.agentRadius + npcConfig.dist.shutDoorKeepOut;
 
 const emptyMeta = {};

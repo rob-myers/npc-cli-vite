@@ -9,7 +9,7 @@ import useMeasure from "react-use-measure";
 import { toProcessStatus } from "../shell/const";
 import type { ExternalMessage, ExternalMessageProcessLeader } from "../shell/io";
 import type { Session } from "../shell/session";
-import { sessionApi, sharedFolder } from "../shell/session";
+import { sessionApi } from "../shell/session";
 import { BaseTty, type State as BaseTtyState } from "./BaseTty";
 import { TtyMenu, type State as TtyMenuState } from "./TtyMenu";
 
@@ -49,11 +49,6 @@ export function Tty(props: Props) {
         baseRef.current?.fitAddon.fit();
       }, 30),
 
-      applyShellActsList() {
-        for (const shellAct of props.shellActsList) {
-          shellAct.extend_shared?.(sharedFolder);
-        }
-      },
       handleExternalMsg({ msg }: ExternalMessage) {
         switch (msg.key) {
           case "auto-re-source-file": {
@@ -182,7 +177,7 @@ export function Tty(props: Props) {
       },
     }),
     {
-      deps: [props.shFiles, props.modules, props.shellActsList],
+      deps: [props.shFiles, props.modules],
     },
   );
 
@@ -244,10 +239,9 @@ export function Tty(props: Props) {
   React.useEffect(() => {
     // sync shell functions
     if (baseRef.current?.session?.ttyShell.isInitialized()) {
-      state.applyShellActsList();
       state.storeAndSourceFuncs();
     }
-  }, [baseRef.current?.session, props.shFiles, props.modules, props.shellActsList]);
+  }, [baseRef.current?.session, props.shFiles, props.modules]);
 
   // useEffectNonStrict so it occurs after BaseTty's
   // sync ~/PROFILE so ready for useEffectNonStrict
@@ -273,7 +267,6 @@ export function Tty(props: Props) {
 
       session.ttyShell.initialise(xterm).then(async () => {
         await state.storeAndSourceFuncs();
-        state.applyShellActsList();
         state.update();
         await session.ttyShell.runProfile();
       });
@@ -319,13 +312,6 @@ export interface Props {
    * They are partitioned by "fileKey".
    */
   modules: typeof import("../jsh/modules");
-  /**
-   * All shell actions provided by module as:
-   * ```tsx
-   * export const SHELL_ACTS: JshCli.SHELL_ACTS = { ... }
-   * ```
-   */
-  shellActsList: JshCli.ShellActsList;
   /**
    * All shell files (*.sh and *.js.sh).
    * They are spread into `/etc`.
