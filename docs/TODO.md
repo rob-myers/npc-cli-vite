@@ -248,7 +248,7 @@
   - ✅ variant which only moves player
   - ✅ use `demo_selector path:/shared/selected prevPath:/shared/selected-prev`
 
-- 🚧 new approach via jsh/world/pred.ts
+- ✅ new approach via jsh/world/pred.ts
   - ✅ jsh modules can export const SHELL_ACTS of type `Partial<JshCli.SHELL_ACTS>`
   - ✅ inferred shellActsList is executed on HMR
   - ✅ pred.ts stores event callback at `/shared/pred/event`
@@ -276,7 +276,10 @@
     - copy from onchange map
     - copy to onchange
   - ✅ derive selector rings from /shared/pred
-  - 🚧 clarify multi-selector meaning relative to controls
+  - ✅ clarify multi-selector meaning relative to controls
+    - can move player
+    - can move last picked
+    - otherwise leave blue selectors
 
 - improve load perf
 
