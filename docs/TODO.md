@@ -271,8 +271,8 @@
   - ✅ default profile has `awaitWorld` and `predicates`
     - remove world profile
   - ✅ put event listener at `/shared/event/pred`
-  - support change map
-    - /shared/map/{mapKey}/pred
+  - ✅ support change map
+    - `/shared/map/{mapKey}/pred`
     - copy from onchange map
     - copy to onchange
   - derive selector rings from /shared/pred

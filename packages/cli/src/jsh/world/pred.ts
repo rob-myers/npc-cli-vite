@@ -1,40 +1,25 @@
-import { sharedFolder } from "../../shell/session";
+import { sharedMapSlot } from "./shared-slot";
+
+/** Predicates */
+type Pred = {
+  everPicked: Set<string>;
+  lastPicked: null | string;
+  picked: Set<string>;
+  player: null | string;
+};
 
 /**
- * Ensure `/shared/pred` object and return it.
+ * `/shared/pred`, kept per map: a map's predicates outlive a visit to another map, whose
+ * npcs they would mean nothing to
  */
-const getPred = () =>
-  (sharedFolder.pred ??= {}) as {
-    everPicked: Set<string>;
-    lastPicked: null | string;
-    picked: Set<string>;
-    player: null | string;
-    onEvent(e: JshCli.Event, w: JshCli.WorldState): void;
-  };
+const pred = sharedMapSlot<Pred>("pred", () => ({
+  everPicked: new Set(),
+  lastPicked: null,
+  picked: new Set(),
+  player: null,
+}));
 
-/**
- * Ensure `/shared/event` object and return it.
- */
-const getEvent = () =>
-  (sharedFolder.event ??= {}) as {
-    pred(e: JshCli.Event, w: JshCli.WorldState): void;
-  };
-
-/**
- * ensure `/shared/pred`
- */
-{
-  const pred = getPred();
-  pred.everPicked ??= new Set();
-  pred.lastPicked ??= null;
-  pred.picked ??= new Set();
-  pred.player ??= null;
-}
-
-/**
- * ensure `/shared/event/pred` and update on HMR
- */
-getEvent().pred = function onWorldEvent(e: JshCli.Event, w: JshCli.WorldState) {
+pred.setHandler(function onWorldEvent(e, w) {
   switch (e.key) {
     case "picked": {
       if (w.helper.isNpcPickEvent(e) === true) {
@@ -43,29 +28,33 @@ getEvent().pred = function onWorldEvent(e: JshCli.Event, w: JshCli.WorldState) {
       break;
     }
     case "set-player":
-      getPred().player = e.playerKey;
+      pred.get().player = e.playerKey;
+      break;
+    case "map-settled":
+      pred.restore(w.mapKey); // the new map's own, restored from an earlier visit if there was one
       break;
   }
   // 🚧 graphical representation e.g. selector rings
-};
+});
 
 function onPickNpc(e: JshCli.NpcPickEvent) {
   const { npcKey } = e.meta;
-  const pred = getPred();
+  const p = pred.get();
 
-  pred.everPicked.add(npcKey);
+  p.everPicked.add(npcKey);
 
   // lastPicked unless re-pick
-  pred.lastPicked = pred.lastPicked === npcKey ? null : npcKey;
+  p.lastPicked = p.lastPicked === npcKey ? null : npcKey;
 
   // npcKey includes <=> pick count odd
-  if (pred.picked.has(npcKey) === true) {
-    pred.picked.delete(npcKey);
+  if (p.picked.has(npcKey) === true) {
+    p.picked.delete(npcKey);
   } else {
-    pred.picked.add(npcKey);
+    p.picked.add(npcKey);
   }
 }
 
 export function predicates(ct: JshCli.RunArg) {
-  ct.w.e.addKeyedListener("pred", (e: JshCli.Event, w: JshCli.WorldState) => getEvent().pred?.(e, w));
+  pred.restore(ct.w.mapKey);
+  ct.w.e.addKeyedListener("pred", pred.handle);
 }
