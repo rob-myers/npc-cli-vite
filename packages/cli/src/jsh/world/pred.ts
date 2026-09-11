@@ -52,11 +52,6 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   }
 }
 
-// 🚧 auto-add listener on connect
-
-/**
- * `pred` stands for "predicates" i.e. the construction of predicates over based on world events.
- */
-export function pred(ct: JshCli.RunArg) {
+export function predicates(ct: JshCli.RunArg) {
   ct.w.e.addKeyedListener("pred", (e: JshCli.Event, w: JshCli.WorldState) => getPredicates().onEvent?.(e, w));
 }
