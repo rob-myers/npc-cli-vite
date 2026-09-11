@@ -270,7 +270,7 @@
     - remove `source` from profile
   - ✅ default profile has `awaitWorld` and `predicates`
     - remove world profile
-  - put event listener at `/shared/event/pred`
+  - ✅ put event listener at `/shared/event/pred`
   - support change map
     - /shared/map/{mapKey}/pred
     - copy from onchange map
