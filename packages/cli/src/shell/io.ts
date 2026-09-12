@@ -395,7 +395,14 @@ class ShellWire<T> {
   }
 }
 
-export type MessageFromXterm = RequestHistoryLine | SendLineToShell | SendKillSignalToShell;
+export type MessageFromXterm = RequestHistoryLine | SendLineToShell | SendKillSignalToShell | RequestCompletion;
+
+/** Tab was pressed: complete the word under `cursor` — see `shell/complete` */
+export type RequestCompletion = {
+  key: "req-completion";
+  input: string;
+  cursor: number;
+};
 
 type RequestHistoryLine = {
   key: "req-history-line";
@@ -422,7 +429,11 @@ export type MessageFromShell =
   | ClearXterm
   | TtyReceivedLine
   | SendHistoryLine
-  | ExternalMessage;
+  | ExternalMessage
+  | SendCompletion;
+
+/** The answer to `req-completion` */
+export type SendCompletion = { key: "send-completion" } & import("./complete").Completion;
 
 /** Tty sends and sets xterm prompt */
 type SendXtermPrompt = {
