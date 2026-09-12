@@ -89,7 +89,7 @@ export default function NPCs() {
         if (npc.agentId === null) {
           return;
         }
-        const result = state.getClosestPoly(npc.point, "0.5");
+        const result = state.getClosestPoly(npc.point, 0.5);
         if (result.success === true) {
           // a fresh agent at the same spot has no velocity, so nothing carries over
           state.placeNpcAt(npc, result, npc.point);
@@ -375,7 +375,7 @@ export default function NPCs() {
         }
         return npc;
       },
-      getClosestPoly(targetPos, accuracy = "0.005", queryFilter = ANY_QUERY_FILTER) {
+      getClosestPoly(targetPos, accuracy = 0.005, queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = helper.groundPointToTuple(helper.parseGroundPoint(targetPos));
         const { halfExtents, distance } = byAccuracy[accuracy];
         const result = findNearestPoly(
@@ -409,7 +409,7 @@ export default function NPCs() {
         let groundPoint = helper.parseGroundPoint(to);
 
         const npc = state.get(npcKey);
-        const result = state.getClosestPoly(groundPoint, "0.5");
+        const result = state.getClosestPoly(groundPoint, 0.5);
 
         const doResult = state.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
 
@@ -703,8 +703,8 @@ export default function NPCs() {
           doResult.type === "none" ? w.e.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
         if (gmRoomId === null) throw Error("must be in some room");
 
-        const closePolyResult = state.getClosestPoly(groundAt, "0.5");
-        if (closePolyResult.success === false && doResult.type === "none") {
+        const closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
+        if (closePolyResult?.success === false) {
           throw Error("not placable");
         }
 
@@ -753,8 +753,8 @@ export default function NPCs() {
           return;
         }
 
-        const from = state.getClosestPoly(rooms[0].astar.centroid, "0.5");
-        const to = state.getClosestPoly(rooms[rooms.length - 1].astar.centroid, "0.5");
+        const from = state.getClosestPoly(rooms[0].astar.centroid, 0.5);
+        const to = state.getClosestPoly(rooms[rooms.length - 1].astar.centroid, 0.5);
         if (from.success === false || to.success === false) {
           return;
         }
@@ -971,7 +971,7 @@ export type State = {
   findFreeDoMeta(meta: Meta, npcKey: string): JshCli.FindDoMetaResult;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
-    accuracy?: "0.005" | "0.1" | "0.5",
+    accuracy?: 0.005 | 0.1 | 0.5,
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;
