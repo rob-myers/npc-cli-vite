@@ -933,14 +933,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       otherPointerDown(e) {
         return (state.controls?.pointers ?? []).some((p) => p.pointerId !== e.pointerId);
       },
-      async pickObject(e) {
-        if (w.settledMapKey !== w.mapKey) {
-          return;
-        }
+      renderPick(uv) {
         const { gl, scene, camera } = w.r3f;
         const renderer = gl as unknown as THREE.WebGPURenderer;
-
-        const uv = state.computePixelUv(e.nativeEvent);
 
         const rt = state.pickRT;
         const rtCamera = camera;
@@ -961,7 +956,19 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         renderer.setRenderTarget(null);
         rtCamera.clearViewOffset();
 
-        const rgba = await renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1);
+        return renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1);
+      },
+      warmPick() {
+        // the pick target has other attachments than the screen, so the first pick builds every
+        // material a second pipeline — on a phone a freeze of a second or two, right on the first
+        // tap. Rendered once here instead, whilst nothing is moving that could be seen to stall
+        void state.renderPick({ u: 0.5, v: 0.5 }).catch(() => {});
+      },
+      async pickObject(e) {
+        if (w.settledMapKey !== w.mapKey) {
+          return;
+        }
+        const rgba = await state.renderPick(state.computePixelUv(e.nativeEvent));
         const picked = state.getPickedFromPixel(rgba);
         if (picked === null) return;
 
@@ -1686,6 +1693,10 @@ export type State = {
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
   /** Where on the frame a pointer landed */
   computePixelUv: (e: PointerEvent) => { u: number; v: number };
+  /** Renders the pick pass for the pixel at `uv`, resolving to its rgba */
+  renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
+  /** Builds the pick pass's pipelines ahead of the first pick — see within */
+  warmPick(): void;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
