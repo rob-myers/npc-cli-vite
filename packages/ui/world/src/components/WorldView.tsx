@@ -46,7 +46,6 @@ import {
   defaultZoomSettleRate,
   zoomCommitIn,
 } from "../service/camera-controls";
-import { createDemoPostFx, type DemoPostFx, type DemoPostFxKey, warpCrtUv } from "../service/demo-post-process";
 import {
   createFadeRooms,
   type FadeRooms,
@@ -67,6 +66,7 @@ import { decodePick } from "../service/pick";
 import { createPlayerFrontier, type PlayerFrontier } from "../service/player-frontier";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
+import { createRgbShift, type RgbShiftFx } from "../service/rgb-shift";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
@@ -145,7 +145,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       frontierHold: false,
       keysDown: new Set(),
       postFx: createPostProcessing(),
-      demoFx: createDemoPostFx(),
+      rgbShiftFx: createRgbShift(),
       fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
       roomSlots: createRoomSlots(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
@@ -155,7 +155,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       busy: null,
       postProcessing: saved.postProcessing,
       npcOutline: saved.npcOutline,
-      demoPostFx: saved.demoPostFx,
+      rgbShift: saved.rgbShift,
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
       // each is 0..1, driving a `mix` so 0 is exactly identity
@@ -167,8 +167,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
         const u = ((e.clientX - left) * glPixelRatio) / state.canvas.width;
         const v = ((e.clientY - top) * glPixelRatio) / state.canvas.height;
-        // `crt` bends the frame under the pointer, so where we clicked is not what we clicked on
-        return state.demoPostFx === "crt" ? warpCrtUv(u, v) : { u, v };
+        return { u, v };
       },
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
@@ -287,9 +286,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         let mesh: THREE.Mesh;
 
         const uv = state.computePixelUv(e);
-        if (uv === null) {
-          return null; // warped uvs needn't cover pixels
-        }
         const normalizedDeviceCoords = new THREE.Vector2(-1 + 2 * uv.u, +1 - 2 * uv.v);
         w.view.raycaster.setFromCamera(normalizedDeviceCoords, state.controls?.object ?? w.r3f.camera);
 
@@ -904,9 +900,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const renderer = gl as unknown as THREE.WebGPURenderer;
 
         const uv = state.computePixelUv(e.nativeEvent);
-        if (uv === null) {
-          return; // the `crt` bulge pushes the corners off-frame, where there is nothing to pick
-        }
 
         const rt = state.pickRT;
         const rtCamera = camera;
@@ -1248,9 +1241,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ postProcessing: next });
         state.forceUpdate();
       },
-      setDemoPostFx(next) {
-        state.demoPostFx = next;
-        store.patch({ demoPostFx: next });
+      setRgbShiftEnabled(next = !state.rgbShift) {
+        state.rgbShift = next;
+        store.patch({ rgbShift: next });
+        state.forceUpdate();
         // rebuilding the pipeline is `PostProcessing`'s job — this is one of its deps, so it has
         // to be re-rendered for the change to be noticed. It only exists whilst the post pass does,
         // so with that off the choice simply waits
@@ -1283,8 +1277,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.npcMaskMrt === null
             ? composed
             : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
-        // then whatever is being tried out on top of it, which is usually nothing at all
-        pipeline.outputNode = state.demoFx.apply(bordered, state.demoPostFx);
+        pipeline.outputNode = state.rgbShiftFx.apply(bordered, state.rgbShift);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -1342,7 +1335,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
          * ℹ️ can set items below true whilst editing respective systems
          */
         initial: false,
-        demoFx: true,
+        rgbShiftFx: true,
         fadeRoomsFx: false,
         playerFrontier: false,
         playerLight: false, // 🔔 `true` causes decor rebuild on hmr
@@ -1588,8 +1581,8 @@ export type State = {
   easeFrontier(): void;
   /** What the post pass does to the finished frame — see `service/post-processing` */
   postFx: PostProcessingType;
-  /** The shelf of effects we can hang off the end of it — see `service/demo-post-process` */
-  demoFx: DemoPostFx;
+  /** Hung off the end of it — see `service/rgb-shift` */
+  rgbShiftFx: RgbShiftFx;
   /** Which rooms the world is shown in — see `service/fade-rooms` */
   fadeRoomsFx: FadeRooms;
   /** Which room every part of the world stands in — see `service/room-slots` */
@@ -1604,8 +1597,8 @@ export type State = {
   postProcessing: boolean;
   /** Whether the post pass borders the npcs — see `service/npc-outline` */
   npcOutline: boolean;
-  /** Which effect is hung off the end of the post pass, `"none"` for the pass on its own */
-  demoPostFx: DemoPostFxKey;
+  /** Whether `rgbShiftFx` runs */
+  rgbShift: boolean;
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame */
@@ -1641,8 +1634,8 @@ export type State = {
   onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
-  /** Where on the frame a pointer landed, `null` if off it — see `warpCrtUv` */
-  computePixelUv: (e: PointerEvent) => null | { u: number; v: number };
+  /** Where on the frame a pointer landed */
+  computePixelUv: (e: PointerEvent) => { u: number; v: number };
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
@@ -1730,8 +1723,8 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   /** Borders the npcs, turning the post pass itself on if it is off */
   setNpcOutlineEnabled(next?: boolean): void;
-  /** Which stock effect runs after the post pass — takes hold whenever that pass is on */
-  setDemoPostFx(next: DemoPostFxKey): void;
+  /** Whether the rgb shift runs after the post pass — takes hold whenever that pass is on */
+  setRgbShiftEnabled(next?: boolean): void;
   /** How much of the world is shown by room, cycling round when asked for no mode in particular */
   setFadeRoomsMode(next?: FadeRoomsMode): void;
   /** Puts the world into `mode` WITHOUT persisting it — see within */
@@ -1847,7 +1840,14 @@ function PostProcessing() {
   // whilst rendering — is already the new one by the time this effect looks
   useEffect(
     () => w.view.setupPostProcessing(),
-    [w.view.postFx.uid, w.view.fadeRoomsFx.uid, w.view.demoFx.uid, w.view.demoPostFx, w.view.npcOutline, npcOutlineUid],
+    [
+      w.view.postFx.uid,
+      w.view.fadeRoomsFx.uid,
+      w.view.rgbShiftFx.uid,
+      w.view.rgbShift,
+      w.view.npcOutline,
+      npcOutlineUid,
+    ],
   );
   // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`
   useFrame(() => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1), -2);
