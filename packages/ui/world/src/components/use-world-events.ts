@@ -221,6 +221,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // frame in hand the npcs pop in a beat after the world has been revealed empty
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          if (firstBootstrap === true && saved === null) {
+            // nothing saved to be looking at, and the player was put down somewhere new: onto
+            // them first, so the world unfolds about them
+            await player.panTo();
+          }
         } finally {
           if (firstBootstrap === true) {
             // the first map is on screen as a flat hull; hold it a beat, bring the fade on, then
@@ -245,7 +250,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // a map we asked for arrives on the player, wherever the last map left the camera
           await pause(introPanDelayMs);
           await player.panTo();
-        } else {
+        } else if (saved !== null) {
           // on load the view is the one we restored, and is left alone: taking the camera off
           // whatever we were looking at is a poor greeting. Instead it is offered — see WorldView
           w.view.showCentreHint();
