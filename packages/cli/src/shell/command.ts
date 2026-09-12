@@ -7,6 +7,7 @@ import {
   generateSelector,
   jsArg,
   jsStringify,
+  keys,
   keysDeep,
   parseJsArg,
   parseJsonArg,
@@ -1253,6 +1254,9 @@ const commandKeys = {
 };
 
 type CommandName = keyof typeof commandKeys;
+
+/** Every builtin, for tab completion — see `shell/complete` */
+export const commandNames = keys(commandKeys);
 
 export interface HandleStatusHandlers {
   /* An optional cleanup */

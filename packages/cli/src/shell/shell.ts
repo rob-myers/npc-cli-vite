@@ -1,6 +1,8 @@
 import { computeJShSource, type JSh } from "@npc-cli/parse-sh";
 import { ExhaustiveError } from "@npc-cli/util";
 import { debug, error, warn } from "@npc-cli/util/legacy/generic";
+import { commandNames } from "./command";
+import { complete } from "./complete";
 import { ansi, ProcessTag, spawnBgPausedDefault, toProcessStatus } from "./const";
 import type { Device, MessageFromShell, MessageFromXterm, ReadResult, ShellIo } from "./io";
 import { parseService } from "./parse";
@@ -146,6 +148,32 @@ export class TtyShell implements Device {
           key: "send-history-line",
           line,
           nextIndex,
+        });
+        break;
+      }
+      case "req-completion": {
+        const meta = { pid: 0, sessionKey: this.sessionKey } as JSh.BaseMeta;
+        const COMPLETE = sessionApi.getVar(meta, "COMPLETE");
+        if (COMPLETE !== undefined && !COMPLETE) {
+          // switched off: Tab is a couple of spaces, as it always was
+          const input = `${msg.input.slice(0, msg.cursor)}  ${msg.input.slice(msg.cursor)}`;
+          this.io.write({
+            key: "send-completion",
+            input,
+            cursor: msg.cursor + 2,
+            candidates: [],
+            commandsOmitted: false,
+          });
+          break;
+        }
+        const session = sessionApi.getSession(this.sessionKey);
+        this.io.write({
+          key: "send-completion",
+          ...complete(msg.input, msg.cursor, {
+            commands: [...commandNames, ...Object.keys(session.func)],
+            root: { home: session.var, etc: session.etc, shared: sessionApi.getShared(), lib: session.modules },
+            pwd: sessionApi.getVar(meta, "PWD") as string,
+          }),
         });
         break;
       }

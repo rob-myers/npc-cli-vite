@@ -1,10 +1,19 @@
 import { ExhaustiveError } from "@npc-cli/util";
 import { jsStringify, safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import type { Terminal } from "@xterm/xterm";
+import cliColumns from "cli-columns";
 import debounce from "debounce";
 import { ansi, scrollback } from "./const";
 import { highlight } from "./highlight";
-import { type DataChunk, isDataChunk, isProxy, type MessageFromShell, type MessageFromXterm, type ShellIo } from "./io";
+import {
+  type DataChunk,
+  isDataChunk,
+  isProxy,
+  type MessageFromShell,
+  type MessageFromXterm,
+  type SendCompletion,
+  type ShellIo,
+} from "./io";
 import { formatMessage } from "./util";
 
 export class TtyXterm {
@@ -51,6 +60,10 @@ export class TtyXterm {
 
   private historyIndex = -1;
   private preHistory: string;
+  /** What the last `req-completion` asked about, so a stale answer is ignored */
+  private pendingCompletion: null | { input: string; cursor: number } = null;
+  /** The input a Tab last left ambiguous: another Tab on it lists the candidates */
+  private lastCompletion: null | string = null;
   private linesPerUpdate = 500;
   private refreshMs = 0;
 
@@ -259,6 +272,9 @@ export class TtyXterm {
       return;
     }
 
+    if (data !== "\t") {
+      this.lastCompletion = null; // anything else typed, and a second Tab starts afresh
+    }
     if (data.length === 1 || data.includes("\r") === false) {
       this.handleXtermKeypresses(data);
     } else if (data === "\u001b\r") {
@@ -366,8 +382,11 @@ export class TtyXterm {
           this.handleCursorErase(true);
           break;
         case "\t": // Tab
-          // We don't support autocompletion
-          this.handleCursorInsert("  ");
+          if (this.promptReady === true) {
+            // tab-completion can be turned off via COMPLETE={falsy_not_undefined}
+            this.pendingCompletion = { input: this.input, cursor: this.cursor };
+            this.session.io.writeToReaders({ key: "req-completion", input: this.input, cursor: this.cursor });
+          }
           break;
         case "\x03": // Ctrl + C
           this.sendSigKill();
@@ -534,6 +553,9 @@ export class TtyXterm {
           this.preHistory = "";
         }
         return;
+      case "send-completion":
+        this.onCompletion(msg);
+        return;
       case "error":
         this.queueCommands([
           {
@@ -597,6 +619,45 @@ export class TtyXterm {
           this.session.rememberLastValue(other);
         }
       }
+    }
+  }
+
+  private onCompletion(msg: SendCompletion) {
+    const pending = this.pendingCompletion;
+    this.pendingCompletion = null;
+    if (pending === null || pending.input !== this.input || pending.cursor !== this.cursor) {
+      return; // typed on since asking
+    }
+
+    if (msg.input !== this.input) {
+      // a match, or the prefix the matches share — the latter left for a second Tab to list
+      this.clearInput();
+      this.setInput(msg.input);
+      this.setCursor(msg.cursor);
+      this.lastCompletion = msg.candidates.length > 1 ? msg.input : null;
+    } else if (msg.candidates.length > 1 && this.lastCompletion === this.input) {
+      // the second Tab: the candidates in columns, then the prompt and input back as they were
+      const { input, cursor } = this;
+      this.setCursor(input.length);
+      this.xterm.write("\r\n");
+      this.input = "";
+      this.cursor = 0;
+      this.queueCommands([
+        ...cliColumns(msg.candidates, { width: this.xterm.cols })
+          .split(/\r?\n/)
+          .map((line) => ({ key: "line" as const, line })),
+        ...(msg.commandsOmitted === true ? [{ key: "line" as const, line: completionHint }] : []),
+        {
+          key: "resolve",
+          resolve: () => {
+            this.setInput(input);
+            this.setCursor(cursor);
+          },
+        },
+      ]);
+      this.lastCompletion = null;
+    } else {
+      this.lastCompletion = msg.candidates.length > 1 ? this.input : null;
     }
   }
 
@@ -868,6 +929,9 @@ export class TtyXterm {
     return words;
   }
 }
+
+/** Under an empty word's listing, which is the directory alone */
+const completionHint = `${ansi.Grey}${ansi.BlueBold}help${ansi.Grey} for builtins\n${ansi.BlueBold}declare -F${ansi.Grey} for shell functions${ansi.Reset}`;
 
 type SessionInput = {
   key: string;
