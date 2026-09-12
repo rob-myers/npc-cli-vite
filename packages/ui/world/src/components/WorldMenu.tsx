@@ -5,18 +5,18 @@ import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
+  BrainIcon,
+  EyeIcon,
+  RobotIcon,
   CaretDownIcon,
   CaretRightIcon,
-  CodeIcon,
   CrosshairSimpleIcon,
   GlobeStandIcon,
   type Icon,
   PauseIcon,
   PersonSimpleCircleIcon,
   PlayIcon,
-  RocketLaunchIcon,
   SunIcon,
-  TestTubeIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -720,7 +720,7 @@ export function WorldMenu() {
           </button>
 
           {/* the world shown by room, everything the player cannot see into faded away — see
-              `service/fade-rooms`. Cycles `prod` to `dev` to `qa`, the same three the keys `1`,
+              `service/fade-rooms`. Cycles `sight` to `sense` to `ship`, the same three the keys `1`,
               `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
               either fading mode switches that on too */}
           <div
@@ -732,12 +732,12 @@ export function WorldMenu() {
               state.update();
             }}
           >
-            {w.view.fadeRoomsMode === "prod" ? (
-              <RocketLaunchIcon className="size-5 text-slate-200" alt="prod" weight="bold" />
-            ) : w.view.fadeRoomsMode === "dev" ? (
-              <CodeIcon className="size-5 text-slate-200" alt="dev" weight="bold" />
+            {w.view.fadeRoomsMode === "sight" ? (
+              <EyeIcon className="size-5 text-slate-200" alt="sight" weight="bold" />
+            ) : w.view.fadeRoomsMode === "sense" ? (
+              <BrainIcon className="size-5 text-slate-200" alt="sense" weight="fill" />
             ) : (
-              <TestTubeIcon className="size-5 text-slate-200" alt="qa" weight="bold" />
+              <RobotIcon className="size-5 text-slate-200" alt="ship" weight="bold" />
             )}
           </div>
 

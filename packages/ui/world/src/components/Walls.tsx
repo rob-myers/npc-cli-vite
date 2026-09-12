@@ -129,8 +129,8 @@ export default function Walls() {
     // in view keeps every wall that encloses it, whatever stands on the far side of them
     const slots = attribute<"vec2">("roomSlots", "vec2");
     const fade = w.view.fadeRoomsFx.fadeAtPair(slots);
-    // `prod` fades the ALPHA out; the other modes keep it solid and take its COLOUR to black
-    const [alphaFade, colorFade] = fadeSplit(w.view.fadeRoomsFx.prodNode, fade);
+    // `sight` fades the ALPHA out; the other modes keep it solid and take its COLOUR to black
+    const [alphaFade, colorFade] = fadeSplit(w.view.fadeRoomsFx.sightNode, fade);
 
     const litOpacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores walls for easier picking
@@ -140,7 +140,7 @@ export default function Walls() {
 
     return {
       opacityUniform,
-      // faded via alpha in `prod` only, so the pick pass stays binary
+      // faded via alpha in `sight` only, so the pick pass stays binary
       opacityNode: litOpacityNode,
       // NOT tinted by `service/player-light`: a wall is flat colour at half opacity, so the light
       // only ever muddied what was behind it — and this runs on every wall fragment in the world
