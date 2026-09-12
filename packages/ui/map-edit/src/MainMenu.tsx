@@ -218,10 +218,12 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
 function useToastTs(tsRecord: Record<string, number>, delayMs = 2000): string[] {
   const [visible, setVisible] = useState<string[]>([]);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const shownTs = useRef<Record<string, number>>({});
 
   useEffect(() => {
     for (const [key, ts] of Object.entries(tsRecord)) {
-      if (!ts) continue;
+      if (!ts || shownTs.current[key] === ts) continue; // only a fresh toast, not every past one again
+      shownTs.current[key] = ts;
       setVisible((prev) => (prev.includes(key) ? prev : [...prev, key]));
       clearTimeout(timers.current[key]);
       timers.current[key] = setTimeout(() => {
