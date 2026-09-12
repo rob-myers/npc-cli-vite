@@ -642,6 +642,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        */
       easeFrontier() {
         const { controls } = state;
+        if (state.lookAtAnimId !== 0) {
+          // not under a `lookAt`: `update` snaps the zoom to whichever stop is nearer the radius
+          // the pan holds, so stops moving beneath it had the view zooming in mid-pan and settling
+          // back out after. The pan is left a pan, and the stops ease once it has landed
+          state.frontierMs = performance.now();
+          return;
+        }
         const min = state.ctrlOpts.minDistance ?? 10;
         const outer = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
         const player = state.getFollowedPlayer();
