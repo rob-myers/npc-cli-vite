@@ -1320,6 +1320,30 @@
           "cssTransform": "matrix(1, 0, 0, 1, 360, 658)"
         }
       ]
+    },
+    {
+      "id": "6e1b8171-7531-4b9b-ac79-26a940b0aefa",
+      "name": "decor",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "d4090db3-168a-4f1e-bf36-690ad628bc1f",
+          "name": "decor point spawn",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 596.5, "f": 478},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "arrow",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 596.5, 478)"
+        }
+      ]
     }
   ],
   "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
