@@ -224,7 +224,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           lit: npc.lit === true ? true : undefined,
           netId,
           idleClipKey: npc.anim.idleClip.name as AnimationClipKey,
-          hidden: npc.hidden === true,
         };
       },
       onWorldEvent(e) {
@@ -244,10 +243,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           }
           case "removed-npcs":
             state.sendToAll({ key: "remove-npcs", npcKeys: e.npcKeys });
-            break;
-          case "npc-hidden":
-          case "npc-shown":
-            state.sendToAll({ key: "npc-visibility", npcKey: e.npcKey, hidden: e.hidden });
             break;
           case "enter-room":
             state.sendToAll({ key: "enter-room", npcKey: e.npcKey, gmRoomId: e.gmRoomId, reEntered: e.reEntered });
@@ -555,11 +550,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             w.e.removeNpcs(...msg.npcKeys);
             for (const npcKey of msg.npcKeys) state.mirrors.delete(npcKey);
             break;
-          case "npc-visibility":
-            if (w.n[msg.npcKey] !== undefined) {
-              w.events.next({ key: msg.hidden ? "npc-hidden" : "npc-shown", npcKey: msg.npcKey, hidden: msg.hidden });
-            }
-            break;
           case "enter-room":
             if (w.n[msg.npcKey] !== undefined) {
               w.events.next({
@@ -674,9 +664,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         getWorldMapStore(w.key, w.mapKey).patch({
           npcs: {
             playerKey: msg.playerKey,
-            npcs: msg.npcs.map(
-              ({ netId: _netId, idleClipKey: _clip, hidden: _hidden, ...persistedNpc }) => persistedNpc,
-            ),
+            npcs: msg.npcs.map(({ netId: _netId, idleClipKey: _clip, ...persistedNpc }) => persistedNpc),
           },
           doorLocks: msg.doors.locked,
           decor: msg.decor,
@@ -761,13 +749,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             if (idleClip !== undefined && npc.anim.idleClip !== idleClip) {
               npc.anim.idleClip = idleClip;
               npc.anim.playIdleClip(0);
-            }
-            if (netNpc.hidden !== (npc.hidden === true)) {
-              w.events.next({
-                key: netNpc.hidden ? "npc-hidden" : "npc-shown",
-                npcKey: netNpc.key,
-                hidden: netNpc.hidden,
-              });
             }
           } catch (e) {
             warn(`net: could not mirror npc ${netNpc.key}`, e);

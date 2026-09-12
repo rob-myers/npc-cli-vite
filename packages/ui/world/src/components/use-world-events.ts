@@ -537,13 +537,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             break;
           }
-          case "npc-hidden":
-          case "npc-shown": {
-            npc.hidden = e.hidden;
-            // the whole group, so their label goes with them
-            if (npc.group !== null) npc.group.visible = e.hidden === false;
-            break;
-          }
           case "started-moving": {
             const nearbyGdKeys = state.npcToDoors[e.npcKey]?.nearby ?? emptySet;
             const npcIntention = nearbyGdKeys.size > 0 ? npc.getCornersPath() : null;
@@ -1054,17 +1047,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (fx.isArriving(next) === true && fx.hasArrived(npc.roomSlot.value) === true) continue;
           npc.roomSlot.value = next;
         }
-        state.syncNpcVisibility();
-      },
-      syncNpcVisibility() {
-        const fx = w.view.fadeRoomsFx;
-        for (const npc of Object.values(w.n)) {
-          // their own slot, not the room they stand in: whilst a room they have walked into is
-          // still arriving they keep the one they came from — see above
-          const hidden = fx.isWipedOut(npc.roomSlot.value);
-          if (hidden === npc.hidden) continue;
-          w.events.next({ key: hidden === true ? "npc-hidden" : "npc-shown", npcKey: npc.key, hidden });
-        }
       },
       async testTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
         const grId = state.npcToRoom.get(npc.key) ?? null;
@@ -1367,11 +1349,6 @@ export type State = {
   syncFadeRooms(): void;
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
   syncNpcRoomSlots(): void;
-  /**
-   * Fires `npc-hidden` / `npc-shown` for whoever `prod` has just wiped away or given back — see
-   * `onNpcEvent`, which is where the draw calls are actually given up
-   */
-  syncNpcVisibility(): void;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
   tryPutNpcIntoRoom(npc: Npc): void;
 };

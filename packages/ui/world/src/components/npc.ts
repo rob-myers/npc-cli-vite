@@ -43,11 +43,6 @@ export class Npc {
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
   group: THREE.Group | null = null;
-  /**
-   * Whether `prod` has wiped them away, so their group is not drawn at all — set by the
-   * `npc-hidden` / `npc-shown` events rather than written to directly
-   */
-  hidden = false;
   material: THREE.MeshStandardNodeMaterial;
   /** npc outlines only i.e. `npcMask` output */
   maskMrt: ReturnType<typeof mrt>;
@@ -317,7 +312,6 @@ export class Npc {
       return;
     }
     this.group = group;
-    group.visible = this.hidden === false; // a fresh group of a wiped npc starts shown
 
     // overwrite
     this.skinnedMesh = group.children[0] as THREE.SkinnedMesh;

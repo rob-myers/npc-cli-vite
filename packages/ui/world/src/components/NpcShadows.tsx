@@ -27,8 +27,6 @@ export default function NpcShadows() {
 
         let i = 0;
         for (const npc of Object.values(w.n)) {
-          // one `prod` has wiped away casts nothing, so they take their instance with them
-          if (npc.hidden === true) continue;
           xzoData[i * 4] = npc.position.x;
           xzoData[i * 4 + 1] = npc.position.z;
           xzoData[i * 4 + 2] = 1;

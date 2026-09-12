@@ -31,15 +31,6 @@ declare namespace JshCli {
         mode: "idle" | "server" | "client";
         phase: string;
       }
-    | {
-        /**
-         * `prod` has wiped an npc away entirely, or given them back — see `syncNpcVisibility`.
-         * Nothing of a hidden npc is drawn, so anything that assumed they were there must let go
-         */
-        key: "npc-hidden" | "npc-shown";
-        npcKey: string;
-        hidden: boolean;
-      }
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }
     | {
