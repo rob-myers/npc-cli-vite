@@ -281,23 +281,25 @@
     - can move last picked
     - otherwise leave blue selectors
 
-- 🚧 improve load perf
+- ✅ improve load perf
 
-- remaining issues
-  - shell error handling: `api.get(path)` when process has already terminated
-  - obstacles should not reach below floor: floor depthWrite false causes issue
-  - `spawn` should snap to mesh by default
+- 🚧 remaining issues
+  - ✅ shell error handling: `api.get(path)` when process has already terminated
+  - ✅ obstacle skirts should not reach below floor
+    - floor depthWrite false causes issue
+  - ✅ `spawn` should snap to mesh by default
+    - provide 0.5 leeway
   - npc sphere wipe should happen after rest of room darkens
+    - otherwise can see flicker
   - pick spot should be dark
   - mobile initial touch delay
   - flatten WorldMenu
   - maybe free azimuthal
   - saw npc intersect unlocked door
-
+  - lock too small to pick on mobile
 
 # FUTURE
 
-- flatten WorldMenu
 - Jobs: indicate stale processes after hmr
 - onchange playground preserve npc position
   - should also work in other maps
@@ -306,7 +308,6 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
 - ask Fable for playwright test suite
 - on hmr recreate tty session `move` stops working?
-- lock too small to pick?
 - ❌ idle-left with left-leg forward
 - ❌ idle-right with right-leg forward
 - ❌ `npc.setMoveType` walk, run, shuffle
