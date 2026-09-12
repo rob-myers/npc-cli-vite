@@ -100,7 +100,7 @@ export default function RoomLabels() {
   useMemo(() => {
     // captures `fade-rooms`' nodes, so it is rebuilt whenever that service is
     const { mat, inst, slot } = state.res;
-    const fade = w.view.fadeRoomsFx.getVisiblity(slot).max(w.view.fadeRoomsFx.prodNode.oneMinus());
+    const fade = w.view.fadeRoomsFx.getVisiblity(slot).max(w.view.fadeRoomsFx.sightNode.oneMinus());
 
     const sign = attribute<"vec2">("billboardOffset", "vec2");
     // billboarded in VIEW space: the quad is built about the point after the camera transform, so

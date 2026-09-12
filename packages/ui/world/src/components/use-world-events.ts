@@ -202,7 +202,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // The arrival is shown whole: folded (or flat, on a phone), then the fade comes on, then
           // the world rises. Left to itself the fade would arrive the moment the player spawns —
           // which is before any of that, and would hide all of it but the one room they are in
-          w.view.setFadeRoomsActive("qa");
+          w.view.setFadeRoomsActive("ship");
           // ...but the NAMES do not join that: shown whole means every room's, and they would then
           // go out again as the fade lands, which reads as a fault rather than a reveal
           w.view.revealRoomLabels(0);

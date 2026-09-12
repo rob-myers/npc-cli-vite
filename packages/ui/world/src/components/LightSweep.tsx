@@ -26,7 +26,7 @@ export default function LightSweep() {
       player?.rotation.y ?? 0,
       w.d ?? emptyDoors,
       w.door?.openRatioArray ?? emptyOpenRatios,
-      w.view.fadeRoomsFx.mode === "prod",
+      w.view.fadeRoomsFx.mode === "sight",
     );
     // and how far ahead they can see, off the sweep just dispatched — only whilst it is wanted
     if (player !== undefined && w.view.cameraMode === "canonical") {

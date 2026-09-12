@@ -11,7 +11,7 @@ import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slo
  * Per-room fade rather then per-fragment. Each instance of an instancedMesh in the world carries the slot of
  * the room it stands in as a static attribute — so a material reads an small array entry and is done.
  */
-export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
+export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms {
   /**
    * The clock every fade here is drawn against. Ours, not tsl's, which advances by the wall time
    * between RENDERS — so a fade begun after an idle spell would be handed all of it on its first
@@ -20,11 +20,11 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
   const clockValue = uniform(nowSecs());
   const clockNode = float(clockValue);
 
-  // `1` in `"prod"` mode and `0` in the others. A morph rather than a plain uniform, so that
+  // `1` in `"sight"` mode and `0` in the others. A morph rather than a plain uniform, so that
   // switching between the two is a fade of its own rather than a snap
-  const prodMorph = arrivedAt(initialMode === "prod" ? 1 : 0, nowSecs());
-  const prodValue = uniform(new THREE.Vector3(prodMorph.from, prodMorph.to, prodMorph.at));
-  const prodAmount = morphNode(prodValue, MODE_FADE_SECS, clockNode);
+  const sightMorph = arrivedAt(initialMode === "sight" ? 1 : 0, nowSecs());
+  const sightValue = uniform(new THREE.Vector3(sightMorph.from, sightMorph.to, sightMorph.at));
+  const sightAmount = morphNode(sightValue, MODE_FADE_SECS, clockNode);
 
   const morphs = Array.from({ length: totalSlots }, () => arrivedAt(1, nowSecs()));
   const morphValues = Array.from({ length: totalSlots }, () => new THREE.Vector3(1, 1, 0));
@@ -48,7 +48,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
     snapNext: true,
     rooms,
     getVisiblity: fadeAt,
-    prodNode: prodAmount,
+    sightNode: sightAmount,
 
     isArriving(slot) {
       // heading for shown and not there yet — the room part way in that an npc walks into
@@ -75,8 +75,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
 
     dropPickWhenHidden(node: never, fade: THREE.Node<"float">, objectPick: THREE.Node<"float">) {
       return Fn(() => {
-        // `prod` only: `dev` blacks a hidden room out but leaves it there to be picked
-        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)).and(prodAmount.greaterThan(0.5)));
+        // `sight` only: `sense` blacks a hidden room out but leaves it there to be picked
+        Discard(objectPick.notEqual(0).and(fade.lessThan(0.5)).and(sightAmount.greaterThan(0.5)));
         return node;
       })();
     },
@@ -94,20 +94,20 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
         for (const grKey of w.e.handLitRooms) rooms.push(helper.getGmRoomId(grKey));
       }
 
-      const showAll = this.mode === "qa" || inView === null;
+      const showAll = this.mode === "ship" || inView === null;
       const now = tick();
 
       // A new map is arrived at rather than faded to
       const snap = this.snapNext;
       if (snap === true && inView !== null) this.snapNext = false;
 
-      // `qa` shows everything anyway, so it keeps whichever answer it had — and coming back out of
+      // `ship` shows everything anyway, so it keeps whichever answer it had — and coming back out of
       // it, the rooms are already as dark as the mode returned to wants them
-      if (this.mode !== "qa") {
-        const wanted = this.mode === "prod" ? 1 : 0;
-        if (snap === true) Object.assign(prodMorph, arrivedAt(wanted, now));
-        else retarget(prodMorph, wanted, MODE_FADE_SECS, now);
-        prodValue.value.set(prodMorph.from, prodMorph.to, prodMorph.at);
+      if (this.mode !== "ship") {
+        const wanted = this.mode === "sight" ? 1 : 0;
+        if (snap === true) Object.assign(sightMorph, arrivedAt(wanted, now));
+        else retarget(sightMorph, wanted, MODE_FADE_SECS, now);
+        sightValue.value.set(sightMorph.from, sightMorph.to, sightMorph.at);
       }
 
       const shown = new Set(rooms.map(({ gmId, roomId }) => slotOf(gmId, roomId)));
@@ -209,31 +209,34 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
 }
 
 /**
- * How much of the world is shown, cycled by the fade button and bound to keys `1`, `2` and `3`:
- * - `prod` — only what the player can see. FOR NOW the same as `dev`
- * - `dev` — what they cannot see goes black and stays, so the world still reads as a floorplan
- * - `qa` — all of it, all the time, as a game master sees it
+ * How much of the ship is shown, by whose eyes:
+ * - `sight` — the player's: what they can see, or could by moving about the rooms they can reach.
+ *   The rest is not there
+ * - `sense` — that, plus their knowledge of the ship: the rest is there, darkened
+ * - `ship` — the ship's own AI, which sees all of it, all the time
  */
-export type FadeRoomsMode = "prod" | "dev" | "qa";
+export type FadeRoomsMode = "sight" | "sense" | "ship";
 
 /** Which key selects which mode */
 export const fadeRoomsModeByKey: Record<string, FadeRoomsMode> = {
-  "1": "prod",
-  "2": "dev",
-  "3": "qa",
+  "1": "sight",
+  "2": "sense",
+  "3": "ship",
 };
 
 /** The next mode round, for the fade button: `1` to `2` to `3` and back */
 export function nextFadeRoomsMode(mode: FadeRoomsMode): FadeRoomsMode {
-  return mode === "prod" ? "dev" : mode === "dev" ? "qa" : "prod";
+  return mode === "sight" ? "sense" : mode === "sense" ? "ship" : "sight";
 }
 
 /** `mode` if it is one, else the default — stored settings are not to be trusted */
 export function parseFadeRoomsMode(mode: unknown): FadeRoomsMode {
-  return mode === "prod" || mode === "dev" || mode === "qa" ? mode : "qa";
+  if (mode === "sight" || mode === "sense" || mode === "ship") return mode;
+  // what a save from before the renaming holds
+  return mode === "prod" ? "sight" : mode === "dev" ? "sense" : "ship";
 }
 
-/** How long the switch between `"prod"` and `"dev"` takes to play out, in seconds */
+/** How long the switch between `"sight"` and `"sense"` takes to play out, in seconds */
 export const MODE_FADE_SECS = 0.7;
 
 /** The wall clock, in seconds */
@@ -279,11 +282,11 @@ export type FadeRooms = {
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
   /**
-   * `1` in `"prod"` mode and `0` in the others, easing between the two as the mode changes — for
-   * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `prod`
+   * `1` in `"sight"` mode and `0` in the others, easing between the two as the mode changes — for
+   * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `sight`
    * takes all the way to black
    */
-  prodNode: THREE.Node<"float">;
+  sightNode: THREE.Node<"float">;
   /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /**

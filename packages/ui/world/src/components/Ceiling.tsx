@@ -160,9 +160,9 @@ export default function Ceiling() {
     const ceilFade = w.view.fadeRoomsFx.getVisiblity(
       w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
     );
-    // `prod` alone fades a lid away; the other modes keep it and take its colour to black.
+    // `sight` alone fades a lid away; the other modes keep it and take its colour to black.
     // `alphaTest` finishes the job, dropping it once what is left falls under `0.1`
-    const alphaFade = mix(float(1), ceilFade, w.view.fadeRoomsFx.prodNode);
+    const alphaFade = mix(float(1), ceilFade, w.view.fadeRoomsFx.sightNode);
 
     const opacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores ceiling for easier picking
@@ -174,10 +174,10 @@ export default function Ceiling() {
       // fix InstancedMesh non-uniform scaling
       normalNode: transformNormalToView(vec3(0, 1, 0)),
       opacityNode,
-      // prod-mode: ensure totally black
+      // sight-mode: ensure totally black
       pickNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling) as THREE.Node<"vec4">;
-        const shown = ceilFade.max(w.view.fadeRoomsFx.prodNode.oneMinus());
+        const shown = ceilFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
         return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
       })(),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it

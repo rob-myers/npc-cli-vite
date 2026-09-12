@@ -592,11 +592,11 @@ export default function Doors() {
     // a door belongs to the rooms on both sides, and is shown at the fuller of the two. Declared
     // ahead of the materials: the `Fn` below reads it, and tsl may run that body straight away
     const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
-    // `prod` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches 0
+    // `sight` alone fades a door out. `fade` is the fuller of its two rooms, so this only reaches 0
     // when both are hidden — and never for a HULL door, which merely blacks out. Nothing is drawn
     // behind one, so its coverage reaching zero flips the pixel from the dark behind the world to
     // the page beyond it in a single frame: the flash at either end of a mode change
-    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.prodNode.mul(isHull.oneMinus()));
+    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.sightNode.mul(isHull.oneMinus()));
 
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
@@ -609,8 +609,8 @@ export default function Doors() {
           w.view.objectPick.notEqual(0).and(
             w.view.pickDoors
               .equal(0)
-              // `prod` only, as `dropPickWhenHidden` — `dev` leaves a hidden door pickable
-              .or(fade.lessThan(0.5).and(w.view.fadeRoomsFx.prodNode.greaterThan(0.5))),
+              // `sight` only, as `dropPickWhenHidden` — `sense` leaves a hidden door pickable
+              .or(fade.lessThan(0.5).and(w.view.fadeRoomsFx.sightNode.greaterThan(0.5))),
           ),
         );
         return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);

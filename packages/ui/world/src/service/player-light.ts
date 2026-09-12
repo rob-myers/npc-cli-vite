@@ -49,7 +49,7 @@ export function createPlayerLight(): PlayerLight {
   const unlitAmount = uniform(0);
   /**
    * That tint on its way between modes. On the CPU, since it ends in a uniform either way and
-   * `createPlayerLight` runs before there is a `prodNode` to hang it off
+   * `createPlayerLight` runs before there is a `sightNode` to hang it off
    */
   const tintMorph = arrivedAt(unlitTintOther, nowSecs());
 
@@ -367,7 +367,7 @@ export function createPlayerLight(): PlayerLight {
       cullDirty = true;
     },
 
-    update(renderer, at, rotationY, doors, openRatios, prod) {
+    update(renderer, at, rotationY, doors, openRatios, sight) {
       // the WebGL fallback runs "compute" through transform feedback, which this sweep's storage
       // buffers are not going to survive — better an unlit world than a broken one
       if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
@@ -383,7 +383,7 @@ export function createPlayerLight(): PlayerLight {
       sweeper = renderer;
       // eased rather than switched, or the mode change lands as a flash
       const now = nowSecs();
-      retarget(tintMorph, prod === true ? unlitTintProd : unlitTintOther, MODE_FADE_SECS, now);
+      retarget(tintMorph, sight === true ? unlitTintSight : unlitTintOther, MODE_FADE_SECS, now);
       unlitAmount.value = morphAt(tintMorph, MODE_FADE_SECS, now);
 
       const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
@@ -488,8 +488,8 @@ export type PlayerLight = {
     rotationY: number,
     doors: Record<string, Geomorph.DoorState>,
     openRatios: Float32Array,
-    /** Whether `fade-rooms` is in `prod`, which goes darker outside the light */
-    prod: boolean,
+    /** Whether `fade-rooms` is in `sight`, which goes darker outside the light */
+    sight: boolean,
   ): void;
 };
 
@@ -513,8 +513,8 @@ export const lightRadius = 8;
 /** Over how much of that, at the edge, the light dies away to nothing — see `litAt` */
 const edgeFalloff = lightRadius * 0.35;
 
-/** How black an unseen fragment goes: `prod` hides it, the other two keep it legible */
-const unlitTintProd = isTouchDevice() ? 0.8 : 0.6;
+/** How black an unseen fragment goes: `sight` hides it, the other two keep it legible */
+const unlitTintSight = isTouchDevice() ? 0.8 : 0.6;
 const unlitTintOther = 0.4;
 
 /**

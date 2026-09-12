@@ -74,7 +74,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraFollow: defaultCameraFollow,
   postProcessing: true,
   rgbShift: true,
-  fadeRoomsMode: "prod",
+  fadeRoomsMode: "sight",
   fadeRoomOutlines: false,
   npcOutline: isTouchDevice() === false,
   litNpcsEnabled: true,

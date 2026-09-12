@@ -1262,13 +1262,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         store.patch({ fadeRoomsMode: next });
         state.setFadeRoomsActive(next);
         // the rooms fade INTO the post pass's backdrop, so asking for them asks for the pass too
-        next !== "qa" && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+        next !== "ship" && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
         w.menu?.update();
       },
       setFadeRoomsActive(mode) {
         // Not `setFadeRoomsMode`, which would persist the answer — this is also how the intro holds
         // the fade off whilst the world arrives, which is a beat rather than a setting.
-        // Either way it SYNCS: going back to `qa` sends every room towards fully shown, which is a
+        // Either way it SYNCS: going back to `ship` sends every room towards fully shown, which is a
         // fade of its own rather than a snap
         state.fadeRoomsFx.mode = mode;
         state.fadeRoomsFx.sync(w);
@@ -1314,7 +1314,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
-        const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.prodNode);
+        const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.sightNode);
         // then the npc borders over the finished frame — see `service/npc-outline`
         const bordered =
           state.npcMaskMrt === null

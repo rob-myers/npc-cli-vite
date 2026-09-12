@@ -35,8 +35,8 @@ mrt({ npcMask: select(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 0, 0, 0)) })
 
 The body only — the label is a billboard, and a border around it would read as a box floating
 overhead. Scaled by everything that takes an npc away, so the border leaves with them: `colorScale`,
-the `fold` of a map change, and `bodyTint`, which drains as they black out in `prod` and `dev` alike
-— and reaches `0` before `prod`'s sphere wipe begins, so nothing outlines a figure already gone.
+the `fold` of a map change, and `bodyTint`, which drains as they black out in `sight` and `sense` alike,
+so nothing outlines a figure that has gone black.
 
 Four things have to be true at once, each found the hard way:
 
@@ -121,7 +121,7 @@ The border goes over the FINISHED frame, between the backdrop composite and the 
 off the end:
 
 ```ts
-const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.prodNode);
+const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.sightNode);
 const bordered = state.npcMaskMrt === null
   ? composed
   : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
