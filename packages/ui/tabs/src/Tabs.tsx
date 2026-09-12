@@ -51,11 +51,13 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           },
         });
       },
-      /** Focus the current tab's content — a focusable inside it, else the content itself */
+      /** Focus the current tab's content — a tty's input, else a focusable inside it, else the content itself */
       focusCurrent() {
         const content = rootRef.current?.querySelector<HTMLElement>(`[data-tab-content="${meta.currentTabId}"]`);
         if (!content) return;
-        (content.querySelector<HTMLElement>('[tabindex]:not([tabindex="-1"])') ?? content).focus();
+        (
+          content.querySelector<HTMLElement>('.xterm-helper-textarea, [tabindex]:not([tabindex="-1"])') ?? content
+        ).focus();
       },
       onFocusCapture() {
         if (uiStore.getState().persistedPanes.focusedTabsUiId !== meta.id) {
@@ -63,6 +65,9 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
         }
       },
       onClickTab(tab: UiInstanceMeta) {
+        if (tab.id === meta.currentTabId) {
+          return state.focusCurrent(); // already shown, so the effect on `currentTabId` won't
+        }
         uiStore.setState((draft) => {
           (draft.byId[meta.id].meta as TabsUiMeta).currentTabId = tab.id;
         });
