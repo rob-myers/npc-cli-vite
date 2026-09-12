@@ -306,7 +306,8 @@
   - 🚧 initial follow player too bumpy
     - look at too
   - support park multiple npcs
-  - fix "keyboard copy text from tty"
+  - ✅ fix "keyboard copy text from tty"
+    - in particular on lost focus while text selected should be able to click tab and refocus without losing the selection
   - simplify `lock $( pick as:meta.gdKey 1 )`
 
 # FUTURE
