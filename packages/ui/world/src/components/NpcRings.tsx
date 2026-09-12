@@ -322,10 +322,14 @@ const spawnRingLook: RingLook = {
  */
 const pickRingConfig = {
   /** Metres, on the ground */
-  radius: 0.025,
-  /** How opaque it is whilst up, `0..1` */
-  alpha: 0.1,
-  color: /* @__PURE__ */ new THREE.Color(0.95, 0.95, 0.95),
+  radius: 0.01,
+  /**
+   * How opaque it is whilst up, `0..1`. The colour only reads above ~0.4: the line's profile
+   * (`ringBandWidth`) is wider than this radius, so most of the mark is its soft edge, and a faint
+   * one comes out as a grey smudge whatever the colour
+   */
+  alpha: 0.5,
+  color: /* @__PURE__ */ new THREE.Color(0.1, 0.1, 0.1),
   /** How long a superseded ring takes to fade away — its own pace, not `ringFadeSecs` */
   fadeSecs: 1,
 };

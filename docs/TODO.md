@@ -291,7 +291,8 @@
     - provide 0.5 leeway
   - npc sphere wipe should happen after rest of room darkens
     - otherwise can see flicker
-  - pick spot should be dark
+  - ❌ pick spot should be dark
+    - also tried moving to obstacles via relaxed getClosestPoly
   - mobile initial touch delay
   - flatten WorldMenu
   - maybe free azimuthal
