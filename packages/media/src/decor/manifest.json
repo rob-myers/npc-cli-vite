@@ -1,13 +1,5 @@
 {
   "byKey": {
-    "arrow-boxed": {
-      "key": "arrow-boxed",
-      "filename": "arrow-boxed.svg",
-      "width": 6,
-      "height": 6,
-      "outputWidth": 26,
-      "outputHeight": 26
-    },
     "arrow": {
       "key": "arrow",
       "filename": "arrow.svg",
@@ -15,22 +7,6 @@
       "height": 6,
       "outputWidth": 52,
       "outputHeight": 52
-    },
-    "axes-2d": {
-      "key": "axes-2d",
-      "filename": "axes-2d.svg",
-      "width": 6,
-      "height": 6,
-      "outputWidth": 26,
-      "outputHeight": 26
-    },
-    "circle-1": {
-      "key": "circle-1",
-      "filename": "circle-1.svg",
-      "width": 60,
-      "height": 60,
-      "outputWidth": 128,
-      "outputHeight": 128
     },
     "icon--warn": {
       "key": "icon--warn",
@@ -72,14 +48,6 @@
       "outputWidth": 188,
       "outputHeight": 137
     },
-    "strut-0": {
-      "key": "strut-0",
-      "filename": "strut-0.svg",
-      "width": 41,
-      "height": 14,
-      "outputWidth": 175,
-      "outputHeight": 60
-    },
     "switch": {
       "key": "switch",
       "filename": "switch.svg",
@@ -87,38 +55,6 @@
       "height": 6,
       "outputWidth": 26,
       "outputHeight": 26
-    },
-    "text---": {
-      "key": "text---",
-      "filename": "text---.svg",
-      "width": 10,
-      "height": 10,
-      "outputWidth": 86,
-      "outputHeight": 86
-    },
-    "text--ae": {
-      "key": "text--ae",
-      "filename": "text--ae.svg",
-      "width": 10,
-      "height": 10,
-      "outputWidth": 86,
-      "outputHeight": 86
-    },
-    "text-ab": {
-      "key": "text-ab",
-      "filename": "text-ab.svg",
-      "width": 10,
-      "height": 10,
-      "outputWidth": 86,
-      "outputHeight": 86
-    },
-    "text-ae": {
-      "key": "text-ae",
-      "filename": "text-ae.svg",
-      "width": 10,
-      "height": 10,
-      "outputWidth": 86,
-      "outputHeight": 86
     }
   }
 }
