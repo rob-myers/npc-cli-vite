@@ -375,7 +375,7 @@ export function WorldMenu() {
         <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
-            <div className={cn("flex flex-wrap max-w-52", touch && "max-w-none items-stretch")}>
+            <div className={cn("flex justify-end", touch && "max-w-none items-stretch")}>
               <div
                 className={cn(
                   "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
@@ -402,7 +402,7 @@ export function WorldMenu() {
                     store.patch({ brightness: w.brightness });
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className={rangeInputClass(touch, touch ? "flex-1" : "w-16")}
+                  className={rangeInputClass(touch, touch ? "flex-1" : "w-24")}
                 />
               </div>
             </div>
@@ -815,7 +815,7 @@ function MenuShell({
                       <XIcon className="size-4" weight="bold" />
                     </button>
                   </div>
-                  <div className="flex-1 overflow-y-auto overscroll-contain pb-6">{children}</div>
+                  <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin pb-6">{children}</div>
                 </motion.div>
               )}
             </AnimatePresence>,
@@ -856,7 +856,7 @@ function MenuShell({
 
       <Menu.Portal container={w.rootEl} className="w-full">
         <Menu.Positioner
-          className="z-50 overflow-auto max-w-[calc(100%-40px)]"
+          className="z-50 overflow-auto scrollbar-thin max-w-[calc(100%-40px)]"
           side="right"
           sideOffset={4}
           align="start"
@@ -869,11 +869,7 @@ function MenuShell({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div
-              className={cn(
-                "flex flex-col overflow-y-auto pb-6",
-                "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent",
-                "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-600",
-              )}
+              className="flex flex-col overflow-y-auto scrollbar-thin pb-6"
               style={{ maxHeight: state.menuHeight, scrollbarWidth: "thin" }}
             >
               {children}
@@ -1206,7 +1202,7 @@ export function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto">
+          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
             <Select.List>
               {items.map(({ key, el, value }) => (
                 <Select.Item key={key} value={value} className={selectItemClassName(touch)}>
