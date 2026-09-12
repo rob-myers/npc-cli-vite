@@ -1,8 +1,52 @@
+diff --git a/dist/blocks/agents/crowd.d.ts b/dist/blocks/agents/crowd.d.ts
+index 4b57e18ae02c827999727c574ece1bab54107c9e..78f6e427bc3ba2a60c3a7606ae27a865bb937d41 100644
+--- a/dist/blocks/agents/crowd.d.ts
++++ b/dist/blocks/agents/crowd.d.ts
+@@ -35,6 +35,8 @@ export type AgentParams = {
+     maxSpeed: number;
+     /** Collision query range (in world units), determines how far to look for neighboring agents and obstacles. */
+     collisionQueryRange: number;
++    /** How far to look for walls (in world units), when that should differ from `collisionQueryRange`. */
++    boundaryQueryRange?: number;
+     /**
+      * Path visibility optimization range (in world units), the maximum distance to raycast for path shortcuts.
+      * @default radius * 30.0
+@@ -80,6 +82,8 @@ export type Agent = {
+     maxSpeed: number;
+     /** The agent collision query range */
+     collisionQueryRange: number;
++    /** The agent wall query range, `collisionQueryRange` when unset */
++    boundaryQueryRange?: number;
+     /** The agent path visibility optimization range */
+     pathOptimizationRange: number;
+     /** The agent separation weight */
 diff --git a/dist/blocks.js b/dist/blocks.js
-index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..0bde05fac4b3a804948d1b2ff88505013d071bfa 100644
+index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..537428187b3178c5e686b14b8d8ea92aa6ea9013 100644
 --- a/dist/blocks.js
 +++ b/dist/blocks.js
-@@ -1584,7 +1584,7 @@ const updateCorners = (crowd, navMesh) => {
+@@ -1079,6 +1079,7 @@ const addAgent = (crowd, navMesh, position, agentParams) => {
+         maxAcceleration: agentParams.maxAcceleration,
+         maxSpeed: agentParams.maxSpeed,
+         collisionQueryRange: agentParams.collisionQueryRange,
++        boundaryQueryRange: agentParams.boundaryQueryRange,
+         pathOptimizationRange: agentParams.pathOptimizationRange ?? agentParams.radius * 30.0,
+         separationWeight: agentParams.separationWeight,
+         updateFlags: agentParams.updateFlags,
+@@ -1563,10 +1564,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
+             continue;
+         }
+         // update boundary if agent has moved significantly or if boundary is invalid
+-        const updateThreshold = agent.collisionQueryRange * 0.25;
++        const boundaryQueryRange = agent.boundaryQueryRange ?? agent.collisionQueryRange;
++        const updateThreshold = boundaryQueryRange * 0.25;
+         const movedDistance = vec3.distance(agent.position, agent.boundary.center);
+         if (movedDistance > updateThreshold || !isLocalBoundaryValid(agent.boundary, navMesh, agent.queryFilter)) {
+-            updateLocalBoundary(agent.boundary, agent.corridor.path[0], agent.position, agent.collisionQueryRange, navMesh, agent.queryFilter);
++            updateLocalBoundary(agent.boundary, agent.corridor.path[0], agent.position, boundaryQueryRange, navMesh, agent.queryFilter);
+         }
+     }
+ };
+@@ -1584,7 +1586,7 @@ const updateCorners = (crowd, navMesh) => {
              continue;
          }
          // get corridor corners for steering

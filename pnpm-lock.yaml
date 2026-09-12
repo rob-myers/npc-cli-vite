@@ -225,7 +225,7 @@ catalogs:
 
 patchedDependencies:
   navcat@0.4.1:
-    hash: d2d36ae7d17bef70c6ad15a8a98bdf6659e256e533cf13ff625203a30ee5579d
+    hash: 8fb1afb6448134e070bc0810c311a7f5fed5995a5649f4c17fe1e0c616e7d3f5
     path: patches/navcat@0.4.1.patch
 
 importers:
@@ -406,7 +406,7 @@ importers:
         version: 12.23.26(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       navcat:
         specifier: 'catalog:'
-        version: 0.4.1(patch_hash=d2d36ae7d17bef70c6ad15a8a98bdf6659e256e533cf13ff625203a30ee5579d)(three@0.184.0)
+        version: 0.4.1(patch_hash=8fb1afb6448134e070bc0810c311a7f5fed5995a5649f4c17fe1e0c616e7d3f5)(three@0.184.0)
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -818,7 +818,7 @@ importers:
         version: 12.23.26(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       navcat:
         specifier: 'catalog:'
-        version: 0.4.1(patch_hash=d2d36ae7d17bef70c6ad15a8a98bdf6659e256e533cf13ff625203a30ee5579d)(three@0.184.0)
+        version: 0.4.1(patch_hash=8fb1afb6448134e070bc0810c311a7f5fed5995a5649f4c17fe1e0c616e7d3f5)(three@0.184.0)
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -5808,7 +5808,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  navcat@0.4.1(patch_hash=d2d36ae7d17bef70c6ad15a8a98bdf6659e256e533cf13ff625203a30ee5579d)(three@0.184.0):
+  navcat@0.4.1(patch_hash=8fb1afb6448134e070bc0810c311a7f5fed5995a5649f4c17fe1e0c616e7d3f5)(three@0.184.0):
     dependencies:
       mathcat: 0.0.12
     optionalDependencies:

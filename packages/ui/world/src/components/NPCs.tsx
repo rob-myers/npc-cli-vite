@@ -332,8 +332,8 @@ export default function NPCs() {
           npc.drawLabel();
 
           if (npc.agent) {
-            const { radius, height, collisionQueryRange, obstacleAvoidance } = getAgentParams();
-            Object.assign(npc.agent, { radius, height, collisionQueryRange, obstacleAvoidance });
+            const { radius, height, collisionQueryRange, boundaryQueryRange, obstacleAvoidance } = getAgentParams();
+            Object.assign(npc.agent, { radius, height, collisionQueryRange, boundaryQueryRange, obstacleAvoidance });
           }
         }
 
@@ -1032,8 +1032,11 @@ function getAgentParams(): crowd.AgentParams {
     maxSpeed: idleAgentMaxSpeed,
     // cannot be smaller; maybe should be larger
     // collisionQueryRange: 0.5,
-    // collisionQueryRange: 0.5 + 0.1,
-    collisionQueryRange: 1,
+    collisionQueryRange: 0.5 + 0.1,
+    // collisionQueryRange: 1,
+    // walls are looked for less far than npcs: the further out they are found, the earlier
+    // avoidance slows a walker for a goal beside one — see `docs/NAVCAT-PATCH.md`
+    boundaryQueryRange: 0.4,
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
     // head-on to an idle agent, the two ways round score alike and avoidance can flip between
