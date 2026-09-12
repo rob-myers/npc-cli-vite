@@ -244,7 +244,7 @@ export default function Obstacles(_props: Props) {
               const dx = p2.x - p1.x, dy = p2.y - p1.y;
               const len = Math.sqrt(dx * dx + dy * dy);
               const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
-              const skirtDimY = typeof meta.h === 'number' ? meta.h : skirtDepth;
+              const skirtDimY = typeof meta.h === 'number' ? meta.h : Math.min(height, skirtDepth);
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
               slots.setXY(sId, slot, slot);
               state.skirtObstacleIds[sId] = instanceId ?? 0; // a pick on a skirt picks its obstacle
