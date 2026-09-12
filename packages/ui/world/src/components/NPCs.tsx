@@ -1032,7 +1032,8 @@ function getAgentParams(): crowd.AgentParams {
     maxSpeed: idleAgentMaxSpeed,
     // cannot be smaller; maybe should be larger
     // collisionQueryRange: 0.5,
-    collisionQueryRange: 0.5 + 0.1,
+    // collisionQueryRange: 0.5 + 0.1,
+    collisionQueryRange: 0.5 + 0.2,
     // collisionQueryRange: 1,
     // walls are looked for less far than npcs: the further out they are found, the earlier
     // avoidance slows a walker for a goal beside one — see `docs/NAVCAT-PATCH.md`
