@@ -65,6 +65,8 @@ Zooms aim at a point: `setDollyTowards(clientX, clientY)` from the cursor (wheel
 
 Navmesh uses `navcat` (recast/detour JS port). Agents live in a `crowd`. To teleport an agent, set `agent.position` **before** calling `requestMoveTarget` — otherwise path-finding starts from the old poly and the agent walks through walls instead of snapping to the destination.
 
+`navcat` is pnpm-patched — four corners per agent, and a `boundaryQueryRange` agent param so walls are looked for less far than npcs. See `docs/NAVCAT-PATCH.md`, including how to edit the patch.
+
 ## Spawning NPCs
 
 `state.placeNpcAt(npc, at, type)` — places or teleports an NPC. The `"navigable"` type throws if the position is off the navmesh; `"doable"` silently removes the agent instead.

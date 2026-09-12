@@ -298,6 +298,9 @@
   - maybe free azimuthal
   - saw npc intersect unlocked door
   - lock too small to pick on mobile
+  - ✅ fix slow stepping near boundary
+  - on first bootstrap should be zoomed out and then zoom in to player
+  - initial follow player too bumpy
 
 # FUTURE
 
