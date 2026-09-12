@@ -94,8 +94,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // follow option ON, which is what it meant
       cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
       cameraFollow: (saved.cameraMode as string) === "follow" ? true : (saved.cameraFollow ?? defaultCameraFollow),
-      canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera()).polar,
-      canonicalTheta: nearestCompass((saved.cameraInitial ?? defaultInitialCamera()).azimuthal),
+      canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
+      canonicalTheta: nearestCompass((saved.cameraInitial ?? defaultInitialCamera).azimuthal),
       canonicalCloseIn: false,
       freeAzimuth: null,
       canonicalDragging: false,
@@ -121,7 +121,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
         zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
-      initial: saved.cameraInitial ?? defaultInitialCamera(),
+      initial: saved.cameraInitial ?? defaultInitialCamera,
       lookAtAnimId: 0,
       lastPointer: {
         epochMs: 0,
@@ -1247,7 +1247,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       resetCamera() {
-        const initial = defaultInitialCamera();
+        const initial = defaultInitialCamera;
         state.initial = initial;
         state.canonicalPolar = initial.polar; // else a reset zoomed out keeps the old tilt
         store.patch({ cameraInitial: initial });
@@ -1884,15 +1884,11 @@ function createPickRT(count: 1 | 2) {
   return renderTarget;
 }
 
-function defaultInitialCamera(): State["initial"] {
-  return {
-    azimuthal: 0,
-    polar: Math.PI / 4,
-    // `y` is the distance: the near stop of `ctrlOpts`, touch and desktop alike, so a first
-    // visit arrives zoomed in on the player
-    position: { x: 4, y: defaultCameraMinDistance, z: 4 },
-  };
-}
+const defaultInitialCamera: State["initial"] = {
+  azimuthal: Math.PI / 4,
+  polar: Math.PI / 4,
+  position: { x: 4, y: defaultCameraMinDistance, z: 4 },
+};
 
 /**
  * Sweeps the player's light polygon, once per rendered frame and before the render — a priority

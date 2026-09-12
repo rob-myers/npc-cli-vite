@@ -298,13 +298,16 @@
   - ✅ mobile initial touch delay
   - ✅ flatten WorldMenu
   - ✅ maybe free azimuthal
-  - 🚧 saw npc intersect unlocked door
-  - lock too small to pick on mobile
+  - ✅ saw npc intersect unlocked door
+    - need repro
+  - ✅ lock too small to pick on mobile
   - ✅ fix slow stepping near boundary
-  - on first bootstrap should be zoomed out and then zoom in to player
-  - initial follow player too bumpy
+  - ✅ on first bootstrap should be zoomed in at angle
+  - 🚧 initial follow player too bumpy
     - look at too
   - support park multiple npcs
+  - fix "keyboard copy text from tty"
+  - simplify `lock $( pick as:meta.gdKey 1 )`
 
 # FUTURE
 
