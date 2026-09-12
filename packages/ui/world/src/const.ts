@@ -87,7 +87,7 @@ export const cameraRefAspect = 1.8;
 
 export const defaultBrightness = 1;
 
-export const defaultCameraMinDistance = isTouchDevice() ? 6 : 8;
+export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
 
 /** How far out the camera's outer zoom stop sits, in metres */
 export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
