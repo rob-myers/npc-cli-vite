@@ -345,15 +345,18 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.frontierHold = false; // the view is theirs again
       },
       onCameraEnd() {
+        state.persistCamera();
+        // a drag released without momentum dispatches no further change: `canonical`'s detent
+        // needs a frame to see the release at all — see `onCameraFrame`
+        w.r3f?.invalidate();
+      },
+      persistCamera() {
         const cameraInitial: PersistedCamera = {
           azimuthal: state.controls.spherical.theta,
           polar: state.controls.spherical.phi,
           position: { x: state.controls.target.x, y: state.controls.spherical.radius, z: state.controls.target.z },
         };
         store.patch({ cameraInitial });
-        // a drag released without momentum dispatches no further change: `canonical`'s detent
-        // needs a frame to see the release at all — see `onCameraFrame`
-        w.r3f?.invalidate();
       },
       onZoomWheel(e) {
         if (state.cameraMode !== "canonical") return;
@@ -1183,6 +1186,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.lookAtAnimId = 0;
           // else the next frame's settle would pull the view off the radius just reached
           controls.setZoomFromRadius(controls.spherical.radius);
+          // as a gesture's end does: a pan on load is otherwise lost to the next load
+          state.persistCamera();
         }
       },
       dimBackground(darken, durationMs = bgDimMs) {
@@ -1642,6 +1647,8 @@ export type State = {
   /** The camera has been touched: a drag, a pinch or the wheel */
   onCameraStart(): void;
   onCameraEnd(): void;
+  /** Saves where the camera is, as the view to restore on load */
+  persistCamera(): void;
   /** Per rendered frame — in `canonical` mode drives the polar, the detent and any aimed zoom */
   onCameraFrame(spherical: THREE.Spherical): void;
   /** The crosshair's fade-out, once whatever raised it has arrived */
