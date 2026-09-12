@@ -1381,7 +1381,7 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
 /** How far a parked npc keeps from parked npcs ACROSS from them, centre to centre */
 const parkNpcClearance = 6.5 * npcConfig.dist.agentRadius;
 /** …and from those parked along the same wall: a body's width, and a little */
-const parkNpcBesideClearance = 2 * npcConfig.dist.agentRadius + 0.05;
+const parkNpcBesideClearance = 4 * npcConfig.dist.agentRadius;
 /** Beyond this from the wall they were parked against, an npc is no longer parked */
 const parkedWithin = npcConfig.dist.agentRadius + 0.1;
 /** A parked point sits this far clear of what cut its span, so a point test agrees */
