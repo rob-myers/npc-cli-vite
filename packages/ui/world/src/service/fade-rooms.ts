@@ -1,4 +1,4 @@
-import { Discard, float, Fn, positionLocal, select, uniform, uniformArray, vec3, vec4 } from "three/tsl";
+import { Discard, float, Fn, select, uniform, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
@@ -31,16 +31,6 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
   const morphArray = uniformArray<"vec3">(morphValues, "vec3");
 
   const rooms: Geomorph.GmRoomId[] = [];
-  /** Which slots `prod` has wiped away entirely — see `isWipedOut` */
-  const wiped = new Set<number>();
-  /**
-   * The slots on their way OUT and not wiped yet, each by the clock time its fade lands on. The
-   * only ones `syncWiped` has to look at, so it can run every frame — the rest are settled either
-   * way. Outside `prod` nothing drains it, and switching INTO prod wipes the lot at once
-   */
-  const fadingOut = new Map<number, number>();
-  /** `this.mode` as `sync` last saw it, for what runs between syncs — see `keepFramesComing` */
-  let syncedMode = initialMode;
   /** Whilst set, frames are asked for — see `keepFramesComing` */
   let framesUntilMs = 0;
   let framesRaf = 0;
@@ -71,10 +61,6 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
       return morph !== undefined && morph.to === 1 && settled(morph, fadeSecsOf(morph), nowSecs()) === true;
     },
 
-    isWipedOut(slot) {
-      return wiped.has(slot);
-    },
-
     fadeAtPair(slots) {
       return fadeAt(slots.x).max(fadeAt(slots.y));
     },
@@ -85,21 +71,6 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
 
     applyFadeAlpha(color, fade) {
       return vec4(color.rgb, color.a.mul(fade));
-    },
-
-    applySphereFade(node: never, fade: THREE.Node<"float">, centerY: number, radius: number, where?: never) {
-      // A SPHERE about a point in the object's own space, growing with `fade`: everything outside
-      // it is hidden, so a thing comes in from its middle outwards and goes back the same way.
-      // Local rather than world, so it goes where the object goes — and for a skinned mesh
-      // `positionLocal` is the skinned position, so it follows the pose rather than the bind
-      return Fn(() => {
-        const outside = positionLocal
-          .sub(vec3(0, centerY, 0))
-          .length()
-          .greaterThan(fade.mul(radius));
-        Discard(where === undefined ? outside : outside.and(where));
-        return node;
-      })();
     },
 
     dropPickWhenHidden(node: never, fade: THREE.Node<"float">, objectPick: THREE.Node<"float">) {
@@ -125,7 +96,6 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
 
       const showAll = this.mode === "qa" || inView === null;
       const now = tick();
-      syncedMode = this.mode;
 
       // A new map is arrived at rather than faded to
       const snap = this.snapNext;
@@ -156,18 +126,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
         // measured against the fade UNDER WAY, whose pace decides where it has got to
         else retarget(morphs[slot], next, fadeSecsOf(morphs[slot]), now);
         morphValues[slot].set(morphs[slot].from, morphs[slot].to, morphs[slot].at);
-
-        // a room going out is wiped once its fade lands; coming back it is given back at once
-        if (next === 0) {
-          if (wiped.has(slot) === false)
-            fadingOut.set(slot, snap === true ? now : morphs[slot].at + ROOM_FADE_OUT_SECS);
-        } else {
-          fadingOut.delete(slot);
-          wiped.delete(slot);
-        }
       }
 
-      syncWiped(now);
       keepFramesComing(w);
     },
   };
@@ -183,41 +143,14 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "qa"): FadeRooms {
     framesUntilMs = performance.now() + ROOM_FADE_OUT_SECS * 1000 + 100;
     if (framesRaf !== 0) return;
     const frame = () => {
-      const now = tick(); // moved on before the frame that reads it
+      tick(); // moved on before the frame that reads it
       // a fade plays out over frames rather than syncs, and does so whilst the world is paused —
-      // so the wipe lands here rather than waiting on a tick that may not come. Rooms first: an
-      // npc changing room reads the answer this settles
-      syncWiped(now);
+      // so an npc changing room is settled here rather than waiting on a tick that may not come
       w.e?.syncNpcRoomSlots();
-      // both drop the instances of whoever is wiped, so they are rewritten when that changes —
-      // here rather than on the tick, since a fade plays out whilst the world is paused
-      w.shadows?.onTick();
-      w.rings?.onTick();
       w.r3f?.invalidate();
       framesRaf = performance.now() < framesUntilMs ? requestAnimationFrame(frame) : 0;
     };
     framesRaf = requestAnimationFrame(frame);
-  }
-
-  /**
-   * Brings `wiped` up to the clock: rooms join it as their fades land, and leaving `prod` gives
-   * every one of them back at once. Only `fadingOut` is walked — the rest are settled either way —
-   * so this is cheap enough for every frame of a fade
-   */
-  function syncWiped(now: number) {
-    // the wipe only begins once the mode itself has arrived — see `bodyFade` in `NPCs`
-    const wiping = syncedMode === "prod" && prodMorph.to === 1 && settled(prodMorph, MODE_FADE_SECS, now);
-
-    if (wiping === false) {
-      wiped.clear();
-      return;
-    }
-
-    for (const [slot, at] of fadingOut) {
-      if (now < at) continue;
-      fadingOut.delete(slot);
-      wiped.add(slot);
-    }
   }
 
   /** Moves the clock up to the wall, and gives what it now reads */
@@ -346,11 +279,6 @@ export type FadeRooms = {
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
   /**
-   * Whether `prod` has wiped `slot` away entirely: the mode arrived, the room's fade fully out.
-   * Nothing in it can be seen, so nothing in it need be DRAWN — see `syncNpcVisibility`
-   */
-  isWipedOut(slot: number): boolean;
-  /**
    * `1` in `"prod"` mode and `0` in the others, easing between the two as the mode changes — for
    * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `prod`
    * takes all the way to black
@@ -373,25 +301,6 @@ export type FadeRooms = {
    * the backdrop should be showing through
    */
   applyFadeAlpha(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
-  /**
-   * `node`, with whatever lies outside a GROWING SPHERE discarded — centred `centerY` up the
-   * object's own space and reaching `radius` at a `fade` of 1, so a thing arrives from its middle
-   * outwards and leaves inwards.
-   *
-   * Measured in LOCAL space, so it moves with the object rather than standing still in the world
-   */
-  applySphereFade<T extends THREE.Node<"float"> | THREE.Node<"vec3"> | THREE.Node<"vec4">>(
-    node: T,
-    fade: THREE.Node<"float">,
-    centerY: number,
-    radius: number,
-    /**
-     * Where the cut applies, for a material whose fragments are not all the same thing. A discard
-     * takes the fragment whatever branch of a `select` it sits in, so anything else sharing the
-     * material — a billboarded label, say — must be excluded here or it goes with the body
-     */
-    where?: THREE.Node<"bool">,
-  ): T;
   /**
    * `node`, with the fragment discarded whilst PICKING if its room is hidden — so a click passes
    * through a room it cannot see and lands on whatever is behind, which is the floor.

@@ -58,10 +58,6 @@ export default function NpcRings() {
             state.selectRingByNpc.delete(npcKey);
             continue;
           }
-          // kept, but not drawn whilst the npc it picks out is wiped away. A SPAWN ring has no
-          // npc to ask — it marks a destination they have yet to reach — so it keeps its instance
-          // and is simply faded out by its room, as it always was
-          if (npc.hidden === true) continue;
           const wanted = npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
           retarget(ring.radius, wanted, selectRingMorphSecs, now);
           // read every tick, unlike the others': an npc walks from one room to the next

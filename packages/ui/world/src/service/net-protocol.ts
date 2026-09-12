@@ -9,7 +9,6 @@ export type NetNpc = PersistedNpc & {
   /** Compact id used by the binary transform stream — assigned by the server */
   netId: number;
   idleClipKey: AnimationClipKey;
-  hidden: boolean;
 };
 
 /** `JshCli.PickEvent` with the three.js `normal` flattened, and no `clickId` (it belongs to the local shell) */
@@ -44,7 +43,6 @@ export type WorldNetMessage =
   /** Spawn AND respawn — skin/idle-clip changes ride on a respawn */
   | { key: "spawn"; npcs: NetNpc[] }
   | { key: "remove-npcs"; npcKeys: string[] }
-  | { key: "npc-visibility"; npcKey: string; hidden: boolean }
   | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId; reEntered: boolean }
   | { key: "door"; kind: "opening" | "closing" | "locked" | "unlocked"; gdKey: Geomorph.GmDoorKey }
   | { key: "speech"; npcKey: string; words: string; epochMs: number }

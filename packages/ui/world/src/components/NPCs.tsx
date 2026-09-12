@@ -125,21 +125,9 @@ export default function NPCs() {
         const litAmount = npcLit.mul(w.view.litNpcsEnabled);
 
         const roomFade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
-        const prod = w.view.fadeRoomsFx.prodNode;
-        // `prod` fades an npc in two phases: colour drained by the time the sphere starts closing,
-        // and symmetrically. `map` only drains the colour, over the whole fade, leaving a black
-        // figure we can still watch move about
-        const prodTint = roomFade
-          .sub(npcFadeShare)
-          .div(1 - npcFadeShare)
-          .clamp(0, 1);
-        const bodyTint = mix(roomFade, prodTint, prod).max(litAmount);
-        // switched rather than eased, else leaving `prod` plays the wipe in reverse. Switching in
-        // waits for `prod` to arrive, by when the body is black anyway
-        const bodyFade = prod
-          .greaterThan(0.999)
-          .select(roomFade.div(npcFadeShare).clamp(0, 1), float(1))
-          .max(litAmount);
+        // every mode drains the colour over the room's fade, leaving a black figure we can still
+        // watch move about — a lit npc keeps theirs
+        const bodyTint = roomFade.max(litAmount);
 
         // Per-vertex groupId: 0=body, 1=label
         const groupIdAttr = attribute<"float">("groupId", "float");
@@ -225,14 +213,8 @@ export default function NPCs() {
         //   light of its own that would dim them wherever the player's already fell
         const shaded = w.view.playerLight.applyLightRgba(mainColor);
         const ownLit = vec4(shaded.rgb.max(mainColor.rgb.mul(npcLitUnseen)), mainColor.a);
-        // the wipe only — `bodyTint` is applied at the output, see below
-        const body = w.view.fadeRoomsFx.applySphereFade(
-          mix(shaded, ownLit, litAmount),
-          bodyFade,
-          npcSphereY,
-          npcSphereRadius,
-          isMain, // body only
-        );
+        // `bodyTint` is applied at the output, see below
+        const body = mix(shaded, ownLit, litAmount);
         // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
         // fade, well before and after the body's own share of it, and eased at both ends
         const labelFade = smoothstep(float(0), float(1), roomFade).max(litAmount);
@@ -1100,25 +1082,6 @@ const rimColor = vec3(0.55, 0.72, 0.7);
  * between: `0` is level with them, `1` directly above
  */
 const rimOverheadAmount = 0.05;
-/**
- * How much of an npc's room fade their own takes, at the near end of it — the stretch over which
- * their sphere closes or opens and their colour drains or returns. `1` is the whole of it
- */
-const npcFadeShare = 0.3;
-
-/**
- * The sphere an npc fades in and out of, in MODEL units — `npcScale` is applied to the group they
- * hang off, so these are not metres. Centred at their FEET, so the last of them to go is what they
- * stand on and the wipe reads top to bottom; centred at their middle it closed on the waist instead
- */
-const npcSphereY = 0;
-/**
- * Big enough to hold the model in ANY pose, not just standing: measured from the feet, and lying
- * down puts the head as far off horizontally as standing puts it vertically. Too small and parts of
- * somebody lying down are cut whilst they are fully shown; too large and the wipe is over early
- */
-const npcSphereRadius = 2.4;
-
 /**
  * How much of their own colour a LIT npc keeps where the player's light does not reach them — the
  * least they are ever seen at, the player's light being taken over it wherever it is brighter.
