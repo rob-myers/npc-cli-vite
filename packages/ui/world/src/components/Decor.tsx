@@ -896,8 +896,9 @@ export default function Decor() {
       const shapeKindAttr = attribute<"vec3">("shapeParams", "vec3").x;
       // decor stands in one room, so both components of `roomSlots` carry it and `.x` will do
       const fade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
-      // `1` outside `prod`, which alone blacks hidden decor out
-      const shown = fade.max(w.view.fadeRoomsFx.prodNode.oneMinus());
+      // `1` outside `prod`, which alone blacks hidden decor out — and black whilst the floor's art
+      // is, so decor arrives with the unfold rather than sitting on a flat hull (see `Floor.fadeTo`)
+      const shown = fade.max(w.view.fadeRoomsFx.prodNode.oneMinus()).mul(w.floor.fade.texAmount);
 
       /** Black at the OUTPUT: `colorNode` is albedo alone, which specular survives. Not whilst picking */
       const blackWhenHidden = (node: THREE.Node<"vec4">) =>
