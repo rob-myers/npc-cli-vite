@@ -6,16 +6,15 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   BrainIcon,
-  EyeIcon,
-  RobotIcon,
-  CaretDownIcon,
   CaretRightIcon,
   CrosshairSimpleIcon,
+  EyeIcon,
   GlobeStandIcon,
   type Icon,
   PauseIcon,
   PersonSimpleCircleIcon,
   PlayIcon,
+  RobotIcon,
   SunIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -59,7 +58,6 @@ export function WorldMenu() {
       minY: 40,
       menuOpen: false,
       menuHeight: saved.menuHeight,
-      openSection: saved.menuSection,
       resizing: false,
       skinDebugOpen: false,
       stateSelectOpen: false,
@@ -118,16 +116,6 @@ export function WorldMenu() {
         if (cancelled === false && state.lookLongPressed === false) {
           w.view.onLookGesture(false);
         }
-      },
-
-      isOpen(section) {
-        return state.openSection === section;
-      },
-      toggleSection(section) {
-        // a concertina: opening one folds whichever was open
-        const openSection = state.isOpen(section) === true ? null : section;
-        store.patch({ menuSection: openSection });
-        state.set({ openSection });
       },
 
       getMaxY() {
@@ -482,226 +470,161 @@ export function WorldMenu() {
               </div>
             </div>
 
-            <div
-              className={sectionHeaderClass(touch)}
-              onClick={(e) => {
-                e.stopPropagation();
-                state.toggleSection("debug");
-              }}
-            >
-              {state.isOpen("debug") ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-              debug
-            </div>
-
-            {state.isOpen("debug") && (
-              <>
-                <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
-                  {debugItems.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={cn(
-                        "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                        touch && "text-sm px-2 py-2 bg-slate-800",
-                        isDebugActive(item)
-                          ? "text-green-400 bg-slate-700"
-                          : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDebugToggle(item);
-                      }}
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </div>
-
-                <div className={cn("px-2 pb-1", touch && "px-3 pb-2")}>
-                  <button
-                    type="button"
-                    className={cn(
-                      "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
-                      touch && "text-sm py-2 mt-1",
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      w.debug.logGPUInfo = true;
-                      w.view.forceUpdate();
-                    }}
-                  >
-                    log gpu info
-                  </button>
-                </div>
-              </>
-            )}
-
-            <div
-              className={sectionHeaderClass(touch)}
-              onClick={(e) => {
-                e.stopPropagation();
-                state.toggleSection("player");
-              }}
-            >
-              {state.isOpen("player") ? <CaretDownIcon className="size-3" /> : <CaretRightIcon className="size-3" />}
-              player
-            </div>
-
-            {state.isOpen("player") && (
-              <div
-                className={cn(
-                  "max-w-80 flex flex-wrap items-end gap-1 px-2 py-1",
-                  touch && "max-w-none flex-col items-stretch gap-2 px-1 py-2",
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className={cn("w-24 flex items-stretch", touch && "w-full mx-2")}>
-                  <MenuSelect
-                    side="bottom"
-                    className="border rounded-l border-white/30 border-r-0"
-                    label={truncateLabel(w.player?.key ?? "no npc", 10)}
-                    value={w.player?.key ?? ""}
-                    items={npcKeys.map((k) => ({ key: k, value: k }))}
-                    onValueChange={(v) => v && w.player.setKey(v)}
-                  />
-                  <button
-                    type="button"
-                    title="Cycle player"
-                    className={cn(
-                      "grid place-items-center border rounded-r border-l-0 border-white/30 px-1.5 text-slate-300 cursor-pointer hover:bg-slate-700",
-                      touch && "px-3",
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (npcKeys.length === 0) return;
-                      const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
-                      w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
-                    }}
-                  >
-                    <CaretRightIcon className="size-3" />
-                  </button>
-                </div>
+            <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
+              <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>
+                player:
               </div>
-            )}
-
-            {import.meta.env.DEV && (
-              <>
-                <div
-                  className={sectionHeaderClass(touch)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    state.toggleSection("edit theme");
-                  }}
-                >
-                  {state.isOpen("edit theme") ? (
-                    <CaretDownIcon className="size-3" />
-                  ) : (
-                    <CaretRightIcon className="size-3" />
-                  )}
-                  edit theme
-                </div>
-                {state.isOpen("edit theme") && (
-                  <div className="p-2 pt-0 flex flex-col gap-1">
-                    <textarea
-                      key={w.themeKey}
-                      ref={state.ref("themeEditorRef")}
-                      className="w-44 h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
-                      defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => {
-                        const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                        if (parsed.success && w.assets) {
-                          (w.assets.theme ??= {})[w.themeKey] = parsed.data;
-                          w.e.onChangeTheme();
-                          state.saveThemeDevDebounced();
-                        }
-                      }}
-                      onBlur={() => {
-                        state.saveThemeDev();
-                      }}
-                    />
-                  </div>
+              <MenuSelect
+                label={truncateLabel(w.player?.key ?? "no npc", 10)}
+                value={w.player?.key ?? ""}
+                items={npcKeys.map((k) => ({ key: k, value: k }))}
+                side="bottom"
+                onValueChange={(v) => v && w.player.setKey(v)}
+              />
+              <button
+                type="button"
+                title="cycle player"
+                className={cn(
+                  "grid place-items-center px-1.5 text-slate-300 cursor-pointer hover:text-white",
+                  touch && "px-3",
                 )}
-              </>
-            )}
-
-            {import.meta.env.DEV && (
-              <div
-                className={sectionHeaderClass(touch)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  state.toggleSection("dev scripts");
+                  if (npcKeys.length === 0) return;
+                  const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                  w.player.setKey(npcKeys[(currentIdx + 1) % npcKeys.length]);
                 }}
               >
-                {state.isOpen("dev scripts") ? (
-                  <CaretDownIcon className="size-3" />
-                ) : (
-                  <CaretRightIcon className="size-3" />
+                <CaretRightIcon className="size-3" />
+              </button>
+            </div>
+
+            <div className={sectionHeaderClass(touch)}>debug</div>
+
+            <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
+              {debugItems.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className={cn(
+                    "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                    touch && "text-sm px-2 py-2 bg-slate-800",
+                    isDebugActive(item)
+                      ? "text-green-400 bg-slate-700"
+                      : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDebugToggle(item);
+                  }}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            <div className={cn("px-2 pb-1", touch && "px-3 pb-2")}>
+              <button
+                type="button"
+                className={cn(
+                  "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
+                  touch && "text-sm py-2 mt-1",
                 )}
-                dev scripts
-              </div>
-            )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  w.debug.logGPUInfo = true;
+                  w.view.forceUpdate();
+                }}
+              >
+                log gpu info
+              </button>
+            </div>
 
-            {import.meta.env.DEV && state.isOpen("dev scripts") && (
-              <div className="flex">
-                <button
-                  type="button"
-                  className={cn(
-                    "w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
-                    touch && "text-sm py-2.5",
-                  )}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    w.setNextPending({ obstacles: true });
-                    try {
-                      const res = await fetch("/api/gen-starship-sheets", {
-                        method: "POST",
-                      });
-                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                      await queryClientApi.queryClient.invalidateQueries({
-                        queryKey: ["sheets"],
-                      });
-                      await queryClientApi.queryClient.invalidateQueries({
-                        queryKey: ["obstacle-images"],
-                      });
-                    } catch (err) {
-                      console.error("Failed to update obstacles:", err);
-                    } finally {
-                      w.setNextPending({ obstacles: false });
-                    }
-                  }}
-                >
-                  obstacles
-                  <ArrowsClockwiseIcon className="size-3.5" />
-                </button>
+            {import.meta.env.DEV && (
+              <>
+                <div className={sectionHeaderClass(touch)}>edit theme</div>
+                <div className="p-2 pt-0 flex flex-col gap-1">
+                  <textarea
+                    key={w.themeKey}
+                    ref={state.ref("themeEditorRef")}
+                    className="w-full h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                    defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => {
+                      const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
+                      if (parsed.success && w.assets) {
+                        (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                        w.e.onChangeTheme();
+                        state.saveThemeDevDebounced();
+                      }
+                    }}
+                    onBlur={() => {
+                      state.saveThemeDev();
+                    }}
+                  />
+                </div>
 
-                <button
-                  type="button"
-                  className={cn(
-                    "w-full flex items-center justify-center gap-1.5 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
-                    touch && "text-sm py-2.5",
-                  )}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    try {
-                      const res = await fetch("/api/gen-assets-json", {
-                        method: "POST",
-                      });
-                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                      await queryClientApi.queryClient.invalidateQueries({
-                        exact: false,
-                        queryKey: w.worldQueryPrefix,
-                      });
-                    } catch (err) {
-                      console.error("Failed to update assets:", err);
-                    }
-                  }}
-                >
-                  assets
-                  <ArrowsClockwiseIcon className="size-3.5" />
-                </button>
-              </div>
+                <div className={sectionHeaderClass(touch)}>dev scripts</div>
+                <div className={cn("flex px-2")}>
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
+                      touch && "text-sm py-2.5",
+                    )}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      w.setNextPending({ obstacles: true });
+                      try {
+                        const res = await fetch("/api/gen-starship-sheets", {
+                          method: "POST",
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        await queryClientApi.queryClient.invalidateQueries({
+                          queryKey: ["sheets"],
+                        });
+                        await queryClientApi.queryClient.invalidateQueries({
+                          queryKey: ["obstacle-images"],
+                        });
+                      } catch (err) {
+                        console.error("Failed to update obstacles:", err);
+                      } finally {
+                        w.setNextPending({ obstacles: false });
+                      }
+                    }}
+                  >
+                    obstacles
+                    <ArrowsClockwiseIcon className="size-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
+                      touch && "text-sm py-2.5",
+                    )}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const res = await fetch("/api/gen-assets-json", {
+                          method: "POST",
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        await queryClientApi.queryClient.invalidateQueries({
+                          exact: false,
+                          queryKey: w.worldQueryPrefix,
+                        });
+                      } catch (err) {
+                        console.error("Failed to update assets:", err);
+                      }
+                    }}
+                  >
+                    assets
+                    <ArrowsClockwiseIcon className="size-3.5" />
+                  </button>
+                </div>
+              </>
             )}
           </MenuShell>
 
@@ -1125,10 +1048,6 @@ export type State = {
   skinDebugOpen: boolean;
   dragged: boolean;
   menuOpen: boolean;
-  /** The one unfolded section, e.g. `debug`. Persisted */
-  openSection: null | string;
-  isOpen(section: string): boolean;
-  toggleSection(section: string): void;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
@@ -1171,12 +1090,9 @@ export type State = {
 /** Enlarges the menu controls on touch devices */
 const touchDeviceZoom = 1.25;
 
-/** A collapsible section's header row, e.g. "player" or "debug" */
+/** A section's label row, e.g. "player" or "debug" — every section is always unfolded */
 const sectionHeaderClass = (touch: boolean) =>
-  cn(
-    "flex items-center gap-1 px-2 py-1 text-xs text-slate-400 cursor-pointer hover:text-slate-200",
-    touch && "gap-2 px-3 py-2.5 text-sm border-t border-slate-800",
-  );
+  cn("px-2 py-1 text-xs text-slate-400", touch && "px-3 py-2.5 text-sm border-t border-slate-800");
 
 /** Every `<input type="range">` in the menu — touch gets a fatter thumb and more room to drag */
 const rangeInputClass = (touch: boolean, width: string) =>
