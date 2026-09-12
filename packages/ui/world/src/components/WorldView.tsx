@@ -1819,7 +1819,7 @@ function createPickRT(count: 1 | 2) {
 
 function defaultInitialCamera(): State["initial"] {
   return {
-    azimuthal: 0,
+    azimuthal: Math.PI / 4,
     polar: Math.PI / 4,
     // the far stop of `ctrlOpts`, touch and desktop alike
     position: { x: 4, y: 14, z: 4 },

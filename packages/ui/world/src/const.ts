@@ -97,6 +97,8 @@ export const defaultNpcLabelColor = "#ff9";
 export const defaultPlayerKey = "rob";
 /** How many random rooms we'll try when spawning the player */
 export const spawnPlayerAttempts = 10;
+/** Room labels the player may be spawned in, when there is nowhere better */
+export const spawnRoomLabels = ["corridor", "common"];
 /** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
 export const defaultAmbientIntensity = 1;
 

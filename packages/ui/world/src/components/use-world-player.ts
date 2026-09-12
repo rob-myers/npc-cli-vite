@@ -1,6 +1,6 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { defaultPlayerKey, spawnPlayerAttempts } from "../const";
+import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const";
 import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 
@@ -20,11 +20,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       async ensure() {
         if (w.n[state.key] === undefined) {
           // a map keeps its own player position, so returning to it puts them back where they
-          // were. Only a map we have never stood on carries their position over from the last
-          (await state.restore()) ||
-            (await state.restoreNearPrevMap()) ||
-            (await state.restoreNearCamera()) ||
-            (await state.spawnSomewhere());
+          // were. A map we have never stood on starts them at one of its spawn points
+          (await state.restore()) || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
         }
         state.prevMapPosition = null;
       },
@@ -68,53 +65,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return false;
         }
       },
-      async restoreNearCamera() {
-        const target = w.view.controls?.target;
-        if (target === undefined) {
-          return false;
-        }
-        const at = { x: target.x, y: target.z };
-
-        // the exact point if navigable, else the nearest room centres
-        const candidates: JshCli.PointAnyFormat[] = [];
-        const snapped = w.npc.getClosestPoly(at, 0.5);
-        if (snapped.success === true) {
-          candidates.push(snapped.position);
-        }
-        candidates.push(
-          ...w.gms
-            .flatMap((gm) => gm.rooms.map((room) => gm.matrix.transformPoint({ ...room.center })))
-            .sort((p, q) => Math.hypot(p.x - at.x, p.y - at.y) - Math.hypot(q.x - at.x, q.y - at.y))
-            .slice(0, spawnPlayerAttempts),
+      async restoreFromSpawnPoint() {
+        const points = Object.values(w.decor.byKey).filter(
+          (decor): decor is Geomorph.DecorPoint => decor.type === "point" && decor.meta.spawn === true,
         );
-
-        for (const point of candidates) {
-          try {
-            await w.npc.spawn({ npcKey: state.key, at: point });
-            return true;
-          } catch {
-            // e.g. "not placable": try the next candidate
-          }
+        const point = points[Math.floor(Math.random() * points.length)];
+        if (point === undefined) {
+          return false; // a map without spawn points
         }
-        return false;
-      },
-      async restoreNearPrevMap() {
-        if (state.prevMapPosition === null) {
-          return false; // on load, rather than onchange map
-        }
-
-        const result = w.npc.getClosestPoly(state.prevMapPosition, 0.5);
-        if (result.success === false) {
-          return false; // nowhere nearby is navigable
-        }
-
-        try {
-          await w.npc.spawn({ npcKey: state.key, at: result.position });
-          return true;
-        } catch (e) {
-          error(e);
-          return false;
-        }
+        await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y } });
+        return true;
       },
       assign(npcKey) {
         state.key = npcKey;
@@ -132,11 +92,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         void state.panTo(); // as on load
       },
       async spawnSomewhere() {
+        // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point
+        const rooms = Object.values(w.decor.byKey).flatMap((decor) =>
+          w.helper.isRoomLabel(decor) && spawnRoomLabels.includes(decor.meta.label) ? [decor.meta] : [],
+        );
         for (let attempt = 0; attempt < spawnPlayerAttempts; attempt++) {
-          const gm = w.gms[Math.floor(Math.random() * w.gms.length)];
-          const room = gm?.rooms[Math.floor(Math.random() * gm.rooms.length)];
+          const { gmId, roomId } = rooms[Math.floor(Math.random() * rooms.length)] ?? {};
+          const gm = w.gms[gmId as number];
+          const room = gm?.rooms[roomId as number];
           if (room === undefined) {
-            continue;
+            break; // no such rooms
           }
 
           try {
@@ -168,14 +133,12 @@ export type State = {
   persist(): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;
-  /** Spawns the player as near the camera as we can manage — `false` if we couldn't */
-  restoreNearCamera(): Promise<boolean>;
-  /** Respawns the player near where they were on the previous map — `false` if we couldn't */
-  restoreNearPrevMap(): Promise<boolean>;
+  /** Spawns the player at one of the map's `meta.spawn` decor points, at random — `false` if it has none */
+  restoreFromSpawnPoint(): Promise<boolean>;
   /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
   /** Make them the player, telling everyone — the bare act, without `setKey`'s lit, persist and pan */
   assign(npcKey: string): void;
   setKey(npcKey: string): void;
-  /** Spawns the player in a random room — `false` if every attempt failed */
+  /** Spawns the player in a random room labelled by `spawnRoomLabels` — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
