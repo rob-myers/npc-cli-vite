@@ -1819,10 +1819,11 @@ function createPickRT(count: 1 | 2) {
 
 function defaultInitialCamera(): State["initial"] {
   return {
-    azimuthal: Math.PI / 4,
+    azimuthal: 0,
     polar: Math.PI / 4,
-    // the far stop of `ctrlOpts`, touch and desktop alike
-    position: { x: 4, y: 14, z: 4 },
+    // `y` is the distance: the near stop of `ctrlOpts`, touch and desktop alike, so a first
+    // visit arrives zoomed in on the player
+    position: { x: 4, y: defaultCameraMinDistance, z: 4 },
   };
 }
 
