@@ -214,7 +214,9 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
   });
 };
 
-const resizeHandleSize = 4;
+/** On screen, in px — and never more than this fraction of the node's smaller side, so they cannot dwarf it */
+const handlePx = 16;
+const handleMaxFrac = 0.25;
 const resizeHandles: { handle: ResizeHandle; getPos: (r: Rect) => { x: number; y: number } }[] = [
   { handle: "nw", getPos: (r) => ({ x: r.x, y: r.y }) },
   { handle: "n", getPos: (r) => ({ x: r.x + r.width / 2, y: r.y }) },
@@ -238,8 +240,16 @@ const handleToCursor: Record<ResizeHandle, string> = {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
+/** The resize cursor for a handle in the direction `dx, dy` (y down) from its node's centre, to the nearest 45° */
+function cursorTowards(dx: number, dy: number) {
+  const octant = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) & 3; // 0 e, 1 se, 2 s, 3 sw — and their opposites
+  return ["cursor-ew-resize", "cursor-nwse-resize", "cursor-ns-resize", "cursor-nesw-resize"][octant];
+}
+
 function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
-  const handleSize = (8 * resizeHandleSize) / (2 * root.zoom);
+  // svg units per screen px: the viewBox is `baseSvgSize / zoom` across, shown `meet` in the element
+  const unitsPerPx = baseSvgSize / root.zoom / Math.min(root.svgWidth, root.svgHeight);
+  const sizeHandles = (minSide: number) => Math.min(handlePx * unitsPerPx, minSide * handleMaxFrac);
 
   if (selectedNode.type === "image") {
     // Rotated UI: compute transformed corners from cssTransform
@@ -251,7 +261,12 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
     const se = tp(w, h);
     const sw = tp(0, h);
     const corners = { nw, ne, se, sw };
+    const centre = tp(w / 2, h / 2);
     const points = `${nw.x},${nw.y} ${ne.x},${ne.y} ${se.x},${se.y} ${sw.x},${sw.y}`;
+    const handleSize = sizeHandles(
+      Math.min(Math.hypot(ne.x - nw.x, ne.y - nw.y), Math.hypot(sw.x - nw.x, sw.y - nw.y)),
+    );
+    const handleStroke = handleSize / 8;
 
     return (
       <g>
@@ -268,8 +283,8 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
                 width={handleSize}
                 height={handleSize}
                 stroke="rgba(100, 100, 100, 1)"
-                strokeWidth={2 / root.zoom}
-                className="stroke-white fill-blue-700 cursor-auto"
+                strokeWidth={handleStroke}
+                className={cn("stroke-white fill-blue-700", cursorTowards(pos.x - centre.x, pos.y - centre.y))}
               />
             );
           })}
@@ -279,6 +294,8 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
 
   // Axis-aligned UI for rect nodes
   const rect = getNodeBounds(selectedNode);
+  const handleSize = sizeHandles(Math.min(rect.width, rect.height));
+  const handleStroke = handleSize / 8;
   return (
     <g>
       <rect
@@ -301,7 +318,7 @@ function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | Ima
               width={handleSize}
               height={handleSize}
               stroke="rgba(100, 100, 100, 1)"
-              strokeWidth={2 / root.zoom}
+              strokeWidth={handleStroke}
               className={cn("stroke-white fill-blue-700", handleToCursor[handle])}
             />
           );
