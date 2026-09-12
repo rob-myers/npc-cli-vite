@@ -295,10 +295,10 @@
     - can remove visibility optimisationx
   - ❌ pick spot should be dark
     - also tried moving to obstacles via relaxed getClosestPoly
-  - mobile initial touch delay
-  - flatten WorldMenu
+  - ✅ mobile initial touch delay
+  - ✅ flatten WorldMenu
   - ✅ maybe free azimuthal
-  - saw npc intersect unlocked door
+  - 🚧 saw npc intersect unlocked door
   - lock too small to pick on mobile
   - ✅ fix slow stepping near boundary
   - on first bootstrap should be zoomed out and then zoom in to player

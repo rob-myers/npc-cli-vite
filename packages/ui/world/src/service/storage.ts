@@ -54,8 +54,6 @@ export type WorldSettings = {
   menuY: number;
   menuWidth: number;
   menuHeight: number;
-  /** The one unfolded section, e.g. `debug` — the menu is a concertina */
-  menuSection: null | string;
   speechY: number;
   speechWidth: null | number;
   speechHeight: null | number;
@@ -84,7 +82,6 @@ const defaultWorldSettings: WorldSettings = {
   menuY: 40,
   menuWidth: 288,
   menuHeight: 288,
-  menuSection: null,
   speechY: 40,
   speechWidth: null,
   speechHeight: null,
