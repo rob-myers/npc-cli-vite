@@ -289,18 +289,22 @@
     - floor depthWrite false causes issue
   - ✅ `spawn` should snap to mesh by default
     - provide 0.5 leeway
-  - npc sphere wipe should happen after rest of room darkens
+  - ❌ npc sphere wipe should happen after rest of room darkens
     - otherwise can see flicker
+  - ✅ prod shows npcs as black too
+    - can remove visibility optimisationx
   - ❌ pick spot should be dark
     - also tried moving to obstacles via relaxed getClosestPoly
   - mobile initial touch delay
   - flatten WorldMenu
-  - maybe free azimuthal
+  - ✅ maybe free azimuthal
   - saw npc intersect unlocked door
   - lock too small to pick on mobile
   - ✅ fix slow stepping near boundary
   - on first bootstrap should be zoomed out and then zoom in to player
   - initial follow player too bumpy
+    - look at too
+  - support park multiple npcs
 
 # FUTURE
 
