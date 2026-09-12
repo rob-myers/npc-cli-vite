@@ -77,7 +77,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 
         // the exact point if navigable, else the nearest room centres
         const candidates: JshCli.PointAnyFormat[] = [];
-        const snapped = w.npc.getClosestPoly(at, "0.5");
+        const snapped = w.npc.getClosestPoly(at, 0.5);
         if (snapped.success === true) {
           candidates.push(snapped.position);
         }
@@ -103,7 +103,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return false; // on load, rather than onchange map
         }
 
-        const result = w.npc.getClosestPoly(state.prevMapPosition, "0.5");
+        const result = w.npc.getClosestPoly(state.prevMapPosition, 0.5);
         if (result.success === false) {
           return false; // nowhere nearby is navigable
         }
