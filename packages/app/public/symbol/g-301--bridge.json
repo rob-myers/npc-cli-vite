@@ -570,13 +570,13 @@
           "name": "decor point spawn",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 597, "f": 178},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 80, "f": 184.5},
           "type": "image",
           "srcType": "decor",
           "srcKey": "arrow",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 597, 178)"
+          "cssTransform": "matrix(1, 0, 0, 1, 80, 184.5)"
         },
         {
           "id": "0b06ce18-23d4-4989-90df-314649bcb2a8",
