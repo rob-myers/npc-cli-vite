@@ -306,7 +306,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.toggleDoor(e.meta.gdKey, {
             open: true,
             npcKey: e.npcKey,
-            npcIntention: npc.getCornersPath() ?? undefined,
+            // avoid ignoring "inside" sensor when path does not intersect
+            npcIntention: e.type === "nearby" ? (npc.getCornersPath() ?? undefined) : undefined,
           });
         }
 
