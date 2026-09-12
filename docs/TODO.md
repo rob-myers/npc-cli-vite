@@ -304,11 +304,13 @@
   - ✅ fix slow stepping near boundary
   - ✅ on first bootstrap should be zoomed in at angle
   - 🚧 initial follow player too bumpy
-    - look at too
+    - "look at" too
   - support park multiple npcs
   - ✅ fix "keyboard copy text from tty"
     - in particular on lost focus while text selected should be able to click tab and refocus without losing the selection
-  - simplify `lock $( pick as:meta.gdKey 1 )`
+  - ✅ simplify `lock $( pick as:meta.gdKey 1 )`
+    - `pick_gd_key`
+    - `lock $( pick_gd_key 1 )`
 
 # FUTURE
 
