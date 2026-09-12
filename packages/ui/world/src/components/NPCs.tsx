@@ -674,7 +674,6 @@ export default function NPCs() {
 
         return npc;
       },
-
       resetMaterials(npc) {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
@@ -704,7 +703,7 @@ export default function NPCs() {
           doResult.type === "none" ? w.e.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
         if (gmRoomId === null) throw Error("must be in some room");
 
-        const closePolyResult = state.getClosestPoly(groundAt);
+        const closePolyResult = state.getClosestPoly(groundAt, "0.5");
         if (closePolyResult.success === false && doResult.type === "none") {
           throw Error("not placable");
         }
