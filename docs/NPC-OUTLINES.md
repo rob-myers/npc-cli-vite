@@ -117,15 +117,15 @@ keeps an even width, unrolled whilst building the node graph so no loop reaches 
 
 ## 4. Compositing, and the `Fn` it must be
 
-The border goes over the FINISHED frame, between the backdrop composite and whatever demo effect is
-hung off the end:
+The border goes over the FINISHED frame, between the backdrop composite and the rgb shift hung
+off the end:
 
 ```ts
 const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.prodNode);
 const bordered = state.npcMaskMrt === null
   ? composed
   : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
-pipeline.outputNode = state.demoFx.apply(bordered, state.demoPostFx);
+pipeline.outputNode = state.rgbShiftFx.apply(bordered, state.rgbShift);
 ```
 
 **`applyNpcOutline` wraps its body in a TSL `Fn`.** The rim is built in `var`s, and outside a
