@@ -11,6 +11,7 @@ import {
   createFindNearestPolyResult,
   type FindNearestPolyResult,
   findNearestPoly,
+  type NodeRef,
   type QueryFilter,
   type Vec3,
 } from "navcat";
@@ -356,6 +357,9 @@ export default function NPCs() {
           throw Error(`npc "${npcKey}" does not exist`);
         }
         return npc;
+      },
+      getNodeRef(agent) {
+        return agent.corridor.path[0];
       },
       getClosestPoly(targetPos, accuracy = 0.005, queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = helper.groundPointToTuple(helper.parseGroundPoint(targetPos));
@@ -953,6 +957,8 @@ export type State = {
    * - Throws if `meta` is doable but not free.
    */
   findFreeDoMeta(meta: Meta, npcKey: string): JshCli.FindDoMetaResult;
+  /** The navmesh poly under an agent, which the crowd keeps under their feet */
+  getNodeRef(agent: crowd.Agent): NodeRef;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
     accuracy?: 0.005 | 0.1 | 0.5,

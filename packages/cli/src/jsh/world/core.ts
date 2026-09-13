@@ -500,8 +500,13 @@ export async function nudge(
 ) {
   const { w } = ct;
   const npc = w.npc.get(opts.npcKey);
+  const agent = npc.agent;
 
   opts.by ??= 0.5;
+
+  if (agent === null) {
+    throw Error("no agent");
+  }
 
   if (!opts.from) {
     // nudge from a random angle
@@ -516,11 +521,16 @@ export async function nudge(
   const src = npc.point;
   const delta = Vect.from(src).sub(w.helper.parseGroundPoint(opts.from)).normalize(opts.by);
 
+  const nodeRef = w.npc.getNodeRef(agent);
+  if (nodeRef === null) {
+    throw Error("npc lacks agent");
+  }
+
   // slide along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
   // rather than crossing it — `npc.queryFilter` refuses door areas they lack access to
   const clamped = moveAlongSurface(
     w.nav.navMesh,
-    w.npc.getClosestPoly(npc.position).nodeRef,
+    nodeRef,
     [src.x, 0, src.y],
     [src.x + delta.x, 0, src.y + delta.y],
     npc.queryFilter,
@@ -1113,8 +1123,8 @@ export async function* wasd_delta(
  * off the mesh, or where the slide left it at the mesh's edge
  */
 function wasdStep(w: JshCli.RunArg["w"], npc: JshCli.Npc, keysDown: Set<string>, length: number) {
-  const poly = w.npc.getClosestPoly(npc.position);
-  if (poly.success === false) return null;
+  const agent = npc.agent;
+  if (agent === null) return null;
 
   // screen-right and screen-up on the ground: the camera's x and y axes, flattened — the y axis
   // rather than the forward, which at birdseye points straight down and flattens away
@@ -1127,7 +1137,7 @@ function wasdStep(w: JshCli.RunArg["w"], npc: JshCli.Npc, keysDown: Set<string>,
   const src = npc.point;
   const clamped = moveAlongSurface(
     w.nav.navMesh,
-    poly.nodeRef,
+    w.npc.getNodeRef(agent),
     [src.x, 0, src.y],
     [src.x + delta.x, 0, src.y + delta.y],
     npc.queryFilter,
