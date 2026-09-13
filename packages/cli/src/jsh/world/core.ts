@@ -1,7 +1,8 @@
-import { npcConfig, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const";
+import { npcConfig, parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
+import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
 
 /**
  * Get at most one decor containing a given point.
@@ -487,22 +488,20 @@ export async function move_next(
 /**
  * ```sh
  * nudge npc:kate
+ * nudge kate
  * nudge npc:kate from:rob
  * nudge npc:kate from:$( pick 1 ) by:1
  * ```
  */
 export async function nudge(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; from?: string | JshCli.PointAnyFormat; by?: number } = ct.api.jsArg(ct.args, {
+  opts: { npcKey?: string; from?: string | JshCli.PointAnyFormat; by?: number } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
     src: "from",
   }),
 ) {
   const { w } = ct;
-  const npc = w.npc.get(opts.npcKey);
-  const agent = npc.agent;
-  if (agent === null) throw Error("no agent");
-
+  const npc = w.npc.get(opts.npcKey ?? ct.args[0]);
   opts.by ??= 0.5;
 
   if (!opts.from) {
@@ -518,27 +517,12 @@ export async function nudge(
   const src = npc.point;
   const delta = Vect.from(src).sub(w.helper.parseGroundPoint(opts.from)).normalize(opts.by);
 
-  const nodeRef = w.npc.getNodeRef(agent);
-  if (nodeRef === null) {
-    throw Error("npc lacks agent");
-  }
-
-  // slide along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
-  // rather than crossing it — `npc.queryFilter` refuses door areas they lack access to
-  const clamped = moveAlongSurface(
-    w.nav.navMesh,
-    nodeRef,
-    [src.x, 0, src.y],
-    [src.x + delta.x, 0, src.y + delta.y],
-    npc.queryFilter,
-  );
-
-  if (clamped.success === false) {
-    return;
-  }
-
-  const to = { x: clamped.position[0], y: clamped.position[2] };
-  if (Math.hypot(to.x - src.x, to.y - src.y) < nudgeMinMove) {
+  // slid along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
+  const to = await plan({
+    ...ct,
+    op: { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + delta.x, y: src.y + delta.y } },
+  });
+  if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < nudgeMinMove) {
     return; // nowhere to go i.e. backed against something
   }
 
@@ -575,29 +559,17 @@ export async function pad(
   opts: { npcKey: string; by?: number } = api.jsArg(args, { npc: "npcKey" }),
 ) {
   const npc = w.npc.get(opts.npcKey ?? args[0]);
-  const agent = npc.agent;
-  if (agent === null) throw Error("no agent");
+  // off the nearest wall
+  const to = await plan({ api, w, op: { key: "pad", npc: npcQuery(w, npc), by: opts.by ?? 0.5 } });
+  if (to === null) throw Error("boundary too far");
 
-  const [seg] = agent.boundary.segments;
-  if (seg === undefined) {
-    throw Error("boundary too far");
-  }
-
-  // move away from 1st seg
-  const src = npc.point;
-  const delta = Vect.from(seg.s[3 + 2] - seg.s[0 + 2], -(seg.s[3 + 0] - seg.s[0 + 0])).normalize(opts.by ?? 0.5);
-
-  await w.npc
-    .move({
-      npcKey: npc.key,
-      to: { x: src.x + delta.x, y: src.y + delta.y },
-    })
-    .catch(() => {}); // ignore stuck
+  await w.npc.move({ npcKey: npc.key, to }).catch(() => {}); // ignore stuck
 }
 
 /**
- * Stand npcs against a nearby wall, out of the way — clear of any doorway, which is the one place
- * a parked npc blocks everybody. Several are planned together, then move together.
+ * Stand npcs against a nearby wall, out of the way: clear of the room's doorways and of its other
+ * parked npcs, and remembered in `w.e.parked`. Planned together on the worker, then everyone
+ * moves at once. A kill rejects the npcs; a pause lets a fade or look finish
  * ```sh
  * park npc:kate
  * park kate
@@ -610,13 +582,43 @@ export async function park(
 ) {
   // ignore non-existent npcKey including e.g. npc:foo
   const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
-  // one at a time with a breath between, but everyone moves at once
-  const planned = new Map<string, ReturnType<typeof w.e.planPark>>();
-  for (const npc of npcs) {
-    planned.set(npc.key, w.e.planPark(npc, planned));
-    await api.sleep(0.05);
-  }
-  await w.e.park(npcs, planned);
+
+  await awaitPausable(api, async (signal) => {
+    const plans = await request(
+      w,
+      api,
+      {
+        key: "park",
+        npcs: npcs.map((npc) => npcQuery(w, npc)),
+        // everyone parked, wherever: a handful, and the worker keeps to the rooms involved
+        parked: [...w.e.parked].flatMap(([key, { s }]) => {
+          const grKey = w.e.npcToRoom.get(key)?.grKey;
+          return grKey === undefined ? [] : [{ key, point: w.n[key].point, grKey, seg: s }];
+        }),
+      },
+      signal,
+    );
+    if (plans.some((plan) => plan === null)) throw Error("boundary too far");
+
+    // a kill stops them where they are; a pause does not — see `awaitPausable`
+    const onAbort = () => isPaused(signal.reason) === false && npcs.forEach((npc) => npc.rejectAll(signal.reason));
+    signal.addEventListener("abort", onAbort, { once: true });
+    try {
+      await Promise.all(
+        npcs.map(async (npc, i) => {
+          const { at, facing, seg } = plans[i] as JshWW.ParkPlan;
+          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > parkMinMove) {
+            await npc.fadeSpawn({ at, facing });
+          } else {
+            await npc.look({ at: facing });
+          }
+          w.e.parked.set(npc.key, { s: seg });
+        }),
+      );
+    } finally {
+      signal.removeEventListener("abort", onAbort);
+    }
+  });
 }
 
 export function pause({ w }: JshCli.RunArg) {

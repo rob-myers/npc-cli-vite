@@ -11,7 +11,11 @@
     "./assets.schema": "./src/assets.schema.ts",
     "./connector": "./src/service/Connector.ts",
     "./query-client": "./src/service/query-client.ts",
-    "./const": "./src/const.ts"
+    "./const": "./src/const.ts",
+    "./worker": "./src/worker/world.worker.ts",
+    "./worker/store": "./src/worker/worker.store.ts",
+    "./worker/nav-util": "./src/worker/nav-util.ts",
+    "./world-worker-factory": "./src/service/world-worker-factory.ts"
   },
   "scripts": {},
   "dependencies": {

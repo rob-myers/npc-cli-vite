@@ -1,6 +1,5 @@
-import { parkQueryRange } from "@npc-cli/ui__world/const";
-import { localBoundary } from "navcat/blocks";
 import { events } from "./core";
+import { npcQuery, plan } from "./plan.main";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -61,7 +60,7 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
  * demo_local_boundary
  * ```
  */
-export function demo_local_boundary(
+export async function demo_local_boundary(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
@@ -69,20 +68,9 @@ export function demo_local_boundary(
     w.debug.setLocalBoundary([]);
     return;
   }
-  const npc = w.npc.get(opts.npcKey);
-  const agent = npc.agent;
-  if (!agent) throw Error("no agent");
-
   // exactly as `park` asks, so what is drawn is what it would see
-  localBoundary.updateLocalBoundary(
-    agent.boundary,
-    w.npc.getNodeRef(agent),
-    w.helper.groundPointToTuple(npc.point),
-    parkQueryRange,
-    w.nav.navMesh,
-    npc.queryFilter,
-  );
-  w.debug.setLocalBoundary(npc.agent.boundary.segments.map(({ s }) => [s[0], s[2], s[3], s[5]]));
+  const segs = await plan({ api, w, op: { key: "boundary", npc: npcQuery(w, w.npc.get(opts.npcKey)) } });
+  w.debug.setLocalBoundary(segs.map((s) => [s[0], s[2], s[3], s[5]]));
 }
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {

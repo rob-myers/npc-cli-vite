@@ -16,7 +16,8 @@ import { sendRaycastResult } from "./ray-cast";
 import { findUnreachableResult, setRoomGraph } from "./room-graph";
 import { workerStore } from "./worker.store";
 
-self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
+/** Exported so another entry can wrap it — see `jsh.worker.ts` in `@npc-cli/cli` */
+export const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
   const msg = e.data;
   if (msg?.type !== "send-npc-positions") {
     debug("🤖 worker received", JSON.stringify(msg?.type));
@@ -91,6 +92,7 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
       // await pause(1000);
 
       const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
+      workerStore.setState({ navMesh: tiledNavMeshResult.navMesh }); // kept for queries here
 
       self.postMessage({
         type: "tiled-navmesh-response",
@@ -176,7 +178,9 @@ self.addEventListener("message", async (e: MessageEvent<WW.MsgToWorker>) => {
     default:
       throw new ExhaustiveError(msg);
   }
-});
+};
+
+self.addEventListener("message", onMessage);
 
 if (import.meta.hot) {
   import.meta.hot.accept((_newModule) => {

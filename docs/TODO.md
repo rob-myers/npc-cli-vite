@@ -321,7 +321,9 @@
   - ✅ saw player fail to arrive when spawning npcs
   - ✅ faster `w.npc.getClosestPoly(npc.position).nodeRef`
     - is nodeRef already available?
-  - park offloads computation to worker
+  - ✅ park offloads computation to worker
+    - jsh.worker booted from app package
+    - jsh.worker imports world.worker
 
 # FUTURE
 
