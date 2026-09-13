@@ -1,4 +1,4 @@
-import { ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { useStateRef } from "@npc-cli/util";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import { helper } from "../service/helper";
@@ -10,6 +10,7 @@ import {
   getRoomGraphPayload,
   getRuntimeCollidersPayload,
 } from "../service/worker-data";
+import { ensureWorldWorker } from "../service/world-worker-factory";
 import { WorldContext } from "./world-context";
 
 export default function WorldWorker() {
@@ -105,7 +106,8 @@ export default function WorldWorker() {
             break;
           }
           default:
-            throw new ExhaustiveError(msg);
+            // type-safety only: the worker may extend world.worker
+            msg satisfies never;
         }
       },
       ping() {
@@ -129,7 +131,7 @@ export default function WorldWorker() {
      * - we send specially craft payloads to worker
      * - this avoids e.g. parse via shared schema, or instantiate geomorphs.
      */
-    const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
+    const worker = ensureWorldWorker();
     state.worker = worker;
     w.worker = state;
     worker.addEventListener("message", state.onWorkerMessage);
