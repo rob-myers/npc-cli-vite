@@ -129,6 +129,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       initial: saved.cameraInitial ?? defaultInitialCamera,
       persistedCamera: null,
       lookAtAnimId: 0,
+      lookingAt: false,
       lastPointer: {
         epochMs: 0,
         longPressTimer: 0,
@@ -1263,6 +1264,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // a leftover gesture would otherwise keep decaying underneath the pan
           controls.u.panOffset.set(0, 0, 0);
           controls.sphericalDelta.set(0, 0, 0);
+          state.lookingAt = true; // the look button shows it, e.g. a pan nobody can see yet
+          w.menu?.update();
 
           // Further pans take longer, so the apparent speed stays similar. The floor tapers away
           // over the last `lookAtShortUnits`, else a pan onto a player already under the crosshair
@@ -1296,6 +1299,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         } finally {
           // `followPlayer` stands down whilst this is non-zero, so every way out must clear it
           state.lookAtAnimId = 0;
+          state.lookingAt = false;
+          w.menu?.update();
           // else the next frame's settle would pull the view off the radius just reached
           controls.setZoomFromRadius(controls.spherical.radius);
           // as a gesture's end does: a pan on load is otherwise lost to the next load
@@ -1792,6 +1797,8 @@ export type State = {
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
   /** Builds the pick pass's pipelines ahead of the first pick — see within */
   warmPick(): Promise<void>;
+  /** Whilst an animated `lookAt` runs — the look button is lit by it */
+  lookingAt: boolean;
   /** Whilst `warmPick` holds the renderer in pick state, when no frame may be drawn */
   warmingPick: boolean;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
