@@ -24,6 +24,7 @@ import {
   canonicalSnapArm,
   canonicalSnapCancel,
   canonicalZoomInRate,
+  compilingShadersText,
   crosshairY,
   defaultCameraFollow,
   defaultCameraMaxDistance,
@@ -93,6 +94,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
       pausedEl: null,
+      warmingPick: false,
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
       cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
@@ -215,20 +217,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         e.stopPropagation();
         state.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
       },
-      async runBusy(text, task) {
+      async runBusy(text, task, minMs = busyMinMs) {
         const shownAt = Date.now();
         state.busy = text;
         state.update();
         await awaitPaint(); // the overlay is on screen before the work blocks the thread
         try {
-          task();
+          await task();
         } finally {
           // the work itself is usually a shader compile, which lands in the NEXT frame — so ask for
           // one and wait until it has been painted
           w.r3f?.invalidate();
           await awaitPaint();
           // a quick task would otherwise flicker the overlay, so it stays up a while regardless
-          await pause(Math.max(0, busyMinMs - (Date.now() - shownAt)));
+          await pause(Math.max(0, minMs - (Date.now() - shownAt)));
           state.busy = null;
           state.update();
         }
@@ -998,14 +1000,37 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       warmPick() {
         // the pick target has other attachments than the screen, so the first pick builds every
         // material a second pipeline — on a phone a freeze of a second or two, right on the first
-        // tap. Rendered once here instead, whilst nothing is moving that could be seen to stall.
-        // Never thrown from: it is a nicety, and the render it does is synchronous
-        try {
-          void state.renderPick({ u: 0.5, v: 0.5 }).catch(() => {});
-        } catch {}
+        // tap. Built here instead, asynchronously: `compileAsync` has the backend create them off
+        // the main thread, yielding between materials. Each shader reads the renderer's mrt as it
+        // is built, so the renderer stays in pick state throughout — and no frame may be drawn
+        // meanwhile, hence `warmingPick` holds `frameloop` at `"never"` via `syncRenderMode`
+        if (state.warmingPick === true) return Promise.resolve();
+        return state.runBusy(
+          compilingShadersText,
+          async () => {
+            const { gl, scene, camera } = w.r3f;
+            const renderer = gl as unknown as THREE.WebGPURenderer;
+            state.warmingPick = true;
+            state.syncRenderMode();
+            await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
+            try {
+              renderer.setMRT(state.npcMaskMrt);
+              renderer.setRenderTarget(state.pickRT);
+              await renderer.compileAsync(scene, camera);
+            } catch {
+              // a nicety: the first tap builds whatever this did not
+            } finally {
+              renderer.setMRT(null);
+              renderer.setRenderTarget(null);
+              state.warmingPick = false;
+              state.syncRenderMode();
+            }
+          },
+          warmBusyMinMs,
+        );
       },
       async pickObject(e) {
-        if (w.settledMapKey !== w.mapKey) {
+        if (w.settledMapKey !== w.mapKey || state.warmingPick === true) {
           return;
         }
         const rgba = await state.renderPick(state.computePixelUv(e.nativeEvent));
@@ -1409,6 +1434,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         };
       },
       syncRenderMode() {
+        if (state.warmingPick === true) {
+          w.r3f?.set({ frameloop: "never" }); // the renderer is in pick state — see `warmPick`
+          return "never";
+        }
         if (w.disabled === true) {
           w.r3f?.set({ frameloop: "demand" });
           return "demand";
@@ -1733,7 +1762,7 @@ export type State = {
    * Runs `task` behind an overlay saying `text`, e.g. a toggle whose shader recompile would
    * otherwise freeze the world unannounced (noticeable on mobile). Pointer events still go through
    */
-  runBusy(text: string, task: () => void): Promise<void>;
+  runBusy(text: string, task: () => void | Promise<void>, minMs?: number): Promise<void>;
   /** Whether a pointer OTHER than `e`'s is down, i.e. the gesture belongs to the camera */
   otherPointerDown(e: React.PointerEvent<HTMLDivElement>): boolean;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -1760,7 +1789,9 @@ export type State = {
   /** Renders the pick pass for the pixel at `uv`, resolving to its rgba */
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
   /** Builds the pick pass's pipelines ahead of the first pick — see within */
-  warmPick(): void;
+  warmPick(): Promise<void>;
+  /** Whilst `warmPick` holds the renderer in pick state, when no frame may be drawn */
+  warmingPick: boolean;
   getRaycastIntersection: (e: PointerEvent, picked: Picked) => null | THREE.Intersection;
   isPointDiffDrag(pointA: Geom.VectJson, pointB: Geom.VectJson): boolean;
   /** Persists `lastCameraReading` — wired to `<CameraControls onEnd>`, fires on real interaction end */
@@ -1925,6 +1956,8 @@ const centreHintSecs = 4;
 const centreHintSmall = 0.6;
 /** The least time the busy overlay is shown for, so a quick task does not flicker it */
 const busyMinMs = 2000;
+/** ...and for the pick warm, which is quick on a desktop */
+const warmBusyMinMs = 1000;
 
 /**
  * Whether this world's canvas is veiled — per `worldKey`, since each instance veils its own canvas.

@@ -331,6 +331,9 @@ export const npcConfig = {
 
 export const defaultDoorCloseMs = 6000;
 
+/** What the busy overlay says whilst shaders compile — a toggle's recompile, or the pick warm */
+export const compilingShadersText = "compiling shaders";
+
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
 /** How solid a door looks. Dithered rather than blended — see `Doors`' `alphaHash` */

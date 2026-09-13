@@ -686,6 +686,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         // still-flat world (a fresh page) must also rise with its floor faded in
         w.view.forceUpdate(0.01);
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        await w.view.warmPick(); // as `onBootstrapMap` does: no frame is drawn whilst it runs
 
         if (w.fold.amount < 1) {
           void w.view.veilCanvas(false, mapVeilMs);
@@ -702,7 +703,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           await pause(introPanDelayMs);
           await w.player.panTo();
         }
-        w.view.warmPick(); // as `onBootstrapMap` does, once at rest
       },
       async applySpawns(npcs) {
         for (const netNpc of npcs) {
