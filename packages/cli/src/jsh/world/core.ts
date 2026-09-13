@@ -501,12 +501,9 @@ export async function nudge(
   const { w } = ct;
   const npc = w.npc.get(opts.npcKey);
   const agent = npc.agent;
+  if (agent === null) throw Error("no agent");
 
   opts.by ??= 0.5;
-
-  if (agent === null) {
-    throw Error("no agent");
-  }
 
   if (!opts.from) {
     // nudge from a random angle
@@ -579,7 +576,7 @@ export async function pad(
 ) {
   const npc = w.npc.get(opts.npcKey ?? args[0]);
   const agent = npc.agent;
-  if (!agent) throw Error("no agent");
+  if (agent === null) throw Error("no agent");
 
   const [seg] = agent.boundary.segments;
   if (seg === undefined) {
