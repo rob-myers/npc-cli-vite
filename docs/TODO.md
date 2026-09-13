@@ -315,6 +315,8 @@
     - ✅ as `park foo bar baz`
     - ✅ refine animation
   - mobile fixes
+  - canonical zoom-in sometimes jerky
+    - probably initial zoom-to-cursor and then continue zoom
   - saw player fail to arrive when spawning npcs
   - faster `w.npc.getClosestPoly(npc.position).nodeRef`
     - is nodeRef already available?

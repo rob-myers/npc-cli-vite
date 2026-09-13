@@ -24,7 +24,7 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import { defaultBrightness } from "../const";
+import { compilingShadersText, defaultBrightness } from "../const";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
@@ -228,7 +228,7 @@ export function WorldMenu() {
       case "RGB Shift":
         return w.view.rgbShift ?? false;
       case "Room Outlines":
-        return w.debug?.fadeRoomOutlines ?? false;
+        return w.view.roomOutline ?? false;
       case "Lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
       case "Colliders":
@@ -258,29 +258,30 @@ export function WorldMenu() {
         break;
       case "Post FX":
         // both rebuild the post pass, whose shader compile can stall a phone for a moment
-        void w.view.runBusy(compilingText, () => {
+        void w.view.runBusy(compilingShadersText, () => {
           w.view.setPostProcessingEnabled();
           state.update();
         });
         break;
       case "Npc Outline":
-        void w.view.runBusy(compilingText, () => {
+        void w.view.runBusy(compilingShadersText, () => {
           w.view.setNpcOutlineEnabled();
           state.update();
         });
         break;
       case "RGB Shift":
         // hung off the post pass, so it needs "Post FX" on to show
-        void w.view.runBusy(compilingText, () => {
+        void w.view.runBusy(compilingShadersText, () => {
           w.view.setRgbShiftEnabled();
           state.update();
         });
         break;
       case "Room Outlines":
-        w.debug?.set({ fadeRoomOutlines: !w.debug.fadeRoomOutlines });
-        store.patch({ fadeRoomOutlines: w.debug?.fadeRoomOutlines === true });
-        w.floor?.drawAll();
-        state.update();
+        // drawn by the post pass, so it rebuilds that too
+        void w.view.runBusy(compilingShadersText, () => {
+          w.view.setRoomOutlineEnabled();
+          state.update();
+        });
         break;
       case "Lit npcs":
         w.view.setLitNpcsEnabled();
@@ -1114,8 +1115,6 @@ const minMenuHeight = 120;
 const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
 const spinnerMinMs = 300;
-/** What the busy overlay says whilst a toggle recompiles shaders */
-const compilingText = "compiling shaders";
 /** How long the look button must be held before it switches camera mode rather than looking */
 const lookLongPressMs = 500;
 /** How long the look button's flash takes to fade, when follow is turned on or off */
