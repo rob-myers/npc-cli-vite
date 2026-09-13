@@ -36,6 +36,9 @@ export class NpcAnimation {
   /** true iff moving via agent in navmesh */
   moving = false;
   stuckAccum = 0;
+  /** Nearest the target has been this move, and how long since it got nearer */
+  nearest = Infinity;
+  nearestAccum = 0;
 
   idleClip = emptyAnimationClip;
   mixer = emptyMixer;
@@ -220,6 +223,8 @@ export class NpcAnimation {
     last.targetDistance = this.npc.distanceTo(groundPoint);
 
     this.stuckAccum = 0;
+    this.nearest = Infinity;
+    this.nearestAccum = 0;
     this.arrive = arrive;
 
     if (this.moving === true && this.moveClipInView() === true) {
@@ -290,22 +295,37 @@ export class NpcAnimation {
     moveAction.timeScale = (moveClipKey === "run" ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
   }
 
-  updateStuck(delta: number, worldSeconds: number): boolean {
+  /**
+   * `"still"` once barely moving for `stuckDuration`; `"circling"` once close to the target yet no
+   * nearer for as long — given once per such spell, so the caller tests why only then
+   */
+  updateStuck(delta: number, worldSeconds: number, targetDist: number): false | "still" | "circling" {
     const { position, last } = this.npc;
+    const { stuckEpsilon, circling } = npcConfig.dist;
+    const { stuckGrace, stuckDuration } = npcConfig.time;
 
     // grace whilst accelerating away from standstill
-    if (worldSeconds - last.moveTime < npcConfig.time.stuckGrace) {
+    if (worldSeconds - last.moveTime < stuckGrace) {
       return false;
     }
 
-    const dx = position.x - last.point.x;
-    const dz = position.z - last.point.y;
-    const dist = Math.hypot(dx, dz);
-    this.stuckAccum += dist < npcConfig.dist.stuckEpsilon ? delta : 0;
+    const dist = Math.hypot(position.x - last.point.x, position.z - last.point.y);
+    this.stuckAccum += dist < stuckEpsilon ? delta : 0;
     last.point.x = position.x;
     last.point.y = position.z;
+    if (this.stuckAccum > stuckDuration) return "still";
 
-    return this.stuckAccum > npcConfig.time.stuckDuration;
+    if (targetDist <= circling) {
+      if (this.nearest - targetDist > stuckEpsilon) {
+        this.nearest = targetDist;
+        this.nearestAccum = 0;
+      } else if ((this.nearestAccum += delta) > stuckDuration) {
+        this.nearestAccum = 0;
+        return "circling";
+      }
+    }
+
+    return false;
   }
 }
 
