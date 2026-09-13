@@ -221,8 +221,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // frame in hand the npcs pop in a beat after the world has been revealed empty
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-          // with everything drawn once, the pick pass compiles now rather than on the first tap
-          w.view.warmPick();
+          // with everything drawn once, the pick pass compiles now rather than on the first tap.
+          // Awaited: no frame is drawn whilst it runs, and the pan below wants its frames
+          await w.view.warmPick();
           if (firstBootstrap === true && saved === null) {
             // nothing saved to be looking at, and the player was put down somewhere new: onto
             // them first, so the world unfolds about them
@@ -427,7 +428,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "update-faded-rooms":
-            if (w.debug?.fadeRoomOutlines === true) w.floor.drawAll();
+            if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
             break;
           default:
             throw new ExhaustiveError(e);
@@ -846,6 +847,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         await state.openDoorwaysWithNpcs();
         state.persistNpcs();
         w.view.forceUpdate();
+        void w.player.panTo(); // as on load
       },
       restoreDecor(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().decor) {
         if (saved === null) {

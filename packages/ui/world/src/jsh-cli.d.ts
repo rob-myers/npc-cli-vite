@@ -50,7 +50,7 @@ declare namespace JshCli {
         meta?: Meta;
       }
     | {
-        /** The rooms in view have changed — `Floor` draws its debug outlines off this */
+        /** The rooms in view have changed — the debug room outlines follow it */
         key: "update-faded-rooms";
       };
 

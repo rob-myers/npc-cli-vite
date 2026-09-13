@@ -40,7 +40,7 @@ export type WorldSettings = {
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
-  /** Whether the rooms in view are outlined over the finished frame — see `service/fade-rooms` */
+  /** debug: whether the rooms in view are ringed over the finished frame — see `service/room-outline` */
   fadeRoomOutlines: boolean;
   /** Whether the post pass borders the npcs — see `service/npc-outline` */
   npcOutline: boolean;
