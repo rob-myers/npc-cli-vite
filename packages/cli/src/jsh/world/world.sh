@@ -1,3 +1,3 @@
-pick_gd_key () {
+pickGdKey () {
   pick as:meta.gdKey $@
 }
