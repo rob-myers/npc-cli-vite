@@ -1017,6 +1017,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
               renderer.setMRT(state.npcMaskMrt);
               renderer.setRenderTarget(state.pickRT);
               await renderer.compileAsync(scene, camera);
+              renderer.setMRT(null);
+              renderer.setRenderTarget(null);
+              // then DRAWN once, and the readback waited for: on a phone a pipeline's first draw
+              // has a cost of its own, in the driver rather than here, which the frames after
+              // would otherwise wait on — and this is where the old synchronous warm paid it
+              await state.renderPick({ u: 0.5, v: 0.5 });
             } catch {
               // a nicety: the first tap builds whatever this did not
             } finally {
