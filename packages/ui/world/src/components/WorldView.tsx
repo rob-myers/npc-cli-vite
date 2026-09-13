@@ -18,6 +18,7 @@ import {
   cameraFov,
   cameraRefAspect,
   canonicalBirdseyePolar,
+  canonicalDialFrom,
   canonicalFlattenFrom,
   canonicalPeekPolar,
   canonicalSnapArm,
@@ -34,7 +35,7 @@ import {
   frontierPanFrac,
   frontierRate,
   npcConfig,
-  roomLabelFadeBy,
+  roomLabelFadeFrom,
   roomLabelNearAlpha,
   rotateSpeedDesktop,
   rotateSpeedMobile,
@@ -67,6 +68,7 @@ import { createPlayerFrontier, type PlayerFrontier } from "../service/player-fro
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
 import { createRgbShift, type RgbShiftFx } from "../service/rgb-shift";
+import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
 import type { SelectAnyType } from "../service/texture";
@@ -90,6 +92,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
     (): State => ({
       bounds: { x: 0, y: 0, width: 0, height: 0 },
       canvas: null as any,
+      pausedEl: null,
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
       cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
@@ -122,6 +125,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
       },
       initial: saved.cameraInitial ?? defaultInitialCamera,
+      persistedCamera: null,
       lookAtAnimId: 0,
       lastPointer: {
         epochMs: 0,
@@ -148,6 +152,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       keysDown: new Set(),
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
+      roomOutlineFx: createRoomOutline(),
       fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
       roomSlots: createRoomSlots(),
       pickDoors: uniform(saved.pickDoors === false ? 0 : 1),
@@ -157,6 +162,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       busy: null,
       postProcessing: saved.postProcessing,
       npcOutline: saved.npcOutline,
+      roomOutline: saved.fadeRoomOutlines,
       rgbShift: saved.rgbShift,
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
@@ -347,17 +353,20 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.frontierHold = false; // the view is theirs again
       },
       onCameraEnd() {
-        state.persistCamera();
         // a drag released without momentum dispatches no further change: `canonical`'s detent
         // needs a frame to see the release at all — see `onCameraFrame`
         w.r3f?.invalidate();
       },
       persistCamera() {
+        // per frame, so it must cost nothing when nothing moved
+        if (cameraDidNotChange(state.persistedCamera, state.controls) === true) return;
+        const { spherical, target } = state.controls;
         const cameraInitial: PersistedCamera = {
-          azimuthal: state.controls.spherical.theta,
-          polar: state.controls.spherical.phi,
-          position: { x: state.controls.target.x, y: state.controls.spherical.radius, z: state.controls.target.z },
+          azimuthal: spherical.theta,
+          polar: spherical.phi,
+          position: { x: target.x, y: spherical.radius, z: target.z },
         };
+        state.persistedCamera = cameraInitial;
         store.patch({ cameraInitial });
       },
       onZoomWheel(e) {
@@ -479,6 +488,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       onCameraFrame(spherical) {
         // outside the mode check, so a fade underway still finishes if the mode changes beneath it
         state.fadeCrosshair();
+        // wherever the camera has got to — a gesture's end fires before its damping has, and a
+        // follow or a frontier ease has no end at all. The store debounces the write
+        state.persistCamera();
 
         const { controls } = state;
         // the LIVE stops rather than the persisted ones: `easeFrontier` draws both in, and the
@@ -493,7 +505,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // the room, which is what keeps it attached to the floor rather than floating over it.
         // Measured off the radius rather than `zoomProgress`, which a free (touch) zoom does not
         // keep. Every mode, unlike what follows
-        const u = clamp01(t / roomLabelFadeBy);
+        const u = clamp01((t - roomLabelFadeFrom) / (1 - roomLabelFadeFrom));
         const eased = u * u * (3 - 2 * u); // eased, so it neither snaps out nor lingers
         state.labelZoomFade.value = roomLabelNearAlpha + (1 - roomLabelNearAlpha) * eased;
 
@@ -515,11 +527,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // dial share it and the lock keeps them apart. Once a zoom-in is under way the polar is
         // pinned, and a turn begun a little up or down would lock vertical and do nothing at all —
         // and close in the polar is the user's own, so a diagonal drag may simply do both
-        controls.lockRotateAxis = t > canonicalFlattenFrom && state.zoomPan === null;
+        controls.lockRotateAxis = t > canonicalDialFrom && state.zoomPan === null;
 
         // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
         state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
-        t <= canonicalFlattenFrom ? state.freeCanonicalAzimuth(spherical) : state.detentCanonicalAzimuth(spherical, t);
+        t <= canonicalDialFrom ? state.freeCanonicalAzimuth(spherical) : state.detentCanonicalAzimuth(spherical, t);
       },
       /**
        * Close in the azimuth is the user's own. The dial follows the nearest point meanwhile, so
@@ -793,7 +805,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       getCanonicalAzimuth(t) {
         const { freeAzimuth, canonicalTheta } = state;
         if (freeAzimuth === null || freeAzimuth.point !== canonicalTheta) return canonicalTheta;
-        const u = clamp01((1 - t) / (1 - canonicalFlattenFrom));
+        const u = clamp01((1 - t) / (1 - canonicalDialFrom));
         return canonicalTheta + deltaAngle(canonicalTheta, freeAzimuth.theta) * u * u * (3 - 2 * u);
       },
       /**
@@ -935,7 +947,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.isPointDiffDrag(last.down, getRelativePointer(e)) === true) {
           return; // drag is not a pick
         }
+        if (w.disabled === true && state.isOverPaused(e.nativeEvent) === true) {
+          w.setDisabled(false); // the pill takes no pointer events on a phone — see its className
+          return;
+        }
         state.pickObject(e);
+      },
+      isOverPaused(e) {
+        const rect = state.pausedEl?.getBoundingClientRect();
+        return (
+          rect !== undefined &&
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        );
       },
       otherPointerDown(e) {
         return (state.controls?.pointers ?? []).some((p) => p.pointerId !== e.pointerId);
@@ -953,23 +979,30 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
         state.objectPick.value = 1 * state.objectPickScale;
-        // the npc material declares an extra output whilst bordering, so this pass needs the same
-        // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
-        renderer.setMRT(state.npcMaskMrt);
-        renderer.setRenderTarget(rt);
-        renderer.render(scene, rtCamera);
-        state.objectPick.value = 0;
-        renderer.setMRT(null);
-        renderer.setRenderTarget(null);
-        rtCamera.clearViewOffset();
+        try {
+          // the npc material declares an extra output whilst bordering, so this pass needs the same
+          // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
+          renderer.setMRT(state.npcMaskMrt);
+          renderer.setRenderTarget(rt);
+          renderer.render(scene, rtCamera);
+        } finally {
+          // whatever the render did: left in pick state, every frame after would be a pick
+          state.objectPick.value = 0;
+          renderer.setMRT(null);
+          renderer.setRenderTarget(null);
+          rtCamera.clearViewOffset();
+        }
 
         return renderer.readRenderTargetPixelsAsync(rt, 0, 0, 1, 1);
       },
       warmPick() {
         // the pick target has other attachments than the screen, so the first pick builds every
         // material a second pipeline — on a phone a freeze of a second or two, right on the first
-        // tap. Rendered once here instead, whilst nothing is moving that could be seen to stall
-        void state.renderPick({ u: 0.5, v: 0.5 }).catch(() => {});
+        // tap. Rendered once here instead, whilst nothing is moving that could be seen to stall.
+        // Never thrown from: it is a nicety, and the render it does is synchronous
+        try {
+          void state.renderPick({ u: 0.5, v: 0.5 }).catch(() => {});
+        } catch {}
       },
       async pickObject(e) {
         if (w.settledMapKey !== w.mapKey) {
@@ -1257,7 +1290,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const initial = defaultInitialCamera;
         state.initial = initial;
         state.canonicalPolar = initial.polar; // else a reset zoomed out keeps the old tilt
+        // the dial too, else the old point pulls the reset azimuth straight back round
+        state.canonicalTheta = nearestCompass(initial.azimuthal);
+        state.freeAzimuth = null;
+        state.canonicalCloseIn = false;
         store.patch({ cameraInitial: initial });
+        // a reset view shows nothing in `sight` mode unless the player happens to be in it: the
+        // ship comes back, darkened, so there is something to find them by
+        if (state.fadeRoomsMode === "sight") state.setFadeRoomsMode("sense");
         if (state.controls) {
           state.controls.target.set(initial.position.x, 0, initial.position.z);
           const delta = new THREE.Vector3().setFromSphericalCoords(
@@ -1291,6 +1331,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.npcOutline = next;
         store.patch({ npcOutline: next });
         // it is drawn by the post pass, so asking for it asks for that pass as well
+        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+      },
+      setRoomOutlineEnabled(next = !state.roomOutline) {
+        state.roomOutline = next;
+        store.patch({ fadeRoomOutlines: next });
+        next === true && state.roomOutlineFx.sync(w); // the bases are only kept up whilst it shows
+        // drawn by the post pass, like the npc borders
         next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
       },
       setPostProcessingEnabled(next = !state.postProcessing) {
@@ -1334,7 +1381,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.npcMaskMrt === null
             ? composed
             : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
-        pipeline.outputNode = state.rgbShiftFx.apply(bordered, state.rgbShift);
+        // and the debug room outlines over that, from a pass of their own — see `service/room-outline`
+        const ringed = state.roomOutline === true ? state.roomOutlineFx.apply(bordered, camera) : bordered;
+        pipeline.outputNode = state.rgbShiftFx.apply(ringed, state.rgbShift);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -1393,6 +1442,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
          */
         initial: false,
         rgbShiftFx: true,
+        roomOutlineFx: true,
         fadeRoomsFx: false,
         playerFrontier: false,
         playerLight: false, // 🔔 `true` causes decor rebuild on hmr
@@ -1520,16 +1570,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <button
         type="button"
         title="resume"
+        ref={state.ref("pausedEl")}
         onClick={() => w.setDisabled(false)}
         onWheel={state.forwardWheel}
         className={cn(
           indicatorClassName,
           "top-[40%] transition-opacity duration-500",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
-          // paused — else an invisible button sits over the middle of a running world
-          w.disabled === true
-            ? "cursor-pointer opacity-100 hover:bg-black/30 hover:text-yellow-100"
-            : "pointer-events-none opacity-0",
+          // paused — else an invisible button sits over the middle of a running world.
+          // On a phone it takes none at all: a finger landing on it is still the camera's, so a
+          // pinch begun there still pinches. The tap that resumes is found by `onPointerUp`
+          w.disabled !== true
+            ? "pointer-events-none opacity-0"
+            : w.touchDevice === true
+              ? "pointer-events-none opacity-100"
+              : "cursor-pointer opacity-100 hover:bg-black/30 hover:text-yellow-100",
         )}
       >
         <PlayIcon className="size-4 shrink-0" weight="fill" />
@@ -1541,7 +1596,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       <AnimatePresence>
         {state.busy !== null && (
           <motion.div
-            className={cn(indicatorClassName, "pointer-events-none top-6")}
+            className={cn(indicatorClassName, "pointer-events-none top-6 z-70")}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1611,6 +1666,8 @@ export type State = {
   ctrlOpts: MapControlsProps;
   /** Avoid HMR veil */
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
+  /** What `persistCamera` last stored, so a frame that moved nothing stores nothing */
+  persistedCamera: null | PersistedCamera;
   /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
   lastPointer: {
     epochMs: number;
@@ -1710,6 +1767,9 @@ export type State = {
   /** The camera has been touched: a drag, a pinch or the wheel */
   onCameraStart(): void;
   onCameraEnd(): void;
+  /** Whether a pointer is over the paused pill — the resume tap, where the pill itself takes none */
+  isOverPaused(e: PointerEvent): boolean;
+  pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */
   persistCamera(): void;
   /** Per rendered frame — in `canonical` mode drives the polar, the detent and any aimed zoom */
@@ -1776,7 +1836,7 @@ export type State = {
   labelRevealAnimId: number;
   /** Fade the room labels to `to` over `ms`, after waiting `delayMs` */
   revealRoomLabels(to: number, ms?: number, delayMs?: number): void;
-  /** How much of a label the ZOOM leaves: `1` from `roomLabelFadeBy` out, `roomLabelNearAlpha` in */
+  /** How much of a label the ZOOM leaves: `1` at the outer stop, `roomLabelNearAlpha` in to `roomLabelFadeFrom` */
   labelZoomFade: THREE.UniformNode<"float", number>;
   /** Takes the page background to black and back, whilst a map loads */
   dimBackground(darken: boolean, durationMs?: number): Promise<void>;
@@ -1797,6 +1857,11 @@ export type State = {
   setPostProcessingEnabled(next?: boolean): void;
   /** Borders the npcs, turning the post pass itself on if it is off */
   setNpcOutlineEnabled(next?: boolean): void;
+  /** debug: whether the rooms in view are ringed over the finished frame — see `service/room-outline` */
+  roomOutline: boolean;
+  roomOutlineFx: RoomOutline;
+  setRoomOutlineEnabled(next?: boolean): void;
+
   /** Whether the rgb shift runs after the post pass — takes hold whenever that pass is on */
   setRgbShiftEnabled(next?: boolean): void;
   /** How much of the world is shown by room, cycling round when asked for no mode in particular */
@@ -1891,6 +1956,18 @@ function createPickRT(count: 1 | 2) {
   return renderTarget;
 }
 
+/** Whether `last` is exactly the reading `persistCamera` would take of `controls` now */
+function cameraDidNotChange(last: null | PersistedCamera, { spherical, target }: BaseCameraControls): boolean {
+  return (
+    last !== null &&
+    last.azimuthal === spherical.theta &&
+    last.polar === spherical.phi &&
+    last.position.x === target.x &&
+    last.position.y === spherical.radius &&
+    last.position.z === target.z
+  );
+}
+
 const defaultInitialCamera: State["initial"] = {
   azimuthal: Math.PI / 4,
   polar: Math.PI / 4,
@@ -1918,6 +1995,8 @@ function PostProcessing() {
       w.view.rgbShift,
       w.view.npcOutline,
       npcOutlineUid,
+      w.view.roomOutline,
+      w.view.roomOutlineFx.uid,
     ],
   );
   // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`

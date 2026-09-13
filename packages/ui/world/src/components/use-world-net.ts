@@ -702,6 +702,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           await pause(introPanDelayMs);
           await w.player.panTo();
         }
+        w.view.warmPick(); // as `onBootstrapMap` does, once at rest
       },
       async applySpawns(npcs) {
         for (const netNpc of npcs) {

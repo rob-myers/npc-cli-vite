@@ -228,7 +228,7 @@ export function WorldMenu() {
       case "RGB Shift":
         return w.view.rgbShift ?? false;
       case "Room Outlines":
-        return w.debug?.fadeRoomOutlines ?? false;
+        return w.view.roomOutline ?? false;
       case "Lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
       case "Colliders":
@@ -277,10 +277,11 @@ export function WorldMenu() {
         });
         break;
       case "Room Outlines":
-        w.debug?.set({ fadeRoomOutlines: !w.debug.fadeRoomOutlines });
-        store.patch({ fadeRoomOutlines: w.debug?.fadeRoomOutlines === true });
-        w.floor?.drawAll();
-        state.update();
+        // drawn by the post pass, so it rebuilds that too
+        void w.view.runBusy(compilingText, () => {
+          w.view.setRoomOutlineEnabled();
+          state.update();
+        });
         break;
       case "Lit npcs":
         w.view.setLitNpcsEnabled();
