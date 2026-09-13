@@ -585,14 +585,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       planPark(npc, planned) {
         const agent = npc.agent;
-        if (!agent) throw Error("no agent");
+        if (agent === null) throw Error("no agent");
 
         // Always, rather than only when empty: the crowd asks within 0.6m and keeps the 8 nearest
         // segments, so an npc stood IN a doorway would otherwise have nothing but its frame to
         // choose from — and the whole point is to get round the corner from it
         localBoundary.updateLocalBoundary(
           agent.boundary,
-          w.npc.getClosestPoly(npc.position).nodeRef,
+          w.npc.getNodeRef(agent),
           helper.groundPointToTuple(npc.point),
           parkQueryRange,
           w.nav.navMesh,

@@ -70,12 +70,13 @@ export function demo_local_boundary(
     return;
   }
   const npc = w.npc.get(opts.npcKey);
-  if (!npc.agent) throw Error("no agent");
+  const agent = npc.agent;
+  if (!agent) throw Error("no agent");
 
   // exactly as `park` asks, so what is drawn is what it would see
   localBoundary.updateLocalBoundary(
-    npc.agent.boundary,
-    w.npc.getClosestPoly(npc.position).nodeRef,
+    agent.boundary,
+    w.npc.getNodeRef(agent),
     w.helper.groundPointToTuple(npc.point),
     parkQueryRange,
     w.nav.navMesh,
