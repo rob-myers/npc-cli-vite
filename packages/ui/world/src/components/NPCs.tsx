@@ -517,9 +517,11 @@ export default function NPCs() {
             npc.anim.rotateTowards(vx, vz, delta * Math.min(1, speed / walkAgentMaxSpeed));
           }
 
-          const stuck = npc.anim.updateStuck(delta, worldSeconds);
+          const [tx, , tz] = agent.targetPosition;
+          const stuck = npc.anim.updateStuck(delta, worldSeconds, Math.hypot(tx - npc.position.x, tz - npc.position.z));
 
-          if (stuck === true) {
+          // circling is stuck when another npc stands on the target — see `docs/npc-debug-notes.md`
+          if (stuck === "still" || (stuck === "circling" && isTargetOccupied(agent, state.crowd))) {
             npc.rejectAll(new Error("stuck"));
           } else if (
             npc.anim.moveClipFadedIn() === true &&
@@ -990,6 +992,17 @@ function getArriveDistance(npc: Npc) {
   const { arrive, glide, arriveMin, arriveFraction } = npcConfig.dist;
   const base = (npc.anim.arrive ? arrive : glide)[npc.running ? "run" : "walk"];
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
+}
+
+/** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */
+function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
+  const [tx, , tz] = agent.targetPosition;
+  return agent.neis.some(({ agentId }) => {
+    const other = agents.agents[agentId];
+    return (
+      other !== undefined && Math.hypot(other.position[0] - tx, other.position[2] - tz) < agent.radius + other.radius
+    );
+  });
 }
 
 /**

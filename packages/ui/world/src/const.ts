@@ -308,6 +308,8 @@ export const npcConfig = {
     doableLook: 1.5,
     /** Below this much movement per frame an npc counts as motionless */
     stuckEpsilon: 0.002,
+    /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
+    circling: 0.6,
     /** Height of an npc */
     height: 1.2,
     /** Sizes the crowd */
