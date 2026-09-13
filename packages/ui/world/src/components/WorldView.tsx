@@ -217,7 +217,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         e.stopPropagation();
         state.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
       },
-      async runBusy(text, task, minMs = busyMinMs) {
+      async runBusy(text, task) {
         const shownAt = Date.now();
         state.busy = text;
         state.update();
@@ -230,7 +230,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           w.r3f?.invalidate();
           await awaitPaint();
           // a quick task would otherwise flicker the overlay, so it stays up a while regardless
-          await pause(Math.max(0, minMs - (Date.now() - shownAt)));
+          await pause(Math.max(0, busyMinMs - (Date.now() - shownAt)));
           state.busy = null;
           state.update();
         }
@@ -1005,35 +1005,31 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // is built, so the renderer stays in pick state throughout — and no frame may be drawn
         // meanwhile, hence `warmingPick` holds `frameloop` at `"never"` via `syncRenderMode`
         if (state.warmingPick === true) return Promise.resolve();
-        return state.runBusy(
-          compilingShadersText,
-          async () => {
-            const { gl, scene, camera } = w.r3f;
-            const renderer = gl as unknown as THREE.WebGPURenderer;
-            state.warmingPick = true;
+        return state.runBusy(compilingShadersText, async () => {
+          const { gl, scene, camera } = w.r3f;
+          const renderer = gl as unknown as THREE.WebGPURenderer;
+          state.warmingPick = true;
+          state.syncRenderMode();
+          await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
+          try {
+            renderer.setMRT(state.npcMaskMrt);
+            renderer.setRenderTarget(state.pickRT);
+            await renderer.compileAsync(scene, camera);
+            renderer.setMRT(null);
+            renderer.setRenderTarget(null);
+            // then DRAWN once, and the readback waited for: on a phone a pipeline's first draw
+            // has a cost of its own, in the driver rather than here, which the frames after
+            // would otherwise wait on — and this is where the old synchronous warm paid it
+            await state.renderPick({ u: 0.5, v: 0.5 });
+          } catch {
+            // a nicety: the first tap builds whatever this did not
+          } finally {
+            renderer.setMRT(null);
+            renderer.setRenderTarget(null);
+            state.warmingPick = false;
             state.syncRenderMode();
-            await awaitPaint(); // a frame already asked for is drawn before the renderer is touched
-            try {
-              renderer.setMRT(state.npcMaskMrt);
-              renderer.setRenderTarget(state.pickRT);
-              await renderer.compileAsync(scene, camera);
-              renderer.setMRT(null);
-              renderer.setRenderTarget(null);
-              // then DRAWN once, and the readback waited for: on a phone a pipeline's first draw
-              // has a cost of its own, in the driver rather than here, which the frames after
-              // would otherwise wait on — and this is where the old synchronous warm paid it
-              await state.renderPick({ u: 0.5, v: 0.5 });
-            } catch {
-              // a nicety: the first tap builds whatever this did not
-            } finally {
-              renderer.setMRT(null);
-              renderer.setRenderTarget(null);
-              state.warmingPick = false;
-              state.syncRenderMode();
-            }
-          },
-          warmBusyMinMs,
-        );
+          }
+        });
       },
       async pickObject(e) {
         if (w.settledMapKey !== w.mapKey || state.warmingPick === true) {
@@ -1768,7 +1764,7 @@ export type State = {
    * Runs `task` behind an overlay saying `text`, e.g. a toggle whose shader recompile would
    * otherwise freeze the world unannounced (noticeable on mobile). Pointer events still go through
    */
-  runBusy(text: string, task: () => void | Promise<void>, minMs?: number): Promise<void>;
+  runBusy(text: string, task: () => void | Promise<void>): Promise<void>;
   /** Whether a pointer OTHER than `e`'s is down, i.e. the gesture belongs to the camera */
   otherPointerDown(e: React.PointerEvent<HTMLDivElement>): boolean;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
@@ -1961,9 +1957,7 @@ const indicatorClassName = cn(
 const centreHintSecs = 4;
 const centreHintSmall = 0.6;
 /** The least time the busy overlay is shown for, so a quick task does not flicker it */
-const busyMinMs = 2000;
-/** ...and for the pick warm, which is quick on a desktop */
-const warmBusyMinMs = 1000;
+const busyMinMs = 1000;
 
 /**
  * Whether this world's canvas is veiled — per `worldKey`, since each instance veils its own canvas.
