@@ -677,6 +677,16 @@ export function WorldMenu() {
             onPointerLeave={() => state.onLookPressEnd(true)}
             onContextMenu={(e) => e.preventDefault()}
           >
+            {w.view.lookingAt === true && (
+              // pulses whilst a pan is under way, which a black screen or a paused world would
+              // otherwise hide
+              <motion.div
+                className="absolute inset-0 pointer-events-none bg-white/60"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
+              />
+            )}
             {followFlash > 0 && (
               // keyed by the count, so each toggle remounts it and replays the fade from the top
               <motion.div
@@ -1119,6 +1129,8 @@ const spinnerMinMs = 300;
 const lookLongPressMs = 500;
 /** How long the look button's flash takes to fade, when follow is turned on or off */
 const followFlashMs = 550;
+/** Half a pulse of the look button, whilst a pan is under way */
+const lookingAtPulseMs = 350;
 
 const nextCameraMode = { free: "canonical", canonical: "free" } as const;
 const debugItems = [
