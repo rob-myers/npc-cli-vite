@@ -314,7 +314,8 @@
     - ✅ in `w.e.park`
     - ✅ as `park foo bar baz`
     - ✅ refine animation
-  - mobile fixes
+  - ✅ mobile fixes
+    - https://github.com/rob-myers/npc-cli-vite/pull/4
   - canonical zoom-in sometimes jerky
     - probably initial zoom-to-cursor and then continue zoom
   - saw player fail to arrive when spawning npcs

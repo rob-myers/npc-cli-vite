@@ -4,12 +4,7 @@
       "key": "human-0",
       "id": "23aa3d70ee53af87",
       "filename": "human-0--23aa3d70ee53af87.png",
-      "meta": {
-        "skinKey": "human-0",
-        "prefix": "human",
-        "firstSeen": "J_az",
-        "brightness": 0.4
-      },
+      "meta": {"skinKey": "human-0", "prefix": "human", "firstSeen": "J_az"},
       "url": "https://namemc.com/skin/23aa3d70ee53af87",
       "svgPath": "skin/human-0.svg"
     },
@@ -19,7 +14,6 @@
       "filename": "human-1--8c524ef1dc111a13.png",
       "meta": {
         "skinKey": "human-1",
-        "brightness": 0.4,
         "prefix": "human",
         "firstSeen": "o__________"
       },
@@ -34,9 +28,7 @@
         "skinKey": "medic-0",
         "prefix": "medic",
         "firstSeen": "NoneType_",
-        "doctor": true,
-        "mask": true,
-        "brightness": 0.2
+        "doctor": true
       },
       "url": "https://namemc.com/skin/3573d1c9cad6c8fc",
       "svgPath": "skin/medic-0.svg"
@@ -45,7 +37,7 @@
       "key": "robot-0",
       "id": "e91cc700154075b2",
       "filename": "robot-0--e91cc700154075b2.png",
-      "meta": {"skinKey": "robot-0", "prefix": "robot", "brightness": 0.5},
+      "meta": {"skinKey": "robot-0", "prefix": "robot"},
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
     }
