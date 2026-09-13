@@ -324,6 +324,9 @@
   - ✅ park offloads computation to worker
     - jsh.worker booted from app package
     - jsh.worker imports world.worker
+    - jsh.worker can yield event-loop
+  - try avoid intersect npc arms
+    - larger npc radius?
 
 # FUTURE
 

@@ -42,7 +42,7 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 
 ## Floor
 
-See `docs/FLOOR.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
+See `docs/floor.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
 object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
 
 ## Camera controls
@@ -67,7 +67,7 @@ Navmesh uses `navcat` (recast/detour JS port). Agents live in a `crowd`. To tele
 
 An npc with an agent has its poly at `agent.corridor.path[0]`, which the crowd keeps under their feet — read `npc.nodeRef` rather than `getClosestPoly(npc.position)`. The first corner's `nodeRef` is the poly *after* it, not the current one.
 
-`navcat` is pnpm-patched — four corners per agent, and a `boundaryQueryRange` agent param so walls are looked for less far than npcs. See `docs/NAVCAT-PATCH.md`, including how to edit the patch.
+`navcat` is pnpm-patched — four corners per agent, and a `boundaryQueryRange` agent param so walls are looked for less far than npcs. See `docs/navcat-patch.md`, including how to edit the patch.
 
 ## Spawning NPCs
 

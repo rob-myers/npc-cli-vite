@@ -1037,7 +1037,7 @@ function getAgentParams(): crowd.AgentParams {
     collisionQueryRange: 0.5 + 0.2,
     // collisionQueryRange: 1,
     // walls are looked for less far than npcs: the further out they are found, the earlier
-    // avoidance slows a walker for a goal beside one — see `docs/NAVCAT-PATCH.md`
+    // avoidance slows a walker for a goal beside one — see `docs/navcat-patch.md`
     boundaryQueryRange: 0.4,
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
