@@ -115,15 +115,6 @@ export default function Floor() {
         // the deck itself — plated, with a line inside each room's walls. See `deckConfig`
         drawRoomFloors(ct, layout, labelOfRoom);
 
-        if (w.debug?.fadeRoomOutlines === true) {
-          const inView = w.view.fadeRoomsFx.rooms.filter((x) => x.gmId === gmId);
-          drawPolygons(
-            ct,
-            inView.flatMap(({ roomId }) => layout.rooms[roomId] ?? []),
-            { fillStyle: null, strokeStyle: debugRoomEdgeColor, lineWidth: debugRoomEdgeWidth },
-          );
-        }
-
         // fix curved walls aliasing 🚧 prefer meta.curved
         drawPolygons(
           ct,
@@ -363,14 +354,8 @@ export default function Floor() {
     const texel = texNode.depth(instanceIndex);
 
     // Shown in room, doorway, or broad wall
-    const floorFade = w.view.objectPick
-      .notEqual(0)
-      .select(
-        float(1),
-        w.view.fadeRoomsFx.getVisiblity(
-          w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
-        ),
-      );
+    const slot = w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true });
+    const floorFade = w.view.objectPick.notEqual(0).select(float(1), w.view.fadeRoomsFx.getVisiblity(slot));
 
     return {
       // fix InstancedMesh non-uniform scaling
@@ -502,10 +487,6 @@ function addNavEdge(path: Path2D, seen: Set<string>, ax: number, ay: number, bx:
   path.moveTo(ax, ay);
   path.lineTo(bx, by);
 }
-
-/** debug: every room outlined — how wide the line is, in metres, and its ink */
-const debugRoomEdgeWidth = 0.06;
-const debugRoomEdgeColor = "rgba(255, 100, 100, 1)";
 
 const tmpMat1 = new Mat();
 const tmpPoly = new Poly();

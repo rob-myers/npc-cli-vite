@@ -37,7 +37,6 @@ export function Debug() {
       demoNavPathShown: false,
       localBoundary: [] as XZSeg[],
       doorNormalsShown: false,
-      fadeRoomOutlines: getWorldStore(w.key).read().fadeRoomOutlines,
       gridShown: false,
       logGPUInfo: false,
       navMeshHelper: null,
@@ -362,8 +361,6 @@ export type State = {
   /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_local_boundary` */
   localBoundary: XZSeg[];
   doorNormalsShown: boolean;
-  /** Ring the rooms in view — drawn into the floor texture, see `Floor.drawGm` */
-  fadeRoomOutlines: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;
   navMeshHelper: null | NavMeshHelperObject;

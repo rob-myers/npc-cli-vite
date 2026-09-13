@@ -1003,9 +1003,11 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.target.addScaledVector(this.u.panOffset, this.panDampingFactor);
 
     // the camera opens whereever it was restored to, and the zoom takes its progress from that —
-    // once the stops are actually in, which is not the case whilst the constructor runs
+    // once the stops are actually in, which is not the case whilst the constructor runs. Snapped
+    // to a stop where the zoom settles onto one anyway; a free zoom rests anywhere between them,
+    // and snapping it would throw the restored distance away
     if (this._zoomSeeded === false && Number.isFinite(this.maxDistance) === true) {
-      this.setZoomFromRadius(this.spherical.radius, true);
+      this.setZoomFromRadius(this.spherical.radius, this.freeZoom === false);
       this._zoomSeeded = true;
     }
 

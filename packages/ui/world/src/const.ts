@@ -113,6 +113,12 @@ export const defaultCameraFollow = false;
  * the polar starts easing towards birdseye. See `WorldView`'s `onCameraFrame`
  */
 export const canonicalFlattenFrom = 0.4;
+/**
+ * ...and how far out its azimuth becomes the detented dial. On a phone the zoom is free and comes
+ * to rest anywhere, so "zoomed in" reaches much further out than the mouse's inner stop: the dial
+ * only takes over close to the outer one
+ */
+export const canonicalDialFrom = isTouchDevice() ? 0.85 : canonicalFlattenFrom;
 /** Birdseye polar — just off `0`, which sits exactly on the orbit pole */
 export const canonicalBirdseyePolar = 0.01;
 /**
@@ -242,11 +248,11 @@ export const roomLabelHeight = 0.4;
 /** How long the room labels take to come in, once the first boot's reveal has settled */
 export const roomLabelRevealMs = 0;
 /**
- * A room label fades with the zoom: down to `roomLabelNearAlpha` at the near stop, and fully back
- * by this far out of the travel between the stops. Close in the room is plain to see and its name
- * is mostly in the way
+ * A room label fades with the zoom: `roomLabelNearAlpha` until this far out of the travel between
+ * the stops, and fully back only at the outer stop. Anything but zoomed out the room is plain to
+ * see and its name is mostly in the way
  */
-export const roomLabelFadeBy = 0.5;
+export const roomLabelFadeFrom = 0.8;
 /** How much of a room label is left at the near stop */
 export const roomLabelNearAlpha = 0;
 /** The texture array behind them — see `RoomLabels` */
@@ -323,7 +329,7 @@ export const npcConfig = {
   },
 } as const;
 
-export const defaultDoorCloseMs = 3000;
+export const defaultDoorCloseMs = 6000;
 
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
