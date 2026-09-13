@@ -23,12 +23,13 @@ export default function NpcRings() {
         for (const ring of state.selectRingByNpc.values()) state.fadeRing(ring, 0);
       },
       fadeOutSpawnRing(npcKey) {
-        state.fadeRing(state.spawnRingByNpc.get(npcKey), 0);
+        // over the npc's fade in, so the ring gives way as they arrive
+        state.fadeRing(state.spawnRingByNpc.get(npcKey), 0, spawnRingOutSecs);
       },
-      fadeRing(ring, to) {
+      fadeRing(ring, to, secs = ring?.fadeSecs ?? 0) {
         if (ring === undefined) return;
         const now = time.value;
-        retarget(ring.fade, to, ring.fadeSecs, now);
+        retarget(ring.fade, to, secs, now);
         if (w.disabled === true) {
           ring.fade.from = ring.fade.to;
           ring.fade.at = now;
@@ -151,15 +152,19 @@ export default function NpcRings() {
         // a select ring's is — and the npc it is for may not have arrived to be asked
         const gmRoomId = w.e.findRoomContaining({ x: at.x, y: at.y }, true);
         const roomSlot = gmRoomId === null ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
-        // it is put up on a destination already chosen, so it is simply there
-        state.spawnRingByNpc.set(npcKey, {
+        // from nothing, as a select ring is: the shader widens a ring as its opacity drops, so it
+        // closes onto the spot over the npc's fade OUT — there by the time they have gone, and
+        // giving way again as they arrive, see `fadeOutSpawnRing`
+        const ring: RingInstance = {
           ...spawnRingLook,
           x: at.x,
           y,
           z: at.y,
           roomSlot,
-          fade: arrivedAt(1, time.value),
-        });
+          fade: arrivedAt(0, time.value),
+        };
+        state.spawnRingByNpc.set(npcKey, ring);
+        state.fadeRing(ring, 1, spawnRingInSecs);
       },
       writeRing(index, ring) {
         if (index >= MAX_RINGS) return index;
@@ -272,11 +277,18 @@ export type State = {
   /** The same for every select ring that is up */
   clearSelectRings(): void;
   /** Sends a ring's opacity towards `to`, or straight there whilst the world is paused */
-  fadeRing(ring: undefined | RingInstance, to: number): void;
+  /** Sends a ring's opacity towards `to` over `secs`, its own pace unless given one */
+  fadeRing(ring: undefined | RingInstance, to: number, secs?: number): void;
 };
 
 /** How long a ring takes to fade all the way in or out */
 const ringFadeSecs = 0.4;
+/**
+ * A spawn ring's fades keep step with the npc's — `Npc.fadeOut` runs at speed `8`, `fadeIn` at
+ * `4` — so it closes onto the spot as they go, and gives way as they come
+ */
+const spawnRingInSecs = 1 / 8;
+const spawnRingOutSecs = 1 / 4;
 /** Default ring height when target isn't doable (just above floor, avoids z-fighting) */
 const spawnRingDefaultHeight = 0.02;
 /** How many picks are marked at once — the oldest gives way */

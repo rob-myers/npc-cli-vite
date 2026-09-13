@@ -564,7 +564,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             throw new ExhaustiveError(e);
         }
       },
-      async park(npc) {
+      async park(npcs, planned = new Map<string, ParkPlan>()) {
+        // whoever the caller has not planned already is planned here, each keeping clear of the
+        // spots already chosen — then everyone moves at once
+        for (const npc of npcs) {
+          if (planned.has(npc.key) === false) planned.set(npc.key, state.planPark(npc, planned));
+        }
+        await Promise.all(
+          npcs.map(async (npc) => {
+            const { at, facing, seg } = planned.get(npc.key) as ParkPlan;
+            if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > parkMinMove) {
+              await npc.fadeSpawn({ at, facing });
+            } else {
+              await npc.look({ at: facing });
+            }
+            state.parked.set(npc.key, { s: seg });
+          }),
+        );
+      },
+      planPark(npc, planned) {
         const agent = npc.agent;
         if (!agent) throw Error("no agent");
 
@@ -593,10 +611,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const doors = (roomNode === null ? [] : w.gmRoomGraph.getSuccs(roomNode)).flatMap((node) =>
           node.type === "door" ? (w.d[node.gdKey] ?? []) : [],
         );
-        // and the room's other parked npcs, to keep clear of
+        // and the room's other parked npcs, to keep clear of — where they are, or where the ones
+        // planned before them in this batch are about to be
         const others = [...(grId === null ? [] : (state.roomToNpcs[grId.gmId]?.[grId.roomId] ?? []))].flatMap(
           (npcKey) => {
-            const seg = npcKey === npc.key ? null : state.getParkedSeg(w.n[npcKey]);
+            if (npcKey === npc.key) return [];
+            const plan = planned.get(npcKey);
+            if (plan !== undefined) return [{ point: plan.at, seg: plan.seg }];
+            const seg = state.getParkedSeg(w.n[npcKey]);
             return seg === null ? [] : [{ point: w.n[npcKey].point, seg }];
           },
         );
@@ -615,16 +637,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const seg = chosen?.seg ?? segments[0];
         const at =
           chosen?.at ?? geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
-        state.parked.set(npc.key, { s: seg.s });
 
         // The walkable side: navcat winds its poly outlines clockwise in the ground plane, so the
         // inside lies along `(dz, -dx)`
         const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
-        if (Math.hypot(at.x - src.x, at.y - src.y) > parkMinMove) {
-          await npc.fadeSpawn({ at, facing });
-        } else {
-          await npc.look({ at: facing });
-        }
+        return { at, facing, seg: seg.s };
       },
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
@@ -1279,9 +1296,12 @@ export type State = {
   getParkedSeg(npc: Npc): null | number[];
   /**
    * Stand them against a nearby wall, out of the way: clear of the room's doorways and of its
-   * other parked npcs, and remembered in `parked`
+   * other parked npcs, and remembered in `parked`. Several are planned together, then move
+   * together — `planned` carries any the caller planned already, e.g. paced by `planPark`
    */
-  park(npc: Npc): Promise<void>;
+  park(npcs: Npc[], planned?: Map<string, ParkPlan>): Promise<void>;
+  /** Where `park` would stand them, given the spots the batch has already planned — see `park` */
+  planPark(npc: Npc, planned: Map<string, ParkPlan>): ParkPlan;
   /**
    * Asks the worker whether this npc can get from one room node to another, and which shut door
    * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there".
@@ -1357,6 +1377,9 @@ export type State = {
 };
 
 const emptySet = new Set<Geomorph.GmDoorKey>();
+
+/** A parking spot, its facing, and the wall segment it stands against */
+type ParkPlan = { at: Geom.VectJson; facing: Geom.VectJson; seg: number[] };
 
 /** How far a parked npc keeps from parked npcs ACROSS from them, centre to centre */
 const parkNpcClearance = 6.5 * npcConfig.dist.agentRadius;

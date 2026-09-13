@@ -303,14 +303,22 @@
   - ✅ lock too small to pick on mobile
   - ✅ fix slow stepping near boundary
   - ✅ on first bootstrap should be zoomed in at angle
-  - 🚧 initial follow player too bumpy
+  - ✅ initial follow player too bumpy
     - "look at" too
-  - support park multiple npcs
   - ✅ fix "keyboard copy text from tty"
     - in particular on lost focus while text selected should be able to click tab and refocus without losing the selection
   - ✅ simplify `lock $( pick as:meta.gdKey 1 )`
     - `pick_gd_key`
     - `lock $( pick_gd_key 1 )`
+  - ✅ support park multiple npcs
+    - ✅ in `w.e.park`
+    - ✅ as `park foo bar baz`
+    - ✅ refine animation
+  - mobile fixes
+  - saw player fail to arrive when spawning npcs
+  - faster `w.npc.getClosestPoly(npc.position).nodeRef`
+    - is nodeRef already available?
+  - park offloads computation to worker
 
 # FUTURE
 

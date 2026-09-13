@@ -589,18 +589,27 @@ export async function pad(
 }
 
 /**
- * Stand npc against a nearby wall, out of the way — clear of any doorway, which is the one place
- * a parked npc blocks everybody.
+ * Stand npcs against a nearby wall, out of the way — clear of any doorway, which is the one place
+ * a parked npc blocks everybody. Several are planned together, then move together.
  * ```sh
  * park npc:kate
  * park kate
+ * park kate rob
  * ```
  */
 export async function park(
   { api, args, w }: JshCli.RunArg,
-  opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
+  opts: { npcKey?: string; npcKeys?: string[] } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  await w.e.park(w.npc.get(opts.npcKey ?? args[0]));
+  // ignore non-existent npcKey including e.g. npc:foo
+  const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
+  // one at a time with a breath between, but everyone moves at once
+  const planned = new Map<string, ReturnType<typeof w.e.planPark>>();
+  for (const npc of npcs) {
+    planned.set(npc.key, w.e.planPark(npc, planned));
+    await api.sleep(0.05);
+  }
+  await w.e.park(npcs, planned);
 }
 
 export function pause({ w }: JshCli.RunArg) {
@@ -943,6 +952,8 @@ export async function spawn(
   if (api.isTtyAt(0)) {
     return await w.npc.spawn(opts);
   }
+
+  opts.npcKey ??= "npc-";
 
   function ignoreSpawnErrors(e: unknown) {
     if (opts.force && e instanceof Error && (e.message === "not placable" || e.message === "not doable")) {
