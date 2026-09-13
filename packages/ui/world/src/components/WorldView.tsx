@@ -533,7 +533,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         controls.lockRotateAxis = t > canonicalDialFrom && state.zoomPan === null;
 
         // whilst a zoom-in's pan runs it owns the polar; otherwise the zoom shapes it
-        state.zoomPan !== null ? state.advanceZoomPan(spherical) : state.shapeCanonicalPolar(spherical, t);
+        state.zoomPan !== null ? state.advanceZoomPan(spherical, t) : state.shapeCanonicalPolar(spherical, t);
         t <= canonicalDialFrom ? state.freeCanonicalAzimuth(spherical) : state.detentCanonicalAzimuth(spherical, t);
       },
       /**
@@ -593,7 +593,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        * arrive exactly when it does and a reversal walks them back. Measured against
        * `zoomPanDoneAlpha`, where we let go, so none of them is left a few percent short
        */
-      advanceZoomPan(spherical) {
+      advanceZoomPan(spherical, t) {
         const { controls, zoomPan } = state;
         if (zoomPan === null) return;
         const alpha = clamp01((controls.zoomProgress - zoomPan.fromProgress) / (1 - zoomPan.fromProgress));
@@ -630,6 +630,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // pinned, so the zoom's own flattening cannot fight the tilt whilst the pan owns it
         const phi = zoomPan.fromPolar + (zoomPan.toPolar - zoomPan.fromPolar) * beta;
         state.pinPolar(phi);
+        // the azimuth placed too, whilst the dial has it and nobody is dragging: the detent's damped
+        // chase falls behind a fast zoom and the rest of the turn plays out after the pan has landed
+        if (t > canonicalDialFrom && controls.pointers.length === 0) {
+          spherical.theta = state.getCanonicalAzimuth(t);
+          controls.sphericalDelta.theta = 0;
+        }
         state.placeCamera(spherical, phi);
         zoomPan.lastTarget.copy(controls.target); // anything else moving it is a pan, see above
 
@@ -1816,8 +1822,8 @@ export type State = {
   onCameraFrame(spherical: THREE.Spherical): void;
   /** The crosshair's fade-out, once whatever raised it has arrived */
   fadeCrosshair(): void;
-  /** Carries a `canonical` zoom-in's pan, tilt and height along with the zoom's progress */
-  advanceZoomPan(spherical: THREE.Spherical): void;
+  /** Carries a `canonical` zoom-in's pan, tilt, turn and height along with the zoom's progress */
+  advanceZoomPan(spherical: THREE.Spherical, t: number): void;
   /** `canonical`'s polar: the user's own close in, a function of the zoom further out */
   shapeCanonicalPolar(spherical: THREE.Spherical, t: number): void;
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */

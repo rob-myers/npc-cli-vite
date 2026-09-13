@@ -316,8 +316,8 @@
     - ✅ refine animation
   - ✅ mobile fixes
     - https://github.com/rob-myers/npc-cli-vite/pull/4
-  - canonical zoom-in sometimes jerky
-    - probably initial zoom-to-cursor and then continue zoom
+  - ✅ canonical zoom-in sometimes jerky
+    - late azimuth
   - saw player fail to arrive when spawning npcs
   - faster `w.npc.getClosestPoly(npc.position).nodeRef`
     - is nodeRef already available?
