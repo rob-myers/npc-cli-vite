@@ -1,15 +1,15 @@
-/// <reference path="./worker/types.d.ts" />
+/// <reference path="./worker/jsh-worker.d.ts" />
 
 /**
  * One op on jsh's side of the worker, under the shell's pause/kill — see `worker/plan.worker.ts`
  * for the ops, and `awaitPausable` for what a pause or kill does
  */
-export function plan<O extends JshWW.Op>({ api, w, op }: Pick<JshCli.RunArg, "api" | "w"> & { op: O }) {
+export function plan<O extends WW.JshOp>({ api, w, op }: Pick<JshCli.RunArg, "api" | "w"> & { op: O }) {
   return awaitPausable(api, (signal) => request(w, api, op, signal));
 }
 
 /** An npc as an op sees them: where they stand, their poly, their room and the doors they may not pass */
-export function npcQuery(w: JshCli.WorldState, npc: JshCli.Npc): JshWW.NpcQuery {
+export function npcQuery(w: JshCli.WorldState, npc: JshCli.Npc): WW.NpcQuery {
   const agent = npc.agent;
   if (agent === null) throw Error("no agent");
   // an npc stood IN a doorway resolves to one of its two rooms, which owns that door either way
@@ -55,7 +55,7 @@ export async function awaitPausable<T>(
 }
 
 /** One request to the worker, which is set up for the map first if need be */
-export function request<O extends JshWW.Op>(
+export function request<O extends WW.JshOp>(
   w: JshCli.WorldState,
   api: JshCli.RunArg["api"],
   op: O,
@@ -64,18 +64,18 @@ export function request<O extends JshWW.Op>(
   const worker = getWorker(w);
   ensureSetup(w, worker);
   const uid = api.getUid();
-  return new Promise<JshWW.Output[O["key"]]>((resolve, reject) => {
+  return new Promise<WW.JshOutput[O["key"]]>((resolve, reject) => {
     signal.throwIfAborted();
-    const onMessage = (e: MessageEvent<JshWW.MsgFromWorker>) => {
+    const onMessage = (e: MessageEvent<WW.JshMsgFromNavWorker>) => {
       if (e.data?.type !== "jsh-plan-result" || e.data.uid !== uid) return;
       worker.removeEventListener("message", onMessage);
-      e.data.error === undefined ? resolve(e.data.output as JshWW.Output[O["key"]]) : reject(Error(e.data.error));
+      e.data.error === undefined ? resolve(e.data.output as WW.JshOutput[O["key"]]) : reject(Error(e.data.error));
     };
     worker.addEventListener("message", onMessage);
     signal.addEventListener("abort", () => (worker.removeEventListener("message", onMessage), reject(signal.reason)), {
       once: true,
     });
-    worker.postMessage({ type: "jsh-plan", uid, op } satisfies JshWW.Request);
+    worker.postMessage({ type: "jsh-plan", uid, op } satisfies WW.JshRequest);
   });
 }
 
@@ -92,7 +92,7 @@ function ensureSetup(w: JshCli.WorldState, worker: Worker) {
     mapKey: w.mapKey,
     doorFrames: Object.values(w.d).map(({ gdKey, src, dst, normal }) => ({ gdKey, src, dst, normal })),
     roomDoors: Object.fromEntries(rooms.map((grKey) => [grKey, getRoomDoorKeys(w, grKey)])),
-  } satisfies JshWW.MsgToWorker);
+  } satisfies WW.JshMsgToNavWorker);
   setupMapKey.set(worker, w.mapKey);
 }
 
@@ -102,7 +102,7 @@ function getRoomDoorKeys(w: JshCli.WorldState, grKey: Geomorph.GmRoomKey) {
 }
 
 function getWorker(w: JshCli.WorldState) {
-  const worker = w.worker.worker;
+  const worker = w.navWorker.worker;
   if (!(worker instanceof Worker)) throw Error("worker not ready"); // a stub swallows posts before it mounts
   return worker;
 }

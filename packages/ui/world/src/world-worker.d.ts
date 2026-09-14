@@ -1,13 +1,24 @@
 declare namespace WW {
-  type MsgToWorker =
+  /** To the physics worker — `worker/physics.worker.ts` */
+  type MsgToWorker = { type: "ping" } | PhysicsMsgToWorker;
+
+  /** To the nav worker — `worker/nav.worker.ts` */
+  type MsgToNavWorker =
     | { type: "ping" }
     | {
         type: "request-tiled-navmesh";
         mapKey: string;
         gmGeoms: WW.GmGeomForNav[];
+        rayCast: RaycastSetupData;
       }
     | RoomGraphMsgToWorker
-    | PhysicsMsgToWorker;
+    | {
+        type: "get-raycast";
+        uid: string;
+        src: Geom.VectJson;
+        dst: Geom.VectJson;
+        gmId: number;
+      };
 
   type RoomGraphMsgToWorker =
     | {
@@ -67,15 +78,7 @@ declare namespace WW {
         mapKey: string;
         npcs: NpcDef[];
         doors: PhysicsDoorDef[];
-        rayCast: RaycastSetupData;
         runtimeColliderDefs: WW.PhysicsColliderDef[];
-      }
-    | {
-        type: "get-raycast";
-        uid: string;
-        src: Geom.VectJson;
-        dst: Geom.VectJson;
-        gmId: number;
       };
 
   type AddPhysicsColliders = Extract<PhysicsMsgToWorker, { type: "add-physics-colliders" }>;
@@ -85,7 +88,7 @@ declare namespace WW {
   type RemovePhysicsColliders = Extract<PhysicsMsgToWorker, { type: "remove-physics-colliders" }>;
   type SendNpcPhysicsPositions = Extract<PhysicsMsgToWorker, { type: "send-npc-positions" }>;
   type SetupPhysicsWorld = Extract<PhysicsMsgToWorker, { type: "setup-physics" }>;
-  type GetRaycast = Extract<PhysicsMsgToWorker, { type: "get-raycast" }>;
+  type GetRaycast = Extract<MsgToNavWorker, { type: "get-raycast" }>;
 
   /** Colliders always on ground hence 2D position suffices */
   type PhysicsColliderDef = Geom.VectJson &
@@ -117,20 +120,29 @@ declare namespace WW {
     position: import("three").Vector3Like;
   };
 
-  type MsgFromWorker =
+  /** From the physics worker */
+  type MsgFromWorker = { type: "pong" } | { type: "worker-hot-module-reload" } | PhysicsMsgFromWorker;
+
+  /** From the nav worker */
+  type MsgFromNavWorker =
     | { type: "pong" }
+    | { type: "worker-hot-module-reload" }
     | ({
         type: "tiled-navmesh-response";
         toNavTris: import("./worker/nav-util").GmFloorNavTris;
       } & import("navcat/blocks").TiledNavMeshResult)
-    | { type: "worker-hot-module-reload" }
     | {
         type: "unreachable-result";
         uid: string;
         /** `null` iff the npc can get there — the door node they'd be stopped by otherwise */
         blocked: null | { doorIndex: number; roomIndex: number };
       }
-    | PhysicsMsgFromWorker;
+    | {
+        type: "raycast-result";
+        uid: string;
+        hit: null | Geom.VectJson;
+        gmDoorIds: Geomorph.GmDoorId[];
+      };
 
   type PhysicsMsgFromWorker =
     | {
@@ -146,20 +158,14 @@ declare namespace WW {
         items: PhysicDebugItem[];
         /** [ux, uy, vx, vy, ...] */
         lines: number[];
-      }
-    | {
-        type: "raycast-result";
-        uid: string;
-        hit: null | Geom.VectJson;
-        gmDoorIds: Geomorph.GmDoorId[];
       };
 
   type NpcCollisionResponse = Extract<MsgFromWorker, { type: "npc-collisions" }>;
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
-  type TiledNavMeshResponse = Extract<MsgFromWorker, { type: "tiled-navmesh-response" }>;
-  type RaycastResultResponse = Extract<MsgFromWorker, { type: "raycast-result" }>;
-  type UnreachableResult = Extract<MsgFromWorker, { type: "unreachable-result" }>;
+  type TiledNavMeshResponse = Extract<MsgFromNavWorker, { type: "tiled-navmesh-response" }>;
+  type RaycastResultResponse = Extract<MsgFromNavWorker, { type: "raycast-result" }>;
+  type UnreachableResult = Extract<MsgFromNavWorker, { type: "unreachable-result" }>;
 
   /**
    * Geomorph geometry for navigation mesh generation.

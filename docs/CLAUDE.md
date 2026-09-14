@@ -67,6 +67,8 @@ Navmesh uses `navcat` (recast/detour JS port). Agents live in a `crowd`. To tele
 
 An npc with an agent has its poly at `agent.corridor.path[0]`, which the crowd keeps under their feet — read `npc.nodeRef` rather than `getClosestPoly(npc.position)`. The first corner's `nodeRef` is the poly *after* it, not the current one.
 
+Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycast, `w.navWorker`). jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one — see `docs/workers.md`.
+
 `navcat` is pnpm-patched — four corners per agent, and a `boundaryQueryRange` agent param so walls are looked for less far than npcs. See `docs/navcat-patch.md`, including how to edit the patch.
 
 ## Spawning NPCs

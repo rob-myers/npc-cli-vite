@@ -2,8 +2,6 @@ import RAPIER from "@dimforge/rapier3d-compat";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
-import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
-import { navForFloorDraw } from "./nav-util";
 import {
   createRigidBody,
   createRuntimeCollider,
@@ -12,12 +10,10 @@ import {
   setupOrRebuildWorld,
   stepWorld,
 } from "./physics";
-import { sendRaycastResult } from "./ray-cast";
-import { findUnreachableResult, setRoomGraph } from "./room-graph";
-import { workerStore } from "./worker.store";
+import { workerStore } from "./physics.store";
 
-/** Exported so another entry can wrap it — see `jsh.worker.ts` in `@npc-cli/cli` */
-export const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
+/** The physics worker: rapier and nothing else — the navmesh and raycast are `nav.worker.ts` */
+const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
   const msg = e.data;
   if (msg?.type !== "send-npc-positions") {
     debug("🤖 worker received", JSON.stringify(msg?.type));
@@ -70,37 +66,6 @@ export const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
     case "ping":
       self.postMessage({ type: "pong" } satisfies WW.MsgFromWorker);
       break;
-    case "request-room-graph": {
-      setRoomGraph(msg);
-      break;
-    }
-    case "request-unreachable": {
-      let blocked: WW.UnreachableResult["blocked"] = null;
-      try {
-        blocked = findUnreachableResult(msg);
-      } catch (e) {
-        // answering "reachable" leaves the npc walking up to the door and stopping, where an
-        // unanswered query would leave `w.npc.move` waiting for a promise nothing can resolve
-        warn("🤖 worker: request-unreachable failed", e);
-      }
-      self.postMessage({ type: "unreachable-result", uid: msg.uid, blocked } satisfies WW.MsgFromWorker);
-      break;
-    }
-    case "request-tiled-navmesh": {
-      // remember last payload
-      workerStore.setState({ gmGeoms: msg.gmGeoms });
-      // await pause(1000);
-
-      const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
-      workerStore.setState({ navMesh: tiledNavMeshResult.navMesh }); // kept for queries here
-
-      self.postMessage({
-        type: "tiled-navmesh-response",
-        ...tiledNavMeshResult,
-        toNavTris: navForFloorDraw(msg.gmGeoms, tiledNavMeshResult.navMesh),
-      } satisfies WW.MsgFromWorker);
-      break;
-    }
     case "remove-physics-bodies":
     case "remove-physics-colliders": {
       if (msg.type === "remove-physics-colliders") {
@@ -169,10 +134,6 @@ export const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
     case "setup-physics": {
       await setupOrRebuildWorld(msg);
       self.postMessage({ type: "world-setup-response" } satisfies WW.MsgFromWorker);
-      break;
-    }
-    case "get-raycast": {
-      sendRaycastResult(msg);
       break;
     }
     default:

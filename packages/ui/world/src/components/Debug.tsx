@@ -76,7 +76,7 @@ export function Debug() {
           state.physicsLines.dispose();
           state.physicsLines = new THREE.BufferGeometry();
           state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
-          w.worker.worker.removeEventListener("message", state.onPhysicsDebugData);
+          w.physics.worker.removeEventListener("message", state.onPhysicsDebugData);
         }
         state.update();
         w.view.forceUpdate();
@@ -88,8 +88,8 @@ export function Debug() {
           physicsLines: new THREE.BufferGeometry(),
         });
         if (shouldShow) {
-          w.worker.worker.addEventListener("message", state.onPhysicsDebugData);
-          w.worker.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
+          w.physics.worker.addEventListener("message", state.onPhysicsDebugData);
+          w.physics.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
         } else {
           pause().then(() => w.view.forceUpdate());
         }

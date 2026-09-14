@@ -56,7 +56,7 @@ export function getPhysicsDoorsPayload(gms: Geomorph.LayoutInstance[]): WW.Physi
  * - static walls determined by gmKey
  * - dynamic doors checked in main thread
  */
-export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.SetupPhysicsWorld["rayCast"] {
+export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSetupData {
   const gmPairs = [...new Set(gms.map(({ key }) => key))].map(
     (key) => [key, gms.find((g) => g.key === key) as Geomorph.LayoutInstance] as const,
   );

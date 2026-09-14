@@ -1,5 +1,4 @@
-import { overrideWorkerFactory } from "@npc-cli/ui__world/world-worker-factory";
+import { overrideNavWorkerFactory } from "@npc-cli/ui__world/nav-worker-factory";
 
-// the world worker is spawned from jsh's entry, which adds jsh's cases — see `jsh.worker.ts`.
-// Imported by the app's entry, so it is set before any World mounts
-overrideWorkerFactory(() => new Worker(new URL("./jsh.worker.ts", import.meta.url), { type: "module" }));
+// the world's nav.worker is spawned from jsh's entry, adds jsh's cases — see `jsh.worker.ts`.
+overrideNavWorkerFactory(() => new Worker(new URL("./jsh.worker.ts", import.meta.url), { type: "module" }));
