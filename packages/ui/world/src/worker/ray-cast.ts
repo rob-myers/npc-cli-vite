@@ -1,17 +1,16 @@
 import { Mat, Poly } from "@npc-cli/util/geom"; // 🔔 @npc-cli/util breaks worker via react-refresh window undefined
 import { Polygon, System } from "detect-collisions";
 
-import { workerStore } from "./worker.store";
+/** The geomorphs as of the last navmesh request, whose transforms a raycast needs */
+let gmGeoms: WW.GmGeomForNav[] = [];
+const gmRayCast: { [gmKey: string]: System } = {};
 
-/**
- * Needs `state.gmGeoms`
- */
-export function createGmRayCastSystems(gmKeyToData: WW.SetupPhysicsWorld["rayCast"]) {
-  const state = workerStore.getState();
+export function createGmRayCastSystems(gmKeyToData: WW.RaycastSetupData, nextGmGeoms: WW.GmGeomForNav[]) {
+  gmGeoms = nextGmGeoms;
 
   for (const { key: gmKey, walls, doors } of Object.values(gmKeyToData)) {
     // construct system per geomorph
-    const system = (state.gmRayCast[gmKey] ??= new System());
+    const system = (gmRayCast[gmKey] ??= new System());
     system.clear();
 
     // Geomorph.Layout not Geomorph.LayoutInstance
@@ -35,18 +34,16 @@ export function createGmRayCastSystems(gmKeyToData: WW.SetupPhysicsWorld["rayCas
 export function sendRaycastResult(msg: WW.GetRaycast) {
   const { src, dst, gmId } = msg;
 
-  const state = workerStore.getState();
-
   let hit: null | Geom.VectJson = null;
   const gmDoorIds: Geomorph.GmDoorId[] = [];
 
-  const gm = state.gmGeoms[gmId];
+  const gm = gmGeoms[gmId];
   const mat = new Mat(gm.mat3);
   const inverseMat = new Mat(gm.inverseMat3);
 
   const localSrc = inverseMat.transformPoint({ ...src });
   const localDst = inverseMat.transformPoint({ ...dst });
-  const result = state.gmRayCast[gm.key].raycast(localSrc, localDst, (body) => {
+  const result = gmRayCast[gm.key].raycast(localSrc, localDst, (body) => {
     if (body.userData.type === "door") {
       gmDoorIds.push({
         gmId,

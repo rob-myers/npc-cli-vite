@@ -134,7 +134,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       async openDoorwaysWithNpcs() {
-        await w.worker?.settle();
+        await w.physics?.settle();
         for (const npcKey in w.n) {
           const gdKey = state.npcToDoors[npcKey]?.inside;
           if (gdKey === null || gdKey === undefined) continue;
@@ -471,7 +471,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (npc.spawns === 1) {
               if (w.client === false) {
                 const { x, y, z } = npc.position;
-                w.worker.worker.postMessage({
+                w.physics.worker.postMessage({
                   type: "add-physics-npcs",
                   npcs: [{ npcKey: e.npcKey, position: { x, y, z } }],
                 } satisfies WW.MsgToWorker);
@@ -570,13 +570,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         while (maxAdjGeomorphs-- > 0) {
           grIds.push(helper.getGmRoomId(gmId, roomId));
 
-          w.worker.worker.postMessage({
+          w.navWorker.worker.postMessage({
             type: "get-raycast",
             uid: raycastUid,
             src,
             dst,
             gmId,
-          } satisfies WW.MsgToWorker);
+          } satisfies WW.MsgToNavWorker);
 
           const result = await new Promise<WW.RaycastResultResponse>(
             (resolve, reject) => (state.pendingRaycast[raycastUid] = { resolve, reject }),
@@ -641,8 +641,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           delete state.pendingUnreachable[uid];
         }
       },
+      rejectPendingRaycast(err) {
+        for (const uid of Object.keys(state.pendingRaycast)) {
+          state.pendingRaycast[uid].reject(err);
+          delete state.pendingRaycast[uid];
+        }
+      },
       async requestUnreachable(npc, srcIndex, dstIndex) {
-        if (w.worker?.worker === undefined) {
+        if (w.navWorker?.worker === undefined) {
           return null; // asked before the worker was up, e.g. a scripted move on bootstrap
         }
 
@@ -659,7 +665,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         const uid = shortUuid.generate();
-        w.worker.worker.postMessage(
+        w.navWorker.worker.postMessage(
           {
             type: "request-unreachable",
             uid,
@@ -672,7 +678,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ),
             locked,
             open,
-          } satisfies WW.MsgToWorker,
+          } satisfies WW.MsgToNavWorker,
           [locked.buffer, open.buffer],
         );
 
@@ -770,7 +776,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (keepPhysics === true) return;
 
         // physics worker will fire exit colliders
-        w.worker.worker.postMessage({
+        w.physics.worker.postMessage({
           type: "remove-physics-bodies",
           bodyKeys: npcs.map((npc) => npcToBodyKey(npc.key)),
         } satisfies WW.MsgToWorker);
@@ -1110,7 +1116,7 @@ export type State = {
    * `park` in `@npc-cli/cli`. Forgotten once they move or respawn
    */
   parked: Map<string, { s: number[] }>;
-  pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(): void } };
+  pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(err: Error): void } };
   pendingUnreachable: {
     [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };
   };
@@ -1162,6 +1168,8 @@ export type State = {
   requestUnreachable(npc: Npc, srcIndex: number, dstIndex: number): Promise<WW.UnreachableResult["blocked"]>;
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
   rejectPendingUnreachable(err: Error): void;
+  /** ...and on `raycast`, e.g. because the nav worker is going */
+  rejectPendingRaycast(err: Error): void;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   /**

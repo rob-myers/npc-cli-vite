@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/correctness/useYield: uniformity */
 import { decodeDoorAreaId, isDoorAreaId } from "@npc-cli/ui__world/worker/nav-util";
 import { geomService } from "@npc-cli/util/geom-service";
 import {
@@ -15,21 +14,57 @@ import {
 import { localBoundary } from "navcat/blocks";
 
 /**
- * One generator per op, each pure given the navmesh and the map's doors. A `yield` is a breath:
- * the world worker's queue runs at each, so a long op `yield`s wherever it can pause
+ * One function per op, each pure given the navmesh and the map's doors: plain, async, or a
+ * generator — whose every `yield` is a breath, at which the nav worker's queue runs. All are
+ * driven the same way, see `handle-message.ts`
  */
 export const ops: {
-  [K in JshWW.OpKey]: (
-    op: Extract<JshWW.Op, { key: K }>,
+  [K in WW.JshOpKey]: (
+    op: Extract<WW.JshOp, { key: K }>,
     navMesh: NavMesh,
-    map: JshWW.MapSetup,
-  ) => Generator<void, JshWW.Output[K]>;
+    map: WW.JshMapSetup,
+  ) => OpResult<WW.JshOutput[K]>;
 } = {
-  park: planPark,
-  *boundary({ npc }, navMesh) {
+  /**
+   * Where each npc should stand: against the nearest wall within reach, clear of the room's
+   * doorways and its other parked npcs. In order, so each keeps clear of the spots chosen before it
+   */
+  *park(op, navMesh, map) {
+    // who stands where, by npc: the parked as given, then each plan as it is made
+    const standing = new Map(op.parked.map((o) => [o.key, o]));
+    const plans: (null | WW.ParkPlan)[] = [];
+
+    for (const npc of op.npcs) {
+      plans.push(planOne(npc));
+      yield; // a breath between npcs
+    }
+    return plans;
+
+    function planOne(npc: WW.NpcQuery): null | WW.ParkPlan {
+      const segments = queryBoundary(npc, navMesh);
+      if (segments.length === 0) return null;
+
+      // only the room's doors and parked npcs: one on the far side of a wall is nothing to them
+      const doors = (map.roomDoors[npc.grKey ?? ""] ?? []).flatMap((gdKey) => map.doorFrames[gdKey] ?? []);
+      const others = [...standing.values()].filter((o) => o.grKey === npc.grKey && o.key !== npc.key);
+
+      // the nearest segment with a clear point — else the nearest segment, as we always parked:
+      // only 8 are kept, and in a tight doorway they can all be frame
+      const src = npc.point;
+      let at: null | Geom.VectJson = null;
+      const seg = segments.find((seg) => (at = findClearPointOnSeg(src, seg, doors, others)) !== null) ?? segments[0];
+      at ??= geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
+
+      // the walkable side: navcat winds its outlines clockwise, so the inside lies along `(dz, -dx)`
+      const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
+      if (npc.grKey !== null) standing.set(npc.key, { key: npc.key, point: at, grKey: npc.grKey, seg: seg.s });
+      return { key: npc.key, at, facing, seg: seg.s };
+    }
+  },
+  boundary({ npc }, navMesh) {
     return queryBoundary(npc, navMesh).map(({ s }) => s.slice());
   },
-  *pad({ npc, by }, navMesh) {
+  pad({ npc, by }, navMesh) {
     const [seg] = queryBoundary(npc, navMesh);
     if (seg === undefined) return null;
     // off the nearest wall, along its inward normal — see `planPark`'s facing
@@ -37,7 +72,7 @@ export const ops: {
     const len = Math.hypot(dx, dy) || 1;
     return { x: npc.point.x + (dx / len) * by, y: npc.point.y + (dy / len) * by };
   },
-  *nudge({ npc, to }, navMesh) {
+  nudge({ npc, to }, navMesh) {
     const nodeRef = resolveNodeRef(navMesh, npc);
     if (nodeRef === null) return null;
     // slid along the navmesh, so a step into a wall — or a door they cannot pass — stops at it
@@ -47,49 +82,14 @@ export const ops: {
   },
 };
 
-/**
- * Where each npc should stand: against the nearest wall within reach, clear of the room's
- * doorways and its other parked npcs. In order, so each keeps clear of the spots chosen before it
- */
-function* planPark(op: Extract<JshWW.Op, { key: "park" }>, navMesh: NavMesh, map: JshWW.MapSetup) {
-  // who stands where, by npc: the parked as given, then each plan as it is made
-  const standing = new Map(op.parked.map((o) => [o.key, o]));
-  const plans: (null | JshWW.ParkPlan)[] = [];
-
-  for (const npc of op.npcs) {
-    plans.push(planOne(npc));
-    yield; // a breath between npcs
-  }
-  return plans;
-
-  function planOne(npc: JshWW.NpcQuery): null | JshWW.ParkPlan {
-    const segments = queryBoundary(npc, navMesh);
-    if (segments.length === 0) return null;
-
-    // only the room's doors and parked npcs: one on the far side of a wall is nothing to them
-    const doors = (map.roomDoors[npc.grKey ?? ""] ?? []).flatMap((gdKey) => map.doorFrames[gdKey] ?? []);
-    const others = [...standing.values()].filter((o) => o.grKey === npc.grKey && o.key !== npc.key);
-
-    // the nearest segment with a clear point — else the nearest segment, as we always parked:
-    // only 8 are kept, and in a tight doorway they can all be frame
-    const src = npc.point;
-    let at: null | Geom.VectJson = null;
-    const seg = segments.find((seg) => (at = findClearPointOnSeg(src, seg, doors, others)) !== null) ?? segments[0];
-    at ??= geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
-
-    // the walkable side: navcat winds its outlines clockwise, so the inside lies along `(dz, -dx)`
-    const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
-    if (npc.grKey !== null) standing.set(npc.key, { key: npc.key, point: at, grKey: npc.grKey, seg: seg.s });
-    return { key: npc.key, at, facing, seg: seg.s };
-  }
-}
+type OpResult<T> = T | Promise<T> | Generator<void, T> | AsyncGenerator<void, T>;
 
 /**
  * The navmesh boundary within `parkQueryRange` of them, nearest first — at most 8 segments, and
  * none if they are off the mesh. Asked afresh every time: the crowd's own query is shorter, and
  * an npc stood IN a doorway would otherwise have nothing but its frame
  */
-function queryBoundary(npc: JshWW.NpcQuery, navMesh: NavMesh) {
+function queryBoundary(npc: WW.NpcQuery, navMesh: NavMesh) {
   const nodeRef = resolveNodeRef(navMesh, npc);
   if (nodeRef === null) return [];
   const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
@@ -98,7 +98,7 @@ function queryBoundary(npc: JshWW.NpcQuery, navMesh: NavMesh) {
 }
 
 /** Main's ref for them, unless the navmesh has changed under it */
-function resolveNodeRef(navMesh: NavMesh, npc: JshWW.NpcQuery) {
+function resolveNodeRef(navMesh: NavMesh, npc: WW.NpcQuery) {
   if (isValidNodeRef(navMesh, npc.nodeRef) === true) return npc.nodeRef;
   const result = findNearestPoly(
     createFindNearestPolyResult(),
@@ -134,7 +134,7 @@ function createParkFilter(blocked: Set<string>, standingRef: number): QueryFilte
 function findClearPointOnSeg(
   src: Geom.VectJson,
   seg: { s: number[] },
-  doors: JshWW.DoorFrame[],
+  doors: WW.DoorFrame[],
   others: { point: Geom.VectJson; seg: number[] }[],
 ): null | Geom.VectJson {
   const a = { x: seg.s[0], y: seg.s[2] };
@@ -174,7 +174,7 @@ function findClearPointOnSeg(
  * a jamb `along` falls outside, so the wall BESIDE a door is clear to stand against. Both bounds
  * are linear in `t`, so each is a half-line: `c0 + c1·t within (lo, hi)`
  */
-function doorwayInterval(a: Geom.VectJson, d: Geom.VectJson, door: JshWW.DoorFrame): null | [number, number] {
+function doorwayInterval(a: Geom.VectJson, d: Geom.VectJson, door: WW.DoorFrame): null | [number, number] {
   const [dx, dy] = [door.dst.x - door.src.x, door.dst.y - door.src.y];
   const len = Math.hypot(dx, dy);
   const r = agentRadius;

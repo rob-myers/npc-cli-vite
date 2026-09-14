@@ -1,4 +1,4 @@
-// spawn jsx.worker which imports world.worker
+// jsh worker extends world's nav.worker
 import "@npc-cli/cli/jsh/world/worker/register";
 
 import { QueryClientProvider } from "@tanstack/react-query";

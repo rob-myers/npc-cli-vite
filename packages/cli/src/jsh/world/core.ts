@@ -606,7 +606,7 @@ export async function park(
     try {
       await Promise.all(
         npcs.map(async (npc, i) => {
-          const { at, facing, seg } = plans[i] as JshWW.ParkPlan;
+          const { at, facing, seg } = plans[i] as WW.ParkPlan;
           if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > parkMinMove) {
             await npc.fadeSpawn({ at, facing });
           } else {

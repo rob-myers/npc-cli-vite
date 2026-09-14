@@ -1,9 +1,9 @@
-/** jsh's own messages to and from the world worker — see `jsh.worker.ts` */
-declare namespace JshWW {
+/** jsh's own messages to and from the nav worker, merged into the world's namespace — see `jsh.worker.ts` */
+declare namespace WW {
   type DoorFrame = { gdKey: string; src: Geom.VectJson; dst: Geom.VectJson; normal: Geom.VectJson };
 
   /** What the worker keeps per map — see `jsh-setup` */
-  type MapSetup = {
+  type JshMapSetup = {
     mapKey: string;
     doorFrames: { [gdKey: string]: DoorFrame };
     roomDoors: { [grKey: string]: string[] };
@@ -23,8 +23,8 @@ declare namespace JshWW {
   /** A parking spot, its facing, and the wall segment `[x1, y1, z1, x2, y2, z2]` it stands against */
   type ParkPlan = { key: string; at: Geom.VectJson; facing: Geom.VectJson; seg: number[] };
 
-  /** An op and its input — see `plan.worker.ts` for what each gives */
-  type Op =
+  /** A jsh op and its input — see `plan.worker.ts` for what each gives */
+  type JshOp =
     | {
         key: "park";
         npcs: NpcQuery[];
@@ -35,10 +35,16 @@ declare namespace JshWW {
     | { key: "pad"; npc: NpcQuery; by: number }
     | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson };
 
-  type OpKey = Op["key"];
+  type JshOpKey = JshOp["key"];
+
+  type JshMsgToNavWorker =
+    | { type: "jsh-setup"; mapKey: string; doorFrames: DoorFrame[]; roomDoors: { [grKey: string]: string[] } }
+    | JshRequest;
+
+  type JshMsgFromNavWorker = JshResult;
 
   /** What each op gives */
-  type Output = {
+  type JshOutput = {
     /** Aligned with `npcs`; `null` where no wall was within range */
     park: (null | ParkPlan)[];
     /** The boundary segments `[x1, y1, z1, x2, y2, z2]` within reach, nearest first */
@@ -49,21 +55,15 @@ declare namespace JshWW {
     nudge: null | Geom.VectJson;
   };
 
-  type Request = { type: "jsh-plan"; uid: string; op: Op };
-  type Result<K extends OpKey = OpKey> = {
+  type JshRequest = { type: "jsh-plan"; uid: string; op: JshOp };
+  type JshResult<K extends JshOpKey = JshOpKey> = {
     [J in K]: {
       type: "jsh-plan-result";
       uid: string;
       key: J;
-      output: Output[J];
-      /** e.g. "no navmesh" whilst the world worker is still generating it */
+      output: JshOutput[J];
+      /** e.g. "no navmesh" whilst the nav worker is still generating it */
       error?: string;
     };
   }[K];
-
-  type MsgToWorker =
-    | { type: "jsh-setup"; mapKey: string; doorFrames: DoorFrame[]; roomDoors: { [grKey: string]: string[] } }
-    | Request;
-
-  type MsgFromWorker = Result;
 }

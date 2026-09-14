@@ -43,10 +43,12 @@ import { Debug } from "./Debug";
 import Decor from "./Decor";
 import Doors from "./Doors";
 import Floor from "./Floor";
+import NavWorker from "./NavWorker";
 import NPCs from "./NPCs";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
+import PhysicsWorker from "./PhysicsWorker";
 import RoomLabels from "./RoomLabels";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
@@ -55,7 +57,6 @@ import Walls from "./Walls";
 import { WorldMenu } from "./WorldMenu";
 import { WorldSpeech } from "./WorldSpeech";
 import { WorldView } from "./WorldView";
-import WorldWorker from "./WorldWorker";
 import { WorldContext } from "./world-context";
 import "../world.css";
 
@@ -163,7 +164,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       speech: null as any,
       view: null as any,
       wall: null as any,
-      worker: { worker: { postMessage() {} } } as any,
+      // stubs swallow posts before the workers mount
+      physics: { worker: { postMessage() {} } } as any,
+      navWorker: { worker: { postMessage() {} } } as any,
 
       helper,
 
@@ -469,7 +472,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             <NPCs key="npcs" />
           </WorldView>
         )}
-        <WorldWorker />
+        <PhysicsWorker />
+        <NavWorker />
         {state.view && <WorldMenu />}
         <WorldSpeech />
       </div>
@@ -559,7 +563,8 @@ export type State = {
   speech: UseStateRef<import("./WorldSpeech").State>;
   view: UseStateRef<import("./WorldView").State>;
   wall: UseStateRef<import("./Walls").State>;
-  worker: UseStateRef<import("./WorldWorker").State>;
+  physics: UseStateRef<import("./PhysicsWorker").State>;
+  navWorker: UseStateRef<import("./NavWorker").State>;
 
   helper: typeof helper;
 
