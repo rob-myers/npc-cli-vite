@@ -325,6 +325,8 @@
     - jsh.worker booted from app package
     - jsh.worker imports world.worker
     - jsh.worker can yield event-loop
+  - ✅ World has physics.worker, separate from jsh.worker
+  - ✅ jsh.worker now extends nav.worker from World
   - try avoid intersect npc arms
     - larger npc radius?
 
