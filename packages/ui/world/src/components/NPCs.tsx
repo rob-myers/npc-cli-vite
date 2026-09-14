@@ -514,12 +514,8 @@ export default function NPCs() {
               // cannot immediately else walk -> idle slides
               agent.maxAcceleration = idleSeparatingMaxAcceleration;
             }
-            // `neis` are within `collisionQueryRange`, `dist` squared
-            if (testLean === true) {
-              npc.anim.leanAway(
-                agent.neis.some(({ agentId, dist }) => dist < leanAwayDistSq && state.byAgentId[agentId]?.isMoving()),
-              );
-            }
+            if (testLean === true) npc.anim.leanAway(nearestWalker(agent, state.byAgentId));
+            npc.anim.leanTick(delta);
             continue;
           }
 
@@ -1032,6 +1028,17 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
 const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
 
 const leanAwayDistSq = npcConfig.dist.leanAway ** 2;
+
+/** The nearest moving npc within `leanAway` — `neis` are within `collisionQueryRange`, `dist` squared */
+function nearestWalker(agent: crowd.Agent, byAgentId: Record<string, Npc>) {
+  let nearest: null | Npc = null;
+  let nearestDist = leanAwayDistSq;
+  for (const { agentId, dist } of agent.neis) {
+    const other = byAgentId[agentId];
+    if (dist < nearestDist && other?.isMoving() === true) [nearest, nearestDist] = [other, dist];
+  }
+  return nearest;
+}
 
 /** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
 /** Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2` */
