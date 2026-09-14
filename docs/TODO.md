@@ -331,8 +331,12 @@
     - ✅ idle-avoid leans back (fable + mcp)
     - every 0.5s if idle has nearby walker then
     - leanAway also turns towards (clamped ±30deg)
-  - maybe sometimes turn initially when move
+
+  - ✅ fix original npc skin flash on hmr
   - fix connect world
+  - try tween collisionQueryRange between 1 and 0.7
+  - sometimes turn initially when move
+  - move leanBack into demo_lean_back
 
 # FUTURE
 
