@@ -80,7 +80,7 @@ export default function Decor() {
       },
 
       addDecorColliders(...decorDefs) {
-        w.worker.worker.postMessage({
+        w.physics.worker.postMessage({
           type: "add-physics-colliders",
           colliders: decorDefs.map(state.getColliderDefFromDecorDef),
         } satisfies WW.MsgToWorker);
@@ -453,7 +453,7 @@ export default function Decor() {
         w.view.forceUpdate();
       },
       removeDecorColliders(...decor) {
-        w.worker.worker.postMessage({
+        w.physics.worker.postMessage({
           type: "remove-physics-colliders",
           colliders: decor.map(({ key, type }) => ({ colliderKey: key, type })),
         } satisfies WW.MsgToWorker);

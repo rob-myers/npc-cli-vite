@@ -1,5 +1,5 @@
 import { hashText } from "@npc-cli/util/legacy/generic";
-import type { PhysicsBijection } from "../worker/worker.store";
+import type { PhysicsBijection } from "../worker/physics.store";
 
 /**
  * Convert physics `bodyKey` into a number i.e. `bodyUid`,

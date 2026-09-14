@@ -321,7 +321,14 @@
   - ✅ saw player fail to arrive when spawning npcs
   - ✅ faster `w.npc.getClosestPoly(npc.position).nodeRef`
     - is nodeRef already available?
-  - park offloads computation to worker
+  - ✅ park offloads computation to worker
+    - jsh.worker booted from app package
+    - jsh.worker imports world.worker
+    - jsh.worker can yield event-loop
+  - ✅ World has physics.worker, separate from jsh.worker
+  - ✅ jsh.worker now extends nav.worker from World
+  - try avoid intersect npc arms
+    - larger npc radius?
 
 # FUTURE
 

@@ -1,7 +1,7 @@
 import { ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
-import { crowd as crowdApi, localBoundary } from "navcat/blocks";
+import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import {
@@ -13,8 +13,6 @@ import {
   MAX_NPCS,
   mapVeilMs,
   npcConfig,
-  parkMinMove,
-  parkQueryRange,
   roomLabelRevealMs,
   unfoldDelayMs,
 } from "../const";
@@ -84,40 +82,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           listener(e, w);
         }
       },
-      findClearPointOnSeg(src, seg, doors, others) {
-        const a = { x: seg.s[0], y: seg.s[2] };
-        const len = Math.hypot(seg.s[3] - a.x, seg.s[5] - a.y);
-        if (len === 0) return null;
-        const d = { x: (seg.s[3] - a.x) / len, y: (seg.s[5] - a.y) / len };
-        const along = (p: Geom.VectJson) => (p.x - a.x) * d.x + (p.y - a.y) * d.y;
-
-        // the stretches of wall, as `t` along it, cut out by each doorway and by each parked npc —
-        // a body's width for one along this wall, further for one across the way (a choke)
-        const spans: [number, number][] = [
-          ...doors.flatMap((door) => {
-            const span = w.door.doorwayInterval(a, d, door);
-            return span === null ? [] : [span];
-          }),
-          ...others.flatMap((o) => {
-            const across = (o.seg[3] - o.seg[0]) * d.x + (o.seg[5] - o.seg[2]) * d.y < 0;
-            const radius = across ? parkNpcClearance : parkNpcBesideClearance;
-            const t0 = along(o.point);
-            const half = Math.sqrt(
-              radius ** 2 - Math.hypot(a.x + d.x * t0 - o.point.x, a.y + d.y * t0 - o.point.y) ** 2,
-            );
-            return Number.isNaN(half) ? [] : [[t0 - half, t0 + half] as [number, number]]; // NaN: too far off
-          }),
-        ];
-
-        // the free point nearest where they stand: that point, else the nearest end of a span,
-        // nudged a hair clear — only such points can be nearest, and there are few
-        const target = Math.max(0, Math.min(len, along(src)));
-        const free = (t: number) => t >= 0 && t <= len && spans.every(([lo, hi]) => t <= lo || t >= hi);
-        const t = [target, ...spans.flatMap(([lo, hi]) => [lo - parkSlack, hi + parkSlack])]
-          .filter(free)
-          .sort((u, v) => Math.abs(u - target) - Math.abs(v - target))[0];
-        return t === undefined ? null : { x: a.x + d.x * t, y: a.y + d.y * t };
-      },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
@@ -146,19 +110,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return null;
         }
       },
-      getParkedSeg(npc) {
-        const entry = state.parked.get(npc.key);
-        if (entry === undefined) {
-          return null;
-        }
-        const { s } = entry;
-        const still =
-          npc.agent !== null &&
-          npc.isMoving() === false &&
-          geomService.getClosestOnSeg(npc.point, { x: s[0], y: s[2] }, { x: s[3], y: s[5] }).dst < parkedWithin;
-        if (still === false) state.parked.delete(npc.key);
-        return still ? s : null;
-      },
       getPoint(npcKey) {
         const npc = w.npc.get(npcKey);
         return {
@@ -183,7 +134,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
       async openDoorwaysWithNpcs() {
-        await w.worker?.settle();
+        await w.physics?.settle();
         for (const npcKey in w.n) {
           const gdKey = state.npcToDoors[npcKey]?.inside;
           if (gdKey === null || gdKey === undefined) continue;
@@ -520,7 +471,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (npc.spawns === 1) {
               if (w.client === false) {
                 const { x, y, z } = npc.position;
-                w.worker.worker.postMessage({
+                w.physics.worker.postMessage({
                   type: "add-physics-npcs",
                   npcs: [{ npcKey: e.npcKey, position: { x, y, z } }],
                 } satisfies WW.MsgToWorker);
@@ -531,6 +482,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (prevGrId !== undefined) {
                 state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
+              state.parked.delete(npc.key); // `park` sets it again after its own respawn
             }
 
             state.npcToRoom.set(npc.key, { ...e.gmRoomId });
@@ -542,6 +494,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "started-moving": {
+            state.parked.delete(e.npcKey);
             const nearbyGdKeys = state.npcToDoors[e.npcKey]?.nearby ?? emptySet;
             const npcIntention = nearbyGdKeys.size > 0 ? npc.getCornersPath() : null;
             for (const gdKey of nearbyGdKeys) {
@@ -564,85 +517,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           default:
             throw new ExhaustiveError(e);
         }
-      },
-      async park(npcs, planned = new Map<string, ParkPlan>()) {
-        // whoever the caller has not planned already is planned here, each keeping clear of the
-        // spots already chosen — then everyone moves at once
-        for (const npc of npcs) {
-          if (planned.has(npc.key) === false) planned.set(npc.key, state.planPark(npc, planned));
-        }
-        await Promise.all(
-          npcs.map(async (npc) => {
-            const { at, facing, seg } = planned.get(npc.key) as ParkPlan;
-            if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > parkMinMove) {
-              await npc.fadeSpawn({ at, facing });
-            } else {
-              await npc.look({ at: facing });
-            }
-            state.parked.set(npc.key, { s: seg });
-          }),
-        );
-      },
-      planPark(npc, planned) {
-        const agent = npc.agent;
-        if (agent === null) throw Error("no agent");
-
-        // Always, rather than only when empty: the crowd asks within 0.6m and keeps the 8 nearest
-        // segments, so an npc stood IN a doorway would otherwise have nothing but its frame to
-        // choose from — and the whole point is to get round the corner from it
-        localBoundary.updateLocalBoundary(
-          agent.boundary,
-          w.npc.getNodeRef(agent),
-          helper.groundPointToTuple(npc.point),
-          parkQueryRange,
-          w.nav.navMesh,
-          npc.queryFilter,
-        );
-        const segments = agent.boundary.segments;
-        if (segments.length === 0) {
-          throw Error("boundary too far");
-        }
-
-        const src = npc.point;
-        // Only the doors of the room they are in — a handful, and one on the far side of a wall
-        // is nothing to them anyway. An npc stood IN a doorway resolves to one of its two rooms,
-        // which owns that door either way
-        const grId = state.npcToRoom.get(npc.key) ?? state.findRoomContaining(src, true);
-        const roomNode = grId === null ? null : w.gmRoomGraph.getNode(grId.grKey);
-        const doors = (roomNode === null ? [] : w.gmRoomGraph.getSuccs(roomNode)).flatMap((node) =>
-          node.type === "door" ? (w.d[node.gdKey] ?? []) : [],
-        );
-        // and the room's other parked npcs, to keep clear of — where they are, or where the ones
-        // planned before them in this batch are about to be
-        const others = [...(grId === null ? [] : (state.roomToNpcs[grId.gmId]?.[grId.roomId] ?? []))].flatMap(
-          (npcKey) => {
-            if (npcKey === npc.key) return [];
-            const plan = planned.get(npcKey);
-            if (plan !== undefined) return [{ point: plan.at, seg: plan.seg }];
-            const seg = state.getParkedSeg(w.n[npcKey]);
-            return seg === null ? [] : [{ point: w.n[npcKey].point, seg }];
-          },
-        );
-
-        // Nearest-first, so the first segment with a clear point is the closest place to stand
-        let chosen: null | { at: Geom.VectJson; seg: (typeof segments)[number] } = null;
-        for (const seg of segments) {
-          const at = state.findClearPointOnSeg(src, seg, doors, others);
-          if (at !== null) {
-            chosen = { at, seg };
-            break;
-          }
-        }
-        // Nothing clear anywhere: only 8 segments are kept, and in a tight doorway they can all be
-        // frame. Park as we always did rather than refusing
-        const seg = chosen?.seg ?? segments[0];
-        const at =
-          chosen?.at ?? geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
-
-        // The walkable side: navcat winds its poly outlines clockwise in the ground plane, so the
-        // inside lies along `(dz, -dx)`
-        const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
-        return { at, facing, seg: seg.s };
       },
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
@@ -696,13 +570,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         while (maxAdjGeomorphs-- > 0) {
           grIds.push(helper.getGmRoomId(gmId, roomId));
 
-          w.worker.worker.postMessage({
+          w.navWorker.worker.postMessage({
             type: "get-raycast",
             uid: raycastUid,
             src,
             dst,
             gmId,
-          } satisfies WW.MsgToWorker);
+          } satisfies WW.MsgToNavWorker);
 
           const result = await new Promise<WW.RaycastResultResponse>(
             (resolve, reject) => (state.pendingRaycast[raycastUid] = { resolve, reject }),
@@ -767,8 +641,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           delete state.pendingUnreachable[uid];
         }
       },
+      rejectPendingRaycast(err) {
+        for (const uid of Object.keys(state.pendingRaycast)) {
+          state.pendingRaycast[uid].reject(err);
+          delete state.pendingRaycast[uid];
+        }
+      },
       async requestUnreachable(npc, srcIndex, dstIndex) {
-        if (w.worker?.worker === undefined) {
+        if (w.navWorker?.worker === undefined) {
           return null; // asked before the worker was up, e.g. a scripted move on bootstrap
         }
 
@@ -785,7 +665,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         const uid = shortUuid.generate();
-        w.worker.worker.postMessage(
+        w.navWorker.worker.postMessage(
           {
             type: "request-unreachable",
             uid,
@@ -798,7 +678,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ),
             locked,
             open,
-          } satisfies WW.MsgToWorker,
+          } satisfies WW.MsgToNavWorker,
           [locked.buffer, open.buffer],
         );
 
@@ -896,7 +776,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (keepPhysics === true) return;
 
         // physics worker will fire exit colliders
-        w.worker.worker.postMessage({
+        w.physics.worker.postMessage({
           type: "remove-physics-bodies",
           bodyKeys: npcs.map((npc) => npcToBodyKey(npc.key)),
         } satisfies WW.MsgToWorker);
@@ -1231,9 +1111,12 @@ export type State = {
    * Relates `npcKey` to current room.
    */
   npcToRoom: Map<string, Geomorph.GmRoomId>;
-  /** By npcKey, the boundary segment `park` last stood them against — see `getParkedSeg` */
+  /**
+   * By npcKey, the boundary segment `[x1, y1, z1, x2, y2, z2]` `park` stood them against — see
+   * `park` in `@npc-cli/cli`. Forgotten once they move or respawn
+   */
   parked: Map<string, { s: number[] }>;
-  pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(): void } };
+  pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(err: Error): void } };
   pendingUnreachable: {
     [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };
   };
@@ -1275,35 +1158,7 @@ export type State = {
       setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
     },
   ): Promise<AStarSearchResult<Graph.GmRoomGraphNode>>;
-  /**
-   * The point on navmesh boundary segment `seg` nearest `src` that no door's traffic runs through,
-   * or `null` where the whole of it is in the way — see the `park` command
-   */
-  findClearPointOnSeg(
-    src: Geom.VectJson,
-    /** A navcat `LocalBoundarySegment`, whose `s` is `[x1, y1, z1, x2, y2, z2]` */
-    seg: { s: number[] },
-    doors: Geomorph.DoorState[],
-    /**
-     * The room's other PARKED npcs, each with the segment they stand against: a body's width is
-     * kept from one along this wall, and more from one across the way, which would make a choke
-     */
-    others: { point: Geom.VectJson; seg: number[] }[],
-  ): null | Geom.VectJson;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
-  /**
-   * The boundary segment `[x1, y1, z1, x2, y2, z2]` `park` stood this npc against, if they are
-   * still idle and still against it — else `null`, and they are forgotten
-   */
-  getParkedSeg(npc: Npc): null | number[];
-  /**
-   * Stand them against a nearby wall, out of the way: clear of the room's doorways and of its
-   * other parked npcs, and remembered in `parked`. Several are planned together, then move
-   * together — `planned` carries any the caller planned already, e.g. paced by `planPark`
-   */
-  park(npcs: Npc[], planned?: Map<string, ParkPlan>): Promise<void>;
-  /** Where `park` would stand them, given the spots the batch has already planned — see `park` */
-  planPark(npc: Npc, planned: Map<string, ParkPlan>): ParkPlan;
   /**
    * Asks the worker whether this npc can get from one room node to another, and which shut door
    * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there".
@@ -1313,6 +1168,8 @@ export type State = {
   requestUnreachable(npc: Npc, srcIndex: number, dstIndex: number): Promise<WW.UnreachableResult["blocked"]>;
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
   rejectPendingUnreachable(err: Error): void;
+  /** ...and on `raycast`, e.g. because the nav worker is going */
+  rejectPendingRaycast(err: Error): void;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   /**
@@ -1380,17 +1237,6 @@ export type State = {
 
 const emptySet = new Set<Geomorph.GmDoorKey>();
 
-/** A parking spot, its facing, and the wall segment it stands against */
-type ParkPlan = { at: Geom.VectJson; facing: Geom.VectJson; seg: number[] };
-
-/** How far a parked npc keeps from parked npcs ACROSS from them, centre to centre */
-const parkNpcClearance = 6.5 * npcConfig.dist.agentRadius;
-/** …and from those parked along the same wall: a body's width, and a little */
-const parkNpcBesideClearance = 4 * npcConfig.dist.agentRadius;
-/** Beyond this from the wall they were parked against, an npc is no longer parked */
-const parkedWithin = npcConfig.dist.agentRadius + 0.1;
-/** A parked point sits this far clear of what cut its span, so a point test agrees */
-const parkSlack = 1e-3;
 /**
  * How far CLEAR of a door an npc it cannot pass is kept: their own radius, and a margin on top.
  * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor

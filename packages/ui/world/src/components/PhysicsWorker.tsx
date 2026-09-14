@@ -1,18 +1,14 @@
-import { ExhaustiveError, useStateRef } from "@npc-cli/util";
+import { useStateRef } from "@npc-cli/util";
 import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import { helper } from "../service/helper";
 import { parsePhysicsBodyKey } from "../service/physics-bijection";
-import {
-  getNavmeshPayload,
-  getPhysicsDoorsPayload,
-  getRaycastPayload,
-  getRoomGraphPayload,
-  getRuntimeCollidersPayload,
-} from "../service/worker-data";
+import { getPhysicsDoorsPayload, getRuntimeCollidersPayload } from "../service/worker-data";
+import { useWorkerLoadRetry } from "./use-worker-load-retry";
 import { WorldContext } from "./world-context";
 
-export default function WorldWorker() {
+/** Owns the physics worker — rapier, stepped on the npc positions sent each tick */
+export default function PhysicsWorker() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
@@ -55,7 +51,7 @@ export default function WorldWorker() {
       },
       onWorkerMessage(e: MessageEvent<WW.MsgFromWorker>) {
         const msg = e.data;
-        debug(`🤖 main thread received "${msg?.type}" from worker`);
+        debug(`🤖 main thread received "${msg?.type}" from physics worker`);
 
         switch (msg.type) {
           case "npc-collisions": {
@@ -79,23 +75,6 @@ export default function WorldWorker() {
             // FIFO both ways, so everything posted before the ping has already been handled here
             state.pendingSettles.shift()?.();
             break;
-
-          case "raycast-result": {
-            w.e.pendingRaycast[msg.uid]?.resolve(msg);
-            delete w.e.pendingRaycast[msg.uid];
-            break;
-          }
-          case "unreachable-result": {
-            w.e.pendingUnreachable[msg.uid]?.resolve(msg);
-            delete w.e.pendingUnreachable[msg.uid];
-            break;
-          }
-          case "tiled-navmesh-response": {
-            w.nav = { ...msg };
-            w.events.next({ key: "nav-updated" });
-            w.setNextPending({ nav: false });
-            break;
-          }
           case "worker-hot-module-reload": {
             state.set({ reloads: state.reloads + 1 });
             break;
@@ -105,7 +84,7 @@ export default function WorldWorker() {
             break;
           }
           default:
-            throw new ExhaustiveError(msg);
+            msg satisfies never;
         }
       },
       ping() {
@@ -129,43 +108,33 @@ export default function WorldWorker() {
      * - we send specially craft payloads to worker
      * - this avoids e.g. parse via shared schema, or instantiate geomorphs.
      */
-    const worker = new Worker(new URL("../worker/world.worker.ts", import.meta.url), { type: "module" });
+    const worker = new Worker(new URL("../worker/physics.worker.ts", import.meta.url), { type: "module" });
     state.worker = worker;
-    w.worker = state;
+    w.physics = state;
     worker.addEventListener("message", state.onWorkerMessage);
     return () => {
       worker.removeEventListener("message", state.onWorkerMessage);
       worker.terminate();
-      // whatever it was still being asked, it can no longer answer
-      w.e.rejectPendingUnreachable(new Error("worker terminated"));
       // no pong is coming; released rather than rejected, since a settle only ever means "as much
       // as the worker was going to say has been said" and a dead worker has said all it will
       for (const resolve of state.pendingSettles.splice(0)) resolve();
     };
   }, [w.threeReady, state.reloads]); // setup worker
 
+  useWorkerLoadRetry(
+    () => state.worker,
+    () => state.set({ reloads: state.reloads + 1 }),
+    [w.threeReady, state.reloads],
+  );
+
   useEffect(() => {
     if (w.hash === 0) return;
-
-    w.setNextPending({ nav: true });
 
     /**
      * - Webworker modules should be disjoint from other ui/world modules,
      *   otherwise multiple HMRs reloads breaks things
      * - So, we send specially crafted payloads to worker
      */
-    state.worker.postMessage({
-      type: "request-tiled-navmesh",
-      mapKey: w.mapKey,
-      gmGeoms: getNavmeshPayload(w.gms),
-    } satisfies WW.MsgToWorker);
-
-    state.worker.postMessage({
-      type: "request-room-graph",
-      mapKey: w.mapKey,
-      roomGraph: getRoomGraphPayload(w.gmRoomGraph),
-    } satisfies WW.MsgToWorker);
-
     state.worker.postMessage({
       type: "setup-physics",
       mapKey: w.mapKey,
@@ -174,12 +143,11 @@ export default function WorldWorker() {
         position: npc.position,
       })),
       doors: getPhysicsDoorsPayload(w.gms),
-      rayCast: getRaycastPayload(w.gms),
       runtimeColliderDefs: getRuntimeCollidersPayload(w.decor.runtime?.byKey ?? {}),
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });
-  }, [w.gmsHash, state.reloads]); // request navmesh, physics
+  }, [w.gmsHash, state.reloads]); // setup physics
 
   return null;
 }
