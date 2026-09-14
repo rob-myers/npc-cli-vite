@@ -1,7 +1,6 @@
 import type { UseStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
 import type { buildGraph } from "@react-three/fiber";
-import { deltaAngle } from "maath/misc";
 import {
   createDefaultQueryFilter,
   createFindNearestPolyResult,
@@ -19,6 +18,7 @@ import { defaultIdleAnimationClipKey, defaultNpcLabelColor } from "../const";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
+import type { AnimationClipKey } from "./NPCs";
 import { NpcAnimation } from "./npc-animation";
 
 export class Npc {
@@ -78,6 +78,9 @@ export class Npc {
     moveTime: 0,
     /** Position (used in stuck detection)  */
     point: { x: 0, y: 0 },
+    stuckAccum: 0,
+    nearest: Infinity,
+    nearestAccum: 0,
     /** Distance to `dst` when the current move started */
     targetDistance: 0,
     /** Non-null iff `dst` was unreachable at time of plan  */
@@ -321,7 +324,7 @@ export class Npc {
 
     this.resolve.spawn("spawned");
 
-    this.anim.mixer.clipAction(this.anim.idleClip).play();
+    this.anim.setPose(this.anim.idleClip.name as AnimationClipKey, { fade: 0, force: true }); // a fresh mixer
     this.anim.mixer.update(0);
   };
 
@@ -359,10 +362,6 @@ export class Npc {
   init() {
     this.skinnedMesh.computeBoundingSphere();
 
-    this.bubbleOffset.y = npcBubbleHeightForClip(this.anim.idleClip.name);
-
-    this.setLabelYShift(npcLabelYShiftForClip(this.anim.idleClip.name));
-
     this.queryFilter = {
       ...createDefaultQueryFilter(),
       passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, true),
@@ -381,7 +380,7 @@ export class Npc {
   }
 
   isLooking() {
-    return this.anim.lookState.active;
+    return this.anim.face.timed !== null;
   }
 
   isMoving() {
@@ -390,8 +389,7 @@ export class Npc {
 
   /** Whether their current clip has them off their feet, i.e. `sit` or `lie` */
   isNotStanding() {
-    const clipName = this.anim.moving === true ? this.anim.moveClip.name : this.anim.idleClip.name;
-    return clipName === "sit" || clipName === "lie";
+    return this.anim.pose === "sit" || this.anim.pose === "lie";
   }
 
   /**
@@ -412,44 +410,20 @@ export class Npc {
       return;
     }
 
-    const startAngle = this.skinnedMesh.rotation.y;
-    const totalDiff = deltaAngle(startAngle, target);
-    const arc = Math.abs(totalDiff);
-    const longLook = arc > longLookAngle;
-    const { lookState } = this.anim;
-
     try {
       await new Promise<string>((resolve, reject) => {
         this.rejectAll(new Error("look again"));
         this.resolve.look = resolve;
         this.reject.look = reject;
-
-        Object.assign(lookState, {
-          active: true,
-          startAngle,
-          totalDiff,
-          // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-          duration: arc < 0.001 ? 0 : Math.max(minLookSecs, (2 * arc) / (2 * Math.PI), minMs / 1000),
-          elapsed: 0,
-          longLook,
-        } satisfies typeof lookState);
-
-        if (longLook === true) {
-          this.anim.startLookShuffle();
-        } else {
-          this.anim.stopLookShuffle(); // in case we superseded a `longLook`
-        }
+        this.anim.lookAt(target, minMs);
       });
     } catch (e) {
       if (e instanceof Error && e.message === "look again") {
         return; // the look which interrupted us owns the animation now
       }
       this.anim.startIdle({ force: true });
-      this.anim.stopLookShuffle();
       throw e;
     }
-
-    this.anim.stopLookShuffle();
   }
 
   pinTo(result: FindNearestPolyResult, overrideGroundPoint?: JshCli.GroundPoint): boolean {
@@ -481,7 +455,7 @@ export class Npc {
     };
     // synchronously stop scale or look
     this.anim.fadeState.delta = 0;
-    this.anim.lookState.active = false;
+    this.anim.face.timed = null;
     reject.worker(err); // stop waiting on the worker
     reject.spawn(err);
     reject.move(err);
@@ -541,31 +515,9 @@ const legalPositionEpsilon = 0.01;
 /** How far past the edge `ensureLegalPosition` puts them */
 const legalPositionMargin = 0.05;
 
-/** Beyond this angle a look gets its own idle animation */
-const longLookAngle = 30 * (Math.PI / 180);
-
-/**
- * No look is quicker than this, however small the angle. The turn's peak rate is `2 * arc /
- * duration`, so a floor eases small turns off the 2π a bare `arc / π` would always give them —
- * and it meets that curve exactly at `arc = 0.3π`, so nothing jumps at the crossover.
- */
-const minLookSecs = 0.3;
-
 const npcCannotLookForClip: Record<string, string | undefined> = {
   sit: "not while sitting",
   lie: "not while lying",
 };
-
-export function npcBubbleHeightForClip(clipName: string): number {
-  if (clipName === "sit") return 1.4;
-  if (clipName === "lie") return 0.9;
-  return 2;
-}
-
-export function npcLabelYShiftForClip(clipName: string): number {
-  if (clipName === "sit") return 1.6;
-  if (clipName === "lie") return 0.75;
-  return 2.2;
-}
 
 export function rejectNoop(_e: Error): void {}
