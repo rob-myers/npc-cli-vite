@@ -66,8 +66,7 @@ export function GlobalMenu() {
       className="fixed text-white bg-gray-800 z-9999 touch-none flex flex-col gap-1"
       style={{
         y: menu.y,
-        left:
-          menu.vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - (2 + (touchDevice ? 6 : 5) + 2) * 4,
+        left: menu.vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - (touchDevice ? 12 : 9) * 4,
         top: menu.vpOffset.y,
       }}
       drag="y"
@@ -77,7 +76,12 @@ export function GlobalMenu() {
       onDragEnd={menu.onDragEnd}
     >
       <Menu.Root open={menu.menuOpen} onOpenChange={menu.onMenuOpenChange}>
-        <Menu.Trigger className="cursor-pointer p-2" render={<span />} nativeButton={false}>
+        {/* same box as WorldSpeech's trigger */}
+        <Menu.Trigger
+          className={cn("grid place-items-center cursor-pointer", touchDevice ? "size-12" : "size-9")}
+          render={<span />}
+          nativeButton={false}
+        >
           <GearIcon className={touchDevice ? "size-6" : "size-5"} weight="bold" />
         </Menu.Trigger>
 
