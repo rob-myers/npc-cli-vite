@@ -1,7 +1,6 @@
 import RAPIER, { ColliderDesc, RigidBodyType } from "@dimforge/rapier3d-compat";
 import { addBodyKeyUidRelation, npcToBodyKey, parsePhysicsBodyKey } from "../service/physics-bijection";
-import { createGmRayCastSystems } from "./ray-cast";
-import { type WorkerStoreState, workerStore } from "./worker.store";
+import { type WorkerStoreState, workerStore } from "./physics.store";
 
 export const wallHeight: typeof import("../const")["wallHeight"] = 1.7;
 const geomorphGridMeters: typeof import("../const")["geomorphGridMeters"] = 1.5;
@@ -229,8 +228,6 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
   createDoorSensors(msg.doors);
 
   restoreNpcs(msg.npcs);
-
-  createGmRayCastSystems(msg.rayCast);
 
   restoreRuntimeColliders(msg.runtimeColliderDefs);
 

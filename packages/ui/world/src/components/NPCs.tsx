@@ -60,7 +60,7 @@ import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
 import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
-import type { PhysicsBijection } from "../worker/worker.store";
+import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
 import { NpcAnimation } from "./npc-animation";
@@ -541,7 +541,7 @@ export default function NPCs() {
 
         // Float32Array caused issues: decode failed
         const positions64 = new Float64Array(positions);
-        w.worker.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
+        w.physics.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
         positions.length = 0;
 
         for (const event of state.postCrowdTickEvents) w.events.next(event);
@@ -577,7 +577,7 @@ export default function NPCs() {
           // - re-adding changes the npc.agentId ATOW
           w.e.removeAgents([npc], { keepPhysics: true });
         } else {
-          w.worker.worker.postMessage({
+          w.physics.worker.postMessage({
             type: "add-physics-npcs",
             npcs: [{ npcKey: npc.key, position: helper.groundPointToVector3(groundPoint) }],
           } satisfies WW.MsgToWorker);
@@ -1037,7 +1037,7 @@ function getAgentParams(): crowd.AgentParams {
     collisionQueryRange: 0.5 + 0.2,
     // collisionQueryRange: 1,
     // walls are looked for less far than npcs: the further out they are found, the earlier
-    // avoidance slows a walker for a goal beside one — see `docs/NAVCAT-PATCH.md`
+    // avoidance slows a walker for a goal beside one — see `docs/navcat-patch.md`
     boundaryQueryRange: 0.4,
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,

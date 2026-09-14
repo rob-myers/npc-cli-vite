@@ -1,6 +1,5 @@
 import type RAPIER from "@dimforge/rapier3d-compat";
 import type { WithImmer } from "@npc-cli/ui-sdk/with-immer-type.d.ts";
-import type { System } from "detect-collisions";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -9,9 +8,6 @@ export const workerStore: UseBoundStore<WithImmer<StoreApi<WorkerStoreState>>> =
   immer(
     devtools(
       (_set, _get): WorkerStoreState => ({
-        gmGeoms: [],
-        gmRayCast: {} as any,
-
         world: undefined as any,
         eventQueue: undefined as any,
         bodyHandleToKey: new Map(),
@@ -24,12 +20,12 @@ export const workerStore: UseBoundStore<WithImmer<StoreApi<WorkerStoreState>>> =
         agentHeight: 1.5,
         agentRadius: 0.2,
       }),
-      { name: "worker.store", anonymousActionType: "worker.store" },
+      { name: "physics.store", anonymousActionType: "physics.store" },
     ),
   ),
 );
 
-export type WorkerStoreState = { gmGeoms: WW.GmGeomForNav[] } & PhysicsState &
+export type WorkerStoreState = PhysicsState &
   PhysicsBijection & {
     fps: number;
     agentHeight: number;
@@ -42,7 +38,6 @@ type PhysicsState = {
   bodyHandleToKey: Map<number, WW.PhysicsBodyKey>;
   bodyKeyToCollider: Map<WW.PhysicsBodyKey, RAPIER.Collider>;
   bodyKeyToBody: Map<WW.PhysicsBodyKey, RAPIER.RigidBody>;
-  gmRayCast: { [gmKey in Geomorph.StarShipGeomorphKey]: System };
 };
 
 export type PhysicsBijection = {
