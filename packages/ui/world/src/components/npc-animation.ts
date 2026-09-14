@@ -41,6 +41,10 @@ export class NpcAnimation {
   nearestAccum = 0;
 
   idleClip = emptyAnimationClip;
+  /** Whether a breathing npc has leant away from a walker — see `leanAway` */
+  leaning = false;
+  /** World time they leant, held for `leanAwayMin` */
+  leanSince = 0;
   mixer = emptyMixer;
   moveClip = emptyAnimationClip;
 
@@ -139,6 +143,19 @@ export class NpcAnimation {
     this.playIdleClip(0.15);
   }
 
+  /** A breathing npc leans back (`idle-avoid`) whilst a walker passes, and slumps back after */
+  leanAway(leaning: boolean) {
+    const { clips } = this.npc;
+    if (leaning === this.leaning || this.idleClip !== clips.breathe) return;
+    const now = this.w.timer.getElapsedTime();
+    if (leaning === false && now - this.leanSince < npcConfig.time.leanAwayMin) return;
+    this.leaning = leaning;
+    this.leanSince = now;
+    const [from, to] = leaning ? [clips.breathe, clips["idle-avoid"]] : [clips["idle-avoid"], clips.breathe];
+    const toAction = this.mixer.clipAction(to).reset().play();
+    this.mixer.clipAction(from).crossFadeTo(toAction, leanFadeSecs, false);
+  }
+
   playIdleClip(duration = 0.1, idleClip = this.idleClip, force = false) {
     // fading all clips prevents e.g. sit from continuing
     for (const clip of Object.values(this.npc.clips)) {
@@ -200,6 +217,7 @@ export class NpcAnimation {
       throw Error(`cannot move without agent: ${this.npc.key}`);
     }
 
+    this.leaning = false; // the walk fades everything but itself out — see below
     // whilst walking, doors should block npcs
     agent.queryFilter = this.npc.queryFilter;
     agent.separationWeight = walkSeparationWeight;
@@ -354,3 +372,6 @@ function labelYShiftForClip(clipName: string): number {
   if (clipName === "lie") return 0.75;
   return 2.2;
 }
+
+/** How long a breathing npc takes to lean away, or slump back */
+const leanFadeSecs = 0.4;
