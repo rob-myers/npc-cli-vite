@@ -62,7 +62,7 @@ import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
-import { Npc, type NpcInit, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
+import { Npc, type NpcInit } from "./npc";
 import { NpcAnimation } from "./npc-animation";
 import { WorldContext } from "./world-context";
 
@@ -462,7 +462,7 @@ export default function NPCs() {
           }
 
           npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
-          npc.anim.startMoving(groundPoint, result, arrive);
+          npc.anim.startMoving({ groundPoint, result }, arrive);
 
           state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
 
@@ -487,9 +487,7 @@ export default function NPCs() {
         if (testLean === true) state.nextLeanTest = worldSeconds + npcConfig.time.leanAwayEvery;
 
         for (const npc of Object.values(state.npc)) {
-          npc.anim.mixer.update(delta);
-          npc.anim.fadeTick(delta);
-          npc.anim.lookTick(delta);
+          npc.anim.tick(delta);
 
           if (npc.agentId === null) {
             continue;
@@ -515,26 +513,24 @@ export default function NPCs() {
               agent.maxAcceleration = idleSeparatingMaxAcceleration;
             }
             if (testLean === true) npc.anim.leanAway(nearestWalker(agent, state.byAgentId));
-            npc.anim.leanTick(delta);
             continue;
           }
 
-          npc.anim.syncAnimation(Math.max(speed, 0.5));
-
-          // turning as fast as they walk: a stuck npc's creeping velocity swings about, and
-          // turning to face each swing looks like a jerk
-          if (speed > 0.05) {
-            npc.anim.rotateTowards(vx, vz, delta * Math.min(1, speed / walkAgentMaxSpeed));
-          }
+          // the gait's pace and their facing, for the next tick: turning as fast as they walk,
+          // and not at all when creeping — a stuck npc's velocity swings about, and turning to
+          // face each swing looks like a jerk
+          npc.anim.speed = speed;
+          npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / walkAgentMaxSpeed) : 0;
+          if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + Math.PI;
 
           const [tx, , tz] = agent.targetPosition;
-          const stuck = npc.anim.updateStuck(delta, worldSeconds, Math.hypot(tx - npc.position.x, tz - npc.position.z));
+          const stuck = updateStuck(npc, delta, worldSeconds, Math.hypot(tx - npc.position.x, tz - npc.position.z));
 
           // circling is stuck when another npc stands on the target — see `docs/npc-debug-notes.md`
           if (stuck === "still" || (stuck === "circling" && isTargetOccupied(agent, state.crowd))) {
             npc.rejectAll(new Error("stuck"));
           } else if (
-            npc.anim.moveClipFadedIn() === true &&
+            moveClipFadedIn(npc) === true &&
             crowdApi.isAgentAtTarget(state.crowd, npc.agentId, getArriveDistance(npc)) === true
           ) {
             // arrived
@@ -649,16 +645,12 @@ export default function NPCs() {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(opts.npcKey, null);
         }
 
@@ -712,13 +704,13 @@ export default function NPCs() {
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
-            npc.resolve.spawn = resolve;
+            npc.resolve.spawn = resolve; // the mount shows the idle — see `groupRef`
             state.update();
           });
-          npc.anim.playIdleClip(0); // after mount
         } else {
           if (as) npc.setSkin(as);
-          if (prevIdleClip !== npc.anim.idleClip) npc.anim.playIdleClip(0); // before update
+          if (prevIdleClip !== npc.anim.idleClip)
+            npc.anim.setPose(npc.anim.idleClip.name as AnimationClipKey, { fade: 0 });
           w.view.forceUpdate(0.01);
         }
 
@@ -1006,6 +998,44 @@ function getArriveDistance(npc: Npc) {
   const { arrive, glide, arriveMin, arriveFraction } = npcConfig.dist;
   const base = (npc.anim.arrive ? arrive : glide)[npc.running ? "run" : "walk"];
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
+}
+
+/**
+ * `"still"` once barely moving for `stuckDuration`; `"circling"` once close to the target yet no
+ * nearer for as long — given once per such spell, so the caller tests why only then
+ */
+function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: number): false | "still" | "circling" {
+  const { position, last } = npc;
+  const { stuckEpsilon, circling } = npcConfig.dist;
+  const { stuckGrace, stuckDuration } = npcConfig.time;
+
+  // grace whilst accelerating away from standstill
+  if (worldSeconds - last.moveTime < stuckGrace) {
+    return false;
+  }
+
+  const dist = Math.hypot(position.x - last.point.x, position.z - last.point.y);
+  last.stuckAccum += dist < stuckEpsilon ? delta : 0;
+  last.point.x = position.x;
+  last.point.y = position.z;
+  if (last.stuckAccum > stuckDuration) return "still";
+
+  if (targetDist <= circling) {
+    if (last.nearest - targetDist > stuckEpsilon) {
+      last.nearest = targetDist;
+      last.nearestAccum = 0;
+    } else if ((last.nearestAccum += delta) > stuckDuration) {
+      last.nearestAccum = 0;
+      return "circling";
+    }
+  }
+
+  return false;
+}
+
+/** Has the move clip finished fading in? Arriving before then would cut it off, looking jerky */
+function moveClipFadedIn(npc: Npc) {
+  return (npc.anim.mixer.existingAction(npc.anim.moveClip)?.getEffectiveWeight() ?? 0) >= 0.99;
 }
 
 /** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */

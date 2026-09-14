@@ -734,8 +734,8 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
                     mirror.prevMoving = false; // they respawned idle — a moving sample retriggers
                     mirror.resume = true; // ease onto the stream — the server walked whilst we faded
                   }
-                  // the respawn's `playIdleClip` stomps any walk clip without lowering this flag —
-                  // make it truthful, so `startMovingMirror` doesn't think the walk is still up
+                  // the respawn's `setPose` stomps any walk clip without lowering this flag —
+                  // make it truthful, so `startMoving` doesn't think the walk is still up
                   existing.anim.moving = false;
                 }
               }
@@ -749,7 +749,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             const idleClip = w.npc.clips[netNpc.idleClipKey];
             if (idleClip !== undefined && npc.anim.idleClip !== idleClip) {
               npc.anim.idleClip = idleClip;
-              npc.anim.playIdleClip(0);
+              npc.anim.setPose(netNpc.idleClipKey, { fade: 0 });
             }
           } catch (e) {
             warn(`net: could not mirror npc ${netNpc.key}`, e);
@@ -818,13 +818,15 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           // crossfade lands when the visual walk ends, not an interp-delay early with a snap
           if (a.moving !== mirror.prevMoving) {
             mirror.prevMoving = a.moving;
-            if (a.moving === true) npc.anim.startMovingMirror(a.run);
-            else npc.anim.startIdle();
+            if (a.moving === true) {
+              npc.anim.moveClip = a.run ? w.npc.clips.run : w.npc.clips.walk;
+              npc.anim.startMoving(null);
+            } else {
+              npc.anim.startIdle();
+            }
           }
-          if (a.moving === true) {
-            // interpolated, so the walk cycle slows with the streamed deceleration
-            npc.anim.syncAnimation(Math.max(a.speed + (b.speed - a.speed) * alpha, 0.5));
-          }
+          // interpolated, so the walk cycle slows with the streamed deceleration
+          npc.anim.speed = a.speed + (b.speed - a.speed) * alpha;
         }
       },
       syncPause(paused) {
