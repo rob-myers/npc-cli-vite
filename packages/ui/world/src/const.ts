@@ -377,15 +377,15 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
-  breathe: { shuffle: 0.15 },
+  breathe: { shuffle: 0.15, "idle-avoid": 0.4 },
   idle: { shuffle: 0.15 },
-  "idle-avoid": {},
+  "idle-avoid": { breathe: 0.4 },
   lie: {},
-  run: {},
+  run: { shuffle: 0.15 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
-  walk: {},
+  walk: { shuffle: 0.15 },
 };
 
 export const defaultSkinKey = "medic-0";
