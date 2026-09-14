@@ -161,7 +161,7 @@ https://jasonjgardner.github.io/blockbench-mcp-plugin/mcp.js
 
 VSCode Claude Code
 - `/mcp`
-- possibly reconnect`
+- possibly reconnect
 
 
 Can select model face
