@@ -330,6 +330,7 @@
   - ✅ try avoid intersect npc arms
     - ✅ idle-avoid leans back (fable + mcp)
     - every 0.5s if idle has nearby walker then
+    - leanAway also turns towards (clamped ±30deg)
   - maybe sometimes turn initially when move
 
 # FUTURE

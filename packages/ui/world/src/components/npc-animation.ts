@@ -41,10 +41,11 @@ export class NpcAnimation {
   nearestAccum = 0;
 
   idleClip = emptyAnimationClip;
-  /** Whether a breathing npc has leant away from a walker — see `leanAway` */
-  leaning = false;
-  /** World time they leant, held for `leanAwayMin` */
-  leanSince = 0;
+  /**
+   * A breathing npc leant away from a walker — see `leanAway`: whom, the nearest at the last
+   * sample; since when, held for `leanAwayMin`; and their facing as it began, turned about
+   */
+  leanState = { active: false, from: null as null | Npc, since: 0, baseY: 0 };
   mixer = emptyMixer;
   moveClip = emptyAnimationClip;
 
@@ -143,17 +144,32 @@ export class NpcAnimation {
     this.playIdleClip(0.15);
   }
 
-  /** A breathing npc leans back (`idle-avoid`) whilst a walker passes, and slumps back after */
-  leanAway(leaning: boolean) {
-    const { clips } = this.npc;
-    if (leaning === this.leaning || this.idleClip !== clips.breathe) return;
+  /** A breathing npc leans back (`idle-avoid`) whilst `walker` passes, and slumps back after none */
+  leanAway(walker: null | Npc) {
+    const s = this.leanState;
+    const { clips, rotation } = this.npc;
+    if (this.idleClip !== clips.breathe) return;
+    s.from = walker ?? s.from; // kept through the hold
     const now = this.w.timer.getElapsedTime();
-    if (leaning === false && now - this.leanSince < npcConfig.time.leanAwayMin) return;
-    this.leaning = leaning;
-    this.leanSince = now;
-    const [from, to] = leaning ? [clips.breathe, clips["idle-avoid"]] : [clips["idle-avoid"], clips.breathe];
-    const toAction = this.mixer.clipAction(to).reset().play();
-    this.mixer.clipAction(from).crossFadeTo(toAction, leanFadeSecs, false);
+    if (walker !== null) {
+      if (s.active === true) return;
+      Object.assign(s, { active: true, since: now, baseY: rotation.y });
+    } else {
+      if (s.active === false || now - s.since < npcConfig.time.leanAwayMin) return;
+      s.active = false;
+    }
+    const [from, to] = s.active ? [clips.breathe, clips["idle-avoid"]] : [clips["idle-avoid"], clips.breathe];
+    this.mixer.clipAction(from).crossFadeTo(this.mixer.clipAction(to).reset().play(), leanFadeSecs, false);
+  }
+
+  /** Whilst leant away, they turn to the walker — no further than `leanTurnMax` from where they faced */
+  leanTick(delta: number) {
+    const s = this.leanState;
+    if (s.active === false || s.from === null) return;
+    const { position } = this.npc;
+    const toWalker = Math.atan2(s.from.position.x - position.x, s.from.position.z - position.z) + Math.PI;
+    const turn = THREE.MathUtils.clamp(deltaAngle(s.baseY, toWalker), -leanTurnMax, leanTurnMax);
+    this.rotateTo(s.baseY + turn, delta * leanTurnScale);
   }
 
   playIdleClip(duration = 0.1, idleClip = this.idleClip, force = false) {
@@ -171,7 +187,10 @@ export class NpcAnimation {
   }
 
   rotateTowards(vx: number, vz: number, delta: number) {
-    const target = Math.atan2(vx, vz) + Math.PI;
+    this.rotateTo(Math.atan2(vx, vz) + Math.PI, delta);
+  }
+
+  rotateTo(target: number, delta: number) {
     const diff = deltaAngle(this.npc.rotation.y, target);
     this.npc.rotation.y += diff * (1 - Math.exp(-5 * delta));
   }
@@ -217,7 +236,7 @@ export class NpcAnimation {
       throw Error(`cannot move without agent: ${this.npc.key}`);
     }
 
-    this.leaning = false; // the walk fades everything but itself out — see below
+    Object.assign(this.leanState, { active: false, from: null }); // the walk fades all else out — see below
     // whilst walking, doors should block npcs
     agent.queryFilter = this.npc.queryFilter;
     agent.separationWeight = walkSeparationWeight;
@@ -375,3 +394,7 @@ function labelYShiftForClip(clipName: string): number {
 
 /** How long a breathing npc takes to lean away, or slump back */
 const leanFadeSecs = 0.4;
+/** How fast they turn to the walker, against a walker's own turn of `1` */
+const leanTurnScale = 0.5;
+/** …and how far, either way */
+const leanTurnMax = (30 * Math.PI) / 180;
