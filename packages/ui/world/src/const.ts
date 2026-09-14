@@ -283,8 +283,9 @@ export const idleAgentMaxSpeed = 0.5;
 export const idleSeparatingMaxSpeed = 0.005;
 export const walkAgentMaxSpeed = 1.5;
 export const runAgentMaxSpeed = 2.5;
-/** Keeps npc away from parked npc at choke point */
-export const walkSeparationWeight = 2.5;
+/** Too large breaks arrival near other npc */
+export const walkSeparationWeight = 0.5;
+/** Less pushable */
 export const idleSeparationWeight = 0.1; // Less pushable
 
 /**
