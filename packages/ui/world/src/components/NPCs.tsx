@@ -5,7 +5,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   ANY_QUERY_FILTER,
   createFindNearestPolyResult,
@@ -62,7 +62,7 @@ import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
-import { Npc, type NpcInit, npcBubbleHeightForClip, npcLabelYShiftForClip } from "./npc";
+import { Npc, type NpcInit } from "./npc";
 import { NpcAnimation } from "./npc-animation";
 import { WorldContext } from "./world-context";
 
@@ -81,7 +81,6 @@ export default function NPCs() {
 
       byAgentId: {},
       byPickId: {},
-      nextLeanTest: 0,
       nextPickId: 0,
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
@@ -462,7 +461,7 @@ export default function NPCs() {
           }
 
           npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
-          npc.anim.startMoving(groundPoint, result, arrive);
+          npc.anim.startMoving({ groundPoint, result }, arrive);
 
           state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
 
@@ -482,14 +481,9 @@ export default function NPCs() {
         if (w.client === false) crowdApi.update(state.crowd, w.nav.navMesh, delta);
         const { positions } = state.physics;
         const worldSeconds = w.timer.getElapsedTime();
-        // sampled, so a walker brushing past does not toggle them every tick
-        const testLean = worldSeconds >= state.nextLeanTest;
-        if (testLean === true) state.nextLeanTest = worldSeconds + npcConfig.time.leanAwayEvery;
 
         for (const npc of Object.values(state.npc)) {
-          npc.anim.mixer.update(delta);
-          npc.anim.fadeTick(delta);
-          npc.anim.lookTick(delta);
+          npc.anim.tick(delta);
 
           if (npc.agentId === null) {
             continue;
@@ -514,27 +508,24 @@ export default function NPCs() {
               // cannot immediately else walk -> idle slides
               agent.maxAcceleration = idleSeparatingMaxAcceleration;
             }
-            if (testLean === true) npc.anim.leanAway(nearestWalker(agent, state.byAgentId));
-            npc.anim.leanTick(delta);
             continue;
           }
 
-          npc.anim.syncAnimation(Math.max(speed, 0.5));
-
-          // turning as fast as they walk: a stuck npc's creeping velocity swings about, and
-          // turning to face each swing looks like a jerk
-          if (speed > 0.05) {
-            npc.anim.rotateTowards(vx, vz, delta * Math.min(1, speed / walkAgentMaxSpeed));
-          }
+          // the gait's pace and their facing, for the next tick: turning as fast as they walk,
+          // and not at all when creeping — a stuck npc's velocity swings about, and turning to
+          // face each swing looks like a jerk
+          npc.anim.speed = speed;
+          npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / walkAgentMaxSpeed) : 0;
+          if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + Math.PI;
 
           const [tx, , tz] = agent.targetPosition;
-          const stuck = npc.anim.updateStuck(delta, worldSeconds, Math.hypot(tx - npc.position.x, tz - npc.position.z));
+          const stuck = updateStuck(npc, delta, worldSeconds, Math.hypot(tx - npc.position.x, tz - npc.position.z));
 
           // circling is stuck when another npc stands on the target — see `docs/npc-debug-notes.md`
           if (stuck === "still" || (stuck === "circling" && isTargetOccupied(agent, state.crowd))) {
             npc.rejectAll(new Error("stuck"));
           } else if (
-            npc.anim.moveClipFadedIn() === true &&
+            moveClipFadedIn(npc) === true &&
             crowdApi.isAgentAtTarget(state.crowd, npc.agentId, getArriveDistance(npc)) === true
           ) {
             // arrived
@@ -649,16 +640,12 @@ export default function NPCs() {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
-          npc.bubbleOffset.y = npcBubbleHeightForClip(npc.anim.idleClip.name);
-          npc.setLabelYShift(npcLabelYShiftForClip(npc.anim.idleClip.name));
           w.e.setNpcDo(opts.npcKey, null);
         }
 
@@ -672,6 +659,7 @@ export default function NPCs() {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
+        mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
         Object.assign(npc, mat);
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
@@ -712,13 +700,13 @@ export default function NPCs() {
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
-            npc.resolve.spawn = resolve;
+            npc.resolve.spawn = resolve; // the mount shows the idle — see `groupRef`
             state.update();
           });
-          npc.anim.playIdleClip(0); // after mount
         } else {
           if (as) npc.setSkin(as);
-          if (prevIdleClip !== npc.anim.idleClip) npc.anim.playIdleClip(0); // before update
+          if (prevIdleClip !== npc.anim.idleClip)
+            npc.anim.setPose(npc.anim.idleClip.name as AnimationClipKey, { fade: 0 });
           w.view.forceUpdate(0.01);
         }
 
@@ -789,7 +777,8 @@ export default function NPCs() {
 
   // the svg overlays — a skin at 256px with its effects, over the sheet's 64px cell — come AFTER
   // the first frame: fetched and rasterised off the critical path, then drawn over the sheet's
-  // cells below. Faster hot-reloads too, than baking them into the spritesheet
+  // cells below. Faster hot-reloads too, than baking them into the spritesheet — and across one
+  // the previous overlays are kept, so the redraw never shows the bare cells whilst they refetch
   const skinOverlays =
     useQuery({
       queryKey: ["skin-overlays", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
@@ -806,24 +795,29 @@ export default function NPCs() {
         ) as Record<string, null | HTMLCanvasElement>;
       },
       enabled: queryData !== null,
+      placeholderData: keepPreviousData,
       gcTime: 0,
     }).data ?? null;
+
+  useMemo(() => {
+    // draw the skins into THIS world's texture array: each cell its overlay, else the sheet's
+    if (!queryData) return;
+    const { width: tw, height: th } = w.texSkin.opts;
+    const { ct } = w.texSkin;
+    ct.imageSmoothingEnabled = false;
+    Object.values(w.sheets.skin).forEach(({ key, sheetId, rect }, i) => {
+      ct.clearRect(0, 0, tw, th);
+      const svgImage = skinOverlays?.[key];
+      if (svgImage) ct.drawImage(svgImage, 0, 0, tw, th);
+      else ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+      w.texSkin.updateIndex(i);
+    });
+  }, [queryData, skinOverlays]);
 
   useMemo(() => {
     state.configureCrowd();
 
     if (!queryData) return;
-
-    // draw the skins into THIS world's texture array
-    const skinEntries = Object.values(w.sheets.skin);
-    const { width: tw, height: th } = w.texSkin.opts;
-    const { ct } = w.texSkin;
-    ct.imageSmoothingEnabled = false;
-    skinEntries.forEach(({ sheetId, rect }, i) => {
-      ct.clearRect(0, 0, tw, th);
-      ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
-      w.texSkin.updateIndex(i);
-    });
 
     state.gltf = queryData.gltf;
 
@@ -848,25 +842,12 @@ export default function NPCs() {
       }
     }
 
-    state.skin = { entries: skinEntries, manifest: queryData.skinManifest };
+    state.skin = { entries: Object.values(w.sheets.skin), manifest: queryData.skinManifest };
     w.setNextPending({ gltf: false, skins: false });
   }, [queryData]);
 
-  useEffect(() => {
-    // the overlays land: redraw their skins over the sheet's cells
-    if (queryData === null || skinOverlays === null) return;
-    const { width: tw, height: th } = w.texSkin.opts;
-    const { ct } = w.texSkin;
-    ct.imageSmoothingEnabled = false;
-    Object.values(w.sheets.skin).forEach(({ key }, i) => {
-      const svgImage = skinOverlays[key];
-      if (!svgImage) return;
-      ct.clearRect(0, 0, tw, th);
-      ct.drawImage(svgImage, 0, 0, tw, th);
-      w.texSkin.updateIndex(i);
-    });
-    w.view.forceUpdate();
-  }, [queryData, skinOverlays]);
+  // the overlays land: a frame, to show them
+  useEffect(() => void (skinOverlays !== null && w.view.forceUpdate()), [skinOverlays]);
 
   w.r3fStore = useReactThreeFiberStore();
 
@@ -894,8 +875,6 @@ export type State = {
 
   byAgentId: Record<string, Npc>;
   byPickId: Record<number, Npc>;
-  /** World time the idle npcs next look for walkers to lean away from */
-  nextLeanTest: number;
   nextPickId: number;
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
@@ -1008,6 +987,44 @@ function getArriveDistance(npc: Npc) {
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
 }
 
+/**
+ * `"still"` once barely moving for `stuckDuration`; `"circling"` once close to the target yet no
+ * nearer for as long — given once per such spell, so the caller tests why only then
+ */
+function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: number): false | "still" | "circling" {
+  const { position, last } = npc;
+  const { stuckEpsilon, circling } = npcConfig.dist;
+  const { stuckGrace, stuckDuration } = npcConfig.time;
+
+  // grace whilst accelerating away from standstill
+  if (worldSeconds - last.moveTime < stuckGrace) {
+    return false;
+  }
+
+  const dist = Math.hypot(position.x - last.point.x, position.z - last.point.y);
+  last.stuckAccum += dist < stuckEpsilon ? delta : 0;
+  last.point.x = position.x;
+  last.point.y = position.z;
+  if (last.stuckAccum > stuckDuration) return "still";
+
+  if (targetDist <= circling) {
+    if (last.nearest - targetDist > stuckEpsilon) {
+      last.nearest = targetDist;
+      last.nearestAccum = 0;
+    } else if ((last.nearestAccum += delta) > stuckDuration) {
+      last.nearestAccum = 0;
+      return "circling";
+    }
+  }
+
+  return false;
+}
+
+/** Has the move clip finished fading in? Arriving before then would cut it off, looking jerky */
+function moveClipFadedIn(npc: Npc) {
+  return (npc.anim.mixer.existingAction(npc.anim.moveClip)?.getEffectiveWeight() ?? 0) >= 0.99;
+}
+
 /** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */
 function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
   const [tx, , tz] = agent.targetPosition;
@@ -1026,19 +1043,6 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
  * wavers. Avoidance plans round the neighbour anyway
  */
 const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
-
-const leanAwayDistSq = npcConfig.dist.leanAway ** 2;
-
-/** The nearest moving npc within `leanAway` — `neis` are within `collisionQueryRange`, `dist` squared */
-function nearestWalker(agent: crowd.Agent, byAgentId: Record<string, Npc>) {
-  let nearest: null | Npc = null;
-  let nearestDist = leanAwayDistSq;
-  for (const { agentId, dist } of agent.neis) {
-    const other = byAgentId[agentId];
-    if (dist < nearestDist && other?.isMoving() === true) [nearest, nearestDist] = [other, dist];
-  }
-  return nearest;
-}
 
 /** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
 /** Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2` */

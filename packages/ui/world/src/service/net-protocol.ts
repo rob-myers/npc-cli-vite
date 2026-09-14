@@ -58,7 +58,7 @@ export type NetTransform = {
   z: number;
   /** `npc.rotation.y` */
   rotY: number;
-  /** Horizontal speed (m/s) — drives `syncAnimation` */
+  /** Horizontal speed (m/s) — paces the gait, see `NpcAnimation.speed` */
   speed: number;
   moving: boolean;
   /** Running rather than walking — only meaningful whilst `moving` */

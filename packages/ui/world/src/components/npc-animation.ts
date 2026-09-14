@@ -5,11 +5,11 @@ import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
 import {
   defaultFadeSecs,
+  defaultIdleAnimationClipKey,
   fadeSecs,
   idleAgentMaxSpeed,
   idleMaxAcceleration,
   idleSeparationWeight,
-  npcConfig,
   npcScale,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
@@ -23,31 +23,39 @@ import type { Npc } from "./npc";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 
+/**
+ * What an npc's skeleton is doing. One pose at a time, changed only by `setPose`; one `tick`;
+ * and the transitions the world asks for. Inputs that vary per frame — `speed`, `face` — are
+ * fields, written by whoever knows them (`onTick`, the net mirror, a jsh demo) and applied by
+ * the next `tick`
+ */
 export class NpcAnimation {
   npc: Npc;
+  mixer = emptyMixer;
 
+  /** The clip on show — a KEY, so it survives a hot-reload's new clip objects */
+  pose: AnimationClipKey = defaultIdleAnimationClipKey;
+  /** What `startIdle` returns to, and which gait `startMoving` shows */
+  idleClip = emptyAnimationClip;
+  moveClip = emptyAnimationClip;
+  /** true iff moving via agent in navmesh */
+  moving = false;
   /**
    * Arrive is `true` iff when npc moves it should slow down before final destination.
    * It can be set via `npc.move` or alternatively via `npc.preventArrive` during move.
    */
   arrive = true;
-  fadeState = { delta: 0, target: 1 };
-  lookState = { active: false, startAngle: 0, totalDiff: 0, duration: 0, elapsed: 0, longLook: false };
-  /** true iff moving via agent in navmesh */
-  moving = false;
-  stuckAccum = 0;
-  /** Nearest the target has been this move, and how long since it got nearer */
-  nearest = Infinity;
-  nearestAccum = 0;
+  /** How fast they are going, which paces the gait */
+  speed = 0;
 
-  idleClip = emptyAnimationClip;
-  /**
-   * A breathing npc leant away from a walker — see `leanAway`: whom, the nearest at the last
-   * sample; since when, held for `leanAwayMin`; and their facing as it began, turned about
-   */
-  leanState = { active: false, from: null as null | Npc, since: 0, baseY: 0 };
-  mixer = emptyMixer;
-  moveClip = emptyAnimationClip;
+  /** The colour fade of `Npc.fadeIn`/`fadeOut`: `delta` per second towards `target`, `0` at rest */
+  fadeState = { delta: 0, target: 1 };
+  /** Facing: eased to `target` at `rate` (`0` holds) — unless a `timed` look is under way */
+  face = {
+    target: 0,
+    rate: 0,
+    timed: null as null | { start: number; diff: number; duration: number; elapsed: number; longLook: boolean },
+  };
 
   constructor(npc: Npc) {
     this.npc = npc;
@@ -57,142 +65,111 @@ export class NpcAnimation {
     return this.npc.w;
   }
 
-  fadeTick(deltaSecs: number) {
-    if (this.fadeState.delta === 0) {
-      return;
+  /** The ONLY way the clip on show changes: everything else fades out as `next` fades in */
+  setPose(next: AnimationClipKey, { fade = fadeSecs[this.pose]?.[next] ?? defaultFadeSecs, force = false } = {}) {
+    if (next === this.pose && force === false) return;
+    const { clips } = this.npc;
+    for (const clip of Object.values(clips)) {
+      if (clip !== clips[next]) this.mixer.existingAction(clip)?.fadeOut(fade);
     }
+    this.mixer.clipAction(clips[next]).reset().fadeIn(fade).play();
+    if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
+    this.pose = next;
+    this.npc.setBubbleHeight(bubbleHeightForClip(next));
+    this.npc.setLabelYShift(labelYShiftForClip(next));
+  }
 
-    const { delta, target } = this.fadeState;
+  /** The ONLY per-frame work: the mixer, the colour fade, the gait's pace, and the facing */
+  tick(delta: number) {
+    this.mixer.update(delta);
 
-    if (delta < 0) {
-      if (this.npc.colorScale.value > target) {
-        const next = Math.max(target, this.npc.colorScale.value + 0.5 * delta * deltaSecs);
-        this.npc.labelVisible.value = next >= 1 ? 1 : 0;
-        this.npc.colorScale.value = next;
-      } else {
-        this.fadeState.delta = 0;
-        this.npc.material.needsUpdate = true;
-        this.npc.resolve.fade("fade");
-      }
-    } else {
-      const next = Math.min(target, this.npc.colorScale.value + 0.5 * delta * deltaSecs);
+    const { fadeState: f, face } = this;
+    const { colorScale, rotation } = this.npc;
+
+    if (f.delta !== 0) {
+      const step = colorScale.value + 0.5 * f.delta * delta;
+      const next = f.delta < 0 ? Math.max(f.target, step) : Math.min(f.target, step);
       this.npc.labelVisible.value = next >= 1 ? 1 : 0;
-      this.npc.colorScale.value = next;
-
-      if (next >= target) {
-        this.fadeState.delta = 0;
+      colorScale.value = next;
+      if (next === f.target) {
+        f.delta = 0;
         this.npc.material.needsUpdate = true;
         this.npc.resolve.fade("fade");
       }
     }
-  }
 
-  lookTick(delta: number) {
-    const s = this.lookState;
-    if (!s.active) {
-      return;
+    if (this.moving === true) {
+      const gait = this.moveClip.name === "run" ? 0.5 : 1;
+      this.mixer.clipAction(this.moveClip).timeScale = gait * Math.max(0.25 / npcScale, this.speed, 0.5);
     }
 
-    s.elapsed += delta;
-
-    // begin crossfading back early, so the shuffle has become idle just as the turn lands.
-    // Clamped, else a turn shorter than the fade would start it before it had begun
-    if (s.longLook === true) {
-      const idleFade = Math.min(lookIdleFadeMs / 1000, s.duration);
-      if (s.elapsed >= s.duration - idleFade) {
-        s.longLook = false;
-        this.playIdleClip(idleFade);
+    if (face.timed !== null) {
+      const t = face.timed;
+      t.elapsed += delta;
+      // begin crossfading back early, so the shuffle has become idle just as the turn lands.
+      // Clamped, else a turn shorter than the fade would start it before it had begun
+      if (t.longLook === true) {
+        const idleFade = Math.min(lookIdleFadeMs / 1000, t.duration);
+        if (t.elapsed >= t.duration - idleFade) {
+          t.longLook = false;
+          this.setPose(keyOf(this.idleClip), { fade: idleFade });
+        }
       }
-    }
-
-    if (s.elapsed >= s.duration) {
-      this.npc.rotation.y = s.startAngle + s.totalDiff;
-      s.active = false;
-      this.npc.resolve.look("lookAt");
-    } else {
-      // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
-      const t = s.elapsed / s.duration;
-      this.npc.rotation.y = s.startAngle + s.totalDiff * (2 * t - t * t);
+      if (t.elapsed >= t.duration) {
+        rotation.y = t.start + t.diff;
+        face.timed = null;
+        face.rate = 0;
+        this.npc.resolve.look("lookAt");
+      } else {
+        // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
+        const p = t.elapsed / t.duration;
+        rotation.y = t.start + t.diff * (2 * p - p * p);
+      }
+    } else if (face.rate > 0) {
+      rotation.y += deltaAngle(rotation.y, face.target) * (1 - Math.exp(-5 * delta * face.rate));
     }
   }
 
-  /** The turn-in-place animation of a `longLook`, whose `lookState` must already be set */
-  startLookShuffle() {
-    const s = this.lookState;
-    this.npc.anim.moveClip = this.npc.clips.shuffle;
-    // every other clip, not merely idle: a walk interrupted by this look — moving onto a
-    // doable, say — otherwise keeps its full weight and strides underneath the shuffle
-    for (const clip of Object.values(this.npc.clips)) {
-      if (clip === this.moveClip) continue;
-      this.mixer.existingAction(clip)?.fadeOut(0.15);
-    }
-    this.mixer.clipAction(this.moveClip).reset().fadeIn(0.15).play();
-    // the feet keep up with the turn: a `minMs` slow enough to drag it out shuffles gently,
-    // where the default rate still gives the 2 this always used
-    const rate = s.duration > 0 ? Math.abs(s.totalDiff) / s.duration : lookShuffleRate;
-    this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
-  }
+  /**
+   * Walk or run to `target` — `moveClip` says which — or, given `null`, merely show it: a mirror
+   * npc's movement arrives over the network (see `use-world-net`)
+   */
+  startMoving(target: null | { groundPoint: JshCli.GroundPoint; result: FindNearestPolyResult }, arrive = true) {
+    if (target !== null) {
+      const agent = this.npc.agent;
+      if (!agent) {
+        throw Error(`cannot move without agent: ${this.npc.key}`);
+      }
+      // whilst walking, doors should block npcs
+      agent.queryFilter = this.npc.queryFilter;
+      agent.separationWeight = walkSeparationWeight;
+      agent.maxAcceleration = walkMaxAcceleration;
+      agent.maxSpeed = this.moveClip.name === "run" ? runAgentMaxSpeed : walkAgentMaxSpeed;
 
-  /** Undoes `startLookShuffle`, and only that — a walk or run is left alone */
-  stopLookShuffle() {
-    this.mixer.timeScale = 1;
+      crowdApi.requestMoveTarget(
+        this.w.npc.crowd,
+        this.npc.agentId as string,
+        target.result.nodeRef,
+        helper.groundPointToTuple(target.groundPoint),
+      );
 
-    if (this.moveClip !== this.npc.clips.shuffle) {
-      return;
-    }
-    this.moveClip = this.npc.clips.walk;
-    this.playIdleClip(0.15);
-  }
-
-  /** A breathing npc leans back (`idle-avoid`) whilst `walker` passes, and slumps back after none */
-  leanAway(walker: null | Npc) {
-    const s = this.leanState;
-    const { clips, rotation } = this.npc;
-    if (this.idleClip !== clips.breathe) return;
-    s.from = walker ?? s.from; // kept through the hold
-    const now = this.w.timer.getElapsedTime();
-    if (walker !== null) {
-      if (s.active === true) return;
-      Object.assign(s, { active: true, since: now, baseY: rotation.y });
-    } else {
-      if (s.active === false || now - s.since < npcConfig.time.leanAwayMin) return;
-      s.active = false;
-    }
-    const [from, to] = s.active ? [clips.breathe, clips["idle-avoid"]] : [clips["idle-avoid"], clips.breathe];
-    this.mixer.clipAction(from).crossFadeTo(this.mixer.clipAction(to).reset().play(), leanFadeSecs, false);
-  }
-
-  /** Whilst leant away, they turn to the walker — no further than `leanTurnMax` from where they faced */
-  leanTick(delta: number) {
-    const s = this.leanState;
-    if (s.active === false || s.from === null) return;
-    const { position } = this.npc;
-    const toWalker = Math.atan2(s.from.position.x - position.x, s.from.position.z - position.z) + Math.PI;
-    const turn = THREE.MathUtils.clamp(deltaAngle(s.baseY, toWalker), -leanTurnMax, leanTurnMax);
-    this.rotateTo(s.baseY + turn, delta * leanTurnScale);
-  }
-
-  playIdleClip(duration = 0.1, idleClip = this.idleClip, force = false) {
-    // fading all clips prevents e.g. sit from continuing
-    for (const clip of Object.values(this.npc.clips)) {
-      if (clip === idleClip) continue;
-      this.mixer.existingAction(clip)?.fadeOut(duration);
+      const { last } = this.npc;
+      // last.dst = groundPoint; // already set in `w.npc.move`
+      last.dstGrId = this.w.e.findRoomContaining(target.groundPoint);
+      last.blockingArea = -1;
+      last.point = this.npc.point;
+      last.moveTime = this.w.timer.getElapsedTime();
+      // arrival radius is relative to this, else a short move starts arrived
+      last.targetDistance = this.npc.distanceTo(target.groundPoint);
+      Object.assign(last, { stuckAccum: 0, nearest: Infinity, nearestAccum: 0 });
     }
 
-    if (!force && (this.mixer.existingAction(idleClip)?.getEffectiveWeight() ?? 0) > 0) {
-      return; // avoid re-triggering the animation
-    }
-
-    this.mixer.clipAction(idleClip).reset().fadeIn(duration).play();
-  }
-
-  rotateTowards(vx: number, vz: number, delta: number) {
-    this.rotateTo(Math.atan2(vx, vz) + Math.PI, delta);
-  }
-
-  rotateTo(target: number, delta: number) {
-    const diff = deltaAngle(this.npc.rotation.y, target);
-    this.npc.rotation.y += diff * (1 - Math.exp(-5 * delta));
+    this.arrive = arrive;
+    // a move interrupted by another keeps its gait on show, so the walk runs on into the new
+    // leg — but a look or a spawn in between puts idle on, and it must be shown again or they slide
+    if (this.moving === true && this.pose === keyOf(this.moveClip)) return;
+    this.moving = true;
+    this.setPose(keyOf(this.moveClip));
   }
 
   startIdle({ force = false } = {}) {
@@ -204,8 +181,6 @@ export class NpcAnimation {
     if (skip) {
       return;
     }
-
-    const forceIdleFadeIn = this.moving;
 
     const agent = this.npc.agent;
 
@@ -223,162 +198,39 @@ export class NpcAnimation {
       this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
     }
 
-    this.playIdleClip(this.getFadeSecs(this.moveClip, this.idleClip), this.idleClip, forceIdleFadeIn);
-    this.npc.setBubbleHeight(bubbleHeightForClip(this.idleClip.name));
-    this.npc.setLabelYShift(labelYShiftForClip(this.idleClip.name));
-
+    this.face.rate = 0;
+    this.setPose(keyOf(this.idleClip), { force: this.moving });
     this.moving = false;
   }
 
-  startMoving(groundPoint: JshCli.GroundPoint, result: FindNearestPolyResult, arrive = true) {
-    const agent = this.npc.agent;
-    if (!agent) {
-      throw Error(`cannot move without agent: ${this.npc.key}`);
-    }
-
-    Object.assign(this.leanState, { active: false, from: null }); // the walk fades all else out — see below
-    // whilst walking, doors should block npcs
-    agent.queryFilter = this.npc.queryFilter;
-    agent.separationWeight = walkSeparationWeight;
-    agent.maxAcceleration = walkMaxAcceleration;
-    agent.maxSpeed = this.moveClip.name === "run" ? runAgentMaxSpeed : walkAgentMaxSpeed;
-
-    crowdApi.requestMoveTarget(
-      this.w.npc.crowd,
-      this.npc.agentId as string,
-      result.nodeRef,
-      helper.groundPointToTuple(groundPoint),
-    );
-
-    const { last } = this.npc;
-    // last.dst = groundPoint; // already set in `w.npc.move`
-    last.dstGrId = this.w.e.findRoomContaining(groundPoint);
-    last.blockingArea = -1;
-    last.point = this.npc.point;
-    last.moveTime = this.w.timer.getElapsedTime();
-    // arrival radius is relative to this, else a short move starts arrived
-    last.targetDistance = this.npc.distanceTo(groundPoint);
-
-    this.stuckAccum = 0;
-    this.nearest = Infinity;
-    this.nearestAccum = 0;
-    this.arrive = arrive;
-
-    if (this.moving === true && this.moveClipInView() === true) {
-      return; // the walk runs on into the new leg
-    }
-
-    this.moving = true;
-    this.playMoveClip();
-  }
-
   /**
-   * The non-crowd tail of `startMoving`, for a mirror npc (no agent) whose movement arrives
-   * over the network — see `use-world-net`. Position/rotation come from the transform stream.
+   * Turn to face `target` (radians) over a duration set by the arc — shuffling round for a long
+   * one, whose feet keep up with the turn — and resolve `npc.resolve.look` on landing. See `Npc.look`
    */
-  startMovingMirror(run: boolean) {
-    this.moveClip = run ? this.w.npc.clips.run : this.w.npc.clips.walk;
-    this.arrive = true; // so the eventual `startIdle` crossfades
+  lookAt(target: number, minMs: number) {
+    const start = this.npc.rotation.y;
+    const diff = deltaAngle(start, target);
+    const arc = Math.abs(diff);
+    const longLook = arc > longLookAngle;
+    // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
+    const duration = arc < 0.001 ? 0 : Math.max(minLookSecs, (2 * arc) / (2 * Math.PI), minMs / 1000);
+    this.face.timed = { start, diff, duration, elapsed: 0, longLook };
+    this.face.rate = 0;
 
-    if (this.moving === true && this.moveClipInView() === true) {
-      return;
+    if (longLook === true) {
+      this.setPose("shuffle");
+      // a `minMs` slow enough to drag it out shuffles gently, where the default rate gives 2
+      const rate = duration > 0 ? arc / duration : lookShuffleRate;
+      this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
+    } else if (this.pose === "shuffle") {
+      this.setPose(keyOf(this.idleClip)); // a short look superseding a long one
     }
-
-    this.moving = true;
-    this.playMoveClip();
-  }
-
-  /**
-   * Whether the move clip is still on screen at all. `moving` says the crowd is driving them, but
-   * cannot say what the mixer is showing: a move interrupted by another leaves it set on purpose,
-   * so that a following move walks straight on — and if a look or a spawn has put idle on in
-   * between, the walk must be played again or they slide
-   */
-  moveClipInView() {
-    return (this.mixer.existingAction(this.moveClip)?.getEffectiveWeight() ?? 0) > 0;
-  }
-
-  /** Crossfades onto the move clip from whatever is playing — idle, a shuffle, or the other gait */
-  playMoveClip() {
-    this.npc.setBubbleHeight(bubbleHeightForClip(this.moveClip.name));
-    this.npc.setLabelYShift(labelYShiftForClip(this.moveClip.name));
-
-    const fade = this.getFadeSecs(this.idleClip, this.moveClip);
-    for (const clip of Object.values(this.npc.clips)) {
-      if (clip === this.moveClip) continue;
-      this.mixer.existingAction(clip)?.fadeOut(fade);
-    }
-    this.mixer.clipAction(this.moveClip).reset().fadeIn(fade).play();
-  }
-
-  getFadeSecs(src: THREE.AnimationClip, dst: THREE.AnimationClip) {
-    const srcKey = src.name as AnimationClipKey;
-    const dstKey = dst.name as AnimationClipKey;
-    return fadeSecs[srcKey]?.[dstKey] ?? defaultFadeSecs;
-  }
-
-  /**
-   * Has the move clip finished fading in?
-   * Arriving before then would cut it off, looking jerky.
-   */
-  moveClipFadedIn() {
-    return (this.mixer.existingAction(this.moveClip)?.getEffectiveWeight() ?? 0) >= 0.99;
-  }
-
-  syncAnimation(speed: number) {
-    if (!this.moving) return;
-    const moveAction = this.mixer.clipAction(this.moveClip);
-    const moveClipKey = this.moveClip.name as AnimationClipKey;
-    moveAction.timeScale = (moveClipKey === "run" ? 0.5 : 1) * Math.max(1 * (0.25 / npcScale), Math.max(speed, 0.5));
-  }
-
-  /**
-   * `"still"` once barely moving for `stuckDuration`; `"circling"` once close to the target yet no
-   * nearer for as long — given once per such spell, so the caller tests why only then
-   */
-  updateStuck(delta: number, worldSeconds: number, targetDist: number): false | "still" | "circling" {
-    const { position, last } = this.npc;
-    const { stuckEpsilon, circling } = npcConfig.dist;
-    const { stuckGrace, stuckDuration } = npcConfig.time;
-
-    // grace whilst accelerating away from standstill
-    if (worldSeconds - last.moveTime < stuckGrace) {
-      return false;
-    }
-
-    const dist = Math.hypot(position.x - last.point.x, position.z - last.point.y);
-    this.stuckAccum += dist < stuckEpsilon ? delta : 0;
-    last.point.x = position.x;
-    last.point.y = position.z;
-    if (this.stuckAccum > stuckDuration) return "still";
-
-    if (targetDist <= circling) {
-      if (this.nearest - targetDist > stuckEpsilon) {
-        this.nearest = targetDist;
-        this.nearestAccum = 0;
-      } else if ((this.nearestAccum += delta) > stuckDuration) {
-        this.nearestAccum = 0;
-        return "circling";
-      }
-    }
-
-    return false;
   }
 }
 
-/**
- * How long a `longLook` takes to crossfade from its shuffle back to idle. It starts this
- * far before the turn ends, so both finish together rather than the idle following on.
- */
-const lookIdleFadeMs = 300;
-
-/**
- * The mean turn rate (radians per second) the shuffle clip is played at 1x for. `look` turns
- * at `2 * arc / duration` initially and eases to nothing, so the mean is half of that.
- */
-const lookShuffleRate = Math.PI / 2;
-const minLookShuffleScale = 0.4;
-const maxLookShuffleScale = 3;
+function keyOf(clip: THREE.AnimationClip) {
+  return clip.name as AnimationClipKey;
+}
 
 function bubbleHeightForClip(clipName: string): number {
   if (clipName === "sit") return 1.4;
@@ -392,9 +244,23 @@ function labelYShiftForClip(clipName: string): number {
   return 2.2;
 }
 
-/** How long a breathing npc takes to lean away, or slump back */
-const leanFadeSecs = 0.4;
-/** How fast they turn to the walker, against a walker's own turn of `1` */
-const leanTurnScale = 0.5;
-/** …and how far, either way */
-const leanTurnMax = (30 * Math.PI) / 180;
+/** Beyond this angle a look shuffles round rather than turning on the spot */
+const longLookAngle = 30 * (Math.PI / 180);
+/**
+ * No look is quicker than this, however small the angle. The turn's peak rate is `2 * arc /
+ * duration`, so a floor eases small turns off the 2π a bare `arc / π` would always give them —
+ * and it meets that curve exactly at `arc = 0.3π`, so nothing jumps at the crossover.
+ */
+const minLookSecs = 0.3;
+/**
+ * How long a long look takes to crossfade from its shuffle back to idle. It starts this far
+ * before the turn ends, so both finish together rather than the idle following on.
+ */
+const lookIdleFadeMs = 300;
+/**
+ * The mean turn rate (radians per second) the shuffle clip is played at 1x for. `look` turns
+ * at `2 * arc / duration` initially and eases to nothing, so the mean is half of that.
+ */
+const lookShuffleRate = Math.PI / 2;
+const minLookShuffleScale = 0.4;
+const maxLookShuffleScale = 3;

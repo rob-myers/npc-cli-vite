@@ -168,6 +168,10 @@ declare namespace JshCli {
     moveTime: number;
     /** Position (used in stuck detection)  */
     point: Geom.VectJson;
+    /** Stuck detection: how long barely moving; the nearest to `dst` yet, and how long since */
+    stuckAccum: number;
+    nearest: number;
+    nearestAccum: number;
     /** Distance to `dst` when the current move started */
     targetDistance: number;
     unreachableResult: null | NpcUnreachableResult;

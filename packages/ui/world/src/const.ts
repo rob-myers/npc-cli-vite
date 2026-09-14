@@ -320,8 +320,6 @@ export const npcConfig = {
     agentRadius: 0.18,
     /** Margin, on top of an npc's radius */
     shutDoorKeepOut: 0.05,
-    /** Within this of a walker, a breathing npc leans away — no further than `collisionQueryRange` */
-    leanAway: 0.5,
   },
   time: {
     /** Grace after a move starts, before stuck detection applies */
@@ -329,10 +327,6 @@ export const npcConfig = {
     /** How long an npc must stay motionless to count as stuck */
     /** try fix choke point slow down */
     stuckDuration: 0.8,
-    /** How often a breathing npc looks for a walker to lean away from */
-    leanAwayEvery: 0.5,
-    /** The least time they stay leant away */
-    leanAwayMin: 2,
     /** Minimum look duration before teleporting onto a nearby doable */
     look: 0.5,
   },
@@ -354,7 +348,7 @@ export const unlockedDoorTint = "#4b4";
 
 export const fromAnimationClipKey = {
   idle: true,
-  /** `idle` leant back, shoulders back — for a walker passing close */
+  /** `idle` leant back, shoulders back — see jsh's `demo_lean_back` */
   "idle-avoid": true,
   breathe: true,
   lie: true,
@@ -377,15 +371,15 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
-  breathe: { shuffle: 0.15 },
+  breathe: { shuffle: 0.15, "idle-avoid": 0.4 },
   idle: { shuffle: 0.15 },
-  "idle-avoid": {},
+  "idle-avoid": { breathe: 0.4 },
   lie: {},
-  run: {},
+  run: { shuffle: 0.15 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
-  walk: {},
+  walk: { shuffle: 0.15 },
 };
 
 export const defaultSkinKey = "medic-0";
