@@ -10,7 +10,6 @@ import {
   idleAgentMaxSpeed,
   idleMaxAcceleration,
   idleSeparationWeight,
-  npcConfig,
   npcScale,
   runAgentMaxSpeed,
   walkAgentMaxSpeed,
@@ -27,7 +26,8 @@ const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 /**
  * What an npc's skeleton is doing. One pose at a time, changed only by `setPose`; one `tick`;
  * and the transitions the world asks for. Inputs that vary per frame — `speed`, `face` — are
- * fields, written by whoever knows them and applied by the next `tick`
+ * fields, written by whoever knows them (`onTick`, the net mirror, a jsh demo) and applied by
+ * the next `tick`
  */
 export class NpcAnimation {
   npc: Npc;
@@ -56,11 +56,6 @@ export class NpcAnimation {
     rate: 0,
     timed: null as null | { start: number; diff: number; duration: number; elapsed: number; longLook: boolean },
   };
-  /**
-   * A breathing npc leant away from a walker — see `leanAway`: whom, the nearest at the last
-   * sample; since when, held for `leanAwayMin`; and their facing as it began, turned about
-   */
-  leanState = { active: false, from: null as null | Npc, since: 0, baseY: 0 };
 
   constructor(npc: Npc) {
     this.npc = npc;
@@ -88,7 +83,7 @@ export class NpcAnimation {
   tick(delta: number) {
     this.mixer.update(delta);
 
-    const { fadeState: f, face, leanState: lean } = this;
+    const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
 
     if (f.delta !== 0) {
@@ -106,14 +101,6 @@ export class NpcAnimation {
     if (this.moving === true) {
       const gait = this.moveClip.name === "run" ? 0.5 : 1;
       this.mixer.clipAction(this.moveClip).timeScale = gait * Math.max(0.25 / npcScale, this.speed, 0.5);
-    }
-
-    // leant away, they turn to the walker — no further than `leanTurnMax` from where they faced
-    if (lean.active === true && lean.from !== null) {
-      const { position } = this.npc;
-      const toWalker = Math.atan2(lean.from.position.x - position.x, lean.from.position.z - position.z) + Math.PI;
-      face.target = lean.baseY + THREE.MathUtils.clamp(deltaAngle(lean.baseY, toWalker), -leanTurnMax, leanTurnMax);
-      face.rate = leanTurnScale;
     }
 
     if (face.timed !== null) {
@@ -148,8 +135,6 @@ export class NpcAnimation {
    * npc's movement arrives over the network (see `use-world-net`)
    */
   startMoving(target: null | { groundPoint: JshCli.GroundPoint; result: FindNearestPolyResult }, arrive = true) {
-    Object.assign(this.leanState, { active: false, from: null }); // the walk fades all else out
-
     if (target !== null) {
       const agent = this.npc.agent;
       if (!agent) {
@@ -241,25 +226,6 @@ export class NpcAnimation {
       this.setPose(keyOf(this.idleClip)); // a short look superseding a long one
     }
   }
-
-  /** A breathing npc leans back (`idle-avoid`) whilst `walker` passes, and slumps back after none */
-  leanAway(walker: null | Npc) {
-    const s = this.leanState;
-    const { clips, rotation } = this.npc;
-    if (this.idleClip !== clips.breathe) return;
-    s.from = walker ?? s.from; // kept through the hold
-    const now = this.w.timer.getElapsedTime();
-    if (walker !== null) {
-      if (s.active === true) return;
-      Object.assign(s, { active: true, since: now, baseY: rotation.y });
-      this.setPose("idle-avoid");
-    } else {
-      if (s.active === false || now - s.since < npcConfig.time.leanAwayMin) return;
-      s.active = false;
-      this.face.rate = 0;
-      this.setPose(keyOf(this.idleClip));
-    }
-  }
 }
 
 function keyOf(clip: THREE.AnimationClip) {
@@ -298,8 +264,3 @@ const lookIdleFadeMs = 300;
 const lookShuffleRate = Math.PI / 2;
 const minLookShuffleScale = 0.4;
 const maxLookShuffleScale = 3;
-
-/** How fast a leant-away npc turns to the walker, against a walker's own turn of `1` */
-const leanTurnScale = 0.5;
-/** …and how far, either way */
-const leanTurnMax = (30 * Math.PI) / 180;

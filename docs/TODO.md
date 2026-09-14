@@ -333,10 +333,11 @@
     - leanAway also turns towards (clamped ±30deg)
 
   - ✅ fix original npc skin flash on hmr
-  - fix connect world
+  - ❌ fix connect world
+    - could not repro issue
+  - ✅ move leanBack into demo_lean_back
   - try tween collisionQueryRange between 1 and 0.7
   - sometimes turn initially when move
-  - move leanBack into demo_lean_back
 
 # FUTURE
 
