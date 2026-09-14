@@ -81,6 +81,7 @@ export default function NPCs() {
 
       byAgentId: {},
       byPickId: {},
+      nextLeanTest: 0,
       nextPickId: 0,
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
@@ -481,6 +482,9 @@ export default function NPCs() {
         if (w.client === false) crowdApi.update(state.crowd, w.nav.navMesh, delta);
         const { positions } = state.physics;
         const worldSeconds = w.timer.getElapsedTime();
+        // sampled, so a walker brushing past does not toggle them every tick
+        const testLean = worldSeconds >= state.nextLeanTest;
+        if (testLean === true) state.nextLeanTest = worldSeconds + npcConfig.time.leanAwayEvery;
 
         for (const npc of Object.values(state.npc)) {
           npc.anim.mixer.update(delta);
@@ -509,6 +513,12 @@ export default function NPCs() {
             if (speed < 0.05) {
               // cannot immediately else walk -> idle slides
               agent.maxAcceleration = idleSeparatingMaxAcceleration;
+            }
+            // `neis` are within `collisionQueryRange`, `dist` squared
+            if (testLean === true) {
+              npc.anim.leanAway(
+                agent.neis.some(({ agentId, dist }) => dist < leanAwayDistSq && state.byAgentId[agentId]?.isMoving()),
+              );
             }
             continue;
           }
@@ -771,7 +781,7 @@ export default function NPCs() {
       queryFn: async () => {
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, skinManifest] = await Promise.all([
-          new GLTFLoader().loadAsync(url.templateMoreAnimsWipGltf),
+          new GLTFLoader().loadAsync(url.templateMoreAnimsMcpGltf),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
@@ -888,6 +898,8 @@ export type State = {
 
   byAgentId: Record<string, Npc>;
   byPickId: Record<number, Npc>;
+  /** World time the idle npcs next look for walkers to lean away from */
+  nextLeanTest: number;
   nextPickId: number;
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
@@ -1018,6 +1030,8 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
  * wavers. Avoidance plans round the neighbour anyway
  */
 const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
+
+const leanAwayDistSq = npcConfig.dist.leanAway ** 2;
 
 /** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
 /** Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2` */

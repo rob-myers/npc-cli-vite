@@ -327,8 +327,10 @@
     - jsh.worker can yield event-loop
   - ✅ World has physics.worker, separate from jsh.worker
   - ✅ jsh.worker now extends nav.worker from World
-  - try avoid intersect npc arms
-    - larger npc radius?
+  - ✅ try avoid intersect npc arms
+    - ✅ idle-avoid leans back (fable + mcp)
+    - every 0.5s if idle has nearby walker then
+  - maybe sometimes turn initially when move
 
 # FUTURE
 
