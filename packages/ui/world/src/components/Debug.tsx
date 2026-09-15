@@ -1,4 +1,4 @@
-import { useStateRef } from "@npc-cli/util";
+import { composeRefs, useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
@@ -10,6 +10,7 @@ import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
+import { bootstrapInstanceColor } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
@@ -36,6 +37,7 @@ export function Debug() {
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
       localBoundary: [] as XZSeg[],
+      corners: [] as XZSeg[],
       doorNormalsShown: false,
       gridShown: false,
       logGPUInfo: false,
@@ -173,7 +175,22 @@ export function Debug() {
         writeSegmentInstances(navPathRef.current, segs, 0.01);
       },
       setLocalBoundary(segs) {
-        state.set({ localBoundary: segs }); // drawn by the effect below, once the mesh has mounted
+        state.localBoundary = segs;
+        state.drawSegments();
+      },
+      setCorners(segs) {
+        state.corners = segs;
+        state.drawSegments();
+      },
+      drawSegments() {
+        // one mesh for both, coloured per instance: the boundary red, the corners blue. Written
+        // straight through the ref, nothing rendering — the caller asks for a frame if it needs one
+        const inst = boundaryRef.current;
+        if (inst === null) return;
+        const segs = [...state.localBoundary, ...state.corners];
+        writeSegmentInstances(inst, segs, 0.02);
+        segs.forEach((_, i) => inst.setColorAt(i, i < state.localBoundary.length ? boundaryColor : cornersColor));
+        if (inst.instanceColor !== null) inst.instanceColor.needsUpdate = true;
       },
     }),
     {
@@ -197,11 +214,6 @@ export function Debug() {
     state.computeDemoPath();
     state.updateNavPathInstances();
   }, [w.nav]);
-
-  useEffect(() => {
-    writeSegmentInstances(boundaryRef.current, state.localBoundary, 0.02);
-    w.view.forceUpdate(); // nothing else asks for a frame
-  }, [state.localBoundary]);
 
   useEffect(() => {
     state.updateDoorNormals();
@@ -277,17 +289,16 @@ export function Debug() {
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
 
-      {/* an npc's local navmesh boundary, as `park` sees it — mounted only whilst shown */}
-      {state.localBoundary.length > 0 && (
-        <instancedMesh
-          ref={boundaryRef}
-          args={[quad, undefined, maxBoundarySegments]}
-          frustumCulled={false}
-          renderOrder={-6}
-        >
-          <meshBasicMaterial color="red" side={THREE.DoubleSide} depthTest={false} />
-        </instancedMesh>
-      )}
+      {/* an npc's local navmesh boundary, as `park` sees it, and/or their corners — see `drawSegments` */}
+      <instancedMesh
+        ref={composeRefs(boundaryRef, bootstrapInstanceColor)}
+        args={[quad, undefined, maxBoundarySegments]}
+        count={0}
+        frustumCulled={false}
+        renderOrder={-6}
+      >
+        <meshBasicMaterial color="white" side={THREE.DoubleSide} depthTest={false} />
+      </instancedMesh>
 
       <instancedMesh
         ref={doorNormalsRef}
@@ -325,6 +336,8 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const maxBoundarySegments = 64;
+const boundaryColor = new THREE.Color("red");
+const cornersColor = new THREE.Color("dodgerblue");
 
 /** A ground segment `[x1, z1, x2, z2]` */
 type XZSeg = [number, number, number, number];
@@ -360,6 +373,8 @@ export type State = {
   demoNavPathShown: boolean;
   /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_local_boundary` */
   localBoundary: XZSeg[];
+  /** An npc's corners as segments from them, drawn whilst non-empty — see `demo_corners` */
+  corners: XZSeg[];
   doorNormalsShown: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;
@@ -383,4 +398,7 @@ export type State = {
   showPhysicsColliders(shouldShow?: boolean): void;
   updateNavPathInstances(): void;
   setLocalBoundary(segs: XZSeg[]): void;
+  setCorners(segs: XZSeg[]): void;
+  /** Writes `localBoundary` and `corners` into their shared mesh */
+  drawSegments(): void;
 };
