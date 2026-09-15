@@ -1,26 +1,27 @@
-import { composeRefs, useStateRef } from "@npc-cli/util";
+import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
-import { useContext, useEffect, useMemo, useRef } from "react";
-import { attribute, select, texture, uv, vec2 } from "three/tsl";
+import { useContext, useEffect, useMemo } from "react";
+import { attribute, select, smoothstep, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
-import { bootstrapInstanceColor } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
 export function Debug() {
   const w = useContext(WorldContext);
-  const navPathRef = useRef<THREE.InstancedMesh>(null);
-  const boundaryRef = useRef<THREE.InstancedMesh>(null);
-
-  const doorNormalsRef = useRef<THREE.InstancedMesh>(null);
   const quad = useMemo(() => createXzQuad(), []);
+  const cornersGeo = useMemo(() => {
+    const geo = createXzQuad();
+    // 1 for the discs, 0 for the lines joining them — see `cornersMaterial`
+    geo.setAttribute("isDisc", new THREE.InstancedBufferAttribute(new Float32Array(maxCornerInstances), 1));
+    return geo;
+  }, []);
   const decorPointsGeo = useMemo(() => {
     const geo = createXzQuad();
     geo.setAttribute("uvOffsets", new THREE.InstancedBufferAttribute(new Float32Array(maxDecorPoints * 2), 2));
@@ -32,12 +33,17 @@ export function Debug() {
   const state = useStateRef(
     (): State => ({
       arrowGeo: createArrowGeo(),
+      // the instanced meshes, via `state.ref`
+      boundaryInst: null as unknown as THREE.InstancedMesh,
+      cornersInst: null as unknown as THREE.InstancedMesh,
       debugPointsInst: null as unknown as THREE.InstancedMesh,
+      doorNormalsInst: null as unknown as THREE.InstancedMesh,
+      navPathInst: null as unknown as THREE.InstancedMesh,
       debugPointInstanceIdToDecorId: [],
       demoNavPath: [] as Vec3[],
       demoNavPathShown: false,
       localBoundary: [] as XZSeg[],
-      corners: [] as XZSeg[],
+      corners: [] as XZPoint[],
       doorNormalsShown: false,
       gridShown: false,
       logGPUInfo: false,
@@ -97,7 +103,7 @@ export function Debug() {
         }
       },
       updateDoorNormals() {
-        const inst = doorNormalsRef.current;
+        const inst = state.doorNormalsInst;
         if (!inst) return;
         let count = 0;
         for (const door of Object.values(w.door?.byKey ?? [])) {
@@ -116,6 +122,9 @@ export function Debug() {
       updateDecorPoints() {
         const inst = state.debugPointsInst;
         if (!inst || !w.sheets || !w.decor.ready) return;
+        const uvOffs = decorPointsGeo.getAttribute("uvOffsets");
+        const uvDims = decorPointsGeo.getAttribute("uvDimensions");
+        const uvTexIds = decorPointsGeo.getAttribute("uvTextureIds");
         state.debugPointInstanceIdToDecorId.length = 0;
         let count = 0;
         for (let gmId = 0; gmId < w.gms.length; gmId++) {
@@ -126,24 +135,15 @@ export function Debug() {
             if (decor.type !== "point" || decor.meta.on !== true) continue;
             const imgKey = w.decor.getDecorImgKey(decor);
             const entry = w.sheets.decor[imgKey];
-            if (!entry) {
+            const dims = entry && w.sheets.decorSheetDims[entry.sheetId];
+            if (!entry || !dims) {
               count++;
               continue;
             }
-            const dims = w.sheets.decorSheetDims[entry.sheetId];
-            if (!dims) {
-              count++;
-              continue;
-            }
-            (decorPointsGeo.getAttribute("uvOffsets").array as Float32Array).set(
-              [entry.rect.x / dims.width, entry.rect.y / dims.height],
-              count * 2,
-            );
-            (decorPointsGeo.getAttribute("uvDimensions").array as Float32Array).set(
-              [entry.rect.width / dims.width, entry.rect.height / dims.height],
-              count * 2,
-            );
-            (decorPointsGeo.getAttribute("uvTextureIds").array as Uint32Array)[count] = entry.sheetId;
+            (uvOffs.array as Float32Array).set([entry.rect.x / dims.width, entry.rect.y / dims.height], count * 2);
+            // biome-ignore format: succint
+            (uvDims.array as Float32Array).set([entry.rect.width / dims.width, entry.rect.height / dims.height], count * 2);
+            (uvTexIds.array as Uint32Array)[count] = entry.sheetId;
             const pw = entry.originalWidth * sguToWorldScale;
             const ph = entry.originalHeight * sguToWorldScale;
             const angle = decor.orient * (Math.PI / 180);
@@ -165,32 +165,45 @@ export function Debug() {
         }
         inst.count = count;
         inst.instanceMatrix.needsUpdate = true;
-        decorPointsGeo.getAttribute("uvOffsets").needsUpdate = true;
-        decorPointsGeo.getAttribute("uvDimensions").needsUpdate = true;
-        decorPointsGeo.getAttribute("uvTextureIds").needsUpdate = true;
+        uvOffs.needsUpdate = uvDims.needsUpdate = uvTexIds.needsUpdate = true;
       },
       updateNavPathInstances() {
         const { demoNavPath: ps } = state;
         const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][2], p[0], p[2]]);
-        writeSegmentInstances(navPathRef.current, segs, 0.01);
+        writeSegmentInstances(state.navPathInst, segs, 0.01);
       },
       setLocalBoundary(segs) {
         state.localBoundary = segs;
-        state.drawSegments();
+        state.drawBoundary();
       },
-      setCorners(segs) {
-        state.corners = segs;
-        state.drawSegments();
+      setCorners(points) {
+        state.corners = points;
+        state.drawCorners();
       },
-      drawSegments() {
-        // one mesh for both, coloured per instance: the boundary red, the corners blue. Written
-        // straight through the ref, nothing rendering — the caller asks for a frame if it needs one
-        const inst = boundaryRef.current;
-        if (inst === null) return;
-        const segs = [...state.localBoundary, ...state.corners];
-        writeSegmentInstances(inst, segs, 0.02);
-        segs.forEach((_, i) => inst.setColorAt(i, i < state.localBoundary.length ? boundaryColor : cornersColor));
-        if (inst.instanceColor !== null) inst.instanceColor.needsUpdate = true;
+      drawBoundary() {
+        // written straight through the ref, nothing rendering — the caller asks for a frame if it
+        // needs one. Rarely changes, and shares nothing with `drawCorners`
+        writeSegmentInstances(state.boundaryInst, state.localBoundary, debugSegHeight);
+      },
+      drawCorners() {
+        const inst = state.cornersInst;
+        if (!inst) return;
+        const ps = state.corners.slice(0, maxCorners);
+        const isDisc = cornersGeo.getAttribute("isDisc").array as Float32Array;
+        // a disc per corner, then the lines joining them, in the one mesh
+        const r = cornerDiscRadius;
+        for (const [i, [x, z]] of ps.entries()) {
+          embedXZMat4(
+            { a: r * 2, b: 0, c: 0, d: r * 2, e: x - r, f: z - r },
+            { yHeight: debugSegHeight, mat4: tmpMat4 },
+          );
+          inst.setMatrixAt(i, tmpMat4);
+          isDisc[i] = 1;
+        }
+        const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][1], p[0], p[1]]);
+        segs.forEach((_, i) => (isDisc[ps.length + i] = 0));
+        writeSegmentInstances(inst, segs, debugSegHeight, ps.length);
+        cornersGeo.getAttribute("isDisc").needsUpdate = true;
       },
     }),
     {
@@ -257,6 +270,15 @@ export function Debug() {
     return navMeshHelper.dispose();
   }, [w.nav?.navMesh]);
 
+  const cornersMaterial = useMemo(() => {
+    const mat = new THREE.MeshBasicNodeMaterial({ color: cornersColor, side: THREE.DoubleSide, transparent: true });
+    mat.depthTest = false;
+    // a disc is cut out of the quad, rather than given a geometry of its own
+    const disc = smoothstep(0.45, 0.5, uv().sub(0.5).length()).oneMinus();
+    mat.opacityNode = select(attribute<"float">("isDisc", "float").greaterThan(0.5), disc, 1);
+    return mat;
+  }, []);
+
   const decorPointsMaterial = useMemo(() => {
     // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
@@ -279,7 +301,7 @@ export function Debug() {
       </mesh>
 
       <instancedMesh
-        ref={navPathRef}
+        ref={state.ref("navPathInst")}
         args={[quad, undefined, maxPathSegments]}
         frustumCulled={false}
         position={[0, 1, 0]}
@@ -289,19 +311,28 @@ export function Debug() {
         <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
       </instancedMesh>
 
-      {/* an npc's local navmesh boundary, as `park` sees it, and/or their corners — see `drawSegments` */}
+      {/* an npc's local navmesh boundary, as `park` sees it — see `drawBoundary` */}
       <instancedMesh
-        ref={composeRefs(boundaryRef, bootstrapInstanceColor)}
-        args={[quad, undefined, maxBoundarySegments]}
+        ref={state.ref("boundaryInst")}
+        args={[quad, undefined, maxBoundarySegs]}
         count={0}
         frustumCulled={false}
         renderOrder={-6}
       >
-        <meshBasicMaterial color="white" side={THREE.DoubleSide} depthTest={false} />
+        <meshBasicMaterial color={boundaryColor} side={THREE.DoubleSide} depthTest={false} />
       </instancedMesh>
 
+      {/* an npc's corners: a disc each, joined by lines — see `drawCorners` */}
       <instancedMesh
-        ref={doorNormalsRef}
+        ref={state.ref("cornersInst")}
+        args={[cornersGeo, cornersMaterial, maxCornerInstances]}
+        count={0}
+        frustumCulled={false}
+        renderOrder={-5}
+      />
+
+      <instancedMesh
+        ref={state.ref("doorNormalsInst")}
         args={[state.arrowGeo, undefined, maxDoorNormals]}
         frustumCulled={false}
         visible={state.doorNormalsShown}
@@ -335,17 +366,31 @@ export function Debug() {
 
 const pathWidth = 0.02;
 const maxPathSegments = 256;
-const maxBoundarySegments = 64;
+const maxBoundarySegs = 64;
+const maxCorners = 16;
+/** A disc per corner, plus the lines joining them */
+const maxCornerInstances = maxCorners * 2 - 1;
+const maxDecorPoints = 1024;
+const maxDoorNormals = 512;
+const cornerDiscRadius = 0.08;
+const debugSegHeight = 0.02;
+const onPointHeight = 0.005;
+const arrowLen = 0.5;
+const arrowWidth = 0.25;
+const doorNormalHeight = 0.05;
 const boundaryColor = new THREE.Color("red");
 const cornersColor = new THREE.Color("dodgerblue");
+const tmpMat4 = new THREE.Matrix4();
 
 /** A ground segment `[x1, z1, x2, z2]` */
 type XZSeg = [number, number, number, number];
+/** A ground point `[x, z]` */
+type XZPoint = [number, number];
 
-/** One thin quad per segment, `yHeight` off the floor */
-function writeSegmentInstances(inst: THREE.InstancedMesh | null, segs: XZSeg[], yHeight: number) {
+/** One thin quad per segment, `yHeight` off the floor, written from instance `offset` on */
+function writeSegmentInstances(inst: THREE.InstancedMesh | null, segs: XZSeg[], yHeight: number, offset = 0) {
   if (inst === null) return;
-  inst.count = segs.length;
+  inst.count = offset + segs.length;
   for (const [i, [x1, z1, x2, z2]] of segs.entries()) {
     const dx = x2 - x1;
     const dz = z2 - z1;
@@ -353,28 +398,26 @@ function writeSegmentInstances(inst: THREE.InstancedMesh | null, segs: XZSeg[], 
     const nx = len > 0 ? dx / len : 1;
     const nz = len > 0 ? dz / len : 0;
     embedXZMat4({ a: dx, b: dz, c: -pathWidth * nz, d: pathWidth * nx, e: x1, f: z1 }, { yHeight, mat4: tmpMat4 });
-    inst.setMatrixAt(i, tmpMat4);
+    inst.setMatrixAt(offset + i, tmpMat4);
   }
   inst.instanceMatrix.needsUpdate = true;
 }
-const maxDecorPoints = 1024;
-const maxDoorNormals = 512;
-const onPointHeight = 0.005;
-const arrowLen = 0.5;
-const arrowWidth = 0.25;
-const doorNormalHeight = 0.05;
-const tmpMat4 = new THREE.Matrix4();
 
 export type State = {
   arrowGeo: THREE.BufferGeometry;
+  /** The instanced meshes: each is `null` until mounted, despite the type */
+  boundaryInst: THREE.InstancedMesh;
+  cornersInst: THREE.InstancedMesh;
   debugPointsInst: THREE.InstancedMesh;
+  doorNormalsInst: THREE.InstancedMesh;
+  navPathInst: THREE.InstancedMesh;
   debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
   demoNavPath: Vec3[];
   demoNavPathShown: boolean;
-  /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_local_boundary` */
+  /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_boundary` */
   localBoundary: XZSeg[];
-  /** An npc's corners as segments from them, drawn whilst non-empty — see `demo_corners` */
-  corners: XZSeg[];
+  /** An npc's corners, drawn as a disc each joined by lines — see `demo_corners` */
+  corners: XZPoint[];
   doorNormalsShown: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;
@@ -398,7 +441,9 @@ export type State = {
   showPhysicsColliders(shouldShow?: boolean): void;
   updateNavPathInstances(): void;
   setLocalBoundary(segs: XZSeg[]): void;
-  setCorners(segs: XZSeg[]): void;
-  /** Writes `localBoundary` and `corners` into their shared mesh */
-  drawSegments(): void;
+  setCorners(points: XZPoint[]): void;
+  /** Writes `localBoundary` into its mesh */
+  drawBoundary(): void;
+  /** Writes the `corners` discs and the lines joining them into their mesh */
+  drawCorners(): void;
 };
