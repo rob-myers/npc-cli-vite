@@ -192,13 +192,8 @@ export function Debug() {
         const ps = state.corners.slice(0, maxCorners);
         const isDisc = cornersGeo.getAttribute("isDisc").array as Float32Array;
         // a disc per corner, then the lines joining them, in the one mesh
-        const r = cornerDiscRadius;
         for (const [i, [x, z]] of ps.entries()) {
-          embedXZMat4(
-            { a: r * 2, b: 0, c: 0, d: r * 2, e: x - r, f: z - r },
-            { yHeight: debugSegHeight, mat4: tmpMat4 },
-          );
-          inst.setMatrixAt(i, tmpMat4);
+          writeDiscInstance(inst, i, x, z, cornerDiscRadius);
           isDisc[i] = 1;
         }
         const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][1], p[0], p[1]]);
@@ -394,6 +389,12 @@ const tmpMat4 = new THREE.Matrix4();
 type XZSeg = [number, number, number, number];
 /** A ground point `[x, z]` */
 type XZPoint = [number, number];
+
+/** A disc of radius `r` centred on `(x, z)` — the quad's disc is cut out by its material */
+function writeDiscInstance(inst: THREE.InstancedMesh, i: number, x: number, z: number, r: number) {
+  embedXZMat4({ a: r * 2, b: 0, c: 0, d: r * 2, e: x - r, f: z - r }, { yHeight: debugSegHeight, mat4: tmpMat4 });
+  inst.setMatrixAt(i, tmpMat4);
+}
 
 /** One thin quad per segment, `yHeight` off the floor, written from instance `offset` on */
 function writeSegmentInstances(inst: THREE.InstancedMesh | null, segs: XZSeg[], yHeight: number, offset = 0) {
