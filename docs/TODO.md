@@ -336,8 +336,22 @@
   - ❌ fix connect world
     - could not repro issue
   - ✅ move leanBack into demo_lean_back
+
+  - ✅ sometimes turn initially when move
+    - useful when facing wrong way and start close to idle npc
+  - remaining case: npc can fail to walk around npc on internal boundary corner
+
+  - park should avoid close npcs "either side of local boundary"
+    - already does but try strengthen
+    - try "park center npcs first"
+    - park should start with inner npcs then move out
+  - provide controls which turn on long click
+  - running should vary between animating `walk` and `run`
+  - bug where walking npc gets stuck oscillating near idle's boundary
   - try tween collisionQueryRange between 1 and 0.7
-  - sometimes turn initially when move
+    - useful when two parked npcs face each other ~ 1 npc apart
+    - could ping neighbours and reduce when two are close
+  - try use strafe left/right animations
 
 # FUTURE
 

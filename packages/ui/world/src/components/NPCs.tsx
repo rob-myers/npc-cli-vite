@@ -6,6 +6,7 @@ import { loadImage } from "@npc-cli/util/legacy/dom";
 import { keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { deltaAngle } from "maath/misc";
 import {
   ANY_QUERY_FILTER,
   createFindNearestPolyResult,
@@ -85,6 +86,7 @@ export default function NPCs() {
       npc: {},
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
       postCrowdTickEvents: [],
+      tickResolvers: [],
 
       clearMomentum(npc) {
         if (npc.agentId === null) {
@@ -314,9 +316,23 @@ export default function NPCs() {
           npc.init();
           npc.drawLabel();
 
-          if (npc.agent) {
-            const { radius, height, collisionQueryRange, boundaryQueryRange, obstacleAvoidance } = getAgentParams();
-            Object.assign(npc.agent, { radius, height, collisionQueryRange, boundaryQueryRange, obstacleAvoidance });
+          if (npc.agent !== null) {
+            const {
+              radius,
+              height,
+              collisionQueryRange,
+              boundaryQueryRange,
+              obstacleAvoidance,
+              pathOptimizationRange,
+            } = getAgentParams();
+            Object.assign(npc.agent, {
+              radius,
+              height,
+              collisionQueryRange,
+              boundaryQueryRange,
+              obstacleAvoidance,
+              pathOptimizationRange,
+            });
           }
         }
 
@@ -461,7 +477,9 @@ export default function NPCs() {
           }
 
           npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
-          npc.anim.startMoving({ groundPoint, result }, arrive);
+          npc.anim.aimAt({ groundPoint, result });
+          await state.turnBeforeMoving(npc);
+          npc.anim.startMoving(arrive);
 
           state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
 
@@ -476,6 +494,9 @@ export default function NPCs() {
           npc.anim.startIdle({ force: true });
           throw e;
         }
+      },
+      nextTick() {
+        return new Promise<void>((resolve) => state.tickResolvers.push(resolve));
       },
       onTick(delta) {
         if (w.client === false) crowdApi.update(state.crowd, w.nav.navMesh, delta);
@@ -543,6 +564,8 @@ export default function NPCs() {
 
         for (const event of state.postCrowdTickEvents) w.events.next(event);
         state.postCrowdTickEvents.length = 0;
+        for (const resolve of state.tickResolvers) resolve();
+        state.tickResolvers.length = 0;
 
         // before the shadows, which read the slot it settles — and every tick, since an npc waiting
         // on a room to arrive takes it the moment it lands rather than at the next door event
@@ -728,6 +751,26 @@ export default function NPCs() {
           npc.material.needsUpdate = true;
         }
       },
+      async turnBeforeMoving(npc) {
+        if (npc.isMoving() === true) {
+          return; // mid-path a turn reads as steering
+        }
+
+        const { agent } = npc;
+        if (agent === null || agent.neis.length === 0) {
+          return; // only turn if there's an agent nearby
+        }
+
+        await state.nextTick(); // the crowd's quick search fills `agent.corners`
+        const [corner] = agent.corners;
+        if (corner === undefined) return;
+
+        const at = { x: corner.position[0], y: corner.position[2] };
+        const target = geomService.getThreeRotationY(at.y - npc.position.z, at.x - npc.position.x);
+        if (Math.abs(deltaAngle(npc.rotation.y, target)) > npcConfig.angle.turnBeforeMove) {
+          await npc.look({ at });
+        }
+      },
       warmCrowd() {
         if (w.client === true) return; // clients never path-find
         const rooms = w.gmRoomGraph.nodesArray.filter((node) => node.type === "room");
@@ -879,6 +922,7 @@ export type State = {
   npc: Record<string, Npc>;
   physics: { positions: number[] } & PhysicsBijection;
   postCrowdTickEvents: JshCli.Event[];
+  tickResolvers: (() => void)[];
 
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
@@ -958,6 +1002,8 @@ export type State = {
   hasDoMeta(meta: Meta): boolean;
   /** Follows this npc with a room-aware light (a room-poly clip that refreshes on `"enter-room"`). `null`/omitted stops tracking. */
   move(opts: JshCli.MoveOpts): Promise<void>;
+  /** Resolves at the end of the next tick, i.e. once the crowd has been updated */
+  nextTick(): Promise<void>;
   onTick(delta: number): void;
   rawSpawn(opts: {
     npcKey: string;
@@ -976,6 +1022,12 @@ export type State = {
     facing?: JshCli.PointAnyFormat;
   }): Npc;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
+  /**
+   * Shuffle round before walking off, when the first leg is well behind them AND someone stands
+   * near: avoidance can hold a walker near-still beside an idle npc, and facing follows velocity
+   * (see `onTick`), so the opening turn would otherwise be spent spinning on the spot
+   */
+  turnBeforeMoving(npc: Npc): Promise<void>;
   /** Walks a throwaway agent whilst the map loads, so nobody pays for a cold search — see within */
   warmCrowd(): void;
 };
@@ -1042,11 +1094,19 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
  * `collisionQueryRange`, blind to walls — at a corner it argues with avoidance, and the walker
  * wavers. Avoidance plans round the neighbour anyway
  */
-const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
+const movingUpdateFlags =
+  crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
+  crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
+  // shortcut the corridor past a corner the next is visible from — see `pathOptimizationRange`
+  crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS;
 
-/** Near the goal, where detour's own slowdown must be obeyed rather than negotiated */
-/** Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2` */
+/**
+ * - Near the goal, where detour's own slowdown must be obeyed rather than negotiated (?)
+ * - Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2
+ * - At `2` can prevent moving around an npc is some cases.
+ */
 const avoidanceWeightCurVel = 2;
+// const avoidanceWeightCurVel = 0.75;
 
 const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.SEPARATION;
 
@@ -1056,10 +1116,8 @@ function getAgentParams(): crowd.AgentParams {
     height: npcConfig.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
-    // cannot be smaller; maybe should be larger
-    // collisionQueryRange: 0.5,
-    // collisionQueryRange: 0.5 + 0.1,
-    collisionQueryRange: 0.5 + 0.2,
+    // collisionQueryRange 0.5, 0.6, 0.7, 1
+    collisionQueryRange: 0.7,
     // collisionQueryRange: 1,
     // walls are looked for less far than npcs: the further out they are found, the earlier
     // avoidance slows a walker for a goal beside one — see `docs/navcat-patch.md`
@@ -1069,9 +1127,15 @@ function getAgentParams(): crowd.AgentParams {
     // head-on to an idle agent, the two ways round score alike and avoidance can flip between
     // them every tick — the walker jerks in place until `updateStuck` gives up. Deviating from the
     // CURRENT velocity is penalised more, so a side once taken is kept
-    obstacleAvoidance: { ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS, weightCurVel: avoidanceWeightCurVel },
-    // crowdApi.CrowdUpdateFlags.OPTIMIZE_TOPO |
-    // crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS,
+    obstacleAvoidance: {
+      ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,
+      weightCurVel: avoidanceWeightCurVel,
+    },
+    // `OPTIMIZE_VIS` casts a ray of exactly this length THROUGH the next corner and shortcuts only
+    // if it hits nothing — so smaller is more often: the default `radius * 30` never fires indoors,
+    // and `1` failed at a wall corner 0.75 away, the ray hitting the wall behind it. The ray need
+    // not reach the corner, only cross out of the poly chain that put an artefact corner underfoot
+    pathOptimizationRange: 0.5,
     queryFilter: ANY_QUERY_FILTER,
   };
 }
