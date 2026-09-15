@@ -53,8 +53,8 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
 }
 
 /**
- * Draw an npc's corners — the crowd's steering waypoints, `[position, ...agent.corners]` — in
- * blue, following them ten times a second until killed. Sans npc, takes it down.
+ * Draw an npc's corners — the crowd's steering waypoints, `agent.corners` — in blue, redrawn
+ * whenever they change, until killed. Sans npc, takes it down.
  * ```sh
  * demo_corners npc:rob
  * demo_corners
@@ -70,15 +70,31 @@ export async function demo_corners(
   };
   if (opts.npcKey === undefined) return clear();
   const npc = w.npc.get(opts.npcKey);
-  const handlers = api.handleStatus({ cleanup: clear });
+
+  /** The corners as drawn, flattened `[x, z, ...]`, so any change is one comparison */
+  let drawn = [] as number[];
+
+  const unsubscribe = w.e.addFrameCallback(() => {
+    if (api.isRunning() === false) return;
+    const cs = npc.agent?.corners ?? [];
+    const next = cs.flatMap(({ position }) => [position[0], position[2]]);
+    if (next.length === drawn.length && next.every((x, i) => x === drawn[i])) return;
+    drawn = next;
+    // drawn as a disc per corner, joined 1st to 2nd, 2nd to 3rd etc: the leg from the npc is
+    // omitted, it would move every frame
+    w.debug.setCorners(cs.map(({ position }) => [position[0], position[2]]));
+  });
+
+  const handlers = api.handleStatus({
+    cleanup() {
+      unsubscribe();
+      clear();
+    },
+  });
 
   try {
-    while (true) {
-      const ps = npc.getCornersPath() ?? [];
-      w.debug.setCorners(ps.slice(1).map((p, i) => [ps[i].x, ps[i].y, p.x, p.y]));
-      w.view.forceUpdate(); // a walker's frames come anyway, a stuck one's do not
-      await api.sleep(1 / 60);
-    }
+    w.view.forceUpdate(); // a walker's frames come anyway, a stuck one's do not
+    await api.sleep(Number.POSITIVE_INFINITY); // until killed
   } finally {
     handlers.dispose();
   }
@@ -88,11 +104,11 @@ export async function demo_corners(
  * Draw an npc's local navmesh boundary — the segments `park` chooses from, as of now — in red.
  * Sans npc, takes it down.
  * ```sh
- * demo_local_boundary npc:rob
- * demo_local_boundary
+ * demo_boundary npc:rob
+ * demo_boundary
  * ```
  */
-export async function demo_local_boundary(
+export async function demo_boundary(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {

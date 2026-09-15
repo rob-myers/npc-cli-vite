@@ -71,7 +71,7 @@ yields per npc.
   with `"paused"` and reruns once resumed. `run` decides what an abort interrupts: `park` lets a
   fade or look finish on a pause, since `npc.rejectAll` would zero the fade.
 
-The commands stay in place: `park`, `pad`, `nudge` in `core.ts`, `demo_local_boundary` in
+The commands stay in place: `park`, `pad`, `nudge` in `core.ts`, `demo_boundary` in
 `demo.ts`, which draws exactly the segments `park` sees. To add an op: a member of `WW.JshOp`, an
 entry in `WW.JshOutput`, a function on `ops`, and a caller `plan({ api, w, op: { key, ... } })`.
 
