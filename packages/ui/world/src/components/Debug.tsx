@@ -4,12 +4,13 @@ import { useFrame } from "@react-three/fiber";
 import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, select, smoothstep, texture, uv, vec2 } from "three/tsl";
+import { attribute, float, select, smoothstep, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
+import type { SelectFloatType } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { WorldContext } from "./world-context";
 
@@ -270,13 +271,27 @@ export function Debug() {
     return navMeshHelper.dispose();
   }, [w.nav?.navMesh]);
 
-  const cornersMaterial = useMemo(() => {
-    const mat = new THREE.MeshBasicNodeMaterial({ color: cornersColor, side: THREE.DoubleSide, transparent: true });
-    mat.depthTest = false;
+  const materials = useMemo(() => {
+    // none of these are pickable, so they all vanish during object-picking. `alphaTest` discards
+    // the fragment outright, rather than trusting a zero alpha to blend away
+    const hideWhenPicking = (opacity: THREE.Node<"float">) =>
+      (select as SelectFloatType)(w.view.objectPick.notEqual(0), float(0), opacity);
+    const create = (color: THREE.ColorRepresentation, opacity: THREE.Node<"float">, depthTest = true) => {
+      // biome-ignore format: succint
+      const mat = new THREE.MeshBasicNodeMaterial({ color, side: THREE.DoubleSide, transparent: true, depthTest, alphaTest: 0.01 });
+      mat.opacityNode = hideWhenPicking(opacity);
+      return mat;
+    };
     // a disc is cut out of the quad, rather than given a geometry of its own
     const disc = smoothstep(0.45, 0.5, uv().sub(0.5).length()).oneMinus();
-    mat.opacityNode = select(attribute<"float">("isDisc", "float").greaterThan(0.5), disc, 1);
-    return mat;
+    const isDisc = attribute<"float">("isDisc", "float").greaterThan(0.5);
+    return {
+      navPath: create("rgb(255, 50, 0)", float(1)),
+      origin: create("red", float(0.1)),
+      boundary: create(boundaryColor, float(1), false),
+      corners: create(cornersColor, (select as SelectFloatType)(isDisc, disc, float(1)), false),
+      doorNormals: create("green", float(1)),
+    };
   }, []);
 
   const decorPointsMaterial = useMemo(() => {
@@ -295,37 +310,32 @@ export function Debug() {
 
   return (
     <>
-      <mesh name="origin" position={[0, 5, 0]} visible={state.originShown}>
+      <mesh name="origin" position={[0, 5, 0]} visible={state.originShown} material={materials.origin}>
         <boxGeometry args={[0.05, 10, 0.05]} />
-        <meshBasicMaterial color="red" transparent opacity={0.1} />
       </mesh>
 
       <instancedMesh
         ref={state.ref("navPathInst")}
-        args={[quad, undefined, maxPathSegments]}
+        args={[quad, materials.navPath, maxPathSegments]}
         frustumCulled={false}
         position={[0, 1, 0]}
         renderOrder={-6}
         visible={state.demoNavPathShown}
-      >
-        <meshBasicMaterial color="rgb(255, 50, 0)" transparent side={THREE.DoubleSide} />
-      </instancedMesh>
+      />
 
       {/* an npc's local navmesh boundary, as `park` sees it — see `drawBoundary` */}
       <instancedMesh
         ref={state.ref("boundaryInst")}
-        args={[quad, undefined, maxBoundarySegs]}
+        args={[quad, materials.boundary, maxBoundarySegs]}
         count={0}
         frustumCulled={false}
         renderOrder={-6}
-      >
-        <meshBasicMaterial color={boundaryColor} side={THREE.DoubleSide} depthTest={false} />
-      </instancedMesh>
+      />
 
       {/* an npc's corners: a disc each, joined by lines — see `drawCorners` */}
       <instancedMesh
         ref={state.ref("cornersInst")}
-        args={[cornersGeo, cornersMaterial, maxCornerInstances]}
+        args={[cornersGeo, materials.corners, maxCornerInstances]}
         count={0}
         frustumCulled={false}
         renderOrder={-5}
@@ -333,13 +343,11 @@ export function Debug() {
 
       <instancedMesh
         ref={state.ref("doorNormalsInst")}
-        args={[state.arrowGeo, undefined, maxDoorNormals]}
+        args={[state.arrowGeo, materials.doorNormals, maxDoorNormals]}
         frustumCulled={false}
         visible={state.doorNormalsShown}
         renderOrder={-4}
-      >
-        <meshBasicMaterial color="green" side={THREE.DoubleSide} />
-      </instancedMesh>
+      />
 
       {state.physicsColliders.length > 0 && (
         <group name="static-colliders" visible={state.physicsColliders.length > 0}>
