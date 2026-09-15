@@ -289,9 +289,13 @@ export const walkSeparationWeight = 0.5;
 export const idleSeparationWeight = 0.1; // Less pushable
 
 /**
- * NPC tuning: `npcConfig.dist` in meters, `npcConfig.time` in seconds.
+ * NPC tuning: `npcConfig.dist` in meters, `npcConfig.time` in seconds, `npcConfig.angle` in radians.
  */
 export const npcConfig = {
+  angle: {
+    /** Opening turn beyond which an npc shuffles round before walking off */
+    turnBeforeMove: Math.PI * 0.75,
+  },
   dist: {
     /** Arrival radius, per `running` and whether we slow down beforehand */
     arrive: { walk: 0.15, run: 0.025 },

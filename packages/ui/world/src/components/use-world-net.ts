@@ -820,7 +820,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             mirror.prevMoving = a.moving;
             if (a.moving === true) {
               npc.anim.moveClip = a.run ? w.npc.clips.run : w.npc.clips.walk;
-              npc.anim.startMoving(null);
+              npc.anim.startMoving();
             } else {
               npc.anim.startIdle();
             }
