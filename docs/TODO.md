@@ -345,18 +345,20 @@
   - ❌ can `move npc:rob to npc:abe`
     - not canonical enough
 
-  - 🚧 park should avoid close npcs "either side of local boundary"
+  - ✅ park should avoid close npcs "either side of local boundary"
     - already does but try strengthen
-    - try "park center npcs first"
-    - park should start with inner npcs then move out
+    - try improve park ordering
+    - do not park unparkable and throw error
+  - split world const into const.env and const.npc
   - provide controls which turn on long click
     - `pick --long | move npc:rob` works but cancels pick-n-move
+    - useful for repro nav issues
   - running should vary between animating `walk` and `run`
   - ✅ bug where walking npc gets stuck oscillating near idle's boundary
-  - try use strafe left/right animations
 
 # FUTURE
 
+- try use strafe left/right animations
 - investigate larger walk around params with fallback to params permitting free motion around parked
   - try tween collisionQueryRange between 1 and 0.7
     - useful when two parked npcs face each other ~ 1 npc apart
