@@ -284,7 +284,8 @@ export const idleSeparatingMaxSpeed = 0.005;
 export const walkAgentMaxSpeed = 1.5;
 export const runAgentMaxSpeed = 2.5;
 /** Too large breaks arrival near other npc */
-export const walkSeparationWeight = 0.5;
+// export const walkSeparationWeight = 0.5;
+export const walkSeparationWeight = 1.5;
 /** Less pushable */
 export const idleSeparationWeight = 0.1; // Less pushable
 
