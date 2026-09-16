@@ -118,3 +118,4 @@ Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DE
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 
 - const.ts only contains constants, no methods
+- Prefer terse comments: a short line over a paragraph, and only what the code doesn't already say
