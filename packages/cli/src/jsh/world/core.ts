@@ -500,7 +500,7 @@ export async function nudge(
     src: "from",
   }),
 ) {
-  const { w } = ct;
+  const { w, api } = ct;
   const npc = w.npc.get(opts.npcKey ?? ct.args[0]);
   opts.by ??= 0.5;
 
@@ -519,7 +519,8 @@ export async function nudge(
 
   // slid along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
   const to = await plan({
-    ...ct,
+    api,
+    w,
     op: { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + delta.x, y: src.y + delta.y } },
   });
   if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < nudgeMinMove) {
