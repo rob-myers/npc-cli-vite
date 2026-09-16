@@ -45,7 +45,7 @@ declare namespace WW {
 
   /** What each op gives */
   type JshOutput = {
-    /** Aligned with `npcs`; `null` where no wall was within range */
+    /** Aligned with `npcs`; `null` where no wall was within range, or none had a clear point */
     park: (null | ParkPlan)[];
     /** The boundary segments `[x1, y1, z1, x2, y2, z2]` within reach, nearest first */
     boundary: number[][];
