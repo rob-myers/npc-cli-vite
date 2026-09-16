@@ -1,6 +1,6 @@
 import { Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { connectorEntranceHalfDepth, doorDepth, hullDoorDepth, precision, wallOutset } from "../const.ts";
+import { connectorEntranceHalfDepth, doorDepth, hullDoorDepth, precision, wallOutset } from "../const.env.ts";
 
 export class Connector {
   poly: Geom.Poly;

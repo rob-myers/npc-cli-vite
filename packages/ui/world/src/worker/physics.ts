@@ -2,9 +2,9 @@ import RAPIER, { ColliderDesc, RigidBodyType } from "@dimforge/rapier3d-compat";
 import { addBodyKeyUidRelation, npcToBodyKey, parsePhysicsBodyKey } from "../service/physics-bijection";
 import { type WorkerStoreState, workerStore } from "./physics.store";
 
-export const wallHeight: typeof import("../const")["wallHeight"] = 1.7;
-const geomorphGridMeters: typeof import("../const")["geomorphGridMeters"] = 1.5;
-const wallOutsetSgu: typeof import("../const")["wallOutsetSgu"] = 10;
+export const wallHeight: typeof import("../const.env")["wallHeight"] = 1.7;
+const geomorphGridMeters: typeof import("../const.env")["geomorphGridMeters"] = 1.5;
+const wallOutsetSgu: typeof import("../const.env")["wallOutsetSgu"] = 10;
 
 const sguToWorldScale = (1 / 60) * geomorphGridMeters;
 const wallOutset = wallOutsetSgu * sguToWorldScale;

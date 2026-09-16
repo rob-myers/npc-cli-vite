@@ -18,7 +18,7 @@ import {
   vec3,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHeight } from "../const";
+import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHeight } from "../const.env";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";

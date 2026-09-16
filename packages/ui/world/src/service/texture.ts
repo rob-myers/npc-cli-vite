@@ -1,7 +1,7 @@
 import { geomService } from "@npc-cli/util/geom-service";
 import { drawRoundedRect, getPolysPath } from "@npc-cli/util/service/canvas";
 import * as THREE from "three/webgpu";
-import { gmFloorExtraScale, worldToSguScale } from "../const";
+import { gmFloorExtraScale, worldToSguScale } from "../const.env";
 import type { TexArray } from "./tex-array";
 
 const texW = 256;

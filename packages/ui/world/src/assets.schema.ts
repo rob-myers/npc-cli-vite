@@ -176,7 +176,7 @@ export const WorldThemeSchema = z.object({
       ambientIntensity: z.number(),
     })
     .default({
-      ambientIntensity: 1 satisfies typeof import("./const.ts").defaultAmbientIntensity,
+      ambientIntensity: 1 satisfies typeof import("./const.env.ts").defaultAmbientIntensity,
     }),
   obstacles: z
     .object({

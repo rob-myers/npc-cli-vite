@@ -11,7 +11,8 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_NPCS, npcShadowRadius } from "../const";
+import { MAX_NPCS } from "../const.env";
+import { npcShadowRadius } from "../const.npc";
 import { createXzQuad } from "../service/geometry";
 import type { SelectFloatType } from "../service/texture";
 import { WorldContext } from "./world-context";

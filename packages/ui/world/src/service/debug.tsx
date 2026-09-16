@@ -3,8 +3,8 @@ import { cn } from "@npc-cli/util";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { XIcon } from "@phosphor-icons/react";
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
-import { gmFloorExtraScale, roomHitTextureScaleDown, worldToSguScale } from "../const";
 import { WorldContext } from "../components/world-context";
+import { gmFloorExtraScale, roomHitTextureScaleDown, worldToSguScale } from "../const.env";
 import { getWorldStore } from "./storage";
 
 export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void; container?: HTMLElement | null };

@@ -1,6 +1,6 @@
 import { Select } from "@base-ui/react/select";
 import { symbolByGroup } from "@npc-cli/media/starship-symbol";
-import { defaultMapKey } from "@npc-cli/ui__world/const";
+import { defaultMapKey } from "@npc-cli/ui__world/const.env";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
 import { FloppyDiskIcon, LockKeyIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
@@ -24,13 +24,7 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
   );
 }
 
-function FolderSwitcher({
-  type,
-  onChange,
-}: {
-  type: "symbol" | "map";
-  onChange: (type: "symbol" | "map") => void;
-}) {
+function FolderSwitcher({ type, onChange }: { type: "symbol" | "map"; onChange: (type: "symbol" | "map") => void }) {
   return (
     <div className="flex gap-1 px-2 py-1 border-b border-slate-700">
       {ALLOWED_MAP_EDIT_FOLDERS.map((folderType) => (

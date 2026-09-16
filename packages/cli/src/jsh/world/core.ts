@@ -1,4 +1,5 @@
-import { npcConfig, parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const";
+import { npcDims } from "@npc-cli/ui__world/const.env";
+import { parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
@@ -31,7 +32,7 @@ export async function at(
   const groundPoint = w.helper.parseGroundPoint(point);
 
   const results = w.decor.queryPoint(groundPoint, {
-    restrictByHeight: w.helper.parse3dHeight(point) ?? npcConfig.dist.height / 2,
+    restrictByHeight: w.helper.parse3dHeight(point) ?? npcDims.height / 2,
     radius: 1.5 / 2,
   });
 

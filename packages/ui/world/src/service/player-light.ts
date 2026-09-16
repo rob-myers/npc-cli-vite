@@ -22,7 +22,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_DOORS } from "../const";
+import { MAX_DOORS } from "../const.env";
 import type DerivedGmsData from "./DerivedGmsData";
 import { MODE_FADE_SECS } from "./fade-rooms";
 import { arrivedAt, morphAt, retarget } from "./morph";

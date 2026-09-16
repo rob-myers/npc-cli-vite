@@ -1,5 +1,5 @@
 import { ExhaustiveError } from "@npc-cli/util";
-import { gmFloorExtraScale, worldToSguScale } from "../const";
+import { gmFloorExtraScale, worldToSguScale } from "../const.env";
 
 /**
  * - Object pick red amounts (0 ≤ r ≤ 255).

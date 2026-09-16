@@ -1,4 +1,4 @@
-import { frontierHalfDeg, frontierReadMinMs } from "../const";
+import { frontierHalfDeg, frontierReadMinMs } from "../const.env";
 import { lightAngles, type PlayerLight } from "./player-light";
 
 /**

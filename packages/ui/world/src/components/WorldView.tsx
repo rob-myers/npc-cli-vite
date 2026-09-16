@@ -35,14 +35,14 @@ import {
   frontierNearFrac,
   frontierPanFrac,
   frontierRate,
-  npcConfig,
+  npcDims,
   roomLabelFadeFrom,
   roomLabelNearAlpha,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   zoomSpeedDesktop,
   zoomSpeedMobile,
-} from "../const";
+} from "../const.env";
 import {
   type CameraControls as BaseCameraControls,
   defaultZoomSettleRate,
@@ -449,9 +449,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             // standing at the bottom edge with only their feet in shot is what this is for
             tmpProjected.set(controls.target.x - offsetX, 0, controls.target.z - offsetZ).project(camera);
             const feet = Math.max(Math.abs(tmpProjected.x), Math.abs(tmpProjected.y));
-            tmpProjected
-              .set(controls.target.x - offsetX, npcConfig.dist.height, controls.target.z - offsetZ)
-              .project(camera);
+            tmpProjected.set(controls.target.x - offsetX, npcDims.height, controls.target.z - offsetZ).project(camera);
             const head = Math.max(Math.abs(tmpProjected.x), Math.abs(tmpProjected.y));
             const over = Math.max(feet, head) / limit;
             if (over <= 1) break;
@@ -1217,7 +1215,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const track = () => (state.getFollowGoal(tmpGoal) === true ? { x: tmpGoal.x, y: tmpGoal.z } : undefined);
         const at = track();
         if (at === undefined) return;
-        void state.lookAt(at, { animate: true, height: npcConfig.dist.height, track });
+        void state.lookAt(at, { animate: true, height: npcDims.height, track });
       },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
