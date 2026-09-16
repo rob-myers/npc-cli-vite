@@ -4,6 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
+import { npcDims } from "../const.both";
 import {
   defaultDoorCloseMs,
   defaultPlayerKey,
@@ -12,7 +13,6 @@ import {
   introPanDelayMs,
   MAX_NPCS,
   mapVeilMs,
-  npcDims,
   roomLabelRevealMs,
   unfoldDelayMs,
 } from "../const.env";
