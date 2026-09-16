@@ -1089,24 +1089,15 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
 }
 
 /**
- * Avoidance is what makes npcs part around each other, and what spoils an arrival. No separation
- * whilst walking: with one neighbour in range it is a fixed 1 m/s shove, on or off at
+ * Avoidance is what makes npcs part around each other, and what spoils an arrival.
+ * No separation whilst walking: with one neighbour in range it is a fixed 1 m/s shove, on or off at
  * `collisionQueryRange`, blind to walls — at a corner it argues with avoidance, and the walker
  * wavers. Avoidance plans round the neighbour anyway
  */
-const movingUpdateFlags =
-  crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
-  crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
-  // shortcut the corridor past a corner the next is visible from — see `pathOptimizationRange`
-  crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS;
+const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
 
-/**
- * - Near the goal, where detour's own slowdown must be obeyed rather than negotiated (?)
- * - Against `DEFAULT_OBSTACLE_AVOIDANCE_PARAMS.weightCurVel` of `0.75`, and `weightDesVel` of `2
- * - At `2` can prevent moving around an npc is some cases.
- */
-const avoidanceWeightCurVel = 2;
-// const avoidanceWeightCurVel = 0.75;
+// const avoidanceWeightCurVel = 2; // avoids intersection more
+const avoidanceWeightCurVel = 0.75; // helpful when moving round npc from other side
 
 const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.SEPARATION;
 
@@ -1131,11 +1122,6 @@ function getAgentParams(): crowd.AgentParams {
       ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,
       weightCurVel: avoidanceWeightCurVel,
     },
-    // `OPTIMIZE_VIS` casts a ray of exactly this length THROUGH the next corner and shortcuts only
-    // if it hits nothing — so smaller is more often: the default `radius * 30` never fires indoors,
-    // and `1` failed at a wall corner 0.75 away, the ray hitting the wall behind it. The ray need
-    // not reach the corner, only cross out of the poly chain that put an artefact corner underfoot
-    pathOptimizationRange: 0.5,
     queryFilter: ANY_QUERY_FILTER,
   };
 }

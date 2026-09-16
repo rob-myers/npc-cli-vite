@@ -339,7 +339,8 @@
 
   - ✅ sometimes turn initially when move
     - useful when facing wrong way and start close to idle npc
-  - remaining case: npc can fail to walk around npc on internal boundary corner
+  - ✅ remaining cases e.g. npc fails to walk around npc on internal boundary corner
+    - this can happen in 301 bridge when npc parked in lower-right corner of table in briefing room
 
   - park should avoid close npcs "either side of local boundary"
     - already does but try strengthen
