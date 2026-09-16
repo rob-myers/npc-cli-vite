@@ -342,20 +342,25 @@
   - ✅ remaining cases e.g. npc fails to walk around npc on internal boundary corner
     - this can happen in 301 bridge when npc parked in lower-right corner of table in briefing room
 
-  - park should avoid close npcs "either side of local boundary"
+  - ❌ can `move npc:rob to npc:abe`
+    - not canonical enough
+
+  - 🚧 park should avoid close npcs "either side of local boundary"
     - already does but try strengthen
     - try "park center npcs first"
     - park should start with inner npcs then move out
   - provide controls which turn on long click
+    - `pick --long | move npc:rob` works but cancels pick-n-move
   - running should vary between animating `walk` and `run`
-  - bug where walking npc gets stuck oscillating near idle's boundary
-  - try tween collisionQueryRange between 1 and 0.7
-    - useful when two parked npcs face each other ~ 1 npc apart
-    - could ping neighbours and reduce when two are close
+  - ✅ bug where walking npc gets stuck oscillating near idle's boundary
   - try use strafe left/right animations
 
 # FUTURE
 
+- investigate larger walk around params with fallback to params permitting free motion around parked
+  - try tween collisionQueryRange between 1 and 0.7
+    - useful when two parked npcs face each other ~ 1 npc apart
+    - could ping neighbours and reduce when two are close
 - Jobs: indicate stale processes after hmr
 - onchange playground preserve npc position
   - should also work in other maps
