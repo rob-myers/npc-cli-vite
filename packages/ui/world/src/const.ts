@@ -284,14 +284,19 @@ export const idleSeparatingMaxSpeed = 0.005;
 export const walkAgentMaxSpeed = 1.5;
 export const runAgentMaxSpeed = 2.5;
 /** Too large breaks arrival near other npc */
-export const walkSeparationWeight = 0.5;
+// export const walkSeparationWeight = 0.5;
+export const walkSeparationWeight = 1.5;
 /** Less pushable */
 export const idleSeparationWeight = 0.1; // Less pushable
 
 /**
- * NPC tuning: `npcConfig.dist` in meters, `npcConfig.time` in seconds.
+ * NPC tuning: `npcConfig.dist` in meters, `npcConfig.time` in seconds, `npcConfig.angle` in radians.
  */
 export const npcConfig = {
+  angle: {
+    /** Opening turn beyond which an npc shuffles round before walking off */
+    turnBeforeMove: Math.PI * 0.75,
+  },
   dist: {
     /** Arrival radius, per `running` and whether we slow down beforehand */
     arrive: { walk: 0.15, run: 0.025 },
@@ -332,7 +337,47 @@ export const npcConfig = {
   },
 } as const;
 
-export const defaultDoorCloseMs = 6000;
+/** See `getAgentParams` in `components/NPCs.tsx` */
+export const crowdConfig = {
+  /** Neighbour search range (tried 0.5–1.5) */
+  collisionQueryRange: 0.7,
+  /** Wall search range: shorter, else walkers slow early beside walls */
+  boundaryQueryRange: 0.4,
+  /** Keeps a side once taken: `2` intersects less, `0.75` rounds npcs better */
+  avoidanceWeightCurVel: 0.75,
+  /** navcat's is 20 */
+  quickSearchIterations: 64,
+  /** Enough to reach the sliced search */
+  warmTicks: 4,
+} as const;
+
+/** `findNearestPoly` query box and tolerance, by accuracy */
+export const closestPolyByAccuracy: Record<
+  "0.005" | "0.1" | "0.5",
+  { halfExtents: [number, number, number]; distance: number }
+> = {
+  "0.005": { halfExtents: [0.005, 0.005, 0.005], distance: 0.005 },
+  "0.1": { halfExtents: [0.1, 0.1, 0.1], distance: 0.1 },
+  "0.5": { halfExtents: [0.5, 0.5, 0.5], distance: 0.5 },
+};
+
+export const npcSpawnConfig = {
+  keyPattern: /^[a-z][a-z0-9-]*$/,
+  /** Pick ids handed out before a spawn renumbers them */
+  compactPickIdsAt: 200,
+} as const;
+
+/** See `NPCs.createMaterials` */
+export const npcMaterialConfig = {
+  labelHalfWidth: 0.5,
+  labelHalfHeight: 0.125,
+  /** Eased to `overheadAmount` as the view elevation goes `overheadFrom` → `overheadTo` */
+  rim: { power: 5, amount: 0.2, color: [0.55, 0.72, 0.7], overheadAmount: 0.05, overheadFrom: 0.45, overheadTo: 0.85 },
+  /** Least colour a lit npc keeps outside the player's light */
+  litUnseen: 0.5,
+} as const;
+
+export const defaultDoorCloseMs = 5000;
 
 /** What the busy overlay says whilst shaders compile — a toggle's recompile, or the pick warm */
 export const compilingShadersText = "compiling shaders";

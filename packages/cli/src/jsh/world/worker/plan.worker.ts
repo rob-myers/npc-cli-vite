@@ -1,5 +1,4 @@
 import { decodeDoorAreaId, isDoorAreaId } from "@npc-cli/ui__world/worker/nav-util";
-import { geomService } from "@npc-cli/util/geom-service";
 import {
   ANY_QUERY_FILTER,
   createDefaultQueryFilter,
@@ -27,38 +26,104 @@ export const ops: {
 } = {
   /**
    * Where each npc should stand: against the nearest wall within reach, clear of the room's
-   * doorways and its other parked npcs. In order, so each keeps clear of the spots chosen before it
+   * doorways and its other parked npcs. Room by room, tightest first: each would take the clear
+   * point nearest them, and the one with the least wall to spare — after those parked, and after
+   * the rest of the room take THEIR first choice — goes next, so nobody is boxed in by a neighbour
+   * who had room to spare. Whoever still finds no clear point has the room re-run, going first —
+   * and failing that is left where they stand, `null`, rather than parked up against someone
    */
   *park(op, navMesh, map) {
-    // who stands where, by npc: the parked as given, then each plan as it is made
+    // who stands where, by npc: the parked as given — bar those re-parking — then each as planned
     const standing = new Map(op.parked.map((o) => [o.key, o]));
-    const plans: (null | WW.ParkPlan)[] = [];
+    for (const npc of op.npcs) standing.delete(npc.key);
+    const plans = new Map<string, null | WW.ParkPlan>();
 
+    // the navmesh is asked once per npc; every choice below is arithmetic on what it gave
+    const rooms = new Map<null | string, Cand[]>();
     for (const npc of op.npcs) {
-      plans.push(planOne(npc));
-      yield; // a breath between npcs
-    }
-    return plans;
-
-    function planOne(npc: WW.NpcQuery): null | WW.ParkPlan {
-      const segments = queryBoundary(npc, navMesh);
-      if (segments.length === 0) return null;
-
+      if (plans.has(npc.key)) continue;
       // only the room's doors and parked npcs: one on the far side of a wall is nothing to them
       const doors = (map.roomDoors[npc.grKey ?? ""] ?? []).flatMap((gdKey) => map.doorFrames[gdKey] ?? []);
-      const others = [...standing.values()].filter((o) => o.grKey === npc.grKey && o.key !== npc.key);
+      const parked = [...standing.values()].filter((o) => o.grKey === npc.grKey);
+      const walls = queryBoundary(npc, navMesh).flatMap(({ s }) => prepareWall(s.slice(), doors, parked) ?? []);
+      if (walls.length === 0) {
+        plans.set(npc.key, null);
+        continue;
+      }
+      const cand: Cand = { npc, walls, near: [], guess: guessSpot(walls, npc.point), slack: 0 };
+      plans.set(npc.key, null); // marks them seen; planned below
+      rooms.set(npc.grKey, [...(rooms.get(npc.grKey) ?? []), cand]);
+    }
 
-      // the nearest segment with a clear point — else the nearest segment, as we always parked:
-      // only 8 are kept, and in a tight doorway they can all be frame
-      const src = npc.point;
-      let at: null | Geom.VectJson = null;
-      const seg = segments.find((seg) => (at = findClearPointOnSeg(src, seg, doors, others)) !== null) ?? segments[0];
-      at ??= geomService.getClosestOnSeg(src, { x: seg.s[0], y: seg.s[2] }, { x: seg.s[3], y: seg.s[5] });
+    for (const [grKey, cands] of rooms) {
+      // in reach of one another: where one stands may cut a wall of the other
+      if (grKey !== null) {
+        for (const c of cands) {
+          c.near = cands.filter(
+            (o) => o !== c && Math.hypot(o.npc.point.x - c.npc.point.x, o.npc.point.y - c.npc.point.y) <= parkReach,
+          );
+        }
+      }
+      // whoever found no clear point goes first next time, keeping the pass with the fewest
+      const first = new Set<Cand>();
+      let best = yield* parkRoom(grKey, cands, first);
+      for (let pass = 1; pass < parkPasses && best.failed.some((c) => first.has(c) === false); pass++) {
+        for (const c of best.failed) first.add(c);
+        const result = yield* parkRoom(grKey, cands, first);
+        if (result.failed.length < best.failed.length) best = result;
+      }
+      for (const [key, plan] of best.plans) plans.set(key, plan); // the failed stay `null`
+    }
+    return op.npcs.map((npc) => plans.get(npc.key) ?? null);
 
-      // the walkable side: navcat winds its outlines clockwise, so the inside lies along `(dz, -dx)`
-      const facing = { x: at.x + (seg.s[5] - seg.s[2]), y: at.y + (seg.s[0] - seg.s[3]) };
-      if (npc.grKey !== null) standing.set(npc.key, { key: npc.key, point: at, grKey: npc.grKey, seg: seg.s });
-      return { key: npc.key, at, facing, seg: seg.s };
+    function* parkRoom(grKey: null | string, cands: Cand[], first: Set<Cand>): Generator<void, RoomResult> {
+      for (const c of cands) {
+        standing.delete(c.npc.key);
+        for (const w of c.walls) w.cut = w.base.slice();
+        c.guess = guessSpot(c.walls, c.npc.point);
+      }
+      const left = new Set(cands);
+      for (const c of cands) c.slack = getSlack(c, left);
+
+      const result: RoomResult = { plans: new Map(), failed: [] };
+      while (left.size > 0) {
+        // the tightest: least wall to spare, then most in reach — and the re-run's first, first
+        const pick = [...left].reduce((p, c) => (tighter(c, p, first) ? c : p));
+        left.delete(pick);
+
+        const { npc } = pick;
+        const { at, wall, clear } = pick.guess;
+        if (clear === false) {
+          // not parked at all: right up against someone is worse than where they stand
+          result.failed.push(pick);
+          yield;
+          continue;
+        }
+        result.plans.set(npc.key, toPlan(npc.key, pick.guess));
+
+        if (grKey !== null) {
+          standing.set(npc.key, { key: npc.key, point: at, grKey, seg: wall.s });
+          // their spot cuts the walls of those in reach, whose first choice may move — which
+          // changes what THEIR neighbours have to spare
+          const dirty = new Set<Cand>();
+          for (const o of pick.near) {
+            if (left.has(o) === false) continue;
+            for (const w of o.walls) {
+              const span = npcSpan(w, at, wall.s);
+              if (span !== null) w.cut.push(span);
+            }
+            const guess = guessSpot(o.walls, o.npc.point);
+            if (guess.at.x !== o.guess.at.x || guess.at.y !== o.guess.at.y) {
+              o.guess = guess;
+              for (const n of o.near) dirty.add(n);
+            }
+            dirty.add(o);
+          }
+          for (const c of dirty) if (left.has(c)) c.slack = getSlack(c, left);
+        }
+        yield; // a breath between npcs
+      }
+      return result;
     }
   },
   boundary({ npc }, navMesh) {
@@ -125,47 +190,132 @@ function createParkFilter(blocked: Set<string>, standingRef: number): QueryFilte
   };
 }
 
+/** A stretch of wall, as `t` along it, that cannot be stood in */
+type Span = [lo: number, hi: number];
+
 /**
- * The point on navmesh boundary segment `seg` nearest `src` that no door's traffic runs through,
- * or `null` where the whole of it is in the way. `others` are the room's parked npcs, each with
- * the segment they stand against: a body's width is kept from one along this wall, and more from
- * one across the way, which would make a choke
+ * A navmesh boundary segment `s`, as the line `a + d·t` for `t` in `[0, len]`. `base` is what the
+ * room's doorways and its npcs parked before the op cut out of it; `cut` is that plus each npc
+ * parked by the op so far, and is reset for a re-run
  */
-function findClearPointOnSeg(
-  src: Geom.VectJson,
-  seg: { s: number[] },
-  doors: WW.DoorFrame[],
-  others: { point: Geom.VectJson; seg: number[] }[],
-): null | Geom.VectJson {
-  const a = { x: seg.s[0], y: seg.s[2] };
-  const len = Math.hypot(seg.s[3] - a.x, seg.s[5] - a.y);
+type Wall = { s: number[]; a: Geom.VectJson; d: Geom.VectJson; len: number; base: Span[]; cut: Span[] };
+
+/** The point they would take now, against `wall` — `clear` false where nothing was, see `guessSpot` */
+type Guess = { at: Geom.VectJson; wall: Wall; clear: boolean };
+
+/** An npc waiting to be parked: their walls nearest first, the room's others in reach, and how they stand */
+type Cand = { npc: WW.NpcQuery; walls: Wall[]; near: Cand[]; guess: Guess; slack: number };
+
+type RoomResult = { plans: Map<string, WW.ParkPlan>; failed: Cand[] };
+
+function prepareWall(s: number[], doors: WW.DoorFrame[], parked: { point: Geom.VectJson; seg: number[] }[]) {
+  const a = { x: s[0], y: s[2] };
+  const len = Math.hypot(s[3] - a.x, s[5] - a.y);
   if (len === 0) return null;
-  const d = { x: (seg.s[3] - a.x) / len, y: (seg.s[5] - a.y) / len };
-  const along = (p: Geom.VectJson) => (p.x - a.x) * d.x + (p.y - a.y) * d.y;
+  const wall: Wall = { s, a, d: { x: (s[3] - a.x) / len, y: (s[5] - a.y) / len }, len, base: [], cut: [] };
+  for (const door of doors) {
+    const span = doorwayInterval(a, wall.d, door);
+    if (span !== null) wall.base.push(span);
+  }
+  for (const o of parked) {
+    const span = npcSpan(wall, o.point, o.seg);
+    if (span !== null) wall.base.push(span);
+  }
+  wall.cut = wall.base.slice();
+  return wall;
+}
 
-  // the stretches of wall, as `t` along it, cut out by each doorway and by each parked npc
-  const spans: [number, number][] = [
-    ...doors.flatMap((door) => {
-      const span = doorwayInterval(a, d, door);
-      return span === null ? [] : [span];
-    }),
-    ...others.flatMap((o) => {
-      const across = (o.seg[3] - o.seg[0]) * d.x + (o.seg[5] - o.seg[2]) * d.y < 0;
-      const radius = across ? parkNpcClearance : parkNpcBesideClearance;
-      const t0 = along(o.point);
-      const half = Math.sqrt(radius ** 2 - Math.hypot(a.x + d.x * t0 - o.point.x, a.y + d.y * t0 - o.point.y) ** 2);
-      return Number.isNaN(half) ? [] : [[t0 - half, t0 + half] as [number, number]]; // NaN: too far off
-    }),
-  ];
+function along({ a, d }: Wall, p: Geom.VectJson) {
+  return (p.x - a.x) * d.x + (p.y - a.y) * d.y;
+}
 
-  // the free point nearest where they stand: that point, else the nearest end of a span, nudged
-  // a hair clear — only such points can be nearest, and there are few
-  const target = Math.max(0, Math.min(len, along(src)));
+/**
+ * The stretch of `wall` an npc parked at `point` against `seg` takes: a body's width where they
+ * stand along this wall, and more where they stand across the way, which would make a choke
+ */
+function npcSpan(wall: Wall, point: Geom.VectJson, seg: number[]): null | Span {
+  const { a, d } = wall;
+  const across = (seg[3] - seg[0]) * d.x + (seg[5] - seg[2]) * d.y < 0;
+  const radius = across ? parkNpcClearance : parkNpcBesideClearance;
+  const t0 = along(wall, point);
+  const half = Math.sqrt(radius ** 2 - Math.hypot(a.x + d.x * t0 - point.x, a.y + d.y * t0 - point.y) ** 2);
+  return Number.isNaN(half) ? null : [t0 - half, t0 + half]; // NaN: too far off
+}
+
+/**
+ * The free point on `wall` nearest `src`, as `t`, or `null` where the whole of it is cut: that
+ * point, else the nearest end of a span, nudged a hair clear — only such points can be nearest,
+ * and there are few
+ */
+function findClearT(wall: Wall, src: Geom.VectJson, spans: Span[]): null | number {
+  const { len } = wall;
+  const target = Math.max(0, Math.min(len, along(wall, src)));
   const free = (t: number) => t >= 0 && t <= len && spans.every(([lo, hi]) => t <= lo || t >= hi);
   const t = [target, ...spans.flatMap(([lo, hi]) => [lo - parkSlack, hi + parkSlack])]
     .filter(free)
     .sort((u, v) => Math.abs(u - target) - Math.abs(v - target))[0];
-  return t === undefined ? null : { x: a.x + d.x * t, y: a.y + d.y * t };
+  return t === undefined ? null : t;
+}
+
+/** How much of `wall` is left, once the `spans` are cut out */
+function freeLength({ len }: Wall, spans: Span[]) {
+  let free = len;
+  let end = 0; // covered up to here, so overlaps count once
+  for (const [lo, hi] of spans.slice().sort((u, v) => u[0] - v[0])) {
+    const [from, to] = [Math.max(end, lo, 0), Math.min(hi, len)];
+    if (to > from) free -= to - from;
+    end = Math.max(end, to);
+  }
+  return free;
+}
+
+/**
+ * Where they would park now, given only the walls' `cut`: the nearest wall with a clear point —
+ * else the nearest wall, not `clear`: a stand-in for the ordering, never parked at
+ */
+function guessSpot(walls: Wall[], src: Geom.VectJson): Guess {
+  for (const wall of walls) {
+    const t = findClearT(wall, src, wall.cut);
+    if (t !== null) return { at: pointAt(wall, t), wall, clear: true };
+  }
+  const [wall] = walls;
+  return { at: pointAt(wall, Math.max(0, Math.min(wall.len, along(wall, src)))), wall, clear: false };
+}
+
+function pointAt({ a, d }: Wall, t: number) {
+  return { x: a.x + d.x * t, y: a.y + d.y * t };
+}
+
+/** Parked at a clear guess, facing the walkable side: navcat winds its outlines clockwise, so the inside lies along `(dz, -dx)` */
+function toPlan(key: string, { at, wall }: Guess): WW.ParkPlan {
+  const facing = { x: at.x + (wall.s[5] - wall.s[2]), y: at.y + (wall.s[0] - wall.s[3]) };
+  return { key, at, facing, seg: wall.s };
+}
+
+/**
+ * The wall they have to spare: what is left of theirs after the parked, and after each of those
+ * `left` in reach takes their own first choice. An estimate — those choices may overlap — but it
+ * only decides the order
+ */
+function getSlack(c: Cand, left: Set<Cand>) {
+  let slack = 0;
+  for (const wall of c.walls) {
+    const spans = wall.cut.slice();
+    for (const o of c.near) {
+      if (left.has(o) === false) continue;
+      const span = npcSpan(wall, o.guess.at, o.guess.wall.s);
+      if (span !== null) spans.push(span);
+    }
+    slack += freeLength(wall, spans);
+  }
+  return slack;
+}
+
+/** Should `c` park before `p`: those a re-run puts `first`, then the least slack, then most in reach */
+function tighter(c: Cand, p: Cand, first: Set<Cand>) {
+  if (first.has(c) !== first.has(p)) return first.has(c);
+  if (c.slack !== p.slack) return c.slack < p.slack;
+  return c.near.length > p.near.length;
 }
 
 /**
@@ -216,5 +366,8 @@ const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 const parkNpcClearance = 6.5 * agentRadius;
 /** …and from those parked along the same wall: a body's width, and a little */
 const parkNpcBesideClearance = 4 * agentRadius;
-/** A parked point sits this far clear of what cut its span, so a point test agrees */
+/** Npcs further apart than this cannot contend: each parks within range, and cuts no further */
+const parkReach = 2 * parkQueryRange + parkNpcClearance;
+/** A room is re-run at most this many times for those who found no clear point */
+const parkPasses = 3; /** A parked point sits this far clear of what cut its span, so a point test agrees */
 const parkSlack = 1e-3;

@@ -336,11 +336,33 @@
   - ❌ fix connect world
     - could not repro issue
   - ✅ move leanBack into demo_lean_back
-  - try tween collisionQueryRange between 1 and 0.7
-  - sometimes turn initially when move
+
+  - ✅ sometimes turn initially when move
+    - useful when facing wrong way and start close to idle npc
+  - ✅ remaining cases e.g. npc fails to walk around npc on internal boundary corner
+    - this can happen in 301 bridge when npc parked in lower-right corner of table in briefing room
+
+  - ❌ can `move npc:rob to npc:abe`
+    - not canonical enough
+
+  - ✅ park should avoid close npcs "either side of local boundary"
+    - already does but try strengthen
+    - try improve park ordering
+    - do not park unparkable and throw error
+  - split world const into const.env and const.npc
+  - provide controls which turn on long click
+    - `pick --long | move npc:rob` works but cancels pick-n-move
+    - useful for repro nav issues
+  - running should vary between animating `walk` and `run`
+  - ✅ bug where walking npc gets stuck oscillating near idle's boundary
 
 # FUTURE
 
+- try use strafe left/right animations
+- investigate larger walk around params with fallback to params permitting free motion around parked
+  - try tween collisionQueryRange between 1 and 0.7
+    - useful when two parked npcs face each other ~ 1 npc apart
+    - could ping neighbours and reduce when two are close
 - Jobs: indicate stale processes after hmr
 - onchange playground preserve npc position
   - should also work in other maps

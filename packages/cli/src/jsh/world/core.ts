@@ -500,7 +500,7 @@ export async function nudge(
     src: "from",
   }),
 ) {
-  const { w } = ct;
+  const { w, api } = ct;
   const npc = w.npc.get(opts.npcKey ?? ct.args[0]);
   opts.by ??= 0.5;
 
@@ -519,7 +519,8 @@ export async function nudge(
 
   // slid along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
   const to = await plan({
-    ...ct,
+    api,
+    w,
     op: { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + delta.x, y: src.y + delta.y } },
   });
   if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < nudgeMinMove) {
@@ -569,7 +570,8 @@ export async function pad(
 /**
  * Stand npcs against a nearby wall, out of the way: clear of the room's doorways and of its other
  * parked npcs, and remembered in `w.e.parked`. Planned together on the worker, then everyone
- * moves at once. A kill rejects the npcs; a pause lets a fade or look finish
+ * moves at once — bar one with no clear spot, left where they stand and named in the error.
+ * A kill rejects the npcs; a pause lets a fade or look finish
  * ```sh
  * park npc:kate
  * park kate
@@ -598,7 +600,8 @@ export async function park(
       },
       signal,
     );
-    if (plans.some((plan) => plan === null)) throw Error("boundary too far");
+    // no wall in reach, or no clear spot on any: left where they stand, and named once the rest are parked
+    const leftOut = npcs.filter((_, i) => plans[i] === null);
 
     // a kill stops them where they are; a pause does not — see `awaitPausable`
     const onAbort = () => isPaused(signal.reason) === false && npcs.forEach((npc) => npc.rejectAll(signal.reason));
@@ -606,7 +609,9 @@ export async function park(
     try {
       await Promise.all(
         npcs.map(async (npc, i) => {
-          const { at, facing, seg } = plans[i] as WW.ParkPlan;
+          const plan = plans[i];
+          if (plan === null) return;
+          const { at, facing, seg } = plan;
           if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > parkMinMove) {
             await npc.fadeSpawn({ at, facing });
           } else {
@@ -618,6 +623,7 @@ export async function park(
     } finally {
       signal.removeEventListener("abort", onAbort);
     }
+    if (leftOut.length > 0) throw Error(`not parked: ${leftOut.map((npc) => npc.key).join(" ")}`);
   });
 }
 

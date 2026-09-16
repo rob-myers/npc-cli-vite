@@ -131,38 +131,50 @@ export class NpcAnimation {
   }
 
   /**
-   * Walk or run to `target` — `moveClip` says which — or, given `null`, merely show it: a mirror
-   * npc's movement arrives over the network (see `use-world-net`)
+   * Ask the crowd for a path to `target`, pinned at rest. One crowd tick later its corners say
+   * where the first leg heads, which `w.npc.turnBeforeMoving` turns to before `startMoving`
+   * releases them — and the corridor is kept, so nothing is pathed twice
    */
-  startMoving(target: null | { groundPoint: JshCli.GroundPoint; result: FindNearestPolyResult }, arrive = true) {
-    if (target !== null) {
-      const agent = this.npc.agent;
-      if (!agent) {
-        throw Error(`cannot move without agent: ${this.npc.key}`);
-      }
-      // whilst walking, doors should block npcs
-      agent.queryFilter = this.npc.queryFilter;
-      agent.separationWeight = walkSeparationWeight;
+  aimAt(target: { groundPoint: JshCli.GroundPoint; result: FindNearestPolyResult }) {
+    const agent = this.npc.agent;
+    if (!agent) {
+      throw Error(`cannot move without agent: ${this.npc.key}`);
+    }
+    // whilst walking, doors should block npcs
+    agent.queryFilter = this.npc.queryFilter;
+    agent.separationWeight = walkSeparationWeight;
+    agent.maxSpeed = 0; // `startMoving` releases them
+
+    crowdApi.requestMoveTarget(
+      this.w.npc.crowd,
+      this.npc.agentId as string,
+      target.result.nodeRef,
+      helper.groundPointToTuple(target.groundPoint),
+    );
+
+    const { last } = this.npc;
+    // last.dst = groundPoint; // already set in `w.npc.move`
+    last.dstGrId = this.w.e.findRoomContaining(target.groundPoint);
+    last.blockingArea = -1;
+    last.point = this.npc.point;
+    // arrival radius is relative to this, else a short move starts arrived
+    last.targetDistance = this.npc.distanceTo(target.groundPoint);
+    Object.assign(last, { stuckAccum: 0, nearest: Infinity, nearestAccum: 0 });
+  }
+
+  /**
+   * Show the gait — `moveClip` says which — and release the agent `aimAt` pinned. A mirror npc
+   * has no agent: its movement arrives over the network (see `use-world-net`)
+   */
+  startMoving(arrive = true) {
+    const agent = this.npc.agent;
+    if (agent !== null) {
+      // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
       agent.maxAcceleration = walkMaxAcceleration;
       agent.maxSpeed = this.moveClip.name === "run" ? runAgentMaxSpeed : walkAgentMaxSpeed;
-
-      crowdApi.requestMoveTarget(
-        this.w.npc.crowd,
-        this.npc.agentId as string,
-        target.result.nodeRef,
-        helper.groundPointToTuple(target.groundPoint),
-      );
-
-      const { last } = this.npc;
-      // last.dst = groundPoint; // already set in `w.npc.move`
-      last.dstGrId = this.w.e.findRoomContaining(target.groundPoint);
-      last.blockingArea = -1;
-      last.point = this.npc.point;
-      last.moveTime = this.w.timer.getElapsedTime();
-      // arrival radius is relative to this, else a short move starts arrived
-      last.targetDistance = this.npc.distanceTo(target.groundPoint);
-      Object.assign(last, { stuckAccum: 0, nearest: Infinity, nearestAccum: 0 });
     }
+    // after the turn, so a long one does not eat the stuck grace
+    this.npc.last.moveTime = this.w.timer.getElapsedTime();
 
     this.arrive = arrive;
     // a move interrupted by another keeps its gait on show, so the walk runs on into the new
