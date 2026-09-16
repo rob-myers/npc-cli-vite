@@ -1,5 +1,5 @@
 import type { StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
-import { precision } from "@npc-cli/ui__world/const";
+import { precision } from "@npc-cli/ui__world/const.env";
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Rect, Vect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";

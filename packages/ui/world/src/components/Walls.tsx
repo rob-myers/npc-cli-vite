@@ -3,7 +3,7 @@ import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { wallHeight } from "../const";
+import { wallHeight } from "../const.env";
 import * as geometry from "../service/geometry";
 import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";

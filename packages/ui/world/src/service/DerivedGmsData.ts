@@ -10,7 +10,7 @@ import {
   roomHitTextureScaleDown,
   wallHeight,
   worldToSguScale,
-} from "../const";
+} from "../const.env";
 import { RoomGraph } from "./room-graph";
 import { getContext2d } from "./tex-array";
 

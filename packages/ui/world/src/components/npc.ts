@@ -14,7 +14,7 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultIdleAnimationClipKey, defaultNpcLabelColor } from "../const";
+import { defaultIdleAnimationClipKey, defaultNpcLabelColor } from "../const.npc";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";

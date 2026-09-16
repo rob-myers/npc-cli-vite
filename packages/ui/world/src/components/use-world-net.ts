@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { defaultSkinKey, floorFadeDelayMs, introPanDelayMs, mapVeilMs, unfoldDelayMs } from "../const";
+import { defaultSkinKey, floorFadeDelayMs, introPanDelayMs, mapVeilMs, unfoldDelayMs } from "../const.env";
 import {
   decodeTransforms,
   encodeTransforms,

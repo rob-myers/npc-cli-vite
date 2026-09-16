@@ -26,7 +26,7 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { StarShipSymbolSheetEntry } from "../assets.schema";
-import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const";
+import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";

@@ -355,10 +355,11 @@ function doorwayInterval(a: Geom.VectJson, d: Geom.VectJson, door: WW.DoorFrame)
 const boundary = localBoundary.create();
 
 // typed copies of the world's constants, which the worker cannot import — see `physics.ts` there
-type WorldConst = typeof import("@npc-cli/ui__world/const");
-const agentRadius: WorldConst["npcConfig"]["dist"]["agentRadius"] = 0.18;
-const doorwayClearance: WorldConst["doorwayClearance"] = 0.6;
-const parkQueryRange: WorldConst["parkQueryRange"] = 2;
+type WorldEnv = typeof import("@npc-cli/ui__world/const.env");
+type WorldNpc = typeof import("@npc-cli/ui__world/const.npc");
+const agentRadius: WorldEnv["npcDims"]["agentRadius"] = 0.18;
+const doorwayClearance: WorldNpc["doorwayClearance"] = 0.6;
+const parkQueryRange: WorldNpc["parkQueryRange"] = 2;
 /** The crowd's `agentPlacementHalfExtents` */
 const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 

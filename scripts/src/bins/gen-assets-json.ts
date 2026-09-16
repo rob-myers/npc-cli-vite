@@ -21,7 +21,7 @@ import { SymbolGraph } from "@npc-cli/graph";
 import { isHullSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import { MapEditSavedFileSchema } from "@npc-cli/ui__map-edit/editor.schema";
 import { AssetsSchema, type AssetsType } from "@npc-cli/ui__world/assets.schema";
-import { defaultWorldTheme } from "@npc-cli/ui__world/const";
+import { defaultWorldTheme } from "@npc-cli/ui__world/const.env";
 import {
   createLayout,
   createMapDefFromSavedFile,

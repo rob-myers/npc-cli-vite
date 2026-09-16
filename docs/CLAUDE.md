@@ -117,5 +117,6 @@ Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DE
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 
-- const.ts only contains constants, no methods
+- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone, never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
 - Prefer terse comments: a short line over a paragraph, and only what the code doesn't already say
+- Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first

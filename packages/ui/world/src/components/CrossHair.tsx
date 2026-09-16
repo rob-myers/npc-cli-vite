@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import * as THREE from "three/webgpu";
-import { crosshairY } from "../const";
+import { crosshairY } from "../const.env";
 import { createGroundCrosshairGeometry } from "../service/geometry";
 import { WorldContext } from "./world-context";
 

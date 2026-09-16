@@ -24,7 +24,7 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import { compilingShadersText, defaultBrightness } from "../const";
+import { compilingShadersText, defaultBrightness } from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";

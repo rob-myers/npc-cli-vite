@@ -1,3 +1,4 @@
+/// <reference path="../jsh-cli.d.ts" />
 import { Vector3 } from "three";
 
 export const helper = {

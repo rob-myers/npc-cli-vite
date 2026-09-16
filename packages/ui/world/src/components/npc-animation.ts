@@ -15,7 +15,7 @@ import {
   walkAgentMaxSpeed,
   walkMaxAcceleration,
   walkSeparationWeight,
-} from "../const";
+} from "../const.npc";
 import { helper } from "../service/helper";
 import { emptyAnimationClip } from "../service/three-animation";
 import type { AnimationClipKey } from "./NPCs";

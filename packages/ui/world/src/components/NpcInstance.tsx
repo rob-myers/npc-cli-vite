@@ -1,6 +1,6 @@
 import { memo } from "react";
 import * as THREE from "three/webgpu";
-import { npcScale } from "../const";
+import { npcScale } from "../const.npc";
 import type { Npc } from "./npc";
 
 function NpcInstance({ npc }: { npc: Npc }) {

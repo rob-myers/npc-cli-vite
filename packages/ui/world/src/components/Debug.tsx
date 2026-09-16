@@ -6,7 +6,7 @@ import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "na
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, select, smoothstep, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { sguToWorldScale } from "../const";
+import { sguToWorldScale } from "../const.env";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";

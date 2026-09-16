@@ -2,7 +2,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness, defaultCameraFollow } from "../const";
+import { defaultBrightness, defaultCameraFollow } from "../const.env";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
