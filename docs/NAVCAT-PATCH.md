@@ -1,7 +1,7 @@
 # The navcat patch
 
 `navcat` (the recast/detour port the crowd runs on) is patched via pnpm —
-`patches/navcat@0.4.1.patch`, wired up under `patchedDependencies` in `pnpm-workspace.yaml`. Four
+`patches/navcat@0.4.1.patch`, wired up under `patchedDependencies` in `pnpm-workspace.yaml`. Five
 changes in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`.
 
 ## 1. Four corners, not three
@@ -48,6 +48,22 @@ parameter fixes it: the term is minimised at rest.
 `0.02` of contact) it points into, keeping its speed — the side it leans to, else the side the
 side-bias prefers (`-np`). Only the sampler's local copy changes; `agent.desiredVelocity` is
 untouched. Costs a dot and a distance per neighbour.
+
+## 5. `avoidanceRadius`: the room walkers prefer to leave an idle npc
+
+Avoidance treats agents as hard discs, so a walker clears a neighbour by exactly the sum of their
+radii — no parameter changes that, only the radius. But a bigger radius is a collision, and a
+walker would stall at a gap its body fits through.
+
+So it is a preference: an optional agent param `avoidanceRadius`, carried onto each neighbour
+circle as `avoidRad`, and in `processSample` a flat `weightSpace` on any sample whose nearest
+approach to the neighbour comes within `rad + avoidRad`. With room to spare the margin is kept, as
+going wide costs less than `weightSpace`; in a gap every sample pays alike, so it cancels and they
+squeeze through at the true radius. Collisions, the side bias and the fold above all keep `rad`.
+The test is a dot and a squared length per idle neighbour — no second sweep — and takes no
+horizon: creeping up to a gap must not dodge it.
+
+Agents are created with `idleAvoidanceRadius`, `startIdle` restores it and `startMoving` clears it.
 
 ## Editing the patch
 

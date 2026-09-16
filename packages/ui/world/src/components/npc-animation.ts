@@ -8,6 +8,7 @@ import {
   defaultIdleAnimationClipKey,
   fadeSecs,
   idleAgentMaxSpeed,
+  idleAvoidanceRadius,
   idleMaxAcceleration,
   idleSeparationWeight,
   npcScale,
@@ -172,6 +173,7 @@ export class NpcAnimation {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
       agent.maxAcceleration = walkMaxAcceleration;
       agent.maxSpeed = this.moveClip.name === "run" ? runAgentMaxSpeed : walkAgentMaxSpeed;
+      agent.avoidanceRadius = undefined; // walking, their true size
     }
     // after the turn, so a long one does not eat the stuck grace
     this.npc.last.moveTime = this.w.timer.getElapsedTime();
@@ -198,6 +200,8 @@ export class NpcAnimation {
 
     if (agent) {
       agent.separationWeight = idleSeparationWeight;
+      // idle, others keep their distance — unless parked against a wall, where the room is needed
+      agent.avoidanceRadius = this.w.e.parked.has(this.npc.key) ? undefined : idleAvoidanceRadius;
       agent.maxAcceleration = idleMaxAcceleration;
       agent.maxSpeed = idleAgentMaxSpeed;
       const [vx, , vz] = agent.velocity;

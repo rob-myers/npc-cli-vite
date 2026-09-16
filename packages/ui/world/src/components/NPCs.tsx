@@ -52,6 +52,7 @@ import {
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
+  idleAvoidanceRadius,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   npcConfig,
@@ -1113,11 +1114,13 @@ function getAgentParams(): crowd.AgentParams {
     maxSpeed: idleAgentMaxSpeed,
     collisionQueryRange: crowdConfig.collisionQueryRange,
     boundaryQueryRange: crowdConfig.boundaryQueryRange,
+    avoidanceRadius: idleAvoidanceRadius, // created idle — see `startIdle`
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
     obstacleAvoidance: {
       ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,
       weightCurVel: crowdConfig.avoidanceWeightCurVel,
+      weightSpace: crowdConfig.avoidanceWeightSpace,
     },
     queryFilter: ANY_QUERY_FILTER,
   };
