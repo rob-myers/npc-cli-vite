@@ -14,7 +14,6 @@ import {
   findNearestPoly,
   type NodeRef,
   type QueryFilter,
-  type Vec3,
 } from "navcat";
 import { type crowd, crowd as crowdApi } from "navcat/blocks";
 import { useContext, useEffect, useMemo } from "react";
@@ -46,12 +45,16 @@ import {
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import {
+  closestPolyByAccuracy,
+  crowdConfig,
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   npcConfig,
+  npcMaterialConfig,
+  npcSpawnConfig,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
 } from "../const";
@@ -111,9 +114,10 @@ export default function NPCs() {
       },
       configureCrowd() {
         // improve initial path accuracy
-        state.crowd.quickSearchIterations = 64;
+        state.crowd.quickSearchIterations = crowdConfig.quickSearchIterations;
       },
       createMaterials(pickId: number, skinIndex: number) {
+        const { labelHalfWidth, labelHalfHeight, rim: rimConfig, litUnseen } = npcMaterialConfig;
         const skinIndexUniform = uniform(skinIndex);
         // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
         const pickIdUniform = uniform(pickId);
@@ -142,7 +146,9 @@ export default function NPCs() {
         const labelYShift = uniform(0, "float");
         const anchor = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
         const viewCtr = cameraViewMatrix.mul(modelWorldMatrix.mul(anchor));
-        const labelPos = cameraProjectionMatrix.mul(viewCtr.add(vec4(sign.x.mul(labelHw), sign.y.mul(labelHh), 0, 0)));
+        const labelPos = cameraProjectionMatrix.mul(
+          viewCtr.add(vec4(sign.x.mul(labelHalfWidth), sign.y.mul(labelHalfHeight), 0, 0)),
+        );
         const stdPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(modelWorldMatrix.mul(vec4(positionLocal, 1))));
 
         // Color node
@@ -160,9 +166,9 @@ export default function NPCs() {
         // the silhouette. Eased off as the camera climbs overhead, where nearly every surface in
         // sight is a flank turned edge-on and the rim would otherwise take the whole npc rather
         // than outlining them — `toEye.y` is how much of the view is straight down
-        const overhead = smoothstep(float(rimOverheadFrom), float(rimOverheadTo), toEye.y);
-        const rimBright = mix(float(rimAmount), float(rimOverheadAmount), overhead);
-        const rim = facing.oneMinus().pow(rimPower).mul(rimBright).mul(fold);
+        const overhead = smoothstep(float(rimConfig.overheadFrom), float(rimConfig.overheadTo), toEye.y);
+        const rimBright = mix(float(rimConfig.amount), float(rimConfig.overheadAmount), overhead);
+        const rim = facing.oneMinus().pow(rimConfig.power).mul(rimBright).mul(fold);
         // `alphaTestNode` below gives way with this, or the body would be discarded whole the
         // moment its alpha started dropping
         const mainColor = vec4(
@@ -170,7 +176,7 @@ export default function NPCs() {
             vec3(0).mul(positionLocal.y),
             // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
             // skin happened to be — a dark uniform takes a rim as readily as a pale one
-            skinTex.rgb.mul(ndotv).add(rimColor.mul(rim)),
+            skinTex.rgb.mul(ndotv).add(vec3(...rimConfig.color).mul(rim)),
             // skinTex.rgb.mul(ndotv),
             colorScale,
           ),
@@ -211,11 +217,11 @@ export default function NPCs() {
         );
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
         // - playerLight affects body but not label
-        // - a LIT npc is never darker than `npcLitUnseen`, and takes the player's light where it
+        // - a LIT npc is never darker than `litUnseen`, and takes the player's light where it
         //   reaches them: the MAX of the two, so being lit is a floor under them rather than a
         //   light of its own that would dim them wherever the player's already fell
         const shaded = w.view.playerLight.applyLightRgba(mainColor);
-        const ownLit = vec4(shaded.rgb.max(mainColor.rgb.mul(npcLitUnseen)), mainColor.a);
+        const ownLit = vec4(shaded.rgb.max(mainColor.rgb.mul(litUnseen)), mainColor.a);
         // `bodyTint` is applied at the output, see below
         const body = mix(shaded, ownLit, litAmount);
         // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
@@ -379,7 +385,7 @@ export default function NPCs() {
       },
       getClosestPoly(targetPos, accuracy = 0.005, queryFilter = ANY_QUERY_FILTER) {
         const targetTuple = helper.groundPointToTuple(helper.parseGroundPoint(targetPos));
-        const { halfExtents, distance } = byAccuracy[accuracy];
+        const { halfExtents, distance } = closestPolyByAccuracy[accuracy];
         const result = findNearestPoly(
           createFindNearestPolyResult(),
           w.nav.navMesh,
@@ -630,6 +636,7 @@ export default function NPCs() {
         });
 
         if (!npc) {
+          const { compactPickIdsAt } = npcSpawnConfig;
           if (state.nextPickId > compactPickIdsAt && Object.keys(state.npc).length < compactPickIdsAt) {
             state.compactPickIds();
           }
@@ -685,8 +692,8 @@ export default function NPCs() {
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
       async spawn({ npcKey, at, as, angle, facing }) {
-        if (typeof npcKey !== "string" || !npcKeyPattern.test(npcKey)) {
-          throw Error(`opts.npcKey must match: ${npcKeyPattern}`);
+        if (typeof npcKey !== "string" || !npcSpawnConfig.keyPattern.test(npcKey)) {
+          throw Error(`opts.npcKey must match: ${npcSpawnConfig.keyPattern}`);
         }
         if (!at) {
           throw Error("opts.at must exist");
@@ -786,7 +793,7 @@ export default function NPCs() {
         crowdApi.requestMoveTarget(state.crowd, agentId, to.nodeRef, to.position);
         // enough updates to carry the search through its quick pass and into the sliced one, which
         // is where the cost lives
-        for (let i = 0; i < warmCrowdTicks; i++) {
+        for (let i = 0; i < crowdConfig.warmTicks; i++) {
           crowdApi.update(state.crowd, w.nav.navMesh, 1 / 60);
         }
         crowdApi.removeAgent(state.crowd, agentId);
@@ -1094,9 +1101,6 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
  */
 const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
 
-// const avoidanceWeightCurVel = 2; // avoids intersection more
-const avoidanceWeightCurVel = 0.75; // helpful when moving round npc from other side
-
 const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.SEPARATION;
 
 function getAgentParams(): crowd.AgentParams {
@@ -1105,20 +1109,13 @@ function getAgentParams(): crowd.AgentParams {
     height: npcConfig.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
-    // collisionQueryRange 0.5, 0.6, 0.7, 1, 1.5
-    collisionQueryRange: 0.7,
-    // collisionQueryRange: 1.5,
-    // walls are looked for less far than npcs: the further out they are found, the earlier
-    // avoidance slows a walker for a goal beside one — see `docs/navcat-patch.md`
-    boundaryQueryRange: 0.4,
+    collisionQueryRange: crowdConfig.collisionQueryRange,
+    boundaryQueryRange: crowdConfig.boundaryQueryRange,
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
-    // head-on to an idle agent, the two ways round score alike and avoidance can flip between
-    // them every tick — the walker jerks in place until `updateStuck` gives up. Deviating from the
-    // CURRENT velocity is penalised more, so a side once taken is kept
     obstacleAvoidance: {
       ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,
-      weightCurVel: avoidanceWeightCurVel,
+      weightCurVel: crowdConfig.avoidanceWeightCurVel,
     },
     queryFilter: ANY_QUERY_FILTER,
   };
@@ -1136,55 +1133,6 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
       return defaultIdleAnimationClipKey;
   }
 }
-
-/** How many crowd updates the warm-up runs, enough to reach the sliced search */
-const warmCrowdTicks = 4;
-
-/** Past this many pick ids handed out, a spawn renumbers them — see `compactPickIds` */
-const compactPickIdsAt = 200;
-
-const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
-const closePolygonDistance = 0.005;
-const mediumPolygonDistance = 0.1;
-const farPolygonDistance = 0.5;
-
-const byAccuracy: Record<"0.005" | "0.1" | "0.5", { halfExtents: Vec3; distance: number }> = {
-  "0.005": {
-    halfExtents: [closePolygonDistance, closePolygonDistance, closePolygonDistance],
-    distance: closePolygonDistance,
-  },
-  "0.1": {
-    halfExtents: [mediumPolygonDistance, mediumPolygonDistance, mediumPolygonDistance],
-    distance: mediumPolygonDistance,
-  },
-  "0.5": { halfExtents: [farPolygonDistance, farPolygonDistance, farPolygonDistance], distance: farPolygonDistance },
-};
-
-/**
- * The rim around an npc: how tightly it hugs the silhouette (higher is narrower), how bright it
- * gets, and what colour it glows
- */
-const rimPower = 5;
-const rimAmount = 0.2;
-const rimColor = vec3(0.55, 0.72, 0.7);
-
-/**
- * How bright it is instead when looking straight down — where nearly every surface in sight is a
- * flank turned edge-on, and a rim would take the whole npc — and the view elevations it eases
- * between: `0` is level with them, `1` directly above
- */
-const rimOverheadAmount = 0.05;
-/**
- * How much of their own colour a LIT npc keeps where the player's light does not reach them — the
- * least they are ever seen at, the player's light being taken over it wherever it is brighter.
- * See `setNpcLit`
- */
-const npcLitUnseen = 0.5;
-const rimOverheadFrom = 0.45;
-const rimOverheadTo = 0.85;
-
-const labelHw = 0.5;
-const labelHh = 0.125;
 
 const emptyMeta = {};
 
