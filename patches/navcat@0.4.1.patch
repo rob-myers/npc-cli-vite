@@ -24,10 +24,29 @@ index 4b57e18ae02c827999727c574ece1bab54107c9e..678678209436a295475c580176651e75
      pathOptimizationRange: number;
      /** The agent separation weight */
 diff --git a/dist/blocks.js b/dist/blocks.js
-index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..b89589d123cb25f12f763306539d9c1812cf6534 100644
+index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..3ca1841e57e6c5a031523dab6b7964091fcc620b 100644
 --- a/dist/blocks.js
 +++ b/dist/blocks.js
-@@ -1079,6 +1079,9 @@ const addAgent = (crowd, navMesh, position, agentParams) => {
+@@ -606,6 +606,18 @@ const _sampleVelocityAdaptive_vcand = vec3.create();
+  */
+ const sampleVelocityAdaptive = (query, pos, rad, vmax, vel, dvel, params, outVelocity, debug) => {
+     prepareObstacles(query, pos, dvel);
++    // PATCH: pressed against someone, wanting to go through them is wanting to go round them:
++    // the desired velocity folds onto their tangent, keeping its speed — the side it leans to,
++    // else the side the bias prefers. Otherwise a slide costs more than standing still
++    for (let i = 0; i < query.circleCount; i++) {
++        const cir = query.circles[i];
++        const into = vdot2D(cir.dp, dvel);
++        if (into <= 0 || vdist2D(pos, cir.p) > rad + cir.rad + 0.02) continue;
++        const [tx, tz] = [dvel[0] - cir.dp[0] * into, dvel[2] - cir.dp[2] * into];
++        const [t, s] = [Math.hypot(tx, tz), Math.hypot(dvel[0], dvel[2])];
++        dvel = t > 1e-3 ? [(tx / t) * s, 0, (tz / t) * s] : [-cir.np[0] * s, 0, -cir.np[2] * s];
++        break;
++    }
+     copyParams(query.params, params);
+     query.invHorizTime = 1.0 / query.params.horizTime;
+     query.vmax = vmax;
+@@ -1079,6 +1091,9 @@ const addAgent = (crowd, navMesh, position, agentParams) => {
          maxAcceleration: agentParams.maxAcceleration,
          maxSpeed: agentParams.maxSpeed,
          collisionQueryRange: agentParams.collisionQueryRange,
@@ -37,7 +56,7 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..b89589d123cb25f12f763306539d9c18
          pathOptimizationRange: agentParams.pathOptimizationRange ?? agentParams.radius * 30.0,
          separationWeight: agentParams.separationWeight,
          updateFlags: agentParams.updateFlags,
-@@ -1563,10 +1566,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
+@@ -1563,10 +1578,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
              continue;
          }
          // update boundary if agent has moved significantly or if boundary is invalid
@@ -51,7 +70,7 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..b89589d123cb25f12f763306539d9c18
          }
      }
  };
-@@ -1584,11 +1588,22 @@ const updateCorners = (crowd, navMesh) => {
+@@ -1584,11 +1600,22 @@ const updateCorners = (crowd, navMesh) => {
              continue;
          }
          // get corridor corners for steering

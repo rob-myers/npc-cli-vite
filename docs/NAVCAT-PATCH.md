@@ -1,7 +1,7 @@
 # The navcat patch
 
 `navcat` (the recast/detour port the crowd runs on) is patched via pnpm —
-`patches/navcat@0.4.1.patch`, wired up under `patchedDependencies` in `pnpm-workspace.yaml`. Three
+`patches/navcat@0.4.1.patch`, wired up under `patchedDependencies` in `pnpm-workspace.yaml`. Four
 changes in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`.
 
 ## 1. Four corners, not three
@@ -35,6 +35,19 @@ to it (`cornerNearestSqr`). A corner goes once that nearest is within reach, and
 falls, so it never comes back — steering stays on the corner beyond whilst they round it. A
 corridor that moves on puts a different point first, and both reset to it. The destination and
 off-mesh corners are never dropped.
+
+## 4. Pressed against an npc, the desired velocity folds onto their tangent
+
+Avoidance scores each candidate velocity partly by its distance from the desired one, `dvel`.
+Touching an npc with `dvel` pointing through them, every open candidate is a slide along their
+tangent — and a slide differs from `dvel` MORE than standing still does, whatever its speed. So
+the walker crawls at ~0.02 m/s, `updateStuck` calls it still, and the move is rejected. No
+parameter fixes it: the term is minimised at rest.
+
+`sampleVelocityAdaptive` now folds `dvel` onto the tangent of the first touched circle (within
+`0.02` of contact) it points into, keeping its speed — the side it leans to, else the side the
+side-bias prefers (`-np`). Only the sampler's local copy changes; `agent.desiredVelocity` is
+untouched. Costs a dot and a distance per neighbour.
 
 ## Editing the patch
 
