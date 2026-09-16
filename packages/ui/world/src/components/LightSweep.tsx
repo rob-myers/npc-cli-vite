@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useContext, useEffect } from "react";
 import type * as THREE from "three/webgpu";
-import { frontierCalmRate, frontierSmoothRate } from "../const";
+import { frontierCalmRate, frontierSmoothRate } from "../const.env";
 import { WorldContext } from "./world-context";
 
 /**

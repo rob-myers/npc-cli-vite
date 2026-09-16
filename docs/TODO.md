@@ -350,6 +350,7 @@
     - try improve park ordering
     - do not park unparkable and throw error
   - split world const into const.env and const.npc
+  - try provide more leeway around unparked
   - provide controls which turn on long click
     - `pick --long | move npc:rob` works but cancels pick-n-move
     - useful for repro nav issues

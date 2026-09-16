@@ -1,6 +1,6 @@
 import { Rect, Vect } from "@npc-cli/util/geom";
 import { warn } from "@npc-cli/util/legacy/generic";
-import { decorGridSize, gmIdGridDim } from "../const";
+import { decorGridSize, gmIdGridDim } from "../const.env";
 
 //#region decor grid
 

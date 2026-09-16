@@ -39,7 +39,7 @@ import {
   type StarShipSymbolSheetDatum,
   type StarShipSymbolSheetEntry,
 } from "@npc-cli/ui__world/assets.schema";
-import { worldToSguScale } from "@npc-cli/ui__world/const";
+import { worldToSguScale } from "@npc-cli/ui__world/const.env";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";

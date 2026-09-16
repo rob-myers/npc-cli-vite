@@ -44,6 +44,7 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
+import { npcDims } from "../const.env";
 import {
   closestPolyByAccuracy,
   crowdConfig,
@@ -57,7 +58,7 @@ import {
   npcSpawnConfig,
   walkAgentMaxSpeed,
   walkMaxAcceleration,
-} from "../const";
+} from "../const.npc";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -76,7 +77,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
-      crowd: crowdApi.create(npcConfig.dist.maxAgentRadius),
+      crowd: crowdApi.create(npcDims.maxAgentRadius),
       gltf: null,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
@@ -1105,8 +1106,8 @@ const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdAp
 
 function getAgentParams(): crowd.AgentParams {
   return {
-    radius: npcConfig.dist.agentRadius,
-    height: npcConfig.dist.height,
+    radius: npcDims.agentRadius,
+    height: npcDims.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
     collisionQueryRange: crowdConfig.collisionQueryRange,

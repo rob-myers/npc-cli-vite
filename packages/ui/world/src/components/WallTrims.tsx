@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
 import * as THREE from "three/webgpu";
-import { wallHeight } from "../const";
+import { wallHeight } from "../const.env";
 import { createTwoSidedXyQuad } from "../service/geometry";
 import { ensureRoomSlots } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";

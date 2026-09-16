@@ -12,17 +12,17 @@ import {
   introPanDelayMs,
   MAX_NPCS,
   mapVeilMs,
-  npcConfig,
+  npcDims,
   roomLabelRevealMs,
   unfoldDelayMs,
-} from "../const";
+} from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
-import { type Npc, rejectNoop } from "./npc";
+import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
 
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
@@ -682,7 +682,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           [locked.buffer, open.buffer],
         );
 
-        let cancel = rejectNoop;
+        let cancel = (_e: Error): void => {};
         try {
           const result = await new Promise<WW.UnreachableResult>((resolve, reject) => {
             state.pendingUnreachable[uid] = { resolve, reject };
@@ -692,7 +692,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         } finally {
           delete state.pendingUnreachable[uid];
           if (npc.reject.worker === cancel) {
-            npc.reject.worker = rejectNoop;
+            npc.reject.worker = () => {};
           }
         }
       },
@@ -1241,6 +1241,6 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
  * How far CLEAR of a door an npc it cannot pass is kept: their own radius, and a margin on top.
  * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor
  */
-const shutDoorKeepOut = npcConfig.dist.agentRadius + npcConfig.dist.shutDoorKeepOut;
+const shutDoorKeepOut = npcDims.agentRadius + npcDims.shutDoorKeepOut;
 
 const emptyMeta = {};

@@ -28,7 +28,7 @@ import {
   sguToWorldScale,
   specialWallMetaKeys,
   wallOutset,
-} from "../const";
+} from "../const.env";
 import { Connector } from "./Connector";
 import { embedXZMat4 } from "./geometry";
 import { helper } from "./helper";

@@ -1,4 +1,5 @@
 import { Vector3 } from "three";
+import "../jsh-cli";
 
 export const helper = {
   /**

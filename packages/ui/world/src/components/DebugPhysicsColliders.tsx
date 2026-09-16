@@ -1,6 +1,6 @@
 import { memo, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
-import { colliderHeight, wallHeight } from "../const";
+import { colliderHeight, wallHeight } from "../const.env";
 import { boxGeometry, cylinderGeometry } from "../service/geometry";
 
 export const MemoizedDebugPhysicsColliders = memo(DebugPhysicsColliders);
