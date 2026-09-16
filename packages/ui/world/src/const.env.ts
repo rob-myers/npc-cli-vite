@@ -220,17 +220,6 @@ export const MAX_DECOR_QUAD_INSTANCES = 1024;
 
 export const MAX_NPCS = 256;
 
-/** An npc's size, which the world builds around: the crowd, the door sensors, the camera's look height */
-export const npcDims = {
-  height: 1.2,
-  /** Radius of an npc's crowd agent */
-  agentRadius: 0.18,
-  /** Sizes the crowd */
-  maxAgentRadius: 0.5,
-  /** Margin, on top of an npc's radius */
-  shutDoorKeepOut: 0.05,
-} as const;
-
 /** Per-world cap on doors, sizing `Doors`' instanced mesh and `service/player-light`'s buffers */
 export const MAX_DOORS = 512;
 

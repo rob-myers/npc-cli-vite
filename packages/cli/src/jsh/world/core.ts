@@ -1,4 +1,4 @@
-import { npcDims } from "@npc-cli/ui__world/const.env";
+import { npcDims } from "@npc-cli/ui__world/const.both";
 import { parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";

@@ -44,7 +44,8 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
-import { npcDims } from "../const.env";
+import { npcDims } from "../const.both";
+
 import {
   closestPolyByAccuracy,
   crowdConfig,

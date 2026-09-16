@@ -14,6 +14,7 @@ import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { npcDims } from "../const.both";
 import {
   cameraFov,
   cameraRefAspect,
@@ -35,7 +36,6 @@ import {
   frontierNearFrac,
   frontierPanFrac,
   frontierRate,
-  npcDims,
   roomLabelFadeFrom,
   roomLabelNearAlpha,
   rotateSpeedDesktop,

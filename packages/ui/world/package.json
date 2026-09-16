@@ -11,6 +11,7 @@
     "./assets.schema": "./src/assets.schema.ts",
     "./connector": "./src/service/Connector.ts",
     "./query-client": "./src/service/query-client.ts",
+    "./const.both": "./src/const.both.ts",
     "./const.env": "./src/const.env.ts",
     "./const.npc": "./src/const.npc.ts",
     "./worker/nav": "./src/worker/nav.worker.ts",
