@@ -412,7 +412,6 @@ export default function NPCs() {
 
         const npc = state.get(npcKey);
         const result = state.getClosestPoly(groundPoint, 0.5);
-
         const doResult = state.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
 
         if (doResult.type === "occupied") {
@@ -457,9 +456,8 @@ export default function NPCs() {
 
         await npc.ensureLegalPosition();
 
+        // code below is interruptible by next move
         try {
-          // everything interruptible by NEXT move...
-
           // navigation unreachable relative to locked doors?
           const unreachableResult = await w.e.testTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
           npc.last.unreachableResult = unreachableResult;
@@ -1107,9 +1105,9 @@ function getAgentParams(): crowd.AgentParams {
     height: npcConfig.dist.height,
     maxAcceleration: walkMaxAcceleration,
     maxSpeed: idleAgentMaxSpeed,
-    // collisionQueryRange 0.5, 0.6, 0.7, 1
+    // collisionQueryRange 0.5, 0.6, 0.7, 1, 1.5
     collisionQueryRange: 0.7,
-    // collisionQueryRange: 1,
+    // collisionQueryRange: 1.5,
     // walls are looked for less far than npcs: the further out they are found, the earlier
     // avoidance slows a walker for a goal beside one — see `docs/navcat-patch.md`
     boundaryQueryRange: 0.4,
