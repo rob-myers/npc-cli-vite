@@ -11,7 +11,7 @@ import {
   MAX_ROOMS_PER_GEOMORPH,
   roomHitTextureScaleDown,
   worldToSguScale,
-} from "../const";
+} from "../const.env";
 import type DerivedGmsData from "./DerivedGmsData";
 import { getContext2d, TexArray } from "./tex-array";
 

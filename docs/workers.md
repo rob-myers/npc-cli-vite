@@ -16,7 +16,7 @@ Messages are typed in `world-worker.d.ts` (`WW.MsgToWorker` / `MsgFromWorker` fo
 `WW.MsgToNavWorker` / `MsgFromNavWorker` for nav), and jsh's in `packages/cli`'s
 `jsh-worker.d.ts`, merged into the same namespace. Payloads are crafted plain data
 (`service/worker-data.ts`): the workers must share no module with the main thread, else an hmr
-of e.g. `const.ts` reloads the page. Constants a worker needs are typed copies.
+of e.g. `const.env.ts` reloads the page. Constants a worker needs are typed copies.
 
 ## The jsh plug-in
 

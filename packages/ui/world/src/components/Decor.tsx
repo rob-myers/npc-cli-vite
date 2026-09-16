@@ -30,7 +30,7 @@ import {
   precision,
   sguToWorldScale,
   unlockedDoorTint,
-} from "../const";
+} from "../const.env";
 import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
 import { addToDecorGrid, queryDecorGridRect, removeFromDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";

@@ -25,7 +25,7 @@ import {
   MAX_NPCS,
   mapEditSymbolSavedEvent,
   roomLabelTexOpts,
-} from "../const";
+} from "../const.env";
 import type { WorldUiMeta } from "../schema";
 import DerivedGmsData from "../service/DerivedGmsData";
 import { emptyTiledNavmeshResponse } from "../service/empty-nav-response";

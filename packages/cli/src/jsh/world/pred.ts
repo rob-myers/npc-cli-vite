@@ -1,4 +1,4 @@
-import { defaultNpcLabelColor } from "@npc-cli/ui__world/const";
+import { defaultNpcLabelColor } from "@npc-cli/ui__world/const.npc";
 import { sharedMapSlot } from "./shared.service";
 
 type Predicates = {

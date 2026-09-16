@@ -2,7 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, mrt, select, texture, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabelHeight, roomLabelWidth, wallHeight } from "../const";
+import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabelHeight, roomLabelWidth, wallHeight } from "../const.env";
 import { helper } from "../service/helper";
 import { slotOf } from "../service/room-slots";
 import type { SelectAnyType } from "../service/texture";

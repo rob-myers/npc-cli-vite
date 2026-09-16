@@ -2,7 +2,7 @@ import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
 // Avoid HMR issue
-const defaultMapKey: typeof import("./const").defaultMapKey = "301-only";
+const defaultMapKey: typeof import("./const.env").defaultMapKey = "301-only";
 
 export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,

@@ -1,6 +1,6 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { error } from "@npc-cli/util/legacy/generic";
-import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const";
+import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
 import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
 

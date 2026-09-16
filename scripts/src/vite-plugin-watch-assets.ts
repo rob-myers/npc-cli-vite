@@ -167,6 +167,6 @@ async function handleAssetsTheme(req: IncomingMessage, res: ServerResponse, them
 }
 
 // Type mirroring avoids HMR issue
-type WorldConst = typeof import("@npc-cli/ui__world/const");
+type WorldConst = typeof import("@npc-cli/ui__world/const.env");
 const assetsJsonChangingEvent: WorldConst["assetsJsonChangingEvent"] = "assets-json-changing";
 const assetsJsonChangedEvent: WorldConst["assetsJsonChangedEvent"] = "assets-json-changed";

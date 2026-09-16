@@ -20,7 +20,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const";
+import { emptyMapDef, MAX_GEOMORPH_INSTANCES, mapVeilMs } from "../const.env";
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { helper } from "../service/helper";

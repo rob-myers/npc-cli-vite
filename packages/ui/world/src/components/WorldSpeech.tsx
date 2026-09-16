@@ -3,7 +3,7 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useEffect, useState } from "react";
-import { npcConfig } from "../const";
+import { npcDims } from "../const.env";
 import { getWorldStore } from "../service/storage";
 import { NetBadge, NetMenu } from "./NetMenu";
 import { WorldContext } from "./world-context";
@@ -369,7 +369,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
                 onClick={() =>
                   void w.view.lookAt(npc.point, {
                     animate: true,
-                    height: npcConfig.dist.height,
+                    height: npcDims.height,
                     track: () => w.n[npcKey]?.point,
                   })
                 }
