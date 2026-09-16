@@ -618,7 +618,9 @@ export async function park(
           } else {
             await npc.look({ at: facing });
           }
+
           w.e.parked.set(npc.key, { s: seg });
+          if (npc.agent !== null) npc.agent.avoidanceRadius = undefined;
         }),
       );
     } finally {
