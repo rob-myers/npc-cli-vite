@@ -748,6 +748,7 @@ export async function* pick(ct: JshCli.RunArg) {
   if (opts.right !== true && opts.any !== true) {
     opts.left = true; // default to left clicks only
   }
+  opts.long ??= false;
 
   // if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
   //   // support reverse order `pick meta.nav 2`
@@ -824,7 +825,7 @@ export async function* pick(ct: JshCli.RunArg) {
       if (
         (opts.left === true && output.rightDown === true) ||
         (opts.right === true && output.rightDown === false) ||
-        (opts.long !== undefined && opts.long !== output.longDown)
+        opts.long !== output.longDown
       ) {
         continue;
       }
