@@ -23,9 +23,13 @@ export class NpcAnimation {
 
   /** The clip on show — a KEY, so it survives a hot-reload's new clip objects */
   pose: AnimationClipKey = defaultIdleAnimationClipKey;
-  /** What `startIdle` returns to, and which gait `startMoving` shows */
+  /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
   idleClip = emptyAnimationClip;
   moveClip = emptyAnimationClip;
+  /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
+  fast = false;
+  /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
+  gaitSecs = 0;
   /** true iff moving via agent in navmesh */
   moving = false;
   /**
@@ -60,7 +64,12 @@ export class NpcAnimation {
     for (const clip of Object.values(clips)) {
       if (clip !== clips[next]) this.mixer.existingAction(clip)?.fadeOut(fade);
     }
-    this.mixer.clipAction(clips[next]).reset().fadeIn(fade).play();
+    const action = this.mixer.clipAction(clips[next]).reset().fadeIn(fade).play();
+    // walk <-> run: the phase carries over, else the feet pop
+    const prev = this.mixer.existingAction(clips[this.pose]);
+    if (prev !== null && isGait(this.pose) && isGait(next)) {
+      action.time = (prev.time / clips[this.pose].duration) * clips[next].duration;
+    }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
     this.pose = next;
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
@@ -87,6 +96,7 @@ export class NpcAnimation {
     }
 
     if (this.moving === true) {
+      this.syncGait(delta);
       const gait = this.moveClip.name === "run" ? 0.5 : 1;
       this.mixer.clipAction(this.moveClip).timeScale = gait * Math.max(0.25 / npcScale, this.speed, 0.5);
     }
@@ -116,6 +126,18 @@ export class NpcAnimation {
     } else if (face.rate > 0) {
       rotation.y += deltaAngle(rotation.y, face.target) * (1 - Math.exp(-5 * delta * face.rate));
     }
+  }
+
+  /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
+  syncGait(delta: number) {
+    const { runAbove, walkBelow, minSecs } = agentConfig.gait;
+    this.gaitSecs += delta;
+    const running = this.moveClip.name === "run";
+    const next = this.fast === true && (running ? this.speed >= walkBelow : this.speed > runAbove);
+    if (next === running || this.gaitSecs < minSecs || isGait(this.pose) === false) return;
+    this.gaitSecs = 0;
+    this.moveClip = this.npc.clips[next ? "run" : "walk"];
+    this.setPose(keyOf(this.moveClip));
   }
 
   /**
@@ -151,7 +173,7 @@ export class NpcAnimation {
   }
 
   /**
-   * Show the gait — `moveClip` says which — and release the agent `aimAt` pinned. A mirror npc
+   * Show the gait — walk, from rest: `syncGait` breaks into a run — and release the agent `aimAt` pinned. A mirror npc
    * has no agent: its movement arrives over the network (see `use-world-net`)
    */
   startMoving(arrive = true) {
@@ -159,7 +181,7 @@ export class NpcAnimation {
     if (agent !== null) {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
       agent.maxAcceleration = agentConfig.maxAcceleration.walk;
-      agent.maxSpeed = this.moveClip.name === "run" ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk;
+      agent.maxSpeed = this.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk;
     }
     // after the turn, so a long one does not eat the stuck grace
     this.npc.last.moveTime = this.w.timer.getElapsedTime();
@@ -167,9 +189,11 @@ export class NpcAnimation {
     this.arrive = arrive;
     // a move interrupted by another keeps its gait on show, so the walk runs on into the new
     // leg — but a look or a spawn in between puts idle on, and it must be shown again or they slide
-    if (this.moving === true && this.pose === keyOf(this.moveClip)) return;
+    if (this.moving === true && isGait(this.pose)) return;
     this.moving = true;
-    this.setPose(keyOf(this.moveClip));
+    this.moveClip = this.npc.clips.walk;
+    this.gaitSecs = 0;
+    this.setPose("walk");
   }
 
   startIdle({ force = false } = {}) {
@@ -226,6 +250,10 @@ export class NpcAnimation {
       this.setPose(keyOf(this.idleClip)); // a short look superseding a long one
     }
   }
+}
+
+function isGait(key: AnimationClipKey) {
+  return key === "walk" || key === "run";
 }
 
 function keyOf(clip: THREE.AnimationClip) {

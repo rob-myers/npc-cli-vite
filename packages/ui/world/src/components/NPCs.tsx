@@ -478,7 +478,7 @@ export default function NPCs() {
             groundPoint = helper.parseGroundPoint(nearDoor.position);
           }
 
-          npc.anim.moveClip = fast ? state.clips.run : state.clips.walk;
+          npc.anim.fast = fast === true; // the gait itself follows their speed — see `syncGait`
           npc.anim.aimAt({ groundPoint, result });
           await state.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);
@@ -1075,9 +1075,13 @@ function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: 
   return false;
 }
 
-/** Has the move clip finished fading in? Arriving before then would cut it off, looking jerky */
+/**
+ * Has the gait finished fading in? Arriving before then would cut it off, looking jerky. Walk and
+ * run together, so a crossfade between them near the target does not hold the arrival up
+ */
 function moveClipFadedIn(npc: Npc) {
-  return (npc.anim.mixer.existingAction(npc.anim.moveClip)?.getEffectiveWeight() ?? 0) >= 0.99;
+  const weight = (key: "walk" | "run") => npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0;
+  return weight("walk") + weight("run") >= 0.99;
 }
 
 /** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */
