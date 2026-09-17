@@ -208,7 +208,7 @@ export function lock(
  */
 export async function look(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; at: string | JshCli.PointAnyFormat } = ct.api.jsArg(ct.args, {
+  opts: { npcKey: string; at: string | JshCli.PointAnyFormat; force?: boolean } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
     to: "at",
     face: "at",
@@ -218,6 +218,7 @@ export async function look(
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { pendingLooks, processHandled, lookPausable } = lookHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   try {
@@ -243,7 +244,7 @@ export async function look(
   }
 }
 
-function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?: boolean }) {
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
@@ -269,8 +270,11 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
 
       await getNpcOrThrow()
         .look(lookOpts)
-        // .look({ ...lookOpts, minMs: 5000 })
-        .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }));
+        .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
+        .catch((e) => {
+          if (opts.force && !(e instanceof Error && e.message === "killed")) return;
+          throw e;
+        });
     },
     processHandled: api.handleStatus({
       cleanup(killed) {
@@ -293,7 +297,7 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
  * Generic machinary for pause/resume move.
  * - `npcKey` is a literal string or a path to a literal string relative to CWD.
  */
-function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?: boolean }) {
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
@@ -312,12 +316,12 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
     getNpcOrUndefined,
     getNpcOrThrow,
     /** Move, handling named errors and any pause the move deferred */
-    async movePausable(moveOpts: JshCli.MoveOpts & { force?: boolean }, extra?: NamedErrorHandlers) {
+    async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
       await w.npc
         .move(moveOpts)
         .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
         .catch((e) => {
-          if (moveOpts.force && !(e instanceof Error && e.message === "killed")) return;
+          if (opts.force && !(e instanceof Error && e.message === "killed")) return;
           throw e;
         });
       // needed in case we allowed fade to complete
@@ -377,6 +381,7 @@ export async function move(
     force?: boolean;
   } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
+    "--fast": "fast",
     "--force": "force",
   }),
 ) {
@@ -410,6 +415,7 @@ async function move_const(
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   try {
@@ -422,7 +428,6 @@ async function move_const(
         to: next,
         arrive: pendingMoves.length === 0,
         fast: opts.fast,
-        force: opts.force,
       });
     }
   } finally {
@@ -444,6 +449,7 @@ async function move_lazy(
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   let pendingRead = api.read();
@@ -458,7 +464,7 @@ async function move_lazy(
       const npc = getNpcOrThrow();
 
       const movePromise = movePausable(
-        { npcKey: npc.key, to: dst, fast: opts.fast, force: opts.force },
+        { npcKey: npc.key, to: dst, fast: opts.fast },
         {
           "not navigable": false,
           stuck: () => {
@@ -494,6 +500,7 @@ async function move_next(
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   try {
@@ -503,7 +510,7 @@ async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { npcKey: npc.key, to: next, fast: opts.fast, force: opts.force },
+        { npcKey: npc.key, to: next, fast: opts.fast },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -728,7 +735,7 @@ export function pause({ w }: JshCli.RunArg) {
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
 
-  // e.g. long presses via `pick --long` not `pick long` (filter)
+  // e.g. `pick --long` not `pick long` (filter)
   const opts = ct.api.jsArg(args, {
     "--left": "left", // left clicks only
     "--right": "right", // right clicks only
