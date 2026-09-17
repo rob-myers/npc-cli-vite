@@ -1,10 +1,10 @@
 import { npcDims } from "@npc-cli/ui__world/const.both";
-import { parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, padClearance, parkMinMove } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
 import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
-import { parked } from "./pred";
+import { padded, parked } from "./pred";
 
 /**
  * Get at most one decor containing a given point.
@@ -201,6 +201,7 @@ export function lock(
 /**
  * ```sh
  * look npc:rob at:$( pick 1 )
+ * look rob at:$( pick 1 )
  * pick | look npc:rob
  * look npc:rob at:kate
  * ```
@@ -213,6 +214,7 @@ export async function look(
     face: "at",
   }),
 ) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { pendingLooks, processHandled, lookPausable } = lookHandling(ct, {
     npcKey: opts.npcKey,
   });
@@ -371,6 +373,9 @@ export async function move(
     throw Error("opts.to required when not piping");
   }
 
+  // can be undefined and will throw
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+
   if (opts.to) {
     await move_const(ct, { ...opts, to: opts.to });
   } else if (!opts.along) {
@@ -502,9 +507,11 @@ export async function nudge(
     src: "from",
   }),
 ) {
-  const { w, api } = ct;
-  const npc = w.npc.get(opts.npcKey ?? ct.args[0]);
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   opts.by ??= 0.5;
+
+  const { w, api } = ct;
+  const npc = w.npc.get(opts.npcKey);
 
   if (!opts.from) {
     // nudge from a random angle
@@ -550,23 +557,59 @@ export function open(
 }
 
 /**
- * Move npc away from nearby boundary e.g. to avoid blocking others.
+ * Stand npcs where there is room to walk right round them: `by` (default `padClearance`) from
+ * their room's walls and doorways, and from anyone parked or padded — remembered in
+ * `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
+ * once; one without is left where they stand and named in the error
  * ```sh
- * pad npc:kate
- * pad npc:kate by:1
  * pad kate
+ * pad kate rob
+ * pad kate by:1
  * ```
  */
 export async function pad(
   { api, args, w }: JshCli.RunArg,
-  opts: { npcKey: string; by?: number } = api.jsArg(args, { npc: "npcKey" }),
+  opts: { npcKey?: string; npcKeys?: string[]; by?: number } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  const npc = w.npc.get(opts.npcKey ?? args[0]);
-  // off the nearest wall
-  const to = await plan({ api, w, op: { key: "pad", npc: npcQuery(w, npc), by: opts.by ?? 0.5 } });
-  if (to === null) throw Error("boundary too far");
+  // ignore non-existent npcKey including e.g. npc:foo
+  const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
 
-  await w.npc.move({ npcKey: npc.key, to }).catch(() => {}); // ignore stuck
+  await awaitPausable(api, async (signal) => {
+    const plans = await request(
+      w,
+      api,
+      {
+        key: "pad",
+        npcs: npcs.map((npc) => npcQuery(w, npc)),
+        others: [...parked.get().keys(), ...padded.get()].flatMap((key) => {
+          const [point, grKey] = [w.n[key]?.point, w.e.npcToRoom.get(key)?.grKey];
+          return point === undefined || grKey === undefined ? [] : [{ key, point, grKey }];
+        }),
+        by: opts.by ?? padClearance,
+      },
+      signal,
+    );
+    const leftOut = npcs.filter((_, i) => plans[i] === null);
+
+    // a kill stops them where they are; a pause does not — see `awaitPausable`
+    const onAbort = () => isPaused(signal.reason) === false && npcs.forEach((npc) => npc.rejectAll(signal.reason));
+    signal.addEventListener("abort", onAbort, { once: true });
+    try {
+      await Promise.all(
+        npcs.map(async (npc, i) => {
+          const plan = plans[i];
+          if (plan === null) return;
+          if (Math.hypot(plan.at.x - npc.point.x, plan.at.y - npc.point.y) > parkMinMove) {
+            await npc.fadeSpawn({ at: plan.at, angle: npc.rotation.y }); // facing as they were
+          }
+          padded.mark(npc.key);
+        }),
+      );
+    } finally {
+      signal.removeEventListener("abort", onAbort);
+    }
+    if (leftOut.length > 0) throw Error(`not padded: ${leftOut.map((npc) => npc.key).join(" ")}`);
+  });
 }
 
 /**
@@ -900,17 +943,28 @@ export function revoke(
  * ```sh
  * # say something
  * say hi npc:rob
+ * say npc:rob hi
  * say hi npc:rob secs:5
  * say hi npc:rob for:10
  * say hi npc:rob for:Infinity
+ * say hi rob for:1
  * ```
  */
 export function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
   opts: { npcKey: string; words?: string; secs?: number } = api.jsArg(args, { npc: "npcKey", for: "secs" }),
 ) {
+  /** support `say hi rob` where lastWord is npcKey */
+  let lastWord: undefined | string;
+  opts.npcKey ??= (lastWord = getLastUnknownNaked(opts)) as string;
+
   const npc = w.npc.get(opts.npcKey);
-  const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
+  const words =
+    opts.words ??
+    api
+      .getJsOperands(args, opts)
+      .slice(0, lastWord === undefined ? undefined : -1)
+      .join(" ");
 
   if (words) {
     w.speech.say(npc.key, words, opts.secs);
@@ -921,15 +975,16 @@ export function say(
  * ```sh
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
+ * skin rob human-1
  * ```
  */
 export function skin(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; as?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
-  const skinKey = opts.as ?? (api.getJsOperands(args, opts)[0] || "medic-0");
-
+  const skinKey = (opts.as ??= getLastUnknownNaked(opts) ?? "robot-0");
   if (w.npc.getSkinIndexBySkinKey(skinKey) === -1) {
     throw Error(`skin "${skinKey}" not found`);
   }
@@ -941,6 +996,7 @@ export function skin(
  * ```sh
  * spawn npc:foo at:[7,0,7]
  * spawn npc:rob at:$( pick 1 )
+ * spawn rob at:$( pick 1 )
  *
  * # spawn multiple
  * pick | spawn npc:rob-
@@ -953,7 +1009,6 @@ export function skin(
  *
  * pick | spawn npc:rob-
  *
- * 🚧 use --force instead somehow
  * # ignore errors when not reading from stdin: non placable or doable
  * pick | spawn force npc:rob-
  * ```
@@ -968,11 +1023,12 @@ export async function spawn(
     look: "facing",
   }),
 ) {
+  // support e.g. `spawn rob at:$( pick 1 )`
+  opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");
+
   if (api.isTtyAt(0)) {
     return await w.npc.spawn(opts);
   }
-
-  opts.npcKey ??= "npc-";
 
   function ignoreSpawnErrors(e: unknown) {
     if (opts.force && e instanceof Error && (e.message === "not placable" || e.message === "not doable")) {
@@ -1075,10 +1131,16 @@ export async function* w(ct: JshCli.RunArg) {
   }
 }
 
+/**
+ * ```sh
+ * warp rob to:$( pick 1 )
+ * ```
+ */
 export async function warp(
   { w, api, args }: JshCli.RunArg,
   opts: { npcKey: string; to: MaybeMeta<JshCli.PointAnyFormat> } = api.jsArg(args, { npc: "npcKey" }),
 ) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
   await npc.fadeSpawn({ at: opts.to });
 }
@@ -1100,7 +1162,7 @@ export async function* wasd_delta(
 ) {
   const { api, w } = ct;
   const { keysDown } = w.view;
-  const length = (opts.fast === true ? runAgentMaxSpeed : walkAgentMaxSpeed) * wasdStepSecs;
+  const length = (opts.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk) * wasdStepSecs;
   // idle costs nothing: with no key held we wait on the next. A kill aborts the wait, which must
   // REJECT rather than simply lose its listener — the shell waits on us returning
   const abort = new AbortController();
@@ -1168,3 +1230,29 @@ const wasdMinMove = 0.05;
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
 }
+
+/**
+ * @see {booleanJsOptSomewhere}
+ * @param opts Parsed from command line
+ */
+function getFirstUnknownNaked(opts: Record<string, any>) {
+  return keys(opts).find((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+}
+
+/**
+ * @see {booleanJsOptSomewhere}
+ * @param opts Parsed from command line
+ */
+function getLastUnknownNaked(opts: Record<string, any>) {
+  return keys(opts).findLast((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+}
+
+/** Forbid certain npcKeys as bare specifiers (over approximation) */
+const booleanJsOptSomewhere = {
+  all: true,
+  along: true,
+  detail: true,
+  fast: true,
+  force: true,
+  point: true,
+};

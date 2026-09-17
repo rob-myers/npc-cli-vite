@@ -3,8 +3,11 @@ import {
   ANY_QUERY_FILTER,
   createDefaultQueryFilter,
   createFindNearestPolyResult,
+  findLocalNeighbourhood,
   findNearestPoly,
   getNodeByRef,
+  getPolyWallSegments,
+  getTileAndPolyByRef,
   isValidNodeRef,
   moveAlongSurface,
   type NavMesh,
@@ -129,13 +132,34 @@ export const ops: {
   boundary({ npc }, navMesh) {
     return queryBoundary(npc, navMesh).map(({ s }) => s.slice());
   },
-  pad({ npc, by }, navMesh) {
-    const [seg] = queryBoundary(npc, navMesh);
-    if (seg === undefined) return null;
-    // off the nearest wall, along its inward normal — see `planPark`'s facing
-    const [dx, dy] = [seg.s[5] - seg.s[2], seg.s[0] - seg.s[3]];
-    const len = Math.hypot(dx, dy) || 1;
-    return { x: npc.point.x + (dx / len) * by, y: npc.point.y + (dy / len) * by };
+  /**
+   * Where each npc may stand with room to walk right round them: `by` from their room's walls and
+   * doorways, and from anyone parked or padded. The walls once per npc, up front; then the npcs,
+   * room by room, most constrained first — see `padRoom`
+   */
+  *pad(op, navMesh) {
+    const rooms = new Map<null | string, PadCand[]>();
+    for (const [index, npc] of op.npcs.entries()) {
+      const cand = { npc, index, spots: findPadSpots(npc, navMesh, op.by) };
+      rooms.set(npc.grKey, [...(rooms.get(npc.grKey) ?? []), cand]);
+      yield; // a breath between npcs
+    }
+
+    const plans: (null | WW.PadPlan)[] = op.npcs.map(() => null);
+    const padding = new Set(op.npcs.map((npc) => npc.key)); // their old spots no longer count
+    for (const [grKey, cands] of rooms) {
+      const others = op.others.flatMap((o) => (o.grKey === grKey && padding.has(o.key) === false ? o.point : []));
+      // whoever found no spot goes first next time, keeping the pass with the fewest
+      const first = new Set<PadCand>();
+      let best = yield* padRoom(cands, others, op.by, first);
+      for (let pass = 1; pass < padPasses && best.failed.some((c) => first.has(c) === false); pass++) {
+        for (const c of best.failed) first.add(c);
+        const result = yield* padRoom(cands, others, op.by, first);
+        if (result.failed.length < best.failed.length) best = result;
+      }
+      for (const [c, at] of best.picks) plans[c.index] = { key: c.npc.key, at };
+    }
+    return plans;
   },
   nudge({ npc, to }, navMesh) {
     const nodeRef = resolveNodeRef(navMesh, npc);
@@ -351,6 +375,99 @@ function doorwayInterval(a: Geom.VectJson, d: Geom.VectJson, door: WW.DoorFrame)
   return tLo < tHi ? [tLo, tHi] : null;
 }
 
+/** An npc to pad: their place in `op.npcs`, and the spots with room from the walls, nearest first */
+type PadCand = { npc: WW.NpcQuery; index: number; spots: Geom.VectJson[] };
+
+/**
+ * The spots near them at least `by` from every wall — ONE navmesh query, the rest arithmetic.
+ * Doors are refused, bar one stood in: so the flood keeps to their room, and each doorway counts
+ * as wall, which keeps a spot out of it too
+ */
+function findPadSpots(npc: WW.NpcQuery, navMesh: NavMesh, by: number): Geom.VectJson[] {
+  const nodeRef = resolveNodeRef(navMesh, npc);
+  if (nodeRef === null) return [];
+  const filter: QueryFilter = {
+    ...createDefaultQueryFilter(),
+    passFilter: (ref, navMesh) => ref === nodeRef || isDoorAreaId(getNodeByRef(navMesh, ref).area) === false,
+  };
+  const { x, y } = npc.point;
+  const hood = findLocalNeighbourhood(navMesh, nodeRef, [x, 0, y], padQueryRange + by, filter);
+  if (hood.success === false) return [];
+
+  const polys: number[][] = []; // outlines `[x, z, ...]`
+  const walls: number[] = []; // segments `[x1, y1, z1, x2, y2, z2, ...]`
+  for (const ref of hood.nodeRefs) {
+    const found = getTileAndPolyByRef(ref, navMesh);
+    if (found.success === false) continue;
+    const vs = found.tile.vertices;
+    polys.push(found.poly.vertices.flatMap((i) => [vs[i * 3], vs[i * 3 + 2]]));
+    const segs = getPolyWallSegments(navMesh, ref, filter, false);
+    if (segs.success === true) walls.push(...segs.segmentVerts);
+  }
+
+  const spots: Geom.VectJson[] = [];
+  for (let ring = 0; ring * padStep <= padQueryRange; ring++) {
+    for (let i = 0; i < (ring === 0 ? 1 : padDirs); i++) {
+      const angle = (i / padDirs) * Math.PI * 2;
+      const p = { x: x + Math.cos(angle) * ring * padStep, y: y + Math.sin(angle) * ring * padStep };
+      if (polys.some((poly) => inConvexPoly(p, poly)) && isClearOfWalls(p, walls, by)) spots.push(p);
+    }
+  }
+  return spots;
+}
+
+/** On or inside a convex outline `[x, z, ...]`, whichever way it winds */
+function inConvexPoly(p: Geom.VectJson, poly: number[]) {
+  let sign = 0;
+  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
+    const cross = (poly[i] - poly[j]) * (p.y - poly[j + 1]) - (poly[i + 1] - poly[j + 1]) * (p.x - poly[j]);
+    if (cross !== 0 && sign !== 0 && cross > 0 !== sign > 0) return false;
+    if (cross !== 0) sign = cross;
+  }
+  return true;
+}
+
+function isClearOfWalls(p: Geom.VectJson, walls: number[], by: number) {
+  for (let i = 0; i < walls.length; i += 6) {
+    const [ax, ay, dx, dy] = [walls[i], walls[i + 2], walls[i + 3] - walls[i], walls[i + 5] - walls[i + 2]];
+    const t = Math.max(0, Math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / (dx * dx + dy * dy || 1)));
+    if ((p.x - ax - dx * t) ** 2 + (p.y - ay - dy * t) ** 2 < by ** 2) return false;
+  }
+  return true;
+}
+
+/**
+ * One room: a spot is free when `by` from everyone `taken` — the parked, the padded, and each
+ * pick as it is made. Fewest free spots goes next — the re-run's `first`, first — and takes their
+ * nearest. Arithmetic only, so a re-run costs no navmesh query — but every pick recounts the
+ * room, so there is a breath after each
+ */
+function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: Set<PadCand>) {
+  const taken = others.slice();
+  const left = new Set(cands);
+  const picks = new Map<PadCand, Geom.VectJson>();
+  const failed: PadCand[] = [];
+  const free = (c: PadCand) => c.spots.filter((s) => taken.every((t) => Math.hypot(t.x - s.x, t.y - s.y) >= by));
+
+  while (left.size > 0) {
+    let [pick, spots, rank] = [undefined as undefined | PadCand, [] as Geom.VectJson[], Number.POSITIVE_INFINITY];
+    for (const c of left) {
+      const mine = free(c);
+      const r = (first.has(c) ? 0 : 1e6) + mine.length;
+      if (r < rank) [pick, spots, rank] = [c, mine, r];
+    }
+    if (pick === undefined) break;
+    left.delete(pick);
+    if (spots.length === 0) failed.push(pick);
+    else {
+      picks.set(pick, spots[0]);
+      taken.push(spots[0]);
+    }
+    yield;
+  }
+  return { picks, failed };
+}
+
 /** One boundary for every query — the "dummy agent" */
 const boundary = localBoundary.create();
 
@@ -360,6 +477,7 @@ type WorldNpc = typeof import("@npc-cli/ui__world/const.npc");
 const agentRadius: WorldBoath["npcDims"]["agentRadius"] = 0.18;
 const doorwayClearance: WorldNpc["doorwayClearance"] = 0.6;
 const parkQueryRange: WorldNpc["parkQueryRange"] = 2;
+const padQueryRange: WorldNpc["padQueryRange"] = 3;
 /** The crowd's `agentPlacementHalfExtents` */
 const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 
@@ -372,3 +490,9 @@ const parkReach = 2 * parkQueryRange + parkNpcClearance;
 /** A room is re-run at most this many times for those who found no clear point */
 const parkPasses = 3; /** A parked point sits this far clear of what cut its span, so a point test agrees */
 const parkSlack = 1e-3;
+
+/** `pad`'s candidate spots: a ring every this far, this many to a ring */
+const padStep = 0.3;
+const padDirs = 12;
+/** A room is re-run at most this many times for those who found no spot */
+const padPasses = 3;

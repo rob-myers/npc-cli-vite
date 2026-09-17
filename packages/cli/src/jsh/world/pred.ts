@@ -8,6 +8,8 @@ type Predicates = {
   player: null | string;
   /** By npcKey, the boundary segment `[x1, y1, z1, x2, y2, z2]` `park` stood them against */
   parked: Map<string, number[]>;
+  /** Those `pad` stood clear of the walls, the parked and each other */
+  padded: Set<string>;
   // ...
 };
 
@@ -21,6 +23,7 @@ const pred = sharedMapSlot<Predicates>("pred", () => ({
   picked: new Set(),
   player: null,
   parked: new Map(),
+  padded: new Set(),
 }));
 
 pred.setHandler(function onWorldEvent(e, w) {
@@ -51,13 +54,13 @@ pred.setHandler(function onWorldEvent(e, w) {
     // a respawn unparks — bar `park`'s own, which marks them again once it lands. A first spawn
     // does not: `restoreNpcs` runs off "map-settled", so a restore lands here parked
     case "spawned":
-      if (e.spawns > 1) p.parked.delete(e.npcKey);
+      if (e.spawns > 1) unmark(p, e.npcKey);
       break;
     case "started-moving":
-      p.parked.delete(e.npcKey);
+      unmark(p, e.npcKey);
       break;
     case "removed-npcs":
-      for (const npcKey of e.npcKeys) p.parked.delete(npcKey);
+      for (const npcKey of e.npcKeys) unmark(p, npcKey);
       break;
   }
 });
@@ -80,10 +83,26 @@ function visualisePredicates(w: JshCli.WorldState, npcKeys: Iterable<string> = O
   }
 }
 
-/** `park`'s side of the mapping — an object, so no shell function is made of it */
+/** Neither parked nor padded */
+function unmark(p: Predicates, npcKey: string) {
+  p.parked.delete(npcKey);
+  p.padded.delete(npcKey);
+}
+
+/** `park`'s and `pad`'s side — objects, so no shell function is made of them. One or the other */
 export const parked = {
   get: () => pred.get().parked,
-  mark: (npcKey: string, seg: number[]) => void pred.get().parked.set(npcKey, seg),
+  mark(npcKey: string, seg: number[]) {
+    unmark(pred.get(), npcKey);
+    pred.get().parked.set(npcKey, seg);
+  },
+};
+export const padded = {
+  get: () => pred.get().padded,
+  mark(npcKey: string) {
+    unmark(pred.get(), npcKey);
+    pred.get().padded.add(npcKey);
+  },
 };
 
 /** @returns the npcs whose visuals may have changed */

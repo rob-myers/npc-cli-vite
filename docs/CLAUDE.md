@@ -75,7 +75,18 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 
 `state.placeNpcAt(npc, at, type)` — places or teleports an NPC. The `"navigable"` type throws if the position is off the navmesh; `"doable"` silently removes the agent instead.
 
-Which npcs are parked — and the wall segment each stands against — is jsh state, not the world's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. `park` records via `parked.mark`; a move, respawn or removal unparks.
+Which npcs are parked — and the wall segment each stands against — is jsh state, not the world's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. `park` records via `parked.mark`; a move, respawn or removal unparks. `padded` beside it is the same for `pad` — a Set of those stood with room to walk right round them — and an npc is one or the other.
+
+## jsh commands
+
+Exports of `packages/cli/src/jsh/world/{core,demo,pred}.ts` become shell commands, and hot-reload. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+
+**A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
+- register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
+- never `await` something a kill cannot interrupt: `w.npc.nextTick()` never resolves whilst the world is paused, so race it — `Promise.race([w.npc.nextTick(), killed])`;
+- on the way out `handlers.dispose()`, then `throw api.getKillError()`.
+
+See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
 ## Map-edit save flow
 
