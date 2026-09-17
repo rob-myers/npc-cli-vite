@@ -369,6 +369,9 @@
   - ❌ simplify tldr.md commands npc args
     - npc:rob useful for editable fields
   - 🚧 running should vary between animating "walk" and "run"
+    - ✅ improve arrival animation when other npc is blocking
+    - ✅ run arrival animation too fast
+    - clean up implementation
 
 # FUTURE
 

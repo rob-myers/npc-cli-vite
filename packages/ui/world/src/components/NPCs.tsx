@@ -521,6 +521,7 @@ export default function NPCs() {
           npc.position.z = agent.position[2];
           const [vx, , vz] = agent.velocity;
           const speed = Math.hypot(vx, vz);
+          npc.anim.speed = speed; // paces the gait — after arriving too, whilst it fades out
 
           if (npc.isLooking() === true) {
             continue;
@@ -534,22 +535,33 @@ export default function NPCs() {
             continue;
           }
 
-          // the gait's pace and their facing, for the next tick: turning as fast as they walk,
-          // and not at all when creeping — a stuck npc's velocity swings about, and turning to
-          // face each swing looks like a jerk
-          npc.anim.speed = speed;
+          // their facing, for the next tick: turning as fast as they walk, and not at all when
+          // creeping — a stuck npc's velocity swings about, and turning to face each swing looks
+          // like a jerk
           npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / agentConfig.maxSpeed.walk) : 0;
           if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + Math.PI;
 
           const [tx, , tz] = agent.targetPosition;
-          const stuck = updateStuck(npc, delta, worldSeconds, Math.hypot(tx - npc.position.x, tz - npc.position.z));
+          const targetDist = Math.hypot(tx - npc.position.x, tz - npc.position.z);
+          const stuck = updateStuck(npc, delta, worldSeconds, targetDist);
+
+          if (npc.anim.fast === true) {
+            // to arrive they walk in — see `walkIn`; gliding through, they keep running
+            const { maxSpeed, walkIn } = agentConfig;
+            const t = npc.anim.arrive === true ? (targetDist - walkIn.to) / (walkIn.from - walkIn.to) : 1;
+            agent.maxSpeed = maxSpeed.walk + (maxSpeed.run - maxSpeed.walk) * Math.max(0, Math.min(1, t));
+          }
 
           // circling is stuck when another npc stands on the target — see `docs/npc-debug-notes.md`
           if (stuck === "still" || (stuck === "circling" && isTargetOccupied(agent, state.crowd))) {
             npc.rejectAll(new Error("stuck"));
           } else if (
             moveClipFadedIn(npc) === true &&
-            crowdApi.isAgentAtTarget(state.crowd, npc.agentId, getArriveDistance(npc)) === true
+            (crowdApi.isAgentAtTarget(state.crowd, npc.agentId, getArriveDistance(npc)) === true ||
+              // ...or settled close by: past the grace, else a short move starts arrived
+              (arriving === true &&
+                speed < agentConfig.settleSpeed &&
+                worldSeconds - npc.last.moveTime > npcConfig.time.stuckGrace))
           ) {
             // arrived
             npc.anim.startIdle();
@@ -1038,7 +1050,7 @@ export type State = {
 /** Capped by the initial distance, so a short move need not start arrived */
 function getArriveDistance(npc: Npc) {
   const { arrive, glide, arriveMin, arriveFraction } = npcConfig.dist;
-  const base = (npc.anim.arrive ? arrive : glide)[npc.running ? "run" : "walk"];
+  const base = npc.anim.arrive ? arrive : glide[npc.running ? "run" : "walk"];
   return Math.min(base, Math.max(arriveMin, arriveFraction * npc.last.targetDistance));
 }
 
