@@ -38,6 +38,11 @@ export const agentConfig = {
     walk: 1.5,
     run: 2.5,
   },
+  /**
+   * Whilst a move is `fast` the gait on show follows their speed: run above one, back to walk
+   * below the other — the gap is the hysteresis — and at least `minSecs` on each
+   */
+  gait: { runAbove: 1.9, walkBelow: 1.6, minSecs: 0.3 },
   separationWeight: {
     /** Less pushable */
     idle: 0.1,
@@ -156,9 +161,9 @@ export const fadeSecs: Record<
   idle: { shuffle: 0.15 },
   "idle-avoid": { breathe: 0.4 },
   lie: {},
-  run: { shuffle: 0.15 },
+  run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
-  walk: { shuffle: 0.15 },
+  walk: { shuffle: 0.15, run: 0.25 },
 };

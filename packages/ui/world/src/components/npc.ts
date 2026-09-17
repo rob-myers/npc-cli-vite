@@ -115,8 +115,9 @@ export class Npc {
     return { x: this.position.x, y: this.position.z };
   }
 
+  /** The move's intent, not the gait on show: it picks the arrival radii */
   get running() {
-    return this.anim.moveClip.name === "run";
+    return this.anim.fast;
   }
 
   get skinIndex() {
