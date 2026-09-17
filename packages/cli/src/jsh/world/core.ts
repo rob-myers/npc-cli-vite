@@ -212,6 +212,7 @@ export async function look(
     npc: "npcKey",
     to: "at",
     face: "at",
+    "--force": "force",
   }),
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
@@ -374,7 +375,10 @@ export async function move(
     to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
     along?: boolean;
     force?: boolean;
-  } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+  } = ct.api.jsArg(ct.args, {
+    npc: "npcKey",
+    "--force": "force",
+  }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
     throw Error("opts.to required when not piping");
@@ -395,7 +399,7 @@ export async function move(
  * move to point or smoothly along points
  * e.g. `move npc:rob to:$( pick 3 )`
  */
-export async function move_const(
+async function move_const(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> & {
     to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
@@ -430,7 +434,7 @@ export async function move_const(
  * move smoothly along lazily supplied path
  * e.g. `pick | move npc:rob along`
  */
-export async function move_lazy(
+async function move_lazy(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> & {
     force?: boolean;
@@ -480,7 +484,7 @@ export async function move_lazy(
  * move immediately to latest destination
  * e.g. `pick | move npc:rob`
  */
-export async function move_next(
+async function move_next(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> & {
     force?: boolean;
