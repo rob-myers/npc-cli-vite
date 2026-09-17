@@ -24,29 +24,38 @@ index 4b57e18ae02c827999727c574ece1bab54107c9e..678678209436a295475c580176651e75
      pathOptimizationRange: number;
      /** The agent separation weight */
 diff --git a/dist/blocks.js b/dist/blocks.js
-index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..3ca1841e57e6c5a031523dab6b7964091fcc620b 100644
+index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..99a71c9cc4089fcfa9fcab653f28e578345951e3 100644
 --- a/dist/blocks.js
 +++ b/dist/blocks.js
-@@ -606,6 +606,18 @@ const _sampleVelocityAdaptive_vcand = vec3.create();
+@@ -601,11 +601,27 @@ const _sampleVelocityAdaptive_ddir2 = vec3.create();
+ const _sampleVelocityAdaptive_res = vec3.create();
+ const _sampleVelocityAdaptive_bvel = vec3.create();
+ const _sampleVelocityAdaptive_vcand = vec3.create();
++const _foldDvel = vec3.create();
+ /**
+  * Sample velocity using adaptive approach.
   */
  const sampleVelocityAdaptive = (query, pos, rad, vmax, vel, dvel, params, outVelocity, debug) => {
      prepareObstacles(query, pos, dvel);
-+    // PATCH: pressed against someone, wanting to go through them is wanting to go round them:
-+    // the desired velocity folds onto their tangent, keeping its speed — the side it leans to,
-+    // else the side the bias prefers. Otherwise a slide costs more than standing still
-+    for (let i = 0; i < query.circleCount; i++) {
++    // PATCH: in contact with someone `dvel` points through, it folds onto their tangent at its speed:
++    // else every open sample is a slide, costlier than standing still. The side — the lean, else the
++    // bias's — is kept whilst in contact, or a corner popping as they slide would turn them back
++    let side = 0;
++    for (let i = 0; i < query.circleCount && side === 0; i++) {
 +        const cir = query.circles[i];
-+        const into = vdot2D(cir.dp, dvel);
-+        if (into <= 0 || vdist2D(pos, cir.p) > rad + cir.rad + 0.02) continue;
-+        const [tx, tz] = [dvel[0] - cir.dp[0] * into, dvel[2] - cir.dp[2] * into];
-+        const [t, s] = [Math.hypot(tx, tz), Math.hypot(dvel[0], dvel[2])];
-+        dvel = t > 1e-3 ? [(tx / t) * s, 0, (tz / t) * s] : [-cir.np[0] * s, 0, -cir.np[2] * s];
-+        break;
++        const [dx, dz] = [cir.p[0] - pos[0], cir.p[2] - pos[2]];
++        if (vdot2D(cir.dp, dvel) <= 0 || dx * dx + dz * dz > (rad + cir.rad + 0.02) ** 2) continue;
++        const [px, pz] = [-cir.dp[2], cir.dp[0]]; // their tangent; `np` is one of its two senses
++        const lean = dvel[0] * px + dvel[2] * pz;
++        side = query.foldSide || (Math.abs(lean) > 1e-3 ? Math.sign(lean) : -Math.sign(cir.np[0] * px + cir.np[2] * pz));
++        const s = side * Math.hypot(dvel[0], dvel[2]);
++        dvel = vec3.set(_foldDvel, px * s, 0, pz * s);
 +    }
++    query.foldSide = side;
      copyParams(query.params, params);
      query.invHorizTime = 1.0 / query.params.horizTime;
      query.vmax = vmax;
-@@ -1079,6 +1091,9 @@ const addAgent = (crowd, navMesh, position, agentParams) => {
+@@ -1079,6 +1095,9 @@ const addAgent = (crowd, navMesh, position, agentParams) => {
          maxAcceleration: agentParams.maxAcceleration,
          maxSpeed: agentParams.maxSpeed,
          collisionQueryRange: agentParams.collisionQueryRange,
@@ -56,7 +65,7 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..3ca1841e57e6c5a031523dab6b796409
          pathOptimizationRange: agentParams.pathOptimizationRange ?? agentParams.radius * 30.0,
          separationWeight: agentParams.separationWeight,
          updateFlags: agentParams.updateFlags,
-@@ -1563,10 +1578,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
+@@ -1563,10 +1582,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
              continue;
          }
          // update boundary if agent has moved significantly or if boundary is invalid
@@ -70,7 +79,7 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..3ca1841e57e6c5a031523dab6b796409
          }
      }
  };
-@@ -1584,11 +1600,22 @@ const updateCorners = (crowd, navMesh) => {
+@@ -1584,11 +1604,23 @@ const updateCorners = (crowd, navMesh) => {
              continue;
          }
          // get corridor corners for steering
@@ -80,8 +89,8 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..3ca1841e57e6c5a031523dab6b796409
              vec3.set(agent.desiredVelocity, 0, 0, 0);
              continue;
          }
-+        // a corner is given up once they have been within reach of it, and never handed back:
-+        // steering turns them as it goes, so the live distance rises again and flips them round
++        // a corner is given up once they have been within reach, and never handed back: steering
++        // turns them as it goes, so the live distance rises again and would flip them round
 +        const [corner] = corners;
 +        if (corners.length > 1 && corner.type !== NodeType.OFFMESH) {
 +            const tracked = agent.cornerTracked;
@@ -89,7 +98,8 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..3ca1841e57e6c5a031523dab6b796409
 +            const distSqr = dist2dSqr(agent.position, corner.position);
 +            agent.cornerTracked = corner.position;
 +            agent.cornerNearestSqr = same ? Math.min(agent.cornerNearestSqr, distSqr) : distSqr;
-+            if (agent.cornerNearestSqr < (MIN_TARGET_DIST * 2) ** 2) corners.shift();
++            // reach: half a body — pressed against someone they skim a corner rather than cross it
++            if (agent.cornerNearestSqr < (agent.radius * 0.5) ** 2) corners.shift();
 +        }
          agent.corners = corners;
          // check to see if the corner after the next corner is directly visible, and short cut to there

@@ -745,7 +745,7 @@ export default function NPCs() {
           await w.player.ensure();
         }
 
-        w.events.next({ key: "spawned", npcKey, gmRoomId });
+        w.events.next({ key: "spawned", npcKey, gmRoomId, spawns: npc.spawns });
       },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so

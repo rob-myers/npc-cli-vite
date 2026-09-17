@@ -221,6 +221,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
         return mapDef.gms.some(({ gmKey }) => isPlaygroundSymbolKey(gmKey));
       },
+      isMapChanging() {
+        return state.settledMapKey !== state.mapKey;
+      },
       isReady(_connectionKey) {
         return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
       },
@@ -587,6 +590,8 @@ export type State = {
   /** One band per wall segment, per door, and per segment of a window's outline */
   getTrimCount(): number;
   /** Either playground map or mentions a playground hull-symbol */
+  /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
+  isMapChanging(): boolean;
   isPlaygroundMap(): boolean;
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;

@@ -3,6 +3,7 @@ export const npcDims = {
   height: 1.2,
   /** Radius of an npc's crowd agent */
   agentRadius: 0.18,
+  // agentRadius: 0.28,
   /** Sizes the crowd */
   maxAgentRadius: 0.5,
   /** Margin, on top of an npc's radius */
