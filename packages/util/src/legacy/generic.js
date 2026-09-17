@@ -412,12 +412,7 @@ export function jsArg(args, alias = {}, opts) {
       (agg, arg) => {
         const colonIndex = arg.indexOf(":");
         if (colonIndex === -1) {
-          if (!(arg in alias)) {
-            agg[arg] = true;
-          } else {
-            // given bare 'foo' with alias 'bar' interpret as 'bar:foo'
-            agg[alias[arg]] = arg;
-          }
+          agg[arg] = true; // no bare specifier aliases (use {alias}:true instead)
           return agg;
         }
 
