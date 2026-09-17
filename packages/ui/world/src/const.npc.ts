@@ -1,7 +1,7 @@
 /**
  * The npcs' tuning, imported by npc modules alone — never by `World`, `WorldView` or their hooks,
  * which would rebuild the world on every edit. What the world builds AROUND an npc, their size,
- * is `npcDims` in `const.env.ts`
+ * is `npcDims` in `const.both.ts` — a copy here rather than an import, so this file stays independent
  */
 
 /** An npc's label, unless `label` or the predicates say otherwise */
@@ -75,6 +75,7 @@ export const npcConfig = {
 export const crowdConfig = {
   /** Neighbour search range (tried 0.5–1.5) */
   collisionQueryRange: 0.7,
+  // collisionQueryRange: 1.7,
   /** Wall search range: shorter, else walkers slow early beside walls */
   boundaryQueryRange: 0.4,
   /** Keeps a side once taken: `2` intersects less, `0.75` rounds npcs better */

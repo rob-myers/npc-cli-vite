@@ -39,7 +39,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       npcToDoable: {},
       npcToDoors: {},
       npcToRoom: new Map(),
-      parked: new Map(),
       pendingRaycast: {},
       pendingUnreachable: {},
       roomToNpcs: [],
@@ -211,6 +210,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onChangeMap() {
+        w.settledMapKey = null; // changing from here to "map-settled" — see `isMapChanging`
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
@@ -231,7 +231,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.handLitRooms = new Set(); // a `grKey` means nothing to the map coming in
         state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
         state.npcToRoom = new Map();
-        state.parked = new Map();
         state.roomToNpcs = [];
 
         // anything still waiting on the worker asked about the old map's rooms
@@ -468,7 +467,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "spawned": {
-            if (npc.spawns === 1) {
+            if (e.spawns === 1) {
               if (w.client === false) {
                 const { x, y, z } = npc.position;
                 w.physics.worker.postMessage({
@@ -482,7 +481,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (prevGrId !== undefined) {
                 state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
-              state.parked.delete(npc.key); // `park` sets it again after its own respawn
             }
 
             state.npcToRoom.set(npc.key, { ...e.gmRoomId });
@@ -494,7 +492,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "started-moving": {
-            state.parked.delete(e.npcKey);
             const nearbyGdKeys = state.npcToDoors[e.npcKey]?.nearby ?? emptySet;
             const npcIntention = nearbyGdKeys.size > 0 ? npc.getCornersPath() : null;
             for (const gdKey of nearbyGdKeys) {
@@ -794,7 +791,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           delete w.n[npc.key];
           w.e.setNpcDo(npc.key, null);
           state.litRooms.delete(npc.key);
-          state.parked.delete(npc.key);
           npc.rejectAll(new Error("removed npc"));
         }
 
@@ -888,6 +884,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           });
         });
 
+        // 1st spawn only, no respawning
         const npcs: Npc[] = [];
         for (const [i, npcKey] of npcKeys.entries()) {
           const doResult = doResults[i];
@@ -1111,11 +1108,6 @@ export type State = {
    * Relates `npcKey` to current room.
    */
   npcToRoom: Map<string, Geomorph.GmRoomId>;
-  /**
-   * By npcKey, the boundary segment `[x1, y1, z1, x2, y2, z2]` `park` stood them against — see
-   * `park` in `@npc-cli/cli`. Forgotten once they move or respawn
-   */
-  parked: Map<string, { s: number[] }>;
   pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(err: Error): void } };
   pendingUnreachable: {
     [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };

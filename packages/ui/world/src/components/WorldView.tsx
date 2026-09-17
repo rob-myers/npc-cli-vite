@@ -1037,7 +1037,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         });
       },
       async pickObject(e) {
-        if (w.settledMapKey !== w.mapKey || state.warmingPick === true) {
+        if (w.isMapChanging() === true || state.warmingPick === true) {
           return;
         }
         const rgba = await state.renderPick(state.computePixelUv(e.nativeEvent));

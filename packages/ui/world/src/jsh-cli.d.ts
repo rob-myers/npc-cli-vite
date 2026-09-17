@@ -38,7 +38,7 @@ declare namespace JshCli {
         key: "set-player";
         playerKey: null | string;
       }
-    | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId }
+    | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId; spawns: number }
     | { key: "spawned-many"; npcKeys: string[] }
     | { key: "speech"; npcKey: string; words: string; epochMs: number }
     | { key: "started-moving"; npcKey: string }

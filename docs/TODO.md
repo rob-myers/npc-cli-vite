@@ -345,20 +345,27 @@
   - ❌ can `move npc:rob to npc:abe`
     - not canonical enough
 
-  - ✅ park should avoid close npcs "either side of local boundary"
-    - already does but try strengthen
-    - try improve park ordering
-    - do not park unparkable and throw error
-  - split world const into const.env and const.npc
-  - try provide more leeway around unparked
+  - ✅ strengthen park
+    - improve park ordering
+    - do not park unparkable (but park others) + throw error
+  - ✅ split world const into const.env and const.npc
+  - ✅ bug where walking npc gets stuck oscillating near idle's boundary
+  - ✅ try provide more leeway around unparked
+  - ✅ refactor parked as predicate
+    - ✅ fixes unparked on refresh via save/restore per map
+    - ❌ each npc's avoidanceRadius could be a fixed function e.g. `(npcKey) => sharedFolder.pred.parked.has(npcKey) ? ... : ...`
+    - ✅ could apply on "spawn" or "spawned-many"
+  - pad command should be like park
+    - fadeSpawn to location with enough padding around npc
+    - support multiple npcs, can fail for some
   - provide controls which turn on long click
     - `pick --long | move npc:rob` works but cancels pick-n-move
     - useful for repro nav issues
   - running should vary between animating `walk` and `run`
-  - ✅ bug where walking npc gets stuck oscillating near idle's boundary
 
 # FUTURE
 
+- consider pruning navcat of unused stuff
 - try use strafe left/right animations
 - investigate larger walk around params with fallback to params permitting free motion around parked
   - try tween collisionQueryRange between 1 and 0.7
