@@ -975,15 +975,16 @@ export function say(
  * ```sh
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
+ * skin rob human-1
  * ```
  */
 export function skin(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; as?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
-  const skinKey = opts.as ?? (api.getJsOperands(args, opts)[0] || "medic-0");
-
+  const skinKey = (opts.as ??= getLastUnknownNaked(opts) ?? "robot-0");
   if (w.npc.getSkinIndexBySkinKey(skinKey) === -1) {
     throw Error(`skin "${skinKey}" not found`);
   }
@@ -1130,10 +1131,16 @@ export async function* w(ct: JshCli.RunArg) {
   }
 }
 
+/**
+ * ```sh
+ * warp rob to:$( pick 1 )
+ * ```
+ */
 export async function warp(
   { w, api, args }: JshCli.RunArg,
   opts: { npcKey: string; to: MaybeMeta<JshCli.PointAnyFormat> } = api.jsArg(args, { npc: "npcKey" }),
 ) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
   await npc.fadeSpawn({ at: opts.to });
 }
@@ -1240,6 +1247,7 @@ function getLastUnknownNaked(opts: Record<string, any>) {
   return keys(opts).findLast((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
 }
 
+/** Forbid certain npcKeys as bare specifiers (over approximation) */
 const booleanJsOptSomewhere = {
   all: true,
   along: true,
