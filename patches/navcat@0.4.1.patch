@@ -24,7 +24,7 @@ index 4b57e18ae02c827999727c574ece1bab54107c9e..678678209436a295475c580176651e75
      pathOptimizationRange: number;
      /** The agent separation weight */
 diff --git a/dist/blocks.js b/dist/blocks.js
-index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..99a71c9cc4089fcfa9fcab653f28e578345951e3 100644
+index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..03755091aa915da9b75cf2b17f317973c73f6514 100644
 --- a/dist/blocks.js
 +++ b/dist/blocks.js
 @@ -601,11 +601,27 @@ const _sampleVelocityAdaptive_ddir2 = vec3.create();
@@ -79,7 +79,7 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..99a71c9cc4089fcfa9fcab653f28e578
          }
      }
  };
-@@ -1584,11 +1604,23 @@ const updateCorners = (crowd, navMesh) => {
+@@ -1584,11 +1604,35 @@ const updateCorners = (crowd, navMesh) => {
              continue;
          }
          // get corridor corners for steering
@@ -98,8 +98,20 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..99a71c9cc4089fcfa9fcab653f28e578
 +            const distSqr = dist2dSqr(agent.position, corner.position);
 +            agent.cornerTracked = corner.position;
 +            agent.cornerNearestSqr = same ? Math.min(agent.cornerNearestSqr, distSqr) : distSqr;
-+            // reach: half a body — pressed against someone they skim a corner rather than cross it
-+            if (agent.cornerNearestSqr < (agent.radius * 0.5) ** 2) corners.shift();
++            // reach: half a body — pressed against someone they skim a corner rather than cross it.
++            // Beside someone idle a corner cannot be neared past their body, so that much nearer counts
++            // too, else they pass and re-pass it for ever — looked for only with the corner close
++            const reach = agent.radius * 0.5;
++            let reached = agent.cornerNearestSqr < reach ** 2;
++            if (reached === false && agent.cornerNearestSqr < (agent.radius * 3) ** 2) {
++                const spare = reach + agent.radius - Math.sqrt(agent.cornerNearestSqr);
++                reached = agent.neis.some(({ agentId }) => {
++                    const nei = crowd.agents[agentId];
++                    return (nei.velocity[0] ** 2 + nei.velocity[2] ** 2 < 0.01 &&
++                        dist2dSqr(nei.position, corner.position) < Math.max(0, spare + nei.radius) ** 2);
++                });
++            }
++            if (reached) corners.shift();
 +        }
          agent.corners = corners;
          // check to see if the corner after the next corner is directly visible, and short cut to there
