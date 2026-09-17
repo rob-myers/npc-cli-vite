@@ -390,32 +390,29 @@ export function mapValues(input, transform) {
 
 /**
  * Parse args as a single JavaScript object.
- * - 'foo:bar baz:qux' -> { "foo": "bar", "baz": "qux" }
- * - 'foo:42 bar' -> { "foo": 42, "bar": true }
+ * - 'foo:bar baz:qux' -> `{ foo: "bar", baz: "qux" }`
+ * - 'foo:42 bar' -> `{ foo: 42, bar: true }`
  *
  * We assume
  * - keys do not contain the double-quote character.
- * - keys should not begin with single character '{'.
+ * - keys do not begin with single character '{'.
  *
  * @template {Record<string, any>} [T=Record<string, any>]
  * @param {string[]} args
  * @param {{ [aliasKey: string]: string; }} [alias]
- * Map alias keys to their true keys.
- * @param {{
- *   array?: { [key: string]: true };
- *   force?: boolean;
- * }} [opts]
+ * - Map alias keys to their true keys.
+ * @param {{ array?: { [key: string]: true }; force?: boolean; }} [opts]
  * - `opts.array` if value isn't an array try to convert space-separated js values into one
  * - `opts.force` ignores errors
  * @returns {T}
  */
-export function jsArg(args, alias, opts) {
+export function jsArg(args, alias = {}, opts) {
   return /** @type {T} */ (
     args.reduce(
       (agg, arg) => {
         const colonIndex = arg.indexOf(":");
         if (colonIndex === -1) {
-          agg[alias?.[arg] ?? arg] = true;
+          agg[arg] = true; // no bare specifier aliases (use {alias}:true instead)
           return agg;
         }
 

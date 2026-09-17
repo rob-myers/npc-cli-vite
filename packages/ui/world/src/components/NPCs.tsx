@@ -47,18 +47,14 @@ import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEn
 import { npcDims } from "../const.both";
 
 import {
+  agentConfig,
   closestPolyByAccuracy,
   crowdConfig,
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
-  idleAgentMaxSpeed,
-  idleSeparatingMaxAcceleration,
-  idleSeparationWeight,
   npcConfig,
   npcMaterialConfig,
   npcSpawnConfig,
-  walkAgentMaxSpeed,
-  walkMaxAcceleration,
 } from "../const.npc";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
 import { helper } from "../service/helper";
@@ -533,7 +529,7 @@ export default function NPCs() {
           if (!npc.isMoving()) {
             if (speed < 0.05) {
               // cannot immediately else walk -> idle slides
-              agent.maxAcceleration = idleSeparatingMaxAcceleration;
+              agent.maxAcceleration = agentConfig.maxAcceleration.idleSeparating;
             }
             continue;
           }
@@ -542,7 +538,7 @@ export default function NPCs() {
           // and not at all when creeping — a stuck npc's velocity swings about, and turning to
           // face each swing looks like a jerk
           npc.anim.speed = speed;
-          npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / walkAgentMaxSpeed) : 0;
+          npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / agentConfig.maxSpeed.walk) : 0;
           if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + Math.PI;
 
           const [tx, , tz] = agent.targetPosition;
@@ -1109,11 +1105,11 @@ function getAgentParams(): crowd.AgentParams {
   return {
     radius: npcDims.agentRadius,
     height: npcDims.height,
-    maxAcceleration: walkMaxAcceleration,
-    maxSpeed: idleAgentMaxSpeed,
+    maxAcceleration: agentConfig.maxAcceleration.walk,
+    maxSpeed: agentConfig.maxSpeed.idle,
     collisionQueryRange: crowdConfig.collisionQueryRange,
     boundaryQueryRange: crowdConfig.boundaryQueryRange,
-    separationWeight: idleSeparationWeight,
+    separationWeight: agentConfig.separationWeight.idle,
     updateFlags: movingUpdateFlags,
     obstacleAvoidance: {
       ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,

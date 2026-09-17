@@ -17,20 +17,34 @@ export const doorwayClearance = 0.6;
 export const parkQueryRange = 2;
 /** Below this much of a move, `park` turns them on the spot instead */
 export const parkMinMove = 0.02;
+/** How much room `pad` wants round them, from walls and from the parked or padded: 4 x `npcDims.agentRadius` */
+// export const padClearance = 0.72;
+export const padClearance = 0.6;
+/** How far from where they stand `pad` looks for such a spot */
+export const padQueryRange = 3;
 
-export const idleMaxAcceleration = 4.0;
-export const idleSeparatingMaxAcceleration = 0.25;
-export const walkMaxAcceleration = 8.0;
-export const idleAgentMaxSpeed = 0.5;
-/** Separating idle npcs should not move by default */
-export const idleSeparatingMaxSpeed = 0.005;
-export const walkAgentMaxSpeed = 1.5;
-export const runAgentMaxSpeed = 2.5;
-/** Too large breaks arrival near other npc */
-// export const walkSeparationWeight = 0.5;
-export const walkSeparationWeight = 1.5;
-/** Less pushable */
-export const idleSeparationWeight = 0.1; // Less pushable
+/** A crowd agent's acceleration, speed and separation, by what they are doing */
+export const agentConfig = {
+  maxAcceleration: {
+    idle: 4.0,
+    /** An idle npc separating: `onTick` drops anyone at rest to this, else walk -> idle slides */
+    idleSeparating: 0.25,
+    walk: 8.0,
+  },
+  maxSpeed: {
+    idle: 0.5,
+    /** Separating idle npcs should not move by default */
+    idleSeparating: 0.005,
+    walk: 1.5,
+    run: 2.5,
+  },
+  separationWeight: {
+    /** Less pushable */
+    idle: 0.1,
+    /** Too large breaks arrival near other npc (tried 0.5) */
+    walk: 1.5,
+  },
+} as const;
 
 /**
  * NPC tuning: `npcConfig.dist` in meters, `npcConfig.time` in seconds, `npcConfig.angle` in radians.
@@ -80,6 +94,7 @@ export const crowdConfig = {
   boundaryQueryRange: 0.4,
   /** Keeps a side once taken: `2` intersects less, `0.75` rounds npcs better */
   avoidanceWeightCurVel: 0.75,
+  // avoidanceWeightCurVel: 1.5,
   /** navcat's is 20 */
   quickSearchIterations: 64,
   /** Enough to reach the sliced search */
