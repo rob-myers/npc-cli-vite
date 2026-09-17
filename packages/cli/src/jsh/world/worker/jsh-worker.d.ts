@@ -22,6 +22,7 @@ declare namespace WW {
 
   /** A parking spot, its facing, and the wall segment `[x1, y1, z1, x2, y2, z2]` it stands against */
   type ParkPlan = { key: string; at: Geom.VectJson; facing: Geom.VectJson; seg: number[] };
+  type PadPlan = { key: string; at: Geom.VectJson };
 
   /** A jsh op and its input — see `plan.worker.ts` for what each gives */
   type JshOp =
@@ -32,7 +33,14 @@ declare namespace WW {
         parked: { key: string; point: Geom.VectJson; grKey: string; seg: number[] }[];
       }
     | { key: "boundary"; npc: NpcQuery }
-    | { key: "pad"; npc: NpcQuery; by: number }
+    | {
+        key: "pad";
+        npcs: NpcQuery[];
+        /** Everyone parked or padded */
+        others: { key: string; point: Geom.VectJson; grKey: string }[];
+        /** The room wanted round each */
+        by: number;
+      }
     | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson };
 
   type JshOpKey = JshOp["key"];
@@ -49,8 +57,8 @@ declare namespace WW {
     park: (null | ParkPlan)[];
     /** The boundary segments `[x1, y1, z1, x2, y2, z2]` within reach, nearest first */
     boundary: number[][];
-    /** A step of `by` off the nearest wall, along its inward normal — `null` with no wall in reach */
-    pad: null | Geom.VectJson;
+    /** Aligned with `npcs`; `null` where no spot had the room */
+    pad: (null | PadPlan)[];
     /** `to`, slid along the navmesh from where they stand — `null` off the mesh */
     nudge: null | Geom.VectJson;
   };
