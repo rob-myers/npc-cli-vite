@@ -358,10 +358,16 @@
   - ✅ pad command should be like park
     - ✅ fadeSpawn to location with enough padding around npc
     - ✅ support multiple npcs, can fail for some
-  - provide controls which turn on long click
-    - `pick --long | move npc:rob` works but cancels pick-n-move
-    - useful for repro nav issues
-  - running should vary between animating `walk` and `run`
+  - 🚧 provide controls which turn on long click
+    - `pick --long | move rob` works but throws ongoing pick-n-move with "move: look again"
+    - useful for repro nav 
+    - ✅ try implement `move force`
+    - 🚧 `force` -> `--force`
+    - 🚧 tldr.md uses `force`
+  - `pick --long` via js opts instead of getopts
+  - ❌ simplify tldr.md commands npc args
+    - npc:rob useful for editable fields
+  - running should vary between animating "walk" and "run"
 
 # FUTURE
 
