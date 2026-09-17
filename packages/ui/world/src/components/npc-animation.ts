@@ -3,19 +3,7 @@ import { deltaAngle } from "maath/misc";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
-import {
-  defaultFadeSecs,
-  defaultIdleAnimationClipKey,
-  fadeSecs,
-  idleAgentMaxSpeed,
-  idleMaxAcceleration,
-  idleSeparationWeight,
-  npcScale,
-  runAgentMaxSpeed,
-  walkAgentMaxSpeed,
-  walkMaxAcceleration,
-  walkSeparationWeight,
-} from "../const.npc";
+import { agentConfig, defaultFadeSecs, defaultIdleAnimationClipKey, fadeSecs, npcScale } from "../const.npc";
 import { helper } from "../service/helper";
 import { emptyAnimationClip } from "../service/three-animation";
 import type { AnimationClipKey } from "./NPCs";
@@ -142,7 +130,7 @@ export class NpcAnimation {
     }
     // whilst walking, doors should block npcs
     agent.queryFilter = this.npc.queryFilter;
-    agent.separationWeight = walkSeparationWeight;
+    agent.separationWeight = agentConfig.separationWeight.walk;
     agent.maxSpeed = 0; // `startMoving` releases them
 
     crowdApi.requestMoveTarget(
@@ -170,8 +158,8 @@ export class NpcAnimation {
     const agent = this.npc.agent;
     if (agent !== null) {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
-      agent.maxAcceleration = walkMaxAcceleration;
-      agent.maxSpeed = this.moveClip.name === "run" ? runAgentMaxSpeed : walkAgentMaxSpeed;
+      agent.maxAcceleration = agentConfig.maxAcceleration.walk;
+      agent.maxSpeed = this.moveClip.name === "run" ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk;
     }
     // after the turn, so a long one does not eat the stuck grace
     this.npc.last.moveTime = this.w.timer.getElapsedTime();
@@ -197,14 +185,14 @@ export class NpcAnimation {
     const agent = this.npc.agent;
 
     if (agent) {
-      agent.separationWeight = idleSeparationWeight;
-      agent.maxAcceleration = idleMaxAcceleration;
-      agent.maxSpeed = idleAgentMaxSpeed;
+      agent.separationWeight = agentConfig.separationWeight.idle;
+      agent.maxAcceleration = agentConfig.maxAcceleration.idle;
+      agent.maxSpeed = agentConfig.maxSpeed.idle;
       const [vx, , vz] = agent.velocity;
 
       // pin ahead by stopping distance v²/2a so agent decelerates without reversing
       const speed = Math.hypot(vx, vz);
-      const pinAhead = speed ** 2 / (2 * idleMaxAcceleration);
+      const pinAhead = speed ** 2 / (2 * agentConfig.maxAcceleration.idle);
       const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
       const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
       this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));

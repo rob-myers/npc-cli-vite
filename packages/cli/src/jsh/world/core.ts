@@ -1,5 +1,5 @@
 import { npcDims } from "@npc-cli/ui__world/const.both";
-import { padClearance, parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, padClearance, parkMinMove } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
@@ -1136,7 +1136,7 @@ export async function* wasd_delta(
 ) {
   const { api, w } = ct;
   const { keysDown } = w.view;
-  const length = (opts.fast === true ? runAgentMaxSpeed : walkAgentMaxSpeed) * wasdStepSecs;
+  const length = (opts.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk) * wasdStepSecs;
   // idle costs nothing: with no key held we wait on the next. A kill aborts the wait, which must
   // REJECT rather than simply lose its listener — the shell waits on us returning
   const abort = new AbortController();
