@@ -151,10 +151,10 @@ export const ops: {
       const others = op.others.flatMap((o) => (o.grKey === grKey && padding.has(o.key) === false ? o.point : []));
       // whoever found no spot goes first next time, keeping the pass with the fewest
       const first = new Set<PadCand>();
-      let best = padRoom(cands, others, op.by, first);
+      let best = yield* padRoom(cands, others, op.by, first);
       for (let pass = 1; pass < padPasses && best.failed.some((c) => first.has(c) === false); pass++) {
         for (const c of best.failed) first.add(c);
-        const result = padRoom(cands, others, op.by, first);
+        const result = yield* padRoom(cands, others, op.by, first);
         if (result.failed.length < best.failed.length) best = result;
       }
       for (const [c, at] of best.picks) plans[c.index] = { key: c.npc.key, at };
@@ -439,9 +439,10 @@ function isClearOfWalls(p: Geom.VectJson, walls: number[], by: number) {
 /**
  * One room: a spot is free when `by` from everyone `taken` — the parked, the padded, and each
  * pick as it is made. Fewest free spots goes next — the re-run's `first`, first — and takes their
- * nearest. Arithmetic only, so a re-run costs no navmesh query
+ * nearest. Arithmetic only, so a re-run costs no navmesh query — but every pick recounts the
+ * room, so there is a breath after each
  */
-function padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: Set<PadCand>) {
+function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: Set<PadCand>) {
   const taken = others.slice();
   const left = new Set(cands);
   const picks = new Map<PadCand, Geom.VectJson>();
@@ -462,6 +463,7 @@ function padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: S
       picks.set(pick, spots[0]);
       taken.push(spots[0]);
     }
+    yield;
   }
   return { picks, failed };
 }
