@@ -311,8 +311,14 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
     getNpcOrUndefined,
     getNpcOrThrow,
     /** Move, handling named errors and any pause the move deferred */
-    async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
-      await w.npc.move(moveOpts).catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }));
+    async movePausable(moveOpts: JshCli.MoveOpts & { force?: boolean }, extra?: NamedErrorHandlers) {
+      await w.npc
+        .move(moveOpts)
+        .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
+        .catch((e) => {
+          if (moveOpts.force && !(e instanceof Error && e.message === "killed")) return;
+          throw e;
+        });
       // needed in case we allowed fade to complete
       await api.awaitResume();
     },
@@ -366,14 +372,14 @@ export async function move(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> & {
     to?: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
-    along: boolean;
+    along?: boolean;
+    force?: boolean;
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
     throw Error("opts.to required when not piping");
   }
-
-  // can be undefined and will throw
+  // undefined will throw later
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
 
   if (opts.to) {
@@ -393,6 +399,7 @@ export async function move_const(
   ct: JshCli.RunArg,
   opts: Omit<JshCli.MoveOpts, "to"> & {
     to: JshCli.PointAnyFormat | JshCli.PointAnyFormat[];
+    force?: boolean;
   } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
   const fixedPoints = isArrayOfPoints(opts.to) ? opts.to : [opts.to];
@@ -406,7 +413,13 @@ export async function move_const(
     let next: undefined | JshCli.PointAnyFormat;
 
     while ((next = pendingMoves.shift())) {
-      await movePausable({ npcKey: getNpcOrThrow().key, to: next, arrive: pendingMoves.length === 0, fast: opts.fast });
+      await movePausable({
+        npcKey: getNpcOrThrow().key,
+        to: next,
+        arrive: pendingMoves.length === 0,
+        fast: opts.fast,
+        force: opts.force,
+      });
     }
   } finally {
     processHandled.dispose();
@@ -419,7 +432,9 @@ export async function move_const(
  */
 export async function move_lazy(
   ct: JshCli.RunArg,
-  opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+  opts: Omit<JshCli.MoveOpts, "to"> & {
+    force?: boolean;
+  } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
   const { api, w } = ct;
 
@@ -439,7 +454,7 @@ export async function move_lazy(
       const npc = getNpcOrThrow();
 
       const movePromise = movePausable(
-        { npcKey: npc.key, to: dst, fast: opts.fast },
+        { npcKey: npc.key, to: dst, fast: opts.fast, force: opts.force },
         {
           "not navigable": false,
           stuck: () => {
@@ -467,7 +482,9 @@ export async function move_lazy(
  */
 export async function move_next(
   ct: JshCli.RunArg,
-  opts: Omit<JshCli.MoveOpts, "to"> = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+  opts: Omit<JshCli.MoveOpts, "to"> & {
+    force?: boolean;
+  } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
 ) {
   const { api } = ct;
 
@@ -482,7 +499,7 @@ export async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { npcKey: npc.key, to: next, fast: opts.fast },
+        { npcKey: npc.key, to: next, fast: opts.fast, force: opts.force },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
