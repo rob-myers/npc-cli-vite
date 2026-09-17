@@ -351,10 +351,13 @@
   - ✅ split world const into const.env and const.npc
   - ✅ bug where walking npc gets stuck oscillating near idle's boundary
   - ✅ try provide more leeway around unparked
-  - 🚧 refactor parked as predicate
-    - fixes unparked on refresh via save/restore per map
-    - each npc's avoidanceRadius could be a fixed function e.g. `(npcKey) => sharedFolder.pred.parked.has(npcKey) ? ... : ...`
-    - could apply on "spawn" or "spawned-many"
+  - ✅ refactor parked as predicate
+    - ✅ fixes unparked on refresh via save/restore per map
+    - ❌ each npc's avoidanceRadius could be a fixed function e.g. `(npcKey) => sharedFolder.pred.parked.has(npcKey) ? ... : ...`
+    - ✅ could apply on "spawn" or "spawned-many"
+  - pad command should be like park
+    - fadeSpawn to location with enough padding around npc
+    - support multiple npcs, can fail for some
   - provide controls which turn on long click
     - `pick --long | move npc:rob` works but cancels pick-n-move
     - useful for repro nav issues
