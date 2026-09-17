@@ -201,6 +201,7 @@ export function lock(
 /**
  * ```sh
  * look npc:rob at:$( pick 1 )
+ * look rob at:$( pick 1 )
  * pick | look npc:rob
  * look npc:rob at:kate
  * ```
@@ -213,6 +214,7 @@ export async function look(
     face: "at",
   }),
 ) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { pendingLooks, processHandled, lookPausable } = lookHandling(ct, {
     npcKey: opts.npcKey,
   });
@@ -505,9 +507,11 @@ export async function nudge(
     src: "from",
   }),
 ) {
-  const { w, api } = ct;
-  const npc = w.npc.get(opts.npcKey ?? ct.args[0]);
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   opts.by ??= 0.5;
+
+  const { w, api } = ct;
+  const npc = w.npc.get(opts.npcKey);
 
   if (!opts.from) {
     // nudge from a random angle
@@ -939,17 +943,28 @@ export function revoke(
  * ```sh
  * # say something
  * say hi npc:rob
+ * say npc:rob hi
  * say hi npc:rob secs:5
  * say hi npc:rob for:10
  * say hi npc:rob for:Infinity
+ * say hi rob for:1
  * ```
  */
 export function say(
   { api, args, w }: JshCli.RunArg<JshCli.PointAnyFormat>,
   opts: { npcKey: string; words?: string; secs?: number } = api.jsArg(args, { npc: "npcKey", for: "secs" }),
 ) {
+  /** support `say hi rob` where lastWord is npcKey */
+  let lastWord: undefined | string;
+  opts.npcKey ??= (lastWord = getLastUnknownNaked(opts)) as string;
+
   const npc = w.npc.get(opts.npcKey);
-  const words = opts.words ?? api.getJsOperands(args, opts).join(" ");
+  const words =
+    opts.words ??
+    api
+      .getJsOperands(args, opts)
+      .slice(0, lastWord === undefined ? undefined : -1)
+      .join(" ");
 
   if (words) {
     w.speech.say(npc.key, words, opts.secs);
@@ -1213,8 +1228,16 @@ function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
  * @see {booleanJsOptSomewhere}
  * @param opts Parsed from command line
  */
-export function getFirstUnknownNaked(opts: Record<string, any>) {
+function getFirstUnknownNaked(opts: Record<string, any>) {
   return keys(opts).find((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+}
+
+/**
+ * @see {booleanJsOptSomewhere}
+ * @param opts Parsed from command line
+ */
+function getLastUnknownNaked(opts: Record<string, any>) {
+  return keys(opts).findLast((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
 }
 
 const booleanJsOptSomewhere = {
