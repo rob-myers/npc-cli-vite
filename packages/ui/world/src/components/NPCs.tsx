@@ -52,7 +52,6 @@ import {
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
   idleAgentMaxSpeed,
-  idleAvoidanceRadius,
   idleSeparatingMaxAcceleration,
   idleSeparationWeight,
   npcConfig,
@@ -746,7 +745,7 @@ export default function NPCs() {
           await w.player.ensure();
         }
 
-        w.events.next({ key: "spawned", npcKey, gmRoomId });
+        w.events.next({ key: "spawned", npcKey, gmRoomId, spawns: npc.spawns });
       },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so
@@ -1114,13 +1113,11 @@ function getAgentParams(): crowd.AgentParams {
     maxSpeed: idleAgentMaxSpeed,
     collisionQueryRange: crowdConfig.collisionQueryRange,
     boundaryQueryRange: crowdConfig.boundaryQueryRange,
-    avoidanceRadius: idleAvoidanceRadius, // created idle — see `startIdle`
     separationWeight: idleSeparationWeight,
     updateFlags: movingUpdateFlags,
     obstacleAvoidance: {
       ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,
       weightCurVel: crowdConfig.avoidanceWeightCurVel,
-      weightSpace: crowdConfig.avoidanceWeightSpace,
     },
     queryFilter: ANY_QUERY_FILTER,
   };

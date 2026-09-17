@@ -4,6 +4,7 @@ import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
 import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
+import { parked } from "./pred";
 
 /**
  * Get at most one decor containing a given point.
@@ -570,7 +571,7 @@ export async function pad(
 
 /**
  * Stand npcs against a nearby wall, out of the way: clear of the room's doorways and of its other
- * parked npcs, and remembered in `w.e.parked`. Planned together on the worker, then everyone
+ * parked npcs, and remembered in `/shared/pred` — see `pred.ts`. Planned together on the worker, then everyone
  * moves at once — bar one with no clear spot, left where they stand and named in the error.
  * A kill rejects the npcs; a pause lets a fade or look finish
  * ```sh
@@ -594,9 +595,10 @@ export async function park(
         key: "park",
         npcs: npcs.map((npc) => npcQuery(w, npc)),
         // everyone parked, wherever: a handful, and the worker keeps to the rooms involved
-        parked: [...w.e.parked].flatMap(([key, { s }]) => {
+        parked: [...parked.get()].flatMap(([key, seg]) => {
           const grKey = w.e.npcToRoom.get(key)?.grKey;
-          return grKey === undefined ? [] : [{ key, point: w.n[key].point, grKey, seg: s }];
+          const point = w.n[key]?.point; // persisted: they may not be here this time
+          return grKey === undefined || point === undefined ? [] : [{ key, point, grKey, seg }];
         }),
       },
       signal,
@@ -619,8 +621,7 @@ export async function park(
             await npc.look({ at: facing });
           }
 
-          w.e.parked.set(npc.key, { s: seg });
-          if (npc.agent !== null) npc.agent.avoidanceRadius = undefined;
+          parked.mark(npc.key, seg);
         }),
       );
     } finally {

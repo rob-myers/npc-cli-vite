@@ -80,16 +80,11 @@ export const crowdConfig = {
   boundaryQueryRange: 0.4,
   /** Keeps a side once taken: `2` intersects less, `0.75` rounds npcs better */
   avoidanceWeightCurVel: 0.75,
-  /** Cost of passing within an idle npc's `idleAvoidanceRadius` — a preference, not a collision */
-  avoidanceWeightSpace: 1.5,
   /** navcat's is 20 */
   quickSearchIterations: 64,
   /** Enough to reach the sliced search */
   warmTicks: 4,
 } as const;
-
-/** What walkers prefer to clear an idle npc by */
-export const idleAvoidanceRadius = 0.36; // twice `npcDims.agentRadius`
 
 /** `findNearestPoly` query box and tolerance, by accuracy */
 export const closestPolyByAccuracy: Record<

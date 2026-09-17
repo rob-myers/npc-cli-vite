@@ -75,6 +75,8 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 
 `state.placeNpcAt(npc, at, type)` — places or teleports an NPC. The `"navigable"` type throws if the position is off the navmesh; `"doable"` silently removes the agent instead.
 
+Which npcs are parked — and the wall segment each stands against — is jsh state, not the world's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. `park` records via `parked.mark`; a move, respawn or removal unparks.
+
 ## Map-edit save flow
 
 `POST /api/map-edit/file/:folder/:filename` → `saveMapEditFile(filePath, body)` in `scripts/src/service/process-map-edit-save.ts`. That function: parses + validates body, writes JSON, generates thumbnail (skia-canvas), updates manifest.
