@@ -17,6 +17,10 @@ export const doorwayClearance = 0.6;
 export const parkQueryRange = 2;
 /** Below this much of a move, `park` turns them on the spot instead */
 export const parkMinMove = 0.02;
+/** How much room `pad` wants round them, from walls and from the parked or padded: 4 x `npcDims.agentRadius` */
+export const padClearance = 0.72;
+/** How far from where they stand `pad` looks for such a spot */
+export const padQueryRange = 3;
 
 export const idleMaxAcceleration = 4.0;
 export const idleSeparatingMaxAcceleration = 0.25;
@@ -80,6 +84,7 @@ export const crowdConfig = {
   boundaryQueryRange: 0.4,
   /** Keeps a side once taken: `2` intersects less, `0.75` rounds npcs better */
   avoidanceWeightCurVel: 0.75,
+  // avoidanceWeightCurVel: 1.5,
   /** navcat's is 20 */
   quickSearchIterations: 64,
   /** Enough to reach the sliced search */

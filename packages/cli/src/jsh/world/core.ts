@@ -1,10 +1,10 @@
 import { npcDims } from "@npc-cli/ui__world/const.both";
-import { parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const.npc";
+import { padClearance, parkMinMove, runAgentMaxSpeed, walkAgentMaxSpeed } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
 import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
-import { parked } from "./pred";
+import { padded, parked } from "./pred";
 
 /**
  * Get at most one decor containing a given point.
@@ -550,23 +550,59 @@ export function open(
 }
 
 /**
- * Move npc away from nearby boundary e.g. to avoid blocking others.
+ * Stand npcs where there is room to walk right round them: `by` (default `padClearance`) from
+ * their room's walls and doorways, and from anyone parked or padded — remembered in
+ * `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
+ * once; one without is left where they stand and named in the error
  * ```sh
- * pad npc:kate
- * pad npc:kate by:1
  * pad kate
+ * pad kate rob
+ * pad kate by:1
  * ```
  */
 export async function pad(
   { api, args, w }: JshCli.RunArg,
-  opts: { npcKey: string; by?: number } = api.jsArg(args, { npc: "npcKey" }),
+  opts: { npcKey?: string; npcKeys?: string[]; by?: number } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  const npc = w.npc.get(opts.npcKey ?? args[0]);
-  // off the nearest wall
-  const to = await plan({ api, w, op: { key: "pad", npc: npcQuery(w, npc), by: opts.by ?? 0.5 } });
-  if (to === null) throw Error("boundary too far");
+  // ignore non-existent npcKey including e.g. npc:foo
+  const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
 
-  await w.npc.move({ npcKey: npc.key, to }).catch(() => {}); // ignore stuck
+  await awaitPausable(api, async (signal) => {
+    const plans = await request(
+      w,
+      api,
+      {
+        key: "pad",
+        npcs: npcs.map((npc) => npcQuery(w, npc)),
+        others: [...parked.get().keys(), ...padded.get()].flatMap((key) => {
+          const [point, grKey] = [w.n[key]?.point, w.e.npcToRoom.get(key)?.grKey];
+          return point === undefined || grKey === undefined ? [] : [{ key, point, grKey }];
+        }),
+        by: opts.by ?? padClearance,
+      },
+      signal,
+    );
+    const leftOut = npcs.filter((_, i) => plans[i] === null);
+
+    // a kill stops them where they are; a pause does not — see `awaitPausable`
+    const onAbort = () => isPaused(signal.reason) === false && npcs.forEach((npc) => npc.rejectAll(signal.reason));
+    signal.addEventListener("abort", onAbort, { once: true });
+    try {
+      await Promise.all(
+        npcs.map(async (npc, i) => {
+          const plan = plans[i];
+          if (plan === null) return;
+          if (Math.hypot(plan.at.x - npc.point.x, plan.at.y - npc.point.y) > parkMinMove) {
+            await npc.fadeSpawn({ at: plan.at, angle: npc.rotation.y }); // facing as they were
+          }
+          padded.mark(npc.key);
+        }),
+      );
+    } finally {
+      signal.removeEventListener("abort", onAbort);
+    }
+    if (leftOut.length > 0) throw Error(`not padded: ${leftOut.map((npc) => npc.key).join(" ")}`);
+  });
 }
 
 /**
