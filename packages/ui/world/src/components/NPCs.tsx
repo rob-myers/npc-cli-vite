@@ -690,6 +690,7 @@ export default function NPCs() {
         // for respawn
         npc.position.setY(positionY);
         npc.rotation.y = rotationY;
+        npc.anim.face.rate = 0;
 
         return npc;
       },
