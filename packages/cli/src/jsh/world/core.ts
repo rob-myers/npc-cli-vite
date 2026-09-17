@@ -371,6 +371,9 @@ export async function move(
     throw Error("opts.to required when not piping");
   }
 
+  // can be undefined and will throw
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+
   if (opts.to) {
     await move_const(ct, { ...opts, to: opts.to });
   } else if (!opts.along) {
@@ -977,6 +980,7 @@ export function skin(
  * ```sh
  * spawn npc:foo at:[7,0,7]
  * spawn npc:rob at:$( pick 1 )
+ * spawn rob at:$( pick 1 )
  *
  * # spawn multiple
  * pick | spawn npc:rob-
@@ -989,7 +993,6 @@ export function skin(
  *
  * pick | spawn npc:rob-
  *
- * 🚧 use --force instead somehow
  * # ignore errors when not reading from stdin: non placable or doable
  * pick | spawn force npc:rob-
  * ```
@@ -1004,11 +1007,12 @@ export async function spawn(
     look: "facing",
   }),
 ) {
+  // support e.g. `spawn rob at:$( pick 1 )`
+  opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");
+
   if (api.isTtyAt(0)) {
     return await w.npc.spawn(opts);
   }
-
-  opts.npcKey ??= "npc-";
 
   function ignoreSpawnErrors(e: unknown) {
     if (opts.force && e instanceof Error && (e.message === "not placable" || e.message === "not doable")) {
@@ -1204,3 +1208,20 @@ const wasdMinMove = 0.05;
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
 }
+
+/**
+ * @see {booleanJsOptSomewhere}
+ * @param opts Parsed from command line
+ */
+export function getFirstUnknownNaked(opts: Record<string, any>) {
+  return keys(opts).find((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+}
+
+const booleanJsOptSomewhere = {
+  all: true,
+  along: true,
+  detail: true,
+  fast: true,
+  force: true,
+  point: true,
+};
