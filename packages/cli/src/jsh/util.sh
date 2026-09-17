@@ -7,9 +7,9 @@ clone() {
   map 'x => JSON.parse(JSON.stringify(x))'
 }
 
-# usage: `expr location | pretty`
 keys() {
-  map Object.keys
+  # map Object.keys
+  map 'x => (x instanceof Set || x instanceof Map) ? Array.from(x.keys()) : Object.keys(x)'
 }
 
 # usage: `expr 42 | keysAll`
