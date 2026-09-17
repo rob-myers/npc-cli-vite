@@ -715,6 +715,8 @@ export function pause({ w }: JshCli.RunArg) {
  *
  * # multiple filters act as OR
  * pick meta.{nav,do}
+ *
+ * pick --long
  * ```
  *
  * Priority:
@@ -726,17 +728,17 @@ export function pause({ w }: JshCli.RunArg) {
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
 
-  const { opts, operands } = ct.api.getOpts(args, {
-    boolean: [
-      "left", // left clicks only
-      "right", // right clicks only
-      "long", // long press only
-      "any", // left or right permitted
-      "fifo", // default lifo: new picks take priority over old ones
-    ],
+  // e.g. long presses via `pick --long` not `pick long` (filter)
+  const opts = ct.api.jsArg(args, {
+    "--left": "left", // left clicks only
+    "--right": "right", // right clicks only
+    "--long": "long", // long press only
+    "--any": "any", // left or right permitted
+    "--fifo": "fifo", // default lifo: new picks take priority over old ones
   });
+  const operands = ct.api.getJsOperands(args, opts);
 
-  if (opts.right === false && opts.any === false) {
+  if (opts.right !== true && opts.any !== true) {
     opts.left = true; // default to left clicks only
   }
 
@@ -768,8 +770,8 @@ export async function* pick(ct: JshCli.RunArg) {
     .map((filterDef) => api.generateSelector(api.parseFnOrStr(filterDef), [ct]));
 
   // support jsArg as:foo.bar.baz (apply selector)
-  const jsOpts = api.jsArg(args) as { as?: string };
-  const selector = jsOpts.as ? api.generateSelector(api.parseFnOrStr(jsOpts.as)) : undefined;
+  // const jsOpts = api.jsArg(args) as { as?: string };
+  const selector = opts.as ? api.generateSelector(api.parseFnOrStr(opts.as)) : undefined;
 
   let eventsSub: import("@npc-cli/util").BasicSubscription;
 
@@ -815,7 +817,7 @@ export async function* pick(ct: JshCli.RunArg) {
       if (
         (opts.left === true && output.rightDown === true) ||
         (opts.right === true && output.rightDown === false) ||
-        opts.long !== output.longDown
+        (opts.long !== undefined && opts.long !== output.longDown)
       ) {
         continue;
       }

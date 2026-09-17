@@ -364,7 +364,8 @@
     - ✅ try implement `move force`
     - ✅ `force` -> `--force`
     - ✅ tldr.md uses `force`
-  - 🚧 `pick --long` via js opts instead of getopts
+  - ✅ `pick --long` via js opts instead of getopts
+    - weirdly we cannot write `pick long` due to collision with filter syntax
   - ❌ simplify tldr.md commands npc args
     - npc:rob useful for editable fields
   - running should vary between animating "walk" and "run"
