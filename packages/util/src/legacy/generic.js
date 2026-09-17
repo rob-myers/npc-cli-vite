@@ -412,7 +412,8 @@ export function jsArg(args, alias = {}, opts) {
       (agg, arg) => {
         const colonIndex = arg.indexOf(":");
         if (colonIndex === -1) {
-          agg[arg] = true; // no bare specifier aliases (use {alias}:true instead)
+          // no bare specifier aliases except e.g. --force -> force
+          agg[arg in alias && arg.startsWith("-") ? alias[arg] : arg] = true;
           return agg;
         }
 
