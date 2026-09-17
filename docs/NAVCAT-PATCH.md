@@ -1,40 +1,44 @@
 # The navcat patch
 
 `navcat` (the recast/detour port the crowd runs on) is patched via pnpm —
-`patches/navcat@0.4.1.patch`, wired up under `patchedDependencies` in `pnpm-workspace.yaml`. Three
-changes in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`.
+`patches/navcat@0.4.1.patch`, under `patchedDependencies` in `pnpm-workspace.yaml`. Four changes
+in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`.
 
 ## 1. Four corners, not three
 
-`updateCorners` asks `findCorners` for `4` corners, not `3`. An npc's intention — `npc.getCorners`
-in `components/npc.ts` — is `[position, ...agent.corners]`, and three could stop short of the door
-they were about to pass through. (Commit `a1065b15`.)
+`updateCorners` asks `findCorners` for `4`. An npc's intention (`npc.getCorners`) is
+`[position, ...agent.corners]`, and three could stop short of the door about to be passed.
 
 ## 2. `boundaryQueryRange`: walls looked for less far than npcs
 
-Navcat gathers both neighbouring agents and the local boundary's wall segments within
-`collisionQueryRange`. Avoidance penalises any velocity heading at a wall inside its time horizon,
-so walls found further out slow a walker for a goal beside one — whilst a longer range for npcs is
-what lets them plan round each other.
-
-The patch adds an optional agent param `boundaryQueryRange`, copied on in `addAgent` and used by
-`updateLocalBoundaries` in place of `collisionQueryRange`, for both the gather and its re-gather
-threshold. Unset, behaviour is navcat's; neighbours and separation are untouched. `getAgentParams`
-in `components/NPCs.tsx` sets both, and `devHotReload` re-applies them to live agents.
+Navcat gathers neighbours and wall segments within one `collisionQueryRange`. Walls found far out
+slow a walker for a goal beside one; a long range for npcs is what lets them plan round each other.
+The optional agent param is used by `updateLocalBoundaries` in place of `collisionQueryRange`, for
+the gather and its re-gather threshold. `getAgentParams` sets both; `devHotReload` re-applies them.
 
 ## 3. A corner given up stays given up
 
-`findCorners` drops a leading corner within `MIN_TARGET_DIST`, and `updateCorners` asks afresh
-every tick — a symmetric test: cross in and the corner goes, drift out and it returns. Where the
-corner beyond lies behind them, a hairpin, dropping one turns them round, which takes them back
-out, which hands it back: they rock a centimetre short of a corner they never reach. The loop's
-size follows the threshold, so tuning it only resizes the wobble.
+`findCorners` drops a leading corner within `MIN_TARGET_DIST`, asked afresh every tick: cross in
+and it goes, drift out and it returns. At a hairpin, dropping it turns them round, which takes them
+out, which hands it back — they rock a centimetre short of a corner never reached.
 
-The patch keeps per agent the corner steered at (`cornerTracked`) and the nearest they have been
-to it (`cornerNearestSqr`). A corner goes once that nearest is within reach, and a nearest only
-falls, so it never comes back — steering stays on the corner beyond whilst they round it. A
-corridor that moves on puts a different point first, and both reset to it. The destination and
-off-mesh corners are never dropped.
+Per agent, the corner steered at (`cornerTracked`) and the nearest they have been to it
+(`cornerNearestSqr`) are kept. Within reach — half the agent's radius: pressed against someone (§4)
+they skim a corner rather than cross it — the corner goes, and as the nearest only falls, never
+comes back. A corridor that moves on resets both. The destination and off-mesh corners are kept.
+
+## 4. Pressed against an npc, the desired velocity folds onto their tangent
+
+Avoidance scores a candidate partly by its distance from the desired velocity `dvel`. Touching an
+npc with `dvel` pointing through them, every open candidate is a slide along their tangent, and a
+slide differs from `dvel` more than standing still does, at any speed: they crawl, `updateStuck`
+calls it still, the move is rejected. No parameter fixes it — the term is minimised at rest.
+
+`sampleVelocityAdaptive` folds `dvel` onto the tangent of the first touched circle it points into,
+at its speed; only the sampler's copy changes. The side is the lean of `dvel`, else the side bias's
+(`-np`), and is kept whilst in contact (`query.foldSide`): a slide crosses lines a string-pulled
+corner comes and goes over, and re-choosing each tick would turn them back at every flip. Contact
+only (`0.02`): folding from wider, a corner just past their far side is folded away from for ever.
 
 ## Editing the patch
 
@@ -44,8 +48,8 @@ pnpm patch navcat@0.4.1          # extracts WITH the current patch applied, prin
 pnpm patch-commit "$PWD/node_modules/.pnpm_patches/navcat@0.4.1"   # rewrites the patch, reinstalls
 ```
 
-`patch-commit` changes the patch hash in `pnpm-lock.yaml` and navcat's path under
-`node_modules/.pnpm`: restart the TypeScript server, and the dev server too.
-
-`pnpm patch` refusing means an edit dir was never committed — look at it before deleting. Only
-`dist/` is patched; navcat's `src/` is shipped for reference, not run.
+`patch-commit` changes the hash in `pnpm-lock.yaml` and navcat's path under `node_modules/.pnpm`:
+restart the TypeScript server and the dev server. Delete the edit dir and any superseded
+`node_modules/.pnpm/navcat@0.4.1_patch_hash=…` copy afterwards — a stale one is easily read by
+mistake. `pnpm patch` refusing means an edit dir was never committed. Only `dist/` is patched;
+`src/` is shipped for reference, not run.
