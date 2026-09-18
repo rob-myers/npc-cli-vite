@@ -97,16 +97,16 @@
       <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>top</title>
       </rect>
-      <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+      <rect x="160" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>right</title>
       </rect>
-      <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="176" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>front</title>
       </rect>
-      <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+      <rect x="192" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>left</title>
       </rect>
-      <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
+      <rect x="208" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px; visibility: visible;">
         <title>back</title>
       </rect>
     </g>
@@ -205,16 +205,16 @@
       <rect x="176" y="64" width="16" height="16" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>top</title>
       </rect>
-      <rect x="160" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="160" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>right</title>
       </rect>
-      <rect x="176" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="176" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>front</title>
       </rect>
-      <rect x="192" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="192" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>left</title>
       </rect>
-      <rect x="208" y="80" width="16" height="32" style="stroke-opacity: 0.5; stroke-width: 3px;">
+      <rect x="208" y="80" width="16" height="40" style="stroke-opacity: 0.5; stroke-width: 3px;">
         <title>back</title>
       </rect>
     </g>
