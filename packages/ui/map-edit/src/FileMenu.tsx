@@ -152,7 +152,7 @@ function FileSelect({ state }: { state: UseStateRef<State> }) {
                       )}
                     >
                       <Select.ItemText className="flex-1">{file.key}</Select.ItemText>
-                      {!state.isReadOnly() && (
+                      {import.meta.env.DEV && !state.isLocked() && (
                         <button
                           className="ml-auto opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded"
                           onPointerDown={(e) => e.stopPropagation()}
@@ -166,7 +166,7 @@ function FileSelect({ state }: { state: UseStateRef<State> }) {
                       )}
                     </Select.Item>
                   ))}
-              {folderType === "map" && !state.isReadOnly() && (
+              {folderType === "map" && import.meta.env.DEV && !state.isLocked() && (
                 <Select.Item
                   value={newMapKey}
                   className="flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-400 border-t border-slate-700 data-highlighted:bg-slate-700"
