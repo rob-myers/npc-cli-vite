@@ -23,6 +23,7 @@ export function WorldSpeech() {
       panelOpen: false,
       panelTab: "speech",
       history: [],
+      menuItems: [],
       minY: 40,
       nextId: 0,
       pinnedId: null,
@@ -32,6 +33,17 @@ export function WorldSpeech() {
       historyWidth: saved.speechWidth ?? (big ? 320 : 288),
       resizing: false,
 
+      addMenuItem(item) {
+        // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
+        const index = state.menuItems.findIndex((x) => x.key === item.key);
+        if (index === -1) state.menuItems.push(item);
+        else state.menuItems[index] = item;
+        state.update();
+      },
+      removeMenuItem(key) {
+        state.menuItems = state.menuItems.filter((x) => x.key !== key);
+        state.update();
+      },
       clear() {
         state.history = [];
         state.update();
@@ -331,7 +343,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
 
   const npc = w.n[npcKey];
   // `setNpcLit` refuses the player, so the item would silently do nothing for them
-  const canLead = npc !== undefined && npc.key !== w.player?.key;
+  const canLight = npc !== undefined && npc.key !== w.player?.key;
 
   return (
     <Menu.Root
@@ -353,13 +365,13 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
       <Menu.Portal container={w.rootEl}>
         <Menu.Positioner className="z-50" side="bottom" sideOffset={4} align="start">
           <Menu.Popup className="select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-36">
-            {canLead === true && (
+            {canLight === true && (
               <Menu.Item
                 className={speechMenuItemClassName}
                 // `setNpcLit` writes a uniform, so nothing here re-renders on its own
                 onClick={() => (w.e.setNpcLit(npc), w.speech.update())}
               >
-                {npc.lit === true ? "make an extra" : "make a lead"}
+                {npc.lit === true ? "unlight" : "light"}
               </Menu.Item>
             )}
             {npc !== undefined && (
@@ -378,6 +390,11 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
                 pan to
               </Menu.Item>
             )}
+            {w.speech.menuItems.map((item) => (
+              <Menu.Item key={item.key} className={speechMenuItemClassName} onClick={() => item.action(npcKey)}>
+                {item.text}
+              </Menu.Item>
+            ))}
             <Menu.Item
               className={cn(speechMenuItemClassName, armed === true && "text-red-300")}
               // stays open on the 1st click, so "confirm" replaces it where it already is
@@ -403,11 +420,19 @@ export type SpeechEntry = {
   epochMs: number;
 };
 
+/** An item added to every `NpcKeyMenu` by e.g. a jsh command — see `addMenuItem` */
+export type SpeechMenuItem = {
+  key: string;
+  text: string;
+  action(npcKey: string): void;
+};
+
 export type State = {
   dragged: boolean;
   panelOpen: boolean;
   panelTab: (typeof speechPanelTabs)[number];
   history: SpeechEntry[];
+  menuItems: SpeechMenuItem[];
   minY: number;
   nextId: number;
   /** The toast held open by an `NpcKeyMenu`, which must not fade whilst it is up */
@@ -420,6 +445,8 @@ export type State = {
   /** Width (px) of the whole history panel — resizable, persisted */
   historyWidth: number;
   resizing: boolean;
+  addMenuItem(item: SpeechMenuItem): void;
+  removeMenuItem(key: string): void;
   clear(): void;
   getMaxY(): number;
   getClampedY(y: number): number;
