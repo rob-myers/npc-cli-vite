@@ -25,14 +25,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         state.prevMapPosition = null;
       },
-      async panTo() {
+      async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
         if (npc === undefined) return;
 
         // no `radius`, so this pans and turns without zooming — `lookAt` keeps the distance it
         // finds, which on load is whatever view we restored
         await w.view.lookAt(npc.point, {
-          animate: true,
+          animate,
           // they walk whilst we pan, and the point of it is to be ON them — a destination fixed at
           // the moment of the press lands behind
           track: () => w.n[state.key]?.point,
@@ -127,8 +127,8 @@ export type State = {
 
   /** Place the player if absent, then track them */
   ensure(): Promise<void>;
-  /** Pans the camera onto the player */
-  panTo(): Promise<void>;
+  /** Pans the camera onto the player, or snaps when `animate` is false */
+  panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
