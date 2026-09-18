@@ -27,6 +27,7 @@ import type { State as WorldState } from "./World";
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
+      changingMap: false,
       doableToNpc: {},
       doorOpen: {},
       doorToNpcs: {},
@@ -145,7 +146,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const { player } = w;
         const saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs;
 
-        const firstBootstrap = player.prevMapPosition === null;
+        // NOT "is there a player to come from": removing them left the veil up on the next map
+        const firstBootstrap = state.changingMap === false;
+        state.changingMap = false;
         if (firstBootstrap) {
           player.assign(saved?.playerKey ?? defaultPlayerKey);
           // The arrival is shown whole: folded (or flat, on a phone), then the fade comes on, then
@@ -210,11 +213,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onChangeMap() {
         w.settledMapKey = null; // changing from here to "map-settled" — see `isMapChanging`
+        state.changingMap = true;
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
-        const player = w.n[w.player.key];
-        w.player.prevMapPosition = player === undefined ? null : { ...player.point };
 
         state.removeNpcs(...Object.keys(w.n));
         // runtime decor is per-map, like the npcs — the incoming map restores its own
@@ -1066,6 +1068,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 }
 
 export type State = {
+  /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
+  changingMap: boolean;
   doableToNpc: { [decorKey: string]: string | null };
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };
