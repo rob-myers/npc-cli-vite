@@ -586,8 +586,8 @@ export function open(
 
 /**
  * Stand npcs where there is room to walk right round them: `by` (default `padClearance`) from
- * their room's walls and doorways, and from anyone parked or padded — remembered in
- * `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
+ * their room's walls and doorways, and from everyone else standing in it — the spot is remembered
+ * in `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
  * once; one without is left where they stand and named in the error
  * ```sh
  * pad kate
@@ -602,6 +602,19 @@ export async function pad(
   // ignore non-existent npcKey including e.g. npc:foo
   const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
 
+  // everyone stood in the rooms we are padding — a spot on top of any of them is no spot at all.
+  // Keyed, so a room shared by two of them is only sent once; the worker drops those being padded
+  const others = new Map(
+    npcs.flatMap((npc) => {
+      const at = w.e.npcToRoom.get(npc.key);
+      if (at === undefined) return [];
+      return [...(w.e.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
+        const point = w.n[key]?.point;
+        return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
+      });
+    }),
+  );
+
   await awaitPausable(api, async (signal) => {
     const plans = await request(
       w,
@@ -609,10 +622,7 @@ export async function pad(
       {
         key: "pad",
         npcs: npcs.map((npc) => npcQuery(w, npc)),
-        others: [...parked.get().keys(), ...padded.get()].flatMap((key) => {
-          const [point, grKey] = [w.n[key]?.point, w.e.npcToRoom.get(key)?.grKey];
-          return point === undefined || grKey === undefined ? [] : [{ key, point, grKey }];
-        }),
+        others: [...others.values()],
         by: opts.by ?? padClearance,
       },
       signal,

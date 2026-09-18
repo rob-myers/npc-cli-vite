@@ -134,7 +134,7 @@ export const ops: {
   },
   /**
    * Where each npc may stand with room to walk right round them: `by` from their room's walls and
-   * doorways, and from anyone parked or padded. The walls once per npc, up front; then the npcs,
+   * doorways, and from everyone else standing in it. The walls once per npc, up front; then the npcs,
    * room by room, most constrained first — see `padRoom`
    */
   *pad(op, navMesh) {
@@ -437,7 +437,7 @@ function isClearOfWalls(p: Geom.VectJson, walls: number[], by: number) {
 }
 
 /**
- * One room: a spot is free when `by` from everyone `taken` — the parked, the padded, and each
+ * One room: a spot is free when `by` from everyone `taken` — those already standing there, and each
  * pick as it is made. Fewest free spots goes next — the re-run's `first`, first — and takes their
  * nearest. Arithmetic only, so a re-run costs no navmesh query — but every pick recounts the
  * room, so there is a breath after each
