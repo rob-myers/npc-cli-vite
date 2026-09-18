@@ -47,8 +47,8 @@ export function WorldMenu() {
 
   const state = useStateRef(
     (): State => ({
-      armedState: null,
-      armedTimeoutId: 0,
+      unconfirmed: null,
+      unconfirmedTimeoutId: 0,
       debugHitOpen: false,
       dragged: false,
       gmGraphsOpen: false,
@@ -65,22 +65,29 @@ export function WorldMenu() {
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
 
+      confirm(value) {
+        window.clearTimeout(state.unconfirmedTimeoutId);
+        if (state.unconfirmed === value) {
+          state.set({ unconfirmed: null });
+          return true;
+        }
+        // it forgets itself, lest a much later click take effect by surprise
+        state.unconfirmedTimeoutId = window.setTimeout(state.clearUnconfirmed, confirmMs);
+        state.set({ unconfirmed: value });
+        return false;
+      },
+      clearUnconfirmed() {
+        window.clearTimeout(state.unconfirmedTimeoutId);
+        if (state.unconfirmed !== null) {
+          state.set({ unconfirmed: null });
+        }
+      },
       onSelectState(value) {
-        if (value === null) {
-          return;
+        if (value === null || state.confirm(value) === false) {
+          return; // the popup stays open with this option now reading "confirm"
         }
-        if (state.armedState !== value) {
-          // the popup stays open with this option now reading "confirm", so it can be clicked
-          // straight away. It forgets itself, lest a much later click take effect by surprise
-          window.clearTimeout(state.armedTimeoutId);
-          state.armedTimeoutId = window.setTimeout(state.disarmState, stateArmedMs);
-          state.set({ armedState: value });
-          return;
-        }
-
-        state.disarmState();
         state.set({ stateSelectOpen: false });
-        if (value === resetStateValue) {
+        if (value === "reset-world-state") {
           void w.e.resetWorldState();
         } else {
           void w.e.restoreFromWorld(value);
@@ -88,17 +95,16 @@ export function WorldMenu() {
       },
       onStateSelectOpenChange(open, reason) {
         if (open === false && reason === "item-press") {
-          return; // `onSelectState` decides, since arming "confirm" must not close the popup
+          return; // `onSelectState` decides, since "confirm" must not close the popup
         }
         if (open === false) {
-          state.disarmState(); // dismissed rather than confirmed
+          state.clearUnconfirmed(); // dismissed rather than confirmed
         }
         state.set({ stateSelectOpen: open });
       },
-      disarmState() {
-        window.clearTimeout(state.armedTimeoutId);
-        if (state.armedState !== null) {
-          state.set({ armedState: null });
+      onResetCamera() {
+        if (state.confirm("reset-camera") === true) {
+          w.view.resetCamera();
         }
       },
 
@@ -428,8 +434,17 @@ export function WorldMenu() {
                     )}
                   />
                 </span>
-                <span title="reset camera" onClick={() => w.view.resetCamera()}>
-                  <ArrowsClockwiseIcon className="size-3.5 cursor-pointer hover:text-white" />
+                <span
+                  title="reset camera"
+                  onClick={state.onResetCamera}
+                  className={cn(
+                    "flex items-center gap-1 cursor-pointer",
+                    state.unconfirmed === "reset-camera" ? "text-red-300" : "hover:text-white",
+                  )}
+                >
+                  {/* the word too: a title says nothing on touch */}
+                  {state.unconfirmed === "reset-camera" && "confirm"}
+                  <ArrowsClockwiseIcon className="size-3.5" />
                 </span>
               </div>
             </MenuRow>
@@ -458,9 +473,9 @@ export function WorldMenu() {
                 <MenuSelect
                   label="state"
                   value={null}
-                  items={[resetStateValue, ...otherWorldKeys].map((value) => ({
-                    key: value === resetStateValue ? "reset" : value,
-                    el: state.armedState === value ? <span className="text-red-300">confirm</span> : undefined,
+                  items={["reset-world-state", ...otherWorldKeys].map((value) => ({
+                    key: value === "reset-world-state" ? "reset" : value,
+                    el: state.unconfirmed === value ? <span className="text-red-300">confirm</span> : undefined,
                     value,
                   }))}
                   side="bottom"
@@ -1049,6 +1064,12 @@ function _LightsMenuSlider({
   );
 }
 
+/**
+ * Something whose click must be confirmed by a second one — extend as more controls need it.
+ * A plain `string` is a `worldKey`, whose map state the `state` select restores from
+ */
+export type Unconfirmed = "reset-camera" | "reset-world-state" | (string & {});
+
 export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
@@ -1064,21 +1085,25 @@ export type State = {
   /** Height (px) of the main menu popup's scrollable body — resizable, persisted */
   menuHeight: number;
   resizing: boolean;
-  /** The `state` option clicked once, whose next click takes effect. `null` when none is armed */
-  armedState: null | string;
-  armedTimeoutId: number;
+  /** Clicked once and awaiting its confirming click — `null` when nothing is */
+  unconfirmed: null | Unconfirmed;
+  unconfirmedTimeoutId: number;
   /** Whether the look button has been held long enough to have switched camera mode */
   lookLongPressed: boolean;
   lookTimeoutId: number;
   /** A click looks at the player; a long press switches camera mode — the badge it wears */
   onLookPressStart(): void;
   onLookPressEnd(cancelled?: boolean): void;
-  /** Controlled, so arming "confirm" can keep the popup open — see `onStateSelectOpenChange` */
+  /** Controlled, so an unconfirmed option can keep the popup open — see `onStateSelectOpenChange` */
   stateSelectOpen: boolean;
+  /** `true` if this click confirms `value`; otherwise `value` becomes the unconfirmed one */
+  confirm(value: Unconfirmed): boolean;
+  clearUnconfirmed(): void;
   /** Either restore this map's state from another world, or reset it — each after confirming */
   onSelectState(value: null | string): void;
+  /** Resets the camera, after confirming */
+  onResetCamera(): void;
   onStateSelectOpenChange(open: boolean, reason: Select.Root.ChangeEventReason): void;
-  disarmState(): void;
   getMaxY(): number;
   getClampedY(y: number): number;
   getMaxMenuWidth(): number;
@@ -1114,10 +1139,8 @@ const rangeInputClass = (touch: boolean, width: string) =>
     width,
   );
 
-/** `MenuSelect` value of the "reset" option, which no `worldKey` can collide with */
-const resetStateValue = "reset-world-state";
-/** How long a `state` option stays armed as "confirm" */
-const stateArmedMs = 5000;
+/** How long something stays unconfirmed, before it forgets it was ever clicked */
+const confirmMs = 5000;
 
 const minMenuWidth = 200;
 const minMenuHeight = 120;

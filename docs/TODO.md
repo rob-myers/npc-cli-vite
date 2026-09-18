@@ -368,7 +368,10 @@
     - weirdly we cannot write `pick long` due to collision with filter syntax
   - ❌ simplify tldr.md commands npc args
     - npc:rob useful for editable fields
-  - running should vary between animating "walk" and "run"
+  - ✅ running should vary between animating "walk" and "run"
+    - ✅ improve arrival animation when other npc is blocking
+    - ✅ run arrival animation too fast
+    - clean up implementation
 
 # FUTURE
 
@@ -413,10 +416,10 @@
 
 ## Bugs
 
-- 🚧 BUG parsing?
+- ✅ BUG parsing?
   - mvdan-sh parse works
   - convertMvdanShToJsh.File works `withParents(convertMvdanShToJsh.File(parsed.file))`
-  - 🚧 npm braces is crashing
+  - ✅ npm braces is crashing
 ```sh
 expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.46,y:2.06},{x:12.95,y:1.86},{x:13.45,y:1.7},{x:13.97,y:1.59},{x:14.49,y:1.52},{x:15.01,y:1.5},{x:15.55,y:1.52},{x:15.55,y:1.52},{x:15.55,y:1.52},{x:16.07,y:1.59},{x:16.58,y:1.7},{x:17.09,y:1.86},{x:17.57,y:2.06},{x:18.04,y:2.31},{x:18.48,y:2.59},{x:18.9,y:2.92},{x:19.06,y:3.06},{x:17.68,y:3.06},{x:17.38,y:2.9},{x:17.12,y:2.9},{x:16.84,y:3.06},{x:16.15,y:3.06},{x:15.9,y:2.9},{x:15.63,y:2.9},{x:15.35,y:3.06},{x:14.66,y:3.06},{x:14.38,y:2.9},{x:14.16,y:2.9},{x:13.85,y:3.06},{x:13.16,y:3.06},{x:12.88,y:2.89},{x:12.66,y:2.89},{x:12.36,y:3.06},{x:10.95,y:3.06},{x:10.99,y:3.02}]}
 ```
@@ -446,14 +449,14 @@ expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.4
 - BUG npc animation out of sync after save npc.ts (?)
 - BUG on collapse/expand should persist pane dimensions
 - BUG need two ctrl-c for while loop walk?
-- BUG saw auto door close with nearby npc
+- ❌ BUG saw auto door close with nearby npc
   - maybe door was closing and didn't open quickly enough
-- BUG on lock door and save Decor we lose switch tint
+- ✅ BUG on lock door and save Decor we lose switch tint
   - maybe just stale while paused
 - BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
 - BUG MapEdit asking to save draft changes onchange when there are no changes
 - BUG MapEdit drafts fighting: with 2 instances open for same file
-- BUG `drawGm` (Floor): "SWEEP" probably poly union issue
+- ❌ BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 
 ## Long running
 
