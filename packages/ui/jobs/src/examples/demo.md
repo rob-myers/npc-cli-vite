@@ -9,7 +9,7 @@ demo_add_decor
 demo_remove_decor
 ```
 
-# UI
+# ui
 
 ```sh
 # show npc tracking ui
@@ -18,19 +18,6 @@ demo_npc_ui npc:rob
 # log speech to console
 demo_log_speech &
 say Hello! rob
-```
-
-# debug
-
-```sh
-# show rob's corners (continually)
-demo_corners npc:rob
-
-# show local boundary near rob (once)
-demo_boundary npc:rob
-
-# log agent params to tty
-demo_fold npc:rob
 ```
 
 # npc interaction

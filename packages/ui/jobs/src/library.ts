@@ -29,6 +29,7 @@ const categoryOrder = [
   "tldr",
   "core",
   "demo",
+  "debug",
   "shell"
 ];
 
