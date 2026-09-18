@@ -1,9 +1,9 @@
 import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
-import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+import { devCacheBust, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
 import { loadImage } from "@npc-cli/util/legacy/dom";
-import { keys, mapValues } from "@npc-cli/util/legacy/generic";
+import { hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { deltaAngle } from "maath/misc";
@@ -76,6 +76,7 @@ export default function NPCs() {
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       gltf: null,
+      gltfHash: 0,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
         entries: [] as SkinSheetEntry[],
@@ -266,6 +267,15 @@ export default function NPCs() {
           material,
         };
       },
+      buildNpcMesh() {
+        // the clone brings its own skeleton; the label rides in the geometry
+        const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
+        const graph = buildGraph(clone);
+        const skinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
+        addEmptyBillboardOffset(skinnedMesh.geometry);
+        const geometry = mergeWithGroupAttr(skinnedMesh.geometry, createSkinnedLabelQuad(0, 0));
+        return { geometry, graph, skinnedMesh };
+      },
       createNpc(
         opts: Pick<NpcInit, "key" | "graph" | "geometry" | "position" | "rotation" | "skinnedMesh"> & {
           pickId: number;
@@ -305,6 +315,11 @@ export default function NPCs() {
         return typeof angle === "number" ? angle : (opts.npc?.rotation.y ?? 0);
       },
       devHotReload() {
+        // every refetch gives a new gltf OBJECT, so compare the file instead
+        const hash = state.gltf === null ? 0 : hashJson(state.gltf.parser.json, false);
+        const newGltf = hash !== state.gltfHash;
+        state.gltfHash = hash;
+
         /**
          * Don't create but instead mutate existing npcs, thereby avoiding stale references in ongoing code.
          * - we update the prototypes
@@ -315,6 +330,9 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           Object.setPrototypeOf(npc, Npc.prototype);
           Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
+
+          // `NpcInstance` carries their position and rotation over to the new mesh
+          if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
 
           state.resetMaterials(npc); // can overwrite materials while debugging
           npc.init();
@@ -651,16 +669,8 @@ export default function NPCs() {
             state.compactPickIds();
           }
 
-          const clone = SkeletonUtils.clone((state.gltf as GLTF).scene);
-          const graph = buildGraph(clone);
-          const clonedSkinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
-
-          const labelQuad = createSkinnedLabelQuad(0, 0);
-          addEmptyBillboardOffset(clonedSkinnedMesh.geometry);
-          const geometry = mergeWithGroupAttr(clonedSkinnedMesh.geometry, labelQuad);
-
-          const rotation = clonedSkinnedMesh.rotation;
-          rotation.y = rotationY;
+          const { geometry, graph, skinnedMesh } = state.buildNpcMesh();
+          skinnedMesh.rotation.y = rotationY;
 
           npc = state.createNpc({
             key: opts.npcKey,
@@ -668,8 +678,8 @@ export default function NPCs() {
             graph,
             pickId: state.nextPickId++,
             position: helper.groundPointToVector3(opts.groundPoint).setY(positionY),
-            rotation,
-            skinnedMesh: clonedSkinnedMesh,
+            rotation: skinnedMesh.rotation,
+            skinnedMesh,
             skinIndex: state.getSkinIndexBySkinKey(opts.as ?? "medic-0"),
           });
         }
@@ -824,7 +834,8 @@ export default function NPCs() {
       queryFn: async () => {
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, skinManifest] = await Promise.all([
-          new GLTFLoader().loadAsync(url.templateMoreAnimsMcpGltf),
+          // busted too, so a devtools reset reloads the model — it is self-contained (data uris)
+          new GLTFLoader().loadAsync(devCacheBust(url.templateMoreAnimsMcpGltf)),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
@@ -927,6 +938,8 @@ export type State = {
   clips: Record<AnimationClipKey, THREE.AnimationClip>;
   crowd: crowdApi.Crowd;
   gltf: GLTF | null;
+  /** DEV: hash of the gltf the npc meshes were built from — see `devHotReload` */
+  gltfHash: number;
   skin: {
     manifest: AssetsSkinManifestType;
     entries: SkinSheetEntry[];
@@ -940,6 +953,8 @@ export type State = {
   postCrowdTickEvents: JshCli.Event[];
   tickResolvers: (() => void)[];
 
+  /** A fresh mesh cloned from `gltf`, with its own skeleton and the label quad merged in */
+  buildNpcMesh(): Pick<NpcInit, "geometry" | "graph" | "skinnedMesh">;
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
   configureCrowd(): void;

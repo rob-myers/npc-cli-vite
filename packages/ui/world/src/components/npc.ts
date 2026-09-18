@@ -325,7 +325,9 @@ export class Npc {
 
     this.resolve.spawn("spawned");
 
-    this.anim.setPose(this.anim.idleClip.name as AnimationClipKey, { fade: 0, force: true }); // a fresh mixer
+    // fresh mixer needs pose + handle gltf hot-reload (?)
+    const clip = this.anim.moving === true ? this.anim.moveClip : this.anim.idleClip;
+    this.anim.setPose(clip.name as AnimationClipKey, { fade: 0, force: true });
     this.anim.mixer.update(0);
   };
 
