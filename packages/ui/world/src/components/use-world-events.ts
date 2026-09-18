@@ -157,11 +157,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.revealRoomLabels(0);
         }
 
+        /** Are they back where the save left them? — else the restored view is on nothing */
+        let playerRestored = false;
+
         try {
           // decor first: a restored npc's `decorKey` may reference it (e.g. sitting)
           state.restoreDecor();
           // the player goes first, else a restored npc would be adopted as them
-          await player.ensure();
+          playerRestored = await player.ensure();
           await state.restoreNpcs(saved);
           // a restored npc can be standing in a doorway — every door starts closed, so one would
           // shut through them. Before the frame below, so it is never seen closed over them
@@ -173,9 +176,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // with everything drawn once, the pick pass compiles now rather than on the first tap.
           // Awaited: no frame is drawn whilst it runs, and the pan below wants its frames
           await w.view.warmPick();
-          if (firstBootstrap === true && saved === null) {
-            // nothing saved to be looking at, and the player was put down somewhere new: onto
-            // them first, so the world unfolds about them
+          if (firstBootstrap === true && playerRestored === false) {
+            // the player was put down somewhere new, so the restored view may be on nothing at
+            // all: onto them first, so the world unfolds about them
             await player.panTo();
           }
         } finally {
@@ -189,8 +192,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             void w.floor?.fadeTo(1);
             await rising;
             // the names come back once the fade the unfold started has settled — by then only the
-            // rooms that stay are still shown, so only their labels appear. Not awaited: the intro
-            // pan below has nothing to do with it
+            // rooms that stay are still shown, so only their labels appear. Not awaited: the
+            // intro pan has nothing to do with it
             w.view.revealRoomLabels(1, roomLabelRevealMs, MODE_FADE_SECS * 1000);
           } else {
             // behind black since `fadeOut` — snap onto the player, so it lifts onto them
@@ -199,7 +202,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
 
-        if (firstBootstrap === true && saved !== null) {
+        if (firstBootstrap === true && playerRestored === true) {
           // on load the view is the one we restored, and is left alone: taking the camera off
           // whatever we were looking at is a poor greeting. Instead it is offered — see WorldView
           w.view.showCentreHint();
