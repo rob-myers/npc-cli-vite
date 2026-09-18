@@ -39,6 +39,34 @@ pick | spawn npc:foo- as:human-1
 pick | spawn npc:test as:human-1 look
 ```
 
+# move
+
+```sh
+# keep moving rob to next picked (1)
+pick | move npc:rob
+
+# [1] but only pick floor or doable
+pick meta.{floor,do} | move npc:rob
+
+# [1] but in order
+pick | move npc:rob along
+
+# move once to ground projected pick (2)
+move npc:rob to:$( pick 1 )
+
+# [2] but must pick floor
+move npc:rob to:$( pick 1 meta.floor )
+
+# [1] but in order floor only
+while true; do
+  move --force npc:rob to:$( pick meta.floor 1 )
+done
+
+# [2] but fast
+move npc:rob to:$( pick 1 ) fast
+```
+
+
 # doors
 
 ```sh
@@ -77,16 +105,21 @@ remove decor
 remove test{0..5}
 ```
 
-# unsorted
+# w
 
 ```sh
-# show npc tracking ui
-demo_npc_ui npc:rob
+# get npc rob
+w n.rob.agent
 
-# whilst on navmesh
+# log rob to console
+w n.rob.agent | log
+
+# maxSpeed
 w n.rob.agent.maxSpeed
 
+# toggle room lit
 w e.setRoomLit g0r2
-w e.setRoomLit g0r2 # toggle
+
+# reset manual lighting
 w e.clearHandLitRooms
 ```
