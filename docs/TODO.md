@@ -368,7 +368,7 @@
     - weirdly we cannot write `pick long` due to collision with filter syntax
   - ❌ simplify tldr.md commands npc args
     - npc:rob useful for editable fields
-  - 🚧 running should vary between animating "walk" and "run"
+  - ✅ running should vary between animating "walk" and "run"
     - ✅ improve arrival animation when other npc is blocking
     - ✅ run arrival animation too fast
     - clean up implementation

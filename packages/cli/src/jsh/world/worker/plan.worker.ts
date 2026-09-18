@@ -465,7 +465,7 @@ function isClearOfWalls(p: Geom.VectJson, walls: number[], by: number) {
 }
 
 /**
- * One room: a spot is free when `by` from everyone `taken` — those already standing there, and each
+ * One room: a spot is free when `by` clear of everyone `taken` — those already standing there, and each
  * pick as it is made. Fewest free spots goes next — the re-run's `first`, first — and takes their
  * nearest. Arithmetic only, so a re-run costs no navmesh query — but every pick recounts the
  * room, so there is a breath after each
@@ -475,7 +475,10 @@ function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: 
   const left = new Set(cands);
   const picks = new Map<PadCand, Geom.VectJson>();
   const failed: PadCand[] = [];
-  const free = (c: PadCand) => c.spots.filter((s) => taken.every((t) => Math.hypot(t.x - s.x, t.y - s.y) >= by));
+  // `by` is wanted from what they stand clear OF — a wall is its line, an npc is their body, so
+  // theirs is `by` beyond it. Measured centre to centre the two then leave the same gap
+  const gap = by + agentRadius;
+  const free = (c: PadCand) => c.spots.filter((s) => taken.every((t) => Math.hypot(t.x - s.x, t.y - s.y) >= gap));
 
   while (left.size > 0) {
     let [pick, spots, rank] = [undefined as undefined | PadCand, [] as Geom.VectJson[], Number.POSITIVE_INFINITY];
