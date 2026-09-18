@@ -46,7 +46,7 @@ pred.setHandler(function onWorldEvent(e, w) {
       break;
     }
     case "map-settled": {
-      const next = pred.restore(w.mapKey);
+      const next = restorePred(w.mapKey);
       next.player = w.player.key; // we ignored "set-player" during map change
       visualisePredicates(w);
       break;
@@ -64,6 +64,20 @@ pred.setHandler(function onWorldEvent(e, w) {
       break;
   }
 });
+
+/**
+ * ensure `/shared/pred` has the right type in case user modified it
+ */
+function restorePred(mapKey: string) {
+  const p = pred.restore(mapKey);
+  if (p.everPicked instanceof Set === false) p.everPicked = new Set();
+  if (p.picked instanceof Set === false) p.picked = new Set();
+  if (p.padded instanceof Set === false) p.padded = new Set();
+  if (p.parked instanceof Map === false) p.parked = new Map();
+  if (typeof p.lastPicked !== "string") p.lastPicked = null;
+  if (typeof p.player !== "string") p.player = null;
+  return p;
+}
 
 /**
  * Show the predicates on `npcKeys`, by default every npc:
@@ -126,12 +140,27 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   return changed;
 }
 
+/** In or out again, as a shift-click does */
+function togglePicked(w: JshCli.WorldState, npcKey: string) {
+  const p = pred.get();
+  p.everPicked.add(npcKey);
+  p.lastPicked = npcKey;
+  if (p.picked.delete(npcKey) === false) p.picked.add(npcKey);
+  visualisePredicates(w, [npcKey]);
+}
+
 /**
  * `predicates` is idempotent and must be invoked to commence tracking.
  */
 export function predicates(ct: JshCli.RunArg) {
-  const p = pred.restore(ct.w.mapKey);
+  const p = restorePred(ct.w.mapKey);
   p.player = ct.w.player.key;
   visualisePredicates(ct.w);
   ct.w.e.addKeyedListener("pred", pred.handle);
+  // picking is otherwise a click on the npc alone, which the speech UI has no way to do
+  ct.w.speech.addMenuItem({
+    key: "pred-toggle-picked",
+    text: "toggle picked",
+    action: (npcKey) => togglePicked(ct.w, npcKey),
+  });
 }
