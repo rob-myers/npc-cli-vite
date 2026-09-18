@@ -1114,7 +1114,10 @@ function isTargetOccupied(agent: crowd.Agent, agents: crowd.Crowd) {
  * `collisionQueryRange`, blind to walls — at a corner it argues with avoidance, and the walker
  * wavers. Avoidance plans round the neighbour anyway
  */
-const movingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE;
+const movingUpdateFlags =
+  crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS |
+  crowdApi.CrowdUpdateFlags.OBSTACLE_AVOIDANCE |
+  crowdApi.CrowdUpdateFlags.OPTIMIZE_VIS;
 
 const arrivingUpdateFlags = crowdApi.CrowdUpdateFlags.ANTICIPATE_TURNS | crowdApi.CrowdUpdateFlags.SEPARATION;
 
@@ -1132,6 +1135,8 @@ function getAgentParams(): crowd.AgentParams {
       ...crowdApi.DEFAULT_OBSTACLE_AVOIDANCE_PARAMS,
       weightCurVel: crowdConfig.avoidanceWeightCurVel,
     },
+    // with OPTIMIZE_VIS fixes occasional corners appearing behind walker moving around idle npc
+    pathOptimizationRange: 0.75,
     queryFilter: ANY_QUERY_FILTER,
   };
 }
