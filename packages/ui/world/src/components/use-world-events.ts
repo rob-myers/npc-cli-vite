@@ -10,7 +10,6 @@ import {
   defaultPlayerKey,
   defaultSkinKey,
   floorFadeDelayMs,
-  introPanDelayMs,
   MAX_NPCS,
   mapVeilMs,
   roomLabelRevealMs,
@@ -28,6 +27,7 @@ import type { State as WorldState } from "./World";
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
+      changingMap: false,
       doableToNpc: {},
       doorOpen: {},
       doorToNpcs: {},
@@ -146,7 +146,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const { player } = w;
         const saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs;
 
-        const firstBootstrap = player.prevMapPosition === null;
+        // NOT "is there a player to come from": removing them left the veil up on the next map
+        const firstBootstrap = state.changingMap === false;
+        state.changingMap = false;
         if (firstBootstrap) {
           player.assign(saved?.playerKey ?? defaultPlayerKey);
           // The arrival is shown whole: folded (or flat, on a phone), then the fade comes on, then
@@ -158,25 +160,31 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.revealRoomLabels(0);
         }
 
+        /**
+         * Was the player provided in save data for this map?
+         * - it won't be if we never visited the map before
+         * - it won't be if we `remove {playerKey}` and refreshed
+         */
+        let playerWasSaved = false;
+
         try {
-          // decor first: a restored npc's `decorKey` may reference it (e.g. sitting)
+          // decor first: a restored npc's may be sitting on a chair (decorKey)
           state.restoreDecor();
-          // the player goes first, else a restored npc would be adopted as them
-          await player.ensure();
+
+          // - player first, else next restored npc becomes player
+          // - the player should always be ensured but it might not have been saved before
+          playerWasSaved = await player.ensure();
           await state.restoreNpcs(saved);
-          // a restored npc can be standing in a doorway — every door starts closed, so one would
-          // shut through them. Before the frame below, so it is never seen closed over them
           await state.openDoorwaysWithNpcs();
-          // spawning resolves on mount, which is not the same as drawn — without a rendered
-          // frame in hand the npcs pop in a beat after the world has been revealed empty
+
+          // ensure npcs drawn
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
           // with everything drawn once, the pick pass compiles now rather than on the first tap.
           // Awaited: no frame is drawn whilst it runs, and the pan below wants its frames
           await w.view.warmPick();
-          if (firstBootstrap === true && saved === null) {
-            // nothing saved to be looking at, and the player was put down somewhere new: onto
-            // them first, so the world unfolds about them
+          if (firstBootstrap === true && playerWasSaved === false) {
             await player.panTo();
           }
         } finally {
@@ -190,20 +198,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             void w.floor?.fadeTo(1);
             await rising;
             // the names come back once the fade the unfold started has settled — by then only the
-            // rooms that stay are still shown, so only their labels appear. Not awaited: the intro
-            // pan below has nothing to do with it
+            // rooms that stay are still shown, so only their labels appear. Not awaited: the
+            // intro pan has nothing to do with it
             w.view.revealRoomLabels(1, roomLabelRevealMs, MODE_FADE_SECS * 1000);
           } else {
-            // a map change has been behind black since `fadeOut`, and simply comes back from it
+            // behind black since `fadeOut` — snap onto the player, so it lifts onto them
+            await player.panTo({ animate: false });
             await w.view.veilCanvas(false, mapVeilMs);
           }
         }
 
-        if (firstBootstrap === false) {
-          // a map we asked for arrives on the player, wherever the last map left the camera
-          await pause(introPanDelayMs);
-          await player.panTo();
-        } else if (saved !== null) {
+        if (firstBootstrap === true && playerWasSaved === true) {
           // on load the view is the one we restored, and is left alone: taking the camera off
           // whatever we were looking at is a poor greeting. Instead it is offered — see WorldView
           w.view.showCentreHint();
@@ -211,11 +216,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       onChangeMap() {
         w.settledMapKey = null; // changing from here to "map-settled" — see `isMapChanging`
+        state.changingMap = true;
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
-        const player = w.n[w.player.key];
-        w.player.prevMapPosition = player === undefined ? null : { ...player.point };
 
         state.removeNpcs(...Object.keys(w.n));
         // runtime decor is per-map, like the npcs — the incoming map restores its own
@@ -1067,6 +1071,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 }
 
 export type State = {
+  /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
+  changingMap: boolean;
   doableToNpc: { [decorKey: string]: string | null };
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };

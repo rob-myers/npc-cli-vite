@@ -36,8 +36,23 @@ export const agentConfig = {
     /** Separating idle npcs should not move by default */
     idleSeparating: 0.005,
     walk: 1.5,
-    run: 2.5,
+    run: 4,
   },
+  /**
+   * Whilst a move is `fast` the gait on show follows their speed: run above one, back to walk
+   * below the other — the gap is the hysteresis — and at least `minSecs` on each
+   */
+  gait: { runAbove: 1.9, walkBelow: 1.6, minSecs: 0.3 },
+  /**
+   * A fast move slows to a walk before arriving — its speed limit eased from run to walk. Navcat
+   * only brakes within two radii, 0.15 s at a run: run -> idle, with no time for the gait to follow
+   */
+  walkIn: { from: 1.8, to: 0.9 },
+  /**
+   * Under this speed, close to the target, they have settled — arrived, even short of the arrival
+   * radius: a neighbour's separation can hold them off it, stepping on the spot until `stuck`
+   */
+  settleSpeed: 0.1,
   separationWeight: {
     /** Less pushable */
     idle: 0.1,
@@ -55,8 +70,8 @@ export const npcConfig = {
     turnBeforeMove: Math.PI * 0.75,
   },
   dist: {
-    /** Arrival radius, per `running` and whether we slow down beforehand */
-    arrive: { walk: 0.15, run: 0.025 },
+    /** Arrival radius when we slow down beforehand: on foot, a fast move included — see `walkIn` */
+    arrive: 0.15,
     /** Arrival radius when gliding through, i.e. `arrive` is false */
     glide: { walk: 0.4, run: 0.8 },
     /** Arrival radius floor, else a zero-distance move never arrives */
@@ -156,9 +171,9 @@ export const fadeSecs: Record<
   idle: { shuffle: 0.15 },
   "idle-avoid": { breathe: 0.4 },
   lie: {},
-  run: { shuffle: 0.15 },
+  run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
-  walk: { shuffle: 0.15 },
+  walk: { shuffle: 0.15, run: 0.25 },
 };

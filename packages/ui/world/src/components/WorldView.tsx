@@ -1323,6 +1323,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return pause(durationMs);
       },
       resetCamera() {
+        // first, else the follow would pull the reset view straight back onto the player
+        if (state.cameraFollow === true) state.setCameraFollow(false);
+        state.frontierHold = false;
         const initial = defaultInitialCamera;
         state.initial = initial;
         state.canonicalPolar = initial.polar; // else a reset zoomed out keeps the old tilt

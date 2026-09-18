@@ -297,7 +297,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             rotY: npc.rotation.y,
             speed: agent === null ? 0 : Math.hypot(agent.velocity[0], agent.velocity[2]),
             moving,
-            run: npc.anim.moveClip.name === "run",
+            run: npc.anim.fast,
           };
           const last = state.lastSent.get(npc.key);
           if (
@@ -819,7 +819,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           if (a.moving !== mirror.prevMoving) {
             mirror.prevMoving = a.moving;
             if (a.moving === true) {
-              npc.anim.moveClip = a.run ? w.npc.clips.run : w.npc.clips.walk;
+              npc.anim.fast = a.run; // the clip follows their streamed speed — see `syncGait`
               npc.anim.startMoving();
             } else {
               npc.anim.startIdle();

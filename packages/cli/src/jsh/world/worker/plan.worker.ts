@@ -28,8 +28,8 @@ export const ops: {
   ) => OpResult<WW.JshOutput[K]>;
 } = {
   /**
-   * Where each npc should stand: against the nearest wall within reach, clear of the room's
-   * doorways and its other parked npcs. Room by room, tightest first: each would take the clear
+   * Where each npc should stand: against the nearest wall within reach, clear of its corners, of
+   * the room's doorways and of its other parked npcs. Room by room, tightest first: each takes the clear
    * point nearest them, and the one with the least wall to spare — after those parked, and after
    * the rest of the room take THEIR first choice — goes next, so nobody is boxed in by a neighbour
    * who had room to spare. Whoever still finds no clear point has the room re-run, going first —
@@ -48,7 +48,9 @@ export const ops: {
       // only the room's doors and parked npcs: one on the far side of a wall is nothing to them
       const doors = (map.roomDoors[npc.grKey ?? ""] ?? []).flatMap((gdKey) => map.doorFrames[gdKey] ?? []);
       const parked = [...standing.values()].filter((o) => o.grKey === npc.grKey);
-      const walls = queryBoundary(npc, navMesh).flatMap(({ s }) => prepareWall(s.slice(), doors, parked) ?? []);
+      // copied up front: the boundary is one reused object, and each wall reads the others for its corners
+      const segs = queryBoundary(npc, navMesh).map(({ s }) => s.slice());
+      const walls = segs.flatMap((s) => prepareWall(s, segs, doors, parked) ?? []);
       if (walls.length === 0) {
         plans.set(npc.key, null);
         continue;
@@ -134,7 +136,7 @@ export const ops: {
   },
   /**
    * Where each npc may stand with room to walk right round them: `by` from their room's walls and
-   * doorways, and from anyone parked or padded. The walls once per npc, up front; then the npcs,
+   * doorways, and from everyone else standing in it. The walls once per npc, up front; then the npcs,
    * room by room, most constrained first — see `padRoom`
    */
   *pad(op, navMesh) {
@@ -232,11 +234,19 @@ type Cand = { npc: WW.NpcQuery; walls: Wall[]; near: Cand[]; guess: Guess; slack
 
 type RoomResult = { plans: Map<string, WW.ParkPlan>; failed: Cand[] };
 
-function prepareWall(s: number[], doors: WW.DoorFrame[], parked: { point: Geom.VectJson; seg: number[] }[]) {
+function prepareWall(
+  s: number[],
+  segs: number[][],
+  doors: WW.DoorFrame[],
+  parked: { point: Geom.VectJson; seg: number[] }[],
+) {
   const a = { x: s[0], y: s[2] };
   const len = Math.hypot(s[3] - a.x, s[5] - a.y);
   if (len === 0) return null;
   const wall: Wall = { s, a, d: { x: (s[3] - a.x) / len, y: (s[5] - a.y) / len }, len, base: [], cut: [] };
+  // a corner is stood clear of, either side: wedged into one is as bad as stuck out past one
+  if (isCorner(s, segs, 0)) wall.base.push([-parkSlack, parkCornerClearance]);
+  if (isCorner(s, segs, 3)) wall.base.push([len - parkCornerClearance, len + parkSlack]);
   for (const door of doors) {
     const span = doorwayInterval(a, wall.d, door);
     if (span !== null) wall.base.push(span);
@@ -247,6 +257,24 @@ function prepareWall(s: number[], doors: WW.DoorFrame[], parked: { point: Geom.V
   }
   wall.cut = wall.base.slice();
   return wall;
+}
+
+/**
+ * Does another segment meet `s` at its end `at` (0 or 3), bending `parkCornerDegrees` or more?
+ * Compared by the way each runs AWAY from the point, so straight on is `u . v === -1` — which is
+ * how a wall split across polys, meeting end to end, is left whole
+ */
+function isCorner(s: number[], segs: number[][], at: 0 | 3) {
+  const [px, py] = [s[at], s[at + 2]];
+  const [ux, uy] = [s[3 - at] - px, s[5 - at] - py];
+  return segs.some((o) => {
+    const meets = (i: 0 | 3) => Math.abs(o[i] - px) < parkCornerEps && Math.abs(o[i + 2] - py) < parkCornerEps;
+    const end = o === s ? -1 : meets(0) ? 0 : meets(3) ? 3 : -1;
+    if (end === -1) return false;
+    const [vx, vy] = [o[3 - end] - px, o[5 - end] - py];
+    const norm = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+    return norm > 0 && (ux * vx + uy * vy) / norm >= parkCornerDot;
+  });
 }
 
 function along({ a, d }: Wall, p: Geom.VectJson) {
@@ -437,7 +465,7 @@ function isClearOfWalls(p: Geom.VectJson, walls: number[], by: number) {
 }
 
 /**
- * One room: a spot is free when `by` from everyone `taken` — the parked, the padded, and each
+ * One room: a spot is free when `by` clear of everyone `taken` — those already standing there, and each
  * pick as it is made. Fewest free spots goes next — the re-run's `first`, first — and takes their
  * nearest. Arithmetic only, so a re-run costs no navmesh query — but every pick recounts the
  * room, so there is a breath after each
@@ -447,7 +475,10 @@ function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: 
   const left = new Set(cands);
   const picks = new Map<PadCand, Geom.VectJson>();
   const failed: PadCand[] = [];
-  const free = (c: PadCand) => c.spots.filter((s) => taken.every((t) => Math.hypot(t.x - s.x, t.y - s.y) >= by));
+  // `by` is wanted from what they stand clear OF — a wall is its line, an npc is their body, so
+  // theirs is `by` beyond it. Measured centre to centre the two then leave the same gap
+  const gap = by + agentRadius;
+  const free = (c: PadCand) => c.spots.filter((s) => taken.every((t) => Math.hypot(t.x - s.x, t.y - s.y) >= gap));
 
   while (left.size > 0) {
     let [pick, spots, rank] = [undefined as undefined | PadCand, [] as Geom.VectJson[], Number.POSITIVE_INFINITY];
@@ -485,6 +516,14 @@ const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 const parkNpcClearance = 6.5 * agentRadius;
 /** …and from those parked along the same wall: a body's width, and a little */
 const parkNpcBesideClearance = 4 * agentRadius;
+/** A boundary bend of this or more is a corner, kept clear of — see `cornerSpans` */
+const parkCornerDegrees = 30;
+/** That bend as a dot product of the two ways out of the corner: straight on is `-1` */
+const parkCornerDot = -Math.cos((parkCornerDegrees * Math.PI) / 180);
+/** How far a parked npc keeps from a corner, along the wall */
+const parkCornerClearance = 2 * agentRadius;
+/** Two boundary segments this close share their endpoint */
+const parkCornerEps = 1e-4;
 /** Npcs further apart than this cannot contend: each parks within range, and cuts no further */
 const parkReach = 2 * parkQueryRange + parkNpcClearance;
 /** A room is re-run at most this many times for those who found no clear point */

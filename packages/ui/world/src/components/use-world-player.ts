@@ -1,5 +1,5 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
-import { error } from "@npc-cli/util/legacy/generic";
+import { error, warn } from "@npc-cli/util/legacy/generic";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
 import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
@@ -15,24 +15,26 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       key: defaultPlayerKey,
-      prevMapPosition: null,
 
       async ensure() {
+        let restored = true; // already present: they are where we left them
         if (w.n[state.key] === undefined) {
           // a map keeps its own player position, so returning to it puts them back where they
           // were. A map we have never stood on starts them at one of its spawn points
-          (await state.restore()) || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
+          restored = await state.restore();
+          const placed = restored || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
+          if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
         }
-        state.prevMapPosition = null;
+        return restored;
       },
-      async panTo() {
+      async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
         if (npc === undefined) return;
 
         // no `radius`, so this pans and turns without zooming — `lookAt` keeps the distance it
         // finds, which on load is whatever view we restored
         await w.view.lookAt(npc.point, {
-          animate: true,
+          animate,
           // they walk whilst we pan, and the point of it is to be ON them — a destination fixed at
           // the moment of the press lands behind
           track: () => w.n[state.key]?.point,
@@ -93,9 +95,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       async spawnSomewhere() {
         // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point
-        const rooms = Object.values(w.decor.byKey).flatMap((decor) =>
+        const labelled = Object.values(w.decor.byKey).flatMap((decor) =>
           w.helper.isRoomLabel(decor) && spawnRoomLabels.includes(decor.meta.label) ? [decor.meta] : [],
         );
+        // a map may label no room at all e.g. a bare playground hull — then any room will do
+        const rooms =
+          labelled.length > 0 ? labelled : w.gms.flatMap((gm, gmId) => gm.rooms.map((_, roomId) => ({ gmId, roomId })));
         for (let attempt = 0; attempt < spawnPlayerAttempts; attempt++) {
           const { gmId, roomId } = rooms[Math.floor(Math.random() * rooms.length)] ?? {};
           const gm = w.gms[gmId as number];
@@ -122,13 +127,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
   key: string;
-  /** Where they stood on the previous map, set by `w.e.onChangeMap` */
-  prevMapPosition: null | Geom.VectJson;
 
-  /** Place the player if absent, then track them */
-  ensure(): Promise<void>;
-  /** Pans the camera onto the player */
-  panTo(): Promise<void>;
+  /** Place the player if absent, then track them. `false` if they are not where the save left them */
+  ensure(): Promise<boolean>;
+  /** Pans the camera onto the player, or snaps when `animate` is false */
+  panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
@@ -139,6 +142,6 @@ export type State = {
   /** Make them the player, telling everyone — the bare act, without `setKey`'s lit, persist and pan */
   assign(npcKey: string): void;
   setKey(npcKey: string): void;
-  /** Spawns the player in a random room labelled by `spawnRoomLabels` — `false` if every attempt failed */
+  /** Spawns the player in a random room, preferring `spawnRoomLabels` — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };

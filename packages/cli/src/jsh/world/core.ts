@@ -208,7 +208,7 @@ export function lock(
  */
 export async function look(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; at: string | JshCli.PointAnyFormat } = ct.api.jsArg(ct.args, {
+  opts: { npcKey: string; at: string | JshCli.PointAnyFormat; force?: boolean } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
     to: "at",
     face: "at",
@@ -218,6 +218,7 @@ export async function look(
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { pendingLooks, processHandled, lookPausable } = lookHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   try {
@@ -243,7 +244,7 @@ export async function look(
   }
 }
 
-function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?: boolean }) {
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
@@ -269,8 +270,11 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
 
       await getNpcOrThrow()
         .look(lookOpts)
-        // .look({ ...lookOpts, minMs: 5000 })
-        .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }));
+        .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
+        .catch((e) => {
+          if (opts.force && !(e instanceof Error && e.message === "killed")) return;
+          throw e;
+        });
     },
     processHandled: api.handleStatus({
       cleanup(killed) {
@@ -293,7 +297,7 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
  * Generic machinary for pause/resume move.
  * - `npcKey` is a literal string or a path to a literal string relative to CWD.
  */
-function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
+function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?: boolean }) {
   const getNpcOrUndefined = (): undefined | JshCli.Npc =>
     w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey, true)];
 
@@ -312,12 +316,12 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string }) {
     getNpcOrUndefined,
     getNpcOrThrow,
     /** Move, handling named errors and any pause the move deferred */
-    async movePausable(moveOpts: JshCli.MoveOpts & { force?: boolean }, extra?: NamedErrorHandlers) {
+    async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
       await w.npc
         .move(moveOpts)
         .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
         .catch((e) => {
-          if (moveOpts.force && !(e instanceof Error && e.message === "killed")) return;
+          if (opts.force && !(e instanceof Error && e.message === "killed")) return;
           throw e;
         });
       // needed in case we allowed fade to complete
@@ -377,6 +381,7 @@ export async function move(
     force?: boolean;
   } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
+    "--fast": "fast",
     "--force": "force",
   }),
 ) {
@@ -410,6 +415,7 @@ async function move_const(
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   try {
@@ -422,7 +428,6 @@ async function move_const(
         to: next,
         arrive: pendingMoves.length === 0,
         fast: opts.fast,
-        force: opts.force,
       });
     }
   } finally {
@@ -444,6 +449,7 @@ async function move_lazy(
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   let pendingRead = api.read();
@@ -458,7 +464,7 @@ async function move_lazy(
       const npc = getNpcOrThrow();
 
       const movePromise = movePausable(
-        { npcKey: npc.key, to: dst, fast: opts.fast, force: opts.force },
+        { npcKey: npc.key, to: dst, fast: opts.fast },
         {
           "not navigable": false,
           stuck: () => {
@@ -494,6 +500,7 @@ async function move_next(
 
   const { getNpcOrThrow, pendingMoves, processHandled, movePausable } = moveHandling(ct, {
     npcKey: opts.npcKey,
+    force: opts.force,
   });
 
   try {
@@ -503,7 +510,7 @@ async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { npcKey: npc.key, to: next, fast: opts.fast, force: opts.force },
+        { npcKey: npc.key, to: next, fast: opts.fast },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -579,8 +586,8 @@ export function open(
 
 /**
  * Stand npcs where there is room to walk right round them: `by` (default `padClearance`) from
- * their room's walls and doorways, and from anyone parked or padded — remembered in
- * `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
+ * their room's walls and doorways, and from everyone else standing in it — the spot is remembered
+ * in `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
  * once; one without is left where they stand and named in the error
  * ```sh
  * pad kate
@@ -595,6 +602,19 @@ export async function pad(
   // ignore non-existent npcKey including e.g. npc:foo
   const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
 
+  // everyone stood in the rooms we are padding — a spot on top of any of them is no spot at all.
+  // Keyed, so a room shared by two of them is only sent once; the worker drops those being padded
+  const others = new Map(
+    npcs.flatMap((npc) => {
+      const at = w.e.npcToRoom.get(npc.key);
+      if (at === undefined) return [];
+      return [...(w.e.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
+        const point = w.n[key]?.point;
+        return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
+      });
+    }),
+  );
+
   await awaitPausable(api, async (signal) => {
     const plans = await request(
       w,
@@ -602,10 +622,7 @@ export async function pad(
       {
         key: "pad",
         npcs: npcs.map((npc) => npcQuery(w, npc)),
-        others: [...parked.get().keys(), ...padded.get()].flatMap((key) => {
-          const [point, grKey] = [w.n[key]?.point, w.e.npcToRoom.get(key)?.grKey];
-          return point === undefined || grKey === undefined ? [] : [{ key, point, grKey }];
-        }),
+        others: [...others.values()],
         by: opts.by ?? padClearance,
       },
       signal,
@@ -634,7 +651,7 @@ export async function pad(
 }
 
 /**
- * Stand npcs against a nearby wall, out of the way: clear of the room's doorways and of its other
+ * Stand npcs against a nearby wall, out of the way: clear of its corners, the room's doorways and its other
  * parked npcs, and remembered in `/shared/pred` — see `pred.ts`. Planned together on the worker, then everyone
  * moves at once — bar one with no clear spot, left where they stand and named in the error.
  * A kill rejects the npcs; a pause lets a fade or look finish
@@ -728,7 +745,7 @@ export function pause({ w }: JshCli.RunArg) {
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
 
-  // e.g. long presses via `pick --long` not `pick long` (filter)
+  // e.g. `pick --long` not `pick long` (filter)
   const opts = ct.api.jsArg(args, {
     "--left": "left", // left clicks only
     "--right": "right", // right clicks only
@@ -741,6 +758,7 @@ export async function* pick(ct: JshCli.RunArg) {
   if (opts.right !== true && opts.any !== true) {
     opts.left = true; // default to left clicks only
   }
+  opts.long ??= false;
 
   // if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
   //   // support reverse order `pick meta.nav 2`
@@ -817,7 +835,7 @@ export async function* pick(ct: JshCli.RunArg) {
       if (
         (opts.left === true && output.rightDown === true) ||
         (opts.right === true && output.rightDown === false) ||
-        (opts.long !== undefined && opts.long !== output.longDown)
+        opts.long !== output.longDown
       ) {
         continue;
       }
