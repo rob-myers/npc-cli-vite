@@ -15,7 +15,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       key: defaultPlayerKey,
-      prevMapPosition: null,
 
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -26,7 +25,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           const placed = restored || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
           if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
         }
-        state.prevMapPosition = null;
         return restored;
       },
       async panTo({ animate = true } = {}) {
@@ -129,8 +127,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
   key: string;
-  /** Where they stood on the previous map, set by `w.e.onChangeMap` */
-  prevMapPosition: null | Geom.VectJson;
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
