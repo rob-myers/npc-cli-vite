@@ -1,7 +1,7 @@
 export const default_profile = `
 # default profile
-source /etc/{util,world}.sh
-source /etc/{util,core,demo,pred}.js.sh
+source /etc/{util,alias}.sh
+source /etc/{util,core,demo,debug,pred}.js.sh
 awaitWorld
 predicates
 
@@ -9,8 +9,8 @@ predicates
 
 export const empty_profile = `
 # empty profile: maybe source something?
-# source /etc/{util,world}.sh
-# source /etc/{util,core,demo,pred}.js.sh
+# source /etc/{util,alias}.sh
+# source /etc/{util,core,demo,debug,pred}.js.sh
 
 `.trim();
 
