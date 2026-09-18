@@ -27,3 +27,8 @@ export async function fetchParsed<T extends z.ZodTypeAny>(
 export function getDevCacheBustQueryParam() {
   return import.meta.env.DEV ? `?v=${Date.now()}` : "";
 }
+
+/** As above, onto a url which may already carry a query — e.g. a bundler's asset url */
+export function devCacheBust(url: string) {
+  return import.meta.env.DEV ? `${url}${url.includes("?") ? "&" : "?"}v=${Date.now()}` : url;
+}
