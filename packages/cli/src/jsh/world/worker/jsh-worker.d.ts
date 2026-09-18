@@ -36,7 +36,7 @@ declare namespace WW {
     | {
         key: "pad";
         npcs: NpcQuery[];
-        /** Everyone parked or padded */
+        /** Everyone standing in the rooms involved */
         others: { key: string; point: Geom.VectJson; grKey: string }[];
         /** The room wanted round each */
         by: number;
