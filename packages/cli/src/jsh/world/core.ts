@@ -651,7 +651,7 @@ export async function pad(
 }
 
 /**
- * Stand npcs against a nearby wall, out of the way: clear of the room's doorways and of its other
+ * Stand npcs against a nearby wall, out of the way: clear of its corners, the room's doorways and its other
  * parked npcs, and remembered in `/shared/pred` — see `pred.ts`. Planned together on the worker, then everyone
  * moves at once — bar one with no clear spot, left where they stand and named in the error.
  * A kill rejects the npcs; a pause lets a fade or look finish
