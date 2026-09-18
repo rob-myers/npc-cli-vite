@@ -159,7 +159,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
               <div className="my-1 border-t border-slate-700" />
 
               <div className="px-1 border-2 border-l-8 border-slate-700 text-[0.7rem]">
-                {!state.isReadOnly() && (
+                {!state.isLocked() && (
                   <Menu.Item
                     className="flex items-center gap-2 px-2 py-1 text-slate-300 hover:bg-slate-700 cursor-pointer"
                     closeOnClick

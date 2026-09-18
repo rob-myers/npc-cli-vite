@@ -191,13 +191,17 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       // will extend with symbol/manifest.json
       savedFileSpecifiers: getLocalStorageFileSpecs(),
 
-      isReadOnly() {
+      isLocked() {
         return isTouchDevice() || (import.meta.env.DEV && state.devForceReadOnly);
       },
-      isPlaygroundFile() {
+      isReadOnly(file = state.currentFile) {
+        // in prod only playground files are editable (localStorage drafts)
+        return state.isLocked() || (import.meta.env.PROD && !state.isPlaygroundFile(file));
+      },
+      isPlaygroundFile(file = state.currentFile) {
         return (
-          (state.currentFile.type === "symbol" && isPlaygroundSymbolKey(state.currentFile.key)) ||
-          (state.currentFile.type === "map" && isPlaygroundMapKey(state.currentFile.key))
+          (file.type === "symbol" && isPlaygroundSymbolKey(file.key)) ||
+          (file.type === "map" && isPlaygroundMapKey(file.key))
         );
       },
 
@@ -1370,7 +1374,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
       save(fileSpecifier = state.currentFile, { autoSaveDraftOnDirtyExit = false } = {}) {
-        if (state.isReadOnly()) {
+        // gate on the target file: "New map..." saves a file other than the current one
+        if (state.isReadOnly(fileSpecifier)) {
           return;
         }
 
@@ -1404,7 +1409,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         };
 
         if (
-          state.isPlaygroundFile() || // in dev on dirty exit we always save the draft
+          state.isPlaygroundFile(fileSpecifier) || // in dev on dirty exit we always save the draft
           (import.meta.env.DEV && autoSaveDraftOnDirtyExit)
         ) {
           tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
@@ -1422,14 +1427,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
         });
-        state.toast(state.isPlaygroundFile() ? "draft saved" : "saved to file");
+        state.toast(state.isPlaygroundFile(fileSpecifier) ? "draft saved" : "saved to file");
 
-        if (state.isPlaygroundFile()) {
+        if (state.isPlaygroundFile(fileSpecifier)) {
           // notify World(s) to recompute layouts from localStorage drafts
           window.dispatchEvent(new CustomEvent(mapEditSymbolSavedEvent, { detail: { key: fileSpecifier.key } }));
         }
 
-        if (import.meta.env.DEV && !autoSaveDraftOnDirtyExit && !state.isPlaygroundFile()) {
+        if (import.meta.env.DEV && !autoSaveDraftOnDirtyExit && !state.isPlaygroundFile(fileSpecifier)) {
           void saveMapEditFile(savedFile);
           // filesystem canonical for non-playground-files: remove stale draft
           localStorage.removeItem(getFileSpecifierLocalStorageKey(fileSpecifier));
@@ -1482,17 +1487,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
       async deleteFile(file) {
-        if (state.isReadOnly()) return;
+        if (import.meta.env.PROD || state.isLocked()) return; // dev only
+
         // remove draft
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
 
-        // useful in prod: clears drafts with no corresponding file in manifest
+        // clears drafts with no corresponding file in manifest
         state.updateSavedFileSpecifiers(getLocalStorageFileSpecs());
 
-        // in dev actually delete from filesystem
-        if (import.meta.env.DEV) {
-          await deleteMapEditFile(file);
-        }
+        await deleteMapEditFile(file);
 
         if (areFileSpecifiersEqual(state.currentFile, file)) {
           state.load(state.savedFileSpecifiers.find((f) => !areFileSpecifiersEqual(f, file)));
@@ -1962,8 +1965,10 @@ export type State = {
   savedFileSpecifiers: MapEditFileSpecifier[];
   toastTs: Record<string, number>;
 
-  isPlaygroundFile: () => boolean;
-  isReadOnly: () => boolean;
+  isPlaygroundFile: (file?: MapEditFileSpecifier) => boolean;
+  /** Device/dev lock, ignoring the prod playground-only rule */
+  isLocked: () => boolean;
+  isReadOnly: (file?: MapEditFileSpecifier) => boolean;
   scrollInspectorNodeIntoView(nodeId: string): void;
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
