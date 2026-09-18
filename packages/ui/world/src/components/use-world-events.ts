@@ -160,28 +160,31 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.view.revealRoomLabels(0);
         }
 
-        /** Are they back where the save left them? — else the restored view is on nothing */
-        let playerRestored = false;
+        /**
+         * Was the player provided in save data for this map?
+         * - it won't be if we never visited the map before
+         * - it won't be if we `remove {playerKey}` and refreshed
+         */
+        let playerWasSaved = false;
 
         try {
-          // decor first: a restored npc's `decorKey` may reference it (e.g. sitting)
+          // decor first: a restored npc's may be sitting on a chair (decorKey)
           state.restoreDecor();
-          // the player goes first, else a restored npc would be adopted as them
-          playerRestored = await player.ensure();
+
+          // - player first, else next restored npc becomes player
+          // - the player should always be ensured but it might not have been saved before
+          playerWasSaved = await player.ensure();
           await state.restoreNpcs(saved);
-          // a restored npc can be standing in a doorway — every door starts closed, so one would
-          // shut through them. Before the frame below, so it is never seen closed over them
           await state.openDoorwaysWithNpcs();
-          // spawning resolves on mount, which is not the same as drawn — without a rendered
-          // frame in hand the npcs pop in a beat after the world has been revealed empty
+
+          // ensure npcs drawn
           w.view.forceUpdate(0.01);
           await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
           // with everything drawn once, the pick pass compiles now rather than on the first tap.
           // Awaited: no frame is drawn whilst it runs, and the pan below wants its frames
           await w.view.warmPick();
-          if (firstBootstrap === true && playerRestored === false) {
-            // the player was put down somewhere new, so the restored view may be on nothing at
-            // all: onto them first, so the world unfolds about them
+          if (firstBootstrap === true && playerWasSaved === false) {
             await player.panTo();
           }
         } finally {
@@ -205,7 +208,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
 
-        if (firstBootstrap === true && playerRestored === true) {
+        if (firstBootstrap === true && playerWasSaved === true) {
           // on load the view is the one we restored, and is left alone: taking the camera off
           // whatever we were looking at is a poor greeting. Instead it is offered — see WorldView
           w.view.showCentreHint();
