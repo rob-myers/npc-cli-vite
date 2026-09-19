@@ -1,7 +1,7 @@
 import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { Mat, Vect } from "@npc-cli/util/geom";
+import { Mat, Poly, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { loadImage } from "@npc-cli/util/legacy/dom";
 import { warn } from "@npc-cli/util/legacy/generic";
@@ -49,6 +49,7 @@ export default function Obstacles(_props: Props) {
       uvDimensions: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
       skirtObstacleIds: new Float32Array(MAX_OBSTACLE_SKIRT_INSTANCES),
+      skirtNormals: new Float32Array(MAX_OBSTACLE_SKIRT_INSTANCES * 2),
       images: [] as HTMLImageElement[],
       instanceCount: 0,
       toInstanceId: [],
@@ -173,6 +174,7 @@ export default function Obstacles(_props: Props) {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
         state.skirtQuad.getAttribute("obstacleIds").needsUpdate = true;
+        state.skirtQuad.getAttribute("skirtNormals").needsUpdate = true;
 
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
         if (state.skirtInst?.instanceColor) state.skirtInst.instanceColor.needsUpdate = true;
@@ -236,6 +238,9 @@ export default function Obstacles(_props: Props) {
                 ? geomService.createInset(origPoly, origPoly.meta.inset)[0]
                 : origPoly
             ).outline.map((p) => tmpMat1.transformPoint(tmpVec1.set(p.x, p.y)).clone());
+            // the outline's winding, so each edge's normal can be turned outward: a skirt's two
+            // quads are one surface seen from either side, saying nothing about which side is out
+            const outward = new Poly(corners).anticlockwise() ? -1 : 1;
 
             // biome-ignore format: succinct
             for (let i = 0; i < corners.length; i++) {
@@ -248,6 +253,9 @@ export default function Obstacles(_props: Props) {
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
               slots.setXY(sId, slot, slot);
               state.skirtObstacleIds[sId] = instanceId ?? 0; // a pick on a skirt picks its obstacle
+              // off the UNSWAPPED edge: `p1`/`p2` flip with the geomorph, the outline does not
+              state.skirtNormals[sId * 2] = (outward * (corners[j].y - corners[i].y)) / len;
+              state.skirtNormals[sId * 2 + 1] = (outward * (corners[i].x - corners[j].x)) / len;
               state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
               state.skirtInst.setMatrixAt(sId++,
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
@@ -307,6 +315,7 @@ export default function Obstacles(_props: Props) {
     ensureRoomSlots(state.skirtQuad, MAX_OBSTACLE_SKIRT_INSTANCES);
     // which obstacle each skirt edge belongs to, so a pick on one lands on that obstacle
     state.skirtQuad.setAttribute("obstacleIds", new THREE.InstancedBufferAttribute(state.skirtObstacleIds, 1));
+    state.skirtQuad.setAttribute("skirtNormals", new THREE.InstancedBufferAttribute(state.skirtNormals, 2));
   }, []);
 
   const skirtMaterial = useMemo(() => {
@@ -319,7 +328,11 @@ export default function Obstacles(_props: Props) {
     const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
     const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
-      w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyLightRgba(vec4(baseColor, 1)), skirtFade),
+      // the light sweep ignores obstacles, so a far side would otherwise be as lit as a near one.
+      w.view.fadeRoomsFx.applyFadeRgba(
+        w.view.playerLight.applyLightRgba(vec4(baseColor, 1), attribute<"vec2">("skirtNormals", "vec2")),
+        skirtFade,
+      ),
       skirtFade,
       w.view.objectPick,
     );
@@ -412,6 +425,8 @@ export type State = {
   uvTextureIds: Uint32Array;
   /** Which obstacle instance each skirt edge belongs to — see `transformAndColorSkirts` */
   skirtObstacleIds: Float32Array;
+  /** Each skirt edge's outward normal in world XZ — what the player's light dims it by */
+  skirtNormals: Float32Array;
   images: HTMLImageElement[];
   /** How many obstacle instances this map draws, `MAX_OBSTACLE_QUAD_INSTANCES` at most */
   instanceCount: number;
