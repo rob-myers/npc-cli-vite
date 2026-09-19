@@ -289,7 +289,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
 
       onSelect(id, opts) {
-        state.pushHistory();
+        // no `pushHistory`: this only ever moves `selectedIds`, never `nodes` — and with the undo
+        // stack empty its dedupe cannot tell, so the first select after a load looked like an edit
         const [node] = findNodeById(state.nodes, id);
         if (!node) return;
 
@@ -1252,7 +1253,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       },
       startDragSelection(e) {
         if (state.isReadOnly()) return;
-        state.pushHistory();
         e.stopPropagation();
         const svgPos = state.clientToSvg(e.clientX, e.clientY);
 
@@ -1265,6 +1265,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         );
 
         if (starts.size === 0) return;
+        state.pushHistory(); // after the guard: nothing draggable is selected, so nothing can change
 
         state.dragEl = { type: "move-selection", startSvg: svgPos, starts };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
@@ -1416,11 +1417,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
         }
 
-        // remember current file for this MapEdit instance
-        tryLocalStorageSet(
-          LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
-          safeJsonCompact(extendCurrentFileSpecifierMapping(props.meta.id, fileSpecifier)),
-        );
+        state.rememberCurrentFile(fileSpecifier);
 
         const alreadyKnown = state.savedFileSpecifiers.some((other) => areFileSpecifiersEqual(other, fileSpecifier));
         state.set({
@@ -1474,6 +1471,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           });
         }
 
+        // on load as well as on save: switching file and refreshing without saving would
+        // otherwise come back to whatever was saved last, or to `defaultSymbolKey`
+        state.rememberCurrentFile(file);
+
         state.set({
           nodes: savedFile.nodes,
           selectedIds: new Set(),
@@ -1490,6 +1491,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             y: (zoom * (baseSvgSize - savedFile.height)) / 2,
           },
         });
+      },
+      /** Which file this MapEdit instance is on, so a refresh comes back to it */
+      rememberCurrentFile(file) {
+        tryLocalStorageSet(
+          LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER,
+          safeJsonCompact(extendCurrentFileSpecifierMapping(props.meta.id, file)),
+        );
       },
       discardDraft(file = state.currentFile) {
         // the badge confirms in place, so the only dialog here is the usual one for unsaved work
@@ -1981,6 +1989,8 @@ export type State = {
   loadedFromDraft: boolean;
   /** Throw the draft away and show the saved file — see the badge in `FileMenu` */
   discardDraft: (file?: MapEditFileSpecifier) => void;
+  /** Remember which file this instance is on, so a refresh comes back to it */
+  rememberCurrentFile: (file: MapEditFileSpecifier) => void;
   /** All saved file specifiers including drafts */
   savedFileSpecifiers: MapEditFileSpecifier[];
   toastTs: Record<string, number>;

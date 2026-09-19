@@ -182,6 +182,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
             e.stopPropagation();
             if (root.isReadOnly()) return;
             const locked = !node.locked;
+            root.pushHistory(); // `locked` is saved with the node, so this is a real change
             traverseNodesSync([node], (n) => (n.locked = locked));
             root.update();
           }}
