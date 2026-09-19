@@ -249,6 +249,54 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // WorldView's own `gmsHash` effect syncs the fade, snapped
         state.rejectPendingUnreachable(new Error("map edited"));
       },
+      reseatAllNpcs() {
+        if (w.client === true) return; // mirrors have no agents
+
+        for (const npc of Object.values(w.n)) {
+          if (npc.agentId === null) continue;
+
+          const at = npc.point;
+          const onNav = w.npc.getClosestPoly(at, 0.5);
+          // `at` overrides unless their floor went, when the nearest that remains takes them
+          const result = onNav.success === true ? onNav : w.npc.getClosestPoly(at, 4);
+          w.npc.placeNpcAt(npc, result, onNav.success === true || result.success === false ? at : undefined);
+
+          if (result.success === false) {
+            state.strandNpc(npc); // left agentless where they stood
+          } else if (npc.isMoving() === true) {
+            // re-aim under the promise `move` awaits, so the walk carries on
+            const groundPoint = helper.parseGroundPoint(npc.last.dst);
+            const dstResult = w.npc.getClosestPoly(groundPoint, 0.5);
+            if (dstResult.success === true) {
+              npc.anim.aimAt({ groundPoint, result: dstResult });
+              npc.anim.startMoving(npc.anim.arrive);
+            } else {
+              npc.rejectAll(Error("map edited")); // `move` idles them and rethrows
+            }
+          }
+        }
+      },
+      standUpStrandedDoers() {
+        // navmesh and decor rebuild on separate queries, so whichever lands last does this
+        if (w.client === true || w.npc === undefined || w.decor?.ready !== true || w.nav.navMesh === undefined) {
+          return;
+        }
+        for (const npc of Object.values(w.n)) {
+          const decorKey = state.npcToDoable[npc.key];
+          if (typeof decorKey !== "string" || w.decor.byKey[decorKey] !== undefined) {
+            continue; // idle, or what they are doing is still there
+          }
+          const near = w.npc.getClosestPoly(npc.point, 4); // an edit took their decor
+          if (near.success === false) state.strandNpc(npc);
+          // faded, as any teleport; nothing waits on it, and a doer has no agent to go stale
+          else void npc.fadeSpawn({ at: helper.parseGroundPoint(near.position) }).catch(warn);
+        }
+      },
+      strandNpc(npc) {
+        // nowhere to stand, and no "map-settled" follows an edit to put the player back
+        if (npc.key !== w.player.key) return void state.removeNpcs(npc.key);
+        void w.player.restoreFromSpawnPoint().then((ok) => ok || w.player.spawnSomewhere());
+      },
       syncDoorsState() {
         for (const gdKey of Object.keys(state.doorOpen) as Geomorph.GmDoorKey[]) {
           if (w.d[gdKey] === undefined) delete state.doorOpen[gdKey];
@@ -307,6 +355,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         switch (e.key) {
           case "decor-created":
           case "decor-removed":
+            break;
+          case "decor-ready":
+            // an edit may have taken the decor somebody was using
+            state.standUpStrandedDoers();
             break;
           case "door-open":
             state.doorOpen[e.gdKey] = true;
@@ -377,10 +429,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "set-player":
             break;
           case "nav-updated":
-            // agents outlived the swap, so they hold refs into the mesh that went — see `reseatAll`
-            if (w.npc !== undefined && Object.keys(w.npc.crowd.agents).length > 0) {
+            // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
+            // the crowd: one doing something (e.g. abed) has no agent, and still needs re-seating
+            if (w.npc !== undefined && Object.keys(w.n).length > 0) {
               state.syncDoorsState();
-              w.npc.reseatAll();
+              state.reseatAllNpcs();
+              state.standUpStrandedDoers(); // no-op until the decor is rebuilt too
               state.recomputeNpcRoomRelationships(); // the displaced moved
               state.syncFadeRooms();
             }
@@ -1212,6 +1266,15 @@ export type State = {
   onEditMap(): void;
   /** Drop door-keyed state whose `gdKey` no door answers to */
   syncDoorsState(): void;
+  /**
+   * Re-adds every agent against the current navmesh, keeping npcs where they stand. A stale
+   * corridor's refs still look valid whilst naming other polys, so only re-adding cures it
+   */
+  reseatAllNpcs(): void;
+  /** Stands up anyone whose doable decor an edit removed, onto the nearest navmesh */
+  standUpStrandedDoers(): void;
+  /** Respawn the player, or drop anyone else, when an edit leaves them nowhere to stand */
+  strandNpc(npc: Npc): void;
   /** Persist the runtime decor defs for `w.mapKey`, so `restoreDecor` can bring them back */
   persistDecor(): void;
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
