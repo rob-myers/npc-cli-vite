@@ -9,6 +9,9 @@ export class QueryClientApi {
       defaultOptions: {
         queries: {
           refetchOnReconnect: import.meta.env.DEV ? false : undefined,
+          // dev fetches everything off localhost, where `navigator.onLine` being false is always a
+          // false negative — prod keeps the pause, which resumes on reconnect by itself
+          networkMode: import.meta.env.DEV ? "always" : undefined,
           // prod refetch on switch tabs caused observable lag
           refetchOnWindowFocus: false,
           // in dev useQuery should rerun on hmr
