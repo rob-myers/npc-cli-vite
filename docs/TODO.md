@@ -2,28 +2,54 @@
 
 - 🚧 new approach to todos i.e. current go into technical and start new section
   - ✅ final few before switch to blog
-  - 🚧 current -> docs/todo_engine.md
+  - 🚧 current -> sections
 
-# FUTURE
+- blog initial layout
+  - some text
+  - demo video
+  - comments
+
+# World
+
+## Animation
+
+- try use strafe left/right animations
+
+## Performance
 
 - consider pruning navcat of unused stuff
-- try use strafe left/right animations
-- investigate larger walk around params with fallback to params permitting free motion around parked
-  - try tween collisionQueryRange between 1 and 0.7
-    - useful when two parked npcs face each other ~ 1 npc apart
-    - could ping neighbours and reduce when two are close
-- Jobs: indicate stale processes after hmr
-- onchange playground preserve npc position
+
+## Playground
+
+- 🚧 playground preserve npc position
   - should also work in other maps
   - fix error on remove room containing player
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
-- ask Fable for playwright test suite
+
+# Jsh
+
+- Jobs: indicate stale processes after hmr
+
+# HMR
+
 - on hmr recreate tty session `move` stops working?
+
+# Testing
+
+- ask Fable for playwright test suite
+
+# FUTURE
+
+- ❌ investigate larger walk around params with fallback to params permitting free motion around parked
+  - try tween collisionQueryRange between 1 and 0.7
+    - useful when two parked npcs face each other ~ 1 npc apart
+    - could ping neighbours and reduce when two are close
 - ❌ idle-left with left-leg forward
 - ❌ idle-right with right-leg forward
 - ❌ `npc.setMoveType` walk, run, shuffle
-- fetch gltf json so can cache-bust
+- ❌ fetch gltf json so can cache-bust
+  - we hmr gltf now
 - labels as decor point
   - add some labels to 301
   - Decor renders them
