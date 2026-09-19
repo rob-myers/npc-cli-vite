@@ -91,7 +91,7 @@ if (someSymbolCreated || opts.values.force) {
 perf("stratify symbols");
 
 perf("flatten symbols");
-flattenSymbols(assets.stratifiedSymbolNodes.slice(stratifiedStartIndex), assets);
+flattenSymbols(stratifiedStartIndex === -1 ? [] : assets.stratifiedSymbolNodes.slice(stratifiedStartIndex), assets);
 perf("flatten symbols");
 
 perf("create layouts");
