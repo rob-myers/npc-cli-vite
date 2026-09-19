@@ -704,6 +704,38 @@ export default function NPCs() {
 
         return npc;
       },
+      reseatAll() {
+        if (w.client === true) return; // mirrors have no agents
+
+        for (const npc of Object.values(state.npc)) {
+          const at = npc.point;
+          const onNav = state.getClosestPoly(at, 0.5);
+          // `at` overrides unless their floor went, when the nearest that remains takes them
+          const result = onNav.success === true ? onNav : state.getClosestPoly(at, 4);
+          state.placeNpcAt(npc, result, onNav.success === true || result.success === false ? at : undefined);
+
+          if (result.success === false) {
+            if (npc.key === w.player.key) {
+              void w.player.restoreFromSpawnPoint().then((ok) => ok || w.player.spawnSomewhere());
+            } else {
+              w.e.removeNpcs(npc.key);
+            }
+            continue;
+          }
+
+          if (npc.isMoving() === true) {
+            // re-aim under the promise `move` awaits, so the walk carries on
+            const groundPoint = helper.parseGroundPoint(npc.last.dst);
+            const dstResult = state.getClosestPoly(groundPoint, 0.5);
+            if (dstResult.success === true) {
+              npc.anim.aimAt({ groundPoint, result: dstResult });
+              npc.anim.startMoving(npc.anim.arrive);
+            } else {
+              npc.rejectAll(Error("map edited")); // `move` idles them and rethrows
+            }
+          }
+        }
+      },
       resetMaterials(npc) {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
@@ -957,6 +989,11 @@ export type State = {
   buildNpcMesh(): Pick<NpcInit, "geometry" | "graph" | "skinnedMesh">;
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
+  /**
+   * Re-adds every agent against current navmesh, keeping npcs where they stand. A stale
+   * corridor's refs still look valid whilst naming other polys, so only re-adding cures it
+   */
+  reseatAll(): void;
   configureCrowd(): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
@@ -1023,7 +1060,7 @@ export type State = {
   getNodeRef(agent: crowd.Agent): NodeRef;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
-    accuracy?: 0.005 | 0.1 | 0.5,
+    accuracy?: 0.005 | 0.1 | 0.5 | 4,
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;

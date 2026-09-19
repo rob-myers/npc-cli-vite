@@ -420,6 +420,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       state.gmGraph = GmGraph.fromGms(state.gms, { permitErrors: true });
       state.gmRoomGraph = GmRoomGraph.fromGmGraph(state.gmGraph);
 
+      // a settled map rebuilding is an EDIT: no teardown, so the npcs must be caught up by hand
+      if (state.settledMapKey === state.mapKey) {
+        state.e.onEditMap();
+      }
+
       state.setNextPending({ assets: false });
       return null;
     },

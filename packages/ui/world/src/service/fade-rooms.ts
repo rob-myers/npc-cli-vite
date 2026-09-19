@@ -189,6 +189,9 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
   if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) {
     return null;
   }
+  if (w.gmRoomGraph.getNode(gmRoomId.grKey) === null) {
+    return null; // a map edit removed the room they were in
+  }
 
   /** Windows vouched for by an open door already reached — see `node.lineOfSight` */
   const vouched = new Set<Geomorph.SeesKey>();

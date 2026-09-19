@@ -243,6 +243,31 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // arm "map-settled" ahead of the world query
         w.setNextPending({ assets: true });
       },
+      onEditMap() {
+        state.recomputeNpcRoomRelationships();
+        state.syncLitRooms();
+        // WorldView's own `gmsHash` effect syncs the fade, snapped
+        state.rejectPendingUnreachable(new Error("map edited"));
+      },
+      syncDoorsState() {
+        for (const gdKey of Object.keys(state.doorOpen) as Geomorph.GmDoorKey[]) {
+          if (w.d[gdKey] === undefined) delete state.doorOpen[gdKey];
+        }
+        for (const gdKey of Object.keys(state.doorToNpcs) as Geomorph.GmDoorKey[]) {
+          if (w.d[gdKey] === undefined) delete state.doorToNpcs[gdKey];
+        }
+        for (const [npcKey, access] of Object.entries(state.npcToAccess)) {
+          for (const gdKey of Object.keys(access) as Geomorph.GmDoorKey[]) {
+            if (w.d[gdKey] === undefined) delete state.npcToAccess[npcKey][gdKey];
+          }
+        }
+        for (const doors of Object.values(state.npcToDoors)) {
+          if (doors.inside !== null && w.d[doors.inside] === undefined) doors.inside = null;
+          for (const gdKey of doors.nearby) {
+            if (w.d[gdKey] === undefined) doors.nearby.delete(gdKey);
+          }
+        }
+      },
       onChangeTheme() {
         const { obstacles, doors, post } = w.getTheme();
         w.obs.setBrightness(obstacles.brightness);
@@ -288,9 +313,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.syncFadeRooms();
             break;
           case "door-opening": {
-            const door = w.d[e.gdKey];
+            const door = w.d[e.gdKey]; // may be gone: onchange map, or a map edit
             // clients skip: the server sends both sides of a hull door
-            if (door.hull === true && w.client === false) {
+            if (door?.hull === true && w.client === false) {
               const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
               adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
             }
@@ -302,7 +327,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-closing": {
             const door = w.d[e.gdKey];
-            if (door.hull === true && w.client === false) {
+            if (door?.hull === true && w.client === false) {
               const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
               adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: false, access: true });
             }
@@ -352,6 +377,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "set-player":
             break;
           case "nav-updated":
+            // agents outlived the swap, so they hold refs into the mesh that went — see `reseatAll`
+            if (w.npc !== undefined && Object.keys(w.npc.crowd.agents).length > 0) {
+              state.syncDoorsState();
+              w.npc.reseatAll();
+              state.recomputeNpcRoomRelationships(); // the displaced moved
+              state.syncFadeRooms();
+            }
             // the crowd is empty at this point, which is what makes it safe to walk a spare agent
             w.npc?.warmCrowd();
             break;
@@ -742,27 +774,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         }
       },
-      async recomputeNpcRoomRelationships() {
-        const prevRoomToNpcs = state.roomToNpcs;
-        const prevExternalNpcs = state.externalNpcs;
-        state.roomToNpcs = w.gms.map((_, _gmId) => []);
+      recomputeNpcRoomRelationships() {
+        state.roomToNpcs = w.gms.map(() => []);
         state.externalNpcs = new Set();
-
-        for (const [_gmId, byRoom] of prevRoomToNpcs.entries()) {
-          // We'll recompute every npc previously in this gmId
-          const npcs = Object.values(byRoom).flatMap((npcKeys) =>
-            Array.from(npcKeys).map((npcKey) => w.npc.npc[npcKey]),
-          );
-
-          for (const [i, npc] of npcs.entries()) {
-            if (i > 0 && i % 5 === 0) await pause(); // batching?
-            state.tryPutNpcIntoRoom(npc);
-          }
-        }
-
-        // try fix previous external npcs
-        for (const npcKey of prevExternalNpcs) {
-          const npc = w.npc.npc[npcKey];
+        // every npc: a map edit can drop a whole gmId, and one left out keeps a stale `grKey`
+        for (const npc of Object.values(w.n)) {
           state.tryPutNpcIntoRoom(npc);
         }
       },
@@ -934,6 +950,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         state.litRooms.set(npc.key, alsoAt === undefined ? [at] : [at, alsoAt]);
         return true;
+      },
+      syncLitRooms() {
+        for (const npc of Object.values(w.n)) state.syncLitRoom(npc);
+        for (const grKey of state.handLitRooms) {
+          const { gmId, roomId } = helper.getGmRoomId(grKey);
+          if (w.gms[gmId]?.rooms[roomId] === undefined) state.handLitRooms.delete(grKey);
+        }
       },
       syncNpcRoomSlots() {
         const fx = w.view.fadeRoomsFx;
@@ -1110,6 +1133,8 @@ export type State = {
    * @param alsoAt the far side of the doorway they stand in, if they stand in one
    */
   syncLitRoom(npc: Npc, alsoAt?: Geomorph.GmRoomId): boolean;
+  /** Re-derives `litRooms` off every npc, and drops `handLitRooms` the map no longer has */
+  syncLitRooms(): void;
   /**
    * Relates `npcKey` to current room.
    */
@@ -1180,6 +1205,13 @@ export type State = {
   onBootstrapMap(): Promise<void>;
   /** Persist and remove every npc, whilst the outgoing map still exists */
   onChangeMap(): void;
+  /**
+   * The same map, rebuilt under the npcs standing on it. Run from the world query, so it lands
+   * ahead of anything keyed on `w.gmsHash`. The crowd waits on the navmesh — see `"nav-updated"`
+   */
+  onEditMap(): void;
+  /** Drop door-keyed state whose `gdKey` no door answers to */
+  syncDoorsState(): void;
   /** Persist the runtime decor defs for `w.mapKey`, so `restoreDecor` can bring them back */
   persistDecor(): void;
   /** Persist every npc for `w.mapKey`, so `restoreNpcs` can bring them back */
