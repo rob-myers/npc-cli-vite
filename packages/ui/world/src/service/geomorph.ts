@@ -19,7 +19,16 @@ import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
 import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
+import {
+  debug,
+  deepClone,
+  error,
+  hashText,
+  tagsToMeta,
+  textToTags,
+  toPrecision,
+  warn,
+} from "@npc-cli/util/legacy/generic";
 import {
   decorPointDefaultRadius,
   doorSwitchHeight,
@@ -505,30 +514,28 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
   return poly;
 }
 
-/** The suffix `numberRelatedNames` adds, e.g. `window#12` */
-const relatedNameRegex = /#\d+$/;
-let nextRelId = 0;
+/** The suffix `numberRelatedNames` adds, e.g. `window#1f4a0c` */
+const relatedNameRegex = /#[0-9a-z]{6}$/;
+
+/** Off the name too, so two already-tagged `window`s do not merge when a copy is re-tagged */
+function relatedNameTag(scope: string, name: string) {
+  return (hashText(`${scope}|${name}`) >>> 0).toString(36).padStart(6, "0").slice(-6);
+}
 
 /**
- * A tag `name={name}` and the `rel={relation}:{name}` pointing at it are authored in ONE symbol's
- * file, so the name is given a number the moment we leave that file — else two symbols both using
- * `name=window` would be identified. `instantiateFlatSymbol` re-issues the number per copy, so two
- * copies of one symbol in a geomorph cannot see each other's names either.
+ * A `name={name}` and the `rel={relation}:{name}` pointing at it are authored in ONE file, so the
+ * name is tagged as we leave it — else two symbols using `name=window` would be identified.
+ * `instantiateFlatSymbol` re-tags per copy, so nor can two copies of one symbol.
  *
  * `only` says which names a pass owns: `"bare"` those written in the file being left, `"numbered"`
- * those a deeper level has already dealt with. Within one pass a name keeps one number.
+ * those a deeper level has dealt with. The tag hashes `scope` rather than counting — a count
+ * depends on how many symbols came before, so a partial rebuild renumbers names nothing touched
  */
-function numberRelatedNames(polys: Poly[], only: "bare" | "numbered"): void {
-  const issued = new Map<string, string>();
-
-  const renumber = (name: string): null | string => {
-    if (relatedNameRegex.test(name) !== (only === "numbered")) return null;
-    const seen = issued.get(name);
-    if (seen !== undefined) return seen;
-    const next = `${name.replace(relatedNameRegex, "")}#${nextRelId++}`;
-    issued.set(name, next);
-    return next;
-  };
+function numberRelatedNames(polys: Poly[], only: "bare" | "numbered", scope: string): void {
+  const renumber = (name: string): null | string =>
+    relatedNameRegex.test(name) === (only === "numbered")
+      ? `${name.replace(relatedNameRegex, "")}#${relatedNameTag(scope, name)}`
+      : null;
 
   for (const { meta } of polys) {
     if (typeof meta.name === "string") {
@@ -551,10 +558,11 @@ function numberRelatedNames(polys: Poly[], only: "bare" | "numbered"): void {
 export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): Geomorph.FlatSymbol {
   const { key, isHull, walls, obstacles, symbols, unsorted, windows, removableDoors, addableWalls } = symbol;
 
-  const flats = symbols.flatMap(({ symbolKey, meta, transform }) => {
+  const flats = symbols.flatMap(({ symbolKey, meta, transform }, i) => {
     const flat = flattened[symbolKey];
     if (flat) {
-      return instantiateFlatSymbol(flat, meta, transform);
+      // scoped per copy, so two copies of one child cannot see each other's names
+      return instantiateFlatSymbol(flat, meta, transform, `${key}/${symbolKey}#${i}`);
     } else {
       warn(`Missing flattened symbol for key ${symbolKey}`);
       return [];
@@ -566,7 +574,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
 
   // the last level at which a name written in THIS file is still bare, and where the `rel`
   // pointing at it sits alongside — so where the two are tied together
-  numberRelatedNames(flatDoors.concat(flatWindows), "bare");
+  numberRelatedNames(flatDoors.concat(flatWindows), "bare", key);
 
   return (flattened[key] = {
     key,
@@ -684,6 +692,8 @@ export function instantiateFlatSymbol(
   sym: Geomorph.FlatSymbol,
   meta: Meta<{ doors?: string[]; walls?: string[] }>,
   transform: Geom.AffineTransform,
+  /** Identifies this copy — see `numberRelatedNames` */
+  scope: string,
 ): Geomorph.FlatSymbol {
   const mat = tmpMat1.setMatrixValue(transform);
   const det = Math.round(mat.determinant); // -1 or +1
@@ -745,9 +755,8 @@ export function instantiateFlatSymbol(
 
   const windows = sym.windows.map((poly) => poly.cleanClone(tmpMat1, relatedOf(poly)));
 
-  // a fresh number per copy, so one copy's `rel` cannot reach another's `name`. A name
-  // `relatedOf` has only just stamped stays bare, for the parent's `flattenSymbol` to number
-  numberRelatedNames(doors.concat(windows), "numbered");
+  // a name `relatedOf` has only just stamped stays bare, for the parent's `flattenSymbol` to tag
+  numberRelatedNames(doors.concat(windows), "numbered", scope);
 
   return {
     key: sym.key,
