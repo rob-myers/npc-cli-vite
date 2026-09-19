@@ -384,7 +384,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
      */
     const direction = (meta.direction as Geom.VectJson) || { x: 0, y: 0 };
     delete meta.direction;
-    const orient = toPrecision((180 / Math.PI) * Math.atan2(direction.y, direction.x));
+    const orient = geomService.normalizeDegrees(toPrecision((180 / Math.PI) * Math.atan2(direction.y, direction.x)));
 
     const transform: Geom.SixTuple = meta.transform ?? [1, 0, 0, 1, 0, 0];
 
@@ -625,7 +625,9 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
   switch (d.type) {
     case "point": {
       const p = matrix.transformPoint({ x: d.x, y: d.y });
-      const orient = toPrecision((180 / Math.PI) * matrix.transformAngle(d.orient * (Math.PI / 180)));
+      const orient = geomService.normalizeDegrees(
+        toPrecision((180 / Math.PI) * matrix.transformAngle(d.orient * (Math.PI / 180))),
+      );
       const groundPoint = { x: toPrecision(p.x), y: toPrecision(p.y) };
       meta.orient = orient; // expose to object-pick
       meta.groundPoint = groundPoint;

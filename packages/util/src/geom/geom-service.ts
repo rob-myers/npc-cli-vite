@@ -265,6 +265,15 @@ class GeomService {
   }
 
   /**
+   * Degrees in `(-180, 180]`. `atan2` already gives that range, but a half turn lands on `-180` or
+   * `180` by the sign of a zero alone — and JSON drops that sign, so a round trip could flip it
+   */
+  normalizeDegrees(degrees: number) {
+    const turned = ((degrees % 360) + 360) % 360;
+    return turned > 180 ? turned - 360 : turned;
+  }
+
+  /**
    * https://github.com/davidfig/intersects/blob/master/polygon-point.js
    * polygon-point collision
    * based on https://stackoverflow.com/a/17490923/1955997
