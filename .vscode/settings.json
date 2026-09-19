@@ -21,6 +21,12 @@
   },
   "tailwindCSS.classFunctions": ["tw", "cn"],
   "tailwindCSS.experimental.configFile": "packages/app/src/styles/main.css",
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
   "[yaml]": {
     "editor.defaultFormatter": "redhat.vscode-yaml"
   }
