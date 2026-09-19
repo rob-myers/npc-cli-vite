@@ -3,7 +3,7 @@ import { symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { defaultMapKey } from "@npc-cli/ui__world/const.env";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
-import { FloppyDiskIcon, LockKeyIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { FileDashedIcon, FloppyDiskIcon, LockKeyIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SymbolKeySchema } from "./editor.schema";
 import type { State } from "./MapEdit";
@@ -19,10 +19,42 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
       {state.isReadOnly() && (
         <LockKeyIcon className="size-3.5 text-red-500 shrink-0 bg-red-500/20 rounded p-1.5 box-content" />
       )}
+      <DraftBadge state={state} />
       <FileSelect state={state} />
     </div>
   );
 }
+
+/**
+ * Shown whilst the editor holds a localStorage draft rather than the saved file — in dev a dirty
+ * exit writes one silently, so it is otherwise impossible to tell. Deleting it is armed by the
+ * first click and takes effect on the second, as `remove npc` does in `NpcKeyMenu`
+ */
+function DraftBadge({ state }: { state: UseStateRef<State> }) {
+  const [armed, setArmed] = useState(false);
+  if (state.loadedFromDraft === false) return null;
+  return (
+    <button
+      type="button"
+      title="showing a local draft, not the saved file"
+      className={cn(
+        "shrink-0 flex items-center gap-1 px-1.5 py-1 rounded cursor-pointer text-[0.625rem] leading-none",
+        armed === true ? "bg-red-500/20 text-red-300" : "bg-amber-500/20 text-amber-300",
+      )}
+      onClick={() => {
+        if (armed === true) return state.discardDraft();
+        setArmed(true);
+        setTimeout(() => setArmed(false), armedMs); // so it never sits armed
+      }}
+    >
+      <FileDashedIcon className="size-3.5" />
+      {armed === true ? "delete?" : "draft"}
+    </button>
+  );
+}
+
+/** How long the badge stays armed before it forgets the first click */
+const armedMs = 3000;
 
 function FolderSwitcher({ type, onChange }: { type: "symbol" | "map"; onChange: (type: "symbol" | "map") => void }) {
   return (
@@ -130,42 +162,42 @@ function FileSelect({ state }: { state: UseStateRef<State> }) {
             <Select.List>
               {folderType === "symbol"
                 ? allSymbolKeys.map((key) => (
-                    <Select.Item
-                      key={key}
-                      value={key}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
-                        "data-highlighted:bg-slate-700 data-selected:text-blue-400",
-                      )}
-                    >
-                      <Select.ItemText>{key}</Select.ItemText>
-                      {savedSymbolKeys.has(key) && <FloppyDiskIcon className="size-3 text-green-400 shrink-0" />}
-                    </Select.Item>
-                  ))
+                  <Select.Item
+                    key={key}
+                    value={key}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
+                      "data-highlighted:bg-slate-700 data-selected:text-blue-400",
+                    )}
+                  >
+                    <Select.ItemText>{key}</Select.ItemText>
+                    {savedSymbolKeys.has(key) && <FloppyDiskIcon className="size-3 text-green-400 shrink-0" />}
+                  </Select.Item>
+                ))
                 : mapFiles.map((file) => (
-                    <Select.Item
-                      key={file.key}
-                      value={file.key}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
-                        "data-highlighted:bg-slate-700 data-selected:text-blue-400",
-                      )}
-                    >
-                      <Select.ItemText className="flex-1">{file.key}</Select.ItemText>
-                      {import.meta.env.DEV && !state.isLocked() && (
-                        <button
-                          className="ml-auto opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded"
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete map "${file.key}"?`)) state.deleteFile(file);
-                          }}
-                        >
-                          <TrashIcon className="size-3" />
-                        </button>
-                      )}
-                    </Select.Item>
-                  ))}
+                  <Select.Item
+                    key={file.key}
+                    value={file.key}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
+                      "data-highlighted:bg-slate-700 data-selected:text-blue-400",
+                    )}
+                  >
+                    <Select.ItemText className="flex-1">{file.key}</Select.ItemText>
+                    {import.meta.env.DEV && !state.isLocked() && (
+                      <button
+                        className="ml-auto opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete map "${file.key}"?`)) state.deleteFile(file);
+                        }}
+                      >
+                        <TrashIcon className="size-3" />
+                      </button>
+                    )}
+                  </Select.Item>
+                ))}
               {folderType === "map" && import.meta.env.DEV && !state.isLocked() && (
                 <Select.Item
                   value={newMapKey}

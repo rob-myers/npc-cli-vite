@@ -185,6 +185,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         key: defaultSymbolKey,
       },
       isDirty: false,
+      loadedFromDraft: false,
 
       toastTs: {} as Record<string, number>,
 
@@ -1408,10 +1409,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           //   .precision(6),
         };
 
-        if (
+        const wroteDraft =
           state.isPlaygroundFile(fileSpecifier) || // in dev on dirty exit we always save the draft
-          (import.meta.env.DEV && autoSaveDraftOnDirtyExit)
-        ) {
+          (import.meta.env.DEV && autoSaveDraftOnDirtyExit);
+        if (wroteDraft) {
           tryLocalStorageSet(getFileSpecifierLocalStorageKey(fileSpecifier), safeJsonCompact(savedFile));
         }
 
@@ -1426,6 +1427,8 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           currentFile: fileSpecifier,
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
+          // a draft written leaves us on one; otherwise the filesystem save below removes it
+          loadedFromDraft: wroteDraft,
         });
         state.toast(state.isPlaygroundFile(fileSpecifier) ? "draft saved" : "saved to file");
 
@@ -1451,6 +1454,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               .pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema))
               .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
 
+        const fromDraft = localStorageResult.data != null;
         const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
         if (!savedFile) {
           return;
@@ -1477,6 +1481,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           currentFile: file,
           ...(preserveHistory ? {} : { undoStack: [], redoStack: [] }),
           isDirty: preserveHistory,
+          loadedFromDraft: fromDraft,
           svgWidth: savedFile.width,
           svgHeight: savedFile.height,
           zoom,
@@ -1485,6 +1490,14 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             y: (zoom * (baseSvgSize - savedFile.height)) / 2,
           },
         });
+      },
+      discardDraft(file = state.currentFile) {
+        // the badge confirms in place, so the only dialog here is the usual one for unsaved work
+        if (state.isDirty && !confirm("You have unsaved changes. Discard and load?")) return;
+        localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
+        // a draft-only file leaves the selector with it — see `deleteFile`, which does the same
+        state.updateSavedFileSpecifiers(getLocalStorageFileSpecs());
+        state.load(file, { ignoreDraft: true, askToRestore: false });
       },
       async deleteFile(file) {
         if (import.meta.env.PROD || state.isLocked()) return; // dev only
@@ -1961,6 +1974,13 @@ export type State = {
   /** {folder}/{filename} */
   currentFile: MapEditFileSpecifier;
   isDirty: boolean;
+  /**
+   * Whether what is on screen came from a localStorage draft rather than the saved file. In dev a
+   * dirty exit writes one silently, so without this an old draft is indistinguishable from the file
+   */
+  loadedFromDraft: boolean;
+  /** Throw the draft away and show the saved file — see the badge in `FileMenu` */
+  discardDraft: (file?: MapEditFileSpecifier) => void;
   /** All saved file specifiers including drafts */
   savedFileSpecifiers: MapEditFileSpecifier[];
   toastTs: Record<string, number>;
