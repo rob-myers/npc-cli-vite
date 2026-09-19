@@ -250,7 +250,17 @@ export function createPlayerLight(): PlayerLight {
     return smoothstep(float(coneOuterCos), float(coneInnerCos), ahead);
   }
 
-  function applyLight(color: THREE.Node<"vec3">) {
+  /**
+   * How much of the light a surface with unit outward normal `outwardXZ` takes: `1` facing it, `0`
+   * facing away, softened so a face seen edge-on does not flicker as the light slides past
+   */
+  function facingAt(outwardXZ: THREE.Node<"vec2">, away: THREE.Node<"vec2">, fromPlayer: THREE.Node<"float">) {
+    // the dot before the divide, as `coneAt` does, and guarded the same way
+    const towards = outwardXZ.dot(away).div(fromPlayer.max(parallelUntil)).negate();
+    return smoothstep(float(-backSoft), float(backSoft), towards);
+  }
+
+  function applyLight(color: THREE.Node<"vec3">, outwardXZ: null | THREE.Node<"vec2"> = null) {
     const away = positionWorld.xz.sub(origin);
     const fromPlayer = away.length();
     const cone = coneAt(away, fromPlayer);
@@ -262,9 +272,12 @@ export function createPlayerLight(): PlayerLight {
     // can never go darker than somewhere the light simply does not reach
     const held = smoothstep(float(0), float(coneFrom), fromPlayer);
     const lit = litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
+    // and none at all on a face turned away — branched in js, so a caller with no normal to give
+    // emits nothing of this
+    const shaded = outwardXZ === null ? lit : lit.mul(facingAt(outwardXZ, away, fromPlayer));
     // towards black, written as the multiply it is rather than as a `mix` against a colour the
     // compiler would have to carry three zeroes for
-    return color.mul(float(1).sub(unlitAmount.mul(lit.oneMinus())));
+    return color.mul(float(1).sub(unlitAmount.mul(shaded.oneMinus())));
   }
 
   /**
@@ -307,8 +320,8 @@ export function createPlayerLight(): PlayerLight {
     litAt,
     applyLight,
 
-    applyLightRgba(color) {
-      return vec4(applyLight(color.rgb), color.a);
+    applyLightRgba(color, outwardXZ) {
+      return vec4(applyLight(color.rgb, outwardXZ), color.a);
     },
 
     getSweeps() {
@@ -450,8 +463,10 @@ export type PlayerLight = {
   /**
    * Tints `color` towards black wherever the fragment cannot be seen from the light. Identity
    * whilst the light is off, so a material can wrap its colour unconditionally.
+   * @param outwardXZ unit outward normal in world XZ: a face turned away takes none of the light.
+   * Omit it for anything horizontal, or whose normal means nothing — a billboard
    */
-  applyLight(color: THREE.Node<"vec3">): THREE.Node<"vec3">;
+  applyLight(color: THREE.Node<"vec3">, outwardXZ?: null | THREE.Node<"vec2">): THREE.Node<"vec3">;
   /**
    * How lit a world XZ is, `0` to `1` — the polygon itself, for anything that has a world position
    * and wants to ask. Ignores whether the light is on, so a caller decides what an unlit light
@@ -461,7 +476,7 @@ export type PlayerLight = {
    */
   litAt(worldXZ: THREE.Node<"vec2">, outset?: number): THREE.Node<"float">;
   /** The same, for a material whose colour carries alpha — which is left alone */
-  applyLightRgba(color: THREE.Node<"vec4">): THREE.Node<"vec4">;
+  applyLightRgba(color: THREE.Node<"vec4">, outwardXZ?: null | THREE.Node<"vec2">): THREE.Node<"vec4">;
   /**
    * Tints as though nothing were ever lit, for a surface the light has no business reaching — the
    * ceiling, which the sweep would otherwise light through the room below it
@@ -529,6 +544,8 @@ const coneHalfDeg = 60;
 const coneSoftDeg = 3;
 const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
 const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
+/** The cosine either side of edge-on a face turning away from the light is softened over */
+const backSoft = 0.15;
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives
