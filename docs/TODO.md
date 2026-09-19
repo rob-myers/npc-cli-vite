@@ -1,45 +1,72 @@
 # TODO
 
-- 🚧 new approach to todos i.e. current go into technical and start new section
-  - ✅ final few before switch to blog
-  - 🚧 current -> sections
+## Blog
 
 - blog initial layout
   - some text
   - demo video
   - comments
 
-# World
+## World
 
-## Animation
+### Animation
 
 - try use strafe left/right animations
+- skin remapping
+  - currently only have skinIndex
 
-## Performance
+### Cleanliness
+
+- fix precision in `assets.json`
+
+### Decor
+
+- labels as decor point
+  - ✅ already support room labels i.e. induced by decor point with label in room
+  - provide example of label via dynamic decor
+
+### DevX
+
+- improve hull symbol thumbnail e.g. add room outlines
+- improve map thumbnail (🔔 currently blank)
+
+### Performance
 
 - consider pruning navcat of unused stuff
 
-## Playground
+### Playground
 
 - 🚧 playground preserve npc position
   - should also work in other maps
+  - saw npc walking in place
   - fix error on remove room containing player
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
 
-# Jsh
+## Documentation
+
+- 🚧 new approach to todos i.e. current go into technical and start new section
+  - ✅ final few before switch to blog
+  - 🚧 current -> sections
+
+- start generating documentation in README.md
+
+## HMR
+
+- on hmr recreate tty session `move` stops working?
+- hot reloading of `pick | move npc:rob` while change `move`?
+  - maybe just clarify current setup vs previous "hot reloading"
+
+## Jsh
 
 - Jobs: indicate stale processes after hmr
 
-# HMR
-
-- on hmr recreate tty session `move` stops working?
-
-# Testing
+## Testing
 
 - ask Fable for playwright test suite
 
-# FUTURE
+
+## UNSORTED 🚧
 
 - ❌ investigate larger walk around params with fallback to params permitting free motion around parked
   - try tween collisionQueryRange between 1 and 0.7
@@ -50,28 +77,17 @@
 - ❌ `npc.setMoveType` walk, run, shuffle
 - ❌ fetch gltf json so can cache-bust
   - we hmr gltf now
-- labels as decor point
-  - add some labels to 301
-  - Decor renders them
-- hot reloading of `pick | move npc:rob` while change `move`?
-  - maybe just clarify current setup vs previous "hot reloading"
-- onchange map sealed doors are staying sealed
-- skin remapping
-  - currently only have skinIndex
-- try fix mobile persist issues via `visibilitychanged`
+- ✅ onchange map sealed doors are staying sealed
+- ✅ try fix mobile persist issues via `visibilitychanged`
   - we'll wrap useBeforeunload and ensure callback only called once
-- fix precision in `assets.json`
-- start generating documentation in README.md
-- improve hull symbol thumbnail e.g. add room outlines
-- improve map thumbnail (🔔 currently blank)
 - ℹ️ minecraft skin templates
   - https://minecraft.fandom.com/wiki/Skin#Templates
-- MapEdit: on start drag should not select text
-- MapEdit: pointer out not disposed somewhere
+- ✅ MapEdit: on start drag should not select text
+- ✅ MapEdit: pointer out not disposed somewhere
   - needs repro
 
 
-## Bugs
+### Bugs
 
 - ✅ BUG parsing?
   - mvdan-sh parse works
@@ -115,7 +131,7 @@ expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.4
 - BUG MapEdit drafts fighting: with 2 instances open for same file
 - ❌ BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 
-## Long running
+### Long running
 
 - 🚧 extend existing symbols with missing obstacles
 - ❌ move path parsing code out of vite plugin file, to support hmr
