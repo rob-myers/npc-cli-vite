@@ -664,7 +664,7 @@ export function WorldMenu() {
               either fading mode switches that on too */}
           <div
             data-keep-menu-open
-            title={`fade: ${w.view.fadeRoomsMode}`}
+            title={w.view.fadeRoomsMode}
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
             onClick={() => {
               w.view.setFadeRoomsMode();
