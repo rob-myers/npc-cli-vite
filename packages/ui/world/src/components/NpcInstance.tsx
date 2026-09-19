@@ -8,7 +8,10 @@ function NpcInstance({ npc }: { npc: Npc }) {
   const bones = Object.values(nodes).filter((n) => n instanceof THREE.Bone);
 
   return (
-    <group ref={npc.groupRef} position={[0, 0.01, 0]}>
+    // keyed on the skeleton: the mixer caches its bindings by ROOT UUID, so new bones under the
+    // same group would be driven by the old ones. Remounting re-runs `groupRef`, which rebuilds it.
+    // NOT `epochMs`, which a material reset bumps too — that would snap the clip back to its start
+    <group key={bones[0]?.uuid} ref={npc.groupRef} position={[0, 0.01, 0]}>
       <skinnedMesh
         geometry={npc.geometry}
         material={npc.material}
