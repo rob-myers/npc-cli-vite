@@ -990,6 +990,7 @@ export default function Decor() {
 
       state.ready = true;
       w.door?.syncLockTints();
+      w.events.next({ key: "decor-ready" });
       w.setNextPending({ decor: false });
 
       return {

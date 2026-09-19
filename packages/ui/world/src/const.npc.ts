@@ -118,12 +118,14 @@ export const crowdConfig = {
 
 /** `findNearestPoly` query box and tolerance, by accuracy */
 export const closestPolyByAccuracy: Record<
-  "0.005" | "0.1" | "0.5",
+  "0.005" | "0.1" | "0.5" | "4",
   { halfExtents: [number, number, number]; distance: number }
 > = {
   "0.005": { halfExtents: [0.005, 0.005, 0.005], distance: 0.005 },
   "0.1": { halfExtents: [0.1, 0.1, 0.1], distance: 0.1 },
   "0.5": { halfExtents: [0.5, 0.5, 0.5], distance: 0.5 },
+  /** A room's width or so: what a map edit leaves under someone whose floor it took */
+  "4": { halfExtents: [4, 4, 4], distance: 4 },
 };
 
 export const npcSpawnConfig = {

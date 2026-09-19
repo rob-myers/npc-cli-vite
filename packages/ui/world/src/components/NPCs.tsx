@@ -1023,7 +1023,7 @@ export type State = {
   getNodeRef(agent: crowd.Agent): NodeRef;
   getClosestPoly(
     targetPos: JshCli.PointAnyFormat,
-    accuracy?: 0.005 | 0.1 | 0.5,
+    accuracy?: 0.005 | 0.1 | 0.5 | 4,
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;

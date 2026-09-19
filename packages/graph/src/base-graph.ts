@@ -138,9 +138,11 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
    * Breadth-first search.
    */
   getReachableNodes<T extends NodeType>(nodeOrNodes: T | string | T[] | string[]): T[] {
-    const initials = Array.isArray(nodeOrNodes)
-      ? nodeOrNodes.map((n) => (typeof n === "string" ? (this.getNode(n) as T) : n))
-      : [typeof nodeOrNodes === "string" ? (this.getNode(nodeOrNodes) as T) : nodeOrNodes];
+    const initials = (
+      Array.isArray(nodeOrNodes)
+        ? nodeOrNodes.map((n) => (typeof n === "string" ? (this.getNode(n) as T) : n))
+        : [typeof nodeOrNodes === "string" ? (this.getNode(nodeOrNodes) as T) : nodeOrNodes]
+    ).filter((node) => node !== null);
     const reachable = new Set(initials);
     let [count, frontier] = [0, initials];
     while (reachable.size > count) {
@@ -152,7 +154,10 @@ ${this.edgesArray.map((x) => `  "${x.src.id}" -> "${x.dst.id}" ${edgeLabel(x) ||
   }
 
   getReachableUpTo(node: NodeType | string, stopWhen: (node: NodeType, depth: number) => boolean): NodeType[] {
-    const root = typeof node === "string" ? (this.getNode(node) as NodeType) : node;
+    const root = typeof node === "string" ? this.getNode(node) : node;
+    if (root === null) {
+      return [];
+    }
     const reachable = new Set([root]);
     let [total, frontier, depth] = [0, [root], 0];
     while (reachable.size > total) {

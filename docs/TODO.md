@@ -36,12 +36,14 @@
 
 ### Playground
 
-- 🚧 playground preserve npc position
-  - should also work in other maps
-  - saw npc walking in place
-  - fix error on remove room containing player
+- ✅ playground preserve npc position
+  - an edit keeps `mapKey`, so no `onChangeMap`: nothing re-seated the crowd — see `w.npc.reseatAll`
+  - ✅ should also work in other maps
+  - ✅ saw npc walking in place
+  - ✅ fix error on remove room containing player
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
+  - ✅ fix `door-opening` TypeError reading 'hull' on save
 
 ## Documentation
 

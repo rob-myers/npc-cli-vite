@@ -2,6 +2,7 @@ declare namespace JshCli {
   type Event =
     | { key: "decor-created"; decorKeys: string[] }
     | { key: "decor-removed"; decorKeys: string[] }
+    | { key: "decor-ready" }
     | { key: "disabled" }
     | ({ key: "door-open" | "door-closed" | "door-opening" | "door-closing"; open: boolean } & ReturnType<
         import("./components/Doors").State["decodeInstanceId"]
