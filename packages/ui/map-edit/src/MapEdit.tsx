@@ -1424,8 +1424,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           currentFile: fileSpecifier,
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
-          // a draft written leaves us on one; otherwise the filesystem save below removes it
-          loadedFromDraft: wroteDraft,
+          // whatever a save wrote IS the saved state now — including a playground file, whose
+          // draft is its only store — so there is no stale draft left to warn about
+          loadedFromDraft: false,
         });
         state.toast(state.isPlaygroundFile(fileSpecifier) ? "draft saved" : "saved to file");
 
@@ -1983,7 +1984,7 @@ export type State = {
   currentFile: MapEditFileSpecifier;
   isDirty: boolean;
   /**
-   * Whether what is on screen came from a localStorage draft rather than the saved file. In dev a
+   * Whether what is on screen came from a localStorage draft and has not been saved since. In dev a
    * dirty exit writes one silently, so without this an old draft is indistinguishable from the file
    */
   loadedFromDraft: boolean;
