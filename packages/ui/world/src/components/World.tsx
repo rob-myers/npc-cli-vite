@@ -70,7 +70,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       client: false,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
+      rootEl: null as any,
       themeKey: "dark-theme",
+      worldGroup: null,
       worldQueryPrefix: ["world", meta.worldKey],
 
       brightness: getWorldStore(meta.worldKey).read().brightness,
@@ -131,6 +133,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
       assets: null as any,
       sheets: null as any,
+      fold: { amount: 0, animId: 0, resolve: null }, // flat until the first floor is up
       gms: [],
       seenGmKeys: [],
       gmsData: new DerivedGmsData(),
@@ -154,34 +157,20 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       player: null as any,
       floor: null as any,
       menu: {} as State["menu"],
+      n: null as any,
+      // stubs swallow posts before the workers mount
+      navWorker: { worker: { postMessage() { } } } as any,
       net: null as any,
       npc: null as any,
-      n: null as any,
       obs: null as any,
+      physics: { worker: { postMessage() { } } } as any,
       rings: null as any,
       roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
       view: null as any,
       wall: null as any,
-      // stubs swallow posts before the workers mount
-      physics: { worker: { postMessage() {} } } as any,
-      navWorker: { worker: { postMessage() {} } } as any,
-
       helper,
-
-      worldGroup: null,
-      fold: { amount: 0, animId: 0, resolve: null }, // flat until the first floor is up
-      rootEl: null as any,
-
-      /** Announce the map once its pending keys stop changing */
-      mapSettled: debounce(() => {
-        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).length > 0) {
-          return;
-        }
-        state.settledMapKey = state.mapKey;
-        state.events.next({ key: "map-settled" });
-      }, settledMs),
 
       /** Everything but the floor folds onto it, and rises again once the floor is back */
       foldTo(amount, ms = worldFoldMs) {
@@ -234,6 +223,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           ),
         );
       },
+      mapSettled: debounce(() => {
+        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).length > 0) {
+          return;
+        }
+        state.settledMapKey = state.mapKey;
+        state.events.next({ key: "map-settled" });
+      }, settledMs),
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
         state.timer.update();
@@ -270,7 +266,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
-        if (!(import.meta.env.DEV && hot)) return () => {};
+        if (!(import.meta.env.DEV && hot)) return () => { };
 
         // biome-ignore format: succinct
         const listeners: [event: string, handler: (...args: any[]) => void][] = [
@@ -595,6 +591,7 @@ export type State = {
   isPlaygroundMap(): boolean;
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
+  /** Announce the map once its pending keys stop changing */
   mapSettled: () => void;
   onTick(): void;
   setupDevAssetsSync(): () => void;
