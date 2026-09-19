@@ -133,3 +133,4 @@ Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DE
 - `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone, never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
 - Prefer terse comments: a short line over a paragraph, and only what the code doesn't already say
 - Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
+- Never stage (`git add`) — leave the index alone, even after editing a file that was already staged. Staging and committing are the user's
