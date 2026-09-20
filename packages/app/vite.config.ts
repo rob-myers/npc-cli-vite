@@ -23,8 +23,9 @@ export default defineConfig({
       routesDirectory: "src/routes",
     }),
     mdx({
-      // highlight at build time: shiki's grammars never reach the browser
-      rehypePlugins: [[rehypeShiki, { themes: { light: "dark-plus", dark: "dark-plus" }, defaultColor: false }]],
+      rehypePlugins: [
+        [rehypeShiki, { themes: { light: "dark-plus", dark: "dark-plus" }, defaultColor: false, langs: ["tsx", "sh"] }],
+      ],
     }),
     react(),
     tailwindcss(),
