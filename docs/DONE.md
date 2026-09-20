@@ -4,6 +4,23 @@
 
 Cleanup old todos
 
+- ❌ can override edit g-301--playground.json in dev
+  - currently can only save as draft
+  - manually created, mentioned in [./map-edit.md](map-edit.md)
+- ❌ obstacle resizing can be confusing
+  - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
+  - only rect resizing supported, not path
+- ✅ BUG assets.json decor orient changing for no apparent reason?
+  - mostly in 101 so maybe needs re-save?
+  - possibly related: remove symbol, save, undo, save (delta exists), save (delta removed)
+  - used normalizeDegrees
+- ✅ BUG npc arms through locked door
+  - ✅ open doors initially and onchange map
+  - ✅ open doors on hmr (NPCs.tsx, World.tsx)
+  - ✅ get too close
+    - unlocked: open door
+    - locked: prevent via door areas
+
 - ❌ investigate larger walk around params with fallback to params permitting free motion around parked
   - try tween collisionQueryRange between 1 and 0.7
     - useful when two parked npcs face each other ~ 1 npc apart
