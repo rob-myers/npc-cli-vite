@@ -7,6 +7,8 @@
   - ✅ demo video
   - ✅ comments
 
+- ✅ support mdx code-fences: tsx and sh
+
 ## World
 
 ### Animation

@@ -1,0 +1,22 @@
+/* Shiki highlights at build time, emitting each theme as CSS vars rather than a baked-in colour */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+  font-style: var(--shiki-light-font-style);
+  font-weight: var(--shiki-light-font-weight);
+  text-decoration: var(--shiki-light-text-decoration);
+}
+
+.theme-dark .shiki,
+.theme-dark .shiki span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+  text-decoration: var(--shiki-dark-text-decoration);
+}
+
+.theme-dark pre.shiki {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
