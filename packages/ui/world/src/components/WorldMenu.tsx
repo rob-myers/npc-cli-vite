@@ -30,6 +30,7 @@ import { compilingShadersText, defaultBrightness, defaultNpcBrightness } from ".
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
+import type { CameraModeType } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
 export function WorldMenu() {
@@ -114,6 +115,7 @@ export function WorldMenu() {
       onLookPressStart() {
         state.lookLongPressed = false;
         state.lookTimeoutId = window.setTimeout(() => {
+          if (state.dragged === true) return; // dragging the column is not a press
           state.lookLongPressed = true;
           w.view.onLookGesture(true);
           state.update();
@@ -121,7 +123,7 @@ export function WorldMenu() {
       },
       onLookPressEnd(cancelled = false) {
         window.clearTimeout(state.lookTimeoutId);
-        if (cancelled === false && state.lookLongPressed === false) {
+        if (cancelled === false && state.dragged === false && state.lookLongPressed === false) {
           w.view.onLookGesture(false);
         }
       },
@@ -387,16 +389,26 @@ export function WorldMenu() {
             <div className={cn("flex justify-end", touch && "max-w-none items-stretch")}>
               <LightSlider touch={touch} />
             </div>
-            <MenuRow
-              menu={!touch}
+            <div
               className={cn(
-                "flex justify-between items-center gap-2 px-2 py-1 text-xs text-slate-300 bg-slate-700 cursor-pointer",
-                touch && "px-3 py-2 text-sm",
+                "flex justify-between items-center gap-2 text-xs text-slate-300 bg-slate-700",
+                touch && "text-sm",
               )}
-              onClick={() => w.view.setCameraMode(nextCameraMode[w.view.cameraMode])}
             >
-              <div>camera: {w.view.cameraMode}</div>
-              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <div className={cn("flex items-center pl-2", touch && "pl-3")}>
+                <div>camera:</div>
+                <MenuSelect
+                  label={w.view.cameraMode}
+                  value={w.view.cameraMode}
+                  items={cameraModes.map((value) => ({ key: value, value }))}
+                  side="bottom"
+                  onValueChange={(mode) => mode !== null && w.view.setCameraMode(mode)}
+                />
+              </div>
+              <div
+                className={cn("flex items-center gap-1.5 pr-2 py-1", touch && "pr-3 py-2")}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <span
                   title={`follow the player: ${w.view.cameraFollow ? "on" : "off"}`}
                   onClick={() => w.view.setCameraFollow(w.view.cameraFollow === false)}
@@ -421,7 +433,7 @@ export function WorldMenu() {
                   <ArrowsClockwiseIcon className="size-3.5" />
                 </span>
               </div>
-            </MenuRow>
+            </div>
 
             <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>map:</div>
@@ -623,7 +635,10 @@ export function WorldMenu() {
             data-keep-menu-open
             title={w.disabled ? "resume" : "pause"}
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
-            onClick={() => w.setDisabled()}
+            onClick={() => {
+              if (state.dragged) return;
+              w.setDisabled();
+            }}
           >
             {w.disabled ? (
               <PlayIcon alt="resume" className="size-5" weight="bold" />
@@ -641,6 +656,7 @@ export function WorldMenu() {
             title={w.view.fadeRoomsMode}
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
             onClick={() => {
+              if (state.dragged) return;
               w.view.setFadeRoomsMode();
               state.update();
             }}
@@ -896,28 +912,6 @@ function MenuShell({
 }
 
 /** A menu row: a real `Menu.Item` in the desktop popup, a plain row in the touch panel */
-function MenuRow({
-  children,
-  className,
-  menu,
-  onClick,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  menu: boolean;
-  onClick: () => void;
-}) {
-  return menu === true ? (
-    <Menu.Item className={className} closeOnClick={false} onClick={onClick}>
-      {children}
-    </Menu.Item>
-  ) : (
-    <div className={className} onClick={onClick}>
-      {children}
-    </div>
-  );
-}
-
 /** The two lights the slider below switches between: the whole world's, and the npcs' own */
 const lights = {
   world: { icon: SunIcon, weight: "bold", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness },
@@ -1148,6 +1142,7 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
+  /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
@@ -1229,7 +1224,7 @@ const followFlashMs = 550;
 /** Half a pulse of the look button, whilst a pan is under way */
 const lookingAtPulseMs = 350;
 
-const nextCameraMode = { free: "canonical", canonical: "free" } as const;
+const cameraModes: CameraModeType[] = ["free", "canonical"];
 const debugItems = [
   "View Pick",
   "Post FX",

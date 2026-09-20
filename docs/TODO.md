@@ -2,10 +2,12 @@
 
 ## Blog
 
-- blog initial layout
-  - some text
-  - demo video
-  - comments
+- ✅ blog initial layout
+  - ✅ can switch between pages
+  - ✅ demo video
+  - ✅ comments
+
+- ✅ support mdx code-fences: tsx and sh
 
 ## World
 
@@ -31,8 +33,6 @@
 
 ### DevX
 
-- rewrite README.md
-
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
 
@@ -53,11 +53,11 @@
 
 ## Documentation
 
-- 🚧 new approach to todos i.e. current go into technical and start new section
+- ✅ new approach to todos i.e. current go into technical and start new section
   - ✅ final few before switch to blog
-  - 🚧 current -> sections
+  - ✅ current -> sections
 
-- start generating documentation in README.md
+- rewrite README.md
 
 ## HMR
 

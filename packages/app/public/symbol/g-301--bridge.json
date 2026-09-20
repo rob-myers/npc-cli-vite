@@ -530,7 +530,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "c76b4551-605f-42a6-ab8e-a4ff26315d8a",
@@ -568,7 +568,7 @@
         {
           "id": "90509b5e-eae3-4e3a-be61-ca76f8981359",
           "name": "decor point spawn",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 80, "f": 184.5},
           "type": "image",

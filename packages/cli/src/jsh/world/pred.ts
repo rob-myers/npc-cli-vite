@@ -32,7 +32,7 @@ pred.setHandler(function onWorldEvent(e, w) {
   const p = pred.get();
   switch (e.key) {
     case "picked":
-      if (w.helper.isNpcPickEvent(e) === true) {
+      if (w.helper.isNpcPickEvent(e) === true && e.longDown === false) {
         visualisePredicates(w, onPickNpc(e));
       }
       break;

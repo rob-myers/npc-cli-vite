@@ -3,6 +3,7 @@ import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import { worldRtcPlugin } from "@npc-cli/scripts/vite-plugin-world-rtc";
+import rehypeShiki from "@shikijs/rehype";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
@@ -21,7 +22,11 @@ export default defineConfig({
       autoCodeSplitting: true,
       routesDirectory: "src/routes",
     }),
-    mdx(),
+    mdx({
+      rehypePlugins: [
+        [rehypeShiki, { themes: { light: "dark-plus", dark: "dark-plus" }, defaultColor: false, langs: ["tsx", "sh"] }],
+      ],
+    }),
     react(),
     tailwindcss(),
     mapEditApiPlugin(),
