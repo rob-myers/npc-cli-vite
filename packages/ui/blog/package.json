@@ -7,9 +7,12 @@
   },
   "scripts": {},
   "dependencies": {
+    "@giscus/react": "catalog:",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "react-lite-youtube-embed": "catalog:",
+    "zod": "catalog:"
   }
 }
