@@ -185,7 +185,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         key: defaultSymbolKey,
       },
       isDirty: false,
-      loadedFromDraft: false,
 
       toastTs: {} as Record<string, number>,
 
@@ -1424,9 +1423,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           currentFile: fileSpecifier,
           savedFileSpecifiers: alreadyKnown ? state.savedFileSpecifiers : [...state.savedFileSpecifiers, fileSpecifier],
           isDirty: false,
-          // whatever a save wrote IS the saved state now — including a playground file, whose
-          // draft is its only store — so there is no stale draft left to warn about
-          loadedFromDraft: false,
         });
         state.toast(state.isPlaygroundFile(fileSpecifier) ? "draft saved" : "saved to file");
 
@@ -1452,7 +1448,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
               .pipe(z.preprocess(migrateMapEditSavedFile, MapEditSavedFileSchema))
               .safeParse(tryLocalStorageGet(getFileSpecifierLocalStorageKey(file)));
 
-        const fromDraft = localStorageResult.data != null;
         const savedFile = localStorageResult.data ?? (await loadMapEditFile(file));
         if (!savedFile) {
           return;
@@ -1483,7 +1478,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           currentFile: file,
           ...(preserveHistory ? {} : { undoStack: [], redoStack: [] }),
           isDirty: preserveHistory,
-          loadedFromDraft: fromDraft,
           svgWidth: savedFile.width,
           svgHeight: savedFile.height,
           zoom,
@@ -1506,7 +1500,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
         // a draft-only file leaves the selector with it — see `deleteFile`, which does the same
         state.updateSavedFileSpecifiers(getLocalStorageFileSpecs());
-        state.load(file, { ignoreDraft: true, askToRestore: false });
+        
+        state.wrapperEl?.focus(); // keep focus
+        // the draft's nodes go onto the undo stack, so a discard is undoable — but NOT dirty with
+        // it, or `useBeforeUnloadOrVisibilityChange` would autosave the draft straight back
+        void state
+          .load(file, { ignoreDraft: true, askToRestore: false, preserveHistory: true })
+          .then(() => state.set({ isDirty: false }));
       },
       async deleteFile(file) {
         if (import.meta.env.PROD || state.isLocked()) return; // dev only
@@ -1987,7 +1987,6 @@ export type State = {
    * Whether what is on screen came from a localStorage draft and has not been saved since. In dev a
    * dirty exit writes one silently, so without this an old draft is indistinguishable from the file
    */
-  loadedFromDraft: boolean;
   /** Throw the draft away and show the saved file — see the badge in `FileMenu` */
   discardDraft: (file?: MapEditFileSpecifier) => void;
   /** Remember which file this instance is on, so a refresh comes back to it */

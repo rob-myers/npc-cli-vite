@@ -7,7 +7,7 @@ import { FileDashedIcon, FloppyDiskIcon, LockKeyIcon, PlusIcon, TrashIcon } from
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SymbolKeySchema } from "./editor.schema";
 import type { State } from "./MapEdit";
-import { ALLOWED_MAP_EDIT_FOLDERS, defaultSymbolKey } from "./map-node-api";
+import { ALLOWED_MAP_EDIT_FOLDERS, defaultSymbolKey, getFileSpecifierLocalStorageKey } from "./map-node-api";
 
 const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
 
@@ -26,17 +26,18 @@ export function FileMenu({ state }: { state: UseStateRef<State> }) {
 }
 
 /**
- * Shown whilst the editor holds a localStorage draft rather than the saved file — in dev a dirty
- * exit writes one silently, so it is otherwise impossible to tell. Deleting it is armed by the
- * first click and takes effect on the second, as `remove npc` does in `NpcKeyMenu`
+ * Shown whilst a localStorage draft stands in for the saved file: a playground save writes one,
+ * a dev dirty exit writes one silently. Deleting it is armed by the first click and takes effect
+ * on the second, as `remove npc` does in `NpcKeyMenu`
  */
 function DraftBadge({ state }: { state: UseStateRef<State> }) {
   const [armed, setArmed] = useState(false);
-  if (state.loadedFromDraft === false) return null;
+  // off the draft ITSELF, never a flag beside it: a flag can say one stands here after it has gone
+  if (localStorage.getItem(getFileSpecifierLocalStorageKey(state.currentFile)) === null) return null;
   return (
     <button
       type="button"
-      title="showing a local draft, not the saved file"
+      title="showing draft"
       className={cn(
         "shrink-0 flex items-center gap-1 px-1.5 py-1 rounded cursor-pointer text-[0.625rem] leading-none",
         armed === true ? "bg-red-500/20 text-red-300" : "bg-amber-500/20 text-amber-300",

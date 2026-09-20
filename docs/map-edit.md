@@ -47,6 +47,10 @@ svg rect — then:
 A playground save also dispatches `mapEditSymbolSavedEvent` on `window`, which `World` listens for
 to recompute its layouts from the drafts.
 
+The `DraftBadge` in `FileMenu.tsx` reads the localStorage key DIRECTLY rather than a flag beside it,
+so it shows exactly when a draft stands in for the file and cannot drift: up after a playground save
+or a silent dirty-exit one, down once `discardDraft` or a filesystem save has removed it.
+
 The filesystem is canonical for non-playground files, which is why a successful DEV save deletes any
 draft for that file: leaving one would silently shadow the file it just wrote.
 
@@ -77,6 +81,11 @@ produce a new array** — mutating in place and passing the same reference stops
 
 `discardDraft(file)` removes the localStorage key, rebuilds `savedFileSpecifiers`, and reloads with
 `ignoreDraft: true`. In production that is the only way back — your edits never touched the file.
+
+It reloads with `preserveHistory` too, so the discarded nodes go onto the undo stack and ctrl+z
+brings them back. `isDirty` is cleared straight after, deliberately: `preserveHistory` sets it, and
+a dirty playground file autosaves its draft on a tab switch — which would resurrect what was just
+discarded. So an undone discard lives in the editor until you save it, which writes the draft again.
 
 ## Playground files
 

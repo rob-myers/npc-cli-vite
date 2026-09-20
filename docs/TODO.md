@@ -78,8 +78,9 @@
 
 ### Bugs 🚧
 
-- 🚧 can override edit g-301--playground.json in dev
+- ❌ can override edit g-301--playground.json in dev
   - currently can only save as draft
+  - manually created, mentioned in [./map-edit.md](map-edit.md)
 - obstacle resizing can be confusing
   - rotation is "determined" by the symbol's dimensions and the graphics appearance within it
   - we can forget to "update obstacles"
