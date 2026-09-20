@@ -2,7 +2,23 @@
 
 # By Sep 20th 2026
 
-Cleanup old todos
+Cleaned old todos...
+
+- ✅ BUG on save shell.ts terminal profile does not run
+  - Cannot destructure property 'ttyShell' of 'sessionApi.getSession(...)' as it is undefined.
+    - Refresh Jsh works when caught by error boundary
+  - now only restarts
+- ✅ BUG npc animation out of sync after save npc.ts (?)
+- ✅ BUG on collapse/expand should persist pane dimensions
+- ❌ BUG need two ctrl-c for while loop walk?
+- ❌ BUG saw auto door close with nearby npc
+  - maybe door was closing and didn't open quickly enough
+- ✅ BUG on lock door and save Decor we lose switch tint
+  - maybe just stale while paused
+- ❌ BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
+- ✅ BUG MapEdit asking to save draft changes onchange when there are no changes
+  - fixed case where selecting something makes symbol dirty
+- ❌ BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 
 - ❌ can override edit g-301--playground.json in dev
   - currently can only save as draft

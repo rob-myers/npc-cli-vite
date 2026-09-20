@@ -15,6 +15,10 @@
 - skin remapping
   - currently only have skinIndex
 
+### Camera
+
+- improve fov based on dimension
+
 ### Cleanliness
 
 - fix precision in `assets.json`
@@ -68,29 +72,9 @@
 ## MapEdit
 
 - 🚧 extend existing symbols with missing obstacles
+- BUG MapEdit drafts fighting: with 2 instances open for same file
 
 ## Testing
 
 - ask Fable for playwright test suite
-
-
-## UNSORTED
-
-### Bugs 🚧
-
-- ✅ BUG on save shell.ts terminal profile does not run
-  - Cannot destructure property 'ttyShell' of 'sessionApi.getSession(...)' as it is undefined.
-    - Refresh Jsh works when caught by error boundary
-  - now only restarts
-- 🚧 BUG npc animation out of sync after save npc.ts (?)
-- BUG on collapse/expand should persist pane dimensions
-- BUG need two ctrl-c for while loop walk?
-- ❌ BUG saw auto door close with nearby npc
-  - maybe door was closing and didn't open quickly enough
-- ✅ BUG on lock door and save Decor we lose switch tint
-  - maybe just stale while paused
-- BUG after hmr and `spawn` sometimes mesh not shown, yet can refetch query "template-gltf"
-- BUG MapEdit asking to save draft changes onchange when there are no changes
-- BUG MapEdit drafts fighting: with 2 instances open for same file
-- ❌ BUG `drawGm` (Floor): "SWEEP" probably poly union issue
 
