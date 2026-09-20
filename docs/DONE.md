@@ -1,5 +1,52 @@
 # DONE
 
+# By Sep 20th 2026
+
+Cleanup old todos
+
+- ❌ investigate larger walk around params with fallback to params permitting free motion around parked
+  - try tween collisionQueryRange between 1 and 0.7
+    - useful when two parked npcs face each other ~ 1 npc apart
+    - could ping neighbours and reduce when two are close
+- ❌ idle-left with left-leg forward
+- ❌ idle-right with right-leg forward
+- ❌ `npc.setMoveType` walk, run, shuffle
+- ❌ fetch gltf json so can cache-bust
+  - we hmr gltf now
+- ✅ onchange map sealed doors are staying sealed
+- ✅ try fix mobile persist issues via `visibilitychanged`
+  - we'll wrap useBeforeunload and ensure callback only called once
+- ℹ️ minecraft skin templates
+  - https://minecraft.fandom.com/wiki/Skin#Templates
+- ✅ MapEdit: on start drag should not select text
+- ✅ MapEdit: pointer out not disposed somewhere
+  - needs repro
+
+- ✅ BUG parsing?
+  - mvdan-sh parse works
+  - convertMvdanShToJsh.File works `withParents(convertMvdanShToJsh.File(parsed.file))`
+  - ✅ npm braces is crashing
+```sh
+expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.46,y:2.06},{x:12.95,y:1.86},{x:13.45,y:1.7},{x:13.97,y:1.59},{x:14.49,y:1.52},{x:15.01,y:1.5},{x:15.55,y:1.52},{x:15.55,y:1.52},{x:15.55,y:1.52},{x:16.07,y:1.59},{x:16.58,y:1.7},{x:17.09,y:1.86},{x:17.57,y:2.06},{x:18.04,y:2.31},{x:18.48,y:2.59},{x:18.9,y:2.92},{x:19.06,y:3.06},{x:17.68,y:3.06},{x:17.38,y:2.9},{x:17.12,y:2.9},{x:16.84,y:3.06},{x:16.15,y:3.06},{x:15.9,y:2.9},{x:15.63,y:2.9},{x:15.35,y:3.06},{x:14.66,y:3.06},{x:14.38,y:2.9},{x:14.16,y:2.9},{x:13.85,y:3.06},{x:13.16,y:3.06},{x:12.88,y:2.89},{x:12.66,y:2.89},{x:12.36,y:3.06},{x:10.95,y:3.06},{x:10.99,y:3.02}]}
+```
+
+- ✅ BUG change map to 301-101-301 and dynamicLight fails to propagate through some doors
+  - fixed by saving texture.ts (hmr)
+- ✅ BUG Jobs: sometimes interactive process 0 shows green although killed
+  - need repro
+- ❌ could cover up curved room raymarching woes
+  - maybe `Walls` can vary opacity
+  - provide additional Walls in MapEdit
+- ✅ BUG npc position after change map
+- ❌ BUG door open wrong way around during raycast of dynamicLight
+  - sporadic due to hmr?
+- ❌ improve transition dark-theme -> light-theme
+- ✅ fix npc final turn when ends near nav border
+
+- ❌ move path parsing code out of vite plugin file, to support hmr
+- ❌ warn if symbols "above" walls in symbol
+
+
 # By Sep 18th 2026
 
 - ✅ easier to run scripts
