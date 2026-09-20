@@ -1,7 +1,8 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
-import { cn, Spinner } from "@npc-cli/util";
-import { lazy, Suspense, useContext, useEffect, useRef } from "react";
+import { cn } from "@npc-cli/util";
+import { useContext, useEffect, useRef } from "react";
+import BlogComments from "./BlogComments";
 import BlogNav from "./BlogNav";
 import { mdxComponents } from "./mdx-components";
 import { getBlogPage } from "./pages";
@@ -10,13 +11,11 @@ import { useNearViewport } from "./use-near-viewport";
 
 import "./blog.css";
 
-const BlogComments = lazy(() => import("./BlogComments"));
-
 export default function Blog({ meta }: { meta: BlogUiMeta }) {
   const { theme } = useContext(UiContext);
   const page = getBlogPage(meta.pageKey);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const comments = useNearViewport();
+  const seen = useNearViewport();
 
   useEffect(() => void bodyRef.current?.scrollTo({ top: 0 }), [page?.key]);
 
@@ -26,7 +25,7 @@ export default function Blog({ meta }: { meta: BlogUiMeta }) {
 
   return (
     // `overflow-hidden` else a long article pushes the nav out of a short pane
-    <div className="size-full flex flex-col overflow-hidden bg-background text-on-background">
+    <div ref={seen.ref} className="size-full flex flex-col overflow-hidden bg-background text-on-background">
       <BlogNav
         pageKey={page.key}
         onSelect={(pageKey) => uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as BlogUiMeta).pageKey = pageKey))}
@@ -39,13 +38,10 @@ export default function Blog({ meta }: { meta: BlogUiMeta }) {
 
         <hr className="my-8 border-on-background/20" />
 
-        {/* deferred: a Blog can sit mounted but unseen in a background tab */}
-        <div ref={comments.ref} className="min-h-24">
-          {comments.near && (
-            <Suspense fallback={<Spinner />}>
-              <BlogComments key={page.key} pageKey={page.key} />
-            </Suspense>
-          )}
+        {/* gated on the pane, not on scroll: loads whilst the article is read, idle in a hidden tab */}
+        <div className="min-h-24">
+          {/* no `key`: giscus swaps the thread in its live iframe, so the box stays up */}
+          {seen.near && <BlogComments pageKey={page.key} />}
         </div>
       </div>
     </div>
