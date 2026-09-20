@@ -140,8 +140,14 @@ export const npcMaterialConfig = {
   labelHalfHeight: 0.125,
   /** Eased to `overheadAmount` as the view elevation goes `overheadFrom` → `overheadTo` */
   rim: { power: 5, amount: 0.2, color: [0.55, 0.72, 0.7], overheadAmount: 0.05, overheadFrom: 0.45, overheadTo: 0.85 },
-  /** Least colour a lit npc keeps outside the player's light */
-  litUnseen: 0.5,
+  /**
+   * An npc's exposure is ADDED up: `ambient` is what they keep out of the player's light, whose
+   * own share is whatever that leaves — so full light is exactly `1` — and `litAmbient` is what
+   * being lit adds on top. `sight` hides the unseen, so it leaves them less to stand in
+   */
+  ambient: 0.3,
+  ambientInSight: 0.12,
+  litAmbient: 0.4,
 } as const;
 
 export const fromAnimationClipKey = {

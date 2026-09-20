@@ -2,7 +2,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness, defaultCameraFollow } from "../const.env";
+import { defaultBrightness, defaultCameraFollow, defaultNpcBrightness } from "../const.env";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
@@ -30,6 +30,8 @@ export type PersistedCamera = {
 /** `null` means "no preference yet", where the default depends on the device */
 export type WorldSettings = {
   brightness: number;
+  /** The npcs' own, a multiplier on their skin — see `NPCs`' `dimNode` */
+  npcBrightness: number;
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
   /** Whether the camera keeps the player centred — an option of either `cameraMode` */
@@ -67,6 +69,7 @@ export type WorldSettings = {
 
 const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
+  npcBrightness: defaultNpcBrightness,
   cameraMode: isTouchDevice() ? "free" : "canonical",
   cameraInitial: null,
   cameraFollow: defaultCameraFollow,

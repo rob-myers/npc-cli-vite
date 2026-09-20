@@ -37,6 +37,12 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
   `applyLightRgba` where the colour carries alpha). Unlit fragments are tinted towards black; a
   `strength` of `0` — no player, or a WebGL fallback backend, which has no real compute — is exactly
   identity, so wrapping is unconditional.
+- **A surface turned away takes less.** `applyLight` accepts a unit outward XZ normal, cut at
+  edge-on (obstacle skirts pass one per instance). A FIGURE asks `litBody(normalWorld)` for the
+  AMOUNT instead, `0`–`1`, wrapped round them half-Lambert off a lamp hung in front of the player
+  — whoever stands on the light has no bearing from it, and the player always does. Npcs add up
+  their own exposure from it (`ambient` + that + `litAmbient` whilst lit, all in `const.npc`)
+  rather than taking a tint, which `unlitTint` would cap at a 0.4 swing.
 - Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances
   instead would put a shadow edge where neither surface is.
 

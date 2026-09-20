@@ -75,6 +75,8 @@ export default function NPCs() {
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
+      // ONE uniform every npc material reads, so the slider is a value write rather than a rebuild
+      dimNode: uniform(w.npcBrightness),
       gltf: null,
       gltfHash: 0,
       skin: {
@@ -116,13 +118,19 @@ export default function NPCs() {
         state.crowd.quickSearchIterations = crowdConfig.quickSearchIterations;
       },
       createMaterials(pickId: number, skinIndex: number) {
-        const { labelHalfWidth, labelHalfHeight, rim: rimConfig, litUnseen } = npcMaterialConfig;
+        const {
+          labelHalfWidth,
+          labelHalfHeight,
+          rim: rimConfig,
+          ambient,
+          ambientInSight,
+          litAmbient,
+        } = npcMaterialConfig;
         const skinIndexUniform = uniform(skinIndex);
         // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
         const pickIdUniform = uniform(pickId);
         const colorScale = uniform(1);
         const labelVisible = uniform(1, "float");
-        const brightness = uniform(1);
         const npcLit = uniform(0);
         const roomSlot = uniform(alwaysShownSlot, "float");
 
@@ -158,8 +166,20 @@ export default function NPCs() {
         const fold = w.view.foldNode;
 
         const toEye = cameraPosition.sub(positionWorld).normalize();
+        // only the rim is shaped by where the CAMERA stands: `N·V` is near 1 over everything it
+        // can see, by definition, so as a shade on the skin it only ever darkened a silhouette
         const facing = normalWorld.dot(toEye).clamp(0, 1);
-        const ndotv = facing.mul(brightness).mul(fold);
+
+        // Their whole exposure, ADDED up: what they keep out of the player's light, that light on
+        // top of it, and more again whilst lit. `oneMinus` gives the light whatever the ambient
+        // leaves, so standing full in it is exactly `1` whichever mode we are in
+        const ambientNow = mix(float(ambient), float(ambientInSight), w.view.fadeRoomsFx.sightNode);
+        const exposure = ambientNow
+          .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
+          .add(litAmount.mul(litAmbient))
+          .clamp(0, 1)
+          .mul(fold)
+          .mul(state.dimNode);
 
         // Rim shading where the body turns away from the view: `1 - N·V` is largest exactly along
         // the silhouette. Eased off as the camera climbs overhead, where nearly every surface in
@@ -175,8 +195,7 @@ export default function NPCs() {
             vec3(0).mul(positionLocal.y),
             // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
             // skin happened to be — a dark uniform takes a rim as readily as a pale one
-            skinTex.rgb.mul(ndotv).add(vec3(...rimConfig.color).mul(rim)),
-            // skinTex.rgb.mul(ndotv),
+            skinTex.rgb.mul(exposure).add(vec3(...rimConfig.color).mul(rim)),
             colorScale,
           ),
           skinTex.a.mul(fold),
@@ -215,14 +234,6 @@ export default function NPCs() {
           float(0.9).mul(fold),
         );
         material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
-        // - playerLight affects body but not label
-        // - a LIT npc is never darker than `litUnseen`, and takes the player's light where it
-        //   reaches them: the MAX of the two, so being lit is a floor under them rather than a
-        //   light of its own that would dim them wherever the player's already fell
-        const shaded = w.view.playerLight.applyLightRgba(mainColor);
-        const ownLit = vec4(shaded.rgb.max(mainColor.rgb.mul(litUnseen)), mainColor.a);
-        // `bodyTint` is applied at the output, see below
-        const body = mix(shaded, ownLit, litAmount);
         // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
         // fade, well before and after the body's own share of it, and eased at both ends
         const labelFade = smoothstep(float(0), float(1), roomFade).max(litAmount);
@@ -231,7 +242,7 @@ export default function NPCs() {
           labelFade,
         );
         material.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
-          (select as any)(isLabel, label, body),
+          (select as any)(isLabel, label, mainColor), // `bodyTint` is applied at the output, below
           roomFade,
           w.view.objectPick,
         );
@@ -255,7 +266,6 @@ export default function NPCs() {
         material.mrtNode = w.view.npcMaskMrt === null ? null : maskMrt;
 
         return {
-          brightness,
           colorScale,
           labelVisible,
           labelYShiftUniform: labelYShift,
@@ -766,6 +776,10 @@ export default function NPCs() {
 
         w.events.next({ key: "spawned", npcKey, gmRoomId, spawns: npc.spawns });
       },
+      setBrightness(next) {
+        state.dimNode.value = next;
+        w.r3f?.invalidate(); // a uniform write draws nothing by itself, the frameloop being on demand
+      },
       syncOutlineMask() {
         // a material mrt *replaces* the colour output unless the scene pass declares one too, so
         // this must follow `w.view.npcMaskMrt` exactly — see `WorldView.setupPostProcessing`, the
@@ -923,7 +937,9 @@ export default function NPCs() {
 
   useEffect(
     () => void (import.meta.env.DEV && state.devHotReload()),
-    [queryData?.gltf, w.view.playerLight.uid, w.view.fadeRoomsFx.uid],
+    // an hmr of `const.npc` gives a NEW config object, and the materials bake its numbers in —
+    // without it here, editing the npc tuning changes nothing until the page is reloaded
+    [queryData?.gltf, w.view.playerLight.uid, w.view.fadeRoomsFx.uid, npcMaterialConfig],
   );
 
   return (
@@ -937,6 +953,8 @@ export type AnimationClipKey = keyof typeof fromAnimationClipKey;
 export type State = {
   clips: Record<AnimationClipKey, THREE.AnimationClip>;
   crowd: crowdApi.Crowd;
+  /** How much of their skin every npc keeps — see `setBrightness`, and `w.npcBrightness` behind it */
+  dimNode: THREE.UniformNode<"float", number>;
   gltf: GLTF | null;
   /** DEV: hash of the gltf the npc meshes were built from — see `devHotReload` */
   gltfHash: number;
@@ -958,6 +976,8 @@ export type State = {
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
   configureCrowd(): void;
+  /** Sets `dimNode`'s value — called by `WorldMenu`'s slider, never `.value` directly */
+  setBrightness(next: number): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
   createMaterials(
@@ -965,7 +985,6 @@ export type State = {
     skinIndex: number,
   ): Pick<
     NpcInit,
-    | "brightness"
     | "colorScale"
     | "labelVisible"
     | "labelYShiftUniform"

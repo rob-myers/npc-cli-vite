@@ -76,6 +76,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       worldQueryPrefix: ["world", meta.worldKey],
 
       brightness: getWorldStore(meta.worldKey).read().brightness,
+      npcBrightness: getWorldStore(meta.worldKey).read().npcBrightness,
 
       events: new Broadcaster(),
       reqAnimId: -1,
@@ -496,6 +497,7 @@ export type State = {
   worldQueryPrefix: ["world", worldKey: string];
 
   brightness: number;
+  npcBrightness: number;
 
   events: Broadcaster<JshCli.Event>;
   r3f: OverrideProperties<
