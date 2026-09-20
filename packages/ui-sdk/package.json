@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./analytics": "./src/analytics.ts",
     "./ui.store": "./src/ui.store.ts",
     "./schema": "./src/schema.ts",
     "./discriminator": "./src/discriminator.ts",

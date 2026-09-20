@@ -1,12 +1,13 @@
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
+import { trackExitOrHide } from "@npc-cli/ui-sdk/analytics";
 import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { useBeforeUnloadOrVisibilityChange } from "@npc-cli/util";
 import { createFileRoute } from "@tanstack/react-router";
 import "allotment/dist/style.css";
 import { motion } from "motion/react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { PaneTree } from "../components/PaneTree";
 import { PaneTreeWrapper } from "../components/PaneTreeWrapper";
@@ -81,6 +82,27 @@ function Index() {
   }
 
   useBeforeUnloadOrVisibilityChange(() => persistPanesToUi());
+
+  // deliberately not `useBeforeUnloadOrVisibilityChange`: that also fires on unmount, and does not
+  // say which event fired — `reason` is what separates leaving from merely backgrounding the tab
+  useEffect(() => {
+    const report = (reason: "beforeunload" | "visibilitychange") =>
+      trackExitOrHide(
+        reason,
+        // deduped by id: `getAllUis` yields a sub-ui both standalone and via its parent's `items`
+        [...new Map(uiStoreApi.getAllUis().map(({ meta }) => [meta.id, meta.uiKey])).values()].filter(
+          (uiKey) => uiKey !== "Tabs",
+        ),
+      );
+    const onBeforeUnload = () => report("beforeunload");
+    const onVisibilityChange = () => void (document.visibilityState === "hidden" && report("visibilitychange"));
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
 
   return (
     <UiContext.Provider value={{ ...contextValue, theme }}>
