@@ -94,29 +94,13 @@ Exports of `packages/cli/src/jsh/world/{core,demo,pred}.ts` become shell command
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
-## Map-edit save flow
+## MapEdit saving
 
-`POST /api/map-edit/file/:folder/:filename` → `saveMapEditFile(filePath, body)` in `scripts/src/service/process-map-edit-save.ts`. That function: parses + validates body, writes JSON, generates thumbnail (skia-canvas), updates manifest.
-
-`savedFileSpecifiers` is the source of truth for the map/symbol selector in `FileMenu.tsx`. It is rebuilt by `updateSavedFileSpecifiers(drafts)` which merges manifest entries + localStorage drafts. When adding a new entry always produce a **new array** — mutating in place then passing the same reference prevents `useMemo` from recomputing `mapFiles` in `MapFileSelect`.
-
-Delete maps via `state.deleteFile(file)` (removes localStorage draft + calls `DELETE /api/map-edit/file/...` in dev, then invalidates the manifests query). Symbols are not deletable from the UI — only maps have a trash button in `MapFileSelect`.
-
-## `loadDrafts` — use-originals / use-drafts toggle
-
-`LoadDraftsMode = "use-originals" | "use-drafts"` controls where MapEdit loads from and saves to. The value is **per-instance**, persisted to localStorage keyed by instance ID (e.g. `map-edit-load-drafts:<id>`). Shared helpers live in `packages/ui/map-edit/src/use-drafts.ts` and are imported by both MapEdit and World.
-
-**MapEdit behaviour:**
-- `"use-originals"` (DEV default): loads from filesystem/manifest; saves write to filesystem (DEV only via `saveMapEditFile`) and delete any stale localStorage draft for that file.
-- `"use-drafts"` (PROD default): loads from localStorage draft; saves write to localStorage only — `saveMapEditFile` is **not** called even in DEV.
-- On mount: `state.load(undefined, { ignoreDraft: state.loadDrafts === "use-originals" })`.
-- `state.switchLoadDrafts(next)`: when switching to `"use-originals"` it first snapshots the current edit state as a draft (so the work is not lost), then reloads from the original.
-- A motion toast appears after every save — `"draft saved"` or `"saved to file"` — driven by `state.toastTs: Record<string, number>` (timestamp per key) and the `useToastTs` hook in `MainMenu.tsx`.
-
-**World behaviour:**
-- `loadDrafts` lives on World component state (`World.tsx`), not WorldView, because the React Query `queryKey` is constructed there. `state.set({ loadDrafts })` triggers a queryKey change and automatic refetch.
-- `"use-drafts"` enables `recomputeAssetsInProduction` (overlays localStorage symbol drafts onto `assets`) in both DEV and PROD. Previously this was PROD-only.
-- The select is in `WorldMenu.tsx`; the storage key is `world-load-drafts:<id>`.
+See `docs/map-edit.md` — the ONLY doc for where a saved MapEdit file goes. In short: playground
+files (key ending `--playground` / `-playground`) save to a localStorage draft and are the only
+thing editable in production; everything else saves to the filesystem in DEV via
+`POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand,
+and its node NAMES are its tags.
 
 ## TSL shader notes
 
