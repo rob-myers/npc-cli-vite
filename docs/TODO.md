@@ -51,6 +51,10 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
 
+### Other Bugs
+
+- 🚧 BUG only some room labels shown when change to map 301-101-301
+
 ## Documentation
 
 - ✅ new approach to todos i.e. current go into technical and start new section
@@ -79,8 +83,14 @@
 - ✅ deploy on https://staging.lastredoubt.co/
 - ✅ deploy on https://lastredoubt.co/
 - ✅ remove https://staging.lastredoubt.co/
-- 🚧 setup umami analytics on https://lastredoubt.co/
+- ✅ setup umami analytics on https://lastredoubt.co/
   - https://cloud.umami.is/analytics/eu/websites
+  - ✅ add script to head
+  - ✅ witness page load
+  - ✅ add some ui tracking for localhost/production
+    - dev has toggle in GlobalMenu
+    - uis-loaded event fires once
+    - exit-or-hide event has at least 60s between firing
 
 ## Testing
 
