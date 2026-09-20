@@ -115,13 +115,6 @@ export default function Floor() {
         // the deck itself — plated, with a line inside each room's walls. See `deckConfig`
         drawRoomFloors(ct, layout, labelOfRoom);
 
-        // fix curved walls aliasing 🚧 prefer meta.curved
-        drawPolygons(
-          ct,
-          gm.walls.filter((x) => x.meta.broad),
-          { fillStyle: null, strokeStyle: "#000", lineWidth: 0.1 },
-        );
-
         // draw nav mesh: gmId specific. Two paths rather than one call per triangle — adjacent
         // triangles share an edge, and stroking each in turn draws every interior edge TWICE, which
         // over a textured deck reads as patchy rather than as a mesh
