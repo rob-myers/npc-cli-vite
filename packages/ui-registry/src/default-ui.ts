@@ -72,17 +72,25 @@ export function getDefaultTabs() {
       id: uid(),
       title: "tabs-1",
       uiKey: "Tabs",
-      items: [jobsMeta.id, jshMeta.id, mapEditMeta.id],
-      currentTabId: jobsMeta.id,
+      items: [jshMeta.id],
+      currentTabId: jshMeta.id,
     });
     jshMeta.parentId = tabs1Meta.id;
-    jobsMeta.parentId = tabs1Meta.id;
-    mapEditMeta.parentId = tabs1Meta.id;
+    
+    const tabs2Meta = Tabs.schema.decode({
+      id: uid(),
+      title: "tabs-2",
+      uiKey: "Tabs",
+      items: [jobsMeta.id, mapEditMeta.id],
+      currentTabId: jobsMeta.id,
+    });
+    jobsMeta.parentId = tabs2Meta.id;
+    mapEditMeta.parentId = tabs2Meta.id;
 
     return {
-      tabs: [tabs0Meta, tabs1Meta],
+      tabs: [tabs0Meta, tabs1Meta, tabs2Meta],
       toUi: Object.fromEntries(
-        [jshMeta, jobsMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta].map((meta) => [meta.id, meta]),
+        [jshMeta, jobsMeta, worldMeta, mapEditMeta, tabs0Meta, tabs1Meta, tabs2Meta].map((meta) => [meta.id, meta]),
       ),
     };
   }
