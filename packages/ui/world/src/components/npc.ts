@@ -51,7 +51,6 @@ export class Npc {
   rotation: THREE.Euler;
   skinnedMesh: THREE.SkinnedMesh;
 
-  brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
@@ -144,7 +143,6 @@ export class Npc {
 
     // Object.assign(this, init);
     this.key = init.key;
-    this.brightness = init.brightness;
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
@@ -374,8 +372,6 @@ export class Npc {
       ...createDefaultQueryFilter(),
       passFilter: (nodeRef, navMesh) => this.canPassNode(nodeRef, navMesh, false),
     };
-
-    this.brightness.value = 0.35;
   }
 
   isFading() {
@@ -493,7 +489,6 @@ export class Npc {
 
 export type NpcInit = {
   key: string;
-  brightness: THREE.UniformNode<"float", number>;
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;

@@ -87,6 +87,9 @@ export const cameraRefAspect = 1.8;
 
 export const defaultBrightness = 1;
 
+/** How much of their skin an npc keeps, so the player's light reads as light ON them */
+export const defaultNpcBrightness = 0.25;
+
 export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
 
 /** How far out the camera's outer zoom stop sits, in metres */

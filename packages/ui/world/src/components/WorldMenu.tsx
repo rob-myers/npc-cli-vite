@@ -11,8 +11,10 @@ import {
   EyeIcon,
   GlobeStandIcon,
   type Icon,
+  type IconWeight,
   PauseIcon,
   PersonSimpleCircleIcon,
+  PersonSimpleIcon,
   PlayIcon,
   RobotIcon,
   SunIcon,
@@ -24,7 +26,7 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import { compilingShadersText, defaultBrightness } from "../const.env";
+import { compilingShadersText, defaultBrightness, defaultNpcBrightness } from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
@@ -383,35 +385,7 @@ export function WorldMenu() {
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
             <div className={cn("flex justify-end", touch && "max-w-none items-stretch")}>
-              <div
-                className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
-                  touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
-                )}
-              >
-                <BrightnessPie
-                  ratio={brightnessToRatio(w.brightness)}
-                  onClick={() => {
-                    const brightness = defaultBrightness;
-                    w.set({ brightness });
-                    store.patch({ brightness });
-                  }}
-                />
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={w.brightness}
-                  onChange={(e) => {
-                    w.brightness = Number(e.target.value);
-                    w.update();
-                    store.patch({ brightness: w.brightness });
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className={rangeInputClass(touch, touch ? "flex-1" : "w-24")}
-                />
-              </div>
+              <LightSlider touch={touch} />
             </div>
             <MenuRow
               menu={!touch}
@@ -944,12 +918,114 @@ function MenuRow({
   );
 }
 
-/** Sun icon wi\th a pie-chart fill showing brightness ratio (0–1) */
-function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void }) {
-  const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
+/** The two lights the slider below switches between: the whole world's, and the npcs' own */
+const lights = {
+  world: { icon: SunIcon, weight: "bold", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness },
+  // a SOLID figure, and not the circled one the npcs menu uses: at 16px a thin stroke inside a
+  // ring is unreadable against the pie behind it, and reading as another control did not help
+  npc: { icon: PersonSimpleIcon, weight: "fill", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness },
+} as const;
+
+/** How long the icon must be held to restore a light's default */
+const lightResetHoldMs = 500;
+
+/**
+ * ONE slider for both, the icon saying which and switching on a click — they are the same control
+ * twice over, and the row has no width for a second. Holding it restores that light's default
+ */
+function LightSlider({ touch }: { touch: boolean }) {
+  const w = useContext(WorldContext);
+  const store = getWorldStore(w.key);
+  const [key, setKey] = useState<keyof typeof lights>("world");
+  const { icon, weight, min, max, step, fallback } = lights[key];
+  const value = key === "npc" ? w.npcBrightness : w.brightness;
+
+  function apply(next: number) {
+    if (key === "npc") {
+      w.npcBrightness = next;
+      w.npc?.setBrightness(next); // a uniform, unlike the world's css filter — and absent until the npcs are
+      store.patch({ npcBrightness: next });
+    } else {
+      w.brightness = next;
+      store.patch({ brightness: next });
+    }
+    w.update();
+  }
+
   return (
-    <div className="relative size-4 cursor-pointer" onClick={onClick}>
-      <SunIcon className="size-4 text-white" />
+    <div
+      className={cn(
+        "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+        touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
+      )}
+    >
+      <BrightnessPie
+        icon={icon}
+        weight={weight}
+        title={`${key} brightness — click to switch, hold to reset`}
+        // the world's is detented at its default, the npcs' plainly linear
+        ratio={key === "npc" ? (value - min) / (max - min) : brightnessToRatio(value)}
+        onClick={() => setKey(key === "npc" ? "world" : "npc")}
+        onHold={() => apply(fallback)}
+      />
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => apply(Number(e.target.value))}
+        onClick={(e) => e.stopPropagation()}
+        className={rangeInputClass(touch, touch ? "flex-1" : "w-24")}
+      />
+    </div>
+  );
+}
+
+/** An icon with a pie-chart fill showing a brightness ratio (0–1), and a press that can be held */
+function BrightnessPie({
+  icon: IconCmp,
+  weight,
+  ratio,
+  title,
+  onClick,
+  onHold,
+}: {
+  icon: Icon;
+  weight?: IconWeight;
+  ratio: number;
+  title?: string;
+  onClick?: () => void;
+  onHold?: () => void;
+}) {
+  const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
+  const timeoutId = useRef(0);
+  /** Whether the hold already fired, so the click ending it is not also taken as a tap */
+  const held = useRef(false);
+  const endPress = () => window.clearTimeout(timeoutId.current);
+
+  return (
+    <div
+      className="relative size-4 cursor-pointer select-none"
+      title={title}
+      // the panel drags off a pointerdown anywhere in it, which a press being held is not
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        held.current = false;
+        timeoutId.current = window.setTimeout(() => {
+          held.current = true;
+          onHold?.();
+        }, lightResetHoldMs);
+      }}
+      onPointerUp={endPress}
+      onPointerLeave={endPress}
+      onPointerCancel={endPress}
+      onContextMenu={(e) => e.preventDefault()} // touch's own long press
+      onClick={(e) => {
+        e.stopPropagation();
+        held.current === false && onClick?.();
+      }}
+    >
       {ratio > 0 && (
         <svg className="absolute inset-0 size-4" viewBox="0 0 16 16">
           <path
@@ -962,6 +1038,8 @@ function BrightnessPie({ ratio, onClick }: { ratio: number; onClick?: () => void
           />
         </svg>
       )}
+      {/* over the fill, never under it — `relative` puts it last in the paint order */}
+      <IconCmp className="relative size-4 text-white" weight={weight} />
     </div>
   );
 }

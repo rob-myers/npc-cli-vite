@@ -19,9 +19,11 @@ import {
   smoothstep,
   uniform,
   vec2,
+  vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { npcDims } from "../const.both";
 import { MAX_DOORS } from "../const.env";
 import type DerivedGmsData from "./DerivedGmsData";
 import { MODE_FADE_SECS } from "./fade-rooms";
@@ -47,6 +49,8 @@ export function createPlayerLight(): PlayerLight {
    * none of them multiplies a constant by a uniform per fragment
    */
   const unlitAmount = uniform(0);
+  /** Whether the light is on at all — what `unlitAmount` folds in and a caller taking an AMOUNT cannot read back out */
+  const strength = uniform(0);
   /**
    * That tint on its way between modes. On the CPU, since it ends in a uniform either way and
    * `createPlayerLight` runs before there is a `sightNode` to hang it off
@@ -260,18 +264,35 @@ export function createPlayerLight(): PlayerLight {
     return smoothstep(float(-backSoft), float(backSoft), towards);
   }
 
+  /**
+   * The same for a FIGURE, whose normal is per fragment and points any which way, so a real N·L
+   * rather than one flattened into XZ — which would read the top of a shoulder as a flank seen
+   * edge-on. The lamp hangs `bodyLightAhead` in FRONT of them, since whoever stands on the light
+   * has no bearing from it and the player always does; ahead by `facing`, which shapes the cone
+   * too, so it reads as one they carry and their own back falls away from it
+   */
+  function facingBody(normalWorld: THREE.Node<"vec3">) {
+    const lampXZ = origin.add(facing.mul(bodyLightAhead));
+    const toLight = vec3(lampXZ.x, float(bodyLightY), lampXZ.y).sub(positionWorld);
+    // WRAPPED round them — half Lambert — rather than cut at edge-on as a wall's face is: a figure
+    // is curved, and the hard terminator `backSoft` gives a flat one runs as a seam down their side
+    const towards = normalWorld.normalize().dot(toLight.normalize());
+    return towards.mul(0.5).add(0.5);
+  }
+
+  /** How much of the light reaches a fragment `away` from the origin, before any normal */
+  function shadeAt(away: THREE.Node<"vec2">, fromPlayer: THREE.Node<"float">) {
+    // What is not ahead of them is DIMMED, though not within `coneFrom`: close in a fragment's
+    // bearing swings about wildly, and dimming there reads as a shadow they are standing in
+    const cone = coneAt(away, fromPlayer);
+    const held = smoothstep(float(0), float(coneFrom), fromPlayer);
+    return litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
+  }
+
   function applyLight(color: THREE.Node<"vec3">, outwardXZ: null | THREE.Node<"vec2"> = null) {
     const away = positionWorld.xz.sub(origin);
     const fromPlayer = away.length();
-    const cone = coneAt(away, fromPlayer);
-
-    // What is not ahead of them is DIMMED, though not within `coneFrom`: close in a fragment's
-    // bearing swings about wildly, and dimming there reads as a shadow they are standing in.
-    //
-    // Taken off `lit` rather than off the colour, so `unlitTint` is the floor for both: the cone
-    // can never go darker than somewhere the light simply does not reach
-    const held = smoothstep(float(0), float(coneFrom), fromPlayer);
-    const lit = litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
+    const lit = shadeAt(away, fromPlayer);
     // and none at all on a face turned away — branched in js, so a caller with no normal to give
     // emits nothing of this
     const shaded = outwardXZ === null ? lit : lit.mul(facingAt(outwardXZ, away, fromPlayer));
@@ -322,6 +343,12 @@ export function createPlayerLight(): PlayerLight {
 
     applyLightRgba(color, outwardXZ) {
       return vec4(applyLight(color.rgb, outwardXZ), color.a);
+    },
+
+    litBody(normalWorld) {
+      const away = positionWorld.xz.sub(origin);
+      // `1` whilst the light is off, so a world with no player is simply lit rather than black
+      return mix(float(1), shadeAt(away, away.length()).mul(facingBody(normalWorld)), strength);
     },
 
     getSweeps() {
@@ -384,16 +411,17 @@ export function createPlayerLight(): PlayerLight {
       // the WebGL fallback runs "compute" through transform feedback, which this sweep's storage
       // buffers are not going to survive — better an unlit world than a broken one
       if ((renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend !== true) {
-        unlitAmount.value = 0;
+        unlitAmount.value = strength.value = 0;
         sweeper = null;
         return;
       }
       if (at === null) {
-        unlitAmount.value = 0;
+        unlitAmount.value = strength.value = 0;
         sweeper = null;
         return;
       }
       sweeper = renderer;
+      strength.value = 1;
       // eased rather than switched, or the mode change lands as a flash
       const now = nowSecs();
       retarget(tintMorph, sight === true ? unlitTintSight : unlitTintOther, MODE_FADE_SECS, now);
@@ -478,6 +506,14 @@ export type PlayerLight = {
   /** The same, for a material whose colour carries alpha — which is left alone */
   applyLightRgba(color: THREE.Node<"vec4">, outwardXZ?: null | THREE.Node<"vec2">): THREE.Node<"vec4">;
   /**
+   * How much light a FIGURE takes — an npc, the player included: the polygon, the cone, and a real
+   * N·L off a lamp carried in front of the player. An AMOUNT, `0` to `1`, for a material adding up
+   * its own exposure rather than taking a tint capped by `unlitTint` — see `NPCs`. `1` with the
+   * light off, so an npc in a world without one is simply lit
+   * @param normalWorld their world normal, which need not be unit
+   */
+  litBody(normalWorld: THREE.Node<"vec3">): THREE.Node<"float">;
+  /**
    * Tints as though nothing were ever lit, for a surface the light has no business reaching — the
    * ceiling, which the sweep would otherwise light through the room below it
    */
@@ -546,6 +582,12 @@ const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
 const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
 /** The cosine either side of edge-on a face turning away from the light is softened over */
 const backSoft = 0.15;
+/**
+ * Where a figure's lamp hangs relative to the player — see `facingBody`. Head height, so it is
+ * their FAR side that darkens rather than the crown the camera looks down on
+ */
+const bodyLightY = npcDims.height;
+const bodyLightAhead = 0.5;
 /**
  * Lets a fragment sit exactly on the surface that occludes it without shadowing itself: a fixed
  * part, and a part that grows with the arc between two angles, which is where the error lives
