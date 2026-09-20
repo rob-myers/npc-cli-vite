@@ -25,7 +25,20 @@
         document.documentElement.classList.add(`theme-${theme}`);
       })();
     </script>
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="e4022522-0f56-4db2-a68f-cf708b91da49"></script>
+    <script defer id="umami-script" src="https://cloud.umami.is/script.js" data-website-id="e4022522-0f56-4db2-a68f-cf708b91da49"></script>
+    <script>
+      (function umamiEnvironment() {
+        // inline, so it beats the deferred umami script — which would otherwise get its automatic
+        // pageview away before any module could disable it
+        const local = location.hostname === 'localhost';
+        document.getElementById('umami-script').dataset.tag = local ? 'localhost' : 'production';
+        // dev starts silent; opt in via the World menu's analytics toggle
+        if (local && localStorage.getItem('umami.dev-seeded') === null) {
+          localStorage.setItem('umami.dev-seeded', '1');
+          localStorage.setItem('umami.disabled', '1');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
