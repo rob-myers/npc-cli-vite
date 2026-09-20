@@ -74,6 +74,14 @@
 - 🚧 extend existing symbols with missing obstacles
 - BUG MapEdit drafts fighting: with 2 instances open for same file
 
+## Site
+
+- ✅ deploy on https://staging.lastredoubt.co/
+- ✅ deploy on https://lastredoubt.co/
+- ✅ remove https://staging.lastredoubt.co/
+- 🚧 setup umami analytics on https://lastredoubt.co/
+  - https://cloud.umami.is/analytics/eu/websites
+
 ## Testing
 
 - ask Fable for playwright test suite
