@@ -115,6 +115,7 @@ export function WorldMenu() {
       onLookPressStart() {
         state.lookLongPressed = false;
         state.lookTimeoutId = window.setTimeout(() => {
+          if (state.dragged === true) return; // dragging the column is not a press
           state.lookLongPressed = true;
           w.view.onLookGesture(true);
           state.update();
@@ -122,7 +123,7 @@ export function WorldMenu() {
       },
       onLookPressEnd(cancelled = false) {
         window.clearTimeout(state.lookTimeoutId);
-        if (cancelled === false && state.lookLongPressed === false) {
+        if (cancelled === false && state.dragged === false && state.lookLongPressed === false) {
           w.view.onLookGesture(false);
         }
       },
@@ -634,7 +635,10 @@ export function WorldMenu() {
             data-keep-menu-open
             title={w.disabled ? "resume" : "pause"}
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
-            onClick={() => w.setDisabled()}
+            onClick={() => {
+              if (state.dragged) return;
+              w.setDisabled();
+            }}
           >
             {w.disabled ? (
               <PlayIcon alt="resume" className="size-5" weight="bold" />
@@ -652,6 +656,7 @@ export function WorldMenu() {
             title={w.view.fadeRoomsMode}
             className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
             onClick={() => {
+              if (state.dragged) return;
               w.view.setFadeRoomsMode();
               state.update();
             }}
@@ -1137,6 +1142,7 @@ export type State = {
   debugHitOpen: boolean;
   gmGraphsOpen: boolean;
   skinDebugOpen: boolean;
+  /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
   menuOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
