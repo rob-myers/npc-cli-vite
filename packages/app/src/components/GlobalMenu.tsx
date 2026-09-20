@@ -1,10 +1,12 @@
 import { Menu } from "@base-ui/react/menu";
 import { themeApi, useThemeName } from "@npc-cli/theme";
+import { isTrackingDisabled, setTrackingDisabled } from "@npc-cli/ui-sdk/analytics";
 import { cn, useStateRef } from "@npc-cli/util";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
   ArrowCounterClockwiseIcon,
   ArrowsInIcon,
+  ChartLineIcon,
   GearIcon,
   MoonIcon,
   SquareHalfBottomIcon,
@@ -38,6 +40,8 @@ export function GlobalMenu() {
     canOpen: false,
     /** Whether reset has been clicked once, so the next click is the confirmation */
     resetArmed: false,
+    /** DEV only, see the analytics item below */
+    trackingOff: isTrackingDisabled(),
 
     close() {
       // a reset half-asked-for is forgotten with the menu
@@ -65,6 +69,11 @@ export function GlobalMenu() {
         resetPanes();
         menu.close();
       }
+    },
+    onToggleTracking() {
+      // umami re-reads the key on every send, so this bites without a reload
+      setTrackingDisabled(menu.trackingOff === false);
+      menu.set({ trackingOff: isTrackingDisabled() });
     },
     onTriggerClick() {
       if (menu.canOpen === true) {
@@ -122,6 +131,17 @@ export function GlobalMenu() {
                   <span className={cn(!menu.resetArmed && "invisible")}>Confirm reset</span>
                 </span>
               </Menu.Item>
+
+              {import.meta.env.DEV && (
+                <Menu.Item
+                  className={cn(itemCls, "px-3", menu.trackingOff && "text-slate-500")}
+                  closeOnClick={false}
+                  onClick={menu.onToggleTracking}
+                >
+                  <ChartLineIcon className="size-4" />
+                  {menu.trackingOff ? "Tracking: off" : "Tracking: on"}
+                </Menu.Item>
+              )}
 
               <div className="flex justify-evenly">
                 <Menu.Item className={itemCls} onClick={() => splitRoot(false)}>
