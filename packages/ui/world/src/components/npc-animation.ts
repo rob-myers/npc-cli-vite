@@ -285,9 +285,9 @@ const minLookSecs = 0.3;
  */
 const lookIdleFadeMs = 300;
 /**
- * The mean turn rate (radians per second) the shuffle clip is played at 1x for. `look` turns
- * at `2 * arc / duration` initially and eases to nothing, so the mean is half of that.
+ * The mean turn rate (rad/s) the shuffle clip is played at 1x for. `duration` floors at `arc / π`,
+ * so `arc / duration` never exceeds π — at π the clip never runs FASTER than its own pace
  */
-const lookShuffleRate = Math.PI / 2;
+const lookShuffleRate = Math.PI;
 const minLookShuffleScale = 0.4;
-const maxLookShuffleScale = 3;
+const maxLookShuffleScale = 1;
