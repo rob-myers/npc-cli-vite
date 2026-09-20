@@ -1,6 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
+import { geomService } from "@npc-cli/util/geom-service";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
 import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
@@ -743,7 +744,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           if (cameBack === false && Math.abs(turned) > canonicalSnapArm) {
             // at least one point, else however many quarters were actually turned
             const points = Math.max(1, Math.round(Math.abs(turned) / halfPi));
-            state.canonicalTheta = normalizeAngle(state.canonicalTheta + Math.sign(turned) * points * halfPi);
+            state.canonicalTheta = geomService.normalizeRadians(
+              state.canonicalTheta + Math.sign(turned) * points * halfPi,
+            );
           }
         }
 
@@ -2008,8 +2011,7 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const detentSettleUntil = 0.002;
 
 const halfPi = Math.PI / 2;
-const normalizeAngle = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
-const nearestCompass = (theta: number) => normalizeAngle(Math.round(theta / halfPi) * halfPi);
+const nearestCompass = (theta: number) => geomService.normalizeRadians(Math.round(theta / halfPi) * halfPi);
 /** The normal of an obstacle's top, for a pick that landed on it without hitting a face */
 const up = new THREE.Vector3(0, 1, 0);
 

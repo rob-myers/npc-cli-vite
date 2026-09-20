@@ -273,6 +273,11 @@ class GeomService {
     return turned > 180 ? turned - 360 : turned;
   }
 
+  /** Radians in `[-π, π]` — the sibling of @see {normalizeDegrees}, whose sign hazard it lacks */
+  normalizeRadians(radians: number) {
+    return Math.atan2(Math.sin(radians), Math.cos(radians));
+  }
+
   /**
    * https://github.com/davidfig/intersects/blob/master/polygon-point.js
    * polygon-point collision

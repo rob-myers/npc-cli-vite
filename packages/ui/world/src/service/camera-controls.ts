@@ -1137,8 +1137,5 @@ const zoomRadiusEpsilon = 1e-4;
 
 const twoPI = 2 * Math.PI;
 
-function _normalizeAngle(a: number) {
-  return a - Math.round(a / twoPI) * twoPI;
-}
 const tempVector3One = new THREE.Vector3();
 const tempVector3Two = new THREE.Vector3();
