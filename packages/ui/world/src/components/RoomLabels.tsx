@@ -91,6 +91,13 @@ export default function RoomLabels() {
         instAttr.needsUpdate = true;
         slotAttr.needsUpdate = true;
       },
+      redraw() {
+        // decor carries the labels AND the rooms they stand in, so there is nothing to show before it
+        if (w.decor.ready === false) return;
+        state.draw();
+        state.position();
+        w.update();
+      },
     }),
     { reset: { res: false } },
   );
@@ -124,12 +131,11 @@ export default function RoomLabels() {
   }, [w.view.fadeRoomsFx.uid, w.texRoomLabel.hash]);
 
   useEffect(() => {
-    // decor carries the labels AND the rooms they stand in, so there is nothing to show before it
-    if (w.decor.ready === false) return;
-    state.draw();
-    state.position();
-    w.update();
-  }, [w.decor.ready, w.gmsHash, w.hash]);
+    // every rebuild renames the rooms, and `ready` need not have toggled across one
+    state.redraw(); // decor may already be built, e.g. mounting after it, or on HMR
+    const sub = w.events.subscribe({ next: (e) => e.key === "decor-ready" && state.redraw() });
+    return () => sub.unsubscribe();
+  }, [w.gmsHash, w.hash]);
 
   return <primitive object={state.res.mesh} />;
 }
@@ -146,6 +152,8 @@ export type State = {
   draw(): void;
   /** Put a billboard at every labelled decor point */
   position(): void;
+  /** Draw and place the labels, once decor is built */
+  redraw(): void;
 };
 
 function createRoomLabelResources() {

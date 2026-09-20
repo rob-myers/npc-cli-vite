@@ -45,6 +45,7 @@ export default function Decor() {
   const state = useStateRef(
     (): State => ({
       byKey: {},
+      buildId: 0,
       byRoom: [],
       grid: {},
       lastHmr: 0,
@@ -618,6 +619,7 @@ export default function Decor() {
 
       if (!w.sheets) return null;
       w.setNextPending({ decor: true });
+      const buildId = ++state.buildId;
 
       // 1. load sheet images ⏳
       const images = await w.loadDecorImages();
@@ -988,6 +990,10 @@ export default function Decor() {
         ) as THREE.Node<"vec4">,
       );
 
+      // a run the map change overtook must not claim readiness: its `byKey` predates the new map,
+      // and every dependant redraws off `ready` alone
+      if (buildId !== state.buildId) return null;
+
       state.ready = true;
       w.door?.syncLockTints();
       w.events.next({ key: "decor-ready" });
@@ -1057,6 +1063,8 @@ export default function Decor() {
 
 export type State = {
   byKey: Record<string, Geomorph.Decor>;
+  /** Which rebuild is the current one — a superseded run bails rather than claiming `ready` */
+  buildId: number;
   byRoom: (Geomorph.RoomDecor | undefined)[][];
   grid: Geomorph.DecorGrid;
   lastHmr: number;
