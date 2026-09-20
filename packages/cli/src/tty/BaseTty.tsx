@@ -138,6 +138,7 @@ export const BaseTty = React.forwardRef<State, Props>(function BaseTty(props: Pr
   }, [themeName, state.xterm]);
 
   useBeforeUnloadOrVisibilityChange(() => {
+    if (sessionApi.getSession(props.sessionKey) === undefined) return; // hmr fix
     sessionApi.persistHistory(props.sessionKey);
     sessionApi.persistHome(props.sessionKey);
     sessionApi.persistShared();

@@ -78,8 +78,11 @@
 
 ### Bugs 🚧
 
-- BUG on save shell.ts terminal profile does not run
-- BUG npc animation out of sync after save npc.ts (?)
+- ✅ BUG on save shell.ts terminal profile does not run
+  - Cannot destructure property 'ttyShell' of 'sessionApi.getSession(...)' as it is undefined.
+    - Refresh Jsh works when caught by error boundary
+  - now only restarts
+- 🚧 BUG npc animation out of sync after save npc.ts (?)
 - BUG on collapse/expand should persist pane dimensions
 - BUG need two ctrl-c for while loop walk?
 - ❌ BUG saw auto door close with nearby npc

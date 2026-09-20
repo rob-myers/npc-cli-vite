@@ -321,9 +321,16 @@ export const sessionApi = {
     delete useSession.getState().device[deviceKey];
   },
   removeProcess(pid: number, sessionKey: string) {
-    const processes = useSession.getState().session[sessionKey].process;
-    killProcess(processes[pid]);
-    delete processes[pid];
+    const processLookup = sessionApi.getSession(sessionKey)?.process;
+    if (processLookup === undefined) {
+      return; // an hmr can drop the session
+    }
+    const process = processLookup?.[pid];
+    if (process === undefined) {
+      return;
+    }
+    killProcess(process);
+    delete processLookup[pid];
   },
   removeSession(sessionKey: string) {
     const session = sessionApi.getSession(sessionKey);
