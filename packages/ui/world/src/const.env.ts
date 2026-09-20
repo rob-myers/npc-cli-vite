@@ -120,14 +120,6 @@ export const canonicalFlattenFrom = 0.4;
  * only takes over close to the outer one
  */
 export const canonicalDialFrom = isTouchDevice() ? 0.85 : canonicalFlattenFrom;
-/** Birdseye polar — just off `0`, which sits exactly on the orbit pole */
-export const canonicalBirdseyePolar = 0.01;
-/**
- * The least a zoomed-out peek may tilt up to — see `WorldView`'s `shapeCanonicalPolar`. The
- * close-in tilt is its ceiling when steeper, but that is remembered from wherever the camera
- * last was, birdseye included, which would leave the peek nowhere to go
- */
-export const canonicalPeekPolar = (55 * Math.PI) / 180;
 /** `canonical` azimuth is a detented compass dial: turn past this to advance to the next point */
 export const canonicalSnapArm = (10 * Math.PI) / 180;
 /**
