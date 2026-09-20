@@ -21,6 +21,7 @@ export class QueryClientApi {
           gcTime: Infinity,
           staleTime: import.meta.env.PROD ? Infinity : undefined,
         },
+        mutations: { networkMode: import.meta.env.DEV ? "always" : undefined },
       },
       queryCache: new QueryCache({
         // Always log query errors
