@@ -921,18 +921,14 @@ function MenuRow({
 /** The two lights the slider below switches between: the whole world's, and the npcs' own */
 const lights = {
   world: { icon: SunIcon, weight: "bold", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness },
-  // a SOLID figure, and not the circled one the npcs menu uses: at 16px a thin stroke inside a
-  // ring is unreadable against the pie behind it, and reading as another control did not help
+  // a SOLID figure: at 16px a thin stroke inside a ring is lost against the pie behind it
   npc: { icon: PersonSimpleIcon, weight: "fill", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness },
 } as const;
 
 /** How long the icon must be held to restore a light's default */
 const lightResetHoldMs = 500;
 
-/**
- * ONE slider for both, the icon saying which and switching on a click — they are the same control
- * twice over, and the row has no width for a second. Holding it restores that light's default
- */
+/** ONE slider for both, the icon saying which and switching on a click; a hold resets that one */
 function LightSlider({ touch }: { touch: boolean }) {
   const w = useContext(WorldContext);
   const store = getWorldStore(w.key);
@@ -943,7 +939,7 @@ function LightSlider({ touch }: { touch: boolean }) {
   function apply(next: number) {
     if (key === "npc") {
       w.npcBrightness = next;
-      w.npc?.setBrightness(next); // a uniform, unlike the world's css filter — and absent until the npcs are
+      w.npc?.setBrightness(next); // a uniform, unlike the world's css filter; absent until they are
       store.patch({ npcBrightness: next });
     } else {
       w.brightness = next;

@@ -49,7 +49,7 @@ export function createPlayerLight(): PlayerLight {
    * none of them multiplies a constant by a uniform per fragment
    */
   const unlitAmount = uniform(0);
-  /** Whether the light is on at all — what `unlitAmount` folds in and a caller taking an AMOUNT cannot read back out */
+  /** Whether the light is on — `unlitAmount` folds it in, a caller taking an AMOUNT cannot */
   const strength = uniform(0);
   /**
    * That tint on its way between modes. On the CPU, since it ends in a uniform either way and
@@ -265,17 +265,13 @@ export function createPlayerLight(): PlayerLight {
   }
 
   /**
-   * The same for a FIGURE, whose normal is per fragment and points any which way, so a real N·L
-   * rather than one flattened into XZ — which would read the top of a shoulder as a flank seen
-   * edge-on. The lamp hangs `bodyLightAhead` in FRONT of them, since whoever stands on the light
-   * has no bearing from it and the player always does; ahead by `facing`, which shapes the cone
-   * too, so it reads as one they carry and their own back falls away from it
+   * A FIGURE's share, by a real N·L off a lamp hung ahead of the player along `facing`: whoever
+   * stands on the light has no bearing from it, and the player always does
    */
   function facingBody(normalWorld: THREE.Node<"vec3">) {
     const lampXZ = origin.add(facing.mul(bodyLightAhead));
     const toLight = vec3(lampXZ.x, float(bodyLightY), lampXZ.y).sub(positionWorld);
-    // WRAPPED round them — half Lambert — rather than cut at edge-on as a wall's face is: a figure
-    // is curved, and the hard terminator `backSoft` gives a flat one runs as a seam down their side
+    // half Lambert: a figure is curved, and `backSoft`'s terminator seams down their flank
     const towards = normalWorld.normalize().dot(toLight.normalize());
     return towards.mul(0.5).add(0.5);
   }
@@ -506,10 +502,8 @@ export type PlayerLight = {
   /** The same, for a material whose colour carries alpha — which is left alone */
   applyLightRgba(color: THREE.Node<"vec4">, outwardXZ?: null | THREE.Node<"vec2">): THREE.Node<"vec4">;
   /**
-   * How much light a FIGURE takes — an npc, the player included: the polygon, the cone, and a real
-   * N·L off a lamp carried in front of the player. An AMOUNT, `0` to `1`, for a material adding up
-   * its own exposure rather than taking a tint capped by `unlitTint` — see `NPCs`. `1` with the
-   * light off, so an npc in a world without one is simply lit
+   * How much light a FIGURE takes, `0` to `1` — for a material adding up its own exposure rather
+   * than taking a tint `unlitTint` caps (see `NPCs`). `1` with the light off
    * @param normalWorld their world normal, which need not be unit
    */
   litBody(normalWorld: THREE.Node<"vec3">): THREE.Node<"float">;
@@ -582,10 +576,7 @@ const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
 const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
 /** The cosine either side of edge-on a face turning away from the light is softened over */
 const backSoft = 0.15;
-/**
- * Where a figure's lamp hangs relative to the player — see `facingBody`. Head height, so it is
- * their FAR side that darkens rather than the crown the camera looks down on
- */
+/** Where a figure's lamp hangs on the player — head height, so the FAR side darkens, not the crown */
 const bodyLightY = npcDims.height;
 const bodyLightAhead = 0.5;
 /**

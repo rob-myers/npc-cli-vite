@@ -86,7 +86,6 @@ export class NpcAnimation {
     if (f.delta !== 0) {
       const step = colorScale.value + 0.5 * f.delta * delta;
       const next = f.delta < 0 ? Math.max(f.target, step) : Math.min(f.target, step);
-      this.npc.labelVisible.value = next >= 1 ? 1 : 0;
       colorScale.value = next;
       if (next === f.target) {
         f.delta = 0;

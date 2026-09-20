@@ -130,7 +130,6 @@ export default function NPCs() {
         // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
         const pickIdUniform = uniform(pickId);
         const colorScale = uniform(1);
-        const labelVisible = uniform(1, "float");
         const npcLit = uniform(0);
         const roomSlot = uniform(alwaysShownSlot, "float");
 
@@ -166,13 +165,10 @@ export default function NPCs() {
         const fold = w.view.foldNode;
 
         const toEye = cameraPosition.sub(positionWorld).normalize();
-        // only the rim is shaped by where the CAMERA stands: `N·V` is near 1 over everything it
-        // can see, by definition, so as a shade on the skin it only ever darkened a silhouette
+        // the rim alone: `N·V` is near 1 over all the camera sees, so on skin it shaded a silhouette
         const facing = normalWorld.dot(toEye).clamp(0, 1);
 
-        // Their whole exposure, ADDED up: what they keep out of the player's light, that light on
-        // top of it, and more again whilst lit. `oneMinus` gives the light whatever the ambient
-        // leaves, so standing full in it is exactly `1` whichever mode we are in
+        // ambient + the player's light + more whilst lit, the light taking what the ambient leaves
         const ambientNow = mix(float(ambient), float(ambientInSight), w.view.fadeRoomsFx.sightNode);
         const exposure = ambientNow
           .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
@@ -202,8 +198,8 @@ export default function NPCs() {
         );
 
         const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(pickIdUniform);
-        // a label is unlit, so fading the body would leave it hanging there — it goes first
-        const labelColor = vec4(labelTex.rgb, labelTex.a.mul(labelVisible).mul(fold));
+        // fades WITH the body: unlit, a cut label hung over a half-there figure
+        const labelColor = vec4(labelTex.rgb, labelTex.a.mul(colorScale).mul(fold));
 
         // Output node: encode NPC pick ID for body; suppress label during picking
         const isPickMode = w.view.objectPick.notEqual(0);
@@ -267,7 +263,6 @@ export default function NPCs() {
 
         return {
           colorScale,
-          labelVisible,
           labelYShiftUniform: labelYShift,
           maskMrt,
           npcLit,
@@ -937,8 +932,7 @@ export default function NPCs() {
 
   useEffect(
     () => void (import.meta.env.DEV && state.devHotReload()),
-    // an hmr of `const.npc` gives a NEW config object, and the materials bake its numbers in —
-    // without it here, editing the npc tuning changes nothing until the page is reloaded
+    // `const.npc`'s hmr gives a NEW object: without it the materials keep their baked numbers
     [queryData?.gltf, w.view.playerLight.uid, w.view.fadeRoomsFx.uid, npcMaterialConfig],
   );
 
@@ -986,7 +980,6 @@ export type State = {
   ): Pick<
     NpcInit,
     | "colorScale"
-    | "labelVisible"
     | "labelYShiftUniform"
     | "maskMrt"
     | "npcLit"

@@ -52,7 +52,6 @@ export class Npc {
   skinnedMesh: THREE.SkinnedMesh;
 
   colorScale: THREE.UniformNode<"float", number>;
-  labelVisible!: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
@@ -146,7 +145,6 @@ export class Npc {
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
-    this.labelVisible = init.labelVisible;
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
     this.roomSlot = init.roomSlot;
@@ -492,7 +490,6 @@ export type NpcInit = {
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
-  labelVisible: THREE.UniformNode<"float", number>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
