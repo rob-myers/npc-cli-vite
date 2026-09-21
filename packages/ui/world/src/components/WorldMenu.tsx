@@ -255,6 +255,8 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
+      case "Routes":
+        return w.debug?.routesShown ?? false;
       default:
         return false;
     }
@@ -342,6 +344,11 @@ export function WorldMenu() {
       case "Decor Points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
         w.view.forceUpdate();
+        break;
+      }
+      case "Routes": {
+        w.debug?.set({ routesShown: !w.debug.routesShown });
+        w.events.next({ key: "path-changed", name: null }); // jsh draws them — see `route.ts`
         break;
       }
     }
@@ -1241,6 +1248,7 @@ const debugItems = [
   "Pick Doors",
   "Door Normals",
   "Decor Points",
+  "Routes",
   "NavMesh",
 ] as const;
 

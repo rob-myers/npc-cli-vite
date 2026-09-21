@@ -470,6 +470,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
             break;
+          case "path-changed":
+            break;
           default:
             throw new ExhaustiveError(e);
         }
@@ -600,6 +602,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "speech":
+          case "stopped-moving":
             break;
           default:
             throw new ExhaustiveError(e);
@@ -608,7 +611,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
-          decor: Object.values(w.decor.runtime.defByKey),
+          decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
         });
       },
       persistNpcs() {

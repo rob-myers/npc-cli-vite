@@ -61,7 +61,7 @@
   - ✅ final few before switch to blog
   - ✅ current -> sections
 
-- rewrite README.md
+- 🚧 rewrite README.md
 
 ## HMR
 
@@ -75,8 +75,24 @@
 
 ## MapEdit
 
-- 🚧 extend existing symbols with missing obstacles
+- 🚧 extend existing symbols
+- 🚧 finish geomorph 101
+- 🚧 finish geomorph 302
 - BUG MapEdit drafts fighting: with 2 instances open for same file
+
+## NavPath
+
+- 🚧 route commands (jsh) `route_add` `route_rm` `route_init`
+  - ✅ stored in `/shared/map/{mapKey}/path` alias `/shared/path`
+  - ✅ `route_add` creates dynamic decor points as it builds
+    - e.g. `pick 3 | route_add demo guard`
+    - edges are decor too i.e. degenerate rects
+    - omitted from dynamic decor persist, use `route_init` instead
+    - cleans up on kill
+  - ✅ debug option to show possibly partial routes
+  - 🚧 debug shows RouteStep label with value kind above nodes
+  - 🚧 can click route nodes (decor points) to toggle rich ui Html3d
+- new ui packages/ui/nav-path i.e. NavPath
 
 ## Site
 

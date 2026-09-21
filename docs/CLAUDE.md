@@ -85,7 +85,9 @@ Which npcs are parked — and the wall segment each stands against — is jsh st
 
 ## jsh commands
 
-Exports of `packages/cli/src/jsh/world/{core,demo,pred}.ts` become shell commands, and hot-reload. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+Exports of `packages/cli/src/jsh/world/{core,demo,debug,pred,route}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+
+**Routes** (`route.ts`) are jsh state too: `/shared/map/{mapKey}/path`, aliased `/shared/path`, holds named routes — tracks of steps by role, bound to npcs when run (`route patrol guard:rob-0 medic:kate`). A `move`/`do` step is a waypoint and the steps after it are done there, which is what makes a track reversible. Tracks sync only through steps: a `sync` barrier is symmetric; `signal`/`await` are one-way. `route_add` builds one from picks.
 
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
