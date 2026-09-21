@@ -559,6 +559,7 @@
             "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
+            "rel": "sees:window",
             "label": "office"
           }
         },
@@ -569,6 +570,7 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "briefing",
+            "rel": "sees:window",
             "label": "stateroom"
           }
         }
@@ -15413,6 +15415,7 @@
             "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
+            "rel": "sees:window#ur9qcn",
             "label": "office"
           }
         },
@@ -15423,6 +15426,7 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "briefing",
+            "rel": "sees:window#ur9qcn",
             "label": "stateroom"
           }
         }
@@ -21233,6 +21237,7 @@
             "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
+            "rel": "sees:window#xdt8wn",
             "label": "office",
             "det": 1
           }
@@ -21251,6 +21256,7 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "briefing",
+            "rel": "sees:window#xdt8wn",
             "label": "stateroom",
             "det": 1
           }
@@ -41325,6 +41331,7 @@
               "manual": true,
               "slide": [0, -1],
               "backLabel": "briefing",
+              "rel": "sees:window#xdt8wn",
               "label": "office",
               "det": 1
             }
@@ -41347,6 +41354,7 @@
               "door": true,
               "slide": [0, 1],
               "backLabel": "briefing",
+              "rel": "sees:window#xdt8wn",
               "label": "stateroom",
               "det": 1
             }
