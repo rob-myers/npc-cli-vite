@@ -11,13 +11,14 @@ import { useUpdate } from "./use-update.js";
  * - On HMR it will update these properties "suitably", relative to options.
  *
  * 🔔 does not support getters or setters
+ * 🔔 `State` may not name `set`, `update` or `ref`: the hook's own overwrite them
  *
  * @template {Record<string, any>} State
- * @param {() => State} initializer Should be side-effect free.
+ * @param {() => State & Record<Extract<keyof State, ReservedKey>, never>} initializer Should be side-effect free.
  * @param {Options<State>} [opts]
  */
 export function useStateRef(initializer, opts = {}) {
-  const [state] = /** @type {[UseStateRef<State>, any]} */ (React.useState(initializer));
+  const [state] = /** @type {[UseStateRef<State>, any]} */ (/** @type {unknown} */ (React.useState(initializer)));
   const update = useUpdate();
 
   React.useMemo(() => {
@@ -92,6 +93,9 @@ export function useStateRef(initializer, opts = {}) {
  * @property {Partial<Record<keyof State, boolean>>} [reset] Reset field(s) on HMR?
  * @property {any[]} [deps]
  */
+
+/** Keys the hook itself provides — a `State` naming one would be clobbered */
+/** @typedef {"set" | "update" | "ref" | "_prevFn"} ReservedKey */
 
 /**
  * @template {Record<string, any>} State
