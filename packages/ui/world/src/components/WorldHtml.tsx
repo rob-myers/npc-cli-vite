@@ -20,12 +20,19 @@ export default function WorldHtml() {
 
       show(key, at, node, opts) {
         const prev = state.byKey.get(key);
-        const object = prev?.tracked.object ?? new THREE.Object3D();
-        object.position.set(at.x, at.y3d ?? 0, at.y);
-        object.updateMatrixWorld();
+        let tracked: TrackedObject3D;
+        if ("object" in at) {
+          tracked = at; // follows it e.g. an npc
+        } else {
+          const object = prev?.tracked.object ?? new THREE.Object3D();
+          object.position.set(at.x, at.y3d ?? 0, at.y);
+          object.updateMatrixWorld();
+          tracked = prev?.tracked ?? { object, offset: zero };
+        }
         state.byKey.set(key, {
-          tracked: prev?.tracked ?? { object, offset: zero },
+          tracked,
           node,
+          visible: prev?.visible ?? true,
           onHide: opts?.onHide,
           frame: prev?.frame ?? null,
           offset: prev?.offset ?? new THREE.Vector3(),
@@ -52,6 +59,12 @@ export default function WorldHtml() {
       },
       toggle(key, at, node, opts) {
         state.byKey.has(key) ? state.hide(key) : state.show(key, at, node, opts);
+      },
+      setShown(key, shown) {
+        const entry = state.byKey.get(key);
+        if (entry === undefined || entry.visible === shown) return;
+        entry.visible = shown;
+        state.update();
       },
       unlock(key) {
         const entry = state.byKey.get(key);
@@ -140,7 +153,7 @@ export default function WorldHtml() {
   };
 
   return [...state.byKey].map(([key, entry]) => {
-    const { tracked, node, offset, width, unlocked } = entry;
+    const { tracked, node, offset, width, unlocked, visible } = entry;
     return (
       <Html3d
         key={key}
@@ -149,7 +162,7 @@ export default function WorldHtml() {
         position={zeroVec}
         r3f={w.r3f}
         tracked={tracked}
-        visible
+        visible={visible}
       >
         <div
           ref={(el) => void (entry.frame = el)}
@@ -214,10 +227,12 @@ export default function WorldHtml() {
 
 export type State = {
   byKey: Map<string, WorldHtmlEntry>;
-  /** Show `node` at the point, replacing what the key showed */
-  show(key: string, at: WorldHtmlPoint, node: React.ReactNode, opts?: WorldHtmlOpts): void;
+  /** Show `node` at the point, or tracking the object, replacing what the key showed */
+  show(key: string, at: WorldHtmlAnchor, node: React.ReactNode, opts?: WorldHtmlOpts): void;
   hide(...keys: string[]): void;
-  toggle(key: string, at: WorldHtmlPoint, node: React.ReactNode, opts?: WorldHtmlOpts): void;
+  toggle(key: string, at: WorldHtmlAnchor, node: React.ReactNode, opts?: WorldHtmlOpts): void;
+  /** Hidden but kept e.g. whilst its npc fades */
+  setShown(key: string, shown: boolean): void;
   /** Let the content take the pointer, for `unlockMs` */
   unlock(key: string): void;
   /** The lock starts its `unlockMs` over, e.g. after a drag */
@@ -230,12 +245,13 @@ export type State = {
   onResizeStart(key: string, clientX: number): void;
 };
 
-export type WorldHtmlPoint = { x: number; y: number; y3d?: number };
+export type WorldHtmlAnchor = { x: number; y: number; y3d?: number } | TrackedObject3D;
 export type WorldHtmlOpts = { onHide?: () => void };
 
 type WorldHtmlEntry = {
   tracked: TrackedObject3D;
   node: React.ReactNode;
+  visible: boolean;
   onHide?: () => void;
   frame: HTMLDivElement | null;
   offset: THREE.Vector3;

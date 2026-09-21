@@ -149,7 +149,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       r3f: null as any,
       r3fStore: null as any,
 
-      b: null as any,
       bubble: null as any,
       ceil: null as any,
       debug: null as any,
@@ -554,7 +553,6 @@ export type State = {
   texNpcLabel: TexArray;
   texSkin: TexArray;
 
-  b: UseStateRef<import("./NpcBubbles").State>["byKey"];
   bubble: UseStateRef<import("./NpcBubbles").State>;
   ceil: UseStateRef<import("./Ceiling").State>;
   d: UseStateRef<import("./Doors").State>["byKey"];

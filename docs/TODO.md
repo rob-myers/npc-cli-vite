@@ -94,6 +94,7 @@
   - ✅ debug shows RouteStep label with value kind above nodes
   - ✅ can click route nodes (decor points) to toggle rich ui Html3d
   - ✅ refine Html3d UI
+- ✅ NpcBubbles should use `w.html`
 - new ui packages/ui/nav-path i.e. NavPath
 
 ## Site
