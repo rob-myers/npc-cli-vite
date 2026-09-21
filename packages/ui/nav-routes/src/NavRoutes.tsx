@@ -1,4 +1,5 @@
 import { Select } from "@base-ui/react/select";
+import { routes } from "@npc-cli/cli/jsh/world/route";
 import type { WorldState } from "@npc-cli/ui__world";
 import { queryClientApi } from "@npc-cli/ui__world/query-client";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
@@ -7,6 +8,8 @@ import { CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { useContext, useEffect } from "react";
 import { NavMap2d } from "./NavMap2d";
+import { NavRoutesLayer } from "./NavRoutesLayer";
+import { RoutesSidebar } from "./RoutesSidebar";
 import type { NavMapLayer, NavRoutesUiMeta } from "./schema";
 
 /** A 2D top-down editor for nav paths, over a live World — see `docs/nav-routes.md` */
@@ -34,6 +37,15 @@ export default function NavRoutes({ meta }: { meta: NavRoutesUiMeta }) {
       setNpcKeys(npcKeys) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as NavRoutesUiMeta).npcKeys = npcKeys));
       },
+      select(id) {
+        uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as NavRoutesUiMeta).selected = id));
+      },
+      toggleTrack(list, id) {
+        uiStoreApi.setUiMeta(meta.id, (draft) => {
+          const ids = (draft as NavRoutesUiMeta)[list];
+          ids.includes(id) ? ids.splice(ids.indexOf(id), 1) : ids.push(id);
+        });
+      },
       toggleLayer(layer) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           const { show } = draft as NavRoutesUiMeta;
@@ -46,8 +58,14 @@ export default function NavRoutes({ meta }: { meta: NavRoutesUiMeta }) {
 
   useEffect(() => {
     if (w === undefined) return;
-    // what the map is drawn from changes under it
-    const sub = w.events.subscribe({ next: (e) => redrawOn.has(e.key) && state.update() });
+    // a terminal's `route_init` points `/shared/path` at the map too; with none open it falls to us
+    routes.restore(w.mapKey);
+    const sub = w.events.subscribe({
+      next(e) {
+        if (e.key === "map-settled") routes.restore(w.mapKey);
+        if (redrawOn.has(e.key)) state.update(); // what is drawn changes under us
+      },
+    });
     return () => sub.unsubscribe();
   }, [w]);
 
@@ -111,8 +129,21 @@ export default function NavRoutes({ meta }: { meta: NavRoutesUiMeta }) {
         </Select.Root>
       </div>
 
-      <div className="flex-1 min-h-0">
-        <NavMap2d w={w} show={meta.show} npcKeys={meta.npcKeys} />
+      <div className="flex-1 min-h-0 flex">
+        <RoutesSidebar
+          w={w}
+          all={routes.all()}
+          selected={meta.selected}
+          hidden={meta.hidden}
+          locked={meta.locked}
+          onSelect={state.select}
+          onToggle={state.toggleTrack}
+        />
+        <div className="flex-1 min-w-0">
+          <NavMap2d w={w} show={meta.show} npcKeys={meta.npcKeys}>
+            <NavRoutesLayer w={w} all={routes.all()} hidden={meta.hidden} selected={meta.selected} />
+          </NavMap2d>
+        </div>
       </div>
     </div>
   );
@@ -122,6 +153,8 @@ type State = {
   npcOptions: string[];
   onNpcsOpenChange(open: boolean): void;
   setNpcKeys(npcKeys: string[]): void;
+  select(id: string | null): void;
+  toggleTrack(list: "hidden" | "locked", id: string): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
@@ -130,6 +163,7 @@ const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid"];
 /** The events after which the map looks different */
 const redrawOn = new Set<string>([
   "map-settled",
+  "path-changed",
   "nav-updated",
   "decor-ready",
   "door-open",

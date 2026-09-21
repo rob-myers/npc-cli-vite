@@ -1,3 +1,4 @@
+import { npcConfig } from "@npc-cli/ui__world/const.npc";
 import { helper } from "@npc-cli/ui__world/helper";
 import { createElement } from "react";
 import { isPaused } from "./plan.main";
@@ -65,6 +66,14 @@ export const routes = {
   get: (name: string): Route | undefined => slot.get()[name],
   validate: validateRoute,
   reverse: reverseTrack,
+  groupByWaypoint,
+  /** A track's colour by its place in the route, the same in 3D and in the NavRoutes panel */
+  colorOf: (trackIndex: number) => trackColors[trackIndex % trackColors.length],
+  /**
+   * Point `/shared/path` at this map's routes. `route_init` does so for a terminal; the NavRoutes
+   * panel calls it for itself, since it reads and edits routes with none open
+   */
+  restore: restoreRoutes,
   set(w: JshCli.WorldState, name: string, def: Route) {
     const error = validateRoute(def);
     if (error !== null) throw Error(`route ${name}: ${error}`);
@@ -220,9 +229,13 @@ async function runRoute(
         if (grKey !== step.grKey)
           api.writeError(`route: ${role}'s waypoint ${JSON.stringify(step.at)} was in ${step.grKey}, now ${grKey}`);
         const npc = w.npc.get(npcKey);
+        // straight through a point with nothing to do there...
+        const passThrough = next?.kind === "move";
+        // ...and one they are already as near as gliding gets is as good as passed: setting off for
+        // it starts a walk which arrives before the gait has faded in, so stalls, then starts again
+        if (passThrough === true && npc.distanceTo(step.at) <= npcConfig.dist.glide.walk) return;
         npc.last.unreachableResult = null;
-        // straight through a waypoint with nothing to do there
-        await w.npc.move({ npcKey, to: step.at, arrive: next?.kind !== "move" });
+        await w.npc.move({ npcKey, to: step.at, arrive: passThrough === false });
         // a locked door is no error to `move`: it stops them at the door, and says so here
         const blocked = npc.last.unreachableResult as JshCli.NpcUnreachableResult | null;
         if (blocked !== null) throw Error(`${role}: locked door`);
@@ -429,6 +442,11 @@ export function route_rm(ct: JshCli.RunArg, opts: Record<string, boolean> = ct.a
 
 const trackColors = ["gold", "deeppink", "aquamarine", "orange", "violet", "springgreen"];
 const edgeWidth = 0.03;
+const nodeImg = "number-zero";
+/** How much smaller a point is drawn when nothing is done there */
+const passThroughScale = 0.5;
+/** A node icon's width in metres, measured off the first one made */
+let nodeSize = 0;
 /** An open node's ui sits this far up */
 const nodeLift = 0.6;
 
@@ -442,9 +460,7 @@ function drawRoutes(w: JshCli.WorldState) {
   w.labels.remove(...[...w.labels.byKey.keys()].filter(isRoute));
   if (w.debug?.routesShown === true) {
     for (const [name, def] of Object.entries(routes.all())) {
-      Object.entries(def.tracks).forEach(([role, steps], i) =>
-        drawTrack(w, name, role, steps, trackColors[i % trackColors.length]),
-      );
+      Object.entries(def.tracks).forEach(([role, steps], i) => drawTrack(w, name, role, steps, routes.colorOf(i)));
     }
   }
   // an open node follows its step, or goes with it
@@ -478,22 +494,32 @@ function drawTrack(w: JshCli.WorldState, name: string, role: string, steps: Rout
   // coloured through `meta`, which a rebuild of the runtime instances reads back; a tint would be lost
   const meta = { shown: true, noPersist: true, route: name, role, tint: color, color };
   let prev: Geom.VectJson | null = null;
-  for (const group of groupByWaypoint(steps)) {
-    const [stepIndex, step] = group[0] ?? [];
-    const at = step === undefined ? null : waypointOf(w, step);
+  const groups = groupByWaypoint(steps).filter((group) => group.length > 0);
+  for (const [i, group] of groups.entries()) {
+    const [stepIndex, step] = group[0];
+    const at = waypointOf(w, step);
     if (at === null) continue;
     const key = `route:${name}:${role}:${stepIndex}`;
-    w.decor.create({
+    // something is done there, or it is where the track ends: else they pass straight through it
+    const stop = group.length > 1 || step.kind === "do" || i === groups.length - 1;
+    const def = {
       type: "point",
       key,
       x: at.x,
       y: at.y,
-      img: "number-zero",
+      img: nodeImg,
       orient: 0,
       y3d: 0.01,
       meta: { ...meta, stepIndex },
-    });
-    if (w.html.byKey.has(key) === false) w.labels.add(key, labelOf(at, group)); // else its ui is up
+    } as const;
+    // the icon's size in metres is only known once one has been made
+    if (nodeSize === 0) nodeSize = w.decor.create(def).bounds.width;
+    // smaller when passed through: the transform scales the icon from its corner
+    const size = nodeSize * passThroughScale;
+    const transform: Geom.SixTuple = [passThroughScale, 0, 0, passThroughScale, at.x - size / 2, at.y - size / 2];
+    w.decor.create(stop ? def : { ...def, transform });
+    // a pass-through says nothing; a stop's label gives way to its ui whilst that is up
+    if (stop === true && w.html.byKey.has(key) === false) w.labels.add(key, labelOf(at, group));
     if (prev !== null) {
       w.decor.create({
         type: "rect",

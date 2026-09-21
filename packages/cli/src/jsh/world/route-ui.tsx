@@ -1,15 +1,5 @@
-import {
-  ArmchairIcon,
-  BellRingingIcon,
-  ChatCircleTextIcon,
-  DoorOpenIcon,
-  EyeIcon,
-  FootprintsIcon,
-  HandshakeIcon,
-  HourglassIcon,
-  type Icon,
-} from "@phosphor-icons/react";
 import type { RouteStep } from "./route";
+import { routeStepIcon } from "./route-icons";
 
 /** A route node's steps, shown above it once clicked — see `route.ts`. `WorldHtml` places and scales it */
 export function RouteNodeUi({ name, role, steps }: { name: string; role: string; steps: [number, RouteStep][] }) {
@@ -22,7 +12,7 @@ export function RouteNodeUi({ name, role, steps }: { name: string; role: string;
         <span className="ml-auto text-white/40">#{steps[0]?.[0]}</span>
       </div>
       {steps.map(([index, step]) => {
-        const StepIcon = iconOf[step.kind];
+        const StepIcon = routeStepIcon[step.kind];
         return (
           <div key={index} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-white/5 px-4 py-2">
             <StepIcon className="size-9 shrink-0 text-white/80" weight="duotone" />
@@ -44,19 +34,6 @@ export function RouteNodeUi({ name, role, steps }: { name: string; role: string;
     </div>
   );
 }
-
-const iconOf: Record<RouteStep["kind"], Icon> = {
-  move: FootprintsIcon,
-  do: ArmchairIcon,
-  wait: HourglassIcon,
-  look: EyeIcon,
-  open: DoorOpenIcon,
-  close: DoorOpenIcon,
-  say: ChatCircleTextIcon,
-  sync: HandshakeIcon,
-  signal: BellRingingIcon,
-  await: BellRingingIcon,
-};
 
 /** A step's fields as label/value chips */
 function fieldsOf(step: RouteStep): [label: string, value: string][] {

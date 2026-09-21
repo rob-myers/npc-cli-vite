@@ -58,7 +58,9 @@ Every `move` carries the `grKey` of the room it was made in, since an npc is alw
 `{ decorKey }`) is reserved for re-anchoring after map edits; nothing reads it yet.
 
 `routes` is the module's side of the data, an object so that no shell command is made of it:
-`all`, `get`, `set(w, name, def)`, `remove(w, name)`, `validate`, `reverse`. **`set` and `remove` are
+`all`, `get`, `set(w, name, def)`, `remove(w, name)`, `validate`, `reverse`, `groupByWaypoint`,
+`colorOf(trackIndex)` and `restore(mapKey)` — the last for the NavRoutes panel, which has no
+terminal to run `route_init` for it. **`set` and `remove` are
 the only way to change a route**: they validate, and emit `path-changed`, which is what redraws.
 `/shared` is user-editable, so a restore only warns of a broken route and `route` refuses to run it.
 
@@ -107,8 +109,11 @@ them.
 - **A track that fails stops the others** — e.g. `not navigable` — and the command exits non-zero with
   its error. A locked door the npc may not pass counts: `w.npc.move` itself resolves, having stopped
   them at the door, so `route` reads `npc.last.unreachableResult` and throws.
-- Consecutive `move`s glide through: only a waypoint with something to do there, or the last, is
-  arrived at (`arrive`).
+- Consecutive `move`s glide through: only a point with something to do there, or the last, is
+  arrived at (`arrive`). So "stop here" is spelt `wait`, with `ms: 0` for a stop with no pause.
+- A pass-through point the npc is already within gliding distance of (`npcConfig.dist.glide.walk`)
+  is skipped. Setting off for it would arrive before the gait has faded in — which is what `move`
+  waits on — so they would start, stall, and start again.
 - `--reverse` walks every track backwards; `loop: "pingpong"` alternates; `loop: "cycle"` goes round to
   the first waypoint again. A looping route runs until killed.
 - A `sync` counts only the **bound** tracks that use its code, so a route can be run with some roles
@@ -126,7 +131,8 @@ default — decides whether routes are drawn. The world knows nothing of routes:
   `…-edge`. Each role is tinted its own colour. Their `meta` carries `route`, `role`, and
   `stepIndex` (or `edgeTo`), plus `shown` and **`noPersist`**, which `persistDecor` skips — a route is
   redrawn from `/shared/path`, never restored as decor.
-- **Each node has a label** through `w.labels`: the kinds done there, e.g. `move · sync · wait`.
+- **A stop has a label** through `w.labels`: the kinds done there, e.g. `move · sync · wait`. A
+  pass-through point is drawn at half size and says nothing.
 - **Clicking a node** toggles its card through `w.html`. `isDecorRouteNode` recognises the pick by its
   meta; `nodeUi` builds the card from the node's group of steps. Whilst the card is up it stands in
   for the label, which `onHide` puts back. A redraw re-renders open cards whose step survives and
