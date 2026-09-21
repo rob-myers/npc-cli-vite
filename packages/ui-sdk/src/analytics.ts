@@ -6,26 +6,21 @@ type Umami = { track(name: string, data?: EventData): void };
 /** umami's own kill-switch: it tests truthiness, so enabling means REMOVING the key */
 const disabledKey = "umami.disabled";
 const loadedDebounceMs = 3000;
-const exitThrottleMs = 60_000;
 
 type Session = {
-  startedAt: number;
   /** ui ids already measured, so an effect re-run on HMR does not re-record */
   seen: Set<string>;
   pending: { uiKey: string; ms: number }[];
   sentLoaded: boolean;
-  lastExitAt: number;
   timeoutId: undefined | ReturnType<typeof setTimeout>;
   /** events raised before the deferred umami script ran */
   queue: [string, EventData][];
 };
 
 const newSession = (): Session => ({
-  startedAt: Date.now(),
   seen: new Set(),
   pending: [],
   sentLoaded: false,
-  lastExitAt: 0,
   timeoutId: undefined,
   queue: [],
 });
@@ -91,18 +86,4 @@ export function flushUisLoaded(): void {
     data[uiKey] = Math.max(Number(data[uiKey] ?? 0), Math.round(ms / 100) * 100);
   }
   track("uis-loaded", data);
-}
-
-/** Throttled, so a tab left open all day reports its longevity via a rising `seconds` */
-export function trackExitOrHide(reason: "beforeunload" | "visibilitychange", uiKeys: string[]): void {
-  const now = Date.now();
-  if (now - session.lastExitAt < exitThrottleMs) return;
-  session.lastExitAt = now;
-  flushUisLoaded();
-  track("exit-or-hide", {
-    uis: [...uiKeys].sort().join(","),
-    count: uiKeys.length,
-    reason,
-    seconds: Math.round((now - session.startedAt) / 10_000) * 10,
-  });
 }

@@ -1,6 +1,6 @@
 import { useThemeName } from "@npc-cli/theme";
 import { uiRegistry } from "@npc-cli/ui-registry";
-import { trackExitOrHide } from "@npc-cli/ui-sdk/analytics";
+import { flushUisLoaded } from "@npc-cli/ui-sdk/analytics";
 import { getFallbackLayoutApi, type LayoutApi, UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { uiStore, uiStoreApi } from "@npc-cli/ui-sdk/ui.store";
 import { useBeforeUnloadOrVisibilityChange } from "@npc-cli/util";
@@ -83,24 +83,15 @@ function Index() {
 
   useBeforeUnloadOrVisibilityChange(() => persistPanesToUi());
 
-  // deliberately not `useBeforeUnloadOrVisibilityChange`: that also fires on unmount, and does not
-  // say which event fired — `reason` is what separates leaving from merely backgrounding the tab
+  // a visit shorter than the batch's debounce would otherwise report nothing at all; umami posts
+  // with `keepalive`, so a flush on the way out still arrives
   useEffect(() => {
-    const report = (reason: "beforeunload" | "visibilitychange") =>
-      trackExitOrHide(
-        reason,
-        // deduped by id: `getAllUis` yields a sub-ui both standalone and via its parent's `items`
-        [...new Map(uiStoreApi.getAllUis().map(({ meta }) => [meta.id, meta.uiKey])).values()].filter(
-          (uiKey) => uiKey !== "Tabs",
-        ),
-      );
-    const onBeforeUnload = () => report("beforeunload");
-    const onVisibilityChange = () => void (document.visibilityState === "hidden" && report("visibilitychange"));
-    window.addEventListener("beforeunload", onBeforeUnload);
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    const onHide = () => void (document.visibilityState === "hidden" && flushUisLoaded());
+    window.addEventListener("beforeunload", flushUisLoaded);
+    document.addEventListener("visibilitychange", onHide);
     return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("beforeunload", flushUisLoaded);
+      document.removeEventListener("visibilitychange", onHide);
     };
   }, []);
 
