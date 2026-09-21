@@ -11,17 +11,11 @@ export const npcScale = 0.7;
 
 export const npcShadowRadius = npcScale / 2.5;
 
-/** How far clear of a door somebody must stand to be out of the traffic through it */
-export const doorwayClearance = 0.6;
-/** How far out `park` looks for a wall to stand against */
-export const parkQueryRange = 2;
 /** Below this much of a move, `park` turns them on the spot instead */
 export const parkMinMove = 0.02;
 /** How much room `pad` wants round them, from walls and from the parked or padded: 4 x `npcDims.agentRadius` */
 // export const padClearance = 0.72;
 export const padClearance = 0.6;
-/** How far from where they stand `pad` looks for such a spot */
-export const padQueryRange = 3;
 
 /** A crowd agent's acceleration, speed and separation, by what they are doing */
 export const agentConfig = {
