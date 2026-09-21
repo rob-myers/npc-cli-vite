@@ -356,6 +356,12 @@ export function WorldMenu() {
     }
   };
 
+  useEffect(() => {
+    // `w.client` decides whether the never-connected plug shows
+    const sub = w.events.subscribe({ next: (e) => e.key === "net-changed" && state.update() });
+    return () => sub.unsubscribe();
+  }, []);
+
   const pendingKeys = Object.keys(w.pending);
   const toastKeys = useToastKeys(pendingKeys, toastLingerMs);
   // held briefly, else a fast load just flickers the trigger
@@ -364,6 +370,10 @@ export function WorldMenu() {
   // a flash over the look button whenever follow is toggled — by this button, by the row in the
   // debug list, or by `f`. Any of them lands here, since it watches the VALUE
   const followFlash = useChangeCount(w.view.cameraFollow);
+
+  // until a tty has connected, what jsh owns is not on show e.g. routes. A client of another world
+  // says nothing either way: its jsh state is the server's
+  const ttyStatus = w.ttyConnected === true ? "connected" : w.client === false ? "never" : null;
 
   const menuTrigger = (
     <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
@@ -395,7 +405,19 @@ export function WorldMenu() {
         <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
-            <div className={cn("flex justify-end", touch && "max-w-none items-stretch")}>
+            <div className={cn("flex justify-end items-center", touch && "max-w-none items-stretch")}>
+              {ttyStatus !== null && (
+                // `leading-tight` and its own `py`, so it sits well when it wraps to two lines
+                <div
+                  className={cn(
+                    "mr-auto min-w-0 flex items-center gap-1.5 px-2 py-1 text-[10px] leading-tight",
+                    ttyStatus === "connected" ? "text-emerald-400" : "text-amber-400",
+                    touch && "px-3 py-1.5 text-xs self-center",
+                  )}
+                >
+                  <span>{ttyStatus === "connected" ? "tty connected" : "connect tty"}</span>
+                </div>
+              )}
               <LightSlider touch={touch} />
             </div>
             <div
@@ -863,6 +885,8 @@ function MenuShell({
           (event.target as HTMLElement).closest?.("[data-keep-menu-open]") != null
         ) {
           // panning to the player, or pausing, should not close the menu
+        } else if (reason === "outside-press" && w.rootEl?.contains(event.target as Node) === false) {
+          // nor should a press outside the World e.g. typing in a tty beside it
         } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
           state.set({ menuOpen: false });
         }

@@ -2,6 +2,7 @@ import Blog from "@npc-cli/ui__blog";
 import Jobs from "@npc-cli/ui__jobs";
 import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
+import NavRoutes from "@npc-cli/ui__nav-routes";
 import Tabs from "@npc-cli/ui__tabs";
 import Template from "@npc-cli/ui__template";
 import World from "@npc-cli/ui__world";
@@ -17,6 +18,7 @@ export type UiRegistry = {
   Jobs: typeof Jobs;
   Jsh: typeof Jsh;
   MapEdit: typeof MapEdit;
+  NavRoutes: typeof NavRoutes;
   Tabs: typeof Tabs;
   Template: typeof Template;
   World: typeof World;
@@ -28,6 +30,7 @@ export const uiRegistryFactory = (): UiRegistry =>
     Jobs,
     Jsh,
     MapEdit,
+    NavRoutes,
     Tabs,
     Template,
     World,

@@ -67,6 +67,13 @@ the only way to change a route**: they validate, and emit `path-changed`, which 
 `route_init` must run first — the default profile does, after `predicates`. It restores the slot for
 the map and registers the module's world-event listener, keyed `"path"`.
 
+It is also the ONLY thing that puts routes on show. They are jsh state, so it takes a terminal to
+bring them to life: a World with no terminal open draws none, whatever the **Routes** toggle says,
+and they appear the moment one loads. The World says so: its menu reads an amber "connect tty"
+until some session has got through `awaitWorld` — `w.isReady(sessionKey)` returning true sets
+`w.ttyConnected`, for good — and a green "tty connected" after. A client of another World says
+neither: its jsh state is the server's.
+
 ```sh
 # build: points from picks become `move` steps, each in the room it lies in
 pick 3 | route_add patrol guard

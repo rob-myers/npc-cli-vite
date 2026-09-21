@@ -9,6 +9,7 @@ const mirrored: Record<UiRegistryKey, true> = {
   Jobs: true,
   Jsh: true,
   MapEdit: true,
+  NavRoutes: true,
   Tabs: true,
   Template: true,
   World: true,

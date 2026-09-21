@@ -35,6 +35,11 @@
 
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
+- tsconfig project references with declaration output, so World is type-checked once
+  - dependents re-check its sources; TSL types then hit TS2590 depending on file order
+  - workaround: `ui/nav-routes/tsconfig.json` includes `../world/src` first
+- improve hmr (avoid full page reload): packages/util/src/index.ts into individual barrels
+  - e.g. for QueryClientApi
 
 ### Performance
 
@@ -83,7 +88,7 @@
 
 ## NavPath
 
-- 🚧 route commands (jsh) `route_add` `route_rm` `route_init`
+- ✅ route commands (jsh) `route_add` `route_rm` `route_init`
   - ✅ stored in `/shared/map/{mapKey}/path` alias `/shared/path`
   - ✅ `route_add` creates dynamic decor points as it builds
     - e.g. `pick 3 | route_add demo guard`
@@ -95,7 +100,8 @@
   - ✅ can click route nodes (decor points) to toggle rich ui Html3d
   - ✅ refine Html3d UI
 - ✅ NpcBubbles should use `w.html`
-- new ui packages/ui/nav-path i.e. NavPath
+- 🚧 new ui NavRoutes in packages/ui/nav-routes
+- route_add -> route add, route_rm -> route rm
 
 ## Site
 

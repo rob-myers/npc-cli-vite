@@ -102,6 +102,13 @@ See `docs/route-command.md` — the ONLY doc for routes. In short: `/shared/map/
 `routes.set`/`remove`. They are drawn as pickable runtime decor (`meta.noPersist`), with labels via
 `w.labels` and a card per clicked node via `w.html` — two generic hosts, which the npc bubbles use too.
 
+## NavRoutes panel
+
+See `docs/nav-routes.md` — the ONLY doc for the panel. In short: `packages/ui/nav-routes` is a 2D
+top-down editor for nav paths over a live World (`meta.worldKey`, read from the query cache). The map
+is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live doors;
+npcs are shown only when chosen. It edits paths; it does not manage or run behaviours.
+
 ## MapEdit saving
 
 See `docs/map-edit.md` — the ONLY doc for where a saved MapEdit file goes. In short: playground

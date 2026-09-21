@@ -1,0 +1,20 @@
+{
+  "name": "@npc-cli/ui__nav-routes",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  }
+}

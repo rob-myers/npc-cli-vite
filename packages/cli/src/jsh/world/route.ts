@@ -143,7 +143,8 @@ function waypointOf(w: JshCli.WorldState, step: RouteStep): Geom.VectJson | null
 }
 
 /**
- * `route_init` is idempotent and must be invoked before the other `route_*` commands.
+ * `route_init` is idempotent and must be invoked before the other `route_*` commands. It is also
+ * what puts routes on show: a World with no terminal has run it, so draws none
  */
 export function route_init(ct: JshCli.RunArg) {
   restoreRoutes(ct.w.mapKey);
@@ -474,8 +475,8 @@ function labelOf(at: Geom.VectJson, group: [number, RouteStep][]) {
 }
 
 function drawTrack(w: JshCli.WorldState, name: string, role: string, steps: RouteStep[], color: string) {
-  const keys: string[] = [];
-  const meta = { shown: true, noPersist: true, route: name, role };
+  // coloured through `meta`, which a rebuild of the runtime instances reads back; a tint would be lost
+  const meta = { shown: true, noPersist: true, route: name, role, tint: color, color };
   let prev: Geom.VectJson | null = null;
   for (const group of groupByWaypoint(steps)) {
     const [stepIndex, step] = group[0] ?? [];
@@ -493,7 +494,6 @@ function drawTrack(w: JshCli.WorldState, name: string, role: string, steps: Rout
       meta: { ...meta, stepIndex },
     });
     if (w.html.byKey.has(key) === false) w.labels.add(key, labelOf(at, group)); // else its ui is up
-    keys.push(key);
     if (prev !== null) {
       w.decor.create({
         type: "rect",
@@ -505,9 +505,7 @@ function drawTrack(w: JshCli.WorldState, name: string, role: string, steps: Rout
         angle: Math.atan2(at.y - prev.y, at.x - prev.x),
         meta: { ...meta, edgeTo: stepIndex },
       });
-      keys.push(`${key}-edge`);
     }
     prev = at;
   }
-  w.decor.tintDecor(color, ...keys);
 }
