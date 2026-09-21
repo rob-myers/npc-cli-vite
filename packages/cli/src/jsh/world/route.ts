@@ -1,4 +1,7 @@
+import { helper } from "@npc-cli/ui__world/helper";
+import { createElement } from "react";
 import { isPaused } from "./plan.main";
+import { RouteNodeUi } from "./route-ui";
 import { sharedMapSlot } from "./shared.service";
 
 /**
@@ -33,7 +36,28 @@ const slot = sharedMapSlot<Record<string, Route>>("path", () => ({}));
 slot.setHandler(function onWorldEvent(e, w) {
   if (e.key === "map-settled") restoreRoutes(w.mapKey);
   if (e.key === "map-settled" || e.key === "path-changed") drawRoutes(w);
+  // a click on a node shows its steps, or takes them down again
+  if (e.key === "picked" && isDecorRouteNode(e.meta)) {
+    const { route: name, role, stepIndex, decorKey } = e.meta;
+    const ui = nodeUi(w, name, role, stepIndex);
+    if (ui === null) return;
+    // whilst open, the ui stands in for the kind label
+    if (w.html.byKey.has(decorKey) === false) w.labels.remove(decorKey);
+    w.html.toggle(decorKey, ui.at, ui.node, { onHide: () => w.labels.add(decorKey, ui.label) });
+  }
 });
+
+/** What a route node's decor carries — see `drawTrack` — and so a pick on it */
+type RouteNodeMeta = { route: string; role: string; stepIndex: number; decorKey: string };
+
+function isDecorRouteNode(meta: Meta): meta is Meta<RouteNodeMeta> {
+  return (
+    typeof meta.route === "string" &&
+    typeof meta.role === "string" &&
+    typeof meta.stepIndex === "number" &&
+    typeof meta.decorKey === "string"
+  );
+}
 
 /** `/shared/path`'s side — an object, so no shell function is made of it */
 export const routes = {
@@ -79,10 +103,10 @@ function isRouteStep(s: any): s is RouteStep {
   if (typeof s !== "object" || s === null) return false;
   // biome-ignore format: succinct
   switch (s.kind) {
-    case "move": return isVectJson(s.at) && typeof s.grKey === "string";
+    case "move": return helper.isVectJson(s.at) && typeof s.grKey === "string";
     case "do": return typeof s.decorKey === "string";
     case "wait": return typeof s.ms === "number";
-    case "look": return typeof s.at === "string" || isVectJson(s.at);
+    case "look": return typeof s.at === "string" || helper.isVectJson(s.at);
     case "open": case "close": return typeof s.gdKey === "string";
     case "say": return typeof s.words === "string";
     case "sync": case "signal": case "await": return typeof s.code === "string";
@@ -90,16 +114,21 @@ function isRouteStep(s: any): s is RouteStep {
   }
 }
 
-const isVectJson = (p: any): p is Geom.VectJson => typeof p?.x === "number" && typeof p?.y === "number";
-
 /** Waypoints in the opposite order, each keeping the steps done once there */
 function reverseTrack(steps: RouteStep[]): RouteStep[] {
-  const groups: RouteStep[][] = [[]];
-  for (const step of steps) {
-    if (isWaypoint(step)) groups.push([step]);
-    else groups[groups.length - 1].push(step);
+  return groupByWaypoint(steps)
+    .reverse()
+    .flatMap((group) => group.map(([, step]) => step));
+}
+
+/** Each waypoint with the steps done there, indexed — and first, any done before setting off */
+function groupByWaypoint(steps: RouteStep[]): [index: number, step: RouteStep][][] {
+  const groups: [number, RouteStep][][] = [[]];
+  for (const [index, step] of steps.entries()) {
+    if (isWaypoint(step)) groups.push([[index, step]]);
+    else groups[groups.length - 1].push([index, step]);
   }
-  return groups.reverse().flat();
+  return groups;
 }
 
 function isWaypoint(step: RouteStep): step is Extract<RouteStep, { kind: "move" | "do" }> {
@@ -371,7 +400,8 @@ function moveStep(w: JshCli.WorldState, point: JshCli.PointAnyFormat): RouteStep
   if (!w.helper.isPointAnyFormat(point)) throw Error(`expected point: ${JSON.stringify(point)}`);
   const grKey = w.e.findRoomContaining(point)?.grKey;
   if (grKey === undefined) throw Error(`not in a room: ${JSON.stringify(point)}`);
-  return { kind: "move", at: w.helper.parseGroundPoint(point), grKey };
+  const { x, y } = w.helper.parseGroundPoint(point); // sans any pick meta
+  return { kind: "move", at: { x, y }, grKey };
 }
 
 /**
@@ -393,13 +423,17 @@ export function route_rm(ct: JshCli.RunArg, opts: Record<string, boolean> = ct.a
 
 const trackColors = ["gold", "deeppink", "aquamarine", "orange", "violet", "springgreen"];
 const edgeWidth = 0.03;
+/** An open node's ui sits this far up */
+const nodeLift = 0.6;
 
 /**
  * Every route's waypoints and the edges between them as runtime decor, a colour per role — so
  * they are pickable, and `meta` says which step. Shown by the "Routes" debug toggle
  */
 function drawRoutes(w: JshCli.WorldState) {
-  w.decor.remove(...Object.keys(w.decor.runtime.byKey).filter((key) => key.startsWith("route:")));
+  const isRoute = (key: string) => key.startsWith("route:");
+  w.decor.remove(...Object.keys(w.decor.runtime.byKey).filter(isRoute));
+  w.labels.remove(...[...w.labels.byKey.keys()].filter(isRoute));
   if (w.debug?.routesShown === true) {
     for (const [name, def] of Object.entries(routes.all())) {
       Object.entries(def.tracks).forEach(([role, steps], i) =>
@@ -407,15 +441,40 @@ function drawRoutes(w: JshCli.WorldState) {
       );
     }
   }
+  // an open node follows its step, or goes with it
+  for (const key of [...w.html.byKey.keys()].filter(isRoute)) {
+    const meta = w.decor.runtime.byKey[key]?.meta;
+    const ui = meta !== undefined && isDecorRouteNode(meta) ? nodeUi(w, meta.route, meta.role, meta.stepIndex) : null;
+    ui === null ? w.html.hide(key) : w.html.show(key, ui.at, ui.node, { onHide: () => w.labels.add(key, ui.label) });
+  }
   w.view.forceUpdate();
+}
+
+/** What a route node shows once clicked: its waypoint and the steps done there, and the label it stands in for */
+function nodeUi(w: JshCli.WorldState, name: string, role: string, stepIndex: number) {
+  const steps = routes.get(name)?.tracks[role];
+  const group = steps === undefined ? undefined : groupByWaypoint(steps).find((g) => g[0]?.[0] === stepIndex);
+  const at = group === undefined ? null : waypointOf(w, group[0][1]);
+  if (group === undefined || at === null) return null;
+  return {
+    at: { ...at, y3d: nodeLift },
+    node: createElement(RouteNodeUi, { name, role, steps: group }),
+    label: labelOf(at, group),
+  };
+}
+
+/** A node's kind label: what is done there */
+function labelOf(at: Geom.VectJson, group: [number, RouteStep][]) {
+  return { x: at.x, y: at.y, text: group.map(([, s]) => s.kind).join(" · ") };
 }
 
 function drawTrack(w: JshCli.WorldState, name: string, role: string, steps: RouteStep[], color: string) {
   const keys: string[] = [];
   const meta = { shown: true, noPersist: true, route: name, role };
   let prev: Geom.VectJson | null = null;
-  for (const [stepIndex, step] of steps.entries()) {
-    const at = waypointOf(w, step);
+  for (const group of groupByWaypoint(steps)) {
+    const [stepIndex, step] = group[0] ?? [];
+    const at = step === undefined ? null : waypointOf(w, step);
     if (at === null) continue;
     const key = `route:${name}:${role}:${stepIndex}`;
     w.decor.create({
@@ -428,6 +487,7 @@ function drawTrack(w: JshCli.WorldState, name: string, role: string, steps: Rout
       y3d: 0.01,
       meta: { ...meta, stepIndex },
     });
+    if (w.html.byKey.has(key) === false) w.labels.add(key, labelOf(at, group)); // else its ui is up
     keys.push(key);
     if (prev !== null) {
       w.decor.create({

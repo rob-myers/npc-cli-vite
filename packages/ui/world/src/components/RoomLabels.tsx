@@ -1,9 +1,10 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, mrt, select, texture, uv, vec4 } from "three/tsl";
-import * as THREE from "three/webgpu";
+import { cameraProjectionMatrix, cameraViewMatrix, float, mrt, select, texture, uv, vec4 } from "three/tsl";
+import type * as THREE from "three/webgpu";
 import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabelHeight, roomLabelWidth, wallHeight } from "../const.env";
 import { helper } from "../service/helper";
+import { createLabelResources, drawLabel } from "../service/labels";
 import { slotOf } from "../service/room-slots";
 import type { SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
@@ -18,13 +19,11 @@ export default function RoomLabels() {
 
   const state = useStateRef(
     (): State => ({
-      res: createRoomLabelResources(),
+      res: createLabelResources(),
       layerOfLabel: {},
       maskMrt: null,
 
       draw() {
-        const { ct } = w.texRoomLabel;
-        const { width, height } = ct.canvas;
         state.layerOfLabel = {};
         let layer = 0;
 
@@ -34,31 +33,7 @@ export default function RoomLabels() {
           if (state.layerOfLabel[label] !== undefined) continue;
           if (layer >= MAX_ROOM_LABELS) break;
 
-          ct.clearRect(0, 0, width, height);
-          ct.textAlign = "center";
-          ct.textBaseline = "alphabetic";
-          ct.letterSpacing = "0.25em";
-          let fontSize = roomLabelFontSize;
-          ct.font = `300 ${fontSize}px sans-serif`;
-          let m = ct.measureText(label);
-          // the box the glyphs occupy, NOT the advance width: `letterSpacing` leaves a trailing
-          // gap, and measuring on that sits the words left of centre
-          const boxWidth = () => m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
-          if (boxWidth() > width - roomLabelPadding * 2) {
-            fontSize *= (width - roomLabelPadding * 2) / boxWidth(); // shrink to fit, not clip
-            ct.font = `300 ${fontSize}px sans-serif`;
-            m = ct.measureText(label);
-          }
-
-          // centred on the glyphs, both ways — `middle` centres the em box, which sits off the
-          // optical centre of a word with no descenders
-          ct.fillStyle = roomLabelInk;
-          ct.fillText(
-            label,
-            width / 2 - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2,
-            height / 2 + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
-          );
-
+          drawLabel(w.texRoomLabel.ct, label);
           w.texRoomLabel.updateIndex(layer);
           state.layerOfLabel[label] = layer++;
         }
@@ -106,10 +81,9 @@ export default function RoomLabels() {
 
   useMemo(() => {
     // captures `fade-rooms`' nodes, so it is rebuilt whenever that service is
-    const { mat, inst, slot } = state.res;
+    const { mat, inst, slot, sign } = state.res;
     const fade = w.view.fadeRoomsFx.getVisiblity(slot).max(w.view.fadeRoomsFx.sightNode.oneMinus());
 
-    const sign = attribute<"vec2">("billboardOffset", "vec2");
     // billboarded in VIEW space: the quad is built about the point after the camera transform, so
     // it always faces us — flat to the floor from birdseye, upright as the view tilts in
     const viewCentre = cameraViewMatrix.mul(vec4(inst.x, inst.y, inst.z, 1));
@@ -141,7 +115,7 @@ export default function RoomLabels() {
 }
 
 export type State = {
-  res: ReturnType<typeof createRoomLabelResources>;
+  res: ReturnType<typeof createLabelResources>;
   /** Which texture layer holds each distinct label */
   layerOfLabel: Record<string, number>;
   /** Marks the label a caption the npc border may not paint over, whilst those borders run */
@@ -156,63 +130,5 @@ export type State = {
   redraw(): void;
 };
 
-function createRoomLabelResources() {
-  const geo = new THREE.InstancedBufferGeometry();
-  // every vertex sits at the instance's own point; `billboardOffset` spreads them in view space
-  geo.setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 3));
-  // biome-ignore format: aligned to the canvas the label is drawn on
-  geo.setAttribute("uv", new THREE.Float32BufferAttribute([
-    0, 1,
-    1, 1,
-    1, 0,
-    0, 0,
-  ], 2));
-  // biome-ignore format: the quad's corners, in halves of its width and height
-  geo.setAttribute("billboardOffset", new THREE.Float32BufferAttribute([
-    -1, -1,
-     1, -1,
-     1,  1,
-    -1,  1,
-  ], 2));
-  geo.setIndex([0, 1, 2, 0, 2, 3]);
-
-  // per instance: world `xyz`, then which layer of the texture array says its name
-  const instData = new Float32Array(MAX_ROOM_LABEL_INSTANCES * 4);
-  const instAttr = new THREE.InstancedBufferAttribute(instData, 4);
-  geo.setAttribute("labelInstance", instAttr);
-  // and the slot of the room it names, so it fades with it
-  const slotData = new Float32Array(MAX_ROOM_LABEL_INSTANCES);
-  const slotAttr = new THREE.InstancedBufferAttribute(slotData, 1);
-  geo.setAttribute("labelSlot", slotAttr);
-  geo.instanceCount = 0;
-
-  const mat = new THREE.MeshBasicNodeMaterial({
-    transparent: true,
-    depthWrite: false,
-    depthTest: false, // over the world: an obstacle must not swallow the name of a room
-    side: THREE.DoubleSide,
-    opacity: 1,
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.frustumCulled = false; // the quads are built in the shader, so their bounds mean nothing
-  mesh.renderOrder = 5;
-
-  return {
-    geo,
-    mat,
-    mesh,
-    instData,
-    instAttr,
-    slotData,
-    slotAttr,
-    inst: attribute<"vec4">("labelInstance", "vec4"),
-    slot: attribute<"float">("labelSlot", "float"),
-  };
-}
-
-const roomLabelInk = "rgba(226, 236, 248, 0.92)";
-const roomLabelFontSize = 28;
-/** Kept clear either side, in texture pixels — a longer name shrinks rather than reaching it */
-const roomLabelPadding = 24;
 /** Off the floor, so it is not in the floor's own plane */
 const roomLabelLift = wallHeight;

@@ -1,7 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
-import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, select, smoothstep, texture, uv, vec2 } from "three/tsl";
@@ -42,11 +41,9 @@ export function Debug() {
       doorNormalsInst: null as unknown as THREE.InstancedMesh,
       navPathInst: null as unknown as THREE.InstancedMesh,
       debugPointInstanceIdToDecorId: [],
-      demoNavPath: [] as Vec3[],
-      demoNavPathShown: false,
       localBoundary: [] as XZSeg[],
       polylines: new Map(),
-      routesShown: false,
+      routesShown: getWorldStore(w.key).read().routesShown,
       doorNormalsShown: false,
       gridShown: false,
       logGPUInfo: false,
@@ -66,19 +63,6 @@ export function Debug() {
         if (!entry) return null;
         const item = w.gms[entry.gmId]?.decor[entry.decorId];
         return item ? { ...item.meta } : null;
-      },
-      computeDemoPath() {
-        const [gm] = w.gms;
-        if (!gm) return;
-        const { x, y, height } = gm.gridRect;
-        const result = findPath(
-          w.nav.navMesh,
-          [x + 0.5, 0, y + 0.5],
-          [x + 0.5, 0, y + height * 0.95],
-          [0.5, 0.1, 0.5],
-          ANY_QUERY_FILTER,
-        );
-        state.demoNavPath = result.success ? result.path.map((p) => p.position) : [];
       },
       onPhysicsDebugData(e) {
         if (e.data.type === "physics-debug-data-response") {
@@ -170,11 +154,6 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
         uvOffs.needsUpdate = uvDims.needsUpdate = uvTexIds.needsUpdate = true;
       },
-      updateNavPathInstances() {
-        const { demoNavPath: ps } = state;
-        const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][2], p[0], p[2]]);
-        writeSegmentInstances(state.navPathInst, segs, 0.01);
-      },
       setLocalBoundary(segs) {
         state.localBoundary = segs;
         state.drawBoundary();
@@ -218,7 +197,7 @@ export function Debug() {
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, pickGdkeyOpensDoors: true, pickDoors: true, arrowGeo: false },
+      reset: { arrowGeo: false },
     },
   );
 
@@ -233,11 +212,6 @@ export function Debug() {
     }
     gl.info.reset();
   });
-
-  useEffect(() => {
-    state.computeDemoPath();
-    state.updateNavPathInstances();
-  }, [w.nav]);
 
   useEffect(() => {
     state.updateDoorNormals();
@@ -325,15 +299,6 @@ export function Debug() {
       <mesh name="origin" position={[0, 5, 0]} visible={state.originShown} material={materials.origin}>
         <boxGeometry args={[0.05, 10, 0.05]} />
       </mesh>
-
-      <instancedMesh
-        ref={state.ref("navPathInst")}
-        args={[quad, materials.navPath, maxPathSegments]}
-        frustumCulled={false}
-        position={[0, 1, 0]}
-        renderOrder={-6}
-        visible={state.demoNavPathShown}
-      />
 
       {/* an npc's local navmesh boundary, as `park` sees it — see `drawBoundary` */}
       <instancedMesh
@@ -442,8 +407,6 @@ export type State = {
   doorNormalsInst: THREE.InstancedMesh;
   navPathInst: THREE.InstancedMesh;
   debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
-  demoNavPath: Vec3[];
-  demoNavPathShown: boolean;
   /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_boundary` */
   localBoundary: XZSeg[];
   /** By key, drawn as a disc per point joined by lines — see `debug_corners` */
@@ -465,13 +428,11 @@ export type State = {
     parsedKey: WW.PhysicsParsedBodyKey;
   })[];
   physicsCollidersShown: boolean;
-  computeDemoPath(): void;
   decodeDebugPointInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   updateDoorNormals(): void;
   updateDecorPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
-  updateNavPathInstances(): void;
   setLocalBoundary(segs: XZSeg[]): void;
   setPolyline(key: string, polyline: Polyline): void;
   removePolyline(key: string): void;

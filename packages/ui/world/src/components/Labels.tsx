@@ -1,0 +1,107 @@
+import { useStateRef } from "@npc-cli/util";
+import { useContext, useEffect, useMemo } from "react";
+import { cameraProjectionMatrix, cameraViewMatrix, float, select, texture, uv, vec4 } from "three/tsl";
+import type * as THREE from "three/webgpu";
+import { MAX_ROOM_LABELS, roomLabelTexOpts } from "../const.env";
+import { createLabelResources, drawLabel } from "../service/labels";
+import { TexArray } from "../service/tex-array";
+import type { SelectAnyType } from "../service/texture";
+import { WorldContext } from "./world-context";
+
+/**
+ * Keyed text at a point, e.g. what a route does at a node: billboards over the world like
+ * `RoomLabels`, one texture layer per DISTINCT text, never pickable and never faded
+ */
+export default function Labels() {
+  const w = useContext(WorldContext);
+
+  const state = useStateRef(
+    (): State => ({
+      byKey: new Map(),
+      res: createLabelResources(maxLabels),
+      tex: new TexArray({ ...roomLabelTexOpts, ctKey: "labels" }),
+      layerOfText: {},
+
+      add(key, label) {
+        state.byKey.set(key, label);
+        state.redraw();
+      },
+      remove(...keys) {
+        let removed = false;
+        for (const key of keys) removed = state.byKey.delete(key) || removed;
+        if (removed) state.redraw();
+      },
+      redraw() {
+        const { instData, instAttr, geo, mesh } = state.res;
+        state.layerOfText = {};
+        let layer = 0;
+        let i = 0;
+        for (const { x, y, y3d = 0, text } of state.byKey.values()) {
+          if (state.layerOfText[text] === undefined) {
+            if (layer >= MAX_ROOM_LABELS) break;
+            drawLabel(state.tex.ct, text);
+            state.tex.updateIndex(layer);
+            state.layerOfText[text] = layer++;
+          }
+          if (i >= maxLabels) break;
+          instData.set([x, y3d + labelLift, y, state.layerOfText[text]], i * 4);
+          i++;
+        }
+        geo.instanceCount = i;
+        mesh.visible = i > 0;
+        instAttr.needsUpdate = true;
+        w.view.forceUpdate();
+      },
+    }),
+    { reset: { res: false, tex: false } },
+  );
+
+  w.labels = state;
+
+  useMemo(() => {
+    const { mat, inst, sign } = state.res;
+    // billboarded in view space, as `RoomLabels` are
+    const viewCentre = cameraViewMatrix.mul(vec4(inst.x, inst.y, inst.z, 1));
+    mat.vertexNode = cameraProjectionMatrix.mul(
+      viewCentre.add(vec4(sign.x.mul(labelWidth / 2), sign.y.mul(labelHeight / 2), 0, 0)),
+    );
+    const tex = texture(state.tex.tex, uv()).depth(inst.w.toInt());
+    const alpha = (select as SelectAnyType)(
+      w.view.objectPick.notEqual(0),
+      float(0), // an annotation, never a thing to pick
+      tex.a.mul(w.view.foldNode),
+    ) as THREE.Node<"float">;
+    mat.colorNode = vec4(tex.rgb, alpha);
+  }, [state.tex.hash]);
+
+  useEffect(() => () => state.tex.dispose(), []);
+
+  return <primitive object={state.res.mesh} />;
+}
+
+export type Label = {
+  x: number;
+  y: number;
+  /** Height off the floor */
+  y3d?: number;
+  text: string;
+};
+
+export type State = {
+  byKey: Map<string, Label>;
+  res: ReturnType<typeof createLabelResources>;
+  tex: TexArray;
+  /** Which texture layer holds each distinct text */
+  layerOfText: Record<string, number>;
+  /** Add, or replace what the key showed */
+  add(key: string, label: Label): void;
+  remove(...keys: string[]): void;
+  /** Draw each distinct text once and place every label */
+  redraw(): void;
+};
+
+const maxLabels = 256;
+/** In metres, at the texture's 4:1 */
+const labelWidth = 0.8;
+const labelHeight = 0.2;
+const labelLift = 0.35;

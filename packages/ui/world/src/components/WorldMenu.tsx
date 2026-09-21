@@ -256,7 +256,7 @@ export function WorldMenu() {
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
       case "Routes":
-        return w.debug?.routesShown ?? false;
+        return w.debug?.routesShown ?? true;
       default:
         return false;
     }
@@ -347,7 +347,9 @@ export function WorldMenu() {
         break;
       }
       case "Routes": {
-        w.debug?.set({ routesShown: !w.debug.routesShown });
+        const next = !w.debug?.routesShown;
+        w.debug?.set({ routesShown: next });
+        store.patch({ routesShown: next });
         w.events.next({ key: "path-changed", name: null }); // jsh draws them — see `route.ts`
         break;
       }

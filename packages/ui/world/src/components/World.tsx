@@ -43,6 +43,7 @@ import { Debug } from "./Debug";
 import Decor from "./Decor";
 import Doors from "./Doors";
 import Floor from "./Floor";
+import Labels from "./Labels";
 import NavWorker from "./NavWorker";
 import NPCs from "./NPCs";
 import NpcRings from "./NpcRings";
@@ -54,6 +55,7 @@ import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
 import Walls from "./Walls";
+import WorldHtml from "./WorldHtml";
 import { WorldMenu } from "./WorldMenu";
 import { WorldSpeech } from "./WorldSpeech";
 import { WorldView } from "./WorldView";
@@ -160,11 +162,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       menu: {} as State["menu"],
       n: null as any,
       // stubs swallow posts before the workers mount
-      navWorker: { worker: { postMessage() { } } } as any,
+      navWorker: { worker: { postMessage() {} } } as any,
       net: null as any,
       npc: null as any,
       obs: null as any,
-      physics: { worker: { postMessage() { } } } as any,
+      physics: { worker: { postMessage() {} } } as any,
+      html: null as any,
+      labels: null as any,
       rings: null as any,
       roomLabels: null as any,
       shadows: null as any,
@@ -267,7 +271,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       setupDevAssetsSync() {
         const hot = import.meta.hot;
-        if (!(import.meta.env.DEV && hot)) return () => { };
+        if (!(import.meta.env.DEV && hot)) return () => {};
 
         // biome-ignore format: succinct
         const listeners: [event: string, handler: (...args: any[]) => void][] = [
@@ -471,8 +475,10 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Decor key="decor" />
               <NpcShadows key="npc-shadows" />
               <RoomLabels key="room-labels" />
+              <Labels key="labels" />
               <NpcRings key="npc-rings" />
               <Debug key="debug" />
+              <WorldHtml key="html" />
             </group>
             <NPCs key="npcs" />
           </WorldView>
@@ -558,6 +564,8 @@ export type State = {
   e: UseStateRef<import("./use-world-events").State>;
   player: UseStateRef<import("./use-world-player").State>;
   floor: UseStateRef<import("./Floor").State>;
+  html: UseStateRef<import("./WorldHtml").State>;
+  labels: UseStateRef<import("./Labels").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   n: UseStateRef<import("./NPCs").State>["npc"];
   net: UseStateRef<import("./use-world-net").State>;

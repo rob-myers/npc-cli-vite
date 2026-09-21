@@ -54,6 +54,7 @@
 ### Other Bugs
 
 - 🚧 BUG only some room labels shown when change to map 301-101-301
+- npc labels should be invisible during object-pick
 
 ## Documentation
 
@@ -90,8 +91,9 @@
     - omitted from dynamic decor persist, use `route_init` instead
     - cleans up on kill
   - ✅ debug option to show possibly partial routes
-  - 🚧 debug shows RouteStep label with value kind above nodes
-  - 🚧 can click route nodes (decor points) to toggle rich ui Html3d
+  - ✅ debug shows RouteStep label with value kind above nodes
+  - ✅ can click route nodes (decor points) to toggle rich ui Html3d
+  - ✅ refine Html3d UI
 - new ui packages/ui/nav-path i.e. NavPath
 
 ## Site
