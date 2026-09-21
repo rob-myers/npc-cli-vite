@@ -1,5 +1,5 @@
 import { npcDims } from "@npc-cli/ui__world/const.both";
-import { agentConfig, padClearance, parkMinMove } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { moveAlongSurface } from "navcat";
@@ -585,7 +585,7 @@ export function open(
 }
 
 /**
- * Stand npcs where there is room to walk right round them: `by` (default `padClearance`) from
+ * Stand npcs where there is room to walk right round them: `by` (default `standConfig.padClearance`) from
  * their room's walls and doorways, and from everyone else standing in it — the spot is remembered
  * in `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
  * once; one without is left where they stand and named in the error
@@ -623,7 +623,7 @@ export async function pad(
         key: "pad",
         npcs: npcs.map((npc) => npcQuery(w, npc)),
         others: [...others.values()],
-        by: opts.by ?? padClearance,
+        by: opts.by ?? standConfig.padClearance,
       },
       signal,
     );
@@ -637,7 +637,7 @@ export async function pad(
         npcs.map(async (npc, i) => {
           const plan = plans[i];
           if (plan === null) return;
-          if (Math.hypot(plan.at.x - npc.point.x, plan.at.y - npc.point.y) > parkMinMove) {
+          if (Math.hypot(plan.at.x - npc.point.x, plan.at.y - npc.point.y) > standConfig.parkMinMove) {
             await npc.fadeSpawn({ at: plan.at, angle: npc.rotation.y }); // facing as they were
           }
           padded.mark(npc.key);
@@ -696,7 +696,7 @@ export async function park(
           const plan = plans[i];
           if (plan === null) return;
           const { at, facing, seg } = plan;
-          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > parkMinMove) {
+          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > standConfig.parkMinMove) {
             await npc.fadeSpawn({ at, facing });
           } else {
             await npc.look({ at: facing });

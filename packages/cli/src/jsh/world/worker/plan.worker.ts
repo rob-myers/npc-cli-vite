@@ -503,12 +503,12 @@ function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: 
 const boundary = localBoundary.create();
 
 // typed copies of the world's constants, which the worker cannot import — see `physics.ts` there
-type WorldBoath = typeof import("@npc-cli/ui__world/const.both");
+type WorldBoth = typeof import("@npc-cli/ui__world/const.both");
 type WorldNpc = typeof import("@npc-cli/ui__world/const.npc");
-const agentRadius: WorldBoath["npcDims"]["agentRadius"] = 0.18;
-const doorwayClearance: WorldNpc["doorwayClearance"] = 0.6;
-const parkQueryRange: WorldNpc["parkQueryRange"] = 2;
-const padQueryRange: WorldNpc["padQueryRange"] = 3;
+const agentRadius: WorldBoth["npcDims"]["agentRadius"] = 0.18;
+const doorwayClearance: WorldNpc["standConfig"]["doorwayClearance"] = 0.6;
+const parkQueryRange: WorldNpc["standConfig"]["parkQueryRange"] = 2;
+const padQueryRange: WorldNpc["standConfig"]["padQueryRange"] = 3;
 /** The crowd's `agentPlacementHalfExtents` */
 const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 
