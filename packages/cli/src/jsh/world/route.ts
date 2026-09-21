@@ -218,8 +218,13 @@ async function runRoute(
         const grKey = w.e.findRoomContaining(step.at)?.grKey ?? null;
         if (grKey !== step.grKey)
           api.writeError(`route: ${role}'s waypoint ${JSON.stringify(step.at)} was in ${step.grKey}, now ${grKey}`);
+        const npc = w.npc.get(npcKey);
+        npc.last.unreachableResult = null;
         // straight through a waypoint with nothing to do there
         await w.npc.move({ npcKey, to: step.at, arrive: next?.kind !== "move" });
+        // a locked door is no error to `move`: it stops them at the door, and says so here
+        const blocked = npc.last.unreachableResult as JshCli.NpcUnreachableResult | null;
+        if (blocked !== null) throw Error(`${role}: locked door`);
         return;
       }
       case "do": {

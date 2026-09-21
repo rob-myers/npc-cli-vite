@@ -87,14 +87,20 @@ Which npcs are parked — and the wall segment each stands against — is jsh st
 
 Exports of `packages/cli/src/jsh/world/{core,demo,debug,pred,route}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
 
-**Routes** (`route.ts`) are jsh state too: `/shared/map/{mapKey}/path`, aliased `/shared/path`, holds named routes — tracks of steps by role, bound to npcs when run (`route patrol guard:rob-0 medic:kate`). A `move`/`do` step is a waypoint and the steps after it are done there, which is what makes a track reversible. Tracks sync only through steps: a `sync` barrier is symmetric; `signal`/`await` are one-way. `route_add` builds one from picks.
-
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
 - never `await` something a kill cannot interrupt: `w.npc.nextTick()` never resolves whilst the world is paused, so race it — `Promise.race([w.npc.nextTick(), killed])`;
 - on the way out `handlers.dispose()`, then `throw api.getKillError()`.
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
+
+## Routes
+
+See `docs/route-command.md` — the ONLY doc for routes. In short: `/shared/map/{mapKey}/path`, aliased
+`/shared/path`, holds named routes — tracks of steps by role, bound to npcs when run
+(`route patrol guard:rob-0 medic:kate`), built with `route_add`, changed only through
+`routes.set`/`remove`. They are drawn as pickable runtime decor (`meta.noPersist`), with labels via
+`w.labels` and a card per clicked node via `w.html` — two generic hosts, which the npc bubbles use too.
 
 ## MapEdit saving
 
