@@ -1186,8 +1186,9 @@ function buildShapeOutputNode(
     edgeX.lessThan(BORDER_W.div(dims.x)).or(edgeY.lessThan(BORDER_W.div(dims.y))),
   ) as THREE.Node<"bool">;
 
+  // dashed along the nearer edge, nearer in world units: in uv a thin rect's ends would take the short axis
   const rectParam = (select as SelectAnyType)(
-    edgeY.greaterThan(edgeX),
+    edgeY.mul(dims.y).greaterThan(edgeX.mul(dims.x)),
     uvCoord.y.mul(dims.y),
     uvCoord.x.mul(dims.x),
   ) as THREE.Node<"float">;
