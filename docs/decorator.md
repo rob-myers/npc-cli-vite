@@ -160,7 +160,10 @@ applies one back by touching only what differs. It knows nothing of edits made f
 card in between: undoing past one reverts it too.
 
 **Moving**: drag any selected decor and the whole selection follows, through their `transform`s
-rather than React, committed on release as one `w.decor.create` per decor (`moved`). Arrows nudge
+rather than React, committed on release as one `w.decor.create` per decor (`moved`). Held during
+the drag, shift puts the pressed decor's anchor on a 0.5m grid, ctrl or alt on a 0.1m one, the
+rest keeping their places about it; a ctrl-press raises no context menu. A shift-press drags
+too — it adds the decor at once, and only a shift-CLICK takes one away. Arrows nudge
 by 0.1m, 0.5m with shift. Delete or Backspace deletes.
 
 **Resizing**: a selected rect shows its four corners, a circle a point on its rim, a point with

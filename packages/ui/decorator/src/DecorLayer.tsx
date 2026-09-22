@@ -3,6 +3,7 @@ import { cn } from "@npc-cli/util";
 import { MapPinIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import {
+  anchorOf,
   circleResized,
   imgSize,
   moved,
@@ -26,18 +27,17 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
   const resized = useRef<Geomorph.DecorDef | null>(null); // the same, for the release to commit
 
   function onHandlePointerDown(e: React.PointerEvent<SVGElement>, key: string, i: number) {
-    if (e.button !== 0 && !(e.button === 2 && e.ctrlKey)) return; // macOS: ctrl-click is a right one
+    if (isPress(e) === false) return;
     e.stopPropagation();
     const handle = e.currentTarget; // React drops `currentTarget` once the handler returns
     const svg = handle.ownerSVGElement;
     const def = w.decor.runtime.defByKey[key];
     if (svg === null || def === undefined) return;
     handle.setPointerCapture(e.pointerId);
-    // a snapped handle lags the pointer, so a menu on release would land beside it
-    window.addEventListener("contextmenu", preventDefault, true);
+    blockMenu();
     const onMove = (ev: PointerEvent) => {
       const at = toMap(svg, ev.clientX, ev.clientY);
-      const step = ev.shiftKey ? coarseStep : ev.ctrlKey || ev.altKey ? fineStep : undefined;
+      const step = stepOf(ev);
       resized.current =
         def.type === "rect"
           ? rectResized(def, i, at, step)
@@ -52,7 +52,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
       handle.removeEventListener("pointermove", onMove);
       handle.removeEventListener("pointerup", onUp);
       handle.removeEventListener("pointercancel", onUp);
-      setTimeout(() => window.removeEventListener("contextmenu", preventDefault, true), menuAfterUpMs);
+      unblockMenu();
       if (resized.current !== null) onCommit([resized.current]);
       resized.current = null;
       setResizing(null);
@@ -63,29 +63,34 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
   }
 
   function onItemPointerDown(e: React.PointerEvent<SVGGElement>, key: string) {
-    if (e.button !== 0) return;
+    if (isPress(e) === false) return;
     e.stopPropagation();
-    const keys = e.shiftKey
-      ? selected.includes(key)
-        ? selected.filter((k) => k !== key)
-        : [...selected, key]
-      : selected.includes(key)
-        ? selected
-        : [key];
-    onSelect(keys);
-    if (e.shiftKey) return;
+    // shift adds at once, so a drag moves it too; taking away waits, since a drag keeps it
+    const keys = selected.includes(key) ? selected : e.shiftKey ? [...selected, key] : [key];
+    if (keys !== selected) onSelect(keys);
     const svg = e.currentTarget.ownerSVGElement;
-    if (svg === null) return;
+    const def = w.decor.runtime.defByKey[key];
+    if (svg === null || def === undefined) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { svg, key, start: toMap(svg, e.clientX, e.clientY), dx: 0, dy: 0, keys };
+    blockMenu();
+    const start = toMap(svg, e.clientX, e.clientY);
+    const shift = e.shiftKey === false ? null : keys === selected ? "remove" : "added";
+    drag.current = { svg, key, start, anchor: anchorOf(def), dx: 0, dy: 0, travel: 0, keys, shift };
   }
 
   function onItemPointerMove(e: React.PointerEvent<SVGGElement>) {
     const d = drag.current;
     if (d === null) return;
     const at = toMap(d.svg, e.clientX, e.clientY);
+    const step = stepOf(e);
     d.dx = at.x - d.start.x;
     d.dy = at.y - d.start.y;
+    d.travel = Math.max(d.travel, Math.hypot(d.dx, d.dy));
+    if (step !== undefined) {
+      // the pressed decor's anchor onto the grid, the rest keeping their places about it
+      d.dx = Math.round((d.anchor.x + d.dx) / step) * step - d.anchor.x;
+      d.dy = Math.round((d.anchor.y + d.dy) / step) * step - d.anchor.y;
+    }
     // the dragged decor, and their handles, follow the pointer through their transforms, not React
     for (const el of dragged(d)) el.setAttribute("transform", `translate(${d.dx} ${d.dy})`);
   }
@@ -94,12 +99,19 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
     const d = drag.current;
     drag.current = null;
     if (d === null) return;
+    unblockMenu();
     for (const el of dragged(d)) el.removeAttribute("transform");
-    if (Math.hypot(d.dx, d.dy) < dragThreshold) {
-      // a click: the press kept the selection so a drag could move it all; narrow to the one
-      if (d.keys.length > 1) onSelect([d.key]);
+    if (d.travel < dragThreshold) {
+      // a click: the press kept the selection so a drag could move it all. A shift-click toggles
+      // the one, else narrows to it
+      if (d.shift === "remove") {
+        onSelect(d.keys.filter((k) => k !== d.key));
+      } else if (d.shift === null && d.keys.length > 1) {
+        onSelect([d.key]);
+      }
       return;
     }
+    if (d.dx === 0 && d.dy === 0) return; // snapped back to where it was
     onCommit(
       d.keys.flatMap((key) =>
         key in w.decor.runtime.defByKey ? [moved(w.decor.runtime.defByKey[key], d.dx, d.dy)] : [],
@@ -135,6 +147,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
             onPointerMove={onItemPointerMove}
             onPointerUp={onItemPointerUp}
             onPointerCancel={onItemPointerUp}
+            onContextMenu={preventDefault}
           >
             <title>{`${d.key} (${d.type}${d.meta.grKey ? `, ${d.meta.grKey}` : ""})`}</title>
             {resizing?.key === d.key ? (
@@ -192,6 +205,25 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
 
 function preventDefault(e: Pick<Event, "preventDefault">) {
   e.preventDefault();
+}
+
+/** A primary press, or a ctrl one: macOS makes ctrl-click a right one */
+function isPress(e: React.PointerEvent) {
+  return e.button === 0 || (e.button === 2 && e.ctrlKey);
+}
+
+/** Shift is the coarse step, ctrl or alt the fine */
+function stepOf(e: { shiftKey: boolean; ctrlKey: boolean; altKey: boolean }) {
+  return e.shiftKey ? coarseStep : e.ctrlKey || e.altKey ? fineStep : undefined;
+}
+
+/** A snapped drag lags the pointer, so a menu on release would land beside what was pressed */
+function blockMenu() {
+  window.addEventListener("contextmenu", preventDefault, true);
+}
+
+function unblockMenu() {
+  setTimeout(() => window.removeEventListener("contextmenu", preventDefault, true), menuAfterUpMs);
 }
 
 /** A rect, circle or point as a handle drags it */
@@ -303,7 +335,20 @@ function Shape({ w, decor: d, color }: { w: WorldState; decor: Geomorph.Decor; c
 }
 
 /** `key` was pressed; `keys` move with it */
-type Drag = { svg: SVGSVGElement; key: string; start: Geom.VectJson; dx: number; dy: number; keys: string[] };
+type Drag = {
+  svg: SVGSVGElement;
+  key: string;
+  start: Geom.VectJson;
+  /** The pressed decor's, which a snapped drag puts on the grid */
+  anchor: Geom.VectJson;
+  dx: number;
+  dy: number;
+  /** The furthest the pointer got, unsnapped: less than `dragThreshold` is a click */
+  travel: number;
+  keys: string[];
+  /** Pressed with shift: a click takes away what was selected, and keeps what the press added */
+  shift: null | "remove" | "added";
+};
 
 type Props = {
   w: WorldState;
@@ -316,7 +361,7 @@ type Props = {
 /** Metres, at most; and at most this share of the decor's own smallest extent */
 const handleSize = 0.16;
 const handleShare = 0.4;
-/** Metres: a resize with shift held goes by this, with ctrl or alt by the finer */
+/** Metres: a drag or resize with shift held goes by this, with ctrl or alt by the finer */
 const coarseStep = 0.5;
 const fineStep = 0.1;
 /** Metres: the pin stands this tall; its tip is this far down its box */
