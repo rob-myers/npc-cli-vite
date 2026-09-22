@@ -148,7 +148,8 @@ click; the point and quad tools take an image, the quad tool a **tilt**, which p
 (`keysWithin`: decor whose bounds meet it), a click on empty map to clear, cmd/ctrl-A for all. A
 press on a selected decor keeps the selection, so a drag moves it all; let go without dragging and
 it narrows to that one. The
-sidebar selects the same, and shows the same. A `decor-removed` drops what went from the selection.
+sidebar selects the same, and shows the same — there, cmd-click toggles one and shift-click takes
+the run from the last plain click, as a file list would. A `decor-removed` drops what went from the selection.
 
 **Undo / redo** (cmd-Z, shift-cmd-Z or cmd-Y, the toolbar): `DecorHistory` keeps snapshots of the
 runtime defs, one taken BEFORE each of the panel's edits — add, move, nudge, delete, rename — and

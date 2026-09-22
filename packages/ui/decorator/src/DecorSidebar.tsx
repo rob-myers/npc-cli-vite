@@ -1,15 +1,34 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { cn } from "@npc-cli/util";
 import { CrosshairIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { typeIcon } from "./decor-edit";
 
-/** The map's runtime decor: select here or on the map alike; double-click renames */
+/**
+ * The map's runtime decor: select here or on the map alike — cmd-click toggles one, shift-click
+ * takes the run from the last plain click; double-click renames
+ */
 export function DecorSidebar({ w, selected, onSelect, onRename, onShowIn3d }: Props) {
   const [filter, setFilter] = useState("");
+  const anchor = useRef<string | null>(null);
   const decors = Object.values(w.decor.runtime.byKey)
     .filter((d) => filter === "" || `${d.key} ${d.type} ${d.meta.grKey ?? ""}`.includes(filter))
     .sort((a, b) => a.key.localeCompare(b.key));
+
+  function onClickRow(e: React.MouseEvent, key: string) {
+    if (e.metaKey || e.ctrlKey) {
+      anchor.current = key;
+      return onSelect(selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key]);
+    }
+    const from = decors.findIndex((d) => d.key === anchor.current);
+    if (e.shiftKey && from !== -1) {
+      const to = decors.findIndex((d) => d.key === key);
+      const run = decors.slice(Math.min(from, to), Math.max(from, to) + 1).map((d) => d.key);
+      return onSelect([...new Set([...selected, ...run])]);
+    }
+    anchor.current = key;
+    onSelect([key]);
+  }
 
   return (
     <div className="flex-1 min-w-0 flex flex-col border-r border-slate-800">
@@ -31,11 +50,7 @@ export function DecorSidebar({ w, selected, onSelect, onRename, onShowIn3d }: Pr
                 "group flex items-center gap-1.5 pl-2 pr-1 py-0.5 cursor-pointer hover:bg-slate-800/60",
                 isSelected && "bg-slate-800",
               )}
-              onClick={(e) =>
-                onSelect(
-                  e.shiftKey ? (isSelected ? selected.filter((k) => k !== d.key) : [...selected, d.key]) : [d.key],
-                )
-              }
+              onClick={(e) => onClickRow(e, d.key)}
             >
               <TypeIcon className="size-3.5 shrink-0 text-slate-500" />
               <Name value={d.key} onCommit={(next) => onRename(d.key, next)} />

@@ -193,7 +193,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
             key={decor.key}
             x={decor.x}
             y={decor.y}
-            fontSize={0.32}
+            fontSize={0.22}
             textAnchor="middle"
             dominantBaseline="central"
             fill={ink.label}
@@ -288,17 +288,17 @@ const tmpMat = new Mat();
 
 const ink = {
   hull: "#0b1220",
-  room: "#16213a",
+  room: "#16213a88",
   nav: "rgba(56, 189, 248, 0.05)",
   navEdge: "rgba(56, 189, 248, 0.1)",
   obstacle: "#2a3a5c",
   wall: "#8ea3c744",
   wallStroke: "#fff6",
-  window: "#5eead4",
+  window: "#5eead422",
   door: "#fbbf24",
   doorOpen: "#4ade80",
   doorLocked: "#f87171",
   grid: "rgba(148, 233, 184, 0.45)",
-  label: "rgba(226, 236, 248, 0.75)",
+  label: "rgba(226, 236, 248, 0.65)",
   npc: "#f0abfc",
 };
