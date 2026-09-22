@@ -33,6 +33,8 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
     const def = w.decor.runtime.defByKey[key];
     if (svg === null || def === undefined) return;
     handle.setPointerCapture(e.pointerId);
+    // a snapped handle lags the pointer, so a menu on release would land beside it
+    window.addEventListener("contextmenu", preventDefault, true);
     const onMove = (ev: PointerEvent) => {
       const at = toMap(svg, ev.clientX, ev.clientY);
       const step = ev.shiftKey ? coarseStep : ev.ctrlKey || ev.altKey ? fineStep : undefined;
@@ -50,6 +52,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
       handle.removeEventListener("pointermove", onMove);
       handle.removeEventListener("pointerup", onUp);
       handle.removeEventListener("pointercancel", onUp);
+      setTimeout(() => window.removeEventListener("contextmenu", preventDefault, true), menuAfterUpMs);
       if (resized.current !== null) onCommit([resized.current]);
       resized.current = null;
       setResizing(null);
@@ -179,12 +182,16 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
             vectorEffect="non-scaling-stroke"
             className="cursor-crosshair"
             onPointerDown={(e) => onHandlePointerDown(e, key, i)}
-            onContextMenu={(e) => e.preventDefault()} // ctrl is the fine step, not a menu
+            onContextMenu={preventDefault} // ctrl is the fine step, not a menu
           />
         ));
       })}
     </g>
   );
+}
+
+function preventDefault(e: Pick<Event, "preventDefault">) {
+  e.preventDefault();
 }
 
 /** A rect, circle or point as a handle drags it */
@@ -315,6 +322,8 @@ const fineStep = 0.1;
 /** Metres: the pin stands this tall; its tip is this far down its box */
 const pinHeight = 0.5;
 const pinTipFrac = 232 / 256;
+/** Some platforms raise a ctrl or right click's menu after `pointerup` */
+const menuAfterUpMs = 100;
 /** In map metres: less is a click */
 const dragThreshold = 0.02;
 const ink = {

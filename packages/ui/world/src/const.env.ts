@@ -115,12 +115,11 @@ export const defaultCameraFollow = false;
  */
 export const canonicalFlattenFrom = 0.4;
 /**
- * ...and how far out its azimuth becomes the detented dial. On a phone the zoom is free and comes
- * to rest anywhere, so "zoomed in" reaches much further out than the mouse's inner stop: the dial
- * only takes over close to the outer one
+ * ...and how far out a drag locks to one axis. On a phone the zoom is free and comes to rest
+ * anywhere, so "zoomed in" reaches much further out than the mouse's inner stop
  */
-export const canonicalDialFrom = isTouchDevice() ? 0.85 : canonicalFlattenFrom;
-/** `canonical` azimuth is a detented compass dial: turn past this to advance to the next point */
+export const canonicalAxisLockFrom = isTouchDevice() ? 0.85 : canonicalFlattenFrom;
+/** `canonical` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
 export const canonicalSnapArm = (10 * Math.PI) / 180;
 /**
  * …but turning BACK by this much, within the same held drag, reads as a peek rather than a turn:

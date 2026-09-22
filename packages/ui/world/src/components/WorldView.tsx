@@ -1,7 +1,6 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { geomService } from "@npc-cli/util/geom-service";
 import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
 import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
@@ -19,7 +18,7 @@ import { npcDims } from "../const.both";
 import {
   cameraFov,
   cameraRefAspect,
-  canonicalDialFrom,
+  canonicalAxisLockFrom,
   canonicalFlattenFrom,
   canonicalSnapArm,
   canonicalSnapCancel,
@@ -100,7 +99,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       cameraFollow: (saved.cameraMode as string) === "follow" ? true : (saved.cameraFollow ?? defaultCameraFollow),
       polarIn: (saved.cameraInitial ?? defaultInitialCamera).polar,
       polarOut: (saved.cameraInitial ?? defaultInitialCamera).polar,
-      canonicalTheta: nearestCompass((saved.cameraInitial ?? defaultInitialCamera).azimuthal),
+      canonicalFrom: 0,
       canonicalDragging: false,
       canonicalPeak: 0,
       zoomPan: null,
@@ -353,8 +352,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.frontierHold = false; // the view is theirs again
       },
       onCameraEnd() {
-        // a drag released without momentum dispatches no further change: `canonical`'s detent
-        // needs a frame to see the release at all — see `onCameraFrame`
+        // a drag released without momentum dispatches no further change: the compass dial needs a
+        // frame to see the release at all — see `detentCanonicalAzimuth`
         w.r3f?.invalidate();
       },
       persistCamera() {
@@ -515,24 +514,16 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         controls.zoomSettleRate = state.zoomInSlow === true ? canonicalZoomInRate : defaultZoomSettleRate;
         state.easeFrontier();
 
-        // steerable at every zoom: close in both angles are the user's own, and zoomed out the
-        // azimuth is the detented dial below with a spring-back peek for the polar — see
-        // `shapeCanonicalPolar`
+        // both angles are the user's own at every zoom, but a turn let go with ctrl or cmd held snaps
         controls.enableRotate = true;
-        // a drag locks to the axis it set off along only whilst ZOOMED OUT, where the peek and the
-        // dial share it and the lock keeps them apart. Once a zoom-in is under way the polar is
-        // pinned, and a turn begun a little up or down would lock vertical and do nothing at all —
-        // and close in the polar is the user's own, so a diagonal drag may simply do both
-        controls.lockRotateAxis = t > canonicalDialFrom && state.zoomPan === null;
+        // a drag locks to the axis it set off along only whilst ZOOMED OUT. Once a zoom-in is under
+        // way a turn begun a little up or down would lock vertical, and close in a diagonal drag
+        // may simply do both
+        controls.lockRotateAxis = t > canonicalAxisLockFrom && state.zoomPan === null;
 
         state.shapeCanonicalPolar(spherical, t); // the zoom owns the tilt, pan or no pan
-        state.advanceZoomPan(spherical, t);
-        t <= canonicalDialFrom ? state.freeCanonicalAzimuth(spherical) : state.detentCanonicalAzimuth(spherical);
-      },
-      /** Close in the azimuth is the user's own, the dial following the nearest point meanwhile */
-      freeCanonicalAzimuth(spherical) {
-        state.canonicalTheta = nearestCompass(spherical.theta);
-        state.canonicalDragging = false;
+        state.advanceZoomPan(spherical);
+        state.detentCanonicalAzimuth(spherical);
       },
       /**
        * Room labels in or out, over `ms`. Only the first boot uses it: the world is REVEALED there
@@ -574,7 +565,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        * arrive exactly when it does and a reversal walks them back. Measured against
        * `zoomPanDoneAlpha`, where we let go, so none of them is left a few percent short
        */
-      advanceZoomPan(spherical, t) {
+      advanceZoomPan(spherical) {
         const { controls, zoomPan } = state;
         if (zoomPan === null) return;
         const alpha = clamp01((controls.zoomProgress - zoomPan.fromProgress) / (1 - zoomPan.fromProgress));
@@ -608,12 +599,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         zoomPan.lastBeta = beta;
 
         controls.target.copy(zoomPan.from).lerp(zoomPan.to, beta);
-        // the azimuth placed too, whilst the dial has it and nobody is dragging: the detent's damped
-        // chase falls behind a fast zoom and the rest of the turn plays out after the pan has landed
-        if (t > canonicalDialFrom && controls.pointers.length === 0) {
-          spherical.theta = state.canonicalTheta;
-          controls.sphericalDelta.theta = 0;
-        }
         state.placeCamera(spherical, spherical.phi);
         zoomPan.lastTarget.copy(controls.target); // anything else moving it is a pan, see above
 
@@ -714,63 +699,53 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       /**
-       * `canonical`'s azimuth is a detented compass dial: free whilst dragging, then on release it
-       * advances a point per `canonicalSnapArm` turned, or springs back inside the arm. Zoomed out
-       * only — close in the azimuth is free, and `onCameraFrame` keeps the dial on the nearest point
+       * A turn let go with ctrl or cmd held is a detented compass dial: it advances a point per
+       * `canonicalSnapArm` turned, or springs back to the point nearest where it set out
        */
       detentCanonicalAzimuth(spherical) {
         const { controls } = state;
 
         if (controls.pointers.length > 0) {
-          if (state.canonicalDragging === false) state.canonicalPeak = 0; // a fresh drag
+          if (controls.isRotating() === false) return;
+          if (state.canonicalDragging === false) {
+            state.canonicalFrom = spherical.theta; // a fresh turn
+            state.canonicalPeak = 0;
+          }
           state.canonicalDragging = true;
           const turning = state.getCanonicalHeading();
           if (Math.abs(turning) > Math.abs(state.canonicalPeak)) state.canonicalPeak = turning;
           return;
         }
+        if (state.canonicalDragging === false) return;
         if (state.lookAtAnimId !== 0) return; // `lookAt` owns the camera whilst it runs
+        state.canonicalDragging = false;
+        if (controls.ctrlHeld === false) return;
 
-        if (state.canonicalDragging === true) {
-          // ON RELEASE ONLY: measuring every frame would measure against a detent the camera is
-          // still travelling to, land beyond the arm on the far side, and oscillate forever
-          state.canonicalDragging = false;
-          const turned = state.getCanonicalHeading();
-          // turning back within the same drag is a PEEK: they went to look and thought better of
-          // it, so the dial returns to where it set out from — but only within the first point:
-          // past a quarter turn the dial has been turned, and turning back is steering, not a peek
-          const cameBack =
-            Math.abs(state.canonicalPeak) < halfPi &&
-            Math.abs(state.canonicalPeak) - Math.abs(turned) > canonicalSnapCancel;
-          if (cameBack === false && Math.abs(turned) > canonicalSnapArm) {
-            // at least one point, else however many quarters were actually turned
-            const points = Math.max(1, Math.round(Math.abs(turned) / halfPi));
-            state.canonicalTheta = geomService.normalizeRadians(
-              state.canonicalTheta + Math.sign(turned) * points * halfPi,
-            );
-          }
+        // decided ON RELEASE ONLY, else measured against a point still being turned to
+        const from = state.canonicalFrom / halfPi;
+        const turned = state.getCanonicalHeading();
+        // turning back within the same drag is a PEEK, but only within the first point
+        const cameBack =
+          Math.abs(state.canonicalPeak) < halfPi &&
+          Math.abs(state.canonicalPeak) - Math.abs(turned) > canonicalSnapCancel;
+        let point = Math.round(from);
+        if (cameBack === false && Math.abs(turned) > canonicalSnapArm) {
+          // at least one point past where it set out, else however many quarters were turned
+          const points = Math.max(1, Math.round(Math.abs(turned) / halfPi));
+          point =
+            turned > 0 ? Math.floor(from + onCompassEpsilon) + points : Math.ceil(from - onCompassEpsilon) - points;
         }
-
-        state.seedDetent("theta", deltaAngle(spherical.theta, state.canonicalTheta));
+        // `update` spends the delta with damping, and overwriting it swallows any momentum
+        controls.sphericalDelta.theta = deltaAngle(spherical.theta, point * halfPi);
+        w.r3f?.invalidate();
       },
       /**
-       * How far the azimuth is from its detent, measured against where the turn is HEADING rather
-       * than where the camera has damped to: `update` adds `sphericalDelta.theta` in total, so
-       * their sum is where it will come to rest. The damped angle lags a drag badly enough that a
-       * turn back within one would barely register
+       * How far this turn is from where it set out, measured against where it is HEADING: `update`
+       * adds `sphericalDelta.theta` in total, and the damped angle lags a drag badly
        */
       getCanonicalHeading() {
         const { spherical, sphericalDelta } = state.controls;
-        return deltaAngle(state.canonicalTheta, spherical.theta + sphericalDelta.theta);
-      },
-      /**
-       * Seeds the detent's remaining turn, and asks for the frame to spend it on. `update`
-       * applies `delta * damping` and decays the rest, so overwriting also swallows leftover
-       * momentum — a detented dial must not coast
-       */
-      seedDetent(axis, remaining) {
-        if (Math.abs(remaining) <= detentSettleUntil) return;
-        state.controls.sphericalDelta[axis] = remaining;
-        w.r3f?.invalidate();
+        return deltaAngle(state.canonicalFrom, spherical.theta + sphericalDelta.theta);
       },
       onCreated(rootState) {
         w.threeReady = true;
@@ -1118,8 +1093,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       setCameraMode(cameraMode) {
         if (cameraMode === "canonical") {
           state.polarIn = state.polarOut = state.controls?.spherical.phi ?? state.initial.polar;
-          // entering turns you onto the nearest compass point
-          state.canonicalTheta = nearestCompass(state.controls?.spherical.theta ?? state.initial.azimuthal);
         } else if (state.cameraMode === "canonical" && state.controls !== null) {
           // leaving: give the polar clamps and the zoom's own pace back — r3f leaves our direct
           // writes alone, so nothing else would
@@ -1266,8 +1239,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const initial = defaultInitialCamera;
         state.initial = initial;
         state.polarIn = state.polarOut = initial.polar; // else a reset zoomed out keeps the old tilt
-        // the dial too, else the old point pulls the reset azimuth straight back round
-        state.canonicalTheta = nearestCompass(initial.azimuthal);
         store.patch({ cameraInitial: initial });
         // a reset view shows nothing in `sight` mode unless the player happens to be in it: the
         // ship comes back, darkened, so there is something to find them by
@@ -1598,15 +1569,11 @@ export type State = {
   /** The tilt close in, and the tilt zoomed out — the zoom blends between them */
   polarIn: number;
   polarOut: number;
-  /** The compass point (multiple of π/2) `canonical`'s azimuth is currently detented at */
-  canonicalTheta: number;
-  /**
-   * The free azimuth the view zoomed out from, and the point the dial settled on. Zooming back in
-   * returns to `theta` if the dial is still on `point`, i.e. was not turned whilst out
-   */
-  /** Whether a drag is underway — the detent is decided on its release, once */
+  /** The azimuth the current turn set out from */
+  canonicalFrom: number;
+  /** Whether a turn is underway — the compass dial is decided on its release, once */
   canonicalDragging: boolean;
-  /** The furthest this drag has turned from its detent, signed — see `canonicalSnapCancel` */
+  /** The furthest this turn has gone from `canonicalFrom`, signed — see `canonicalSnapCancel` */
   canonicalPeak: number;
   /** The pan a `canonical` zoom-in is carrying out, keyed to the zoom's progress */
   zoomPan: null | {
@@ -1640,7 +1607,6 @@ export type State = {
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** What `persistCamera` last stored, so a frame that moved nothing stores nothing */
   persistedCamera: null | PersistedCamera;
-  /** Latest camera reading, updated every frame by `onCameraChange` — persisted by `onCameraEnd` */
   lastPointer: {
     epochMs: number;
     longPress: boolean;
@@ -1753,18 +1719,14 @@ export type State = {
   /** The crosshair's fade-out, once whatever raised it has arrived */
   fadeCrosshair(): void;
   /** Carries a `canonical` zoom-in's pan, tilt, turn and height along with the zoom's progress */
-  advanceZoomPan(spherical: THREE.Spherical, t: number): void;
+  advanceZoomPan(spherical: THREE.Spherical): void;
   /** `canonical`'s polar: the user's own close in, a function of the zoom further out */
   shapeCanonicalPolar(spherical: THREE.Spherical, t: number): void;
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
-  /** `canonical`'s azimuth close in — free, with the dial kept on the nearest point */
-  freeCanonicalAzimuth(spherical: THREE.Spherical): void;
-  /** `canonical`'s azimuth zoomed out — a detented compass dial, see `canonicalSnapArm` */
+  /** `canonical`'s azimuth: a turn let go with ctrl or cmd held snaps to a compass point (multiple of π/2) */
   detentCanonicalAzimuth(spherical: THREE.Spherical): void;
-  /** The angle the zoomed-out azimuth is drawn to at zoom `t` — see within */
+  /** How far the current turn is from `canonicalFrom`, as it will come to rest */
   getCanonicalHeading(): number;
-  /** Seeds a detent's remaining turn or tilt, and asks for the frame to spend it on */
-  seedDetent(axis: "theta" | "phi", remaining: number): void;
   /** Puts the crosshair on a ground point and shows it at full strength */
   setCrosshair(at: THREE.Vector3): void;
   /** Rebuilds the camera about `target` at `phi` and re-aims it */
@@ -2007,11 +1969,10 @@ const zoomOutStopEpsilon = 0.001;
 /** Near enough the polar it is easing to, so no further frame is asked for */
 const phiSettledEpsilon = 0.0001;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
-/** Near enough its compass point that the detent stops turning */
-const detentSettleUntil = 0.002;
 
 const halfPi = Math.PI / 2;
-const nearestCompass = (theta: number) => geomService.normalizeRadians(Math.round(theta / halfPi) * halfPi);
+/** In quarter turns: a turn from this near a compass point advances past the next one */
+const onCompassEpsilon = 0.01;
 /** The normal of an obstacle's top, for a pick that landed on it without hitting a face */
 const up = new THREE.Vector3(0, 1, 0);
 
