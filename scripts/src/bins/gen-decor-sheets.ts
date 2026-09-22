@@ -96,6 +96,7 @@ writeFileSync(sheetsJsonPath, safeJsonCompact(sheet));
 // 5. generate sheet PNGs
 // 🔔 skiaCanvas doesn't support filters (e.g. grayscale) applied to <path>,
 // although it does support applying them to <image>
+// 🔔 skiaCanvas SVG renders 4/8-digit hex (e.g. #ffffffe6) as black: use rgba() or fill-opacity
 const sheetDir = path.resolve(PROJECT_ROOT, "packages/app/public/sheet");
 mkdirSync(sheetDir, { recursive: true });
 
