@@ -83,18 +83,15 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
     const at = toMap(d.svg, e.clientX, e.clientY);
     d.dx = at.x - d.start.x;
     d.dy = at.y - d.start.y;
-    // the dragged decor follow the pointer through their transforms, not through React
-    for (const key of d.keys)
-      d.svg
-        .querySelector<SVGGElement>(`[data-decor="${key}"]`)
-        ?.setAttribute("transform", `translate(${d.dx} ${d.dy})`);
+    // the dragged decor, and their handles, follow the pointer through their transforms, not React
+    for (const el of dragged(d)) el.setAttribute("transform", `translate(${d.dx} ${d.dy})`);
   }
 
   function onItemPointerUp() {
     const d = drag.current;
     drag.current = null;
     if (d === null) return;
-    for (const key of d.keys) d.svg.querySelector<SVGGElement>(`[data-decor="${key}"]`)?.removeAttribute("transform");
+    for (const el of dragged(d)) el.removeAttribute("transform");
     if (Math.hypot(d.dx, d.dy) < dragThreshold) {
       // a click: the press kept the selection so a drag could move it all; narrow to the one
       if (d.keys.length > 1) onSelect([d.key]);
@@ -104,6 +101,12 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
       d.keys.flatMap((key) =>
         key in w.decor.runtime.defByKey ? [moved(w.decor.runtime.defByKey[key], d.dx, d.dy)] : [],
       ),
+    );
+  }
+
+  function dragged(d: Drag) {
+    return d.svg.querySelectorAll<SVGElement>(
+      d.keys.map((key) => `[data-decor="${key}"], [data-handle="${key}"]`).join(","),
     );
   }
 
@@ -164,6 +167,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
         return handles.map((p, i) => (
           <rect
             key={`${key}:${i}`}
+            data-handle={key}
             data-no-pan
             x={p.x - size / 2}
             y={p.y - size / 2}
