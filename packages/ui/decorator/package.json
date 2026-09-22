@@ -1,5 +1,5 @@
 {
-  "name": "@npc-cli/ui__nav-routes",
+  "name": "@npc-cli/ui__decorator",
   "private": true,
   "type": "module",
   "exports": {
@@ -8,7 +8,6 @@
   "scripts": {},
   "dependencies": {
     "@base-ui/react": "catalog:",
-    "@npc-cli/cli": "workspace:^",
     "@npc-cli/ui-sdk": "workspace:^",
     "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",

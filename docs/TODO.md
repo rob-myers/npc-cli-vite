@@ -37,7 +37,7 @@
 - improve map thumbnail (🔔 currently blank)
 - tsconfig project references with declaration output, so World is type-checked once
   - dependents re-check its sources; TSL types then hit TS2590 depending on file order
-  - workaround: `ui/nav-routes/tsconfig.json` includes `../world/src` first
+  - workaround: `ui/decorator/tsconfig.json` includes `../world/src` first
 - improve hmr (avoid full page reload): packages/util/src/index.ts into individual barrels
   - e.g. for QueryClientApi
 
@@ -86,7 +86,7 @@
 - 🚧 finish geomorph 302
 - BUG MapEdit drafts fighting: with 2 instances open for same file
 
-## NavPath
+## Decorator
 
 - ✅ route commands (jsh) `route_add` `route_rm` `route_init`
   - ✅ stored in `/shared/map/{mapKey}/path` alias `/shared/path`
@@ -100,8 +100,16 @@
   - ✅ can click route nodes (decor points) to toggle rich ui Html3d
   - ✅ refine Html3d UI
 - ✅ NpcBubbles should use `w.html`
-- 🚧 new ui NavRoutes in packages/ui/nav-routes
-- route_add -> route add, route_rm -> route rm
+- ✅ new ui NavRoutes in packages/ui/nav-routes
+
+- 🚧 ui/nav-routes --> ui/decorator
+  - decorate world map with dynamic points, rects, circles, icons, screens etc.
+  - keep quad-label <-> html3d toggle
+  - keep editor
+  - discard notion of path
+  - can group points/rects/circles etc.
+
+- w.label should fade with rooms
 
 ## Site
 

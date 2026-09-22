@@ -1,9 +1,9 @@
 import { defineUi } from "@npc-cli/ui-sdk/schema";
 import { lazy } from "react";
-import { NavRoutesUiMetaSchema } from "./schema";
+import { DecoratorUiMetaSchema } from "./schema";
 
 export default defineUi({
-  ui: lazy(() => import("./NavRoutes")),
+  ui: lazy(() => import("./Decorator")),
   bootstrap: null,
-  schema: NavRoutesUiMetaSchema,
+  schema: DecoratorUiMetaSchema,
 });

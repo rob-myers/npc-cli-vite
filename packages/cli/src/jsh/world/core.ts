@@ -1042,7 +1042,7 @@ export function skin(
  * # spawn multiple
  * pick | spawn npc:rob-
  *
- * spawn npc:rob at:$( pick 1 ) angle:Math.PI
+ * spawn npc:rob at:$( pick 1 ) angle:3.14
  * spawn npc:rob at:$( pick 1 ) facing:$( pick 1 )
  *
  * # alternating (at, facing)

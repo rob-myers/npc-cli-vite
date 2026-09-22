@@ -32,11 +32,6 @@ declare namespace JshCli {
         mode: "idle" | "server" | "client";
         phase: string;
       }
-    | {
-        /** A route in `/shared/path` was set or removed, or `null`: redraw them all — see jsh `route.ts` */
-        key: "path-changed";
-        name: string | null;
-      }
     | PickEvent
     | { key: "removed-npcs"; npcKeys: string[] }
     | {

@@ -53,7 +53,7 @@
       "path": "./packages/ui/jobs"
     },
     {
-      "path": "./packages/ui/nav-routes"
+      "path": "./packages/ui/decorator"
     }
   ]
 }

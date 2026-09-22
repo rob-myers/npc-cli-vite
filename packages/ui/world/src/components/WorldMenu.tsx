@@ -255,8 +255,8 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
-      case "Routes":
-        return w.debug?.routesShown ?? true;
+      case "Decorations":
+        return w.debug?.decorShown ?? false;
       default:
         return false;
     }
@@ -346,11 +346,12 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
-      case "Routes": {
-        const next = !w.debug?.routesShown;
-        w.debug?.set({ routesShown: next });
-        store.patch({ routesShown: next });
-        w.events.next({ key: "path-changed", name: null }); // jsh draws them — see `route.ts`
+      case "Decorations": {
+        const next = !w.debug?.decorShown;
+        w.debug?.set({ decorShown: next });
+        store.patch({ decorShown: next });
+        w.decor.setupRuntimeInstances(); // decor not meant to show is drawn whilst decorating
+        w.view.forceUpdate();
         break;
       }
     }
@@ -371,7 +372,7 @@ export function WorldMenu() {
   // debug list, or by `f`. Any of them lands here, since it watches the VALUE
   const followFlash = useChangeCount(w.view.cameraFollow);
 
-  // until a tty has connected, what jsh owns is not on show e.g. routes. A client of another world
+  // until a tty has connected, what jsh owns is not on show e.g. predicates. A client of another world
   // says nothing either way: its jsh state is the server's
   const ttyStatus = w.ttyConnected === true ? "connected" : w.client === false ? "never" : null;
 
@@ -1274,7 +1275,7 @@ const debugItems = [
   "Pick Doors",
   "Door Normals",
   "Decor Points",
-  "Routes",
+  "Decorations",
   "NavMesh",
 ] as const;
 

@@ -85,7 +85,7 @@ Which npcs are parked — and the wall segment each stands against — is jsh st
 
 ## jsh commands
 
-Exports of `packages/cli/src/jsh/world/{core,demo,debug,pred,route}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+Exports of `packages/cli/src/jsh/world/{core,demo,debug,decor,pred}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
 
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
@@ -94,20 +94,13 @@ Exports of `packages/cli/src/jsh/world/{core,demo,debug,pred,route}.ts` become s
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
-## Routes
+## Decorator panel
 
-See `docs/route-command.md` — the ONLY doc for routes. In short: `/shared/map/{mapKey}/path`, aliased
-`/shared/path`, holds named routes — tracks of steps by role, bound to npcs when run
-(`route patrol guard:rob-0 medic:kate`), built with `route_add`, changed only through
-`routes.set`/`remove`. They are drawn as pickable runtime decor (`meta.noPersist`), with labels via
-`w.labels` and a card per clicked node via `w.html` — two generic hosts, which the npc bubbles use too.
-
-## NavRoutes panel
-
-See `docs/nav-routes.md` — the ONLY doc for the panel. In short: `packages/ui/nav-routes` is a 2D
-top-down editor for nav paths over a live World (`meta.worldKey`, read from the query cache). The map
-is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live doors;
-npcs are shown only when chosen. It edits paths; it does not manage or run behaviours.
+See `docs/decorator.md` — the ONLY doc for it. In short: `packages/ui/decorator` places dynamic
+(runtime) decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache).
+The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live
+doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **Decorations**
+toggle labels it and opens a card per pick.
 
 ## MapEdit saving
 

@@ -4,11 +4,11 @@ import { helper } from "@npc-cli/ui__world/helper";
 import { Mat } from "@npc-cli/util/geom";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { useEffect, useMemo, useRef } from "react";
-import type { NavRoutesUiMeta } from "./schema";
+import type { DecoratorUiMeta } from "./schema";
 
 /**
  * The map from above, in world metres: 2D `x/y` is world `x/z`. Drawn from each geomorph's own
- * layout and the navmesh, so it is where things really are — see `docs/nav-routes.md`
+ * layout and the navmesh, so it is where things really are — see `docs/decorator.md`
  */
 export function NavMap2d({ w, show, npcKeys, children }: Props) {
   const bounds = useMemo(() => {
@@ -196,9 +196,9 @@ function NpcDots({ w, npcKeys }: Pick<Props, "w" | "npcKeys">) {
 
 type Props = {
   w: WorldState;
-  show: NavRoutesUiMeta["show"];
+  show: DecoratorUiMeta["show"];
   npcKeys: string[];
-  /** Drawn over the map and under the npcs, in world metres e.g. the routes */
+  /** Drawn over the map and under the npcs, in world metres e.g. the decor */
   children?: React.ReactNode;
 };
 

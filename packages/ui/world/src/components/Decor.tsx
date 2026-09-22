@@ -357,8 +357,17 @@ export default function Decor() {
           decor.type === "quad" ||
           (decor.type === "point" && decor.meta.shown === true) ||
           (decor.type === "rect" && decor.meta.shown === true) ||
-          (decor.type === "circle" && decor.meta.shown === true)
+          (decor.type === "circle" && decor.meta.shown === true) ||
+          // whilst decorating, runtime decor is drawn whether it is meant to show or not
+          (w.debug?.decorShown === true && decor.key in state.runtime.byKey)
         );
+      },
+      rename(decorKey, next) {
+        const def = state.runtime.defByKey[decorKey];
+        if (def === undefined || next === "" || next === decorKey || next in state.byKey) return false;
+        state.remove(decorKey);
+        state.create({ ...def, key: next });
+        return true;
       },
       queryPoint(center, opts) {
         const groundPoint = helper.parseGroundPoint(center);
@@ -534,7 +543,7 @@ export default function Decor() {
 
         const imgKey = state.getDecorImgKey(decor);
         const entry = w.sheets?.decor[imgKey];
-        const dims = w.sheets?.decorSheetDims[entry.sheetId];
+        const dims = entry === undefined ? undefined : w.sheets?.decorSheetDims[entry.sheetId];
         if (!entry || !dims) return false;
 
         const k = typeof decor.meta.inset === "number" ? decor.meta.inset : 0;
@@ -1131,6 +1140,8 @@ export type State = {
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
+  /** Runtime decor only; `false` when there is none such, or `next` is taken */
+  rename(decorKey: string, next: string): boolean;
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
   removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
   setupRuntimeInstances(): void;

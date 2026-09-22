@@ -11,6 +11,7 @@ import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
 import type { SelectFloatType } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
+import { DecorInspector } from "./DecorInspector";
 import { WorldContext } from "./world-context";
 
 export function Debug() {
@@ -43,7 +44,7 @@ export function Debug() {
       debugPointInstanceIdToDecorId: [],
       localBoundary: [] as XZSeg[],
       polylines: new Map(),
-      routesShown: getWorldStore(w.key).read().routesShown,
+      decorShown: getWorldStore(w.key).read().decorShown,
       doorNormalsShown: false,
       gridShown: false,
       logGPUInfo: false,
@@ -345,6 +346,8 @@ export function Debug() {
       />
 
       {state.navMeshShown && state.navMeshHelper && <primitive object={state.navMeshHelper.object} />}
+
+      {state.decorShown && <DecorInspector />}
     </>
   );
 }
@@ -411,8 +414,8 @@ export type State = {
   localBoundary: XZSeg[];
   /** By key, drawn as a disc per point joined by lines — see `debug_corners` */
   polylines: Map<string, Polyline>;
-  /** Whether the routes in `/shared/path` are drawn, as decor — see jsh `route.ts` */
-  routesShown: boolean;
+  /** Decorating: every runtime decor is drawn, labelled and opens its card — see `DecorInspector` */
+  decorShown: boolean;
   doorNormalsShown: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;

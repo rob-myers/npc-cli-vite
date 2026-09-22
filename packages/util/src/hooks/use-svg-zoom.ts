@@ -13,7 +13,7 @@ export function preventPopupGestures(el: HTMLElement | SVGElement | null) {
 
 /**
  * Pan and zoom for an SVG whose viewBox is in world units: wheel about the cursor, drag, pinch.
- * Shared by the World's debug modals and `@npc-cli/ui__nav-routes`.
+ * Shared by the World's debug modals and `@npc-cli/ui__decorator`.
  *
  * One rule serves all three: the map point that was grabbed stays under the pointer. It is worked
  * out off the SVG's own screen transform, since `preserveAspectRatio` letterboxes the viewBox and

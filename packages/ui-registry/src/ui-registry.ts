@@ -1,8 +1,8 @@
 import Blog from "@npc-cli/ui__blog";
+import Decorator from "@npc-cli/ui__decorator";
 import Jobs from "@npc-cli/ui__jobs";
 import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
-import NavRoutes from "@npc-cli/ui__nav-routes";
 import Tabs from "@npc-cli/ui__tabs";
 import Template from "@npc-cli/ui__template";
 import World from "@npc-cli/ui__world";
@@ -15,10 +15,10 @@ import type { UiPackageDef } from "@npc-cli/ui-sdk";
  */
 export type UiRegistry = {
   Blog: typeof Blog;
+  Decorator: typeof Decorator;
   Jobs: typeof Jobs;
   Jsh: typeof Jsh;
   MapEdit: typeof MapEdit;
-  NavRoutes: typeof NavRoutes;
   Tabs: typeof Tabs;
   Template: typeof Template;
   World: typeof World;
@@ -27,10 +27,10 @@ export type UiRegistry = {
 export const uiRegistryFactory = (): UiRegistry =>
   ({
     Blog,
+    Decorator,
     Jobs,
     Jsh,
     MapEdit,
-    NavRoutes,
     Tabs,
     Template,
     World,

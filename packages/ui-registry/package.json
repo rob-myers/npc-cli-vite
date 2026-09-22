@@ -11,10 +11,10 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/ui__blog": "workspace:^",
+    "@npc-cli/ui__decorator": "workspace:^",
     "@npc-cli/ui__jobs": "workspace:^",
     "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/ui__map-edit": "workspace:^",
-    "@npc-cli/ui__nav-routes": "workspace:^",
     "@npc-cli/ui__tabs": "workspace:^",
     "@npc-cli/ui__template": "workspace:^",
     "@npc-cli/ui__world": "workspace:^",

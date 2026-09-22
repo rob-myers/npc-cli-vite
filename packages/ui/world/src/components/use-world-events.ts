@@ -355,6 +355,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         switch (e.key) {
           case "decor-created":
           case "decor-removed":
+            // whoever edits is saved — not whilst a map changes, which removes the outgoing map's
+            // decor after saving it, and restores the incoming one's
+            if (w.isMapChanging() === false) state.persistDecor();
             break;
           case "decor-ready":
             // an edit may have taken the decor somebody was using
@@ -469,8 +472,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
-            break;
-          case "path-changed":
             break;
           default:
             throw new ExhaustiveError(e);

@@ -7,8 +7,6 @@
     "./jsh/modules": "./src/jsh/modules.js",
     "./jsh/profiles": "./src/jsh/profiles.js",
     "./jsh/scripts": "./src/jsh/scripts.js",
-    "./jsh/world/route": "./src/jsh/world/route.ts",
-    "./jsh/world/route-icons": "./src/jsh/world/route-icons.ts",
     "./jsh/world/worker/register": "./src/jsh/world/worker/register.ts",
     "./shell/const": "./src/shell/const.ts",
     "./shell/js-to-shell": "./src/shell/js-to-shell.ts",
