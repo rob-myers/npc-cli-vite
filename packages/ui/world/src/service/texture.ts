@@ -691,11 +691,37 @@ function drawDeck(ct: CanvasRenderingContext2D, poly: Geom.Poly) {
   ct.fillRect(rect.x, rect.y, rect.width, rect.height);
 
   if (deckConfig.plate.shown === true) {
+    drawSeams(ct, rect);
     ct.fillStyle = getPlatePattern();
     ct.fillRect(rect.x, rect.y, rect.width, rect.height);
   }
 
   ct.restore();
+}
+
+/**
+ * Each seam straight onto its grid line, in metres, rather than from the pattern: a pattern whose
+ * origin falls between pixels, as a geomorph's bounds put it, is resampled off the grid
+ */
+function drawSeams(ct: CanvasRenderingContext2D, rect: Geom.RectJson) {
+  const { size, seamWidth, seamInk, lipWidth, lipInk } = deckConfig.plate;
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (let x = Math.floor(rect.x / size) * size; x <= rect.x + rect.width; x += size) xs.push(x);
+  for (let y = Math.floor(rect.y / size) * size; y <= rect.y + rect.height; y += size) ys.push(y);
+
+  // one path per ink, so a crossing is not inked twice
+  const band = (from: number, width: number) => {
+    ct.beginPath();
+    for (const x of xs) ct.rect(x + from, rect.y, width, rect.height);
+    for (const y of ys) ct.rect(rect.x, y + from, rect.width, width);
+  };
+  band(-seamWidth / 2, seamWidth); // the groove, centred on the line
+  ct.fillStyle = seamInk;
+  ct.fill();
+  band(seamWidth / 2, lipWidth); // its lit lip just beyond, towards the light
+  ct.fillStyle = lipInk;
+  ct.fill();
 }
 
 function drawRoomOutline(ct: CanvasRenderingContext2D, room: Geom.Poly) {
@@ -739,16 +765,7 @@ function createPlatePattern(): CanvasPattern {
   canvas.height = side;
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-  // only the top and left edges: the plate to the right and the one below draw the others
-  const seamPx = Math.max(1, Math.round(plate.seamWidth * worldToCanvas));
-  const lipPx = Math.max(1, Math.round(plate.lipWidth * worldToCanvas));
-  ctx.fillStyle = plate.seamInk;
-  ctx.fillRect(0, 0, side, seamPx);
-  ctx.fillRect(0, 0, seamPx, side);
-  ctx.fillStyle = plate.lipInk;
-  ctx.fillRect(0, seamPx, side, lipPx);
-  ctx.fillRect(seamPx, 0, lipPx, side);
-
+  // the seams are `drawSeams`', straight onto the grid: only the rivets are patterned
   if (rivet.shown === true) {
     const radius = rivet.radius * worldToCanvas;
     const inset = rivet.inset * worldToCanvas;
