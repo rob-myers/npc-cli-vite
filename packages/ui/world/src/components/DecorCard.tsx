@@ -69,6 +69,7 @@ export function DecorCard({
             <NumberRow label="y" value={def.y} onCommit={(y) => commit({ ...def, y })} />
             <NumberRow label="orient°" value={def.orient ?? 0} onCommit={(orient) => commit({ ...def, orient })} />
             <NumberRow label="y3d" value={def.y3d ?? 0} onCommit={(y3d) => commit({ ...def, y3d })} />
+            <NumberRow label="scale" value={def.scale ?? 1} onCommit={(scale) => commit({ ...def, scale })} />
             <ImgRow w={w} value={def.img} optional onCommit={(img) => commit({ ...def, img })} />
           </>
         )}

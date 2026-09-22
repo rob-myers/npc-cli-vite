@@ -42,12 +42,85 @@ export function moved(def: Geomorph.DecorDef, dx: number, dy: number): Geomorph.
   }
 }
 
+type RectDef = Extract<Geomorph.DecorDef, { type: "rect" }>;
+type CircleDef = Extract<Geomorph.DecorDef, { type: "circle" }>;
+
+/** A rect's corners in world, from its own `x y` round by `angle` — as `Decor` lays it out */
+export function rectCorners(def: RectDef): Geom.VectJson[] {
+  const { cos, sin } = trig(def.angle ?? 0);
+  const local = [
+    [0, 0],
+    [def.width, 0],
+    [def.width, def.height],
+    [0, def.height],
+  ];
+  return local.map(([lx, ly]) => ({ x: def.x + cos * lx - sin * ly, y: def.y + sin * lx + cos * ly }));
+}
+
+/** The rect with corner `i` dragged to `at`, the corner opposite staying put; sides to `step` */
+export function rectResized(def: RectDef, i: number, at: Geom.VectJson, step?: number): RectDef {
+  const { cos, sin } = trig(def.angle ?? 0);
+  // into the rect's own frame, where the opposite corner and the drag bound the new rect
+  const dx = at.x - def.x;
+  const dy = at.y - def.y;
+  const p = { x: cos * dx + sin * dy, y: -sin * dx + cos * dy };
+  const o = [
+    { x: def.width, y: def.height },
+    { x: 0, y: def.height },
+    { x: 0, y: 0 },
+    { x: def.width, y: 0 },
+  ][i];
+  const width = sized(Math.abs(p.x - o.x), step);
+  const height = sized(Math.abs(p.y - o.y), step);
+  const minX = p.x < o.x ? o.x - width : o.x;
+  const minY = p.y < o.y ? o.y - height : o.y;
+  return {
+    ...def,
+    x: def.x + cos * minX - sin * minY,
+    y: def.y + sin * minX + cos * minY,
+    width,
+    height,
+  };
+}
+
+type PointDef = Extract<Geomorph.DecorDef, { type: "point" }>;
+
+/** Where a point's image has its corner, turned by `orient`, for a handle to sit */
+export function pointCorner(w: WorldState, def: PointDef): Geom.VectJson | null {
+  const size = imgSize(w, def.img, def.scale);
+  if (size === null) return null;
+  const { cos, sin } = trig(((def.orient ?? 0) * Math.PI) / 180);
+  const [lx, ly] = [size.width / 2, size.height / 2];
+  return { x: def.x + cos * lx - sin * ly, y: def.y + sin * lx + cos * ly };
+}
+
+/** The point with its image's corner dragged to `at`: a scale, to `step` when given */
+export function pointResized(w: WorldState, def: PointDef, at: Geom.VectJson, step?: number): PointDef {
+  const size = imgSize(w, def.img);
+  if (size === null) return def;
+  const half = Math.hypot(size.width, size.height) / 2;
+  const scale = Math.hypot(at.x - def.x, at.y - def.y) / half;
+  return { ...def, scale: Math.max(minScale, step === undefined ? scale : Math.round(scale / step) * step) };
+}
+
+export function circleResized(def: CircleDef, at: Geom.VectJson, step?: number): CircleDef {
+  return { ...def, radius: sized(Math.hypot(at.x - def.center.x, at.y - def.center.y), step) };
+}
+
+/** No smaller than `minSize`, and a multiple of `step` when given */
+function sized(length: number, step?: number) {
+  return Math.max(minSize, step === undefined ? length : Math.round(length / step) * step);
+}
+
+function trig(angle: number) {
+  return { cos: Math.cos(angle), sin: Math.sin(angle) };
+}
+
 /** An image's size in metres, as `Decor` draws it */
-export function imgSize(w: WorldState, img: string | undefined): { width: number; height: number } | null {
+export function imgSize(w: WorldState, img: string | undefined, scale = 1): { width: number; height: number } | null {
   const entry = img === undefined ? undefined : w.sheets?.decor[img];
-  return entry === undefined
-    ? null
-    : { width: entry.originalWidth * sguToWorldScale, height: entry.originalHeight * sguToWorldScale };
+  const s = sguToWorldScale * scale;
+  return entry === undefined ? null : { width: entry.originalWidth * s, height: entry.originalHeight * s };
 }
 
 /** A new def of `type` at `at`, with sensible defaults, its image centred there */
@@ -108,6 +181,9 @@ export function toMap(svg: SVGSVGElement, clientX: number, clientY: number): Geo
   return { x, y };
 }
 
+/** Metres: a resize stops here */
+const minSize = 0.1;
+const minScale = 0.1;
 export const defaultQuadImg = "screen-0";
 /** Where a tilted quad's top sits, as the symbols' screens do */
 export const tiltedQuadHeight = 1.35;

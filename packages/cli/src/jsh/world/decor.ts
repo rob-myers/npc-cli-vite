@@ -12,6 +12,8 @@ type AddOpts = {
   img?: string;
   /** Degrees, for a point */
   orient?: number;
+  /** On its image's size, for a point */
+  scale?: number;
   y3d?: number;
   /** For a circle, or a rect made about ONE point */
   radius?: number;
@@ -95,7 +97,7 @@ function toDef(type: DecorType, key: string, [p, q]: Geom.VectJson[], opts: AddO
   const meta = { shown: true, ...opts.meta }; // else it could not be seen where it was put
   switch (type) {
     case "point":
-      return { type, key, x: p.x, y: p.y, img: opts.img, orient: opts.orient, y3d: opts.y3d, meta };
+      return { type, key, x: p.x, y: p.y, img: opts.img, orient: opts.orient, scale: opts.scale, y3d: opts.y3d, meta };
     case "circle":
       return { type, key, center: p, radius: opts.radius ?? defaultRadius, meta };
     case "quad":

@@ -123,6 +123,7 @@ pick 1 | decor_add                         # an abstract point
 pick 2 | decor_add type:rect               # each PAIR of picks is a rect's opposite corners
 pick 1 | decor_add type:rect width:2 height:1
 pick 1 | decor_add type:circle radius:1.5
+pick 1 | decor_add type:point img:number-one scale:2
 pick 1 | decor_add type:quad img:screen-0
 decor_add to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
 decor_ls | map key | decor_rm
@@ -162,6 +163,17 @@ card in between: undoing past one reverts it too.
 rather than React, committed on release as one `w.decor.create` per decor (`moved`). Arrows nudge
 by 0.1m, 0.5m with shift. Delete or Backspace deletes.
 
+**Resizing**: a selected rect shows its four corners, a circle a point on its rim, a point with
+an image the image's corner; dragging one redraws the def in place (`rectResized` keeps the
+opposite corner put, in the rect's own turned frame; `circleResized` sets the radius;
+`pointResized` sets the point's **`scale`**, a factor on its image's own size which the World
+honours — `Decor` scales the instance and the bounds by it, and the card has it as a field) and
+commits it on release — one edit, so one undo. With shift held the sides go by 0.5m, with ctrl or
+alt by 0.1m — a scale by 0.5 or 0.1. Nothing is smaller than 0.1m, or scaled under 0.1.
+
+A point or quad with an image draws the same raster the World's sheet is packed from,
+`/decor/<img>.thumbnail.png`, so it looks as it does in 3D.
+
 The map itself owns presses on it (`NavMap2d`): a plain press pans, a press let go within a few px
 is a click, and a shift-press is a marquee. Decor opt out of panning with `data-no-pan`, which
 `useSvgZoom` respects, and handle their own presses. Client coordinates become map ones through the
@@ -172,4 +184,4 @@ The sidebar's crosshair centres the MAP on the decor (`centreOn`, zooming in to 
 
 ## Not built yet
 
-Rotate and resize handles, snapping, duplicate, copy/paste.
+Rotate handles, snapping, duplicate, copy/paste.

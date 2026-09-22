@@ -1,15 +1,63 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { cn } from "@npc-cli/util";
 import { MapPinIcon } from "@phosphor-icons/react";
-import { useRef } from "react";
-import { imgSize, moved, toMap } from "./decor-edit";
+import { useRef, useState } from "react";
+import {
+  circleResized,
+  imgSize,
+  moved,
+  pointCorner,
+  pointResized,
+  rectCorners,
+  rectResized,
+  toMap,
+} from "./decor-edit";
 
 /**
  * The map's decor, over `NavMap2d`: static decor faint for context, runtime decor selectable and
- * draggable. A drag moves the selection as one and commits on release, as one `create` per decor
+ * draggable. A drag moves the selection as one and commits on release, as one `create` per decor.
+ * A selected rect or circle has handles: its corners, or a point on its rim; a point with an
+ * image has one at the image's corner, which scales it
  */
 export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Props) {
   const drag = useRef<Drag | null>(null);
+  /** The def as a handle drags it, drawn in place of the decor until let go */
+  const [resizing, setResizing] = useState<Geomorph.DecorDef | null>(null);
+  const resized = useRef<Geomorph.DecorDef | null>(null); // the same, for the release to commit
+
+  function onHandlePointerDown(e: React.PointerEvent<SVGElement>, key: string, i: number) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const handle = e.currentTarget; // React drops `currentTarget` once the handler returns
+    const svg = handle.ownerSVGElement;
+    const def = w.decor.runtime.defByKey[key];
+    if (svg === null || def === undefined) return;
+    handle.setPointerCapture(e.pointerId);
+    const onMove = (ev: PointerEvent) => {
+      const at = toMap(svg, ev.clientX, ev.clientY);
+      const step = ev.shiftKey ? coarseStep : ev.ctrlKey || ev.altKey ? fineStep : undefined;
+      resized.current =
+        def.type === "rect"
+          ? rectResized(def, i, at, step)
+          : def.type === "circle"
+            ? circleResized(def, at, step)
+            : def.type === "point"
+              ? pointResized(w, def, at, step)
+              : null;
+      setResizing(resized.current);
+    };
+    const onUp = () => {
+      handle.removeEventListener("pointermove", onMove);
+      handle.removeEventListener("pointerup", onUp);
+      handle.removeEventListener("pointercancel", onUp);
+      if (resized.current !== null) onCommit([resized.current]);
+      resized.current = null;
+      setResizing(null);
+    };
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+    handle.addEventListener("pointercancel", onUp);
+  }
 
   function onItemPointerDown(e: React.PointerEvent<SVGGElement>, key: string) {
     if (e.button !== 0) return;
@@ -83,12 +131,86 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
             onPointerCancel={onItemPointerUp}
           >
             <title>{`${d.key} (${d.type}${d.meta.grKey ? `, ${d.meta.grKey}` : ""})`}</title>
-            <Shape w={w} decor={d} color={isSelected ? ink.selected : ink[d.type]} />
+            {resizing?.key === d.key ? (
+              <Preview w={w} def={resizing} color={ink.selected} />
+            ) : (
+              <Shape w={w} decor={d} color={isSelected ? ink.selected : ink[d.type]} />
+            )}
           </g>
         );
       })}
+      {selected.map((key) => {
+        const def = resizing?.key === key ? resizing : w.decor.runtime.defByKey[key];
+        if (def === undefined) return null;
+        const corner = def.type === "point" ? pointCorner(w, def) : null;
+        const handles =
+          def.type === "rect"
+            ? rectCorners(def)
+            : def.type === "circle"
+              ? [{ x: def.center.x + def.radius, y: def.center.y }]
+              : corner !== null
+                ? [corner]
+                : [];
+        // no bigger than a share of the thing itself, e.g. a small image's corner
+        const extent =
+          def.type === "rect"
+            ? Math.min(def.width, def.height)
+            : def.type === "circle"
+              ? def.radius
+              : def.type === "point"
+                ? Math.min(...Object.values(imgSize(w, def.img, def.scale) ?? { w: Infinity }))
+                : Infinity;
+        const size = Math.min(handleSize, extent * handleShare);
+        return handles.map((p, i) => (
+          <rect
+            key={`${key}:${i}`}
+            data-no-pan
+            x={p.x - size / 2}
+            y={p.y - size / 2}
+            width={size}
+            height={size}
+            fill={ink.selected}
+            stroke="#000"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+            className="cursor-crosshair"
+            onPointerDown={(e) => onHandlePointerDown(e, key, i)}
+          />
+        ));
+      })}
     </g>
   );
+}
+
+/** A rect, circle or point as a handle drags it */
+function Preview({ w, def, color }: { w: WorldState; def: Geomorph.DecorDef; color: string }) {
+  const stroke = { stroke: color, strokeWidth: 1.5, vectorEffect: "non-scaling-stroke" as const };
+  if (def.type === "rect") {
+    const points = rectCorners(def)
+      .map((p) => `${p.x},${p.y}`)
+      .join(" ");
+    return <polygon points={points} fill={color} fillOpacity={0.15} {...stroke} />;
+  }
+  if (def.type === "circle") {
+    return <circle cx={def.center.x} cy={def.center.y} r={def.radius} fill={color} fillOpacity={0.15} {...stroke} />;
+  }
+  if (def.type === "point") {
+    const size = imgSize(w, def.img, def.scale);
+    if (size === null) return null;
+    return (
+      <rect
+        x={-size.width / 2}
+        y={-size.height / 2}
+        width={size.width}
+        height={size.height}
+        transform={`translate(${def.x} ${def.y}) rotate(${def.orient ?? 0})`}
+        fill={color}
+        fillOpacity={0.15}
+        {...stroke}
+      />
+    );
+  }
+  return null;
 }
 
 /** One decor as its 2D footprint */
@@ -96,7 +218,7 @@ function Shape({ w, decor: d, color }: { w: WorldState; decor: Geomorph.Decor; c
   const stroke = { stroke: color, strokeWidth: 1.5, vectorEffect: "non-scaling-stroke" as const };
   switch (d.type) {
     case "point": {
-      const size = imgSize(w, d.meta.img);
+      const size = imgSize(w, d.meta.img, d.scale);
       if (size === null) {
         // abstract: a pin, its tip on the point
         return (
@@ -123,7 +245,7 @@ function Shape({ w, decor: d, color }: { w: WorldState; decor: Geomorph.Decor; c
       return (
         <g transform={`translate(${d.x} ${d.y}) rotate(${d.orient})`}>
           <image
-            href={`/decor/${d.meta.img}.svg`}
+            href={`/decor/${d.meta.img}.thumbnail.png`}
             x={-size.width / 2}
             y={-size.height / 2}
             width={size.width}
@@ -152,7 +274,7 @@ function Shape({ w, decor: d, color }: { w: WorldState; decor: Geomorph.Decor; c
       const [a, b, c, e, f, g] = d.transform;
       return (
         <g transform={`matrix(${a} ${b} ${c} ${e} ${f} ${g})`}>
-          <image href={`/decor/${d.meta.img}.svg`} width={size.width} height={size.height} opacity={0.8} />
+          <image href={`/decor/${d.meta.img}.thumbnail.png`} width={size.width} height={size.height} opacity={0.8} />
           <rect
             width={size.width}
             height={size.height}
@@ -179,6 +301,12 @@ type Props = {
   onCommit(defs: Geomorph.DecorDef[]): void;
 };
 
+/** Metres, at most; and at most this share of the decor's own smallest extent */
+const handleSize = 0.16;
+const handleShare = 0.4;
+/** Metres: a resize with shift held goes by this, with ctrl or alt by the finer */
+const coarseStep = 0.5;
+const fineStep = 0.1;
 /** Metres: the pin stands this tall; its tip is this far down its box */
 const pinHeight = 0.5;
 const pinTipFrac = 232 / 256;

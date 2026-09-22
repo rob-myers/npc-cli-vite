@@ -1,8 +1,8 @@
-import { Discard, float, Fn, select, uniform, uniformArray, vec4 } from "three/tsl";
+import { Discard, Fn, float, select, uniform, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
-import { arrivedAt, morphNode, retarget, settled, type Morph } from "./morph";
+import { arrivedAt, type Morph, morphNode, retarget, settled } from "./morph";
 import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slots";
 
 /**

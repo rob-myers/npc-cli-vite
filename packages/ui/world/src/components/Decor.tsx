@@ -234,9 +234,11 @@ export default function Decor() {
             }
 
             const entry = def.img ? w.sheets.decor[def.img] : null;
-            const radius = entry
-              ? (Math.max(entry.originalWidth, entry.originalHeight) * sguToWorldScale) / 2
-              : decorPointDefaultRadius;
+            const scale = def.scale ?? 1;
+            const radius =
+              (entry
+                ? (Math.max(entry.originalWidth, entry.originalHeight) * sguToWorldScale) / 2
+                : decorPointDefaultRadius) * scale;
             const half = radius / 2;
 
             // def.transform overrides def.{x,y}
@@ -268,6 +270,7 @@ export default function Decor() {
               y: center.y,
               orient: def.orient ?? 0,
               transform,
+              scale,
               det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
             };
             break;
@@ -593,8 +596,9 @@ export default function Decor() {
           inst.setMatrixAt(id, mat4);
         } else {
           tmpMat.setMatrixValue(decor.transform);
+          const s = decor.scale * sguToWorldScale;
           //biome-ignore format: preserve newlines
-          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          tmpMat.preMultiply([ entry.originalWidth * s, 0, 0, entry.originalHeight * s, 0, 0]);
           //biome-ignore format: preserve newlines
           inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }

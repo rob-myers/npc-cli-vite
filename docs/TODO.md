@@ -113,8 +113,10 @@
 - ✅ decor rect/circle should have meta.floor
 
 - 🚧 Decorator refinements
-  - improve default decor point icon (not warn)
   - ✅ can tilt e.g. screen, switch
+  - ✅ Decorator can resize rect/circle/points
+  - ✅ Decorator has better icon for points
+  - improve default decor point icon (not warn)
   - can set 3d height 
   - book, box, key
 
