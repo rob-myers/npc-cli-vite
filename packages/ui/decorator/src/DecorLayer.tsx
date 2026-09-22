@@ -98,10 +98,17 @@ function Shape({ w, decor: d, color }: { w: WorldState; decor: Geomorph.Decor; c
     case "point": {
       const size = imgSize(w, d.meta.img);
       if (size === null) {
-        // abstract: a pin, its tip on the point, and a tick for its facing
+        // abstract: a pin, its tip on the point
         return (
           <g transform={`translate(${d.x} ${d.y})`}>
-            {/* <line x2={0} y2={-pinTick} transform={`rotate(${d.orient})`} {...stroke} /> */}
+            {/* under the pin: its hole would let a press through */}
+            <rect
+              x={-pinHeight / 2}
+              y={-pinHeight * pinTipFrac}
+              width={pinHeight}
+              height={pinHeight}
+              fill="transparent"
+            />
             <MapPinIcon
               x={-pinHeight / 2}
               y={-pinHeight * pinTipFrac}
@@ -172,10 +179,9 @@ type Props = {
   onCommit(defs: Geomorph.DecorDef[]): void;
 };
 
-/** Metres: the pin stands this tall; its tip is this far down its box; the facing tick reaches this far */
+/** Metres: the pin stands this tall; its tip is this far down its box */
 const pinHeight = 0.5;
 const pinTipFrac = 232 / 256;
-const pinTick = 0.35;
 /** In map metres: less is a click */
 const dragThreshold = 0.02;
 const ink = {

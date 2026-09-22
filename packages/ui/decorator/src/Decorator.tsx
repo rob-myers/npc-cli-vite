@@ -197,7 +197,8 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
       tabIndex={0}
       onKeyDown={state.onKeyDown}
     >
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-slate-800">
+      {/* one line, whatever the tools show: it scrolls sideways rather than wrapping */}
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-slate-800 overflow-x-auto scrollbar-thin whitespace-nowrap *:shrink-0">
         <span className="text-slate-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
