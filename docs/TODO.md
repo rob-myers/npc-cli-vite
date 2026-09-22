@@ -35,6 +35,11 @@
 
 - improve hull symbol thumbnail e.g. add room outlines
 - improve map thumbnail (🔔 currently blank)
+- tsconfig project references with declaration output, so World is type-checked once
+  - dependents re-check its sources; TSL types then hit TS2590 depending on file order
+  - workaround: `ui/decorator/tsconfig.json` includes `../world/src` first
+- improve hmr (avoid full page reload): packages/util/src/index.ts into individual barrels
+  - e.g. for QueryClientApi
 
 ### Performance
 
@@ -54,6 +59,7 @@
 ### Other Bugs
 
 - 🚧 BUG only some room labels shown when change to map 301-101-301
+- npc labels should be invisible during object-pick
 
 ## Documentation
 
@@ -61,7 +67,7 @@
   - ✅ final few before switch to blog
   - ✅ current -> sections
 
-- rewrite README.md
+- 🚧 rewrite README.md
 
 ## HMR
 
@@ -75,8 +81,44 @@
 
 ## MapEdit
 
-- 🚧 extend existing symbols with missing obstacles
+- 🚧 extend existing symbols
+- 🚧 finish geomorph 101
+- 🚧 finish geomorph 302
 - BUG MapEdit drafts fighting: with 2 instances open for same file
+
+## Decorator
+
+- ✅ route commands (jsh) `route_add` `route_rm` `route_init`
+  - ✅ stored in `/shared/map/{mapKey}/path` alias `/shared/path`
+  - ✅ `route_add` creates dynamic decor points as it builds
+    - e.g. `pick 3 | route_add demo guard`
+    - edges are decor too i.e. degenerate rects
+    - omitted from dynamic decor persist, use `route_init` instead
+    - cleans up on kill
+  - ✅ debug option to show possibly partial routes
+  - ✅ debug shows RouteStep label with value kind above nodes
+  - ✅ can click route nodes (decor points) to toggle rich ui Html3d
+  - ✅ refine Html3d UI
+- ✅ NpcBubbles should use `w.html`
+- ✅ new ui NavRoutes in packages/ui/nav-routes
+
+- ✅ ui/nav-routes --> ui/decorator
+  - decorate world map with dynamic points, rects, circles, icons, screens etc.
+  - keep quad-label <-> html3d toggle
+  - keep editor
+  - discard notion of path
+  - ❌ can group points/rects/circles etc.
+
+- ✅ w.label should fade with rooms
+- ✅ decor rect/circle should have meta.floor
+
+- 🚧 Decorator refinements
+  - ✅ can tilt e.g. screen, switch
+  - ✅ Decorator can resize rect/circle/points
+  - ✅ Decorator has better icon for points
+  - improve default decor point icon (not warn)
+  - can set 3d height 
+  - book, box, key
 
 ## Site
 

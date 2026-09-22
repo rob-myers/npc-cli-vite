@@ -999,7 +999,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           meta: {
             ...picked,
             ...gmRoomId,
-            nav: picked.type === "floor" && w.npc.getClosestPoly(point).success,
+            nav: (picked.type === "floor" || picked.type === "decor") && w.npc.getClosestPoly(point, 0.1).success,
             do:
               // picked decor with meta.do string
               (picked.type === "decor" && !!w.decor.byKey[picked.decorKey]?.meta.do) ||

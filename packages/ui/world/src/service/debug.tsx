@@ -1,24 +1,14 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { cn } from "@npc-cli/util";
 import { Rect } from "@npc-cli/util/geom/rect";
+import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { XIcon } from "@phosphor-icons/react";
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { WorldContext } from "../components/world-context";
 import { gmFloorExtraScale, roomHitTextureScaleDown, worldToSguScale } from "../const.env";
 import { getWorldStore } from "./storage";
 
 export type DebugModalProps = { open: boolean; onOpenChange: (open: boolean) => void; container?: HTMLElement | null };
-
-/** A popup that pans and zooms: the page must not scroll or pinch-zoom under it */
-function preventPopupGestures(el: HTMLElement | null) {
-  if (!el) return;
-  const preventTouch = (e: TouchEvent) => {
-    if (e.touches.length >= 2) e.preventDefault();
-  };
-  el.addEventListener("touchstart", preventTouch, { passive: false });
-  el.addEventListener("touchmove", preventTouch, { passive: false });
-  el.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
-}
 
 /** The live `roomHitCt` canvases in a row, in metres, panned and zoomed like the graphs */
 export function RoomHitModal({ open, onOpenChange, container }: DebugModalProps) {
@@ -487,151 +477,6 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
       </Dialog.Portal>
     </Dialog.Root>
   );
-}
-
-function useSvgZoom(bounds: { minX: number; minY: number; width: number; height: number }) {
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
-  const pinchRef = useRef<{
-    dist: number;
-    midX: number;
-    midY: number;
-    startZoom: number;
-    startPanX: number;
-    startPanY: number;
-  } | null>(null);
-
-  const viewBox = useMemo(() => {
-    const w = bounds.width / zoom;
-    const h = bounds.height / zoom;
-    const cx = bounds.minX + bounds.width / 2 + pan.x;
-    const cy = bounds.minY + bounds.height / 2 + pan.y;
-    return `${cx - w / 2} ${cy - h / 2} ${w} ${h}`;
-  }, [bounds, zoom, pan]);
-
-  const onWheel = useCallback(
-    (e: React.WheelEvent<SVGSVGElement>) => {
-      const svg = e.currentTarget;
-      const rect = svg.getBoundingClientRect();
-      const fx = (e.clientX - rect.left) / rect.width;
-      const fy = (e.clientY - rect.top) / rect.height;
-
-      const factor = e.deltaY < 0 ? 1.05 : 1 / 1.05;
-      const newZoom = Math.min(20, Math.max(0.5, zoom * factor));
-
-      const vw = bounds.width / zoom;
-      const vh = bounds.height / zoom;
-      const curVx = bounds.minX + bounds.width / 2 + pan.x - vw / 2;
-      const curVy = bounds.minY + bounds.height / 2 + pan.y - vh / 2;
-      const mouseVx = curVx + vw * fx;
-      const mouseVy = curVy + vh * fy;
-
-      const newVw = bounds.width / newZoom;
-      const newVh = bounds.height / newZoom;
-      const newCx = mouseVx - newVw * fx + newVw / 2;
-      const newCy = mouseVy - newVh * fy + newVh / 2;
-
-      setPan({
-        x: newCx - (bounds.minX + bounds.width / 2),
-        y: newCy - (bounds.minY + bounds.height / 2),
-      });
-      setZoom(newZoom);
-    },
-    [zoom, pan, bounds],
-  );
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
-      if ((e.target as Element).closest?.("text")) return;
-      e.currentTarget.setPointerCapture(e.pointerId);
-      dragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
-    },
-    [pan],
-  );
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!dragRef.current || pinchRef.current) return;
-      const svg = e.currentTarget;
-      const rect = svg.getBoundingClientRect();
-      const scaleX = bounds.width / zoom / rect.width;
-      const scaleY = bounds.height / zoom / rect.height;
-      setPan({
-        x: dragRef.current.panX - (e.clientX - dragRef.current.startX) * scaleX,
-        y: dragRef.current.panY - (e.clientY - dragRef.current.startY) * scaleY,
-      });
-    },
-    [bounds, zoom],
-  );
-
-  const onPointerUp = useCallback(() => {
-    dragRef.current = null;
-  }, []);
-
-  const onTouchStart = useCallback(
-    (e: React.TouchEvent<SVGSVGElement>) => {
-      if (e.touches.length === 2) {
-        dragRef.current = null;
-        const [t0, t1] = [e.touches[0], e.touches[1]];
-        pinchRef.current = {
-          dist: Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY),
-          midX: (t0.clientX + t1.clientX) / 2,
-          midY: (t0.clientY + t1.clientY) / 2,
-          startZoom: zoom,
-          startPanX: pan.x,
-          startPanY: pan.y,
-        };
-      }
-    },
-    [zoom, pan],
-  );
-
-  const onTouchMove = useCallback(
-    (e: React.TouchEvent<SVGSVGElement>) => {
-      if (e.touches.length !== 2 || !pinchRef.current) return;
-      const [t0, t1] = [e.touches[0], e.touches[1]];
-      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
-      const midX = (t0.clientX + t1.clientX) / 2;
-      const midY = (t0.clientY + t1.clientY) / 2;
-
-      const scale = dist / pinchRef.current.dist;
-      const newZoom = Math.min(20, Math.max(0.5, pinchRef.current.startZoom * scale));
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const scaleX = bounds.width / pinchRef.current.startZoom / rect.width;
-      const scaleY = bounds.height / pinchRef.current.startZoom / rect.height;
-
-      setPan({
-        x: pinchRef.current.startPanX - (midX - pinchRef.current.midX) * scaleX,
-        y: pinchRef.current.startPanY - (midY - pinchRef.current.midY) * scaleY,
-      });
-      setZoom(newZoom);
-    },
-    [bounds],
-  );
-
-  const onTouchEnd = useCallback(() => {
-    pinchRef.current = null;
-  }, []);
-
-  const reset = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
-
-  return {
-    viewBox,
-    onWheel,
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-    reset,
-    zoom,
-  };
 }
 
 function octantCandidates(cx: number, cy: number, tw: number, th: number, gap: number) {

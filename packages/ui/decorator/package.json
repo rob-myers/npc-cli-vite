@@ -1,0 +1,22 @@
+{
+  "name": "@npc-cli/ui__decorator",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "catalog:",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "catalog:",
+    "@base-ui/react": "catalog:",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  }
+}

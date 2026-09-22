@@ -1,7 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
-import { ANY_QUERY_FILTER, findPath, type Vec3 } from "navcat";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, select, smoothstep, texture, uv, vec2 } from "three/tsl";
@@ -12,15 +11,17 @@ import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
 import type { SelectFloatType } from "../service/texture";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
+import { DecorInspector } from "./DecorInspector";
 import { WorldContext } from "./world-context";
 
 export function Debug() {
   const w = useContext(WorldContext);
   const quad = useMemo(() => createXzQuad(), []);
-  const cornersGeo = useMemo(() => {
+  const polylinesGeo = useMemo(() => {
     const geo = createXzQuad();
-    // 1 for the discs, 0 for the lines joining them — see `cornersMaterial`
-    geo.setAttribute("isDisc", new THREE.InstancedBufferAttribute(new Float32Array(maxCornerInstances), 1));
+    // 1 for the discs, 0 for the lines joining them — see `materials.polylines`
+    geo.setAttribute("isDisc", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances), 1));
+    geo.setAttribute("lineColor", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances * 3), 3));
     return geo;
   }, []);
   const decorPointsGeo = useMemo(() => {
@@ -36,15 +37,14 @@ export function Debug() {
       arrowGeo: createArrowGeo(),
       // the instanced meshes, via `state.ref`
       boundaryInst: null as unknown as THREE.InstancedMesh,
-      cornersInst: null as unknown as THREE.InstancedMesh,
+      polylinesInst: null as unknown as THREE.InstancedMesh,
       debugPointsInst: null as unknown as THREE.InstancedMesh,
       doorNormalsInst: null as unknown as THREE.InstancedMesh,
       navPathInst: null as unknown as THREE.InstancedMesh,
       debugPointInstanceIdToDecorId: [],
-      demoNavPath: [] as Vec3[],
-      demoNavPathShown: false,
       localBoundary: [] as XZSeg[],
-      corners: [] as XZPoint[],
+      polylines: new Map(),
+      decorShown: getWorldStore(w.key).read().decorShown,
       doorNormalsShown: false,
       gridShown: false,
       logGPUInfo: false,
@@ -64,19 +64,6 @@ export function Debug() {
         if (!entry) return null;
         const item = w.gms[entry.gmId]?.decor[entry.decorId];
         return item ? { ...item.meta } : null;
-      },
-      computeDemoPath() {
-        const [gm] = w.gms;
-        if (!gm) return;
-        const { x, y, height } = gm.gridRect;
-        const result = findPath(
-          w.nav.navMesh,
-          [x + 0.5, 0, y + 0.5],
-          [x + 0.5, 0, y + height * 0.95],
-          [0.5, 0.1, 0.5],
-          ANY_QUERY_FILTER,
-        );
-        state.demoNavPath = result.success ? result.path.map((p) => p.position) : [];
       },
       onPhysicsDebugData(e) {
         if (e.data.type === "physics-debug-data-response") {
@@ -168,42 +155,50 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
         uvOffs.needsUpdate = uvDims.needsUpdate = uvTexIds.needsUpdate = true;
       },
-      updateNavPathInstances() {
-        const { demoNavPath: ps } = state;
-        const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][2], p[0], p[2]]);
-        writeSegmentInstances(state.navPathInst, segs, 0.01);
-      },
       setLocalBoundary(segs) {
         state.localBoundary = segs;
         state.drawBoundary();
       },
-      setCorners(points) {
-        state.corners = points;
-        state.drawCorners();
+      setPolyline(key, polyline) {
+        state.polylines.set(key, polyline);
+        state.drawPolylines();
+      },
+      removePolyline(key) {
+        if (state.polylines.delete(key) === true) state.drawPolylines();
       },
       drawBoundary() {
         // written straight through the ref, nothing rendering — the caller asks for a frame if it
-        // needs one. Rarely changes, and shares nothing with `drawCorners`
+        // needs one. Rarely changes, and shares nothing with `drawPolylines`
         writeSegmentInstances(state.boundaryInst, state.localBoundary, debugSegHeight);
       },
-      drawCorners() {
-        const inst = state.cornersInst;
+      drawPolylines() {
+        const inst = state.polylinesInst;
         if (!inst) return;
-        const ps = state.corners.slice(0, maxCorners);
-        const isDisc = cornersGeo.getAttribute("isDisc").array as Float32Array;
-        // a disc per corner, then the lines joining them, in the one mesh
-        for (const [i, [x, z]] of ps.entries()) {
-          writeDiscInstance(inst, i, x, z, cornerDiscRadius);
-          isDisc[i] = 1;
+        const isDisc = polylinesGeo.getAttribute("isDisc").array as Float32Array;
+        const lineColor = polylinesGeo.getAttribute("lineColor").array as Float32Array;
+        let offset = 0;
+        for (const { points, color } of state.polylines.values()) {
+          const ps = points.slice(0, Math.floor((maxPolylineInstances - offset + 1) / 2));
+          if (ps.length === 0) continue;
+          tmpColor.set(color);
+          // a disc per point, then the lines joining them, all one colour
+          for (const [i, [x, z]] of ps.entries()) writeDiscInstance(inst, offset + i, x, z, polylineDiscRadius);
+          const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][1], p[0], p[1]]);
+          writeSegmentInstances(inst, segs, debugSegHeight, offset + ps.length);
+          for (let i = 0; i < ps.length + segs.length; i++) {
+            isDisc[offset + i] = i < ps.length ? 1 : 0;
+            tmpColor.toArray(lineColor, (offset + i) * 3);
+          }
+          offset += ps.length + segs.length;
         }
-        const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][1], p[0], p[1]]);
-        segs.forEach((_, i) => (isDisc[ps.length + i] = 0));
-        writeSegmentInstances(inst, segs, debugSegHeight, ps.length);
-        cornersGeo.getAttribute("isDisc").needsUpdate = true;
+        inst.count = offset;
+        inst.instanceMatrix.needsUpdate = true;
+        polylinesGeo.getAttribute("isDisc").needsUpdate = true;
+        polylinesGeo.getAttribute("lineColor").needsUpdate = true;
       },
     }),
     {
-      reset: { demoNavPathShown: true, originShown: true, pickGdkeyOpensDoors: true, pickDoors: true, arrowGeo: false },
+      reset: { arrowGeo: false },
     },
   );
 
@@ -218,11 +213,6 @@ export function Debug() {
     }
     gl.info.reset();
   });
-
-  useEffect(() => {
-    state.computeDemoPath();
-    state.updateNavPathInstances();
-  }, [w.nav]);
 
   useEffect(() => {
     state.updateDoorNormals();
@@ -280,11 +270,13 @@ export function Debug() {
     // a disc is cut out of the quad, rather than given a geometry of its own
     const disc = smoothstep(0.45, 0.5, uv().sub(0.5).length()).oneMinus();
     const isDisc = attribute<"float">("isDisc", "float").greaterThan(0.5);
+    const polylines = create("white", (select as SelectFloatType)(isDisc, disc, float(1)), false);
+    polylines.colorNode = attribute<"vec3">("lineColor", "vec3"); // each polyline its own
     return {
       navPath: create("rgb(255, 50, 0)", float(1)),
       origin: create("red", float(0.1)),
       boundary: create(boundaryColor, float(1), false),
-      corners: create(cornersColor, (select as SelectFloatType)(isDisc, disc, float(1)), false),
+      polylines,
       doorNormals: create("green", float(1)),
     };
   }, []);
@@ -309,15 +301,6 @@ export function Debug() {
         <boxGeometry args={[0.05, 10, 0.05]} />
       </mesh>
 
-      <instancedMesh
-        ref={state.ref("navPathInst")}
-        args={[quad, materials.navPath, maxPathSegments]}
-        frustumCulled={false}
-        position={[0, 1, 0]}
-        renderOrder={-6}
-        visible={state.demoNavPathShown}
-      />
-
       {/* an npc's local navmesh boundary, as `park` sees it — see `drawBoundary` */}
       <instancedMesh
         ref={state.ref("boundaryInst")}
@@ -327,10 +310,10 @@ export function Debug() {
         renderOrder={-6}
       />
 
-      {/* an npc's corners: a disc each, joined by lines — see `drawCorners` */}
+      {/* polylines e.g. an npc's corners: a disc per point joined by lines — see `drawPolylines` */}
       <instancedMesh
-        ref={state.ref("cornersInst")}
-        args={[cornersGeo, materials.corners, maxCornerInstances]}
+        ref={state.ref("polylinesInst")}
+        args={[polylinesGeo, materials.polylines, maxPolylineInstances]}
         count={0}
         frustumCulled={false}
         renderOrder={-5}
@@ -363,6 +346,8 @@ export function Debug() {
       />
 
       {state.navMeshShown && state.navMeshHelper && <primitive object={state.navMeshHelper.object} />}
+
+      {state.decorShown && <DecorInspector />}
     </>
   );
 }
@@ -370,25 +355,29 @@ export function Debug() {
 const pathWidth = 0.02;
 const maxPathSegments = 256;
 const maxBoundarySegs = 64;
-const maxCorners = 16;
-/** A disc per corner, plus the lines joining them */
-const maxCornerInstances = maxCorners * 2 - 1;
+/** Across every polyline: a disc per point, plus the lines joining them */
+const maxPolylineInstances = 1024;
 const maxDecorPoints = 1024;
 const maxDoorNormals = 512;
-const cornerDiscRadius = 0.08;
+const polylineDiscRadius = 0.08;
 const debugSegHeight = 0.02;
 const onPointHeight = 0.005;
 const arrowLen = 0.5;
 const arrowWidth = 0.25;
 const doorNormalHeight = 0.05;
 const boundaryColor = new THREE.Color("red");
-const cornersColor = new THREE.Color("dodgerblue");
 const tmpMat4 = new THREE.Matrix4();
+const tmpColor = new THREE.Color();
 
 /** A ground segment `[x1, z1, x2, z2]` */
 type XZSeg = [number, number, number, number];
 /** A ground point `[x, z]` */
-type XZPoint = [number, number];
+export type XZPoint = [number, number];
+
+export type Polyline = {
+  points: XZPoint[];
+  color: THREE.ColorRepresentation;
+};
 
 /** A disc of radius `r` centred on `(x, z)` — the quad's disc is cut out by its material */
 function writeDiscInstance(inst: THREE.InstancedMesh, i: number, x: number, z: number, r: number) {
@@ -416,17 +405,17 @@ export type State = {
   arrowGeo: THREE.BufferGeometry;
   /** The instanced meshes: each is `null` until mounted, despite the type */
   boundaryInst: THREE.InstancedMesh;
-  cornersInst: THREE.InstancedMesh;
+  polylinesInst: THREE.InstancedMesh;
   debugPointsInst: THREE.InstancedMesh;
   doorNormalsInst: THREE.InstancedMesh;
   navPathInst: THREE.InstancedMesh;
   debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
-  demoNavPath: Vec3[];
-  demoNavPathShown: boolean;
   /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_boundary` */
   localBoundary: XZSeg[];
-  /** An npc's corners, drawn as a disc each joined by lines — see `demo_corners` */
-  corners: XZPoint[];
+  /** By key, drawn as a disc per point joined by lines — see `debug_corners` */
+  polylines: Map<string, Polyline>;
+  /** Decorating: every runtime decor is drawn, labelled and opens its card — see `DecorInspector` */
+  decorShown: boolean;
   doorNormalsShown: boolean;
   gridShown: boolean;
   logGPUInfo: boolean;
@@ -442,17 +431,16 @@ export type State = {
     parsedKey: WW.PhysicsParsedBodyKey;
   })[];
   physicsCollidersShown: boolean;
-  computeDemoPath(): void;
   decodeDebugPointInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   updateDoorNormals(): void;
   updateDecorPoints(): void;
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
-  updateNavPathInstances(): void;
   setLocalBoundary(segs: XZSeg[]): void;
-  setCorners(points: XZPoint[]): void;
+  setPolyline(key: string, polyline: Polyline): void;
+  removePolyline(key: string): void;
   /** Writes `localBoundary` into its mesh */
   drawBoundary(): void;
-  /** Writes the `corners` discs and the lines joining them into their mesh */
-  drawCorners(): void;
+  /** Writes every shown polyline's discs and joining lines into the one mesh */
+  drawPolylines(): void;
 };

@@ -1,6 +1,5 @@
 import { events } from "./core";
 
-
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
     type: "circle",
@@ -130,6 +129,7 @@ export async function* demo_log_speech(ct: JshCli.RunArg) {
 }
 
 /**
+ * A card over an npc, following them — see `NpcBubbles`; its close button takes it down
  * ```sh
  * demo_npc_ui npc:rob
  * demo_npc_ui rob

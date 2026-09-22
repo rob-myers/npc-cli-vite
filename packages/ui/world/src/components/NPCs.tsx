@@ -517,6 +517,7 @@ export default function NPCs() {
             return; // interrupting move owns npc now
           }
           npc.anim.startIdle({ force: true });
+          state.postCrowdTickEvents.push({ key: "stopped-moving", npcKey });
           throw e;
         }
       },
@@ -588,6 +589,7 @@ export default function NPCs() {
           ) {
             // arrived
             npc.anim.startIdle();
+            state.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: npc.key });
           }
 
           const { x, y, z } = npc.position;

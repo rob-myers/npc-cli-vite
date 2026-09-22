@@ -18,7 +18,8 @@
     "./legacy/generic": "./src/legacy/generic.js",
     "./legacy/dom": "./src/legacy/dom.js",
     "./service/canvas": "./src/service/canvas.ts",
-    "./local-store": "./src/service/local-store.ts"
+    "./local-store": "./src/service/local-store.ts",
+    "./use-svg-zoom": "./src/hooks/use-svg-zoom.ts"
   },
   "scripts": {},
   "dependencies": {

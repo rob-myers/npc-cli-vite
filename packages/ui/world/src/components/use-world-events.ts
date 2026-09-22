@@ -355,6 +355,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         switch (e.key) {
           case "decor-created":
           case "decor-removed":
+            // whoever edits is saved — not whilst a map changes, which removes the outgoing map's
+            // decor after saving it, and restores the incoming one's
+            if (w.isMapChanging() === false) state.persistDecor();
             break;
           case "decor-ready":
             // an edit may have taken the decor somebody was using
@@ -600,6 +603,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "speech":
+          case "stopped-moving":
             break;
           default:
             throw new ExhaustiveError(e);
@@ -608,7 +612,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
-          decor: Object.values(w.decor.runtime.defByKey),
+          decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
         });
       },
       persistNpcs() {

@@ -511,6 +511,9 @@ importers:
       '@npc-cli/ui__blog':
         specifier: workspace:^
         version: link:../ui/blog
+      '@npc-cli/ui__decorator':
+        specifier: workspace:^
+        version: link:../ui/decorator
       '@npc-cli/ui__jobs':
         specifier: workspace:^
         version: link:../ui/jobs
@@ -602,6 +605,42 @@ importers:
       react-lite-youtube-embed:
         specifier: 'catalog:'
         version: 3.7.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
+
+  packages/ui/decorator:
+    dependencies:
+      '@atlaskit/pragmatic-drag-and-drop':
+        specifier: 'catalog:'
+        version: 1.7.7
+      '@atlaskit/pragmatic-drag-and-drop-hitbox':
+        specifier: 'catalog:'
+        version: 1.1.0
+      '@base-ui/react':
+        specifier: 'catalog:'
+        version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
+      '@npc-cli/ui__world':
+        specifier: workspace:^
+        version: link:../world
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.90.12(react@19.2.1)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.1(react@19.2.1)
       zod:
         specifier: 'catalog:'
         version: 4.1.13

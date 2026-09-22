@@ -255,6 +255,8 @@ export function WorldMenu() {
         return w.debug?.doorNormalsShown ?? true;
       case "Decor Points":
         return w.debug?.doPointsShown ?? false;
+      case "Decorations":
+        return w.debug?.decorShown ?? false;
       default:
         return false;
     }
@@ -341,6 +343,14 @@ export function WorldMenu() {
         break;
       case "Decor Points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
+        w.view.forceUpdate();
+        break;
+      }
+      case "Decorations": {
+        const next = !w.debug?.decorShown;
+        w.debug?.set({ decorShown: next });
+        store.patch({ decorShown: next });
+        w.decor.setupRuntimeInstances(); // decor not meant to show is drawn whilst decorating
         w.view.forceUpdate();
         break;
       }
@@ -854,6 +864,8 @@ function MenuShell({
           (event.target as HTMLElement).closest?.("[data-keep-menu-open]") != null
         ) {
           // panning to the player, or pausing, should not close the menu
+        } else if (reason === "outside-press" && w.rootEl?.contains(event.target as Node) === false) {
+          // nor should a press outside the World e.g. typing in a tty beside it
         } else if (reason === "outside-press" || reason === "escape-key" || reason === "item-press") {
           state.set({ menuOpen: false });
         }
@@ -1241,6 +1253,7 @@ const debugItems = [
   "Pick Doors",
   "Door Normals",
   "Decor Points",
+  "Decorations",
   "NavMesh",
 ] as const;
 

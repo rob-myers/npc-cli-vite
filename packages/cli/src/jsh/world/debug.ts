@@ -23,7 +23,6 @@ export async function debug_boundary(
   w.view.forceUpdate();
 }
 
-
 /**
  * Draw an npc's corners — the crowd's steering waypoints, `agent.corners` — in blue, redrawn
  * whenever they change, until killed. Sans npc, takes it down.
@@ -37,7 +36,7 @@ export async function debug_corners(
   opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
   const clear = () => {
-    w.debug.setCorners([]);
+    w.debug.removePolyline("corners");
     w.view.forceUpdate();
   };
   if (opts.npcKey === undefined) return clear();
@@ -54,7 +53,10 @@ export async function debug_corners(
     drawn = next;
     // drawn as a disc per corner, joined 1st to 2nd, 2nd to 3rd etc: the leg from the npc is
     // omitted, it would move every frame
-    w.debug.setCorners(cs.map(({ position }) => [position[0], position[2]]));
+    w.debug.setPolyline("corners", {
+      points: cs.map(({ position }) => [position[0], position[2]]),
+      color: "dodgerblue",
+    });
   });
 
   const handlers = api.handleStatus({
@@ -71,7 +73,6 @@ export async function debug_corners(
     handlers.dispose();
   }
 }
-
 
 /**
  * A line per crowd tick for one npc, to see a rock: `avoid` or `sep` (the arriving flags), the

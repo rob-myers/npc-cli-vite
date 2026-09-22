@@ -138,9 +138,13 @@ export default function Decor() {
           state.remove(def.key);
         }
 
-        const meta = (def.meta ?? {}) as Meta<Geomorph.GmRoomId>;
+        // a copy: the def is kept and persisted as given, and a def made from an old decor, e.g. one
+        // the Decorator moved, must not carry that decor's room along with it
+        const { gmId: _g, roomId: _r, grKey: _k, ...rest } = def.meta ?? {};
+        const meta = rest as Meta<Geomorph.GmRoomId>;
         meta.decor = true;
         meta.decorKey = def.key;
+        if (def.type === "rect" || def.type === "circle") meta.floor = true;
 
         let d: Geomorph.Decor;
 
@@ -230,9 +234,11 @@ export default function Decor() {
             }
 
             const entry = def.img ? w.sheets.decor[def.img] : null;
-            const radius = entry
-              ? (Math.max(entry.originalWidth, entry.originalHeight) * sguToWorldScale) / 2
-              : decorPointDefaultRadius;
+            const scale = def.scale ?? 1;
+            const radius =
+              (entry
+                ? (Math.max(entry.originalWidth, entry.originalHeight) * sguToWorldScale) / 2
+                : decorPointDefaultRadius) * scale;
             const half = radius / 2;
 
             // def.transform overrides def.{x,y}
@@ -245,9 +251,7 @@ export default function Decor() {
                   .precision(precision)
               : tmpVect.copy(def).precision(precision);
 
-            const bounds = tmpRect
-              .set(center.x - radius, center.y - radius, 2 * radius, 2 * radius)
-              .precision(precision);
+            const bounds = new Rect(center.x - radius, center.y - radius, 2 * radius, 2 * radius).precision(precision); // kept: not the scratch
 
             // fallback transform is pure translation
             const transform: Geom.SixTuple = def.transform ?? [1, 0, 0, 1, bounds.x, bounds.y];
@@ -266,6 +270,7 @@ export default function Decor() {
               y: center.y,
               orient: def.orient ?? 0,
               transform,
+              scale,
               det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
             };
             break;
@@ -357,8 +362,17 @@ export default function Decor() {
           decor.type === "quad" ||
           (decor.type === "point" && decor.meta.shown === true) ||
           (decor.type === "rect" && decor.meta.shown === true) ||
-          (decor.type === "circle" && decor.meta.shown === true)
+          (decor.type === "circle" && decor.meta.shown === true) ||
+          // whilst decorating, runtime decor is drawn whether it is meant to show or not
+          (w.debug?.decorShown === true && decor.key in state.runtime.byKey)
         );
+      },
+      rename(decorKey, next) {
+        const def = state.runtime.defByKey[decorKey];
+        if (def === undefined || next === "" || next === decorKey || next in state.byKey) return false;
+        state.remove(decorKey);
+        state.create({ ...def, key: next });
+        return true;
       },
       queryPoint(center, opts) {
         const groundPoint = helper.parseGroundPoint(center);
@@ -534,7 +548,7 @@ export default function Decor() {
 
         const imgKey = state.getDecorImgKey(decor);
         const entry = w.sheets?.decor[imgKey];
-        const dims = w.sheets?.decorSheetDims[entry.sheetId];
+        const dims = entry === undefined ? undefined : w.sheets?.decorSheetDims[entry.sheetId];
         if (!entry || !dims) return false;
 
         const k = typeof decor.meta.inset === "number" ? decor.meta.inset : 0;
@@ -582,8 +596,9 @@ export default function Decor() {
           inst.setMatrixAt(id, mat4);
         } else {
           tmpMat.setMatrixValue(decor.transform);
+          const s = decor.scale * sguToWorldScale;
           //biome-ignore format: preserve newlines
-          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          tmpMat.preMultiply([ entry.originalWidth * s, 0, 0, entry.originalHeight * s, 0, 0]);
           //biome-ignore format: preserve newlines
           inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }
@@ -1131,6 +1146,8 @@ export type State = {
   queryRect: (rect: Geom.RectJson, opts?: Geomorph.DecorGridQueryOpts) => Geomorph.Decor[];
   /** Can only remove custom decor */
   remove(...decorKeys: string[]): void;
+  /** Runtime decor only; `false` when there is none such, or `next` is taken */
+  rename(decorKey: string, next: string): boolean;
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
   removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
   setupRuntimeInstances(): void;
@@ -1186,8 +1203,9 @@ function buildShapeOutputNode(
     edgeX.lessThan(BORDER_W.div(dims.x)).or(edgeY.lessThan(BORDER_W.div(dims.y))),
   ) as THREE.Node<"bool">;
 
+  // dashed along the nearer edge, nearer in world units: in uv a thin rect's ends would take the short axis
   const rectParam = (select as SelectAnyType)(
-    edgeY.greaterThan(edgeX),
+    edgeY.mul(dims.y).greaterThan(edgeX.mul(dims.x)),
     uvCoord.y.mul(dims.y),
     uvCoord.x.mul(dims.x),
   ) as THREE.Node<"float">;

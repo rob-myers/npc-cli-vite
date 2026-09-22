@@ -442,12 +442,32 @@ export function jsArg(args, alias = {}, opts) {
 }
 
 /**
- * Parse input with string fallback (by default)
+ * Parse input as JS where it LOOKS like a literal — an object, array or call `{ ( [`, a quoted
+ * string, a number, or `true false null undefined Infinity NaN` — else it is the string as given.
+ * Anything else was once evaluated too, so `screen-0` read as `screen - 0` i.e. `NaN`, `screen`
+ * being a global, and `stop` as `window.stop`. Parentheses ask for evaluation: `radius:(1+2)`,
+ * `foo=(window.innerWidth)`.
  * - preserves `undefined` (by default)
  * - preserves empty-string (by default)
  * @param {string} [input]
  */
 export function parseJsArg(input) {
+  if (typeof input !== "string" || jsLiteralRegex.test(input) === false) return input;
+  try {
+    return Function(`return ${input}`)();
+  } catch {
+    return input;
+  }
+}
+
+const jsLiteralRegex = /^(?:[[{("'`.\-\d]|(?:true|false|null|undefined|Infinity|NaN)$)/;
+
+/**
+ * Evaluate input as JS, whatever it looks like, with string fallback — what `parseJsArg` was, for
+ * `expr`, whose whole point is `expr window.navigator.vendor`
+ * @param {string} [input]
+ */
+export function evalJsArg(input) {
   try {
     if (input === "") return input;
     return Function(`return ${input}`)();

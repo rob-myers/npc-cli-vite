@@ -52,6 +52,8 @@ export type WorldSettings = {
   pickOpenDoors: boolean;
   /** Whether doors are drawn during object-picking at all — see `Debug`'s `pickDoors` */
   pickDoors: boolean;
+  /** Whether we are decorating — see `Debug`'s `decorShown` */
+  decorShown: boolean;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
@@ -81,6 +83,7 @@ const defaultWorldSettings: WorldSettings = {
   litNpcsEnabled: true,
   pickOpenDoors: true,
   pickDoors: false,
+  decorShown: false,
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,

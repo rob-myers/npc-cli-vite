@@ -396,6 +396,7 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
       y: center.y,
       orient,
       transform,
+      scale: 1,
       det: Math.sign(transform[0] * transform[3] - transform[1] * transform[2]),
     };
   }

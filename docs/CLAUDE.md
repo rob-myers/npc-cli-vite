@@ -85,7 +85,7 @@ Which npcs are parked — and the wall segment each stands against — is jsh st
 
 ## jsh commands
 
-Exports of `packages/cli/src/jsh/world/{core,demo,pred}.ts` become shell commands, and hot-reload. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+Exports of `packages/cli/src/jsh/world/{core,demo,debug,decor,pred}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
 
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
@@ -93,6 +93,14 @@ Exports of `packages/cli/src/jsh/world/{core,demo,pred}.ts` become shell command
 - on the way out `handlers.dispose()`, then `throw api.getKillError()`.
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
+
+## Decorator panel
+
+See `docs/decorator.md` — the ONLY doc for it. In short: `packages/ui/decorator` places dynamic
+(runtime) decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache).
+The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live
+doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **Decorations**
+toggle labels it and opens a card per pick.
 
 ## MapEdit saving
 

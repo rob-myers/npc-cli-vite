@@ -14,6 +14,7 @@
     "./const.both": "./src/const.both.ts",
     "./const.env": "./src/const.env.ts",
     "./const.npc": "./src/const.npc.ts",
+    "./helper": "./src/service/helper.ts",
     "./worker/nav": "./src/worker/nav.worker.ts",
     "./worker/nav-util": "./src/worker/nav-util.ts",
     "./nav-worker-factory": "./src/service/nav-worker-factory.ts"

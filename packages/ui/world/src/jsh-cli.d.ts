@@ -43,6 +43,11 @@ declare namespace JshCli {
     | { key: "spawned-many"; npcKeys: string[] }
     | { key: "speech"; npcKey: string; words: string; epochMs: number }
     | { key: "started-moving"; npcKey: string }
+    | {
+        /** Arrived, or the move was stopped — not one cut short by the next move */
+        key: "stopped-moving";
+        npcKey: string;
+      }
     | { key: "requested-physics" }
     | {
         /** Try close door after countdown and keep trying thereafter */

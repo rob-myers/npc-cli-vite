@@ -51,6 +51,9 @@
     },
     {
       "path": "./packages/ui/jobs"
+    },
+    {
+      "path": "./packages/ui/decorator"
     }
   ]
 }
