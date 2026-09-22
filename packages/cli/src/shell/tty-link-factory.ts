@@ -25,19 +25,14 @@ export function computeChoiceTtyLinkFactory(text: string): {
   // biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
   const mdLinksRegex = /(^|[^\x1b])\[ ([^()]+?) \]\((.*?)\)/g;
   const matches = Array.from(text.matchAll(mdLinksRegex));
-  const boundaries = matches.flatMap((match) => [
-    match.index! + match[1].length,
-    match.index! + match[0].length,
-  ]);
+  const boundaries = matches.flatMap((match) => [match.index! + match[1].length, match.index! + match[0].length]);
   // Ensure `boundaries` starts with `0`.
   // If added it then links occur at odd indices of `parts` (else even indices)
   const addedZero = boundaries[0] === 0 ? 0 : boundaries.unshift(0) && 1;
   const parts = boundaries
     .map((textIndex, i) => text.slice(textIndex, boundaries[i + 1] ?? text.length))
     .map((part, i) =>
-      addedZero === i % 2
-        ? formatLink(part.slice(1, part.indexOf("(") - 1))
-        : `${ansi.White}${part}${ansi.Reset}`,
+      addedZero === i % 2 ? formatLink(part.slice(1, part.indexOf("(") - 1)) : `${ansi.White}${part}${ansi.Reset}`,
     );
   const ttyText = parts.join("");
   const ttyTextKey = stripAnsi(ttyText);
@@ -66,7 +61,7 @@ export function computeChoiceTtyLinkFactory(text: string): {
             } else {
               // links [ foo ](bar) have value `JSON.parse("bar")` or `"bar"`
               // e.g. `choice '[ foo ]( [{"bar":"baz"}] )'`
-              // 🔔 parseJsArg would convert e.g. stop -> `window.stop`
+              // 🔔 parseJsArg once converted e.g. stop -> `window.stop`; it reads only literals now
               value = parseJsonArg(match[3]);
             }
 

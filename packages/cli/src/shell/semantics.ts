@@ -228,6 +228,14 @@ export class JShSemantics {
       node.exitCode = 0;
       return; // e.g. `declare -F`
     }
+    // `foo=(1+2)` is bash array syntax, which we do not support: a one-element array is instead the
+    // parenthesised JS expression it looks like, and `(` is what makes `parseJsArg` evaluate it
+    if (Value === null && node.Array !== null && node.Array.Elems.length === 1) {
+      const { value: inner } = await this.lastExpanded(sem.Expand(node.Array.Elems[0].Value));
+      sessionApi.setVar(meta, Name.Value, parseJsArg(`(${inner})`));
+      node.exitCode = 0;
+      return;
+    }
     if (Naked === true || Value === null) {
       sessionApi.setVar(meta, Name.Value, "");
       node.exitCode = 0;

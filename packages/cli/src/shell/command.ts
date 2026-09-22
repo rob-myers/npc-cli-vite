@@ -4,6 +4,7 @@ import { ExhaustiveError, observableToAsyncIterable } from "@npc-cli/util";
 import {
   deepGet,
   entries,
+  evalJsArg,
   generateSelector,
   jsArg,
   jsStringify,
@@ -333,6 +334,7 @@ class CmdService {
 
     /** js parse with string fallback */
     parseJsArg,
+    evalJsArg,
 
     parseFnOrStr,
 

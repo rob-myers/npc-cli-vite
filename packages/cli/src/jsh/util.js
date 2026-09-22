@@ -35,7 +35,7 @@ export async function* call(ct) {
  */
 export const expr = ({ api, args }) => {
   const input = args.join(" ");
-  return api.parseJsArg(input);
+  return api.evalJsArg(input);
 };
 
 /**
