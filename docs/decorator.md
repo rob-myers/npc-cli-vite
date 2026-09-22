@@ -39,7 +39,7 @@ way.
 
 An SVG in **world metres**: 2D `x/y` is world `x/z`. The viewBox is the union of every `gm.gridRect`,
 panned and zoomed by `useSvgZoom`, which keeps the grabbed map point under the pointer (wheel about
-the cursor, drag, pinch; double-click resets). Where the map was left is kept per World and map,
+the cursor, drag, pinch). Where the map was left is kept per World and map,
 under one localStorage key `decorator:<world>:map:<map>` (`storage.ts`), and the map is remade per
 `mapKey` so it starts from there.
 

@@ -145,7 +145,6 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
       onTouchStart={zoom.onTouchStart}
       onTouchMove={zoom.onTouchMove}
       onTouchEnd={zoom.onTouchEnd}
-      onDoubleClick={zoom.reset}
     >
       <defs>
         <pattern id={gridId} width={geomorphGridMeters} height={geomorphGridMeters} patternUnits="userSpaceOnUse">
