@@ -185,10 +185,10 @@ const pinTipFrac = 232 / 256;
 /** In map metres: less is a click */
 const dragThreshold = 0.02;
 const ink = {
-  static: "#94a3b8",
-  selected: "#fde047",
-  point: "#f0abfc",
-  rect: "#67e8f9",
-  circle: "#86efac",
-  quad: "#fdba74",
+  static: "#8a97a8",
+  selected: "#ffe066",
+  point: "#e3b968",
+  rect: "#7fc3d9",
+  circle: "#9ccf8f",
+  quad: "#e09a6a",
 };

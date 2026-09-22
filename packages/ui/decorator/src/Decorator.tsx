@@ -25,7 +25,7 @@ export default function Decorator({ meta }: { meta: DecoratorUiMeta }) {
 
   if (w === undefined) {
     return (
-      <div className="size-full grid place-items-center bg-slate-950 text-slate-400 text-sm">
+      <div className="size-full grid place-items-center bg-zinc-950 text-zinc-400 text-sm">
         waiting for {meta.worldKey}…
       </div>
     );
@@ -193,13 +193,13 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
 
   return (
     <div
-      className="size-full flex flex-col bg-slate-950 text-slate-300 text-xs outline-none"
+      className="size-full flex flex-col bg-zinc-950 text-zinc-300 text-xs outline-none"
       tabIndex={0}
       onKeyDown={state.onKeyDown}
     >
       {/* one line, whatever the tools show: it scrolls sideways rather than wrapping */}
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-slate-800 overflow-x-auto scrollbar-thin whitespace-nowrap *:shrink-0">
-        <span className="text-slate-500 pr-2">
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap *:shrink-0">
+        <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
         <ToolButton
@@ -208,7 +208,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
           active={meta.sidebarOpen}
           onClick={() => state.setSidebar({ sidebarOpen: !meta.sidebarOpen })}
         />
-        <span className="w-px h-4 mx-1 bg-slate-800" />
+        <span className="w-px h-4 mx-1 bg-zinc-800" />
         {/* the tools: select, or add one of each type where the map is clicked */}
         <ToolButton
           icon={CursorIcon}
@@ -227,7 +227,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
         ))}
         {(state.tool === "point" || state.tool === "quad") && (
           <select
-            className="px-1 py-0.5 rounded border border-slate-800 bg-slate-950 outline-none"
+            className="px-1 py-0.5 rounded border border-zinc-800 bg-zinc-950 outline-none"
             value={state.img ?? ""}
             onChange={(e) => state.set({ img: e.currentTarget.value === "" ? undefined : e.currentTarget.value })}
           >
@@ -249,17 +249,17 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
             tilt
           </label>
         )}
-        <span className="w-px h-4 mx-1 bg-slate-800" />
+        <span className="w-px h-4 mx-1 bg-zinc-800" />
         <ToolButton icon={ArrowUUpLeftIcon} title="undo (cmd-Z)" active={false} onClick={state.undo} />
         <ToolButton icon={ArrowUUpRightIcon} title="redo (shift-cmd-Z)" active={false} onClick={state.redo} />
-        <span className="w-px h-4 mx-1 bg-slate-800" />
+        <span className="w-px h-4 mx-1 bg-zinc-800" />
         {layers.map((layer) => (
           <button
             key={layer}
             type="button"
             className={cn(
               "px-2 py-0.5 rounded border cursor-pointer",
-              meta.show[layer] ? "border-slate-500 text-slate-200 bg-slate-800" : "border-slate-800 text-slate-500",
+              meta.show[layer] ? "border-zinc-500 text-zinc-200 bg-zinc-800" : "border-zinc-800 text-zinc-500",
             )}
             onClick={() => state.toggleLayer(layer)}
           >
@@ -273,19 +273,19 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
           onValueChange={state.setNpcKeys}
           onOpenChange={state.onNpcsOpenChange}
         >
-          <Select.Trigger className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded border border-slate-800 cursor-pointer hover:bg-slate-800">
+          <Select.Trigger className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded border border-zinc-800 cursor-pointer hover:bg-zinc-800">
             <Select.Value>{(npcKeys: string[]) => (npcKeys.length === 0 ? "npcs" : npcKeys.join(", "))}</Select.Value>
             <CaretDownIcon className="size-3" />
           </Select.Trigger>
           <Select.Portal>
             <Select.Positioner className="z-50" sideOffset={4} align="end" alignItemWithTrigger={false}>
-              <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-slate-300">
-                {state.npcOptions.length === 0 && <div className="px-3 py-1 text-slate-500">no npcs</div>}
+              <Select.Popup className="bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300">
+                {state.npcOptions.length === 0 && <div className="px-3 py-1 text-zinc-500">no npcs</div>}
                 {state.npcOptions.map((npcKey) => (
                   <Select.Item
                     key={npcKey}
                     value={npcKey}
-                    className="flex items-center gap-2 px-3 py-1 cursor-pointer data-highlighted:bg-slate-700"
+                    className="flex items-center gap-2 px-3 py-1 cursor-pointer data-highlighted:bg-zinc-700"
                   >
                     <Select.ItemIndicator className="w-3">
                       <CheckIcon className="size-3" />
@@ -316,7 +316,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
         )}
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
         <div
-          className="shrink-0 w-1.5 -ml-0.5 cursor-col-resize hover:bg-slate-700/60 select-none"
+          className="shrink-0 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
           onMouseDown={state.onSidebarResizeStart}
         />
         <div className="flex-1 min-w-0">
@@ -357,9 +357,7 @@ function ToolButton(props: {
       title={props.title}
       className={cn(
         "grid place-items-center size-6 rounded border cursor-pointer",
-        props.active
-          ? "border-slate-400 text-slate-100 bg-slate-700"
-          : "border-slate-800 text-slate-500 hover:bg-slate-800",
+        props.active ? "border-zinc-400 text-zinc-100 bg-zinc-700" : "border-zinc-800 text-zinc-500 hover:bg-zinc-800",
       )}
       onClick={props.onClick}
     >

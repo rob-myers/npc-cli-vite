@@ -133,7 +133,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
   return (
     <svg
       ref={preventPopupGestures}
-      className="size-full touch-none select-none bg-slate-950"
+      className="size-full touch-none select-none bg-[#050608]"
       style={{ cursor }}
       viewBox={zoom.viewBox}
       onWheel={zoom.onWheel}
@@ -209,9 +209,9 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
       <rect
         ref={marqueeEl}
         style={{ display: "none" }}
-        fill="#fde047"
+        fill="#ffe066"
         fillOpacity={0.1}
-        stroke="#fde047"
+        stroke="#ffe066"
         strokeWidth={1}
         strokeDasharray="4 2"
         vectorEffect="non-scaling-stroke"
@@ -286,19 +286,20 @@ const clickSlopPx = 4;
 const gridId = "nav-map-2d-grid";
 const tmpMat = new Mat();
 
+/** The World's own steel: its hull fill, its panel lips, its amber doors */
 const ink = {
-  hull: "#0b1220",
-  room: "#16213a88",
-  nav: "rgba(56, 189, 248, 0.05)",
-  navEdge: "rgba(56, 189, 248, 0.1)",
-  obstacle: "#2a3a5c",
-  wall: "#8ea3c744",
-  wallStroke: "#fff6",
-  window: "#5eead422",
-  door: "#fbbf24",
-  doorOpen: "#4ade80",
-  doorLocked: "#f87171",
-  grid: "rgba(148, 233, 184, 0.45)",
-  label: "rgba(226, 236, 248, 0.65)",
-  npc: "#f0abfc",
+  hull: "#0b0d10",
+  room: "#1e2226",
+  nav: "rgba(190, 205, 225, 0.04)",
+  navEdge: "rgba(190, 205, 225, 0.09)",
+  obstacle: "#383e45",
+  wall: "rgba(190, 205, 225, 0.28)",
+  wallStroke: "rgba(205, 220, 240, 0.55)",
+  window: "rgba(120, 190, 235, 0.75)",
+  door: "#d9a83a",
+  doorOpen: "#8fbf7a",
+  doorLocked: "#e86052",
+  grid: "rgba(190, 205, 225, 0.13)",
+  label: "rgba(225, 240, 255, 0.7)",
+  npc: "#e8f0ff",
 };
