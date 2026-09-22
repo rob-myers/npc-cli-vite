@@ -160,7 +160,7 @@ export function predicates(ct: JshCli.RunArg) {
   // picking is otherwise a click on the npc alone, which the speech UI has no way to do
   ct.w.speech.addMenuItem({
     key: "pred-toggle-picked",
-    text: "toggle picked",
+    text: (npcKey) => (pred.get().picked.has(npcKey) ? "unpick" : "pick"),
     action: (npcKey) => togglePicked(ct.w, npcKey),
   });
 }

@@ -314,8 +314,9 @@ export function WorldSpeech() {
             <motion.div
               key={id}
               className={cn(
-                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] p-3 py-1.5 max-w-md",
-                big && "text-sm px-3 py-1.5 max-w-lg",
+                "pr-3",
+                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] py-1.5 max-w-md",
+                big && "text-sm py-1.5 max-w-lg",
               )}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -323,6 +324,7 @@ export function WorldSpeech() {
               transition={{ duration: 0.2 }}
             >
               <NpcKeyMenu npcKey={npcKey} onOpenChange={(open) => state.pinToast(id, open)} />
+
               <span className="wrap-break-word">{words}</span>
             </motion.div>
           ))}
@@ -343,7 +345,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
 
   const npc = w.n[npcKey];
   // `setNpcLit` refuses the player, so the item would silently do nothing for them
-  const canLight = npc !== undefined && npc.key !== w.player?.key;
+  const canLightOrDelete = npc !== undefined && npc.key !== w.player?.key;
 
   return (
     <Menu.Root
@@ -355,7 +357,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
       {/* `pointer-events-auto`: the toast strip is click-through, so only the key itself takes a click */}
       <Menu.Trigger
         className={cn(
-          "pointer-events-auto shrink-0 pr-0.5 inline-flex items-center gap-1 font-medium tracking-wider text-blue-200/80 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100",
+          "pointer-events-auto shrink-0 px-3 inline-flex items-center gap-1 font-medium tracking-wider text-blue-200/80 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100",
 
           npc?.lit === true && "text-yellow-200/80",
         )}
@@ -363,9 +365,9 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
         {npcKey}
       </Menu.Trigger>
       <Menu.Portal container={w.rootEl}>
-        <Menu.Positioner className="z-50" side="bottom" sideOffset={4} align="start">
-          <Menu.Popup className="select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-36">
-            {canLight === true && (
+        <Menu.Positioner className="z-50" side="bottom" align="start" sideOffset={8}>
+          <Menu.Popup className="select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg min-w-18">
+            {canLightOrDelete === true && (
               <Menu.Item
                 className={speechMenuItemClassName}
                 // `setNpcLit` writes a uniform, so nothing here re-renders on its own
@@ -387,22 +389,24 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
                   })
                 }
               >
-                pan to
+                goto
               </Menu.Item>
             )}
             {w.speech.menuItems.map((item) => (
               <Menu.Item key={item.key} className={speechMenuItemClassName} onClick={() => item.action(npcKey)}>
-                {item.text}
+                {typeof item.text === "function" ? item.text(npcKey) : item.text}
               </Menu.Item>
             ))}
-            <Menu.Item
-              className={cn(speechMenuItemClassName, armed === true && "text-red-300")}
-              // stays open on the 1st click, so "confirm" replaces it where it already is
-              closeOnClick={armed}
-              onClick={() => (armed === true ? w.e.removeNpcs(npcKey) : setArmed(true))}
-            >
-              {armed === true ? "confirm" : "remove npc"}
-            </Menu.Item>
+            {canLightOrDelete && (
+              <Menu.Item
+                className={cn(speechMenuItemClassName, armed === true && "text-red-300")}
+                // stays open on the 1st click, so "confirm" replaces it where it already is
+                closeOnClick={armed}
+                onClick={() => (armed === true ? w.e.removeNpcs(npcKey) : setArmed(true))}
+              >
+                {armed === true ? "confirm" : "remove npc"}
+              </Menu.Item>
+            )}
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
@@ -423,7 +427,7 @@ export type SpeechEntry = {
 /** An item added to every `NpcKeyMenu` by e.g. a jsh command — see `addMenuItem` */
 export type SpeechMenuItem = {
   key: string;
-  text: string;
+  text: string | ((npcKey: string) => string);
   action(npcKey: string): void;
 };
 
