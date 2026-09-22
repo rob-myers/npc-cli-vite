@@ -26,7 +26,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
   const resized = useRef<Geomorph.DecorDef | null>(null); // the same, for the release to commit
 
   function onHandlePointerDown(e: React.PointerEvent<SVGElement>, key: string, i: number) {
-    if (e.button !== 0) return;
+    if (e.button !== 0 && !(e.button === 2 && e.ctrlKey)) return; // macOS: ctrl-click is a right one
     e.stopPropagation();
     const handle = e.currentTarget; // React drops `currentTarget` once the handler returns
     const svg = handle.ownerSVGElement;
@@ -175,6 +175,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
             vectorEffect="non-scaling-stroke"
             className="cursor-crosshair"
             onPointerDown={(e) => onHandlePointerDown(e, key, i)}
+            onContextMenu={(e) => e.preventDefault()} // ctrl is the fine step, not a menu
           />
         ));
       })}
