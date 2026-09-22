@@ -10,9 +10,14 @@ the 3D World, which needs neither the panel nor a terminal.
 
 | file | what it holds |
 |---|---|
-| `ui/decorator/src/Decorator.tsx` | the panel: finds the World, the toolbar, the npc picker |
-| `ui/decorator/src/NavMap2d.tsx` | the map as SVG, and the npc dots |
-| `ui/decorator/src/schema.ts` | its meta: `worldKey`, `npcKeys`, `show` |
+| `ui/decorator/src/Decorator.tsx` | the panel: finds the World; the tools, selection, keys, npc picker |
+| `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots |
+| `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
+| `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, show in 3D |
+| `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
+| `ui/decorator/src/schema.ts` | its meta: `worldKey`, `npcKeys`, `show`, the sidebar |
+| `ui/decorator/src/storage.ts` | per World and map: where the map was left |
+| `ui/decorator/src/history.ts` | undo/redo over the runtime defs |
 | `util/src/hooks/use-svg-zoom.ts` | `useSvgZoom`, `preventPopupGestures` — shared with the World's debug modals |
 | `ui/world/src/components/DecorInspector.tsx` | decorating in 3D: a label per runtime decor, a card per pick |
 | `ui/world/src/components/DecorCard.tsx` | the card: a decor's fields, its `meta`, delete |
@@ -21,16 +26,22 @@ the 3D World, which needs neither the panel nor a terminal.
 ## It needs a live World
 
 `meta.worldKey` names one (default `world-0`). A World puts its state in the query cache under its
-key — `queryClientApi.set([worldKey], state)` — so the panel reads it with
-`useQuery({ queryKey: [worldKey], queryFn: skipToken })` and re-renders when it arrives or goes.
-Until there is one with geomorphs, the panel says it is waiting. Packages depend
-`ui/decorator → ui/world`, never the other way.
+key — `queryClientApi.set([worldKey], state)` — and REMOVES the query on unmount, setting a new one
+on remount, e.g. over HMR. So the panel does not `useQuery` it: an observer of the removed query
+would wait forever. `useWorld` reads `queryClientApi.get([worldKey])` off the cache's own events
+(`useSyncExternalStore`), and the editor is keyed by the state OBJECT, so a remade World gets a
+fresh editor. Until there is one with geomorphs, the panel says it is waiting — the snapshot is
+`undefined` until then, since the state object is the same before and after its assets load, and
+an unchanged snapshot does not re-render. Packages depend `ui/decorator → ui/world`, never the other
+way.
 
 ## The map
 
 An SVG in **world metres**: 2D `x/y` is world `x/z`. The viewBox is the union of every `gm.gridRect`,
 panned and zoomed by `useSvgZoom`, which keeps the grabbed map point under the pointer (wheel about
-the cursor, drag, pinch; double-click resets).
+the cursor, drag, pinch; double-click resets). Where the map was left is kept per World and map,
+under one localStorage key `decorator:<world>:map:<map>` (`storage.ts`), and the map is remade per
+`mapKey` so it starts from there.
 
 It is drawn from each geomorph's own layout, not from the geomorph PNGs the debug "Graphs" modal
 shows behind its graphs — so it is where things really are:
@@ -44,7 +55,8 @@ shows behind its graphs — so it is where things really are:
   red locked;
 - room labels from the labelled decor points.
 
-`meta.show` toggles `nav`, `labels`, `obstacles` and `grid` (1.5m). The panel re-renders on
+`meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m) and `static` — the map's own decor,
+faint, for context. The sidebar's width and whether it is out are `meta.sidebarWidth` / `sidebarOpen`. The panel re-renders on
 `map-settled`, `nav-updated`, `decor-ready` and the door events.
 
 ## Npcs are opt-in
@@ -65,7 +77,9 @@ this makes it the World's own. See the TODO on project references.
 ## The World's side
 
 Runtime decor is the World's: `w.decor.create(def)` makes or REPLACES one — there is no update —
-`w.decor.remove(...keys)`, `w.decor.rename(key, next)`. The defs are persisted per World and map
+`w.decor.remove(...keys)`, `w.decor.rename(key, next)`. `create` copies the def's `meta` and finds
+the room afresh, so a def made from an old decor — one the panel moved — does not carry that decor's
+room along, and fades with the room it is now in. A rect or circle gets `meta.floor`. The defs are persisted per World and map
 (`getWorldMapStore(w.key, w.mapKey).decor`) and replayed on boot. `use-world-events` now saves on
 every `decor-created` / `decor-removed`, so whoever edits is saved; not whilst a map changes, which
 removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor out of the save.
@@ -113,7 +127,42 @@ Keys are the next free `<type>-<n>` unless `key:` is given and free. `meta.shown
 what was placed can be seen. A pick's own meta is dropped: only its `{ x, y }` is kept, and `Decor`
 finds the room. `decor_add` yields each key it makes.
 
+## Placing decor on the map
+
+`DecorLayer` draws the runtime decor over the map, each as its 2D footprint: a point as its image
+turned by `orient`, or a ring with a tick for its facing when abstract; a rect from its `points`; a
+circle; a quad's image through its `transform`, its top edge marked, since a tilt stands it up
+along that edge. A `<title>` names each, with its type and room.
+
+**Tools** are on the toolbar: *select*, or *add* a point, rect, circle or quad — a click on empty
+map places one, with the next free key (`nextKey`, `<type>-<n>`), `meta.shown` on, centred on the
+click; the point and quad tools take an image, the quad tool a **tilt**, which puts its top at
+`tiltedQuadHeight`. Escape returns to *select*.
+
+**Selecting**: click, shift-click to add or take away, shift-drag on empty map for a marquee
+(`keysWithin`: decor whose bounds meet it), a click on empty map to clear, cmd/ctrl-A for all. A
+press on a selected decor keeps the selection, so a drag moves it all; let go without dragging and
+it narrows to that one. The
+sidebar selects the same, and shows the same. A `decor-removed` drops what went from the selection.
+
+**Undo / redo** (cmd-Z, shift-cmd-Z or cmd-Y, the toolbar): `DecorHistory` keeps snapshots of the
+runtime defs, one taken BEFORE each of the panel's edits — add, move, nudge, delete, rename — and
+applies one back by touching only what differs. It knows nothing of edits made from the shell or a
+card in between: undoing past one reverts it too.
+
+**Moving**: drag any selected decor and the whole selection follows, through their `transform`s
+rather than React, committed on release as one `w.decor.create` per decor (`moved`). Arrows nudge
+by 0.1m, 0.5m with shift. Delete or Backspace deletes.
+
+The map itself owns presses on it (`NavMap2d`): a plain press pans, a press let go within a few px
+is a click, and a shift-press is a marquee. Decor opt out of panning with `data-no-pan`, which
+`useSvgZoom` respects, and handle their own presses. Client coordinates become map ones through the
+SVG's own screen transform (`toMap`), which letterboxing does not fool.
+
+The sidebar's "show in 3D" pans the World to the decor (`w.view.lookAt`); with **Decorations** on,
+a right-click there opens its card.
+
 ## Not built yet
 
-Placing and editing decor on the 2D map — add, select, move, rotate, resize, duplicate, copy/paste,
-undo, and a sidebar; queries in `/shared/query`. See the plan's D2, D3.
+Rotate and resize handles, snapping, duplicate, copy/paste, undo/redo (the plan's D2, second pass);
+queries in `/shared/query` (D3).

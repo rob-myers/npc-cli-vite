@@ -138,9 +138,13 @@ export default function Decor() {
           state.remove(def.key);
         }
 
-        const meta = (def.meta ?? {}) as Meta<Geomorph.GmRoomId>;
+        // a copy: the def is kept and persisted as given, and a def made from an old decor, e.g. one
+        // the Decorator moved, must not carry that decor's room along with it
+        const { gmId: _g, roomId: _r, grKey: _k, ...rest } = def.meta ?? {};
+        const meta = rest as Meta<Geomorph.GmRoomId>;
         meta.decor = true;
         meta.decorKey = def.key;
+        if (def.type === "rect" || def.type === "circle") meta.floor = true;
 
         let d: Geomorph.Decor;
 
@@ -245,9 +249,7 @@ export default function Decor() {
                   .precision(precision)
               : tmpVect.copy(def).precision(precision);
 
-            const bounds = tmpRect
-              .set(center.x - radius, center.y - radius, 2 * radius, 2 * radius)
-              .precision(precision);
+            const bounds = new Rect(center.x - radius, center.y - radius, 2 * radius, 2 * radius).precision(precision); // kept: not the scratch
 
             // fallback transform is pure translation
             const transform: Geom.SixTuple = def.transform ?? [1, 0, 0, 1, bounds.x, bounds.y];

@@ -4,13 +4,18 @@ import { helper } from "@npc-cli/ui__world/helper";
 import { Mat } from "@npc-cli/util/geom";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { useEffect, useMemo, useRef } from "react";
+import { toMap } from "./decor-edit";
 import type { DecoratorUiMeta } from "./schema";
+import { getDecoratorMapStore } from "./storage";
 
 /**
  * The map from above, in world metres: 2D `x/y` is world `x/z`. Drawn from each geomorph's own
  * layout and the navmesh, so it is where things really are — see `docs/decorator.md`
  */
-export function NavMap2d({ w, show, npcKeys, children }: Props) {
+export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, cursor }: Props) {
+  const press = useRef<Press | null>(null);
+  const marqueeEl = useRef<SVGRectElement>(null);
+
   const bounds = useMemo(() => {
     if (w.gms.length === 0) return { minX: 0, minY: 0, width: 10, height: 10 };
     const xs = w.gms.flatMap(({ gridRect: r }) => [r.x, r.x + r.width]);
@@ -20,7 +25,48 @@ export function NavMap2d({ w, show, npcKeys, children }: Props) {
     return { minX: x1 - pad, minY: y1 - pad, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad };
   }, [w.gmsHash]);
 
-  const zoom = useSvgZoom(bounds);
+  // where the map was left, per World and map
+  const store = getDecoratorMapStore(w.key, w.mapKey);
+  const zoom = useSvgZoom(bounds, {
+    initial: store.read().view ?? undefined,
+    onChange: (view) => store.patch({ view }),
+  });
+
+  // a press on the map itself: with shift a marquee, else a pan — and, unmoved, a click
+  function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    if (e.button !== 0 || (e.target as Element).closest?.("[data-no-pan]")) return;
+    const at = toMap(e.currentTarget, e.clientX, e.clientY);
+    press.current = { at, client: { x: e.clientX, y: e.clientY }, marquee: e.shiftKey && onMarquee !== undefined };
+    if (press.current.marquee) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } else {
+      zoom.onPointerDown(e);
+    }
+  }
+  function onPointerMove(e: React.PointerEvent<SVGSVGElement>) {
+    const p = press.current;
+    if (p?.marquee !== true) return zoom.onPointerMove(e);
+    const r = rectFrom(p.at, toMap(e.currentTarget, e.clientX, e.clientY));
+    const el = marqueeEl.current;
+    if (el === null) return;
+    el.setAttribute("x", String(r.x));
+    el.setAttribute("y", String(r.y));
+    el.setAttribute("width", String(r.width));
+    el.setAttribute("height", String(r.height));
+    el.style.display = "";
+  }
+  function onPointerUp(e: React.PointerEvent<SVGSVGElement>) {
+    const p = press.current;
+    press.current = null;
+    zoom.onPointerUp();
+    if (p === null) return;
+    if (p.marquee) {
+      if (marqueeEl.current) marqueeEl.current.style.display = "none";
+      onMarquee?.(rectFrom(p.at, toMap(e.currentTarget, e.clientX, e.clientY)), e.nativeEvent);
+    } else if (Math.hypot(e.clientX - p.client.x, e.clientY - p.client.y) < clickSlopPx) {
+      onClick?.(p.at, e.nativeEvent);
+    }
+  }
 
   // each geomorph's layout as path data in ITS OWN space: the group's transform places it
   const gmPaths = useMemo(
@@ -59,11 +105,12 @@ export function NavMap2d({ w, show, npcKeys, children }: Props) {
     <svg
       ref={preventPopupGestures}
       className="size-full touch-none select-none bg-slate-950"
+      style={{ cursor }}
       viewBox={zoom.viewBox}
       onWheel={zoom.onWheel}
-      onPointerDown={zoom.onPointerDown}
-      onPointerMove={zoom.onPointerMove}
-      onPointerUp={zoom.onPointerUp}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
       onTouchStart={zoom.onTouchStart}
       onTouchMove={zoom.onTouchMove}
       onTouchEnd={zoom.onTouchEnd}
@@ -71,12 +118,12 @@ export function NavMap2d({ w, show, npcKeys, children }: Props) {
     >
       <defs>
         <pattern id={gridId} width={geomorphGridMeters} height={geomorphGridMeters} patternUnits="userSpaceOnUse">
+          {/* in metres: `non-scaling-stroke` does nothing inside a pattern tile */}
           <path
             d={`M${geomorphGridMeters} 0H0V${geomorphGridMeters}`}
             fill="none"
             stroke={ink.grid}
-            strokeWidth={1}
-            vectorEffect="non-scaling-stroke"
+            strokeWidth={0.03}
           />
         </pattern>
       </defs>
@@ -98,7 +145,7 @@ export function NavMap2d({ w, show, npcKeys, children }: Props) {
               />
             )}
             {show.obstacles && <path d={paths.obstacles} fill={ink.obstacle} />}
-            <path d={paths.walls} fill={ink.wall} />
+            <path d={paths.walls} fill={ink.wall} strokeWidth={0.04} stroke={ink.wallStroke} />
             <path d={paths.windows} fill={ink.window} />
           </g>
         );
@@ -151,6 +198,18 @@ export function NavMap2d({ w, show, npcKeys, children }: Props) {
 
       {children}
 
+      <rect
+        ref={marqueeEl}
+        style={{ display: "none" }}
+        fill="#fde047"
+        fillOpacity={0.1}
+        stroke="#fde047"
+        strokeWidth={1}
+        strokeDasharray="4 2"
+        vectorEffect="non-scaling-stroke"
+        pointerEvents="none"
+      />
+
       <NpcDots w={w} npcKeys={npcKeys} />
     </svg>
   );
@@ -200,7 +259,21 @@ type Props = {
   npcKeys: string[];
   /** Drawn over the map and under the npcs, in world metres e.g. the decor */
   children?: React.ReactNode;
+  /** A press on the map itself, let go where it landed */
+  onClick?(at: Geom.VectJson, e: PointerEvent): void;
+  /** A shift-drag on the map itself, let go */
+  onMarquee?(rect: Geom.RectJson, e: PointerEvent): void;
+  cursor?: string;
 };
+
+type Press = { at: Geom.VectJson; client: Geom.VectJson; marquee: boolean };
+
+function rectFrom(a: Geom.VectJson, b: Geom.VectJson): Geom.RectJson {
+  return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) };
+}
+
+/** In screen px: a press let go within it is a click, not a pan */
+const clickSlopPx = 4;
 
 const gridId = "nav-map-2d-grid";
 const tmpMat = new Mat();
@@ -208,15 +281,16 @@ const tmpMat = new Mat();
 const ink = {
   hull: "#0b1220",
   room: "#16213a",
-  nav: "rgba(56, 189, 248, 0.10)",
-  navEdge: "rgba(56, 189, 248, 0.22)",
+  nav: "rgba(56, 189, 248, 0.05)",
+  navEdge: "rgba(56, 189, 248, 0.1)",
   obstacle: "#2a3a5c",
-  wall: "#8ea3c7",
+  wall: "#8ea3c744",
+  wallStroke: "#fff6",
   window: "#5eead4",
   door: "#fbbf24",
   doorOpen: "#4ade80",
   doorLocked: "#f87171",
-  grid: "rgba(148, 163, 184, 0.18)",
+  grid: "rgba(148, 233, 184, 0.45)",
   label: "rgba(226, 236, 248, 0.75)",
   npc: "#f0abfc",
 };

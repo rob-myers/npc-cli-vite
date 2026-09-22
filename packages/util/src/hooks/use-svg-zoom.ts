@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** A popup that pans and zooms: the page must not scroll or pinch-zoom under it */
 export function preventPopupGestures(el: HTMLElement | SVGElement | null) {
@@ -13,15 +13,26 @@ export function preventPopupGestures(el: HTMLElement | SVGElement | null) {
 
 /**
  * Pan and zoom for an SVG whose viewBox is in world units: wheel about the cursor, drag, pinch.
- * Shared by the World's debug modals and `@npc-cli/ui__decorator`.
+ * Shared by the World's debug modals and `@npc-cli/ui__decorator`. `initial` is where to start,
+ * e.g. as persisted, and `onChange` hears every change, e.g. to persist it.
  *
  * One rule serves all three: the map point that was grabbed stays under the pointer. It is worked
  * out off the SVG's own screen transform, since `preserveAspectRatio` letterboxes the viewBox and
  * the element's rect says nothing of where the map is inside it
  */
-export function useSvgZoom(bounds: { minX: number; minY: number; width: number; height: number }) {
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+export function useSvgZoom(
+  bounds: { minX: number; minY: number; width: number; height: number },
+  opts: { initial?: SvgZoomState; onChange?: (next: SvgZoomState) => void } = {},
+) {
+  const [zoom, setZoom] = useState(opts.initial?.zoom ?? 1);
+  const [pan, setPan] = useState(opts.initial?.pan ?? { x: 0, y: 0 });
+  const onChange = useRef(opts.onChange);
+  onChange.current = opts.onChange;
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) return void (first.current = false); // the initial value is theirs already
+    onChange.current?.({ zoom, pan });
+  }, [zoom, pan]);
   const dragRef = useRef<Grab | null>(null);
   const pinchRef = useRef<(Grab & { dist: number }) | null>(null);
 
@@ -71,7 +82,8 @@ export function useSvgZoom(bounds: { minX: number; minY: number; width: number; 
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if ((e.target as Element).closest?.("text")) return;
+      // text is left to be selected; `data-no-pan` marks what handles its own presses e.g. a draggable item
+      if ((e.target as Element).closest?.("text, [data-no-pan]")) return;
       e.currentTarget.setPointerCapture(e.pointerId);
       dragRef.current = grabAt(e.currentTarget, e.clientX, e.clientY);
     },
@@ -142,6 +154,8 @@ export function useSvgZoom(bounds: { minX: number; minY: number; width: number; 
     zoom,
   };
 }
+
+export type SvgZoomState = { zoom: number; pan: { x: number; y: number } };
 
 /** A map point under the pointer, with the zoom and screen scale it was seen at */
 type Grab = { x: number; y: number; pxPerUnit: number; zoom: number };

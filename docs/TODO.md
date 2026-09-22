@@ -102,14 +102,15 @@
 - ✅ NpcBubbles should use `w.html`
 - ✅ new ui NavRoutes in packages/ui/nav-routes
 
-- 🚧 ui/nav-routes --> ui/decorator
+- ✅ ui/nav-routes --> ui/decorator
   - decorate world map with dynamic points, rects, circles, icons, screens etc.
   - keep quad-label <-> html3d toggle
   - keep editor
   - discard notion of path
-  - can group points/rects/circles etc.
+  - ❌ can group points/rects/circles etc.
 
-- w.label should fade with rooms
+- ✅ w.label should fade with rooms
+- ✅ decor rect/circle should have meta.floor
 
 ## Site
 

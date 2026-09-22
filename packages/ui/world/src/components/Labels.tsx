@@ -4,13 +4,15 @@ import { cameraProjectionMatrix, cameraViewMatrix, float, select, texture, uv, v
 import type * as THREE from "three/webgpu";
 import { MAX_ROOM_LABELS, roomLabelTexOpts } from "../const.env";
 import { createLabelResources, drawLabel } from "../service/labels";
+import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import { TexArray } from "../service/tex-array";
 import type { SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 /**
- * Keyed text at a point, e.g. what a route does at a node: billboards over the world like
- * `RoomLabels`, one texture layer per DISTINCT text, never pickable and never faded
+ * Keyed text at a point, e.g. a decor's name whilst decorating: billboards over the world like
+ * `RoomLabels`, one texture layer per DISTINCT text, never pickable, fading with the room they are
+ * in — the label says which; one in no room is always shown
  */
 export default function Labels() {
   const w = useContext(WorldContext);
@@ -32,11 +34,11 @@ export default function Labels() {
         if (removed) state.redraw();
       },
       redraw() {
-        const { instData, instAttr, geo, mesh } = state.res;
+        const { instData, instAttr, slotData, slotAttr, geo, mesh } = state.res;
         state.layerOfText = {};
         let layer = 0;
         let i = 0;
-        for (const { x, y, y3d = 0, text } of state.byKey.values()) {
+        for (const { x, y, y3d = 0, text, gmRoomId } of state.byKey.values()) {
           if (state.layerOfText[text] === undefined) {
             if (layer >= MAX_ROOM_LABELS) break;
             drawLabel(state.tex.ct, text);
@@ -45,11 +47,13 @@ export default function Labels() {
           }
           if (i >= maxLabels) break;
           instData.set([x, y3d + labelLift, y, state.layerOfText[text]], i * 4);
+          slotData[i] = gmRoomId === undefined ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
           i++;
         }
         geo.instanceCount = i;
         mesh.visible = i > 0;
         instAttr.needsUpdate = true;
+        slotAttr.needsUpdate = true;
         w.view.forceUpdate();
       },
     }),
@@ -59,7 +63,9 @@ export default function Labels() {
   w.labels = state;
 
   useMemo(() => {
-    const { mat, inst, sign } = state.res;
+    // captures `fade-rooms`' nodes, so it is rebuilt whenever that service is
+    const { mat, inst, sign, slot } = state.res;
+    const fade = w.view.fadeRoomsFx.getVisiblity(slot).max(w.view.fadeRoomsFx.sightNode.oneMinus());
     // billboarded in view space, as `RoomLabels` are
     const viewCentre = cameraViewMatrix.mul(vec4(inst.x, inst.y, inst.z, 1));
     mat.vertexNode = cameraProjectionMatrix.mul(
@@ -69,10 +75,10 @@ export default function Labels() {
     const alpha = (select as SelectAnyType)(
       w.view.objectPick.notEqual(0),
       float(0), // an annotation, never a thing to pick
-      tex.a.mul(w.view.foldNode),
+      tex.a.mul(w.view.foldNode).mul(fade),
     ) as THREE.Node<"float">;
     mat.colorNode = vec4(tex.rgb, alpha);
-  }, [state.tex.hash]);
+  }, [state.tex.hash, w.view.fadeRoomsFx.uid]);
 
   useEffect(() => () => state.tex.dispose(), []);
 
@@ -85,6 +91,8 @@ export type Label = {
   /** Height off the floor */
   y3d?: number;
   text: string;
+  /** The room it fades with; none, and it is always shown */
+  gmRoomId?: Geomorph.GmRoomId;
 };
 
 export type State = {

@@ -70,7 +70,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       id: meta.id,
       key: meta.worldKey,
       client: false,
-      ttyConnected: false,
       disabled: meta.disabled,
       mapKey: meta.mapKey,
       rootEl: null as any,
@@ -218,13 +217,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       isMapChanging() {
         return state.settledMapKey !== state.mapKey;
       },
-      isReady(connectionKey) {
-        const ready = !!state.assets && state.nav !== emptyTiledNavmeshResponse;
-        if (ready === true && connectionKey !== undefined && state.ttyConnected === false) {
-          state.ttyConnected = true; // a terminal's `awaitWorld` got through
-          state.menu.update?.();
-        }
-        return ready;
+      isReady(_connectionKey) {
+        return !!state.assets && state.nav !== emptyTiledNavmeshResponse;
       },
       async loadDecorImages() {
         return await Promise.all(
@@ -608,8 +602,6 @@ export type State = {
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;
   isPlaygroundMap(): boolean;
-  /** Whether some tty has ever found us ready: jsh state such as routes shows only once one has */
-  ttyConnected: boolean;
   isReady(connectionKey?: string): boolean;
   loadDecorImages(): Promise<HTMLImageElement[]>;
   /** Announce the map once its pending keys stop changing */

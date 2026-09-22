@@ -17,7 +17,18 @@ export function DecorInspector() {
       const d = w.decor.runtime.byKey[decorKey];
       if (d === undefined) return null;
       const { x, y } = d.type === "point" ? d : d.center;
-      return { x, y, y3d: typeof d.meta.y === "number" ? d.meta.y : 0, text: String(d.meta.label ?? d.key) };
+      const { gmId, roomId } = d.meta;
+      return {
+        x,
+        y,
+        y3d: typeof d.meta.y === "number" ? d.meta.y : 0,
+        text: String(d.meta.label ?? d.key),
+        // fades with the room, as the decor itself does
+        gmRoomId:
+          typeof gmId === "number" && typeof roomId === "number" && roomId >= 0
+            ? { gmId, roomId, grKey: d.meta.grKey }
+            : undefined,
+      };
     }
 
     function showCard(decorKey: string) {
