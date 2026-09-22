@@ -14,14 +14,22 @@ export class DecorHistory {
     this.w = w;
   }
 
-  /** Call before an edit */
-  mark() {
+  /** The last edit's `merge`, and when */
+  last: { merge: string; at: number } | null = null;
+
+  /** Call before an edit. One with the `merge` of the last, soon after it, joins it: one undo takes back both */
+  mark(merge?: string) {
+    const now = performance.now();
+    const joins = merge !== undefined && this.last?.merge === merge && now - this.last.at < mergeWithinMs;
+    this.last = merge === undefined ? null : { merge, at: now };
+    if (joins) return;
     this.past.push(this.snapshot());
     if (this.past.length > maxHistory) this.past.shift();
     this.future = [];
   }
 
   undo() {
+    this.last = null;
     const prev = this.past.pop();
     if (prev === undefined) return false;
     this.future.push(this.snapshot());
@@ -30,6 +38,7 @@ export class DecorHistory {
   }
 
   redo() {
+    this.last = null;
     const next = this.future.pop();
     if (next === undefined) return false;
     this.past.push(this.snapshot());
@@ -53,6 +62,13 @@ export class DecorHistory {
   }
 }
 
+/** A field's steps on the same decor join one undo; typed edits do not merge */
+export function mergeKey(stepped: boolean, keys: string[], field: string) {
+  return stepped ? `${keys.join(",")}:${field}` : undefined;
+}
+
 type Snapshot = Record<string, Geomorph.DecorDef>;
 
 const maxHistory = 100;
+/** A merging edit this soon after the last of its kind joins it */
+const mergeWithinMs = 1500;
