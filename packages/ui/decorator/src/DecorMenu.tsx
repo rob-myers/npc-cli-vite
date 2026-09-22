@@ -1,6 +1,7 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import type { WorldState } from "@npc-cli/ui__world";
 import { cn } from "@npc-cli/util";
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { CaretRightIcon, CheckIcon, TrashIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import {
@@ -20,7 +21,7 @@ import { mergeKey } from "./history";
 
 /**
  * The map's context menu: on empty map it adds decor where it was opened, on a decor it edits it.
- * A ctrl-click is a fine-step drag, not a menu, as is any press a drag is blocking
+ * A ctrl-click is a fine-step drag, not a menu, as is any press a drag is blocking. None on touch, for now
  */
 export function DecorMenu({
   w,
@@ -44,8 +45,8 @@ export function DecorMenu({
     locate(e);
   }
 
-  /** What was pressed: a long press opens on touch with no `contextmenu` */
-  function locate(e: { currentTarget: HTMLDivElement; target: EventTarget; clientX: number; clientY: number }) {
+  /** What was pressed */
+  function locate(e: React.MouseEvent<HTMLDivElement>) {
     const svg = e.currentTarget.querySelector("svg");
     if (svg === null) return;
     const el = (e.target as Element).closest?.("[data-decor], [data-handle]");
@@ -57,13 +58,11 @@ export function DecorMenu({
   const def = target?.key == null ? undefined : w.decor.runtime.defByKey[target.key];
   const imgs = Object.keys(w.sheets?.decor ?? {});
 
+  if (touchDevice) return <div className="flex-1 min-w-0">{children}</div>;
+
   return (
     <ContextMenu.Root onOpenChange={(open) => onOpenChange(open)}>
-      <ContextMenu.Trigger
-        className="flex-1 min-w-0"
-        onContextMenuCapture={onContextMenuCapture}
-        onPointerDownCapture={(e) => e.pointerType === "touch" && locate(e)}
-      >
+      <ContextMenu.Trigger className="flex-1 min-w-0" onContextMenuCapture={onContextMenuCapture}>
         {children}
       </ContextMenu.Trigger>
       <ContextMenu.Portal>
@@ -279,6 +278,7 @@ type Props = {
 /** Where the menu was opened, and on which decor if any */
 type Target = { key: string | null; at: Geom.VectJson };
 
+const touchDevice = isTouchDevice();
 const addTypes: DecorType[] = ["point", "rect", "circle", "quad"];
 const popupCls =
   "min-w-36 py-1 rounded border border-zinc-700 bg-zinc-900 text-xs text-zinc-300 shadow-lg outline-none";
