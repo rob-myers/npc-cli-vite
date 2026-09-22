@@ -23,30 +23,37 @@ export default function Labels() {
       res: createLabelResources(maxLabels, { occluded: true }),
       tex: new TexArray({ ...roomLabelTexOpts, ctKey: "labels" }),
       layerOfText: {},
+      dirty: false,
 
       add(key, label) {
         state.byKey.set(key, label);
-        state.redraw();
+        state.queueRedraw();
       },
       remove(...keys) {
         let removed = false;
         for (const key of keys) removed = state.byKey.delete(key) || removed;
-        if (removed) state.redraw();
+        if (removed) state.queueRedraw();
       },
-      redraw() {
+      queueRedraw() {
+        if (state.dirty === true) return;
+        state.dirty = true;
+        queueMicrotask(() => {
+          state.dirty = false;
+          state.redraw();
+        });
+      },
+      redraw(retry = true) {
         const { instData, instAttr, slotData, slotAttr, geo, mesh } = state.res;
-        state.layerOfText = {};
-        let layer = 0;
         let i = 0;
         for (const { x, y, y3d = 0, text, gmRoomId } of state.byKey.values()) {
-          if (state.layerOfText[text] === undefined) {
-            if (layer >= MAX_ROOM_LABELS) break;
-            drawLabel(state.tex.ct, text);
-            state.tex.updateIndex(layer);
-            state.layerOfText[text] = layer++;
-          }
           if (i >= maxLabels) break;
-          instData.set([x, y3d + labelLift, y, state.layerOfText[text]], i * 4);
+          const layer = state.layerOf(text);
+          if (layer === null) {
+            if (retry === false) break;
+            state.layerOfText = {}; // full of texts gone by: once more from empty
+            return state.redraw(false);
+          }
+          instData.set([x, y3d + labelLift, y, layer], i * 4);
           slotData[i] = gmRoomId === undefined ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
           i++;
         }
@@ -55,6 +62,15 @@ export default function Labels() {
         instAttr.needsUpdate = true;
         slotAttr.needsUpdate = true;
         w.view.forceUpdate();
+      },
+      layerOf(text) {
+        let layer = state.layerOfText[text];
+        if (layer !== undefined) return layer;
+        layer = Object.keys(state.layerOfText).length;
+        if (layer >= MAX_ROOM_LABELS) return null;
+        drawLabel(state.tex.ct, text);
+        state.tex.updateIndex(layer);
+        return (state.layerOfText[text] = layer);
       },
     }),
     { reset: { res: false, tex: false } },
@@ -101,11 +117,17 @@ export type State = {
   tex: TexArray;
   /** Which texture layer holds each distinct text */
   layerOfText: Record<string, number>;
+  /** A redraw is queued */
+  dirty: boolean;
   /** Add, or replace what the key showed */
   add(key: string, label: Label): void;
   remove(...keys: string[]): void;
-  /** Draw each distinct text once and place every label */
-  redraw(): void;
+  /** One redraw for every add and remove this tick */
+  queueRedraw(): void;
+  /** Place every label; `retry` once with the layers cleared, should they be full */
+  redraw(retry?: boolean): void;
+  /** The text's layer, drawn if new; `null` when every layer is taken */
+  layerOf(text: string): number | null;
 };
 
 const maxLabels = 256;

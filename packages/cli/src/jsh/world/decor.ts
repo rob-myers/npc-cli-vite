@@ -1,6 +1,6 @@
 /**
- * Runtime decor from the shell — see `docs/decorator.md`. What is piped in says WHERE: picks, points,
- * or a query's answer. The World persists what is made, and the debug **Decorations** toggle edits it
+ * Runtime decor from the shell — see `docs/decorator.md`. What is piped in says WHERE: picks or
+ * points. The World persists what is made, and the debug **Decorations** toggle edits it
  */
 
 type DecorType = Geomorph.DecorDef["type"];
@@ -76,7 +76,7 @@ export async function decor_rm({ api, args, w }: JshCli.RunArg) {
   const keys = args.slice();
   if (!api.isTtyAt(0)) {
     let datum: unknown;
-    // a key, or anything which names one e.g. a def, a pick on decor, a query's item
+    // a key, or anything which names one e.g. a def, a pick on decor
     while ((datum = await api.read()) !== api.eof) {
       const key = typeof datum === "string" ? datum : ((datum as Meta)?.key ?? (datum as Meta)?.meta?.decorKey);
       if (typeof key === "string") keys.push(key);

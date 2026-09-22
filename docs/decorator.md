@@ -4,9 +4,9 @@ The panel `@npc-cli/ui__decorator` (uiKey `Decorator`), and the World's side of 
 configuring **dynamic decor** — runtime decor points (abstract or icon), rects, circles and quads.
 Nothing about it lives in another doc.
 
-Decor is made three ways, all ending in `w.decor.create(def)`: placed on the panel's 2D map; placed
-in the 3D World from the shell, at picked points; made from a query's answer. It is configured in
-the 3D World, which needs neither the panel nor a terminal.
+Decor is made two ways, both ending in `w.decor.create(def)`: placed on the panel's 2D map, or placed
+in the 3D World from the shell, at picked points. It is configured in the 3D World, which needs
+neither the panel nor a terminal.
 
 | file | what it holds |
 |---|---|
@@ -88,7 +88,8 @@ removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor
 
 - every runtime decor is drawn, whether or not `meta.shown` says so — `hasInstance` admits it, and
   the toggle rebuilds the runtime instances — so abstract decor can be seen and picked;
-- `DecorInspector` labels each through `w.labels` (its key, or `meta.label`), and a **right-click**
+- `DecorInspector` labels each through `w.labels` (its key, or `meta.label`) — which draws a text
+  once, keeps its layer, and redraws once per tick however many labels came and went — and a **right-click**
   toggles its `DecorCard` through `w.html`, the label giving way whilst the card is up — so a plain
   click stays a pick for e.g. `pick | decor_add`. Touch has no right-click, so there any pick
   toggles. Its ids are `decor:<key>`. On desktop the card opens **focused**
@@ -168,5 +169,4 @@ a right-click there opens its card.
 
 ## Not built yet
 
-Rotate and resize handles, snapping, duplicate, copy/paste, undo/redo (the plan's D2, second pass);
-queries in `/shared/query` (D3).
+Rotate and resize handles, snapping, duplicate, copy/paste.

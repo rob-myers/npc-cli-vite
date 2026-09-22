@@ -98,7 +98,36 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
     [w.gmsHash, w.nav],
   );
 
-  const labels = Object.values(w.decor?.byKey ?? {}).filter(helper.isRoomLabel);
+  // the geomorphs themselves, kept over the renders a pan or a selection brings
+  const gmGroups = useMemo(
+    () =>
+      w.gms.map((gm, gmId) => {
+        const { a, b, c, d, e, f } = gm.transform;
+        const paths = gmPaths[gmId];
+        return (
+          <g key={gmId} transform={`matrix(${a},${b},${c},${d},${e},${f})`}>
+            <path d={paths.hull} fill={ink.hull} fillRule="evenodd" />
+            <path d={paths.rooms} fill={ink.room} />
+            {show.nav && (
+              <path
+                d={navPaths[gmId]}
+                fill={ink.nav}
+                stroke={ink.navEdge}
+                strokeWidth={0.5}
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
+            {show.obstacles && <path d={paths.obstacles} fill={ink.obstacle} />}
+            <path d={paths.walls} fill={ink.wall} strokeWidth={0.04} stroke={ink.wallStroke} />
+            <path d={paths.windows} fill={ink.window} />
+          </g>
+        );
+      }),
+    [gmPaths, navPaths, show.nav, show.obstacles],
+  );
+
+  // `byKey` is remade whenever the decor are
+  const labels = useMemo(() => Object.values(w.decor?.byKey ?? {}).filter(helper.isRoomLabel), [w.decor?.byKey]);
   const doors = Object.values(w.door?.byKey ?? {});
 
   return (
@@ -128,28 +157,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
         </pattern>
       </defs>
 
-      {w.gms.map((gm, gmId) => {
-        const { a, b, c, d, e, f } = gm.transform;
-        const paths = gmPaths[gmId];
-        return (
-          <g key={gmId} transform={`matrix(${a},${b},${c},${d},${e},${f})`}>
-            <path d={paths.hull} fill={ink.hull} fillRule="evenodd" />
-            <path d={paths.rooms} fill={ink.room} />
-            {show.nav && (
-              <path
-                d={navPaths[gmId]}
-                fill={ink.nav}
-                stroke={ink.navEdge}
-                strokeWidth={0.5}
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-            {show.obstacles && <path d={paths.obstacles} fill={ink.obstacle} />}
-            <path d={paths.walls} fill={ink.wall} strokeWidth={0.04} stroke={ink.wallStroke} />
-            <path d={paths.windows} fill={ink.window} />
-          </g>
-        );
-      })}
+      {gmGroups}
 
       {show.grid && (
         <rect
