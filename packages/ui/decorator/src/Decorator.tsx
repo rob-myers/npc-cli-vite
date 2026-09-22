@@ -303,6 +303,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
         {meta.sidebarOpen && (
           <div className="relative shrink-0 flex" style={{ width: meta.sidebarWidth }}>
             <DecorSidebar
+              key={w.mapKey} // remade per map: its arrangement is that map's
               w={w}
               selected={state.selected}
               onSelect={state.select}

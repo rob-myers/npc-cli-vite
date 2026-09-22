@@ -16,7 +16,7 @@ neither the panel nor a terminal.
 | `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, show in 3D |
 | `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
 | `ui/decorator/src/schema.ts` | its meta: `worldKey`, `npcKeys`, `show`, the sidebar |
-| `ui/decorator/src/storage.ts` | per World and map: where the map was left |
+| `ui/decorator/src/storage.ts` | per World and map: where the map was left, how the list is arranged |
 | `ui/decorator/src/history.ts` | undo/redo over the runtime defs |
 | `util/src/hooks/use-svg-zoom.ts` | `useSvgZoom`, `preventPopupGestures` — shared with the World's debug modals |
 | `ui/world/src/components/DecorInspector.tsx` | decorating in 3D: a label per runtime decor, a card per pick |
@@ -149,7 +149,9 @@ click; the point and quad tools take an image, the quad tool a **tilt**, which p
 press on a selected decor keeps the selection, so a drag moves it all; let go without dragging and
 it narrows to that one. The
 sidebar selects the same, and shows the same — there, cmd-click toggles one and shift-click takes
-the run from the last plain click, as a file list would. A `decor-removed` drops what went from the selection.
+the run from the last plain click, as a file list would. Its rows are **dragged to arrange**
+(pragmatic-drag-and-drop, as `MapEdit`'s inspector; a selected row brings the selection), the
+`order` kept in the panel's store per World and map; a key not in it follows, by key. A `decor-removed` drops what went from the selection.
 
 **Undo / redo** (cmd-Z, shift-cmd-Z or cmd-Y, the toolbar): `DecorHistory` keeps snapshots of the
 runtime defs, one taken BEFORE each of the panel's edits — add, move, nudge, delete, rename — and

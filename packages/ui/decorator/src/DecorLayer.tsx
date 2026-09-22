@@ -76,7 +76,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit }: Prop
             key={d.key}
             data-decor={d.key}
             data-no-pan
-            className={cn("cursor-move", isSelected && "drop-shadow-[0_0_2px_white]")}
+            className={cn("cursor-move", isSelected && "drop-shadow-[0_0_3px_#ffe066]")}
             onPointerDown={(e) => onItemPointerDown(e, d.key)}
             onPointerMove={onItemPointerMove}
             onPointerUp={onItemPointerUp}
@@ -187,7 +187,7 @@ const dragThreshold = 0.02;
 const ink = {
   static: "#8a97a8",
   selected: "#ffe066",
-  point: "#e3b968",
+  point: "#9fb4cc",
   rect: "#7fc3d9",
   circle: "#9ccf8f",
   quad: "#e09a6a",
