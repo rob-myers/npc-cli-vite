@@ -14,10 +14,10 @@ import { getDecoratorMapStore } from "./storage";
 
 /**
  * The map's runtime decor: select here or on the map alike — cmd-click toggles one, shift-click
- * takes the run from the last plain click; double-click renames; drag to arrange, as `MapEdit`'s
- * inspector does, the arrangement kept per World and map
+ * takes the run from the last plain click; double-click renames; the crosshair centres the map on
+ * it; drag to arrange, as `MapEdit`'s inspector does, the arrangement kept per World and map
  */
-export function DecorSidebar({ w, selected, onSelect, onRename, onShowIn3d }: Props) {
+export function DecorSidebar({ w, selected, onSelect, onRename, onLocate }: Props) {
   const [filter, setFilter] = useState("");
   const anchor = useRef<string | null>(null);
   const store = getDecoratorMapStore(w.key, w.mapKey);
@@ -72,7 +72,7 @@ export function DecorSidebar({ w, selected, onSelect, onRename, onShowIn3d }: Pr
             dragKeys={selected.includes(d.key) ? selected : [d.key]}
             onClick={(e) => onClickRow(e, d.key)}
             onRename={(next) => onRename(d.key, next)}
-            onShowIn3d={() => onShowIn3d(d.key)}
+            onLocate={() => onLocate(d.key)}
             onDrop={(keys, edge) => onReorder(keys, d.key, edge)}
           />
         ))}
@@ -82,7 +82,7 @@ export function DecorSidebar({ w, selected, onSelect, onRename, onShowIn3d }: Pr
 }
 
 /** A row: draggable, and a drop target above or below */
-function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onShowIn3d, onDrop }: RowProps) {
+function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onLocate, onDrop }: RowProps) {
   const el = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState<Edge | null>(null);
   const latest = useRef({ dragKeys, onDrop });
@@ -128,11 +128,11 @@ function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onShowIn3d, on
       <span className="ml-auto text-[10px] text-zinc-600">{String(d.meta.grKey ?? "")}</span>
       <button
         type="button"
-        title="show in 3D"
+        title="centre the map on it"
         className="grid place-items-center size-5 rounded text-zinc-500 opacity-0 group-hover:opacity-100 hover:bg-zinc-700 hover:text-zinc-200 cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
-          onShowIn3d();
+          onLocate();
         }}
       >
         <CrosshairIcon className="size-3.5" />
@@ -175,7 +175,7 @@ type Props = {
   selected: string[];
   onSelect(keys: string[]): void;
   onRename(key: string, next: string): void;
-  onShowIn3d(key: string): void;
+  onLocate(key: string): void;
 };
 
 type RowProps = {
@@ -184,7 +184,7 @@ type RowProps = {
   dragKeys: string[];
   onClick(e: React.MouseEvent): void;
   onRename(next: string): void;
-  onShowIn3d(): void;
+  onLocate(): void;
   onDrop(keys: string[], edge: Edge): void;
 };
 

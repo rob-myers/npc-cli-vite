@@ -12,7 +12,7 @@ import { getDecoratorMapStore } from "./storage";
  * The map from above, in world metres: 2D `x/y` is world `x/z`. Drawn from each geomorph's own
  * layout and the navmesh, so it is where things really are — see `docs/decorator.md`
  */
-export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, cursor }: Props) {
+export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, cursor, apiRef }: Props) {
   const press = useRef<Press | null>(null);
   const marqueeEl = useRef<SVGRectElement>(null);
 
@@ -31,6 +31,8 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
     initial: store.read().view ?? undefined,
     onChange: (view) => store.patch({ view }),
   });
+
+  if (apiRef !== undefined) apiRef.current = { centreOn: zoom.centreOn };
 
   // a press on the map itself: with shift a marquee, else a pan — and, unmoved, a click
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
@@ -272,6 +274,12 @@ type Props = {
   /** A shift-drag on the map itself, let go */
   onMarquee?(rect: Geom.RectJson, e: PointerEvent): void;
   cursor?: string;
+  /** For whoever renders it to steer the map */
+  apiRef?: React.RefObject<NavMap2dApi | null>;
+};
+
+export type NavMap2dApi = {
+  centreOn(x: number, y: number, minZoom?: number): void;
 };
 
 type Press = { at: Geom.VectJson; client: Geom.VectJson; marquee: boolean };

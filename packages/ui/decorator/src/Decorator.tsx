@@ -11,12 +11,12 @@ import {
   CursorIcon,
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
-import { useCallback, useContext, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
 import { DecorLayer } from "./DecorLayer";
 import { DecorSidebar } from "./DecorSidebar";
 import { type DecorType, keysWithin, moved, newDef, nextKey, typeIcon } from "./decor-edit";
 import { DecorHistory } from "./history";
-import { NavMap2d } from "./NavMap2d";
+import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
 
 /** Places dynamic decor on a 2D top-down map of a live World — see `docs/decorator.md` */
@@ -60,6 +60,7 @@ function epochOf(w: WorldState) {
 /** The panel proper, once there is a World */
 function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
   const { uiStoreApi } = useContext(UiContext);
+  const map = useRef<NavMap2dApi>(null);
 
   const state = useStateRef(
     (): State => ({
@@ -308,9 +309,11 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
               selected={state.selected}
               onSelect={state.select}
               onRename={state.rename}
-              onShowIn3d={(key) => {
+              onLocate={(key) => {
                 const d = w.decor.runtime.byKey[key];
-                if (d !== undefined) void w.view.lookAt(d.type === "point" ? d : d.center, { animate: true });
+                if (d === undefined) return;
+                const { x, y } = d.type === "point" ? d : d.center;
+                map.current?.centreOn(x, y, locateZoom);
               }}
             />
           </div>
@@ -323,6 +326,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
         <div className="flex-1 min-w-0">
           <NavMap2d
             key={w.mapKey} // remade per map: it reads where that map was left, and saves there
+            apiRef={map}
             w={w}
             show={meta.show}
             npcKeys={meta.npcKeys}
@@ -394,6 +398,8 @@ type State = {
 const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static"];
 const decorTypes: DecorType[] = ["point", "rect", "circle", "quad"];
 const minSidebarWidth = 120;
+/** Locating a decor zooms in at least this far */
+const locateZoom = 3;
 
 /** The events after which the map looks different */
 const redrawOn = new Set<string>([

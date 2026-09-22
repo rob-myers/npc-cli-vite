@@ -13,7 +13,7 @@ neither the panel nor a terminal.
 | `ui/decorator/src/Decorator.tsx` | the panel: finds the World; the tools, selection, keys, npc picker |
 | `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots |
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
-| `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, show in 3D |
+| `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, arrange, locate on the map |
 | `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
 | `ui/decorator/src/schema.ts` | its meta: `worldKey`, `npcKeys`, `show`, the sidebar |
 | `ui/decorator/src/storage.ts` | per World and map: where the map was left, how the list is arranged |
@@ -167,8 +167,8 @@ is a click, and a shift-press is a marquee. Decor opt out of panning with `data-
 `useSvgZoom` respects, and handle their own presses. Client coordinates become map ones through the
 SVG's own screen transform (`toMap`), which letterboxing does not fool.
 
-The sidebar's "show in 3D" pans the World to the decor (`w.view.lookAt`); with **Decorations** on,
-a right-click there opens its card.
+The sidebar's crosshair centres the MAP on the decor (`centreOn`, zooming in to at least
+`locateZoom`) — never the World's camera, which is the player's.
 
 ## Not built yet
 

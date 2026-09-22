@@ -141,8 +141,18 @@ export function useSvgZoom(
     setPan({ x: 0, y: 0 });
   }, []);
 
+  /** Put the point at the centre, at least this far in */
+  const centreOn = useCallback(
+    (x: number, y: number, minZoom = 1) => {
+      setPan({ x: x - (bounds.minX + bounds.width / 2), y: y - (bounds.minY + bounds.height / 2) });
+      setZoom((zoom) => Math.max(zoom, minZoom));
+    },
+    [bounds],
+  );
+
   return {
     viewBox,
+    centreOn,
     onWheel,
     onPointerDown,
     onPointerMove,
