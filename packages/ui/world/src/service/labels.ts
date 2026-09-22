@@ -32,7 +32,7 @@ export function drawLabel(ct: CanvasRenderingContext2D, label: string) {
 }
 
 /** Billboards built in the shader about a point each — see `RoomLabels` and `Labels` */
-export function createLabelResources(maxInstances = MAX_ROOM_LABEL_INSTANCES) {
+export function createLabelResources(maxInstances = MAX_ROOM_LABEL_INSTANCES, { occluded = false } = {}) {
   const geo = new THREE.InstancedBufferGeometry();
   // every vertex sits at the instance's own point; `billboardOffset` spreads them in view space
   geo.setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 3));
@@ -65,7 +65,7 @@ export function createLabelResources(maxInstances = MAX_ROOM_LABEL_INSTANCES) {
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
-    depthTest: false, // over the world: an obstacle must not swallow the name of a room
+    depthTest: occluded, // else over the world: an obstacle must not swallow the name of a room
     // built in view space, the quad always faces us — and a transparent DoubleSide draws twice
     side: THREE.FrontSide,
     opacity: 1,

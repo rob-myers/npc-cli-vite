@@ -11,8 +11,8 @@ import { WorldContext } from "./world-context";
 
 /**
  * Keyed text at a point, e.g. a decor's name whilst decorating: billboards over the world like
- * `RoomLabels`, one texture layer per DISTINCT text, never pickable, fading with the room they are
- * in — the label says which; one in no room is always shown
+ * `RoomLabels` but occluded like any thing, one texture layer per DISTINCT text, never pickable,
+ * fading with the room they are in — the label says which; one in no room is always shown
  */
 export default function Labels() {
   const w = useContext(WorldContext);
@@ -20,7 +20,7 @@ export default function Labels() {
   const state = useStateRef(
     (): State => ({
       byKey: new Map(),
-      res: createLabelResources(maxLabels),
+      res: createLabelResources(maxLabels, { occluded: true }),
       tex: new TexArray({ ...roomLabelTexOpts, ctKey: "labels" }),
       layerOfText: {},
 

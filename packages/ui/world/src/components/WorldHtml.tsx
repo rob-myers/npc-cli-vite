@@ -9,7 +9,7 @@ import { WorldContext } from "./world-context";
  * Keyed React content at a point, or following an object, e.g. a decor's editor once clicked — an
  * `Html3d` each, centred above its anchor. It always takes the pointer, and has a close button, a
  * grip to drag it up and down, and a corner handle to set its width (as `--html-width`, for the
- * content to flow into), both kept whilst the key is shown
+ * content to flow into), both remembered by key once closed
  */
 export default function WorldHtml() {
   const w = useContext(WorldContext);
@@ -20,6 +20,7 @@ export default function WorldHtml() {
 
       show(key, at, node, opts) {
         const prev = state.byKey.get(key);
+        const kept = prev === undefined ? remembered.get(`${w.key}:${key}`) : undefined;
         let tracked: TrackedObject3D;
         if ("object" in at) {
           tracked = at; // follows it e.g. an npc
@@ -35,8 +36,8 @@ export default function WorldHtml() {
           visible: prev?.visible ?? true,
           onHide: opts?.onHide,
           frame: prev?.frame ?? null,
-          offset: prev?.offset ?? new THREE.Vector3(),
-          width: prev?.width ?? null,
+          offset: prev?.offset ?? kept?.offset ?? new THREE.Vector3(),
+          width: prev?.width ?? kept?.width ?? null,
           // only as it opens: a re-show, e.g. after an edit, must not take focus from a field
           wantsFocus: prev === undefined && opts?.focus === true && w.touchDevice === false,
         });
@@ -49,6 +50,7 @@ export default function WorldHtml() {
           const entry = state.byKey.get(key);
           if (entry === undefined) continue;
           state.byKey.delete(key);
+          remembered.set(`${w.key}:${key}`, { offset: entry.offset, width: entry.width });
           entry.onHide?.();
           removed = true;
         }
@@ -232,6 +234,8 @@ type WorldHtmlEntry = {
   wantsFocus: boolean;
 };
 
+/** Where each key was dragged to and how wide, kept over close and World HMR alike */
+const remembered = new Map<string, Pick<WorldHtmlEntry, "offset" | "width">>();
 const handleClass =
   "pointer-events-auto absolute grid place-items-center rounded-lg border-2 border-white/40 bg-black/80 text-white/90";
 const zero = new THREE.Vector3();

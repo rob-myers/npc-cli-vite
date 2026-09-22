@@ -104,9 +104,13 @@ inspector tidies up after a removal in a microtask, else every edit would close 
 It is rendered by `<Debug>`, so needs neither the panel nor a terminal.
 
 `w.html` frames have no lock: they always take the pointer, and always show the close button, the
-grip and the width handle. `Html3d` appends its content INSIDE the r3f canvas's wrapper, whose
-`onPointerDown`/`onPointerUp` are the World's — a press there would be picked as one, and on release
-the wrapper focuses itself, so a clicked field lost focus at once. The frame therefore stops both.
+grip and the width handle. Where a frame was dragged to and how wide it was made are remembered by
+key (per World, in memory), so a card reopens as it was left. The labels are occluded like any
+thing — `createLabelResources(…, { occluded: true })` — unlike room labels, which draw over all.
+
+`Html3d` appends its content INSIDE the r3f canvas's wrapper, whose `onPointerDown`/`onPointerUp`
+are the World's — a press there would be picked as one, and on release the wrapper focuses itself,
+so a clicked field lost focus at once. The frame therefore stops both.
 
 ## From the shell
 

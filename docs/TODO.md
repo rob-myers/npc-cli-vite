@@ -112,6 +112,12 @@
 - ✅ w.label should fade with rooms
 - ✅ decor rect/circle should have meta.floor
 
+- 🚧 Decorator refinements
+  - improve default decor point icon (not warn)
+  - ✅ can tilt e.g. screen, switch
+  - can set 3d height 
+  - book, box, key
+
 ## Site
 
 - ✅ deploy on https://staging.lastredoubt.co/
