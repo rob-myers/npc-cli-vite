@@ -141,6 +141,23 @@ left foot forward. t=1.25 is the push: deeper lean, arm rises and shoves forward
 Stomach/chest position and leg z are idle's; the root rotation is zeroed and the legs pinned, so the
 feet stay put (see *Legs and the floor*).
 
+## walk / run — planted feet (legs and root solved, not hand-keyed)
+
+The npc moves `1 / gait` metres per cycle (`gait` in `npc-animation.ts`: walk `1`, run `0.5`), i.e.
+at 1/16 × `npcScale` (0.7) a stance foot must slide back **22.86 u/s** (walk) / **45.72 u/s** (run).
+Legs, knees, feet (x only) and `skeleton-root` position y were solved by 2D IK from a foot path — heel
+strike, flat, toe-off rocker, Hermite swing — with the root taken from a target stance-knee bend and
+low-passed under the reach limit. Keys: 24 per cycle (12 was too coarse: the rockers sank the foot
+up to 0.17). Stance speed checks within 0.5% (walk). Leg/knee position
+channels were dropped, and run's root rotation `-2` moved onto `upperbody` x.
+
+- Walk: left heel strikes at t=0, duty 0.5, heel strike toes-up 22°, toe-off −34°; bob −0.84…+0.15;
+  stance knee −16…−35° (the long stride for these short legs needs the big heel/toe rockers). Leans
+  from the hips: `upperbody` x −11 at contact / −9 passing, `chest` −2 / 0; head +4 / +2 so it tips
+  down with the body; arms raised +10.5 / +7 over their original swing so they still hang.
+- Run: left lands at t=0, duty 0.27; bob −0.87…−0.29; swing knee to −115°.
+- Hand-tweaking one leg key breaks the plant — re-measure a foot's lowest vertex per sample.
+
 ## Sit animation — arm position keyframes
 
 Remove the arm y-lift (originally y=0.3 at t=1.25) — set all arm position keyframes to `[0, 0, 0]` so arms don't float during the breathing cycle.
