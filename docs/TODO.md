@@ -114,6 +114,7 @@
   - ✅ can tilt e.g. screen, switch
   - ✅ Decorator can resize rect/circle/points
   - ✅ Decorator has better icon for points
+  - dynamic decor needn't have meta.shown
   - improve default decor point icon (not warn)
   - can set 3d height 
   - book, box, key
