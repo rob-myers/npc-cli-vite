@@ -8671,10 +8671,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 6.15, 0.05],
-            "doorId": 0,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 0
           }
         },
         {
@@ -8691,10 +8688,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 8.7875, 0.05],
-            "doorId": 1,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 1
           }
         },
         {
@@ -8709,10 +8703,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 21.1, 0],
-            "doorId": 2,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 2
           }
         },
         {
@@ -8726,10 +8717,7 @@
             "label": "corridor",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 24.1, 6.05],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -8746,10 +8734,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 23.7375, 0],
-            "doorId": 3,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 3
           }
         },
         {
@@ -8766,10 +8751,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 6.25, 29.9],
-            "doorId": 4,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 4
           }
         },
         {
@@ -8786,10 +8768,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 8.8875, 29.9],
-            "doorId": 5,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 5
           }
         },
         {
@@ -8806,10 +8785,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 21.25, 29.975],
-            "doorId": 6,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 6
           }
         },
         {
@@ -8831,10 +8807,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 23.8875, 29.975],
-            "doorId": 7,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 7
           }
         },
         {
@@ -8849,10 +8822,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 0.1, 6.25],
-            "doorId": 8,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 8
           }
         },
         {
@@ -8869,10 +8839,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 0.1, 8.9125],
-            "doorId": 9,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 9
           }
         },
         {
@@ -8889,10 +8856,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 0.05, 21.25],
-            "doorId": 10,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 10
           }
         },
         {
@@ -8909,10 +8873,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 0.1, 23.9],
-            "doorId": 11,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 11
           }
         },
         {
@@ -8929,10 +8890,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 6.1],
-            "doorId": 12,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 12
           }
         },
         {
@@ -8949,10 +8907,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 8.75],
-            "doorId": 13,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 13
           }
         },
         {
@@ -8969,10 +8924,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.85, 21.1],
-            "doorId": 14,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 14
           }
         },
         {
@@ -8989,10 +8941,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 23.75],
-            "doorId": 15,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 15
           }
         },
         {
@@ -9006,10 +8955,7 @@
             "label": "common",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 14.75, 10.1],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -9024,10 +8970,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 5.85, 9.05],
-            "doorId": 16,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 16
           }
         },
         {
@@ -9042,10 +8985,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 5.85, 8.95],
-            "doorId": 16,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 16
           }
         },
         {
@@ -9062,10 +9002,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 25.4, 9.05],
-            "doorId": 17,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 17
           }
         },
         {
@@ -9082,10 +9019,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 25.4, 8.95],
-            "doorId": 17,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 17
           }
         },
         {
@@ -9107,10 +9041,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 13.5375, 13.6],
-            "doorId": 18,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 18
           }
         },
         {
@@ -9132,10 +9063,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 13.5375, 13.5],
-            "doorId": 18,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 18
           }
         },
         {
@@ -9157,10 +9085,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 16.3125, 13.6],
-            "doorId": 19,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 19
           }
         },
         {
@@ -9182,10 +9107,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 16.3125, 13.5],
-            "doorId": 19,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 19
           }
         },
         {
@@ -9207,10 +9129,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 13.5375, 16.55],
-            "doorId": 20,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 20
           }
         },
         {
@@ -9232,10 +9151,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 13.5375, 16.45],
-            "doorId": 20,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 20
           }
         },
         {
@@ -9257,10 +9173,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 16.3125, 16.55],
-            "doorId": 21,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 21
           }
         },
         {
@@ -9282,10 +9195,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 16.3125, 16.45],
-            "doorId": 21,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 21
           }
         },
         {
@@ -9304,10 +9214,7 @@
             "spawn": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 14.9125, 11.95],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -9326,10 +9233,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0, 0.5, 0.5, 0, 12.649999999999999, 4.8375],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": 1},
+            "y": 0.01
           }
         },
         {
@@ -9351,10 +9256,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 12.0125, 5.925000000000001],
-            "doorId": 22,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 22
           }
         },
         {
@@ -9376,10 +9278,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 12.1625, 6.025],
-            "doorId": 22,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 22
           }
         },
         {
@@ -9399,11 +9298,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.342, -0.9397, 0.9397, -0.342, 10.87791, 5.65475],
+            "direction": {"x": -0.342, "y": -0.9397},
             "obstacleId": 9,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9423,11 +9320,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.342, -0.9397, -0.9397, -0.342, 9.74709, 5.66725],
+            "direction": {"x": 0.342, "y": -0.9397},
             "obstacleId": 10,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9447,11 +9342,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 9.862499999999999, 3.6875],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 12,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -9466,11 +9359,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 12.7, 4.1875],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 14,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9489,10 +9380,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0, -0.5, 0.5, 0, 12.649999999999999, 11.6625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "y": 0.01
           }
         },
         {
@@ -9514,10 +9403,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 12.0125, 10.575],
-            "doorId": 23,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 23
           }
         },
         {
@@ -9539,10 +9425,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 12.1625, 10.475000000000001],
-            "doorId": 23,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 23
           }
         },
         {
@@ -9562,11 +9445,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.342, 0.9397, 0.9397, 0.342, 10.87791, 10.84525],
+            "direction": {"x": -0.342, "y": 0.9397},
             "obstacleId": 15,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9586,11 +9467,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.342, 0.9397, -0.9397, 0.342, 9.74709, 10.83275],
+            "direction": {"x": 0.342, "y": 0.9397},
             "obstacleId": 16,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9610,11 +9489,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 9.862499999999999, 12.8125],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 18,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -9634,11 +9511,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 12.7, 12.3125],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 20,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9657,10 +9532,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0, -0.5, -0.5, 0, 17.35, 11.6625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "y": 0.01
           }
         },
         {
@@ -9682,10 +9555,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 17.9875, 10.575],
-            "doorId": 24,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 24
           }
         },
         {
@@ -9707,10 +9577,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 17.837500000000002, 10.475000000000001],
-            "doorId": 24,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 24
           }
         },
         {
@@ -9730,11 +9597,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.342, 0.9397, -0.9397, 0.342, 19.12209, 10.84525],
+            "direction": {"x": 0.342, "y": 0.9397},
             "obstacleId": 21,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9754,11 +9619,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.342, 0.9397, 0.9397, 0.342, 20.25291, 10.83275],
+            "direction": {"x": -0.342, "y": 0.9397},
             "obstacleId": 22,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9778,11 +9641,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 20.1375, 12.8125],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 24,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -9802,11 +9663,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, -1, 0, 17.3, 12.3125],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 26,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -9832,10 +9691,8 @@
               12.007368000000001,
               18.628137000000002
             ],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": 1},
+            "y": 0.01
           }
         },
         {
@@ -9857,10 +9714,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 12.107368000000001, 19.478137],
-            "doorId": 25,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 25
           }
         },
         {
@@ -9882,10 +9736,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 12.107368000000001, 19.578137],
-            "doorId": 25,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 25
           }
         },
         {
@@ -9905,11 +9756,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 12.032368, 18.165637],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 27,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -9928,10 +9777,8 @@
             "label": "office",
             "img": "label",
             "transform": [0, 0.5, 0.5, 0, 17.9875, 18.631275000000002],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": 1},
+            "y": 0.01
           }
         },
         {
@@ -9953,10 +9800,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 17.887500000000003, 19.481275],
-            "doorId": 26,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 26
           }
         },
         {
@@ -9978,10 +9822,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 17.887500000000003, 19.581275],
-            "doorId": 26,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 26
           }
         },
         {
@@ -10001,11 +9842,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 17.962500000000002, 18.168775],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 30,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -10031,10 +9870,8 @@
               12.007368000000001,
               24.921861999999997
             ],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "y": 0.01
           }
         },
         {
@@ -10056,10 +9893,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 12.107368000000001, 24.071862],
-            "doorId": 27,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 27
           }
         },
         {
@@ -10081,10 +9915,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 12.107368000000001, 23.971861999999998],
-            "doorId": 27,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 27
           }
         },
         {
@@ -10104,11 +9935,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, -1, 0, 12.032368, 25.384362],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 33,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -10127,10 +9956,8 @@
             "label": "office",
             "img": "label",
             "transform": [0, -0.5, 0.5, 0, 17.9875, 24.912499999999998],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "y": 0.01
           }
         },
         {
@@ -10152,10 +9979,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 17.887500000000003, 24.0625],
-            "doorId": 28,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 28
           }
         },
         {
@@ -10177,10 +10001,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 17.887500000000003, 23.9625],
-            "doorId": 28,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 28
           }
         },
         {
@@ -10200,11 +10021,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 17.962500000000002, 25.375],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 36,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -10218,10 +10037,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 10.775, 8.1625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -10238,10 +10055,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 12.05, 7.6],
-            "doorId": 29,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 29
           }
         },
         {
@@ -10259,10 +10073,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, -1, 0, 11.95, 7.6],
-            "doorId": 29,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 29
           }
         },
         {
@@ -10277,11 +10088,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 9.855, 6.705],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 40,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -10296,11 +10105,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 9.855, 9.795],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 42,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -10320,11 +10127,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 10.2175, 8.1825],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 44,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -10343,10 +10148,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [-0.5, 0, 0, -0.5, 19.7375, 8.5],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -10363,10 +10166,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 17.9375, 8.9],
-            "doorId": 30,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 30
           }
         },
         {
@@ -10384,10 +10184,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 18.0375, 8.9],
-            "doorId": 30,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 30
           }
         },
         {
@@ -10407,11 +10204,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.7071, -0.7071, 0.7071, 0.7071, 18.40858, 9.97818],
+            "direction": {"x": 0.7071, "y": -0.7071},
             "obstacleId": 46,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -10426,11 +10221,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 20.150000000000002, 6.6875],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 48,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -10449,10 +10242,8 @@
             "label": "fresher",
             "img": "label",
             "transform": [0, 0.5, 0.5, 0, 15.58273, 4.22518],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": 1},
+            "y": 0.01
           }
         },
         {
@@ -10474,10 +10265,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 15.08273, 6.02518],
-            "doorId": 31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 31
           }
         },
         {
@@ -10500,10 +10288,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 15.08273, 5.92518],
-            "doorId": 31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 31
           }
         },
         {
@@ -10523,11 +10308,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 14.29523, 3.41268],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 49,
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.01
           }
         },
         {
@@ -10547,11 +10330,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.83273, 4.40018],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 50,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -10571,11 +10352,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.337605, 7.499727999999999],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 62,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -10595,11 +10374,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.950105, 7.499727999999999],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 62,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -10619,11 +10396,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.562605000000001, 7.499727999999999],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 62,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -10643,11 +10418,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.6428, 0.766, 0.766, 0.6428, 19.170565, 3.233955],
+            "direction": {"x": -0.6428, "y": 0.766},
             "obstacleId": 64,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -10667,11 +10440,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.6428, -0.766, 0.766, -0.6428, 19.183065, 4.352673],
+            "direction": {"x": -0.6428, "y": -0.766},
             "obstacleId": 65,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -10698,11 +10469,9 @@
               18.321350000000002,
               3.246455
             ],
+            "direction": {"x": 0.6428, "y": 0.766},
             "obstacleId": 66,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -10729,11 +10498,9 @@
               18.321350000000002,
               4.365173
             ],
+            "direction": {"x": 0.6428, "y": -0.766},
             "obstacleId": 67,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -10750,10 +10517,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 4.575, 10.675],
-            "doorId": 32,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 32
           }
         },
         {
@@ -10770,10 +10534,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 4.4750000000000005, 10.525],
-            "doorId": 32,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 32
           }
         },
         {
@@ -10795,10 +10556,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 4.569567, 19.372345000000003],
-            "doorId": 33,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 33
           }
         },
         {
@@ -10820,10 +10578,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, -1, 0, 4.4695670000000005, 19.522345],
-            "doorId": 33,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 33
           }
         },
         {
@@ -10845,10 +10600,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 4.476005, 16.387529999999998],
-            "doorId": 34,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 34
           }
         },
         {
@@ -10871,10 +10623,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 4.576004999999999, 16.387529999999998],
-            "doorId": 34,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 34
           }
         },
         {
@@ -10896,10 +10645,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 4.476005, 13.437529999999999],
-            "doorId": 35,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 35
           }
         },
         {
@@ -10922,10 +10668,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 4.576004999999999, 13.437529999999999],
-            "doorId": 35,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 35
           }
         },
         {
@@ -10947,10 +10690,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 22.667753, 16.560385],
-            "doorId": 36,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 36
           }
         },
         {
@@ -10973,10 +10713,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 22.667753, 16.460385],
-            "doorId": 36,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 36
           }
         },
         {
@@ -10996,11 +10733,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 18.447885],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 68,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -11020,11 +10755,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 19.447885],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 69,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -11044,11 +10777,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 20.447885],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 70,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -11070,10 +10801,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 22.617753, 13.489614999999999],
-            "doorId": 37,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 37
           }
         },
         {
@@ -11096,10 +10824,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 22.617753, 13.589615],
-            "doorId": 37,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 37
           }
         },
         {
@@ -11119,11 +10844,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 11.602115],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 74,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -11143,11 +10866,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 10.602115],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 75,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -11167,11 +10888,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 9.602115],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 76,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -11193,10 +10912,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 7.539615, 16.517753000000003],
-            "doorId": 38,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 38
           }
         },
         {
@@ -11219,10 +10935,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 7.539615, 16.442753],
-            "doorId": 38,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 38
           }
         },
         {
@@ -11242,11 +10955,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 7.177115000000001, 17.167753],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 81,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         }
       ],
@@ -18027,10 +17738,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 6.25, 14.9],
-            "doorId": 0,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 0
           }
         },
         {
@@ -18047,10 +17755,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 8.8875, 14.9],
-            "doorId": 1,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 1
           }
         },
         {
@@ -18067,10 +17772,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 21.25, 14.9],
-            "doorId": 2,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 2
           }
         },
         {
@@ -18092,10 +17794,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 23.8875, 14.9],
-            "doorId": 3,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 3
           }
         },
         {
@@ -18110,10 +17809,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 0.1, 8.75],
-            "doorId": 4,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 4
           }
         },
         {
@@ -18128,10 +17824,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 0.1, 6.1],
-            "doorId": 5,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 5
           }
         },
         {
@@ -18148,10 +17841,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 6.1],
-            "doorId": 6,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 6
           }
         },
         {
@@ -18168,10 +17858,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 8.75],
-            "doorId": 7,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 7
           }
         },
         {
@@ -18187,10 +17874,7 @@
             "tilt": true,
             "tint": "#aaa",
             "img": "screen-0",
-            "transform": [0, -0.7727, 0.7727, 0, 6.1, 10.2],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "transform": [0, -0.7727, 0.7727, 0, 6.1, 10.2]
           }
         },
         {
@@ -18205,10 +17889,7 @@
             "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 5.7, 7.4],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -18222,10 +17903,7 @@
             "spawn": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 2, 4.6125],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -18240,10 +17918,7 @@
             "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 23.5, 7.5],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -18262,10 +17937,8 @@
             "label": "office",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 25.525, 5.2875],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18282,10 +17955,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 26.95, 4.4],
-            "doorId": 8,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 8
           }
         },
         {
@@ -18302,10 +17972,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 27.05, 4.4],
-            "doorId": 8,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 8
           }
         },
         {
@@ -18322,10 +17989,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 25.7, 6.05],
-            "doorId": 9,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 9
           }
         },
         {
@@ -18342,10 +18006,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 25.7, 5.95],
-            "doorId": 9,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 9
           }
         },
         {
@@ -18364,10 +18025,8 @@
             "shown": true,
             "img": "number-zero",
             "transform": [1, 0, 0, 1, 26.375, 4.2375],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18382,10 +18041,7 @@
             "y": 0.7,
             "h": 0.05,
             "img": "number-one",
-            "transform": [1, 0, 0, 1, 26.25, 3.3],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "transform": [1, 0, 0, 1, 26.25, 3.3]
           }
         },
         {
@@ -18405,10 +18061,7 @@
             "y": 1.4,
             "tilt": true,
             "img": "screen-0",
-            "transform": [0.7071, -0.7071, 0.7071, 0.7071, 24.375, 4.1375],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "transform": [0.7071, -0.7071, 0.7071, 0.7071, 24.375, 4.1375]
           }
         },
         {
@@ -18428,11 +18081,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 25.72892, 4.64068],
+            "direction": {"x": -0.7071, "y": -0.7071},
             "obstacleId": 7,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -18446,10 +18097,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18466,10 +18115,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 28.35, 5.975],
-            "doorId": 10,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 10
           }
         },
         {
@@ -18486,10 +18132,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 28.5, 6.025],
-            "doorId": 10,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 10
           }
         },
         {
@@ -18503,10 +18146,8 @@
             "label": "fresher",
             "img": "label",
             "transform": [-0.5, 0, 0, 0.5, 28, 0.9],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18528,10 +18169,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 28.525, 1.5375],
-            "doorId": 11,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 11
           }
         },
         {
@@ -18553,10 +18191,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 28.375, 1.4625],
-            "doorId": 11,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 11
           }
         },
         {
@@ -18576,11 +18211,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.866, 0.5, -0.5, -0.866, 29.583, 4.465199999999999],
+            "direction": {"x": -0.866, "y": 0.5},
             "obstacleId": 8,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -18600,11 +18233,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.866, -0.5, -0.5, 0.866, 29.583, 5.5223],
+            "direction": {"x": -0.866, "y": -0.5},
             "obstacleId": 9,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -18619,11 +18250,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, -1, 0, 29.375, 1.95],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 10,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -18638,11 +18267,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, -1, 0, 29.375, 1.95],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 11,
-            "y": 1.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 1.31
           }
         },
         {
@@ -18657,11 +18284,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, -1, 0, 28.5625, 0.35],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 12,
-            "y": 0.71,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.71
           }
         },
         {
@@ -18677,10 +18302,8 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 27.6875, 0.8],
-            "obstacleId": 13,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "obstacleId": 13
           }
         },
         {
@@ -18695,11 +18318,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 29.6375, 0.8],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 14,
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.01
           }
         },
         {
@@ -18713,10 +18334,8 @@
             "label": "bridge",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 14.7, 4.4125],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18733,10 +18352,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 20.9625, 7.3500000000000005],
-            "doorId": 12,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 12
           }
         },
         {
@@ -18753,10 +18369,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 21.0625, 7.3500000000000005],
-            "doorId": 12,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 12
           }
         },
         {
@@ -18778,10 +18391,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 20.8125, 6.0625],
-            "doorId": 12,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 12
           }
         },
         {
@@ -18803,10 +18413,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 15.712499999999999, 6.1125],
-            "doorId": 13,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 13
           }
         },
         {
@@ -18828,10 +18435,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 15.712499999999999, 6.0125],
-            "doorId": 13,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 13
           }
         },
         {
@@ -18848,10 +18452,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 14.1625, 6],
-            "doorId": 13,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 13
           }
         },
         {
@@ -18868,10 +18469,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 14.1625, 6.1000000000000005],
-            "doorId": 13,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 13
           }
         },
         {
@@ -18888,10 +18486,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 9.337499999999999, 6.075],
-            "doorId": 14,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 14
           }
         },
         {
@@ -18908,10 +18503,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 9.049999999999999, 7.3625],
-            "doorId": 14,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 14
           }
         },
         {
@@ -18928,10 +18520,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 8.95, 7.3625],
-            "doorId": 14,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 14
           }
         },
         {
@@ -18950,10 +18539,8 @@
             "label": "locker",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 12.5125, 5.5625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18972,10 +18559,8 @@
             "label": "locker",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 17.0125, 5.5625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -18994,10 +18579,8 @@
             "label": "locker",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 10.2625, 8.1625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19017,10 +18600,8 @@
             "corridor": true,
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 14.7625, 7.3625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19042,10 +18623,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 11.962499999999999, 7.5625],
-            "doorId": 17,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 17
           }
         },
         {
@@ -19067,10 +18645,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 12.0625, 7.5625],
-            "doorId": 17,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 17
           }
         },
         {
@@ -19096,10 +18671,8 @@
               19.174999999999997,
               7.7875000000000005
             ],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19118,10 +18691,8 @@
             "label": "briefing",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 14.7625, 10.712499999999999],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19140,10 +18711,8 @@
             "label": "office",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 11.112499999999999, 11.4125],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19165,10 +18734,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 13.325, 9.0125],
-            "doorId": 19,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 19
           }
         },
         {
@@ -19185,10 +18751,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 13.325, 9.1],
-            "doorId": 19,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 19
           }
         },
         {
@@ -19210,10 +18773,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 12.0625, 10.5125],
-            "doorId": 20,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 20
           }
         },
         {
@@ -19235,10 +18795,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 11.962499999999999, 10.5125],
-            "doorId": 20,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 20
           }
         },
         {
@@ -19257,10 +18814,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 18.7625, 10.7625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19282,10 +18837,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 18.0625, 10.5125],
-            "doorId": 21,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 21
           }
         },
         {
@@ -19307,10 +18859,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 17.9625, 10.5125],
-            "doorId": 21,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 21
           }
         },
         {
@@ -19325,11 +18874,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 12.85, 3.6500000000000004],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 20,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -19349,11 +18896,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 15.875, 3.6375],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 21,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -19373,11 +18918,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 17.3375, 3.6375],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 22,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -19397,11 +18940,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 14.337499999999999, 3.6375],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 23,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -19421,11 +18962,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 16.724999999999998, 10.837499999999999],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 27,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19445,11 +18984,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 14.049999999999999, 11.587499999999999],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 28,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19469,11 +19006,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 14.649999999999999, 11.587499999999999],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 29,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19488,11 +19023,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 15.849999999999998, 11.587499999999999],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 30,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19512,11 +19045,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 15.25, 11.587499999999999],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 31,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19531,11 +19062,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.849999999999998, 9.8875],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 32,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19550,11 +19079,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.25, 9.8875],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 33,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19569,11 +19096,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.649999999999999, 9.8875],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 34,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19588,11 +19113,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.049999999999999, 9.8875],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 35,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19612,11 +19135,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.299999999999999, 10.687499999999998],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 36,
-            "y": 0.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.31
           }
         },
         {
@@ -19631,11 +19152,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 10.149999999999999, 9.337499999999999],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 37,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -19662,11 +19181,9 @@
               10.5410825,
               11.029422499999999
             ],
+            "direction": {"x": -0.2588, "y": -0.9659},
             "obstacleId": 38,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -19686,11 +19203,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 18.4625, 9.6375],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 40,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -19711,10 +19226,8 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 18.525, 8.2375],
-            "obstacleId": 41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": 1},
+            "obstacleId": 41
           }
         },
         {
@@ -19734,11 +19247,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 19.4625, 8.7125],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 42,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -19758,11 +19269,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 20.3375, 8.7125],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 43,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -19777,11 +19286,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 45,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -19796,11 +19303,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 7.325, 2.1375],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 47,
-            "y": 0.61,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.61
           }
         },
         {
@@ -19819,10 +19324,8 @@
             "label": "cartography",
             "img": "label",
             "transform": [-0.5, 0, 0, 0.5, 26.8375, 11.425],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -19851,10 +19354,7 @@
               25.35,
               9.137500000000001
             ],
-            "doorId": 22,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 22
           }
         },
         {
@@ -19883,10 +19383,7 @@
               25.299999999999997,
               9.0875
             ],
-            "doorId": 22,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 22
           }
         },
         {
@@ -19915,10 +19412,7 @@
               24.2,
               10.287500000000001
             ],
-            "doorId": 22,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 22
           }
         },
         {
@@ -19940,10 +19434,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-0.7071, 0.7071, -0.7071, -0.7071, 24.15, 10.2375],
-            "doorId": 22,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 22
           }
         },
         {
@@ -19970,11 +19461,9 @@
               27.722355,
               11.684890000000001
             ],
+            "direction": {"x": 0.9659, "y": -0.2588},
             "obstacleId": 49,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20001,11 +19490,9 @@
               26.80213,
               12.78941
             ],
+            "direction": {"x": -0.2588, "y": 0.9659},
             "obstacleId": 50,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20019,10 +19506,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "y": 0.01
           }
         },
         {
@@ -20039,10 +19524,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 5.975, 13.35],
-            "doorId": 23,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 23
           }
         },
         {
@@ -20059,10 +19541,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 6.025, 13.5],
-            "doorId": 23,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 23
           }
         },
         {
@@ -20076,10 +19555,8 @@
             "label": "fresher",
             "img": "label",
             "transform": [0, -0.5, 0.5, 0, 0.9, 13],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "y": 0.01
           }
         },
         {
@@ -20101,10 +19578,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, 1, 0, 1.5375, 13.525],
-            "doorId": 24,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 24
           }
         },
         {
@@ -20126,10 +19600,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 1.4625, 13.375],
-            "doorId": 24,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 24
           }
         },
         {
@@ -20149,11 +19620,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
+            "direction": {"x": 0.5, "y": -0.866},
             "obstacleId": 51,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20173,11 +19642,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
+            "direction": {"x": -0.5, "y": -0.866},
             "obstacleId": 52,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20192,11 +19659,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 1.95, 14.375],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 53,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20211,11 +19676,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 1.95, 14.375],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 54,
-            "y": 1.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 1.31
           }
         },
         {
@@ -20230,11 +19693,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 0.35, 13.5625],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 55,
-            "y": 0.71,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.71
           }
         },
         {
@@ -20250,10 +19711,8 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 0.8, 12.6875],
-            "obstacleId": 56,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "obstacleId": 56
           }
         },
         {
@@ -20268,11 +19727,9 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 0.8, 14.6375],
+            "direction": {"x": -1, "y": 0},
             "obstacleId": 57,
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.01
           }
         },
         {
@@ -20284,10 +19741,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 5, 9.85],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20302,10 +19757,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 4.45, 8.95],
-            "doorId": 25,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 25
           }
         },
         {
@@ -20320,10 +19772,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 4.6, 9.05],
-            "doorId": 25,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 25
           }
         },
         {
@@ -20343,11 +19792,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 3.6875, 11.1625],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 59,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20366,10 +19813,8 @@
             "label": "fresher",
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 5.0125, 11.5],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20386,10 +19831,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, -1, 0, 5.9625, 10.35],
-            "doorId": 26,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 26
           }
         },
         {
@@ -20406,10 +19848,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, -1, 0, 5.9625, 10.8],
-            "doorId": 26,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 26
           }
         },
         {
@@ -20424,11 +19863,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 5.35, 11.55],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 60,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20440,10 +19877,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 2, 9.85],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20458,10 +19893,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 1.45, 8.95],
-            "doorId": 27,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 27
           }
         },
         {
@@ -20476,10 +19908,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, 1, 1.6, 9.05],
-            "doorId": 27,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 27
           }
         },
         {
@@ -20499,11 +19928,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 0.6875, 11.1625],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 62,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20522,10 +19949,8 @@
             "label": "fresher",
             "img": "label",
             "transform": [0.5, 0, 0, -0.5, 2.0125, 11.5],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20542,10 +19967,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, -1, 0, 2.9625, 10.35],
-            "doorId": 28,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 28
           }
         },
         {
@@ -20562,10 +19984,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, -1, -1, 0, 2.9625, 10.8],
-            "doorId": 28,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 28
           }
         },
         {
@@ -20580,11 +19999,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 2.3499999999999996, 11.55],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 63,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20598,10 +20015,8 @@
             "label": "stateroom",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 1.9, 4.1625],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20618,10 +20033,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 1.65, 5.975],
-            "doorId": 29,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 29
           }
         },
         {
@@ -20638,10 +20050,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 1.5, 6.025],
-            "doorId": 29,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 29
           }
         },
         {
@@ -20653,10 +20062,8 @@
             "label": "fresher",
             "img": "label",
             "transform": [0.5, 0, 0, 0.5, 2, 0.9],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20673,10 +20080,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 1.475, 1.5375],
-            "doorId": 30,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 30
           }
         },
         {
@@ -20693,10 +20097,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 1.625, 1.4625],
-            "doorId": 30,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 30
           }
         },
         {
@@ -20723,11 +20124,9 @@
               0.4169999999999999,
               4.465199999999999
             ],
+            "direction": {"x": 0.866, "y": 0.5},
             "obstacleId": 64,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20747,11 +20146,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
+            "direction": {"x": 0.866, "y": -0.5},
             "obstacleId": 65,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20766,11 +20163,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 0.625, 1.95],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 66,
-            "y": 0.51,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.51
           }
         },
         {
@@ -20785,11 +20180,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 0.625, 1.95],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 67,
-            "y": 1.31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 1.31
           }
         },
         {
@@ -20804,11 +20197,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 1.4375, 0.35],
+            "direction": {"x": 0, "y": 1},
             "obstacleId": 68,
-            "y": 0.71,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.71
           }
         },
         {
@@ -20824,10 +20215,8 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 2.3125, 0.8],
-            "obstacleId": 69,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": 0, "y": -1},
+            "obstacleId": 69
           }
         },
         {
@@ -20842,11 +20231,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 0.3625, 0.8],
+            "direction": {"x": 0, "y": -1},
             "obstacleId": 70,
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.01
           }
         },
         {
@@ -20860,10 +20247,8 @@
             "label": "office",
             "img": "label",
             "transform": [-0.5, 0, 0, 0.5, 4.475, 5.2875],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20878,10 +20263,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, 1, 4.3, 6.05],
-            "doorId": 31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 31
           }
         },
         {
@@ -20896,10 +20278,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [1, 0, 0, -1, 4.3, 5.95],
-            "doorId": 31,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 31
           }
         },
         {
@@ -20913,10 +20292,8 @@
             "shown": true,
             "img": "number-zero",
             "transform": [-1, 0, 0, 1, 3.625, 4.2375],
-            "y": 0.01,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "direction": {"x": -1, "y": 0},
+            "y": 0.01
           }
         },
         {
@@ -20929,10 +20306,7 @@
             "y": 0.7,
             "h": 0.05,
             "img": "number-one",
-            "transform": [-1, 0, 0, 1, 3.75, 3.3],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "transform": [-1, 0, 0, 1, 3.75, 3.3]
           }
         },
         {
@@ -20952,10 +20326,7 @@
             "y": 1.4,
             "tilt": true,
             "img": "screen-0",
-            "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 5.625, 4.1375],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 5.625, 4.1375]
           }
         },
         {
@@ -20975,11 +20346,9 @@
             "on": true,
             "img": "arrow",
             "transform": [0.7071, -0.7071, 0.7071, 0.7071, 4.27108, 4.64068],
+            "direction": {"x": 0.7071, "y": -0.7071},
             "obstacleId": 74,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         }
       ],
@@ -25637,10 +25006,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 6.25, 14.9],
-            "doorId": 0,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 0
           }
         },
         {
@@ -25657,10 +25023,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 8.9, 14.9],
-            "doorId": 1,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 1
           }
         },
         {
@@ -25677,10 +25040,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 21.25, 14.9],
-            "doorId": 2,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 2
           }
         },
         {
@@ -25697,10 +25057,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 23.9, 14.9],
-            "doorId": 3,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 3
           }
         },
         {
@@ -25715,10 +25072,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 0.1, 8.75],
-            "doorId": 4,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 4
           }
         },
         {
@@ -25733,10 +25087,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 0.1, 6.1],
-            "doorId": 5,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 5
           }
         },
         {
@@ -25753,10 +25104,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 6.1],
-            "doorId": 6,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 6
           }
         },
         {
@@ -25773,10 +25121,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 8.75],
-            "doorId": 7,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 7
           }
         },
         {
@@ -25790,10 +25135,7 @@
             "spawn": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.45, 13.975],
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1,
-            "y": 0
+            "direction": {"x": 1, "y": 0}
           }
         },
         {
@@ -25813,11 +25155,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 6.4825, 11.275],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 2,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -25837,11 +25177,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 6.4825, 11.887500000000001],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 2,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         },
         {
@@ -25856,11 +25194,9 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 6.4825, 12.5],
+            "direction": {"x": 1, "y": 0},
             "obstacleId": 2,
-            "y": 0.41,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "y": 0.41000000000000003
           }
         }
       ],
@@ -26240,10 +25576,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 6.25, 14.9],
-            "doorId": 0,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 0
           }
         },
         {
@@ -26260,10 +25593,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 8.8875, 14.9],
-            "doorId": 1,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 1
           }
         },
         {
@@ -26280,10 +25610,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 21.25, 14.9],
-            "doorId": 2,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 2
           }
         },
         {
@@ -26305,10 +25632,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [-1, 0, 0, -1, 23.8875, 14.9],
-            "doorId": 3,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 3
           }
         },
         {
@@ -26323,10 +25647,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 0.1, 8.75],
-            "doorId": 4,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 4
           }
         },
         {
@@ -26341,10 +25662,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, 1, 0, 0.1, 6.1],
-            "doorId": 5,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 5
           }
         },
         {
@@ -26361,10 +25679,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 6.1],
-            "doorId": 6,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 6
           }
         },
         {
@@ -26381,10 +25696,7 @@
             "y": 1.2,
             "tilt": true,
             "transform": [0, 1, -1, 0, 29.9, 8.75],
-            "doorId": 7,
-            "gmId": -1,
-            "grKey": "g-1r-1",
-            "roomId": -1
+            "doorId": 7
           }
         }
       ],
@@ -29859,7 +29171,7 @@
           "type": "point",
           "x": 12.7438,
           "y": 5.0875,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 0.5, 0.5, 0, 12.649999999999999, 4.8375],
           "scale": 1,
           "det": -1
@@ -29927,7 +29239,7 @@
           "type": "point",
           "x": 10.9228,
           "y": 5.5586,
-          "orient": 0,
+          "orient": -110,
           "transform": [-0.342, -0.9397, 0.9397, -0.342, 10.87791, 5.65475],
           "scale": 1,
           "det": 1
@@ -29951,7 +29263,7 @@
           "type": "point",
           "x": 9.7023,
           "y": 5.5711,
-          "orient": 0,
+          "orient": -70,
           "transform": [0.342, -0.9397, -0.9397, -0.342, 9.74709, 5.66725],
           "scale": 1,
           "det": -1
@@ -29999,7 +29311,7 @@
           "type": "point",
           "x": 12.775,
           "y": 4.1125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 12.7, 4.1875],
           "scale": 1,
           "det": 1
@@ -30021,7 +29333,7 @@
           "type": "point",
           "x": 12.7438,
           "y": 11.4125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, 0.5, 0, 12.649999999999999, 11.6625],
           "scale": 1,
           "det": 1
@@ -30089,7 +29401,7 @@
           "type": "point",
           "x": 10.9227,
           "y": 10.9414,
-          "orient": 0,
+          "orient": 110,
           "transform": [-0.342, 0.9397, 0.9397, 0.342, 10.87791, 10.84525],
           "scale": 1,
           "det": -1
@@ -30113,7 +29425,7 @@
           "type": "point",
           "x": 9.7022,
           "y": 10.9289,
-          "orient": 0,
+          "orient": 70,
           "transform": [0.342, 0.9397, -0.9397, 0.342, 9.74709, 10.83275],
           "scale": 1,
           "det": 1
@@ -30161,7 +29473,7 @@
           "type": "point",
           "x": 12.775,
           "y": 12.3875,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 12.7, 12.3125],
           "scale": 1,
           "det": -1
@@ -30183,7 +29495,7 @@
           "type": "point",
           "x": 17.2563,
           "y": 11.4125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, -0.5, 0, 17.35, 11.6625],
           "scale": 1,
           "det": -1
@@ -30251,7 +29563,7 @@
           "type": "point",
           "x": 19.0772,
           "y": 10.9414,
-          "orient": 0,
+          "orient": 70,
           "transform": [0.342, 0.9397, -0.9397, 0.342, 19.12209, 10.84525],
           "scale": 1,
           "det": 1
@@ -30275,7 +29587,7 @@
           "type": "point",
           "x": 20.2978,
           "y": 10.9289,
-          "orient": 0,
+          "orient": 110,
           "transform": [-0.342, 0.9397, 0.9397, 0.342, 20.25291, 10.83275],
           "scale": 1,
           "det": -1
@@ -30299,7 +29611,7 @@
           "type": "point",
           "x": 20.0625,
           "y": 12.7375,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, -1, 20.1375, 12.8125],
           "scale": 1,
           "det": 1
@@ -30323,7 +29635,7 @@
           "type": "point",
           "x": 17.225,
           "y": 12.3875,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, -1, 0, 17.3, 12.3125],
           "scale": 1,
           "det": 1
@@ -30352,7 +29664,7 @@
           "type": "point",
           "x": 11.9137,
           "y": 18.8781,
-          "orient": 0,
+          "orient": 90,
           "transform": [
             0,
             0.5,
@@ -30427,7 +29739,7 @@
           "type": "point",
           "x": 11.9574,
           "y": 18.0906,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 12.032368, 18.165637],
           "scale": 1,
           "det": -1
@@ -30449,7 +29761,7 @@
           "type": "point",
           "x": 18.0813,
           "y": 18.8813,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 0.5, 0.5, 0, 17.9875, 18.631275000000002],
           "scale": 1,
           "det": -1
@@ -30517,7 +29829,7 @@
           "type": "point",
           "x": 18.0375,
           "y": 18.0938,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 17.962500000000002, 18.168775],
           "scale": 1,
           "det": 1
@@ -30546,7 +29858,7 @@
           "type": "point",
           "x": 11.9137,
           "y": 24.6719,
-          "orient": 0,
+          "orient": -90,
           "transform": [
             0,
             -0.5,
@@ -30621,7 +29933,7 @@
           "type": "point",
           "x": 11.9574,
           "y": 25.4594,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, -1, 0, 12.032368, 25.384362],
           "scale": 1,
           "det": 1
@@ -30643,7 +29955,7 @@
           "type": "point",
           "x": 18.0813,
           "y": 24.6625,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, 0.5, 0, 17.9875, 24.912499999999998],
           "scale": 1,
           "det": 1
@@ -30711,7 +30023,7 @@
           "type": "point",
           "x": 18.0375,
           "y": 25.45,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 17.962500000000002, 25.375],
           "scale": 1,
           "det": -1
@@ -30850,7 +30162,7 @@
           "type": "point",
           "x": 10.1425,
           "y": 8.2575,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, 1, 10.2175, 8.1825],
           "scale": 1,
           "det": -1
@@ -30872,7 +30184,7 @@
           "type": "point",
           "x": 19.4875,
           "y": 8.4063,
-          "orient": 0,
+          "orient": 180,
           "transform": [-0.5, 0, 0, -0.5, 19.7375, 8.5],
           "scale": 1,
           "det": 1
@@ -30941,7 +30253,7 @@
           "type": "point",
           "x": 18.5146,
           "y": 9.9782,
-          "orient": 0,
+          "orient": -45,
           "transform": [0.7071, -0.7071, 0.7071, 0.7071, 18.40858, 9.97818],
           "scale": 1,
           "det": 1
@@ -30965,7 +30277,7 @@
           "type": "point",
           "x": 20.075,
           "y": 6.7625,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, 1, 20.150000000000002, 6.6875],
           "scale": 1,
           "det": -1
@@ -30987,7 +30299,7 @@
           "type": "point",
           "x": 15.6765,
           "y": 4.4752,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 0.5, 0.5, 0, 15.58273, 4.22518],
           "scale": 1,
           "det": -1
@@ -31056,7 +30368,7 @@
           "type": "point",
           "x": 14.2202,
           "y": 3.4877,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, 1, 14.29523, 3.41268],
           "scale": 1,
           "det": -1
@@ -31104,7 +30416,7 @@
           "type": "point",
           "x": 14.4126,
           "y": 7.5747,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 14.337605, 7.499727999999999],
           "scale": 1,
           "det": -1
@@ -31128,7 +30440,7 @@
           "type": "point",
           "x": 15.0251,
           "y": 7.5747,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 14.950105, 7.499727999999999],
           "scale": 1,
           "det": -1
@@ -31152,7 +30464,7 @@
           "type": "point",
           "x": 15.6376,
           "y": 7.5747,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 15.562605000000001, 7.499727999999999],
           "scale": 1,
           "det": -1
@@ -31176,7 +30488,7 @@
           "type": "point",
           "x": 19.1798,
           "y": 3.3397,
-          "orient": 0,
+          "orient": 130,
           "transform": [-0.6428, 0.766, 0.766, 0.6428, 19.170565, 3.233955],
           "scale": 1,
           "det": -1
@@ -31200,7 +30512,7 @@
           "type": "point",
           "x": 19.1923,
           "y": 4.247,
-          "orient": 0,
+          "orient": -130,
           "transform": [-0.6428, -0.766, 0.766, -0.6428, 19.183065, 4.352673],
           "scale": 1,
           "det": 1
@@ -31231,7 +30543,7 @@
           "type": "point",
           "x": 18.3121,
           "y": 3.3521,
-          "orient": 0,
+          "orient": 50,
           "transform": [
             0.6428,
             0.766,
@@ -31269,7 +30581,7 @@
           "type": "point",
           "x": 18.3121,
           "y": 4.2595,
-          "orient": 0,
+          "orient": -50,
           "transform": [
             0.6428,
             -0.766,
@@ -31757,7 +31069,7 @@
           "type": "point",
           "x": 7.1021,
           "y": 17.2428,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, 1, 7.177115000000001, 17.167753],
           "scale": 1,
           "det": -1
@@ -38293,7 +37605,7 @@
           "type": "point",
           "x": 25.6229,
           "y": 4.6407,
-          "orient": 0,
+          "orient": -135,
           "transform": [-0.7071, -0.7071, -0.7071, 0.7071, 25.72892, 4.64068],
           "scale": 1,
           "det": -1
@@ -38315,7 +37627,7 @@
           "type": "point",
           "x": 27.85,
           "y": 4.2562,
-          "orient": 0,
+          "orient": 180,
           "transform": [-0.5, 0, 0, 0.5, 28.1, 4.1625],
           "scale": 1,
           "det": -1
@@ -38381,7 +37693,7 @@
           "type": "point",
           "x": 27.75,
           "y": 0.9937,
-          "orient": 0,
+          "orient": 180,
           "transform": [-0.5, 0, 0, 0.5, 28, 0.9],
           "scale": 1,
           "det": -1
@@ -38449,7 +37761,7 @@
           "type": "point",
           "x": 29.4805,
           "y": 4.4378,
-          "orient": 0,
+          "orient": 150,
           "transform": [-0.866, 0.5, -0.5, -0.866, 29.583, 4.465199999999999],
           "scale": 1,
           "det": 1
@@ -38473,7 +37785,7 @@
           "type": "point",
           "x": 29.4806,
           "y": 5.5497,
-          "orient": 0,
+          "orient": -150,
           "transform": [-0.866, -0.5, -0.5, 0.866, 29.583, 5.5223],
           "scale": 1,
           "det": -1
@@ -38497,7 +37809,7 @@
           "type": "point",
           "x": 29.3,
           "y": 2.025,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, -1, 0, 29.375, 1.95],
           "scale": 1,
           "det": 1
@@ -38521,7 +37833,7 @@
           "type": "point",
           "x": 29.3,
           "y": 2.025,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, -1, 0, 29.375, 1.95],
           "scale": 1,
           "det": 1
@@ -38545,7 +37857,7 @@
           "type": "point",
           "x": 28.4875,
           "y": 0.425,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, -1, 0, 28.5625, 0.35],
           "scale": 1,
           "det": 1
@@ -38569,7 +37881,7 @@
           "type": "point",
           "x": 27.6125,
           "y": 0.725,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 27.6875, 0.8],
           "scale": 1,
           "det": -1
@@ -38593,7 +37905,7 @@
           "type": "point",
           "x": 29.5625,
           "y": 0.725,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 29.6375, 0.8],
           "scale": 1,
           "det": -1
@@ -39219,7 +38531,7 @@
           "type": "point",
           "x": 12.775,
           "y": 3.575,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 12.85, 3.6500000000000004],
           "scale": 1,
           "det": -1
@@ -39243,7 +38555,7 @@
           "type": "point",
           "x": 15.8,
           "y": 3.5625,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 15.875, 3.6375],
           "scale": 1,
           "det": -1
@@ -39267,7 +38579,7 @@
           "type": "point",
           "x": 17.2625,
           "y": 3.5625,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 17.3375, 3.6375],
           "scale": 1,
           "det": -1
@@ -39291,7 +38603,7 @@
           "type": "point",
           "x": 14.2625,
           "y": 3.5625,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 14.337499999999999, 3.6375],
           "scale": 1,
           "det": -1
@@ -39315,7 +38627,7 @@
           "type": "point",
           "x": 16.65,
           "y": 10.7625,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, -1, 16.724999999999998, 10.837499999999999],
           "scale": 1,
           "det": 1
@@ -39339,7 +38651,7 @@
           "type": "point",
           "x": 14.125,
           "y": 11.5125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 14.049999999999999, 11.587499999999999],
           "scale": 1,
           "det": 1
@@ -39363,7 +38675,7 @@
           "type": "point",
           "x": 14.725,
           "y": 11.5125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 14.649999999999999, 11.587499999999999],
           "scale": 1,
           "det": 1
@@ -39387,7 +38699,7 @@
           "type": "point",
           "x": 15.925,
           "y": 11.5125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 15.849999999999998, 11.587499999999999],
           "scale": 1,
           "det": 1
@@ -39411,7 +38723,7 @@
           "type": "point",
           "x": 15.325,
           "y": 11.5125,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 15.25, 11.587499999999999],
           "scale": 1,
           "det": 1
@@ -39435,7 +38747,7 @@
           "type": "point",
           "x": 15.925,
           "y": 9.9625,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 15.849999999999998, 9.8875],
           "scale": 1,
           "det": -1
@@ -39459,7 +38771,7 @@
           "type": "point",
           "x": 15.325,
           "y": 9.9625,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 15.25, 9.8875],
           "scale": 1,
           "det": -1
@@ -39483,7 +38795,7 @@
           "type": "point",
           "x": 14.725,
           "y": 9.9625,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 14.649999999999999, 9.8875],
           "scale": 1,
           "det": -1
@@ -39507,7 +38819,7 @@
           "type": "point",
           "x": 14.125,
           "y": 9.9625,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 14.049999999999999, 9.8875],
           "scale": 1,
           "det": -1
@@ -39555,7 +38867,7 @@
           "type": "point",
           "x": 10.225,
           "y": 9.4125,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 10.149999999999999, 9.337499999999999],
           "scale": 1,
           "det": -1
@@ -39586,7 +38898,7 @@
           "type": "point",
           "x": 10.5941,
           "y": 10.9375,
-          "orient": 0,
+          "orient": -105,
           "transform": [
             -0.2588,
             -0.9659,
@@ -39641,7 +38953,7 @@
           "type": "point",
           "x": 18.6,
           "y": 8.3125,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 18.525, 8.2375],
           "scale": 1,
           "det": -1
@@ -39665,7 +38977,7 @@
           "type": "point",
           "x": 19.5375,
           "y": 8.6375,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 19.4625, 8.7125],
           "scale": 1,
           "det": 1
@@ -39689,7 +39001,7 @@
           "type": "point",
           "x": 20.4125,
           "y": 8.6375,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 20.3375, 8.7125],
           "scale": 1,
           "det": 1
@@ -39713,7 +39025,7 @@
           "type": "point",
           "x": 22.7,
           "y": 2.175,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
           "scale": 1,
           "det": -1
@@ -39759,7 +39071,7 @@
           "type": "point",
           "x": 26.5875,
           "y": 11.5188,
-          "orient": 0,
+          "orient": 180,
           "transform": [-0.5, 0, 0, 0.5, 26.8375, 11.425],
           "scale": 1,
           "det": -1
@@ -39919,7 +39231,7 @@
           "type": "point",
           "x": 27.8142,
           "y": 11.7379,
-          "orient": 0,
+          "orient": -15,
           "transform": [
             0.9659,
             -0.2588,
@@ -39957,7 +39269,7 @@
           "type": "point",
           "x": 26.7102,
           "y": 12.8424,
-          "orient": 0,
+          "orient": 105,
           "transform": [-0.2588, 0.9659, -0.9659, -0.2588, 26.80213, 12.78941],
           "scale": 1,
           "det": 1
@@ -39979,7 +39291,7 @@
           "type": "point",
           "x": 4.2562,
           "y": 12.85,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, 0.5, 0, 4.1625, 13.1],
           "scale": 1,
           "det": 1
@@ -40045,7 +39357,7 @@
           "type": "point",
           "x": 0.9937,
           "y": 12.75,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -0.5, 0.5, 0, 0.9, 13],
           "scale": 1,
           "det": 1
@@ -40113,7 +39425,7 @@
           "type": "point",
           "x": 4.4377,
           "y": 14.4805,
-          "orient": 0,
+          "orient": -60,
           "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
           "scale": 1,
           "det": -1
@@ -40137,7 +39449,7 @@
           "type": "point",
           "x": 5.5498,
           "y": 14.4805,
-          "orient": 0,
+          "orient": -120,
           "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
           "scale": 1,
           "det": 1
@@ -40233,7 +39545,7 @@
           "type": "point",
           "x": 0.725,
           "y": 12.6125,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, -1, 0.8, 12.6875],
           "scale": 1,
           "det": 1
@@ -40257,7 +39569,7 @@
           "type": "point",
           "x": 0.725,
           "y": 14.5625,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, -1, 0.8, 14.6375],
           "scale": 1,
           "det": 1
@@ -40347,7 +39659,7 @@
           "type": "point",
           "x": 3.7625,
           "y": 11.0875,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 3.6875, 11.1625],
           "scale": 1,
           "det": 1
@@ -40437,7 +39749,7 @@
           "type": "point",
           "x": 5.275,
           "y": 11.475,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 5.35, 11.55],
           "scale": 1,
           "det": -1
@@ -40527,7 +39839,7 @@
           "type": "point",
           "x": 0.7625,
           "y": 11.0875,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 0.6875, 11.1625],
           "scale": 1,
           "det": 1
@@ -40617,7 +39929,7 @@
           "type": "point",
           "x": 2.275,
           "y": 11.475,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, -1, 0, 2.3499999999999996, 11.55],
           "scale": 1,
           "det": -1
@@ -40780,7 +40092,7 @@
           "type": "point",
           "x": 0.5194,
           "y": 4.4377,
-          "orient": 0,
+          "orient": 30,
           "transform": [
             0.866,
             0.5,
@@ -40811,7 +40123,7 @@
           "type": "point",
           "x": 0.5194,
           "y": 5.5498,
-          "orient": 0,
+          "orient": -30,
           "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
           "scale": 1,
           "det": 1
@@ -40835,7 +40147,7 @@
           "type": "point",
           "x": 0.7,
           "y": 2.025,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 0.625, 1.95],
           "scale": 1,
           "det": -1
@@ -40859,7 +40171,7 @@
           "type": "point",
           "x": 0.7,
           "y": 2.025,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 0.625, 1.95],
           "scale": 1,
           "det": -1
@@ -40883,7 +40195,7 @@
           "type": "point",
           "x": 1.5125,
           "y": 0.425,
-          "orient": 0,
+          "orient": 90,
           "transform": [0, 1, 1, 0, 1.4375, 0.35],
           "scale": 1,
           "det": -1
@@ -40907,7 +40219,7 @@
           "type": "point",
           "x": 2.3875,
           "y": 0.725,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 2.3125, 0.8],
           "scale": 1,
           "det": 1
@@ -40931,7 +40243,7 @@
           "type": "point",
           "x": 0.4375,
           "y": 0.725,
-          "orient": 0,
+          "orient": -90,
           "transform": [0, -1, 1, 0, 0.3625, 0.8],
           "scale": 1,
           "det": 1
@@ -40953,7 +40265,7 @@
           "type": "point",
           "x": 4.225,
           "y": 5.3812,
-          "orient": 0,
+          "orient": 180,
           "transform": [-0.5, 0, 0, 0.5, 4.475, 5.2875],
           "scale": 1,
           "det": -1
@@ -41019,7 +40331,7 @@
           "type": "point",
           "x": 3.5,
           "y": 4.3625,
-          "orient": 0,
+          "orient": 180,
           "transform": [-1, 0, 0, 1, 3.625, 4.2375],
           "scale": 1,
           "det": -1
@@ -41088,7 +40400,7 @@
           "type": "point",
           "x": 4.3771,
           "y": 4.6407,
-          "orient": 0,
+          "orient": -45,
           "transform": [0.7071, -0.7071, 0.7071, 0.7071, 4.27108, 4.64068],
           "scale": 1,
           "det": 1

@@ -322,7 +322,8 @@ export function createLayout(
  */
 export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
   // 🔔 key, meta.{gmId,grKey,roomId} will provided on instantiation
-  const meta = Object.assign(poly.meta, { gmId: -1, grKey: "g-1r-1", roomId: -1 } satisfies Geomorph.GmRoomId);
+  // a copy: `poly` is the flattened symbol's, and `delete meta.direction` below must not reach it
+  const meta = Object.assign({ ...poly.meta }, { gmId: -1, grKey: "g-1r-1", roomId: -1 } satisfies Geomorph.GmRoomId);
   meta.y = toPrecision(Number(meta.y) || 0);
   const base = { key: "", meta };
 
