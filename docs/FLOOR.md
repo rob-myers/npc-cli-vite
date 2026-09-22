@@ -158,6 +158,9 @@ There used to be a third, an inner shadow on every floor panel. It went with the
 - **A seam is two lines.** A dark groove plus a lit lip just beyond it (`plate.seamInk` /
   `plate.lipInk`). That pair is what makes a join read as recessed metal instead of a drawn line.
   The rivets and the wiring channel follow the same rule, all lit from the upper-left.
+- **A groove is centred on the grid line.** `drawSeams` draws each one straight onto its line in
+  metres; only the rivets come from the pattern. A geomorph's bounds start between pixels (e.g.
+  -0.1375 m), so a patterned seam was resampled off the line.
 - **Keep every feature at least two texels wide** — 0.02 m at 100 px/m. A sub-pixel line is
   antialiased into a smear whose coverage depends on where it falls, so where an axis-aligned nav
   edge lies along a seam the two beat against each other as the camera moves.

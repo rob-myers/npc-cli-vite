@@ -78,9 +78,9 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
         rooms: gm.rooms.map((p) => p.svgPath).join(" "),
         walls: gm.walls.map((p) => p.svgPath).join(" "),
         windows: gm.windows.map((c) => c.poly.svgPath).join(" "),
-        obstacles: gm.obstacles
-          .map((o) => o.origPoly.clone().applyMatrix(tmpMat.setMatrixValue(o.transform)).svgPath)
-          .join(" "),
+        // one path EACH: merged, an obstacle overlapping another would cut a hole in it, the two
+        // windings cancelling under the nonzero rule
+        obstacles: gm.obstacles.map((o) => o.origPoly.clone().applyMatrix(tmpMat.setMatrixValue(o.transform)).svgPath),
       })),
     [w.gmsHash],
   );
@@ -119,7 +119,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
                 vectorEffect="non-scaling-stroke"
               />
             )}
-            {show.obstacles && <path d={paths.obstacles} fill={ink.obstacle} />}
+            {show.obstacles && paths.obstacles.map((d, i) => <path key={i} d={d} fill={ink.obstacle} />)}
             <path d={paths.walls} fill={ink.wall} strokeWidth={0.04} stroke={ink.wallStroke} />
             <path d={paths.windows} fill={ink.window} />
           </g>

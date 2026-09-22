@@ -13,9 +13,20 @@ import {
 } from "@phosphor-icons/react";
 import { useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
 import { DecorLayer } from "./DecorLayer";
+import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
-import { type DecorType, keysWithin, moved, newDef, nextKey, typeIcon } from "./decor-edit";
-import { DecorHistory } from "./history";
+import {
+  type DecorType,
+  hasHeight,
+  keysWithin,
+  moved,
+  newDef,
+  nextKey,
+  tiltedQuadHeight,
+  typeIcon,
+  withHeight,
+} from "./decor-edit";
+import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
 
@@ -72,6 +83,11 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
       /** For the point and quad tools */
       img: undefined,
       tilt: true,
+      /** For the point and quad tools: `undefined` is their default */
+      y3d: undefined,
+      menuOpen: false,
+      /** `performance.now()` before which no context menu opens: `Infinity` whilst a press is under way */
+      menuBlockedUntil: 0,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -80,8 +96,8 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
       setTool(tool) {
         state.set({ tool: state.tool === tool ? "select" : tool });
       },
-      commit(defs) {
-        state.history.mark();
+      commit(defs, merge) {
+        state.history.mark(merge);
         for (const def of defs) w.decor.create(def);
         w.view.forceUpdate();
       },
@@ -101,6 +117,19 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
       },
       redo() {
         state.history.redo() && state.select(state.selected);
+      },
+      selectedWithHeight() {
+        return state.selected
+          .map((key) => w.decor.runtime.defByKey[key])
+          .filter((d) => d !== undefined && hasHeight(d));
+      },
+      heightShown() {
+        return state.tool === "point" || state.tool === "quad" || state.selectedWithHeight().length > 0;
+      },
+      heightValue() {
+        if (state.tool !== "select") return state.y3d;
+        const ys = new Set(state.selectedWithHeight().map((def) => def.y3d)); // the selection's, when they agree
+        return ys.size === 1 ? [...ys][0] : undefined;
       },
       setSidebar(patch) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void Object.assign(draft as DecoratorUiMeta, patch));
@@ -125,14 +154,40 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
       },
+      onPressing(pressing) {
+        // some platforms raise a ctrl or right click's menu after `pointerup`
+        state.menuBlockedUntil = pressing ? Number.POSITIVE_INFINITY : performance.now() + menuAfterUpMs;
+      },
+      isMenuBlocked() {
+        return performance.now() < state.menuBlockedUntil;
+      },
       onMapClick(at) {
+        if (state.menuOpen) return; // a long press let go
         if (state.tool === "select") return state.select([]);
-        const def = newDef(w, state.tool, nextKey(w, state.tool), at, { img: state.img, tilt: state.tilt });
+        state.add(state.tool, at);
+      },
+      add(type, at) {
+        const def = newDef(w, type, nextKey(w, type), at, { img: state.img, tilt: state.tilt, y3d: state.y3d });
         state.commit([def]);
         state.select([def.key]);
       },
+      setHeight(y3d, stepped) {
+        const defs = state.selectedWithHeight();
+        if (state.tool === "select" && defs.length > 0) {
+          state.commit(
+            defs.map((def) => withHeight(def, y3d)),
+            mergeKey(stepped === true, state.selected, "y3d"),
+          );
+        } else {
+          state.set({ y3d });
+        }
+      },
       onKeyDown(e) {
-        if ((e.target as HTMLElement).tagName === "INPUT") return;
+        const el = e.target as HTMLElement;
+        // the menu is portalled, yet its keys bubble here through React
+        if (["INPUT", "SELECT"].includes(el.tagName) || el.closest('[role="menu"]') !== null) return;
+        const toolKey = e.metaKey || e.ctrlKey || e.altKey ? undefined : toolByKey[e.key.toLowerCase()];
+        if (toolKey !== undefined) return state.set({ tool: toolKey });
         const nudge = e.shiftKey ? 0.5 : 0.1;
         const arrows: Record<string, [number, number]> = {
           ArrowLeft: [-nudge, 0],
@@ -213,7 +268,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
         {/* the tools: select, or add one of each type where the map is clicked */}
         <ToolButton
           icon={CursorIcon}
-          title="select (Esc)"
+          title="select (V, Esc)"
           active={state.tool === "select"}
           onClick={() => state.setTool("select")}
         />
@@ -221,7 +276,7 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
           <ToolButton
             key={type}
             icon={typeIcon[type]}
-            title={`add ${type}`}
+            title={`add ${type} (${type[0].toUpperCase()})`}
             active={state.tool === type}
             onClick={() => state.setTool(type)}
           />
@@ -239,6 +294,16 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
               </option>
             ))}
           </select>
+        )}
+        {state.heightShown() && (
+          <label className="flex items-center gap-1" title="height off the floor (m)">
+            height
+            <NumberInput
+              value={state.heightValue()}
+              placeholder={state.tool === "quad" && state.tilt ? String(tiltedQuadHeight) : "0"}
+              onCommit={state.setHeight}
+            />
+          </label>
         )}
         {state.tool === "quad" && (
           <label className="flex items-center gap-1 cursor-pointer">
@@ -323,7 +388,16 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
           className="shrink-0 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
           onMouseDown={state.onSidebarResizeStart}
         />
-        <div className="flex-1 min-w-0">
+        <DecorMenu
+          w={w}
+          newDefOpts={{ img: state.img, tilt: state.tilt, y3d: state.y3d }}
+          isBlocked={state.isMenuBlocked}
+          onOpenChange={(menuOpen) => void (state.menuOpen = menuOpen)}
+          onAdd={state.add}
+          onTarget={(key) => state.selected.includes(key) || state.select([key])}
+          onCommit={(def, merge) => state.commit([def], merge)}
+          onRemove={(key) => state.remove([key])}
+        >
           <NavMap2d
             key={w.mapKey} // remade per map: it reads where that map was left, and saves there
             apiRef={map}
@@ -342,9 +416,10 @@ function Editor({ w, meta }: { w: WorldState; meta: DecoratorUiMeta }) {
               showStatic={meta.show.static}
               onSelect={state.select}
               onCommit={state.commit}
+              onPressing={state.onPressing}
             />
           </NavMap2d>
-        </div>
+        </DecorMenu>
       </div>
     </div>
   );
@@ -378,10 +453,15 @@ type State = {
   tool: "select" | DecorType;
   img: string | undefined;
   tilt: boolean;
+  y3d: number | undefined;
+  menuOpen: boolean;
+  menuBlockedUntil: number;
+  onPressing(pressing: boolean): void;
+  isMenuBlocked(): boolean;
   select(keys: string[]): void;
   setTool(tool: "select" | DecorType): void;
   /** Each def replaces its decor, which the World persists; every edit is undoable */
-  commit(defs: Geomorph.DecorDef[]): void;
+  commit(defs: Geomorph.DecorDef[], merge?: string): void;
   remove(keys: string[]): void;
   rename(key: string, next: string): void;
   undo(): void;
@@ -389,6 +469,12 @@ type State = {
   setSidebar(patch: Partial<Pick<DecoratorUiMeta, "sidebarWidth" | "sidebarOpen">>): void;
   onSidebarResizeStart(e: React.MouseEvent): void;
   onMapClick(at: Geom.VectJson): void;
+  add(type: DecorType, at: Geom.VectJson): void;
+  /** The selection's height, else the tools' */
+  setHeight(y3d: number | undefined, stepped?: boolean): void;
+  selectedWithHeight(): HeightDef[];
+  heightShown(): boolean;
+  heightValue(): number | undefined;
   onKeyDown(e: React.KeyboardEvent): void;
   onNpcsOpenChange(open: boolean): void;
   setNpcKeys(npcKeys: string[]): void;
@@ -397,7 +483,11 @@ type State = {
 
 const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static"];
 const decorTypes: DecorType[] = ["point", "rect", "circle", "quad"];
+type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
+const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };
 const minSidebarWidth = 120;
+/** Ms after a press ends that no context menu opens */
+const menuAfterUpMs = 100;
 /** Locating a decor zooms in at least this far */
 const locateZoom = 3;
 

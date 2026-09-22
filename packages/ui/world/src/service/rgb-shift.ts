@@ -9,6 +9,8 @@ export type RgbShiftFx = {
    * something in `PostProcessing`'s deps moved. See `WorldView`'s `reset`
    */
   uid: string;
+  /** How far the channels part, in uv: eased down as the view zooms out — see `WorldView`'s `onCameraFrame` */
+  setAmount(amount: number): void;
   /**
    * @param composed what `PostProcessing.apply` produced — OPAQUE, with the theme's backdrop
    * already under the world: a full-frame restyle with no notion of what was drawn and what wasn't
@@ -22,8 +24,17 @@ export type RgbShiftFx = {
  * `pipeline.render()`, where `WorldView`'s `gl.render` patch is already re-entrant.
  */
 export function createRgbShift(): RgbShiftFx {
+  // the effect keeps its own uniform, so the amount is written onto whichever node is built
+  let node: null | { amount: { value: number } } = null;
+  let amount = rgbShiftAmount;
+
   return {
     uid: crypto.randomUUID(),
+
+    setAmount(next) {
+      amount = next;
+      if (node !== null) node.amount.value = next;
+    },
 
     apply(composed, enabled) {
       if (enabled === false) {
@@ -34,11 +45,12 @@ export function createRgbShift(): RgbShiftFx {
       // values. So it is handed a display-referred frame and the result decoded back for the
       // pipeline to encode again
       const display = workingToColorSpace(composed, THREE.SRGBColorSpace) as unknown as THREE.Node<"vec4">;
-      return colorSpaceToWorking(rgbShift(display, rgbShiftAmount, rgbShiftAngle), THREE.SRGBColorSpace);
+      node = rgbShift(display, amount, rgbShiftAngle) as unknown as { amount: { value: number } };
+      return colorSpaceToWorking(node as unknown as THREE.Node<"vec4">, THREE.SRGBColorSpace);
     },
   };
 }
 
-/** How far the channels part, in uv, and along which direction */
-const rgbShiftAmount = 0.0025;
+/** How far the channels part close in, in uv, and along which direction */
+export const rgbShiftAmount = 0.0025;
 const rgbShiftAngle = 0;

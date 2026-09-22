@@ -13,6 +13,7 @@ neither the panel nor a terminal.
 | `ui/decorator/src/Decorator.tsx` | the panel: finds the World; the tools, selection, keys, npc picker |
 | `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots |
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
+| `ui/decorator/src/DecorMenu.tsx` | the map's context menu: add on empty map, edit a decor; `HeightInput` |
 | `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, arrange, locate on the map |
 | `ui/decorator/src/decor-edit.ts` | pure helpers over defs: `newDef`, `moved`, `nextKey`, `keysWithin`, `toMap` |
 | `ui/decorator/src/schema.ts` | its meta: `worldKey`, `npcKeys`, `show`, the sidebar |
@@ -48,7 +49,7 @@ shows behind its graphs — so it is where things really are:
 
 - per `w.gms[gmId]`, inside `<g transform="matrix(gm.transform)">`, path data in the geomorph's own
   space: `hullPoly`, `rooms`, `walls`, `windows`, and `obstacles` (each `origPoly` through its own
-  `transform`). Memoised on `w.gmsHash`;
+  `transform`, and each its OWN path — merged, two overlapping ones would cancel and cut a hole). Memoised on `w.gmsHash`;
 - the **navigable area** from `w.nav.toNavTris[gmId]` — the same triangles the floor draws, local to
   their geomorph. Memoised on `w.nav`;
 - **doors** from `w.door.byKey`, in world space, so they are live: amber closed, green dashed open,
@@ -143,7 +144,17 @@ along that edge. A `<title>` names each, with its type and room.
 **Tools** are on the toolbar: *select*, or *add* a point, rect, circle or quad — a click on empty
 map places one, with the next free key (`nextKey`, `<type>-<n>`), `meta.shown` on, centred on the
 click; the point and quad tools take an image, the quad tool a **tilt**, which puts its top at
-`tiltedQuadHeight`. Escape returns to *select*.
+`tiltedQuadHeight`. Keys pick a tool — V select, P point, R rect, C circle, Q quad — and Escape
+returns to *select*. The toolbar's **height** is `y3d` for an added point or quad, empty being its
+default; with the select tool it is the selection's instead, shown when they agree, and setting it
+sets theirs.
+
+**The context menu** (`DecorMenu.tsx`, base-ui's `ContextMenu`; a long press on touch): on empty
+map it adds a point, rect, circle or quad where it was opened, taking the toolbar's image, tilt and
+height; on a decor it selects it and edits its image, a quad's tilt and scale, a rect or quad's angle, a point or quad's
+height, or deletes it. A ctrl-click stays a fine-step press, and no menu opens whilst a press on the map is under way or
+just after — `onPressing` sets `menuBlockedUntil` on the panel's state, never a window listener, and a
+lost pointer capture or an unmount ends the press, so no block outlives it.
 
 **Selecting**: click, shift-click to add or take away, shift-drag on empty map for a marquee
 (`keysWithin`: decor whose bounds meet it), a click on empty map to clear, cmd/ctrl-A for all. A
@@ -157,7 +168,9 @@ the run from the last plain click, as a file list would. Its rows are **dragged 
 **Undo / redo** (cmd-Z, shift-cmd-Z or cmd-Y, the toolbar): `DecorHistory` keeps snapshots of the
 runtime defs, one taken BEFORE each of the panel's edits — add, move, nudge, delete, rename — and
 applies one back by touching only what differs. It knows nothing of edits made from the shell or a
-card in between: undoing past one reverts it too.
+card in between: undoing past one reverts it too. A number field's spinner or arrow keys commit each step at once, and
+steps on one field of one decor within `mergeWithinMs` of each other join one snapshot (`mark(merge)`),
+so one undo takes back the run; typing commits on Enter or blur.
 
 **Moving**: drag any selected decor and the whole selection follows, through their `transform`s
 rather than React, committed on release as one `w.decor.create` per decor (`moved`). Held during
@@ -170,8 +183,14 @@ by 0.1m, 0.5m with shift. Delete or Backspace deletes.
 an image the image's corner; dragging one redraws the def in place (`rectResized` keeps the
 opposite corner put, in the rect's own turned frame; `circleResized` sets the radius;
 `pointResized` sets the point's **`scale`**, a factor on its image's own size which the World
-honours — `Decor` scales the instance and the bounds by it, and the card has it as a field) and
-commits it on release — one edit, so one undo. With shift held the sides go by 0.5m, with ctrl or
+honours — `Decor` scales the instance and the bounds by it, and the card has it as a field); a quad's
+bottom-right corner scales it from its top line's middle (`quadResized`), where a tilt stands it up, its **scale** living in its
+`transform` — `quadScale` reads it back, taken as uniform) and
+commits it on release — one edit, so one undo. A selected rect or quad also has a **rotate** handle
+beyond its top edge: `rotated` turns it about its centre to face the pointer, by 15° with shift
+held and 5° with ctrl or alt. The context menu sets its angle in degrees (`turned`). A rect's is
+its `angle`; a quad's is where its top faces, and a turn composes a rotation onto its `transform`,
+so a scale or flip in it is kept. With shift held the sides go by 0.5m, with ctrl or
 alt by 0.1m — a scale by 0.5 or 0.1. Nothing is smaller than 0.1m, or scaled under 0.1.
 
 A point or quad with an image draws the same raster the World's sheet is packed from,
@@ -187,4 +206,4 @@ The sidebar's crosshair centres the MAP on the decor (`centreOn`, zooming in to 
 
 ## Not built yet
 
-Rotate handles, snapping, duplicate, copy/paste.
+Rotate handles for points, snapping, duplicate, copy/paste.
