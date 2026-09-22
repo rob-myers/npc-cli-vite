@@ -25,6 +25,7 @@ import type { DecorSheetEntry } from "../assets.schema";
 import {
   decorKeyFallback,
   decorPointDefaultRadius,
+  decorPointKeyFallback,
   lockedDoorTint,
   MAX_DECOR_QUAD_INSTANCES,
   precision,
@@ -230,10 +231,10 @@ export default function Decor() {
             // points don't need an image
             if (typeof def.img === "string" && !(def.img in w.sheets.decor)) {
               warn(`w.sheets.decor lacks def.img: ${def.img}`);
-              def.img = decorKeyFallback;
+              def.img = decorPointKeyFallback;
             }
 
-            const entry = def.img ? w.sheets.decor[def.img] : null;
+            const entry = w.sheets.decor[def.img ?? decorPointKeyFallback] ?? null; // drawn with the fallback, so sized by it
             const scale = def.scale ?? 1;
             const radius =
               (entry
@@ -349,7 +350,8 @@ export default function Decor() {
         }
       },
       getDecorImgKey(d) {
-        if (d.type === "quad" || d.type === "point") return d.meta.img ?? decorKeyFallback;
+        if (d.type === "point") return d.meta.img ?? decorPointKeyFallback;
+        if (d.type === "quad") return d.meta.img ?? decorKeyFallback;
         return decorKeyFallback;
       },
       groupByRoom(d) {

@@ -178,44 +178,51 @@
       "originalWidth": 40,
       "originalHeight": 15
     },
+    "abstract-point": {
+      "key": "abstract-point",
+      "rect": {"x": 192, "y": 2, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 6,
+      "originalHeight": 6
+    },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 192, "y": 2, "width": 52, "height": 52},
+      "rect": {"x": 192, "y": 56, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 192, "y": 56, "width": 52, "height": 52},
+      "rect": {"x": 192, "y": 110, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 192, "y": 110, "width": 43, "height": 43},
+      "rect": {"x": 2, "y": 207, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 175, "y": 155, "width": 43, "height": 43},
+      "rect": {"x": 47, "y": 207, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 2, "y": 207, "width": 26, "height": 26},
+      "rect": {"x": 92, "y": 207, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 246, "height": 235}],
-  "maxDecorSheetDim": {"width": 246, "height": 235},
+  "decorSheetDims": [{"width": 246, "height": 252}],
+  "maxDecorSheetDim": {"width": 246, "height": 252},
   "skin": {
     "human-0": {
       "key": "human-0",

@@ -1,5 +1,13 @@
 {
   "byKey": {
+    "abstract-point": {
+      "key": "abstract-point",
+      "filename": "abstract-point.svg",
+      "width": 6,
+      "height": 6,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
     "arrow": {
       "key": "arrow",
       "filename": "arrow.svg",

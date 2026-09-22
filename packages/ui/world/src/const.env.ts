@@ -258,6 +258,7 @@ export const roomLabelTexOpts = {
 export const decorGridSize = geomorphGridMeters * 2;
 
 export const decorKeyFallback = "icon--warn";
+export const decorPointKeyFallback = "abstract-point";
 
 /** 15 (meters) */
 export const gmIdGridDim = 600 * sguToWorldScale;
