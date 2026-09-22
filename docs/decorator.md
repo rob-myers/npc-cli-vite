@@ -49,7 +49,7 @@ shows behind its graphs — so it is where things really are:
 
 - per `w.gms[gmId]`, inside `<g transform="matrix(gm.transform)">`, path data in the geomorph's own
   space: `hullPoly`, `rooms`, `walls`, `windows`, and `obstacles` (each `origPoly` through its own
-  `transform`). Memoised on `w.gmsHash`;
+  `transform`, and each its OWN path — merged, two overlapping ones would cancel and cut a hole). Memoised on `w.gmsHash`;
 - the **navigable area** from `w.nav.toNavTris[gmId]` — the same triangles the floor draws, local to
   their geomorph. Memoised on `w.nav`;
 - **doors** from `w.door.byKey`, in world space, so they are live: amber closed, green dashed open,

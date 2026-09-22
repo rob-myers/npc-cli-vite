@@ -19,7 +19,6 @@ import {
   cameraFov,
   cameraRefAspect,
   canonicalAxisLockFrom,
-  canonicalFlattenFrom,
   canonicalSnapArm,
   canonicalSnapCancel,
   canonicalZoomInRate,
@@ -34,6 +33,7 @@ import {
   frontierNearFrac,
   frontierPanFrac,
   frontierRate,
+  rgbShiftZoomedOutScale,
   roomLabelFadeFrom,
   roomLabelNearAlpha,
   rotateSpeedDesktop,
@@ -66,7 +66,7 @@ import { decodePick } from "../service/pick";
 import { createPlayerFrontier, type PlayerFrontier } from "../service/player-frontier";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
-import { createRgbShift, type RgbShiftFx } from "../service/rgb-shift";
+import { createRgbShift, type RgbShiftFx, rgbShiftAmount } from "../service/rgb-shift";
 import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
@@ -97,8 +97,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // follow option ON, which is what it meant
       cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
       cameraFollow: (saved.cameraMode as string) === "follow" ? true : (saved.cameraFollow ?? defaultCameraFollow),
-      polarIn: (saved.cameraInitial ?? defaultInitialCamera).polar,
-      polarOut: (saved.cameraInitial ?? defaultInitialCamera).polar,
+      canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
       canonicalFrom: 0,
       canonicalDragging: false,
       canonicalPeak: 0,
@@ -504,6 +503,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const eased = u * u * (3 - 2 * u); // eased, so it neither snaps out nor lingers
         state.labelZoomFade.value = roomLabelNearAlpha + (1 - roomLabelNearAlpha) * eased;
 
+        // the channels part less the further out the view is, on the same easing: every mode
+        state.rgbShiftFx.setAmount(rgbShiftAmount * (1 - (1 - rgbShiftZoomedOutScale) * eased));
+
         if (state.cameraMode !== "canonical") return;
 
         // the aimed zoom-in eases slower, a pan and a tilt riding on it — held until the ZOOM
@@ -521,7 +523,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // may simply do both
         controls.lockRotateAxis = t > canonicalAxisLockFrom && state.zoomPan === null;
 
-        state.shapeCanonicalPolar(spherical, t); // the zoom owns the tilt, pan or no pan
+        state.shapeCanonicalPolar(spherical); // the tilt is theirs, whatever the zoom
         state.advanceZoomPan(spherical);
         state.detentCanonicalAzimuth(spherical);
       },
@@ -671,30 +673,21 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.r3f?.invalidate(); // still on its way
       },
       /**
-       * Two tilts are tracked, one close in and one zoomed out, and the zoom carries the camera
-       * between them. Neither is clamped, so a drag owns the polar at every zoom
+       * ONE tilt, kept across the zoom: zooming neither flattens the view nor tips it back. It is
+       * never clamped, so a drag owns the polar at every zoom
        */
-      shapeCanonicalPolar(spherical, t) {
+      shapeCanonicalPolar(spherical) {
         const { controls, ctrlOpts } = state;
         controls.minPolarAngle = ctrlOpts.minPolarAngle ?? 0;
         controls.maxPolarAngle = ctrlOpts.maxPolarAngle ?? Math.PI / 2;
 
-        const u = clamp01((t - canonicalFlattenFrom) / (1 - canonicalFlattenFrom));
-        const s = u * u * (3 - 2 * u);
-        const want = state.polarIn * (1 - s) + state.polarOut * s;
-
-        // theirs whilst they drag: the tilt is fed back into BOTH ends, by how much each weighs
-        // here, so the blend goes on passing through wherever they leave it
         if (controls.isRotating() === true) {
-          const d = spherical.phi - want;
-          const k = (1 - s) * (1 - s) + s * s;
-          state.polarIn += (d * (1 - s)) / k;
-          state.polarOut += (d * s) / k;
+          state.canonicalPolar = spherical.phi; // theirs whilst they drag
           return;
         }
-        if (Math.abs(spherical.phi - want) > phiSettledEpsilon) {
-          spherical.phi = want;
-          state.placeCamera(spherical, want);
+        if (Math.abs(spherical.phi - state.canonicalPolar) > phiSettledEpsilon) {
+          spherical.phi = state.canonicalPolar;
+          state.placeCamera(spherical, state.canonicalPolar);
           w.r3f?.invalidate();
         }
       },
@@ -1092,7 +1085,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       setCameraMode(cameraMode) {
         if (cameraMode === "canonical") {
-          state.polarIn = state.polarOut = state.controls?.spherical.phi ?? state.initial.polar;
+          state.canonicalPolar = state.controls?.spherical.phi ?? state.initial.polar;
         } else if (state.cameraMode === "canonical" && state.controls !== null) {
           // leaving: give the polar clamps and the zoom's own pace back — r3f leaves our direct
           // writes alone, so nothing else would
@@ -1238,7 +1231,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.frontierHold = false;
         const initial = defaultInitialCamera;
         state.initial = initial;
-        state.polarIn = state.polarOut = initial.polar; // else a reset zoomed out keeps the old tilt
+        state.canonicalPolar = initial.polar; // else a reset zoomed out keeps the old tilt
         store.patch({ cameraInitial: initial });
         // a reset view shows nothing in `sight` mode unless the player happens to be in it: the
         // ship comes back, darkened, so there is something to find them by
@@ -1565,10 +1558,8 @@ export type State = {
   cameraMode: CameraModeType;
   /** Whether the view keeps the player centred — an option of EITHER mode */
   cameraFollow: boolean;
-  /** `canonical`'s polar close in: what a zoom-out flattens FROM and a zoom-in returns TO */
-  /** The tilt close in, and the tilt zoomed out — the zoom blends between them */
-  polarIn: number;
-  polarOut: number;
+  /** `canonical`'s tilt, the same at every zoom */
+  canonicalPolar: number;
   /** The azimuth the current turn set out from */
   canonicalFrom: number;
   /** Whether a turn is underway — the compass dial is decided on its release, once */
@@ -1721,7 +1712,7 @@ export type State = {
   /** Carries a `canonical` zoom-in's pan, tilt, turn and height along with the zoom's progress */
   advanceZoomPan(spherical: THREE.Spherical): void;
   /** `canonical`'s polar: the user's own close in, a function of the zoom further out */
-  shapeCanonicalPolar(spherical: THREE.Spherical, t: number): void;
+  shapeCanonicalPolar(spherical: THREE.Spherical): void;
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
   /** `canonical`'s azimuth: a turn let go with ctrl or cmd held snaps to a compass point (multiple of π/2) */
   detentCanonicalAzimuth(spherical: THREE.Spherical): void;
