@@ -960,7 +960,7 @@ export default function Decor() {
       texMat.outputNode = blackWhenHidden(
         buildShapeOutputNode(
           OBJECT_PICK_KEY_TO_RED.decor,
-          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
+          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor, 1), // opaque, else blending scrambles the id
           w.view.objectPick,
         ) as THREE.Node<"vec4">,
       );
@@ -987,7 +987,7 @@ export default function Decor() {
       runtimeTexMat.outputNode = blackWhenHidden(
         buildShapeOutputNode(
           OBJECT_PICK_KEY_TO_RED.runtimeDecor,
-          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor, 1), // opaque, else blending scrambles the id
           w.view.objectPick,
         ) as THREE.Node<"vec4">,
       );
