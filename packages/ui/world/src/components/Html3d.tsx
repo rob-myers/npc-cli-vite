@@ -40,6 +40,14 @@ export const Html3d = forwardRef<State, Props>((props, ref) => {
         }
       },
 
+      setInnerDiv(el) {
+        state.innerDiv = el ?? emptyDiv;
+        if (el === null) return;
+        // placed and scaled before its first paint, else it shows unscaled until the next frame
+        state.zoom = 0;
+        state.onFrame();
+      },
+
       computePosition() {
         v1.setFromMatrixPosition(props.tracked.object.matrixWorld).add(props.tracked.offset);
         v1.add(props.offset); // e.g. manually offset speech bubble
@@ -71,7 +79,7 @@ export const Html3d = forwardRef<State, Props>((props, ref) => {
   useLayoutEffect(() => {
     state.reactRoot.render?.(
       <div
-        ref={state.ref("innerDiv")}
+        ref={state.setInnerDiv}
         children={props.children}
         className={cn("origin-top-left", !props.visible && "invisible")}
       />,
@@ -139,5 +147,6 @@ export type State = {
   reactRoot: ReactDOM.Root;
   zoom: number;
   onFrame(rootState?: RootState): void;
+  setInnerDiv(el: HTMLDivElement | null): void;
   computePosition(): Geom.VectJson;
 };

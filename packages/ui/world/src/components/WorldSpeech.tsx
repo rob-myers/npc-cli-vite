@@ -392,6 +392,11 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
                 goto
               </Menu.Item>
             )}
+            {npc !== undefined && (
+              <Menu.Item className={speechMenuItemClassName} onClick={() => w.bubble.ensure(npcKey)}>
+                debug
+              </Menu.Item>
+            )}
             {w.speech.menuItems.map((item) => (
               <Menu.Item key={item.key} className={speechMenuItemClassName} onClick={() => item.action(npcKey)}>
                 {typeof item.text === "function" ? item.text(npcKey) : item.text}
