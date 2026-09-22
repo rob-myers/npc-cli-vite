@@ -55,7 +55,8 @@
 ## Blockbench
 
 - ✅ clean filenames
-- add psychic attack animation
+- ✅ add psychic attack animation (1st attempt)
+- ✅ lie/sie animation head should rotate less
 
 ## Blog
 
