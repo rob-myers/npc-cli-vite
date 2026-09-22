@@ -1,14 +1,5 @@
 # TODO
 
-## Blog
-
-- ✅ blog initial layout
-  - ✅ can switch between pages
-  - ✅ demo video
-  - ✅ comments
-
-- ✅ support mdx code-fences: tsx and sh
-
 ## World
 
 ### Animation
@@ -61,11 +52,17 @@
 - 🚧 BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
 
-## Documentation
+## Blockbench
 
-- ✅ new approach to todos i.e. current go into technical and start new section
-  - ✅ final few before switch to blog
-  - ✅ current -> sections
+- ✅ clean filenames
+- add psychic attack animation
+
+## Blog
+
+- ✅ blog initial layout
+  - ✅ can switch between pages
+  - ✅ demo video
+  - ✅ comments
 
 - 🚧 rewrite README.md
 

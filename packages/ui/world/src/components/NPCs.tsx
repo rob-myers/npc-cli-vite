@@ -846,7 +846,7 @@ export default function NPCs() {
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, sheetImages, skinManifest] = await Promise.all([
           // busted too, so a devtools reset reloads the model — it is self-contained (data uris)
-          new GLTFLoader().loadAsync(devCacheBust(url.templateMoreAnimsMcpGltf)),
+          new GLTFLoader().loadAsync(devCacheBust(url.currentGltf)),
           Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
