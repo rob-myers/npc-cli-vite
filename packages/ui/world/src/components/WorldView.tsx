@@ -392,7 +392,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           if (state.raycaster.ray.intersectPlane(groundPlane, tmpGroundHit) === null) return;
 
           // a shallow ray meets the ground hundreds of metres out — keep the aim to what is in view
-          const maxPan = state.ctrlOpts.maxDistance ?? 20;
+          const maxPan = state.ctrlOpts.maxDistance;
           if (tmpGroundHit.distanceTo(controls.target) > maxPan) {
             tmpGroundHit.sub(controls.target).setLength(maxPan).add(controls.target);
           }
@@ -414,8 +414,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.setCrosshair(tmpGroundHit);
         w.r3f?.invalidate();
       },
+      getPlayer() {
+        return w.n[w.player?.key ?? ""];
+      },
       getFollowedPlayer() {
-        const player = w.n[w.player?.key ?? ""];
+        const player = state.getPlayer();
         return state.cameraFollow === true || state.frontierHold === true ? player : undefined;
       },
       getFollowGoal(out) {
@@ -468,13 +471,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         state.zoomCrossFadeMs = 0; // a fresh aim cancels any fade underway
       },
       /**
-       * Rebuild the camera about `target` at `phi` and re-aim it. `update` has already aimed at
+       * Rebuild the camera about `target` from `spherical` and re-aim it. `update` has already aimed at
        * the target it had BEFORE our writes, so without this each frame renders a new position
        * through the last one's orientation — seen as jitter
        */
-      placeCamera(spherical, phi) {
+      placeCamera(spherical) {
         const { controls } = state;
-        tmpLookAtOffset.setFromSphericalCoords(spherical.radius, phi, spherical.theta);
+        tmpLookAtOffset.setFromSpherical(spherical);
         controls.object.position.copy(controls.target).add(tmpLookAtOffset);
         controls.object.lookAt(controls.target);
         controls.object.updateMatrixWorld();
@@ -579,29 +582,36 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // of the target this tick is neither a turn nor a pan, and is simply overwritten below
           zoomPan.to.set(tmpGoal.x, 0, tmpGoal.z);
           state.setCrosshair(zoomPan.to);
-        } else if (spherical.theta !== zoomPan.lastTheta) {
-          // a TURN slid the rig about its pivot — the crosshair, usually — but `to` is a point on
-          // the ground and stays put, so the path is redrawn from wherever the turn left the target
-          // as of the progress it had made: the remaining way still ends on the crosshair. Arrived,
-          // `from` no longer matters
-          if (rest > 1e-3) {
-            zoomPan.from.copy(controls.target).addScaledVector(zoomPan.to, -zoomPan.lastBeta).divideScalar(rest);
-          }
         } else {
-          // whatever else moved the target is the user panning: carried into both ends, so a
-          // drag mid-flight steers where the zoom is going rather than being overwritten
-          tmpDrift.copy(controls.target).sub(zoomPan.lastTarget);
+          // a TURN slides the rig about its pivot and a PAN translates it, often in the same frame —
+          // a turn's damping runs on long after it — so `theta` changing cannot tell them apart.
+          // Where the turn alone would have left the target is what separates them
+          tmpTurned.copy(zoomPan.lastTarget);
+          const dTheta = spherical.theta - zoomPan.lastTheta;
+          if (controls._rotateAimed === true && dTheta !== 0) {
+            const pivot = controls.u.rotatePivot;
+            const vx = tmpTurned.x - pivot.x;
+            const vz = tmpTurned.z - pivot.z;
+            tmpTurned.x = pivot.x + vx * Math.cos(dTheta) + vz * Math.sin(dTheta); // see `slideAboutPivot`
+            tmpTurned.z = pivot.z + vz * Math.cos(dTheta) - vx * Math.sin(dTheta);
+          }
+          // the pan steers where the zoom is going rather than being overwritten
+          tmpDrift.copy(controls.target).sub(tmpTurned);
           if (tmpDrift.lengthSq() > 0) {
-            zoomPan.from.add(tmpDrift);
             zoomPan.to.add(tmpDrift);
             state.setCrosshair(zoomPan.to);
+          }
+          // `to` is on the ground, which a turn leaves put, so the rest of the path is redrawn from
+          // wherever the target now is, as of the progress it had made. Arrived, `from` no longer matters
+          if (rest > 1e-3) {
+            zoomPan.from.copy(controls.target).addScaledVector(zoomPan.to, -zoomPan.lastBeta).divideScalar(rest);
           }
         }
         zoomPan.lastTheta = spherical.theta;
         zoomPan.lastBeta = beta;
 
         controls.target.copy(zoomPan.from).lerp(zoomPan.to, beta);
-        state.placeCamera(spherical, spherical.phi);
+        state.placeCamera(spherical);
         zoomPan.lastTarget.copy(controls.target); // anything else moving it is a pan, see above
 
         if (alpha < zoomPanDoneAlpha) {
@@ -633,8 +643,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.frontierMs = performance.now();
           return;
         }
-        const min = state.ctrlOpts.minDistance ?? 10;
-        const outer = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
+        const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
         const player = state.getFollowedPlayer();
         let wanted = outer;
         let wantedMin = min;
@@ -677,17 +686,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        * never clamped, so a drag owns the polar at every zoom
        */
       shapeCanonicalPolar(spherical) {
-        const { controls, ctrlOpts } = state;
-        controls.minPolarAngle = ctrlOpts.minPolarAngle ?? 0;
-        controls.maxPolarAngle = ctrlOpts.maxPolarAngle ?? Math.PI / 2;
-
-        if (controls.isRotating() === true) {
+        if (state.controls.isRotating() === true) {
           state.canonicalPolar = spherical.phi; // theirs whilst they drag
           return;
         }
         if (Math.abs(spherical.phi - state.canonicalPolar) > phiSettledEpsilon) {
           spherical.phi = state.canonicalPolar;
-          state.placeCamera(spherical, state.canonicalPolar);
+          state.placeCamera(spherical);
           w.r3f?.invalidate();
         }
       },
@@ -765,7 +770,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
       },
       holdFrontier() {
-        if (w.n[w.player?.key ?? ""] === undefined) return;
+        if (state.getPlayer() === undefined) return;
         // the follow's framing — the player and their frontier — without the follow: held until
         // the camera is next touched, see `onCameraStart`. A `lookAt` takes it there rather than
         // leaving it to the follow, which runs on the world tick — a paused world runs none. It
@@ -1041,19 +1046,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
        */
       followPlayer(deltaSecs) {
         const { controls } = state;
-        const player = w.n[w.player?.key ?? ""];
-        if (
-          (state.cameraFollow === false && state.frontierHold === false) ||
-          controls === null ||
-          player === undefined
-        ) {
-          return;
-        }
         // a `lookAt` owns the target whilst it runs, and tracks the player itself — two of us
         // writing it would fight, and the pan would never arrive
-        if (state.lookAtAnimId !== 0) return;
-
-        state.getFollowGoal(tmpGoal); // the player, or part way to their frontier — see it
+        if (controls === null || state.lookAtAnimId !== 0) return;
+        // the player, or part way to their frontier — none when not following nor holding
+        if (state.getFollowGoal(tmpGoal) === false) return;
 
         const { target } = controls;
         const dx = tmpGoal.x - target.x;
@@ -1087,15 +1084,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (cameraMode === "canonical") {
           state.canonicalPolar = state.controls?.spherical.phi ?? state.initial.polar;
         } else if (state.cameraMode === "canonical" && state.controls !== null) {
-          // leaving: give the polar clamps and the zoom's own pace back — r3f leaves our direct
-          // writes alone, so nothing else would
-          state.controls.minPolarAngle = state.ctrlOpts.minPolarAngle ?? 0;
-          state.controls.maxPolarAngle = state.ctrlOpts.maxPolarAngle ?? Math.PI / 2;
+          // leaving: give the zoom its own pace back — r3f leaves our direct writes alone, so
+          // nothing else would
           state.controls.zoomSettleRate = defaultZoomSettleRate;
           state.controls.lockRotateAxis = true; // only `canonical` ever takes it away
           // see `easeFrontier`, which has been easing both stops
-          state.controls.maxDistance = state.ctrlOpts.maxDistance ?? defaultCameraMaxDistance;
-          state.controls.minDistance = state.ctrlOpts.minDistance ?? 10;
+          state.controls.maxDistance = state.ctrlOpts.maxDistance;
+          state.controls.minDistance = state.ctrlOpts.minDistance;
           state.zoomPan = null;
           state.zoomCrossFadeMs = 0;
           state.zoomInSlow = false;
@@ -1238,12 +1233,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.fadeRoomsMode === "sight") state.setFadeRoomsMode("sense");
         if (state.controls) {
           state.controls.target.set(initial.position.x, 0, initial.position.z);
-          const delta = new THREE.Vector3().setFromSphericalCoords(
-            initial.position.y,
-            initial.polar,
-            initial.azimuthal,
-          );
-          state.controls.object.position.copy(state.controls.target).add(delta);
+          tmpLookAtOffset.setFromSphericalCoords(initial.position.y, initial.polar, initial.azimuthal);
+          state.controls.object.position.copy(state.controls.target).add(tmpLookAtOffset);
           state.controls.setZoomFromRadius(initial.position.y, true);
           state.controls.update();
           w.r3f?.invalidate();
@@ -1583,6 +1574,7 @@ export type State = {
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
   /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
+  getPlayer(): Npc | undefined;
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;
@@ -1593,7 +1585,8 @@ export type State = {
   canvas: HTMLCanvasElement;
   clickIds: { id: string; blocking: boolean }[];
   controls: BaseCameraControls;
-  ctrlOpts: MapControlsProps;
+  /** The persisted zoom stops are always given — `easeFrontier` eases the live ones back to them */
+  ctrlOpts: MapControlsProps & { minDistance: number; maxDistance: number };
   /** Avoid HMR veil */
   initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
   /** What `persistCamera` last stored, so a frame that moved nothing stores nothing */
@@ -1721,7 +1714,7 @@ export type State = {
   /** Puts the crosshair on a ground point and shows it at full strength */
   setCrosshair(at: THREE.Vector3): void;
   /** Rebuilds the camera about `target` at `phi` and re-aims it */
-  placeCamera(spherical: THREE.Spherical, phi: number): void;
+  placeCamera(spherical: THREE.Spherical): void;
   /** Aims a `canonical` zoom-in at the cursor's ground point */
   onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
@@ -1939,6 +1932,7 @@ const tmpVect = new Vect();
 const tmpLookAtOffset = new THREE.Vector3();
 const tmpNdc = new THREE.Vector2();
 const tmpDrift = new THREE.Vector3();
+const tmpTurned = new THREE.Vector3();
 /** From the player to their frontier — see `service/player-frontier` */
 const tmpAhead = { x: 0, z: 0 };
 /** Where the follow is holding the target — see `getFollowGoal` */
