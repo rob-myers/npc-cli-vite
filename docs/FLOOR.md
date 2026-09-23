@@ -15,7 +15,7 @@ the world's — text and anything else with a handedness has to be flipped back)
 ## `deckConfig` — the one place to tune
 
 The look is deliberately quiet: a flat tone, square plates of decking with a seam and a rivet at
-each corner, a line held off each room's walls, a bright conduit bundle in some rooms, and the nav
+each corner, a bright conduit bundle in some rooms, and the nav
 mesh over the top. All of it comes from **one mutable object**, `deckConfig` in
 `service/texture.ts`. Change a value from the console and call `w.floor.drawAll()`; the plate
 pattern notices and rebuilds itself.
@@ -28,7 +28,7 @@ deckConfig.nav.ink = "rgba(255,120,120,0.2)";
 w.floor.drawAll();
 ```
 
-Seven parts: `tone`, `plate`, `rivet`, `outline`, `wiring`, `doorTicks`, `nav`. Each but `tone` and
+Six parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `nav`. Each but `tone` and
 `nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
 
 Two of them read a room's **label** — `wiring.rooms` and `doorTicks.rooms`, each a list of labels or

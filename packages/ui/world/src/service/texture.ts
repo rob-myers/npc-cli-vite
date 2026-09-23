@@ -153,16 +153,6 @@ export const deckConfig = {
     lipInk: "rgba(205, 220, 240, 0.3)",
   },
 
-  /** A line following the room's walls, held off them */
-  outline: {
-    shown: true,
-    inset: 0.35,
-    width: 0.025,
-    ink: "rgba(190, 200, 210, 0.05)",
-    /** Rooms below this (m²) get none: it would only crowd them */
-    minRoomArea: 4,
-  },
-
   /** Conduit run along the deck, in the rooms `rooms` names */
   wiring: {
     shown: true,
@@ -254,7 +244,7 @@ export const deckConfig = {
   },
 };
 
-/** Every room's deck, the doorways between them, and a line inside each room's walls */
+/** Every room's deck, and the doorways between them */
 export function drawRoomFloors(
   ct: CanvasRenderingContext2D,
   layout: Geomorph.Layout,
@@ -271,7 +261,6 @@ export function drawRoomFloors(
 
   for (const [roomId, room] of layout.rooms.entries()) {
     drawDeck(ct, room);
-    drawRoomOutline(ct, room);
 
     const { wiring } = deckConfig;
     if (wantsFeature(wiring.rooms, wiring.shown, labelOfRoom[roomId]) === false) continue;
@@ -722,26 +711,6 @@ function drawSeams(ct: CanvasRenderingContext2D, rect: Geom.RectJson) {
   band(seamWidth / 2, lipWidth); // its lit lip just beyond, towards the light
   ct.fillStyle = lipInk;
   ct.fill();
-}
-
-function drawRoomOutline(ct: CanvasRenderingContext2D, room: Geom.Poly) {
-  const { outline: opts } = deckConfig;
-  if (opts.shown === false) return;
-
-  const whole = room.clone().removeHoles();
-  if (whole.rect.area < opts.minRoomArea) return;
-
-  ct.save();
-  ct.strokeStyle = opts.ink;
-  ct.lineWidth = opts.width;
-  for (const poly of geomService.createInset(whole, opts.inset)) {
-    if (poly.outline.length < 3) continue;
-    ct.beginPath();
-    poly.outline.forEach((p, i) => (i === 0 ? ct.moveTo(p.x, p.y) : ct.lineTo(p.x, p.y)));
-    ct.closePath();
-    ct.stroke();
-  }
-  ct.restore();
 }
 
 let cachedPlate: null | { key: string; pattern: CanvasPattern } = null;
