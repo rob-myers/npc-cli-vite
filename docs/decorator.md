@@ -56,8 +56,9 @@ shows behind its graphs — so it is where things really are:
   red locked;
 - room labels from the labelled decor points.
 
-`meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m) and `static` — the map's own decor,
-faint, for context. The sidebar's width and whether it is out are `meta.sidebarWidth` / `sidebarOpen`. The panel re-renders on
+`meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m, on by default) and `static` — the map's
+own decor, faint, for context (off by default). The sidebar's width and whether it is out (not by default)
+are `meta.sidebarWidth` / `sidebarOpen`. The panel re-renders on
 `map-settled`, `nav-updated`, `decor-ready` and the door events.
 
 ## Npcs are opt-in
