@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Each symbol with at least one obstacle gets packed into a sheet.
- * We also erase the parts of the symbol which are not obstacles.
- * This can waste space for some symbols e.g. bridge--042.
- * However, it should be a bit faster than splitting into many obstacles,
- * and won't change as much as one adds obstacles to symbols.
+ * Each obstacle polygon of each symbol gets its bounding rect packed into a sheet,
+ * clipped to the polygon.
  *
  * creates/mutates
  * - public/sheets.json
@@ -19,22 +16,18 @@
  *
  * dependencies
  * - `public/assets.json`
- * - `public/starship-symbol/manifest.json`
+ * - `public/starship-symbol/*.png`
  * - `pngquant` command to reduce PNG size
  */
 
 import fs, { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import assetsEncoded from "@npc-cli/app/public/assets.json" with { type: "json" };
-import starshipSymbolManifestEncoded from "@npc-cli/app/public/starship-symbol/manifest.json" with { type: "json" };
-import {
-  isHullSymbolImageKey,
-  type StarshipSymbolImageKey,
-  StarshipSymbolPngsManifestSchema,
-} from "@npc-cli/media/starship-symbol";
+import { isHullSymbolImageKey, type StarshipSymbolImageKey } from "@npc-cli/media/starship-symbol";
 import {
   AssetsSchema,
   emptySheets,
+  getObstacleSheetKey,
   SheetsSchema,
   type StarShipSymbolSheetDatum,
   type StarShipSymbolSheetEntry,
@@ -44,7 +37,7 @@ import { Rect } from "@npc-cli/util/geom/rect";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
-import { Canvas, loadImage } from "skia-canvas";
+import { Canvas, type Image, loadImage } from "skia-canvas";
 import z from "zod";
 import { PROJECT_ROOT } from "../const.ts";
 import { loggedSpawn } from "../service/logged-spawn.ts";
@@ -52,48 +45,48 @@ import { packRectangles } from "../service/rects-packer.ts";
 import { collectMasks } from "../service/svg-masks.ts";
 
 const assets = z.parse(AssetsSchema, assetsEncoded);
-const starshipSymbolManifest = z.parse(StarshipSymbolPngsManifestSchema, starshipSymbolManifestEncoded);
 
-/** unflattened symbols with at least one obstacle */
-const symbolsWithAtLeastOneObstacle = Object.values(assets.symbol).filter(({ obstacles }) => obstacles.length > 0);
-const manifestEntries = symbolsWithAtLeastOneObstacle.map((x) => starshipSymbolManifest.byKey[x.key]);
+/** one per obstacle polygon of each unflattened symbol */
+const obstacleRects = Object.values(assets.symbol).flatMap((sym) =>
+  sym.obstacles.map((poly, obstacleId) => {
+    const srcRect = poly.rect.delta(-sym.bounds.x, -sym.bounds.y).scale(getSymbolPngScale(sym.key)).precision(2);
+    return {
+      width: Math.ceil(srcRect.width),
+      height: Math.ceil(srcRect.height),
+      data: { symbolKey: sym.key, obstacleId, srcRect } satisfies StarShipSymbolSheetDatum,
+    };
+  }),
+);
 
 const {
   bins,
   width: maxWidth,
   height: maxHeight,
-} = packRectangles<StarShipSymbolSheetDatum>(
-  manifestEntries.map(({ key, width, height, group }) => ({
-    width,
-    height,
-    data: { key, group } satisfies StarShipSymbolSheetDatum,
-  })),
-  {
-    logPrefix: "gen-starship-sheets",
-    packedPadding: 8,
-    maxWidth: 4096,
-    maxHeight: 4096,
-    // maxWidth: 2048,
-    // maxHeight: 2048,
-  },
-);
+} = packRectangles<StarShipSymbolSheetDatum>(obstacleRects, {
+  logPrefix: "gen-starship-sheets",
+  packedPadding: 8,
+  maxWidth: 4096,
+  maxHeight: 4096,
+});
 
 //#region sheets.json
 
 // other sheet-generation scripts may write to sheets.json too
 const sheetsJsonPath = path.resolve("packages/app/public", "sheets.json");
 const prevSheetsRaw = await fs.promises.readFile(sheetsJsonPath, "utf-8").catch(warn);
-const prevSheets = jsonParser.pipe(SheetsSchema).safeParse(prevSheetsRaw).data ?? emptySheets;
+// ignore our own section, so a change to its format cannot wipe the others
+const prevSheets = jsonParser.pipe(SheetsSchema.omit({ symbol: true })).safeParse(prevSheetsRaw).data ?? emptySheets;
 
 const sheet = SheetsSchema.encode({
   ...prevSheets,
   symbol: Object.fromEntries(
     bins.flatMap((bin, sheetId) =>
-      bin.rects.map<[StarshipSymbolImageKey, StarShipSymbolSheetEntry]>(({ x, y, width, height, data }) => [
-        data.key,
+      bin.rects.map<[string, StarShipSymbolSheetEntry]>(({ x, y, data: { symbolKey, obstacleId, srcRect } }) => [
+        getObstacleSheetKey(symbolKey, obstacleId),
         {
-          key: data.key,
-          rect: Rect.fromJson({ x, y, width, height }),
+          symbolKey,
+          obstacleId,
+          rect: Rect.fromJson({ x, y, width: srcRect.width, height: srcRect.height }),
           sheetId,
         },
       ]),
@@ -120,75 +113,74 @@ const baseSymbolsSheetPath = path.resolve(symbolsSheetDirectory, "symbols");
 /** "symbol key" to array of polygons to erase/color, in SVG viewBox coordinates */
 const masksBySymbol = collectMasks(starshipSymbolsMasksDir);
 
+const symbolImages = new Map<StarshipSymbolImageKey, Promise<Image>>();
+/** can replace image -- they'll be inverted like original images */
+function getSymbolImage(symbolKey: StarshipSymbolImageKey) {
+  let image = symbolImages.get(symbolKey);
+  if (!image) {
+    const replacePath = path.resolve(starshipSymbolsReplaceDir, `${symbolKey}.png`);
+    image = loadImage(existsSync(replacePath) ? replacePath : path.resolve(starshipSymbolDir, `${symbolKey}.png`));
+    symbolImages.set(symbolKey, image);
+  }
+  return image;
+}
+
 for (const [sheetId, bin] of bins.entries()) {
   const canvas = new Canvas(bin.width, bin.height);
   const ct = canvas.getContext("2d");
   // ct.fillStyle = "blue";
   // ct.fillRect(0, 0, bin.width, bin.height);
 
-  for (const rect of bin.rects) {
-    const symKey = rect.data.key as StarshipSymbolImageKey;
-    const sym = assets.symbol[symKey];
+  for (const { x, y, data } of bin.rects) {
+    const { symbolKey, obstacleId, srcRect } = data;
+    const sym = assets.symbol[symbolKey];
     if (!sym) {
-      warn(`symbolKey not found: ${symKey}`);
+      warn(`symbolKey not found: ${symbolKey}`);
       continue;
     }
 
-    // can replace image -- they'll be inverted like original images
-    const shouldReplaceImage = existsSync(path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`));
+    const image = await getSymbolImage(symbolKey);
+    const scale = getSymbolPngScale(symbolKey);
+    // symbol png pixels to sheet pixels
+    const dx = x - srcRect.x;
+    const dy = y - srcRect.y;
 
-    const image = await loadImage(
-      shouldReplaceImage
-        ? path.resolve(starshipSymbolsReplaceDir, `${rect.data.key}.png`)
-        : path.resolve(starshipSymbolDir, `${rect.data.key}.png`),
-    );
-
-    const scale = worldToSguScale * (isHullSymbolImageKey(symKey) ? 1 : 5);
-
-    // 🔔 clip to obstacles for much smaller file size
-    const polys = sym.obstacles.map((poly) =>
+    ct.save();
+    drawPolygons(
+      ct as unknown as CanvasRenderingContext2D,
       // assume top-left bounds coincides with underlying image top-left
-      poly.translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(rect.x, rect.y),
+      sym.obstacles[obstacleId].clone().translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(dx, dy),
+      { clip: true, fillStyle: "red", strokeStyle: null },
     );
+    ct.drawImage(image, srcRect.x, srcRect.y, srcRect.width, srcRect.height, x, y, srcRect.width, srcRect.height);
 
-    // 🔔 issue with complex self-intersecting clipping path, so redraw per poly
-    for (const poly of polys) {
-      ct.save();
-      drawPolygons(ct as unknown as CanvasRenderingContext2D, poly, {
-        clip: true,
-        fillStyle: "red",
-        strokeStyle: null,
-      });
-      ct.drawImage(image, 0, 0, rect.width, rect.height, rect.x, rect.y, rect.width, rect.height);
-      ct.restore();
-    }
-
-    const masks = masksBySymbol[symKey];
-    const offsetX = rect.x - sym.bounds.x * scale;
-    const offsetY = rect.y - sym.bounds.y * scale;
+    // masks are in scaled svg viewBox coords, and stay inside the clip so they can't reach a neighbour
+    const masks = masksBySymbol[symbolKey];
+    const offsetX = dx - sym.bounds.x * scale;
+    const offsetY = dy - sym.bounds.y * scale;
 
     // erase "mask remove" regions
     if (masks?.remove.length) {
-      ct.save();
       ct.globalCompositeOperation = "destination-out";
       for (const maskPoly of masks.remove) {
-        drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.clone().translate(offsetX, offsetY), {
           fillStyle: "black",
           strokeStyle: null,
         });
       }
-      ct.restore();
+      ct.globalCompositeOperation = "source-over";
     }
 
     // overwrite "mask color={color}" regions
     for (const [fillColor, maskPolys] of Object.entries(masks?.color ?? {})) {
       for (const maskPoly of maskPolys) {
-        drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.translate(offsetX, offsetY), {
+        drawPolygons(ct as unknown as CanvasRenderingContext2D, maskPoly.clone().translate(offsetX, offsetY), {
           fillStyle: fillColor,
           strokeStyle: null,
         });
       }
     }
+    ct.restore();
   }
 
   // Invert colors while preserving transparency
@@ -222,4 +214,8 @@ try {
 } catch (e) {
   warn(`pngquant failed to optimize PNGs: have you installed it?`);
   warn(e);
+}
+
+function getSymbolPngScale(symbolKey: StarshipSymbolImageKey) {
+  return worldToSguScale * (isHullSymbolImageKey(symbolKey) ? 1 : 5);
 }

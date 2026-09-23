@@ -280,7 +280,6 @@ export function createLayout(
       symbolKey,
       obstacleId: origObstacleId,
       origPoly,
-      origSubRect: origPoly.rect.delta(-origSymbol.bounds.x, -origSymbol.bounds.y).precision(2),
       height: heightOffFloor,
       transform: tmpMat1.feedFromArray(transform).json,
       center: tmpMat1.transformPoint(origPoly.center).precision(2),

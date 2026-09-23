@@ -1,4 +1,3 @@
-import { sguScaleSvgToPngFactor } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { Mat, Poly, Vect } from "@npc-cli/util/geom";
@@ -25,8 +24,8 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import type { StarShipSymbolSheetEntry } from "../assets.schema";
-import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES, worldToSguScale } from "../const.env";
+import { getObstacleSheetKey } from "../assets.schema";
+import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
@@ -92,36 +91,26 @@ export default function Obstacles(_props: Props) {
         const uvTextureIds = state.quad.getAttribute("uvTextureIds");
         (uvTextureIds.array as Uint32Array).fill(0);
 
-        const worldToPngScale = worldToSguScale * sguScaleSvgToPngFactor;
-
         // written AT the instance id rather than in step with it, so nothing here can drift out of
         // line with `transformAndColorObstacles` or with what a pick decodes — see `buildInstanceIds`
         for (const [gmId, { obstacles }] of w.gms.entries()) {
-          for (const [obstacleId, { symbolKey, origSubRect }] of obstacles.entries()) {
+          for (const [obstacleId, { symbolKey, obstacleId: origObstacleId }] of obstacles.entries()) {
             const instanceId = state.encodeInstanceId(gmId, obstacleId);
             if (instanceId === null) {
               continue; // past the cap, so it has no instance to describe
             }
-            const entry = w.sheets.symbol[symbolKey] as StarShipSymbolSheetEntry;
+            const sheetKey = getObstacleSheetKey(symbolKey, origObstacleId);
+            const entry = w.sheets.symbol[sheetKey];
             if (!entry) {
-              warn(`${symbolKey} not found in sheets.json`);
+              warn(`${sheetKey} not found in sheets.json`);
               continue;
             }
-            const {
-              sheetId,
-              rect: { x: symbolX, y: symbolY },
-            } = entry;
-            // origSubRect is in world units, sheet is in png pixel units
-            const subX = origSubRect.x * worldToPngScale;
-            const subY = origSubRect.y * worldToPngScale;
-            const subW = origSubRect.width * worldToPngScale;
-            const subH = origSubRect.height * worldToPngScale;
-
+            const { sheetId, rect } = entry;
             const { width: sheetWidth, height: sheetHeight } = w.sheets.symbolSheetDims[sheetId];
-            const uvOffsetX = (symbolX + subX) / sheetWidth;
-            const uvOffsetY = (symbolY + subY) / sheetHeight;
-            const uvDimW = subW / sheetWidth;
-            const uvDimH = subH / sheetHeight;
+            const uvOffsetX = rect.x / sheetWidth;
+            const uvOffsetY = rect.y / sheetHeight;
+            const uvDimW = rect.width / sheetWidth;
+            const uvDimH = rect.height / sheetHeight;
 
             uvOffsets.array.set([uvOffsetX, uvOffsetY], instanceId * 2);
             uvDimensions.array.set([uvDimW, uvDimH], instanceId * 2);

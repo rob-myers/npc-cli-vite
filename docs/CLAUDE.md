@@ -51,6 +51,13 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 See `docs/floor.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
 object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
 
+## Obstacle spritesheets
+
+See `docs/starship-sheets.md` — the ONLY doc for them. In short: `gen-starship-sheets` packs one rect
+per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in
+`sheets.json`; `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any
+MapEdit obstacle change.
+
 ## Camera controls
 
 Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.
