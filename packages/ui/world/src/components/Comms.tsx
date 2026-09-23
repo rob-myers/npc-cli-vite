@@ -1,5 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import {
   cameraProjectionMatrix,
   cameraViewMatrix,
@@ -21,13 +21,17 @@ import {
   smoothstep,
   textureLoad,
   uniform,
+  uniformArray,
   varying,
   vec2,
   vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { MAX_GEOMORPH_INSTANCES } from "../const.env";
+import type { FadeRooms } from "../service/fade-rooms";
 import type { PlayerLight } from "../service/player-light";
+import { type RoomSlots, slotUvPerMetre } from "../service/room-slots";
 import { getWorldStore } from "../service/storage";
 import { WorldContext } from "./world-context";
 
@@ -106,6 +110,16 @@ export default function Comms() {
         for (const x of [state.self, ...state.influenced]) x.presence = x.target;
         state.influenced = state.influenced.filter((x) => x.target === 1);
       },
+      syncGms() {
+        w.gms.forEach((gm, gmId) => {
+          const { a, b, c, d, e, f } = gm.inverseMatrix;
+          const { x, y, width, height } = gm.bounds;
+          state.gmValues[gmId * 3].set(a, b, c, d);
+          state.gmValues[gmId * 3 + 1].set(e, f, x, y);
+          state.gmValues[gmId * 3 + 2].set(width, height, 0, 0);
+        });
+        state.gmCount.value = w.gms.length;
+      },
       turnOff() {
         state.influence(w.player?.key ?? null);
       },
@@ -122,13 +136,15 @@ export default function Comms() {
 
   w.comms = state;
 
+  useEffect(() => state.syncGms(), [w.hash]);
+
   useMemo(() => {
     const { vertexNode, colorNode } = commsNodes(state, w.view);
     state.mat.vertexNode = vertexNode;
     state.mat.colorNode = colorNode;
     state.mat.needsUpdate = true;
     state.onTick(); // a fresh geometry has no instances yet
-  }, [w.view.playerLight.uid]);
+  }, [w.view.fadeRoomsFx.uid, w.view.playerLight.uid]);
 
   return <primitive object={state.mesh} />;
 }
@@ -148,6 +164,8 @@ export type State = Resources & {
   onTick(): void;
   /** Every fade straight to its end */
   snap(): void;
+  /** Each geomorph's inverse transform and local bounds, for the shader to find a pixel's room */
+  syncGms(): void;
   /** Fade out the influence and the player's rings with it, as influencing the player does */
   turnOff(): void;
   setShown(shown: boolean): void;
@@ -182,6 +200,10 @@ function createCommsResources() {
   npcTex.needsUpdate = true;
   const slotCount = uniform(0);
   const flowSecs = uniform(0);
+  // per geomorph, three `vec4`s — see `syncGms`
+  const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
+  const gmArray = uniformArray<"vec4">(gmValues, "vec4");
+  const gmCount = uniform(0);
 
   // additive, so the lines glow over a dark floor
   const mat = new THREE.MeshBasicNodeMaterial({
@@ -195,16 +217,20 @@ function createCommsResources() {
   mesh.frustumCulled = false;
   mesh.renderOrder = +5;
 
-  return { geo, mat, mesh, npcData, npcTex, slotCount, flowSecs };
+  return { geo, mat, mesh, npcData, npcTex, slotCount, flowSecs, gmValues, gmArray, gmCount };
 }
 
 function commsNodes(
-  { npcTex, slotCount, flowSecs }: Resources,
+  { npcTex, slotCount, flowSecs, gmArray, gmCount }: Resources,
   {
+    fadeRoomsFx,
     playerLight,
     objectPick,
     foldNode,
+    roomSlots,
   }: {
+    fadeRoomsFx: FadeRooms;
+    roomSlots: RoomSlots;
     playerLight: PlayerLight;
     objectPick: THREE.UniformNode<"float", number>;
     foldNode: THREE.UniformNode<"float", number>;
@@ -239,6 +265,26 @@ function commsNodes(
     return vec2(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest));
   });
 
+  /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
+  const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
+    const gmId = float(-1).toVar();
+    const uvAt = vec2(0).toVar();
+    Loop({ type: "int", start: 0, end: gmCount.toInt() as THREE.Node<"int"> }, ({ i }: { i: THREE.Node<"int"> }) => {
+      // `(a, b, c, d)`, `(e, f, x, y)`, `(width, height)`: inverse transform and local bounds
+      const m = gmArray.element(i.mul(3));
+      const t = gmArray.element(i.mul(3).add(1));
+      const size = gmArray.element(i.mul(3).add(2));
+      const local = vec2(m.x.mul(q.x).add(m.z.mul(q.y)).add(t.x), m.y.mul(q.x).add(m.w.mul(q.y)).add(t.y));
+      const rel = local.sub(t.zw);
+      const inside = rel.x.greaterThanEqual(0).and(rel.y.greaterThanEqual(0));
+      If(gmId.lessThan(0).and(inside).and(rel.x.lessThanEqual(size.x)).and(rel.y.lessThanEqual(size.y)), () => {
+        gmId.assign(i.toFloat());
+        uvAt.assign(rel.mul(slotUvPerMetre));
+      });
+    });
+    return vec3(uvAt, gmId);
+  });
+
   const ownSlot = slotAt(instanceIndex.toInt() as THREE.Node<"int">);
   // on one world grid, so overlapping quads share vertices and their reliefs agree
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
@@ -249,6 +295,8 @@ function commsNodes(
   const p = varying(worldXZ, "vCommsXZ");
   const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vCommsOwn");
   const presence = varying(ownSlot.z, "vCommsPresence");
+  // found per vertex, the uv being affine in position: the texture is read per pixel
+  const gmUv = varying<"vec3">(gmUvAt(worldXZ) as THREE.Node<"vec3">, "vCommsGmUv");
 
   const colorNode = Fn(() => {
     // per fragment rather than a varying, so a line keeps its shape between vertices
@@ -263,7 +311,19 @@ function commsNodes(
     // the outermost dies away rather than ringing the reach
     const edge = smoothstep(reach - reachFade, reach - reachFade + spacing, g).oneMinus();
 
-    const a = objectPick.notEqual(0).select(0, line.mul(edge).mul(owned).mul(presence).mul(foldNode).mul(alpha));
+    // as the floor has it: an unlit room hides them, but only in `sight`
+    const gmId = gmUv.z.round();
+    const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">, {
+      heedBroadWalls: true,
+    });
+    const roomShown = gmId
+      .greaterThanEqual(0)
+      .select(fadeRoomsFx.getVisiblity(slot), float(0))
+      .max(fadeRoomsFx.sightNode.oneMinus());
+
+    const a = objectPick
+      .notEqual(0)
+      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(alpha));
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
     return playerLight.applyLightRgba(vec4(vec3(color.r, color.g, color.b), a));
   })();
