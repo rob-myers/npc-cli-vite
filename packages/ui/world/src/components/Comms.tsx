@@ -48,6 +48,7 @@ export default function Comms() {
       tickedMs: performance.now(),
 
       influence(npcKey) {
+        if (w.disabled === true) state.snap(); // paused: nothing fades, so a change is at once
         if (state.influenced.some((x) => x.target === 0)) {
           state.pending = npcKey; // one still fading out: wait for it, latest pick wins
           return;
@@ -63,6 +64,7 @@ export default function Comms() {
           if (current !== undefined) current.target = 0;
           if (next !== null) state.influenced.push({ npcKey: next, presence: 0, target: 1 });
         }
+        if (w.disabled === true) state.snap();
         state.onTick();
         w.r3f?.invalidate();
       },
@@ -99,6 +101,10 @@ export default function Comms() {
         state.slotCount.value = slots.length;
         state.geo.instanceCount = slots.length;
         state.npcTex.needsUpdate = true;
+      },
+      snap() {
+        for (const x of [state.self, ...state.influenced]) x.presence = x.target;
+        state.influenced = state.influenced.filter((x) => x.target === 1);
       },
       turnOff() {
         state.influence(w.player?.key ?? null);
@@ -140,6 +146,8 @@ export type State = Resources & {
   /** Influence `npcKey` instead, or nobody. The player themself turns it all off, till the next */
   influence(npcKey: null | string): void;
   onTick(): void;
+  /** Every fade straight to its end */
+  snap(): void;
   /** Fade out the influence and the player's rings with it, as influencing the player does */
   turnOff(): void;
   setShown(shown: boolean): void;
