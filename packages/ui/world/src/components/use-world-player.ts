@@ -75,7 +75,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (point === undefined) {
           return false; // a map without spawn points
         }
-        await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y } });
+        // facing the point's direction, as `determineSpawnedAngle` reads `meta.orient`
+        const angle = -(point.orient + 90) * (Math.PI / 180);
+        await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y }, angle });
         return true;
       },
       assign(npcKey) {
