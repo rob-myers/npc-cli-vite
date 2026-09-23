@@ -34,6 +34,7 @@ import {
 } from "@npc-cli/ui__world/assets.schema";
 import { worldToSguScale } from "@npc-cli/ui__world/const.env";
 import { Rect } from "@npc-cli/util/geom/rect";
+import { geomService } from "@npc-cli/util/geom-service";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
@@ -45,6 +46,9 @@ import { packRectangles } from "../service/rects-packer.ts";
 import { collectMasks } from "../service/svg-masks.ts";
 
 const assets = z.parse(AssetsSchema, assetsEncoded);
+const packedPadding = 8;
+/** Less than half of `packedPadding`, so neighbours never meet */
+const bleedPx = 2;
 
 /** one per obstacle polygon of each unflattened symbol */
 const obstacleRects = Object.values(assets.symbol).flatMap((sym) =>
@@ -65,7 +69,7 @@ const {
   height: maxHeight,
 } = packRectangles<StarShipSymbolSheetDatum>(obstacleRects, {
   logPrefix: "gen-starship-sheets",
-  packedPadding: 8,
+  packedPadding,
   maxWidth: 4096,
   maxHeight: 4096,
 });
@@ -146,14 +150,20 @@ for (const [sheetId, bin] of bins.entries()) {
     const dx = x - srcRect.x;
     const dy = y - srcRect.y;
 
+    // assume top-left bounds coincides with underlying image top-left
+    const poly = sym.obstacles[obstacleId]
+      .clone()
+      .translate(-sym.bounds.x, -sym.bounds.y)
+      .scale(scale)
+      .translate(dx, dy);
     ct.save();
-    drawPolygons(
-      ct as unknown as CanvasRenderingContext2D,
-      // assume top-left bounds coincides with underlying image top-left
-      sym.obstacles[obstacleId].clone().translate(-sym.bounds.x, -sym.bounds.y).scale(scale).translate(dx, dy),
-      { clip: true, fillStyle: "red", strokeStyle: null },
-    );
-    ct.drawImage(image, srcRect.x, srcRect.y, srcRect.width, srcRect.height, x, y, srcRect.width, srcRect.height);
+    // bled past the polygon and its rect, so edge texels are opaque — else abutting obstacles show a seam
+    drawPolygons(ct as unknown as CanvasRenderingContext2D, geomService.createOutset(poly, bleedPx), {
+      clip: true,
+      fillStyle: "red",
+      strokeStyle: null,
+    });
+    ct.drawImage(image, dx, dy);
 
     // masks are in scaled svg viewBox coords, and stay inside the clip so they can't reach a neighbour
     const masks = masksBySymbol[symbolKey];
