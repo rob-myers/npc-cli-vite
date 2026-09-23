@@ -19,7 +19,7 @@
     {
       "id": "6e957986-c12c-4015-b19d-d85a951823d6",
       "name": "symbols",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -28,7 +28,7 @@
         {
           "id": "808d6435-0b19-4837-8e3e-f1a94dd9e387",
           "name": "extra--003--chair y=0.3",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0.6428,
@@ -47,7 +47,7 @@
         {
           "id": "01e6b0ca-bcec-4c3c-a563-2ad17f91fc7e",
           "name": "extra--003--chair y=0.3",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0.6428,
@@ -66,7 +66,7 @@
         {
           "id": "5387b1f1-d6a4-4200-8fda-4432375117ec",
           "name": "extra--003--chair y=0.3",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -0.6428,
@@ -85,7 +85,7 @@
         {
           "id": "5ca8f074-602b-46d7-9646-acd75b710baf",
           "name": "extra--003--chair y=0.3",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": -0.6428,
