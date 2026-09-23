@@ -143,6 +143,28 @@ export function demo_npc_ui(
   w.bubble.ensure(npc.key);
 }
 
+/**
+ * The player influences one npc at a time, each fading in as the last fades out — see `Comms`.
+ * With no npc and nothing piped in, the player influences nobody
+ * ```sh
+ * pick | demo_influence
+ * demo_influence rob
+ * ```
+ */
+export async function demo_influence({ api, args, w }: JshCli.RunArg) {
+  for (const npcKey of args) w.comms.influence(npcKey);
+  if (api.isTtyAt(0)) {
+    if (args.length === 0) w.comms.influence(null);
+    return;
+  }
+  let datum: unknown;
+  while ((datum = await api.read()) !== api.eof) {
+    const pick = datum as JshCli.PickEvent;
+    const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
+    if (npcKey !== undefined && npcKey in w.n) w.comms.influence(npcKey);
+  }
+}
+
 export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }

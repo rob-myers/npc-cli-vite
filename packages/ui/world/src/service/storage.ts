@@ -54,6 +54,8 @@ export type WorldSettings = {
   pickDoors: boolean;
   /** Whether we are decorating — see `Debug`'s `decorShown` */
   decorShown: boolean;
+  /** debug: whether npcs' field contours are drawn — see `Comms` */
+  commsShown: boolean;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
@@ -84,6 +86,7 @@ const defaultWorldSettings: WorldSettings = {
   pickOpenDoors: true,
   pickDoors: false,
   decorShown: false,
+  commsShown: isTouchDevice() === false,
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,

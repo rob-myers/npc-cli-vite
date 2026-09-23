@@ -20,8 +20,13 @@
 
 ### Comms
 
-- new component `<Comms>` can draw reactive contour-like smooth lines around npcs
-- can draw contours from an npc towards another
+- ✅ new component `<Comms>` can draw reactive contour-like smooth lines around npcs
+- ✅ restrict to player vs one other with transition for previous
+  - draws contours from an npc towards another
+  - `pick | demo_influence`
+- can extend distance somehow
+- check mobile
+- rename comms e.g. PlayerInfluence
 
 ### Decor
 

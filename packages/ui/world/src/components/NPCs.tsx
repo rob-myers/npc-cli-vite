@@ -611,6 +611,7 @@ export default function NPCs() {
         w.e.syncNpcRoomSlots();
         w.shadows?.onTick();
         w.rings?.onTick();
+        w.comms?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
@@ -753,6 +754,7 @@ export default function NPCs() {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
+        w.comms?.onTick();
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
