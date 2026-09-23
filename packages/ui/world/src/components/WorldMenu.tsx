@@ -9,6 +9,7 @@ import {
   CaretRightIcon,
   CrosshairSimpleIcon,
   EyeIcon,
+  GlobeSimpleIcon,
   GlobeStandIcon,
   type Icon,
   type IconWeight,
@@ -924,22 +925,22 @@ function MenuShell({
 }
 
 /** A menu row: a real `Menu.Item` in the desktop popup, a plain row in the touch panel */
-/** The two lights the slider below switches between: the whole world's, and the npcs' own */
+/** The two lights the slider below switches between: the environment's, and the npcs' own */
 const lights = {
-  world: { icon: SunIcon, weight: "bold", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness },
-  // a SOLID figure: at 16px a thin stroke inside a ring is lost against the pie behind it
-  npc: { icon: PersonSimpleIcon, weight: "fill", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness },
+  world: { icon: GlobeSimpleIcon, label: "environment", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness },
+  npc: { icon: PersonSimpleIcon, label: "npc", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness },
 } as const;
 
 /** How long the icon must be held to restore a light's default */
 const lightResetHoldMs = 500;
 
-/** ONE slider for both, the icon saying which and switching on a click; a hold resets that one */
+/** ONE slider for both: a toggle says which, the brightness icon shows its level and a hold resets it */
 function LightSlider({ touch }: { touch: boolean }) {
   const w = useContext(WorldContext);
   const store = getWorldStore(w.key);
   const [key, setKey] = useState<keyof typeof lights>("world");
-  const { icon, weight, min, max, step, fallback } = lights[key];
+  const { icon: WhichIcon, label, min, max, step, fallback } = lights[key];
+  const other = key === "npc" ? "world" : "npc";
   const value = key === "npc" ? w.npcBrightness : w.brightness;
 
   function apply(next: number) {
@@ -962,14 +963,24 @@ function LightSlider({ touch }: { touch: boolean }) {
       )}
     >
       <BrightnessPie
-        icon={icon}
-        weight={weight}
-        title={`${key} brightness — click to switch, hold to reset`}
+        icon={SunIcon}
+        weight="bold"
+        title={`${label} brightness — hold to reset`}
         // the world's is detented at its default, the npcs' plainly linear
         ratio={key === "npc" ? (value - min) / (max - min) : brightnessToRatio(value)}
-        onClick={() => setKey(key === "npc" ? "world" : "npc")}
         onHold={() => apply(fallback)}
       />
+      <button
+        type="button"
+        className="cursor-pointer text-slate-300 hover:text-white"
+        title={`${label} brightness — click for ${lights[other].label}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setKey(other);
+        }}
+      >
+        <WhichIcon className="size-4" weight="bold" />
+      </button>
       <input
         type="range"
         min={min}
@@ -980,6 +991,7 @@ function LightSlider({ touch }: { touch: boolean }) {
         onClick={(e) => e.stopPropagation()}
         className={rangeInputClass(touch, touch ? "flex-1" : "w-24")}
       />
+      <span className="w-9 text-right tabular-nums text-slate-400">{value.toFixed(step < 0.1 ? 2 : 1)}×</span>
     </div>
   );
 }
