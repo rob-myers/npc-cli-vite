@@ -1,5 +1,5 @@
 import { Select } from "@base-ui/react/select";
-import { symbolByGroup } from "@npc-cli/media/starship-symbol";
+import { type StarshipSymbolGroup, symbolByGroup } from "@npc-cli/media/starship-symbol";
 import { defaultMapKey } from "@npc-cli/ui__world/const.env";
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { keys } from "@npc-cli/util/legacy/generic";
@@ -9,7 +9,18 @@ import { SymbolKeySchema } from "./editor.schema";
 import type { State } from "./MapEdit";
 import { ALLOWED_MAP_EDIT_FOLDERS, defaultSymbolKey, getFileSpecifierLocalStorageKey } from "./map-node-api";
 
-const allSymbolKeys = Object.values(symbolByGroup).flatMap((group) => keys(group));
+/** Hull groups first, then the rest by name, each group's keys sorted */
+const symbolGroups = (() => {
+  const hullGroups: StarshipSymbolGroup[] = ["geomorph-core", "geomorph-edge", "playground"];
+  const rest = keys(symbolByGroup)
+    .filter((group) => !hullGroups.includes(group))
+    .sort();
+  return [...hullGroups, ...rest].map((group) => ({
+    group,
+    label: group.replace(/^symbol-/, "").replace(/-/g, " "),
+    keys: keys(symbolByGroup[group]).sort(),
+  }));
+})();
 
 const newMapKey = "__new_map__";
 
@@ -162,43 +173,50 @@ function FileSelect({ state }: { state: UseStateRef<State> }) {
             />
             <Select.List>
               {folderType === "symbol"
-                ? allSymbolKeys.map((key) => (
-                  <Select.Item
-                    key={key}
-                    value={key}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
-                      "data-highlighted:bg-slate-700 data-selected:text-blue-400",
-                    )}
-                  >
-                    <Select.ItemText>{key}</Select.ItemText>
-                    {savedSymbolKeys.has(key) && <FloppyDiskIcon className="size-3 text-green-400 shrink-0" />}
-                  </Select.Item>
-                ))
+                ? symbolGroups.map(({ group, label, keys }) => (
+                    <Select.Group key={group}>
+                      <Select.GroupLabel className="sticky top-0 z-10 px-2 pt-1.5 pb-0.5 text-[10px] uppercase tracking-wide text-slate-500 bg-slate-800">
+                        {label}
+                      </Select.GroupLabel>
+                      {keys.map((key) => (
+                        <Select.Item
+                          key={key}
+                          value={key}
+                          className={cn(
+                            "flex items-center gap-1.5 pl-4 pr-2 py-1 text-xs cursor-pointer text-slate-300",
+                            "data-highlighted:bg-slate-700 data-selected:text-blue-400",
+                          )}
+                        >
+                          <Select.ItemText>{key}</Select.ItemText>
+                          {savedSymbolKeys.has(key) && <FloppyDiskIcon className="size-3 text-green-400 shrink-0" />}
+                        </Select.Item>
+                      ))}
+                    </Select.Group>
+                  ))
                 : mapFiles.map((file) => (
-                  <Select.Item
-                    key={file.key}
-                    value={file.key}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
-                      "data-highlighted:bg-slate-700 data-selected:text-blue-400",
-                    )}
-                  >
-                    <Select.ItemText className="flex-1">{file.key}</Select.ItemText>
-                    {import.meta.env.DEV && !state.isLocked() && (
-                      <button
-                        className="ml-auto opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Delete map "${file.key}"?`)) state.deleteFile(file);
-                        }}
-                      >
-                        <TrashIcon className="size-3" />
-                      </button>
-                    )}
-                  </Select.Item>
-                ))}
+                    <Select.Item
+                      key={file.key}
+                      value={file.key}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2 py-1 text-xs cursor-pointer text-slate-300",
+                        "data-highlighted:bg-slate-700 data-selected:text-blue-400",
+                      )}
+                    >
+                      <Select.ItemText className="flex-1">{file.key}</Select.ItemText>
+                      {import.meta.env.DEV && !state.isLocked() && (
+                        <button
+                          className="ml-auto opacity-40 hover:opacity-100 hover:text-red-400 p-0.5 rounded"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete map "${file.key}"?`)) state.deleteFile(file);
+                          }}
+                        >
+                          <TrashIcon className="size-3" />
+                        </button>
+                      )}
+                    </Select.Item>
+                  ))}
               {folderType === "map" && import.meta.env.DEV && !state.isLocked() && (
                 <Select.Item
                   value={newMapKey}
