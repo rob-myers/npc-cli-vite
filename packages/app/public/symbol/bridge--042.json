@@ -699,7 +699,7 @@
         },
         {
           "id": "3fd0f7d0-1817-4259-9e91-2c963e9dd91f",
-          "name": "obstacle table y=0.6 inset=1",
+          "name": "obstacle table y=0.6 h=0.2 inset=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 1},

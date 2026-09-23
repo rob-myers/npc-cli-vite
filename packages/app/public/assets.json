@@ -664,6 +664,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2
@@ -15299,6 +15300,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2
@@ -21230,6 +21232,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2,
@@ -41799,6 +41802,7 @@
               "obstacle": true,
               "table": true,
               "y": 0.6,
+              "h": 0.2,
               "inset": 0.025,
               "symKey": "bridge--042",
               "origObstacleId": 2
@@ -41817,6 +41821,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.6,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 2
@@ -48203,5 +48208,5 @@
       "walls": {"color": "#000", "opacity": 0.25}
     }
   },
-  "hash": {"obstacles": -1527355242}
+  "hash": {"obstacles": -1967721018}
 }

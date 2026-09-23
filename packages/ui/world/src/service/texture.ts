@@ -158,7 +158,7 @@ export const deckConfig = {
     shown: true,
     inset: 0.35,
     width: 0.025,
-    ink: "rgba(190, 200, 210, 0.1)",
+    ink: "rgba(190, 200, 210, 0.05)",
     /** Rooms below this (m²) get none: it would only crowd them */
     minRoomArea: 4,
   },
