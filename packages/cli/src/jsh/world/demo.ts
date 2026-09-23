@@ -145,7 +145,8 @@ export function demo_npc_ui(
 
 /**
  * The player influences one npc at a time, each fading in as the last fades out — see `Comms`.
- * With no npc and nothing piped in, the player influences nobody
+ * Picking the player, or killing this, fades it all away till the next. With no npc and nothing
+ * piped in, the player influences nobody
  * ```sh
  * pick | demo_influence
  * demo_influence rob
@@ -157,12 +158,29 @@ export async function demo_influence({ api, args, w }: JshCli.RunArg) {
     if (args.length === 0) w.comms.influence(null);
     return;
   }
-  let datum: unknown;
-  while ((datum = await api.read()) !== api.eof) {
-    const pick = datum as JshCli.PickEvent;
-    const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
-    if (npcKey !== undefined && npcKey in w.n) w.comms.influence(npcKey);
+  // a kill turns it off, and ends a read that may never come
+  let killed = false as boolean; // set by `cleanup`, which narrowing cannot see
+  let onKill = () => {};
+  const killedRead = new Promise<void>((resolve) => (onKill = resolve));
+  const handlers = api.handleStatus({
+    cleanup() {
+      killed = true;
+      w.comms.turnOff();
+      onKill();
+    },
+  });
+
+  try {
+    let datum: unknown;
+    while ((datum = await Promise.race([api.read(), killedRead])) !== api.eof && killed === false) {
+      const pick = datum as JshCli.PickEvent;
+      const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
+      if (npcKey !== undefined && npcKey in w.n) w.comms.influence(npcKey);
+    }
+  } finally {
+    handlers.dispose();
   }
+  if (killed === true) throw api.getKillError();
 }
 
 export function demo_remove_decor(ct: JshCli.RunArg) {

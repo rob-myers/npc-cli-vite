@@ -24,9 +24,12 @@
 - ✅ restrict to player vs one other with transition for previous
   - draws contours from an npc towards another
   - `pick | demo_influence`
-- can extend distance somehow
+- Comms -> PlayerInfluence
+  - no need to support other npcs
+- reaches further distance
+- pair with animation "influence"
+- clarify as weapon
 - check mobile
-- rename comms e.g. PlayerInfluence
 
 ### Decor
 
