@@ -193,13 +193,21 @@ export function getDefaultPanes(): PersistedPanesLayout {
       type: "split",
       id: 0,
       vertical: false,
-      children: tabs.length >= 3 ? [
-        {type: "leaf", id: 0, uiId: tabs[0].id },
-        {type: "split", vertical: true, id: 1, children: [
-          {type: "leaf", id: 2, uiId: tabs[1].id },
-          {type: "leaf", id: 3, uiId: tabs[2].id },
-        ]}
-      ] : [{type: "leaf", id: 0, uiId: tabs[0].id }],
+      children:
+        tabs.length >= 3
+          ? [
+              { type: "leaf", id: 0, uiId: tabs[0].id },
+              {
+                type: "split",
+                vertical: true,
+                id: 1,
+                children: [
+                  { type: "leaf", id: 2, uiId: tabs[1].id },
+                  { type: "leaf", id: 3, uiId: tabs[2].id },
+                ],
+              },
+            ]
+          : [{ type: "leaf", id: 0, uiId: tabs[0].id }],
       sizes: [100, 100],
     },
     toUi,

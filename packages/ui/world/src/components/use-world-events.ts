@@ -426,7 +426,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "disabled":
           case "enabled":
-            w.net?.syncPause(e.key === "disabled"); // clients route play/pause via the server
             w.npc?.warmCrowd();
             break;
           case "set-player":

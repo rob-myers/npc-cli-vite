@@ -164,6 +164,19 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     });
   }, [meta.currentTabId]); // lazy mount
 
+  // a hidden tab pauses per its `pauseOnHideTab`, and resumes when shown unless paused by hand
+  useEffect(() => {
+    const device = isTouchDevice() ? "mobile" : "desktop";
+    for (const id of meta.items) {
+      const tab = uiStoreApi.getUi(id)?.meta;
+      if (tab?.pauseOnHideTab !== device && tab?.pauseOnHideTab !== "mobile-and-desktop") continue;
+      const hidden = id !== meta.currentTabId;
+      if (hidden ? !tab.disabled : tab.autoPaused) {
+        uiStoreApi.setUiMeta(id, (draft) => void (draft.disabled = draft.autoPaused = hidden));
+      }
+    }
+  }, [meta.currentTabId]);
+
   const hasMounted = useRef(false);
   useEffect(() => {
     if (!hasMounted.current) {
@@ -400,7 +413,10 @@ function TabHeaderItem({
               className="mr-0.5"
               onClick={(e) => {
                 e.stopPropagation();
-                uiStoreApi.setUiMeta(tab.id, (draft) => (draft.disabled = !draft.disabled));
+                uiStoreApi.setUiMeta(tab.id, (draft) => {
+                  draft.disabled = !draft.disabled;
+                  delete draft.autoPaused;
+                });
               }}
             >
               <PlayCircleIcon

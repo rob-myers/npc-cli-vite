@@ -175,11 +175,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             });
             break;
           }
-          case "set-paused":
-            // a client's play/pause request — applying it fires our own disabled/enabled,
-            // which `onWorldEvent` broadcasts back to every client
-            if ((w.disabled === true) !== msg.paused) w.setDisabled(msg.paused);
-            break;
           case "leave":
             state.dropClient(peer.uid);
             break;
@@ -205,7 +200,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           },
           decor: Object.values(w.decor.runtime.defByKey),
           playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
-          paused: w.disabled === true,
         };
       },
       toNetNpc(npc) {
@@ -274,10 +268,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             // the server switched maps mid-session — clients re-adopt and re-snapshot
             state.sendToAll({ key: "map-changed", mapKey: w.mapKey });
             break;
-          case "disabled":
-          case "enabled":
-            state.sendToAll({ key: "set-paused", paused: e.key === "disabled" });
-            break;
           default:
             break;
         }
@@ -289,7 +279,8 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           const netId = state.netIds.fromKey.get(npc.key);
           if (netId === undefined) continue; // not announced to clients yet
           const agent = npc.agent;
-          const moving = npc.anim.moving === true;
+          // paused, they stand still — else a client would walk them on the spot
+          const moving = w.disabled !== true && npc.anim.moving === true;
           const entry: NetTransform = {
             netId,
             x: npc.position.x,
@@ -592,9 +583,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             state.setPhase("client", "adopting-map");
             await state.adoptMap(msg.mapKey);
             break;
-          case "set-paused":
-            if ((w.disabled === true) !== msg.paused) w.setDisabled(msg.paused);
-            break;
           case "set-player":
             w.player.assign(msg.npcKey);
             break;
@@ -678,7 +666,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
 
         state.reconnect = null;
         state.setPhase("client", "connected");
-        if ((w.disabled === true) !== msg.paused) w.setDisabled(msg.paused);
         await state.reveal();
       },
       async reveal() {
@@ -827,14 +814,6 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           }
           // interpolated, so the walk cycle slows with the streamed deceleration
           npc.anim.speed = a.speed + (b.speed - a.speed) * alpha;
-        }
-      },
-      syncPause(paused) {
-        // a client's own play/pause (enter/escape, menu, `w.setDisabled`) goes via the server,
-        // whose disabled/enabled events broadcast it to every client. Idempotent: applying a
-        // remote pause re-enters here, but the far side is already in that state
-        if (state.mode === "client" && state.phase === "connected") {
-          state.sendClient({ key: "set-paused", paused });
         }
       },
       forwardPick(e) {
@@ -1098,8 +1077,6 @@ export type State = {
   applyTransforms(buffer: ArrayBuffer): void;
   /** Interpolates the mirrors — called from `World`'s `onTick` before `w.npc.onTick` */
   onTick(delta: number): void;
-  /** A client's local play/pause, forwarded to the server — see the disabled/enabled cases in `onEvent` */
-  syncPause(paused: boolean): void;
   forwardPick(e: JshCli.PickEvent): void;
   leave(opts?: { remote?: boolean; keepParent?: boolean }): Promise<void>;
   restoreStandalone(): Promise<void>;

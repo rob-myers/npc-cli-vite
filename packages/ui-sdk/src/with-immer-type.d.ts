@@ -34,10 +34,7 @@ type StoreImmer<S> = S extends {
     }
     ? {
         setState(
-          nextStateOrUpdater:
-            | SetStateType<A2>
-            | Partial<SetStateType<A2>>
-            | ((state: Draft<SetStateType<A2>>) => void),
+          nextStateOrUpdater: SetStateType<A2> | Partial<SetStateType<A2>> | ((state: Draft<SetStateType<A2>>) => void),
           shouldReplace?: false,
           ...args: SkipTwo<A1>
         ): Sr1;

@@ -247,6 +247,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           draft.disabled = disabled ?? !state.disabled;
+          delete draft.autoPaused; // by hand, so showing its tab won't undo it
         });
       },
       setNextPending(partial) {
