@@ -1,226 +1,78 @@
-# Dependencies
+# npc-cli
 
-Install pnpm
-> https://pnpm.io/installation
+<img src="docs/screenshots/initial-vid-3.webp" alt="Moving the player and spawning npcs in  Geomorph 301"  />
 
+*Moving the player and spawning npcs in [Geomorph 301](https://travellerrpgblog.blogspot.com/2020/07/starship-geomorphs-20.html) using an in-browser shell.*
 
-# Architecture Overview
+A pnpm monorepo vite react app hosting tabbed uis:
+- **World** is a 3D world built using three.js WebGPU and react three fiber
+- **Jsh** is a xterm.js shell around JavaScript
+- **MapEdit** is an SVG style editor sub-symbols and maps
+- **Decorator** is for placing dynamic decor.
 
-- 🚧 WIP
+## Quick start
 
-## `packages/app`
-
-### @mdx-js/rollup
-
-https://www.npmjs.com/package/@mdx-js/rollup
-
-## `packages/parse-sh`
-
-### golang setup
+Needs Node 24 (see `.nvmrc`) and [pnpm](https://pnpm.io/installation).
 
 ```sh
-brew install go@1.23
-go version
-# go version go1.23.12 darwin/arm64
-
-# inside your profile
-export GOPATH=$HOME/go
-export PATH="$GOPATH/bin:$PATH"
+pnpm install         # also points git at .githooks/
+pnpm approve-builds  # allow skia-canvas' native build
+pnpm dev             # http://localhost:5173
 ```
 
-```sh
-go mod download
-go get
+On a phone, `pnpm dev-hotspot` serves on your network: find your address with `ipconfig getifaddr en0` and open `http://<address>:5173`.
 
-# generate structs_easyjson.go
-cd processor
-easyjson -all structs.go
-```
+Some scripts need extra tools (pngquant, ImageMagick, Go/TinyGo) — see [docs/tooling.md](docs/tooling.md).
 
-### golang -> wasm
+## Layout
 
-Install tinygo
-
-> On MacOS
->
-> https://tinygo.org/getting-started/install/macos/
->
-> ```sh
-> brew tap tinygo-org/tools
-> brew install tinygo
-> ```
-
-We use it to generate WASM (https://tinygo.org/docs/guides/webassembly/) following the method of https://github.com/un-ts/sh-syntax
-
-
-```sh
-# generate packages/parse-sh/main.wasm with current structs
-pnpm -F @npc-cli/parse-sh build:wasm
-```
-
-### ImageMagick
-
-Needed for e.g. `pnpm extract-starship-pngs root Symbols symbol-root`
-
-```sh
-brew install imagemagick
-```
-
-```sh
-magick '200x100 Iris Valves.png'  -precision 4 -format "%[pixel:p{0,0}]\n" info:
-
-# does the top line contain a fully opaque pixel?
-magick 'Cargo 007 [20x20].png' -crop x1+0+0 +repage -alpha extract -format "%[fx:maxima == 1 ? 1 : 0]\n" info:
-
-magick 'Fuel 057 [25x80].png' -shave 1x1 -fuzz 1% -trim some.png
-# magick: invalid colormap index `Fuel 057 [25x80].png' @ error/colormap-private.h/ConstrainColormapIndex/35.
-```
-
-# Gotchas
-
-## Graphics
-
-Decor SVG `width` and `height` take precedence over `viewbox`.
-Ensure they are also changed on resize in Boxy SVG.
-
-`skia-canvas` function `loadImage` sporadically supports filters inside SVGs
-  - seems to work for data-url `<image>` in skins
-  - does not seem to work for decor with SVG paths even when rasterized as `<image>`
-
-Shaders can have at most 8 vertex attributes -- check console for errors
-
-Height related MapEdit symbol file dimensions are already in meters e.g. y=1, h=1
-
-BoxySVG cut circle from square empty when circle radius matches square half-width
-
-Boxy: transformed shapes may not be rendered correctly by `skia-canvas`.
-- Convert to path and reduce transform seem to fix it.
+| Package | What it is |
+|---|---|
+| `packages/app` | Vite app entry, and the public assets: sheets, symbols, maps, decor, skins |
+| `packages/ui/world` | The 3D world: camera, npcs, navigation, lighting, floor |
+| `packages/ui/*` | The other UIs: `jsh`, `map-edit`, `decorator`, `tabs`, `jobs`, `blog`, … |
+| `packages/cli` | The shell behind Jsh: tty, processes, and the `jsh` world commands |
+| `packages/media` | Static asset keys, symbol metadata, source images e.g. the geomorphs |
+| `packages/util` | Shared geometry (`Mat`, `Vect`, `Rect`), services, TSL helpers |
+| `packages/parse-sh` | Shell parser, Go compiled to WASM |
+| `packages/ui-sdk`, `ui-registry` | How a UI is defined, registered and persisted |
+| `scripts` | Vite plugins, the MapEdit save API, asset generation |
 
 ## Scripts
 
-`pnpm gen-assets-json --force` recomputes stratification in case out-of-sync
+| Command | When |
+|---|---|
+| `pnpm dev` / `pnpm build` / `pnpm preview` | Run, build, or serve the build |
+| `pnpm typecheck` | Type-check every package (`tsgo -b`) |
+| `pnpm check` | Lint and format check (Biome) |
+| `pnpm gen-assets-json` | Rebuild `assets.json` from MapEdit files — runs by itself on save in dev; `--force` recomputes symbol stratification |
+| `pnpm gen-starship-sheets` | Rebuild the obstacle spritesheet after changing obstacles — or the **obstacles** button in the World menu |
+| `pnpm gen-decor-sheets` / `pnpm gen-skin-sheets` | Rebuild the decor or skin spritesheets |
+| `pnpm gen:ui` / `pnpm gen-pkg` | Scaffold a new UI or package |
 
-packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
+## Git hooks
 
-- Must have original image size (no scale down).
-- Must have offset matching symbol in assets.json
-> e.g. bridge--042 symbol has large offset
-
-packages/app/public/starship-symbol/mask/{symbol}.svg does not support transformed rects/polys
-- Using BoxySVG we can convert to shape (if needed) and then Transform > Reduce.
-
-The starship-symbol spritesheet will draw "leaf nodes" in the assets.json stratifiedSymbolNodes
-This means WIP composite symbols should have at least one sub-symbol.
-
-In Node script saw "Could not find a declaration file for module" on try import from js path
-
-## Geometry
-
-Hull doors can have navRectId -1 if hull walls not properly aligned
-
-`gmId` detection issue: map transfoms must be aligned to (15 * n, 15 * n)
-
-## General
-
-In VSCode can manually reconnect to mcp server via `/mcp` then click button
-
-Worker modules should be disjoint from other ui/world modules
-Otherwise vite HMR can happen multiple times breaking worker re-intialization.
-
-TTY needs both WORLD_KEY and CACHE_SHORTCUTS to connect to world
-```sh
-# for example
-WORLD_KEY=world-0
-CACHE_SHORTCUTS="{ w: 'WORLD_KEY' }"
-```
-
-Sometimes worth playing World to debug out-of-sync updates
-
-Confusing type errors arise when auto-added imports reference other packages via relative paths instead of e.g. `@npc-cli/foo`.
-
-Blockbench import GLTF seems to cache file unless you "X it and rechoose"
-
-```sh
-# example solution
-cd packages/util/src/legacy
-npx tsc generic.js --declaration --allowJs --emitDeclarationOnly
-```
-
-Hot module reload can yield unreachable malformed state on add library.
-
-`pnpm approve-builds`
-- Needed for `skia-canvas`.
-  > https://www.npmjs.com/package/skia-canvas
-
-
-# Blockbench
-
-https://github.com/jasonjgardner/blockbench-mcp-plugin
-
-https://jasonjgardner.github.io/blockbench-mcp-plugin/mcp.js
-
-VSCode Claude Code
-- `/mcp`
-- possibly reconnect
-
-
-Can select model face
-
-Can drag uv square area (not diagonal)
-
-Select two objects then can Cmd+Drag create box e.g. of vertices
-
-`z` gets to wireframe and back
-
-RMB to translate view
-
-Personal keybindings setup
-- Shift + P ~ Perspective camera
-
-
-# Pngquant
-
-```sh
-brew install pngquant
-
-# manual usage
-cd packages/app/public/sheet
-pngquant --ext .pngquant.png *.png
-```
-
-
-# Git hooks
-
-Git hooks live in `.githooks/` and are version-controlled. After cloning, run:
-
-```sh
-pnpm install
-```
-
-The `prepare` script automatically configures `core.hooksPath` to use `.githooks/`.
+Hooks live in `.githooks/`; `pnpm install` enables them via the `prepare` script.
 
 | Hook | What it does |
-|------|-------------|
-| `pre-commit` | Runs `pnpm gen-starship-sheets` and stages the output |
+|---|---|
+| `pre-commit` | Runs `pnpm gen-starship-sheets` and stages its output |
 | `pre-push` | Runs `pnpm gen-starship-sheets` |
 
-# Dev scripts
+## Docs
 
-```sh
-pnpm gen-ui
-
-pnpm gen-pkg
-
-pnpm gen-starship-sheets
-```
-
-# Debug on mobile hotspot
-
-```sh
-pnpm dev-hotspot
-
-# get local ip address for mobile development
-ipconfig getifaddr en0
-
-# navigate to http://${ipAddress}:5173
-```
+| Doc | About |
+|---|---|
+| [floor](docs/floor.md) | How the floor is drawn, and `deckConfig` |
+| [starship-sheets](docs/starship-sheets.md) | Obstacle spritesheets, masks, and MapEdit `dup` |
+| [map-edit](docs/map-edit.md) | Where a saved MapEdit file goes |
+| [decorator](docs/decorator.md) | The Decorator panel and runtime decor |
+| [workers](docs/workers.md) | The physics and nav web workers |
+| [web-rtc-worlds](docs/web-rtc-worlds.md) | One World joining another over WebRTC |
+| [navcat-patch](docs/navcat-patch.md) | The patched crowd/navmesh library |
+| [npc-outlines](docs/npc-outlines.md) | The border drawn round npcs |
+| [page-load-perf](docs/page-load-perf.md) | Page load measurements |
+| [screen-slideshows](docs/screen-slideshows.md) | Turning a screen recording into a README slideshow |
+| [tooling](docs/tooling.md) | Optional tools, and which scripts need them |
+| [gotchas](docs/gotchas.md) | Things that have bitten before |
+| [blockbench](docs/blockbench.md) | Modelling npcs in Blockbench |

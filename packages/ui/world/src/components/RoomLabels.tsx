@@ -82,7 +82,10 @@ export default function RoomLabels() {
   useMemo(() => {
     // captures `fade-rooms`' nodes, so it is rebuilt whenever that service is
     const { mat, inst, slot, sign } = state.res;
-    const fade = w.view.fadeRoomsFx.getVisiblity(slot).max(w.view.fadeRoomsFx.sightNode.oneMinus());
+    // `sense` keeps a hidden room's label, dimmed to tell it from a shown room's
+    const fade = w.view.fadeRoomsFx
+      .getVisiblity(slot)
+      .max(w.view.fadeRoomsFx.sightNode.oneMinus().mul(hiddenRoomLabelFade));
 
     // billboarded in VIEW space: the quad is built about the point after the camera transform, so
     // it always faces us — flat to the floor from birdseye, upright as the view tilts in
@@ -132,3 +135,5 @@ export type State = {
 
 /** Off the floor, so it is not in the floor's own plane */
 const roomLabelLift = wallHeight;
+/** How much of a hidden room's label `sense` mode shows */
+const hiddenRoomLabelFade = 0.25;

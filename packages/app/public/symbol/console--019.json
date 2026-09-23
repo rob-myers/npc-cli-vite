@@ -8,12 +8,12 @@
       "name": "console--019",
       "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "image",
       "srcType": "symbol",
       "srcKey": "console--019",
-      "baseRect": { "width": 121.4, "height": 121.4 },
-      "offset": { "x": -0.7, "y": -0.7 },
+      "baseRect": {"width": 121.4, "height": 121.4},
+      "offset": {"x": -0.7, "y": -0.7},
       "cssTransform": "matrix(1, 0, 0, 1, -0.7, -0.7)"
     },
     {
@@ -21,7 +21,7 @@
       "name": "symbols",
       "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
       "expanded": false,
       "children": [
@@ -40,8 +40,8 @@
           },
           "type": "symbol",
           "srcKey": "console--051",
-          "baseRect": { "width": 30, "height": 30 },
-          "offset": { "x": 0, "y": -0.7 },
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0, "y": -0.7},
           "cssTransform": "matrix(0.7071067811865475, 0.7071067811865476, -0.7071067811865476, 0.7071067811865475, 63, 42.3)"
         }
       ]
@@ -51,7 +51,7 @@
       "name": "obstacles",
       "locked": true,
       "visible": true,
-      "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0 },
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
       "expanded": false,
       "children": [
@@ -60,9 +60,9 @@
           "name": "obstacle table y=0.6",
           "locked": true,
           "visible": true,
-          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5 },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": -0.5},
           "type": "rect",
-          "baseRect": { "width": 31, "height": 121 },
+          "baseRect": {"width": 31, "height": 121},
           "cssTransform": "matrix(1, 0, 0, 1, -0.5, -0.5)"
         },
         {
@@ -70,10 +70,10 @@
           "name": "obstacle table y=0.6",
           "locked": true,
           "visible": true,
-          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30 },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30},
           "type": "path",
           "d": "M 0 0 L 30 0 L 0 30 L 0 0 Z",
-          "baseRect": { "width": 30, "height": 30 },
+          "baseRect": {"width": 30, "height": 30},
           "cssTransform": "matrix(1, 0, 0, 1, 30, 30)"
         },
         {
@@ -81,15 +81,15 @@
           "name": "obstacle table y=0.6",
           "locked": true,
           "visible": true,
-          "transform": { "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -0.5 },
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": -0.5},
           "type": "rect",
-          "baseRect": { "width": 120, "height": 31 },
+          "baseRect": {"width": 120, "height": 31},
           "cssTransform": "matrix(1, 0, 0, 1, 0, -0.5)"
         }
       ]
     }
   ],
-  "bounds": { "x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4 },
+  "bounds": {"x": -0.7, "y": -0.7, "width": 121.4, "height": 121.4},
   "type": "symbol",
   "key": "console--019"
 }

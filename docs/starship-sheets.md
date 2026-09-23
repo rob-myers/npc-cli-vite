@@ -30,6 +30,10 @@ Drawing each rect: clip to the polygon, `drawImage` just `srcRect` from the symb
 **inside the same clip** — rects are packed tight, so an unclipped mask would paint a neighbour. The whole
 sheet is then inverted (alpha kept) and squeezed with `pngquant`.
 
+**Mask SVGs** (`starship-symbol/mask/{symbolKey}.svg`, drawn in Boxy SVG) must keep the symbol's original
+image size (no scaling down), with offsets matching the symbol in `assets.json` — e.g. `bridge--042` has a
+large one. Transformed rects/polys are not supported: convert to a shape if needed, then Transform > Reduce.
+
 ## `sheets.json` entries
 
 ```ts

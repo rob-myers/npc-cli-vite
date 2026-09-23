@@ -247,8 +247,10 @@ function cursorTowards(dx: number, dy: number) {
 }
 
 function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
-  // svg units per screen px: the viewBox is `baseSvgSize / zoom` across, shown `meet` in the element
-  const unitsPerPx = baseSvgSize / root.zoom / Math.min(root.svgWidth, root.svgHeight);
+  // svg units per screen px: the viewBox is `baseSvgSize / zoom` across, shown `meet` in the element —
+  // whose css size, not `svgWidth`/`svgHeight` (the document's), is what is on screen
+  const bounds = root.svgEl?.getBoundingClientRect();
+  const unitsPerPx = baseSvgSize / root.zoom / (bounds ? Math.min(bounds.width, bounds.height) : baseSvgSize);
   const sizeHandles = (minSide: number) => Math.min(handlePx * unitsPerPx, minSide * handleMaxFrac);
 
   if (selectedNode.type === "image") {
