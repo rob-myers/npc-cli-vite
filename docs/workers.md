@@ -101,3 +101,5 @@ an npc is parked only if it was explicitly parked.
 - **Ordering.** Physics setup no longer queues behind navmesh generation, so physics may be ready
   first. Nothing depends on the order today (`requested-physics` → room relationships,
   `nav-updated` → `warmCrowd`).
+- **Keep worker modules disjoint** from the rest of `ui/world`: a module both import makes vite HMR
+  fire more than once, which breaks worker re-initialisation.
