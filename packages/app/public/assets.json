@@ -717,6 +717,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 3
@@ -769,9 +770,66 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
-            "window-base": true,
+            "h": 0.2,
+            "window": true,
+            "dup": {"y": 1.7, "top": true},
             "symKey": "bridge--042",
             "origObstacleId": 4
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [1.93535, 1.159475],
+              [2.377025, 0.8189],
+              [2.843, 0.524],
+              [3.329175, 0.265075],
+              [3.840775, 0.0573],
+              [4.36405, -0.11335],
+              [4.909625, -0.22745],
+              [5.45505, -0.299425],
+              [6.0099, -0.31835],
+              [6.55535, -0.2989],
+              [7.0983, -0.226575],
+              [7.63595, -0.111575],
+              [8.1691, 0.0607],
+              [8.68195, 0.26855],
+              [9.1739, 0.531575],
+              [9.63325, 0.8206],
+              [10.0796, 1.16745],
+              [10.5, 1.557825],
+              [10.29255, 1.81355],
+              [9.88245, 1.434975],
+              [9.4649, 1.109025],
+              [9.02465, 0.82765],
+              [8.55435, 0.58235],
+              [8.07195, 0.382225],
+              [7.5628, 0.223975],
+              [7.057, 0.109275],
+              [6.5388, 0.04],
+              [6, 0.023525],
+              [5.48015, 0.04],
+              [4.961025, 0.1076],
+              [4.443675, 0.22125],
+              [3.94835, 0.378925],
+              [3.460425, 0.57915],
+              [2.989275, 0.82895],
+              [2.550475, 1.10345],
+              [2.1279, 1.429625],
+              [1.739275, 1.792625],
+              [1.525575, 1.53325]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "y": 1.7,
+            "h": 0.2,
+            "window": true,
+            "symKey": "bridge--042",
+            "origObstacleId": 5,
+            "top": true,
+            "dupOf": 4
           }
         }
       ],
@@ -4820,10 +4878,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
             "window": true,
             "h": 0.2,
-            "inset": 0.05,
+            "dup": {"force-y": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0
@@ -4841,12 +4898,13 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
             "window": true,
-            "force-y": 0.4,
+            "h": 0.2,
             "symKey": "window--007",
             "origObstacleId": 1,
-            "windowId": 0
+            "windowId": 0,
+            "force-y": 0.4,
+            "dupOf": 0
           }
         }
       ],
@@ -14684,7 +14742,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 3.8375000000000004, 2.1375],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 5,
+            "obstacleId": 6,
             "y": 0.51
           }
         },
@@ -14701,7 +14759,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 6.8625, 2.125],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 6,
+            "obstacleId": 7,
             "y": 0.51
           }
         },
@@ -14718,7 +14776,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 8.325, 2.125],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 7,
+            "obstacleId": 8,
             "y": 0.51
           }
         },
@@ -14735,7 +14793,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 5.325, 2.125],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 8,
+            "obstacleId": 9,
             "y": 0.51
           }
         },
@@ -14752,7 +14810,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 7.7124999999999995, 9.325],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 12,
+            "obstacleId": 13,
             "y": 0.31
           }
         },
@@ -14774,7 +14832,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 5.0375, 10.075],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 13,
+            "obstacleId": 14,
             "y": 0.31
           }
         },
@@ -14796,7 +14854,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 5.637499999999999, 10.075],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 14,
+            "obstacleId": 15,
             "y": 0.31
           }
         },
@@ -14818,7 +14876,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 6.8374999999999995, 10.075],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 15,
+            "obstacleId": 16,
             "y": 0.31
           }
         },
@@ -14840,7 +14898,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 6.2375, 10.075],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 16,
+            "obstacleId": 17,
             "y": 0.31
           }
         },
@@ -14857,7 +14915,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 6.8374999999999995, 8.375],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 17,
+            "obstacleId": 18,
             "y": 0.31
           }
         },
@@ -14874,7 +14932,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 6.2375, 8.375],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 18,
+            "obstacleId": 19,
             "y": 0.31
           }
         },
@@ -14891,7 +14949,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 5.637499999999999, 8.375],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 19,
+            "obstacleId": 20,
             "y": 0.31
           }
         },
@@ -14908,7 +14966,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 5.0375, 8.375],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 20,
+            "obstacleId": 21,
             "y": 0.31
           }
         },
@@ -14925,7 +14983,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 4.2875, 9.174999999999999],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 21,
+            "obstacleId": 22,
             "y": 0.31
           }
         },
@@ -14942,7 +15000,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 1.1375, 7.824999999999999],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 22,
+            "obstacleId": 23,
             "y": 0.41000000000000003
           }
         },
@@ -14971,7 +15029,7 @@
               9.5169225
             ],
             "direction": {"x": -0.2588, "y": -0.9659},
-            "obstacleId": 23,
+            "obstacleId": 24,
             "y": 0.41000000000000003
           }
         },
@@ -14988,7 +15046,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 9.45, 8.125],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 25,
+            "obstacleId": 26,
             "y": 0.51
           }
         },
@@ -15006,7 +15064,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 9.5125, 6.7250000000000005],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 26
+            "obstacleId": 27
           }
         },
         {
@@ -15022,7 +15080,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 10.45, 7.2],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 27,
+            "obstacleId": 28,
             "y": 0.61
           }
         },
@@ -15039,7 +15097,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 11.325, 7.2],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 28,
+            "obstacleId": 29,
             "y": 0.61
           }
         }
@@ -15284,6 +15342,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 3
@@ -15336,9 +15395,66 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
-            "window-base": true,
+            "h": 0.2,
+            "window": true,
+            "dup": {"y": 1.7, "top": true},
             "symKey": "bridge--042",
             "origObstacleId": 4
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [1.93535, 1.159475],
+              [2.377025, 0.8189],
+              [2.843, 0.524],
+              [3.329175, 0.265075],
+              [3.840775, 0.0573],
+              [4.36405, -0.11335],
+              [4.909625, -0.22745],
+              [5.45505, -0.299425],
+              [6.0099, -0.31835],
+              [6.55535, -0.2989],
+              [7.0983, -0.226575],
+              [7.63595, -0.111575],
+              [8.1691, 0.0607],
+              [8.68195, 0.26855],
+              [9.1739, 0.531575],
+              [9.63325, 0.8206],
+              [10.0796, 1.16745],
+              [10.5, 1.557825],
+              [10.29255, 1.81355],
+              [9.88245, 1.434975],
+              [9.4649, 1.109025],
+              [9.02465, 0.82765],
+              [8.55435, 0.58235],
+              [8.07195, 0.382225],
+              [7.5628, 0.223975],
+              [7.057, 0.109275],
+              [6.5388, 0.04],
+              [6, 0.023525],
+              [5.48015, 0.04],
+              [4.961025, 0.1076],
+              [4.443675, 0.22125],
+              [3.94835, 0.378925],
+              [3.460425, 0.57915],
+              [2.989275, 0.82895],
+              [2.550475, 1.10345],
+              [2.1279, 1.429625],
+              [1.739275, 1.792625],
+              [1.525575, 1.53325]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "y": 1.7,
+            "h": 0.2,
+            "window": true,
+            "symKey": "bridge--042",
+            "origObstacleId": 5,
+            "top": true,
+            "dupOf": 4
           }
         },
         {
@@ -15412,10 +15528,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
             "window": true,
             "h": 0.2,
-            "inset": 0.05,
+            "dup": {"force-y": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0,
@@ -15430,12 +15545,13 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
             "window": true,
-            "force-y": 0.4,
+            "h": 0.2,
             "symKey": "window--007",
             "origObstacleId": 1,
             "windowId": 0,
+            "force-y": 0.4,
+            "dupOf": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 4.5, 7.5125]
           }
@@ -18875,7 +18991,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 12.85, 3.6500000000000004],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 20,
+            "obstacleId": 21,
             "y": 0.51
           }
         },
@@ -18897,7 +19013,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 15.875, 3.6375],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 21,
+            "obstacleId": 22,
             "y": 0.51
           }
         },
@@ -18919,7 +19035,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 17.3375, 3.6375],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 22,
+            "obstacleId": 23,
             "y": 0.51
           }
         },
@@ -18941,7 +19057,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 14.337499999999999, 3.6375],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 23,
+            "obstacleId": 24,
             "y": 0.51
           }
         },
@@ -18963,7 +19079,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 16.724999999999998, 10.837499999999999],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 27,
+            "obstacleId": 28,
             "y": 0.31
           }
         },
@@ -18985,7 +19101,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 14.049999999999999, 11.587499999999999],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 28,
+            "obstacleId": 29,
             "y": 0.31
           }
         },
@@ -19007,7 +19123,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 14.649999999999999, 11.587499999999999],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 29,
+            "obstacleId": 30,
             "y": 0.31
           }
         },
@@ -19024,7 +19140,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 15.849999999999998, 11.587499999999999],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 30,
+            "obstacleId": 31,
             "y": 0.31
           }
         },
@@ -19046,7 +19162,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 15.25, 11.587499999999999],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 31,
+            "obstacleId": 32,
             "y": 0.31
           }
         },
@@ -19063,7 +19179,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.849999999999998, 9.8875],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 32,
+            "obstacleId": 33,
             "y": 0.31
           }
         },
@@ -19080,7 +19196,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.25, 9.8875],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 33,
+            "obstacleId": 34,
             "y": 0.31
           }
         },
@@ -19097,7 +19213,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.649999999999999, 9.8875],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 34,
+            "obstacleId": 35,
             "y": 0.31
           }
         },
@@ -19114,7 +19230,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.049999999999999, 9.8875],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 35,
+            "obstacleId": 36,
             "y": 0.31
           }
         },
@@ -19136,7 +19252,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.299999999999999, 10.687499999999998],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 36,
+            "obstacleId": 37,
             "y": 0.31
           }
         },
@@ -19153,7 +19269,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 10.149999999999999, 9.337499999999999],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 37,
+            "obstacleId": 38,
             "y": 0.41000000000000003
           }
         },
@@ -19182,7 +19298,7 @@
               11.029422499999999
             ],
             "direction": {"x": -0.2588, "y": -0.9659},
-            "obstacleId": 38,
+            "obstacleId": 39,
             "y": 0.41000000000000003
           }
         },
@@ -19204,7 +19320,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 18.4625, 9.6375],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 40,
+            "obstacleId": 41,
             "y": 0.51
           }
         },
@@ -19227,7 +19343,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 18.525, 8.2375],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 41
+            "obstacleId": 42
           }
         },
         {
@@ -19248,7 +19364,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 19.4625, 8.7125],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 42,
+            "obstacleId": 43,
             "y": 0.61
           }
         },
@@ -19270,7 +19386,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 20.3375, 8.7125],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 43,
+            "obstacleId": 44,
             "y": 0.61
           }
         },
@@ -19287,7 +19403,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 45,
+            "obstacleId": 46,
             "y": 0.61
           }
         },
@@ -19304,7 +19420,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 7.325, 2.1375],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 47,
+            "obstacleId": 48,
             "y": 0.61
           }
         },
@@ -19462,7 +19578,7 @@
               11.684890000000001
             ],
             "direction": {"x": 0.9659, "y": -0.2588},
-            "obstacleId": 49,
+            "obstacleId": 50,
             "y": 0.51
           }
         },
@@ -19491,7 +19607,7 @@
               12.78941
             ],
             "direction": {"x": -0.2588, "y": 0.9659},
-            "obstacleId": 50,
+            "obstacleId": 51,
             "y": 0.51
           }
         },
@@ -19621,7 +19737,7 @@
             "img": "arrow",
             "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
             "direction": {"x": 0.5, "y": -0.866},
-            "obstacleId": 51,
+            "obstacleId": 52,
             "y": 0.51
           }
         },
@@ -19643,23 +19759,6 @@
             "img": "arrow",
             "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
             "direction": {"x": -0.5, "y": -0.866},
-            "obstacleId": 52,
-            "y": 0.51
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [[1.95, 14.375], [1.95, 14.225], [2.1, 14.225], [2.1, 14.375]]
-          ],
-          "meta": {
-            "decor": true,
-            "point": true,
-            "do": "lie",
-            "on": true,
-            "img": "arrow",
-            "transform": [1, 0, 0, -1, 1.95, 14.375],
-            "direction": {"x": 1, "y": 0},
             "obstacleId": 53,
             "y": 0.51
           }
@@ -19678,6 +19777,23 @@
             "transform": [1, 0, 0, -1, 1.95, 14.375],
             "direction": {"x": 1, "y": 0},
             "obstacleId": 54,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[1.95, 14.375], [1.95, 14.225], [2.1, 14.225], [2.1, 14.375]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [1, 0, 0, -1, 1.95, 14.375],
+            "direction": {"x": 1, "y": 0},
+            "obstacleId": 55,
             "y": 1.31
           }
         },
@@ -19694,7 +19810,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 0.35, 13.5625],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 55,
+            "obstacleId": 56,
             "y": 0.71
           }
         },
@@ -19712,7 +19828,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 0.8, 12.6875],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 56
+            "obstacleId": 57
           }
         },
         {
@@ -19728,7 +19844,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 0.8, 14.6375],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 57,
+            "obstacleId": 58,
             "y": 0.01
           }
         },
@@ -19793,7 +19909,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 3.6875, 11.1625],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 59,
+            "obstacleId": 60,
             "y": 0.51
           }
         },
@@ -19864,7 +19980,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 5.35, 11.55],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 60,
+            "obstacleId": 61,
             "y": 0.51
           }
         },
@@ -19929,7 +20045,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 0.6875, 11.1625],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 62,
+            "obstacleId": 63,
             "y": 0.51
           }
         },
@@ -20000,7 +20116,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 2.3499999999999996, 11.55],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 63,
+            "obstacleId": 64,
             "y": 0.51
           }
         },
@@ -20125,7 +20241,7 @@
               4.465199999999999
             ],
             "direction": {"x": 0.866, "y": 0.5},
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.51
           }
         },
@@ -20147,23 +20263,6 @@
             "img": "arrow",
             "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
             "direction": {"x": 0.866, "y": -0.5},
-            "obstacleId": 65,
-            "y": 0.51
-          }
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [[0.625, 1.95], [0.775, 1.95], [0.775, 2.1], [0.625, 2.1]]
-          ],
-          "meta": {
-            "decor": true,
-            "point": true,
-            "do": "lie",
-            "on": true,
-            "img": "arrow",
-            "transform": [0, 1, 1, 0, 0.625, 1.95],
-            "direction": {"x": 0, "y": 1},
             "obstacleId": 66,
             "y": 0.51
           }
@@ -20182,6 +20281,23 @@
             "transform": [0, 1, 1, 0, 0.625, 1.95],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 67,
+            "y": 0.51
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[0.625, 1.95], [0.775, 1.95], [0.775, 2.1], [0.625, 2.1]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "lie",
+            "on": true,
+            "img": "arrow",
+            "transform": [0, 1, 1, 0, 0.625, 1.95],
+            "direction": {"x": 0, "y": 1},
+            "obstacleId": 68,
             "y": 1.31
           }
         },
@@ -20198,7 +20314,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 1.4375, 0.35],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 68,
+            "obstacleId": 69,
             "y": 0.71
           }
         },
@@ -20216,7 +20332,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 2.3125, 0.8],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 69
+            "obstacleId": 70
           }
         },
         {
@@ -20232,7 +20348,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 0.3625, 0.8],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 70,
+            "obstacleId": 71,
             "y": 0.01
           }
         },
@@ -20347,7 +20463,7 @@
             "img": "arrow",
             "transform": [0.7071, -0.7071, 0.7071, 0.7071, 4.27108, 4.64068],
             "direction": {"x": 0.7071, "y": -0.7071},
-            "obstacleId": 74,
+            "obstacleId": 75,
             "y": 0.41000000000000003
           }
         }
@@ -21158,6 +21274,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 3,
@@ -21211,9 +21328,67 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
-            "window-base": true,
+            "h": 0.2,
+            "window": true,
+            "dup": {"y": 1.7, "top": true},
             "symKey": "bridge--042",
             "origObstacleId": 4,
+            "transform": [1, 0, 0, 1, 9.0125, 1.5125]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [10.9478, 2.672],
+              [11.3895, 2.3314],
+              [11.8555, 2.0365],
+              [12.3417, 1.7776],
+              [12.8533, 1.5698],
+              [13.3765, 1.3991],
+              [13.9221, 1.2851],
+              [14.4675, 1.2131],
+              [15.0224, 1.1942],
+              [15.5678, 1.2136],
+              [16.1108, 1.2859],
+              [16.6485, 1.4009],
+              [17.1816, 1.5732],
+              [17.6944, 1.7811],
+              [18.1864, 2.0441],
+              [18.6457, 2.3331],
+              [19.0921, 2.6799],
+              [19.5125, 3.0703],
+              [19.3051, 3.326],
+              [18.895, 2.9475],
+              [18.4774, 2.6215],
+              [18.0371, 2.3401],
+              [17.5668, 2.0949],
+              [17.0844, 1.8947],
+              [16.5753, 1.7365],
+              [16.0695, 1.6218],
+              [15.5513, 1.5525],
+              [15.0125, 1.536],
+              [14.4926, 1.5525],
+              [13.9735, 1.6201],
+              [13.4562, 1.7337],
+              [12.9608, 1.8914],
+              [12.4729, 2.0917],
+              [12.0018, 2.3415],
+              [11.563, 2.6159],
+              [11.1404, 2.9421],
+              [10.7518, 3.3051],
+              [10.5381, 3.0457]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "y": 1.7,
+            "h": 0.2,
+            "window": true,
+            "symKey": "bridge--042",
+            "origObstacleId": 5,
+            "top": true,
+            "dupOf": 4,
             "transform": [1, 0, 0, 1, 9.0125, 1.5125]
           }
         },
@@ -21303,10 +21478,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
             "window": true,
             "h": 0.2,
-            "inset": 0.05,
+            "dup": {"force-y": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 1,
@@ -21326,12 +21500,13 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
             "window": true,
-            "force-y": 0.4,
+            "h": 0.2,
             "symKey": "window--007",
             "origObstacleId": 1,
             "windowId": 1,
+            "force-y": 0.4,
+            "dupOf": 0,
             "y": 1.7,
             "transform": [1, 0, 0, 1, 13.5125, 9.025]
           }
@@ -23879,10 +24054,9 @@
           ],
           "meta": {
             "obstacle": true,
-            "lintel": true,
             "window": true,
             "h": 0.2,
-            "inset": 0.05,
+            "dup": {"force-y": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0
@@ -23900,12 +24074,13 @@
           ],
           "meta": {
             "obstacle": true,
-            "apron": true,
             "window": true,
-            "force-y": 0.4,
+            "h": 0.2,
             "symKey": "window--007",
             "origObstacleId": 1,
-            "windowId": 0
+            "windowId": 0,
+            "force-y": 0.4,
+            "dupOf": 0
           }
         }
       ],
@@ -38414,7 +38589,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 12.85, 3.6500000000000004],
-            "obstacleId": 20,
+            "obstacleId": 21,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38438,7 +38613,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 15.875, 3.6375],
-            "obstacleId": 21,
+            "obstacleId": 22,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38462,7 +38637,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 17.3375, 3.6375],
-            "obstacleId": 22,
+            "obstacleId": 23,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38486,7 +38661,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 14.337499999999999, 3.6375],
-            "obstacleId": 23,
+            "obstacleId": 24,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38510,7 +38685,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 16.724999999999998, 10.837499999999999],
-            "obstacleId": 27,
+            "obstacleId": 28,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38534,7 +38709,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 14.049999999999999, 11.587499999999999],
-            "obstacleId": 28,
+            "obstacleId": 29,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38558,7 +38733,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 14.649999999999999, 11.587499999999999],
-            "obstacleId": 29,
+            "obstacleId": 30,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38582,7 +38757,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 15.849999999999998, 11.587499999999999],
-            "obstacleId": 30,
+            "obstacleId": 31,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38606,7 +38781,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 15.25, 11.587499999999999],
-            "obstacleId": 31,
+            "obstacleId": 32,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38630,7 +38805,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.849999999999998, 9.8875],
-            "obstacleId": 32,
+            "obstacleId": 33,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38654,7 +38829,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.25, 9.8875],
-            "obstacleId": 33,
+            "obstacleId": 34,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38678,7 +38853,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.649999999999999, 9.8875],
-            "obstacleId": 34,
+            "obstacleId": 35,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38702,7 +38877,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.049999999999999, 9.8875],
-            "obstacleId": 35,
+            "obstacleId": 36,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38726,7 +38901,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.299999999999999, 10.687499999999998],
-            "obstacleId": 36,
+            "obstacleId": 37,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38750,7 +38925,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 10.149999999999999, 9.337499999999999],
-            "obstacleId": 37,
+            "obstacleId": 38,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38781,7 +38956,7 @@
               10.5410825,
               11.029422499999999
             ],
-            "obstacleId": 38,
+            "obstacleId": 39,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38812,7 +38987,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 18.4625, 9.6375],
-            "obstacleId": 40,
+            "obstacleId": 41,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38837,7 +39012,7 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 18.525, 8.2375],
-            "obstacleId": 41,
+            "obstacleId": 42,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -38860,7 +39035,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 19.4625, 8.7125],
-            "obstacleId": 42,
+            "obstacleId": 43,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38884,7 +39059,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 20.3375, 8.7125],
-            "obstacleId": 43,
+            "obstacleId": 44,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38908,7 +39083,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 22.775000000000002, 2.0999999999999996],
-            "obstacleId": 45,
+            "obstacleId": 46,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -38932,7 +39107,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 7.325, 2.1375],
-            "obstacleId": 47,
+            "obstacleId": 48,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39114,7 +39289,7 @@
               27.722355,
               11.684890000000001
             ],
-            "obstacleId": 49,
+            "obstacleId": 50,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39152,7 +39327,7 @@
               26.80213,
               12.78941
             ],
-            "obstacleId": 50,
+            "obstacleId": 51,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39308,7 +39483,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0.5, -0.866, -0.866, -0.5, 4.465199999999999, 14.583],
-            "obstacleId": 51,
+            "obstacleId": 52,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39332,7 +39507,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.5, -0.866, 0.866, -0.5, 5.5223, 14.583],
-            "obstacleId": 52,
+            "obstacleId": 53,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39356,7 +39531,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 1.95, 14.375],
-            "obstacleId": 53,
+            "obstacleId": 54,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39380,7 +39555,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 1.95, 14.375],
-            "obstacleId": 54,
+            "obstacleId": 55,
             "y": 1.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39404,7 +39579,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 0.35, 13.5625],
-            "obstacleId": 55,
+            "obstacleId": 56,
             "y": 0.71,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39429,7 +39604,7 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 0.8, 12.6875],
-            "obstacleId": 56,
+            "obstacleId": 57,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -39452,7 +39627,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, -1, 0.8, 14.6375],
-            "obstacleId": 57,
+            "obstacleId": 58,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39542,7 +39717,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 3.6875, 11.1625],
-            "obstacleId": 59,
+            "obstacleId": 60,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39632,7 +39807,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 5.35, 11.55],
-            "obstacleId": 60,
+            "obstacleId": 61,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39722,7 +39897,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 0.6875, 11.1625],
-            "obstacleId": 62,
+            "obstacleId": 63,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39812,7 +39987,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 2.3499999999999996, 11.55],
-            "obstacleId": 63,
+            "obstacleId": 64,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -39975,7 +40150,7 @@
               0.4169999999999999,
               4.465199999999999
             ],
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -40006,7 +40181,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0.866, -0.5, 0.5, 0.866, 0.4169999999999999, 5.5223],
-            "obstacleId": 65,
+            "obstacleId": 66,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -40030,7 +40205,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 0.625, 1.95],
-            "obstacleId": 66,
+            "obstacleId": 67,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -40054,7 +40229,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 0.625, 1.95],
-            "obstacleId": 67,
+            "obstacleId": 68,
             "y": 1.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -40078,7 +40253,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 1.4375, 0.35],
-            "obstacleId": 68,
+            "obstacleId": 69,
             "y": 0.71,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -40103,7 +40278,7 @@
             "y": 0.01,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 2.3125, 0.8],
-            "obstacleId": 69,
+            "obstacleId": 70,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -40126,7 +40301,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 0.3625, 0.8],
-            "obstacleId": 70,
+            "obstacleId": 71,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -40283,7 +40458,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0.7071, -0.7071, 0.7071, 0.7071, 4.27108, 4.64068],
-            "obstacleId": 74,
+            "obstacleId": 75,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -41682,6 +41857,7 @@
               "obstacle": true,
               "table": true,
               "y": 0.81,
+              "h": 0.2,
               "inset": 0.025,
               "symKey": "bridge--042",
               "origObstacleId": 3
@@ -41700,6 +41876,7 @@
             "obstacle": true,
             "table": true,
             "y": 0.81,
+            "h": 0.2,
             "inset": 0.025,
             "symKey": "bridge--042",
             "origObstacleId": 3
@@ -41756,7 +41933,9 @@
             "meta": {
               "obstacle": true,
               "y": 0.8,
-              "window-base": true,
+              "h": 0.2,
+              "window": true,
+              "dup": {"y": 1.7, "top": true},
               "symKey": "bridge--042",
               "origObstacleId": 4
             }
@@ -41773,9 +41952,90 @@
           "meta": {
             "obstacle": true,
             "y": 0.8,
-            "window-base": true,
+            "h": 0.2,
+            "window": true,
+            "dup": {"y": 1.7, "top": true},
             "symKey": "bridge--042",
             "origObstacleId": 4
+          }
+        },
+        {
+          "symbolKey": "bridge--042",
+          "obstacleId": 5,
+          "height": 1.7,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [1.93535, 1.159475],
+                [2.377025, 0.8189],
+                [2.843, 0.524],
+                [3.329175, 0.265075],
+                [3.840775, 0.0573],
+                [4.36405, -0.11335],
+                [4.909625, -0.22745],
+                [5.45505, -0.299425],
+                [6.0099, -0.31835],
+                [6.55535, -0.2989],
+                [7.0983, -0.226575],
+                [7.63595, -0.111575],
+                [8.1691, 0.0607],
+                [8.68195, 0.26855],
+                [9.1739, 0.531575],
+                [9.63325, 0.8206],
+                [10.0796, 1.16745],
+                [10.5, 1.557825],
+                [10.29255, 1.81355],
+                [9.88245, 1.434975],
+                [9.4649, 1.109025],
+                [9.02465, 0.82765],
+                [8.55435, 0.58235],
+                [8.07195, 0.382225],
+                [7.5628, 0.223975],
+                [7.057, 0.109275],
+                [6.5388, 0.04],
+                [6, 0.023525],
+                [5.48015, 0.04],
+                [4.961025, 0.1076],
+                [4.443675, 0.22125],
+                [3.94835, 0.378925],
+                [3.460425, 0.57915],
+                [2.989275, 0.82895],
+                [2.550475, 1.10345],
+                [2.1279, 1.429625],
+                [1.739275, 1.792625],
+                [1.525575, 1.53325]
+              ]
+            ],
+            "meta": {
+              "obstacle": true,
+              "y": 1.7,
+              "h": 0.2,
+              "window": true,
+              "symKey": "bridge--042",
+              "origObstacleId": 5,
+              "top": true,
+              "dupOf": 4
+            }
+          },
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 9.0125,
+            "f": 1.5125
+          },
+          "center": {"x": 15.02, "y": 2.04},
+          "meta": {
+            "obstacle": true,
+            "y": 1.7,
+            "h": 0.2,
+            "window": true,
+            "symKey": "bridge--042",
+            "origObstacleId": 5,
+            "top": true,
+            "dupOf": 4
           }
         },
         {
@@ -41962,10 +42222,9 @@
             ],
             "meta": {
               "obstacle": true,
-              "lintel": true,
               "window": true,
               "h": 0.2,
-              "inset": 0.05,
+              "dup": {"force-y": 0.4},
               "symKey": "window--007",
               "origObstacleId": 0,
               "windowId": 0
@@ -41982,10 +42241,9 @@
           "center": {"x": 15.77, "y": 9.18},
           "meta": {
             "obstacle": true,
-            "lintel": true,
             "window": true,
             "h": 0.2,
-            "inset": 0.05,
+            "dup": {"force-y": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 1
@@ -42007,12 +42265,13 @@
             ],
             "meta": {
               "obstacle": true,
-              "apron": true,
               "window": true,
-              "force-y": 0.4,
+              "h": 0.2,
               "symKey": "window--007",
               "origObstacleId": 1,
-              "windowId": 0
+              "windowId": 0,
+              "force-y": 0.4,
+              "dupOf": 0
             }
           },
           "transform": {
@@ -42026,12 +42285,13 @@
           "center": {"x": 15.77, "y": 9.18},
           "meta": {
             "obstacle": true,
-            "apron": true,
             "window": true,
-            "force-y": 0.4,
+            "h": 0.2,
             "symKey": "window--007",
             "origObstacleId": 1,
-            "windowId": 1
+            "windowId": 1,
+            "force-y": 0.4,
+            "dupOf": 0
           }
         },
         {
@@ -47926,5 +48186,5 @@
       "walls": {"color": "#000", "opacity": 0.25}
     }
   },
-  "hash": {"obstacles": 1999300095}
+  "hash": {"obstacles": -1527355242}
 }

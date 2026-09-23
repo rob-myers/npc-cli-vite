@@ -21,6 +21,10 @@ as drawn in MapEdit — gets its own rect:
 - The png scale is `worldToSguScale * (hull ? 1 : 5)` (`getSymbolPngScale`) — hull pngs are not upscaled.
 - Packed at `ceil(srcRect.width) x ceil(srcRect.height)` with `packedPadding: 8`, max 4096².
 
+**`dup`**: MapEdit `obstacle y=0.8 window dup={y:1.7,top:true}` (no spaces inside the braces) makes
+`parseSymbolFromSavedFile` append a copy with `meta` extended by `dup` and `meta.dupOf` = the original's
+`obstacleId` — e.g. a window's bottom and top. The copy gets no rect of its own: `addUvs` reads its original's.
+
 Drawing each rect: clip to the polygon, `drawImage` just `srcRect` from the symbol png (or its
 `starship-symbol/replace/{key}.png` override), then apply `starship-symbol/mask/` remove/colour polys
 **inside the same clip** — rects are packed tight, so an unclipped mask would paint a neighbour. The whole

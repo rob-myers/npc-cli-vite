@@ -30,7 +30,8 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
   change by `syncWalls`) plus the **closed** part of each door, derived in-shader from its
   `src`/`dst`, `gapAtHighLambda` and live `openRatio` — mirroring `Doors`' own `inGap` test.
   Windows are excluded on purpose — light passes through glass — except HULL windows (`meta.hull`),
-  whose centre line `seg` joins the walls: nothing beyond the hull should be lit.
+  whose centre line `seg` joins the walls: nothing beyond the hull should be lit. A CURVED one
+  (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
 - **The table is created once** and never rebuilt, so materials reading it survive a map change.
   Only the occluder buffers are refilled, and nothing but the sweep reads those.
 - **Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)` (or

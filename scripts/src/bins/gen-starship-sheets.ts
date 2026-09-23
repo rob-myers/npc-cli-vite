@@ -2,7 +2,7 @@
 
 /**
  * Each obstacle polygon of each symbol gets its bounding rect packed into a sheet,
- * clipped to the polygon.
+ * clipped to the polygon. A `dup` copy (`meta.dupOf`) shares its original's.
  *
  * creates/mutates
  * - public/sheets.json
@@ -48,7 +48,8 @@ const assets = z.parse(AssetsSchema, assetsEncoded);
 
 /** one per obstacle polygon of each unflattened symbol */
 const obstacleRects = Object.values(assets.symbol).flatMap((sym) =>
-  sym.obstacles.map((poly, obstacleId) => {
+  sym.obstacles.flatMap((poly, obstacleId) => {
+    if (typeof poly.meta.dupOf === "number") return []; // shares its original's rect
     const srcRect = poly.rect.delta(-sym.bounds.x, -sym.bounds.y).scale(getSymbolPngScale(sym.key)).precision(2);
     return {
       width: Math.ceil(srcRect.width),

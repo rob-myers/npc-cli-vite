@@ -710,7 +710,7 @@
         },
         {
           "id": "d13b07f6-877c-4926-abfc-9675ac7b8fe7",
-          "name": "obstacle table y=0.81 inset=1",
+          "name": "obstacle table y=0.81 h=0.2 inset=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
@@ -721,7 +721,7 @@
         },
         {
           "id": "101fb0b7-71f8-4ae1-809d-f9bf1f1ad12b",
-          "name": "obstacle y=0.8 window-base",
+          "name": "obstacle y=0.8 h=0.2 window dup={y:1.7,top:true}",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},

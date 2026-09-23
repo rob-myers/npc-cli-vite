@@ -94,12 +94,16 @@ export default function Obstacles(_props: Props) {
         // written AT the instance id rather than in step with it, so nothing here can drift out of
         // line with `transformAndColorObstacles` or with what a pick decodes — see `buildInstanceIds`
         for (const [gmId, { obstacles }] of w.gms.entries()) {
-          for (const [obstacleId, { symbolKey, obstacleId: origObstacleId }] of obstacles.entries()) {
+          for (const [obstacleId, { symbolKey, obstacleId: origObstacleId, meta }] of obstacles.entries()) {
             const instanceId = state.encodeInstanceId(gmId, obstacleId);
             if (instanceId === null) {
               continue; // past the cap, so it has no instance to describe
             }
-            const sheetKey = getObstacleSheetKey(symbolKey, origObstacleId);
+            // a `dup` copy shares its original's rect
+            const sheetKey = getObstacleSheetKey(
+              symbolKey,
+              typeof meta.dupOf === "number" ? meta.dupOf : origObstacleId,
+            );
             const entry = w.sheets.symbol[sheetKey];
             if (!entry) {
               warn(`${sheetKey} not found in sheets.json`);

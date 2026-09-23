@@ -902,6 +902,17 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
     }
   }
 
+  // `dup={y:1.7,top:true}` appends a copy with extended meta, sharing its original's sheet rect
+  for (const [obstacleId, poly] of [...polysLookup.obstacles].entries()) {
+    const { dup } = poly.meta;
+    if (typeof dup !== "object" || dup === null || Array.isArray(dup)) continue;
+    const copy = poly.clone();
+    delete copy.meta.dup;
+    Object.assign(copy.meta, dup, { dupOf: obstacleId, origObstacleId: polysLookup.obstacles.length });
+    if (typeof dup.inset === "number") copy.meta.inset = toPrecision(dup.inset * sguToWorldScale, 6);
+    polysLookup.obstacles.push(copy);
+  }
+
   // sgu -> world scale, noting hullWalls repeated in walls
   const s = sguToWorldScale;
   const scaled = new Set<Geom.Poly>();
