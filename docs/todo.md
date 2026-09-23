@@ -4,7 +4,9 @@
 
 ### Animation
 
-- try use strafe left/right animations
+- ✅ remove strafe left/right animations
+- ✅ rename psychic-attack -> influence
+
 - skin remapping
   - currently only have skinIndex
 
@@ -15,6 +17,11 @@
 ### Cleanliness
 
 - fix precision in `assets.json`
+
+### Comms
+
+- new component `<Comms>` can draw reactive contour-like smooth lines around npcs
+- can draw contours from an npc towards another
 
 ### Decor
 
@@ -47,7 +54,7 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
 
-### Other Bugs
+### Unorganised Bugs
 
 - 🚧 BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
@@ -67,10 +74,10 @@
 
 - ✅ rewrite README.md
 
-- main image improvements
+- 🚧 main image improvements
   - larger World
-  - larger tty text (zoom in browser)
-  - brighter
+  - 🚧 larger tty text (120%) 
+  - 🚧 brighter (1x global, 0.7x npc)
 
 ## HMR
 

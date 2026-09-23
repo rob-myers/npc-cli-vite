@@ -118,7 +118,7 @@ anim.getBoneAnimator(Group.all.find(g => g.name === 'rightarm'))
   .addKeyframe({channel: 'rotation', time: 0, interpolation: 'catmullrom', data_points: [{x, y, z}]});
 ```
 
-## psychic-attack (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+## influence (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
 
 Idle's root sway and breathing, leaning forward, right hand on the right temple, left arm outstretched,
 left foot forward. t=1.25 is the push: deeper lean, arm rises and shoves forward, hand stays on the temple.

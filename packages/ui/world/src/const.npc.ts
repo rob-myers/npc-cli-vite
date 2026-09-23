@@ -158,7 +158,7 @@ export const fromAnimationClipKey = {
   /** `idle` leant back, shoulders back — see jsh's `demo_lean_back` */
   "idle-avoid": true,
   lie: true,
-  "psychic-attack": true,
+  influence: true,
   run: true,
   shuffle: true,
   sit: true,
@@ -182,7 +182,7 @@ export const fadeSecs: Record<
   idle: { shuffle: 0.15 },
   "idle-avoid": { breathe: 0.4 },
   lie: {},
-  "psychic-attack": {},
+  influence: {},
   run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
