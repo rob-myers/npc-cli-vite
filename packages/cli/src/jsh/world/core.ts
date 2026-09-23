@@ -189,7 +189,7 @@ export function label(
  * lock doors:$( pick 3 as:meta.gdKey | sponge )
  * ```
  *
- * NOTE `pick | lock` unsupported because lock/unlock would toggle under debug option "Toggle Doors"
+ * NOTE `pick | lock` unsupported because lock/unlock would toggle under debug option "toggle doors"
  */
 export function lock(
   ct: JshCli.RunArg,

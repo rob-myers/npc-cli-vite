@@ -230,33 +230,33 @@ export function WorldMenu() {
 
   const isDebugActive = (item: string) => {
     switch (item) {
-      case "View Pick":
+      case "view pick":
         return w.view.objectPick?.value === 1;
-      case "Post FX":
+      case "post fx":
         return w.view.postProcessing ?? false;
-      case "Npc Outline":
+      case "npc outline":
         return w.view.npcOutline ?? false;
-      case "RGB Shift":
+      case "rgb shift":
         return w.view.rgbShift ?? false;
-      case "Room Outlines":
+      case "room outlines":
         return w.view.roomOutline ?? false;
-      case "Lit npcs":
+      case "lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
-      case "Colliders":
+      case "colliders":
         return w.debug?.physicsCollidersShown ?? false;
-      case "Grid":
+      case "grid":
         return w.debug?.gridShown ?? false;
-      case "NavMesh":
+      case "navmesh":
         return w.debug?.navMeshShown ?? false;
-      case "Toggle Doors":
+      case "toggle doors":
         return w.debug?.pickGdkeyOpensDoors ?? true;
-      case "Pick Doors":
+      case "pick doors":
         return w.debug?.pickDoors ?? true;
-      case "Door Normals":
+      case "door normals":
         return w.debug?.doorNormalsShown ?? true;
-      case "Decor Points":
+      case "decor points":
         return w.debug?.doPointsShown ?? false;
-      case "Decorations":
+      case "decorations":
         return w.debug?.decorShown ?? false;
       default:
         return false;
@@ -265,64 +265,64 @@ export function WorldMenu() {
 
   const onDebugToggle = (item: string) => {
     switch (item) {
-      case "View Pick":
+      case "view pick":
         w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
         w.view.forceUpdate();
         break;
-      case "Post FX":
+      case "post fx":
         // both rebuild the post pass, whose shader compile can stall a phone for a moment
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setPostProcessingEnabled();
           state.update();
         });
         break;
-      case "Npc Outline":
+      case "npc outline":
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setNpcOutlineEnabled();
           state.update();
         });
         break;
-      case "RGB Shift":
-        // hung off the post pass, so it needs "Post FX" on to show
+      case "rgb shift":
+        // hung off the post pass, so it needs "post fx" on to show
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setRgbShiftEnabled();
           state.update();
         });
         break;
-      case "Room Outlines":
+      case "room outlines":
         // drawn by the post pass, so it rebuilds that too
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setRoomOutlineEnabled();
           state.update();
         });
         break;
-      case "Lit npcs":
+      case "lit npcs":
         w.view.setLitNpcsEnabled();
         state.update();
         break;
-      case "Room Hit":
+      case "room hit":
         state.set({ menuOpen: false, debugHitOpen: true });
         break;
-      case "Graphs":
+      case "graphs":
         state.set({ menuOpen: false, gmGraphsOpen: true });
         break;
-      case "Skins":
+      case "skins":
         state.set({ menuOpen: false, skinDebugOpen: true });
         break;
-      case "Colliders":
+      case "colliders":
         w.debug?.showPhysicsColliders();
         w.update();
         break;
-      case "Grid":
+      case "grid":
         w.debug?.set({ gridShown: !w.debug.gridShown });
         void w.floor?.draw().then(() => w.update());
         break;
-      case "NavMesh":
+      case "navmesh":
         w.debug?.set({ navMeshShown: !w.debug.navMeshShown });
         setTimeout(() => w.view.forceUpdate());
         break;
-      case "Toggle Doors": {
-        // independent of "Pick Doors": a door's switches carry its `gdKey` too, so picking one of
+      case "toggle doors": {
+        // independent of "pick doors": a door's switches carry its `gdKey` too, so picking one of
         // those opens it whilst the door itself stays out of the pick pass
         const next = !w.debug?.pickGdkeyOpensDoors;
         w.debug?.set({ pickGdkeyOpensDoors: next });
@@ -330,7 +330,7 @@ export function WorldMenu() {
         state.update();
         break;
       }
-      case "Pick Doors": {
+      case "pick doors": {
         const next = !w.debug?.pickDoors;
         w.debug?.set({ pickDoors: next });
         store.patch({ pickDoors: next });
@@ -338,16 +338,16 @@ export function WorldMenu() {
         state.update();
         break;
       }
-      case "Door Normals":
+      case "door normals":
         w.debug?.set({ doorNormalsShown: !w.debug.doorNormalsShown });
         w.view.forceUpdate();
         break;
-      case "Decor Points": {
+      case "decor points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
         w.view.forceUpdate();
         break;
       }
-      case "Decorations": {
+      case "decorations": {
         const next = !w.debug?.decorShown;
         w.debug?.set({ decorShown: next });
         store.patch({ decorShown: next });
@@ -1250,23 +1250,23 @@ const lookingAtPulseMs = 350;
 
 const cameraModes: CameraModeType[] = ["free", "canonical"];
 const debugItems = [
-  "View Pick",
-  "Post FX",
-  "Npc Outline",
-  "RGB Shift",
-  "Room Outlines",
-  "Lit npcs",
-  "Room Hit",
-  "Graphs",
-  "Skins",
-  "Colliders",
-  "Grid",
-  "Toggle Doors",
-  "Pick Doors",
-  "Door Normals",
-  "Decor Points",
-  "Decorations",
-  "NavMesh",
+  "view pick",
+  "post fx",
+  "npc outline",
+  "rgb shift",
+  "room outlines",
+  "lit npcs",
+  "room hit",
+  "graphs",
+  "skins",
+  "colliders",
+  "grid",
+  "toggle doors",
+  "pick doors",
+  "door normals",
+  "decor points",
+  "decorations",
+  "navmesh",
 ] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */

@@ -220,7 +220,7 @@ export function Debug() {
     state.update();
   }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
 
-  // "Toggle Doors"
+  // "toggle doors"
   useEffect(() => {
     const sub = w.events.subscribe({
       next(event) {

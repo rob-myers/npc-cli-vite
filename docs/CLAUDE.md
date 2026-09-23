@@ -107,7 +107,7 @@ See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (fram
 See `docs/decorator.md` — the ONLY doc for it. In short: `packages/ui/decorator` places dynamic
 (runtime) decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache).
 The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live
-doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **Decorations**
+doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **decorations**
 toggle labels it and opens a card per pick.
 
 ## MapEdit saving

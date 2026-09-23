@@ -65,7 +65,12 @@
   - ✅ demo video
   - ✅ comments
 
-- 🚧 rewrite README.md
+- ✅ rewrite README.md
+
+- main image improvements
+  - larger World
+  - larger tty text (zoom in browser)
+  - brighter
 
 ## HMR
 
