@@ -10,6 +10,7 @@ export const WorldUiSchema = z.object({
   disabled: BaseUiMetaSchema.shape.disabled.default(true),
   // disable World when refresh page
   disableOnRehydrate: BaseUiMetaSchema.shape.disableOnRehydrate.default(true),
+  pauseOnHideTab: BaseUiMetaSchema.shape.pauseOnHideTab.default("mobile"),
   worldKey: z.templateLiteral(["world-", z.number()]),
   mapKey: z.string().default(defaultMapKey),
 });

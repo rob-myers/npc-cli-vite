@@ -34,10 +34,7 @@ export type WorldNetMessage =
       playerKey: null | string;
       doors: { open: Geomorph.GmDoorKey[]; locked: Geomorph.GmDoorKey[] };
       decor: Geomorph.DecorDef[];
-      paused: boolean;
     }
-  /** Bidirectional: server → client "apply this"; client → server "please apply this" */
-  | { key: "set-paused"; paused: boolean }
   /** The server's player (re)spawned after the snapshot went out */
   | { key: "set-player"; npcKey: string }
   /** Spawn AND respawn — skin/idle-clip changes ride on a respawn */
