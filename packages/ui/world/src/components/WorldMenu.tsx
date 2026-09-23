@@ -368,7 +368,7 @@ export function WorldMenu() {
   const followFlash = useChangeCount(w.view.cameraFollow);
 
   const menuTrigger = (
-    <div className="outline-width-1 grid place-items-center size-9 bg-gray-800 text-white">
+    <div className="outline-width-1 grid place-items-center size-9 bg-neutral-800 text-white">
       {spinnerKeys.length > 0 ? <Spinner className="size-4" /> : <GlobeStandIcon className="size-5" weight="bold" />}
     </div>
   );
@@ -402,7 +402,7 @@ export function WorldMenu() {
             </div>
             <div
               className={cn(
-                "flex justify-between items-center gap-2 text-xs text-slate-300 bg-slate-700",
+                "flex justify-between items-center gap-2 text-xs text-neutral-300 bg-neutral-700",
                 touch && "text-sm",
               )}
             >
@@ -427,7 +427,7 @@ export function WorldMenu() {
                   <CrosshairSimpleIcon
                     className={cn(
                       "size-3.5 cursor-pointer",
-                      w.view.cameraFollow === true ? "text-emerald-400" : "hover:text-white",
+                      w.view.cameraFollow === true ? "text-amber-300" : "hover:text-white",
                     )}
                   />
                 </span>
@@ -446,7 +446,7 @@ export function WorldMenu() {
               </div>
             </div>
 
-            <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
+            <div className={cn("flex", touch && "items-center border-t border-neutral-800")}>
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>map:</div>
               <MenuSelect
                 label={w.mapKey}
@@ -464,7 +464,7 @@ export function WorldMenu() {
               />
               {/* reset this map's npcs, lit rooms and locked doors, or take another world's */}
               <div
-                className={cn("flex", touch && "items-center border-t border-slate-800")}
+                className={cn("flex", touch && "items-center border-t border-neutral-800")}
                 title="reset, or use another world's npcs, lit rooms, locked doors"
               >
                 <MenuSelect
@@ -483,7 +483,7 @@ export function WorldMenu() {
               </div>
             </div>
 
-            <div className={cn("flex", touch && "items-center border-t border-slate-800")}>
+            <div className={cn("flex", touch && "items-center border-t border-neutral-800")}>
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>
                 player:
               </div>
@@ -498,7 +498,7 @@ export function WorldMenu() {
                 type="button"
                 title="cycle player"
                 className={cn(
-                  "grid place-items-center px-1.5 text-slate-300 cursor-pointer hover:text-white",
+                  "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
                   touch && "px-3",
                 )}
                 onClick={(e) => {
@@ -521,10 +521,10 @@ export function WorldMenu() {
                   type="button"
                   className={cn(
                     "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                    touch && "text-sm px-2 py-2 bg-slate-800",
+                    touch && "text-sm px-2 py-2 bg-neutral-800",
                     isDebugActive(item)
-                      ? "text-green-400 bg-slate-700"
-                      : "text-slate-400 hover:bg-slate-700 hover:text-slate-200",
+                      ? "text-amber-300 bg-neutral-700"
+                      : "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -540,7 +540,7 @@ export function WorldMenu() {
               <button
                 type="button"
                 className={cn(
-                  "w-full cursor-pointer text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded px-2 py-0.5",
+                  "w-full cursor-pointer text-xs bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded px-2 py-0.5",
                   touch && "text-sm py-2 mt-1",
                 )}
                 onClick={(e) => {
@@ -560,7 +560,7 @@ export function WorldMenu() {
                   <textarea
                     key={w.themeKey}
                     ref={state.ref("themeEditorRef")}
-                    className="w-full h-32 select-text bg-slate-900 text-slate-200 text-[10px] font-mono p-1 rounded border border-slate-600 resize-y"
+                    className="w-full h-32 select-text bg-neutral-900 text-neutral-200 text-[10px] font-mono p-1 rounded border border-neutral-600 resize-y"
                     defaultValue={JSON.stringify(w.getTheme(), null, 2)}
                     onKeyDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
@@ -583,7 +583,7 @@ export function WorldMenu() {
                   <button
                     type="button"
                     className={cn(
-                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
+                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-neutral-700/70 hover:bg-neutral-600 text-neutral-200 border border-neutral-600 px-2 py-1",
                       touch && "text-sm py-2.5",
                     )}
                     onClick={async (e) => {
@@ -614,7 +614,7 @@ export function WorldMenu() {
                   <button
                     type="button"
                     className={cn(
-                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-slate-700/70 hover:bg-slate-600 text-slate-200 border border-slate-600 px-2 py-1",
+                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-neutral-700/70 hover:bg-neutral-600 text-neutral-200 border border-neutral-600 px-2 py-1",
                       touch && "text-sm py-2.5",
                     )}
                     onClick={async (e) => {
@@ -645,7 +645,7 @@ export function WorldMenu() {
             type="button"
             data-keep-menu-open
             title={w.disabled ? "resume" : "pause"}
-            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9"
+            className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9"
             onClick={() => {
               if (state.dragged) return;
               w.setDisabled();
@@ -665,7 +665,7 @@ export function WorldMenu() {
           <div
             data-keep-menu-open
             title={w.view.fadeRoomsMode}
-            className="cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            className="cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
             onClick={() => {
               if (state.dragged) return;
               w.view.setFadeRoomsMode();
@@ -673,11 +673,11 @@ export function WorldMenu() {
             }}
           >
             {w.view.fadeRoomsMode === "sight" ? (
-              <EyeIcon className="size-5 text-slate-200" alt="sight" weight="bold" />
+              <EyeIcon className="size-5 text-neutral-200" alt="sight" weight="bold" />
             ) : w.view.fadeRoomsMode === "sense" ? (
-              <BrainIcon className="size-5 text-slate-200" alt="sense" weight="fill" />
+              <BrainIcon className="size-5 text-neutral-200" alt="sense" weight="fill" />
             ) : (
-              <RobotIcon className="size-5 text-slate-200" alt="ship" weight="bold" />
+              <RobotIcon className="size-5 text-neutral-200" alt="ship" weight="bold" />
             )}
           </div>
 
@@ -686,7 +686,7 @@ export function WorldMenu() {
               row above. See `WorldView`'s `onLookGesture` */}
           <div
             data-keep-menu-open
-            className="relative cursor-pointer outline-width-1 grid place-items-center bg-gray-800 text-white hover:bg-gray-700 size-9 touch-none select-none"
+            className="relative cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
             title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (long press or f to toggle)`}
             onPointerDown={() => state.onLookPressStart()}
             onPointerUp={() => state.onLookPressEnd()}
@@ -709,7 +709,7 @@ export function WorldMenu() {
                 key={followFlash}
                 className={cn(
                   "absolute inset-0 pointer-events-none",
-                  w.view.cameraFollow === true ? "bg-emerald-400" : "bg-slate-400",
+                  w.view.cameraFollow === true ? "bg-amber-300" : "bg-neutral-400",
                 )}
                 initial={{ opacity: 0.55 }}
                 animate={{ opacity: 0 }}
@@ -717,7 +717,7 @@ export function WorldMenu() {
               />
             )}
             <PersonSimpleCircleIcon
-              className={cn("size-5 relative", w.view.cameraFollow === true && "text-emerald-400")}
+              className={cn("size-5 relative", w.view.cameraFollow === true && "text-amber-300")}
               alt={
                 w.view.cameraFollow === true ? "stop following the player" : "look at the player (long press to follow)"
               }
@@ -730,7 +730,7 @@ export function WorldMenu() {
             {[...toastKeys, ...toggleToastKeys].map((key) => (
               <motion.div
                 key={key}
-                className="rounded shadow-lg shadow-black/40 bg-zinc-900/95 text-slate-100 text-xs px-3 py-1.5 wrap-break-word"
+                className="rounded shadow-lg shadow-black/40 bg-neutral-900/95 text-neutral-100 text-xs px-3 py-1.5 wrap-break-word"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -824,7 +824,7 @@ function MenuShell({
                   className={cn(
                     "absolute inset-y-2 left-14 z-50 flex flex-col select-none",
                     "w-[min(22rem,calc(100%-4.5rem))] rounded-lg overflow-hidden",
-                    "bg-slate-900/70 border border-slate-700 shadow-2xl shadow-black/50",
+                    "bg-neutral-900/70 border border-neutral-700 shadow-2xl shadow-black/50",
                   )}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -832,11 +832,11 @@ function MenuShell({
                   transition={{ duration: 0.15 }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between pl-3 pr-1.5 py-1.5 bg-slate-800 border-b border-slate-700">
-                    <span className="text-sm text-slate-300">world</span>
+                  <div className="flex items-center justify-between pl-3 pr-1.5 py-1.5 bg-neutral-800 border-b border-neutral-700">
+                    <span className="text-sm text-neutral-300">world</span>
                     <button
                       type="button"
-                      className="grid place-items-center size-9 rounded text-slate-300 cursor-pointer hover:bg-slate-700"
+                      className="grid place-items-center size-9 rounded text-neutral-300 cursor-pointer hover:bg-neutral-700"
                       onClick={() => state.set({ menuOpen: false })}
                     >
                       <XIcon className="size-4" weight="bold" />
@@ -891,7 +891,7 @@ function MenuShell({
           align="start"
         >
           <Menu.Popup
-            className="relative select-none bg-slate-800/70 border border-slate-700 rounded-md shadow-lg py-1"
+            className="relative select-none bg-neutral-800/70 border border-neutral-700 rounded-md shadow-lg py-1"
             style={{ width: state.menuWidth }}
             // the portal still propagates React events to the draggable column, so a press
             // anywhere in the popup would otherwise start dragging it up and down
@@ -912,8 +912,8 @@ function MenuShell({
             >
               <div
                 className={cn(
-                  "absolute bottom-1 right-1 size-2.5 border-b-2 border-r-2 border-slate-600 rounded-br",
-                  state.resizing && "border-slate-400",
+                  "absolute bottom-1 right-1 size-2.5 border-b-2 border-r-2 border-neutral-600 rounded-br",
+                  state.resizing && "border-neutral-400",
                 )}
               />
             </div>
@@ -958,7 +958,7 @@ function LightSlider({ touch }: { touch: boolean }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 text-xs text-slate-300",
+        "flex items-center gap-2 px-2 py-1.5 text-xs text-neutral-300",
         touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
       )}
     >
@@ -972,7 +972,7 @@ function LightSlider({ touch }: { touch: boolean }) {
       />
       <button
         type="button"
-        className="cursor-pointer text-slate-300 hover:text-white"
+        className="cursor-pointer text-neutral-300 hover:text-white"
         title={`${label} brightness — click for ${lights[other].label}`}
         onClick={(e) => {
           e.stopPropagation();
@@ -991,7 +991,7 @@ function LightSlider({ touch }: { touch: boolean }) {
         onClick={(e) => e.stopPropagation()}
         className={rangeInputClass(touch, touch ? "flex-1" : "w-24")}
       />
-      <span className="w-9 text-right tabular-nums text-slate-400">{value.toFixed(step < 0.1 ? 2 : 1)}×</span>
+      <span className="w-9 text-right tabular-nums text-neutral-400">{value.toFixed(step < 0.1 ? 2 : 1)}×</span>
     </div>
   );
 }
@@ -1089,12 +1089,12 @@ function _LightsIconButton({
       }}
       className={cn(
         "grid place-items-center rounded cursor-pointer size-6",
-        touch && "size-10 bg-slate-800",
+        touch && "size-10 bg-neutral-800",
         danger
           ? "text-red-300 hover:bg-red-900/40"
           : active
-            ? "bg-slate-700 text-white"
-            : "text-slate-500 hover:bg-slate-700",
+            ? "bg-neutral-700 text-white"
+            : "text-neutral-500 hover:bg-neutral-700",
       )}
     >
       <IconCmp
@@ -1128,7 +1128,7 @@ function _LightsMenuSlider({
     <div className="flex flex-col gap-0.5 px-2 py-0.5">
       <span
         className={cn(
-          "text-[10px] text-slate-400",
+          "text-[10px] text-neutral-400",
           touch && "text-xs",
           defaultValue !== undefined && "cursor-pointer hover:underline",
         )}
@@ -1217,7 +1217,7 @@ const touchDeviceZoom = 1.25;
 
 /** A section's label row, e.g. "player" or "debug" — every section is always unfolded */
 const sectionHeaderClass = (touch: boolean) =>
-  cn("px-2 py-1 text-xs text-slate-400", touch && "px-3 py-2.5 text-sm border-t border-slate-800");
+  cn("px-2 py-1 text-xs text-neutral-400", touch && "px-3 py-2.5 text-sm border-t border-neutral-800");
 
 /** Every `<input type="range">` in the menu — touch gets a fatter thumb and more room to drag */
 const rangeInputClass = (touch: boolean, width: string) =>
@@ -1274,8 +1274,8 @@ const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label
 
 const selectItemClassName = (touch: boolean) =>
   cn(
-    "px-2 py-1 text-xs cursor-pointer text-slate-300",
-    "data-highlighted:bg-slate-700 data-selected:text-green-400",
+    "px-2 py-1 text-xs cursor-pointer text-neutral-300",
+    "data-highlighted:bg-neutral-700 data-selected:text-amber-300",
     touch && "px-3 py-2.5 text-sm",
   );
 
@@ -1312,7 +1312,7 @@ export function MenuSelect<T extends string>({
     >
       <Select.Trigger
         className={cn(
-          "flex items-center gap-1 px-2 py-1 text-xs text-slate-300 cursor-pointer hover:bg-slate-700 w-full min-w-0",
+          "flex items-center gap-1 px-2 py-1 text-xs text-neutral-300 cursor-pointer hover:bg-neutral-700 w-full min-w-0",
           touch && "px-3 py-2 text-sm",
           className,
         )}
@@ -1330,7 +1330,7 @@ export function MenuSelect<T extends string>({
           collisionPadding={0}
           alignItemWithTrigger={false}
         >
-          <Select.Popup className="bg-slate-800 border border-slate-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
+          <Select.Popup className="bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
             <Select.List>
               {items.map(({ key, el, value }) => (
                 <Select.Item key={key} value={value} className={selectItemClassName(touch)}>
