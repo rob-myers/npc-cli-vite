@@ -313,9 +313,8 @@ function commsNodes(
 
     // as the floor has it: an unlit room hides them, but only in `sight`
     const gmId = gmUv.z.round();
-    const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">, {
-      heedBroadWalls: true,
-    });
+    // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
+    const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">);
     const roomShown = gmId
       .greaterThanEqual(0)
       .select(fadeRoomsFx.getVisiblity(slot), float(0))
