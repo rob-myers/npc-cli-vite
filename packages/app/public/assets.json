@@ -532,7 +532,12 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 6.25], [3.1, 7.3], [2.9, 7.3], [2.9, 6.25]]],
-          "meta": {"door": true, "slide": [0, -1], "label": "locker"}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "rel": "sees:window",
+            "label": "locker"
+          }
         },
         {
           "type": "Polygon",
@@ -541,6 +546,7 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "bridge",
+            "rel": "sees:window",
             "label": "fresher"
           }
         },
@@ -15168,7 +15174,12 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 6.25], [3.1, 7.3], [2.9, 7.3], [2.9, 6.25]]],
-          "meta": {"door": true, "slide": [0, -1], "label": "locker"}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "rel": "sees:window#ur9qcn",
+            "label": "locker"
+          }
         },
         {
           "type": "Polygon",
@@ -15177,6 +15188,7 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "bridge",
+            "rel": "sees:window#ur9qcn",
             "label": "fresher"
           }
         },
@@ -20687,7 +20699,13 @@
               [11.9125, 7.7625]
             ]
           ],
-          "meta": {"door": true, "slide": [0, -1], "label": "locker", "det": 1}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "rel": "sees:window#xdt8wn",
+            "label": "locker",
+            "det": 1
+          }
         },
         {
           "type": "Polygon",
@@ -20703,6 +20721,7 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "bridge",
+            "rel": "sees:window#xdt8wn",
             "label": "fresher",
             "det": 1
           }
@@ -40793,6 +40812,7 @@
             "meta": {
               "door": true,
               "slide": [0, -1],
+              "rel": "sees:window#xdt8wn",
               "label": "locker",
               "det": 1
             }
@@ -40815,6 +40835,7 @@
               "door": true,
               "slide": [0, 1],
               "backLabel": "bridge",
+              "rel": "sees:window#xdt8wn",
               "label": "fresher",
               "det": 1
             }
