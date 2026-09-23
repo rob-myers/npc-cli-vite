@@ -10,16 +10,16 @@ export const DecoratorUiMetaSchema = z.object({
   npcKeys: z.array(z.string()).default([]),
   /** The sidebar: its width, and whether it is out */
   sidebarWidth: z.number().default(208),
-  sidebarOpen: z.boolean().default(true),
+  sidebarOpen: z.boolean().default(false),
   /** Layers of the map */
   show: z
     .object({
       nav: z.boolean().default(true),
       labels: z.boolean().default(true),
       obstacles: z.boolean().default(true),
-      grid: z.boolean().default(false),
+      grid: z.boolean().default(true),
       /** The map's own decor, faint, for context */
-      static: z.boolean().default(true),
+      static: z.boolean().default(false),
     })
     .prefault({}),
 });

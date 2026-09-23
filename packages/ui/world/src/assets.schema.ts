@@ -3,6 +3,7 @@ import {
   StarShipGeomorphKeySchema,
   StarShipGeomorphNumberSchema,
   StarShipSymbolImageKeySchema,
+  type StarshipSymbolImageKey,
 } from "@npc-cli/media/starship-symbol";
 import { MapKeySchema } from "@npc-cli/ui__map-edit/editor.schema";
 import {
@@ -101,8 +102,6 @@ export const GeomorphLayoutObstacleSchema = z.object({
   height: z.number(),
   /** `symbol.obstacles[obstacleId]` -- could be inferred from `assets` */
   origPoly: polyCodec,
-  /** Subrect of original symbol's image for UV computation later */
-  origSubRect: rectCodec,
   /** Transform from original symbol into Geomorph (meters) */
   transform: AffineTransformSchema,
   /** `origPoly.center` transformed by `transform` */
@@ -235,13 +234,17 @@ export const GeomorphLayoutInstanceSchema = GeomorphLayoutSchema.extend({
 export type GeomorphLayoutInstance = z.infer<typeof GeomorphLayoutInstanceSchema>;
 
 export const StarShipSymbolSheetDatumSchema = z.object({
-  key: StarShipSymbolImageKeySchema,
-  group: z.string(),
+  symbolKey: StarShipSymbolImageKeySchema,
+  obstacleId: z.number(),
+  /** The obstacle's bounds in the symbol's png, in (fractional) pixels */
+  srcRect: rectCodec,
 });
 export type StarShipSymbolSheetDatum = z.infer<typeof StarShipSymbolSheetDatumSchema>;
 
 export const StarShipSymbolSheetEntrySchema = z.object({
-  key: StarShipSymbolImageKeySchema,
+  symbolKey: StarShipSymbolImageKeySchema,
+  obstacleId: z.number(),
+  /** Integer top-left in the sheet, but the obstacle's exact (fractional) pixel size */
   rect: rectCodec,
   sheetId: z.number(),
 });
@@ -274,10 +277,10 @@ const SheetDimSchema = z.object({ width: z.number(), height: z.number() });
 export const SheetsSchema = z.object({
   /**
    * Over all sheets
-   * - key format `{symbolKey} ${obstacleId}`
-   * - `rect` in Starship Geomorphs Units (sgu), possibly scaled-up for higher-res images
+   * - one per obstacle polygon, keyed by `getObstacleSheetKey`
+   * - `rect` in sheet pixels
    */
-  symbol: z.partialRecord(StarShipSymbolImageKeySchema, StarShipSymbolSheetEntrySchema).default({}),
+  symbol: z.record(z.string(), StarShipSymbolSheetEntrySchema).default({}),
   /** Aligned to sheets; its length is the number of the sheets. */
   symbolSheetDims: z.array(SheetDimSchema).default([]),
   /** Maximum over all sheets, for texture array */
@@ -296,6 +299,10 @@ export const SheetsSchema = z.object({
   maxSkinSheetDim: SheetDimSchema.default({ width: 1, height: 1 }),
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
+
+export function getObstacleSheetKey(symbolKey: StarshipSymbolImageKey, obstacleId: number) {
+  return `${symbolKey} ${obstacleId}`;
+}
 
 export const emptySheets: SheetsType = {
   symbol: {},

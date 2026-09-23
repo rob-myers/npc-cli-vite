@@ -30,7 +30,8 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
   change by `syncWalls`) plus the **closed** part of each door, derived in-shader from its
   `src`/`dst`, `gapAtHighLambda` and live `openRatio` — mirroring `Doors`' own `inGap` test.
   Windows are excluded on purpose — light passes through glass — except HULL windows (`meta.hull`),
-  whose centre line `seg` joins the walls: nothing beyond the hull should be lit.
+  whose centre line `seg` joins the walls: nothing beyond the hull should be lit. A CURVED one
+  (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
 - **The table is created once** and never rebuilt, so materials reading it survive a map change.
   Only the occluder buffers are refilled, and nothing but the sweep reads those.
 - **Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)` (or
@@ -50,6 +51,13 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 
 See `docs/floor.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
 object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
+
+## Obstacle spritesheets
+
+See `docs/starship-sheets.md` — the ONLY doc for them. In short: `gen-starship-sheets` packs one rect
+per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in
+`sheets.json`; `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any
+MapEdit obstacle change.
 
 ## Camera controls
 

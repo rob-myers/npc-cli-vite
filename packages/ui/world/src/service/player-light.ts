@@ -372,7 +372,13 @@ export function createPlayerLight(): PlayerLight {
     },
 
     syncWalls(gms, gmsData) {
-      const total = gms.reduce((sum, gm) => sum + gmsData.byKey[gm.key].wallSegs.length + gm.windows.length, 0);
+      // light passes through glass — but not out through the hull, where a window looks onto
+      // nothing the light has any business reaching
+      const hullWindowSegs = gms.map((gm) => gm.windows.filter((x) => x.meta.hull === true).flatMap(toHullWindowSegs));
+      const total = gms.reduce(
+        (sum, gm, gmId) => sum + gmsData.byKey[gm.key].wallSegs.length + hullWindowSegs[gmId].length,
+        0,
+      );
       if (sourceWalls.length < total * 4) sourceWalls = new Float32Array(total * 4);
 
       let count = 0;
@@ -391,12 +397,10 @@ export function createPlayerLight(): PlayerLight {
         count++;
       };
 
-      for (const gm of gms) {
+      for (const [gmId, gm] of gms.entries()) {
         mat.setMatrixValue(gm.transform);
         for (const { seg } of gmsData.byKey[gm.key].wallSegs) push(seg);
-        // light passes through glass — but not out through the hull, where a window looks onto
-        // nothing the light has any business reaching
-        for (const window of gm.windows) window.meta.hull === true && push(window.seg);
+        for (const seg of hullWindowSegs[gmId]) push(seg);
       }
 
       sourceCount = count;
@@ -546,6 +550,49 @@ export type PlayerLight = {
 export const lightAngles = 2048 + 1024;
 /** Cap on the walls handed to the sweep at once — the largest geomorph has under 400 */
 const maxLightSegs = 4096;
+
+/** A curved window's `seg` is its AABB's midline, which cuts across the bay — follow its centre line instead */
+function toHullWindowSegs(window: Geomorph.Connector): [Geom.Vect, Geom.Vect][] {
+  if (window.meta.curved !== true) return [window.seg];
+  const line = curvedMidline(window.poly.outline);
+  return line.slice(1).map((p, i) => [line[i], p]);
+}
+
+/** Split at the two furthest-apart vertices, then pair the halves up by arc length */
+function curvedMidline(outline: Geom.Vect[]): Vect[] {
+  const n = outline.length;
+  let [from, to, best] = [0, 0, -1];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const d = outline[i].distanceTo(outline[j]);
+      if (d > best) [from, to, best] = [i, j, d];
+    }
+  }
+  const one = outline.slice(from, to + 1);
+  const other = outline
+    .slice(to)
+    .concat(outline.slice(0, from + 1))
+    .reverse();
+  const count = Math.max(1, Math.ceil(n / 2));
+  return Array.from({ length: count + 1 }, (_, k) => {
+    const [p, q] = [alongPolyline(one, k / count), alongPolyline(other, k / count)];
+    return new Vect((p.x + q.x) / 2, (p.y + q.y) / 2);
+  });
+}
+
+/** The point a fraction `t` of the way along `line` */
+function alongPolyline(line: Geom.Vect[], t: number): Geom.VectJson {
+  const lengths = line.slice(1).map((p, i) => p.distanceTo(line[i]));
+  let rest = t * lengths.reduce((sum, x) => sum + x, 0);
+  for (const [i, length] of lengths.entries()) {
+    if (rest <= length && length > 0) {
+      const s = rest / length;
+      return { x: line[i].x + s * (line[i + 1].x - line[i].x), y: line[i].y + s * (line[i + 1].y - line[i].y) };
+    }
+    rest -= length;
+  }
+  return line[line.length - 1];
+}
 /**
  * How far the light may wander before the walls within reach are chosen again, and the margin the
  * choice is made with — the second must exceed the first, or a wall can come into range unseen
