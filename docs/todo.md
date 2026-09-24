@@ -60,10 +60,12 @@
 - ✅ reaches further distance
 - 🚧 pair with animation "influence"
   - ✅ influence -> psi-begin, psi-end
-  - ✅ psi-begin: both hands touch temples
-  - ✅ psi-end:  only right hand touches temple
-  - 🚧 `demo_psi` plays animations
-- clarify as weapon
+  - ✅ `psi-begin`: both hands touch temples
+  - ✅ `psi-end`:  only right hand touches temple
+  - ✅ `demo_psi` plays animations
+  - ✅ remove `psi-end`, `psi-start` -> `psi`
+  - 🚧 tidy
+- 🚧 clarify as weapon
   - can modulate reach/speed/gap/fade/colour
     - ideally with controls
   - listen to their thoughts in WorldSpeech
@@ -71,9 +73,9 @@
     - can suggest anger, lethargy, restless
 - check mobile performance
 
-### Stun
+### Gauntlet
 
-- model has gun via extra limb on right arm
+- animation `aim`
 
 ### Unorganised Bugs
 

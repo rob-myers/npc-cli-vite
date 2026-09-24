@@ -145,19 +145,24 @@ export function demo_npc_ui(
 
 /**
  * The player influences one npc at a time, each fading in as the last fades out — see `Psi`.
- * Picking the player, or killing this, fades it all away till the next. With no npc and nothing
- * piped in, the player influences nobody
+ * Picking the player, killing this, or no npc with nothing piped in, fades it all away
  * ```sh
  * pick | demo_psi
  * demo_psi rob
+ * demo_psi
  * ```
  */
-export async function demo_psi({ api, args, w }: JshCli.RunArg) {
-  for (const npcKey of args) w.psi.choose(npcKey);
-  if (api.isTtyAt(0)) {
-    if (args.length === 0) w.psi.choose(null);
-    return;
-  }
+export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
+  /** The player, the default, turns it off */
+  const choose = (npcKey = w.player?.key ?? null) => {
+    w.psi.choose(npcKey);
+    const player = w.n[w.player?.key];
+    player?.anim.setUpper(npcKey === player.key ? null : "psi"); // hands to temples whilst it shows
+  };
+
+  if (arg !== undefined || api.isTtyAt(0)) choose(arg);
+  if (api.isTtyAt(0)) return;
+
   // a kill turns it off, and ends a read that may never come
   let killed = false as boolean; // set by `cleanup`, which narrowing cannot see
   let onKill = () => {};
@@ -165,7 +170,7 @@ export async function demo_psi({ api, args, w }: JshCli.RunArg) {
   const handlers = api.handleStatus({
     cleanup() {
       killed = true;
-      w.psi.turnOff();
+      choose();
       onKill();
     },
   });
@@ -175,7 +180,7 @@ export async function demo_psi({ api, args, w }: JshCli.RunArg) {
     while ((datum = await Promise.race([api.read(), killedRead])) !== api.eof && killed === false) {
       const pick = datum as JshCli.PickEvent;
       const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
-      if (npcKey !== undefined && npcKey in w.n) w.psi.choose(npcKey);
+      if (npcKey !== undefined && npcKey in w.n) choose(npcKey);
     }
   } finally {
     handlers.dispose();

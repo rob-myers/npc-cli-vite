@@ -335,6 +335,7 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           Object.setPrototypeOf(npc, Npc.prototype);
           Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
+          Object.assign(npc.anim, { ...new NpcAnimation(npc), ...npc.anim }); // fields added since
 
           // `NpcInstance` carries their position and rotation over to the new mesh
           if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });

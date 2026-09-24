@@ -3,7 +3,14 @@ import { deltaAngle } from "maath/misc";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
-import { agentConfig, defaultFadeSecs, defaultIdleAnimationClipKey, fadeSecs, npcScale } from "../const.npc";
+import {
+  agentConfig,
+  defaultFadeSecs,
+  defaultIdleAnimationClipKey,
+  fadeSecs,
+  npcScale,
+  upperFadeSecs,
+} from "../const.npc";
 import { helper } from "../service/helper";
 import { emptyAnimationClip } from "../service/three-animation";
 import type { AnimationClipKey } from "./NPCs";
@@ -42,6 +49,14 @@ export class NpcAnimation {
 
   /** The colour fade of `Npc.fadeIn`/`fadeOut`: `delta` per second towards `target`, `0` at rest */
   fadeState = { delta: 0, target: 1 };
+  /** A clip over the upper body alone, eased in and out over the pose by `blend` — see `tickUpper` */
+  upper = {
+    key: null as null | AnimationClipKey,
+    blend: 0,
+    target: 0,
+    mixer: emptyMixer,
+    bones: [] as THREE.Object3D[],
+  };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `timed` look is under way */
   face = {
     target: 0,
@@ -76,9 +91,16 @@ export class NpcAnimation {
     this.npc.setLabelYShift(labelYShiftForClip(next));
   }
 
-  /** The ONLY per-frame work: the mixer, the colour fade, the gait's pace, and the facing */
+  /** Ease `key` in over the upper body, or out with `null` */
+  setUpper(key: null | AnimationClipKey) {
+    if (key !== null) this.upper.key = key;
+    this.upper.target = key === null ? 0 : 1;
+  }
+
+  /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
     this.mixer.update(delta);
+    this.tickUpper(delta);
 
     const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
@@ -125,6 +147,30 @@ export class NpcAnimation {
     } else if (face.rate > 0) {
       rotation.y += deltaAngle(rotation.y, face.target) * (1 - Math.exp(-5 * delta * face.rate));
     }
+  }
+
+  /** Slerp the upper body from the pose towards `upper.key`, by `blend` */
+  tickUpper(delta: number) {
+    const u = this.upper;
+    const { group } = this.npc;
+    u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
+    if (u.blend === 0 || u.key === null || group === null) return;
+
+    if (u.mixer.getRoot() !== group) {
+      u.mixer = new THREE.AnimationMixer(group); // a fresh group, or hmr
+      u.bones = upperBodyBones.flatMap((name) => group.getObjectByName(name) ?? []);
+    }
+    u.bones.forEach((b, i) => tmpQuats[i].copy(b.quaternion)); // the pose's
+    const action = u.mixer.clipAction(upperClipOf(this.npc.clips[u.key]));
+    if (action.isRunning() === false) {
+      u.mixer.stopAllAction(); // a new key or clip
+      action.play();
+    }
+    u.mixer.update(delta);
+
+    const t = u.blend * u.blend * (3 - 2 * u.blend);
+    // not `slerpQuaternions`, which copies over its own `qb`
+    u.bones.forEach((b, i) => b.quaternion.copy(tmpQuats[i].slerp(b.quaternion, t)));
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
@@ -254,6 +300,21 @@ export class NpcAnimation {
 function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
 }
+
+/** `clip`'s rotations of `upperBodyBones` — not positions, which some poses leave be — cached per clip */
+function upperClipOf(clip: THREE.AnimationClip) {
+  let upper = upperClips.get(clip);
+  if (upper === undefined) {
+    const tracks = clip.tracks.filter((t) => upperBodyBones.some((name) => t.name === `${name}.quaternion`));
+    upperClips.set(clip, (upper = new THREE.AnimationClip(clip.name, clip.duration, tracks)));
+  }
+  return upper;
+}
+
+const upperClips = new WeakMap<THREE.AnimationClip, THREE.AnimationClip>();
+/** The chest stays the pose's, so its breath and sway carry the arms */
+const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
+const tmpQuats = upperBodyBones.map(() => new THREE.Quaternion());
 
 function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;

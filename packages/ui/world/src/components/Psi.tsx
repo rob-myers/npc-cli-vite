@@ -76,11 +76,13 @@ export default function Psi() {
         if (w.n === null) return; // <NPCs> mounts after us
         state.flowSecs.value = w.timer.getElapsedTime(); // world time, so a pause holds the rings still
         const now = performance.now();
-        const step = Math.min((now - state.tickedMs) / 1000, 0.1) / psiConfig.fadeSecs;
+        const secs = Math.min((now - state.tickedMs) / 1000, 0.1);
         state.tickedMs = now;
 
         const { self } = state;
-        for (const x of [self, ...state.influenced]) approach(x, step);
+        for (const x of [self, ...state.influenced]) {
+          approach(x, secs / (x.target === 1 ? psiConfig.fadeSecs : psiConfig.fadeOutSecs));
+        }
         state.influenced = state.influenced.filter(
           (x) => w.n[x.npcKey] !== undefined && (x.presence > 0 || x.target > 0),
         );
@@ -239,9 +241,10 @@ function psiNodes(
   const { reach, reachFade, spacing, blend, flow, lineWidthPx, color, alpha, lift, height, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
-  /** Distance to a slot, pushed out of reach as its presence falls, so coming and going is continuous */
+  const maxPush = reach - reachFade;
+  /** Distance to a slot, pushed out as its presence falls — not past `reachFade`, where `log` races the rings */
   const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">) =>
-    q.sub(slot.xy).length().add(slot.z.oneMinus().mul(reach));
+    q.sub(slot.xy).length().add(slot.z.oneMinus().mul(maxPush));
   /** Each eased to nought at `reach`, since a hard cut steps the contours */
   const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(reach - reachFade, reach, r).oneMinus());
 
@@ -350,8 +353,9 @@ const psiConfig = {
   height: 1.3,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
-  /** Seconds an influence takes to come or go */
+  /** Seconds an influence takes to come and to go */
   fadeSecs: 0.6,
+  fadeOutSecs: 1.2,
 } as const;
 
 /** The player, whom they influence, and whom they did */
