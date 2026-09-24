@@ -46,15 +46,18 @@ export default function WorldHtml() {
       },
       hide(...keys) {
         let removed = false;
+        let hadFocus = false;
         for (const key of keys) {
           const entry = state.byKey.get(key);
           if (entry === undefined) continue;
+          hadFocus ||= entry.frame?.contains(document.activeElement) === true;
           state.byKey.delete(key);
           remembered.set(`${w.key}:${key}`, { offset: entry.offset, width: entry.width });
           entry.onHide?.();
           removed = true;
         }
         if (removed === false) return;
+        if (hadFocus === true) w.view.focus(); // else it falls to the body, and keys miss the World
         state.update();
         w.view.forceUpdate();
       },
@@ -144,12 +147,6 @@ export default function WorldHtml() {
         <div
           ref={(el) => void (entry.frame = el)}
           tabIndex={-1} // a click anywhere in it focuses it too
-          // Escape closes it, and goes no further: the World reads keys off its root
-          onKeyDown={(e) => {
-            if (e.key !== "Escape") return;
-            e.stopPropagation();
-            state.hide(key);
-          }}
           // `Html3d` puts us INSIDE the canvas's own wrapper, which takes every press for the World's
           // — and on release takes the focus, so a field clicked here would lose it at once
           onPointerDown={(e) => e.stopPropagation()}
@@ -185,9 +182,11 @@ export default function WorldHtml() {
             className={cn(
               handleClass,
               "right-0 bottom-full mb-2 size-9 cursor-pointer outline-none hover:border-red-400/70 hover:text-red-300",
-              "focus:outline-2 focus:outline-solid focus:outline-offset-2 focus:outline-white/30", // Escape closes it
+              "focus:outline-2 focus:outline-solid focus:outline-offset-2 focus:outline-white/30", // Enter closes it
             )}
             onClick={() => state.hide(key)}
+            // the World reads keys off its root, and Enter there unpauses
+            onKeyDown={(e) => e.key === "Enter" && e.stopPropagation()}
           >
             <XIcon className="size-6" weight="bold" />
           </button>
@@ -213,7 +212,7 @@ export type State = {
   /** Show `node` at the point, or tracking the object, replacing what the key showed */
   show(key: string, at: WorldHtmlAnchor, node: React.ReactNode, opts?: WorldHtmlOpts): void;
   hide(...keys: string[]): void;
-  /** Desktop: focus its close button, so Escape closes it — as `show`'s `focus`, but open already too */
+  /** Desktop: focus its close button, so Enter closes it — as `show`'s `focus`, but open already too */
   focus(key: string): void;
   toggle(key: string, at: WorldHtmlAnchor, node: React.ReactNode, opts?: WorldHtmlOpts): void;
   /** Hidden but kept e.g. whilst its npc fades */
@@ -227,7 +226,7 @@ export type State = {
 export type WorldHtmlAnchor = { x: number; y: number; y3d?: number } | TrackedObject3D;
 export type WorldHtmlOpts = {
   onHide?: () => void;
-  /** Desktop: focus its close button as it opens, so Escape closes it */
+  /** Desktop: focus its close button as it opens, so Enter closes it */
   focus?: boolean;
 };
 

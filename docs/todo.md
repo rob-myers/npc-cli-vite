@@ -66,7 +66,7 @@
   - ✅ remove `psi-end`, `psi-start` -> `psi`
   - ✅ tidy
 - 🚧 clarify as weapon
-  - 🚧 debug toggle "npc contextmenu" shows npc bubble on right-click
+  - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
   - 🚧 can modulate reach/speed/gap/fade/colour
     - ideally with controls
   - listen to their thoughts in WorldSpeech

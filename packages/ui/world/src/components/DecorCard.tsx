@@ -48,7 +48,6 @@ export function DecorCard({
     <div
       className="pointer-events-auto flex max-h-[22rem] w-(--html-width,30rem) flex-col gap-3 overflow-auto rounded-2xl border-4 border-white/40 bg-black/75 px-5 py-4 text-[1.6rem] text-white/90"
       // the World reads keys off its root e.g. `f`, `1`: not whilst typing here. Escape goes on up
-      // to the frame, which closes the card
       onKeyDown={(e) => e.key !== "Escape" && e.stopPropagation()}
       onKeyUp={(e) => e.stopPropagation()}
     >
@@ -160,7 +159,7 @@ function Field({ value, onCommit, className }: { value: string; onCommit(next: s
       onBlur={() => text !== value && onCommit(text)}
       onKeyDown={(e) => {
         if (e.key === "Enter") e.currentTarget.blur();
-        // Escape gives up an edit; with none to give up it is the card's, and closes it
+        // Escape gives up an edit; with none to give up it goes on up to the World
         if (e.key === "Escape" && text !== value) {
           e.stopPropagation();
           setText(value);

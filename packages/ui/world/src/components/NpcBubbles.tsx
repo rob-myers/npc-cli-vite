@@ -3,6 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useState } from "react";
 import type { AnimationClipKey } from "./NPCs";
+import PsiControls from "./PsiControls";
 import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
 
@@ -89,6 +90,7 @@ function NpcBubble({ w, npcKey }: { w: WorldState; npcKey: string }) {
           </Select.Portal>
         </Select.Root>
       )}
+      {npcKey === w.player?.key && <PsiControls w={w} />}
     </div>
   );
 }

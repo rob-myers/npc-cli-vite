@@ -870,6 +870,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         }
         state.pickObject(e);
       },
+      focus() {
+        // the `Canvas` wrapper, which has the `tabIndex`
+        state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
+      },
       isOverPaused(e) {
         const rect = state.pausedEl?.getBoundingClientRect();
         return (
@@ -1694,6 +1698,8 @@ export type State = {
   onCameraStart(): void;
   onCameraEnd(): void;
   /** Whether a pointer is over the paused pill — the resume tap, where the pill itself takes none */
+  /** Keys to the World again e.g. Escape pauses */
+  focus(): void;
   isOverPaused(e: PointerEvent): boolean;
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */

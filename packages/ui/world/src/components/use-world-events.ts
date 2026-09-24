@@ -458,7 +458,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ) {
               w.speech.say(e.meta.npcKey, "...");
             }
-            // debug: as the speech menu's "debug", but Escape closes it. Our own picks only, not a client's forwarded
+            // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
             if (
               (e.longDown === true || e.rightDown === true) &&
               e.meta.type === "npc" &&

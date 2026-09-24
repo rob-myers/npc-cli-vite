@@ -28,7 +28,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_GEOMORPH_INSTANCES } from "../const.env";
+import { defaultPsiTune, MAX_GEOMORPH_INSTANCES, type PsiTune, psiMaxReach } from "../const.env";
 import type { FadeRooms } from "../service/fade-rooms";
 import type { PlayerLight } from "../service/player-light";
 import { type RoomSlots, slotUvPerMetre } from "../service/room-slots";
@@ -46,6 +46,8 @@ export default function Psi() {
     (): State => ({
       ...createPsiResources(),
       shown: getWorldStore(w.key).read().psiShown,
+      tune: { ...defaultPsiTune, ...getWorldStore(w.key).read().psiTune },
+      flowAt: 0,
       self: { presence: 0, target: 0 }, // off till someone is influenced
       influenced: [],
       pending: undefined,
@@ -74,14 +76,17 @@ export default function Psi() {
       },
       onTick() {
         if (w.n === null) return; // <NPCs> mounts after us
-        state.flowSecs.value = w.timer.getElapsedTime(); // world time, so a pause holds the rings still
+        // world time, so a pause holds the rings still — and a phase, so a new speed does not jump them
+        const worldSecs = w.timer.getElapsedTime();
+        state.flowPhase.value += Math.max(0, worldSecs - state.flowAt) * state.tune.speed;
+        state.flowAt = worldSecs;
         const now = performance.now();
         const secs = Math.min((now - state.tickedMs) / 1000, 0.1);
         state.tickedMs = now;
 
-        const { self } = state;
+        const { self, tune } = state;
         for (const x of [self, ...state.influenced]) {
-          approach(x, secs / (x.target === 1 ? psiConfig.fadeSecs : psiConfig.fadeOutSecs));
+          approach(x, secs / (x.target === 1 ? tune.fadeSecs : tune.fadeSecs * psiConfig.fadeOutScale));
         }
         state.influenced = state.influenced.filter(
           (x) => w.n[x.npcKey] !== undefined && (x.presence > 0 || x.target > 0),
@@ -125,6 +130,18 @@ export default function Psi() {
       turnOff() {
         state.choose(w.player?.key ?? null);
       },
+      setTune(partial) {
+        Object.assign(state.tune, partial);
+        getWorldStore(w.key).patch({ psiTune: { ...state.tune } });
+        state.syncTune();
+        w.r3f?.invalidate();
+      },
+      syncTune() {
+        const { reach, gap, color } = state.tune;
+        state.reach.value = Math.min(reach, psiMaxReach);
+        state.gap.value = gap;
+        state.color.value.set(color);
+      },
       setShown(shown) {
         state.shown = shown;
         getWorldStore(w.key).patch({ psiShown: shown });
@@ -132,13 +149,14 @@ export default function Psi() {
         w.r3f?.invalidate();
       },
     }),
-    // a new `reach` or `cell` needs a new geometry, and the mesh and material go with it
+    // a new `psiMaxReach` or `cell` needs a new geometry, and the mesh and material go with it
     { reset: { geo: true, mat: true, mesh: true } },
   );
 
   w.psi = state;
 
   useEffect(() => state.syncGms(), [w.hash]);
+  useEffect(() => state.syncTune(), []);
 
   useMemo(() => {
     const { vertexNode, colorNode } = psiNodes(state, w.view);
@@ -153,6 +171,10 @@ export default function Psi() {
 
 export type State = Resources & {
   shown: boolean;
+  /** What the player's bubble adjusts, persisted — see `PsiControls` */
+  tune: PsiTune;
+  /** World seconds `flowPhase` was last advanced at */
+  flowAt: number;
   /** The player's own rings, which go when the player is influenced — see `choose` */
   self: Presence;
   /** Instances after the player's: whom they influence, and whom they did whilst it fades out */
@@ -171,6 +193,9 @@ export type State = Resources & {
   /** Fade out the influence and the player's rings with it, as choosing the player does */
   turnOff(): void;
   setShown(shown: boolean): void;
+  setTune(partial: Partial<PsiTune>): void;
+  /** `tune` into the uniforms */
+  syncTune(): void;
 };
 
 /** How far into view a slot's rings are, and whither they are headed */
@@ -186,8 +211,8 @@ function approach(x: Presence, step: number) {
 function createPsiResources() {
   // subdivided, since the vertex shader raises it by the field. Even, with a cell to spare each side,
   // so a quad snapped to the world grid still covers its npc's reach
-  const { reach, cell } = psiConfig;
-  const segments = 2 * Math.ceil(reach / cell) + 2;
+  const { cell } = psiConfig;
+  const segments = 2 * Math.ceil(psiMaxReach / cell) + 2;
   const side = segments * cell;
   const base = new THREE.PlaneGeometry(side, side, segments, segments).rotateX(-Math.PI / 2);
   const geo = new THREE.InstancedBufferGeometry();
@@ -201,7 +226,10 @@ function createPsiResources() {
   npcTex.minFilter = npcTex.magFilter = THREE.NearestFilter;
   npcTex.needsUpdate = true;
   const slotCount = uniform(0);
-  const flowSecs = uniform(0);
+  const flowPhase = uniform(0);
+  const reach = uniform(defaultPsiTune.reach);
+  const gap = uniform(defaultPsiTune.gap);
+  const color = uniform(new THREE.Color(defaultPsiTune.color));
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
   const gmArray = uniformArray<"vec4">(gmValues, "vec4");
@@ -219,11 +247,11 @@ function createPsiResources() {
   mesh.frustumCulled = false;
   mesh.renderOrder = +5;
 
-  return { geo, mat, mesh, npcData, npcTex, slotCount, flowSecs, gmValues, gmArray, gmCount };
+  return { geo, mat, mesh, npcData, npcTex, slotCount, flowPhase, reach, gap, color, gmValues, gmArray, gmCount };
 }
 
 function psiNodes(
-  { npcTex, slotCount, flowSecs, gmArray, gmCount }: Resources,
+  { npcTex, slotCount, flowPhase, reach, gap, color, gmArray, gmCount }: Resources,
   {
     fadeRoomsFx,
     playerLight,
@@ -238,15 +266,15 @@ function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reach, reachFade, spacing, blend, flow, lineWidthPx, color, alpha, lift, height, cell } = psiConfig;
+  const { reachFade, blend, lineWidthPx, alpha, lift, height, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
-  const maxPush = reach - reachFade;
+  const maxPush = reach.sub(reachFade);
   /** Distance to a slot, pushed out as its presence falls — not past `reachFade`, where `log` races the rings */
   const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">) =>
     q.sub(slot.xy).length().add(slot.z.oneMinus().mul(maxPush));
   /** Each eased to nought at `reach`, since a hard cut steps the contours */
-  const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(reach - reachFade, reach, r).oneMinus());
+  const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
 
   /**
    * `(g, slot of nearest)` at world `q`: a smooth min of the distances to the player and to the
@@ -292,7 +320,7 @@ function psiNodes(
   // on one world grid, so overlapping quads share vertices and their reliefs agree
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
   // each contour at a fixed height, as on a relief map
-  const y = max(fieldAt(worldXZ).x.div(-reach).add(1), 0).mul(height).add(lift);
+  const y = max(fieldAt(worldXZ).x.div(reach.negate()).add(1), 0).mul(height).add(lift);
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
 
   const p = varying(worldXZ, "vPsiXZ");
@@ -307,12 +335,12 @@ function psiNodes(
     const g = found.x;
     const owned = found.y.sub(own).abs().lessThan(0.5).select(float(1), float(0)); // drawn once, by the nearest
 
-    const v = g.div(spacing).sub(flowSecs.mul(flow));
+    const v = g.div(gap).sub(flowPhase);
     const toLine = float(0.5).sub(fract(v).sub(0.5).abs()); // 0 on a contour
     const px = toLine.div(max(fwidth(v), 1e-6));
     const line = smoothstep(lineWidthPx / 2 - 0.5, lineWidthPx / 2 + 0.5, px).oneMinus(); // solid core, 1px edge
     // the outermost dies away rather than ringing the reach
-    const edge = smoothstep(reach - reachFade, reach - reachFade + spacing, g).oneMinus();
+    const edge = smoothstep(maxPush, maxPush.add(gap), g).oneMinus();
 
     // as the floor has it: an unlit room hides them, but only in `sight`
     const gmId = gmUv.z.round();
@@ -327,25 +355,18 @@ function psiNodes(
       .notEqual(0)
       .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(alpha));
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
-    return playerLight.applyLightRgba(vec4(vec3(color.r, color.g, color.b), a));
+    return playerLight.applyLightRgba(vec4(color, a));
   })();
 
   return { vertexNode, colorNode };
 }
 
 const psiConfig = {
-  /** Metres an npc's field reaches */
-  reach: 5,
   /** Metres before `reach` over which it fades out */
   reachFade: 0.75,
-  /** Metres between contours */
-  spacing: 0.5,
   /** Metres over which the player's and another's rings merge: smaller gives a sharper waist */
   blend: 0.3,
-  /** Contours per second the rings drift by: outwards when positive */
-  flow: 0.4,
   lineWidthPx: 2.5,
-  color: /* @__PURE__ */ new THREE.Color("#9fe8ff"),
   alpha: 0.5,
   /** Metres the relief's rim sits above the floor */
   lift: 0,
@@ -353,9 +374,8 @@ const psiConfig = {
   height: 1.3,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
-  /** Seconds an influence takes to come and to go */
-  fadeSecs: 0.6,
-  fadeOutSecs: 1.2,
+  /** Going takes this many times as long as coming */
+  fadeOutScale: 2,
 } as const;
 
 /** The player, whom they influence, and whom they did */

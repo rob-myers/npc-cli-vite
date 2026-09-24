@@ -58,6 +58,8 @@ export type WorldSettings = {
   npcContextMenu: boolean;
   /** debug: whether the player's influence is drawn — see `Psi` */
   psiShown: boolean;
+  /** What the player's bubble set of `Psi`, over its defaults */
+  psiTune: Partial<import("../const.env").PsiTune>;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
@@ -90,6 +92,7 @@ const defaultWorldSettings: WorldSettings = {
   decorShown: false,
   npcContextMenu: false,
   psiShown: isTouchDevice() === false,
+  psiTune: {},
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,
