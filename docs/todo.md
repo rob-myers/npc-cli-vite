@@ -76,7 +76,8 @@
 
 ### Gauntlet
 
-- animation `aim`
+- 🚧 remove animation `idle-avoid`
+- 🚧 animation `aim`
 
 ### Unorganised Bugs
 

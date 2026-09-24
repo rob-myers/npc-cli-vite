@@ -155,8 +155,6 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   breathe: true,
   idle: true,
-  /** `idle` leant back, shoulders back — see jsh's `demo_lean_back` */
-  "idle-avoid": true,
   lie: true,
   psi: true,
   run: true,
@@ -181,9 +179,8 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
-  breathe: { shuffle: 0.15, "idle-avoid": 0.4 },
+  breathe: { shuffle: 0.15 },
   idle: { shuffle: 0.15 },
-  "idle-avoid": { breathe: 0.4 },
   lie: {},
   psi: {},
   run: { shuffle: 0.15, walk: 0.25 },
