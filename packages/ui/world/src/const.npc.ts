@@ -155,6 +155,7 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   breathe: true,
   idle: true,
+  gauntlet: true,
   lie: true,
   psi: true,
   run: true,
@@ -181,6 +182,7 @@ export const fadeSecs: Record<
 > = {
   breathe: { shuffle: 0.15 },
   idle: { shuffle: 0.15 },
+  gauntlet: {},
   lie: {},
   psi: {},
   run: { shuffle: 0.15, walk: 0.25 },
