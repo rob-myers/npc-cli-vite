@@ -48,7 +48,7 @@ function NpcBubble({ w, npcKey }: { w: WorldState; npcKey: string }) {
   const npc = w.n[npcKey];
 
   return (
-    <div className="pointer-events-auto flex w-(--html-width,32rem) flex-col gap-3 rounded-2xl border-4 border-white/40 bg-black/70 px-5 py-4 text-[1.8rem] text-white/90">
+    <div className="pointer-events-auto flex w-(--html-width,32rem) flex-col gap-3 rounded-2xl border-4 border-white/40 bg-black/70 px-5 py-4 text-lg text-white/90">
       <div className="flex items-center gap-3">
         <PersonSimpleIcon className="size-9 shrink-0 text-white/80" weight="duotone" />
         <span className="truncate font-medium tracking-wide">{npcKey}</span>

@@ -11,7 +11,7 @@ export default function PsiControls({ w }: { w: WorldState }) {
   };
 
   return (
-    <div className="flex flex-col gap-1.5 border-t-2 border-white/20 pt-3">
+    <div className="flex flex-col gap-1.5 border-t-2 border-white/20 pt-3 text-lg">
       <div className="flex items-center gap-3">
         <span className="text-white/50">psi</span>
         <input
