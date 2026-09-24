@@ -43,6 +43,8 @@ export const agentConfig = {
     idleSeparating: 0.005,
     walk: 1.5,
     run: 4,
+    /** Backing away — see `w.npc.move`'s `backwards` */
+    backwards: 0.8,
   },
   /**
    * Whilst a move is `fast` the gait on show follows their speed: run above one, back to walk
@@ -153,6 +155,7 @@ export const npcMaterialConfig = {
 } as const;
 
 export const fromAnimationClipKey = {
+  backwards: true,
   breathe: true,
   idle: true,
   gauntlet: true,
@@ -180,6 +183,7 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
+  backwards: {},
   breathe: { shuffle: 0.15 },
   idle: { shuffle: 0.15 },
   gauntlet: {},

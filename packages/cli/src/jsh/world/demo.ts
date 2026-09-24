@@ -1,4 +1,5 @@
 import { events } from "./core";
+import { npcQuery, plan } from "./plan.main";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -50,6 +51,62 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
     api.get("/shared");
   }, 1000);
 }
+
+/**
+ * Idle npcs pressed by a walker back off to one side of its path, facing it — see `w.npc.move`'s
+ * `backwards`. Sampled a few times a second; runs until killed.
+ * ```sh
+ * demo_back_off rob kate
+ * ```
+ */
+export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
+  const npcs = args.map((npcKey) => w.npc.get(npcKey));
+  const handlers = api.handleStatus({ cleanup() {} });
+
+  try {
+    while (true) {
+      await api.sleep(backOffConfig.sampleSecs);
+      for (const npc of npcs) {
+        if (w.n[npc.key] !== npc || npc.agent === null || npc.isMoving() || npc.isLooking()) continue;
+
+        // the nearest walker pressing against them — `neis` have `dist` squared
+        const [nearest] = npc.agent.neis
+          .filter(({ agentId, dist }) => dist < backOffConfig.dist ** 2 && w.npc.byAgentId[agentId]?.isMoving())
+          .sort((a, b) => a.dist - b.dist);
+        const walker = nearest === undefined ? undefined : w.npc.byAgentId[nearest.agentId];
+        if (walker?.agent == null) continue;
+
+        // across its path, on our side of it
+        const [vx, , vz] = walker.agent.velocity;
+        const speed = Math.hypot(vx, vz);
+        if (speed < 0.05) continue;
+        const side = (npc.position.x - walker.position.x) * -vz + (npc.position.z - walker.position.z) * vx;
+        const sign = side < 0 ? -1 : 1;
+        const by = backOffConfig.by / speed;
+        const src = npc.point;
+        const to = await plan({
+          api,
+          w,
+          op: { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x - sign * vz * by, y: src.y + sign * vx * by } },
+        });
+        if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < backOffConfig.minMove) continue;
+
+        void w.npc.move({ npcKey: npc.key, to, backwards: true }).catch(() => {}); // a new push may interrupt
+      }
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
+const backOffConfig = {
+  /** Within this of a walker they back off — no further than the crowd's `collisionQueryRange` */
+  dist: 0.6,
+  /** Metres they back off by, and the least worth moving once slid along the navmesh */
+  by: 0.8,
+  minMove: 0.2,
+  sampleSecs: 0.25,
+};
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {
   for await (const e of events(ct, {

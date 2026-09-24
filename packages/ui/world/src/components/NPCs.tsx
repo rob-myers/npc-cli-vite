@@ -434,7 +434,7 @@ export default function NPCs() {
       hasDoMeta(meta) {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
       },
-      async move({ npcKey, to, arrive = true, fast }) {
+      async move({ npcKey, to, arrive = true, fast, backwards = false }) {
         /** Can be overriden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
 
@@ -502,7 +502,8 @@ export default function NPCs() {
             groundPoint = helper.parseGroundPoint(nearDoor.position);
           }
 
-          npc.anim.fast = fast === true; // the gait itself follows their speed — see `syncGait`
+          npc.anim.fast = fast === true && backwards === false; // the gait itself follows their speed — see `syncGait`
+          npc.anim.backwards = backwards;
           npc.anim.aimAt({ groundPoint, result });
           await state.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);
@@ -564,7 +565,8 @@ export default function NPCs() {
           // creeping — a stuck npc's velocity swings about, and turning to face each swing looks
           // like a jerk
           npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / agentConfig.maxSpeed.walk) : 0;
-          if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + Math.PI;
+          // backing away they face whence they go
+          if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + (npc.anim.backwards === true ? 0 : Math.PI);
 
           const [tx, , tz] = agent.targetPosition;
           const targetDist = Math.hypot(tx - npc.position.x, tz - npc.position.z);
@@ -806,6 +808,10 @@ export default function NPCs() {
         if (corner === undefined) return;
 
         const at = { x: corner.position[0], y: corner.position[2] };
+        if (npc.anim.backwards === true) {
+          // backs onto it: faces the point opposite
+          Object.assign(at, { x: 2 * npc.position.x - at.x, y: 2 * npc.position.z - at.y });
+        }
         const target = geomService.getThreeRotationY(at.y - npc.position.z, at.x - npc.position.x);
         if (Math.abs(deltaAngle(npc.rotation.y, target)) > npcConfig.angle.turnBeforeMove) {
           await npc.look({ at });
@@ -1125,8 +1131,9 @@ function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: 
  * run together, so a crossfade between them near the target does not hold the arrival up
  */
 function moveClipFadedIn(npc: Npc) {
-  const weight = (key: "walk" | "run") => npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0;
-  return weight("walk") + weight("run") >= 0.99;
+  const weight = (key: "walk" | "run" | "backwards") =>
+    npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0;
+  return weight("walk") + weight("run") + weight("backwards") >= 0.99;
 }
 
 /** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */

@@ -129,6 +129,8 @@ declare namespace JshCli {
     to: MaybeMeta<JshCli.PointAnyFormat>;
     arrive?: boolean;
     fast?: boolean;
+    /** Back away: face whence they came, slower, never running */
+    backwards?: boolean;
   };
   type LookOpts = {
     at: string | MaybeMeta<JshCli.PointAnyFormat>;

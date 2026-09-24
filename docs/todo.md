@@ -7,6 +7,10 @@
 - ✅ remove strafe left/right animations
 - ✅ rename psychic-attack -> influence
 
+- ✅ `backwards` animation
+- ✅ `move rob --back to:$( pick 1 )`
+- ✅ `demo_back_off kate`
+
 - skin remapping
   - currently only have skinIndex
 
@@ -77,7 +81,7 @@
 ### Gauntlet
 
 - ✅ remove animation `idle-avoid`
-- 🚧 animation `gauntlet`
+- ✅ animation `gauntlet`
 
 ### Unorganised Bugs
 

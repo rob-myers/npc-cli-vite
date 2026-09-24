@@ -371,6 +371,8 @@ type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
  *
  * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
  * move npc:rob fast to:$( pick 1 )
+ * move npc:rob backwards to:$( pick 1 )
+ * move rob --back to:$( pick 1 )
  * ```
  */
 export async function move(
@@ -383,6 +385,8 @@ export async function move(
     npc: "npcKey",
     "--fast": "fast",
     "--force": "force",
+    "--backwards": "backwards",
+    "--back": "backwards",
   }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
@@ -428,6 +432,7 @@ async function move_const(
         to: next,
         arrive: pendingMoves.length === 0,
         fast: opts.fast,
+        backwards: opts.backwards,
       });
     }
   } finally {
@@ -464,7 +469,7 @@ async function move_lazy(
       const npc = getNpcOrThrow();
 
       const movePromise = movePausable(
-        { npcKey: npc.key, to: dst, fast: opts.fast },
+        { npcKey: npc.key, to: dst, fast: opts.fast, backwards: opts.backwards },
         {
           "not navigable": false,
           stuck: () => {
@@ -510,7 +515,7 @@ async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { npcKey: npc.key, to: next, fast: opts.fast },
+        { npcKey: npc.key, to: next, fast: opts.fast, backwards: opts.backwards },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -1292,6 +1297,7 @@ function getLastUnknownNaked(opts: Record<string, any>) {
 const booleanJsOptSomewhere = {
   all: true,
   along: true,
+  backwards: true,
   detail: true,
   fast: true,
   force: true,

@@ -35,6 +35,8 @@ export class NpcAnimation {
   moveClip = emptyAnimationClip;
   /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
   fast = false;
+  /** The move's INTENT: they back away, facing whence they go — see `w.npc.move` */
+  backwards = false;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
   gaitSecs = 0;
   /** true iff moving via agent in navmesh */
@@ -175,6 +177,7 @@ export class NpcAnimation {
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
   syncGait(delta: number) {
+    if (this.backwards === true) return; // one gait
     const { runAbove, walkBelow, minSecs } = agentConfig.gait;
     this.gaitSecs += delta;
     const running = this.moveClip.name === "run";
@@ -226,7 +229,8 @@ export class NpcAnimation {
     if (agent !== null) {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
       agent.maxAcceleration = agentConfig.maxAcceleration.walk;
-      agent.maxSpeed = this.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk;
+      const { maxSpeed } = agentConfig;
+      agent.maxSpeed = this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
     }
     // after the turn, so a long one does not eat the stuck grace
     this.npc.last.moveTime = this.w.timer.getElapsedTime();
@@ -234,11 +238,12 @@ export class NpcAnimation {
     this.arrive = arrive;
     // a move interrupted by another keeps its gait on show, so the walk runs on into the new
     // leg — but a look or a spawn in between puts idle on, and it must be shown again or they slide
-    if (this.moving === true && isGait(this.pose)) return;
+    const clipKey = this.backwards === true ? "backwards" : "walk";
+    if (this.moving === true && (this.backwards === true ? this.pose === clipKey : isGait(this.pose))) return;
     this.moving = true;
-    this.moveClip = this.npc.clips.walk;
+    this.moveClip = this.npc.clips[clipKey];
     this.gaitSecs = 0;
-    this.setPose("walk");
+    this.setPose(clipKey);
   }
 
   startIdle({ force = false } = {}) {

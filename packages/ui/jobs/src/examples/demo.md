@@ -20,6 +20,13 @@ demo_log_speech &
 say Hello! rob
 ```
 
+# npc interaction
+
+```sh
+spawn abe at:$( pick 1 ) as:robot-0
+demo_back_off kate
+```
+
 # batch
 
 ```sh
