@@ -58,15 +58,16 @@
   - only for player
   - `pick | demo_psi`
 - ✅ reaches further distance
-- 🚧 pair with animation "influence"
+- ✅ pair with animation "influence"
   - ✅ influence -> psi-begin, psi-end
   - ✅ `psi-begin`: both hands touch temples
   - ✅ `psi-end`:  only right hand touches temple
   - ✅ `demo_psi` plays animations
   - ✅ remove `psi-end`, `psi-start` -> `psi`
-  - 🚧 tidy
+  - ✅ tidy
 - 🚧 clarify as weapon
-  - can modulate reach/speed/gap/fade/colour
+  - 🚧 debug toggle "npc contextmenu" shows npc bubble on right-click
+  - 🚧 can modulate reach/speed/gap/fade/colour
     - ideally with controls
   - listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech

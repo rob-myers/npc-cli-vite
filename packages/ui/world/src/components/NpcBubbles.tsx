@@ -12,10 +12,11 @@ export default function NpcBubbles() {
 
   const state = useStateRef(
     (): State => ({
-      ensure(npcKey) {
+      ensure(npcKey, { focus = false } = {}) {
         const npc = w.npc.get(npcKey);
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
         w.html.show(bubbleKey(npcKey), tracked, <NpcBubble w={w} npcKey={npcKey} />);
+        if (focus === true) w.html.focus(bubbleKey(npcKey));
       },
       delete(...npcKeys) {
         w.html.hide(...npcKeys.map(bubbleKey));
@@ -97,8 +98,8 @@ const bubbleKey = (npcKey: string) => `bubble:${npcKey}`;
 const posePollMs = 250;
 
 export type State = {
-  /** Up, redrawn if already */
-  ensure(npcKey: string): void;
+  /** Up, redrawn if already — `focus` its close button, open already or not */
+  ensure(npcKey: string, opts?: { focus?: boolean }): void;
   delete(...npcKeys: string[]): void;
   setShown(npcKey: string, shown: boolean): void;
 };

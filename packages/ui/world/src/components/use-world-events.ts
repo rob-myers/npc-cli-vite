@@ -458,6 +458,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ) {
               w.speech.say(e.meta.npcKey, "...");
             }
+            // debug: as the speech menu's "debug", but Escape closes it. Our own picks only, not a client's forwarded
+            if (
+              (e.longDown === true || e.rightDown === true) &&
+              e.meta.type === "npc" &&
+              typeof e.meta.npcKey === "string" &&
+              e.srcWorld === w.key &&
+              w.debug?.npcContextMenu === true
+            ) {
+              w.bubble.ensure(e.meta.npcKey, { focus: true });
+            }
             break;
           }
           case "spawned-many": {

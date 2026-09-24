@@ -54,6 +54,7 @@ export function Debug() {
       originShown: false,
       pickGdkeyOpensDoors: getWorldStore(w.key).read().pickOpenDoors,
       pickDoors: getWorldStore(w.key).read().pickDoors,
+      npcContextMenu: getWorldStore(w.key).read().npcContextMenu,
 
       physicsLines: new THREE.BufferGeometry(),
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
@@ -426,6 +427,8 @@ export type State = {
   pickGdkeyOpensDoors: boolean;
   /** Whether the doors are drawn during object-picking, and so can be picked — see `pickObject` */
   pickDoors: boolean;
+  /** Whether a right click or long press on an npc opens their bubble — see `pickObject` */
+  npcContextMenu: boolean;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
   physicsColliders: (WW.PhysicDebugItem & {
     parsedKey: WW.PhysicsParsedBodyKey;
