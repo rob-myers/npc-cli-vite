@@ -67,9 +67,9 @@
   - ✅ tidy
 - 🚧 clarify as weapon
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
-  - 🚧 can modulate reach/speed/gap/fade/colour
+  - ✅ can modulate reach/speed/gap/fade/colour
     - ideally with controls
-  - listen to their thoughts in WorldSpeech
+  - 🚧 listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech
     - can suggest anger, lethargy, restless
 - check mobile performance
