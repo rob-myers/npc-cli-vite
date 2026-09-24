@@ -18,19 +18,6 @@
 
 - fix precision in `assets.json`
 
-### Comms
-
-- ✅ new component `<Comms>` can draw reactive contour-like smooth lines around npcs
-- ✅ restrict to player vs one other with transition for previous
-  - draws contours from an npc towards another
-  - `pick | demo_influence`
-- Comms -> PlayerInfluence
-  - no need to support other npcs
-- reaches further distance
-- pair with animation "influence"
-- clarify as weapon
-- check mobile
-
 ### Decor
 
 - labels as decor point
@@ -61,6 +48,32 @@
     - TypeError: Cannot read properties of null (reading 'type')
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
+
+### Psi
+
+- ✅ new component `<Comms>` can draw reactive contour-like smooth lines around npcs
+- ✅ restrict to player vs one other with transition for previous
+  - draws contours from an npc towards another
+- ✅ Comms -> Psi
+  - only for player
+  - `pick | demo_psi`
+- ✅ reaches further distance
+- 🚧 pair with animation "influence"
+  - ✅ influence -> psi-begin, psi-end
+  - ✅ psi-begin: both hands touch temples
+  - ✅ psi-end:  only right hand touches temple
+  - 🚧 `demo_psi` plays animations
+- clarify as weapon
+  - can modulate reach/speed/gap/fade/colour
+    - ideally with controls
+  - listen to their thoughts in WorldSpeech
+  - player can think in WorldSpeech
+    - can suggest anger, lethargy, restless
+- check mobile performance
+
+### Stun
+
+- model has gun via extra limb on right arm
 
 ### Unorganised Bugs
 

@@ -332,7 +332,7 @@ function psiNodes(
 
 const psiConfig = {
   /** Metres an npc's field reaches */
-  reach: 2.5,
+  reach: 5,
   /** Metres before `reach` over which it fades out */
   reachFade: 0.75,
   /** Metres between contours */
