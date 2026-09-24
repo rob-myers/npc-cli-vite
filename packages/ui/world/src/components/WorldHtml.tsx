@@ -158,7 +158,7 @@ export default function WorldHtml() {
           <div
             className={cn(
               handleClass,
-              "bottom-full left-1/2 mb-2 h-9 w-16 -translate-x-1/2 cursor-grab active:cursor-grabbing",
+              "top-full left-1/2 mt-2 h-9 w-16 -translate-x-1/2 cursor-grab active:cursor-grabbing",
             )}
             onMouseDown={(e) => {
               const p = pointerOf(e);
@@ -181,7 +181,7 @@ export default function WorldHtml() {
             }}
             className={cn(
               handleClass,
-              "right-0 bottom-full mb-2 size-9 cursor-pointer outline-none hover:border-red-400/70 hover:text-red-300",
+              "-top-3 -right-3 z-10 size-9 cursor-pointer outline-none hover:border-red-400/70 hover:text-red-300",
               "focus:outline-2 focus:outline-solid focus:outline-offset-2 focus:outline-white/30", // Enter closes it
             )}
             onClick={() => state.hide(key)}
