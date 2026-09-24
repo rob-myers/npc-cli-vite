@@ -39,19 +39,19 @@ import { WorldContext } from "./world-context";
  * Contour lines of a field between the player and the one npc they influence, a quad apiece. A new
  * influence fades in as the last fades out, so the player has at most two others.
  */
-export default function Comms() {
+export default function Psi() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
     (): State => ({
-      ...createCommsResources(),
-      shown: getWorldStore(w.key).read().commsShown,
+      ...createPsiResources(),
+      shown: getWorldStore(w.key).read().psiShown,
       self: { presence: 0, target: 0 }, // off till someone is influenced
       influenced: [],
       pending: undefined,
       tickedMs: performance.now(),
 
-      influence(npcKey) {
+      choose(npcKey) {
         if (w.disabled === true) state.snap(); // paused: nothing fades, so a change is at once
         if (state.influenced.some((x) => x.target === 0)) {
           state.pending = npcKey; // one still fading out: wait for it, latest pick wins
@@ -76,7 +76,7 @@ export default function Comms() {
         if (w.n === null) return; // <NPCs> mounts after us
         state.flowSecs.value = w.timer.getElapsedTime(); // world time, so a pause holds the rings still
         const now = performance.now();
-        const step = Math.min((now - state.tickedMs) / 1000, 0.1) / commsConfig.fadeSecs;
+        const step = Math.min((now - state.tickedMs) / 1000, 0.1) / psiConfig.fadeSecs;
         state.tickedMs = now;
 
         const { self } = state;
@@ -85,7 +85,7 @@ export default function Comms() {
           (x) => w.n[x.npcKey] !== undefined && (x.presence > 0 || x.target > 0),
         );
         if (state.pending !== undefined && state.influenced.every((x) => x.target === 1)) {
-          state.influence(state.pending);
+          state.choose(state.pending);
         }
 
         const player = w.player === undefined ? undefined : w.n[w.player.key];
@@ -121,11 +121,11 @@ export default function Comms() {
         state.gmCount.value = w.gms.length;
       },
       turnOff() {
-        state.influence(w.player?.key ?? null);
+        state.choose(w.player?.key ?? null);
       },
       setShown(shown) {
         state.shown = shown;
-        getWorldStore(w.key).patch({ commsShown: shown });
+        getWorldStore(w.key).patch({ psiShown: shown });
         state.onTick();
         w.r3f?.invalidate();
       },
@@ -134,12 +134,12 @@ export default function Comms() {
     { reset: { geo: true, mat: true, mesh: true } },
   );
 
-  w.comms = state;
+  w.psi = state;
 
   useEffect(() => state.syncGms(), [w.hash]);
 
   useMemo(() => {
-    const { vertexNode, colorNode } = commsNodes(state, w.view);
+    const { vertexNode, colorNode } = psiNodes(state, w.view);
     state.mat.vertexNode = vertexNode;
     state.mat.colorNode = colorNode;
     state.mat.needsUpdate = true;
@@ -151,7 +151,7 @@ export default function Comms() {
 
 export type State = Resources & {
   shown: boolean;
-  /** The player's own rings, which go when the player is influenced — see `influence` */
+  /** The player's own rings, which go when the player is influenced — see `choose` */
   self: Presence;
   /** Instances after the player's: whom they influence, and whom they did whilst it fades out */
   influenced: (Presence & { npcKey: string })[];
@@ -160,13 +160,13 @@ export type State = Resources & {
   tickedMs: number;
 
   /** Influence `npcKey` instead, or nobody. The player themself turns it all off, till the next */
-  influence(npcKey: null | string): void;
+  choose(npcKey: null | string): void;
   onTick(): void;
   /** Every fade straight to its end */
   snap(): void;
   /** Each geomorph's inverse transform and local bounds, for the shader to find a pixel's room */
   syncGms(): void;
-  /** Fade out the influence and the player's rings with it, as influencing the player does */
+  /** Fade out the influence and the player's rings with it, as choosing the player does */
   turnOff(): void;
   setShown(shown: boolean): void;
 };
@@ -174,17 +174,17 @@ export type State = Resources & {
 /** How far into view a slot's rings are, and whither they are headed */
 type Presence = { presence: number; target: 0 | 1 };
 
-type Resources = ReturnType<typeof createCommsResources>;
+type Resources = ReturnType<typeof createPsiResources>;
 
 /** Steps `x.presence` towards its target by at most `step` */
 function approach(x: Presence, step: number) {
   x.presence += Math.max(-step, Math.min(step, x.target - x.presence));
 }
 
-function createCommsResources() {
+function createPsiResources() {
   // subdivided, since the vertex shader raises it by the field. Even, with a cell to spare each side,
   // so a quad snapped to the world grid still covers its npc's reach
-  const { reach, cell } = commsConfig;
+  const { reach, cell } = psiConfig;
   const segments = 2 * Math.ceil(reach / cell) + 2;
   const side = segments * cell;
   const base = new THREE.PlaneGeometry(side, side, segments, segments).rotateX(-Math.PI / 2);
@@ -194,8 +194,8 @@ function createCommsResources() {
   geo.instanceCount = 0;
 
   // a texel per slot, the player's first: world `xz`, eased presence
-  const npcData = new Float32Array(MAX_COMMS * 4);
-  const npcTex = new THREE.DataTexture(npcData, MAX_COMMS, 1, THREE.RGBAFormat, THREE.FloatType);
+  const npcData = new Float32Array(MAX_PSI * 4);
+  const npcTex = new THREE.DataTexture(npcData, MAX_PSI, 1, THREE.RGBAFormat, THREE.FloatType);
   npcTex.minFilter = npcTex.magFilter = THREE.NearestFilter;
   npcTex.needsUpdate = true;
   const slotCount = uniform(0);
@@ -220,7 +220,7 @@ function createCommsResources() {
   return { geo, mat, mesh, npcData, npcTex, slotCount, flowSecs, gmValues, gmArray, gmCount };
 }
 
-function commsNodes(
+function psiNodes(
   { npcTex, slotCount, flowSecs, gmArray, gmCount }: Resources,
   {
     fadeRoomsFx,
@@ -236,7 +236,7 @@ function commsNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reach, reachFade, spacing, blend, flow, lineWidthPx, color, alpha, lift, height, cell } = commsConfig;
+  const { reach, reachFade, spacing, blend, flow, lineWidthPx, color, alpha, lift, height, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   /** Distance to a slot, pushed out of reach as its presence falls, so coming and going is continuous */
@@ -292,11 +292,11 @@ function commsNodes(
   const y = max(fieldAt(worldXZ).x.div(-reach).add(1), 0).mul(height).add(lift);
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
 
-  const p = varying(worldXZ, "vCommsXZ");
-  const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vCommsOwn");
-  const presence = varying(ownSlot.z, "vCommsPresence");
+  const p = varying(worldXZ, "vPsiXZ");
+  const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vPsiOwn");
+  const presence = varying(ownSlot.z, "vPsiPresence");
   // found per vertex, the uv being affine in position: the texture is read per pixel
-  const gmUv = varying<"vec3">(gmUvAt(worldXZ) as THREE.Node<"vec3">, "vCommsGmUv");
+  const gmUv = varying<"vec3">(gmUvAt(worldXZ) as THREE.Node<"vec3">, "vPsiGmUv");
 
   const colorNode = Fn(() => {
     // per fragment rather than a varying, so a line keeps its shape between vertices
@@ -330,7 +330,7 @@ function commsNodes(
   return { vertexNode, colorNode };
 }
 
-const commsConfig = {
+const psiConfig = {
   /** Metres an npc's field reaches */
   reach: 2.5,
   /** Metres before `reach` over which it fades out */
@@ -355,4 +355,4 @@ const commsConfig = {
 } as const;
 
 /** The player, whom they influence, and whom they did */
-const MAX_COMMS = 3;
+const MAX_PSI = 3;

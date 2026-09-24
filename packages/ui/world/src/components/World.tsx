@@ -39,7 +39,6 @@ import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import Ceiling from "./Ceiling";
-import Comms from "./Comms";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
 import Doors from "./Doors";
@@ -51,6 +50,7 @@ import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import PhysicsWorker from "./PhysicsWorker";
+import Psi from "./Psi";
 import RoomLabels from "./RoomLabels";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
@@ -170,7 +170,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       html: null as any,
       labels: null as any,
       rings: null as any,
-      comms: null as any,
+      psi: null as any,
       roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
@@ -476,7 +476,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Obstacles key="obstacles" />
               <Decor key="decor" />
               <NpcShadows key="npc-shadows" />
-              <Comms key="comms" />
+              <Psi key="psi" />
               <RoomLabels key="room-labels" />
               <Labels key="labels" />
               <NpcRings key="npc-rings" />
@@ -574,7 +574,7 @@ export type State = {
   npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
-  comms: UseStateRef<import("./Comms").State>;
+  psi: UseStateRef<import("./Psi").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
   roomLabels: UseStateRef<import("./RoomLabels").State>;
   speech: UseStateRef<import("./WorldSpeech").State>;

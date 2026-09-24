@@ -242,8 +242,8 @@ export function WorldMenu() {
         return w.view.roomOutline ?? false;
       case "lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
-      case "comms":
-        return w.comms?.shown ?? false;
+      case "psi":
+        return w.psi?.shown ?? false;
       case "colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "grid":
@@ -349,8 +349,8 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
-      case "comms":
-        w.comms?.setShown(!w.comms.shown);
+      case "psi":
+        w.psi?.setShown(!w.psi.shown);
         state.update();
         break;
       case "decorations": {
@@ -1262,7 +1262,7 @@ const debugItems = [
   "rgb shift",
   "room outlines",
   "lit npcs",
-  "comms",
+  "psi",
   "room hit",
   "graphs",
   "skins",

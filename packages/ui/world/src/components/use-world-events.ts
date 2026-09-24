@@ -873,7 +873,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick();
         w.rings?.onTick();
-        w.comms?.onTick();
+        w.psi?.onTick();
         w.speech?.removeNpcToasts(...npcKeys);
         w.npc.update();
         // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
@@ -980,7 +980,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
-        w.comms?.onTick();
+        w.psi?.onTick();
         w.view.forceUpdate();
 
         await Promise.all(
