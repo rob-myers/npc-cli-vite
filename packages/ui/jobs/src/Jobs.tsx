@@ -161,8 +161,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             (agg, meta) => ((agg[meta.key] = processMetaToProcessLeader(meta)), agg),
             [] as ProcessLeader[],
           );
-          // session leader has its status reset; show as killed if not running
-          if (session.process[0].cleanups.length === 0) {
+          // session leader is reused: finished once the prompt is back, whatever it registered
+          if (session.ttyShell.isInitialized() && session.ttyShell.isInteractive()) {
             state.processes[0].status = toProcessStatus.Killed;
           }
 
