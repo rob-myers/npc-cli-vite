@@ -50,6 +50,16 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   while (api.getCached(WORLD_KEY)?.isReady(api.meta.sessionKey) !== true) {
     await api.sleep(0.05);
   }
+
+  // world commands pause with it — see `docs/jsh-pause.md`
+  api.setPtags({ world: false });
+  const w = api.getCached(WORLD_KEY);
+  const group = api.pauseGroup("world");
+  const sub = w.events.subscribe({
+    next: (e) => (e.key === "disabled" ? group.pause() : e.key === "enabled" && group.resume()),
+  });
+  group.own(() => sub.unsubscribe());
+  if (w.disabled === true) group.pause();
 }
 
 /**
@@ -109,6 +119,7 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   { api, args, w }: JshCli.RunArg,
   opts: { where?(e: JshCli.Event): e is T } = api.jsArg(args),
 ) {
+  api.setPtags({ world: false }); // it reports the pause
   const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
@@ -749,6 +760,7 @@ export function pause({ w }: JshCli.RunArg) {
  */
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
+  api.setPtags({ world: false }); // picking whilst paused
 
   // e.g. `pick --long` not `pick long` (filter)
   const opts = ct.api.jsArg(args, {

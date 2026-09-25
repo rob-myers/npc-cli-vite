@@ -174,6 +174,7 @@ export function demo_npc_ui(
  * ```
  */
 export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // switches on a pick whilst paused
   /** The player, the default, turns it off */
   const choose = (npcKey = w.player?.key ?? null) => {
     w.psi.choose(npcKey);

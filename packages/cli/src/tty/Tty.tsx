@@ -128,7 +128,7 @@ export function Tty(props: Props) {
 
         // resume spawned whilst paused, unless explicitly paused
         for (const pgid of state.pausedSpawnPgids) {
-          sessionApi.kill(props.sessionKey, [pgid], { GROUP: true, CONT: true });
+          sessionApi.kill(props.sessionKey, [pgid], { GROUP: true, CONT: true, reason: "tty" });
         }
         state.pausedSpawnPgids.clear();
 
@@ -188,7 +188,7 @@ export function Tty(props: Props) {
     if (!baseRef.current?.session) return;
     const { session } = baseRef.current;
 
-    // if disabled, suspend spawned bg processes sans process tag 'always'
+    // if disabled, suspend spawned bg processes — see `docs/jsh-pause.md`
     session.ttyShell.disabled = !!props.disabled;
 
     if (props.disabled === true) {

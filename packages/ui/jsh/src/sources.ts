@@ -5,7 +5,7 @@ import { jsFunctionToShellFunction } from "@npc-cli/cli/shell/js-to-shell";
 
 export type TtyJsModules = typeof modules;
 
-type TtyJsModuleKey = keyof TtyJsModules;
+type TtyJsModuleKey = Exclude<keyof TtyJsModules, "moduleTags">;
 
 /**
  * Keys of basenames of files in /etc.
@@ -20,24 +20,26 @@ export const shellFunctionFiles = {
     {} as Record<EtcBasename, string>,
   ),
 
-  ...Object.entries(modules).reduce(
-    (agg, [moduleKey, module]) => ({
-      ...agg,
-      [`${moduleKey}.js.sh`]: Object.entries(module)
-        .flatMap(
-          // exclude non-function exports
-          ([fnKey, fn]) =>
-            typeof fn === "function"
-              ? jsFunctionToShellFunction({
-                  modules,
-                  moduleKey,
-                  fnKey,
-                  fn,
-                })
-              : [],
-        )
-        .join("\n\n"),
-    }),
-    {} as Record<EtcBasename, string>,
-  ),
+  ...Object.entries(modules)
+    .filter(([moduleKey]) => moduleKey !== "moduleTags")
+    .reduce(
+      (agg, [moduleKey, module]) => ({
+        ...agg,
+        [`${moduleKey}.js.sh`]: Object.entries(module)
+          .flatMap(
+            // exclude non-function exports
+            ([fnKey, fn]) =>
+              typeof fn === "function"
+                ? jsFunctionToShellFunction({
+                    modules,
+                    moduleKey,
+                    fnKey,
+                    fn,
+                  })
+                : [],
+          )
+          .join("\n\n"),
+      }),
+      {} as Record<EtcBasename, string>,
+    ),
 };
