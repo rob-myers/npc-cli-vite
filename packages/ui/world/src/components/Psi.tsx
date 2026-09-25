@@ -86,7 +86,7 @@ export default function Psi() {
 
         const { self, tune } = state;
         for (const x of [self, ...state.influenced]) {
-          approach(x, secs / (x.target === 1 ? tune.fadeSecs : tune.fadeSecs * psiConfig.fadeOutScale));
+          approach(x, secs / tune.fadeSecs);
         }
         state.influenced = state.influenced.filter(
           (x) => w.n[x.npcKey] !== undefined && (x.presence > 0 || x.target > 0),
@@ -385,8 +385,6 @@ const psiConfig = {
   headAbove: 0.24,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
-  /** Going takes this many times as long as coming */
-  fadeOutScale: 2,
 } as const;
 
 /** The player, whom they influence, and whom they did */

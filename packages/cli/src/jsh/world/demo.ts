@@ -177,10 +177,14 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
   api.setPtags({ world: false }); // switches on a pick whilst paused
   /** Whom the player influences, or `null` */
   let influenced: null | string = null;
-  /** Hands to temples whilst influencing — elbows forward (`psi_avoid`) whilst a crowd neighbour is too close for them out */
+  /** Hands to temples whilst influencing — elbows forward (`psi_avoid`) whilst they'd hit a crowd neighbour or a doorway */
   const syncHands = () => {
     const player = w.n[w.player?.key];
-    const near = player?.agent?.neis.some(({ dist }) => dist < psiNearDist ** 2) === true; // `dist` squared
+    const doors = player === undefined ? undefined : w.e.npcToDoors[player.key];
+    const near =
+      player?.agent?.neis.some(({ dist }) => dist < psiNearDist ** 2) === true || // `dist` squared
+      doors?.inside != null ||
+      (player?.isMoving() === true && (doors?.nearby.size ?? 0) > 0); // walking up to one
     const pose = influenced === null ? null : near ? "psi_avoid" : "psi";
     player?.anim.setUpper(pose, { swapSecs: near ? psiAvoidSecs : undefined });
   };

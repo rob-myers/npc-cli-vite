@@ -289,7 +289,7 @@ export const defaultSkinKey = "medic-0";
 /** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
 export const psiMaxReach = 8;
 
-export const defaultPsiTune: PsiTune = { reach: 5, speed: 0.4, gap: 0.5, fadeSecs: 0.6, color: "#9fe8ff" };
+export const defaultPsiTune: PsiTune = { reach: 5, speed: 0.4, gap: 0.5, fadeSecs: 1.2, color: "#9fe8ff" };
 
 /** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
 export const psiTuneRanges = {
@@ -307,7 +307,7 @@ export type PsiTune = {
   speed: number;
   /** Metres between contours */
   gap: number;
-  /** Seconds an influence takes to come — going takes `psiConfig.fadeOutScale` times as long */
+  /** Seconds an influence takes to come, and to go */
   fadeSecs: number;
   color: string;
 };
