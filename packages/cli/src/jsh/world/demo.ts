@@ -185,7 +185,9 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
   if (arg !== undefined || api.isTtyAt(0)) choose(arg);
   if (api.isTtyAt(0)) return;
 
-  // a kill turns it off, and ends a read that may never come
+  /** Whom we influence, again on resume */
+  let chosen = arg;
+  // a kill turns it off, and ends a read that may never come; a pause turns it off till resumed
   let killed = false as boolean; // set by `cleanup`, which narrowing cannot see
   let onKill = () => {};
   const killedRead = new Promise<void>((resolve) => (onKill = resolve));
@@ -195,6 +197,8 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
       choose();
       onKill();
     },
+    onSuspend: () => (choose(), true),
+    onResume: () => (chosen !== undefined && choose(chosen), true),
   });
 
   try {
@@ -202,7 +206,7 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
     while ((datum = await Promise.race([api.read(), killedRead])) !== api.eof && killed === false) {
       const pick = datum as JshCli.PickEvent;
       const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
-      if (npcKey !== undefined && npcKey in w.n) choose(npcKey);
+      if (npcKey !== undefined && npcKey in w.n) choose((chosen = npcKey));
     }
   } finally {
     handlers.dispose();
