@@ -95,12 +95,16 @@ Which npcs are parked — and the wall segment each stands against — is jsh st
 
 Exports of `packages/cli/src/jsh/world/{core,demo,debug,decor,pred}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
 
+**Only `packages/cli/src/jsh/world` knows of the World.** The shell (`packages/cli/src/shell`: builtins, `api`, sessions) and `packages/cli/src/jsh`'s own modules e.g. `util.js` must not import or mention it. A later-sourced module may shadow an earlier one's command, never a builtin — builtins win.
+
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
 - never `await` something a kill cannot interrupt: `w.npc.nextTick()` never resolves whilst the world is paused, so race it — `Promise.race([w.npc.nextTick(), killed])`;
 - on the way out `handlers.dispose()`, then `throw api.getKillError()`.
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
+
+**Pausing** — see `docs/jsh-pause.md`, the ONLY doc for it. In short: world commands (and their descendants) pause with the World via a pause group made in `awaitWorld`; one that must keep going calls `api.setPtags({ world: false })` first, like `pick`.
 
 ## Decorator panel
 
@@ -134,6 +138,7 @@ and its node NAMES are its tags.
 
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
+- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`' `onTick` via `useMemo`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 
 - `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone, never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`

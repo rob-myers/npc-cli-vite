@@ -3,6 +3,7 @@ import { useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useState } from "react";
 import type { AnimationClipKey } from "./NPCs";
+import PsiControls from "./PsiControls";
 import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
 
@@ -12,10 +13,11 @@ export default function NpcBubbles() {
 
   const state = useStateRef(
     (): State => ({
-      ensure(npcKey) {
+      ensure(npcKey, { focus = false } = {}) {
         const npc = w.npc.get(npcKey);
         const tracked = { object: npc.skinnedMesh, offset: npc.bubbleOffset };
         w.html.show(bubbleKey(npcKey), tracked, <NpcBubble w={w} npcKey={npcKey} />);
+        if (focus === true) w.html.focus(bubbleKey(npcKey));
       },
       delete(...npcKeys) {
         w.html.hide(...npcKeys.map(bubbleKey));
@@ -46,7 +48,7 @@ function NpcBubble({ w, npcKey }: { w: WorldState; npcKey: string }) {
   const npc = w.n[npcKey];
 
   return (
-    <div className="pointer-events-auto flex w-(--html-width,32rem) flex-col gap-3 rounded-2xl border-4 border-white/40 bg-black/70 px-5 py-4 text-[1.8rem] text-white/90">
+    <div className="pointer-events-auto flex w-(--html-width,32rem) flex-col gap-3 rounded-2xl border-4 border-white/40 bg-black/70 px-5 py-4 text-lg text-white/90">
       <div className="flex items-center gap-3">
         <PersonSimpleIcon className="size-9 shrink-0 text-white/80" weight="duotone" />
         <span className="truncate font-medium tracking-wide">{npcKey}</span>
@@ -88,6 +90,7 @@ function NpcBubble({ w, npcKey }: { w: WorldState; npcKey: string }) {
           </Select.Portal>
         </Select.Root>
       )}
+      {npcKey === w.player?.key && <PsiControls w={w} />}
     </div>
   );
 }
@@ -97,8 +100,8 @@ const bubbleKey = (npcKey: string) => `bubble:${npcKey}`;
 const posePollMs = 250;
 
 export type State = {
-  /** Up, redrawn if already */
-  ensure(npcKey: string): void;
+  /** Up, redrawn if already — `focus` its close button, open already or not */
+  ensure(npcKey: string, opts?: { focus?: boolean }): void;
   delete(...npcKeys: string[]): void;
   setShown(npcKey: string, shown: boolean): void;
 };

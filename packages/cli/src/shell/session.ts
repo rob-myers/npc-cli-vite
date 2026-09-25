@@ -10,7 +10,7 @@ import {
   warn,
 } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
-import { type ProcessStatus, ProcessTag, toProcessStatus } from "./const";
+import { type ProcessStatus, toProcessStatus } from "./const";
 import {
   type Device,
   FifoDevice,
@@ -183,10 +183,11 @@ export const sessionApi = {
       // const interactive = session.ttyShell.isInteractive();
 
       if (opts.STOP === true) {
+        // held ones too, else resuming their hold would outrun ours — see `KillOpts.reason`
         const processes = Object.values(session.process)
-          .filter((p) => p.status === toProcessStatus.Running && !(ProcessTag.always in p.ptags))
+          .filter((p) => p.status === toProcessStatus.Running || !!p.holds?.size)
           .reverse();
-        sessionApi.killProcesses(processes, opts);
+        sessionApi.killProcesses(processes, { reason: "tty", ...opts });
         return processes.map((p) => p.key);
       }
 
@@ -195,7 +196,7 @@ export const sessionApi = {
         const processes = pids
           .map((pid) => session.process[pid])
           .filter((p) => p?.status === toProcessStatus.Suspended);
-        sessionApi.killProcesses(processes, opts);
+        sessionApi.killProcesses(processes, { reason: "tty", ...opts });
         return processes.map((p) => p.key);
       }
     }
@@ -225,6 +226,14 @@ export const sessionApi = {
     } else if (opts.STOP === true) {
       const byPtags = !!opts.byPtags;
       for (const p of processes) {
+        if (opts.reason !== undefined) {
+          const holds = (p.holds ??= new Set());
+          if (holds.has(opts.reason)) continue;
+          // paused outright before any hold: keep it so, until a plain CONT
+          if (holds.size === 0 && p.status === toProcessStatus.Suspended) holds.add("user");
+          holds.add(opts.reason);
+          if (holds.size > 1) continue; // already suspended
+        }
         p.onSuspends = p.onSuspends.filter((onSuspend) => {
           try {
             return onSuspend(byPtags);
@@ -238,6 +247,8 @@ export const sessionApi = {
       }
     } else if (opts.CONT === true) {
       for (const p of processes) {
+        if (opts.reason === undefined) p.holds?.clear();
+        else if (p.holds?.delete(opts.reason) !== true || p.holds.size > 0) continue; // not ours, or held still
         p.onResumes = p.onResumes.filter((onResume) => {
           try {
             return onResume();
@@ -541,6 +552,8 @@ export type ProcessMeta = {
   /** Inherited local variables. */
   inheritVar: Record<string, unknown>;
   ptags: Ptags;
+  /** Why it is suspended, when a `KillOpts.reason` suspended it */
+  holds?: Set<string>;
 };
 
 export type TtyLinkCtxt = {
@@ -566,10 +579,14 @@ interface KillOpts {
   SIGINT?: boolean;
   /**
    * - For `api.killProcesses` this is just passed to suspend callbacks.
-   * - For `api.kill` this selects the processes to be killed, i.e. those
-   *   lacking the process tag `ProcessTag.always`
+   * - For `api.kill` this selects the processes: STOP every live one, CONT the given pids
    */
   byPtags?: boolean;
   GROUP?: boolean;
   ptags?: Ptags;
+  /**
+   * A hold: STOP adds it, CONT removes it and resumes only once none remain — so pausers don't
+   * undo one another. `api.kill` by ptags uses `"tty"`. Without one, CONT resumes outright
+   */
+  reason?: string;
 }

@@ -4,7 +4,13 @@
 
 ### Animation
 
-- try use strafe left/right animations
+- ✅ remove strafe left/right animations
+- ✅ rename psychic-attack -> influence
+
+- ✅ `backwards` animation
+- ✅ `move rob --back to:$( pick 1 )`
+- ✅ `demo_back_off kate`
+
 - skin remapping
   - currently only have skinIndex
 
@@ -47,7 +53,37 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
 
-### Other Bugs
+### Psi
+
+- ✅ new component `<Comms>` can draw reactive contour-like smooth lines around npcs
+- ✅ restrict to player vs one other with transition for previous
+  - draws contours from an npc towards another
+- ✅ Comms -> Psi
+  - only for player
+  - `pick | demo_psi`
+- ✅ reaches further distance
+- ✅ pair with animation "influence"
+  - ✅ influence -> psi-begin, psi-end
+  - ✅ `psi-begin`: both hands touch temples
+  - ✅ `psi-end`:  only right hand touches temple
+  - ✅ `demo_psi` plays animations
+  - ✅ remove `psi-end`, `psi-start` -> `psi`
+  - ✅ tidy
+- 🚧 clarify as weapon
+  - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
+  - ✅ can modulate reach/speed/gap/fade/colour
+    - ideally with controls
+  - 🚧 listen to their thoughts in WorldSpeech
+  - player can think in WorldSpeech
+    - can suggest anger, lethargy, restless
+- check mobile performance
+
+### Gauntlet
+
+- ✅ remove animation `idle-avoid`
+- ✅ animation `gauntlet`
+
+### Unorganised Bugs
 
 - 🚧 BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
@@ -67,10 +103,10 @@
 
 - ✅ rewrite README.md
 
-- main image improvements
+- 🚧 main image improvements
   - larger World
-  - larger tty text (zoom in browser)
-  - brighter
+  - 🚧 larger tty text (120%) 
+  - 🚧 brighter (1x global, 0.7x npc)
 
 ## HMR
 

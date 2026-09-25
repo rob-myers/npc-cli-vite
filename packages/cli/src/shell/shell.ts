@@ -348,13 +348,12 @@ export class TtyShell implements Device {
 
       if (
         this.disabled === true &&
-        // processes not tagged with 'always' are paused,
-        // except those which are tagged interactive
-        !(ProcessTag.always in process.ptags) &&
+        // paused, except those tagged interactive
         !(ProcessTag.interactive in process.ptags) &&
         this.spawnBgPaused === true
       ) {
         process.status = toProcessStatus.Suspended;
+        process.holds = new Set(["tty"]);
       }
 
       // Shallow clone avoids mutation by descendants

@@ -215,7 +215,8 @@ export default function Ceiling() {
         normalNode={material.normalNode}
         outputNode={material.pickNode}
         opacityNode={material.opacityNode}
-        depthWrite // use depth buffer to fix editable lighting
+        // depthWrite // use depth buffer to fix editable lighting
+        depthWrite={false}
         alphaTest={0.1}
       />
     </instancedMesh>

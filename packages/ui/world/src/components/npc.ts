@@ -392,7 +392,7 @@ export class Npc {
   /**
    * Can look at `npcKey` or point.
    */
-  async look({ at, minMs = 0, immediate = false }: JshCli.LookOpts) {
+  async look({ at, minMs = 0, immediate = false, rate = 1 }: JshCli.LookOpts) {
     const groundPoint = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
     this.last.look = groundPoint;
 
@@ -412,7 +412,7 @@ export class Npc {
         this.rejectAll(new Error("look again"));
         this.resolve.look = resolve;
         this.reject.look = reject;
-        this.anim.lookAt(target, minMs);
+        this.anim.lookAt(target, minMs, rate);
       });
     } catch (e) {
       if (e instanceof Error && e.message === "look again") {

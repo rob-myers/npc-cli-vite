@@ -219,6 +219,8 @@ function rasterise(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance, it
 /** The same dimensions and transform as `DerivedGmsData`'s room-hit canvas */
 const slotTextureDimension = Math.round(floorTextureDimension * roomHitTextureScaleDown);
 const slotScale = roomHitTextureScaleDown * worldToSguScale * gmFloorExtraScale;
+/** Metres in geomorph-local space to `decodeUvVisibility`'s uv */
+export const slotUvPerMetre = slotScale / slotTextureDimension;
 
 /**
  * How far each room is grown, in metres: half a non-hull wall's thickness.

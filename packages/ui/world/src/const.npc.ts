@@ -43,6 +43,8 @@ export const agentConfig = {
     idleSeparating: 0.005,
     walk: 1.5,
     run: 4,
+    /** Backing away — see `w.npc.move`'s `backwards` */
+    backwards: 0.8,
   },
   /**
    * Whilst a move is `fast` the gait on show follows their speed: run above one, back to walk
@@ -153,12 +155,12 @@ export const npcMaterialConfig = {
 } as const;
 
 export const fromAnimationClipKey = {
+  backwards: true,
   breathe: true,
   idle: true,
-  /** `idle` leant back, shoulders back — see jsh's `demo_lean_back` */
-  "idle-avoid": true,
+  gauntlet: true,
   lie: true,
-  "psychic-attack": true,
+  psi: true,
   run: true,
   shuffle: true,
   sit: true,
@@ -170,6 +172,9 @@ export const defaultIdleAnimationClipKey = "breathe" satisfies import("./compone
 /** Fallback for @see {fadeSecs} */
 export const defaultFadeSecs = 0.3;
 
+/** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
+export const upperFadeSecs = 0.4;
+
 /**
  * Cross-fade seconds `fadeSecs[src][dst]`, from one animation clip into another.
  * A missing destination falls back to @see {defaultFadeSecs}.
@@ -178,11 +183,12 @@ export const fadeSecs: Record<
   keyof typeof fromAnimationClipKey,
   Partial<Record<keyof typeof fromAnimationClipKey, number>>
 > = {
-  breathe: { shuffle: 0.15, "idle-avoid": 0.4 },
+  backwards: {},
+  breathe: { shuffle: 0.15 },
   idle: { shuffle: 0.15 },
-  "idle-avoid": { breathe: 0.4 },
+  gauntlet: {},
   lie: {},
-  "psychic-attack": {},
+  psi: {},
   run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },

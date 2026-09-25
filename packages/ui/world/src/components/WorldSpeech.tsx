@@ -367,13 +367,9 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
       <Menu.Portal container={w.rootEl}>
         <Menu.Positioner className="z-50" side="bottom" align="start" sideOffset={8}>
           <Menu.Popup className="select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg min-w-18">
-            {canLightOrDelete === true && (
-              <Menu.Item
-                className={speechMenuItemClassName}
-                // `setNpcLit` writes a uniform, so nothing here re-renders on its own
-                onClick={() => (w.e.setNpcLit(npc), w.speech.update())}
-              >
-                {npc.lit === true ? "unlight" : "light"}
+            {npc !== undefined && (
+              <Menu.Item className={speechMenuItemClassName} onClick={() => w.bubble.ensure(npcKey)}>
+                debug
               </Menu.Item>
             )}
             {npc !== undefined && (
@@ -392,16 +388,15 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
                 goto
               </Menu.Item>
             )}
-            {npc !== undefined && (
-              <Menu.Item className={speechMenuItemClassName} onClick={() => w.bubble.ensure(npcKey)}>
-                debug
+            {canLightOrDelete === true && (
+              <Menu.Item
+                className={speechMenuItemClassName}
+                // `setNpcLit` writes a uniform, so nothing here re-renders on its own
+                onClick={() => (w.e.setNpcLit(npc), w.speech.update())}
+              >
+                {npc.lit === true ? "unlight" : "light"}
               </Menu.Item>
             )}
-            {w.speech.menuItems.map((item) => (
-              <Menu.Item key={item.key} className={speechMenuItemClassName} onClick={() => item.action(npcKey)}>
-                {typeof item.text === "function" ? item.text(npcKey) : item.text}
-              </Menu.Item>
-            ))}
             {canLightOrDelete && (
               <Menu.Item
                 className={cn(speechMenuItemClassName, armed === true && "text-red-300")}
@@ -409,9 +404,14 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
                 closeOnClick={armed}
                 onClick={() => (armed === true ? w.e.removeNpcs(npcKey) : setArmed(true))}
               >
-                {armed === true ? "confirm" : "remove npc"}
+                {armed === true ? "confirm" : "remove"}
               </Menu.Item>
             )}
+            {w.speech.menuItems.map((item) => (
+              <Menu.Item key={item.key} className={speechMenuItemClassName} onClick={() => item.action(npcKey)}>
+                {typeof item.text === "function" ? item.text(npcKey) : item.text}
+              </Menu.Item>
+            ))}
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>

@@ -54,6 +54,7 @@ import {
   fromAnimationClipKey,
   npcConfig,
   npcMaterialConfig,
+  npcScale,
   npcSpawnConfig,
 } from "../const.npc";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
@@ -74,6 +75,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
+      headYByPose: mapValues(fromAnimationClipKey, () => 0),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       // ONE uniform every npc material reads, so the slider is a value write rather than a rebuild
       dimNode: uniform(w.npcBrightness),
@@ -335,6 +337,7 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           Object.setPrototypeOf(npc, Npc.prototype);
           Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
+          Object.assign(npc.anim, { ...new NpcAnimation(npc), ...npc.anim }); // fields added since
 
           // `NpcInstance` carries their position and rotation over to the new mesh
           if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
@@ -433,7 +436,7 @@ export default function NPCs() {
       hasDoMeta(meta) {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
       },
-      async move({ npcKey, to, arrive = true, fast }) {
+      async move({ npcKey, to, arrive = true, fast, backwards = false }) {
         /** Can be overriden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
 
@@ -501,7 +504,8 @@ export default function NPCs() {
             groundPoint = helper.parseGroundPoint(nearDoor.position);
           }
 
-          npc.anim.fast = fast === true; // the gait itself follows their speed — see `syncGait`
+          npc.anim.fast = fast === true && backwards === false; // the gait itself follows their speed — see `syncGait`
+          npc.anim.backwards = backwards;
           npc.anim.aimAt({ groundPoint, result });
           await state.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);
@@ -563,7 +567,8 @@ export default function NPCs() {
           // creeping — a stuck npc's velocity swings about, and turning to face each swing looks
           // like a jerk
           npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / agentConfig.maxSpeed.walk) : 0;
-          if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + Math.PI;
+          // backing away they face whence they go
+          if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + (npc.anim.backwards === true ? 0 : Math.PI);
 
           const [tx, , tz] = agent.targetPosition;
           const targetDist = Math.hypot(tx - npc.position.x, tz - npc.position.z);
@@ -611,6 +616,7 @@ export default function NPCs() {
         w.e.syncNpcRoomSlots();
         w.shadows?.onTick();
         w.rings?.onTick();
+        w.psi?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
@@ -753,6 +759,7 @@ export default function NPCs() {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
+        w.psi?.onTick();
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
@@ -803,6 +810,10 @@ export default function NPCs() {
         if (corner === undefined) return;
 
         const at = { x: corner.position[0], y: corner.position[2] };
+        if (npc.anim.backwards === true) {
+          // backs onto it: faces the point opposite
+          Object.assign(at, { x: 2 * npc.position.x - at.x, y: 2 * npc.position.z - at.y });
+        }
         const target = geomService.getThreeRotationY(at.y - npc.position.z, at.x - npc.position.x);
         if (Math.abs(deltaAngle(npc.rotation.y, target)) > npcConfig.angle.turnBeforeMove) {
           await npc.look({ at });
@@ -909,6 +920,7 @@ export default function NPCs() {
     );
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
+    state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
 
     /** on new clips fade old ones, else hmr can break animations */
     for (const npc of Object.values(state.npc)) {
@@ -948,6 +960,8 @@ export type AnimationClipKey = keyof typeof fromAnimationClipKey;
 
 export type State = {
   clips: Record<AnimationClipKey, THREE.AnimationClip>;
+  /** Metres of the head bone's pivot above an npc's feet, per pose at its start — see `Psi` */
+  headYByPose: Record<AnimationClipKey, number>;
   crowd: crowdApi.Crowd;
   /** How much of their skin every npc keeps — see `setBrightness`, and `w.npcBrightness` behind it */
   dimNode: THREE.UniformNode<"float", number>;
@@ -1117,13 +1131,29 @@ function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: 
   return false;
 }
 
+/** Pose a spare copy in each clip at its start, and read the head bone's height — once per model */
+function headYByPoseOf(scene: THREE.Object3D, clips: Record<AnimationClipKey, THREE.AnimationClip>) {
+  const model = SkeletonUtils.clone(scene);
+  const head = model.getObjectByName("head");
+  const mixer = new THREE.AnimationMixer(model);
+  return mapValues(clips, (clip) => {
+    mixer.stopAllAction(); // the rest pose, bar what this clip moves
+    mixer.clipAction(clip).play();
+    mixer.update(0);
+    return (head?.getWorldPosition(tmpVector3).y ?? 0) * npcScale;
+  });
+}
+
+const tmpVector3 = new THREE.Vector3();
+
 /**
  * Has the gait finished fading in? Arriving before then would cut it off, looking jerky. Walk and
  * run together, so a crossfade between them near the target does not hold the arrival up
  */
 function moveClipFadedIn(npc: Npc) {
-  const weight = (key: "walk" | "run") => npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0;
-  return weight("walk") + weight("run") >= 0.99;
+  const weight = (key: "walk" | "run" | "backwards") =>
+    npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0;
+  return weight("walk") + weight("run") + weight("backwards") >= 0.99;
 }
 
 /** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */

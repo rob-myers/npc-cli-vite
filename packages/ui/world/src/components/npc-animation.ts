@@ -3,7 +3,14 @@ import { deltaAngle } from "maath/misc";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
-import { agentConfig, defaultFadeSecs, defaultIdleAnimationClipKey, fadeSecs, npcScale } from "../const.npc";
+import {
+  agentConfig,
+  defaultFadeSecs,
+  defaultIdleAnimationClipKey,
+  fadeSecs,
+  npcScale,
+  upperFadeSecs,
+} from "../const.npc";
 import { helper } from "../service/helper";
 import { emptyAnimationClip } from "../service/three-animation";
 import type { AnimationClipKey } from "./NPCs";
@@ -23,11 +30,15 @@ export class NpcAnimation {
 
   /** The clip on show — a KEY, so it survives a hot-reload's new clip objects */
   pose: AnimationClipKey = defaultIdleAnimationClipKey;
+  /** Metres of the head's pivot above their feet in `pose` — see `w.npc.headYByPose` */
+  headY = 0;
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
   idleClip = emptyAnimationClip;
   moveClip = emptyAnimationClip;
   /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
   fast = false;
+  /** The move's INTENT: they back away, facing whence they go — see `w.npc.move` */
+  backwards = false;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
   gaitSecs = 0;
   /** true iff moving via agent in navmesh */
@@ -42,6 +53,17 @@ export class NpcAnimation {
 
   /** The colour fade of `Npc.fadeIn`/`fadeOut`: `delta` per second towards `target`, `0` at rest */
   fadeState = { delta: 0, target: 1 };
+  /** A clip over the upper body alone, eased in and out over the pose by `blend` — see `tickUpper` */
+  upper = {
+    key: null as null | AnimationClipKey,
+    blend: 0,
+    target: 0,
+    /** Seconds into its clip */
+    time: 0,
+    group: null as null | THREE.Group,
+    /** Each bone, the pose's rotation of it, and ours as last written — see `tickUpper` */
+    bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion }[],
+  };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `timed` look is under way */
   face = {
     target: 0,
@@ -72,13 +94,21 @@ export class NpcAnimation {
     }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
     this.pose = next;
+    this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
     this.npc.setLabelYShift(labelYShiftForClip(next));
   }
 
-  /** The ONLY per-frame work: the mixer, the colour fade, the gait's pace, and the facing */
+  /** Ease `key` in over the upper body, or out with `null` */
+  setUpper(key: null | AnimationClipKey) {
+    if (key !== null) this.upper.key = key;
+    this.upper.target = key === null ? 0 : 1;
+  }
+
+  /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
     this.mixer.update(delta);
+    this.tickUpper(delta);
 
     const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
@@ -127,8 +157,42 @@ export class NpcAnimation {
     }
   }
 
+  /** Slerp the upper body from the pose towards `upper.key`, by `blend` */
+  tickUpper(delta: number) {
+    const u = this.upper;
+    const { group } = this.npc;
+    u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
+    if (u.key === null || group === null) return;
+
+    if (u.group !== group) {
+      u.group = group; // a fresh group, or hmr
+      u.bones = upperBodyBones.flatMap((name) => {
+        const bone = group.getObjectByName(name);
+        // `written` equals nothing, so the first tick reads the pose
+        return bone === undefined
+          ? []
+          : [{ bone, base: new THREE.Quaternion(), written: new THREE.Quaternion(Number.NaN) }];
+      });
+    }
+
+    // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
+    const clip = this.npc.clips[u.key];
+    u.time = (u.time + delta) % (clip.duration || 1);
+    const tracks = upperTracksOf(clip);
+    const t = u.blend * u.blend * (3 - 2 * u.blend);
+    for (const { bone, base, written } of u.bones) {
+      // the pose's, unless its mixer left ours there — as a still pose e.g. `lie` does
+      if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+      const track = tracks.get(bone.name);
+      const q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
+      written.copy(bone.quaternion.slerpQuaternions(base, q, t));
+    }
+    if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
+  }
+
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
   syncGait(delta: number) {
+    if (this.backwards === true) return; // one gait
     const { runAbove, walkBelow, minSecs } = agentConfig.gait;
     this.gaitSecs += delta;
     const running = this.moveClip.name === "run";
@@ -180,7 +244,8 @@ export class NpcAnimation {
     if (agent !== null) {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
       agent.maxAcceleration = agentConfig.maxAcceleration.walk;
-      agent.maxSpeed = this.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk;
+      const { maxSpeed } = agentConfig;
+      agent.maxSpeed = this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
     }
     // after the turn, so a long one does not eat the stuck grace
     this.npc.last.moveTime = this.w.timer.getElapsedTime();
@@ -188,11 +253,12 @@ export class NpcAnimation {
     this.arrive = arrive;
     // a move interrupted by another keeps its gait on show, so the walk runs on into the new
     // leg — but a look or a spawn in between puts idle on, and it must be shown again or they slide
-    if (this.moving === true && isGait(this.pose)) return;
+    const clipKey = this.backwards === true ? "backwards" : "walk";
+    if (this.moving === true && (this.backwards === true ? this.pose === clipKey : isGait(this.pose))) return;
     this.moving = true;
-    this.moveClip = this.npc.clips.walk;
+    this.moveClip = this.npc.clips[clipKey];
     this.gaitSecs = 0;
-    this.setPose("walk");
+    this.setPose(clipKey);
   }
 
   startIdle({ force = false } = {}) {
@@ -230,13 +296,13 @@ export class NpcAnimation {
    * Turn to face `target` (radians) over a duration set by the arc — shuffling round for a long
    * one, whose feet keep up with the turn — and resolve `npc.resolve.look` on landing. See `Npc.look`
    */
-  lookAt(target: number, minMs: number) {
+  lookAt(target: number, minMs: number, rate = 1) {
     const start = this.npc.rotation.y;
     const diff = deltaAngle(start, target);
     const arc = Math.abs(diff);
     const longLook = arc > longLookAngle;
     // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-    const duration = arc < 0.001 ? 0 : Math.max(minLookSecs, (2 * arc) / (2 * Math.PI), minMs / 1000);
+    const duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
     this.face.timed = { start, diff, duration, elapsed: 0, longLook };
     this.face.rate = 0;
 
@@ -254,6 +320,26 @@ export class NpcAnimation {
 function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
 }
+
+/** Per bone of `upperBodyBones`, the rotation of `clip` at a time — cached per clip */
+function upperTracksOf(clip: THREE.AnimationClip) {
+  let tracks = upperTracks.get(clip);
+  if (tracks === undefined) {
+    const entries = upperBodyBones.flatMap((name) => {
+      const track = clip.tracks.find((t) => t.name === `${name}.quaternion`);
+      // set per track by its interpolation, but untyped
+      const interpolant = (track as undefined | { createInterpolant(): THREE.Interpolant })?.createInterpolant();
+      return interpolant === undefined ? [] : [[name, interpolant] as const];
+    });
+    upperTracks.set(clip, (tracks = new Map(entries)));
+  }
+  return tracks;
+}
+
+const upperTracks = new WeakMap<THREE.AnimationClip, Map<string, THREE.Interpolant>>();
+/** The chest stays the pose's, so its breath and sway carry the arms */
+const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
+const tmpQuat = new THREE.Quaternion();
 
 function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;

@@ -1,4 +1,5 @@
 import { events } from "./core";
+import { npcQuery, plan } from "./plan.main";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -52,71 +53,91 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
 }
 
 /**
- * A breathing npc leans back (`idle-avoid`) whilst a walker passes within reach, glancing their
- * way, and slumps back once none has for a while. Sampled every half second; runs until killed.
+ * Idle npcs back off from a walker held up beside them, to one side of its path and facing it —
+ * see `w.npc.move`'s `backwards`. Runs until killed.
  * ```sh
- * demo_lean_back npc:rob
+ * demo_back_off rob kate
  * ```
  */
-export async function demo_lean_back(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
-) {
-  const npc = w.npc.get(opts.npcKey);
-  const { anim } = npc;
-  /** When the lean began, and their facing then, which the glance is clamped about */
-  let since = 0;
-  let baseY = 0;
+export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
+  const npcs = args.map((npcKey) => w.npc.get(npcKey));
+  /** Whom each has had beside them, since when in world seconds, and where it was then */
+  const beside = new Map<string, { walker: JshCli.Npc; since: number; at: JshCli.GroundPoint }>();
+  const handlers = api.handleStatus({ cleanup() {} });
 
-  const slump = () => {
-    anim.face.rate = 0;
-    if (anim.pose === "idle-avoid") anim.setPose("breathe");
-  };
-  const handlers = api.handleStatus({ cleanup: slump });
+  /** Has `walker` been beside `npc` for `lingerSecs`, making little headway? */
+  function heldUp(npc: JshCli.Npc, walker: JshCli.Npc | undefined): walker is JshCli.Npc {
+    const now = w.timer.getElapsedTime();
+    const prev = beside.get(npc.key);
+    if (walker === undefined) {
+      beside.delete(npc.key);
+    } else if (prev?.walker !== walker || walker.distanceTo(prev.at) > backOffConfig.progress) {
+      beside.set(npc.key, { walker, since: now, at: walker.point }); // time it afresh
+    } else if (now - prev.since >= backOffConfig.lingerSecs) {
+      beside.delete(npc.key);
+      return true;
+    }
+    return false;
+  }
 
   try {
     while (true) {
-      await api.sleep(leanConfig.sampleSecs);
-      if (npc.agent === null || npc.isMoving() || npc.isLooking() || anim.idleClip !== npc.clips.breathe) continue;
-      const now = w.timer.getElapsedTime();
-      const leaning = anim.pose === "idle-avoid";
+      await api.sleep(backOffConfig.sampleSecs);
+      for (const npc of npcs) {
+        if (w.n[npc.key] !== npc || npc.isMoving() || npc.isLooking()) continue;
+        const walker = presser(w, npc);
+        if (heldUp(npc, walker) === false) continue;
 
-      // the nearest walker within reach — `neis` are within `collisionQueryRange`, `dist` squared
-      const [nearest] = npc.agent.neis
-        .filter(({ agentId, dist }) => dist < leanConfig.dist ** 2 && w.npc.byAgentId[agentId]?.isMoving())
-        .sort((a, b) => a.dist - b.dist);
-      if (nearest === undefined) {
-        if (leaning === true && now - since >= leanConfig.minSecs) slump();
-        continue;
-      }
-      if (leaning === false) {
-        [since, baseY] = [now, npc.rotation.y];
-        anim.setPose("idle-avoid");
-      }
+        const src = npc.point;
+        const [ux, uz] = awayFrom(npc, walker);
+        const by = backOffConfig.by;
+        const op = { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + ux * by, y: src.y + uz * by } } as const;
+        const to = await plan({ api, w, op });
+        if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < backOffConfig.minMove) continue;
 
-      // glance at them, no further than `turnMax` from where they faced
-      const walker = w.npc.byAgentId[nearest.agentId];
-      const toWalker = Math.atan2(walker.position.x - npc.position.x, walker.position.z - npc.position.z) + Math.PI;
-      const turn = Math.atan2(Math.sin(toWalker - baseY), Math.cos(toWalker - baseY));
-      Object.assign(anim.face, {
-        target: baseY + Math.max(-leanConfig.turnMax, Math.min(leanConfig.turnMax, turn)),
-        rate: leanConfig.turnScale,
-      });
+        // back onto it, unless it passed by whilst they turned
+        await npc
+          .look({ at: { x: 2 * src.x - to.x, y: 2 * src.y - to.y }, rate: backOffConfig.turnRate })
+          .catch(() => {});
+        if (walker.distanceTo(npc.point) > backOffConfig.dist) continue;
+        void w.npc.move({ npcKey: npc.key, to, backwards: true }).catch(() => {}); // a new push may interrupt
+      }
     }
   } finally {
     handlers.dispose();
   }
 }
 
-const leanConfig = {
-  /** Within this of a walker they lean — no further than the crowd's `collisionQueryRange` */
-  dist: 0.5,
-  /** How often they look for one, and the least time they stay leant */
-  sampleSecs: 0.5,
-  minSecs: 2,
-  /** How far they glance either way, and how fast — against a walker's own turn of `1` */
-  turnMax: (30 * Math.PI) / 180,
-  turnScale: 0.5,
+/** The nearest walker beside `npc` — `neis` have `dist` squared */
+function presser(w: JshCli.WorldState, npc: JshCli.Npc) {
+  const [nearest] = (npc.agent?.neis ?? [])
+    .filter(({ agentId, dist }) => dist < backOffConfig.dist ** 2 && w.npc.byAgentId[agentId]?.isMoving())
+    .sort((a, b) => a.dist - b.dist);
+  return nearest === undefined ? undefined : w.npc.byAgentId[nearest.agentId];
+}
+
+/** Unit `(x, z)` across `walker`'s path on `npc`'s side of it, else straight away from it */
+function awayFrom(npc: JshCli.Npc, walker: JshCli.Npc) {
+  const [vx, , vz] = walker.agent?.velocity ?? [0, 0, 0];
+  const dx = npc.position.x - walker.position.x;
+  const dz = npc.position.z - walker.position.z;
+  const [ux, uz] = Math.hypot(vx, vz) < 0.05 ? [dx, dz] : -vz * dx + vx * dz < 0 ? [vz, -vx] : [-vz, vx];
+  const length = Math.hypot(ux, uz) || 1;
+  return [ux / length, uz / length] as const;
+}
+
+const backOffConfig = {
+  /** Within this of a walker they back off — no further than the crowd's `collisionQueryRange` */
+  dist: 0.6,
+  /** A walker beside them this long, making less headway (metres), is held up — sooner than `stuckDuration` */
+  lingerSecs: 0.2,
+  progress: 0.15,
+  /** Metres they back off by, and the least worth moving once slid along the navmesh */
+  by: 0.8,
+  minMove: 0.2,
+  sampleSecs: 0.1,
+  /** Times faster than usual they turn about */
+  turnRate: 2.5,
 };
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {
@@ -141,6 +162,56 @@ export function demo_npc_ui(
 ) {
   const npc = w.npc.get(opts.npcKey ?? args[0]);
   w.bubble.ensure(npc.key);
+}
+
+/**
+ * The player influences one npc at a time, each fading in as the last fades out — see `Psi`.
+ * Picking the player, killing this, or no npc with nothing piped in, fades it all away
+ * ```sh
+ * pick | demo_psi
+ * demo_psi rob
+ * demo_psi
+ * ```
+ */
+export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // switches on a pick whilst paused
+  /** The player, the default, turns it off */
+  const choose = (npcKey = w.player?.key ?? null) => {
+    w.psi.choose(npcKey);
+    const player = w.n[w.player?.key];
+    player?.anim.setUpper(npcKey === player.key ? null : "psi"); // hands to temples whilst it shows
+  };
+
+  if (arg !== undefined || api.isTtyAt(0)) choose(arg);
+  if (api.isTtyAt(0)) return;
+
+  /** Whom we influence, again on resume */
+  let chosen = arg;
+  // a kill turns it off, and ends a read that may never come; a pause turns it off till resumed
+  let killed = false as boolean; // set by `cleanup`, which narrowing cannot see
+  let onKill = () => {};
+  const killedRead = new Promise<void>((resolve) => (onKill = resolve));
+  const handlers = api.handleStatus({
+    cleanup() {
+      killed = true;
+      choose();
+      onKill();
+    },
+    onSuspend: () => (choose(), true),
+    onResume: () => (chosen !== undefined && choose(chosen), true),
+  });
+
+  try {
+    let datum: unknown;
+    while ((datum = await Promise.race([api.read(), killedRead])) !== api.eof && killed === false) {
+      const pick = datum as JshCli.PickEvent;
+      const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
+      if (npcKey !== undefined && npcKey in w.n) choose((chosen = npcKey));
+    }
+  } finally {
+    handlers.dispose();
+  }
+  if (killed === true) throw api.getKillError();
 }
 
 export function demo_remove_decor(ct: JshCli.RunArg) {

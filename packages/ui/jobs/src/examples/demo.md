@@ -24,7 +24,7 @@ say Hello! rob
 
 ```sh
 spawn abe at:$( pick 1 ) as:robot-0
-demo_lean_back npc:abe
+demo_back_off kate
 ```
 
 # batch

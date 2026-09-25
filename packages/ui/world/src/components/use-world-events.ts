@@ -458,6 +458,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ) {
               w.speech.say(e.meta.npcKey, "...");
             }
+            // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
+            if (
+              (e.longDown === true || e.rightDown === true) &&
+              e.meta.type === "npc" &&
+              typeof e.meta.npcKey === "string" &&
+              e.srcWorld === w.key &&
+              w.debug?.npcContextMenu === true
+            ) {
+              w.bubble.ensure(e.meta.npcKey, { focus: true });
+            }
             break;
           }
           case "spawned-many": {
@@ -873,6 +883,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick();
         w.rings?.onTick();
+        w.psi?.onTick();
         w.speech?.removeNpcToasts(...npcKeys);
         w.npc.update();
         // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
@@ -979,6 +990,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
+        w.psi?.onTick();
         w.view.forceUpdate();
 
         await Promise.all(

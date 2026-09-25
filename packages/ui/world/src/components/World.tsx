@@ -50,6 +50,7 @@ import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import PhysicsWorker from "./PhysicsWorker";
+import Psi from "./Psi";
 import RoomLabels from "./RoomLabels";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
@@ -169,6 +170,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       html: null as any,
       labels: null as any,
       rings: null as any,
+      psi: null as any,
       roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
@@ -474,6 +476,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Obstacles key="obstacles" />
               <Decor key="decor" />
               <NpcShadows key="npc-shadows" />
+              <Psi key="psi" />
               <RoomLabels key="room-labels" />
               <Labels key="labels" />
               <NpcRings key="npc-rings" />
@@ -571,6 +574,7 @@ export type State = {
   npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
+  psi: UseStateRef<import("./Psi").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
   roomLabels: UseStateRef<import("./RoomLabels").State>;
   speech: UseStateRef<import("./WorldSpeech").State>;

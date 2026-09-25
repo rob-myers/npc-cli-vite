@@ -50,6 +50,16 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   while (api.getCached(WORLD_KEY)?.isReady(api.meta.sessionKey) !== true) {
     await api.sleep(0.05);
   }
+
+  // world commands pause with it — see `docs/jsh-pause.md`
+  api.setPtags({ world: false });
+  const w = api.getCached(WORLD_KEY);
+  const group = api.pauseGroup("world");
+  const sub = w.events.subscribe({
+    next: (e) => (e.key === "disabled" ? group.pause() : e.key === "enabled" && group.resume()),
+  });
+  group.own(() => sub.unsubscribe());
+  if (w.disabled === true) group.pause();
 }
 
 /**
@@ -109,6 +119,7 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   { api, args, w }: JshCli.RunArg,
   opts: { where?(e: JshCli.Event): e is T } = api.jsArg(args),
 ) {
+  api.setPtags({ world: false }); // it reports the pause
   const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
@@ -371,6 +382,8 @@ type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
  *
  * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
  * move npc:rob fast to:$( pick 1 )
+ * move npc:rob backwards to:$( pick 1 )
+ * move rob --back to:$( pick 1 )
  * ```
  */
 export async function move(
@@ -383,6 +396,8 @@ export async function move(
     npc: "npcKey",
     "--fast": "fast",
     "--force": "force",
+    "--backwards": "backwards",
+    "--back": "backwards",
   }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
@@ -428,6 +443,7 @@ async function move_const(
         to: next,
         arrive: pendingMoves.length === 0,
         fast: opts.fast,
+        backwards: opts.backwards,
       });
     }
   } finally {
@@ -464,7 +480,7 @@ async function move_lazy(
       const npc = getNpcOrThrow();
 
       const movePromise = movePausable(
-        { npcKey: npc.key, to: dst, fast: opts.fast },
+        { npcKey: npc.key, to: dst, fast: opts.fast, backwards: opts.backwards },
         {
           "not navigable": false,
           stuck: () => {
@@ -510,7 +526,7 @@ async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { npcKey: npc.key, to: next, fast: opts.fast },
+        { npcKey: npc.key, to: next, fast: opts.fast, backwards: opts.backwards },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -744,6 +760,7 @@ export function pause({ w }: JshCli.RunArg) {
  */
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
+  api.setPtags({ world: false }); // picking whilst paused
 
   // e.g. `pick --long` not `pick long` (filter)
   const opts = ct.api.jsArg(args, {
@@ -1064,6 +1081,8 @@ export async function spawn(
     look: "facing",
   }),
 ) {
+  api.setPtags({ world: false }); // can spawn while paused
+
   // support e.g. `spawn rob at:$( pick 1 )`
   opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");
 
@@ -1292,6 +1311,7 @@ function getLastUnknownNaked(opts: Record<string, any>) {
 const booleanJsOptSomewhere = {
   all: true,
   along: true,
+  backwards: true,
   detail: true,
   fast: true,
   force: true,

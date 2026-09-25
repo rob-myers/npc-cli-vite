@@ -33,8 +33,9 @@ import {
 } from "./io";
 import { jsFunctionToShellFunction } from "./js-to-shell";
 import { cloneParsed, type NamedFunction, parseService } from "./parse";
+import { createPauseGroup } from "./pause-group";
 import { queryClientApi } from "./query-client";
-import { type ProcessMeta, type Session, sessionApi } from "./session";
+import { type ProcessMeta, type Ptags, type Session, sessionApi } from "./session";
 import { TtyShell, ttyError } from "./shell";
 import { computeChoiceTtyLinkFactory } from "./tty-link-factory";
 import {
@@ -345,6 +346,11 @@ class CmdService {
       });
     },
 
+    /** Processes tagged `key` paused together, replacing any such group — see `docs/jsh-pause.md` */
+    pauseGroup(key: string) {
+      return createPauseGroup(this.meta.sessionKey, key);
+    },
+
     /** Output 1, 2, ... at fixed intervals (minimum every 0.5s) */
     async *poll(args: string[]) {
       const seconds = args.length ? parseFloat(parseJsonArg(args[0])) || 1 : 1;
@@ -382,6 +388,17 @@ class CmdService {
     },
 
     safeJsStringify,
+
+    /** Update our own ptags, which later children inherit — `key: false` leaves a `pauseGroup` */
+    setPtags(updates: Ptags) {
+      const process = sessionApi.getProcess(this.meta);
+      applyPtagUpdates(process.ptags, updates);
+      for (const key of Object.keys(updates)) {
+        if (process.ptags[key] !== true && process.holds?.has(key)) {
+          sessionApi.killProcesses([process], { CONT: true, reason: key });
+        }
+      }
+    },
 
     set(varPath: string, varValue: any, recursive = false) {
       sessionApi.setVarDeep(this.meta, varPath, varValue, recursive);
@@ -997,6 +1014,10 @@ class CmdService {
             if (func === undefined) {
               throw Error(`not found`);
             }
+            // the module's default ptags, bar any we have e.g. an inherited `world: false`
+            const { ptags } = sessionApi.getProcess(meta);
+            for (const [k, v] of Object.entries<Ptags[string]>((ct.lib as any).moduleTags?.[args[0]] ?? {}))
+              ptags[k] ??= v;
 
             ct.args = args.slice(2); // discard e.g. "core spawn"
 

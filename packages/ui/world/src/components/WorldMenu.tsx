@@ -242,6 +242,8 @@ export function WorldMenu() {
         return w.view.roomOutline ?? false;
       case "lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
+      case "psi":
+        return w.psi?.shown ?? false;
       case "colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "grid":
@@ -258,6 +260,8 @@ export function WorldMenu() {
         return w.debug?.doPointsShown ?? false;
       case "decorations":
         return w.debug?.decorShown ?? false;
+      case "npc contextmenu":
+        return w.debug?.npcContextMenu ?? false;
       default:
         return false;
     }
@@ -345,6 +349,17 @@ export function WorldMenu() {
       case "decor points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
         w.view.forceUpdate();
+        break;
+      }
+      case "psi":
+        w.psi?.setShown(!w.psi.shown);
+        state.update();
+        break;
+      case "npc contextmenu": {
+        const next = !w.debug?.npcContextMenu;
+        w.debug?.set({ npcContextMenu: next });
+        store.patch({ npcContextMenu: next });
+        state.update();
         break;
       }
       case "decorations": {
@@ -1256,6 +1271,7 @@ const debugItems = [
   "rgb shift",
   "room outlines",
   "lit npcs",
+  "psi",
   "room hit",
   "graphs",
   "skins",
@@ -1266,6 +1282,7 @@ const debugItems = [
   "door normals",
   "decor points",
   "decorations",
+  "npc contextmenu",
   "navmesh",
 ] as const;
 
