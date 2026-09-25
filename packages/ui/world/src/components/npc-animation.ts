@@ -193,7 +193,7 @@ export class NpcAnimation {
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
     u.time = (u.time + delta) % (clip.duration || 1);
-    const tracks = upperTracksOf(clip);
+    const { tracks, lean } = upperTracksOf(clip);
     const t = u.blend * u.blend * (3 - 2 * u.blend);
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
@@ -202,6 +202,7 @@ export class NpcAnimation {
       if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
       const track = tracks.get(bone.name);
       let q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
+      if (track !== undefined && bone.parent?.name === "chest") q.premultiply(lean); // the chest stays the pose's
       if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
       written.copy(bone.quaternion.slerpQuaternions(base, q, t));
     }
@@ -339,22 +340,35 @@ function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
 }
 
-/** Per bone of `upperBodyBones`, the rotation of `clip` at a time — cached per clip */
+/** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and its torso's lean at the start — cached per clip */
 function upperTracksOf(clip: THREE.AnimationClip) {
-  let tracks = upperTracks.get(clip);
-  if (tracks === undefined) {
-    const entries = upperBodyBones.flatMap((name) => {
+  let cached = upperTracks.get(clip);
+  if (cached === undefined) {
+    const interpolantOf = (name: string) => {
       const track = clip.tracks.find((t) => t.name === `${name}.quaternion`);
       // set per track by its interpolation, but untyped
-      const interpolant = (track as undefined | { createInterpolant(): THREE.Interpolant })?.createInterpolant();
-      return interpolant === undefined ? [] : [[name, interpolant] as const];
-    });
-    upperTracks.set(clip, (tracks = new Map(entries)));
+      return (track as undefined | { createInterpolant(): THREE.Interpolant })?.createInterpolant();
+    };
+    const tracks = new Map(
+      upperBodyBones.flatMap((name) => {
+        const interpolant = interpolantOf(name);
+        return interpolant === undefined ? [] : [[name, interpolant] as const];
+      }),
+    );
+    const lean = new THREE.Quaternion();
+    for (const name of ["stomach", "chest"]) {
+      const values = interpolantOf(name)?.evaluate(0);
+      if (values !== undefined) lean.multiply(tmpQuat.fromArray(values));
+    }
+    upperTracks.set(clip, (cached = { tracks, lean }));
   }
-  return tracks;
+  return cached;
 }
 
-const upperTracks = new WeakMap<THREE.AnimationClip, Map<string, THREE.Interpolant>>();
+const upperTracks = new WeakMap<
+  THREE.AnimationClip,
+  { tracks: Map<string, THREE.Interpolant>; lean: THREE.Quaternion }
+>();
 /** The chest stays the pose's, so its breath and sway carry the arms */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
 const tmpQuat = new THREE.Quaternion();

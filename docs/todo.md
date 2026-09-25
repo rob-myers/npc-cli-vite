@@ -73,7 +73,7 @@
 - ✅ play `psi_avoid` nearby npcs
 - precompute tall obstacles by grKey (e.g. bunk beds) and play `psi_avoid` nearby
 
-- clarify as weapon
+- 🚧 clarify as ability
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
   - ✅ can modulate reach/speed/gap/fade/colour
     - ideally with controls
@@ -89,7 +89,9 @@
 - ✅ add animation `primed` `attack`
 - ✅ remove `primed` `attack`
 - ✅ `gauntlet` -> `point`
-- 🚧 try ...
+- ✅ `demo_attack` plays `point` with `defensive` fallback near others
+- ✅ `point` played into upper body was pointing upwards a bit
+- 🚧 investigate shooting effects
 
 ### Unorganised Bugs
 
