@@ -141,7 +141,7 @@ and its node NAMES are its tags.
 - `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`' `onTick` via `useMemo`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 
-- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone, never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
+- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone — those drawing npcs or what surrounds them too, e.g. `NpcRings`, `Psi` and its tuning — never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
 - Comments must be TERSE: one short line, never a paragraph, and only what the code doesn't already
   say. Prefer none to a restatement. A JSDoc is two lines at most — give the "why" in a clause, not
   an essay, and never recap a mechanism the reader can see. Trailing `// like this` beats a line above

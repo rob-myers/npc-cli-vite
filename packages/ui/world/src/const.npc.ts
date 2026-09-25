@@ -199,3 +199,32 @@ export const fadeSecs: Record<
   sit: {},
   walk: { shuffle: 0.15, run: 0.25 },
 };
+
+/** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
+export const psiMaxReach = 8;
+
+export const defaultPsiTune: PsiTune = { reach: 5, speed: 0.4, gap: 0.5, width: 2.5, fadeSecs: 1.2, color: "#9fe8ff" };
+
+/** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
+export const psiTuneRanges = {
+  reach: [1.5, psiMaxReach, 0.1],
+  speed: [-2, 2, 0.05],
+  gap: [0.15, 1.5, 0.05],
+  width: [0.5, 8, 0.25],
+  fadeSecs: [0.1, 3, 0.1],
+} as const;
+
+/** What the player's bubble adjusts of `Psi`, persisted */
+export type PsiTune = {
+  /** Metres the field reaches, at most `psiMaxReach` */
+  reach: number;
+  /** Contours per second the rings drift by: outwards when positive */
+  speed: number;
+  /** Metres between contours */
+  gap: number;
+  /** Pixels wide each contour is drawn */
+  width: number;
+  /** Seconds an influence takes to come, and to go */
+  fadeSecs: number;
+  color: string;
+};

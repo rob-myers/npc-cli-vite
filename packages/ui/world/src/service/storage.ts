@@ -59,7 +59,7 @@ export type WorldSettings = {
   /** debug: whether the player's influence is drawn — see `Psi` */
   psiShown: boolean;
   /** What the player's bubble set of `Psi`, over its defaults */
-  psiTune: Partial<import("../const.env").PsiTune>;
+  psiTune: Partial<import("../const.npc").PsiTune>;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
