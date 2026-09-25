@@ -69,23 +69,31 @@
   - ✅ `demo_psi` plays animations
   - ✅ remove `psi-end`, `psi-start` -> `psi`
   - ✅ tidy
-- 🚧 clarify as weapon
+
+- ✅ play `psi_avoid` nearby npcs
+- precompute tall obstacles by grKey (e.g. bunk beds) and play `psi_avoid` nearby
+
+- clarify as weapon
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
   - ✅ can modulate reach/speed/gap/fade/colour
     - ideally with controls
-  - 🚧 listen to their thoughts in WorldSpeech
+  - listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech
     - can suggest anger, lethargy, restless
 - check mobile performance
 
-### Gauntlet
+### Weapon
 
 - ✅ remove animation `idle-avoid`
 - ✅ animation `gauntlet`
+- ✅ add animation `primed` `attack`
+- ✅ remove `primed` `attack`
+- ✅ `gauntlet` -> `point`
+- 🚧 try ...
 
 ### Unorganised Bugs
 
-- 🚧 BUG only some room labels shown when change to map 301-101-301
+- ✅ BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
 
 ## Blockbench

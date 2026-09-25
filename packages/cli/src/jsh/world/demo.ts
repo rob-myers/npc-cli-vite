@@ -175,11 +175,20 @@ export function demo_npc_ui(
  */
 export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
   api.setPtags({ world: false }); // switches on a pick whilst paused
+  /** Whom the player influences, or `null` */
+  let influenced: null | string = null;
+  /** Hands to temples whilst influencing — elbows forward (`psi_avoid`) whilst a crowd neighbour is too close for them out */
+  const syncHands = () => {
+    const player = w.n[w.player?.key];
+    const near = player?.agent?.neis.some(({ dist }) => dist < psiNearDist ** 2) === true; // `dist` squared
+    const pose = influenced === null ? null : near ? "psi_avoid" : "psi";
+    player?.anim.setUpper(pose, { swapSecs: near ? psiAvoidSecs : undefined });
+  };
   /** The player, the default, turns it off */
   const choose = (npcKey = w.player?.key ?? null) => {
     w.psi.choose(npcKey);
-    const player = w.n[w.player?.key];
-    player?.anim.setUpper(npcKey === player.key ? null : "psi"); // hands to temples whilst it shows
+    influenced = npcKey === w.player?.key ? null : npcKey;
+    syncHands();
   };
 
   if (arg !== undefined || api.isTtyAt(0)) choose(arg);
@@ -200,6 +209,7 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
     onSuspend: () => (choose(), true),
     onResume: () => (chosen !== undefined && choose(chosen), true),
   });
+  const nearId = setInterval(() => api.isRunning() && syncHands(), 100);
 
   try {
     let datum: unknown;
@@ -209,10 +219,16 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
       if (npcKey !== undefined && npcKey in w.n) choose((chosen = npcKey));
     }
   } finally {
+    clearInterval(nearId);
     handlers.dispose();
   }
   if (killed === true) throw api.getKillError();
 }
+
+/** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
+const psiNearDist = 0.65;
+/** Seconds the player's elbows take to come forward */
+const psiAvoidSecs = 0.3;
 
 export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");

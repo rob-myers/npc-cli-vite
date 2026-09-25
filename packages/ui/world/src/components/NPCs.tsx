@@ -337,7 +337,13 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           Object.setPrototypeOf(npc, Npc.prototype);
           Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
-          Object.assign(npc.anim, { ...new NpcAnimation(npc), ...npc.anim }); // fields added since
+          // fields added since, and to its plain objects e.g. `upper` — else they read `undefined`
+          for (const [key, value] of Object.entries(new NpcAnimation(npc))) {
+            const had = (npc.anim as unknown as Record<string, unknown>)[key];
+            if (had === undefined) Object.assign(npc.anim, { [key]: value });
+            else if (value?.constructor === Object && had?.constructor === Object)
+              Object.assign(npc.anim, { [key]: { ...value, ...had } });
+          }
 
           // `NpcInstance` carries their position and rotation over to the new mesh
           if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });

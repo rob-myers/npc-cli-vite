@@ -60,9 +60,12 @@ export class NpcAnimation {
     target: 0,
     /** Seconds into its clip */
     time: 0,
+    /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
+    swap: 1,
+    swapSecs: upperFadeSecs,
     group: null as null | THREE.Group,
     /** Each bone, the pose's rotation of it, and ours as last written — see `tickUpper` */
-    bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion }[],
+    bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion }[],
   };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `timed` look is under way */
   face = {
@@ -99,10 +102,15 @@ export class NpcAnimation {
     this.npc.setLabelYShift(labelYShiftForClip(next));
   }
 
-  /** Ease `key` in over the upper body, or out with `null` */
-  setUpper(key: null | AnimationClipKey) {
-    if (key !== null) this.upper.key = key;
-    this.upper.target = key === null ? 0 : 1;
+  /** Ease `key` in over the upper body, or out with `null` — from another shown, in `swapSecs` */
+  setUpper(key: null | AnimationClipKey, { swapSecs = upperFadeSecs } = {}) {
+    const u = this.upper;
+    if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
+      u.bones.forEach((b) => b.from.copy(b.written)); // shown: ease over from where they are, in `swapSecs`
+      Object.assign(u, { swap: 0, swapSecs });
+    }
+    if (key !== null) u.key = key;
+    u.target = key === null ? 0 : 1;
   }
 
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
@@ -171,7 +179,14 @@ export class NpcAnimation {
         // `written` equals nothing, so the first tick reads the pose
         return bone === undefined
           ? []
-          : [{ bone, base: new THREE.Quaternion(), written: new THREE.Quaternion(Number.NaN) }];
+          : [
+              {
+                bone,
+                base: new THREE.Quaternion(),
+                written: new THREE.Quaternion(Number.NaN),
+                from: new THREE.Quaternion(),
+              },
+            ];
       });
     }
 
@@ -180,11 +195,14 @@ export class NpcAnimation {
     u.time = (u.time + delta) % (clip.duration || 1);
     const tracks = upperTracksOf(clip);
     const t = u.blend * u.blend * (3 - 2 * u.blend);
-    for (const { bone, base, written } of u.bones) {
+    u.swap = Math.min(1, u.swap + delta / u.swapSecs);
+    const s = u.swap * u.swap * (3 - 2 * u.swap);
+    for (const { bone, base, written, from } of u.bones) {
       // the pose's, unless its mixer left ours there — as a still pose e.g. `lie` does
       if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
       const track = tracks.get(bone.name);
-      const q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
+      let q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
+      if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
       written.copy(bone.quaternion.slerpQuaternions(base, q, t));
     }
     if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
@@ -340,6 +358,7 @@ const upperTracks = new WeakMap<THREE.AnimationClip, Map<string, THREE.Interpola
 /** The chest stays the pose's, so its breath and sway carry the arms */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
 const tmpQuat = new THREE.Quaternion();
+const tmpSwap = new THREE.Quaternion();
 
 function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;
