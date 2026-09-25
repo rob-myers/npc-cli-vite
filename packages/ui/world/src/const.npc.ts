@@ -157,10 +157,12 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
+  defensive: true,
   idle: true,
-  gauntlet: true,
   lie: true,
+  point: true,
   psi: true,
+  psi_avoid: true,
   run: true,
   shuffle: true,
   sit: true,
@@ -185,10 +187,12 @@ export const fadeSecs: Record<
 > = {
   backwards: {},
   breathe: { shuffle: 0.15 },
+  defensive: {},
   idle: { shuffle: 0.15 },
-  gauntlet: {},
   lie: {},
+  point: {},
   psi: {},
+  psi_avoid: {},
   run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
