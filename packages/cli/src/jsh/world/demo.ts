@@ -45,6 +45,70 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
+/**
+ * Npcs point (upper body) whilst `q` over the world toggles it on, drawing in to `defensive` for at least
+ * `holdSecs` whenever the arm would touch a crowd neighbour, a wall or a closed door. Runs until killed;
+ * a pause lowers it
+ * ```sh
+ * demo_attack rob kate
+ * ```
+ */
+export async function demo_attack({ api, args, w }: JshCli.RunArg) {
+  const npcs = args.map((npcKey) => w.npc.get(npcKey));
+  const holdUntil = new Map<string, number>(); // world seconds each stays defensive until
+  let [on, paused] = [false, false];
+  const show = () => {
+    const now = w.timer.getElapsedTime();
+    for (const npc of npcs) {
+      const defensive = (holdUntil.get(npc.key) ?? 0) > now;
+      const pose = on && !paused ? (defensive ? "defensive" : "point") : null;
+      npc.anim.setUpper(pose, { swapSecs: defensive ? attackConfig.drawInSecs : undefined }); // in before the hand goes through
+    }
+  };
+  const onKey = (e: KeyboardEvent) => void (e.key === "q" && api.isRunning() && ((on = !on), show()));
+  w.rootEl.addEventListener("keydown", onKey);
+  const handlers = api.handleStatus({
+    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show()),
+    onSuspend: () => ((paused = true), show(), true),
+    onResume: () => ((paused = false), show(), true),
+  });
+
+  try {
+    while (true) {
+      for (const npc of on ? npcs : []) {
+        if (await armBlocked(w, npc)) holdUntil.set(npc.key, w.timer.getElapsedTime() + attackConfig.holdSecs);
+      }
+      show();
+      await api.sleep(attackConfig.sampleSecs); // a kill rejects it
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
+/** Is a crowd neighbour in front of `npc`, or a wall or closed door within `reach`? */
+async function armBlocked(w: JshCli.WorldState, npc: JshCli.Npc) {
+  const [fx, fz] = [-Math.sin(npc.rotation.y), -Math.cos(npc.rotation.y)]; // facing
+  const { x, z } = npc.position;
+  const npcAhead = (npc.agent?.neis ?? []).some(({ agentId }) => {
+    const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
+    return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx); // within 45° of facing
+  });
+  if (npcAhead) return true;
+  const hand = { x: x + fx * attackConfig.reach, y: z + fz * attackConfig.reach };
+  const { hit } = await w.e.raycast(npc.point, hand).catch(() => ({ hit: true })); // off the map throws
+  return hit !== null;
+}
+
+const attackConfig = {
+  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
+  reach: 1,
+  /** Seconds they stay defensive at least — longer whilst something stays in reach */
+  holdSecs: 0.5,
+  drawInSecs: 0.15,
+  sampleSecs: 0.1,
+};
+
 /** The process no longer exists when we attempt to resolve */
 export function demo_bad_resolve({ api }: JshCli.RunArg) {
   setTimeout(() => {
@@ -180,11 +244,9 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
   /** Hands to temples whilst influencing — elbows forward (`psi_avoid`) whilst they'd hit a crowd neighbour or a doorway */
   const syncHands = () => {
     const player = w.n[w.player?.key];
-    const doors = player === undefined ? undefined : w.e.npcToDoors[player.key];
     const near =
       player?.agent?.neis.some(({ dist }) => dist < psiNearDist ** 2) === true || // `dist` squared
-      doors?.inside != null ||
-      (player?.isMoving() === true && (doors?.nearby.size ?? 0) > 0); // walking up to one
+      (player !== undefined && w.e.npcToDoors[player.key]?.inside != null); // in a doorway
     const pose = influenced === null ? null : near ? "psi_avoid" : "psi";
     player?.anim.setUpper(pose, { swapSecs: near ? psiAvoidSecs : undefined });
   };
