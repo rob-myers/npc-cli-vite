@@ -1081,6 +1081,8 @@ export async function spawn(
     look: "facing",
   }),
 ) {
+  api.setPtags({ world: false }); // can spawn while paused
+
   // support e.g. `spawn rob at:$( pick 1 )`
   opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");
 
