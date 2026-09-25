@@ -50,10 +50,12 @@ suspended, with the hold `"tty"` (`shell.ts`, spawn).
 
 ## Pause groups
 
-A pause group (`packages/cli/src/shell/pause-group.ts`) suspends and resumes together the processes
-tagged `ptags[key] === true`, with the reason `key`. Get one with `api.pauseGroup(key)`:
+A pause group (`packages/cli/src/shell/pause-group.ts`) suspends and resumes whole jobs together,
+with the reason `key`. A job (process group) is held as a whole as soon as any of its processes is a
+member, i.e. tagged `ptags[key] === true` — so a pipeline is never partly paused, as when you pause a
+job yourself. Get one with `api.pauseGroup(key)`:
 
-- `pause()` holds every live member. Processes started later aren't caught until the next `pause()`.
+- `pause()` holds every job with a live member. Processes started later aren't caught until the next `pause()`.
 - `resume()` releases everyone it holds, member or not.
 - `own(teardown)` registers teardowns for `dispose()`, e.g. unsubscribing whatever drives the group.
 - There is one per session and key. A new one disposes the last, which resumes whatever it held.
@@ -69,11 +71,12 @@ later descendants.
   Every module under `jsh/world/` gets `{ world: true }`, found with `import.meta.glob`; dotted helpers
   such as `plan.main.ts` are excluded. The `run` builtin adds a module's defaults to its process, but
   only where a tag is absent.
-- **Opting out:** `api.setPtags({ world: false })` leaves the group, releasing any hold it had, and
-  children spawned afterwards inherit `false`. An inherited `false` beats a module default, so an
-  opted-out process's descendants stay out.
+- **Opting out:** `api.setPtags({ world: false })` stops a process making its job a member, releasing
+  any hold it had, and children spawned afterwards inherit `false`. An inherited `false` beats a module
+  default, so an opted-out process's descendants stay out. A job keeps running only if none of its
+  processes is a member: in `pick | move`, `move` makes the whole job pause, `pick` included.
 
-Opted out today, because each must work whilst the World is paused:
+Opted out today, because each must work whilst the World is paused (e.g. `pick | demo_psi`):
 
 - `pick` (picking whilst paused),
 - `events` (it reports the pause itself),
@@ -88,7 +91,7 @@ Opted out today, because each must work whilst the World is paused:
 2. subscribes to `w.events`: `disabled` calls `pause()`, `enabled` calls `resume()`,
 3. pauses the group at once if the World is already paused.
 
-So pausing the World suspends world commands and everything they spawn, and resuming releases only
+So pausing the World suspends every job running a world command, and resuming releases only
 what the World held. Anything the terminal or a user paused stays paused.
 
 ## Adding a long-running world command

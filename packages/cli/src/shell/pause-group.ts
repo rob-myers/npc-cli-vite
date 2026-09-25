@@ -2,9 +2,9 @@ import { toProcessStatus } from "./const";
 import { sessionApi } from "./session";
 
 /**
- * Processes tagged `ptags[key] === true` suspended and resumed together, under the hold `key` — so
- * neither the `<Tty>` nor another group resumes what this one paused. One per session and key: a
- * new one disposes the last. A process leaves by tagging itself `key: false`, and so do its later children
+ * Jobs suspended and resumed together, under the hold `key` — so neither the `<Tty>` nor another group
+ * resumes what this one paused. A job (process group) is held whole once any of its processes is tagged
+ * `ptags[key] === true`. One per session and key: a new one disposes the last
  */
 export function createPauseGroup(sessionKey: string, key: string): PauseGroup {
   const id = `${sessionKey} ${key}`;
@@ -17,9 +17,9 @@ export function createPauseGroup(sessionKey: string, key: string): PauseGroup {
   const group: PauseGroup = {
     pause() {
       const processes = live();
-      // members, and their group's leader which `ps` and Jobs show — unless it opted out
+      // whole process groups, never part of a pipeline: any with a member
       const pgids = new Set(processes.flatMap((p) => (p.ptags[key] === true ? p.pgid : [])));
-      const held = processes.filter((p) => p.ptags[key] === true || (pgids.has(p.key) && p.ptags[key] !== false));
+      const held = processes.filter((p) => pgids.has(p.pgid));
       sessionApi.killProcesses(held.reverse(), { STOP: true, reason: key });
     },
     resume() {
