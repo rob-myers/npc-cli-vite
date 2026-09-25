@@ -30,6 +30,8 @@ export class NpcAnimation {
 
   /** The clip on show — a KEY, so it survives a hot-reload's new clip objects */
   pose: AnimationClipKey = defaultIdleAnimationClipKey;
+  /** Metres of the head's pivot above their feet in `pose` — see `w.npc.headYByPose` */
+  headY = 0;
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
   idleClip = emptyAnimationClip;
   moveClip = emptyAnimationClip;
@@ -56,8 +58,11 @@ export class NpcAnimation {
     key: null as null | AnimationClipKey,
     blend: 0,
     target: 0,
-    mixer: emptyMixer,
-    bones: [] as THREE.Object3D[],
+    /** Seconds into its clip */
+    time: 0,
+    group: null as null | THREE.Group,
+    /** Each bone, the pose's rotation of it, and ours as last written — see `tickUpper` */
+    bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion }[],
   };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `timed` look is under way */
   face = {
@@ -89,6 +94,7 @@ export class NpcAnimation {
     }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
     this.pose = next;
+    this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
     this.npc.setLabelYShift(labelYShiftForClip(next));
   }
@@ -156,23 +162,32 @@ export class NpcAnimation {
     const u = this.upper;
     const { group } = this.npc;
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
-    if (u.blend === 0 || u.key === null || group === null) return;
+    if (u.key === null || group === null) return;
 
-    if (u.mixer.getRoot() !== group) {
-      u.mixer = new THREE.AnimationMixer(group); // a fresh group, or hmr
-      u.bones = upperBodyBones.flatMap((name) => group.getObjectByName(name) ?? []);
+    if (u.group !== group) {
+      u.group = group; // a fresh group, or hmr
+      u.bones = upperBodyBones.flatMap((name) => {
+        const bone = group.getObjectByName(name);
+        // `written` equals nothing, so the first tick reads the pose
+        return bone === undefined
+          ? []
+          : [{ bone, base: new THREE.Quaternion(), written: new THREE.Quaternion(Number.NaN) }];
+      });
     }
-    u.bones.forEach((b, i) => tmpQuats[i].copy(b.quaternion)); // the pose's
-    const action = u.mixer.clipAction(upperClipOf(this.npc.clips[u.key]));
-    if (action.isRunning() === false) {
-      u.mixer.stopAllAction(); // a new key or clip
-      action.play();
-    }
-    u.mixer.update(delta);
 
+    // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
+    const clip = this.npc.clips[u.key];
+    u.time = (u.time + delta) % (clip.duration || 1);
+    const tracks = upperTracksOf(clip);
     const t = u.blend * u.blend * (3 - 2 * u.blend);
-    // not `slerpQuaternions`, which copies over its own `qb`
-    u.bones.forEach((b, i) => b.quaternion.copy(tmpQuats[i].slerp(b.quaternion, t)));
+    for (const { bone, base, written } of u.bones) {
+      // the pose's, unless its mixer left ours there — as a still pose e.g. `lie` does
+      if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+      const track = tracks.get(bone.name);
+      const q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
+      written.copy(bone.quaternion.slerpQuaternions(base, q, t));
+    }
+    if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
@@ -306,20 +321,25 @@ function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
 }
 
-/** `clip`'s rotations of `upperBodyBones` — not positions, which some poses leave be — cached per clip */
-function upperClipOf(clip: THREE.AnimationClip) {
-  let upper = upperClips.get(clip);
-  if (upper === undefined) {
-    const tracks = clip.tracks.filter((t) => upperBodyBones.some((name) => t.name === `${name}.quaternion`));
-    upperClips.set(clip, (upper = new THREE.AnimationClip(clip.name, clip.duration, tracks)));
+/** Per bone of `upperBodyBones`, the rotation of `clip` at a time — cached per clip */
+function upperTracksOf(clip: THREE.AnimationClip) {
+  let tracks = upperTracks.get(clip);
+  if (tracks === undefined) {
+    const entries = upperBodyBones.flatMap((name) => {
+      const track = clip.tracks.find((t) => t.name === `${name}.quaternion`);
+      // set per track by its interpolation, but untyped
+      const interpolant = (track as undefined | { createInterpolant(): THREE.Interpolant })?.createInterpolant();
+      return interpolant === undefined ? [] : [[name, interpolant] as const];
+    });
+    upperTracks.set(clip, (tracks = new Map(entries)));
   }
-  return upper;
+  return tracks;
 }
 
-const upperClips = new WeakMap<THREE.AnimationClip, THREE.AnimationClip>();
+const upperTracks = new WeakMap<THREE.AnimationClip, Map<string, THREE.Interpolant>>();
 /** The chest stays the pose's, so its breath and sway carry the arms */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
-const tmpQuats = upperBodyBones.map(() => new THREE.Quaternion());
+const tmpQuat = new THREE.Quaternion();
 
 function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;

@@ -54,6 +54,7 @@ import {
   fromAnimationClipKey,
   npcConfig,
   npcMaterialConfig,
+  npcScale,
   npcSpawnConfig,
 } from "../const.npc";
 import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
@@ -74,6 +75,7 @@ export default function NPCs() {
   const state = useStateRef(
     (): State => ({
       clips: mapValues(fromAnimationClipKey, () => emptyAnimationClip),
+      headYByPose: mapValues(fromAnimationClipKey, () => 0),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       // ONE uniform every npc material reads, so the slider is a value write rather than a rebuild
       dimNode: uniform(w.npcBrightness),
@@ -918,6 +920,7 @@ export default function NPCs() {
     );
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
+    state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
 
     /** on new clips fade old ones, else hmr can break animations */
     for (const npc of Object.values(state.npc)) {
@@ -957,6 +960,8 @@ export type AnimationClipKey = keyof typeof fromAnimationClipKey;
 
 export type State = {
   clips: Record<AnimationClipKey, THREE.AnimationClip>;
+  /** Metres of the head bone's pivot above an npc's feet, per pose at its start — see `Psi` */
+  headYByPose: Record<AnimationClipKey, number>;
   crowd: crowdApi.Crowd;
   /** How much of their skin every npc keeps — see `setBrightness`, and `w.npcBrightness` behind it */
   dimNode: THREE.UniformNode<"float", number>;
@@ -1125,6 +1130,21 @@ function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: 
 
   return false;
 }
+
+/** Pose a spare copy in each clip at its start, and read the head bone's height — once per model */
+function headYByPoseOf(scene: THREE.Object3D, clips: Record<AnimationClipKey, THREE.AnimationClip>) {
+  const model = SkeletonUtils.clone(scene);
+  const head = model.getObjectByName("head");
+  const mixer = new THREE.AnimationMixer(model);
+  return mapValues(clips, (clip) => {
+    mixer.stopAllAction(); // the rest pose, bar what this clip moves
+    mixer.clipAction(clip).play();
+    mixer.update(0);
+    return (head?.getWorldPosition(tmpVector3).y ?? 0) * npcScale;
+  });
+}
+
+const tmpVector3 = new THREE.Vector3();
 
 /**
  * Has the gait finished fading in? Arriving before then would cut it off, looking jerky. Walk and

@@ -108,6 +108,7 @@ export default function Psi() {
           state.npcData[i * 4] = npc.position.x;
           state.npcData[i * 4 + 1] = npc.position.z;
           state.npcData[i * 4 + 2] = presence * presence * (3 - 2 * presence); // eased
+          state.npcData[i * 4 + 3] = npc.position.y + npc.anim.headY + psiConfig.headAbove; // their peak
         });
         state.slotCount.value = slots.length;
         state.geo.instanceCount = slots.length;
@@ -266,7 +267,7 @@ function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, lineWidthPx, alpha, lift, height, cell } = psiConfig;
+  const { reachFade, blend, lineWidthPx, alpha, lift, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
@@ -281,19 +282,28 @@ function psiNodes(
    * nearest other, pointed at each so they keep rings of their own
    */
   const fieldAt = Fn(([q]: [THREE.Node<"vec2">]) => {
-    const rPlayer = distTo(q, slotAt(int(0)));
+    const player = slotAt(int(0));
+    const rPlayer = distTo(q, player);
     const rOther = float(1e9).toVar();
+    const hOther = float(1).toVar();
     const nearest = float(0).toVar();
     Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
-      const r = distTo(q, slotAt(i));
+      const slot = slotAt(i);
+      const r = distTo(q, slot);
       If(r.lessThan(rOther), () => {
         rOther.assign(r);
+        hOther.assign(slot.w);
         nearest.assign(i.toFloat());
       });
     });
 
-    const g = log(max(weigh(rPlayer).add(weigh(rOther)), 1e-20)).mul(-blend); // huge beyond reach
-    return vec2(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest));
+    const wPlayer = weigh(rPlayer);
+    const wOther = weigh(rOther);
+    const total = max(wPlayer.add(wOther), 1e-20);
+    const g = log(total).mul(-blend); // huge beyond reach
+    // their peaks blended as their fields are, so the relief has no step between them
+    const h = wPlayer.mul(player.w).add(wOther.mul(hOther)).div(total);
+    return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
   });
 
   /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
@@ -320,7 +330,8 @@ function psiNodes(
   // on one world grid, so overlapping quads share vertices and their reliefs agree
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
   // each contour at a fixed height, as on a relief map
-  const y = max(fieldAt(worldXZ).x.div(reach.negate()).add(1), 0).mul(height).add(lift);
+  const field = fieldAt(worldXZ);
+  const y = max(field.x.div(reach.negate()).add(1), 0).mul(field.z).add(lift); // `z` is the peak
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
 
   const p = varying(worldXZ, "vPsiXZ");
@@ -370,8 +381,8 @@ const psiConfig = {
   alpha: 0.5,
   /** Metres the relief's rim sits above the floor */
   lift: 0,
-  /** Metres one npc's peak rises by: negative for a well */
-  height: 1.3,
+  /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */
+  headAbove: 0.24,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
   /** Going takes this many times as long as coming */
