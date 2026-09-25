@@ -136,6 +136,8 @@ declare namespace JshCli {
     at: string | MaybeMeta<JshCli.PointAnyFormat>;
     minMs?: number;
     immediate?: boolean;
+    /** Turn this many times faster than usual, e.g. startled */
+    rate?: number;
   };
 
   type RaycastResult = {

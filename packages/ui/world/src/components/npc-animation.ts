@@ -281,13 +281,13 @@ export class NpcAnimation {
    * Turn to face `target` (radians) over a duration set by the arc — shuffling round for a long
    * one, whose feet keep up with the turn — and resolve `npc.resolve.look` on landing. See `Npc.look`
    */
-  lookAt(target: number, minMs: number) {
+  lookAt(target: number, minMs: number, rate = 1) {
     const start = this.npc.rotation.y;
     const diff = deltaAngle(start, target);
     const arc = Math.abs(diff);
     const longLook = arc > longLookAngle;
     // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-    const duration = arc < 0.001 ? 0 : Math.max(minLookSecs, (2 * arc) / (2 * Math.PI), minMs / 1000);
+    const duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
     this.face.timed = { start, diff, duration, elapsed: 0, longLook };
     this.face.rate = 0;
 
