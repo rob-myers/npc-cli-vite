@@ -60,7 +60,11 @@ pred.setHandler(function onWorldEvent(e, w) {
       unmark(p, e.npcKey);
       break;
     case "removed-npcs":
-      for (const npcKey of e.npcKeys) unmark(p, npcKey);
+      for (const npcKey of e.npcKeys) forget(p, npcKey);
+      break;
+    case "npcs-restored":
+      for (const npcKey of [...p.everPicked, ...p.picked, ...p.parked.keys(), ...p.padded])
+        if (w.n[npcKey] === undefined) forget(p, npcKey);
       break;
   }
 });
@@ -101,6 +105,14 @@ function visualisePredicates(w: JshCli.WorldState, npcKeys: Iterable<string> = O
 function unmark(p: Predicates, npcKey: string) {
   p.parked.delete(npcKey);
   p.padded.delete(npcKey);
+}
+
+/** No trace of them, as they no longer exist */
+function forget(p: Predicates, npcKey: string) {
+  unmark(p, npcKey);
+  p.picked.delete(npcKey);
+  p.everPicked.delete(npcKey);
+  if (p.lastPicked === npcKey) p.lastPicked = null;
 }
 
 /** `park`'s and `pad`'s side — objects, so no shell function is made of them. One or the other */

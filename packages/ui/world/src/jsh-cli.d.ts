@@ -27,6 +27,10 @@ declare namespace JshCli {
       }
     | { key: "nav-updated" }
     | {
+        /** The map's saved npcs are back, so whoever is missing is gone — see `restoreNpcs` */
+        key: "npcs-restored";
+      }
+    | {
         /** This world's multiplayer role or connection phase changed — see `use-world-net` */
         key: "net-changed";
         mode: "idle" | "server" | "client";

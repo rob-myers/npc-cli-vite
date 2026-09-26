@@ -423,6 +423,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "door-locked":
             break;
           case "net-changed":
+          case "npcs-restored":
             break;
           case "disabled":
           case "enabled":
@@ -899,11 +900,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npcKeys.includes(w.player.key)) w.events.next({ key: "set-player", playerKey: null });
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        if (saved === null) {
-          return;
-        }
-
-        for (const { key, at, angle, skinKey, decorKey, lit } of saved.npcs) {
+        for (const { key, at, angle, skinKey, decorKey, lit } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
@@ -921,6 +918,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
           }
         }
+        w.events.next({ key: "npcs-restored" });
       },
       setNpcDo(npcKey, decorKey) {
         const currentDecorKey = w.e.npcToDoable[npcKey];
