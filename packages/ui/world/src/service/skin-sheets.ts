@@ -35,7 +35,7 @@ async function drawSkinSheets(sheets: SheetsType, manifest: AssetsSkinManifestTy
 async function fetchSkinSvgUrl(svgPath: string, cacheBust: string) {
   const svgText = await fetch(`/${svgPath}${cacheBust}`).then((r) => r.text());
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
-  for (const g of doc.querySelectorAll("g")) {
+  for (const g of Array.from(doc.querySelectorAll("g"))) {
     if (g.querySelector(":scope > title")?.textContent?.trim() === "ignore") g.remove();
   }
   const svg = new XMLSerializer().serializeToString(doc.documentElement);

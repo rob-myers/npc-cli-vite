@@ -1,11 +1,11 @@
 import childProcess from "node:child_process";
-import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
 import { WorldThemeSchema } from "@npc-cli/ui__world/assets.schema";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
+import { Canvas, loadImage } from "skia-canvas";
 import type { Plugin, ViteDevServer } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
@@ -125,25 +125,17 @@ export function watchAssetsPlugin(): Plugin {
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-/** A skin sheet with its svg overlays baked in, sent by the World in DEV — see `bakeSkinSheets` */
+/** A skin sheet drawn by a DEV World — see `docs/skins.md` */
 async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, sheetId: number) {
   try {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
-    const png = Buffer.concat(chunks);
-    const hash = createHash("sha1").update(png).digest("hex");
+    const png = await squeezePng(Buffer.concat(chunks));
     const filePath = path.join(PUBLIC_DIR, "sheet", `skin.${sheetId}.png`);
-    const prev = bakedSkinSheet.get(sheetId);
-    // every World sends it on every load: written only if changed, or `gen-skin-sheets` overwrote it
-    if (prev?.hash !== hash || prev.mtimeMs !== fs.statSync(filePath).mtimeMs) {
+    // every World sends it on every load: written only if its pixels changed
+    if (!fs.existsSync(filePath) || !(await samePixels(png, fs.readFileSync(filePath)))) {
       fs.writeFileSync(filePath, png);
-      try {
-        childProcess.execFileSync("pngquant", ["--force", "--ext", ".png", filePath]);
-      } catch {
-        console.warn("[skin-sheet] pngquant unavailable: left unsqueezed");
-      }
-      bakedSkinSheet.set(sheetId, { hash, mtimeMs: fs.statSync(filePath).mtimeMs });
-      console.log(`[skin-sheet] baked svg overlays into skin.${sheetId}.png`);
+      console.log(`[skin-sheet] redrew skin.${sheetId}.png`);
     }
     res.writeHead(200).end();
   } catch (err) {
@@ -152,8 +144,27 @@ async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, sheetI
   }
 }
 
-/** Per sheet, the last png written — this server's run */
-const bakedSkinSheet = new Map<number, { hash: string; mtimeMs: number }>();
+function squeezePng(png: Buffer) {
+  return new Promise<Buffer>((resolve) => {
+    const proc = childProcess.execFile("pngquant", ["-"], { encoding: "buffer" }, (err, stdout) => {
+      if (err) console.warn("[skin-sheet] pngquant failed: left unsqueezed", err.message);
+      resolve(err ? png : stdout);
+    });
+    proc.stdin?.end(png);
+  });
+}
+
+async function samePixels(a: Buffer, b: Buffer) {
+  const [pa, pb] = await Promise.all([a, b].map(getPixels));
+  return Buffer.from(pa.buffer).equals(Buffer.from(pb.buffer));
+}
+
+async function getPixels(png: Buffer) {
+  const image = await loadImage(png);
+  const ct = new Canvas(image.width, image.height).getContext("2d");
+  ct.drawImage(image, 0, 0);
+  return ct.getImageData(0, 0, image.width, image.height).data;
+}
 
 async function handleGenSkinSheets(res: ServerResponse) {
   try {

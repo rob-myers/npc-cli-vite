@@ -21,7 +21,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
 **In DEV** the World draws each sheet itself (`service/skin-sheets`): per skin its svg, else its png,
 nearest-neighbour. Those canvases feed `w.texSkin`
 directly, and each is POSTed to `/api/skin-sheet/:sheetId`, where the dev server writes
-`public/sheet/skin.{sheetId}.png` and runs `pngquant` on it — only if it changed, or the file did.
+`public/sheet/skin.{sheetId}.png` and runs `pngquant` on it — written only if its pixels changed.
 
 **In production** no skin png or svg is fetched: `w.texSkin` (256px, one layer per npc) is drawn
 from `skin.{sheetId}.png` alone. So **load a World in DEV before committing**, else it is stale —
