@@ -76,6 +76,8 @@ export const npcConfig = {
   angle: {
     /** Opening turn beyond which an npc shuffles round before walking off */
     turnBeforeMove: Math.PI * 0.75,
+    /** A target further than this from their facing, and within `dist.backStep`, is backed onto — see `w.npc.move` */
+    backStep: (Math.PI * 2) / 3,
   },
   dist: {
     /** Arrival radius when we slow down beforehand: on foot, a fast move included — see `walkIn` */
@@ -92,6 +94,8 @@ export const npcConfig = {
     blockedLook: 0.3,
     /** Look before teleporting onto a doable this close by */
     doableLook: 1.5,
+    /** Within this, a target behind them is backed onto — past a `wasd_delta --fast` step, so held `s` never turns them */
+    backStep: 0.75,
     /** Below this much movement per frame an npc counts as motionless */
     stuckEpsilon: 0.002,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
@@ -166,6 +170,8 @@ export const fromAnimationClipKey = {
   run: true,
   shuffle: true,
   sit: true,
+  strafe_left: true,
+  strafe_right: true,
   walk: true,
 };
 
@@ -197,6 +203,8 @@ export const fadeSecs: Record<
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
+  strafe_left: {},
+  strafe_right: {},
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
@@ -251,3 +259,10 @@ export const swordConfig = {
   sides: 6,
   segments: 24,
 };
+
+/** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
+export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };
+/** Metres per second strafing each way, blended as the gaits are — see `w.npc.move`'s `strafe` */
+export const strafeSpeed = { walk: 1.2, strafe_right: 0.5, backwards: 1, strafe_left: 0.5 };
+/** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
+export const strafeEaseSecs = 0.25;

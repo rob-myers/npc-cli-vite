@@ -110,7 +110,7 @@ export default function Sword() {
         w.r3f?.invalidate();
       },
     }),
-    { reset: { geo: true, mat: true, mesh: true } },
+    { reset: { geo: true, mat: true, mesh: true, srcData: true, dstData: true } }, // the geometry's attributes wrap the data
   );
 
   w.sword = state;

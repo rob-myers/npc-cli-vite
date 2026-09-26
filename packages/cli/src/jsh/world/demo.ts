@@ -285,7 +285,9 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
   w.rootEl.addEventListener("keydown", onKey);
   // a pause leaves it drawn, as the world is
   const handlers = api.handleStatus({
-    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show()),
+    cleanup: () => (
+      w.rootEl.removeEventListener("keydown", onKey), (on = false), show(), (npc.anim.face.fixate = null)
+    ),
   });
 
   const readPicks = async () => {
@@ -299,6 +301,7 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
 
   try {
     while (true) {
+      npc.anim.face.fixate = (target !== null && w.n[target]?.point) || null; // they face whom they'd strike, moving or not
       if (on && (await armBlocked(w, npc))) holdUntil = w.timer.getElapsedTime() + demoSwordConfig.holdSecs;
       show();
       const locked = on && (await inSight(w, npc, target));

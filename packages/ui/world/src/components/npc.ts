@@ -7,6 +7,7 @@ import {
   type FindNearestPolyResult,
   findNearestPoly,
   getNodeByRef,
+  moveAlongSurface,
   type NavMesh,
   type QueryFilter,
   type Vec3,
@@ -352,6 +353,21 @@ export class Npc {
     }
 
     return true;
+  }
+
+  /** Slide by `delta` from where they stand, stopped by walls and doors they cannot pass — `null` without an agent */
+  getSlideResult(delta: Geom.VectJson) {
+    const agent = this.agent;
+    if (agent === null) return null;
+    const { x, z } = this.position;
+    const result = moveAlongSurface(
+      this.w.nav.navMesh,
+      this.w.npc.getNodeRef(agent),
+      [x, 0, z],
+      [x + delta.x, 0, z + delta.y],
+      this.queryFilter,
+    );
+    return { ...result, groundPoint: { x: result.position[0], y: result.position[2] } };
   }
 
   hasRing() {

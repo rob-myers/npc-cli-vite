@@ -1,11 +1,17 @@
 # controls
 
 ```sh
-# move to floor or doable
-pick meta.{floor,do,point} | move npc:rob --force
+# move npc via mouse
+pick meta.{floor,do,point} | move npc:rob --backstep --force
 
-# keyboard controls
+# move npc via keyboard
 wasd_delta npc:rob | move npc:rob --force
+
+# strafe npc via mouse
+pick meta.{floor,do,point} | move rob --strafe --force
+
+# strafe npc via keyboard
+wasd_delta npc:rob | move npc:rob --strafe --force
 
 # move player
 pick meta.{floor,do,point} | move npc:/shared/pred/player --force
