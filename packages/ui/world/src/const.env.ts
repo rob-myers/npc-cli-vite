@@ -106,8 +106,13 @@ export const defaultAmbientIntensity = 1;
 export const defaultCameraMode: import("./components/CameraControls").CameraModeType = isTouchDevice()
   ? "free"
   : "canonical";
-/** Whether the camera keeps the player centred — an option of EITHER mode, not a mode of its own */
-export const defaultCameraFollow = false;
+/**
+ * How the camera follows the player — an option of EITHER mode, not a mode of its own: `loose` keeps them
+ * framed, `tight` also keeps it behind their facing
+ */
+export const followModes = ["off", "loose", "tight"] as const;
+export type FollowMode = (typeof followModes)[number];
+export const defaultFollowMode: FollowMode = "off";
 
 /**
  * `canonical` camera mode: how far out — as a fraction of the travel between the zoom's stops —

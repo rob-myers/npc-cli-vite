@@ -24,10 +24,11 @@ import {
   canonicalZoomInRate,
   compilingShadersText,
   crosshairY,
-  defaultCameraFollow,
   defaultCameraMaxDistance,
   defaultCameraMinDistance,
   defaultCameraMode,
+  defaultFollowMode,
+  type FollowMode,
   frontierMargin,
   frontierNearest,
   frontierNearFrac,
@@ -96,7 +97,8 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
       cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
-      cameraFollow: (saved.cameraMode as string) === "follow" ? true : (saved.cameraFollow ?? defaultCameraFollow),
+      followMode: (saved.cameraMode as string) === "follow" ? "loose" : (saved.followMode ?? defaultFollowMode),
+      followLast: saved.followLast ?? "loose",
       canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
       canonicalFrom: 0,
       canonicalDragging: false,
@@ -425,7 +427,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       getFollowedPlayer() {
         const player = state.getPlayer();
-        return state.cameraFollow === true || state.frontierHold === true ? player : undefined;
+        return state.followMode !== "off" || state.frontierHold === true ? player : undefined;
       },
       getFollowGoal(out) {
         const player = state.getFollowedPlayer();
@@ -765,15 +767,9 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.update();
       },
       onLookGesture(held) {
-        if (state.cameraFollow === true) {
-          // either press leaves the follow: looking is what it already does every frame, so a press
-          // that only looked would do nothing at all
-          state.setCameraFollow(false);
-        } else if (held === true) {
-          state.setCameraFollow(true);
-        } else {
-          state.holdFrontier();
-        }
+        // a short press looks, or stops a follow; a long one turns the follow off, or back to the last one on
+        if (held === false && state.followMode === "off") return state.holdFrontier();
+        state.setFollowMode(state.followMode === "off" ? state.followLast : "off");
       },
       holdFrontier() {
         if (state.getPlayer() === undefined) return;
@@ -1062,6 +1058,24 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // the player, or part way to their frontier — none when not following nor holding
         if (state.getFollowGoal(tmpGoal) === false) return;
 
+        const player = state.followMode === "tight" ? state.getFollowedPlayer() : undefined;
+        if (player !== undefined) {
+          // behind their facing, turned about `target` — the spherical kept in step, else `fixedAzimuth` undoes it
+          const turn =
+            deltaAngle(controls.getAzimuthalAngle(), player.rotation.y) * (1 - Math.exp(-followTurnRate * deltaSecs));
+          const { object, target } = controls;
+          const [ox, oz, cos, sin] = [
+            object.position.x - target.x,
+            object.position.z - target.z,
+            Math.cos(turn),
+            Math.sin(turn),
+          ];
+          object.position.x = target.x + ox * cos + oz * sin;
+          object.position.z = target.z + oz * cos - ox * sin;
+          controls.spherical.theta += turn;
+          w.r3f?.invalidate();
+        }
+
         const { target } = controls;
         const dx = tmpGoal.x - target.x;
         const dz = tmpGoal.z - target.z;
@@ -1080,13 +1094,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       showCentreHint() {
         state.set({ centreHint: true });
       },
-      setCameraFollow(cameraFollow) {
+      setFollowMode(followMode) {
         state.frontierHold = false; // superseded either way
-        state.cameraFollow = cameraFollow; // before the look, whose goal is the follow's
-        // turning it on goes to the player at once rather than waiting for them to move
-        if (cameraFollow === true) state.lookAtPlayer();
-        store.patch({ cameraFollow });
-        state.set({ cameraFollow });
+        state.followMode = followMode; // before the look, whose goal is the follow's
+        if (followMode !== "off") {
+          state.followLast = followMode;
+          state.lookAtPlayer(); // to the player at once rather than waiting for them to move
+        }
+        store.patch({ followMode, followLast: state.followLast });
+        state.set({ followMode });
         w.update(); // the look button shows it
         w.r3f?.invalidate();
       },
@@ -1232,7 +1248,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       resetCamera() {
         // first, else the follow would pull the reset view straight back onto the player
-        if (state.cameraFollow === true) state.setCameraFollow(false);
+        if (state.followMode !== "off") state.setFollowMode("off");
         state.frontierHold = false;
         const initial = defaultInitialCamera;
         state.initial = initial;
@@ -1446,11 +1462,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           // Aiming at the pointer instead moves the target, which the follow would only undo —
           // and a pan would do the same, so it is simply off for the duration
           // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
-          zoomToCursor={state.cameraMode === "free" && state.cameraFollow === false}
+          zoomToCursor={state.cameraMode === "free" && state.followMode === "off"}
           // a turn goes about the zoom crosshair whilst it shows: what the zoom is heading for
           // stays put. Otherwise, and whilst following, about `target`
           rotateAbout={state.getCrosshairPivot}
-          enablePan={state.cameraFollow === false}
+          enablePan={state.followMode === "off"}
+          fixedAzimuth={state.followMode === "tight"} // `followPlayer` turns it, behind them; drags only tilt
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -1557,8 +1574,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
 export type State = {
   bounds: Geom.RectJson;
   cameraMode: CameraModeType;
-  /** Whether the view keeps the player centred — an option of EITHER mode */
-  cameraFollow: boolean;
+  /** How the view follows the player — an option of EITHER mode: `tight` also keeps it behind their facing */
+  followMode: FollowMode;
+  /** The follow a long look press turns back on */
+  followLast: Exclude<FollowMode, "off">;
   /** `canonical`'s tilt, the same at every zoom */
   canonicalPolar: number;
   /** The azimuth the current turn set out from */
@@ -1733,9 +1752,9 @@ export type State = {
   onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
   setupDom(): () => void;
-  setCameraFollow(cameraFollow: boolean): void;
+  setFollowMode(followMode: FollowMode): void;
   setCameraMode(cameraMode: CameraModeType): void;
-  /** Keeps the player centred whilst `cameraFollow` is on — called every tick from `World` */
+  /** Keeps the player framed whilst following, and behind them whilst `tight` — called every tick from `World` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
   /** Whether the "centre on the player" UI is shown */
@@ -1826,6 +1845,8 @@ function getPixelRatio() {
 
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
+/** How fast `tight` swings the camera behind the player, per second — slower than the pan, so a turn does not whip it */
+const followTurnRate = 3;
 const followUntil = 0.01;
 /** Near enough the outer stop it is easing to that it simply lands there */
 const frontierSettleUntil = 0.001;
