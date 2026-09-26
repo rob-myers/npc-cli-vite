@@ -123,7 +123,7 @@ export const canonicalAxisLockFrom = isTouchDevice() ? 0.85 : canonicalFlattenFr
  * What the rgb shift is scaled to at the outer zoom stop: zoomed out the whole ship is in frame and
  * the parted channels read as a blur over everything rather than an edge on what is near
  */
-export const rgbShiftZoomedOutScale = 0.25;
+export const rgbShiftZoomedOutScale = 1;
 /** `canonical` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
 export const canonicalSnapArm = (10 * Math.PI) / 180;
 /**
