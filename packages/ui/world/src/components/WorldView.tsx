@@ -1518,7 +1518,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         onWheel={state.forwardWheel}
         className={cn(
           indicatorClassName,
-          "top-[40%] transition-opacity duration-500",
+          "top-[40%] transition-opacity duration-500 bg-black/60 rounded-xl",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
           // paused — else an invisible button sits over the middle of a running world.
           // On a phone it takes none at all: a finger landing on it is still the camera's, so a
@@ -1527,7 +1527,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             ? "pointer-events-none opacity-0"
             : w.touchDevice === true
               ? "pointer-events-none opacity-100"
-              : "cursor-pointer opacity-100 hover:bg-black/30 hover:text-yellow-100",
+              : "cursor-pointer opacity-100 hover:text-yellow-100",
         )}
       >
         <PlayIcon className="size-4 shrink-0" weight="fill" />
