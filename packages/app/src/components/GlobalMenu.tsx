@@ -101,7 +101,7 @@ export function GlobalMenu() {
         onDragStart={menu.onDragStart}
         onDragEnd={menu.onDragEnd}
       >
-        <Menu.Root open={menu.menuOpen} onOpenChange={menu.onOpenChange}>
+        <Menu.Root open={menu.menuOpen} onOpenChange={menu.onOpenChange} modal={false}>
           <Menu.Trigger
             className={cn("grid place-items-center cursor-pointer", triggerCls)}
             render={<span />}
