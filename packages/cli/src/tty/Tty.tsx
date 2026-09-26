@@ -168,7 +168,9 @@ export function Tty(props: Props) {
         }
 
         // store original functions too
-        Object.assign(session.modules, props.modules);
+        const { modulePtags, ...modules } = props.modules;
+        Object.assign(session.modules, modules);
+        session.modulePtags = modulePtags;
       },
       writeErrorToTty(sessionKey: string, message: string, origError: any) {
         sessionApi.writeMsg(sessionKey, `${message} (see console)`, "error");

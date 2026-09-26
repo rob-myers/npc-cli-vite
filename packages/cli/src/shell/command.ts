@@ -1016,8 +1016,7 @@ class CmdService {
             }
             // the module's default ptags, bar any we have e.g. an inherited `world: false`
             const { ptags } = sessionApi.getProcess(meta);
-            for (const [k, v] of Object.entries<Ptags[string]>((ct.lib as any).moduleTags?.[args[0]] ?? {}))
-              ptags[k] ??= v;
+            Object.assign(ptags, { ...sessionApi.getSession(meta.sessionKey).modulePtags[args[0]], ...ptags });
 
             ct.args = args.slice(2); // discard e.g. "core spawn"
 

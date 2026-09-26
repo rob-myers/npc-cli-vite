@@ -12,6 +12,6 @@ export * as pred from "./world/pred.ts";
 const worldPaths = Object.keys(import.meta.glob(["./world/*.ts", "!./world/*.*.ts"], { eager: true }));
 
 /** Set default ptags used by `run` -- see `docs/jsh-pause.md` */
-export const moduleTags = Object.fromEntries(
+export const modulePtags = Object.fromEntries(
   worldPaths.map((path) => [path.replace(/^.*\/|\.ts$/g, ""), { world: true }]),
 );

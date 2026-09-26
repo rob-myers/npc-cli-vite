@@ -67,7 +67,7 @@ The shell knows nothing of what drives a group; `jsh/world` does.
 A process's ptags are copied from its parent when it is spawned, so membership passes to all its
 later descendants.
 
-- **Default:** `moduleTags` in `packages/cli/src/jsh/modules.js` gives each module key default ptags.
+- **Default:** `modulePtags` in `packages/cli/src/jsh/modules.js` gives each module key default ptags. `Tty` keeps it as `session.modulePtags`, out of `/lib`.
   Every module under `jsh/world/` gets `{ world: true }`, found with `import.meta.glob`; dotted helpers
   such as `plan.main.ts` are excluded. The `run` builtin adds a module's defaults to its process, but
   only where a tag is absent.

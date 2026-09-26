@@ -105,6 +105,7 @@ export const sessionApi = {
             ...persisted.var,
           },
           modules: {} as any,
+          modulePtags: {},
           nextPid: 0,
           process: {},
           lastBg: 0,
@@ -492,7 +493,9 @@ export type Session = {
   };
 
   /** e.g. JS function `modules.core.spawn` */
-  modules: typeof import("../jsh/modules");
+  modules: Omit<typeof import("../jsh/modules"), "modulePtags">;
+  /** Default ptags per module, kept out of `/lib` — see `docs/jsh-pause.md` */
+  modulePtags: typeof import("../jsh/modules")["modulePtags"];
 
   nextPid: number;
   lastExit: {

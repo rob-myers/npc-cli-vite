@@ -5,7 +5,7 @@ import { jsFunctionToShellFunction } from "@npc-cli/cli/shell/js-to-shell";
 
 export type TtyJsModules = typeof modules;
 
-type TtyJsModuleKey = Exclude<keyof TtyJsModules, "moduleTags">;
+type TtyJsModuleKey = Exclude<keyof TtyJsModules, "modulePtags">;
 
 /**
  * Keys of basenames of files in /etc.
@@ -21,7 +21,7 @@ export const shellFunctionFiles = {
   ),
 
   ...Object.entries(modules)
-    .filter(([moduleKey]) => moduleKey !== "moduleTags")
+    .filter(([moduleKey]) => moduleKey !== "modulePtags")
     .reduce(
       (agg, [moduleKey, module]) => ({
         ...agg,
