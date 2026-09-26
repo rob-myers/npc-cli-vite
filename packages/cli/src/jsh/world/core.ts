@@ -728,7 +728,8 @@ export async function park(
   });
 }
 
-export function pause({ w }: JshCli.RunArg) {
+export function pause({ api, w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // else it pauses itself
   w.setDisabled(true);
 }
 
@@ -876,7 +877,8 @@ export async function* pick(ct: JshCli.RunArg) {
   }
 }
 
-export function play({ w }: JshCli.RunArg) {
+export function play({ api, w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // else it starts paused
   w.setDisabled(false);
 }
 
