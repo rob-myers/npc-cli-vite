@@ -89,9 +89,10 @@
 - ✅ add animation `primed` `attack`
 - ✅ remove `primed` `attack`
 - ✅ `gauntlet` -> `point`
-- ✅ `demo_attack` plays `point` with `defensive` fallback near others
+- ✅ `demo_sword` (was `demo_attack`) plays `point` with `defensive` fallback near others
 - ✅ `point` played into upper body was pointing upwards a bit
 - 🚧 investigate shooting effects
+  - `demo_sword`
 
 ### Unorganised Bugs
 

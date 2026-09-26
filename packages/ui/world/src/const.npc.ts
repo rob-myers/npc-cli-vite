@@ -228,3 +228,26 @@ export type PsiTune = {
   fadeSecs: number;
   color: string;
 };
+
+/** `Sword`: the rope from a pointer's right hand — see `demo_sword` */
+export const swordConfig = {
+  /** The hand's tip in the right forearm's frame, in model units — tuned by eye */
+  handTip: [0, -0.36, 0] as [number, number, number],
+  /** Metres the unlocked stub reaches, level, ahead of the hand */
+  stub: 1,
+  /** Metres above the target's head bone the rope lands */
+  headAbove: 0.3,
+  /** Metres the arc rises, plus this per metre between the ends */
+  lift: 0.3,
+  liftPerMetre: 0.15,
+  /** Metres of radius at the hand, and at the target */
+  r0: 0.008,
+  r1: 0.04,
+  alpha: 0.35,
+  /** Pulses along the rope, drifting towards the target a band per second */
+  bands: 4,
+  color: "#ff8a5c",
+  fadeSecs: 0.3,
+  sides: 6,
+  segments: 24,
+};

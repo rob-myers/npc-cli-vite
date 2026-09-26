@@ -45,70 +45,6 @@ export function demo_add_decor(ct: JshCli.RunArg) {
   ct.w.view.forceUpdate();
 }
 
-/**
- * Npcs point (upper body) whilst `q` over the world toggles it on, drawing in to `defensive` for at least
- * `holdSecs` whenever the arm would touch a crowd neighbour, a wall or a closed door. Runs until killed;
- * a pause lowers it
- * ```sh
- * demo_attack rob kate
- * ```
- */
-export async function demo_attack({ api, args, w }: JshCli.RunArg) {
-  const npcs = args.map((npcKey) => w.npc.get(npcKey));
-  const holdUntil = new Map<string, number>(); // world seconds each stays defensive until
-  let [on, paused] = [false, false];
-  const show = () => {
-    const now = w.timer.getElapsedTime();
-    for (const npc of npcs) {
-      const defensive = (holdUntil.get(npc.key) ?? 0) > now;
-      const pose = on && !paused ? (defensive ? "defensive" : "point") : null;
-      npc.anim.setUpper(pose, { swapSecs: defensive ? attackConfig.drawInSecs : undefined }); // in before the hand goes through
-    }
-  };
-  const onKey = (e: KeyboardEvent) => void (e.key === "q" && api.isRunning() && ((on = !on), show()));
-  w.rootEl.addEventListener("keydown", onKey);
-  const handlers = api.handleStatus({
-    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show()),
-    onSuspend: () => ((paused = true), show(), true),
-    onResume: () => ((paused = false), show(), true),
-  });
-
-  try {
-    while (true) {
-      for (const npc of on ? npcs : []) {
-        if (await armBlocked(w, npc)) holdUntil.set(npc.key, w.timer.getElapsedTime() + attackConfig.holdSecs);
-      }
-      show();
-      await api.sleep(attackConfig.sampleSecs); // a kill rejects it
-    }
-  } finally {
-    handlers.dispose();
-  }
-}
-
-/** Is a crowd neighbour in front of `npc`, or a wall or closed door within `reach`? */
-async function armBlocked(w: JshCli.WorldState, npc: JshCli.Npc) {
-  const [fx, fz] = [-Math.sin(npc.rotation.y), -Math.cos(npc.rotation.y)]; // facing
-  const { x, z } = npc.position;
-  const npcAhead = (npc.agent?.neis ?? []).some(({ agentId }) => {
-    const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
-    return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx); // within 45° of facing
-  });
-  if (npcAhead) return true;
-  const hand = { x: x + fx * attackConfig.reach, y: z + fz * attackConfig.reach };
-  const { hit } = await w.e.raycast(npc.point, hand).catch(() => ({ hit: true })); // off the map throws
-  return hit !== null;
-}
-
-const attackConfig = {
-  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
-  reach: 1,
-  /** Seconds they stay defensive at least — longer whilst something stays in reach */
-  holdSecs: 0.5,
-  drawInSecs: 0.15,
-  sampleSecs: 0.1,
-};
-
 /** The process no longer exists when we attempt to resolve */
 export function demo_bad_resolve({ api }: JshCli.RunArg) {
   setTimeout(() => {
@@ -325,3 +261,82 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
     skins: pointsWithMeta.map(() => skinKeys[Math.floor(skinCount * Math.random())]),
   });
 }
+
+/**
+ * `npcKey` points (upper body) whilst `q` over the world toggles it on, drawing in to `defensive` for at
+ * least `holdSecs` whenever the arm would touch a crowd neighbour, a wall or a closed door. Their `Sword`
+ * locks on to the npc picked last whilst nothing is between them; picking `npcKey` unlocks it
+ * ```sh
+ * pick | demo_sword rob
+ * ```
+ */
+export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
+  const npc = w.npc.get(npcKey);
+  /** The npc picked last, bar themself */
+  let target: null | string = null;
+  let [on, holdUntil] = [false, 0]; // world seconds they stay defensive until
+  const defensive = () => holdUntil > w.timer.getElapsedTime();
+  const show = () => {
+    const pose = on ? (defensive() ? "defensive" : "point") : null;
+    npc.anim.setUpper(pose, { swapSecs: defensive() ? demoSwordConfig.drawInSecs : undefined }); // in before the hand goes through
+    if (pose !== "point") w.sword.sheathe(npc.key);
+  };
+  const onKey = (e: KeyboardEvent) => void (e.key === "q" && api.isRunning() && ((on = !on), show()));
+  w.rootEl.addEventListener("keydown", onKey);
+  // a pause leaves it drawn, as the world is
+  const handlers = api.handleStatus({
+    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show()),
+  });
+
+  const readPicks = async () => {
+    for (let datum = await api.read(); datum !== api.eof; datum = await api.read()) {
+      const pick = datum as JshCli.PickEvent;
+      const key = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
+      if (key !== undefined && key in w.n) target = key === npc.key ? null : key;
+    }
+  };
+  if (api.isTtyAt(0) === false) readPicks().catch(() => {}); // a kill ends it
+
+  try {
+    while (true) {
+      if (on && (await armBlocked(w, npc))) holdUntil = w.timer.getElapsedTime() + demoSwordConfig.holdSecs;
+      show();
+      const locked = on && (await inSight(w, npc, target));
+      if (on && !defensive()) w.sword.aim(npc.key, locked ? target : null); // `on` again: killed meanwhile?
+      await api.sleep(demoSwordConfig.sampleSecs); // a kill rejects it
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
+/** Is a crowd neighbour in front of `npc`, or a wall or closed door within `reach`? */
+async function armBlocked(w: JshCli.WorldState, npc: JshCli.Npc) {
+  const [fx, fz] = [-Math.sin(npc.rotation.y), -Math.cos(npc.rotation.y)]; // facing
+  const { x, z } = npc.position;
+  const npcAhead = (npc.agent?.neis ?? []).some(({ agentId }) => {
+    const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
+    return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx); // within 45° of facing
+  });
+  if (npcAhead) return true;
+  const hand = { x: x + fx * demoSwordConfig.reach, y: z + fz * demoSwordConfig.reach };
+  const { hit } = await w.e.raycast(npc.point, hand).catch(() => ({ hit: true })); // off the map throws
+  return hit !== null;
+}
+
+/** Is neither a wall nor a closed door between `npc` and `targetKey`? */
+async function inSight(w: JshCli.WorldState, npc: JshCli.Npc, targetKey: null | string) {
+  const other = targetKey === null ? undefined : w.n[targetKey];
+  if (other === undefined) return false;
+  const { hit } = await w.e.raycast(npc.point, other.point).catch(() => ({ hit: true })); // off the map throws
+  return hit === null;
+}
+
+const demoSwordConfig = {
+  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
+  reach: 1,
+  /** Seconds they stay defensive at least — longer whilst something stays in reach */
+  holdSecs: 0.5,
+  drawInSecs: 0.15,
+  sampleSecs: 0.1,
+};
