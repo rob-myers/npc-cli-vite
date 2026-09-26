@@ -224,7 +224,12 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
               uiStoreApi={uiStoreApi}
             />
           ))}
-          <button ref={newTabButtonRef} type="button" className="cursor-pointer p-2" onClick={state.onAddNewTab}>
+          <button
+            ref={newTabButtonRef}
+            type="button"
+            className="sticky right-0 shrink-0 cursor-pointer bg-background p-2" // in view however many tabs
+            onClick={state.onAddNewTab}
+          >
             <PlusCircleIcon className="size-6 text-on-background/60" weight="duotone" />
           </button>
         </div>
@@ -383,11 +388,12 @@ function TabHeaderItem({
               trigger={
                 <DotsThreeOutlineVerticalIcon weight="thin" className="cursor-pointer size-4 text-on-background/80" />
               }
+              triggerClassName="flex items-center self-stretch px-2 -mx-1" // wider than the icon, easier to hit
               className="bg-gray-700 py-0.5 px-1 flex flex-col"
               positionerClassName="z-10000"
               arrowClassName="fill-gray-700"
               side="bottom"
-              sideOffset={8}
+              sideOffset={0}
               onOpenChange={(open) => !open && state.set({ confirmClose: false })}
             >
               <div className="flex items-center gap-2 px-2 py-1">
@@ -408,22 +414,24 @@ function TabHeaderItem({
               </div>
             </BasicPopover>
 
-            <button
-              type="button"
-              className="mr-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                uiStoreApi.setUiMeta(tab.id, (draft) => {
-                  draft.disabled = !draft.disabled;
-                  delete draft.autoPaused;
-                });
-              }}
-            >
-              <PlayCircleIcon
-                weight="duotone"
-                className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
-              />
-            </button>
+            {tab.pausable === true && (
+              <button
+                type="button"
+                className="mr-0.5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  uiStoreApi.setUiMeta(tab.id, (draft) => {
+                    draft.disabled = !draft.disabled;
+                    delete draft.autoPaused;
+                  });
+                }}
+              >
+                <PlayCircleIcon
+                  weight="duotone"
+                  className={cn("size-5 cursor-pointer", tab.disabled ? "text-gray-500" : "text-green-700")}
+                />
+              </button>
+            )}
           </>
         )}
       </div>
