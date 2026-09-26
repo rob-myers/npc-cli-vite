@@ -8,19 +8,30 @@ separate, simpler rule, covered at the end.
 
 `w.npc.move({ ..., strafe })` in `NPCs.tsx` sets the move's intent on `npc.anim`:
 
-- `strafe` defaults to whether they fixate: `strafe ?? Boolean(npc.anim.face.fixate)`.
+- `strafe` defaults to whether they aim: `strafe ?? Boolean(npc.anim.face.aim)`.
 - Strafing rules out `backwards` and `fast`: one gait blend, never running.
 - `turnBeforeMoving` returns at once: they set off without turning.
 - The npc tick stops steering `face` by velocity (`face.rate = 0`), so facing holds, unless
-  `face.fixate` points them at something.
+  `face.aim` turns them.
 
-jsh: `move rob --strafe to:$( pick 1 )`, or `fixate rob at:$( pick 1 )` then any `move`.
+jsh: `move rob --strafe to:$( pick 1 )`, or `aim rob at:$( pick 1 )` then any `move`.
 
-## Facing: `face.fixate`
+## Facing: `face.aim`
 
-`npc.anim.face.fixate: null | Geom.VectJson` is a point they face whilst set, moving or not. At the
-top of `NpcAnimation.tick` it sets `face.target` to its bearing and `face.rate` to `1`, unless a
-timed `look` is under way. `demo_sword` fixates on the picked npc every sample.
+`npc.anim.face.aim: null | { at, rate, untilRest }` is faced whilst set, moving or not: `at` is a
+point, tracked, or a world angle (as `rotation.y`). At the top of `NpcAnimation.tick` it sets
+`face.target` to that bearing and `face.rate` to `rate`, unless `face.turn`, a timed turn on the spot, is under way — so
+turning to it is the usual exponential ease.
+
+- **A look whilst strafing** (`npc.look` when `strafe` and moving) does not stop them or turn them on
+  the spot: it sets the aim to the look's angle, `untilRest`, and returns at once. `startIdle` clears
+  an `untilRest` aim, so it lasts for the move. Otherwise a look is the usual timed turn on the spot.
+- **jsh `aim`**: `aim rob at:$( pick 1 )`, `aim rob at:1.57`, `aim rob at:kate rate:0.5`; a bare
+  `aim rob` clears it. Piped (`pick --right | aim rob`), each pick re-aims them until killed, and
+  picking them clears it.
+- `demo_sword` aims at the picked npc every sample.
+
+Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 
 ## The blend
 
@@ -90,7 +101,8 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 
 ## Where
 
-- `components/npc-animation.ts` — `setPose`, `syncStrafe`, `startMoving`, `face.fixate`
+- `components/npc-animation.ts` — `setPose`, `syncStrafe`, `startMoving`, `face.aim`
+- `components/npc.ts` — `look`, which aims instead whilst strafing
 - `components/NPCs.tsx` — `w.npc.move`, `turnBeforeMoving`, the tick's facing, `isBackStep`, `moveClipFadedIn`
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
-- `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `fixate`
+- `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `aim`
