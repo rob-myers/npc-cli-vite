@@ -510,7 +510,7 @@ export default function NPCs() {
             groundPoint = helper.parseGroundPoint(nearDoor.position);
           }
 
-          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.fixate); // fixating, they strafe unless told not to
+          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
           npc.anim.backwards =
             npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint)));
           npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
@@ -528,7 +528,9 @@ export default function NPCs() {
           if (e instanceof Error && e.message === "move again") {
             return; // interrupting move owns npc now
           }
-          npc.anim.startIdle({ force: true });
+          if (!(e instanceof Error && e.message === "look again")) {
+            npc.anim.startIdle({ force: true }); // delegated to look
+          }
           state.postCrowdTickEvents.push({ key: "stopped-moving", npcKey });
           throw e;
         }

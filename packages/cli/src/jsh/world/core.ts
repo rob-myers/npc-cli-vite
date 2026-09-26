@@ -6,6 +6,52 @@ import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
 import { padded, parked } from "./pred";
 
 /**
+ * Face a point, tracked, or a world angle, moving or not: moves strafe whilst set — see `npc.anim.face.aim`.
+ * A bare `aim rob` clears it. Piped, each pick re-aims them until killed, and picking them clears it
+ * ```sh
+ * aim rob at:$( pick 1 )
+ * aim rob at:1.57
+ * aim rob at:kate rate:0.5
+ * aim rob
+ * pick --right | aim rob
+ * ```
+ */
+export async function aim(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; at?: number | string | JshCli.PointAnyFormat; rate?: number } = api.jsArg(args, {
+    npc: "npcKey",
+  }),
+) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  const npc = w.npc.get(opts.npcKey);
+  const aimAt = (at?: number | string | MaybeMeta<JshCli.PointAnyFormat>) => {
+    const to = typeof at === "string" ? w.e.getPoint(at) : at; // another npc as they stand now
+    const self = typeof to === "object" && to.meta?.npcKey === npc.key;
+    const { face } = npc.anim;
+    if (to === undefined || self) return void (face.aim = null); // picking or naming them clears it
+    face.aim = {
+      at: typeof to === "number" ? to : w.helper.parseGroundPoint(to),
+      rate: opts.rate ?? 1,
+      untilRest: false,
+    };
+  };
+  if (api.isTtyAt(0)) return aimAt(opts.at);
+
+  let onKill = () => {};
+  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
+  const handlers = api.handleStatus({ cleanup: () => (aimAt(), onKill()) });
+  try {
+    while (true) {
+      const datum = await Promise.race([api.read(), killed]);
+      if (datum === api.eof) break;
+      aimAt(datum);
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
+/**
  * Get at most one decor containing a given point.
  * Accounts for height e.g. bunk beds.
  * - opts
@@ -135,32 +181,6 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   // get here via ctrl-c or `kill`
   handlers.dispose();
   throw api.getKillError();
-}
-
-/**
- * ```sh
- * fixate at:$( pick 1 ) rob
- * fixate npc:rob at:$( pick 1 )
- * fixate rob # stop fixating
- * ```
- */
-export function fixate(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey: string; at?: JshCli.PointAnyFormat } = api.jsArg(args, {
-    npc: "npcKey",
-  }),
-) {
-  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  const npc = w.npc.get(opts.npcKey);
-
-  if (!opts.at) {
-    npc.anim.face.fixate = null;
-    return;
-  }
-  if (!w.helper.isPointAnyFormat(opts.at)) {
-    throw Error("opts.at must be a point");
-  }
-  npc.anim.face.fixate = w.helper.parseGroundPoint(opts.at);
 }
 
 /**
@@ -318,8 +338,8 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       },
       onSuspend: () => {
         const npc = getNpcOrUndefined();
-        if (!npc) {
-          return true;
+        if (!npc || w.disabled === true) {
+          return true; // a paused world holds the look itself: undone and redone, the pose would jump
         }
         pendingLooks.unshift({ ...npc.last.look });
         npc.rejectAll(Error("paused"));
@@ -369,8 +389,8 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       },
       onSuspend: () => {
         const npc = getNpcOrUndefined();
-        if (!npc) {
-          return true;
+        if (!npc || w.disabled === true) {
+          return true; // a paused world holds the move itself: undone and redone, the walk would jump
         }
 
         // fadeSpawn must complete

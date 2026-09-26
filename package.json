@@ -2,6 +2,7 @@
   "name": "npc-cli-vite",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "pnpm -F @npc-cli/app dev",

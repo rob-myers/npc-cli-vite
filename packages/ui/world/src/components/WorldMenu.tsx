@@ -27,7 +27,13 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import { compilingShadersText, defaultBrightness, defaultNpcBrightness } from "../const.env";
+import {
+  compilingShadersText,
+  defaultBrightness,
+  defaultNpcBrightness,
+  type FollowMode,
+  followModes,
+} from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
@@ -58,6 +64,8 @@ export function WorldMenu() {
       gmGraphsOpen: false,
       lookLongPressed: false,
       lookTimeoutId: 0,
+      lookEl: null as null | HTMLDivElement,
+      followMenuOpen: false,
       menuWidth: saved.menuWidth,
       minY: 40,
       menuOpen: false,
@@ -112,14 +120,13 @@ export function WorldMenu() {
         }
       },
 
-      // what each press means is `WorldView`'s `onLookGesture`, which `f` runs too
+      // a short press is `WorldView`'s `onLookGesture`, as `f` is; a long one opens the follow menu
       onLookPressStart() {
         state.lookLongPressed = false;
         state.lookTimeoutId = window.setTimeout(() => {
           if (state.dragged === true) return; // dragging the column is not a press
           state.lookLongPressed = true;
-          w.view.onLookGesture(true);
-          state.update();
+          state.set({ followMenuOpen: true });
         }, lookLongPressMs);
       },
       onLookPressEnd(cancelled = false) {
@@ -380,7 +387,7 @@ export function WorldMenu() {
   const toggleToastKeys = useToastTs(state.toastTs);
   // a flash over the look button whenever follow is toggled — by this button, by the row in the
   // debug list, or by `f`. Any of them lands here, since it watches the VALUE
-  const followFlash = useChangeCount(w.view.cameraFollow);
+  const followFlash = useChangeCount(w.view.followMode);
 
   const menuTrigger = (
     <div className="outline-width-1 grid place-items-center size-9 bg-neutral-800 text-white">
@@ -436,13 +443,13 @@ export function WorldMenu() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <span
-                  title={`follow the player: ${w.view.cameraFollow ? "on" : "off"}`}
-                  onClick={() => w.view.setCameraFollow(w.view.cameraFollow === false)}
+                  title={`follow the player: ${w.view.followMode}`}
+                  onClick={() => w.view.setFollowMode(w.view.followMode === "off" ? w.view.followLast : "off")}
                 >
                   <CrosshairSimpleIcon
                     className={cn(
                       "size-3.5 cursor-pointer",
-                      w.view.cameraFollow === true ? "text-amber-300" : "hover:text-white",
+                      w.view.followMode !== "off" ? "text-amber-300" : "hover:text-white",
                     )}
                   />
                 </span>
@@ -696,13 +703,13 @@ export function WorldMenu() {
             )}
           </div>
 
-          {/* look at the player, long press to follow them — which turns it green — and either one
-              to stop following. `f` is the same gesture on a key, and the camera MODE is the menu
-              row above. See `WorldView`'s `onLookGesture` */}
+          {/* a press looks at the player, or stops a follow (amber); a long press opens the follow menu.
+              `f` is the same press, and held toggles the follow — see `WorldView`'s `onLookGesture` */}
           <div
             data-keep-menu-open
             className="relative cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
-            title={`camera: ${w.view.cameraMode}, follow ${w.view.cameraFollow ? "on" : "off"} (long press or f to toggle)`}
+            ref={state.ref("lookEl")}
+            title={`camera: ${w.view.cameraMode}, follow ${w.view.followMode} (long press to choose, hold f to toggle)`}
             onPointerDown={() => state.onLookPressStart()}
             onPointerUp={() => state.onLookPressEnd()}
             onPointerLeave={() => state.onLookPressEnd(true)}
@@ -724,7 +731,7 @@ export function WorldMenu() {
                 key={followFlash}
                 className={cn(
                   "absolute inset-0 pointer-events-none",
-                  w.view.cameraFollow === true ? "bg-amber-300" : "bg-neutral-400",
+                  w.view.followMode !== "off" ? "bg-amber-300" : "bg-neutral-400",
                 )}
                 initial={{ opacity: 0.55 }}
                 animate={{ opacity: 0 }}
@@ -732,12 +739,47 @@ export function WorldMenu() {
               />
             )}
             <PersonSimpleCircleIcon
-              className={cn("size-5 relative", w.view.cameraFollow === true && "text-amber-300")}
-              alt={
-                w.view.cameraFollow === true ? "stop following the player" : "look at the player (long press to follow)"
-              }
+              className={cn("size-5 relative", w.view.followMode !== "off" && "text-amber-300")}
+              alt="look/follow"
             />
           </div>
+
+          <Menu.Root
+            open={state.followMenuOpen}
+            onOpenChange={(open) => open === false && state.set({ followMenuOpen: false })}
+            modal={false}
+          >
+            <Menu.Portal container={w.rootEl}>
+              <Menu.Positioner anchor={state.lookEl} side="right" sideOffset={4} className="z-50">
+                <Menu.Popup
+                  data-keep-menu-open
+                  className="select-none bg-neutral-800/90 border border-neutral-700 rounded-md shadow-lg py-1 text-xs"
+                  onPointerDown={(e) => e.stopPropagation()} // else the draggable column takes it
+                >
+                  <Menu.RadioGroup
+                    value={w.view.followMode}
+                    onValueChange={(mode: FollowMode) => {
+                      w.view.setFollowMode(mode);
+                      state.set({ followMenuOpen: false });
+                    }}
+                  >
+                    {followModes.map((mode) => (
+                      <Menu.RadioItem
+                        key={mode}
+                        value={mode}
+                        className={cn(
+                          "px-3 py-1 cursor-pointer text-neutral-300 hover:bg-neutral-700 data-checked:text-amber-300",
+                          touch && "py-2 text-sm",
+                        )}
+                      >
+                        {mode}
+                      </Menu.RadioItem>
+                    ))}
+                  </Menu.RadioGroup>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
         </div>
 
         <div className="absolute top-full left-0 mt-1 w-max max-w-64 flex flex-col gap-0.5">
@@ -1199,6 +1241,9 @@ export type State = {
   /** Whether the look button has been held long enough to have switched camera mode */
   lookLongPressed: boolean;
   lookTimeoutId: number;
+  lookEl: null | HTMLDivElement;
+  /** Opened by a long press on the look button — see `onLookPressStart` */
+  followMenuOpen: boolean;
   /** A click looks at the player; a long press switches camera mode — the badge it wears */
   onLookPressStart(): void;
   onLookPressEnd(cancelled?: boolean): void;

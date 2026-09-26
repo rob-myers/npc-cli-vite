@@ -8,6 +8,7 @@ import {
   ArrowsInIcon,
   ChartLineIcon,
   GearIcon,
+  InfoIcon,
   MoonIcon,
   SquareHalfBottomIcon,
   SquareHalfIcon,
@@ -16,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import { motion, useMotionValue } from "motion/react";
 import { useEffect, useState } from "react";
+import { AboutModal } from "./AboutModal";
 import { resetPanes, splitRoot } from "./pane-service";
 
 const storageKey = "allotment-menu-y";
@@ -36,6 +38,7 @@ export function GlobalMenu() {
   const menu = useStateRef(() => ({
     y,
     menuOpen: false,
+    aboutOpen: false,
     /** Whether the current press may open the menu i.e. is neither a drag, nor the press which closed it */
     canOpen: false,
     /** Whether reset has been clicked once, so the next click is the confirmation */
@@ -83,85 +86,95 @@ export function GlobalMenu() {
   }));
 
   return (
-    <motion.div
-      className="fixed text-white bg-gray-800 z-9999 touch-none flex flex-col gap-1"
-      style={{
-        y: menu.y,
-        left: vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - triggerPx,
-        top: vpOffset.y,
-      }}
-      drag="y"
-      dragMomentum={false}
-      dragConstraints={{ top: minY, bottom: window.innerHeight - minY }}
-      onPointerDown={menu.onPointerDown}
-      onDragStart={menu.onDragStart}
-      onDragEnd={menu.onDragEnd}
-    >
-      <Menu.Root open={menu.menuOpen} onOpenChange={menu.onOpenChange}>
-        <Menu.Trigger
-          className={cn("grid place-items-center cursor-pointer", triggerCls)}
-          render={<span />}
-          nativeButton={false}
-          onClick={menu.onTriggerClick}
-        >
-          <GearIcon className={gearCls} weight="bold" />
-        </Menu.Trigger>
+    <>
+      <motion.div
+        className="fixed text-white bg-gray-800 z-9999 touch-none flex flex-col gap-1"
+        style={{
+          y: menu.y,
+          left: vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - triggerPx,
+          top: vpOffset.y,
+        }}
+        drag="y"
+        dragMomentum={false}
+        dragConstraints={{ top: minY, bottom: window.innerHeight - minY }}
+        onPointerDown={menu.onPointerDown}
+        onDragStart={menu.onDragStart}
+        onDragEnd={menu.onDragEnd}
+      >
+        <Menu.Root open={menu.menuOpen} onOpenChange={menu.onOpenChange} modal={false}>
+          <Menu.Trigger
+            className={cn("grid place-items-center cursor-pointer", triggerCls)}
+            render={<span />}
+            nativeButton={false}
+            onClick={menu.onTriggerClick}
+          >
+            <GearIcon className={gearCls} weight="bold" />
+          </Menu.Trigger>
 
-        <Menu.Portal>
-          <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={2} side="left" collisionPadding={0}>
-            <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-              <Menu.Item className={cn(itemCls, "px-3")} closeOnClick={false} onClick={() => themeApi.setOther()}>
-                {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-                {theme === "dark" ? "Light" : "Dark"}
-              </Menu.Item>
+          <Menu.Portal>
+            <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={2} side="left" collisionPadding={0}>
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
+                <Menu.Item className={cn(itemCls, "px-3")} closeOnClick={false} onClick={() => themeApi.setOther()}>
+                  {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
+                  {theme === "dark" ? "Light" : "Dark"}
+                </Menu.Item>
 
-              <Menu.Item
-                className={cn(itemCls, "px-3", menu.resetArmed && "text-red-300")}
-                closeOnClick={false}
-                onClick={menu.onReset}
-              >
-                {menu.resetArmed ? (
-                  <WarningIcon className="size-4" />
-                ) : (
-                  <ArrowCounterClockwiseIcon className="size-4" />
-                )}
-                {/* both labels share a cell, so the item is as wide as the wider whichever shows */}
-                <span className="grid *:col-start-1 *:row-start-1">
-                  <span className={cn(menu.resetArmed && "invisible")}>Reset layout</span>
-                  <span className={cn(!menu.resetArmed && "invisible")}>Confirm reset</span>
-                </span>
-              </Menu.Item>
-
-              {import.meta.env.DEV && (
                 <Menu.Item
-                  className={cn(itemCls, "px-3", menu.trackingOff && "text-slate-500")}
+                  className={cn(itemCls, "px-3", menu.resetArmed && "text-red-300")}
                   closeOnClick={false}
-                  onClick={menu.onToggleTracking}
+                  onClick={menu.onReset}
                 >
-                  <ChartLineIcon className="size-4" />
-                  {menu.trackingOff ? "Tracking: off" : "Tracking: on"}
+                  {menu.resetArmed ? (
+                    <WarningIcon className="size-4" />
+                  ) : (
+                    <ArrowCounterClockwiseIcon className="size-4" />
+                  )}
+                  {/* both labels share a cell, so the item is as wide as the wider whichever shows */}
+                  <span className="grid *:col-start-1 *:row-start-1">
+                    <span className={cn(menu.resetArmed && "invisible")}>Reset layout</span>
+                    <span className={cn(!menu.resetArmed && "invisible")}>Confirm reset</span>
+                  </span>
                 </Menu.Item>
-              )}
 
-              <div className="flex justify-evenly">
-                <Menu.Item className={itemCls} onClick={() => splitRoot(false)}>
-                  <SquareHalfIcon className="size-4" />
-                </Menu.Item>
-                <Menu.Item className={itemCls} onClick={() => splitRoot(true)}>
-                  <SquareHalfBottomIcon className="size-4" />
-                </Menu.Item>
-              </div>
-            </Menu.Popup>
-          </Menu.Positioner>
-        </Menu.Portal>
-      </Menu.Root>
+                {import.meta.env.DEV && (
+                  <Menu.Item
+                    className={cn(itemCls, "px-3", menu.trackingOff && "text-slate-500")}
+                    closeOnClick={false}
+                    onClick={menu.onToggleTracking}
+                  >
+                    <ChartLineIcon className="size-4" />
+                    {menu.trackingOff ? "Tracking: off" : "Tracking: on"}
+                  </Menu.Item>
+                )}
 
-      {vpOffset.zoomed && (
-        <button type="button" className="cursor-pointer" onClick={() => location.reload()}>
-          <ArrowsInIcon className="size-5" />
-        </button>
-      )}
-    </motion.div>
+                <Menu.Item className={cn(itemCls, "px-3")} onClick={() => menu.set({ aboutOpen: true })}>
+                  <InfoIcon className="size-4" />
+                  About
+                </Menu.Item>
+
+                <div className="flex justify-evenly">
+                  <Menu.Item className={itemCls} onClick={() => splitRoot(false)}>
+                    <SquareHalfIcon className="size-4" />
+                  </Menu.Item>
+                  <Menu.Item className={itemCls} onClick={() => splitRoot(true)}>
+                    <SquareHalfBottomIcon className="size-4" />
+                  </Menu.Item>
+                </div>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+
+        {vpOffset.zoomed && (
+          <button type="button" className="cursor-pointer" onClick={() => location.reload()}>
+            <ArrowsInIcon className="size-5" />
+          </button>
+        )}
+      </motion.div>
+
+      {/* not inside the draggable, which a press in the dialog would otherwise bubble to */}
+      <AboutModal open={menu.aboutOpen} onOpenChange={(aboutOpen) => menu.set({ aboutOpen })} />
+    </>
   );
 }
 

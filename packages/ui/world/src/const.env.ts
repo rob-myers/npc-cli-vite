@@ -106,8 +106,13 @@ export const defaultAmbientIntensity = 1;
 export const defaultCameraMode: import("./components/CameraControls").CameraModeType = isTouchDevice()
   ? "free"
   : "canonical";
-/** Whether the camera keeps the player centred — an option of EITHER mode, not a mode of its own */
-export const defaultCameraFollow = false;
+/**
+ * How the camera follows the player — an option of EITHER mode, not a mode of its own: `loose` keeps them
+ * framed, `tight` also keeps it behind their facing
+ */
+export const followModes = ["off", "loose", "tight"] as const;
+export type FollowMode = (typeof followModes)[number];
+export const defaultFollowMode: FollowMode = "off";
 
 /**
  * `canonical` camera mode: how far out — as a fraction of the travel between the zoom's stops —
@@ -123,7 +128,7 @@ export const canonicalAxisLockFrom = isTouchDevice() ? 0.85 : canonicalFlattenFr
  * What the rgb shift is scaled to at the outer zoom stop: zoomed out the whole ship is in frame and
  * the parted channels read as a blur over everything rather than an edge on what is near
  */
-export const rgbShiftZoomedOutScale = 0.25;
+export const rgbShiftZoomedOutScale = 1;
 /** `canonical` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
 export const canonicalSnapArm = (10 * Math.PI) / 180;
 /**
