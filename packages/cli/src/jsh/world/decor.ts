@@ -26,18 +26,32 @@ type AddOpts = {
 };
 
 /**
- * Make decor where it is pointed at, by `to:` or by what is piped in.
+ * Make decor where it is pointed at, by `to:` or by what is piped in — or `ls` or `rm` it.
  * ```sh
- * pick 3 | decor_add type:point img:switch   # one at each pick
- * pick 1 | decor_add                         # an abstract point
- * pick 2 | decor_add type:rect               # each PAIR of picks is a rect's opposite corners
- * pick 1 | decor_add type:rect width:2 height:1
- * pick 1 | decor_add type:circle radius:1.5
- * pick 1 | decor_add type:quad img:screen-0
- * decor_add to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
+ * pick 3 | decor type:point img:switch   # one at each pick
+ * pick 1 | decor                         # an abstract point
+ * pick 2 | decor type:rect               # each PAIR of picks is a rect's opposite corners
+ * pick 1 | decor type:rect width:2 height:1
+ * pick 1 | decor type:circle radius:1.5
+ * pick 1 | decor type:quad img:screen-0
+ * decor to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
+ * decor ls
+ * decor rm point-3 point-4
+ * decor ls | map key | decor rm
  * ```
  */
-export async function* decor_add({ api, args, w }: JshCli.RunArg, opts: AddOpts = api.jsArg(args)) {
+export async function* decor(ct: JshCli.RunArg) {
+  switch (ct.args[0]) {
+    case "ls":
+      return yield* Object.values(ct.w.decor.runtime.defByKey); // as the defs which made it
+    case "rm":
+      return await remove(ct, ct.args.slice(1));
+    default:
+      return yield* add(ct, ct.api.jsArg(ct.args));
+  }
+}
+
+async function* add({ api, w }: JshCli.RunArg, opts: AddOpts) {
   const type = opts.type ?? "point";
   const points: Geom.VectJson[] = [];
 
@@ -68,14 +82,7 @@ export async function* decor_add({ api, args, w }: JshCli.RunArg, opts: AddOpts 
   w.view.forceUpdate();
 }
 
-/**
- * ```sh
- * decor_rm point-3 point-4
- * decor_ls | map key | decor_rm
- * ```
- */
-export async function decor_rm({ api, args, w }: JshCli.RunArg) {
-  const keys = args.slice();
+async function remove({ api, w }: JshCli.RunArg, keys: string[]) {
   if (!api.isTtyAt(0)) {
     let datum: unknown;
     // a key, or anything which names one e.g. a def, a pick on decor
@@ -86,11 +93,6 @@ export async function decor_rm({ api, args, w }: JshCli.RunArg) {
   }
   w.decor.remove(...keys.filter((key) => key in w.decor.runtime.byKey));
   w.view.forceUpdate();
-}
-
-/** The map's runtime decor, as the defs which made it */
-export function* decor_ls({ w }: JshCli.RunArg) {
-  yield* Object.values(w.decor.runtime.defByKey);
 }
 
 function toDef(type: DecorType, key: string, [p, q]: Geom.VectJson[], opts: AddOpts): Geomorph.DecorDef {

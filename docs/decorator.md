@@ -22,7 +22,7 @@ neither the panel nor a terminal.
 | `util/src/hooks/use-svg-zoom.ts` | `useSvgZoom`, `preventPopupGestures` — shared with the World's debug modals |
 | `ui/world/src/components/DecorInspector.tsx` | decorating in 3D: a label per runtime decor, a card per pick |
 | `ui/world/src/components/DecorCard.tsx` | the card: a decor's fields, its `meta`, delete |
-| `cli/src/jsh/world/decor.ts` | `decor_add`, `decor_rm`, `decor_ls` |
+| `cli/src/jsh/world/decor.ts` | `decor`, `decor ls`, `decor rm` |
 
 ## It needs a live World
 
@@ -93,7 +93,7 @@ removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor
 - `DecorInspector` labels each through `w.labels` (its key, or `meta.label`) — which draws a text
   once, keeps its layer, and redraws once per tick however many labels came and went — and a **right-click**
   toggles its `DecorCard` through `w.html`, the label giving way whilst the card is up — so a plain
-  click stays a pick for e.g. `pick | decor_add`. Touch has no right-click, so there any pick
+  click stays a pick for e.g. `pick | decor`. Touch has no right-click, so there any pick
   toggles. Its ids are `decor:<key>`. On desktop the card opens **focused**
   (`w.html.show(…, { focus: true })`), so **Escape** closes it — or, in a field with an edit under
   way, gives that up;
@@ -120,20 +120,20 @@ so a clicked field lost focus at once. The frame therefore stops both.
 `decor.ts` is sourced by the default profile. What is piped in says where:
 
 ```sh
-pick 3 | decor_add type:point img:switch   # one at each pick
-pick 1 | decor_add                         # an abstract point
-pick 2 | decor_add type:rect               # each PAIR of picks is a rect's opposite corners
-pick 1 | decor_add type:rect width:2 height:1
-pick 1 | decor_add type:circle radius:1.5
-pick 1 | decor_add type:point img:number-one scale:2
-pick 1 | decor_add type:quad img:screen-0
-decor_add to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
-decor_ls | map key | decor_rm
+pick 3 | decor type:point img:switch   # one at each pick
+pick 1 | decor                         # an abstract point
+pick 2 | decor type:rect               # each PAIR of picks is a rect's opposite corners
+pick 1 | decor type:rect width:2 height:1
+pick 1 | decor type:circle radius:1.5
+pick 1 | decor type:point img:number-one scale:2
+pick 1 | decor type:quad img:screen-0
+decor to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
+decor ls | map key | decor rm
 ```
 
 Keys are the next free `<type>-<n>` unless `key:` is given and free. `meta.shown` defaults on, so
 what was placed can be seen. A pick's own meta is dropped: only its `{ x, y }` is kept, and `Decor`
-finds the room. `decor_add` yields each key it makes.
+finds the room. `decor` yields each key it makes.
 
 ## Placing decor on the map
 
