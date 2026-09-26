@@ -460,7 +460,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
             if (
-              (e.longDown === true || e.rightDown === true) &&
+              (e.rightDown === true || (w.touchDevice && e.longDown === true)) &&
               e.meta.type === "npc" &&
               typeof e.meta.npcKey === "string" &&
               e.srcWorld === w.key &&

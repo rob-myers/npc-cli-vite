@@ -76,6 +76,8 @@ export const npcConfig = {
   angle: {
     /** Opening turn beyond which an npc shuffles round before walking off */
     turnBeforeMove: Math.PI * 0.75,
+    /** A target further than this from their facing, and within `dist.backStep`, is backed onto — see `w.npc.move` */
+    backStep: (Math.PI * 2) / 3,
   },
   dist: {
     /** Arrival radius when we slow down beforehand: on foot, a fast move included — see `walkIn` */
@@ -92,6 +94,8 @@ export const npcConfig = {
     blockedLook: 0.3,
     /** Look before teleporting onto a doable this close by */
     doableLook: 1.5,
+    /** Within this, a target behind them is backed onto — past a `wasd_delta --fast` step, so held `s` never turns them */
+    backStep: 0.75,
     /** Below this much movement per frame an npc counts as motionless */
     stuckEpsilon: 0.002,
     /** Within this of the target, getting no nearer for `stuckDuration` counts as circling */
@@ -157,13 +161,17 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
+  defensive: true,
   idle: true,
-  gauntlet: true,
   lie: true,
+  point: true,
   psi: true,
+  psi_avoid: true,
   run: true,
   shuffle: true,
   sit: true,
+  strafe_left: true,
+  strafe_right: true,
   walk: true,
 };
 
@@ -185,13 +193,76 @@ export const fadeSecs: Record<
 > = {
   backwards: {},
   breathe: { shuffle: 0.15 },
+  defensive: {},
   idle: { shuffle: 0.15 },
-  gauntlet: {},
   lie: {},
+  point: {},
   psi: {},
+  psi_avoid: {},
   run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
+  strafe_left: {},
+  strafe_right: {},
   walk: { shuffle: 0.15, run: 0.25 },
 };
+
+/** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
+export const psiMaxReach = 8;
+
+export const defaultPsiTune: PsiTune = { reach: 5, speed: 0.4, gap: 0.5, width: 2.5, fadeSecs: 1.2, color: "#9fe8ff" };
+
+/** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
+export const psiTuneRanges = {
+  reach: [1.5, psiMaxReach, 0.1],
+  speed: [-2, 2, 0.05],
+  gap: [0.15, 1.5, 0.05],
+  width: [0.5, 8, 0.25],
+  fadeSecs: [0.1, 3, 0.1],
+} as const;
+
+/** What the player's bubble adjusts of `Psi`, persisted */
+export type PsiTune = {
+  /** Metres the field reaches, at most `psiMaxReach` */
+  reach: number;
+  /** Contours per second the rings drift by: outwards when positive */
+  speed: number;
+  /** Metres between contours */
+  gap: number;
+  /** Pixels wide each contour is drawn */
+  width: number;
+  /** Seconds an influence takes to come, and to go */
+  fadeSecs: number;
+  color: string;
+};
+
+/** `Sword`: the rope from a pointer's right hand — see `demo_sword` */
+export const swordConfig = {
+  /** The hand's tip in the right forearm's frame, in model units — tuned by eye */
+  handTip: [0, -0.36, 0] as [number, number, number],
+  /** Metres the unlocked stub reaches, level, ahead of the hand */
+  stub: 1,
+  /** Metres above the target's head bone the rope lands */
+  headAbove: 0.3,
+  /** Metres the arc rises, plus this per metre between the ends */
+  lift: 0.3,
+  liftPerMetre: 0.15,
+  /** Metres of radius at the hand, and at the target */
+  r0: 0.008,
+  r1: 0.04,
+  alpha: 0.35,
+  /** Pulses along the rope, drifting towards the target a band per second */
+  bands: 4,
+  color: "#ff8a5c",
+  fadeSecs: 0.3,
+  sides: 6,
+  segments: 24,
+};
+
+/** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
+export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };
+/** Metres per second strafing each way, blended as the gaits are — see `w.npc.move`'s `strafe` */
+export const strafeSpeed = { walk: 1.2, strafe_right: 0.5, backwards: 1, strafe_left: 0.5 };
+/** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
+export const strafeEaseSecs = 0.25;

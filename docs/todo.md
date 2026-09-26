@@ -21,6 +21,10 @@
 ### Cleanliness
 
 - fix precision in `assets.json`
+- `npc.ts`: getters `navMesh` and `nodeRef` (`agent.corridor.path[0]`) instead of `this.w.nav.navMesh` / `this.w.npc.getNodeRef(agent)`
+  - `docs/CLAUDE.md` already says "read `npc.nodeRef`", but it doesn't exist yet
+  - getters, not stored copies: the navmesh is rebuilt on map change
+- `nudge` and `demo_back_off` slide via the plan worker's `nudge` op; maybe `npc.getSlideResult` instead (check why it went via the worker)
 
 ### Decor
 
@@ -69,24 +73,47 @@
   - ✅ `demo_psi` plays animations
   - ✅ remove `psi-end`, `psi-start` -> `psi`
   - ✅ tidy
-- 🚧 clarify as weapon
+
+- ✅ play `psi_avoid` nearby npcs
+- precompute tall obstacles by grKey (e.g. bunk beds) and play `psi_avoid` nearby
+
+- 🚧 clarify as ability
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
   - ✅ can modulate reach/speed/gap/fade/colour
     - ideally with controls
-  - 🚧 listen to their thoughts in WorldSpeech
+  - listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech
     - can suggest anger, lethargy, restless
 - check mobile performance
 
-### Gauntlet
+### Weapon
 
 - ✅ remove animation `idle-avoid`
 - ✅ animation `gauntlet`
+- ✅ add animation `primed` `attack`
+- ✅ remove `primed` `attack`
+- ✅ `gauntlet` -> `point`
+- ✅ `demo_sword` (was `demo_attack`) plays `point` with `defensive` fallback near others
+- ✅ `point` played into upper body was pointing upwards a bit
+- 🚧 investigate shooting effects
+  - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
+- ✅ strafe walking
+  - Blockbench animations strafe_left strafe_right
+  - `w.npc.move` supports `opts.strafe`
+  - npc supports `npc.anim.face.fixate`
+    - forces `opts.strafe` i.e. need these animations
+  - `move rob --strafe to:$( pick 1 )`
+  - `pick | move rob --strafe`
+  - `wasd_delta rob | move rob --strafe`
 
 ### Unorganised Bugs
 
-- 🚧 BUG only some room labels shown when change to map 301-101-301
+- ✅ BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
+
+### Worker
+
+- consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
 
 ## Blockbench
 
@@ -114,8 +141,10 @@
 - hot reloading of `pick | move npc:rob` while change `move`?
   - maybe just clarify current setup vs previous "hot reloading"
 
-## Jsh
+## Jsh and Jobs
 
+- Jobs: can be confusing whether process is paused due to World or explicitly
+  - indicate process tags?
 - Jobs: indicate stale processes after hmr
 
 ## MapEdit

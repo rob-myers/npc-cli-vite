@@ -81,6 +81,8 @@ Opted out today, because each must work whilst the World is paused (e.g. `pick |
 - `pick` (picking whilst paused),
 - `events` (it reports the pause itself),
 - `demo_psi` (switches on a pick),
+- `spawn` (spawning whilst paused),
+- `pause` and `play` (else `pause` would pause itself, and `play` start paused),
 - `awaitWorld` (it sets up the group).
 
 ## The World's group

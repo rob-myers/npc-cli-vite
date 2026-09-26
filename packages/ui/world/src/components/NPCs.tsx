@@ -337,7 +337,13 @@ export default function NPCs() {
         for (const npc of Object.values(state.npc)) {
           Object.setPrototypeOf(npc, Npc.prototype);
           Object.setPrototypeOf(npc.anim, NpcAnimation.prototype);
-          Object.assign(npc.anim, { ...new NpcAnimation(npc), ...npc.anim }); // fields added since
+          // fields added since, and to its plain objects e.g. `upper` — else they read `undefined`
+          for (const [key, value] of Object.entries(new NpcAnimation(npc))) {
+            const had = (npc.anim as unknown as Record<string, unknown>)[key];
+            if (had === undefined) Object.assign(npc.anim, { [key]: value });
+            else if (value?.constructor === Object && had?.constructor === Object)
+              Object.assign(npc.anim, { [key]: { ...value, ...had } });
+          }
 
           // `NpcInstance` carries their position and rotation over to the new mesh
           if (newGltf === true) Object.assign(npc, state.buildNpcMesh(), { epochMs: Date.now() });
@@ -436,7 +442,7 @@ export default function NPCs() {
       hasDoMeta(meta) {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
       },
-      async move({ npcKey, to, arrive = true, fast, backwards = false }) {
+      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe }) {
         /** Can be overriden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
 
@@ -504,8 +510,10 @@ export default function NPCs() {
             groundPoint = helper.parseGroundPoint(nearDoor.position);
           }
 
-          npc.anim.fast = fast === true && backwards === false; // the gait itself follows their speed — see `syncGait`
-          npc.anim.backwards = backwards;
+          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.fixate); // fixating, they strafe unless told not to
+          npc.anim.backwards =
+            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint)));
+          npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
           npc.anim.aimAt({ groundPoint, result });
           await state.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);
@@ -566,7 +574,8 @@ export default function NPCs() {
           // their facing, for the next tick: turning as fast as they walk, and not at all when
           // creeping — a stuck npc's velocity swings about, and turning to face each swing looks
           // like a jerk
-          npc.anim.face.rate = speed > 0.05 ? Math.min(1, speed / agentConfig.maxSpeed.walk) : 0;
+          npc.anim.face.rate =
+            speed > 0.05 && npc.anim.strafe !== true ? Math.min(1, speed / agentConfig.maxSpeed.walk) : 0; // strafing holds it
           // backing away they face whence they go
           if (speed > 0.05) npc.anim.face.target = Math.atan2(vx, vz) + (npc.anim.backwards === true ? 0 : Math.PI);
 
@@ -617,6 +626,7 @@ export default function NPCs() {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.psi?.onTick();
+        w.sword?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
@@ -796,8 +806,8 @@ export default function NPCs() {
         }
       },
       async turnBeforeMoving(npc) {
-        if (npc.isMoving() === true) {
-          return; // mid-path a turn reads as steering
+        if (npc.isMoving() === true || npc.anim.strafe === true) {
+          return; // mid-path a turn reads as steering; strafing keeps their facing
         }
 
         const { agent } = npc;
@@ -1146,14 +1156,24 @@ function headYByPoseOf(scene: THREE.Object3D, clips: Record<AnimationClipKey, TH
 
 const tmpVector3 = new THREE.Vector3();
 
+/** Is `to` close behind `npc`, where stepping back beats turning round? */
+function isBackStep(npc: Npc, to: Geom.VectJson) {
+  const [dx, dz] = [to.x - npc.position.x, to.y - npc.position.z];
+  const dist = Math.hypot(dx, dz);
+  const ahead = -dx * Math.sin(npc.rotation.y) - dz * Math.cos(npc.rotation.y);
+  return dist < npcConfig.dist.backStep && ahead < dist * Math.cos(npcConfig.angle.backStep);
+}
+
 /**
  * Has the gait finished fading in? Arriving before then would cut it off, looking jerky. Walk and
  * run together, so a crossfade between them near the target does not hold the arrival up
  */
 function moveClipFadedIn(npc: Npc) {
-  const weight = (key: "walk" | "run" | "backwards") =>
-    npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0;
-  return weight("walk") + weight("run") + weight("backwards") >= 0.99;
+  const gaits = ["walk", "run", "backwards", "strafe_left", "strafe_right"] as const;
+  return (
+    gaits.reduce((sum, key) => sum + (npc.anim.mixer.existingAction(npc.clips[key])?.getEffectiveWeight() ?? 0), 0) >=
+    0.99
+  );
 }
 
 /** Whether another agent stands on `agent`'s target — its neighbours are unsorted, so each is tested */

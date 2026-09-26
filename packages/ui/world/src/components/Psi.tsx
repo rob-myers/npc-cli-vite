@@ -28,7 +28,8 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultPsiTune, MAX_GEOMORPH_INSTANCES, type PsiTune, psiMaxReach } from "../const.env";
+import { MAX_GEOMORPH_INSTANCES } from "../const.env";
+import { defaultPsiTune, type PsiTune, psiMaxReach } from "../const.npc";
 import type { FadeRooms } from "../service/fade-rooms";
 import type { PlayerLight } from "../service/player-light";
 import { type RoomSlots, slotUvPerMetre } from "../service/room-slots";
@@ -86,7 +87,7 @@ export default function Psi() {
 
         const { self, tune } = state;
         for (const x of [self, ...state.influenced]) {
-          approach(x, secs / (x.target === 1 ? tune.fadeSecs : tune.fadeSecs * psiConfig.fadeOutScale));
+          approach(x, secs / tune.fadeSecs);
         }
         state.influenced = state.influenced.filter(
           (x) => w.n[x.npcKey] !== undefined && (x.presence > 0 || x.target > 0),
@@ -138,9 +139,11 @@ export default function Psi() {
         w.r3f?.invalidate();
       },
       syncTune() {
-        const { reach, gap, color } = state.tune;
+        state.tune = { ...defaultPsiTune, ...state.tune }; // a field added since, e.g. over hmr
+        const { reach, gap, width, color } = state.tune;
         state.reach.value = Math.min(reach, psiMaxReach);
         state.gap.value = gap;
+        state.width.value = width;
         state.color.value.set(color);
       },
       setShown(shown) {
@@ -230,6 +233,7 @@ function createPsiResources() {
   const flowPhase = uniform(0);
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
+  const width = uniform(defaultPsiTune.width);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
@@ -248,11 +252,26 @@ function createPsiResources() {
   mesh.frustumCulled = false;
   mesh.renderOrder = +5;
 
-  return { geo, mat, mesh, npcData, npcTex, slotCount, flowPhase, reach, gap, color, gmValues, gmArray, gmCount };
+  return {
+    geo,
+    mat,
+    mesh,
+    npcData,
+    npcTex,
+    slotCount,
+    flowPhase,
+    reach,
+    gap,
+    width,
+    color,
+    gmValues,
+    gmArray,
+    gmCount,
+  };
 }
 
 function psiNodes(
-  { npcTex, slotCount, flowPhase, reach, gap, color, gmArray, gmCount }: Resources,
+  { npcTex, slotCount, flowPhase, reach, gap, width, color, gmArray, gmCount }: Resources,
   {
     fadeRoomsFx,
     playerLight,
@@ -267,7 +286,7 @@ function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, lineWidthPx, alpha, lift, cell } = psiConfig;
+  const { reachFade, blend, alpha, lift, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
@@ -349,7 +368,7 @@ function psiNodes(
     const v = g.div(gap).sub(flowPhase);
     const toLine = float(0.5).sub(fract(v).sub(0.5).abs()); // 0 on a contour
     const px = toLine.div(max(fwidth(v), 1e-6));
-    const line = smoothstep(lineWidthPx / 2 - 0.5, lineWidthPx / 2 + 0.5, px).oneMinus(); // solid core, 1px edge
+    const line = smoothstep(width.mul(0.5).sub(0.5), width.mul(0.5).add(0.5), px).oneMinus(); // solid core, 1px edge
     // the outermost dies away rather than ringing the reach
     const edge = smoothstep(maxPush, maxPush.add(gap), g).oneMinus();
 
@@ -377,7 +396,6 @@ const psiConfig = {
   reachFade: 0.75,
   /** Metres over which the player's and another's rings merge: smaller gives a sharper waist */
   blend: 0.3,
-  lineWidthPx: 2.5,
   alpha: 0.5,
   /** Metres the relief's rim sits above the floor */
   lift: 0,
@@ -385,8 +403,6 @@ const psiConfig = {
   headAbove: 0.24,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
-  /** Going takes this many times as long as coming */
-  fadeOutScale: 2,
 } as const;
 
 /** The player, whom they influence, and whom they did */

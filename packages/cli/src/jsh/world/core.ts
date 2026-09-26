@@ -2,7 +2,6 @@ import { npcDims } from "@npc-cli/ui__world/const.both";
 import { agentConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
-import { moveAlongSurface } from "navcat";
 import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
 import { padded, parked } from "./pred";
 
@@ -136,6 +135,32 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   // get here via ctrl-c or `kill`
   handlers.dispose();
   throw api.getKillError();
+}
+
+/**
+ * ```sh
+ * fixate at:$( pick 1 ) rob
+ * fixate npc:rob at:$( pick 1 )
+ * fixate rob # stop fixating
+ * ```
+ */
+export function fixate(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey: string; at?: JshCli.PointAnyFormat } = api.jsArg(args, {
+    npc: "npcKey",
+  }),
+) {
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  const npc = w.npc.get(opts.npcKey);
+
+  if (!opts.at) {
+    npc.anim.face.fixate = null;
+    return;
+  }
+  if (!w.helper.isPointAnyFormat(opts.at)) {
+    throw Error("opts.at must be a point");
+  }
+  npc.anim.face.fixate = w.helper.parseGroundPoint(opts.at);
 }
 
 /**
@@ -374,16 +399,20 @@ type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
  * move npc:rob to:$( pick 1 )
  * move npc:rob to:$( pick 3 )
  *
+ * move rob to:$( pick 1 )
+ * move rob --back to:$( pick 1 )
+ * move rob --strafe to:$( pick 1 )
+ * # back up to nearby targets
+ * move rob --backstep to:$( pick 1 )
+ *
  * # move immediately
  * pick | move npc:rob
  *
  * # move along picked path
  * pick | move npc:rob along
  *
- * move npc:rob to:$( pick 1 ) facing:$( pick 1 )
- * move npc:rob fast to:$( pick 1 )
- * move npc:rob backwards to:$( pick 1 )
- * move rob --back to:$( pick 1 )
+ * move rob to:$( pick 1 ) facing:$( pick 1 )
+ * move rob --fast to:$( pick 1 )
  * ```
  */
 export async function move(
@@ -398,6 +427,8 @@ export async function move(
     "--force": "force",
     "--backwards": "backwards",
     "--back": "backwards",
+    "--strafe": "strafe",
+    "--backstep": "backstep",
   }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
@@ -439,11 +470,10 @@ async function move_const(
 
     while ((next = pendingMoves.shift())) {
       await movePausable({
+        ...moveFlags(opts),
         npcKey: getNpcOrThrow().key,
         to: next,
         arrive: pendingMoves.length === 0,
-        fast: opts.fast,
-        backwards: opts.backwards,
       });
     }
   } finally {
@@ -480,7 +510,7 @@ async function move_lazy(
       const npc = getNpcOrThrow();
 
       const movePromise = movePausable(
-        { npcKey: npc.key, to: dst, fast: opts.fast, backwards: opts.backwards },
+        { ...moveFlags(opts), npcKey: npc.key, to: dst },
         {
           "not navigable": false,
           stuck: () => {
@@ -526,7 +556,7 @@ async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { npcKey: npc.key, to: next, fast: opts.fast, backwards: opts.backwards },
+        { ...moveFlags(opts), npcKey: npc.key, to: next },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -728,7 +758,8 @@ export async function park(
   });
 }
 
-export function pause({ w }: JshCli.RunArg) {
+export function pause({ api, w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // else it pauses itself
   w.setDisabled(true);
 }
 
@@ -876,7 +907,8 @@ export async function* pick(ct: JshCli.RunArg) {
   }
 }
 
-export function play({ w }: JshCli.RunArg) {
+export function play({ api, w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // else it starts paused
   w.setDisabled(false);
 }
 
@@ -1206,86 +1238,45 @@ export async function warp(
 }
 
 /**
- * A nearby navigable target near the npc, emitted whilst `w`, `a`, `s` or `d` is held over the
- * world — up, left, down or right AS SEEN, i.e. along the camera's axes flattened onto the ground,
- * and between two for a pair. It sits a little further than they get before the next one, so a
- * held key walks them on without arriving, and nothing is emitted where the mesh ends — see
- * `moveAlongSurface`. Meant for
+ * Whilst w/a/s/d are held over the World, emits a navigable target just ahead of the npc: up, left, down or right as
+ * seen. None is emitted where the mesh ends — see `npc.getSlideResult`
  * ```sh
- * wasd_delta npc:rob | move npc:rob
- * wasd_delta npc:rob fast:true | move npc:rob fast:true
+ * wasd_delta rob | move rob
+ * wasd_delta rob --fast | move rob --fast
  * ```
  */
 export async function* wasd_delta(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; fast?: boolean } = ct.api.jsArg(ct.args, { npc: "npcKey" }),
+  opts: { npcKey: string; fast?: boolean } = ct.api.jsArg(ct.args, { "--fast": "fast", npc: "npcKey" }),
 ) {
   const { api, w } = ct;
-  const { keysDown } = w.view;
-  const length = (opts.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk) * wasdStepSecs;
-  // idle costs nothing: with no key held we wait on the next. A kill aborts the wait, which must
-  // REJECT rather than simply lose its listener — the shell waits on us returning
-  const abort = new AbortController();
-  const handlers = api.handleStatus({ cleanup: () => abort.abort() });
-  const nextKey = () =>
-    new Promise<void>((resolve, reject) => {
-      w.rootEl.addEventListener("keydown", () => resolve(), { once: true, signal: abort.signal });
-      abort.signal.addEventListener("abort", () => reject(api.getKillError()), { once: true });
-    });
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  const length = (opts.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk) * wasdConfig.stepSecs;
 
-  try {
-    while (true) {
-      if (api.isRunning() === false) await api.awaitResume();
-      if (wasdKeys.some((key) => keysDown.has(key)) === false) {
-        await nextKey();
-        continue;
-      }
-      const to = wasdStep(w, w.npc.get(opts.npcKey), keysDown, length);
-      if (to !== null) yield { ...to, meta: { floor: true, nav: true } };
-      await api.sleep(wasdIntervalSecs); // paced whilst held: each is a fresh step ahead
-    }
-  } finally {
-    handlers.dispose();
+  while (true) {
+    await api.sleep(wasdConfig.intervalSecs); // a kill rejects it
+    const direction = w.view.getWasdDirection();
+    if (direction.length === 0) continue; // none held, or opposites
+    const npc = w.npc.get(opts.npcKey);
+    const slide = npc.getSlideResult(direction.normalize(length));
+    if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < wasdConfig.minMove) continue; // the mesh's edge
+    yield { ...slide.groundPoint, meta: { floor: true, nav: true } };
   }
 }
 
-/**
- * A step of `length` from the npc along the screen's `wasd` axes, slid along the navmesh — `null`
- * off the mesh, or where the slide left it at the mesh's edge
- */
-function wasdStep(w: JshCli.RunArg["w"], npc: JshCli.Npc, keysDown: Set<string>, length: number) {
-  const agent = npc.agent;
-  if (agent === null) return null;
+const wasdConfig = {
+  /** Seconds between reads of the held keys */
+  intervalSecs: 0.1,
+  /** Seconds of travel the target sits ahead — past the next read, so they never arrive */
+  stepSecs: 0.4,
+  /** Metres: a clamped step shorter than this is the mesh's edge, and nothing is emitted */
+  minMove: 0.05,
+} as const;
 
-  // screen-right and screen-up on the ground: the camera's x and y axes, flattened — the y axis
-  // rather than the forward, which at birdseye points straight down and flattens away
-  const right = (keysDown.has("d") ? 1 : 0) - (keysDown.has("a") ? 1 : 0);
-  const up = (keysDown.has("w") ? 1 : 0) - (keysDown.has("s") ? 1 : 0);
-  const m = w.view.controls.object.matrixWorld.elements;
-  const delta = new Vect(right * m[0] + up * m[4], right * m[2] + up * m[6]).normalize(length);
-
-  // a step into a wall — or a door they cannot pass — stops at it
-  const src = npc.point;
-  const clamped = moveAlongSurface(
-    w.nav.navMesh,
-    w.npc.getNodeRef(agent),
-    [src.x, 0, src.y],
-    [src.x + delta.x, 0, src.y + delta.y],
-    npc.queryFilter,
-  );
-  if (clamped.success === false) return null;
-
-  const to = { x: clamped.position[0], y: clamped.position[2] };
-  return Math.hypot(to.x - src.x, to.y - src.y) < wasdMinMove ? null : to;
+/** How each move is made, as the command line gave it */
+function moveFlags({ fast, backwards, backstep, strafe }: Omit<JshCli.MoveOpts, "to">) {
+  return { fast, backwards, backstep, strafe };
 }
-
-const wasdKeys = ["w", "a", "s", "d"];
-/** How often the held keys are read, in seconds */
-const wasdIntervalSecs = 0.1;
-/** How far ahead the target sits, as seconds of travel — well past the next read, so they never arrive */
-const wasdStepSecs = 0.4;
-/** Below this much of a clamped step, they are at the boundary and nothing is emitted */
-const wasdMinMove = 0.05;
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
@@ -1311,9 +1302,11 @@ function getLastUnknownNaked(opts: Record<string, any>) {
 const booleanJsOptSomewhere = {
   all: true,
   along: true,
+  backstep: true,
   backwards: true,
   detail: true,
   fast: true,
   force: true,
   point: true,
+  strafe: true,
 };

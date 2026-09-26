@@ -16,6 +16,7 @@
     "gen-decor-sheets": "./src/bins/gen-decor-sheets.ts",
     "gen-skin-sheets": "./src/bins/gen-skin-sheets.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
+    "gen-strafe-keys": "./src/bins/gen-strafe-keys.ts",
     "gen-ui": "./src/bins/gen-ui.ts"
   },
   "dependencies": {
@@ -32,9 +33,11 @@
     "json-stringify-pretty-compact": "catalog:",
     "maxrects-packer": "catalog:",
     "skia-canvas": "catalog:",
+    "three": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/three": "catalog:",
     "htmlparser2": "catalog:",
     "nodemon": "catalog:"
   }

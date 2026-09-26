@@ -285,29 +285,3 @@ export const lockedDoorTint = "#f44";
 export const unlockedDoorTint = "#4b4";
 
 export const defaultSkinKey = "medic-0";
-
-/** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
-export const psiMaxReach = 8;
-
-export const defaultPsiTune: PsiTune = { reach: 5, speed: 0.4, gap: 0.5, fadeSecs: 0.6, color: "#9fe8ff" };
-
-/** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
-export const psiTuneRanges = {
-  reach: [1.5, psiMaxReach, 0.1],
-  speed: [-2, 2, 0.05],
-  gap: [0.15, 1.5, 0.05],
-  fadeSecs: [0.1, 3, 0.1],
-} as const;
-
-/** What the player's bubble adjusts of `Psi`, persisted */
-export type PsiTune = {
-  /** Metres the field reaches, at most `psiMaxReach` */
-  reach: number;
-  /** Contours per second the rings drift by: outwards when positive */
-  speed: number;
-  /** Metres between contours */
-  gap: number;
-  /** Seconds an influence takes to come — going takes `psiConfig.fadeOutScale` times as long */
-  fadeSecs: number;
-  color: string;
-};

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as THREE from "three/webgpu";
-import { defaultPsiTune, type PsiTune, psiTuneRanges } from "../const.env";
+import { defaultPsiTune, type PsiTune, psiTuneRanges } from "../const.npc";
 import type { State as WorldState } from "./World";
 
 /** The player's psi, as `Psi` draws it */
@@ -73,5 +73,6 @@ const psiSliders = [
   ["reach", "reach"],
   ["speed", "speed"],
   ["gap", "gap"],
+  ["width", "width"],
   ["fadeSecs", "fade"],
 ] as const satisfies [keyof typeof psiTuneRanges, string][];

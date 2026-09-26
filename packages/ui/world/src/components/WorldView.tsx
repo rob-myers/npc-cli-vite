@@ -417,6 +417,12 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       getPlayer() {
         return w.n[w.player?.key ?? ""];
       },
+      getWasdDirection() {
+        const right = (state.keysDown.has("d") ? 1 : 0) - (state.keysDown.has("a") ? 1 : 0);
+        const up = (state.keysDown.has("w") ? 1 : 0) - (state.keysDown.has("s") ? 1 : 0);
+        const m = state.controls.object.matrixWorld.elements; // its x and y axes: its forward points down at birdseye
+        return new Vect(right * m[0] + up * m[4], right * m[2] + up * m[6]);
+      },
       getFollowedPlayer() {
         const player = state.getPlayer();
         return state.cameraFollow === true || state.frontierHold === true ? player : undefined;
@@ -1579,6 +1585,8 @@ export type State = {
   getCrosshairPivot(): THREE.Vector3 | null;
   /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
   getPlayer(): Npc | undefined;
+  /** Ground direction of the held `wasd` keys as seen, unnormalised — zero when none or opposites are held */
+  getWasdDirection(): Vect;
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;
