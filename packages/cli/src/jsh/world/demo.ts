@@ -165,11 +165,11 @@ export function demo_npc_ui(
 }
 
 /**
- * The player influences one npc at a time, each fading in as the last fades out — see `Psi`.
- * Picking the player, killing this, or no npc with nothing piped in, fades it all away
+ * The player influences one npc at a time, each fading in as the last fades out — see `Psi`. Runs until
+ * killed, bar a bare `demo_psi`. Picking the player, killing it, or a bare `demo_psi`, fades it all away
  * ```sh
  * pick | demo_psi
- * demo_psi rob
+ * demo_psi abe
  * demo_psi
  * ```
  */
@@ -193,8 +193,9 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
     syncHands();
   };
 
-  if (arg !== undefined || api.isTtyAt(0)) choose(arg);
-  if (api.isTtyAt(0)) return;
+  const piped = api.isTtyAt(0) === false;
+  if (arg !== undefined || piped === false) choose(arg);
+  if (arg === undefined && piped === false) return; // just turns it off
 
   /** Whom we influence, again on resume */
   let chosen = arg;
@@ -215,7 +216,8 @@ export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
 
   try {
     let datum: unknown;
-    while ((datum = await Promise.race([api.read(), killedRead])) !== api.eof && killed === false) {
+    const next = () => (piped ? Promise.race([api.read(), killedRead]) : killedRead); // named, no picks: till killed
+    while ((datum = await next()) !== api.eof && killed === false) {
       const pick = datum as JshCli.PickEvent;
       const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
       if (npcKey !== undefined && npcKey in w.n) choose((chosen = npcKey));
