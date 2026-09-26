@@ -13,19 +13,22 @@ export function AboutModal({ open, onOpenChange }: { open: boolean; onOpenChange
         <Dialog.Popup
           className={cn(
             "fixed left-1/2 top-1/2 z-10000 -translate-x-1/2 -translate-y-1/2",
-            "max-w-lg w-[90vw] max-h-[80vh] flex flex-col rounded-lg overflow-hidden",
-            "bg-neutral-900/70 border border-neutral-700 shadow-2xl shadow-black/50",
+            "max-w-xl w-[92vw] max-h-[85vh] flex flex-col rounded-xl overflow-hidden",
+            "bg-neutral-900/95 backdrop-blur border border-neutral-700 shadow-2xl shadow-black/50",
           )}
         >
           {/* as WorldMenu's panel */}
-          <div className="flex items-center justify-between pl-3 pr-1.5 py-1.5 bg-neutral-800 border-b border-neutral-700">
-            <Dialog.Title className="text-sm text-neutral-300">about</Dialog.Title>
+          <div className="flex items-center justify-between pl-5 pr-2 py-2 border-b border-neutral-800">
+            <Dialog.Title className="flex items-center gap-2.5 text-base font-medium text-neutral-100">
+              <img src="/favicon.svg" alt="" className="size-6" />
+              About NPC CLI
+            </Dialog.Title>
             <Dialog.Close className="grid place-items-center size-9 rounded text-neutral-300 cursor-pointer hover:bg-neutral-700">
               <XIcon className="size-4" weight="bold" />
             </Dialog.Close>
           </div>
 
-          <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin p-4 flex flex-col gap-4 text-sm text-neutral-300">
+          <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin px-5 py-5 flex flex-col gap-4 text-[15px] leading-relaxed text-neutral-300">
             <About components={aboutComponents} />
           </div>
         </Dialog.Popup>

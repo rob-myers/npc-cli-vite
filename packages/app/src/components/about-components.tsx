@@ -10,9 +10,9 @@ export const aboutComponents = {
       rel="noreferrer"
     />
   ),
-  strong: (props: React.ComponentProps<"strong">) => <strong {...props} className="font-normal text-white" />,
+  strong: (props: React.ComponentProps<"strong">) => <strong {...props} className="font-medium text-white" />,
   h2: (props: React.ComponentProps<"h2">) => (
-    <h2 {...props} className="border-t border-neutral-800 pt-4 text-xs text-neutral-300 first:border-t-0 first:pt-0" />
+    <h2 {...props} className="mt-2 text-xs font-medium uppercase tracking-wider text-neutral-400 first:mt-0" />
   ),
   /** e.g. `<Abbr title="Non Player Character">NPC</Abbr>` */
   Abbr: ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -34,6 +34,8 @@ export const aboutComponents = {
     </Tooltip.Root>
   ),
   Notices: ({ children }: { children: React.ReactNode }) => (
-    <div className="flex flex-col gap-2 border-t border-neutral-800 pt-4 text-xs text-neutral-400">{children}</div>
+    <div className="flex flex-col gap-2 border-t border-neutral-800 pt-5 text-sm leading-relaxed text-neutral-400">
+      {children}
+    </div>
   ),
 };

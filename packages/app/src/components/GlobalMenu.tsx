@@ -28,7 +28,12 @@ const touchDevice = isTouchDevice();
 const triggerCls = touchDevice ? "size-12" : "size-9";
 const triggerPx = touchDevice ? 48 : 36;
 const gearCls = touchDevice ? "size-6" : "size-5";
-const itemCls = "flex items-center gap-2 py-1.5 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer";
+const itemCls = cn(
+  "flex items-center gap-2 px-3 text-slate-300 hover:bg-slate-700 cursor-pointer",
+  touchDevice ? "py-2.5 text-sm" : "py-1.5 text-xs",
+);
+const iconCls = "size-4 shrink-0";
+const separatorCls = "my-1 border-t border-slate-700";
 
 export function GlobalMenu() {
   const y = useMotionValue(getInitialY());
@@ -113,21 +118,45 @@ export function GlobalMenu() {
 
           <Menu.Portal>
             <Menu.Positioner className="z-9999" alignOffset={0} sideOffset={2} side="left" collisionPadding={0}>
-              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-20">
-                <Menu.Item className={cn(itemCls, "px-3")} closeOnClick={false} onClick={() => themeApi.setOther()}>
-                  {theme === "dark" ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
-                  {theme === "dark" ? "Light" : "Dark"}
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-40">
+                <Menu.Item className={itemCls} closeOnClick={false} onClick={() => themeApi.setOther()}>
+                  {theme === "dark" ? <SunIcon className={iconCls} /> : <MoonIcon className={iconCls} />}
+                  {theme === "dark" ? "Light theme" : "Dark theme"}
                 </Menu.Item>
 
+                <Menu.Separator className={separatorCls} />
+
+                <div className={cn(itemCls, "cursor-default hover:bg-transparent")}>
+                  Split
+                  <span className="ml-auto flex gap-1">
+                    <Menu.Item
+                      className="p-1 rounded hover:bg-slate-700 cursor-pointer"
+                      aria-label="Split side by side"
+                      title="Split side by side"
+                      onClick={() => splitRoot(false)}
+                    >
+                      <SquareHalfIcon className={iconCls} />
+                    </Menu.Item>
+                    <Menu.Item
+                      className="p-1 rounded hover:bg-slate-700 cursor-pointer"
+                      aria-label="Split top and bottom"
+                      title="Split top and bottom"
+                      onClick={() => splitRoot(true)}
+                    >
+                      <SquareHalfBottomIcon className={iconCls} />
+                    </Menu.Item>
+                  </span>
+                </div>
+
                 <Menu.Item
-                  className={cn(itemCls, "px-3", menu.resetArmed && "text-red-300")}
+                  className={cn(itemCls, menu.resetArmed && "text-red-300")}
                   closeOnClick={false}
                   onClick={menu.onReset}
                 >
                   {menu.resetArmed ? (
-                    <WarningIcon className="size-4" />
+                    <WarningIcon className={iconCls} />
                   ) : (
-                    <ArrowCounterClockwiseIcon className="size-4" />
+                    <ArrowCounterClockwiseIcon className={iconCls} />
                   )}
                   {/* both labels share a cell, so the item is as wide as the wider whichever shows */}
                   <span className="grid *:col-start-1 *:row-start-1">
@@ -136,30 +165,23 @@ export function GlobalMenu() {
                   </span>
                 </Menu.Item>
 
-                {import.meta.env.DEV && (
-                  <Menu.Item
-                    className={cn(itemCls, "px-3", menu.trackingOff && "text-slate-500")}
-                    closeOnClick={false}
-                    onClick={menu.onToggleTracking}
-                  >
-                    <ChartLineIcon className="size-4" />
-                    {menu.trackingOff ? "Tracking: off" : "Tracking: on"}
-                  </Menu.Item>
-                )}
+                <Menu.Separator className={separatorCls} />
 
-                <Menu.Item className={cn(itemCls, "px-3")} onClick={() => menu.set({ aboutOpen: true })}>
-                  <InfoIcon className="size-4" />
+                <Menu.Item className={itemCls} onClick={() => menu.set({ aboutOpen: true })}>
+                  <InfoIcon className={iconCls} />
                   About
                 </Menu.Item>
 
-                <div className="flex justify-evenly">
-                  <Menu.Item className={itemCls} onClick={() => splitRoot(false)}>
-                    <SquareHalfIcon className="size-4" />
+                {import.meta.env.DEV && (
+                  <Menu.Item
+                    className={cn(itemCls, menu.trackingOff && "text-slate-500")}
+                    closeOnClick={false}
+                    onClick={menu.onToggleTracking}
+                  >
+                    <ChartLineIcon className={iconCls} />
+                    {menu.trackingOff ? "Tracking: off" : "Tracking: on"}
                   </Menu.Item>
-                  <Menu.Item className={itemCls} onClick={() => splitRoot(true)}>
-                    <SquareHalfBottomIcon className="size-4" />
-                  </Menu.Item>
-                </div>
+                )}
               </Menu.Popup>
             </Menu.Positioner>
           </Menu.Portal>
