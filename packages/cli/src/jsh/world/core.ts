@@ -338,8 +338,8 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       },
       onSuspend: () => {
         const npc = getNpcOrUndefined();
-        if (!npc) {
-          return true;
+        if (!npc || w.disabled === true) {
+          return true; // a paused world holds the look itself: undone and redone, the pose would jump
         }
         pendingLooks.unshift({ ...npc.last.look });
         npc.rejectAll(Error("paused"));
@@ -389,8 +389,8 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       },
       onSuspend: () => {
         const npc = getNpcOrUndefined();
-        if (!npc) {
-          return true;
+        if (!npc || w.disabled === true) {
+          return true; // a paused world holds the move itself: undone and redone, the walk would jump
         }
 
         // fadeSpawn must complete
