@@ -59,6 +59,12 @@ per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obsta
 `sheets.json`; `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any
 MapEdit obstacle change.
 
+## Npc skins
+
+See `docs/skins.md` — the ONLY doc for them. In short: `gen-skin-sheets` lays out a 256px cell per
+skin in `sheets.json`; a DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves
+it, so a build fetches neither. Load a DEV World before committing.
+
 ## Camera controls
 
 Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.

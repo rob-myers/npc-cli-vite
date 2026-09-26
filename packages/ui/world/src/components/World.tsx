@@ -313,8 +313,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           [devMessageFromServer.skinSvgsChanged, async () => {
             debug("[World] skin svgs changed");
             await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
-            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] }); // the manifest
-            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skin-overlays"] });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] }); // redraws the sheets
           }],
         ];
 

@@ -2,10 +2,9 @@ import { url } from "@npc-cli/media";
 import { useStateRef } from "@npc-cli/util";
 import { devCacheBust, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { geomService } from "@npc-cli/util/geom-service";
-import { loadImage } from "@npc-cli/util/legacy/dom";
 import { hashJson, keys, mapValues } from "@npc-cli/util/legacy/generic";
 import { buildGraph, useStore as useReactThreeFiberStore } from "@react-three/fiber";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { deltaAngle } from "maath/misc";
 import {
   ANY_QUERY_FILTER,
@@ -61,7 +60,8 @@ import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } f
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
-import { fetchSkinOverlay, type SelectAnyType } from "../service/texture";
+import { loadSkinSheets } from "../service/skin-sheets";
+import type { SelectAnyType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
@@ -867,56 +867,30 @@ export default function NPCs() {
       queryKey: ["skins-and-gltf", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
       queryFn: async () => {
         const cacheBust = getDevCacheBustQueryParam();
-        const [gltf, sheetImages, skinManifest] = await Promise.all([
+        const [gltf, skinManifest] = await Promise.all([
           // busted too, so a devtools reset reloads the model — it is self-contained (data uris)
           new GLTFLoader().loadAsync(devCacheBust(url.currentGltf)),
-          Promise.all(w.sheets.skinSheetDims.map((_, i) => loadImage(`/sheet/skin.${i}.png${cacheBust}`))),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
+        const sheetImages = await loadSkinSheets(w.sheets, skinManifest, cacheBust);
         return { gltf, sheetImages, skinManifest };
       },
       enabled: !!w.sheets,
       gcTime: 0,
     }).data ?? null;
 
-  // the svg overlays — a skin at 256px with its effects, over the sheet's 64px cell — come AFTER
-  // the first frame: fetched and rasterised off the critical path, then drawn over the sheet's
-  // cells below. Faster hot-reloads too, than baking them into the spritesheet — and across one
-  // the previous overlays are kept, so the redraw never shows the bare cells whilst they refetch
-  const skinOverlays =
-    useQuery({
-      queryKey: ["skin-overlays", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
-      queryFn: async () => {
-        const cacheBust = getDevCacheBustQueryParam();
-        const entries = Object.entries(queryData?.skinManifest.byKey ?? {});
-        return Object.fromEntries(
-          await Promise.all(
-            entries.map(async ([key, { svgPath }]) => [
-              key,
-              svgPath ? await fetchSkinOverlay(svgPath, cacheBust) : null,
-            ]),
-          ),
-        ) as Record<string, null | HTMLCanvasElement>;
-      },
-      enabled: queryData !== null,
-      placeholderData: keepPreviousData,
-      gcTime: 0,
-    }).data ?? null;
-
   useMemo(() => {
-    // draw the skins into THIS world's texture array: each cell its overlay, else the sheet's
+    // draw the skins into THIS world's texture array
     if (!queryData) return;
     const { width: tw, height: th } = w.texSkin.opts;
     const { ct } = w.texSkin;
     ct.imageSmoothingEnabled = false;
-    Object.values(w.sheets.skin).forEach(({ key, sheetId, rect }, i) => {
+    Object.values(w.sheets.skin).forEach(({ sheetId, rect }, i) => {
       ct.clearRect(0, 0, tw, th);
-      const svgImage = skinOverlays?.[key];
-      if (svgImage) ct.drawImage(svgImage, 0, 0, tw, th);
-      else ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
+      ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
       w.texSkin.updateIndex(i);
     });
-  }, [queryData, skinOverlays]);
+  }, [queryData]);
 
   useMemo(() => {
     state.configureCrowd();
@@ -950,9 +924,6 @@ export default function NPCs() {
     state.skin = { entries: Object.values(w.sheets.skin), manifest: queryData.skinManifest };
     w.setNextPending({ gltf: false, skins: false });
   }, [queryData]);
-
-  // the overlays land: a frame, to show them
-  useEffect(() => void (skinOverlays !== null && w.view.forceUpdate()), [skinOverlays]);
 
   w.r3fStore = useReactThreeFiberStore();
 

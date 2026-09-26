@@ -1,4 +1,5 @@
 import childProcess from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -102,8 +103,15 @@ export function watchAssetsPlugin(): Plugin {
         if (req.url === "/api/gen-starship-sheets" && req.method === "POST") {
           return handleGenStarshipSheets(res);
         }
+        if (req.url === "/api/gen-skin-sheets" && req.method === "POST") {
+          return handleGenSkinSheets(res);
+        }
         if (req.url === "/api/gen-assets-json" && req.method === "POST") {
           return handleGenAssetsJson(res);
+        }
+        const skinSheetMatch = req.url?.match(/^\/api\/skin-sheet\/(\d+)$/);
+        if (skinSheetMatch && req.method === "POST") {
+          return handleSkinSheet(req, res, Number(skinSheetMatch[1]));
         }
         const themeMatch = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
         if (themeMatch && req.method === "POST") {
@@ -116,6 +124,50 @@ export function watchAssetsPlugin(): Plugin {
 }
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+
+/** A skin sheet with its svg overlays baked in, sent by the World in DEV — see `bakeSkinSheets` */
+async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, sheetId: number) {
+  try {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const png = Buffer.concat(chunks);
+    const hash = createHash("sha1").update(png).digest("hex");
+    const filePath = path.join(PUBLIC_DIR, "sheet", `skin.${sheetId}.png`);
+    const prev = bakedSkinSheet.get(sheetId);
+    // every World sends it on every load: written only if changed, or `gen-skin-sheets` overwrote it
+    if (prev?.hash !== hash || prev.mtimeMs !== fs.statSync(filePath).mtimeMs) {
+      fs.writeFileSync(filePath, png);
+      try {
+        childProcess.execFileSync("pngquant", ["--force", "--ext", ".png", filePath]);
+      } catch {
+        console.warn("[skin-sheet] pngquant unavailable: left unsqueezed");
+      }
+      bakedSkinSheet.set(sheetId, { hash, mtimeMs: fs.statSync(filePath).mtimeMs });
+      console.log(`[skin-sheet] baked svg overlays into skin.${sheetId}.png`);
+    }
+    res.writeHead(200).end();
+  } catch (err) {
+    console.error("[skin-sheet] failed:", err);
+    res.writeHead(500).end();
+  }
+}
+
+/** Per sheet, the last png written — this server's run */
+const bakedSkinSheet = new Map<number, { hash: string; mtimeMs: number }>();
+
+async function handleGenSkinSheets(res: ServerResponse) {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const proc = childProcess.spawn("pnpm", ["exec", "gen-skin-sheets"], { cwd: PROJECT_ROOT, stdio: "inherit" });
+      proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
+      proc.on("error", reject);
+    });
+    res.writeHead(200).end();
+  } catch (err) {
+    console.error("[gen-skin-sheets] failed:", err);
+    res.writeHead(500).end();
+  }
+}
 
 async function handleGenStarshipSheets(res: ServerResponse) {
   try {

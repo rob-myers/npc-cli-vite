@@ -754,41 +754,6 @@ function createPlatePattern(): CanvasPattern {
   return ctx.createPattern(canvas, "repeat") as CanvasPattern;
 }
 
-export async function fetchSkinOverlay(svgPath: string, cacheBust: string): Promise<HTMLCanvasElement> {
-  const svgText = await fetch(`/${svgPath}${cacheBust}`).then((r) => r.text());
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgText, "image/svg+xml");
-  for (const g of Array.from(doc.querySelectorAll("g"))) {
-    const titleEl = g.querySelector(":scope > title");
-    if (titleEl?.textContent?.trim() === "ignore") {
-      g.remove();
-    }
-  }
-  const svgBlob = new Blob([new XMLSerializer().serializeToString(doc.documentElement)], { type: "image/svg+xml" });
-  const blobUrl = URL.createObjectURL(svgBlob);
-  try {
-    const img = await loadSvgImage(blobUrl);
-    const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
-    const ct = canvas.getContext("2d") as CanvasRenderingContext2D;
-    ct.imageSmoothingEnabled = false;
-    ct.drawImage(img, 0, 0, 256, 256);
-    return canvas;
-  } finally {
-    URL.revokeObjectURL(blobUrl);
-  }
-}
-
-function loadSvgImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
 let basePanelCanvas: HTMLCanvasElement | null = null;
 
 /** How strongly a door's label is drawn, against the part-transparent panel behind it */

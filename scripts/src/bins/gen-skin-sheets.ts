@@ -3,8 +3,6 @@
 /**
  * creates/mutates
  * - public/sheets.json (skin fields)
- * creates
- * - public/sheet/skin.{sheetId}.png
  *
  * Usage
  * ```sh
@@ -13,10 +11,11 @@
  *
  * dependencies
  * - `public/skin/manifest.json` (rebuilt by this script)
- * - `pngquant` command to reduce PNG size of sheets
+ *
+ * Only the layout: a DEV World draws `public/sheet/skin.{sheetId}.png` and saves it — see `docs/skins.md`
  */
 
-import fs, { mkdirSync, writeFileSync } from "node:fs";
+import fs, { writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   AssetsSkinManifestSchema,
@@ -28,14 +27,12 @@ import { Rect } from "@npc-cli/util/geom/rect";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact, warn } from "@npc-cli/util/legacy/generic";
 import type { Rectangle } from "maxrects-packer";
-import { Canvas, loadImage } from "skia-canvas";
 import { PROJECT_ROOT } from "../const.ts";
-import { loggedSpawn } from "../service/logged-spawn.ts";
 import { packRectangles } from "../service/rects-packer.ts";
 import { rebuildSkinManifest } from "../service/watch-skin-pngs.ts";
 
-/** Minecraft skins are 64x64 */
-const skinSheetCellSize = 64;
+/** A 64px Minecraft skin, drawn at the 256px of its svg overlay — see `drawSkinSheets` */
+const skinSheetCellSize = 256;
 
 // 1. rebuild manifest
 await rebuildSkinManifest();
@@ -100,37 +97,3 @@ const sheet = SheetsSchema.encode({
   maxSkinSheetDim: { width: maxWidth, height: maxHeight },
 });
 writeFileSync(sheetsJsonPath, safeJsonCompact(sheet));
-
-// 5. generate sheet PNGs
-const sheetDir = path.resolve(PROJECT_ROOT, "packages/app/public/sheet");
-mkdirSync(sheetDir, { recursive: true });
-
-for (const [sheetId, bin] of bins.entries()) {
-  const canvas = new Canvas(bin.width, bin.height);
-  const ct = canvas.getContext("2d");
-
-  for (const rect of bin.rects) {
-    const skinPngPath = path.join(skinDir, rect.data.filename);
-    const image = await loadImage(skinPngPath);
-    const scale = Math.min(rect.width / image.width, rect.height / image.height);
-    const w = image.width * scale;
-    const h = image.height * scale;
-    ct.drawImage(image, rect.x + (rect.width - w) / 2, rect.y + (rect.height - h) / 2, w, h);
-  }
-
-  await canvas.toFile(path.resolve(sheetDir, `skin.${sheetId}.png`));
-}
-
-// 6. reduce PNG size of skin sheets
-try {
-  process.chdir(sheetDir);
-  await loggedSpawn({
-    label: "pngquant",
-    command: "pngquant",
-    args: ["--force", "--ext", ".png", "skin.*.png"],
-    shell: true,
-  });
-} catch (e) {
-  warn(`pngquant failed to optimize PNGs: have you installed it?`);
-  warn(e);
-}

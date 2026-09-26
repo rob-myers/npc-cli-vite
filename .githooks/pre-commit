@@ -5,3 +5,11 @@ pnpm gen-starship-sheets
 
 # Stage any generated/updated sheet files
 git add packages/app/public/sheet/ packages/app/public/sheets.json packages/app/public/assets.json
+
+# warn (only) if a staged skin png/svg is newer than the sheets a DEV World draws — see docs/skins.md
+oldest_sheet=$(ls -tr packages/app/public/sheet/skin.*.png 2>/dev/null | head -1)
+for f in $(git diff --cached --name-only --diff-filter=AM -- ':(glob)packages/media/src/skin/*.png' ':(glob)packages/media/src/skin/*.svg'); do
+  if [ -z "$oldest_sheet" ] || [ "$f" -nt "$oldest_sheet" ]; then
+    echo "WARNING: $f is newer than the skin sheets: load a World in DEV to redraw them"
+  fi
+done

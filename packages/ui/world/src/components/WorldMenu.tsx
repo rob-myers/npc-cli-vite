@@ -601,7 +601,7 @@ export function WorldMenu() {
                 </div>
 
                 <div className={sectionHeaderClass(touch)}>dev scripts</div>
-                <div className={cn("flex px-2")}>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] px-2">
                   <button
                     type="button"
                     className={cn(
@@ -630,6 +630,30 @@ export function WorldMenu() {
                     }}
                   >
                     obstacles
+                    <ArrowsClockwiseIcon className="size-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 cursor-pointer text-xs bg-neutral-700/70 hover:bg-neutral-600 text-neutral-200 border border-neutral-600 px-2 py-1",
+                      touch && "text-sm py-2.5",
+                    )}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      w.setNextPending({ skins: true });
+                      try {
+                        const res = await fetch("/api/gen-skin-sheets", { method: "POST" });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
+                        await queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
+                      } catch (err) {
+                        console.error("Failed to update skins:", err);
+                        w.setNextPending({ skins: false });
+                      }
+                    }}
+                  >
+                    skins
                     <ArrowsClockwiseIcon className="size-3.5" />
                   </button>
 
