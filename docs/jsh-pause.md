@@ -102,3 +102,6 @@ what the World held. Anything the terminal or a user paused stays paused.
 - If it must keep going whilst the World is paused, call `api.setPtags({ world: false })` first.
 - Otherwise do nothing: it joins the World's group by default. It stops at its next read or write,
   and at any `isRunning()` check or `onSuspend` of its own.
+- An `onSuspend` that stops an npc (e.g. `rejectAll`) should skip it whilst `w.disabled`: the paused
+  World already holds them, and a move undone and redone on resume restarts the walk — see
+  `moveHandling` and `lookHandling` in `core.ts`.

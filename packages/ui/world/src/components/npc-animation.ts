@@ -75,13 +75,14 @@ export class NpcAnimation {
     /** Each bone, the pose's rotation of it, and ours as last written — see `tickUpper` */
     bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion }[],
   };
-  /** Facing: eased to `target` at `rate` (`0` holds) — unless a `timed` look is under way, else `fixate` sets both */
+  /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
   face = {
     target: 0,
     rate: 0,
-    /** Faced whilst set, moving or not */
-    fixate: null as null | Geom.VectJson,
-    timed: null as null | { start: number; diff: number; duration: number; elapsed: number; longLook: boolean },
+    /** Faced whilst set, moving or not: a point, tracked, or a world angle — `untilRest` if a look on the move set it */
+    aim: null as null | { at: Geom.VectJson | number; rate: number; untilRest: boolean },
+    /** A timed turn on the spot, eased out and landing exactly — shuffling round if `longLook` — see `lookAt` */
+    turn: null as null | { start: number; diff: number; duration: number; elapsed: number; longLook: boolean },
   };
 
   constructor(npc: Npc) {
@@ -135,10 +136,14 @@ export class NpcAnimation {
     const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
 
-    if (face.fixate && face.timed === null) {
-      const { x, y } = face.fixate;
-      face.target = geomService.getThreeRotationY(y - this.npc.position.z, x - this.npc.position.x);
-      face.rate = 1;
+    const { aim } = face;
+    if (aim && face.turn === null) {
+      const { at } = aim;
+      face.target =
+        typeof at === "number"
+          ? at
+          : geomService.getThreeRotationY(at.y - this.npc.position.z, at.x - this.npc.position.x);
+      face.rate = aim.rate;
     }
 
     if (f.delta !== 0) {
@@ -159,8 +164,8 @@ export class NpcAnimation {
       if (this.strafing === true) this.syncStrafe(delta);
     }
 
-    if (face.timed !== null) {
-      const t = face.timed;
+    if (face.turn !== null) {
+      const t = face.turn;
       t.elapsed += delta;
       // begin crossfading back early, so the shuffle has become idle just as the turn lands.
       // Clamped, else a turn shorter than the fade would start it before it had begun
@@ -173,7 +178,7 @@ export class NpcAnimation {
       }
       if (t.elapsed >= t.duration) {
         rotation.y = t.start + t.diff;
-        face.timed = null;
+        face.turn = null;
         face.rate = 0;
         this.npc.resolve.look("lookAt");
       } else {
@@ -367,6 +372,7 @@ export class NpcAnimation {
     }
 
     this.face.rate = 0;
+    if (this.face.aim?.untilRest === true) this.face.aim = null;
     this.setPose(keyOf(this.idleClip), { force: this.moving });
     this.moving = false;
   }
@@ -382,7 +388,7 @@ export class NpcAnimation {
     const longLook = arc > longLookAngle;
     // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
     const duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
-    this.face.timed = { start, diff, duration, elapsed: 0, longLook };
+    this.face.turn = { start, diff, duration, elapsed: 0, longLook };
     this.face.rate = 0;
 
     if (longLook === true) {

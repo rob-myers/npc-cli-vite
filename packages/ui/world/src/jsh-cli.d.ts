@@ -133,9 +133,10 @@ declare namespace JshCli {
     backwards?: boolean;
     /** Back away from a target close behind them, rather than turning round — see `npcConfig.dist.backStep` */
     backstep?: boolean;
-    /** Keep their facing, the gait blended by heading — by default whilst `npc.anim.face.fixate` */
+    /** Keep their facing, the gait blended by heading — by default whilst `npc.anim.face.aim` */
     strafe?: boolean;
   };
+  /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {
     at: string | MaybeMeta<JshCli.PointAnyFormat>;
     minMs?: number;

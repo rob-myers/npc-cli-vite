@@ -86,7 +86,7 @@
     - can suggest anger, lethargy, restless
 - check mobile performance
 
-### Weapon
+### Sword and Strafe
 
 - ✅ remove animation `idle-avoid`
 - ✅ animation `gauntlet`
@@ -95,18 +95,24 @@
 - ✅ `gauntlet` -> `point`
 - ✅ `demo_sword` (was `demo_attack`) plays `point` with `defensive` fallback near others
 - ✅ `point` played into upper body was pointing upwards a bit
-- 🚧 investigate shooting effects
-  - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
 - ✅ strafe walking
   - Blockbench animations strafe_left strafe_right
   - `w.npc.move` supports `opts.strafe`
-  - npc supports `npc.anim.face.fixate`
+  - npc supports `npc.anim.face.aim` (point or angle); a look whilst strafing aims rather than stopping
     - forces `opts.strafe` i.e. need these animations
   - `move rob --strafe to:$( pick 1 )`
   - `pick | move rob --strafe`
   - `wasd_delta rob | move rob --strafe`
 
+- 🚧 investigate shooting effects
+  - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
+  - 🚧 refine...
+
+- handle `demo_psi` vs `demo_sword` blend fighting
+
 ### Unorganised Bugs
+
+- ✅ pause World while `move` then resume is jerky
 
 - ✅ BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
@@ -193,6 +199,12 @@
   - ✅ can set 3d height 
     - live update of control
   - 🚧 book, box, key
+
+## Shell
+
+- 🚧 js in a jsArg value, e.g. `aim rob at:(Math.PI)`, is a ParseError
+  - mvdan/sh: "a command can only contain words and redirects; encountered (" (`parse.ts`)
+  - workaround: quote it, `aim rob at:'(Math.PI)'` — `parseJsArg` evaluates a value starting `(`
 
 ## Site
 

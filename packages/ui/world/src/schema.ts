@@ -8,6 +8,7 @@ export const WorldUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
   uiKey: z.literal("World"),
   disabled: BaseUiMetaSchema.shape.disabled.default(true),
+  pausable: BaseUiMetaSchema.shape.pausable.default(true),
   // disable World when refresh page
   disableOnRehydrate: BaseUiMetaSchema.shape.disableOnRehydrate.default(true),
   pauseOnHideTab: BaseUiMetaSchema.shape.pauseOnHideTab.default("mobile"),

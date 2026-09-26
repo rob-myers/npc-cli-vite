@@ -7,6 +7,6 @@ debug_corners npc:rob
 # show local boundary near rob (once)
 debug_boundary npc:rob
 
-# log agent params to tty
-debug_fold npc:rob
+# log rob's crowd agent to tty, a line per tick
+debug_agent npc:rob
 ```

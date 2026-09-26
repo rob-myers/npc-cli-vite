@@ -5,6 +5,7 @@ export const JshUiSchema = z.object({
   ...BaseUiMetaSchema.shape,
   // enabled initially and on rehydrate
   disabled: BaseUiMetaSchema.shape.disabled.default(false),
+  pausable: BaseUiMetaSchema.shape.pausable.default(true),
   enableOnRehydrate: BaseUiMetaSchema.shape.enableOnRehydrate.default(true),
   sessionBootedAt: z.number().optional(),
   sessionKey: z.templateLiteral(["tty-", z.number()]),

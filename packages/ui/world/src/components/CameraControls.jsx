@@ -74,9 +74,10 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
     r3f.set({ controls });
     controls.setParams({
       fixedPolar: props.fixedPolar ?? false,
+      fixedAzimuth: props.fixedAzimuth ?? false,
     });
     return () => r3f.set({ controls: old });
-  }, [props.fixedPolar, controls]);
+  }, [props.fixedPolar, props.fixedAzimuth, controls]);
 
   useFrame(() => {
     controls.update();
@@ -110,6 +111,7 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  * @typedef Props
  * @property {HTMLElement} domElement
  * @property {boolean} [fixedPolar] Pin the polar angle, leaving azimuth and zoom
+ * @property {boolean} [fixedAzimuth] Pin the azimuth against drags, leaving polar and zoom
  * @property {number} [initialAzimuthal]
  * @property {number} [initialPolar]
  * @property {{ x: number; y: number; z: number }} [initialPosition]

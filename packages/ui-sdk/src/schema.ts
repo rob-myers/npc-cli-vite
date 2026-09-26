@@ -20,6 +20,8 @@ const FlatBaseUiMetaSchema = z.looseObject({
   id: z.string(),
   /** For pausing */
   disabled: z.boolean().optional(),
+  /** Its tab header has a play/pause button */
+  pausable: z.boolean().optional(),
   /** Pause whilst its tab is hidden, on which devices — see `Tabs` */
   pauseOnHideTab: z.enum(["mobile", "desktop", "mobile-and-desktop"]).optional(),
   /** Paused by its tab being hidden, so showing it resumes it */

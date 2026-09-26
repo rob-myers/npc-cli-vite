@@ -204,7 +204,7 @@ export function WorldSpeech() {
       >
         <div
           className={cn(
-            "relative grid touch-none place-items-center cursor-pointer bg-gray-800 text-white",
+            "relative outline-width-1 grid touch-none place-items-center cursor-pointer bg-neutral-800 text-white hover:bg-neutral-700",
             big ? "size-12" : "size-9",
           )}
           onPointerDown={(e) => dragControls.start(e)}

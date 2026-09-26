@@ -2,7 +2,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness, defaultCameraFollow, defaultNpcBrightness } from "../const.env";
+import { defaultBrightness, defaultFollowMode, defaultNpcBrightness, type FollowMode } from "../const.env";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
@@ -34,8 +34,10 @@ export type WorldSettings = {
   npcBrightness: number;
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
-  /** Whether the camera keeps the player centred — an option of either `cameraMode` */
-  cameraFollow: boolean;
+  /** How the camera follows the player — an option of either `cameraMode` */
+  followMode: FollowMode;
+  /** The follow a long `f` press turns back on */
+  followLast: Exclude<FollowMode, "off">;
   postProcessing: boolean;
   /** Whether the channels are parted over the finished frame — see `service/rgb-shift` */
   rgbShift: boolean;
@@ -80,7 +82,8 @@ const defaultWorldSettings: WorldSettings = {
   npcBrightness: defaultNpcBrightness,
   cameraMode: isTouchDevice() ? "free" : "canonical",
   cameraInitial: null,
-  cameraFollow: defaultCameraFollow,
+  followMode: defaultFollowMode,
+  followLast: "loose",
   postProcessing: true,
   rgbShift: true,
   fadeRoomsMode: "sight",

@@ -393,7 +393,7 @@ export class Npc {
   }
 
   isLooking() {
-    return this.anim.face.timed !== null;
+    return this.anim.face.turn !== null;
   }
 
   isMoving() {
@@ -422,10 +422,20 @@ export class Npc {
       this.skinnedMesh.rotation.y = target;
       return;
     }
+    if (this.anim.strafe === true && this.isMoving() === true) {
+      this.anim.face.aim = { at: target, rate, untilRest: true }; // on the move: eased round, the move kept
+      return;
+    }
 
     try {
       await new Promise<string>((resolve, reject) => {
+        const moving = this.isMoving();
         this.rejectAll(new Error("look again"));
+        if (moving === true) {
+          // not strafing so come to stop
+          this.w.npc.clearMomentum(this);
+          this.anim.startIdle({ force: true });
+        }
         this.resolve.look = resolve;
         this.reject.look = reject;
         this.anim.lookAt(target, minMs, rate);
@@ -468,7 +478,7 @@ export class Npc {
     };
     // synchronously stop scale or look
     this.anim.fadeState.delta = 0;
-    this.anim.face.timed = null;
+    this.anim.face.turn = null;
     reject.worker(err); // stop waiting on the worker
     reject.spawn(err);
     reject.move(err);

@@ -5,6 +5,7 @@ import path from "node:path";
 import { WorldThemeSchema } from "@npc-cli/ui__world/assets.schema";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { safeJsonCompact } from "@npc-cli/util/legacy/generic";
+import { Canvas, loadImage } from "skia-canvas";
 import type { Plugin, ViteDevServer } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
@@ -102,8 +103,15 @@ export function watchAssetsPlugin(): Plugin {
         if (req.url === "/api/gen-starship-sheets" && req.method === "POST") {
           return handleGenStarshipSheets(res);
         }
+        if (req.url === "/api/gen-skin-sheets" && req.method === "POST") {
+          return handleGenSkinSheets(res);
+        }
         if (req.url === "/api/gen-assets-json" && req.method === "POST") {
           return handleGenAssetsJson(res);
+        }
+        const skinSheetMatch = req.url?.match(/^\/api\/skin-sheet\/(\d+)$/);
+        if (skinSheetMatch && req.method === "POST") {
+          return handleSkinSheet(req, res, Number(skinSheetMatch[1]));
         }
         const themeMatch = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
         if (themeMatch && req.method === "POST") {
@@ -116,6 +124,61 @@ export function watchAssetsPlugin(): Plugin {
 }
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+
+/** A skin sheet drawn by a DEV World — see `docs/skins.md` */
+async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, sheetId: number) {
+  try {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const png = await squeezePng(Buffer.concat(chunks));
+    const filePath = path.join(PUBLIC_DIR, "sheet", `skin.${sheetId}.png`);
+    // every World sends it on every load: written only if its pixels changed
+    if (!fs.existsSync(filePath) || !(await samePixels(png, fs.readFileSync(filePath)))) {
+      fs.writeFileSync(filePath, png);
+      console.log(`[skin-sheet] redrew skin.${sheetId}.png`);
+    }
+    res.writeHead(200).end();
+  } catch (err) {
+    console.error("[skin-sheet] failed:", err);
+    res.writeHead(500).end();
+  }
+}
+
+function squeezePng(png: Buffer) {
+  return new Promise<Buffer>((resolve) => {
+    const proc = childProcess.execFile("pngquant", ["-"], { encoding: "buffer" }, (err, stdout) => {
+      if (err) console.warn("[skin-sheet] pngquant failed: left unsqueezed", err.message);
+      resolve(err ? png : stdout);
+    });
+    proc.stdin?.end(png);
+  });
+}
+
+async function samePixels(a: Buffer, b: Buffer) {
+  const [pa, pb] = await Promise.all([a, b].map(getPixels));
+  return Buffer.from(pa.buffer).equals(Buffer.from(pb.buffer));
+}
+
+async function getPixels(png: Buffer) {
+  const image = await loadImage(png);
+  const ct = new Canvas(image.width, image.height).getContext("2d");
+  ct.drawImage(image, 0, 0);
+  return ct.getImageData(0, 0, image.width, image.height).data;
+}
+
+async function handleGenSkinSheets(res: ServerResponse) {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const proc = childProcess.spawn("pnpm", ["exec", "gen-skin-sheets"], { cwd: PROJECT_ROOT, stdio: "inherit" });
+      proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`exit code ${code}`))));
+      proc.on("error", reject);
+    });
+    res.writeHead(200).end();
+  } catch (err) {
+    console.error("[gen-skin-sheets] failed:", err);
+    res.writeHead(500).end();
+  }
+}
 
 async function handleGenStarshipSheets(res: ServerResponse) {
   try {

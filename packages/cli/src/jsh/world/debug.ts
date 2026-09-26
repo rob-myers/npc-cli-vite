@@ -75,20 +75,22 @@ export async function debug_corners(
 }
 
 /**
- * A line per crowd tick for one npc, to see a rock: `avoid` or `sep` (the arriving flags), the
- * fold's side, the gap to the nearest npc, how far the target is — and the `least` it could be, given
- * who stands beside it — the first corner (NEW when it
- * changed), desired vs actual velocity
+ * A line per crowd tick of an npc's agent, until killed — terse, for a thin tty:
+ * `tick avo|sep f{fold} g{gap} t{target}/{least} c{x},{z}[*new] {corner dist}/{nearest} dv{deg}@{speed} v{deg}@{speed} m{max}`
  * ```sh
- * debug_fold npc:rob
+ * debug_agent npc:rob
  * ```
  */
-export async function* debug_fold(
+export async function* debug_agent(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
   const npc = w.npc.get(opts.npcKey);
-  const deg = (x: number, z: number) => ((Math.atan2(z, x) * 180) / Math.PI).toFixed(0).padStart(4);
+  const deg = (x: number, z: number) => ((Math.atan2(z, x) * 180) / Math.PI).toFixed(0);
+  const num = (x: number, digits = 1) => x.toFixed(digits).replace(/^(-?)0\./, "$1."); // `.5` not `0.5`
+  const { GreyDark: dim, Reset: reset, Yellow, GreenDark, Purple, Red, Cyan } = api.ansi;
+  const paint = (color: string, text: string | number) => `${color}${text}${reset}`;
+  const label = (key: string, value: string) => `${paint(dim, key)}${value}`; // dim labels, plain values
   let prevCorner = "";
   // a kill must end the wait too: no tick comes whilst the world is paused
   let kill = () => {};
@@ -104,7 +106,7 @@ export async function* debug_fold(
     );
     const c = agent.corners[0]?.position;
     const corner = c === undefined ? "none" : `${c[0].toFixed(2)},${c[2].toFixed(2)}`;
-    const changed = corner === prevCorner ? "" : " NEW";
+    const changed = corner === prevCorner ? "" : paint(Cyan, "*");
     prevCorner = corner;
     const [dx, , dz] = agent.desiredVelocity;
     const [vx, , vz] = agent.velocity;
@@ -118,16 +120,22 @@ export async function* debug_fold(
       }),
     );
     const fold = (agent.obstacleAvoidanceQuery as { foldSide?: number }).foldSide ?? 0;
+    const [ax, , az] = agent.position;
     yield [
-      String(tick).padStart(4),
-      (agent.updateFlags & 4) !== 0 ? "sep  " : "avoid", // SEPARATION: the arriving flags
-      `fold ${String(fold).padStart(2)}`,
-      `gap ${Number.isFinite(gap) ? gap.toFixed(2) : " -  "}`,
-      `target ${Math.hypot(tx - agent.position[0], tz - agent.position[2]).toFixed(2)} (least ${least.toFixed(2)})`,
-      `corner ${corner}${changed} at ${c === undefined ? " -  " : Math.hypot(c[0] - agent.position[0], c[2] - agent.position[2]).toFixed(2)} nearest ${Math.sqrt(agent.cornerNearestSqr).toFixed(2)}`,
-      `dvel ${deg(dx, dz)} ${Math.hypot(dx, dz).toFixed(2)}`,
-      `vel ${deg(vx, vz)} ${Math.hypot(vx, vz).toFixed(2)}`,
-    ].join("  ");
+      paint(dim, tick),
+      (agent.updateFlags & 4) !== 0 ? paint(Yellow, "sep") : paint(GreenDark, "avo"), // SEPARATION: the arriving flags
+      label("f", fold === 0 ? "0" : paint(Purple, fold)),
+      label("g", !Number.isFinite(gap) ? "-" : gap < 0.05 ? paint(Red, num(gap, 2)) : num(gap, 2)), // touching
+      label("t", `${num(Math.hypot(tx - ax, tz - az))}/${num(least)}`),
+      label("c", c === undefined ? "-" : `${num(c[0])},${num(c[2])}${changed}`),
+      paint(
+        dim,
+        `${c === undefined ? "-" : num(Math.hypot(c[0] - ax, c[2] - az))}/${num(Math.sqrt(agent.cornerNearestSqr))}`,
+      ),
+      label("dv", `${deg(dx, dz)}@${num(Math.hypot(dx, dz))}`),
+      label("v", `${deg(vx, vz)}@${num(Math.hypot(vx, vz))}`),
+      label("m", num(agent.maxSpeed)),
+    ].join(" ");
   }
   handlers.dispose();
   throw api.getKillError();
