@@ -1,5 +1,4 @@
 import { events } from "./core";
-import { npcQuery, plan } from "./plan.main";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -53,8 +52,8 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
 }
 
 /**
- * Idle npcs back off from a walker held up beside them, to one side of its path and facing it —
- * see `w.npc.move`'s `backwards`. Runs until killed.
+ * Idle npcs back off from a walker held up beside them, to one side of its path — strafing, so they
+ * keep their facing rather than turning. Runs until killed.
  * ```sh
  * demo_back_off rob kate
  * ```
@@ -88,19 +87,11 @@ export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
         const walker = presser(w, npc);
         if (heldUp(npc, walker) === false) continue;
 
-        const src = npc.point;
         const [ux, uz] = awayFrom(npc, walker);
-        const by = backOffConfig.by;
-        const op = { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + ux * by, y: src.y + uz * by } } as const;
-        const to = await plan({ api, w, op });
-        if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < backOffConfig.minMove) continue;
-
-        // back onto it, unless it passed by whilst they turned
-        await npc
-          .look({ at: { x: 2 * src.x - to.x, y: 2 * src.y - to.y }, rate: backOffConfig.turnRate })
-          .catch(() => {});
-        if (walker.distanceTo(npc.point) > backOffConfig.dist) continue;
-        void w.npc.move({ npcKey: npc.key, to, backwards: true }).catch(() => {}); // a new push may interrupt
+        const { by, minMove } = backOffConfig;
+        const slide = npc.getSlideResult({ x: ux * by, y: uz * by });
+        if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < minMove) continue;
+        void w.npc.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true }).catch(() => {}); // a new push may interrupt
       }
     }
   } finally {
@@ -136,8 +127,6 @@ const backOffConfig = {
   by: 0.8,
   minMove: 0.2,
   sampleSecs: 0.1,
-  /** Times faster than usual they turn about */
-  turnRate: 2.5,
 };
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {
