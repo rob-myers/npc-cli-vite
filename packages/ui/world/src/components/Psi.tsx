@@ -140,10 +140,11 @@ export default function Psi() {
       },
       syncTune() {
         state.tune = { ...defaultPsiTune, ...state.tune }; // a field added since, e.g. over hmr
-        const { reach, gap, width, color } = state.tune;
+        const { reach, gap, width, opacity, color } = state.tune;
         state.reach.value = Math.min(reach, psiMaxReach);
         state.gap.value = gap;
         state.width.value = width;
+        state.opacity.value = opacity;
         state.color.value.set(color);
       },
       setShown(shown) {
@@ -234,6 +235,7 @@ function createPsiResources() {
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
   const width = uniform(defaultPsiTune.width);
+  const opacity = uniform(defaultPsiTune.opacity);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
@@ -263,6 +265,7 @@ function createPsiResources() {
     reach,
     gap,
     width,
+    opacity,
     color,
     gmValues,
     gmArray,
@@ -271,7 +274,7 @@ function createPsiResources() {
 }
 
 function psiNodes(
-  { npcTex, slotCount, flowPhase, reach, gap, width, color, gmArray, gmCount }: Resources,
+  { npcTex, slotCount, flowPhase, reach, gap, width, opacity, color, gmArray, gmCount }: Resources,
   {
     fadeRoomsFx,
     playerLight,
@@ -286,7 +289,7 @@ function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, alpha, lift, cell } = psiConfig;
+  const { reachFade, blend, lift, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
@@ -383,7 +386,7 @@ function psiNodes(
 
     const a = objectPick
       .notEqual(0)
-      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(alpha));
+      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity));
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
     return playerLight.applyLightRgba(vec4(color, a));
   })();
@@ -396,7 +399,6 @@ const psiConfig = {
   reachFade: 0.75,
   /** Metres over which the player's and another's rings merge: smaller gives a sharper waist */
   blend: 0.3,
-  alpha: 0.5,
   /** Metres the relief's rim sits above the floor */
   lift: 0,
   /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */

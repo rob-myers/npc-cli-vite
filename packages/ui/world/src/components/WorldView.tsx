@@ -390,6 +390,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.cameraMode !== "canonical") return;
         const { controls } = state;
         if (controls === null || state.canvas === null) return;
+        if (e.target !== state.canvas) return; // e.g. scrolling a card, or an overlay's before `forwardWheel`
 
         // a zoom-in aims at the cursor's ground point and pans onto it, ending up CENTRED rather
         // than merely held still as `zoomToCursor` does. Aimed once the zoom has COMMITTED:

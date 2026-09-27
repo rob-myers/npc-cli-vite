@@ -8,8 +8,8 @@ import { WorldContext } from "./world-context";
 /**
  * Keyed React content at a point, or following an object, e.g. a decor's editor once clicked — an
  * `Html3d` each, centred above its anchor. It always takes the pointer, and has a close button, a
- * grip to drag it up and down, and a corner handle to set its width (as `--html-width`, for the
- * content to flow into), both remembered by key once closed
+ * grip to drag it up and down, and a corner handle to set its size (as `--html-width` and `--html-height`,
+ * for the content to flow and scroll into), all remembered by key once closed
  */
 export default function WorldHtml() {
   const w = useContext(WorldContext);
@@ -38,6 +38,7 @@ export default function WorldHtml() {
           frame: prev?.frame ?? null,
           offset: prev?.offset ?? kept?.offset ?? new THREE.Vector3(),
           width: prev?.width ?? kept?.width ?? null,
+          height: prev?.height ?? kept?.height ?? null,
           // only as it opens: a re-show, e.g. after an edit, must not take focus from a field
           wantsFocus: prev === undefined && opts?.focus === true && w.touchDevice === false,
         });
@@ -52,7 +53,7 @@ export default function WorldHtml() {
           if (entry === undefined) continue;
           hadFocus ||= entry.frame?.contains(document.activeElement) === true;
           state.byKey.delete(key);
-          remembered.set(`${w.key}:${key}`, { offset: entry.offset, width: entry.width });
+          remembered.set(`${w.key}:${key}`, { offset: entry.offset, width: entry.width, height: entry.height });
           entry.onHide?.();
           removed = true;
         }
@@ -92,16 +93,19 @@ export default function WorldHtml() {
           w.view.forceUpdate();
         });
       },
-      onResizeStart(key, clientX) {
+      onResizeStart(key, clientX, clientY) {
         const entry = state.byKey.get(key);
         if (entry === undefined || entry.frame === null) return;
         const { frame } = entry;
-        const startWidth = frame.offsetWidth; // CSS px
+        const [startWidth, startHeight] = [frame.offsetWidth, frame.offsetHeight]; // CSS px
         const screenPerCss = frame.getBoundingClientRect().width / startWidth;
-        track((x) => {
+        track((x, y) => {
           // doubled: centred on the point, the edge under the handle moves by half the change
           entry.width = Math.max(minWidth, startWidth + (2 * (x - clientX)) / screenPerCss);
+          // not doubled: hung above the point, its top edge takes all of the change
+          entry.height = Math.max(minHeight, startHeight + (y - clientY) / screenPerCss);
           frame.style.setProperty("--html-width", `${entry.width}px`);
+          frame.style.setProperty("--html-height", `${entry.height}px`);
         });
       },
     }),
@@ -133,7 +137,7 @@ export default function WorldHtml() {
   };
 
   return [...state.byKey].map(([key, entry]) => {
-    const { tracked, node, offset, width, visible } = entry;
+    const { tracked, node, offset, width, height, visible } = entry;
     return (
       <Html3d
         key={key}
@@ -153,7 +157,11 @@ export default function WorldHtml() {
           onPointerUp={(e) => e.stopPropagation()}
           // no text selection, bar inside a focused field
           className="pointer-events-auto relative transform-[translate(-50%,-100%)] select-none outline-none [&_:is(input,textarea,[contenteditable]):focus]:select-text"
-          style={{ zoom: htmlZoom, ...(width !== null && { "--html-width": `${width}px` }) }}
+          style={{
+            zoom: htmlZoom,
+            ...(width !== null && { "--html-width": `${width}px` }),
+            ...(height !== null && { "--html-height": `${height}px` }),
+          }}
         >
           <div
             className={cn(
@@ -193,10 +201,13 @@ export default function WorldHtml() {
           {node}
           <div
             className={cn(handleClass, "-right-3 -bottom-3 size-9 cursor-nwse-resize")}
-            onMouseDown={(e) => state.onResizeStart(key, pointerOf(e).clientX)}
+            onMouseDown={(e) => {
+              const p = pointerOf(e);
+              state.onResizeStart(key, p.clientX, p.clientY);
+            }}
             onTouchStart={(e) => {
               const p = pointerOf(e);
-              if (p) state.onResizeStart(key, p.clientX);
+              if (p) state.onResizeStart(key, p.clientX, p.clientY);
             }}
           >
             <ResizeIcon className="size-6" weight="bold" />
@@ -219,8 +230,8 @@ export type State = {
   setShown(key: string, shown: boolean): void;
   /** Drag the grip to move it up and down */
   onDragStart(key: string, clientX: number, clientY: number): void;
-  /** Drag the corner handle to set the width */
-  onResizeStart(key: string, clientX: number): void;
+  /** Drag the corner handle to set the size */
+  onResizeStart(key: string, clientX: number, clientY: number): void;
 };
 
 export type WorldHtmlAnchor = { x: number; y: number; y3d?: number } | TrackedObject3D;
@@ -239,12 +250,14 @@ type WorldHtmlEntry = {
   offset: THREE.Vector3;
   /** CSS px, or the content's own */
   width: number | null;
+  /** CSS px, which the content may scroll within, or its own */
+  height: number | null;
   /** Focus the close button once it mounts */
   wantsFocus: boolean;
 };
 
-/** Where each key was dragged to and how wide, kept over close and World HMR alike */
-const remembered = new Map<string, Pick<WorldHtmlEntry, "offset" | "width">>();
+/** Where each key was dragged to and how big, kept over close and World HMR alike */
+const remembered = new Map<string, Pick<WorldHtmlEntry, "offset" | "width" | "height">>();
 const handleClass =
   "pointer-events-auto absolute grid place-items-center rounded-lg border-2 border-white/40 bg-black/80 text-white/90";
 const zero = new THREE.Vector3();
@@ -253,3 +266,4 @@ const tmpVec = new THREE.Vector3();
 /** `Html3d` scales the content down, as `NpcBubble` compensates with large rem sizes */
 const htmlZoom = 2;
 const minWidth = 240;
+const minHeight = 120;
