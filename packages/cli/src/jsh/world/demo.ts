@@ -277,6 +277,12 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
   /** The npc picked last, bar themself */
   let target: null | string = null;
   let [on, holdUntil] = [false, 0]; // world seconds they stay defensive until
+  /** The aim we last set, so we clear only our own: a look on the move aims them too */
+  let ownAim: JshCli.Npc["anim"]["face"]["aim"] = null;
+  const clearOwnAim = () => {
+    if (ownAim !== null && npc.anim.face.aim === ownAim) npc.anim.face.aim = null;
+    ownAim = null;
+  };
   const defensive = () => holdUntil > w.timer.getElapsedTime();
   const show = () => {
     const pose = on ? (defensive() ? "defensive" : "point") : null;
@@ -287,7 +293,7 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
   w.rootEl.addEventListener("keydown", onKey);
   // a pause leaves it drawn, as the world is
   const handlers = api.handleStatus({
-    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show(), (npc.anim.face.aim = null)),
+    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show(), clearOwnAim()),
   });
 
   const readPicks = async () => {
@@ -302,7 +308,8 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
   try {
     while (true) {
       const at = target === null ? undefined : w.n[target]?.point;
-      npc.anim.face.aim = at === undefined ? null : { at, rate: 1, untilRest: false }; // whom they'd strike, moving or not
+      if (at === undefined) clearOwnAim();
+      else npc.anim.face.aim = ownAim = { at, rate: 1, untilRest: false }; // whom they'd strike, moving or not
       if (on && (await armBlocked(w, npc))) holdUntil = w.timer.getElapsedTime() + demoSwordConfig.holdSecs;
       show();
       const locked = on && (await inSight(w, npc, target));

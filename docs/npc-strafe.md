@@ -30,7 +30,8 @@ turning to it is the usual exponential ease.
 - **jsh `aim`**: `aim rob at:$( pick 1 )`, `aim rob at:1.57`, `aim rob at:kate rate:0.5`; a bare
   `aim rob` clears it. Piped (`pick --right | aim rob`), each pick re-aims them until killed, and
   picking them clears it.
-- `demo_sword` aims at the picked npc every sample.
+- `demo_sword` aims at the picked npc every sample, and clears only an aim it set: with nobody
+  picked, a look still turns them.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 
