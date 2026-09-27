@@ -1,5 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
+import { isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { error, warn } from "@npc-cli/util/legacy/generic";
+import { useEffect } from "react";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
 import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
@@ -26,6 +28,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
         }
         return restored;
+      },
+      onKeyDown(e) {
+        if (isTypingTarget(e) || e.repeat === true) return;
+        if ((e.key === "q" || e.key === "Q") && w.n[state.key] !== undefined) w.swords.toggle(state.key);
       },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
@@ -128,6 +134,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   );
 
   w.player = state;
+
+  useEffect(() => {
+    if (w.rootEl === null) return;
+    const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
+    w.rootEl.addEventListener("keydown", onKeyDown);
+    return () => w.rootEl?.removeEventListener("keydown", onKeyDown);
+  }, [w.rootEl]);
 }
 
 export type State = {
@@ -136,6 +149,8 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
+  /** The player's controls, e.g. `q` draws or sheathes their sword — the view's own keys are WorldView's */
+  onKeyDown(e: KeyboardEvent): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */

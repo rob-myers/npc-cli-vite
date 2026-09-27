@@ -644,7 +644,7 @@ export default function NPCs() {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.psi?.onTick();
-        w.sword?.onTick();
+        w.swords?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);

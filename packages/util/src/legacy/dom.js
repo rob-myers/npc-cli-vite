@@ -69,6 +69,15 @@ export function isTouchDevice() {
 }
 
 /**
+ * Was the key pressed whilst typing into a field — which key handlers should leave be?
+ * @param {KeyboardEvent} e
+ */
+export function isTypingTarget(e) {
+  const tag = /** @type {HTMLElement} */ (e.target).tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
+/**
  * @param {string} text
  * @param {SpeechSynthesisVoice} [voice]
  */

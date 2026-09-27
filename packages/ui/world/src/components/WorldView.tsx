@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
+import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
 import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
@@ -811,8 +811,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.speech?.onResize();
       }, 100),
       onKeyDown(e) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (isTypingTarget(e)) return;
         state.keysDown.add(e.key.toLowerCase());
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
@@ -838,6 +837,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       onKeyUp(e) {
         state.keysDown.delete(e.key.toLowerCase());
+        if (isTypingTarget(e)) return;
         if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
           state.onLookGesture(false);
         }

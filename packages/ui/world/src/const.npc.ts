@@ -248,7 +248,7 @@ export type PsiTune = {
   color: string;
 };
 
-/** `Sword`: the rope from a pointer's right hand — see `demo_sword` */
+/** `Swords`: wielding, and the rope from a pointer's right hand — see `w.swords` */
 export const swordConfig = {
   /** The hand's tip in the right forearm's frame, in model units — tuned by eye */
   handTip: [0, -0.36, 0] as [number, number, number],
@@ -269,6 +269,16 @@ export const swordConfig = {
   fadeSecs: 0.3,
   sides: 6,
   segments: 24,
+  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
+  reach: 1,
+  /** Seconds they stay defensive at least — longer whilst something stays in reach */
+  holdSecs: 0.5,
+  drawInSecs: 0.15,
+  /** Seconds between raycasts at most, and only once they, their target or a door has changed */
+  sampleSecs: 0.1,
+  /** Metres moved, or radians turned, that call for another raycast */
+  recastMoved: 0.05,
+  recastTurned: 0.05,
 };
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */

@@ -1203,6 +1203,42 @@ export async function spawn(
 }
 
 /**
+ * Draw or sheathe npcs' swords, or lock them on to an npc — see `w.swords`. The swords are theirs, so a kill
+ * changes nothing. Piped, each pick is drawn, sheathed, or locked on to; picking one of them unlocks
+ * ```sh
+ * sword --on rob kate
+ * sword --off rob
+ * sword rob kate lock:will
+ * sword rob lock:null
+ * pick | sword --on
+ * pick | sword rob kate
+ * ```
+ */
+export async function sword(
+  { api, args, w }: JshCli.RunArg,
+  opts: { on?: boolean; off?: boolean; lock?: null | string } = api.jsArg(args, { "--on": "on", "--off": "off" }),
+) {
+  api.setPausable("world", false); // picks whilst paused
+  const srcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
+
+  if (api.isTtyAt(0)) {
+    if (opts.on === true) w.swords.draw(...srcKeys);
+    else if (opts.off === true) w.swords.sheathe(...srcKeys);
+    else if ("lock" in opts) w.swords.lock(srcKeys, opts.lock ? w.npc.get(opts.lock).key : null);
+    else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
+    return;
+  }
+
+  for (let datum = await api.read(); datum !== api.eof; datum = await api.read()) {
+    const npcKey = npcKeyOf(datum);
+    if (npcKey === undefined || !(npcKey in w.n)) continue;
+    if (opts.on === true) w.swords.draw(npcKey);
+    else if (opts.off === true) w.swords.sheathe(npcKey);
+    else w.swords.lock(srcKeys, srcKeys.includes(npcKey) ? null : npcKey);
+  }
+}
+
+/**
  * ```sh
  * unlock g0d29 g0d30
  * unlock door:g0d29

@@ -81,7 +81,7 @@
 
 - 🚧 clarify as ability
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
-  - ✅ can modulate reach/speed/gap/fade/colour
+  - ✅ can modulate reach/speed/gap/fade/colour/opacity
     - ideally with controls
   - listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech
@@ -89,6 +89,7 @@
 
 - ✅ `demo_psi` -> `psi` wrapping `w.player.psi`
 - 🚧 better ui for psi
+  - e.g. `pick --long meta.npcLabel | psi`
 - check mobile performance
 
 ### Sword and Strafe
@@ -116,7 +117,10 @@
   - beam is straight and mainly transparent except at target
   - can lock on to body part
 
-- 🚧 refactor demo_sword into npc
+- ✅ refactor demo_sword into `<Swords>`
+  - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
+  - ✅ `sword` mutates sword wield/sheathe/lock
+    - `sword rob lock:npc-1`
 
 - handle psi vs sword blend fighting
 
