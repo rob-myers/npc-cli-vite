@@ -35,6 +35,7 @@ import {
   positionWorld,
   select,
   smoothstep,
+  step,
   texture as tslTexture,
   uniform,
   uv,
@@ -56,12 +57,17 @@ import {
   npcScale,
   npcSpawnConfig,
 } from "../const.npc";
-import { addEmptyBillboardOffset, createSkinnedLabelQuad, mergeWithGroupAttr } from "../service/geometry";
+import {
+  addBodyPartAttr,
+  addEmptyBillboardOffset,
+  createSkinnedLabelQuad,
+  mergeWithGroupAttr,
+} from "../service/geometry";
 import { helper } from "../service/helper";
-import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
+import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
 import { loadSkinSheets } from "../service/skin-sheets";
-import type { SelectAnyType } from "../service/texture";
+import type { SelectAnyType, SelectFloatType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
@@ -152,6 +158,8 @@ export default function NPCs() {
         // Vertex node: billboard expansion for label, standard skinned MVP otherwise
         const sign = attribute<"vec2">("billboardOffset", "vec2");
         const labelYShift = uniform(0, "float");
+        // the text's own box in the label's uv, set by `drawLabel`
+        const labelRect = uniform(new THREE.Vector4(0, 0, 1, 1));
         const anchor = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
         const viewCtr = cameraViewMatrix.mul(modelWorldMatrix.mul(anchor));
         const labelPos = cameraProjectionMatrix.mul(
@@ -199,13 +207,21 @@ export default function NPCs() {
           skinTex.a.mul(fold),
         );
 
-        const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(pickIdUniform);
-        // fades WITH the body: unlit, a cut label hung over a half-there figure
-        const labelColor = vec4(labelTex.rgb, labelTex.a.mul(colorScale).mul(fold));
-
-        // Output node: encode NPC pick ID for body; suppress label during picking
         const isPickMode = w.view.objectPick.notEqual(0);
-        const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, pickIdUniform);
+        const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(pickIdUniform);
+        const inRect = step(labelRect.x, uv().x)
+          .mul(step(labelRect.y, uv().y))
+          .mul(step(uv().x, labelRect.z))
+          .mul(step(uv().y, labelRect.w));
+        // picked as a solid box round the text, else only its ink would be
+        const labelAlpha = (select as SelectFloatType)(isPickMode, inRect, labelTex.a);
+        // fades WITH the body: unlit, a cut label hung over a half-there figure
+        const labelColor = vec4(labelTex.rgb, labelAlpha.mul(colorScale).mul(fold));
+
+        // Output node: the pick's `g` is the joint drawn — see `npcJointToPickGreen`
+        const bodyPart = attribute<"float">("bodyPart", "float").round(); // interpolated, if all alike
+        const npcPickId = bodyPart.mul(256).add(pickIdUniform);
+        const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, npcPickId, 1); // opaque, else blended
 
         // The silhouette the border is grown from — see `service/npc-outline`. The BODY only: the
         // label is a billboard, and a border around it would read as a box floating overhead.
@@ -247,11 +263,7 @@ export default function NPCs() {
         // blacked out at the OUTPUT: `colorNode` is only the albedo, and a standard material still
         // adds specular off the scene lights to an albedo of zero
         const beauty = (select as SelectAnyType)(isMain, vec4(output.rgb.mul(bodyTint), output.a), output);
-        material.outputNode = (select as SelectAnyType)(
-          isPickMode,
-          (select as SelectAnyType)(isMain, npcPick, vec4(0, 0, 0, 0)),
-          beauty,
-        );
+        material.outputNode = (select as SelectAnyType)(isPickMode, npcPick, beauty);
         // The label writes no silhouette — it is not part of the figure — but marks itself in `g`
         // as a caption the border may not paint over: it sits a few pixels above the head, well
         // inside the border's reach. Keyed to the label's OWN alpha, so a faded one protects
@@ -265,6 +277,7 @@ export default function NPCs() {
 
         return {
           colorScale,
+          labelRectUniform: labelRect,
           labelYShiftUniform: labelYShift,
           maskMrt,
           npcLit,
@@ -280,7 +293,10 @@ export default function NPCs() {
         const graph = buildGraph(clone);
         const skinnedMesh = graph.nodes.root as THREE.SkinnedMesh;
         addEmptyBillboardOffset(skinnedMesh.geometry);
-        const geometry = mergeWithGroupAttr(skinnedMesh.geometry, createSkinnedLabelQuad(0, 0));
+        const geometry = addBodyPartAttr(
+          mergeWithGroupAttr(skinnedMesh.geometry, createSkinnedLabelQuad(0, 0)),
+          npcJointToPickGreen,
+        );
         return { geometry, graph, skinnedMesh };
       },
       createNpc(
@@ -734,6 +750,7 @@ export default function NPCs() {
         mat.npcLit.value = npc.lit === true ? 1 : 0;
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
         mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
+        mat.labelRectUniform.value.copy(npc.labelRectUniform.value);
         Object.assign(npc, mat);
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
@@ -979,6 +996,7 @@ export type State = {
   ): Pick<
     NpcInit,
     | "colorScale"
+    | "labelRectUniform"
     | "labelYShiftUniform"
     | "maskMrt"
     | "npcLit"

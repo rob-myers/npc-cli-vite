@@ -15,7 +15,7 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultIdleAnimationClipKey, defaultNpcLabelColor } from "../const.npc";
+import { defaultIdleAnimationClipKey, defaultNpcLabelColor, npcScale } from "../const.npc";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -53,6 +53,7 @@ export class Npc {
   skinnedMesh: THREE.SkinnedMesh;
 
   colorScale: THREE.UniformNode<"float", number>;
+  labelRectUniform: THREE.UniformNode<"vec4", THREE.Vector4>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
@@ -146,6 +147,7 @@ export class Npc {
     this.colorScale = init.colorScale;
     this.geometry = init.geometry;
     this.graph = init.graph;
+    this.labelRectUniform = init.labelRectUniform;
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
     this.roomSlot = init.roomSlot;
@@ -184,6 +186,13 @@ export class Npc {
 
     const labelText = this.labelStyle.speaking ? `[ ${this.key} ]` : this.key;
     ct.fillText(labelText, width / 2, height / 2);
+    const m = ct.measureText(labelText);
+    this.labelRectUniform.value.set(
+      (width / 2 - m.actualBoundingBoxLeft - labelPickPadPx) / width,
+      (height / 2 - m.actualBoundingBoxAscent - labelPickPadPx) / height,
+      (width / 2 + m.actualBoundingBoxRight + labelPickPadPx) / width,
+      (height / 2 + m.actualBoundingBoxDescent + labelPickPadPx) / height,
+    );
     // ct.strokeText(labelText, width / 2, height / 2);
 
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
@@ -500,6 +509,11 @@ export class Npc {
     this.w.view.forceUpdate();
   }
 
+  /** Where their label hangs, in world space */
+  getLabelPosition(out = new THREE.Vector3()) {
+    return out.copy(this.position).setY(this.position.y + this.labelYShiftUniform.value * npcScale);
+  }
+
   setLabelYShift(shift: number) {
     this.labelYShiftUniform.value = shift;
   }
@@ -516,6 +530,7 @@ export type NpcInit = {
   colorScale: THREE.UniformNode<"float", number>;
   geometry: THREE.BufferGeometry;
   graph: ReturnType<typeof buildGraph>;
+  labelRectUniform: THREE.UniformNode<"vec4", THREE.Vector4>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
@@ -528,6 +543,9 @@ export type NpcInit = {
   skinnedMesh: THREE.SkinnedMesh;
   skinIndexUniform: THREE.UniformNode<"float", number>;
 };
+
+/** Pixels the label's pick box reaches beyond its text */
+const labelPickPadPx = 2;
 
 /** How far `ensureLegalPosition` looks for ground the npc is allowed to stand on */
 const legalPositionHalfExtents: Vec3 = [1.5, 1, 1.5];

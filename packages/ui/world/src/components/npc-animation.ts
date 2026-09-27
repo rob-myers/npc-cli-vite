@@ -453,10 +453,13 @@ function bubbleHeightForClip(clipName: string): number {
   return 2;
 }
 
+/** The highest a label is lifted, standing — see `boundLabel` */
+export const labelYShiftMax = 2.2;
+
 function labelYShiftForClip(clipName: string): number {
   if (clipName === "sit") return 1.6;
   if (clipName === "lie") return 0.75;
-  return 2.2;
+  return labelYShiftMax;
 }
 
 /** Beyond this angle a look shuffles round rather than turning on the spot */

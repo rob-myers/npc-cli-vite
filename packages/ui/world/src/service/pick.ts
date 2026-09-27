@@ -28,6 +28,29 @@ const objectPickRedToKey = Object.fromEntries(Object.entries(OBJECT_PICK_KEY_TO_
   keyof typeof OBJECT_PICK_KEY_TO_RED
 >;
 
+/** An npc's pick `g` is their joint, spaced out and shuffled to tell apart in debug; `b` is their pick id */
+export function npcJointToPickGreen(jointIndex: number) {
+  return reverse4Bits(jointIndex) * 17;
+}
+
+export type NpcBodyPart =
+  | "label"
+  | "head"
+  | "chest"
+  | "stomach"
+  | "hips"
+  | `${"left" | "right"}${"arm" | "forearm" | "thigh" | "shin" | "foot"}`;
+
+/** Joint `0` (the root) is their label */
+export function decodeNpcPickId(instanceId: number) {
+  return { pickId: instanceId & 255, jointIndex: reverse4Bits(Math.round((instanceId >> 8) / 17)) };
+}
+
+/** Its own inverse: neighbouring joints land far apart */
+function reverse4Bits(n: number) {
+  return ((n & 1) << 3) | ((n & 2) << 1) | ((n & 4) >> 1) | ((n & 8) >> 3);
+}
+
 /**
  * Decode RGBA pixel to `{ type, instanceId }` or `null`.
  */

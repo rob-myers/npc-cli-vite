@@ -337,6 +337,20 @@ export function mergeWithGroups(base: THREE.BufferGeometry, ...extras: THREE.Buf
   return merged;
 }
 
+/** Adds float `bodyPart`: `encode` of the joint weighted heaviest, which on a rigid rig is the only one */
+export function addBodyPartAttr(geo: THREE.BufferGeometry, encode: (jointIndex: number) => number) {
+  const joints = geo.getAttribute("skinIndex");
+  const weights = geo.getAttribute("skinWeight");
+  const parts = new Float32Array(joints.count);
+  for (let i = 0; i < joints.count; i++) {
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (weights.getComponent(i, k) > weights.getComponent(i, best)) best = k;
+    parts[i] = encode(joints.getComponent(i, best));
+  }
+  geo.setAttribute("bodyPart", new THREE.BufferAttribute(parts, 1));
+  return geo;
+}
+
 /** Merge geometries without Three.js groups (→ 1 draw call).
  *  Adds float "groupId" attribute (0, 1, 2…) per vertex for shader branching. */
 export function mergeWithGroupAttr(base: THREE.BufferGeometry, ...extras: THREE.BufferGeometry[]) {
