@@ -24,6 +24,7 @@ import {
   VoiceDevice,
 } from "./io";
 import type { NamedFunction } from "./parse";
+import type { PauseGroup } from "./pause-group";
 import { queryClientApi } from "./query-client";
 import { TtyShell, ttyError } from "./shell";
 import { getSharedStore, getTtyStore } from "./storage";
@@ -105,7 +106,7 @@ export const sessionApi = {
             ...persisted.var,
           },
           modules: {} as any,
-          modulePtags: {},
+          pauseGroups: {},
           nextPid: 0,
           process: {},
           lastBg: 0,
@@ -126,6 +127,10 @@ export const sessionApi = {
   },
   getLastExitCode(meta: JSh.BaseMeta) {
     return sessionApi.getSession(meta.sessionKey).lastExit[meta.background ? "bg" : "fg"];
+  },
+  /** The default ptags of a module's commands, whatever the session — see `docs/jsh-pause.md` */
+  getModulePtags(moduleKey: string) {
+    return useSession.getState().static.modulePtags[moduleKey];
   },
   getNextPid(sessionKey: string) {
     return sessionApi.getSession(sessionKey).nextPid++;
@@ -184,11 +189,11 @@ export const sessionApi = {
       // const interactive = session.ttyShell.isInteractive();
 
       if (opts.STOP === true) {
-        // held ones too, else resuming their hold would outrun ours — see `KillOpts.reason`
+        // only what runs: the pane resumes just those, and leaves another's pause be
         const processes = Object.values(session.process)
-          .filter((p) => p.status === toProcessStatus.Running || !!p.holds?.size)
+          .filter((p) => p.status === toProcessStatus.Running)
           .reverse();
-        sessionApi.killProcesses(processes, { reason: "tty", ...opts });
+        sessionApi.killProcesses(processes, { reason: "jsh-pane", ...opts });
         return processes.map((p) => p.key);
       }
 
@@ -197,7 +202,7 @@ export const sessionApi = {
         const processes = pids
           .map((pid) => session.process[pid])
           .filter((p) => p?.status === toProcessStatus.Suspended);
-        sessionApi.killProcesses(processes, { reason: "tty", ...opts });
+        sessionApi.killProcesses(processes, { reason: "jsh-pane", ...opts });
         return processes.map((p) => p.key);
       }
     }
@@ -231,9 +236,11 @@ export const sessionApi = {
           const holds = (p.holds ??= new Set());
           if (holds.has(opts.reason)) continue;
           // paused outright before any hold: keep it so, until a plain CONT
-          if (holds.size === 0 && p.status === toProcessStatus.Suspended) holds.add("user");
+          if (holds.size === 0 && p.status === toProcessStatus.Suspended) holds.add("manual");
           holds.add(opts.reason);
           if (holds.size > 1) continue; // already suspended
+        } else if (p.holds?.size) {
+          p.holds.add("manual"); // paused by hand whilst held: kept so until a plain CONT
         }
         p.onSuspends = p.onSuspends.filter((onSuspend) => {
           try {
@@ -347,12 +354,14 @@ export const sessionApi = {
   removeSession(sessionKey: string) {
     const session = sessionApi.getSession(sessionKey);
     if (session) {
-      const { process, ttyShell } = session;
+      const { process, ttyShell, pauseGroups } = session;
       session.verbose = false;
       ttyShell.dispose();
       Object.values(process)
         .reverse()
         .forEach((x) => void killProcess(x));
+      // after the kills, so they resume nobody: just their teardowns, e.g. the World's subscription
+      Object.values(pauseGroups).forEach((group) => void group.dispose());
       delete useSession.getState().device[ttyShell.key];
       useSession.setState(({ session }) => ({ session: removeFromLookup(sessionKey, session) }));
     } else {
@@ -373,6 +382,9 @@ export const sessionApi = {
     for (const process of sessionApi.getProcesses(sessionKey, pgid)) {
       process.onSignals.forEach((onSignal) => onSignal(signalKey));
     }
+  },
+  setModulePtags(modulePtags: State["static"]["modulePtags"]) {
+    useSession.setState((state) => ({ static: { ...state.static, modulePtags } }));
   },
   setLastExitCode(meta: JSh.BaseMeta, exitCode?: number) {
     const session = sessionApi.getSession(meta.sessionKey);
@@ -449,6 +461,7 @@ export const useSession = create<State>()(
     device: {},
     session: {},
     shared: sharedFolder,
+    static: { modulePtags: {} },
   }),
 );
 
@@ -468,6 +481,11 @@ export type State = {
   device: KeyedLookup<Device>;
   session: KeyedLookup<Session>;
   shared: Record<string, any>;
+  /** The same for every session, set once on load */
+  static: {
+    /** Default ptags per module, kept out of `/lib` — see `docs/jsh-pause.md` */
+    modulePtags: typeof import("../jsh/modules")["modulePtags"];
+  };
 };
 
 export type Session = {
@@ -494,8 +512,8 @@ export type Session = {
 
   /** e.g. JS function `modules.core.spawn` */
   modules: Omit<typeof import("../jsh/modules"), "modulePtags">;
-  /** Default ptags per module, kept out of `/lib` — see `docs/jsh-pause.md` */
-  modulePtags: typeof import("../jsh/modules")["modulePtags"];
+  /** By key, one each — see `createPauseGroup` */
+  pauseGroups: Record<string, PauseGroup>;
 
   nextPid: number;
   lastExit: {
@@ -556,7 +574,7 @@ export type ProcessMeta = {
   inheritVar: Record<string, unknown>;
   ptags: Ptags;
   /** Why it is suspended, when a `KillOpts.reason` suspended it */
-  holds?: Set<string>;
+  holds?: Set<HoldReason>;
 };
 
 export type TtyLinkCtxt = {
@@ -588,8 +606,13 @@ interface KillOpts {
   GROUP?: boolean;
   ptags?: Ptags;
   /**
-   * A hold: STOP adds it, CONT removes it and resumes only once none remain — so pausers don't
-   * undo one another. `api.kill` by ptags uses `"tty"`. Without one, CONT resumes outright
+   * A hold: STOP adds it, CONT removes it and resumes only once none remain.
+   * - this prevents pausers from undoing one another
+   * - the Jsh pane uses `"jsh-pane"` (pauses running processes) — see `docs/jsh-pause.md`.
+   * - without one, CONT resumes outright
    */
-  reason?: string;
+  reason?: HoldReason;
 }
+
+/** Who holds a process paused: the Jsh pane, a pause by hand, else a pause group's key — see `docs/jsh-pause.md` */
+export type HoldReason = "jsh-pane" | "manual" | (string & {});

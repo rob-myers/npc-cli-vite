@@ -128,7 +128,7 @@ export function Tty(props: Props) {
 
         // resume spawned whilst paused, unless explicitly paused
         for (const pgid of state.pausedSpawnPgids) {
-          sessionApi.kill(props.sessionKey, [pgid], { GROUP: true, CONT: true, reason: "tty" });
+          sessionApi.kill(props.sessionKey, [pgid], { GROUP: true, CONT: true, reason: "jsh-pane" });
         }
         state.pausedSpawnPgids.clear();
 
@@ -170,7 +170,7 @@ export function Tty(props: Props) {
         // store original functions too
         const { modulePtags, ...modules } = props.modules;
         Object.assign(session.modules, modules);
-        session.modulePtags = modulePtags;
+        sessionApi.setModulePtags(modulePtags);
       },
       writeErrorToTty(sessionKey: string, message: string, origError: any) {
         sessionApi.writeMsg(sessionKey, `${message} (see console)`, "error");

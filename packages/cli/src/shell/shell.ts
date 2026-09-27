@@ -353,7 +353,7 @@ export class TtyShell implements Device {
         this.spawnBgPaused === true
       ) {
         process.status = toProcessStatus.Suspended;
-        process.holds = new Set(["tty"]);
+        process.holds = new Set(["jsh-pane"]);
       }
 
       // Shallow clone avoids mutation by descendants

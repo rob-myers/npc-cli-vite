@@ -33,9 +33,9 @@ import {
 } from "./io";
 import { jsFunctionToShellFunction } from "./js-to-shell";
 import { cloneParsed, type NamedFunction, parseService } from "./parse";
-import { createPauseGroup } from "./pause-group";
+import { createPauseGroup, pausablePtag, pauseGroupKeysOf } from "./pause-group";
 import { queryClientApi } from "./query-client";
-import { type ProcessMeta, type Ptags, type Session, sessionApi } from "./session";
+import { type HoldReason, type ProcessMeta, type Ptags, type Session, sessionApi } from "./session";
 import { TtyShell, ttyError } from "./shell";
 import { computeChoiceTtyLinkFactory } from "./tty-link-factory";
 import {
@@ -314,6 +314,12 @@ class CmdService {
       return sessionApi.getProcess(this.meta).status === toProcessStatus.Suspended;
     },
 
+    /** Is the process paused by `reason` alone — see `docs/jsh-pause.md` */
+    isHeldOnlyBy(reason: HoldReason) {
+      const { holds } = sessionApi.getProcess(this.meta);
+      return holds?.size === 1 && holds.has(reason);
+    },
+
     /** Is the process running? */
     isRunning() {
       return sessionApi.getProcess(this.meta).status === toProcessStatus.Running;
@@ -346,7 +352,7 @@ class CmdService {
       });
     },
 
-    /** Processes tagged `key` paused together, replacing any such group — see `docs/jsh-pause.md` */
+    /** Jobs tagged `pausablePtag(key)` paused together under the hold `key`, replacing any such group — see `docs/jsh-pause.md` */
     pauseGroup(key: string) {
       return createPauseGroup(this.meta.sessionKey, key);
     },
@@ -389,13 +395,27 @@ class CmdService {
 
     safeJsStringify,
 
-    /** Update our own ptags, which later children inherit — `key: false` leaves a `pauseGroup` */
+    /**
+     * Whether our job pauses with the group `key`, ours and later children's: `false` leaves it.
+     * Such ptags may have been set as true by default elsewhere.
+     */
+    setPausable(key: string, pausable: boolean) {
+      this.setPtags({ [pausablePtag(key)]: pausable });
+    },
+
+    /**
+     * - Update our own ptags, which children spawned later inherit.
+     * - Unsetting a pause group's ptag (e.g. `WORLD_PAUSABLE: false`) also releases that group's hold.
+     */
     setPtags(updates: Ptags) {
       const process = sessionApi.getProcess(this.meta);
       applyPtagUpdates(process.ptags, updates);
-      for (const key of Object.keys(updates)) {
-        if (process.ptags[key] !== true && process.holds?.has(key)) {
-          sessionApi.killProcesses([process], { CONT: true, reason: key });
+      for (const ptag of Object.keys(updates)) {
+        // ptags usually have value `true`
+        if (process.ptags[ptag] === true) continue;
+        // pause group ptags not equal to `true` are considered removed
+        for (const key of pauseGroupKeysOf(this.meta.sessionKey, ptag)) {
+          if (process.holds?.has(key)) sessionApi.killProcesses([process], { CONT: true, reason: key });
         }
       }
     },
@@ -1014,9 +1034,9 @@ class CmdService {
             if (func === undefined) {
               throw Error(`not found`);
             }
-            // the module's default ptags, bar any we have e.g. an inherited `world: false`
+            // the module's default ptags, bar any we have e.g. an inherited `WORLD_PAUSABLE: false`
             const { ptags } = sessionApi.getProcess(meta);
-            Object.assign(ptags, { ...sessionApi.getSession(meta.sessionKey).modulePtags[args[0]], ...ptags });
+            Object.assign(ptags, { ...sessionApi.getModulePtags(args[0]), ...ptags });
 
             ct.args = args.slice(2); // discard e.g. "core spawn"
 

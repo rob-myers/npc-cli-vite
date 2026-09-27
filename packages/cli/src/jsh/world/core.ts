@@ -97,7 +97,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   }
 
   // world commands pause with it — see `docs/jsh-pause.md`
-  api.setPtags({ world: false });
+  api.setPausable("world", false);
   const w = api.getCached(WORLD_KEY);
   const group = api.pauseGroup("world");
   const sub = w.events.subscribe({
@@ -164,7 +164,7 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   { api, args, w }: JshCli.RunArg,
   opts: { where?(e: JshCli.Event): e is T } = api.jsArg(args),
 ) {
-  api.setPtags({ world: false }); // it reports the pause
+  api.setPausable("world", false); // it reports the pause
   const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
@@ -332,18 +332,13 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
           throw e;
         });
     },
-    processHandled: api.handleStatus({
-      cleanup(killed) {
-        killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
-      },
-      onSuspend: () => {
+    processHandled: handleNpcStatus(api, {
+      killed: () => getNpcOrUndefined()?.rejectAll(new Error("killed")),
+      paused: () => {
         const npc = getNpcOrUndefined();
-        if (!npc || w.disabled === true) {
-          return true; // a paused world holds the look itself: undone and redone, the pose would jump
-        }
+        if (!npc) return;
         pendingLooks.unshift({ ...npc.last.look });
         npc.rejectAll(Error("paused"));
-        return true;
       },
     }),
   };
@@ -383,20 +378,11 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       // needed in case we allowed fade to complete
       await api.awaitResume();
     },
-    processHandled: api.handleStatus({
-      cleanup(killed) {
-        killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
-      },
-      onSuspend: () => {
+    processHandled: handleNpcStatus(api, {
+      killed: () => getNpcOrUndefined()?.rejectAll(new Error("killed")),
+      paused: () => {
         const npc = getNpcOrUndefined();
-        if (!npc || w.disabled === true) {
-          return true; // a paused world holds the move itself: undone and redone, the walk would jump
-        }
-
-        // fadeSpawn must complete
-        if (npc.isFading()) {
-          return true;
-        }
+        if (!npc || npc.isFading()) return; // fadeSpawn must complete
 
         if (npc.isMoving()) {
           pendingMoves.unshift({ ...npc.last.dst });
@@ -405,10 +391,20 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
           pendingMoves.unshift({ ...npc.last.dst });
         }
         npc.rejectAll(Error("paused"));
-        return true;
       },
     }),
   };
+}
+
+/**
+ * Status handling for a command driving an npc: a pause rejects its promise via `paused`, unless the
+ * World's is the only hold — the paused World holds the npc itself, and undone and redone the walk would jump
+ */
+function handleNpcStatus(api: JshCli.RunArg["api"], on: { killed(): void; paused(): void }) {
+  return api.handleStatus({
+    cleanup: (killed) => void (killed && on.killed()),
+    onSuspend: () => (api.isHeldOnlyBy("world") === false && on.paused(), true),
+  });
 }
 
 type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
@@ -779,7 +775,7 @@ export async function park(
 }
 
 export function pause({ api, w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // else it pauses itself
+  api.setPausable("world", false); // else it pauses itself
   w.setDisabled(true);
 }
 
@@ -811,7 +807,7 @@ export function pause({ api, w }: JshCli.RunArg) {
  */
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
-  api.setPtags({ world: false }); // picking whilst paused
+  api.setPausable("world", false); // picking whilst paused
 
   // e.g. `pick --long` not `pick long` (filter)
   const opts = ct.api.jsArg(args, {
@@ -928,7 +924,7 @@ export async function* pick(ct: JshCli.RunArg) {
 }
 
 export function play({ api, w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // else it starts paused
+  api.setPausable("world", false); // else it starts paused
   w.setDisabled(false);
 }
 
@@ -942,7 +938,7 @@ export function play({ api, w }: JshCli.RunArg) {
  * ```
  */
 export async function psi({ api, args: [arg], w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // switches on a pick whilst paused
+  api.setPausable("world", false); // switches on a pick whilst paused
   const piped = api.isTtyAt(0) === false;
   if (arg !== undefined || piped === false) w.player.psi(arg ?? null);
   if (arg === undefined && piped === false) return; // just turns it off
@@ -1169,7 +1165,7 @@ export async function spawn(
     look: "facing",
   }),
 ) {
-  api.setPtags({ world: false }); // can spawn while paused
+  api.setPausable("world", false); // can spawn while paused
 
   // support e.g. `spawn rob at:$( pick 1 )`
   opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");

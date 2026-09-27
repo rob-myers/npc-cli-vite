@@ -112,7 +112,7 @@ Exports of `packages/cli/src/jsh/world/{core,demo,debug,decor,pred}.ts` become s
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
-**Pausing** — see `docs/jsh-pause.md`, the ONLY doc for it. In short: world commands (and their descendants) pause with the World via a pause group made in `awaitWorld`; one that must keep going calls `api.setPtags({ world: false })` first, like `pick`.
+**Pausing** — see `docs/jsh-pause.md`, the ONLY doc for it. In short: world commands (and their descendants) pause with the World via a pause group made in `awaitWorld`; one that must keep going calls `api.setPausable("world", false)` first, like `pick`.
 
 ## Decorator panel
 
