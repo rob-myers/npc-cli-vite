@@ -22,3 +22,5 @@
   Cache-Control: public, max-age=0, must-revalidate
 /starship-symbol/*
   Cache-Control: public, max-age=0, must-revalidate
+/asset-not-found/*
+  Cache-Control: no-store

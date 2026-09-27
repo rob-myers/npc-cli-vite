@@ -1,4 +1,5 @@
 import mdx from "@mdx-js/rollup";
+import { assetHistoryPlugin } from "@npc-cli/scripts/vite-plugin-asset-history";
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
 import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
@@ -35,6 +36,7 @@ export default defineConfig({
     jobsExamplesPlugin(),
     worldRtcPlugin(),
     buildIdPlugin(),
+    assetHistoryPlugin(),
 
     process.env.BUILD_AND_ANALYZE ? analyzer() : undefined,
 
