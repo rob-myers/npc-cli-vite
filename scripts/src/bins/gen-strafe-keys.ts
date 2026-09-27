@@ -43,8 +43,8 @@ const translation = (name: string) =>
   new THREE.Vector3().fromArray(gltf.nodes.find((n: { name: string }) => n.name === name).translation);
 const sides = ["left", "right"] as const;
 type Side = (typeof sides)[number];
-const hip = { left: translation("leftleg"), right: translation("rightleg") };
-const kneeT = translation("leftknee");
+const hip = { left: translation("leftthigh"), right: translation("rightthigh") };
+const kneeT = translation("leftshin");
 const footT = translation("leftfoot");
 const rest = kneeT.clone().add(footT); // ankle from hip at rest
 const legLength = rest.length();
@@ -134,8 +134,8 @@ for (let i = 0; i <= samples; i++) {
     widest = Math.max(widest, Math.abs(deg(z)));
     // the sole kept flat: undo the leg and knee
     const flat = new THREE.Euler().setFromQuaternion(toQuat(a, z).multiply(toQuat(k, 0)).invert(), "ZYX");
-    (keys[`${side}leg`] ??= []).push([deg(a), 0, deg(z)]);
-    (keys[`${side}knee`] ??= []).push([deg(k), 0, 0]);
+    (keys[`${side}thigh`] ??= []).push([deg(a), 0, deg(z)]);
+    (keys[`${side}shin`] ??= []).push([deg(k), 0, 0]);
     (keys[`${side}foot`] ??= []).push([deg(flat.x), deg(flat.y), deg(flat.z)]);
   }
   keys["skeleton-root"].push([0, +((hipHeight + rest.y) * 16).toFixed(3), 0]); // Blockbench pixels
