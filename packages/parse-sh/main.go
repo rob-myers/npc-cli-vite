@@ -21,6 +21,8 @@ type Block struct {
 	value []byte
 }
 
+// Returns the slice's header, not its bytes: parse.ts reads their address from its first word
+//
 //export wasmAlloc
 func wasmAlloc(size int) *[]byte {
 	slice := make([]byte, size)
