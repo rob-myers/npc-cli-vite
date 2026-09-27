@@ -1,3 +1,24 @@
 # hashed build output never changes under a name, so a browser may keep it for good
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# unhashed data: revalidate, else a redeploy pairs new code with old assets.
+# sheets.json and sheet/* are keyed by index, so a stale pair gives wrong UVs.
+/assets.json
+  Cache-Control: public, max-age=0, must-revalidate
+/sheets.json
+  Cache-Control: public, max-age=0, must-revalidate
+/sheet/*
+  Cache-Control: public, max-age=0, must-revalidate
+/skin/*
+  Cache-Control: public, max-age=0, must-revalidate
+/decor/*
+  Cache-Control: public, max-age=0, must-revalidate
+/map/*
+  Cache-Control: public, max-age=0, must-revalidate
+/symbol/*
+  Cache-Control: public, max-age=0, must-revalidate
+/path/*
+  Cache-Control: public, max-age=0, must-revalidate
+/starship-symbol/*
+  Cache-Control: public, max-age=0, must-revalidate
