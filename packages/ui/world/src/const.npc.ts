@@ -211,7 +211,15 @@ export const fadeSecs: Record<
 /** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
 export const psiMaxReach = 8;
 
-export const defaultPsiTune: PsiTune = { reach: 5, speed: 0.4, gap: 0.5, width: 2.5, fadeSecs: 1.2, color: "#9fe8ff" };
+export const defaultPsiTune: PsiTune = {
+  reach: 5,
+  speed: 0.4,
+  gap: 0.5,
+  width: 2.5,
+  opacity: 0.5,
+  fadeSecs: 1.2,
+  color: "#9fe8ff",
+};
 
 /** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
 export const psiTuneRanges = {
@@ -219,6 +227,7 @@ export const psiTuneRanges = {
   speed: [-2, 2, 0.05],
   gap: [0.15, 1.5, 0.05],
   width: [0.5, 8, 0.25],
+  opacity: [0.05, 1, 0.05],
   fadeSecs: [0.1, 3, 0.1],
 } as const;
 
@@ -232,12 +241,14 @@ export type PsiTune = {
   gap: number;
   /** Pixels wide each contour is drawn */
   width: number;
+  /** Of each contour, which glows additively: lower is fainter */
+  opacity: number;
   /** Seconds an influence takes to come, and to go */
   fadeSecs: number;
   color: string;
 };
 
-/** `Sword`: the rope from a pointer's right hand — see `demo_sword` */
+/** `Swords`: wielding, and the rope from a pointer's right hand — see `w.swords` */
 export const swordConfig = {
   /** The hand's tip in the right forearm's frame, in model units — tuned by eye */
   handTip: [0, -0.36, 0] as [number, number, number],
@@ -258,6 +269,16 @@ export const swordConfig = {
   fadeSecs: 0.3,
   sides: 6,
   segments: 24,
+  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
+  reach: 1,
+  /** Seconds they stay defensive at least — longer whilst something stays in reach */
+  holdSecs: 0.5,
+  drawInSecs: 0.15,
+  /** Seconds between raycasts at most, and only once they, their target or a door has changed */
+  sampleSecs: 0.1,
+  /** Metres moved, or radians turned, that call for another raycast */
+  recastMoved: 0.05,
+  recastTurned: 0.05,
 };
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */

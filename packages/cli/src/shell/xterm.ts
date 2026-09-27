@@ -23,7 +23,7 @@ export class TtyXterm {
    */
   historyEnabled = true;
 
-  maxStringifyLength = 2 * scrollback * 100;
+  maxStringifyLength = 40_000; // not tied to `scrollback`, whose size would slow printing a huge value
   /** sugar-high can be slow for strings of length `maxStringifyLength`  */
   maxHighlightLength = 2 * 50 * 100;
 

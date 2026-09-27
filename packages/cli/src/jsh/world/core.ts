@@ -97,7 +97,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
   }
 
   // world commands pause with it — see `docs/jsh-pause.md`
-  api.setPtags({ world: false });
+  api.setPausable("world", false);
   const w = api.getCached(WORLD_KEY);
   const group = api.pauseGroup("world");
   const sub = w.events.subscribe({
@@ -164,7 +164,7 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
   { api, args, w }: JshCli.RunArg,
   opts: { where?(e: JshCli.Event): e is T } = api.jsArg(args),
 ) {
-  api.setPtags({ world: false }); // it reports the pause
+  api.setPausable("world", false); // it reports the pause
   const filter = opts.where ?? (args[0] ? api.generateSelector(api.parseFnOrStr(args[0]), []) : undefined);
   const asyncIterable = api.observableToAsyncIterable(w.events);
   const handlers = api.handleStatus({
@@ -332,18 +332,13 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
           throw e;
         });
     },
-    processHandled: api.handleStatus({
-      cleanup(killed) {
-        killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
-      },
-      onSuspend: () => {
+    processHandled: handleNpcStatus(api, {
+      killed: () => getNpcOrUndefined()?.rejectAll(new Error("killed")),
+      paused: () => {
         const npc = getNpcOrUndefined();
-        if (!npc || w.disabled === true) {
-          return true; // a paused world holds the look itself: undone and redone, the pose would jump
-        }
+        if (!npc) return;
         pendingLooks.unshift({ ...npc.last.look });
         npc.rejectAll(Error("paused"));
-        return true;
       },
     }),
   };
@@ -383,20 +378,11 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       // needed in case we allowed fade to complete
       await api.awaitResume();
     },
-    processHandled: api.handleStatus({
-      cleanup(killed) {
-        killed && getNpcOrUndefined()?.rejectAll(new Error("killed"));
-      },
-      onSuspend: () => {
+    processHandled: handleNpcStatus(api, {
+      killed: () => getNpcOrUndefined()?.rejectAll(new Error("killed")),
+      paused: () => {
         const npc = getNpcOrUndefined();
-        if (!npc || w.disabled === true) {
-          return true; // a paused world holds the move itself: undone and redone, the walk would jump
-        }
-
-        // fadeSpawn must complete
-        if (npc.isFading()) {
-          return true;
-        }
+        if (!npc || npc.isFading()) return; // fadeSpawn must complete
 
         if (npc.isMoving()) {
           pendingMoves.unshift({ ...npc.last.dst });
@@ -405,10 +391,20 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
           pendingMoves.unshift({ ...npc.last.dst });
         }
         npc.rejectAll(Error("paused"));
-        return true;
       },
     }),
   };
+}
+
+/**
+ * Status handling for a command driving an npc: a pause rejects its promise via `paused`, unless the
+ * World's is the only hold — the paused World holds the npc itself, and undone and redone the walk would jump
+ */
+function handleNpcStatus(api: JshCli.RunArg["api"], on: { killed(): void; paused(): void }) {
+  return api.handleStatus({
+    cleanup: (killed) => void (killed && on.killed()),
+    onSuspend: () => (api.isHeldOnlyBy("world") === false && on.paused(), true),
+  });
 }
 
 type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
@@ -779,7 +775,7 @@ export async function park(
 }
 
 export function pause({ api, w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // else it pauses itself
+  api.setPausable("world", false); // else it pauses itself
   w.setDisabled(true);
 }
 
@@ -811,7 +807,7 @@ export function pause({ api, w }: JshCli.RunArg) {
  */
 export async function* pick(ct: JshCli.RunArg) {
   const { args, api, w } = ct;
-  api.setPtags({ world: false }); // picking whilst paused
+  api.setPausable("world", false); // picking whilst paused
 
   // e.g. `pick --long` not `pick long` (filter)
   const opts = ct.api.jsArg(args, {
@@ -928,8 +924,44 @@ export async function* pick(ct: JshCli.RunArg) {
 }
 
 export function play({ api, w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // else it starts paused
+  api.setPausable("world", false); // else it starts paused
   w.setDisabled(false);
+}
+
+/**
+ * The player influences an npc — see `w.player.psi`. Runs until killed, bar a bare `psi`; picking the
+ * player, a kill or a bare `psi` turns it off
+ * ```sh
+ * pick | psi
+ * psi abe
+ * psi
+ * ```
+ */
+export async function psi({ api, args: [arg], w }: JshCli.RunArg) {
+  api.setPausable("world", false); // switches on a pick whilst paused
+  const piped = api.isTtyAt(0) === false;
+  if (arg !== undefined || piped === false) w.player.psi(arg ?? null);
+  if (arg === undefined && piped === false) return; // just turns it off
+
+  /** Whom we influence, again on resume */
+  let chosen = arg ?? null;
+  let onKill = () => {};
+  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
+  const handlers = api.handleStatus({
+    cleanup: () => (w.player.psi(null), onKill()),
+    onSuspend: () => (w.player.psi(null), true),
+    onResume: () => (w.player.psi(chosen), true),
+  });
+  try {
+    while (true) {
+      const datum = await (piped ? Promise.race([api.read(), killed]) : killed); // named, no picks: till killed
+      if (datum === api.eof) break;
+      const npcKey = npcKeyOf(datum);
+      if (npcKey !== undefined && npcKey in w.n) w.player.psi((chosen = npcKey));
+    }
+  } finally {
+    handlers.dispose();
+  }
 }
 
 /**
@@ -1133,7 +1165,7 @@ export async function spawn(
     look: "facing",
   }),
 ) {
-  api.setPtags({ world: false }); // can spawn while paused
+  api.setPausable("world", false); // can spawn while paused
 
   // support e.g. `spawn rob at:$( pick 1 )`
   opts.npcKey ??= getFirstUnknownNaked(opts) ?? (api.isTtyAt(0) ? "npc" : "npc-");
@@ -1167,6 +1199,42 @@ export async function spawn(
         facing: await api.read(),
       })
       .catch(ignoreSpawnErrors);
+  }
+}
+
+/**
+ * Draw or sheathe npcs' swords, or lock them on to an npc — see `w.swords`. The swords are theirs, so a kill
+ * changes nothing. Piped, each pick is drawn, sheathed, or locked on to; picking one of them unlocks
+ * ```sh
+ * sword --on rob kate
+ * sword --off rob
+ * sword rob kate lock:will
+ * sword rob lock:null
+ * pick | sword --on
+ * pick | sword rob kate
+ * ```
+ */
+export async function sword(
+  { api, args, w }: JshCli.RunArg,
+  opts: { on?: boolean; off?: boolean; lock?: null | string } = api.jsArg(args, { "--on": "on", "--off": "off" }),
+) {
+  api.setPausable("world", false); // picks whilst paused
+  const srcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
+
+  if (api.isTtyAt(0)) {
+    if (opts.on === true) w.swords.draw(...srcKeys);
+    else if (opts.off === true) w.swords.sheathe(...srcKeys);
+    else if ("lock" in opts) w.swords.lock(srcKeys, opts.lock ? w.npc.get(opts.lock).key : null);
+    else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
+    return;
+  }
+
+  for (let datum = await api.read(); datum !== api.eof; datum = await api.read()) {
+    const npcKey = npcKeyOf(datum);
+    if (npcKey === undefined || !(npcKey in w.n)) continue;
+    if (opts.on === true) w.swords.draw(npcKey);
+    else if (opts.off === true) w.swords.sheathe(npcKey);
+    else w.swords.lock(srcKeys, srcKeys.includes(npcKey) ? null : npcKey);
   }
 }
 
@@ -1296,6 +1364,13 @@ const wasdConfig = {
 /** How each move is made, as the command line gave it */
 function moveFlags({ fast, backwards, backstep, strafe }: Omit<JshCli.MoveOpts, "to">) {
   return { fast, backwards, backstep, strafe };
+}
+
+/** A named npc, or a picked one's */
+function npcKeyOf(datum: unknown) {
+  if (typeof datum === "string") return datum;
+  const { meta } = (datum as JshCli.PickEvent | undefined) ?? {};
+  return meta?.type === "npc" ? meta.npcKey : undefined;
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {

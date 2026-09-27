@@ -1,7 +1,7 @@
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, useStateRef } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
-import { getRelativePointer, isRMB } from "@npc-cli/util/legacy/dom";
+import { getRelativePointer, isRMB, isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { pause, testNever } from "@npc-cli/util/legacy/generic";
 import { PersonSimpleCircleIcon, PlayIcon } from "@phosphor-icons/react";
 import { type MapControlsProps, PerspectiveCamera, Stats } from "@react-three/drei";
@@ -288,7 +288,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             const bodyPart = (
               jointIndex === 0 ? "label" : npc.skinnedMesh.skeleton.bones[jointIndex]?.name
             ) as NpcBodyPart;
-            return { ...pick, instanceId: pickId, npcKey: npc.key, bodyPart, npc: true, ...w.e.npcToRoom.get(npc.key) };
+            return {
+              ...pick,
+              instanceId: pickId,
+              npcKey: npc.key,
+              bodyPart,
+              npc: true,
+              ...(bodyPart === "label" && { npcLabel: true as const }),
+              ...w.e.npcToRoom.get(npc.key),
+            };
           }
           default:
             throw new ExhaustiveError(pick);
@@ -390,6 +398,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         if (state.cameraMode !== "canonical") return;
         const { controls } = state;
         if (controls === null || state.canvas === null) return;
+        if (e.target !== state.canvas) return; // e.g. scrolling a card, or an overlay's before `forwardWheel`
 
         // a zoom-in aims at the cursor's ground point and pans onto it, ending up CENTRED rather
         // than merely held still as `zoomToCursor` does. Aimed once the zoom has COMMITTED:
@@ -802,8 +811,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         w.speech?.onResize();
       }, 100),
       onKeyDown(e) {
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (isTypingTarget(e)) return;
         state.keysDown.add(e.key.toLowerCase());
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
@@ -829,6 +837,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       },
       onKeyUp(e) {
         state.keysDown.delete(e.key.toLowerCase());
+        if (isTypingTarget(e)) return;
         if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
           state.onLookGesture(false);
         }
@@ -2030,5 +2039,5 @@ export type Picked = {
   | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
-  | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart } & Partial<Geomorph.GmRoomId>)
+  | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)
 );

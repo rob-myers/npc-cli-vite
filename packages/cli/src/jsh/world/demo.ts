@@ -1,5 +1,4 @@
 import { events } from "./core";
-import { npcQuery, plan } from "./plan.main";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -53,8 +52,8 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
 }
 
 /**
- * Idle npcs back off from a walker held up beside them, to one side of its path and facing it —
- * see `w.npc.move`'s `backwards`. Runs until killed.
+ * Idle npcs back off from a walker held up beside them, to one side of its path — strafing, so they
+ * keep their facing rather than turning. Runs until killed.
  * ```sh
  * demo_back_off rob kate
  * ```
@@ -88,19 +87,11 @@ export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
         const walker = presser(w, npc);
         if (heldUp(npc, walker) === false) continue;
 
-        const src = npc.point;
         const [ux, uz] = awayFrom(npc, walker);
-        const by = backOffConfig.by;
-        const op = { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + ux * by, y: src.y + uz * by } } as const;
-        const to = await plan({ api, w, op });
-        if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < backOffConfig.minMove) continue;
-
-        // back onto it, unless it passed by whilst they turned
-        await npc
-          .look({ at: { x: 2 * src.x - to.x, y: 2 * src.y - to.y }, rate: backOffConfig.turnRate })
-          .catch(() => {});
-        if (walker.distanceTo(npc.point) > backOffConfig.dist) continue;
-        void w.npc.move({ npcKey: npc.key, to, backwards: true }).catch(() => {}); // a new push may interrupt
+        const { by, minMove } = backOffConfig;
+        const slide = npc.getSlideResult({ x: ux * by, y: uz * by });
+        if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < minMove) continue;
+        void w.npc.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true }).catch(() => {}); // a new push may interrupt
       }
     }
   } finally {
@@ -136,8 +127,6 @@ const backOffConfig = {
   by: 0.8,
   minMove: 0.2,
   sampleSecs: 0.1,
-  /** Times faster than usual they turn about */
-  turnRate: 2.5,
 };
 
 export async function* demo_log_speech(ct: JshCli.RunArg) {
@@ -163,76 +152,6 @@ export function demo_npc_ui(
   const npc = w.npc.get(opts.npcKey ?? args[0]);
   w.bubble.ensure(npc.key);
 }
-
-/**
- * The player influences one npc at a time, each fading in as the last fades out — see `Psi`. Runs until
- * killed, bar a bare `demo_psi`. Picking the player, killing it, or a bare `demo_psi`, fades it all away
- * ```sh
- * pick | demo_psi
- * demo_psi abe
- * demo_psi
- * ```
- */
-export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // switches on a pick whilst paused
-  /** Whom the player influences, or `null` */
-  let influenced: null | string = null;
-  /** Hands to temples whilst influencing — elbows forward (`psi_avoid`) whilst they'd hit a crowd neighbour or a doorway */
-  const syncHands = () => {
-    const player = w.n[w.player?.key];
-    const near =
-      player?.agent?.neis.some(({ dist }) => dist < psiNearDist ** 2) === true || // `dist` squared
-      (player !== undefined && w.e.npcToDoors[player.key]?.inside != null); // in a doorway
-    const pose = influenced === null ? null : near ? "psi_avoid" : "psi";
-    player?.anim.setUpper(pose, { swapSecs: near ? psiAvoidSecs : undefined });
-  };
-  /** The player, the default, turns it off */
-  const choose = (npcKey = w.player?.key ?? null) => {
-    w.psi.choose(npcKey);
-    influenced = npcKey === w.player?.key ? null : npcKey;
-    syncHands();
-  };
-
-  const piped = api.isTtyAt(0) === false;
-  if (arg !== undefined || piped === false) choose(arg);
-  if (arg === undefined && piped === false) return; // just turns it off
-
-  /** Whom we influence, again on resume */
-  let chosen = arg;
-  // a kill turns it off, and ends a read that may never come; a pause turns it off till resumed
-  let killed = false as boolean; // set by `cleanup`, which narrowing cannot see
-  let onKill = () => {};
-  const killedRead = new Promise<void>((resolve) => (onKill = resolve));
-  const handlers = api.handleStatus({
-    cleanup() {
-      killed = true;
-      choose();
-      onKill();
-    },
-    onSuspend: () => (choose(), true),
-    onResume: () => (chosen !== undefined && choose(chosen), true),
-  });
-  const nearId = setInterval(() => api.isRunning() && syncHands(), 100);
-
-  try {
-    let datum: unknown;
-    const next = () => (piped ? Promise.race([api.read(), killedRead]) : killedRead); // named, no picks: till killed
-    while ((datum = await next()) !== api.eof && killed === false) {
-      const pick = datum as JshCli.PickEvent;
-      const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
-      if (npcKey !== undefined && npcKey in w.n) choose((chosen = npcKey));
-    }
-  } finally {
-    clearInterval(nearId);
-    handlers.dispose();
-  }
-  if (killed === true) throw api.getKillError();
-}
-
-/** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
-const psiNearDist = 0.65;
-/** Seconds the player's elbows take to come forward */
-const psiAvoidSecs = 0.3;
 
 export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
@@ -263,84 +182,3 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
     skins: pointsWithMeta.map(() => skinKeys[Math.floor(skinCount * Math.random())]),
   });
 }
-
-/**
- * `npcKey` points (upper body) whilst `q` over the world toggles it on, drawing in to `defensive` for at
- * least `holdSecs` whenever the arm would touch a crowd neighbour, a wall or a closed door. Their `Sword`
- * locks on to the npc picked last whilst nothing is between them; picking `npcKey` unlocks it
- * ```sh
- * pick | demo_sword rob
- * ```
- */
-export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
-  const npc = w.npc.get(npcKey);
-  /** The npc picked last, bar themself */
-  let target: null | string = null;
-  let [on, holdUntil] = [false, 0]; // world seconds they stay defensive until
-  const defensive = () => holdUntil > w.timer.getElapsedTime();
-  const show = () => {
-    const pose = on ? (defensive() ? "defensive" : "point") : null;
-    npc.anim.setUpper(pose, { swapSecs: defensive() ? demoSwordConfig.drawInSecs : undefined }); // in before the hand goes through
-    if (pose !== "point") w.sword.sheathe(npc.key);
-  };
-  const onKey = (e: KeyboardEvent) => void (e.key === "q" && api.isRunning() && ((on = !on), show()));
-  w.rootEl.addEventListener("keydown", onKey);
-  // a pause leaves it drawn, as the world is
-  const handlers = api.handleStatus({
-    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show(), (npc.anim.face.aim = null)),
-  });
-
-  const readPicks = async () => {
-    for (let datum = await api.read(); datum !== api.eof; datum = await api.read()) {
-      const pick = datum as JshCli.PickEvent;
-      const key = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
-      if (key !== undefined && key in w.n) target = key === npc.key ? null : key;
-    }
-  };
-  if (api.isTtyAt(0) === false) readPicks().catch(() => {}); // a kill ends it
-
-  try {
-    while (true) {
-      const at = target === null ? undefined : w.n[target]?.point;
-      npc.anim.face.aim = at === undefined ? null : { at, rate: 1, untilRest: false }; // whom they'd strike, moving or not
-      if (on && (await armBlocked(w, npc))) holdUntil = w.timer.getElapsedTime() + demoSwordConfig.holdSecs;
-      show();
-      const locked = on && (await inSight(w, npc, target));
-      if (on && !defensive()) w.sword.aim(npc.key, locked ? target : null); // `on` again: killed meanwhile?
-      await api.sleep(demoSwordConfig.sampleSecs); // a kill rejects it
-    }
-  } finally {
-    handlers.dispose();
-  }
-}
-
-/** Is a crowd neighbour in front of `npc`, or a wall or closed door within `reach`? */
-async function armBlocked(w: JshCli.WorldState, npc: JshCli.Npc) {
-  const [fx, fz] = [-Math.sin(npc.rotation.y), -Math.cos(npc.rotation.y)]; // facing
-  const { x, z } = npc.position;
-  const npcAhead = (npc.agent?.neis ?? []).some(({ agentId }) => {
-    const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
-    return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx); // within 45° of facing
-  });
-  if (npcAhead) return true;
-  const hand = { x: x + fx * demoSwordConfig.reach, y: z + fz * demoSwordConfig.reach };
-  const { hit } = await w.e.raycast(npc.point, hand).catch(() => ({ hit: true })); // off the map throws
-  return hit !== null;
-}
-
-/** Is neither a wall nor a closed door between `npc` and `targetKey`? */
-async function inSight(w: JshCli.WorldState, npc: JshCli.Npc, targetKey: null | string) {
-  const other = targetKey === null ? undefined : w.n[targetKey];
-  if (other === undefined) return false;
-  const { hit } = await w.e.raycast(npc.point, other.point).catch(() => ({ hit: true })); // off the map throws
-  return hit === null;
-}
-
-const demoSwordConfig = {
-  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
-  reach: 1,
-  /** Seconds they stay defensive at least — longer whilst something stays in reach */
-  holdSecs: 0.5,
-  drawInSecs: 0.15,
-  sampleSecs: 0.1,
-};

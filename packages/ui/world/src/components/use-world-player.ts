@@ -1,5 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
+import { isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { error, warn } from "@npc-cli/util/legacy/generic";
+import { useEffect } from "react";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
 import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
@@ -27,6 +29,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         return restored;
       },
+      onKeyDown(e) {
+        if (isTypingTarget(e) || e.repeat === true) return;
+        if ((e.key === "q" || e.key === "Q") && w.n[state.key] !== undefined) w.swords.toggle(state.key);
+      },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
         if (npc === undefined) return;
@@ -39,6 +45,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           // the moment of the press lands behind
           track: () => w.n[state.key]?.point,
         });
+      },
+      psi(npcKey) {
+        if (npcKey !== null) w.npc.get(npcKey); // throws for an unknown npc
+        w.psi.choose(npcKey ?? state.key);
       },
       persist() {
         w.e.persistNpcs();
@@ -124,6 +134,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   );
 
   w.player = state;
+
+  useEffect(() => {
+    if (w.rootEl === null) return;
+    const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
+    w.rootEl.addEventListener("keydown", onKeyDown);
+    return () => w.rootEl?.removeEventListener("keydown", onKeyDown);
+  }, [w.rootEl]);
 }
 
 export type State = {
@@ -132,10 +149,14 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
+  /** The player's controls, e.g. `q` draws or sheathes their sword — the view's own keys are WorldView's */
+  onKeyDown(e: KeyboardEvent): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
+  /** Influence `npcKey` — `null`, or the player themself, turns it off. See `Psi` */
+  psi(npcKey: null | string): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;
   /** Spawns the player at one of the map's `meta.spawn` decor points, at random — `false` if it has none */

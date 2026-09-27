@@ -57,7 +57,7 @@ export function addStdinToArgs(dataFromStdin: any, args: any[]): any[] {
  */
 export function applyPtagUpdates(ptags: Ptags, updates: Ptags) {
   for (const [k, v] of Object.entries(updates)) {
-    if (v == null) delete ptags[k];
+    if (v === null || v === undefined) delete ptags[k];
     else ptags[k] = v;
   }
   return ptags;

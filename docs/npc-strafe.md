@@ -24,12 +24,15 @@ point, tracked, or a world angle (as `rotation.y`). At the top of `NpcAnimation.
 turning to it is the usual exponential ease.
 
 - **A look whilst strafing** (`npc.look` when `strafe` and moving) does not stop them or turn them on
-  the spot: it sets the aim to the look's angle, `untilRest`, and returns at once. `startIdle` clears
-  an `untilRest` aim, so it lasts for the move. Otherwise a look is the usual timed turn on the spot.
+  the spot: it sets the aim to the look's angle, `untilRest`, and returns at once. `startIdle` clears an
+  `untilRest` aim, so it lasts for the move, and turns them the rest of the way on the spot, since
+  they may arrive before the ease lands. Otherwise a look is the usual timed turn on the spot.
 - **jsh `aim`**: `aim rob at:$( pick 1 )`, `aim rob at:1.57`, `aim rob at:kate rate:0.5`; a bare
   `aim rob` clears it. Piped (`pick --right | aim rob`), each pick re-aims them until killed, and
   picking them clears it.
-- `demo_sword` aims at the picked npc every sample.
+- A drawn sword (`w.swords`, jsh `sword`, `q` for the player) aims at its lock's target every tick, but
+  replaces or clears only an aim it set, so a look still turns them. Drawn at nobody, it holds their
+  facing with an aim at `rate` `0`, which turns them not at all, so every move strafes.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 

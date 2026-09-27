@@ -138,11 +138,7 @@ export class NpcAnimation {
 
     const { aim } = face;
     if (aim && face.turn === null) {
-      const { at } = aim;
-      face.target =
-        typeof at === "number"
-          ? at
-          : geomService.getThreeRotationY(at.y - this.npc.position.z, at.x - this.npc.position.x);
+      face.target = this.bearingOf(aim.at);
       face.rate = aim.rate;
     }
 
@@ -372,9 +368,19 @@ export class NpcAnimation {
     }
 
     this.face.rate = 0;
-    if (this.face.aim?.untilRest === true) this.face.aim = null;
+    const { aim } = this.face;
+    if (aim?.untilRest === true) this.face.aim = null;
     this.setPose(keyOf(this.idleClip), { force: this.moving });
     this.moving = false;
+    // a look on the move they arrived before finishing: the rest of it on the spot
+    if (aim?.untilRest === true) this.lookAt(this.bearingOf(aim.at), 0, aim.rate);
+  }
+
+  /** `face.aim.at` as a world angle, a point's from where they stand */
+  bearingOf(at: Geom.VectJson | number) {
+    return typeof at === "number"
+      ? at
+      : geomService.getThreeRotationY(at.y - this.npc.position.z, at.x - this.npc.position.x);
   }
 
   /**

@@ -42,6 +42,8 @@
 - improve hmr (avoid full page reload): packages/util/src/index.ts into individual barrels
   - e.g. for QueryClientApi
 
+### Navigation
+
 ### Performance
 
 - consider pruning navcat of unused stuff
@@ -79,11 +81,15 @@
 
 - 🚧 clarify as ability
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
-  - ✅ can modulate reach/speed/gap/fade/colour
+  - ✅ can modulate reach/speed/gap/fade/colour/opacity
     - ideally with controls
   - listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech
     - can suggest anger, lethargy, restless
+
+- ✅ `demo_psi` -> `psi` wrapping `w.player.psi`
+- 🚧 better ui for psi
+  - e.g. `pick --long meta.npcLabel | psi`
 - check mobile performance
 
 ### Sword and Strafe
@@ -106,15 +112,23 @@
 
 - 🚧 investigate shooting effects
   - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
-  - 🚧 refine...
+  - ✅ `demo_sword` forces strafe whilst wielding sword
+    - expect look controls available for player e.g. `pick --long | look npc:rob --force`
+  - beam is straight and mainly transparent except at target
+  - can lock on to body part
 
-- handle `demo_psi` vs `demo_sword` blend fighting
+- ✅ refactor demo_sword into `<Swords>`
+  - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
+  - ✅ `sword` mutates sword wield/sheathe/lock
+    - `sword rob lock:npc-1`
+
+- handle psi vs sword blend fighting
 
 ### Unorganised Bugs
 
 - ✅ pause World while `move` then resume is jerky
 - ✅ BUG only some room labels shown when change to map 301-101-301
-- npc labels should be invisible during object-pick
+- ❌ npc labels should be invisible during object-pick
 
 ### Worker
 
@@ -148,9 +162,10 @@
 
 ## Jsh and Jobs
 
-- Jobs: can be confusing whether process is paused due to World or explicitly
+- 🚧 Jobs: can be confusing whether process is paused due to World or explicitly
   - indicate process tags
   - put back process tag `always` and can set from ui
+
 - Jobs: indicate stale processes after hmr
 
 ## MapEdit

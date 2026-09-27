@@ -34,6 +34,7 @@ import type { FadeRooms } from "../service/fade-rooms";
 import type { PlayerLight } from "../service/player-light";
 import { type RoomSlots, slotUvPerMetre } from "../service/room-slots";
 import { getWorldStore } from "../service/storage";
+import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
@@ -52,6 +53,7 @@ export default function Psi() {
       self: { presence: 0, target: 0 }, // off till someone is influenced
       influenced: [],
       pending: undefined,
+      handsOn: null,
       tickedMs: performance.now(),
 
       choose(npcKey) {
@@ -97,6 +99,7 @@ export default function Psi() {
         }
 
         const player = w.player === undefined ? undefined : w.n[w.player.key];
+        state.syncHands(player);
         const others = state.influenced.filter((x) => x.npcKey !== player?.key);
         const off = player === undefined || (self.presence === 0 && others.length === 0);
         state.mesh.visible = state.shown && off === false; // else no draw call
@@ -114,6 +117,28 @@ export default function Psi() {
         state.slotCount.value = slots.length;
         state.geo.instanceCount = slots.length;
         state.npcTex.needsUpdate = true;
+      },
+      syncHands(player) {
+        if (state.handsOn !== (player?.key ?? null)) {
+          const prev = state.handsOn === null ? undefined : w.n[state.handsOn];
+          if (prev !== undefined && isPsiPose(prev.anim.upper.key)) prev.anim.setUpper(null); // the player changed
+          state.handsOn = player?.key ?? null;
+        }
+        if (player === undefined) return;
+
+        const { nearDist, avoidSecs } = psiConfig;
+        const influencing = state.influenced.some((x) => x.target === 1 && x.npcKey !== player.key);
+        const near =
+          player.agent?.neis.some(({ dist }) => dist < nearDist ** 2) === true || // `dist` squared
+          w.e.npcToDoors[player.key]?.inside != null; // in a doorway
+        const pose = influencing === false ? null : near ? "psi_avoid" : "psi";
+        const { upper } = player.anim;
+        const shown = upper.target === 1 ? upper.key : null;
+        if (pose === null) {
+          if (isPsiPose(shown)) player.anim.setUpper(null);
+        } else if (pose !== shown && (shown === null || isPsiPose(shown))) {
+          player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined }); // not over another's e.g. `point`
+        }
       },
       snap() {
         for (const x of [state.self, ...state.influenced]) x.presence = x.target;
@@ -140,10 +165,11 @@ export default function Psi() {
       },
       syncTune() {
         state.tune = { ...defaultPsiTune, ...state.tune }; // a field added since, e.g. over hmr
-        const { reach, gap, width, color } = state.tune;
+        const { reach, gap, width, opacity, color } = state.tune;
         state.reach.value = Math.min(reach, psiMaxReach);
         state.gap.value = gap;
         state.width.value = width;
+        state.opacity.value = opacity;
         state.color.value.set(color);
       },
       setShown(shown) {
@@ -185,6 +211,8 @@ export type State = Resources & {
   influenced: (Presence & { npcKey: string })[];
   /** Who is next influenced, once the last has faded out — `null` for nobody */
   pending: undefined | null | string;
+  /** Whose hands we move: the player, as last seen */
+  handsOn: null | string;
   tickedMs: number;
 
   /** Influence `npcKey` instead, or nobody. The player themself turns it all off, till the next */
@@ -192,6 +220,8 @@ export type State = Resources & {
   onTick(): void;
   /** Every fade straight to its end */
   snap(): void;
+  /** The player's hands to their temples whilst influencing, elbows forward (`psi_avoid`) near a neighbour or in a doorway */
+  syncHands(player: undefined | Npc): void;
   /** Each geomorph's inverse transform and local bounds, for the shader to find a pixel's room */
   syncGms(): void;
   /** Fade out the influence and the player's rings with it, as choosing the player does */
@@ -234,6 +264,7 @@ function createPsiResources() {
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
   const width = uniform(defaultPsiTune.width);
+  const opacity = uniform(defaultPsiTune.opacity);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
@@ -263,6 +294,7 @@ function createPsiResources() {
     reach,
     gap,
     width,
+    opacity,
     color,
     gmValues,
     gmArray,
@@ -271,7 +303,7 @@ function createPsiResources() {
 }
 
 function psiNodes(
-  { npcTex, slotCount, flowPhase, reach, gap, width, color, gmArray, gmCount }: Resources,
+  { npcTex, slotCount, flowPhase, reach, gap, width, opacity, color, gmArray, gmCount }: Resources,
   {
     fadeRoomsFx,
     playerLight,
@@ -286,7 +318,7 @@ function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, alpha, lift, cell } = psiConfig;
+  const { reachFade, blend, lift, cell } = psiConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
@@ -383,7 +415,7 @@ function psiNodes(
 
     const a = objectPick
       .notEqual(0)
-      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(alpha));
+      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity));
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
     return playerLight.applyLightRgba(vec4(color, a));
   })();
@@ -396,14 +428,20 @@ const psiConfig = {
   reachFade: 0.75,
   /** Metres over which the player's and another's rings merge: smaller gives a sharper waist */
   blend: 0.3,
-  alpha: 0.5,
   /** Metres the relief's rim sits above the floor */
   lift: 0,
   /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */
   headAbove: 0.24,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
+  /** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
+  nearDist: 0.65,
+  /** Seconds the player's elbows take to come forward */
+  avoidSecs: 0.3,
 } as const;
+
+/** Ours to clear: never another's upper pose e.g. `point` */
+const isPsiPose = (key: null | string) => key === "psi" || key === "psi_avoid";
 
 /** The player, whom they influence, and whom they did */
 const MAX_PSI = 3;

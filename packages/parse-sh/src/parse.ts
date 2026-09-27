@@ -70,33 +70,37 @@ export async function parse(
   const textBuffer = encoder.encode(text);
   const uStopAt = encoder.encode(stopAt);
 
-  const filePathPointer = wasmAlloc(filePath.byteLength);
-  new Uint8Array(memory.buffer).set(filePath, filePathPointer);
-  const textPointer = wasmAlloc(textBuffer.byteLength);
-  new Uint8Array(memory.buffer).set(textBuffer, textPointer);
-  const stopAtPointer = wasmAlloc(uStopAt.byteLength);
-  new Uint8Array(memory.buffer).set(uStopAt, stopAtPointer);
+  /** `wasmAlloc` returns the slice's 12-byte header, whose first word points at its bytes: written there, not over the header */
+  const put = (bytes: Uint8Array) => {
+    const header = wasmAlloc(bytes.byteLength);
+    const data = new Uint32Array(memory.buffer, header, 1)[0];
+    new Uint8Array(memory.buffer).set(bytes, data);
+    return { header, data };
+  };
+  const filePathAt = put(filePath);
+  const textAt = put(textBuffer);
+  const stopAtAt = put(uStopAt);
 
   const resultPointer = (interactive === true ? transpiledInteractiveParse : transpiledParse)(
-    filePathPointer,
+    filePathAt.data,
     filePath.byteLength,
     filePath.byteLength,
 
-    textPointer,
+    textAt.data,
     textBuffer.byteLength,
     textBuffer.byteLength,
 
     keepComments,
     variant,
-    stopAtPointer,
+    stopAtAt.data,
     uStopAt.byteLength,
     uStopAt.byteLength,
     recoverErrors,
   );
 
-  wasmFree(filePathPointer);
-  wasmFree(textPointer);
-  wasmFree(stopAtPointer);
+  wasmFree(filePathAt.header);
+  wasmFree(textAt.header);
+  wasmFree(stopAtAt.header);
 
   if (resultPointer === 0) {
     if (interactive === true) {
