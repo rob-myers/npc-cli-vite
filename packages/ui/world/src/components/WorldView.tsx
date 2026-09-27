@@ -63,7 +63,7 @@ import {
   npcOutlineUid,
   syncNpcOutlineWidth,
 } from "../service/npc-outline";
-import { decodePick } from "../service/pick";
+import { decodeNpcPickId, decodePick, type NpcBodyPart } from "../service/pick";
 import { createPlayerFrontier, type PlayerFrontier } from "../service/player-frontier";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
@@ -282,9 +282,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             return { ...pick, debugPoint: true, ...decoded };
           }
           case "npc": {
-            const npc = w.npc.byPickId[pick.instanceId];
-            if (npc) return { ...pick, npcKey: npc.key, npc: true, ...w.e.npcToRoom.get(npc.key) };
-            return null;
+            const { pickId, jointIndex } = decodeNpcPickId(pick.instanceId);
+            const npc = w.npc.byPickId[pickId];
+            if (npc === undefined) return null;
+            const bodyPart = (
+              jointIndex === 0 ? "label" : npc.skinnedMesh.skeleton.bones[jointIndex]?.name
+            ) as NpcBodyPart;
+            return { ...pick, instanceId: pickId, npcKey: npc.key, bodyPart, npc: true, ...w.e.npcToRoom.get(npc.key) };
           }
           default:
             throw new ExhaustiveError(pick);
@@ -304,9 +308,22 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           case "wall":
             mesh = getTempInstanceMesh(w.wall.inst as THREE.InstancedMesh, picked.instanceId);
             break;
-          case "npc":
-            mesh = w.npc.npc[picked.npcKey].skinnedMesh;
+          case "npc": {
+            const npc = w.npc.npc[picked.npcKey];
+            if (picked.bodyPart === "label") {
+              // a billboard only the vertex shader spreads out, so the ray cannot hit it
+              const { ray } = state.raycaster;
+              const point = ray.closestPointToPoint(npc.getLabelPosition(), new THREE.Vector3());
+              return {
+                distance: point.distanceTo(ray.origin),
+                point,
+                object: npc.skinnedMesh,
+                normal: ray.direction.clone().negate(),
+              };
+            }
+            mesh = npc.skinnedMesh;
             break;
+          }
           case "door":
             mesh = getTempInstanceMesh(w.door.inst as THREE.InstancedMesh, picked.instanceId);
             break;
@@ -1387,9 +1404,14 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         // 🔔 SelectAnyType fixes horrible: Expression produces a union type that is too complex to represent.
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
-      withPickOutputId(typeId, idUniform) {
+      withPickOutputId(typeId, idUniform, forceAlpha) {
         const idx = float(idUniform);
-        const pickVec = vec4(float(typeId).div(255), idx.div(256).floor().div(255), idx.mod(256).div(255), output.a);
+        const pickVec = vec4(
+          float(typeId).div(255),
+          idx.div(256).floor().div(255),
+          idx.mod(256).div(255),
+          forceAlpha ?? output.a,
+        );
         return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
@@ -1805,7 +1827,7 @@ export type State = {
    */
   withPickOutput(typeId: number, forceAlpha?: number): THREE.Node;
   /** Like `withPickOutput` but uses a uniform instead of `instanceIndex` (for non-instanced meshes). */
-  withPickOutputId(typeId: number, idUniform: THREE.Node<"float">): THREE.Node;
+  withPickOutputId(typeId: number, idUniform: THREE.Node<"float">, forceAlpha?: number): THREE.Node;
   setPostProcessingEnabled(next?: boolean): void;
   /** Borders the npcs, turning the post pass itself on if it is off */
   setNpcOutlineEnabled(next?: boolean): void;
@@ -2008,5 +2030,5 @@ export type Picked = {
   | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
-  | ({ type: "npc"; npcKey: string } & Partial<Geomorph.GmRoomId>)
+  | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart } & Partial<Geomorph.GmRoomId>)
 );

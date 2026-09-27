@@ -113,7 +113,6 @@
 ### Unorganised Bugs
 
 - ✅ pause World while `move` then resume is jerky
-
 - ✅ BUG only some room labels shown when change to map 301-101-301
 - npc labels should be invisible during object-pick
 
@@ -150,7 +149,8 @@
 ## Jsh and Jobs
 
 - Jobs: can be confusing whether process is paused due to World or explicitly
-  - indicate process tags?
+  - indicate process tags
+  - put back process tag `always` and can set from ui
 - Jobs: indicate stale processes after hmr
 
 ## MapEdit
@@ -202,7 +202,7 @@
 
 ## Shell
 
-- 🚧 js in a jsArg value, e.g. `aim rob at:(Math.PI)`, is a ParseError
+- js in a jsArg value, e.g. `aim rob at:(Math.PI)`, is a ParseError
   - mvdan/sh: "a command can only contain words and redirects; encountered (" (`parse.ts`)
   - workaround: quote it, `aim rob at:'(Math.PI)'` — `parseJsArg` evaluates a value starting `(`
 

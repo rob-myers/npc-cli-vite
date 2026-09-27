@@ -14,7 +14,7 @@
 ### Bone Hierarchy
 ```
 skeleton-root
-├── upperbody
+├── hips
 │   └── stomach
 │       └── chest
 │           ├── head
@@ -22,11 +22,11 @@ skeleton-root
 │           │   └── rightforearm
 │           └── leftarm
 │               └── leftforearm
-├── rightleg
-│   └── rightknee
+├── rightthigh
+│   └── rightshin
 │       └── rightfoot
-└── leftleg
-    └── leftknee
+└── leftthigh
+    └── leftshin
         └── leftfoot
 ```
 
@@ -62,7 +62,7 @@ The shuffle was originally a copy of the walk animation. It has been rewritten w
 | Bone | Channel | t=0 | t=0.25 | t=0.5 | t=0.75 | t=1 | Description |
 |------|---------|-----|--------|-------|--------|-----|-------------|
 | **skeleton-root** | position | [0,-0.1,0] | [0,0.1,0] | [0,-0.1,0] | [0,0.1,0] | [0,-0.1,0] | Body bounce on each beat |
-| **upperbody** | rotation | [0,0,0] | [0,0,2] | [0,0,0] | [0,0,-2] | [0,0,0] | Side-to-side sway |
+| **hips** | rotation | [0,0,0] | [0,0,2] | [0,0,0] | [0,0,-2] | [0,0,0] | Side-to-side sway |
 | **chest** | rotation | [0,0,0] | [0,0,1] | [0,0,0] | [0,0,-1] | [0,0,0] | Subtle twist |
 | **chest** | position | [0,0,0] | [0,0.05,0] | [0,0,0] | [0,0.05,0] | [0,0,0] | Bob with beat |
 | **head** | rotation | [0,0,0] | [2,0,0] | [0,0,0] | [-2,0,0] | [0,0,0] | Nodding |
@@ -71,11 +71,11 @@ The shuffle was originally a copy of the walk animation. It has been rewritten w
 | **rightforearm** | rotation | [0,0,0] | [4,0,0] | [0,0,0] | [-4,0,0] | [0,0,0] | Forearm follow-through |
 | **leftarm** | rotation | [0,0,0] | [-6,0,-4] | [0,0,0] | [6,0,4] | [0,0,0] | Opposite arm swing |
 | **leftforearm** | rotation | [0,0,0] | [-4,0,0] | [0,0,0] | [4,0,0] | [0,0,0] | Opposite forearm |
-| **rightleg** | rotation | [0,0,0] | [4,0,0] | [0,0,0] | [-4,0,0] | [0,0,0] | Leg lift |
-| **rightknee** | rotation | [0,0,0] | [-6,0,0] | [0,0,0] | [-6,0,0] | [0,0,0] | Knee bends backward |
-| **rightknee** | position | [0,0,0] | [0,0.05,0] | [0,0,0] | [0,0.05,0] | [0,0,0] | Knee bob |
+| **rightthigh** | rotation | [0,0,0] | [4,0,0] | [0,0,0] | [-4,0,0] | [0,0,0] | Leg lift |
+| **rightshin** | rotation | [0,0,0] | [-6,0,0] | [0,0,0] | [-6,0,0] | [0,0,0] | Knee bends backward |
+| **rightshin** | position | [0,0,0] | [0,0.05,0] | [0,0,0] | [0,0.05,0] | [0,0,0] | Knee bob |
 | **rightfoot** | rotation | [0,0,0] | [4,0,0] | [0,0,0] | [4,0,0] | [0,0,0] | Foot tilt |
-| **leftleg** | rotation | [0,0,0] | [-4,0,0] | [0,0,0] | [4,0,0] | [0,0,0] | Opposite leg lift |
-| **leftknee** | rotation | [0,0,0] | [-6,0,0] | [0,0,0] | [-6,0,0] | [0,0,0] | Opposite knee bends backward |
-| **leftknee** | position | [0,0,0] | [0,0.05,0] | [0,0,0] | [0,0.05,0] | [0,0,0] | Opposite knee bob |
+| **leftthigh** | rotation | [0,0,0] | [-4,0,0] | [0,0,0] | [4,0,0] | [0,0,0] | Opposite leg lift |
+| **leftshin** | rotation | [0,0,0] | [-6,0,0] | [0,0,0] | [-6,0,0] | [0,0,0] | Opposite knee bends backward |
+| **leftshin** | position | [0,0,0] | [0,0.05,0] | [0,0,0] | [0,0.05,0] | [0,0,0] | Opposite knee bob |
 | **leftfoot** | rotation | [0,0,0] | [4,0,0] | [0,0,0] | [4,0,0] | [0,0,0] | Opposite foot tilt |
