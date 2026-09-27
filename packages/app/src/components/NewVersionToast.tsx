@@ -4,15 +4,16 @@ import { ArrowClockwiseIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
 
-/** Served by `buildIdPlugin` */
+/** Both written by `buildIdPlugin` */
 const versionJsonPath = "/version.json";
+const ourBuildId = document.querySelector<HTMLMetaElement>('meta[name="build-id"]')?.content ?? "";
 /** A returning tab need not hammer the check */
 const minCheckMs = 60 * 1000;
 const touchDevice = isTouchDevice();
 
 /**
  * A tab left open across a deploy runs superseded code, which no cache header can fix.
- * We compare our baked-in `__BUILD_ID__` against the deployed one whenever the tab resurfaces.
+ * We compare our html's build id against the deployed one whenever the tab resurfaces.
  */
 export function NewVersionToast() {
   const state = useStateRef(() => ({
@@ -21,12 +22,12 @@ export function NewVersionToast() {
 
     async check(force = false) {
       const now = Date.now();
-      if (state.stale || (!force && now - state.lastCheckMs < minCheckMs)) return;
+      if (!ourBuildId || state.stale || (!force && now - state.lastCheckMs < minCheckMs)) return;
       state.lastCheckMs = now;
       try {
         const res = await fetch(versionJsonPath, { cache: "no-store" });
         const { id } = await res.json();
-        if (typeof id === "string" && id !== __BUILD_ID__) state.set({ stale: true });
+        if (typeof id === "string" && id !== ourBuildId) state.set({ stale: true });
       } catch {} // offline, or mid-deploy
     },
     onVisible() {

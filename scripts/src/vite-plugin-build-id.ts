@@ -2,10 +2,15 @@ import type { Plugin } from "vite";
 
 /** Where `<NewVersionToast>` looks for the deployed build's id */
 export const versionJsonPath = "/version.json";
+/** `<meta name>` carrying the running build's id */
+export const buildIdMetaName = "build-id";
 
 /**
- * Gives the app a per-build `__BUILD_ID__` and serves the same id at `/version.json`,
+ * Serves a per-build id at `/version.json`, and tags `index.html` with the same one,
  * so a long-lived tab can notice it is running superseded code.
+ *
+ * The id goes in the html rather than a `define`, which would inline it into a hashed
+ * chunk and so rename every chunk it reaches on each build.
  */
 export function buildIdPlugin(): Plugin {
   const buildId = Date.now().toString(36);
@@ -14,8 +19,8 @@ export function buildIdPlugin(): Plugin {
   return {
     name: "build-id",
 
-    config() {
-      return { define: { __BUILD_ID__: JSON.stringify(buildId) } };
+    transformIndexHtml() {
+      return [{ tag: "meta", attrs: { name: buildIdMetaName, content: buildId }, injectTo: "head" }];
     },
 
     generateBundle() {
