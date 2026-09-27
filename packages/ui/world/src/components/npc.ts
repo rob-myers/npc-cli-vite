@@ -432,7 +432,7 @@ export class Npc {
       return;
     }
     if (this.anim.strafe === true && this.isMoving() === true) {
-      this.anim.face.aim = { at: target, rate, untilRest: true }; // on the move: eased round, the move kept
+      this.anim.face.aim = { at: groundPoint, rate, untilRest: true }; // on the move: eased round, the move kept
       return;
     }
 
