@@ -76,11 +76,11 @@ later descendants.
   default, so an opted-out process's descendants stay out. A job keeps running only if none of its
   processes is a member: in `pick | move`, `move` makes the whole job pause, `pick` included.
 
-Opted out today, because each must work whilst the World is paused (e.g. `pick | demo_psi`):
+Opted out today, because each must work whilst the World is paused (e.g. `pick | psi`):
 
 - `pick` (picking whilst paused),
 - `events` (it reports the pause itself),
-- `demo_psi` (switches on a pick),
+- `psi` (switches on a pick),
 - `spawn` (spawning whilst paused),
 - `pause` and `play` (else `pause` would pause itself, and `play` start paused),
 - `awaitWorld` (it sets up the group).

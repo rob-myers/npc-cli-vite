@@ -933,6 +933,42 @@ export function play({ api, w }: JshCli.RunArg) {
 }
 
 /**
+ * The player influences an npc — see `w.player.psi`. Runs until killed, bar a bare `psi`; picking the
+ * player, a kill or a bare `psi` turns it off
+ * ```sh
+ * pick | psi
+ * psi abe
+ * psi
+ * ```
+ */
+export async function psi({ api, args: [arg], w }: JshCli.RunArg) {
+  api.setPtags({ world: false }); // switches on a pick whilst paused
+  const piped = api.isTtyAt(0) === false;
+  if (arg !== undefined || piped === false) w.player.psi(arg ?? null);
+  if (arg === undefined && piped === false) return; // just turns it off
+
+  /** Whom we influence, again on resume */
+  let chosen = arg ?? null;
+  let onKill = () => {};
+  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
+  const handlers = api.handleStatus({
+    cleanup: () => (w.player.psi(null), onKill()),
+    onSuspend: () => (w.player.psi(null), true),
+    onResume: () => (w.player.psi(chosen), true),
+  });
+  try {
+    while (true) {
+      const datum = await (piped ? Promise.race([api.read(), killed]) : killed); // named, no picks: till killed
+      if (datum === api.eof) break;
+      const npcKey = npcKeyOf(datum);
+      if (npcKey !== undefined && npcKey in w.n) w.player.psi((chosen = npcKey));
+    }
+  } finally {
+    handlers.dispose();
+  }
+}
+
+/**
  * Test if ray hits walls or closed doors.
  * - Point via `ray point`
  * - Detail via `ray detail`
@@ -1296,6 +1332,13 @@ const wasdConfig = {
 /** How each move is made, as the command line gave it */
 function moveFlags({ fast, backwards, backstep, strafe }: Omit<JshCli.MoveOpts, "to">) {
   return { fast, backwards, backstep, strafe };
+}
+
+/** A named npc, or a picked one's */
+function npcKeyOf(datum: unknown) {
+  if (typeof datum === "string") return datum;
+  const { meta } = (datum as JshCli.PickEvent | undefined) ?? {};
+  return meta?.type === "npc" ? meta.npcKey : undefined;
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {

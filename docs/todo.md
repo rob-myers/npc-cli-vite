@@ -86,6 +86,9 @@
   - listen to their thoughts in WorldSpeech
   - player can think in WorldSpeech
     - can suggest anger, lethargy, restless
+
+- ✅ `demo_psi` -> `psi` wrapping `w.player.psi`
+- 🚧 better ui for psi
 - check mobile performance
 
 ### Sword and Strafe
@@ -113,8 +116,8 @@
   - beam is straight and mainly transparent except at target
   - can lock on to body part
 
-- 🚧 refactor demo_psi into core
-- 🚧 refactor demo_sword into core
+- 🚧 refactor demo_sword into npc
+
 - handle psi vs sword blend fighting
 
 ### Unorganised Bugs

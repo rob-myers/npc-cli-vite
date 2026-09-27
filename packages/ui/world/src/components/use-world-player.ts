@@ -40,6 +40,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           track: () => w.n[state.key]?.point,
         });
       },
+      psi(npcKey) {
+        if (npcKey !== null) w.npc.get(npcKey); // throws for an unknown npc
+        w.psi.choose(npcKey ?? state.key);
+      },
       persist() {
         w.e.persistNpcs();
         w.e.persistDecor();
@@ -136,6 +140,8 @@ export type State = {
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
+  /** Influence `npcKey` — `null`, or the player themself, turns it off. See `Psi` */
+  psi(npcKey: null | string): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;
   /** Spawns the player at one of the map's `meta.spawn` decor points, at random — `false` if it has none */

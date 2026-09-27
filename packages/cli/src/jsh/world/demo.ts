@@ -164,76 +164,6 @@ export function demo_npc_ui(
   w.bubble.ensure(npc.key);
 }
 
-/**
- * The player influences one npc at a time, each fading in as the last fades out — see `Psi`. Runs until
- * killed, bar a bare `demo_psi`. Picking the player, killing it, or a bare `demo_psi`, fades it all away
- * ```sh
- * pick | demo_psi
- * demo_psi abe
- * demo_psi
- * ```
- */
-export async function demo_psi({ api, args: [arg], w }: JshCli.RunArg) {
-  api.setPtags({ world: false }); // switches on a pick whilst paused
-  /** Whom the player influences, or `null` */
-  let influenced: null | string = null;
-  /** Hands to temples whilst influencing — elbows forward (`psi_avoid`) whilst they'd hit a crowd neighbour or a doorway */
-  const syncHands = () => {
-    const player = w.n[w.player?.key];
-    const near =
-      player?.agent?.neis.some(({ dist }) => dist < psiNearDist ** 2) === true || // `dist` squared
-      (player !== undefined && w.e.npcToDoors[player.key]?.inside != null); // in a doorway
-    const pose = influenced === null ? null : near ? "psi_avoid" : "psi";
-    player?.anim.setUpper(pose, { swapSecs: near ? psiAvoidSecs : undefined });
-  };
-  /** The player, the default, turns it off */
-  const choose = (npcKey = w.player?.key ?? null) => {
-    w.psi.choose(npcKey);
-    influenced = npcKey === w.player?.key ? null : npcKey;
-    syncHands();
-  };
-
-  const piped = api.isTtyAt(0) === false;
-  if (arg !== undefined || piped === false) choose(arg);
-  if (arg === undefined && piped === false) return; // just turns it off
-
-  /** Whom we influence, again on resume */
-  let chosen = arg;
-  // a kill turns it off, and ends a read that may never come; a pause turns it off till resumed
-  let killed = false as boolean; // set by `cleanup`, which narrowing cannot see
-  let onKill = () => {};
-  const killedRead = new Promise<void>((resolve) => (onKill = resolve));
-  const handlers = api.handleStatus({
-    cleanup() {
-      killed = true;
-      choose();
-      onKill();
-    },
-    onSuspend: () => (choose(), true),
-    onResume: () => (chosen !== undefined && choose(chosen), true),
-  });
-  const nearId = setInterval(() => api.isRunning() && syncHands(), 100);
-
-  try {
-    let datum: unknown;
-    const next = () => (piped ? Promise.race([api.read(), killedRead]) : killedRead); // named, no picks: till killed
-    while ((datum = await next()) !== api.eof && killed === false) {
-      const pick = datum as JshCli.PickEvent;
-      const npcKey = typeof datum === "string" ? datum : pick?.meta?.type === "npc" ? pick.meta.npcKey : undefined;
-      if (npcKey !== undefined && npcKey in w.n) choose((chosen = npcKey));
-    }
-  } finally {
-    clearInterval(nearId);
-    handlers.dispose();
-  }
-  if (killed === true) throw api.getKillError();
-}
-
-/** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
-const psiNearDist = 0.65;
-/** Seconds the player's elbows take to come forward */
-const psiAvoidSecs = 0.3;
-
 export function demo_remove_decor(ct: JshCli.RunArg) {
   ct.w.decor.remove("test-decor-circle", "test-decor-point", "test-decor-rect", "test-decor-rect-angled");
 }
@@ -282,7 +212,9 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
   const defensive = () => holdUntil > w.timer.getElapsedTime();
   const show = () => {
     const pose = on ? (defensive() ? "defensive" : "point") : null;
-    npc.anim.setUpper(pose, { swapSecs: defensive() ? demoSwordConfig.drawInSecs : undefined }); // in before the hand goes through
+    const ours = npc.anim.upper.key === "point" || npc.anim.upper.key === "defensive"; // never e.g. psi's hands
+    if (pose !== null || ours)
+      npc.anim.setUpper(pose, { swapSecs: defensive() ? demoSwordConfig.drawInSecs : undefined }); // in before the hand goes through
     if (pose !== "point") w.sword.sheathe(npc.key);
   };
   /** Faces whom they'd strike; drawn at nobody, holds their facing so a move strafes */
