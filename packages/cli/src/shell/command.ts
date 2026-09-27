@@ -400,7 +400,7 @@ class CmdService {
      * Such ptags may have been set as true by default elsewhere.
      */
     setPausable(key: string, pausable: boolean) {
-      this.setPtags({ [pausablePtag(key)]: pausable });
+      cmdService.setPtags(this.meta, { [pausablePtag(key)]: pausable });
     },
 
     /**
@@ -408,16 +408,7 @@ class CmdService {
      * - Unsetting a pause group's ptag (e.g. `WORLD_PAUSABLE: false`) also releases that group's hold.
      */
     setPtags(updates: Ptags) {
-      const process = sessionApi.getProcess(this.meta);
-      applyPtagUpdates(process.ptags, updates);
-      for (const ptag of Object.keys(updates)) {
-        // ptags usually have value `true`
-        if (process.ptags[ptag] === true) continue;
-        // pause group ptags not equal to `true` are considered removed
-        for (const key of pauseGroupKeysOf(this.meta.sessionKey, ptag)) {
-          if (process.holds?.has(key)) sessionApi.killProcesses([process], { CONT: true, reason: key });
-        }
-      }
+      cmdService.setPtags(this.meta, updates);
     },
 
     set(varPath: string, varValue: any, recursive = false) {
@@ -1179,6 +1170,20 @@ class CmdService {
       }
       default:
         throw new ExhaustiveError(command);
+    }
+  }
+
+  /** See `processApi.setPtags` — here, as its methods are bound to `{ meta, node }` alone */
+  setPtags(meta: JSh.BaseMeta, updates: Ptags) {
+    const process = sessionApi.getProcess(meta);
+    applyPtagUpdates(process.ptags, updates);
+    for (const ptag of Object.keys(updates)) {
+      // ptags usually have value `true`
+      if (process.ptags[ptag] === true) continue;
+      // pause group ptags not equal to `true` are considered removed
+      for (const key of pauseGroupKeysOf(meta.sessionKey, ptag)) {
+        if (process.holds?.has(key)) sessionApi.killProcesses([process], { CONT: true, reason: key });
+      }
     }
   }
 

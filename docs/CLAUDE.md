@@ -105,6 +105,8 @@ Exports of `packages/cli/src/jsh/world/{core,demo,debug,decor,pred}.ts` become s
 
 **Only `packages/cli/src/jsh/world` knows of the World.** The shell (`packages/cli/src/shell`: builtins, `api`, sessions) and `packages/cli/src/jsh`'s own modules e.g. `util.js` must not import or mention it. A later-sourced module may shadow an earlier one's command, never a builtin — builtins win.
 
+**`api` methods are bound to `{ meta, node }` alone** (`provideProcessCtxt` in `shell/command.ts`), so inside `processApi` `this` is not the api: `this.setPtags(…)` from another method is undefined at runtime, though it typechecks. Share logic via a `CmdService` method taking `meta`, e.g. `cmdService.setPtags(this.meta, …)`.
+
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
 - never `await` something a kill cannot interrupt: `w.npc.nextTick()` never resolves whilst the world is paused, so race it — `Promise.race([w.npc.nextTick(), killed])`;
