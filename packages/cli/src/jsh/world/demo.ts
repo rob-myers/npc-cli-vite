@@ -267,7 +267,7 @@ export async function demo_spawn_many({ w }: JshCli.RunArg) {
 /**
  * `npcKey` points (upper body) whilst `q` over the world toggles it on, drawing in to `defensive` for at
  * least `holdSecs` whenever the arm would touch a crowd neighbour, a wall or a closed door. Their `Sword`
- * locks on to the npc picked last whilst nothing is between them; picking `npcKey` unlocks it
+ * locks on to the npc picked last whilst nothing is between them; picking `npcKey` unlocks it. Drawn, they strafe
  * ```sh
  * pick | demo_sword rob
  * ```
@@ -277,23 +277,27 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
   /** The npc picked last, bar themself */
   let target: null | string = null;
   let [on, holdUntil] = [false, 0]; // world seconds they stay defensive until
-  /** The aim we last set, so we clear only our own: a look on the move aims them too */
+  /** The aim we set, so we replace or clear only ours: a look's is left be */
   let ownAim: JshCli.Npc["anim"]["face"]["aim"] = null;
-  const clearOwnAim = () => {
-    if (ownAim !== null && npc.anim.face.aim === ownAim) npc.anim.face.aim = null;
-    ownAim = null;
-  };
   const defensive = () => holdUntil > w.timer.getElapsedTime();
   const show = () => {
     const pose = on ? (defensive() ? "defensive" : "point") : null;
     npc.anim.setUpper(pose, { swapSecs: defensive() ? demoSwordConfig.drawInSecs : undefined }); // in before the hand goes through
     if (pose !== "point") w.sword.sheathe(npc.key);
   };
-  const onKey = (e: KeyboardEvent) => void (e.key === "q" && api.isRunning() && ((on = !on), show()));
+  /** Faces whom they'd strike; drawn at nobody, holds their facing so a move strafes */
+  const syncAim = () => {
+    const { face } = npc.anim;
+    if (face.aim !== null && face.aim !== ownAim) return;
+    const at = target === null ? undefined : w.n[target]?.point;
+    const walking = npc.isMoving() && npc.anim.strafe !== true; // held, their forward gait would slide
+    face.aim = ownAim = at !== undefined ? { at, rate: 1, untilRest: false } : on && !walking ? heldAim : null;
+  };
+  const onKey = (e: KeyboardEvent) => void (e.key === "q" && api.isRunning() && ((on = !on), show(), syncAim()));
   w.rootEl.addEventListener("keydown", onKey);
   // a pause leaves it drawn, as the world is
   const handlers = api.handleStatus({
-    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), show(), clearOwnAim()),
+    cleanup: () => (w.rootEl.removeEventListener("keydown", onKey), (on = false), (target = null), show(), syncAim()),
   });
 
   const readPicks = async () => {
@@ -307,9 +311,7 @@ export async function demo_sword({ api, args: [npcKey], w }: JshCli.RunArg) {
 
   try {
     while (true) {
-      const at = target === null ? undefined : w.n[target]?.point;
-      if (at === undefined) clearOwnAim();
-      else npc.anim.face.aim = ownAim = { at, rate: 1, untilRest: false }; // whom they'd strike, moving or not
+      syncAim();
       if (on && (await armBlocked(w, npc))) holdUntil = w.timer.getElapsedTime() + demoSwordConfig.holdSecs;
       show();
       const locked = on && (await inSight(w, npc, target));
@@ -342,6 +344,9 @@ async function inSight(w: JshCli.WorldState, npc: JshCli.Npc, targetKey: null | 
   const { hit } = await w.e.raycast(npc.point, other.point).catch(() => ({ hit: true })); // off the map throws
   return hit === null;
 }
+
+/** Turns them not at all, at `rate` `0`, but is an aim: a move strafes */
+const heldAim = { at: 0, rate: 0, untilRest: false };
 
 const demoSwordConfig = {
   /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
