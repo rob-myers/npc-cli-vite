@@ -1,2 +1,5 @@
+# a hashed asset past asset-history's retention: leave /assets/*, whose immutable header would pin the miss
+/assets/*  /asset-not-found/:splat  302
+/asset-not-found/*  /asset-not-found.txt  404
 /* /index.html 200
 # /test-wasm /index.html 200
