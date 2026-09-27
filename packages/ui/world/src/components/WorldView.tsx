@@ -288,7 +288,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
             const bodyPart = (
               jointIndex === 0 ? "label" : npc.skinnedMesh.skeleton.bones[jointIndex]?.name
             ) as NpcBodyPart;
-            return { ...pick, instanceId: pickId, npcKey: npc.key, bodyPart, npc: true, ...w.e.npcToRoom.get(npc.key) };
+            return {
+              ...pick,
+              instanceId: pickId,
+              npcKey: npc.key,
+              bodyPart,
+              npc: true,
+              ...(bodyPart === "label" && { npcLabel: true as const }),
+              ...w.e.npcToRoom.get(npc.key),
+            };
           }
           default:
             throw new ExhaustiveError(pick);
@@ -2031,5 +2039,5 @@ export type Picked = {
   | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
-  | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart } & Partial<Geomorph.GmRoomId>)
+  | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)
 );
