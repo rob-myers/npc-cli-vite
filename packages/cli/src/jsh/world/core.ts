@@ -1161,8 +1161,7 @@ export async function spawn(
     npc: "npcKey",
     to: "at",
     skin: "as",
-    towards: "facing",
-    look: "facing",
+    "--facing": "facing",
   }),
 ) {
   api.setPausable("world", false); // can spawn while paused
@@ -1400,6 +1399,7 @@ const booleanJsOptSomewhere = {
   backstep: true,
   backwards: true,
   detail: true,
+  facing: true,
   fast: true,
   force: true,
   point: true,

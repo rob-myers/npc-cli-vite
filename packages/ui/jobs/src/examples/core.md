@@ -26,8 +26,8 @@ pick as:meta.gdKey
 # spawn rob at pick
 spawn npc:rob at:$( pick 1 )
 
-# spawn at pick, look at 2nd pick
-spawn npc:rob at:$( pick 1 ) look:$( pick 1 )
+# spawn at pick, facing 2nd pick
+spawn npc:rob at:$( pick 1 ) facing:$( pick 1 )
 
 # spawn with skin human-0
 spawn npc:rob at:$( pick 1 ) as:human-0
@@ -35,8 +35,8 @@ spawn npc:rob at:$( pick 1 ) as:human-0
 # spawn npcs foo-0, foo-1 etc.
 pick | spawn npc:foo- as:human-1
 
-# two picks per spawn (at, look)
-pick | spawn npc:test as:human-1 look
+# two picks per spawn (at, facing)
+pick | spawn npc:test as:human-1 --facing
 ```
 
 # move
