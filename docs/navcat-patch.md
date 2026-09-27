@@ -22,7 +22,10 @@ Each tick an agent steers at the first corner of its corridor. Navcat gives a co
 whilst the agent is within `MIN_TARGET_DIST` (1 cm) of it, tested afresh every tick. The patch
 remembers, per agent, the corner steered at (`cornerTracked`) and the nearest they have been to
 it (`cornerNearestSqr`); once that nearest is within *reach* the corner goes, and since a nearest
-only falls, it never comes back. A corridor that moves on resets both. The destination and
+only falls, it never comes back. Both reset when the first corner moves elsewhere, and on a new
+move (`requestMoveTarget`): the give-up is keyed by the corner's *position*, so without that a later
+move whose first corner is the same point — say they were pushed back past it by an idle npc — drops
+it at once, and they steer straight at the next corner, through the wall. The destination and
 off-mesh corners are never given up.
 
 Three cases, all seen as an npc rocking back and forth, the corner popping in and out in

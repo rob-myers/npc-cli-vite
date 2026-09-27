@@ -24,7 +24,7 @@ index 4b57e18ae02c827999727c574ece1bab54107c9e..678678209436a295475c580176651e75
      pathOptimizationRange: number;
      /** The agent separation weight */
 diff --git a/dist/blocks.js b/dist/blocks.js
-index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..03755091aa915da9b75cf2b17f317973c73f6514 100644
+index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..96fba97c76da11f988eba547f30be8f31defca49 100644
 --- a/dist/blocks.js
 +++ b/dist/blocks.js
 @@ -601,11 +601,27 @@ const _sampleVelocityAdaptive_ddir2 = vec3.create();
@@ -65,7 +65,17 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..03755091aa915da9b75cf2b17f317973
          pathOptimizationRange: agentParams.pathOptimizationRange ?? agentParams.radius * 30.0,
          separationWeight: agentParams.separationWeight,
          updateFlags: agentParams.updateFlags,
-@@ -1563,10 +1582,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
+@@ -1164,6 +1183,9 @@ const requestMoveTarget = (crowd, agentId, targetRef, targetPos) => {
+     agent.targetState = AgentTargetState.REQUESTING;
+     agent.targetPathIsPartial = false;
+     agent.targetPathfindingTime = 0; // Reset timer for new request
++    // PATCH: a new move forgets any corner given up on the last, whose point may well lie ahead again
++    agent.cornerTracked = null;
++    agent.cornerNearestSqr = Number.POSITIVE_INFINITY;
+     return true;
+ };
+ const requestMoveTargetReplan = (crowd, agentId, targetRef, targetPos) => {
+@@ -1563,10 +1585,11 @@ const updateLocalBoundaries = (crowd, navMesh) => {
              continue;
          }
          // update boundary if agent has moved significantly or if boundary is invalid
@@ -79,7 +89,7 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..03755091aa915da9b75cf2b17f317973
          }
      }
  };
-@@ -1584,11 +1604,35 @@ const updateCorners = (crowd, navMesh) => {
+@@ -1584,11 +1607,35 @@ const updateCorners = (crowd, navMesh) => {
              continue;
          }
          // get corridor corners for steering
