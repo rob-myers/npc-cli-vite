@@ -88,6 +88,7 @@ export default function Swords() {
         const sword = state.ensure(npcKey);
         sword.drawn = !sword.drawn;
         state.sync();
+        return sword.drawn;
       },
       onTick() {
         if (w.n === null) return; // <NPCs> mounts after us
@@ -273,7 +274,7 @@ export type State = Resources & {
   markDirty(): void;
   /** Sheathe their swords: the pose and aim are let go of, and the rope fades */
   sheathe(...npcKeys: string[]): void;
-  toggle(npcKey: string): void;
+  toggle(npcKey: string): boolean;
   onTick(): void;
   /** Every fade straight to its end */
   snap(): void;

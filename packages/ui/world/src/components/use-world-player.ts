@@ -36,13 +36,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         switch (e.key) {
           case "e":
           case "E":
-            w.swords.sheathe(state.key);
-            w.psi.toggle();
+            w.psi.toggle() && w.swords.sheathe(state.key);
             break;
           case "q":
           case "Q":
-            state.psi(null);
-            w.swords.toggle(state.key);
+            w.swords.toggle(state.key) && state.psi(null);
             break;
         }
       },

@@ -34,11 +34,12 @@ export default function Psi() {
         chooseInfluence(state.influence, target, w.player?.key, w.disabled);
         state.upload();
         w.r3f?.invalidate();
+        return state.getTarget();
       },
       toggle() {
         if (state.getTarget() !== null) return state.choose(null);
         const { lastChosen } = state.influence;
-        state.choose(lastChosen !== null && lastChosen in w.n ? lastChosen : (w.player?.key ?? null));
+        return state.choose(lastChosen !== null && lastChosen in w.n ? lastChosen : (w.player?.key ?? null));
       },
       getTarget() {
         return influenceTarget(state.influence, w.player?.key);
@@ -161,9 +162,9 @@ export type State = PsiResources & {
   tickedMs: number;
 
   /** Target `npcKey` — the player themself for their rings alone, `null` for off. At once whilst paused */
-  choose(target: null | string): void;
+  choose(target: null | string): null | string;
   /** Off, else back on to the last target, or the player */
-  toggle(): void;
+  toggle(): null | string;
   /** The target, or the one taken up once a fade-out ends */
   getTarget(): null | string;
   onTick(): void;
