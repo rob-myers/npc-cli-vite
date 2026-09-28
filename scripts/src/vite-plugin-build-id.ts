@@ -2,8 +2,9 @@ import type { Plugin } from "vite";
 
 /** Where `<NewVersionToast>` looks for the deployed build's id */
 export const versionJsonPath = "/version.json";
-/** `<meta name>` carrying the running build's id */
+/** `<meta name>`s carrying the running build's id and when it was built */
 export const buildIdMetaName = "build-id";
+export const buildAtMetaName = "build-at";
 
 /**
  * Serves a per-build id at `/version.json`, and tags `index.html` with the same one,
@@ -13,14 +14,19 @@ export const buildIdMetaName = "build-id";
  * chunk and so rename every chunk it reaches on each build.
  */
 export function buildIdPlugin(): Plugin {
-  const buildId = Date.now().toString(36);
-  const source = `${JSON.stringify({ id: buildId })}\n`;
+  const now = Date.now();
+  const buildId = now.toString(36);
+  const buildAt = new Date(now).toISOString();
+  const source = `${JSON.stringify({ id: buildId, at: buildAt })}\n`;
 
   return {
     name: "build-id",
 
     transformIndexHtml() {
-      return [{ tag: "meta", attrs: { name: buildIdMetaName, content: buildId }, injectTo: "head" }];
+      return [
+        { tag: "meta", attrs: { name: buildIdMetaName, content: buildId }, injectTo: "head" },
+        { tag: "meta", attrs: { name: buildAtMetaName, content: buildAt }, injectTo: "head" },
+      ];
     },
 
     generateBundle() {

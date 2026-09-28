@@ -7,6 +7,7 @@
     "./vite-plugin-build-id": "./src/vite-plugin-build-id.ts",
     "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
+    "./vite-plugin-stable-entry": "./src/vite-plugin-stable-entry.ts",
     "./vite-plugin-watch-assets": "./src/vite-plugin-watch-assets.ts",
     "./vite-plugin-world-rtc": "./src/vite-plugin-world-rtc.ts"
   },

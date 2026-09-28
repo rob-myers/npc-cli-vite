@@ -5,6 +5,7 @@ import { UiErrorBoundary } from "@npc-cli/ui-sdk/UiErrorBoundary";
 import { UiParseError } from "@npc-cli/ui-sdk/UiParseError";
 import { uiStore } from "@npc-cli/ui-sdk/ui.store";
 import { Spinner } from "@npc-cli/util";
+import { simulatedStaleUi } from "@npc-cli/util/build-info";
 import type React from "react";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import * as portals from "react-reverse-portal";
@@ -35,7 +36,13 @@ const UiPortal = ({ meta, portal, everSeen }: UiStoreByIdEntry) => {
         <UiErrorBoundary meta={meta}>
           <Suspense fallback={<Spinner />}>
             <ReportLoad meta={meta} startedAt={startedAt} />
-            {result.success ? <C meta={result.data} /> : <UiParseError uiKey={meta.uiKey} zodError={result.error} />}
+            {simulatedStaleUi === meta.uiKey ? (
+              <SimulatedChunkFailure uiKey={meta.uiKey} />
+            ) : result.success ? (
+              <C meta={result.data} />
+            ) : (
+              <UiParseError uiKey={meta.uiKey} zodError={result.error} />
+            )}
           </Suspense>
         </UiErrorBoundary>
       )}
@@ -53,3 +60,8 @@ const ReportLoad = ({ meta, startedAt }: { meta: UiInstanceMeta; startedAt: Reac
   }, [meta.id, meta.uiKey, startedAt]);
   return null;
 };
+
+/** Throws what a lazy load throws once a deploy has removed its chunk */
+function SimulatedChunkFailure({ uiKey }: { uiKey: string }): never {
+  throw new Error(`Failed to fetch dynamically imported module: ${location.origin}/assets/${uiKey}-simulated.js`);
+}
