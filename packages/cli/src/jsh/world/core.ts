@@ -1162,6 +1162,7 @@ export async function spawn(
     to: "at",
     skin: "as",
     "--facing": "facing",
+    "--towards": "facing",
   }),
 ) {
   api.setPausable("world", false); // can spawn while paused
@@ -1377,19 +1378,25 @@ function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
 }
 
 /**
+ * Get first naked arg (no colon, no hyphen prefix) not in `booleanJsOptSomewhere`
  * @see {booleanJsOptSomewhere}
  * @param opts Parsed from command line
  */
 function getFirstUnknownNaked(opts: Record<string, any>) {
-  return keys(opts).find((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+  return keys(opts).find(
+    (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
+  );
 }
 
 /**
+ * Get last naked arg (no colon, no hyphen prefix) not in `booleanJsOptSomewhere`
  * @see {booleanJsOptSomewhere}
  * @param opts Parsed from command line
  */
 function getLastUnknownNaked(opts: Record<string, any>) {
-  return keys(opts).findLast((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+  return keys(opts).findLast(
+    (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
+  );
 }
 
 /** Forbid certain npcKeys as bare specifiers (over approximation) */
