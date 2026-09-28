@@ -44,6 +44,7 @@ export default function JobsLibrary(props: Props) {
       edits: {},
       props,
       ranId: null,
+      rootEl: null,
       sectionKeys: stored?.sectionKeys ?? {},
       view: stored?.view ?? "preview",
 
@@ -158,8 +159,10 @@ export default function JobsLibrary(props: Props) {
 
   return (
     <div
+      ref={state.ref("rootEl")}
       className={cn(
-        "min-h-0 flex flex-col flex-1 font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40",
+        // `relative` so the tooltips portalled within are clipped
+        "relative overflow-hidden min-h-0 flex flex-col flex-1 font-sans bg-term-inset border border-term-border rounded shadow-md shadow-black/40",
         !touchDevice && "text-sm",
       )}
     >
@@ -399,8 +402,8 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
           </code>
         </Tooltip.Trigger>
 
-        {/* portalled, else the scrolling article would clip it */}
-        <Tooltip.Portal>
+        {/* portalled to the library, else the scrolling article would clip it, or Jobs show it */}
+        <Tooltip.Portal container={state.rootEl}>
           <Tooltip.Positioner className="z-50 max-w-72" side="top" align="end" sideOffset={4}>
             <Tooltip.Popup
               className={cn(
@@ -513,6 +516,8 @@ type State = {
   props: Props;
   /** The example most recently run, which stays bordered until another is */
   ranId: null | string;
+  /** Clips the tooltips, which are portalled into it */
+  rootEl: null | HTMLElement;
   /** categoryKey -> currently shown sectionKey */
   sectionKeys: Record<string, string>;
   /** `preview` reads like the markdown file; `compact` lists one section tersely */
