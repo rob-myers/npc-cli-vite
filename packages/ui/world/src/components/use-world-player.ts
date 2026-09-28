@@ -31,7 +31,20 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       onKeyDown(e) {
         if (isTypingTarget(e) || e.repeat === true) return;
-        if ((e.key === "q" || e.key === "Q") && w.n[state.key] !== undefined) w.swords.toggle(state.key);
+        if (!(state.key in w.n)) return;
+
+        switch (e.key) {
+          case "e":
+          case "E":
+            w.swords.sheathe(state.key);
+            w.psi.toggle();
+            break;
+          case "q":
+          case "Q":
+            state.psi(null);
+            w.swords.toggle(state.key);
+            break;
+        }
       },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
@@ -48,7 +61,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       psi(npcKey) {
         if (npcKey !== null) w.npc.get(npcKey); // throws for an unknown npc
-        w.psi.choose(npcKey ?? state.key);
+        w.psi.choose(npcKey);
       },
       persist() {
         w.e.persistNpcs();
@@ -155,7 +168,7 @@ export type State = {
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
-  /** Influence `npcKey` — `null`, or the player themself, turns it off. See `Psi` */
+  /** Target `npcKey` — the player themself for their rings alone, `null` for off. See `Psi` */
   psi(npcKey: null | string): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;

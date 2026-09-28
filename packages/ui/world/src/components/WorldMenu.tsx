@@ -249,8 +249,6 @@ export function WorldMenu() {
         return w.view.roomOutline ?? false;
       case "lit npcs":
         return w.view.litNpcsEnabled?.value === 1;
-      case "psi":
-        return w.psi?.shown ?? false;
       case "colliders":
         return w.debug?.physicsCollidersShown ?? false;
       case "grid":
@@ -358,10 +356,6 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
-      case "psi":
-        w.psi?.setShown(!w.psi.shown);
-        state.update();
-        break;
       case "npc contextmenu": {
         const next = !w.debug?.npcContextMenu;
         w.debug?.set({ npcContextMenu: next });
@@ -1340,7 +1334,6 @@ const debugItems = [
   "rgb shift",
   "room outlines",
   "lit npcs",
-  "psi",
   "room hit",
   "graphs",
   "skins",

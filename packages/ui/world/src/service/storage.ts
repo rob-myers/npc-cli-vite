@@ -58,8 +58,6 @@ export type WorldSettings = {
   decorShown: boolean;
   /** Whether an npc's contextmenu opens their bubble — see `Debug`'s `npcContextMenu` */
   npcContextMenu: boolean;
-  /** debug: whether the player's influence is drawn — see `Psi` */
-  psiShown: boolean;
   /** What the player's bubble set of `Psi`, over its defaults */
   psiTune: Partial<import("../const.npc").PsiTune>;
   gmGraphsFilter: "gm" | "room";
@@ -94,7 +92,6 @@ const defaultWorldSettings: WorldSettings = {
   pickDoors: false,
   decorShown: false,
   npcContextMenu: false,
-  psiShown: isTouchDevice() === false,
   psiTune: {},
   gmGraphsFilter: "room",
   menuY: 40,

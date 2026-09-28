@@ -930,7 +930,7 @@ export function play({ api, w }: JshCli.RunArg) {
 
 /**
  * The player influences an npc — see `w.player.psi`. Runs until killed, bar a bare `psi`; picking the
- * player, a kill or a bare `psi` turns it off
+ * player shows their rings alone, and a kill or a bare `psi` turns it off
  * ```sh
  * pick | psi
  * psi abe
