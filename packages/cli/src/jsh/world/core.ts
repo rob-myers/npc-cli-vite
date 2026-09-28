@@ -1216,7 +1216,11 @@ export async function spawn(
  */
 export async function sword(
   { api, args, w }: JshCli.RunArg,
-  opts: { on?: boolean; off?: boolean; lock?: null | string } = api.jsArg(args, { "--on": "on", "--off": "off" }),
+  opts: { on?: boolean; off?: boolean; lock?: null | string } = api.jsArg(args, {
+    "--on": "on",
+    "--off": "off",
+    "--unlock": "lock:false",
+  }),
 ) {
   api.setPausable("world", false); // picks whilst paused
   const srcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
