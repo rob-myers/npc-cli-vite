@@ -368,13 +368,18 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
         <Menu.Positioner className="z-50" side="bottom" align="start" sideOffset={8}>
           <Menu.Popup className="select-none bg-slate-800 border border-slate-700 rounded-md shadow-lg min-w-18">
             {npc !== undefined && (
-              <Menu.Item className={speechMenuItemClassName} onClick={() => w.bubble.ensure(npcKey)}>
+              <Menu.Item
+                className={speechMenuItemClassName}
+                closeOnClick={false}
+                onClick={() => w.bubble.ensure(npcKey)}
+              >
                 debug
               </Menu.Item>
             )}
             {npc !== undefined && (
               <Menu.Item
                 className={speechMenuItemClassName}
+                closeOnClick={false}
                 // tracked, since they may walk whilst it pans — and it animates on its own frames,
                 // so it works with the world paused. See `lookAtPlayer`, which does the same
                 onClick={() =>
@@ -391,6 +396,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
             {canLightOrDelete === true && (
               <Menu.Item
                 className={speechMenuItemClassName}
+                closeOnClick={false}
                 // `setNpcLit` writes a uniform, so nothing here re-renders on its own
                 onClick={() => (w.e.setNpcLit(npc), w.speech.update())}
               >
@@ -399,8 +405,8 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
             )}
             {canLightOrDelete && (
               <Menu.Item
-                className={cn(speechMenuItemClassName, armed === true && "text-red-300")}
-                // stays open on the 1st click, so "confirm" replaces it where it already is
+                className={cn(speechMenuItemClassName, armed === true && "text-red-300 data-highlighted:text-red-200")}
+                // "confirm" replaces it where it already is, then closes: the npc goes with it
                 closeOnClick={armed}
                 onClick={() => (armed === true ? w.e.removeNpcs(npcKey) : setArmed(true))}
               >
@@ -408,7 +414,12 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
               </Menu.Item>
             )}
             {w.speech.menuItems.map((item) => (
-              <Menu.Item key={item.key} className={speechMenuItemClassName} onClick={() => item.action(npcKey)}>
+              <Menu.Item
+                key={item.key}
+                className={speechMenuItemClassName}
+                closeOnClick={false}
+                onClick={() => (item.action(npcKey), w.speech.update())} // its `text` may change, e.g. pick/unpick
+              >
                 {typeof item.text === "function" ? item.text(npcKey) : item.text}
               </Menu.Item>
             ))}
