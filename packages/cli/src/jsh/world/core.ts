@@ -929,39 +929,17 @@ export function play({ api, w }: JshCli.RunArg) {
 }
 
 /**
- * The player influences an npc — see `w.player.psi`. Runs until killed, bar a bare `psi`; picking the
- * player shows their rings alone, and a kill or a bare `psi` turns it off
+ * The player targets an npc — themself for their rings alone, a bare `psi` for off. See `w.player.psi`.
+ * It is the player's, not a process's, so like `sword` it returns at once
  * ```sh
- * pick | psi
  * psi abe
+ * psi $( w player.key )
  * psi
  * ```
  */
-export async function psi({ api, args: [arg], w }: JshCli.RunArg) {
-  api.setPausable("world", false); // switches on a pick whilst paused
-  const piped = api.isTtyAt(0) === false;
-  if (arg !== undefined || piped === false) w.player.psi(arg ?? null);
-  if (arg === undefined && piped === false) return; // just turns it off
-
-  /** Whom we influence, again on resume */
-  let chosen = arg ?? null;
-  let onKill = () => {};
-  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
-  const handlers = api.handleStatus({
-    cleanup: () => (w.player.psi(null), onKill()),
-    onSuspend: () => (w.player.psi(null), true),
-    onResume: () => (w.player.psi(chosen), true),
-  });
-  try {
-    while (true) {
-      const datum = await (piped ? Promise.race([api.read(), killed]) : killed); // named, no picks: till killed
-      if (datum === api.eof) break;
-      const npcKey = npcKeyOf(datum);
-      if (npcKey !== undefined && npcKey in w.n) w.player.psi((chosen = npcKey));
-    }
-  } finally {
-    handlers.dispose();
-  }
+export function psi({ api, args: [npcKey], w }: JshCli.RunArg) {
+  api.setPausable("world", false); // switches it whilst paused
+  w.player.psi(npcKey ?? null);
 }
 
 /**

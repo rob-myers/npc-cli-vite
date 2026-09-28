@@ -98,9 +98,12 @@
   - `psi` is `w.player.psi` wrapper
 - ✅ player can activate on desktop: `e` key
 
-- `psi` only specifies targets i.e. does not read picks
+- ✅ `psi` only specifies targets i.e. does not read picks
   - in line with `sword`
 
+- ✅ demo command to pick player's psi target
+  - `pick as:meta.npcKey | map '(npcKey, { w }) => w.player.psi(npcKey)'`
+  - maybe needs cleanup
 - player can activate on mobile
 - check mobile performance
 
@@ -130,15 +133,15 @@
   - can lock on to body part
 
 - ✅ player can activate on desktop: `q` key
+- ✅ demo command to lock sword on click
+    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(dstNpcKey, w.player.key)'`
 - player can activate on mobile
 
 - ✅ refactor demo_sword into `<Swords>`
   - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
   - ✅ `sword` mutates sword wield/sheathe/lock
     - `sword rob lock:npc-1`
-
 - ✅ handle psi vs sword blend fighting
-
 - ✅ on unsheathe weapon whilst moving strafe immediately
 
 ### Unorganised Bugs
