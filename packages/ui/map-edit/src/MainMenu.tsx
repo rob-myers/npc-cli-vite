@@ -23,7 +23,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
     <div className="relative flex items-start gap-2">
       <Menu.Root>
         <Menu.Trigger className="cursor-pointer">
-          <ListIcon className="size-5.5 bg-background text-on-background border border-on-background/50 p-0.5" />
+          <ListIcon className="size-6.5 bg-background text-on-background border border-on-background/50 p-1" />
         </Menu.Trigger>
 
         <Menu.Portal>
