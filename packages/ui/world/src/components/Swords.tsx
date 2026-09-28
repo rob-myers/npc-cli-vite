@@ -10,7 +10,6 @@ import {
   Fn,
   float,
   fract,
-  max,
   mix,
   normalize,
   positionLocal,
@@ -27,8 +26,8 @@ import { WorldContext } from "./world-context";
 
 /**
  * Npcs' swords: whilst drawn they point (upper body), drawing in to `defensive` whenever the arm would touch a
- * crowd neighbour, a wall or a closed door, and a rope runs from the hand — a faint stub, else locked on to their
- * target whilst nothing is between them. Theirs, not a process's: see `w.swords` and the jsh command `sword`
+ * crowd neighbour, a wall or a closed door, and a rope runs from the wrist — a faint stub, else straight to the
+ * middle of a body part of their target whilst nothing is between them. Theirs, not a process's: see `w.swords` and jsh `sword`
  */
 export default function Swords() {
   const w = useContext(WorldContext);
@@ -46,10 +45,19 @@ export default function Swords() {
       ensure(npcKey) {
         let sword = state.swords.get(npcKey);
         if (sword === undefined) {
-          const rope = { dstKey: null, next: null, shown: off(), locked: off() };
+          const rope = {
+            dstKey: null,
+            dstPart: null,
+            next: null,
+            shown: off(),
+            locked: off(),
+            glide: null,
+            end: new THREE.Vector3(),
+          };
           sword = {
             drawn: false,
             target: null,
+            bodyPart: null,
             holdUntil: 0,
             ownAim: null,
             ...rope,
@@ -66,12 +74,11 @@ export default function Swords() {
       isDrawn(npcKey) {
         return state.swords.get(npcKey)?.drawn === true;
       },
-      lock(dstKey, ...srcKeys) {
-        for (const srcKey of srcKeys) {
-          const sword = state.ensure(srcKey);
-          sword.target = dstKey === srcKey ? null : dstKey;
-          sword.cast = null; // look again, at once
-        }
+      lock(srcKey, dstKey, bodyPart) {
+        const sword = state.ensure(srcKey);
+        sword.target = dstKey === srcKey ? null : dstKey;
+        sword.bodyPart = bodyPart ?? null;
+        sword.cast = null; // look again, at once
         state.sync();
       },
       markDirty() {
@@ -107,8 +114,13 @@ export default function Swords() {
           state.wield(npc, sword);
 
           if (sword.next !== null && w.n[sword.next] === undefined) sword.next = null;
-          // a new target: back to the stub, then out to it
-          if (sword.dstKey !== sword.next && sword.locked.presence === 0) sword.dstKey = sword.next;
+          if (sword.dstKey !== sword.next || sword.dstPart !== sword.bodyPart) {
+            // a new target or body part: glides there whilst locked on, else comes out from the stub once back to it
+            const gliding = sword.dstKey !== null && sword.next !== null && sword.locked.presence > 0;
+            if (gliding) sword.glide = { from: sword.end.clone(), t: 0 };
+            if (gliding || sword.locked.presence === 0)
+              Object.assign(sword, { dstKey: sword.next, dstPart: sword.bodyPart });
+          }
           sword.locked.target = sword.dstKey !== null && sword.dstKey === sword.next ? 1 : 0;
           approach(sword.shown, step);
           approach(sword.locked, step);
@@ -121,7 +133,7 @@ export default function Swords() {
           const hand = npc.group?.getObjectByName("rightforearm");
           if (hand === undefined) continue;
           hand.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
-          const tip = hand.localToWorld(tmpTip.fromArray(swordConfig.handTip));
+          const tip = hand.localToWorld(tmpTip.fromArray(swordConfig.ropeFrom));
           const ry = npc.rotation.y;
           const stubEnd = tmpEnd.set(
             tip.x - Math.sin(ry) * swordConfig.stub,
@@ -131,9 +143,15 @@ export default function Swords() {
           const dst = sword.dstKey === null ? undefined : w.n[sword.dstKey];
           const locked = eased(sword.locked.presence);
           if (dst !== undefined) {
-            const overY = dst.position.y + dst.anim.headY + swordConfig.headAbove;
-            stubEnd.lerp(tmpOver.set(dst.position.x, overY, dst.position.z), locked);
+            const at = bodyPartPoint(dst, sword.dstPart, tmpAt);
+            if (sword.glide !== null) {
+              sword.glide.t = Math.min(1, sword.glide.t + step);
+              at.lerpVectors(sword.glide.from, tmpGlide.copy(at), eased(sword.glide.t)); // tracks the target meanwhile
+              if (sword.glide.t === 1) sword.glide = null;
+            }
+            stubEnd.lerp(at, locked);
           }
+          sword.end.copy(stubEnd);
           state.srcData.set([tip.x, tip.y, tip.z, eased(sword.shown.presence)], count * 4);
           state.dstData.set([stubEnd.x, stubEnd.y, stubEnd.z, locked], count * 4);
           count++;
@@ -147,7 +165,7 @@ export default function Swords() {
       },
       snap() {
         for (const sword of state.swords.values()) {
-          if (sword.next !== sword.dstKey) sword.dstKey = sword.next;
+          Object.assign(sword, { dstKey: sword.next, dstPart: sword.bodyPart, glide: null });
           sword.shown.presence = sword.shown.target;
           sword.locked.presence = sword.dstKey === null ? 0 : 1;
         }
@@ -270,7 +288,7 @@ export type State = Resources & {
   ensure(npcKey: string): SwordEntry;
   isDrawn(npcKey: string): boolean;
   /** Lock them on to `dstKey` whilst drawn and in sight — `null`, or themself, unlocks */
-  lock(dstKey: null | string, ...srcKeys: string[]): void;
+  lock(srcKey: string, dstKey: null | string, bodyPart?: null | string): void;
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
   /** Sheathe their swords: the pose and aim are let go of, and the rope fades */
@@ -290,13 +308,20 @@ type SwordEntry = {
   drawn: boolean;
   /** Whom they lock on to whilst drawn and in sight */
   target: null | string;
+  /** Which of `target`'s bones' parts, e.g. `head` — `null`, or none such, is over their head */
+  bodyPart: null | string;
   /** World seconds they stay defensive until */
   holdUntil: number;
   /** The aim we set, so we replace or clear only ours */
   ownAim: Npc["anim"]["face"]["aim"];
   /** The rope: whom it is locked on to, whom it is to be, and how far into view each is */
   dstKey: null | string;
+  dstPart: null | string;
   next: null | string;
+  /** Whilst locked on, gliding to a new target or body part: from where the end was, and how far along */
+  glide: null | { from: THREE.Vector3; t: number };
+  /** Where the rope ended, last tick */
+  end: THREE.Vector3;
   shown: Presence;
   locked: Presence;
   /** Where they stood, faced, and their target stood, when last cast — `null` is to cast again */
@@ -357,21 +382,16 @@ function swordNodes(
     foldNode,
   }: { objectPick: THREE.UniformNode<"float", number>; foldNode: THREE.UniformNode<"float", number> },
 ) {
-  const { lift, liftPerMetre, r0, r1, alpha, bands, color } = swordConfig;
+  const { r0, r1, alpha, faint, solid, nearMetres, bands, color } = swordConfig;
   const src = attribute<"vec4">("swordSrc", "vec4");
   const dst = attribute<"vec4">("swordDst", "vec4");
   const [shown, locked] = [src.w, dst.w];
   const t = positionLocal.y.add(0.5);
 
-  // a cubic Bézier whose middle points are the ends raised by `h`: `mix` by smoothstep, plus a hump
   const d = dst.xyz.sub(src.xyz);
-  const h = locked.mul(float(lift).add(d.length().mul(liftPerMetre)));
-  const up = vec3(0, 1, 0);
-  const onRope = mix(src.xyz, dst.xyz, t.mul(t).mul(t.mul(-2).add(3))).add(up.mul(h.mul(3).mul(t).mul(t.oneMinus())));
-  const tangent = d.mul(max(t.mul(t.oneMinus()).mul(6), 0.01)).add(up.mul(h.mul(3).mul(t.mul(-2).add(1))));
-  // the rope lies in the upright plane through both ends
+  const onRope = mix(src.xyz, dst.xyz, t);
   const side = normalize(vec3(d.z.negate(), 0, d.x).add(vec3(1e-4, 0, 0)));
-  const normal = normalize(cross(side, tangent));
+  const normal = normalize(cross(side, d));
   const radius = mix(float(r0), mix(float(r0), float(r1), locked), t.mul(t)).mul(shown);
   const p = onRope.add(side.mul(positionLocal.x).add(normal.mul(positionLocal.z)).mul(radius));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
@@ -379,12 +399,17 @@ function swordNodes(
   const along = varying(t, "vSwordT");
   const vShown = varying(shown, "vSwordShown");
   const vLocked = varying(locked, "vSwordLocked");
+  /** Metres short of the end, where a locked rope meets the body part */
+  const toEnd = varying(t.oneMinus().mul(d.length()), "vSwordToEnd");
   const colorNode = Fn(() => {
-    const stubFade = mix(along.oneMinus(), float(1), vLocked); // a stub dies away at its tip
     const flow = smoothstep(0.6, 1, fract(along.mul(bands).sub(phase)))
       .mul(0.5)
       .add(0.5); // pulses towards the target
-    const a = objectPick.notEqual(0).select(0, vShown.mul(stubFade).mul(flow).mul(foldNode).mul(alpha));
+    /** A stub dies away at its tip */
+    const stub = along.oneMinus().mul(flow).mul(alpha);
+    /** Faint and pulsing on the way, solid as it nears the part */
+    const lockedOn = mix(flow.mul(faint), float(solid), smoothstep(0, nearMetres, toEnd).oneMinus());
+    const a = objectPick.notEqual(0).select(0, vShown.mul(mix(stub, lockedOn, vLocked)).mul(foldNode));
     Discard(a.lessThan(1 / 512));
     return vec4(uniform(new THREE.Color(color)), a);
   })();
@@ -411,4 +436,43 @@ const isSwordPose = (key: null | string) => key === "point" || key === "defensiv
 const heldAim = { at: 0, rate: 0, untilRest: false };
 const tmpTip = new THREE.Vector3();
 const tmpEnd = new THREE.Vector3();
-const tmpOver = new THREE.Vector3();
+const tmpAt = new THREE.Vector3();
+const tmpGlide = new THREE.Vector3();
+
+/** The middle of `part` on `npc`, in world space — over their head, where their label is, for none */
+function bodyPartPoint(npc: Npc, part: null | string, out: THREE.Vector3) {
+  const bone = part === null || part === "label" ? undefined : npc.skinnedMesh.skeleton.getBoneByName(part);
+  const centre = bone === undefined ? undefined : partCentres(npc.skinnedMesh).get(bone.name);
+  if (bone === undefined || centre === undefined) {
+    return out.set(npc.position.x, npc.position.y + npc.anim.headY + swordConfig.headAbove, npc.position.z);
+  }
+  bone.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
+  return out.copy(centre).applyMatrix4(bone.matrixWorld);
+}
+
+/** Each bone's part: the middle of what it moves most, in its own frame, off the bind pose — one rig for all */
+function partCentres(mesh: THREE.SkinnedMesh) {
+  let centres = partCentresByGeo.get(mesh.geometry);
+  if (centres !== undefined) return centres;
+  const { skeleton, geometry: geo } = mesh;
+  const [position, joints, weights] = ["position", "skinIndex", "skinWeight"].map((key) => geo.getAttribute(key));
+  const boxes = skeleton.bones.map(() => new THREE.Box3());
+  const v = new THREE.Vector3();
+  for (let i = 0; i < position.count; i++) {
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (weights.getComponent(i, k) > weights.getComponent(i, best)) best = k;
+    const j = joints.getComponent(i, best);
+    boxes[j].expandByPoint(
+      v.fromBufferAttribute(position, i).applyMatrix4(mesh.bindMatrix).applyMatrix4(skeleton.boneInverses[j]),
+    );
+  }
+  centres = new Map(
+    skeleton.bones.flatMap((bone, j) =>
+      boxes[j].isEmpty() ? [] : [[bone.name, boxes[j].getCenter(new THREE.Vector3())]],
+    ),
+  );
+  partCentresByGeo.set(geo, centres);
+  return centres;
+}
+
+const partCentresByGeo = new WeakMap<THREE.BufferGeometry, Map<string, THREE.Vector3>>();

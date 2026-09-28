@@ -1181,12 +1181,14 @@ export async function spawn(
 }
 
 /**
- * Draw or sheathe npcs' swords, or lock them on to an npc — see `w.swords`. The swords are theirs, so a kill
- * changes nothing. Piped, each pick is drawn, sheathed, or locked on to; picking one of them unlocks
+ * Draw or sheathe npcs' swords, or lock them on to an npc, through a body part — see `w.swords`. The swords are
+ * theirs, so a kill changes nothing. Piped, each pick is drawn, sheathed, or locked on to through the part picked;
+ * picking one of them unlocks
  * ```sh
  * sword --on rob kate
  * sword --off rob
  * sword rob kate lock:will
+ * sword rob lock:will part:leftforearm
  * sword rob lock:null
  * pick | sword --on
  * pick | sword rob kate
@@ -1194,7 +1196,7 @@ export async function spawn(
  */
 export async function sword(
   { api, args, w }: JshCli.RunArg,
-  opts: { on?: boolean; off?: boolean; lock?: null | string } = api.jsArg(args, {
+  opts: { on?: boolean; off?: boolean; lock?: null | string; part?: string } = api.jsArg(args, {
     "--on": "on",
     "--off": "off",
     "--unlock": "lock:false",
@@ -1206,8 +1208,10 @@ export async function sword(
   if (api.isTtyAt(0)) {
     if (opts.on === true) w.swords.draw(...srcKeys);
     else if (opts.off === true) w.swords.sheathe(...srcKeys);
-    else if ("lock" in opts) w.swords.lock(opts.lock ? w.npc.get(opts.lock).key : null, ...srcKeys);
-    else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
+    else if ("lock" in opts) {
+      const dstKey = opts.lock ? w.npc.get(opts.lock).key : null;
+      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part);
+    } else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
     return;
   }
 
@@ -1216,7 +1220,10 @@ export async function sword(
     if (npcKey === undefined || !(npcKey in w.n)) continue;
     if (opts.on === true) w.swords.draw(npcKey);
     else if (opts.off === true) w.swords.sheathe(npcKey);
-    else w.swords.lock(srcKeys.includes(npcKey) ? null : npcKey, ...srcKeys);
+    else {
+      const dstKey = srcKeys.includes(npcKey) ? null : npcKey; // one of them unlocks all
+      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, bodyPartOf(datum));
+    }
   }
 }
 
@@ -1353,6 +1360,12 @@ function npcKeyOf(datum: unknown) {
   if (typeof datum === "string") return datum;
   const { meta } = (datum as JshCli.PickEvent | undefined) ?? {};
   return meta?.type === "npc" ? meta.npcKey : undefined;
+}
+
+/** The npc body part a pick hit, e.g. `head` */
+function bodyPartOf(datum: unknown) {
+  const { meta } = (typeof datum === "object" ? (datum as JshCli.PickEvent | null) : null) ?? {};
+  return meta?.type === "npc" ? meta.bodyPart : undefined;
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
