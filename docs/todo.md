@@ -114,7 +114,7 @@
   - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
   - ✅ `demo_sword` forces strafe whilst wielding sword
     - expect look controls available for player e.g. `pick --long | look npc:rob --force`
-  - beam is straight and mainly transparent except at target
+  - 🚧 beam is straight and mainly transparent except at target
   - can lock on to body part
 
 - ✅ refactor demo_sword into `<Swords>`
@@ -122,7 +122,7 @@
   - ✅ `sword` mutates sword wield/sheathe/lock
     - `sword rob lock:npc-1`
 
-- handle psi vs sword blend fighting
+- ✅ handle psi vs sword blend fighting
 
 ### Unorganised Bugs
 
@@ -132,7 +132,8 @@
 
 ### Worker
 
-- consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
+- 🚧 consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
+  - ✅ demo_back_off
 
 ## Blockbench
 

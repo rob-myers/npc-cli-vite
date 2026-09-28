@@ -1,12 +1,11 @@
 import { useStateRef } from "@npc-cli/util";
+import { fetchLatestBuild, getBuildInfo } from "@npc-cli/util/build-info";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import { ArrowClockwiseIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect } from "react";
 
-/** Both written by `buildIdPlugin` */
-const versionJsonPath = "/version.json";
-const ourBuildId = document.querySelector<HTMLMetaElement>('meta[name="build-id"]')?.content ?? "";
+const ourBuildId = getBuildInfo()?.id;
 /** A returning tab need not hammer the check */
 const minCheckMs = 60 * 1000;
 const touchDevice = isTouchDevice();
@@ -24,11 +23,8 @@ export function NewVersionToast() {
       const now = Date.now();
       if (!ourBuildId || state.stale || (!force && now - state.lastCheckMs < minCheckMs)) return;
       state.lastCheckMs = now;
-      try {
-        const res = await fetch(versionJsonPath, { cache: "no-store" });
-        const { id } = await res.json();
-        if (typeof id === "string" && id !== ourBuildId) state.set({ stale: true });
-      } catch {} // offline, or mid-deploy
+      const latest = await fetchLatestBuild();
+      if (latest && latest.id !== ourBuildId) state.set({ stale: true });
     },
     onVisible() {
       if (document.visibilityState === "visible") state.check();

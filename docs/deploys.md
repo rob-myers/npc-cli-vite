@@ -10,6 +10,8 @@ still on the site, and the site keeps it only if nothing renamed it needlessly.
 |---|---|
 | `scripts/src/vite-plugin-build-id.ts` | `buildIdPlugin` — `<meta name="build-id">` in `index.html`, `/version.json` |
 | `packages/app/src/components/NewVersionToast.tsx` | the "New version available" toast |
+| `packages/ui-sdk/src/StaleSiteNotice.tsx` | what a ui shows when its chunk won't load |
+| `packages/util/src/service/build-info.ts` | `getBuildInfo`, `fetchLatestBuild`, `simulatedStaleUi` |
 | `scripts/src/vite-plugin-asset-history.ts` | `assetHistoryPlugin` — carries old assets forward, `/asset-history.json` |
 | `scripts/src/vite-plugin-stable-entry.ts` | `stableEntryPlugin` — keeps chunks from importing the entry |
 | `packages/ui-registry/src/ui-schemas.ts` | `uiSchemas` — each ui's schema, without its lazy component |
@@ -18,13 +20,38 @@ still on the site, and the site keeps it only if nothing renamed it needlessly.
 
 ## Telling a tab it is stale
 
-`buildIdPlugin` writes the build's id into `index.html` and `/version.json`. `NewVersionToast`
-compares them on `visibilitychange`, `pageshow` and `vite:preloadError`, at most once a minute,
-and offers a reload. In dev it is off unless the url has `?checkVersion`; `showNewVersion()` in
-the console forces it.
+`buildIdPlugin` writes the build's id and time into `index.html` (`<meta name="build-id">`,
+`"build-at"`) and `/version.json` (`{ id, at }`). `NewVersionToast` compares them on
+`visibilitychange`, `pageshow` and `vite:preloadError`, at most once a minute, and offers a reload.
+In dev it is off unless the url has `?checkVersion`; `showNewVersion()` in the console forces it.
 
 The id lives in the html, never in a `define`: a `define` inlines it into a hashed chunk, which
 renamed 15 chunks on every build, even one that changed nothing.
+
+## A ui whose chunk won't load
+
+Opening a ui whose chunk a later deploy removed throws `Failed to fetch dynamically imported
+module`. `UiErrorBoundary` recognises it (`chunkLoadFailureRegex`) and shows `StaleSiteNotice`,
+which fetches the latest build and says which case it is:
+
+- a newer build: "This page is out of date", with this page's build time, the latest's, and the gap;
+- the same build: the network probably failed;
+- no answer: the site is unreachable.
+
+It shows in dev too; "Technical details" still has the error and stack, and "Reload page" fixes it.
+
+**To see it**, add `?simulateStale=<uiKey>` to the url (dev or prod) and open that ui, e.g.
+`?simulateStale=MapEdit` then the `mapedit-0` tab. `UiPortalContainer` throws the same error in its
+place, and `fetchLatestBuild` pretends a build from now exists.
+
+**To test the real thing**, act out a deploy under an open page:
+
+```bash
+pnpm build && pnpm preview        # open it, leave the mapedit-0 tab unopened
+rm packages/app/dist/assets/MapEdit-*.js
+node -e "require('fs').writeFileSync('packages/app/dist/version.json', JSON.stringify({ id: 'newer', at: new Date().toISOString() }))"
+# now open mapedit-0: its chunk 404s
+```
 
 ## Caching
 
@@ -41,18 +68,25 @@ longer emits into `dist/assets`, and writes a new history. Old chunks are then o
 files on the same origin: an old tab loads them without a reload, and "Clear cache and deploy"
 cannot lose them.
 
-- A superseded asset is dropped after 30 deploys or 14 days, whichever comes first.
+- A superseded asset is dropped once 30 deploys have passed since a build last produced it. Only
+  a build drops anything, so without deploys nothing leaves.
 - Production only (`CONTEXT=production`). `ASSET_HISTORY_FROM=<url>` points it at any site, e.g. a
   `vite preview` of an earlier build.
 - It never fails a deploy: if the history cannot be fetched it warns and carries nothing.
 - It keeps code, not data. An old tab reads the new `assets.json` and `sheets.json`, which is what
   the toast is for.
 
-`/asset-history.json` also logs each retained deploy's ui entry chunks:
+`/asset-history.json` also logs each retained deploy's ui entry chunks and sizes:
 
 ```json
-"deploys": [{ "seq": 7, "commit": "187ff7e3", "at": 1790…, "ui": { "MapEdit": "assets/MapEdit-Ci5ob05m.js", … } }]
+"deploys": [{ "seq": 7, "commit": "187ff7e3", "at": 1790…,
+  "ui": { "MapEdit": "assets/MapEdit-Ci5ob05m.js", … },
+  "counts": { "current": 70, "added": 3, "carried": 3 },
+  "bytes": { "current": 10705369, "added": 152222, "carried": 152194 } }]
 ```
+
+`current` is the build's own assets, `added` those new to the site (the growth), `carried` the
+older ones kept. The build log prints the same. A MapEdit change adds about 0.1MB.
 
 Diff two consecutive entries to see which ui urls a deploy changed:
 

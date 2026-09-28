@@ -135,9 +135,9 @@ and its node NAMES are its tags.
 ## Deploys and stale tabs
 
 See `docs/deploys.md` — the ONLY doc for it. In short: a tab can outlive its deploy, so production
-keeps 14 days of superseded hashed assets (`assetHistoryPlugin`, whose `/asset-history.json` also
-logs each deploy's ui chunk paths), `NewVersionToast` offers a reload, and ui chunk names stay put
-unless their code changed. Keep them so: nothing a ui imports may value-import
+keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json`
+also logs each deploy's ui chunk paths and sizes), `NewVersionToast` offers a reload, and ui chunk
+names stay put unless their code changed. Keep them so: nothing a ui imports may value-import
 `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`), and
 `stableEntryPlugin` keeps chunks from importing the entry.
 

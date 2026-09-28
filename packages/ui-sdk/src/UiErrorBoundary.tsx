@@ -3,6 +3,7 @@ import { cn } from "@npc-cli/util";
 import { error as logError, safeJsonCompact } from "@npc-cli/util/legacy/generic";
 import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { Component } from "react";
+import { StaleSiteNotice } from "./StaleSiteNotice";
 
 export class UiErrorBoundary extends Component<
   React.PropsWithChildren<BaseProps>,
@@ -45,8 +46,9 @@ export class UiErrorBoundary extends Component<
     const uiKey = this.props.meta?.uiKey;
     // a module that never arrived cannot be remounted back into existence
     const canRefresh = chunkLoadFailureRegex.test(this.state.error.message) === false;
-    // what broke is the developer's business — in prod it waits behind "Technical details"
-    const detailed = import.meta.env.DEV || this.state.showDetails;
+    // what broke is the developer's business — in prod it waits behind "Technical details",
+    // as does a missing chunk's everywhere, so the stale notice is testable in dev
+    const detailed = this.state.showDetails || (import.meta.env.DEV && canRefresh);
 
     return (
       <div className="flex flex-col size-full bg-black text-white">
@@ -91,14 +93,16 @@ export class UiErrorBoundary extends Component<
               </section>
             </div>
           </>
-        ) : (
+        ) : canRefresh ? (
           <div className="flex-1 min-h-0 grid place-items-center p-4 text-sm/relaxed text-white/70">
             Something went wrong.
           </div>
+        ) : (
+          <StaleSiteNotice uiKey={uiKey} />
         )}
 
         <div className="shrink-0 flex items-center gap-2 p-4 border-t border-white/15">
-          {import.meta.env.PROD && (
+          {(import.meta.env.PROD || canRefresh === false) && (
             <button
               type="button"
               className={cn(buttonCss, "border-transparent text-white/60 hover:text-white")}
