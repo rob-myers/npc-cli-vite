@@ -1228,7 +1228,7 @@ export async function sword(
   if (api.isTtyAt(0)) {
     if (opts.on === true) w.swords.draw(...srcKeys);
     else if (opts.off === true) w.swords.sheathe(...srcKeys);
-    else if ("lock" in opts) w.swords.lock(srcKeys, opts.lock ? w.npc.get(opts.lock).key : null);
+    else if ("lock" in opts) w.swords.lock(opts.lock ? w.npc.get(opts.lock).key : null, ...srcKeys);
     else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
     return;
   }
@@ -1238,7 +1238,7 @@ export async function sword(
     if (npcKey === undefined || !(npcKey in w.n)) continue;
     if (opts.on === true) w.swords.draw(npcKey);
     else if (opts.off === true) w.swords.sheathe(npcKey);
-    else w.swords.lock(srcKeys, srcKeys.includes(npcKey) ? null : npcKey);
+    else w.swords.lock(srcKeys.includes(npcKey) ? null : npcKey, ...srcKeys);
   }
 }
 

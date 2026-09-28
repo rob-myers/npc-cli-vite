@@ -66,7 +66,7 @@ export default function Swords() {
       isDrawn(npcKey) {
         return state.swords.get(npcKey)?.drawn === true;
       },
-      lock(srcKeys, dstKey) {
+      lock(dstKey, ...srcKeys) {
         for (const srcKey of srcKeys) {
           const sword = state.ensure(srcKey);
           sword.target = dstKey === srcKey ? null : dstKey;
@@ -270,7 +270,7 @@ export type State = Resources & {
   ensure(npcKey: string): SwordEntry;
   isDrawn(npcKey: string): boolean;
   /** Lock them on to `dstKey` whilst drawn and in sight — `null`, or themself, unlocks */
-  lock(srcKeys: string[], dstKey: null | string): void;
+  lock(dstKey: null | string, ...srcKeys: string[]): void;
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
   /** Sheathe their swords: the pose and aim are let go of, and the rope fades */
