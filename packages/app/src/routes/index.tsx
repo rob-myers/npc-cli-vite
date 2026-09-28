@@ -13,6 +13,7 @@ import { PaneTree } from "../components/PaneTree";
 import { PaneTreeWrapper } from "../components/PaneTreeWrapper";
 import {
   closePane,
+  countPanes,
   deferHiddenPaneUis,
   ensureLeafUis,
   findLeafByUiId,
@@ -64,6 +65,9 @@ function Index() {
         const root = uiStore.getState().persistedPanes.root;
         const leaf = findLeafByUiId(root, uiId);
         return leaf ? findPanePosition(root, leaf.id) : null;
+      },
+      getPaneCount() {
+        return countPanes(uiStore.getState().persistedPanes.root);
       },
     },
     theme,

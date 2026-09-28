@@ -126,6 +126,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
               console.warn("persistedPanes invalid: reverting to default", { invalidPersistedPanes: persistedPanes });
               state.persistedPanes = getDefaultPanes();
             }
+            state.persistedPanes.root = withUniqueIds(state.persistedPanes.root);
 
             const rehydratedUis = Object.values(state.persistedPanes.toUi);
             for (const ui of rehydratedUis) {
@@ -198,7 +199,7 @@ export function getDefaultPanes(): PersistedPanesLayout {
       children:
         tabs.length >= 3
           ? [
-              { type: "leaf", id: 0, uiId: tabs[0].id },
+              { type: "leaf", id: 4, uiId: tabs[0].id }, // not the root's 0: ids find nodes
               {
                 type: "split",
                 vertical: true,
@@ -209,9 +210,25 @@ export function getDefaultPanes(): PersistedPanesLayout {
                 ],
               },
             ]
-          : [{ type: "leaf", id: 0, uiId: tabs[0].id }],
+          : [{ type: "leaf", id: 4, uiId: tabs[0].id }],
       sizes: [100, 100],
     },
     toUi,
   };
+}
+
+/** Older default layouts gave the root and a leaf id `0`, so closing that leaf closed everything */
+function withUniqueIds(root: PersistedPaneNode): PersistedPaneNode {
+  const seen = new Set<number>();
+  const maxId = (n: PersistedPaneNode): number => (n.type === "leaf" ? n.id : Math.max(n.id, ...n.children.map(maxId)));
+  let nextId = maxId(root) + 1;
+  const visit = (node: PersistedPaneNode): PersistedPaneNode => {
+    const id = seen.has(node.id) ? nextId++ : node.id;
+    seen.add(id);
+    if (node.type === "leaf") return { ...node, id };
+    const children = node.children.map(visit);
+    const renamed = new Map(node.children.map((c, i) => [c.id, children[i].id]));
+    return { ...node, id, children, hiddenIds: node.hiddenIds?.map((h) => renamed.get(h) ?? h) };
+  };
+  return visit(root);
 }

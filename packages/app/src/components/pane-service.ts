@@ -46,6 +46,10 @@ export function splitPane(targetId: number, vertical: boolean) {
   persistPanesToUi();
 }
 
+export function countPanes(node: PaneNode): number {
+  return node.type === "leaf" ? 1 : node.children.reduce((sum, child) => sum + countPanes(child), 0);
+}
+
 export function closePane(targetId: number) {
   const { persistedPanes } = uiStore.getState();
   const target = findNode(persistedPanes.root, targetId);

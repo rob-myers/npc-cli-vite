@@ -32,6 +32,7 @@ export type LayoutApi = {
   swapPane(uiId: string, direction: -1 | 1): void;
   toggleOrientation(uiId: string): void;
   getPanePosition(uiId: string): { vertical: boolean; index: number; siblingCount: number } | null;
+  getPaneCount(): number;
 };
 
 export type OverrideContextMenuOpts = {
@@ -49,5 +50,6 @@ export function getFallbackLayoutApi(): LayoutApi {
     swapPane: () => {},
     toggleOrientation: () => {},
     getPanePosition: () => null,
+    getPaneCount: () => 1,
   };
 }

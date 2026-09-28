@@ -10,9 +10,10 @@ import {
   PlayCircleIcon,
   SquareHalfBottomIcon,
   SquareHalfIcon,
+  TrashIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { UiContext } from "./UiContext";
 
 export function UiInstanceMenu({ className, meta }: { className?: string; meta: UiInstanceMeta }) {
@@ -69,14 +70,7 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
     >
       {meta.uiKey === "Tabs" && (
         <div className="flex flex-col border-b border-white/20 py-1">
-          {/* 🗑️ */}
-          <button
-            type="button"
-            className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
-            onPointerDown={() => layoutApi.closePane(meta.id)}
-          >
-            <XIcon className="size-5" />
-          </button>
+          <ClosePaneButton disabled={layoutApi.getPaneCount() <= 1} onClose={() => layoutApi.closePane(meta.id)} />
           <button
             type="button"
             className="cursor-pointer text-sm py-1 px-2 hover:bg-white/20"
@@ -121,6 +115,29 @@ function UiInstancePopover({ meta }: { meta: UiInstanceMeta }) {
           </button>
         ))}
     </CloseOnClickPopover>
+  );
+}
+
+/** The first press arms it in place, the second closes the pane */
+function ClosePaneButton({ disabled, onClose }: { disabled: boolean; onClose(): void }) {
+  const [armed, setArmed] = useState(false); // reset as the popup unmounts
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      title={disabled ? "The only pane" : armed ? "Confirm close" : "Close pane"}
+      className={cn(
+        "cursor-pointer text-sm py-1 px-2 disabled:cursor-not-allowed disabled:opacity-30",
+        armed ? "bg-red-700 hover:bg-red-600" : "enabled:hover:bg-white/20",
+      )}
+      onPointerDown={(e) => {
+        if (armed && !disabled) return onClose();
+        e.stopPropagation(); // keep the popup open, to confirm or when disabled
+        if (!disabled) setArmed(true);
+      }}
+    >
+      {armed ? <TrashIcon className="size-5" /> : <XIcon className="size-5" />}
+    </button>
   );
 }
 
