@@ -9,6 +9,10 @@ separate, simpler rule, covered at the end.
 `w.npc.move({ ..., strafe })` in `NPCs.tsx` sets the move's intent on `npc.anim`:
 
 - `strafe` defaults to whether they aim: `strafe ?? Boolean(npc.anim.face.aim)`.
+- **Left to that default, it follows the aim mid-move** (`strafeFollowsAim`): `NpcAnimation.tick`
+  calls `setStrafe` as `face.aim` comes or goes, so a sword drawn whilst moving strafes at once and a
+  sheathed one lets go. A move told `strafe` either way keeps it. Letting go restores the move's own
+  `fast` (`fastAsked`), so they run again.
 - Strafing rules out `backwards` and `fast`: one gait blend, never running.
 - `turnBeforeMoving` returns at once: they set off without turning.
 - The npc tick stops steering `face` by velocity (`face.rate = 0`), so facing holds, unless
@@ -32,7 +36,8 @@ turning to it is the usual exponential ease.
   picking them clears it.
 - A drawn sword (`w.swords`, jsh `sword`, `q` for the player) aims at its lock's target every tick, but
   replaces or clears only an aim it set, so a look still turns them. Drawn at nobody, it holds their
-  facing with an aim at `rate` `0`, which turns them not at all, so every move strafes.
+  facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
+  not to, which it leaves to face its path, else its forward gait would slide.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 
@@ -45,6 +50,11 @@ Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
   with base `weight` `1` for `walk` and `0` for the rest; `strafing` records that the four are on
   show. Any other pose fades them all out as usual. The mixer multiplies each fade by that base
   weight, so fading still works whilst `syncStrafe` moves the weights.
+- **Already walking**, `setPose` keeps `walk` as it is rather than restarting it, which would reset its
+  phase and fade its weight in from `0` — the feet popping and the body sagging towards the rest pose.
+  The other three start at `0` and `syncStrafe` eases them in.
+- **Let go mid-move**, the four stay on show whilst `syncStrafe` eases all the weight onto `walk`, then
+  `walk` shows alone. `syncGait` may break into a run meanwhile, crossfading as usual.
 - **Weighed by heading** (`syncStrafe`, each moving tick). The heading is their velocity relative to
   their facing. The two clips either side of it share the weight linearly, so the four sum to `1`.
   Each weight eases towards its target over `strafeEaseSecs` (all by the same fraction, so the sum
@@ -59,7 +69,8 @@ Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
   blended speed is the agent's `maxSpeed` each tick. `startMoving` sets `strafeSpeed.walk` until the
   first heading.
 
-`startMoving` re-shows the gait (`setPose` forced) when a move changes between strafing and not.
+`startMoving` re-shows the gait (`setPose` forced) when a move starts strafing; one that stops eases
+out as above.
 `moveClipFadedIn`, which holds up arrival until the gait has faded in, counts all four.
 
 The upper-body overlay (`setUpper`, e.g. `point`, `psi`) is unaffected: it blends the arms and head
@@ -104,8 +115,9 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 
 ## Where
 
-- `components/npc-animation.ts` — `setPose`, `syncStrafe`, `startMoving`, `face.aim`
+- `components/npc-animation.ts` — `setPose`, `setStrafe`, `syncStrafe`, `startMoving`, `face.aim`
 - `components/npc.ts` — `look`, which aims instead whilst strafing
 - `components/NPCs.tsx` — `w.npc.move`, `turnBeforeMoving`, the tick's facing, `isBackStep`, `moveClipFadedIn`
+- `components/Swords.tsx` — `wield`, which sets or withholds a drawn sword's aim
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
 - `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `aim`

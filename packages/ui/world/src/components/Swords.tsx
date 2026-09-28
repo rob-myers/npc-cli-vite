@@ -179,11 +179,12 @@ export default function Swords() {
         // the aim — only ours, so a look still turns them: at the target, else held so a move strafes
         const { face } = npc.anim;
         if (face.aim === null || face.aim === sword.ownAim) {
-          const walking = npc.isMoving() && npc.anim.strafe !== true; // held, their forward gait would slide
+          /** On a move told not to strafe, whose forward gait a held aim would slide */
+          const forwardOnly = npc.isMoving() && npc.anim.strafe !== true && npc.anim.strafeFollowsAim !== true;
           face.aim = sword.ownAim =
             target !== undefined
               ? { at: target.point, rate: 1, untilRest: false }
-              : sword.drawn === true && walking === false
+              : sword.drawn === true && forwardOnly === false
                 ? heldAim
                 : null;
         }
