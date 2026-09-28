@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
     "./geomorph.d.ts": "./src/geomorph.d.ts",
     "./jsh-cli.d.ts": "./src/jsh-cli.d.ts",
     "./geomorph": "./src/service/geomorph.ts",

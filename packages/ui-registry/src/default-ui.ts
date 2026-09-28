@@ -1,10 +1,6 @@
 import type { ProfileKey } from "@npc-cli/cli/jsh/profiles";
-import Jobs from "@npc-cli/ui__jobs";
-import Jsh from "@npc-cli/ui__jsh";
-import MapEdit from "@npc-cli/ui__map-edit";
-import Tabs from "@npc-cli/ui__tabs";
-import World from "@npc-cli/ui__world";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
+import { uiSchemas } from "./ui-schemas";
 
 /**
  * We also provide `toUi` for panes.
@@ -17,9 +13,9 @@ export function getDefaultTabs() {
   const ttyKey = "tty-0";
   const worldKey = "world-0";
 
-  const jobsMeta = Jobs.schema.decode({ id: uid(), title: jobsKey, uiKey: "Jobs" });
+  const jobsMeta = uiSchemas.Jobs.decode({ id: uid(), title: jobsKey, uiKey: "Jobs" });
 
-  const jshMeta = Jsh.schema.decode({
+  const jshMeta = uiSchemas.Jsh.decode({
     id: uid(),
     title: ttyKey,
     uiKey: "Jsh",
@@ -33,17 +29,17 @@ export function getDefaultTabs() {
     },
   });
 
-  const mapEditMeta = MapEdit.schema.decode({
+  const mapEditMeta = uiSchemas.MapEdit.decode({
     id: uid(),
     title: "mapedit-0",
     uiKey: "MapEdit",
   });
 
-  const worldMeta = World.schema.decode({ id: uid(), title: worldKey, uiKey: "World", worldKey });
+  const worldMeta = uiSchemas.World.decode({ id: uid(), title: worldKey, uiKey: "World", worldKey });
 
   if (isTouchDevice()) {
     // only one Tabs on mobile
-    const tabsMeta = Tabs.schema.decode({
+    const tabsMeta = uiSchemas.Tabs.decode({
       id: uid(),
       title: "tabs-0",
       uiKey: "Tabs",
@@ -59,7 +55,7 @@ export function getDefaultTabs() {
       toUi: Object.fromEntries([jshMeta, jobsMeta, worldMeta, mapEditMeta, tabsMeta].map((meta) => [meta.id, meta])),
     };
   } else {
-    const tabs0Meta = Tabs.schema.decode({
+    const tabs0Meta = uiSchemas.Tabs.decode({
       id: uid(),
       title: "tabs-0",
       uiKey: "Tabs",
@@ -68,7 +64,7 @@ export function getDefaultTabs() {
     });
     worldMeta.parentId = tabs0Meta.id;
 
-    const tabs1Meta = Tabs.schema.decode({
+    const tabs1Meta = uiSchemas.Tabs.decode({
       id: uid(),
       title: "tabs-1",
       uiKey: "Tabs",
@@ -76,8 +72,8 @@ export function getDefaultTabs() {
       currentTabId: jshMeta.id,
     });
     jshMeta.parentId = tabs1Meta.id;
-    
-    const tabs2Meta = Tabs.schema.decode({
+
+    const tabs2Meta = uiSchemas.Tabs.decode({
       id: uid(),
       title: "tabs-2",
       uiKey: "Tabs",

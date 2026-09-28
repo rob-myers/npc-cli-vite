@@ -132,6 +132,15 @@ thing editable in production; everything else saves to the filesystem in DEV via
 `POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand,
 and its node NAMES are its tags.
 
+## Deploys and stale tabs
+
+See `docs/deploys.md` — the ONLY doc for it. In short: a tab can outlive its deploy, so production
+keeps 14 days of superseded hashed assets (`assetHistoryPlugin`, whose `/asset-history.json` also
+logs each deploy's ui chunk paths), `NewVersionToast` offers a reload, and ui chunk names stay put
+unless their code changed. Keep them so: nothing a ui imports may value-import
+`@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`), and
+`stableEntryPlugin` keeps chunks from importing the entry.
+
 ## TSL shader notes
 
 - **`positionLocal` range**: returns the raw geometry attribute, which for `BoxGeometry(1,1,1)` is `[-0.5, 0.5]` even after `geo.translate(0.5, 0.5, 0.5)`. Don't use `positionLocal` with `step()` assuming `[0,1]` — use `uv()` instead for per-face detection on box geometry.

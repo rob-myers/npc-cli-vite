@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
     "./map-node-api": "./src/map-node-api.ts",
     "./editor.schema": "./src/editor.schema.ts",
     "./use-drafts": "./src/use-drafts.ts"

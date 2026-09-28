@@ -10,7 +10,12 @@ const retainDays = 14;
 const dayMs = 24 * 60 * 60 * 1000;
 const assetKeyRegex = /^assets\/[\w.-]+$/;
 
-type History = { seq: number; files: Record<string, { seq: number; at: number }> };
+type History = {
+  seq: number;
+  files: Record<string, { seq: number; at: number }>;
+  /** Each retained deploy's ui entry chunks, so consecutive deploys can be diffed */
+  deploys?: { seq: number; at: number; commit: string | null; ui: Record<string, string> }[];
+};
 
 /**
  * Copies forward the live site's hashed assets this build no longer emits, so a tab left open
@@ -18,6 +23,7 @@ type History = { seq: number; files: Record<string, { seq: number; at: number }>
  */
 export function assetHistoryPlugin(): Plugin {
   let outDir = "";
+  let ui: Record<string, string> = {};
   // a Netlify production build is still serving the previous deploy
   const from = process.env.ASSET_HISTORY_FROM || (process.env.CONTEXT === "production" ? process.env.URL : undefined);
 
@@ -27,6 +33,19 @@ export function assetHistoryPlugin(): Plugin {
 
     configResolved(config) {
       outDir = path.resolve(config.root, config.build.outDir);
+    },
+
+    generateBundle(_, bundle) {
+      ui = {};
+      for (const chunk of Object.values(bundle)) {
+        if (
+          chunk.type === "chunk" &&
+          chunk.isDynamicEntry &&
+          /[\\/]packages[\\/]ui[\\/]/.test(chunk.facadeModuleId ?? "")
+        ) {
+          ui[chunk.name] = chunk.fileName;
+        }
+      }
     },
 
     async closeBundle() {
@@ -51,9 +70,15 @@ export function assetHistoryPlugin(): Plugin {
           files[key] = v;
         });
 
-        await fs.writeFile(path.join(outDir, historyFile), `${JSON.stringify({ seq, files })}\n`);
+        const deploys = [
+          ...(Array.isArray(prev?.deploys) ? prev.deploys : []).filter((d) => seq - d.seq < retainDeploys),
+          { seq, at: now, commit: process.env.COMMIT_REF ?? null, ui },
+        ];
+        await fs.writeFile(path.join(outDir, historyFile), `${JSON.stringify({ seq, files, deploys })}\n`);
         const carried = Object.values(files).filter((v) => v.seq !== seq).length;
-        console.log(`[asset-history] deploy #${seq}: carried ${carried} superseded assets${from ? ` from ${from}` : ""}`);
+        console.log(
+          `[asset-history] deploy #${seq}: carried ${carried} superseded assets${from ? ` from ${from}` : ""}`,
+        );
       } catch (e) {
         console.warn("[asset-history] skipped:", e); // never fail a deploy over history
       }

@@ -1,4 +1,6 @@
-import { getDefaultTabs, type UiRegistryKey, uiRegistry } from "@npc-cli/ui-registry";
+import type { UiRegistryKey } from "@npc-cli/ui-registry";
+import { getDefaultTabs } from "@npc-cli/ui-registry/default-ui";
+import { uiSchemas } from "@npc-cli/ui-registry/schemas";
 import { castDraft, type Draft } from "immer";
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { createJSONStorage, devtools, persist } from "zustand/middleware";
@@ -12,13 +14,13 @@ import type { WithImmer } from "./with-immer-type.d.ts";
 export const uiStoreApi = {
   addUis({ metas, overwrite = true }: { metas: UiInstanceMeta[]; overwrite?: boolean }): void {
     // safety: on ui key rename/remove ignore persisted
-    metas = metas.filter((meta) => meta.uiKey in uiRegistry);
+    metas = metas.filter((meta) => meta.uiKey in uiSchemas);
 
     uiStore.setState((draft) => {
       for (const meta of metas) {
         // initial parse ensures e.g. Tabs `items` array
         // UiPortal will re-parse on updates and handle errors
-        const result = uiRegistry[meta.uiKey].schema.safeParse(meta);
+        const result = uiSchemas[meta.uiKey].safeParse(meta);
         if (overwrite || !draft.byId[meta.id]) {
           draft.byId[meta.id] = {
             meta: result.success ? result.data : meta,

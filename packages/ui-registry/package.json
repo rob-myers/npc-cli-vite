@@ -4,6 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./default-ui": "./src/default-ui.ts",
+    "./schemas": "./src/ui-schemas.ts",
     "./types": {
       "types": "./src/index.ts"
     }

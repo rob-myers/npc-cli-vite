@@ -1,4 +1,4 @@
-# a hashed asset past asset-history's retention: leave /assets/*, whose immutable header would pin the miss
+# fallback for a missing asset, should the asset-not-found function (which runs first) be absent
 /assets/*  /asset-not-found/:splat  302
 /asset-not-found/*  /asset-not-found.txt  404
 /* /index.html 200
