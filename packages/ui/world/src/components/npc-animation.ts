@@ -489,7 +489,7 @@ function bubbleHeightForClip(clipName: string): number {
   return 2;
 }
 
-/** The highest a label is lifted, standing — see `boundLabel` */
+/** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;
 
 function labelYShiftForClip(clipName: string): number {

@@ -1,5 +1,6 @@
 import { memo } from "react";
 import * as THREE from "three/webgpu";
+import { npcDims } from "../const.both";
 import { npcMaterialConfig, npcScale } from "../const.npc";
 import type { Npc } from "./npc";
 import { labelYShiftMax } from "./npc-animation";
@@ -16,7 +17,7 @@ function NpcInstance({ npc }: { npc: Npc }) {
       <skinnedMesh
         geometry={npc.geometry}
         material={npc.material}
-        ref={boundLabel}
+        ref={boundAnyPose}
         position={npc.position}
         renderOrder={0}
         rotation={npc.rotation}
@@ -29,15 +30,20 @@ function NpcInstance({ npc }: { npc: Npc }) {
   );
 }
 
-/** Grows their bounds by the label, which only the vertex shader lifts overhead — else a pick's 1px frustum culls it */
-function boundLabel(mesh: THREE.SkinnedMesh | null) {
+/**
+ * Bounds for any pose, and the label, which only the vertex shader lifts overhead — else a pick's 1px frustum culls
+ * them. Not computed lazily off the first pose drawn: a sphere fitted standing would cull a lying npc's legs
+ */
+function boundAnyPose(mesh: THREE.SkinnedMesh | null) {
   if (mesh === null) return;
-  // still computed lazily, once posed
   mesh.computeBoundingSphere = function () {
-    THREE.SkinnedMesh.prototype.computeBoundingSphere.call(this);
-    this.boundingSphere?.union(labelSphere);
+    this.boundingSphere = poseSphere.clone().union(labelSphere);
   };
+  mesh.computeBoundingSphere(); // once, and never refitted to a pose
 }
+
+/** Standing, sitting, or lying along `-z`, they stay within about their height of their origin */
+const poseSphere = new THREE.Sphere(new THREE.Vector3(), (npcDims.height / npcScale) * 1.25);
 
 const labelSphere = new THREE.Sphere(
   new THREE.Vector3(0, labelYShiftMax, 0),
