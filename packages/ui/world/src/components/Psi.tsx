@@ -57,14 +57,16 @@ export default function Psi() {
       tickedMs: performance.now(),
 
       choose(npcKey) {
-        if (w.disabled === true) state.snap(); // paused: nothing fades, so a change is at once
+        /** nothing fades, so a change is at once */
+        const paused = w.disabled;
+        if (paused) state.snap(); // ends a fade-out, else we would wait on it
         if (state.influenced.some((x) => x.target === 0)) {
           state.pending = npcKey; // one still fading out: wait for it, latest pick wins
           return;
         }
         state.pending = undefined;
-        // the player themself turns it off: their rings go too
-        const off = npcKey === w.player?.key;
+
+        const off = npcKey === w.player?.key; // the player themself: their own rings go too
         const next = off ? null : npcKey;
         state.self.target = off ? 0 : 1;
 
@@ -73,12 +75,12 @@ export default function Psi() {
           if (current !== undefined) current.target = 0;
           if (next !== null) state.influenced.push({ npcKey: next, presence: 0, target: 1 });
         }
-        if (w.disabled === true) state.snap();
+
+        if (paused) state.snap(); // lands the change
         state.onTick();
         w.r3f?.invalidate();
       },
       onTick() {
-        if (w.n === null) return; // <NPCs> mounts after us
         // world time, so a pause holds the rings still — and a phase, so a new speed does not jump them
         const worldSecs = w.timer.getElapsedTime();
         state.flowPhase.value += Math.max(0, worldSecs - state.flowAt) * state.tune.speed;

@@ -468,7 +468,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             }
           >
             <ambientLight intensity={ambientLightIntensity} color="#fff" />
+
             <Floor key="floor" />
+
             {/* folded */}
             <group ref={state.ref("worldGroup")}>
               <Ceiling key="ceiling" />
@@ -476,20 +478,28 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Doors key="doors" />
               <Obstacles key="obstacles" />
               <Decor key="decor" />
-              <NpcShadows key="npc-shadows" />
-              <Psi key="psi" />
-              <Swords key="swords" />
               <RoomLabels key="room-labels" />
               <Labels key="labels" />
-              <NpcRings key="npc-rings" />
               <Debug key="debug" />
               <WorldHtml key="html" />
             </group>
+
             <NPCs key="npcs" />
+
+            {state.npc && (
+              <>
+                <NpcRings key="npc-rings" />
+                <NpcShadows key="npc-shadows" />
+                <Psi key="psi" />
+                <Swords key="swords" />
+              </>
+            )}
           </WorldView>
         )}
+
         <PhysicsWorker />
         <NavWorker />
+
         {state.view && <WorldMenu />}
         <WorldSpeech />
       </div>
