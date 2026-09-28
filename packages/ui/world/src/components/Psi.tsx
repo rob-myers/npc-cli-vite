@@ -1,6 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
 import { defaultPsiTune, type PsiTune, psiMaxReach } from "../const.npc";
+import { eased } from "../service/fade";
 import {
   advanceInfluence,
   chooseInfluence,
@@ -74,7 +75,7 @@ export default function Psi() {
         slots.forEach(({ npc, presence }, i) => {
           state.npcData[i * 4] = npc.position.x;
           state.npcData[i * 4 + 1] = npc.position.z;
-          state.npcData[i * 4 + 2] = presence * presence * (3 - 2 * presence); // eased
+          state.npcData[i * 4 + 2] = eased(presence);
           state.npcData[i * 4 + 3] = npc.position.y + npc.anim.headY + psiConfig.headAbove; // their peak
         });
         state.slotCount.value = slots.length;

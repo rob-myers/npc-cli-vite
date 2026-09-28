@@ -1,5 +1,4 @@
-/** How far into view some rings are, and whither they are headed */
-export type Fade = { presence: number; target: 0 | 1 };
+import { type Fade, stepFade } from "./fade";
 
 export type NpcFade = Fade & { npcKey: string };
 
@@ -62,7 +61,7 @@ export function advanceInfluence(
   exists: (npcKey: string) => boolean,
 ) {
   for (const fade of [x.self, x.current, x.leaving]) {
-    if (fade !== null) fade.presence += Math.max(-step, Math.min(step, fade.target - fade.presence));
+    if (fade !== null) stepFade(fade, step);
   }
   if (x.current !== null && exists(x.current.npcKey) === false) x.current = null; // the player's rings stay
   if (x.leaving !== null && (x.leaving.presence === 0 || exists(x.leaving.npcKey) === false)) x.leaving = null;
