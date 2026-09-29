@@ -10,6 +10,11 @@ import ReactDOM from "react-dom/client";
 import { queryClientApi } from "./query-client";
 import { routeTree } from "./routeTree.gen";
 
+if (import.meta.env.DEV) {
+  /** On first use, not at boot, so the app's own load order is untouched — see `docs/mcp.md` */
+  (window as unknown as { __devMcpLoad(): Promise<unknown> }).__devMcpLoad = () => import("./dev-mcp-hooks");
+}
+
 const router = createRouter({
   routeTree,
 });

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "npc-cli": {
+      "command": "node",
+      "args": ["--import=tsx", "scripts/src/mcp/server.ts"]
+    }
+  }
+}
