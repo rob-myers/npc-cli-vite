@@ -84,9 +84,11 @@ from `ct.w` and returning plain data.
 - **`say` takes the npc last**: `say nominal as always bot1`, else a quoted first word is taken for the npc.
   Escape an apostrophe, `say captain\'s orders bot1`: an open quote leaves the tty at a `>` prompt,
   though `jsh` reports `exitCode: 0` — `interrupt` it.
-- **A patrol is a background loop**, so the tty stays free — no need for another:
-  `while true; do move bot2 to:[15.75,0,7.75]; move bot2 to:[23.7,0,6.1]; done &`. A `move` failing
-  `stuck` ends it — `pad` or `park` those idling near its route first, e.g. out of a doorway.
+- **Points go in decor, not the command**, so they can be dragged in the Decorator:
+  `decor to:[15.75,7.75] key:patrol-bot2-0`, then read them back by key prefix with `route patrol-bot2-`.
+- **A patrol is a background job**, so the tty stays free: `patrol_route bot2 patrol-bot2- | move bot2 &`.
+  It follows a point moved whilst they head for it. `pad` or `park` those idling on its route first,
+  e.g. out of a doorway, else they block it.
 - **`pad` needs room**: in a crowded room it fails `not padded: bot0`; `park` stands them against a wall instead.
 - **Check a facing** by `w.n[key].rotation.y`, which is `-(atan2(dz, dx) + π/2)` towards a point `(dx, dz)` away.
 
