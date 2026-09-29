@@ -17,6 +17,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       key: defaultPlayerKey,
+      twoTap: null,
 
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -31,18 +32,36 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       onKeyDown(e) {
         if (isTypingTarget(e) || e.repeat === true) return;
-        if (!(state.key in w.n)) return;
-
-        switch (e.key) {
-          case "e":
-          case "E":
-            w.psi.toggle() && w.swords.sheathe(state.key);
-            break;
-          case "q":
-          case "Q":
-            w.swords.toggle(state.key) && state.psi(null);
-            break;
+        if (e.key === "q" || e.key === "Q") state.toggleSword();
+        else if (e.key === "e" || e.key === "E") state.togglePsi();
+      },
+      onTouch(e) {
+        if (e.type === "touchstart") {
+          const [a, b, c] = e.touches; // a second finger begins one, a third ends it
+          const onCanvas = a?.target === w.view.canvas && b?.target === w.view.canvas;
+          state.twoTap = onCanvas && c === undefined ? { startMs: e.timeStamp, downs: [a, b] } : null;
+          return;
         }
+        const tap = state.twoTap;
+        if (tap === null) return;
+        const strayed = [...e.changedTouches].some((t) => {
+          const down = tap.downs.find((d) => d.identifier === t.identifier);
+          return down === undefined || Math.hypot(t.clientX - down.clientX, t.clientY - down.clientY) > twoTapSlopPx;
+        });
+        if (e.type === "touchcancel" || strayed || e.timeStamp - tap.startMs > twoTapMs) state.twoTap = null;
+        else if (e.touches.length === 0) {
+          state.twoTap = null;
+          const { top, height } = w.view.canvas.getBoundingClientRect();
+          (tap.downs[0].clientY + tap.downs[1].clientY) / 2 < top + height / 2
+            ? state.toggleSword()
+            : state.togglePsi();
+        }
+      },
+      toggleSword() {
+        if (state.key in w.n) w.swords.toggle(state.key) && state.psi(null);
+      },
+      togglePsi() {
+        if (state.key in w.n) w.psi.toggle() && w.swords.sheathe(state.key);
       },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
@@ -105,6 +124,18 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.key = npcKey;
         w.events.next({ key: "set-player", playerKey: npcKey });
       },
+      setupDom() {
+        const el = w.rootEl;
+        const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
+        const onTouch = (e: TouchEvent) => state.onTouch(e);
+        const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
+        el.addEventListener("keydown", onKeyDown);
+        for (const type of touchTypes) el.addEventListener(type, onTouch);
+        return () => {
+          el.removeEventListener("keydown", onKeyDown);
+          for (const type of touchTypes) el.removeEventListener(type, onTouch);
+        };
+      },
       setKey(npcKey) {
         if (npcKey === state.key || w.n[npcKey] === undefined) {
           return;
@@ -146,13 +177,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 
   w.player = state;
 
-  useEffect(() => {
-    if (w.rootEl === null) return;
-    const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
-    w.rootEl.addEventListener("keydown", onKeyDown);
-    return () => w.rootEl?.removeEventListener("keydown", onKeyDown);
-  }, [w.rootEl]);
+  useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 }
+
+/** A two-finger tap's longest, second finger down to last up, and how far either may stray — as `isPointDiffDrag` */
+const twoTapMs = 300;
+const twoTapSlopPx = 20;
 
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
@@ -160,8 +190,17 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
+  /** Two fingers down on the canvas that may yet be a tap: since when, and where */
+  twoTap: null | { startMs: number; downs: [Touch, Touch] };
+
   /** The player's controls, e.g. `q` draws or sheathes their sword — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
+  /** Touch's `q` and `e`: a two-finger tap on the canvas, its top half the sword, its bottom half psi */
+  onTouch(e: TouchEvent): void;
+  /** Draws or sheathes their sword, letting go of psi */
+  toggleSword(): void;
+  /** Psi off, else back on to the last target, sheathing their sword */
+  togglePsi(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
@@ -176,6 +215,8 @@ export type State = {
   /** Make them the player, telling everyone — the bare act, without `setKey`'s lit, persist and pan */
   assign(npcKey: string): void;
   setKey(npcKey: string): void;
+  /** Listens on the World's root for the player's keys and taps, returning the cleanup */
+  setupDom(): () => void;
   /** Spawns the player in a random room, preferring `spawnRoomLabels` — `false` if every attempt failed */
   spawnSomewhere(): Promise<boolean>;
 };
