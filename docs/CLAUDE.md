@@ -101,7 +101,7 @@ Which npcs are parked — and the wall segment each stands against — is jsh st
 
 ## jsh commands
 
-Exports of `packages/cli/src/jsh/world/{core,demo,debug,decor,pred}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. The `*_mcp.ts` ones are Claude's, written through the MCP server (see below). An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
 
 **Only `packages/cli/src/jsh/world` knows of the World.** The shell (`packages/cli/src/shell`: builtins, `api`, sessions) and `packages/cli/src/jsh`'s own modules e.g. `util.js` must not import or mention it. A later-sourced module may shadow an earlier one's command, never a builtin — builtins win.
 
@@ -140,6 +140,13 @@ also logs each deploy's ui chunk paths and sizes), `NewVersionToast` offers a re
 names stay put unless their code changed. Keep them so: nothing a ui imports may value-import
 `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`), and
 `stableEntryPlugin` keeps chunks from importing the entry.
+
+## MCP server
+
+See `docs/mcp.md` — the ONLY doc for it. In short: `scripts/src/mcp/server.ts` (in `.mcp.json`) drives
+the `pnpm dev` page over CDP through `window.__devMcp` (`packages/app/src/dev-mcp-hooks.ts`): jsh lines
+in `tty-1` and beyond, their output, pointer presses on the World, the console, screenshots. Prototype in
+a tty; keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
 
 ## Checking a change in the browser
 

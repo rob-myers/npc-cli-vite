@@ -1,4 +1,5 @@
 import { decodeDoorAreaId, isDoorAreaId } from "@npc-cli/ui__world/worker/nav-util";
+import { geomService } from "@npc-cli/util/geom-service";
 import {
   ANY_QUERY_FILTER,
   createDefaultQueryFilter,
@@ -13,7 +14,6 @@ import {
   type NavMesh,
   type QueryFilter,
 } from "navcat";
-import { localBoundary } from "navcat/blocks";
 
 /**
  * One function per op, each pure given the navmesh and the map's doors: plain, async, or a
@@ -48,8 +48,7 @@ export const ops: {
       // only the room's doors and parked npcs: one on the far side of a wall is nothing to them
       const doors = (map.roomDoors[npc.grKey ?? ""] ?? []).flatMap((gdKey) => map.doorFrames[gdKey] ?? []);
       const parked = [...standing.values()].filter((o) => o.grKey === npc.grKey);
-      // copied up front: the boundary is one reused object, and each wall reads the others for its corners
-      const segs = queryBoundary(npc, navMesh).map(({ s }) => s.slice());
+      const segs = queryBoundary(npc, navMesh).map(({ s }) => s);
       const walls = segs.flatMap((s) => prepareWall(s, segs, doors, parked) ?? []);
       if (walls.length === 0) {
         plans.set(npc.key, null);
@@ -132,7 +131,7 @@ export const ops: {
     }
   },
   boundary({ npc }, navMesh) {
-    return queryBoundary(npc, navMesh).map(({ s }) => s.slice());
+    return queryBoundary(npc, navMesh).map(({ s }) => s);
   },
   /**
    * Where each npc may stand with room to walk right round them: `by` from their room's walls and
@@ -176,16 +175,27 @@ export const ops: {
 type OpResult<T> = T | Promise<T> | Generator<void, T> | AsyncGenerator<void, T>;
 
 /**
- * The navmesh boundary within `parkQueryRange` of them, nearest first — at most 8 segments, and
- * none if they are off the mesh. Asked afresh every time: the crowd's own query is shorter, and
- * an npc stood IN a doorway would otherwise have nothing but its frame
+ * The navmesh boundary within `parkQueryRange` of them, nearest first — none if they are off the mesh.
+ * Not navcat's local boundary, which keeps the 8 nearest: stood in a doorway, those are all its frame
  */
 function queryBoundary(npc: WW.NpcQuery, navMesh: NavMesh) {
   const nodeRef = resolveNodeRef(navMesh, npc);
   if (nodeRef === null) return [];
   const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
-  localBoundary.updateLocalBoundary(boundary, nodeRef, [npc.point.x, 0, npc.point.y], parkQueryRange, navMesh, filter);
-  return boundary.segments;
+  const hood = findLocalNeighbourhood(navMesh, nodeRef, [npc.point.x, 0, npc.point.y], parkQueryRange, filter);
+  if (hood.success === false) return [];
+
+  const found: { d: number; s: number[] }[] = [];
+  for (const ref of hood.nodeRefs) {
+    const walls = getPolyWallSegments(navMesh, ref, filter, false);
+    if (walls.success === false) continue;
+    for (let k = 0; k < walls.segmentVerts.length; k += 6) {
+      const s = walls.segmentVerts.slice(k, k + 6);
+      const d = geomService.getDistanceToSeg(npc.point.x, npc.point.y, { x: s[0], y: s[2] }, { x: s[3], y: s[5] });
+      if (d <= parkQueryRange) found.push({ d, s });
+    }
+  }
+  return found.sort((u, v) => u.d - v.d);
 }
 
 /** Main's ref for them, unless the navmesh has changed under it */
@@ -498,9 +508,6 @@ function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: 
   }
   return { picks, failed };
 }
-
-/** One boundary for every query — the "dummy agent" */
-const boundary = localBoundary.create();
 
 // typed copies of the world's constants, which the worker cannot import — see `physics.ts` there
 type WorldBoth = typeof import("@npc-cli/ui__world/const.both");

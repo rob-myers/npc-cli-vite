@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "catalog:",
+    "@modelcontextprotocol/sdk": "catalog:",
     "@npc-cli/app": "workspace:^",
     "@npc-cli/cli": "workspace:^",
     "@npc-cli/graph": "workspace:^",

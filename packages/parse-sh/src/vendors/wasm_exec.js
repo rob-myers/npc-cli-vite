@@ -97,6 +97,8 @@
 			umask() { throw enosys(); },
 			cwd() { throw enosys(); },
 			chdir() { throw enosys(); },
+			// npc-cli: libraries take a global `process` to have `env` e.g. polygon-clipping, which throws if loaded after this
+			env: {},
 		}
 	}
 

@@ -7,6 +7,7 @@ export * as core from "./world/core.ts";
 export * as debug from "./world/debug.ts";
 export * as decor from "./world/decor.ts";
 export * as demo from "./world/demo.ts";
+export * as demo_mcp from "./world/demo_mcp.ts";
 export * as pred from "./world/pred.ts";
 
 import { pausablePtag } from "../shell/pause-group";
