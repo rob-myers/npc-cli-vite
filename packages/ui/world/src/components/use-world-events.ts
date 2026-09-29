@@ -430,6 +430,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.npc?.warmCrowd();
             break;
           case "set-player":
+            state.syncFadeRooms(); // the rooms in view are the player's
             break;
           case "nav-updated":
             // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
