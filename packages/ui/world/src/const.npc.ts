@@ -252,13 +252,13 @@ export type PsiTune = {
 export const swordConfig = {
   /** Where the rope leaves the right forearm, above the wrist — its `+x` is up whilst pointing — in model units */
   ropeFrom: [0.07, -0.26, 0] as [number, number, number],
-  /** Metres the unlocked stub reaches, level, ahead of the hand */
-  stub: 1,
+  /** Metres the unlocked stub reaches, level, from above the wrist: just past the hand */
+  stub: 0.05,
   /** Metres above the target's head bone the rope lands, for no body part */
   headAbove: 0.3,
-  /** Metres of radius at the hand, and at the target */
-  r0: 0.008,
-  r1: 0.04,
+  /** Metres of radius of the rope, and of the ball at its end */
+  radius: 0.01,
+  tipRadius: 0.035,
   /** The stub's alpha, and the locked rope's on the way, and within `nearMetres` of the body part */
   alpha: 0.35,
   faint: 0.04,

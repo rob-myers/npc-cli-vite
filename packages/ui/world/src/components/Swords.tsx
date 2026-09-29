@@ -99,17 +99,19 @@ export default function Swords() {
           if (hand === undefined) continue;
           hand.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
           const tip = hand.localToWorld(tmpTip.fromArray(swordConfig.ropeFrom));
-          const end = ropeEnd(rope, tip, npc.rotation.y, rope.to === null ? undefined : w.n[rope.to.npcKey]);
+          const dst = rope.to === null ? undefined : w.n[rope.to.npcKey];
+          const end = ropeEnd(rope, tip, npc.rotation.y, dst);
           state.srcData.set([tip.x, tip.y, tip.z, eased(rope.shown.presence)], count * 4);
           state.dstData.set([end.x, end.y, end.z, eased(rope.locked.presence)], count * 4);
+          const to = dst ?? npc;
+          state.roomData.set([npc.roomSlot.value, to.roomSlot.value, npc.npcLit.value, to.npcLit.value], count * 4);
           count++;
         }
 
-        state.mesh.visible = count > 0; // else no draw call
+        state.group.visible = count > 0; // else no draw call
         if (count === 0) return; // nor any upload
-        state.geo.instanceCount = count;
-        state.geo.getAttribute("swordSrc").needsUpdate = true;
-        state.geo.getAttribute("swordDst").needsUpdate = true;
+        state.tube.geometry.instanceCount = state.ball.geometry.instanceCount = count;
+        for (const attr of state.attrs) attr.needsUpdate = true;
       },
       sync() {
         state.onTick(w.disabled === true); // paused: nothing fades, so a change is at once
@@ -193,7 +195,7 @@ export default function Swords() {
           });
       },
     }),
-    { reset: { geo: true, mat: true, mesh: true, srcData: true, dstData: true } }, // the geometry's attributes wrap the data
+    { reset: { tube: true, ball: true, group: true, attrs: true, srcData: true, dstData: true, roomData: true } }, // the attributes wrap the data
   );
 
   w.swords = state;
@@ -207,14 +209,13 @@ export default function Swords() {
   }, []);
 
   useEffect(() => {
-    const { vertexNode, colorNode } = swordNodes(state, w.view);
-    state.mat.vertexNode = vertexNode;
-    state.mat.colorNode = colorNode;
-    state.mat.needsUpdate = true;
+    for (const mesh of [state.tube, state.ball]) {
+      Object.assign(mesh.material, swordNodes(state, w.view, mesh === state.ball), { needsUpdate: true });
+    }
     state.onTick(); // a fresh geometry has no instances yet
-  }, []);
+  }, [w.view.fadeRoomsFx.uid]);
 
-  return <primitive object={state.mesh} />;
+  return <primitive object={state.group} />;
 }
 
 export type State = SwordResources & {
