@@ -13,7 +13,7 @@ export function npcQuery(w: JshCli.WorldState, npc: JshCli.Npc): WW.NpcQuery {
   const agent = npc.agent;
   if (agent === null) throw Error("no agent");
   // an npc stood IN a doorway resolves to one of its two rooms, which owns that door either way
-  const grKey = (w.e.npcToRoom.get(npc.key) ?? w.e.findRoomContaining(npc.point, true))?.grKey ?? null;
+  const grKey = (w.npc.npcToRoom.get(npc.key) ?? w.findRoomContaining(npc.point, true))?.grKey ?? null;
   const doors = grKey === null ? [] : getRoomDoorKeys(w, grKey);
   return {
     key: npc.key,

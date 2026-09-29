@@ -43,7 +43,7 @@ export const agentConfig = {
     idleSeparating: 0.005,
     walk: 1.5,
     run: 4,
-    /** Backing away — see `w.npc.move`'s `backwards` */
+    /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
   },
   /**
@@ -76,7 +76,7 @@ export const npcConfig = {
   angle: {
     /** Opening turn beyond which an npc shuffles round before walking off */
     turnBeforeMove: Math.PI * 0.75,
-    /** A target further than this from their facing, and within `dist.backStep`, is backed onto — see `w.npc.move` */
+    /** A target further than this from their facing, and within `dist.backStep`, is backed onto — see `w.e.move` */
     backStep: (Math.PI * 2) / 3,
   },
   dist: {
@@ -284,7 +284,7 @@ export const swordConfig = {
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
 export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };
-/** Metres per second strafing each way, blended as the gaits are — see `w.npc.move`'s `strafe` */
+/** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe` */
 export const strafeSpeed = { walk: 1.2, strafe_right: 0.5, backwards: 1, strafe_left: 0.5 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;

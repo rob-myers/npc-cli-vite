@@ -344,7 +344,7 @@ export class Npc {
    * such an area (spawned in a doorway, or a door locked whilst they stood in it) and the crowd
    * refuses to move an agent whose own node fails its filter. Searches only ever filter
    * NEIGHBOURS, so this lets them walk out of the doorway without letting them walk through it.
-   * `w.npc.move` uses `strictQueryFilter` — the same test without the exemption — to ask whether
+   * `w.e.move` uses `strictQueryFilter` — the same test without the exemption — to ask whether
    * they are standing somewhere they should not be
    */
   canPassNode(nodeRef: number, navMesh: NavMesh, exemptStanding: boolean): boolean {

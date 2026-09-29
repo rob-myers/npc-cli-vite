@@ -206,7 +206,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         return renderer;
       },
       forceUpdate(delta = 0) {
-        w.npc?.onTick(delta);
+        if (w.npc !== null) {
+          w.npc.onTick(delta);
+          w.e.postNpcTick();
+        }
         w.r3f?.invalidate();
         w.update();
       },
@@ -299,7 +302,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
               bodyPart,
               npc: true,
               ...(bodyPart === "label" && { npcLabel: true as const }),
-              ...w.e.npcToRoom.get(npc.key),
+              ...w.npc.npcToRoom.get(npc.key),
             };
           }
           default:
@@ -999,7 +1002,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const clickId = state.clickIds.shift();
 
         // npc might lack gmId
-        const gmRoomId = "gmId" in picked ? w.e.findRoomContaining(point, true) : null;
+        const gmRoomId = "gmId" in picked ? w.findRoomContaining(point, true) : null;
 
         const pickEvent: JshCli.PickEvent = {
           key: "picked",

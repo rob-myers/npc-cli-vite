@@ -180,6 +180,29 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       wall: null as any,
       helper,
 
+      findGmIdContaining(input) {
+        if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
+          return input.meta.gmId;
+        }
+        return state.gmGraph.findGmIdContaining(helper.parseGroundPoint(input));
+      },
+      findRoomContaining(input, includeDoors = false) {
+        if (helper.isGmRoomId(input.meta) === true) {
+          // existing input.meta overrides includeDoors `false`
+          // return { ...input.meta };
+          return { gmId: input.meta.gmId, roomId: input.meta.roomId, grKey: input.meta.grKey };
+        }
+        const gmId = state.findGmIdContaining(input);
+        if (typeof gmId === "number") {
+          const point = helper.parseGroundPoint(input);
+          const gm = state.gms[gmId];
+          const localPoint = gm.inverseMatrix.transformPoint({ x: point.x, y: point.y });
+          const roomId = state.gmsData.findRoomIdContaining(gm, localPoint, includeDoors);
+          return roomId === null ? null : { gmId, roomId, grKey: helper.getGmRoomKey(gmId, roomId) };
+        } else {
+          return null;
+        }
+      },
       /** Everything but the floor folds onto it, and rises again once the floor is back */
       foldTo(amount, ms = worldFoldMs) {
         return new Promise<void>((resolve) => {
@@ -245,6 +268,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.door.onTick(delta);
         state.net?.onTick(delta); // mirrors move before the npc tick animates them
         state.npc.onTick(delta);
+        state.e.postNpcTick();
         state.speech?.onTick(delta);
         state.view.followPlayer(delta);
       },
@@ -611,6 +635,8 @@ export type State = {
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
 
+  findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
+  findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   foldTo(amount: number, ms?: number): Promise<void>;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;

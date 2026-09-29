@@ -368,7 +368,7 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
     getNpcOrThrow,
     /** Move, handling named errors and any pause the move deferred */
     async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
-      await w.npc
+      await w.e
         .move(moveOpts)
         .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
         .catch((e) => {
@@ -626,7 +626,7 @@ export async function nudge(
     return; // nowhere to go i.e. backed against something
   }
 
-  await w.npc.move({ npcKey: npc.key, to });
+  await w.e.move({ npcKey: npc.key, to });
 }
 
 /** Below this much of a clamped nudge, we do not move at all */
@@ -668,9 +668,9 @@ export async function pad(
   // Keyed, so a room shared by two of them is only sent once; the worker drops those being padded
   const others = new Map(
     npcs.flatMap((npc) => {
-      const at = w.e.npcToRoom.get(npc.key);
+      const at = w.npc.npcToRoom.get(npc.key);
       if (at === undefined) return [];
-      return [...(w.e.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
+      return [...(w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
         const point = w.n[key]?.point;
         return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
       });
@@ -739,7 +739,7 @@ export async function park(
         npcs: npcs.map((npc) => npcQuery(w, npc)),
         // everyone parked, wherever: a handful, and the worker keeps to the rooms involved
         parked: [...parked.get()].flatMap(([key, seg]) => {
-          const grKey = w.e.npcToRoom.get(key)?.grKey;
+          const grKey = w.npc.npcToRoom.get(key)?.grKey;
           const point = w.n[key]?.point; // persisted: they may not be here this time
           return grKey === undefined || point === undefined ? [] : [{ key, point, grKey, seg }];
         }),
@@ -1261,7 +1261,7 @@ export async function* w(ct: JshCli.RunArg) {
   const { api, args, w } = ct;
 
   // support piped inputs via hyphen args -
-  // e.g. `pick 1 | w e.findRoomContaining -`
+  // e.g. `pick 1 | w findRoomContaining -`
   const stdinInputChar = "-";
   const readStdin = !ct.api.isTtyAt(0) && args.slice(1).some((arg) => arg === stdinInputChar);
 

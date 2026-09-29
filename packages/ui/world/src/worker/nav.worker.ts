@@ -36,7 +36,7 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
         blocked = findUnreachableResult(msg);
       } catch (e) {
         // answering "reachable" leaves the npc walking up to the door and stopping, where an
-        // unanswered query would leave `w.npc.move` waiting for a promise nothing can resolve
+        // unanswered query would leave `w.e.move` waiting for a promise nothing can resolve
         warn("🤖 nav worker: request-unreachable failed", e);
       }
       self.postMessage({ type: "unreachable-result", uid: msg.uid, blocked } satisfies WW.MsgFromNavWorker);

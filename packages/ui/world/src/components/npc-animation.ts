@@ -41,7 +41,7 @@ export class NpcAnimation {
   moveClip = emptyAnimationClip;
   /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
   fast = false;
-  /** The move's INTENT: they back away, facing whence they go — see `w.npc.move` */
+  /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */
   strafe = false;
@@ -326,8 +326,8 @@ export class NpcAnimation {
     );
 
     const { last } = this.npc;
-    // last.dst = groundPoint; // already set in `w.npc.move`
-    last.dstGrId = this.w.e.findRoomContaining(target.groundPoint);
+    // last.dst = groundPoint; // already set in `w.e.move`
+    last.dstGrId = this.w.findRoomContaining(target.groundPoint);
     last.blockingArea = -1;
     last.point = this.npc.point;
     // arrival radius is relative to this, else a short move starts arrived

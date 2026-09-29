@@ -64,6 +64,7 @@ import {
   mergeWithGroupAttr,
 } from "../service/geometry";
 import { helper } from "../service/helper";
+import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
 import { loadSkinSheets } from "../service/skin-sheets";
@@ -94,10 +95,15 @@ export default function NPCs() {
 
       byAgentId: {},
       byPickId: {},
+      config: npcConfig,
+      doableToNpc: {},
       nextPickId: 0,
       npc: {},
+      npcToDoable: {},
+      npcToRoom: new Map(),
       physics: { positions: [], bodyKeyToUid: {}, bodyUidToKey: {} },
       postCrowdTickEvents: [],
+      roomToNpcs: [],
       tickResolvers: [],
 
       clearMomentum(npc) {
@@ -391,10 +397,10 @@ export default function NPCs() {
         state.update();
       },
       findFreeDoMeta(meta, npcKey) {
-        const currentDecorKey = w.e.npcToDoable[npcKey] ?? null;
+        const currentDecorKey = state.npcToDoable[npcKey] ?? null;
 
         if (typeof meta.do === "string") {
-          const otherNpcKey = w.e.doableToNpc[meta.decorKey] ?? null;
+          const otherNpcKey = state.doableToNpc[meta.decorKey] ?? null;
           return otherNpcKey !== null && otherNpcKey !== npcKey
             ? { type: "occupied", meta }
             : { type: meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta };
@@ -406,7 +412,7 @@ export default function NPCs() {
           // 🔔 clarify precedence
           const found =
             ds.find((d) => {
-              const otherNpcKey = w.e.doableToNpc[d.key] ?? null;
+              const otherNpcKey = state.doableToNpc[d.key] ?? null;
               return otherNpcKey == null || otherNpcKey === npcKey;
             }) ?? null;
           return found === null
@@ -414,7 +420,7 @@ export default function NPCs() {
             : { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
         }
 
-        return currentDecorKey !== null && meta.npcKey === npcKey && w.e.npcToDoable[npcKey] !== null
+        return currentDecorKey !== null && meta.npcKey === npcKey && state.npcToDoable[npcKey] !== null
           ? // can respawn onto self whilst doing
             { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
           : { type: "none", meta };
@@ -457,101 +463,6 @@ export default function NPCs() {
       },
       hasDoMeta(meta) {
         return typeof meta.do === "string" || (meta.obstacle === true && Array.isArray(meta.decorIds));
-      },
-      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe }) {
-        /** Can be overriden if unreachable due to locked doors */
-        let groundPoint = helper.parseGroundPoint(to);
-
-        const npc = state.get(npcKey);
-        const result = state.getClosestPoly(groundPoint, 0.5);
-        const doResult = state.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
-
-        if (doResult.type === "occupied") {
-          throw Error("occupied");
-        }
-
-        // so can resume doable or nav
-        npc.last.dst = helper.parseGroundPoint(to);
-
-        npc.rejectAll(new Error("move again"));
-
-        if (doResult.type !== "none") {
-          // doable overrides navigable
-          if (doResult.type === "use-current") {
-            await state.spawn({ npcKey, at: to }); // respawn
-          } else {
-            // look when standing nearby
-            if (w.e.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < npcConfig.dist.doableLook) {
-              // else an npc interrupted mid-move keeps its momentum and slides through the look
-              state.clearMomentum(npc);
-              await npc.look({ at: to, minMs: npcConfig.time.look * 1000 });
-            }
-
-            await npc.fadeSpawn({ at: to });
-          }
-          // fix contiguous move
-          npc.anim.moving = false;
-          return;
-        }
-
-        if (!result.success) {
-          throw Error("not navigable");
-        }
-
-        if (npc.agentId === null) {
-          // fade spawn from doable to nav
-          await npc.fadeSpawn({ at: result.position, facingTarget: true });
-          return;
-        }
-
-        w.e.setNpcDo(npcKey, null); // in case do=stand
-
-        await npc.ensureLegalPosition();
-
-        // code below is interruptible by next move
-        try {
-          // navigation unreachable relative to locked doors?
-          const unreachableResult = await w.e.testTargetUnreachable(npc, w.e.findRoomContaining(groundPoint));
-          npc.last.unreachableResult = unreachableResult;
-
-          if (unreachableResult !== null) {
-            // destination unreachable
-            if (npc.distanceTo(unreachableResult.nearbyPoint) < npcConfig.dist.blockedLook) {
-              // too close: look instead of walk
-              await npc.look({ at: unreachableResult.nearbyPoint, minMs: npcConfig.time.look * 1000 });
-              return;
-            }
-            // change destination to point near eventual locked door
-            const nearDoor = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
-            groundPoint = helper.parseGroundPoint(nearDoor.position);
-          }
-
-          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
-          npc.anim.strafeFollowsAim = strafe === undefined; // so a sword drawn mid-move strafes at once
-          npc.anim.backwards =
-            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint)));
-          npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
-          npc.anim.fastAsked = fast === true;
-          npc.anim.aimAt({ groundPoint, result });
-          await state.turnBeforeMoving(npc);
-          npc.anim.startMoving(arrive);
-
-          state.postCrowdTickEvents.push({ key: "started-moving", npcKey });
-
-          await new Promise<string>((resolve, reject) => {
-            npc.resolve.move = resolve;
-            npc.reject.move = reject;
-          });
-        } catch (e) {
-          if (e instanceof Error && e.message === "move again") {
-            return; // interrupting move owns npc now
-          }
-          if (!(e instanceof Error && e.message === "look again")) {
-            npc.anim.startIdle({ force: true }); // delegated to look
-          }
-          state.postCrowdTickEvents.push({ key: "stopped-moving", npcKey });
-          throw e;
-        }
       },
       nextTick() {
         return new Promise<void>((resolve) => state.tickResolvers.push(resolve));
@@ -639,21 +550,13 @@ export default function NPCs() {
         state.postCrowdTickEvents.length = 0;
         for (const resolve of state.tickResolvers) resolve();
         state.tickResolvers.length = 0;
-
-        // before the shadows, which read the slot it settles — and every tick, since an npc waiting
-        // on a room to arrive takes it the moment it lands rather than at the next door event
-        w.e.syncNpcRoomSlots();
-        w.shadows?.onTick();
-        w.rings?.onTick();
-        w.psi?.onTick();
-        w.swords?.onTick();
       },
       placeNpcAt(npc, closePolyResult, override) {
         const groundPoint = helper.parseGroundPoint(override ?? closePolyResult.position);
 
         if (w.client === true) {
           // mirror npcs get no crowd agent or physics body — the server world drives them
-          w.e.removeAgents([npc], { keepPhysics: true });
+          state.removeAgents([npc], { keepPhysics: true });
           npc.position.x = groundPoint.x;
           npc.position.z = groundPoint.y;
           return;
@@ -661,7 +564,7 @@ export default function NPCs() {
 
         if (!closePolyResult.success) {
           // do not throw in case of hot reload with changing geometry
-          w.e.removeAgents([npc]);
+          state.removeAgents([npc]);
           npc.position.x = groundPoint.x;
           npc.position.z = groundPoint.y;
           return;
@@ -670,7 +573,7 @@ export default function NPCs() {
         if (npc.agentId !== null) {
           // - must remove agent so can teleport without issues
           // - re-adding changes the npc.agentId ATOW
-          w.e.removeAgents([npc], { keepPhysics: true });
+          state.removeAgents([npc], { keepPhysics: true });
         } else {
           w.physics.worker.postMessage({
             type: "add-physics-npcs",
@@ -692,6 +595,22 @@ export default function NPCs() {
         state.physics.positions.push(npc.bodyUid, ...helper.groundPointToTuple(groundPoint));
         // } else if (type === "navigable") {
         //   throw Error("not placable");
+      },
+      removeAgents(npcs, { keepPhysics = false } = {}) {
+        for (const npc of npcs) {
+          if (npc.agentId === null) continue;
+          crowdApi.removeAgent(state.crowd, npc.agentId);
+          delete state.byAgentId[npc.agentId];
+          npc.agentId = null;
+        }
+
+        if (keepPhysics === true) return;
+
+        // physics worker will fire exit colliders
+        w.physics.worker.postMessage({
+          type: "remove-physics-bodies",
+          bodyKeys: npcs.map((npc) => npcToBodyKey(npc.key)),
+        } satisfies WW.MsgToWorker);
       },
       rawSpawn(opts) {
         let npc = w.n[opts.npcKey];
@@ -731,13 +650,13 @@ export default function NPCs() {
           const overrideGroundPoint = opts.doResult.meta.groundPoint;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[metaToIdleAnimationClipKey(opts.doResult.meta)];
-          w.e.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
+          state.setNpcDo(opts.npcKey, opts.doResult.meta.decorKey);
         } else {
           const overrideGroundPoint =
             opts.groundPoint.meta?.npcKey === opts.npcKey ? helper.parseGroundPoint(npc.position) : undefined;
           state.placeNpcAt(npc, closePolyResult, overrideGroundPoint);
           npc.anim.idleClip = state.clips[defaultIdleAnimationClipKey];
-          w.e.setNpcDo(opts.npcKey, null);
+          state.setNpcDo(opts.npcKey, null);
         }
 
         // for respawn
@@ -746,6 +665,17 @@ export default function NPCs() {
         npc.anim.face.rate = 0;
 
         return npc;
+      },
+      setNpcDo(npcKey, decorKey) {
+        const currentDecorKey = state.npcToDoable[npcKey];
+        if (typeof currentDecorKey === "string") {
+          state.doableToNpc[currentDecorKey] = null;
+        }
+        if (typeof decorKey === "string") {
+          state.doableToNpc[decorKey] = npcKey;
+        }
+        state.npcToDoable[npcKey] = decorKey;
+        w.events.next({ key: "npc-do", npcKey, decorKey });
       },
       resetMaterials(npc) {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
@@ -775,7 +705,7 @@ export default function NPCs() {
         }
 
         const gmRoomId = // doable meta is gmRoomId
-          doResult.type === "none" ? w.e.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
+          doResult.type === "none" ? w.findRoomContaining(at, true) : helper.maybeGmRoomId(doResult.meta);
         if (gmRoomId === null) throw Error("must be in some room");
 
         const closePolyResult = doResult.type === "none" ? state.getClosestPoly(groundAt, 0.5) : undefined;
@@ -873,6 +803,7 @@ export default function NPCs() {
         crowdApi.removeAgent(state.crowd, agentId);
       },
     }),
+    { reset: { config: true } },
   );
 
   w.npc = state;
@@ -977,10 +908,22 @@ export type State = {
 
   byAgentId: Record<string, Npc>;
   byPickId: Record<number, Npc>;
+  /** `const.npc`'s tuning, for World hooks, which must not import it */
+  config: typeof npcConfig;
+  doableToNpc: { [decorKey: string]: string | null };
   nextPickId: number;
   npc: Record<string, Npc>;
+  npcToDoable: { [npcKey: string]: string | null };
+  /**
+   * Relates `npcKey` to current room.
+   */
+  npcToRoom: Map<string, Geomorph.GmRoomId>;
   physics: { positions: number[] } & PhysicsBijection;
   postCrowdTickEvents: JshCli.Event[];
+  /**
+   * The "inverse" of npcToRoom i.e. `roomToNpc[gmId][roomId]` is a set of `npcKey`s
+   */
+  roomToNpcs: { [roomId: number]: Set<string> }[];
   tickResolvers: (() => void)[];
 
   /** A fresh mesh cloned from `gltf`, with its own skeleton and the label quad merged in */
@@ -1013,6 +956,7 @@ export type State = {
    */
   compactPickIds(): void;
   /** Fresh materials for `npc`, carrying over the uniforms that hold live state. Bumps `epochMs` */
+  setNpcDo(npcKey: string, decorKey: string | null): void;
   resetMaterials(npc: Npc): void;
   determineSpawnedAngle(opts: {
     /** Spawn destination */
@@ -1062,11 +1006,10 @@ export type State = {
   getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;
   hasDoMeta(meta: Meta): boolean;
-  /** Follows this npc with a room-aware light (a room-poly clip that refreshes on `"enter-room"`). `null`/omitted stops tracking. */
-  move(opts: JshCli.MoveOpts): Promise<void>;
   /** Resolves at the end of the next tick, i.e. once the crowd has been updated */
   nextTick(): Promise<void>;
   onTick(delta: number): void;
+  removeAgents(npcs: Npc[], opts?: { keepPhysics?: boolean }): void;
   rawSpawn(opts: {
     npcKey: string;
     groundPoint: Meta<JshCli.GroundPoint>;
@@ -1148,14 +1091,6 @@ function headYByPoseOf(scene: THREE.Object3D, clips: Record<AnimationClipKey, TH
 }
 
 const tmpVector3 = new THREE.Vector3();
-
-/** Is `to` close behind `npc`, where stepping back beats turning round? */
-function isBackStep(npc: Npc, to: Geom.VectJson) {
-  const [dx, dz] = [to.x - npc.position.x, to.y - npc.position.z];
-  const dist = Math.hypot(dx, dz);
-  const ahead = -dx * Math.sin(npc.rotation.y) - dz * Math.cos(npc.rotation.y);
-  return dist < npcConfig.dist.backStep && ahead < dist * Math.cos(npcConfig.angle.backStep);
-}
 
 /**
  * Has the gait finished fading in? Arriving before then would cut it off, looking jerky. Walk and

@@ -185,7 +185,7 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
     return null;
   }
 
-  const gmRoomId = w.e.npcToRoom.get(w.player.key);
+  const gmRoomId = w.npc?.npcToRoom.get(w.player.key);
   if (gmRoomId === undefined || w.gms[gmRoomId.gmId] === undefined) {
     return null;
   }
