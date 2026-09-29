@@ -17,6 +17,8 @@ import { getContext2d } from "./tex-array";
 const worldToCanvas = worldToSguScale * gmFloorExtraScale;
 /** How far outside a broad wall's edge to look for a room, in metres — see `roomsTouching` */
 const broadWallProbe = 0.05;
+/** Wall tops stop this far short of a broad wall, else their tips take its room-slot texels and show with it */
+const broadWallTopClearance = 0.04;
 
 /**
  * Editing this file triggers World query HMR, which instantiates latest DerivedGmsData.
@@ -111,12 +113,15 @@ export default class DerivedGmsData {
         (poly.meta.h === undefined || poly.meta.y + poly.meta.h === wallHeight), // touches ceiling
     );
     gmData.tops = {
-      broad: gm.walls.filter((x) => x.meta.broad === true).flatMap((x) => geomService.createInset(x, 0.02)),
+      broad: gm.walls.filter((x) => x.meta.broad === true).flatMap((x) => geomService.createInset(x, 0.03)),
       nonHullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? [] : door.computeThinPoly(0.05))),
       hullDoor: gm.doors.flatMap((door) => (door.meta.hull === true ? door.computeThinPoly(0.15) : [])),
       hullWall: Poly.union(gm.walls.filter((x) => x.meta.hull)).flatMap((x) => geomService.createInset(x, 0.02)),
       // 🔔 must union after inset e.g. due to broad walls intersecting with others
-      nonHullWall: Poly.union(nonHullWallsTouchCeil.flatMap((x) => geomService.createInset(x, 0.02))),
+      nonHullWall: Poly.cutOut(
+        gmData.broadWalls.flatMap(({ poly }) => geomService.createOutset(poly, broadWallTopClearance)),
+        Poly.union(nonHullWallsTouchCeil.flatMap((x) => geomService.createInset(x, 0.03))),
+      ),
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
 
