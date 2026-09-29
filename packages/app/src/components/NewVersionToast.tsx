@@ -57,35 +57,40 @@ export function NewVersionToast() {
   }, []);
 
   return (
-    <AnimatePresence>
-      {state.stale && (
-        <motion.div
-          className="fixed bottom-6 left-1/2 z-50 flex items-center gap-3 rounded bg-neutral-900/95 px-3 py-2 text-neutral-100 shadow-lg shadow-black/40"
-          style={{ marginBottom: "env(safe-area-inset-bottom)" }}
-          initial={{ opacity: 0, x: "-50%", y: 8 }}
-          animate={{ opacity: 1, x: "-50%", y: 0 }}
-          exit={{ opacity: 0, x: "-50%" }}
-          transition={{ duration: 0.2 }}
-        >
-          <ArrowClockwiseIcon className="size-4 shrink-0" />
-          <span className={touchDevice ? "text-sm" : "text-xs"}>New version available</span>
-          <button
-            type="button"
-            className="rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-900 hover:bg-white"
-            onClick={state.reload}
+    // full width on a phone, bar a small gap either side
+    <div
+      className="pointer-events-none fixed inset-x-2 bottom-6 z-50 flex justify-center"
+      style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <AnimatePresence>
+        {state.stale && (
+          <motion.div
+            className="pointer-events-auto flex w-full items-center gap-3 rounded bg-neutral-900/95 px-3 py-2 text-neutral-100 shadow-lg shadow-black/40 sm:w-auto"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            Reload
-          </button>
-          <button
-            type="button"
-            aria-label="Dismiss"
-            className="text-neutral-400 hover:text-neutral-100"
-            onClick={() => state.set({ stale: false })}
-          >
-            <XIcon className="size-4" />
-          </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <ArrowClockwiseIcon className="size-4 shrink-0" />
+            <span className={touchDevice ? "flex-1 text-sm" : "flex-1 text-xs"}>New version available</span>
+            <button
+              type="button"
+              className="rounded bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-900 hover:bg-white"
+              onClick={state.reload}
+            >
+              Reload
+            </button>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              className="text-neutral-400 hover:text-neutral-100"
+              onClick={() => state.set({ stale: false })}
+            >
+              <XIcon className="size-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
