@@ -50,7 +50,8 @@ async, or a generator — all driven the same way by `handle-message.ts`:
 `NpcQuery` is an npc as an op sees them: point, `nodeRef` (the corridor head, `w.npc.getNodeRef`;
 looked up afresh if stale), room, and the doors they may not pass. The worker's query filter
 refuses those door areas bar the one they stand on, as `Npc.canPassNode` does. There is no crowd
-on the worker: one scratch `localBoundary.create()` is the "dummy agent".
+on the worker, and its boundary is not navcat's local boundary, which keeps only the 8 nearest
+segments — from a doorway, all of them its frame: `queryBoundary` keeps every wall in range.
 
 Door frames and each room's door keys are sent once per map per worker (`jsh-setup`), by
 `ensureSetup` before the first request. Door access is per request, so nothing goes stale.
