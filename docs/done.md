@@ -1,6 +1,173 @@
 # DONE
 
-# By Sep 20th 2026
+## World
+
+### Animation
+
+- ✅ remove strafe left/right animations
+- ✅ rename psychic-attack -> influence
+
+- ✅ `backwards` animation
+- ✅ `move rob --back to:$( pick 1 )`
+- ✅ `demo_back_off kate`
+
+### Playground
+
+- ✅ playground preserve npc position
+  - an edit keeps `mapKey`, so no `onChangeMap`: nothing re-seated the crowd — see `w.npc.reseatAll`
+  - ✅ should also work in other maps
+  - ✅ saw npc walking in place
+  - ✅ fix error on remove room containing player
+    - TypeError: Cannot read properties of null (reading 'type')
+    - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
+  - ✅ fix `door-opening` TypeError reading 'hull' on save
+
+### Psi
+
+- ✅ new component `<Comms>` can draw reactive contour-like smooth lines around npcs
+- ✅ restrict to player vs one other with transition for previous
+  - draws contours from an npc towards another
+- ✅ Comms -> Psi
+  - only for player
+  - `pick | demo_psi`
+- ✅ reaches further distance
+- ✅ pair with animation "influence"
+  - ✅ influence -> psi-begin, psi-end
+  - ✅ `psi-begin`: both hands touch temples
+  - ✅ `psi-end`:  only right hand touches temple
+  - ✅ `demo_psi` plays animations
+  - ✅ remove `psi-end`, `psi-start` -> `psi`
+  - ✅ tidy
+
+- ✅ play `psi_avoid` nearby npcs
+
+- ✅ clarify as ability
+  - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
+  - ✅ can modulate reach/speed/gap/fade/colour/opacity
+    - ideally with controls
+  - could listen to their thoughts in WorldSpeech
+  - could suggest thoughts in WorldSpeech: angry, lethargic, restless
+
+- ✅ `demo_psi` -> `psi` wrapping `w.player.psi`
+- ❌ better ui for psi e.g. `pick --long meta.npcLabel | psi`
+- ✅ integrate animations into `<Psi>`
+  - `psi` is `w.player.psi` wrapper
+- ✅ player can activate on desktop: `e` key
+
+- ✅ `psi` only specifies targets i.e. does not read picks
+  - in line with `sword`
+
+- ✅ demo command to pick player's psi target
+  - `pick as:meta.npcKey | map '(npcKey, { w }) => w.player.psi(npcKey)'`
+  - maybe needs cleanup
+
+- ✅ player can activate on mobile
+
+
+### Sword and Strafe
+
+
+- ✅ remove animation `idle-avoid`
+- ✅ animation `gauntlet`
+- ✅ add animation `primed` `attack`
+- ✅ remove `primed` `attack`
+- ✅ `gauntlet` -> `point`
+- ✅ `demo_sword` (was `demo_attack`) plays `point` with `defensive` fallback near others
+- ✅ `point` played into upper body was pointing upwards a bit
+- ✅ strafe walking
+  - Blockbench animations strafe_left strafe_right
+  - `w.npc.move` supports `opts.strafe`
+  - npc supports `npc.anim.face.aim` (point or angle); a look whilst strafing aims rather than stopping
+    - forces `opts.strafe` i.e. need these animations
+  - `move rob --strafe to:$( pick 1 )`
+  - `pick | move rob --strafe`
+  - `wasd_delta rob | move rob --strafe`
+
+- ✅ investigate shooting effects
+  - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
+  - ✅ `demo_sword` forces strafe whilst wielding sword
+    - expect look controls available for player e.g. `pick --long | look npc:rob --force`
+
+- ✅ player can activate on desktop: `q` key
+- ✅ demo command to lock sword on click
+    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(w.player.key, dstNpcKey)'`
+- ✅ player can activate on mobile
+
+- ✅ refactor demo_sword into `<Swords>`
+  - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
+  - ✅ `sword` mutates sword wield/sheathe/lock
+    - `sword rob lock:npc-1`
+- ✅ handle psi vs sword blend fighting
+- ✅ on unsheathe weapon whilst moving strafe immediately
+
+- ✅ beam is straight and mainly transparent except at target
+- ✅ can lock on to body part
+
+- ✅ can toggle sword for other npc
+  - `w swords.toggle npc-3`
+
+### Unorganised Bugs
+
+- ✅ pause World while `move` then resume is jerky
+- ✅ BUG only some room labels shown when change to map 301-101-301
+
+
+## Blockbench
+
+- ✅ clean filenames
+- ✅ add psychic attack animation (1st attempt)
+- ✅ lie/sie animation head should rotate less
+
+## Blog
+
+- ✅ blog initial layout
+  - ✅ can switch between pages
+  - ✅ demo video
+  - ✅ comments
+
+- ✅ rewrite README.md
+
+## Decorator
+
+- ✅ route commands (jsh) `route_add` `route_rm` `route_init`
+  - ✅ stored in `/shared/map/{mapKey}/path` alias `/shared/path`
+  - ✅ `route_add` creates dynamic decor points as it builds
+    - e.g. `pick 3 | route_add demo guard`
+    - edges are decor too i.e. degenerate rects
+    - omitted from dynamic decor persist, use `route_init` instead
+    - cleans up on kill
+  - ✅ debug option to show possibly partial routes
+  - ✅ debug shows RouteStep label with value kind above nodes
+  - ✅ can click route nodes (decor points) to toggle rich ui Html3d
+  - ✅ refine Html3d UI
+- ✅ NpcBubbles should use `w.html`
+- ✅ new ui NavRoutes in packages/ui/nav-routes
+
+- ✅ ui/nav-routes --> ui/decorator
+  - decorate world map with dynamic points, rects, circles, icons, screens etc.
+  - keep quad-label <-> html3d toggle
+  - keep editor
+  - discard notion of path
+  - ❌ can group points/rects/circles etc.
+
+- ✅ w.label should fade with rooms
+- ✅ decor rect/circle should have meta.floor
+
+## Site
+
+- ✅ deploy on https://staging.lastredoubt.co/
+- ✅ deploy on https://lastredoubt.co/
+- ✅ remove https://staging.lastredoubt.co/
+- ✅ setup umami analytics on https://lastredoubt.co/
+  - https://cloud.umami.is/analytics/eu/websites
+  - ✅ add script to head
+  - ✅ witness page load
+  - ✅ add some ui tracking for localhost/production
+    - dev has toggle in GlobalMenu
+    - uis-loaded event fires once
+    - exit-or-hide event has at least 60s between firing
+
+## By Sep 20th 2026
 
 Cleaned old todos...
 
@@ -80,7 +247,7 @@ expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.4
 - ❌ warn if symbols "above" walls in symbol
 
 
-# By Sep 18th 2026
+## By Sep 18th 2026
 
 - ✅ easier to run scripts
   - ℹ️ e.g. spawn, focus, pick-to-move
@@ -452,7 +619,7 @@ expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.4
     - clean up implementation
 
 
-# By Jul 30th 2026
+## By Jul 30th 2026
 
 - ✅ switch light-theme and dark-theme
   - default dark-theme
@@ -546,7 +713,7 @@ expr {refinedOutline:[{x:11.12,y:2.91},{x:11.55,y:2.58},{x:11.99,y:2.31},{x:12.4
   - sometimes on hot reload need to ctrl-c
 
 
-# By Jul 19th 2026
+## By Jul 19th 2026
 
 - ✅ custom decor preserved on hmr
 
@@ -980,7 +1147,7 @@ w decor.byKey.test-decor-point
   - use depth map to avoid lighting npc outside light but occluding it
 
 
-# By Jun 17th 2026
+## By Jun 17th 2026
 
 - ✅ door normals determined by slide direction
   - ✅ debug draw normals
@@ -1175,7 +1342,7 @@ w decor.byKey.test-decor-point
   - ✅ clean Jsh props
 
 
-# By Jun 6th 2026
+## By Jun 6th 2026
 
 - ✅ simplify decor
   - ❌ sensors should be decor rects in grid
