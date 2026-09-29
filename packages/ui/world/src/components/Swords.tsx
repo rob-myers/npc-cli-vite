@@ -99,8 +99,9 @@ export default function Swords() {
           if (hand === undefined) continue;
           hand.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
           const tip = hand.localToWorld(tmpTip.fromArray(swordConfig.ropeFrom));
+          const along = tmpAlong.set(0, -1, 0).transformDirection(hand.matrixWorld); // the forearm, towards the hand
           const dst = rope.to === null ? undefined : w.n[rope.to.npcKey];
-          const end = ropeEnd(rope, tip, npc.rotation.y, dst);
+          const end = ropeEnd(rope, tip, along, dst);
           state.srcData.set([tip.x, tip.y, tip.z, eased(rope.shown.presence)], count * 4);
           state.dstData.set([end.x, end.y, end.z, eased(rope.locked.presence)], count * 4);
           const to = dst ?? npc;
@@ -280,3 +281,4 @@ const isSwordPose = (key: null | string) => key === "point" || key === "defensiv
 /** Turns them not at all, at `rate` `0`, but is an aim: a move strafes */
 const heldAim = { at: 0, rate: 0, untilRest: false };
 const tmpTip = new THREE.Vector3();
+const tmpAlong = new THREE.Vector3();
