@@ -125,16 +125,14 @@
   - `pick | move rob --strafe`
   - `wasd_delta rob | move rob --strafe`
 
-- 🚧 investigate shooting effects
+- ✅ investigate shooting effects
   - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
   - ✅ `demo_sword` forces strafe whilst wielding sword
     - expect look controls available for player e.g. `pick --long | look npc:rob --force`
-  - 🚧 beam is straight and mainly transparent except at target
-  - can lock on to body part
 
 - ✅ player can activate on desktop: `q` key
 - ✅ demo command to lock sword on click
-    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(dstNpcKey, w.player.key)'`
+    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(w.player.key, dstNpcKey)'`
 - player can activate on mobile
 
 - ✅ refactor demo_sword into `<Swords>`
@@ -143,6 +141,12 @@
     - `sword rob lock:npc-1`
 - ✅ handle psi vs sword blend fighting
 - ✅ on unsheathe weapon whilst moving strafe immediately
+
+- ✅ beam is straight and mainly transparent except at target
+- ✅ can lock on to body part
+
+- ✅ can toggle sword for other npc
+  - `w swords.toggle npc-3`
 
 ### Unorganised Bugs
 

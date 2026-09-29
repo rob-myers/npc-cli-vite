@@ -141,6 +141,12 @@ names stay put unless their code changed. Keep them so: nothing a ui imports may
 `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`), and
 `stableEntryPlugin` keeps chunks from importing the entry.
 
+## Checking a change in the browser
+
+See `docs/browser-scenarios.md` — the ONLY doc for it, and the log of scenarios run. In short: a
+production preview in a visible Chrome, driven by typing into the app's own jsh terminal one step at a
+time, pausing for "next" — never headless. Players are moved, not spawned.
+
 ## TSL shader notes
 
 - **`positionLocal` range**: returns the raw geometry attribute, which for `BoxGeometry(1,1,1)` is `[-0.5, 0.5]` even after `geo.translate(0.5, 0.5, 0.5)`. Don't use `positionLocal` with `step()` assuming `[0,1]` — use `uv()` instead for per-face detection on box geometry.
