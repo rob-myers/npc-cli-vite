@@ -21,10 +21,15 @@
 ### Cleanliness
 
 - fix precision in `assets.json`
+
 - `npc.ts`: getters `navMesh` and `nodeRef` (`agent.corridor.path[0]`) instead of `this.w.nav.navMesh` / `this.w.npc.getNodeRef(agent)`
   - `docs/CLAUDE.md` already says "read `npc.nodeRef`", but it doesn't exist yet
   - getters, not stored copies: the navmesh is rebuilt on map change
+
 - `nudge` and `demo_back_off` slide via the plan worker's `nudge` op; maybe `npc.getSlideResult` instead (check why it went via the worker)
+  - ✅ demo_back_off
+
+- NpcAnimation has too many properties
 
 ### Decor
 
@@ -77,19 +82,29 @@
   - ✅ tidy
 
 - ✅ play `psi_avoid` nearby npcs
-- precompute tall obstacles by grKey (e.g. bunk beds) and play `psi_avoid` nearby
+
+- precompute tall obstacles by grKey (e.g. bunk beds) and avoid
 
 - 🚧 clarify as ability
   - ✅ debug toggle "npc contextmenu" shows npc bubble on right-click
   - ✅ can modulate reach/speed/gap/fade/colour/opacity
     - ideally with controls
   - listen to their thoughts in WorldSpeech
-  - player can think in WorldSpeech
-    - can suggest anger, lethargy, restless
+  - suggest thoughts in WorldSpeech: angry, lethargic, restless
 
 - ✅ `demo_psi` -> `psi` wrapping `w.player.psi`
-- 🚧 better ui for psi
-  - e.g. `pick --long meta.npcLabel | psi`
+- ❌ better ui for psi e.g. `pick --long meta.npcLabel | psi`
+- ✅ integrate animations into `<Psi>`
+  - `psi` is `w.player.psi` wrapper
+- ✅ player can activate on desktop: `e` key
+
+- ✅ `psi` only specifies targets i.e. does not read picks
+  - in line with `sword`
+
+- ✅ demo command to pick player's psi target
+  - `pick as:meta.npcKey | map '(npcKey, { w }) => w.player.psi(npcKey)'`
+  - maybe needs cleanup
+- player can activate on mobile
 - check mobile performance
 
 ### Sword and Strafe
@@ -110,19 +125,28 @@
   - `pick | move rob --strafe`
   - `wasd_delta rob | move rob --strafe`
 
-- 🚧 investigate shooting effects
+- ✅ investigate shooting effects
   - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
   - ✅ `demo_sword` forces strafe whilst wielding sword
     - expect look controls available for player e.g. `pick --long | look npc:rob --force`
-  - 🚧 beam is straight and mainly transparent except at target
-  - can lock on to body part
+
+- ✅ player can activate on desktop: `q` key
+- ✅ demo command to lock sword on click
+    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(w.player.key, dstNpcKey)'`
+- player can activate on mobile
 
 - ✅ refactor demo_sword into `<Swords>`
   - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
   - ✅ `sword` mutates sword wield/sheathe/lock
     - `sword rob lock:npc-1`
-
 - ✅ handle psi vs sword blend fighting
+- ✅ on unsheathe weapon whilst moving strafe immediately
+
+- ✅ beam is straight and mainly transparent except at target
+- ✅ can lock on to body part
+
+- ✅ can toggle sword for other npc
+  - `w swords.toggle npc-3`
 
 ### Unorganised Bugs
 

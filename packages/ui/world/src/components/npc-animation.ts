@@ -45,6 +45,10 @@ export class NpcAnimation {
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */
   strafe = false;
+  /** The move left `strafe` to `face.aim`, so it follows the aim mid-move — see `setStrafe` */
+  strafeFollowsAim = false;
+  /** The move asked to run, so a strafe let go mid-move may run again */
+  fastAsked = false;
   /** Is `walk` on show as the four directional gaits — see `setPose` */
   strafing = false;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
@@ -101,13 +105,20 @@ export class NpcAnimation {
     for (const clip of Object.values(clips)) {
       if (shown.every((key) => clips[key] !== clip)) this.mixer.existingAction(clip)?.fadeOut(fade);
     }
-    const action = this.mixer.clipAction(clips[next]).reset().fadeIn(fade).play();
+    const action = this.mixer.clipAction(clips[next]);
+    /** Already on show, e.g. walk as a strafe starts: restarting it would pop the feet and dip its weight */
+    const kept = next === this.pose && action.isRunning();
+    if (kept === false) action.reset().fadeIn(fade).play();
     action.weight = 1; // `syncStrafe` weighs the four, fading or not
-    for (const key of shown.slice(1)) this.mixer.clipAction(clips[key]).reset().fadeIn(fade).play().weight = 0;
+    for (const key of shown.slice(1)) {
+      const other = this.mixer.clipAction(clips[key]).reset().play();
+      other.weight = 0;
+      if (kept === false) other.fadeIn(fade); // else `syncStrafe` eases them in from nought
+    }
     this.strafing = shown.length > 1;
     // walk <-> run: the phase carries over, else the feet pop
     const prev = this.mixer.existingAction(clips[this.pose]);
-    if (prev !== null && isGait(this.pose) && isGait(next)) {
+    if (kept === false && prev !== null && isGait(this.pose) && isGait(next)) {
       action.time = (prev.time / clips[this.pose].duration) * clips[next].duration;
     }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
@@ -140,6 +151,10 @@ export class NpcAnimation {
     if (aim && face.turn === null) {
       face.target = this.bearingOf(aim.at);
       face.rate = aim.rate;
+    }
+    const aiming = aim !== null;
+    if (this.moving === true && this.strafeFollowsAim === true && aiming !== this.strafe) {
+      this.setStrafe(aiming); // e.g. a sword drawn mid-move
     }
 
     if (f.delta !== 0) {
@@ -244,16 +259,28 @@ export class NpcAnimation {
     this.setPose(keyOf(this.moveClip));
   }
 
+  /** Start or stop strafing mid-move, as `face.aim` comes or goes: stopping eases out in `syncStrafe` */
+  setStrafe(strafe: boolean) {
+    this.strafe = strafe;
+    this.backwards = false;
+    this.fast = strafe === false && this.fastAsked; // strafing never runs
+    if (this.npc.agent !== null) this.npc.agent.maxSpeed = this.maxSpeedFor();
+    this.showGait();
+  }
+
   /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
   syncStrafe(delta: number) {
     const { clips, agent, rotation } = this.npc;
     const actions = strafeClipKeys.map((key) => this.mixer.clipAction(clips[key]));
     const [vx, , vz] = agent?.velocity ?? [0, 0, 0];
-    if (Math.hypot(vx, vz) >= 0.05) {
+    const ease = 1 - Math.exp(-delta / strafeEaseSecs); // alike for all four, so they still sum to 1
+    if (this.strafe === false) {
+      // let go mid-move: all to `walk`, which then shows alone
+      actions.forEach((action, i) => void (action.weight += ((i === 0 ? 1 : 0) - action.weight) * ease));
+    } else if (Math.hypot(vx, vz) >= 0.05) {
       // creeping, their velocity swings about: the last weights are kept
       const [sin, cos] = [Math.sin(rotation.y), Math.cos(rotation.y)];
       const heading = Math.atan2(vx * cos - vz * sin, -vx * sin - vz * cos); // `0` ahead, `π/2` to their right
-      const ease = 1 - Math.exp(-delta / strafeEaseSecs); // alike for all four, so they still sum to 1
       actions.forEach((action, i) => {
         const target = Math.max(0, 1 - Math.abs(deltaAngle(heading, (i * Math.PI) / 2)) / (Math.PI / 2));
         action.weight += (target - action.weight) * ease;
@@ -261,7 +288,7 @@ export class NpcAnimation {
     }
     const blend = (byKey: Record<(typeof strafeClipKeys)[number], number>) =>
       actions.reduce((sum, action, i) => sum + action.weight * byKey[strafeClipKeys[i]], 0);
-    if (agent !== null) agent.maxSpeed = blend(strafeSpeed); // as fast as that way allows
+    if (agent !== null && this.strafe === true) agent.maxSpeed = blend(strafeSpeed); // as fast as that way allows
 
     const [walk] = actions;
     const timeScale = walk.timeScale / (blend(gaitStride) || 1); // `tick`'s pace, per ground the blend covers
@@ -273,6 +300,7 @@ export class NpcAnimation {
       const offset = strafeClipKeys[i] === "backwards" ? 0.5 : 0;
       action.time = ((phase + offset) % 1) * action.getClip().duration;
     });
+    if (this.strafe === false && walk.weight > 0.99) this.setPose("walk", { force: true });
   }
 
   /**
@@ -316,25 +344,27 @@ export class NpcAnimation {
     if (agent !== null) {
       // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
       agent.maxAcceleration = agentConfig.maxAcceleration.walk;
-      const { maxSpeed } = agentConfig;
-      agent.maxSpeed =
-        this.strafe === true
-          ? strafeSpeed.walk // till `syncStrafe` has a heading
-          : this.backwards === true
-            ? maxSpeed.backwards
-            : this.fast === true
-              ? maxSpeed.run
-              : maxSpeed.walk;
+      agent.maxSpeed = this.maxSpeedFor();
     }
     // after the turn, so a long one does not eat the stuck grace
     this.npc.last.moveTime = this.w.timer.getElapsedTime();
-
     this.arrive = arrive;
-    // a move interrupted by another keeps its gait on show, so the walk runs on into the new
-    // leg — but a look or a spawn in between puts idle on, and it must be shown again or they slide
+    this.showGait();
+  }
+
+  /** The agent's top speed for the move's intent: a strafe's is then `syncStrafe`'s, by heading */
+  maxSpeedFor() {
+    const { maxSpeed } = agentConfig;
+    if (this.strafe === true) return strafeSpeed.walk;
+    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
+  }
+
+  /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
+  showGait() {
     const clipKey = this.backwards === true ? "backwards" : "walk";
+    // a look or a spawn in between puts idle on, and it must be shown again or they slide
     const shown = this.backwards === true ? this.pose === clipKey : isGait(this.pose);
-    if (this.moving === true && shown === true && this.strafing === this.strafe) return;
+    if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
     this.moving = true;
     this.moveClip = this.npc.clips[clipKey];
     this.gaitSecs = 0;
@@ -459,7 +489,7 @@ function bubbleHeightForClip(clipName: string): number {
   return 2;
 }
 
-/** The highest a label is lifted, standing — see `boundLabel` */
+/** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;
 
 function labelYShiftForClip(clipName: string): number {

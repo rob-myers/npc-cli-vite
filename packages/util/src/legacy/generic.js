@@ -400,7 +400,8 @@ export function mapValues(input, transform) {
  * @template {Record<string, any>} [T=Record<string, any>]
  * @param {string[]} args
  * @param {{ [aliasKey: string]: string; }} [alias]
- * - Map alias keys to their true keys.
+ * - Map alias keys to their true keys, e.g. `{ npc: "npcKey" }`.
+ * - A bare alias must start with a hyphen, and may give a value too, e.g. `{ "--unlock": "lock:false" }`.
  * @param {{ array?: { [key: string]: true }; force?: boolean; }} [opts]
  * - `opts.array` if value isn't an array try to convert space-separated js values into one
  * - `opts.force` ignores errors
@@ -410,31 +411,46 @@ export function jsArg(args, alias = {}, opts) {
   return /** @type {T} */ (
     args.reduce(
       (agg, arg) => {
-        const colonIndex = arg.indexOf(":");
+        let colonIndex = arg.indexOf(":");
+
         if (colonIndex === -1) {
-          // no bare specifier aliases except e.g. --force -> force
-          agg[arg in alias && arg.startsWith("-") ? alias[arg] : arg] = true;
+          // e.g. "force" -> { force: true}
+          let value = true;
+
+          // support some aliased bare specifiers e.g. --force -> force
+          if (arg in alias && arg.startsWith("-")) {
+            arg = alias[arg];
+            colonIndex = arg.indexOf(":"); // e.g. --unlock -> lock:false
+            if (colonIndex !== -1) {
+              value = parseJsArg(arg.slice(colonIndex + 1));
+              arg = arg.slice(0, colonIndex);
+            }
+          }
+
+          agg[arg] = value;
+          return agg;
+        } else {
+          // e.g. "foo:[1,2,3]" -> { foo: [1,2,3] }
+          let key = arg.slice(0, colonIndex);
+
+          if (key.startsWith("{")) {
+            if (opts?.force === true) {
+              return agg;
+            }
+            throw Error(`key should not start with left-brace: ${key}`);
+          }
+
+          key = alias?.[key] ?? key;
+
+          let value = parseJsArg(arg.slice(colonIndex + 1));
+
+          if (opts?.array?.[key] === true && Array.isArray(value) === false) {
+            value = parseJsArg(`[${arg.slice(colonIndex + 1).split(/\s+/)}]`);
+          }
+
+          agg[key] = value;
           return agg;
         }
-
-        let key = arg.slice(0, colonIndex);
-        if (key.startsWith("{")) {
-          if (opts?.force === true) {
-            return agg;
-          }
-          throw Error(`${key}: bad key (try quotes)`);
-        }
-
-        key = alias?.[key] ?? key;
-
-        let value = parseJsArg(arg.slice(colonIndex + 1));
-
-        if (opts?.array?.[key] === true && Array.isArray(value) === false) {
-          value = parseJsArg(`[${arg.slice(colonIndex + 1).split(/\s+/)}]`);
-        }
-
-        agg[key] = value;
-        return agg;
       },
       /** @type {Record<string, any>} */ ({}),
     )

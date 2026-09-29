@@ -250,27 +250,28 @@ export type PsiTune = {
 
 /** `Swords`: wielding, and the rope from a pointer's right hand — see `w.swords` */
 export const swordConfig = {
-  /** The hand's tip in the right forearm's frame, in model units — tuned by eye */
-  handTip: [0, -0.36, 0] as [number, number, number],
-  /** Metres the unlocked stub reaches, level, ahead of the hand */
-  stub: 1,
-  /** Metres above the target's head bone the rope lands */
+  /** Where the rope leaves the right forearm, above the wrist — its `+x` is up whilst pointing — in model units */
+  ropeFrom: [0.07, -0.26, 0] as [number, number, number],
+  /** Metres the unlocked stub reaches, level, from above the wrist: just past the hand */
+  stub: 0.05,
+  /** Metres above the target's head bone the rope lands, for no body part */
   headAbove: 0.3,
-  /** Metres the arc rises, plus this per metre between the ends */
-  lift: 0.3,
-  liftPerMetre: 0.15,
-  /** Metres of radius at the hand, and at the target */
-  r0: 0.008,
-  r1: 0.04,
+  /** Metres of radius of the rope, and of the ball at its end */
+  radius: 0.01,
+  tipRadius: 0.035,
+  /** The stub's alpha, and the locked rope's on the way, and within `nearMetres` of the body part */
   alpha: 0.35,
+  faint: 0.04,
+  solid: 0.9,
+  nearMetres: 0.25,
   /** Pulses along the rope, drifting towards the target a band per second */
   bands: 4,
   color: "#ff8a5c",
   fadeSecs: 0.3,
   sides: 6,
   segments: 24,
-  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
-  reach: 1,
+  /** Metres ahead a wall or closed door blocks — just past the outstretched arm's `0.51`, so it is drawn in in time */
+  reach: 0.6,
   /** Seconds they stay defensive at least — longer whilst something stays in reach */
   holdSecs: 0.5,
   drawInSecs: 0.15,

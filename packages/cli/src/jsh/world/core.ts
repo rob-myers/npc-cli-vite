@@ -929,39 +929,17 @@ export function play({ api, w }: JshCli.RunArg) {
 }
 
 /**
- * The player influences an npc — see `w.player.psi`. Runs until killed, bar a bare `psi`; picking the
- * player, a kill or a bare `psi` turns it off
+ * The player targets an npc — themself for their rings alone, a bare `psi` for off. See `w.player.psi`.
+ * It is the player's, not a process's, so like `sword` it returns at once
  * ```sh
- * pick | psi
  * psi abe
+ * psi $( w player.key )
  * psi
  * ```
  */
-export async function psi({ api, args: [arg], w }: JshCli.RunArg) {
-  api.setPausable("world", false); // switches on a pick whilst paused
-  const piped = api.isTtyAt(0) === false;
-  if (arg !== undefined || piped === false) w.player.psi(arg ?? null);
-  if (arg === undefined && piped === false) return; // just turns it off
-
-  /** Whom we influence, again on resume */
-  let chosen = arg ?? null;
-  let onKill = () => {};
-  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
-  const handlers = api.handleStatus({
-    cleanup: () => (w.player.psi(null), onKill()),
-    onSuspend: () => (w.player.psi(null), true),
-    onResume: () => (w.player.psi(chosen), true),
-  });
-  try {
-    while (true) {
-      const datum = await (piped ? Promise.race([api.read(), killed]) : killed); // named, no picks: till killed
-      if (datum === api.eof) break;
-      const npcKey = npcKeyOf(datum);
-      if (npcKey !== undefined && npcKey in w.n) w.player.psi((chosen = npcKey));
-    }
-  } finally {
-    handlers.dispose();
-  }
+export function psi({ api, args: [npcKey], w }: JshCli.RunArg) {
+  api.setPausable("world", false); // switches it whilst paused
+  w.player.psi(npcKey ?? null);
 }
 
 /**
@@ -1162,6 +1140,7 @@ export async function spawn(
     to: "at",
     skin: "as",
     "--facing": "facing",
+    "--towards": "facing",
   }),
 ) {
   api.setPausable("world", false); // can spawn while paused
@@ -1202,12 +1181,14 @@ export async function spawn(
 }
 
 /**
- * Draw or sheathe npcs' swords, or lock them on to an npc — see `w.swords`. The swords are theirs, so a kill
- * changes nothing. Piped, each pick is drawn, sheathed, or locked on to; picking one of them unlocks
+ * Draw or sheathe npcs' swords, or lock them on to an npc, through a body part — see `w.swords`. The swords are
+ * theirs, so a kill changes nothing. Piped, each pick is drawn, sheathed, or locked on to through the part picked;
+ * picking one of them unlocks
  * ```sh
  * sword --on rob kate
  * sword --off rob
  * sword rob kate lock:will
+ * sword rob lock:will part:leftforearm
  * sword rob lock:null
  * pick | sword --on
  * pick | sword rob kate
@@ -1215,7 +1196,11 @@ export async function spawn(
  */
 export async function sword(
   { api, args, w }: JshCli.RunArg,
-  opts: { on?: boolean; off?: boolean; lock?: null | string } = api.jsArg(args, { "--on": "on", "--off": "off" }),
+  opts: { on?: boolean; off?: boolean; lock?: null | string; part?: string } = api.jsArg(args, {
+    "--on": "on",
+    "--off": "off",
+    "--unlock": "lock:false",
+  }),
 ) {
   api.setPausable("world", false); // picks whilst paused
   const srcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
@@ -1223,8 +1208,10 @@ export async function sword(
   if (api.isTtyAt(0)) {
     if (opts.on === true) w.swords.draw(...srcKeys);
     else if (opts.off === true) w.swords.sheathe(...srcKeys);
-    else if ("lock" in opts) w.swords.lock(srcKeys, opts.lock ? w.npc.get(opts.lock).key : null);
-    else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
+    else if ("lock" in opts) {
+      const dstKey = opts.lock ? w.npc.get(opts.lock).key : null;
+      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part);
+    } else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
     return;
   }
 
@@ -1233,7 +1220,10 @@ export async function sword(
     if (npcKey === undefined || !(npcKey in w.n)) continue;
     if (opts.on === true) w.swords.draw(npcKey);
     else if (opts.off === true) w.swords.sheathe(npcKey);
-    else w.swords.lock(srcKeys, srcKeys.includes(npcKey) ? null : npcKey);
+    else {
+      const dstKey = srcKeys.includes(npcKey) ? null : npcKey; // one of them unlocks all
+      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, bodyPartOf(datum));
+    }
   }
 }
 
@@ -1372,24 +1362,36 @@ function npcKeyOf(datum: unknown) {
   return meta?.type === "npc" ? meta.npcKey : undefined;
 }
 
+/** The npc body part a pick hit, e.g. `head` */
+function bodyPartOf(datum: unknown) {
+  const { meta } = (typeof datum === "object" ? (datum as JshCli.PickEvent | null) : null) ?? {};
+  return meta?.type === "npc" ? meta.bodyPart : undefined;
+}
+
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
   return Array.isArray(x) && typeof x[0] !== "number";
 }
 
 /**
+ * Get first naked arg (no colon, no hyphen prefix) not in `booleanJsOptSomewhere`
  * @see {booleanJsOptSomewhere}
  * @param opts Parsed from command line
  */
 function getFirstUnknownNaked(opts: Record<string, any>) {
-  return keys(opts).find((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+  return keys(opts).find(
+    (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
+  );
 }
 
 /**
+ * Get last naked arg (no colon, no hyphen prefix) not in `booleanJsOptSomewhere`
  * @see {booleanJsOptSomewhere}
  * @param opts Parsed from command line
  */
 function getLastUnknownNaked(opts: Record<string, any>) {
-  return keys(opts).findLast((key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere));
+  return keys(opts).findLast(
+    (key) => typeof opts[key] === "boolean" && !(key in booleanJsOptSomewhere) && !key.startsWith("-"),
+  );
 }
 
 /** Forbid certain npcKeys as bare specifiers (over approximation) */

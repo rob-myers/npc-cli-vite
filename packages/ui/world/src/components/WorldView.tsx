@@ -215,6 +215,10 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         e.stopPropagation();
         state.canvas.dispatchEvent(new WheelEvent(e.nativeEvent.type, e.nativeEvent));
       },
+      forwardPointer(e) {
+        e.stopPropagation();
+        state.canvas.dispatchEvent(new PointerEvent(e.nativeEvent.type, e.nativeEvent)); // the controls capture it
+      },
       async runBusy(text, task) {
         const shownAt = Date.now();
         state.busy = text;
@@ -893,7 +897,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           return; // drag is not a pick
         }
         if (w.disabled === true && state.isOverPaused(e.nativeEvent) === true) {
-          w.setDisabled(false); // the pill takes no pointer events on a phone — see its className
+          w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
         state.pickObject(e);
@@ -1564,18 +1568,15 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         ref={state.ref("pausedEl")}
         onClick={() => w.setDisabled(false)}
         onWheel={state.forwardWheel}
+        // a press is still the camera's, so a pinch begun there still pinches — and no card beneath
+        // takes it. The tap that resumes is found by `onPointerUp`
+        onPointerDown={state.forwardPointer}
         className={cn(
           indicatorClassName,
-          "top-[40%] transition-opacity duration-500 bg-black/60 rounded-xl",
+          "top-[40%] transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
-          // paused — else an invisible button sits over the middle of a running world.
-          // On a phone it takes none at all: a finger landing on it is still the camera's, so a
-          // pinch begun there still pinches. The tap that resumes is found by `onPointerUp`
-          w.disabled !== true
-            ? "pointer-events-none opacity-0"
-            : w.touchDevice === true
-              ? "pointer-events-none opacity-100"
-              : "cursor-pointer opacity-100 hover:text-yellow-100",
+          // paused — else an invisible button sits over the middle of a running world
+          w.disabled !== true ? "pointer-events-none opacity-0" : "cursor-pointer opacity-100 hover:text-yellow-100",
         )}
       >
         <PlayIcon className="size-4 shrink-0" weight="fill" />
@@ -1713,6 +1714,7 @@ export type State = {
   forceUpdate(delta?: number): void;
   /** Hands an overlay's wheel event to the canvas, so the camera still zooms beneath it */
   forwardWheel(e: React.WheelEvent): void;
+  forwardPointer(e: React.PointerEvent): void;
   /**
    * Runs `task` behind an overlay saying `text`, e.g. a toggle whose shader recompile would
    * otherwise freeze the world unannounced (noticeable on mobile). Pointer events still go through
@@ -1755,9 +1757,9 @@ export type State = {
   /** The camera has been touched: a drag, a pinch or the wheel */
   onCameraStart(): void;
   onCameraEnd(): void;
-  /** Whether a pointer is over the paused pill — the resume tap, where the pill itself takes none */
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
+  /** Whether a pointer is over the paused pill — the resume tap, since the pill forwards its presses */
   isOverPaused(e: PointerEvent): boolean;
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */

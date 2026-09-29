@@ -527,9 +527,11 @@ export default function NPCs() {
           }
 
           npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
+          npc.anim.strafeFollowsAim = strafe === undefined; // so a sword drawn mid-move strafes at once
           npc.anim.backwards =
             npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint)));
           npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
+          npc.anim.fastAsked = fast === true;
           npc.anim.aimAt({ groundPoint, result });
           await state.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);

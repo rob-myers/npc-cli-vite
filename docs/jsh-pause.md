@@ -86,11 +86,11 @@ later descendants.
   A job keeps running only if none of its processes is a member: in `pick | move`, `move` makes the
   whole job pause, `pick` included.
 
-Opted out today, because each must work whilst the World is paused (e.g. `pick | psi`):
+Opted out today, because each must work whilst the World is paused (e.g. `pick | sword --on`):
 
 - `pick` (picking whilst paused),
 - `events` (it reports the pause itself),
-- `psi` (switches on a pick),
+- `psi` and `sword` (each switches whilst paused),
 - `spawn` (spawning whilst paused),
 - `pause` and `play` (else `pause` would pause itself, and `play` start paused),
 - `awaitWorld` (it sets up the group).
