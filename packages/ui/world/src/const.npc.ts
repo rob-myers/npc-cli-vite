@@ -270,8 +270,8 @@ export const swordConfig = {
   fadeSecs: 0.3,
   sides: 6,
   segments: 24,
-  /** Metres ahead a wall or closed door blocks — beyond the arm, so it is drawn in in time */
-  reach: 1,
+  /** Metres ahead a wall or closed door blocks — just past the outstretched arm's `0.51`, so it is drawn in in time */
+  reach: 0.6,
   /** Seconds they stay defensive at least — longer whilst something stays in reach */
   holdSecs: 0.5,
   drawInSecs: 0.15,
