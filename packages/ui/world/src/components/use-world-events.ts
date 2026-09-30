@@ -651,6 +651,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               if (prevGrId !== undefined) {
                 w.npc.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
+              if (e.npcKey === w.player.key) w.view.onPlayerRespawn();
             }
 
             w.npc.npcToRoom.set(npc.key, { ...e.gmRoomId });

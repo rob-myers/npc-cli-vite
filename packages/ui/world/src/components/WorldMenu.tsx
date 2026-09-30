@@ -733,16 +733,19 @@ export function WorldMenu() {
             onPointerLeave={() => state.onLookPressEnd(true)}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {w.view.lookingAt === true && (
-              // pulses whilst a pan is under way, which a black screen or a paused world would
-              // otherwise hide
-              <motion.div
-                className="absolute inset-0 pointer-events-none bg-white/60"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
-              />
-            )}
+            <AnimatePresence>
+              {w.view.lookingAt === true && (
+                // pulses whilst a pan is under way, which a black screen or a paused world would
+                // otherwise hide — and fades out from wherever the pulse is once it lands
+                <motion.div
+                  className="absolute inset-0 pointer-events-none bg-white/60"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.5 }}
+                  exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
+                  transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
+                />
+              )}
+            </AnimatePresence>
             {followFlash > 0 && (
               // keyed by the count, so each toggle remounts it and replays the fade from the top
               <motion.div
@@ -1324,7 +1327,9 @@ const lookLongPressMs = 500;
 /** How long the look button's flash takes to fade, when follow is turned on or off */
 const followFlashMs = 550;
 /** Half a pulse of the look button, whilst a pan is under way */
-const lookingAtPulseMs = 350;
+const lookingAtPulseMs = 700;
+/** How long the pulse takes to fade once the pan lands */
+const lookingAtFadeMs = 400;
 
 const cameraModes: CameraModeType[] = ["free", "canonical"];
 const debugItems = [
@@ -1482,7 +1487,10 @@ function useToastKeys(keys: string[], delayMs: number): string[] {
   }, [keys.join(",")]);
 
   useEffect(() => {
-    return () => Object.values(timers.current).forEach(clearTimeout);
+    return () => {
+      Object.values(timers.current).forEach(clearTimeout);
+      timers.current = {}; // a Fast Refresh re-runs the effect above, which must re-arm them
+    };
   }, []);
 
   return visible;
