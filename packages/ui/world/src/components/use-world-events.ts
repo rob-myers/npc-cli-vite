@@ -542,11 +542,24 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // `spawnMany` goes via `rawSpawn`, which does not fire `spawned` — so this is where its
             // npcs are put into the rooms they stand in, as that would have done
             for (const npcKey of e.npcKeys) {
-              if (w.n[npcKey] !== undefined) state.tryPutNpcIntoRoom(w.n[npcKey]);
+              if (npcKey in w.n) state.tryPutNpcIntoRoom(w.n[npcKey]);
             }
             state.syncFadeRooms();
             break;
           }
+          case "swords":
+            if (!e.drawn) return;
+            for (const npcKey of e.npcKeys) {
+              if (npcKey === w.player.key) {
+                w.psi.choose(null);
+              } else {
+                const npc = w.n[npcKey];
+                if (npc.anim.hasUpper("psi") || npc.anim.hasUpper("psi_avoid")) {
+                  npc.anim.setUpper(null);
+                }
+              }
+            }
+            break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
             break;

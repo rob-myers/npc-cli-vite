@@ -428,6 +428,10 @@ export class NpcAnimation {
     return (t.diff * 6 * p * (1 - p)) / t.duration + t.v0 * (1 - p) * (1 - 3 * p);
   }
 
+  hasUpper(animKey: AnimationClipKey | null) {
+    return this.upper.target === 1 && this.upper.key === animKey;
+  }
+
   /**
    * Turn to face `target` (radians) over a duration set by the arc, shuffling round a long one, and resolve
    * `npc.resolve.look` on landing — setting off at `fromRate`, a superseded look's, rather than restarting

@@ -25,13 +25,15 @@ export default function Swords() {
       tickedMs: performance.now(),
 
       draw(...npcKeys) {
-        for (const npcKey of npcKeys) state.ensure(npcKey).drawn = true;
+        const swordsDrawn = npcKeys.map((npcKey) => state.ensure(npcKey)).filter((s) => !s.drawn && (s.drawn = true));
         state.sync();
+        swordsDrawn.length && w.events.next({ key: "swords", drawn: true, npcKeys: swordsDrawn.map((s) => s.key) });
       },
       ensure(npcKey) {
         let sword = state.swords.get(npcKey);
         if (sword === undefined) {
           sword = {
+            key: npcKey,
             drawn: false,
             target: null,
             holdUntil: 0,
@@ -73,7 +75,6 @@ export default function Swords() {
         return sword.drawn;
       },
       onTick(instant = false) {
-        if (w.n === null) return; // <NPCs> mounts after us
         const now = performance.now();
         const step = Math.min((now - state.tickedMs) / 1000, 0.1) / swordConfig.fadeSecs;
         state.tickedMs = now;
@@ -220,7 +221,7 @@ export default function Swords() {
 }
 
 export type State = SwordResources & {
-  /** Per npc with a sword drawn, fading, or locked on to someone */
+  /** By npcKey, i.e. whether sword is drawn, fading, or locked onto someone */
   swords: Map<string, SwordEntry>;
   tickedMs: number;
 
@@ -246,6 +247,8 @@ export type State = SwordResources & {
 };
 
 type SwordEntry = {
+  /** npcKey */
+  key: string;
   drawn: boolean;
   /** Whom they lock on to whilst drawn and in sight */
   target: null | RopeTarget;

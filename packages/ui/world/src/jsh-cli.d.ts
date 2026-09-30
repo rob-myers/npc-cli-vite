@@ -52,6 +52,7 @@ declare namespace JshCli {
         key: "stopped-moving";
         npcKey: string;
       }
+    | { key: "swords"; drawn: boolean; npcKeys: string[] }
     | {
         /** About to look at (if close enough), then fade onto, a free doable */
         key: "npc-pre-do";
