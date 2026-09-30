@@ -204,6 +204,9 @@ catalogs:
     svg-path-parser:
       specifier: ^1.1.0
       version: 1.1.0
+    swipl-wasm:
+      specifier: ^8.2.0
+      version: 8.2.0
     tailwind-merge:
       specifier: ^3.4.0
       version: 3.4.0
@@ -383,6 +386,9 @@ importers:
       '@npc-cli/parse-sh':
         specifier: workspace:^
         version: link:../parse-sh
+      '@npc-cli/prolog':
+        specifier: workspace:^
+        version: link:../prolog
       '@npc-cli/theme':
         specifier: workspace:^
         version: link:../theme
@@ -494,6 +500,12 @@ importers:
         specifier: ^4.1.13
         version: 4.1.13
 
+  packages/prolog:
+    dependencies:
+      swipl-wasm:
+        specifier: 'catalog:'
+        version: 8.2.0
+
   packages/template:
     dependencies:
       zod:
@@ -532,6 +544,9 @@ importers:
       '@npc-cli/ui__template':
         specifier: workspace:^
         version: link:../ui/template
+      '@npc-cli/ui__term-graph':
+        specifier: workspace:^
+        version: link:../ui/term-graph
       '@npc-cli/ui__world':
         specifier: workspace:^
         version: link:../ui/world
@@ -816,6 +831,30 @@ importers:
       '@npc-cli/util':
         specifier: workspace:^
         version: link:../../util
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.1(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
+
+  packages/ui/term-graph:
+    dependencies:
+      '@npc-cli/prolog':
+        specifier: workspace:^
+        version: link:../../prolog
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react:
         specifier: 'catalog:'
         version: 19.2.1
@@ -2245,6 +2284,9 @@ packages:
 
   '@types/earcut@3.0.0':
     resolution: {integrity: sha512-k/9fOUGO39yd2sCjrbAJvGDEQvRwRnQIZlBz43roGwUZo5SHAmyVvSFyaVVZkicRVCaDXPKlbxrUcBuJoSWunQ==}
+
+  '@types/emscripten@1.41.6':
+    resolution: {integrity: sha512-uN+9i8bFT5CUcZfyIEYDrSueACEyKGbUs5kC/72DGlZZoinh84sJfVV0i8UOJD1asdzkvLPBRrKs41kZ8MdEXg==}
 
   '@types/estree-jsx@1.0.5':
     resolution: {integrity: sha512-52CcUVNFyfb1A2ALocQw/Dd1BQFNmSdkuC3BkZ6iqhdMfQz7JWOFRuJFloOzjk+6WijU56m9oKXFAXc7o3Towg==}
@@ -3881,6 +3923,10 @@ packages:
   svg-path-parser@1.1.0:
     resolution: {integrity: sha512-jGCUqcQyXpfe38R7RFfhrMyfXcBmpMNJI/B+4CE9/Unkh98UporAc461GTthv+TVDuZXsBx7/WiwJb1Oh4tt4A==}
 
+  swipl-wasm@8.2.0:
+    resolution: {integrity: sha512-3Xr2cpWB6ifVjO+eFxyVPY4hR87D3bG5Uo9WcUq3Z7cHBlOLgBwc97/XFUpXG+KX/l0IiTfDOTz2ZBfBoW35Ow==}
+    hasBin: true
+
   tabbable@6.4.0:
     resolution: {integrity: sha512-05PUHKSNE8ou2dwIxTngl4EzcnsCDZGJ/iCLtDflR/SHB/ny14rXc+qU5P4mG9JkusiV7EivzY9Mhm55AzAvCg==}
 
@@ -5288,6 +5334,8 @@ snapshots:
   '@types/draco3d@1.4.10': {}
 
   '@types/earcut@3.0.0': {}
+
+  '@types/emscripten@1.41.6': {}
 
   '@types/estree-jsx@1.0.5':
     dependencies:
@@ -7149,6 +7197,10 @@ snapshots:
       react: 19.2.1
 
   svg-path-parser@1.1.0: {}
+
+  swipl-wasm@8.2.0:
+    dependencies:
+      '@types/emscripten': 1.41.6
 
   tabbable@6.4.0: {}
 

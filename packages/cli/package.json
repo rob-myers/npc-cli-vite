@@ -19,6 +19,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/parse-sh": "workspace:^",
+    "@npc-cli/prolog": "workspace:^",
     "@npc-cli/theme": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",

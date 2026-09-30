@@ -1,0 +1,19 @@
+{
+  "name": "@npc-cli/ui__term-graph",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@npc-cli/prolog": "workspace:^",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -12,6 +12,7 @@ const mirrored: Record<UiRegistryKey, true> = {
   MapEdit: true,
   Tabs: true,
   Template: true,
+  TermGraph: true,
   World: true,
 };
 

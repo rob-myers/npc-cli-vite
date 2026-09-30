@@ -7,6 +7,19 @@
 - skin remapping
   - currently only have skinIndex
 
+
+- ✅ merge `look` and `aim`
+  - `look --strafe` is `aim`
+- ✅ support `wasd_delta rob | look ... rob` smooth interrupt
+
+### Bootstrap
+
+- `awaitWorld` should wait for the npcs to be restored, not just `isReady()` (assets and navmesh)
+  - else a command run straight after it sees none e.g. `npcs` prints `[]`
+  - `map-settled` is too early: `restoreNpcs` runs off it, then emits `npcs-restored`
+  - an event is missed by a later tty, so set a flag e.g. `restoredMapKey` before emitting it, and poll
+    `isReady() && restoredMapKey === mapKey`
+
 ### Camera
 
 - improve fov based on dimension
@@ -57,11 +70,13 @@
 
 ### Sword and Psi
 
-- sword/psi: cancel when do e.g. sit
-- sword: non-locked-on should look better
-- sword: no bodyPart defaults to head
-- sword/psi: command for setting player's target
-- psi: improve no-target animation
+- ✅ sword: cancel when do e.g. sit
+- ✅ sword: non-locked-on should look better
+- ✅ sword: no bodyPart defaults to head
+- ✅  psi: improve no-target animation
+- 🚧 sword/psi: command for setting player's target
+  - already have `psi npc-0` and `sword rob --lock:npc-0`
+  - need ui for desktop/mobile
 
 ### Unorganised Bugs
 

@@ -5,6 +5,7 @@ import Jsh from "@npc-cli/ui__jsh";
 import MapEdit from "@npc-cli/ui__map-edit";
 import Tabs from "@npc-cli/ui__tabs";
 import Template from "@npc-cli/ui__template";
+import TermGraph from "@npc-cli/ui__term-graph";
 import World from "@npc-cli/ui__world";
 import type { UiPackageDef } from "@npc-cli/ui-sdk";
 
@@ -21,6 +22,7 @@ export type UiRegistry = {
   MapEdit: typeof MapEdit;
   Tabs: typeof Tabs;
   Template: typeof Template;
+  TermGraph: typeof TermGraph;
   World: typeof World;
 };
 
@@ -33,6 +35,7 @@ export const uiRegistryFactory = (): UiRegistry =>
     MapEdit,
     Tabs,
     Template,
+    TermGraph,
     World,
   }) satisfies Record<string, UiPackageDef>;
 

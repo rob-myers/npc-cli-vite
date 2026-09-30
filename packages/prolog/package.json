@@ -1,0 +1,13 @@
+{
+  "name": "@npc-cli/prolog",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/client.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "swipl-wasm": "catalog:"
+  }
+}

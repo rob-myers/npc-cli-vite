@@ -116,6 +116,13 @@ See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (fram
 
 **Pausing** — see `docs/jsh-pause.md`, the ONLY doc for it. In short: world commands (and their descendants) pause with the World via a pause group made in `awaitWorld`; one that must keep going calls `api.setPausable("world", false)` first, like `pick`.
 
+## Prolog
+
+See `docs/prolog.md` — the ONLY doc for it. In short: `packages/prolog` runs swipl-wasm in a lazy
+worker; nodes are terms it reasons about, never runs. `/shared/term` (`jsh/world/term.ts`) persists
+them per map, `demo_prolog.ts` has the `pl*` commands, and `packages/ui/term-graph` edits a node as
+nested boxes.
+
 ## Decorator panel
 
 See `docs/decorator.md` — the ONLY doc for it. In short: `packages/ui/decorator` places dynamic

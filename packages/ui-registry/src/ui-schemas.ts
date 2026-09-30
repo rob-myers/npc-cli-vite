@@ -5,6 +5,7 @@ import { JshUiSchema } from "@npc-cli/ui__jsh/schema";
 import { MapEditUiMetaSchema } from "@npc-cli/ui__map-edit/schema";
 import { TabsUiMetaSchema } from "@npc-cli/ui__tabs/schema";
 import { TemplateUiMetaSchema } from "@npc-cli/ui__template/schema";
+import { TermGraphUiMetaSchema } from "@npc-cli/ui__term-graph/schema";
 import { WorldUiSchema } from "@npc-cli/ui__world/schema";
 import type { UiRegistry, UiRegistryKey } from "./ui-registry";
 
@@ -20,5 +21,6 @@ export const uiSchemas = {
   MapEdit: MapEditUiMetaSchema,
   Tabs: TabsUiMetaSchema,
   Template: TemplateUiMetaSchema,
+  TermGraph: TermGraphUiMetaSchema,
   World: WorldUiSchema,
 } satisfies { [K in UiRegistryKey]: UiRegistry[K]["schema"] };
