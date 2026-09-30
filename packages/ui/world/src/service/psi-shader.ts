@@ -114,40 +114,41 @@ export function psiNodes(
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
-  /** Distance to a slot, pushed out as its presence falls — not past `reachFade`, where `log` races the rings */
-  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">) =>
-    q.sub(slot.xy).length().add(slot.z.oneMinus().mul(maxPush));
+  /** Distance to a slot, `pushed` out as its presence falls — not past `reachFade`, where `log` races the rings */
+  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, pushed: boolean) =>
+    pushed ? q.sub(slot.xy).length().add(slot.z.oneMinus().mul(maxPush)) : q.sub(slot.xy).length();
   /** Each eased to nought at `reach`, since a hard cut steps the contours */
   const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
 
   /**
    * `(g, slot of nearest)` at world `q`: a smooth min of the distances to the player and to the
-   * nearest other, pointed at each so they keep rings of their own
+   * nearest other, pointed at each so they keep rings of their own — the player's own `pushed` or not
    */
-  const fieldAt = Fn(([q]: [THREE.Node<"vec2">]) => {
-    const player = slotAt(int(0));
-    const rPlayer = distTo(q, player);
-    const rOther = float(1e9).toVar();
-    const hOther = float(1).toVar();
-    const nearest = float(0).toVar();
-    Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
-      const slot = slotAt(i);
-      const r = distTo(q, slot);
-      If(r.lessThan(rOther), () => {
-        rOther.assign(r);
-        hOther.assign(slot.w);
-        nearest.assign(i.toFloat());
+  const fieldOf = (pushed: boolean) =>
+    Fn(([q]: [THREE.Node<"vec2">]) => {
+      const player = slotAt(int(0));
+      const rPlayer = distTo(q, player, pushed);
+      const rOther = float(1e9).toVar();
+      const hOther = float(1).toVar();
+      const nearest = float(0).toVar();
+      Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
+        const slot = slotAt(i);
+        const r = distTo(q, slot, true); // else a fading other's hill would stand until dropped
+        If(r.lessThan(rOther), () => {
+          rOther.assign(r);
+          hOther.assign(slot.w);
+          nearest.assign(i.toFloat());
+        });
       });
-    });
 
-    const wPlayer = weigh(rPlayer);
-    const wOther = weigh(rOther);
-    const total = max(wPlayer.add(wOther), 1e-20);
-    const g = log(total).mul(-blend); // huge beyond reach
-    // their peaks blended as their fields are, so the relief has no step between them
-    const h = wPlayer.mul(player.w).add(wOther.mul(hOther)).div(total);
-    return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
-  });
+      const wPlayer = weigh(rPlayer);
+      const wOther = weigh(rOther);
+      const total = max(wPlayer.add(wOther), 1e-20);
+      const g = log(total).mul(-blend); // huge beyond reach
+      // their peaks blended as their fields are, so the relief has no step between them
+      const h = wPlayer.mul(player.w).add(wOther.mul(hOther)).div(total);
+      return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
+    });
 
   /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
   const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
@@ -172,8 +173,8 @@ export function psiNodes(
   const ownSlot = slotAt(instanceIndex.toInt() as THREE.Node<"int">);
   // on one world grid, so overlapping quads share vertices and their reliefs agree
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
-  // each contour at a fixed height, as on a relief map
-  const field = fieldAt(worldXZ);
+  // each contour at a fixed height, as on a relief map — off the player's unpushed field, so theirs fade in from the peak
+  const field = fieldOf(false)(worldXZ);
   const y = max(field.x.div(reach.negate()).add(1), 0).mul(field.z).add(lift); // `z` is the peak
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
 
@@ -185,7 +186,7 @@ export function psiNodes(
 
   const colorNode = Fn(() => {
     // per fragment rather than a varying, so a line keeps its shape between vertices
-    const found = fieldAt(p).toVar();
+    const found = fieldOf(true)(p).toVar();
     const g = found.x;
     const owned = found.y.sub(own).abs().lessThan(0.5).select(float(1), float(0)); // drawn once, by the nearest
 
