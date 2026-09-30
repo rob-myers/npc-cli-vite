@@ -57,7 +57,7 @@ from `ct.w` and returning plain data.
 - **Fade-rooms mode follows the session's aim**: `sight` when imagining what the player sees; `sense`
   or `ship` are fine otherwise, e.g. debugging many npcs (`w view.setFadeRoomsMode ship`). In `sight` an
   unlit room cannot be picked, so a `click` there does nothing useful.
-- **View settings persist**: `w view.setFollowMode loose` and the fade mode are saved, so put back what
+- **View settings persist**: `w view.setFollowMode pan` and the fade mode are saved, so put back what
   a session changed unless asked to keep it.
 - **`click` a world point only when it is on-screen**: else point the camera there first
   (`w view.lookAt '{ x, y }'`, with follow `off` or it pulls back to the player).
