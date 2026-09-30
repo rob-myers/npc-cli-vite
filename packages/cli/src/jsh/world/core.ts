@@ -209,9 +209,8 @@ export function lock(
 }
 
 /**
- * - Turn to face a point or npc. Piped, a look superseding one under way carries on from its turn.
- * - `--strafe` faces it moving or not, so moves strafe: a point, tracked, or a world angle, held until
- * cleared by a bare `look rob --strafe`, by picking them, or by killing the pipe — see `npc.anim.face.aim`
+ * - Turn to face a point or npc, via args or read points from stdin.
+ * - Fixate at constant point or angle via --strafe, clearable via `look rob --strafe` or killed pipe.
  * ```sh
  * look npc:rob at:$( pick 1 )
  * look rob at:$( pick 1 )
@@ -220,6 +219,7 @@ export function lock(
  * wasd_delta rob | look rob
  * look rob at:kate --strafe rate:0.5
  * look rob at:1.57 --strafe
+ * look rob at:1.57 --fixate
  * look rob --strafe
  * pick --right | look rob --strafe
  * ```
@@ -231,6 +231,7 @@ export async function look(
     to: "at",
     face: "at",
     "--force": "force",
+    "--fixate": "strafe",
     "--strafe": "strafe",
   }),
 ) {
