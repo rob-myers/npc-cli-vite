@@ -78,7 +78,11 @@ export default function Psi() {
           state.npcData[i * 4 + 2] = eased(presence);
           state.npcData[i * 4 + 3] = npc.position.y + npc.anim.headY + psiConfig.headAbove; // their peak
         });
-        state.slotCount.value = slots.length;
+        if (slots.length === 1) {
+          // a far stand-in, weightless there: alone, the field's loop over the others draws only the first ring
+          state.npcData.set([player.position.x + psiConfig.loneFar, player.position.z, 0, 0], 4);
+        }
+        state.slotCount.value = Math.max(2, slots.length); // drawn by `instanceCount`, which omits the stand-in
         state.geo.instanceCount = slots.length;
         state.npcTex.needsUpdate = true;
       },
@@ -187,6 +191,8 @@ const psiConfig = {
   nearDist: 0.65,
   /** Seconds the player's elbows take to come forward */
   avoidSecs: 0.3,
+  /** Metres off the player the stand-in for no one sits, far past any `reach` */
+  loneFar: 1e4,
 } as const;
 
 /** Ours to clear: never another's upper pose e.g. `point` */
