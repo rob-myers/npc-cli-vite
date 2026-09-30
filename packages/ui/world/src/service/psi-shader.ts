@@ -115,14 +115,16 @@ export function psiNodes(
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
   /** Distance to a slot, `pushed` out as its presence falls — not past `reachFade`, where `log` races the rings */
-  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, pushed: boolean) =>
-    pushed ? q.sub(slot.xy).length().add(slot.z.oneMinus().mul(maxPush)) : q.sub(slot.xy).length();
+  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, pushed: boolean) => {
+    const r = q.sub(slot.xy).length();
+    return pushed ? r.add(slot.z.oneMinus().mul(maxPush)) : r;
+  };
   /** Each eased to nought at `reach`, since a hard cut steps the contours */
   const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
 
   /**
-   * `(g, slot of nearest)` at world `q`: a smooth min of the distances to the player and to the
-   * nearest other, pointed at each so they keep rings of their own — the player's own `pushed` or not
+   * `(g, slot of nearest, peak)` at world `q`: a smooth min of the distances to the player and to
+   * the nearest other, so each keeps rings of their own — the player's `pushed` or not
    */
   const fieldOf = (pushed: boolean) =>
     Fn(([q]: [THREE.Node<"vec2">]) => {
@@ -150,6 +152,10 @@ export function psiNodes(
       return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
     });
 
+  const fieldAt = fieldOf(true);
+  /** The player's unpushed, so their rings fade in from the peak rather than the floor */
+  const reliefAt = fieldOf(false);
+
   /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
   const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
     const gmId = float(-1).toVar();
@@ -173,8 +179,8 @@ export function psiNodes(
   const ownSlot = slotAt(instanceIndex.toInt() as THREE.Node<"int">);
   // on one world grid, so overlapping quads share vertices and their reliefs agree
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
-  // each contour at a fixed height, as on a relief map — off the player's unpushed field, so theirs fade in from the peak
-  const field = fieldOf(false)(worldXZ);
+  // each contour at a fixed height, as on a relief map
+  const field = reliefAt(worldXZ);
   const y = max(field.x.div(reach.negate()).add(1), 0).mul(field.z).add(lift); // `z` is the peak
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
 
@@ -186,7 +192,7 @@ export function psiNodes(
 
   const colorNode = Fn(() => {
     // per fragment rather than a varying, so a line keeps its shape between vertices
-    const found = fieldOf(true)(p).toVar();
+    const found = fieldAt(p).toVar();
     const g = found.x;
     const owned = found.y.sub(own).abs().lessThan(0.5).select(float(1), float(0)); // drawn once, by the nearest
 
