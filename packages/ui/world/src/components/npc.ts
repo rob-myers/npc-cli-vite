@@ -439,6 +439,7 @@ export class Npc {
     try {
       await new Promise<string>((resolve, reject) => {
         const moving = this.isMoving();
+        const fromRate = this.anim.getTurnRate(); // before `rejectAll` drops the turn
         this.rejectAll(new Error("look again"));
         if (moving === true) {
           // not strafing so come to stop
@@ -447,7 +448,7 @@ export class Npc {
         }
         this.resolve.look = resolve;
         this.reject.look = reject;
-        this.anim.lookAt(target, minMs, rate);
+        this.anim.lookAt(target, minMs, rate, fromRate);
       });
     } catch (e) {
       if (e instanceof Error && e.message === "look again") {
