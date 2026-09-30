@@ -1193,7 +1193,7 @@ export async function spawn(
  * sword --on rob kate
  * sword --off rob
  * sword rob kate lock:will
- * sword rob lock:will part:leftforearm
+ * sword rob --lock:npc-0 part:hips
  * sword rob lock:null
  * pick | sword --on
  * pick | sword rob kate
@@ -1204,6 +1204,7 @@ export async function sword(
   opts: { on?: boolean; off?: boolean; lock?: null | string; part?: string } = api.jsArg(args, {
     "--on": "on",
     "--off": "off",
+    "--lock": "lock",
     "--unlock": "lock:false",
   }),
 ) {
@@ -1215,8 +1216,9 @@ export async function sword(
     else if (opts.off === true) w.swords.sheathe(...srcKeys);
     else if ("lock" in opts) {
       const dstKey = opts.lock ? w.npc.get(opts.lock).key : null;
-      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part);
-    } else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
+      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part ?? "head");
+    } else
+      throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... --lock:npcKey; sword --unlock");
     return;
   }
 
@@ -1322,7 +1324,7 @@ export async function warp(
 /**
  * - Whilst w/a/s/d are held over the World, emits a target just ahead of the npc: up, left, down or right as
  * seen.
- * - --nav ensures target is navigable e.g. not emitted where the mesh ends — see `npc.getSlideResult`. 
+ * - --nav ensures target is navigable e.g. not emitted where the mesh ends — see `npc.getSlideResult`.
  * ```sh
  * wasd_delta --nav rob | move rob
  * wasd_delta --nav rob --fast | move rob --fast
@@ -1346,7 +1348,7 @@ export async function* wasd_delta(
     const direction = w.view.getWasdDirection();
     if (direction.length === 0) continue; // none held or opposites
     const npc = w.npc.get(opts.npcKey);
-    
+
     if (opts.nav === true) {
       const slide = npc.getSlideResult(direction.normalize(length));
       if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < wasdConfig.minMove) continue; // the mesh's edge
