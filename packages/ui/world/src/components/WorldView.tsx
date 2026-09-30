@@ -150,6 +150,7 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       frontierMs: 0,
       frontierHold: false,
       followTurnSign: 0,
+      wasdAzimuth: 0,
       keysDown: new Set(),
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
@@ -458,7 +459,13 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
         const right = (state.keysDown.has("d") ? 1 : 0) - (state.keysDown.has("a") ? 1 : 0);
         const up = (state.keysDown.has("w") ? 1 : 0) - (state.keysDown.has("s") ? 1 : 0);
         const m = state.controls.object.matrixWorld.elements; // its x and y axes: its forward points down at birdseye
-        return new Vect(right * m[0] + up * m[4], right * m[2] + up * m[6]);
+        const x = right * m[0] + up * m[4];
+        const z = right * m[2] + up * m[6];
+        if (state.getFollowAzimuth() === undefined) return new Vect(x, z);
+        // `pov` and `watch` turn the camera as they turn, which would turn "left" with them: as seen when the hold began
+        const turned = state.wasdAzimuth - state.controls.getAzimuthalAngle();
+        const [cos, sin] = [Math.cos(turned), Math.sin(turned)];
+        return new Vect(x * cos + z * sin, z * cos - x * sin);
       },
       getFollowedPlayer() {
         const player = state.getPlayer();
@@ -825,7 +832,11 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
       }, 100),
       onKeyDown(e) {
         if (isTypingTarget(e)) return;
-        state.keysDown.add(e.key.toLowerCase());
+        const key = e.key.toLowerCase();
+        if (wasdKeys.includes(key) && !wasdKeys.some((k) => state.keysDown.has(k))) {
+          state.wasdAzimuth = state.controls?.getAzimuthalAngle() ?? 0; // a hold begins — see `getWasdDirection`
+        }
+        state.keysDown.add(key);
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
@@ -1741,6 +1752,8 @@ export type State = {
   followTurnSign: number;
   /** The keys held down over the world, lowercased — `wasd_delta` reads them */
   keysDown: Set<string>;
+  /** The camera's azimuth when the held `wasd` keys were first pressed — see `getWasdDirection` */
+  wasdAzimuth: number;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
   holdFrontier(): void;
   /** Draws `canonical`'s zoom stops in by how little the player sees ahead — see within */
@@ -1942,6 +1955,8 @@ function getCameraFov(aspect: number) {
   const halfTan = Math.tan(cameraFov * 0.5 * THREE.MathUtils.DEG2RAD);
   return 2 * Math.atan((halfTan * cameraRefAspect) / aspect) * THREE.MathUtils.RAD2DEG;
 }
+
+const wasdKeys = ["w", "a", "s", "d"];
 
 /** `tight` became `pov` */
 function untight<T extends FollowMode>(mode: T): T {
