@@ -316,7 +316,7 @@ export default function Decor() {
       ensureGmRoomId(decor) {
         if (!(decor.meta.gmId >= 0 && decor.meta.roomId >= 0)) {
           const decorOrigin = decor.type === "point" ? decor : decor.center;
-          const gmRoomId = w.e.findRoomContaining(decorOrigin);
+          const gmRoomId = w.findRoomContaining(decorOrigin);
           return gmRoomId === null ? null : Object.assign(decor.meta, gmRoomId);
         } else {
           decor.meta.grKey ??= helper.getGmRoomKey(decor.meta.gmId, decor.meta.roomId);
@@ -720,7 +720,7 @@ export default function Decor() {
           metaPoint.x = decor.type === "point" ? decor.x : decor.center.x;
           metaPoint.y = decor.type === "point" ? decor.y : decor.center.y;
           metaPoint.meta = decor.meta;
-          const gmRoomId = w.e.findRoomContaining(metaPoint, true);
+          const gmRoomId = w.findRoomContaining(metaPoint, true);
           Object.assign(decor.meta, gmRoomId);
 
           // rename periods because used as delimiter in CLI
@@ -740,7 +740,7 @@ export default function Decor() {
           metaPoint.y = obs.center.y;
           gm.matrix.transformPoint(tmpVect.copy(obs.center));
           metaPoint.meta = emptyMeta;
-          const gmRoomId = w.e.findRoomContaining(metaPoint, true);
+          const gmRoomId = w.findRoomContaining(metaPoint, true);
 
           Object.assign(obs.meta, gmRoomId); // store in obstacle too
 

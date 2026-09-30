@@ -44,10 +44,9 @@ export function advanceRope(x: Rope, step: number, exists: (npcKey: string) => b
   if (x.glide !== null && (x.glide.t = Math.min(1, x.glide.t + step)) === 1) x.glide = null;
 }
 
-/** Where the rope from `tip` ends: its stub, level ahead of them, drawn to `dst` as it locks on */
-export function ropeEnd(x: Rope, tip: THREE.Vector3, ry: number, dst: undefined | Npc) {
-  const { stub } = swordConfig;
-  const end = x.end.set(tip.x - Math.sin(ry) * stub, tip.y, tip.z - Math.cos(ry) * stub);
+/** Where the rope from `tip` ends: its stub, on down the arm `along`, drawn to `dst` as it locks on */
+export function ropeEnd(x: Rope, tip: THREE.Vector3, along: THREE.Vector3, dst: undefined | Npc) {
+  const end = x.end.copy(tip).addScaledVector(along, swordConfig.stub);
   if (dst !== undefined) {
     const at = bodyPartPoint(dst, x.to?.part ?? null, tmpAt);
     if (x.glide !== null) at.lerpVectors(x.glide.from, tmpGlide.copy(at), eased(x.glide.t)); // tracks the target meanwhile

@@ -17,6 +17,8 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
   let pending = false;
   let readSweep = 0;
   let lastReadMs = 0;
+  /** Bumped by `reset`, so a read issued before it is dropped */
+  let epoch = 0;
 
   const frontier: PlayerFrontier = {
     reach: null,
@@ -25,6 +27,11 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       out.x = eased.x;
       out.z = eased.z;
       return true;
+    },
+    reset() {
+      frontier.reach = null;
+      eased = null;
+      epoch++;
     },
     update(rotationY, deltaSecs, rate) {
       const lookAngle = -rotationY - Math.PI / 2; // three's rotation-Y to an angle in world XZ
@@ -44,14 +51,16 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
           lastReadMs = nowMs;
           // the facing as an index into the table — see `player-light`'s `litFrom`
           const centre = Math.round((((lookAngle / (2 * Math.PI)) % 1) + 1) * lightAngles);
+          const readEpoch = epoch;
           read.then(
             () => {
+              pending = false;
+              if (readEpoch !== epoch) return;
               let furthest = 0;
               for (let i = -halfCount; i <= halfCount; i++) {
                 furthest = Math.max(furthest, table[(centre + i + lightAngles) % lightAngles]);
               }
               frontier.reach = furthest;
-              pending = false;
               onRead();
             },
             (error) => {
@@ -87,5 +96,7 @@ export type PlayerFrontier = {
    * Reads the sweep when there is a fresh one, and eases the vector at `rate` per second. Call
    * once per frame, after the sweep
    */
+  /** Forgets the reading, e.g. on a teleport: eased, it would carry the view past them */
+  reset(): void;
   update(rotationY: number, deltaSecs: number, rate: number): void;
 };

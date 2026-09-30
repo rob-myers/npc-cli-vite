@@ -57,7 +57,7 @@ from `ct.w` and returning plain data.
 - **Fade-rooms mode follows the session's aim**: `sight` when imagining what the player sees; `sense`
   or `ship` are fine otherwise, e.g. debugging many npcs (`w view.setFadeRoomsMode ship`). In `sight` an
   unlit room cannot be picked, so a `click` there does nothing useful.
-- **View settings persist**: `w view.setFollowMode loose` and the fade mode are saved, so put back what
+- **View settings persist**: `w view.setFollowMode pan` and the fade mode are saved, so put back what
   a session changed unless asked to keep it.
 - **`click` a world point only when it is on-screen**: else point the camera there first
   (`w view.lookAt '{ x, y }'`, with follow `off` or it pulls back to the player).
@@ -91,6 +91,18 @@ from `ct.w` and returning plain data.
   e.g. out of a doorway, else they block it.
 - **`pad` needs room**: in a crowded room it fails `not padded: bot0`; `park` stands them against a wall instead.
 - **Check a facing** by `w.n[key].rotation.y`, which is `-(atan2(dz, dx) + π/2)` towards a point `(dx, dz)` away.
+- **A black World after editing `service/player-frontier.ts`** is a NaN camera: HMR keeps the old
+  `w.view.playerFrontier` instance, and its callers now use the new shape. Recover without a reload:
+  ```js
+  async w => {
+    const v = w.view, c = v.controls;
+    const mod = await import(`/@fs/<repo>/packages/ui/world/src/service/player-frontier.ts?t=${Date.now()}`);
+    v.playerFrontier = mod.createPlayerFrontier(() => v.playerLight, () => w.r3f?.invalidate());
+    c.maxDistance = v.ctrlOpts.maxDistance; c.minDistance = v.ctrlOpts.minDistance; // NaN too
+    v.resetCamera(); // turns the follow off: put it back
+  }
+  ```
+  `persistCamera` never saves a non-finite camera, so a reload would not have restored it.
 
 ## Seeing Claude's calls
 

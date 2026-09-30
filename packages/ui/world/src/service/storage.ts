@@ -81,7 +81,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraMode: isTouchDevice() ? "free" : "canonical",
   cameraInitial: null,
   followMode: defaultFollowMode,
-  followLast: "loose",
+  followLast: "pan",
   postProcessing: true,
   rgbShift: true,
   fadeRoomsMode: "sight",

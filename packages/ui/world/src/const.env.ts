@@ -107,10 +107,10 @@ export const defaultCameraMode: import("./components/CameraControls").CameraMode
   ? "free"
   : "canonical";
 /**
- * How the camera follows the player — an option of EITHER mode, not a mode of its own: `loose` keeps them
- * framed, `tight` also keeps it behind their facing
+ * How the camera follows the player — an option of EITHER mode, not a mode of its own: `pan` keeps them
+ * framed, `full` also keeps it in front of them, facing them
  */
-export const followModes = ["off", "loose", "tight"] as const;
+export const followModes = ["off", "pan", "full"] as const;
 export type FollowMode = (typeof followModes)[number];
 export const defaultFollowMode: FollowMode = "off";
 

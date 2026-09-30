@@ -52,6 +52,18 @@ declare namespace JshCli {
         key: "stopped-moving";
         npcKey: string;
       }
+    | { key: "swords"; drawn: boolean; npcKeys: string[] }
+    | {
+        /** About to look at (if close enough), then fade onto, a free doable */
+        key: "npc-pre-do";
+        npcKey: string;
+      }
+    | {
+        /** Started doing `decorKey`, else (`null`) nothing */
+        key: "npc-do";
+        npcKey: string;
+        decorKey: string | null;
+      }
     | { key: "requested-physics" }
     | {
         /** Try close door after countdown and keep trying thereafter */

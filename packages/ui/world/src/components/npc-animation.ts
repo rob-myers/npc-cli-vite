@@ -41,7 +41,7 @@ export class NpcAnimation {
   moveClip = emptyAnimationClip;
   /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
   fast = false;
-  /** The move's INTENT: they back away, facing whence they go — see `w.npc.move` */
+  /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */
   strafe = false;
@@ -85,8 +85,15 @@ export class NpcAnimation {
     rate: 0,
     /** Faced whilst set, moving or not: a point, tracked, or a world angle — `untilRest` if a look on the move set it */
     aim: null as null | { at: Geom.VectJson | number; rate: number; untilRest: boolean },
-    /** A timed turn on the spot, eased out and landing exactly — shuffling round if `longLook` — see `lookAt` */
-    turn: null as null | { start: number; diff: number; duration: number; elapsed: number; longLook: boolean },
+    /** A timed turn on the spot, setting off at `v0` and landing still — shuffling round if `longLook` — see `lookAt` */
+    turn: null as null | {
+      start: number;
+      diff: number;
+      duration: number;
+      elapsed: number;
+      longLook: boolean;
+      v0: number;
+    },
   };
 
   constructor(npc: Npc) {
@@ -193,9 +200,9 @@ export class NpcAnimation {
         face.rate = 0;
         this.npc.resolve.look("lookAt");
       } else {
-        // ease-out: p(t) = 2t - t², velocity starts at v0 and falls to 0
+        // cubic Hermite, leaving at `v0` and landing still — a fresh look's `v0` makes it `2p - p²`
         const p = t.elapsed / t.duration;
-        rotation.y = t.start + t.diff * (2 * p - p * p);
+        rotation.y = t.start + t.diff * p * p * (3 - 2 * p) + t.v0 * t.duration * p * (1 - p) * (1 - p);
       }
     } else if (face.rate > 0) {
       rotation.y += deltaAngle(rotation.y, face.target) * (1 - Math.exp(-5 * delta * face.rate));
@@ -326,8 +333,8 @@ export class NpcAnimation {
     );
 
     const { last } = this.npc;
-    // last.dst = groundPoint; // already set in `w.npc.move`
-    last.dstGrId = this.w.e.findRoomContaining(target.groundPoint);
+    // last.dst = groundPoint; // already set in `w.e.move`
+    last.dstGrId = this.w.findRoomContaining(target.groundPoint);
     last.blockingArea = -1;
     last.point = this.npc.point;
     // arrival radius is relative to this, else a short move starts arrived
@@ -413,18 +420,38 @@ export class NpcAnimation {
       : geomService.getThreeRotationY(at.y - this.npc.position.z, at.x - this.npc.position.x);
   }
 
+  /** The turn's rate now, rad/s, `0` if none — a look superseding it sets off at it */
+  getTurnRate() {
+    const t = this.face.turn;
+    if (t === null || t.duration === 0) return 0;
+    const p = t.elapsed / t.duration;
+    return (t.diff * 6 * p * (1 - p)) / t.duration + t.v0 * (1 - p) * (1 - 3 * p);
+  }
+
+  hasUpper(animKey: AnimationClipKey | null) {
+    return this.upper.target === 1 && this.upper.key === animKey;
+  }
+
   /**
-   * Turn to face `target` (radians) over a duration set by the arc — shuffling round for a long
-   * one, whose feet keep up with the turn — and resolve `npc.resolve.look` on landing. See `Npc.look`
+   * Turn to face `target` (radians) over a duration set by the arc, shuffling round a long one, and resolve
+   * `npc.resolve.look` on landing — setting off at `fromRate`, a superseded look's, rather than restarting
    */
-  lookAt(target: number, minMs: number, rate = 1) {
+  lookAt(target: number, minMs: number, rate = 1, fromRate = 0) {
     const start = this.npc.rotation.y;
     const diff = deltaAngle(start, target);
     const arc = Math.abs(diff);
-    const longLook = arc > longLookAngle;
-    // quadratic ease-out: T = 2|arc| / v0 so initial speed equals angularVelocity
-    const duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
-    this.face.turn = { start, diff, duration, elapsed: 0, longLook };
+    // a shuffle under way carries on, crossfading to idle as the turn lands
+    const longLook = arc > longLookAngle || (fromRate !== 0 && this.pose === "shuffle");
+    let duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
+    // fresh, a quadratic ease-out: it sets off at `2 * arc / duration`
+    let v0 = duration === 0 ? 0 : (2 * diff) / duration;
+    if (fromRate !== 0) {
+      v0 = fromRate;
+      // sooner, else it overshoots: at `3 * arc / |v0|` it is a cubic ease-out
+      if (v0 * diff > 0 && Math.abs(v0) * duration > 3 * arc) duration = (3 * arc) / Math.abs(v0);
+      duration = Math.max(duration, minStopSecs);
+    }
+    this.face.turn = { start, diff, duration, elapsed: 0, longLook, v0 };
     this.face.rate = 0;
 
     if (longLook === true) {
@@ -506,6 +533,8 @@ const longLookAngle = 30 * (Math.PI / 180);
  * and it meets that curve exactly at `arc = 0.3π`, so nothing jumps at the crossover.
  */
 const minLookSecs = 0.3;
+/** The least a superseding look takes, so a turn under way is slowed rather than stopped dead */
+const minStopSecs = 0.15;
 /**
  * How long a long look takes to crossfade from its shuffle back to idle. It starts this far
  * before the turn ends, so both finish together rather than the idle following on.

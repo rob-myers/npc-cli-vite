@@ -6,52 +6,6 @@ import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
 import { padded, parked } from "./pred";
 
 /**
- * Face a point, tracked, or a world angle, moving or not: moves strafe whilst set — see `npc.anim.face.aim`.
- * A bare `aim rob` clears it. Piped, each pick re-aims them until killed, and picking them clears it
- * ```sh
- * aim rob at:$( pick 1 )
- * aim rob at:1.57
- * aim rob at:kate rate:0.5
- * aim rob
- * pick --right | aim rob
- * ```
- */
-export async function aim(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey: string; at?: number | string | JshCli.PointAnyFormat; rate?: number } = api.jsArg(args, {
-    npc: "npcKey",
-  }),
-) {
-  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  const npc = w.npc.get(opts.npcKey);
-  const aimAt = (at?: number | string | MaybeMeta<JshCli.PointAnyFormat>) => {
-    const to = typeof at === "string" ? w.e.getPoint(at) : at; // another npc as they stand now
-    const self = typeof to === "object" && to.meta?.npcKey === npc.key;
-    const { face } = npc.anim;
-    if (to === undefined || self) return void (face.aim = null); // picking or naming them clears it
-    face.aim = {
-      at: typeof to === "number" ? to : w.helper.parseGroundPoint(to),
-      rate: opts.rate ?? 1,
-      untilRest: false,
-    };
-  };
-  if (api.isTtyAt(0)) return aimAt(opts.at);
-
-  let onKill = () => {};
-  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
-  const handlers = api.handleStatus({ cleanup: () => (aimAt(), onKill()) });
-  try {
-    while (true) {
-      const datum = await Promise.race([api.read(), killed]);
-      if (datum === api.eof) break;
-      aimAt(datum);
-    }
-  } finally {
-    handlers.dispose();
-  }
-}
-
-/**
  * Get at most one decor containing a given point.
  * Accounts for height e.g. bunk beds.
  * - opts
@@ -255,23 +209,37 @@ export function lock(
 }
 
 /**
+ * - Turn to face a point or npc, via args or read points from stdin.
+ * - Fixate at constant point or angle via --strafe, clearable via `look rob --strafe` or killed pipe.
  * ```sh
  * look npc:rob at:$( pick 1 )
  * look rob at:$( pick 1 )
  * pick | look npc:rob
  * look npc:rob at:kate
+ * wasd_delta rob | look rob
+ * look rob at:kate --strafe rate:0.5
+ * look rob at:1.57 --strafe
+ * look rob at:1.57 --fixate
+ * look rob --strafe
+ * pick --right | look rob --strafe
  * ```
  */
 export async function look(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; at: string | JshCli.PointAnyFormat; force?: boolean } = ct.api.jsArg(ct.args, {
+  opts: LookCmdOpts = ct.api.jsArg(ct.args, {
     npc: "npcKey",
     to: "at",
     face: "at",
     "--force": "force",
+    "--fixate": "strafe",
+    "--strafe": "strafe",
   }),
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  if (opts.strafe === true) {
+    return lookStrafe(ct, opts);
+  }
+
   const { pendingLooks, processHandled, lookPausable } = lookHandling(ct, {
     npcKey: opts.npcKey,
     force: opts.force,
@@ -282,21 +250,59 @@ export async function look(
     const { api } = ct;
 
     if (api.isTtyAt(0)) {
-      pendingLooks.push(opts.at);
+      pendingLooks.push(opts.at as string | JshCli.PointAnyFormat); // `lookPausable` rejects anything else
 
       while ((next = pendingLooks.shift())) {
-        await lookPausable({ at: next });
+        await lookPausable({ at: next, rate: opts.rate });
       }
     } else {
       let pendingRead = api.read();
 
       while ((next = pendingLooks.shift() ?? (await pendingRead)) !== api.eof && next) {
-        const lookPromise = lookPausable({ at: next });
+        const lookPromise = lookPausable({ at: next, rate: opts.rate });
         await Promise.race([lookPromise, (pendingRead = api.read())]);
       }
     }
   } finally {
     processHandled.dispose();
+  }
+}
+
+type LookCmdOpts = {
+  npcKey: string;
+  at?: number | string | JshCli.PointAnyFormat;
+  force?: boolean;
+  strafe?: boolean;
+  rate?: number;
+};
+
+/** `look --strafe`: sets `npc.anim.face.aim`, so they face it moving or not, and any move strafes */
+async function lookStrafe({ api, w }: JshCli.RunArg, opts: LookCmdOpts) {
+  const npc = w.npc.get(opts.npcKey);
+  const aimAt = (at?: number | string | MaybeMeta<JshCli.PointAnyFormat>) => {
+    const to = typeof at === "string" ? w.e.getPoint(at) : at; // another npc as they stand now
+    const self = typeof to === "object" && to.meta?.npcKey === npc.key;
+    const { face } = npc.anim;
+    if (to === undefined || self) return void (face.aim = null); // picking or naming them clears it
+    face.aim = {
+      at: typeof to === "number" ? to : w.helper.parseGroundPoint(to),
+      rate: opts.rate ?? 1,
+      untilRest: false,
+    };
+  };
+  if (api.isTtyAt(0)) return aimAt(opts.at);
+
+  let onKill = () => {};
+  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError()))); // a read may never come
+  const handlers = api.handleStatus({ cleanup: () => (aimAt(), onKill()) });
+  try {
+    while (true) {
+      const datum = await Promise.race([api.read(), killed]);
+      if (datum === api.eof) break;
+      aimAt(datum);
+    }
+  } finally {
+    handlers.dispose();
   }
 }
 
@@ -368,7 +374,7 @@ function moveHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
     getNpcOrThrow,
     /** Move, handling named errors and any pause the move deferred */
     async movePausable(moveOpts: JshCli.MoveOpts, extra?: NamedErrorHandlers) {
-      await w.npc
+      await w.e
         .move(moveOpts)
         .catch(handleNamedErrors({ paused: () => api.awaitResume(), ...extra }))
         .catch((e) => {
@@ -626,7 +632,7 @@ export async function nudge(
     return; // nowhere to go i.e. backed against something
   }
 
-  await w.npc.move({ npcKey: npc.key, to });
+  await w.e.move({ npcKey: npc.key, to });
 }
 
 /** Below this much of a clamped nudge, we do not move at all */
@@ -668,9 +674,9 @@ export async function pad(
   // Keyed, so a room shared by two of them is only sent once; the worker drops those being padded
   const others = new Map(
     npcs.flatMap((npc) => {
-      const at = w.e.npcToRoom.get(npc.key);
+      const at = w.npc.npcToRoom.get(npc.key);
       if (at === undefined) return [];
-      return [...(w.e.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
+      return [...(w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
         const point = w.n[key]?.point;
         return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
       });
@@ -739,7 +745,7 @@ export async function park(
         npcs: npcs.map((npc) => npcQuery(w, npc)),
         // everyone parked, wherever: a handful, and the worker keeps to the rooms involved
         parked: [...parked.get()].flatMap(([key, seg]) => {
-          const grKey = w.e.npcToRoom.get(key)?.grKey;
+          const grKey = w.npc.npcToRoom.get(key)?.grKey;
           const point = w.n[key]?.point; // persisted: they may not be here this time
           return grKey === undefined || point === undefined ? [] : [{ key, point, grKey, seg }];
         }),
@@ -1188,7 +1194,7 @@ export async function spawn(
  * sword --on rob kate
  * sword --off rob
  * sword rob kate lock:will
- * sword rob lock:will part:leftforearm
+ * sword rob --lock:npc-0 part:hips
  * sword rob lock:null
  * pick | sword --on
  * pick | sword rob kate
@@ -1199,6 +1205,7 @@ export async function sword(
   opts: { on?: boolean; off?: boolean; lock?: null | string; part?: string } = api.jsArg(args, {
     "--on": "on",
     "--off": "off",
+    "--lock": "lock",
     "--unlock": "lock:false",
   }),
 ) {
@@ -1210,8 +1217,9 @@ export async function sword(
     else if (opts.off === true) w.swords.sheathe(...srcKeys);
     else if ("lock" in opts) {
       const dstKey = opts.lock ? w.npc.get(opts.lock).key : null;
-      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part);
-    } else throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... lock:npcKey");
+      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part ?? "head");
+    } else
+      throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... --lock:npcKey; sword --unlock");
     return;
   }
 
@@ -1261,7 +1269,7 @@ export async function* w(ct: JshCli.RunArg) {
   const { api, args, w } = ct;
 
   // support piped inputs via hyphen args -
-  // e.g. `pick 1 | w e.findRoomContaining -`
+  // e.g. `pick 1 | w findRoomContaining -`
   const stdinInputChar = "-";
   const readStdin = !ct.api.isTtyAt(0) && args.slice(1).some((arg) => arg === stdinInputChar);
 
@@ -1315,16 +1323,22 @@ export async function warp(
 }
 
 /**
- * Whilst w/a/s/d are held over the World, emits a navigable target just ahead of the npc: up, left, down or right as
- * seen. None is emitted where the mesh ends — see `npc.getSlideResult`
+ * - Whilst w/a/s/d are held over the World, emits a target just ahead of the npc: up, left, down or right as
+ * seen.
+ * - --nav ensures target is navigable e.g. not emitted where the mesh ends — see `npc.getSlideResult`.
  * ```sh
- * wasd_delta rob | move rob
- * wasd_delta rob --fast | move rob --fast
+ * wasd_delta --nav rob | move rob
+ * wasd_delta --nav rob --fast | move rob --fast
+ * wasd_delta rob | look rob
  * ```
  */
 export async function* wasd_delta(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; fast?: boolean } = ct.api.jsArg(ct.args, { "--fast": "fast", npc: "npcKey" }),
+  opts: { npcKey: string; fast?: boolean; nav?: boolean } = ct.api.jsArg(ct.args, {
+    "--fast": "fast",
+    "--nav": "nav",
+    npc: "npcKey",
+  }),
 ) {
   const { api, w } = ct;
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
@@ -1333,11 +1347,17 @@ export async function* wasd_delta(
   while (true) {
     await api.sleep(wasdConfig.intervalSecs); // a kill rejects it
     const direction = w.view.getWasdDirection();
-    if (direction.length === 0) continue; // none held, or opposites
+    if (direction.length === 0) continue; // none held or opposites
     const npc = w.npc.get(opts.npcKey);
-    const slide = npc.getSlideResult(direction.normalize(length));
-    if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < wasdConfig.minMove) continue; // the mesh's edge
-    yield { ...slide.groundPoint, meta: { floor: true, nav: true } };
+
+    if (opts.nav === true) {
+      const slide = npc.getSlideResult(direction.normalize(length));
+      if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < wasdConfig.minMove) continue; // the mesh's edge
+      yield { ...slide.groundPoint, meta: { floor: true, nav: true } };
+    } else {
+      const { x, y } = direction.normalize(wasdConfig.lookDist);
+      yield { x: npc.position.x + x, y: npc.position.z + y };
+    }
   }
 }
 
@@ -1348,6 +1368,8 @@ const wasdConfig = {
   stepSecs: 0.4,
   /** Metres: a clamped step shorter than this is the mesh's edge, and nothing is emitted */
   minMove: 0.05,
+  /** Metres ahead a `--look` point sits: far enough that its bearing holds whilst they shuffle round */
+  lookDist: 1,
 } as const;
 
 /** How each move is made, as the command line gave it */
@@ -1404,6 +1426,7 @@ const booleanJsOptSomewhere = {
   facing: true,
   fast: true,
   force: true,
+  nav: true,
   point: true,
   strafe: true,
 };

@@ -124,6 +124,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
    */
   lockRotateAxis = true;
+  /** A rotate drag turns nothing, nor counts as `isRotating`, until held this long — so a click leaves the view be */
+  rotateArmMs = 0;
+  /** When the gesture's first pointer went down — see `rotateArmMs` */
+  _firstDownMs = 0;
   /** Whether ctrl or cmd was held at the latest mouse pointer event — see `WorldView`'s compass dial */
   ctrlHeld = false;
   /** `(clientX, clientY)` of first pointerdown */
@@ -292,6 +296,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   }
 
   handleMouseMoveRotate(event: MouseEvent) {
+    if (this.isRotateArmed() === false) {
+      this.u.rotateStart.set(event.clientX, event.clientY); // it sets off from where the pointer is once armed
+      return;
+    }
     this.u.rotateEnd.set(event.clientX, event.clientY);
     this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
 
@@ -422,6 +430,10 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
       const n = Object.keys(this.pointerPositions).length;
       this.u.rotateEnd.set(cx / n, cy / n);
     }
+    if (this.isRotateArmed() === false) {
+      this.u.rotateStart.copy(this.u.rotateEnd); // see `handleMouseMoveRotate`
+      return;
+    }
 
     this.u.rotateDelta.subVectors(this.u.rotateEnd, this.u.rotateStart).multiplyScalar(this.rotateSpeed);
 
@@ -488,13 +500,19 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     return this.maxDistance + (this.minDistance - this.maxDistance) * this.zoomProgress;
   }
 
-  /** Whether a drag is turning the camera — the mouse's rotate, or a touch's */
+  /** Whether a drag is turning the camera — the mouse's rotate, or a touch's — once armed */
   isRotating(): boolean {
     return (
-      this.state === this.STATE.ROTATE ||
-      this.state === this.STATE.TOUCH_ROTATE ||
-      this.state === this.STATE.TOUCH_DOLLY_ROTATE
+      (this.state === this.STATE.ROTATE ||
+        this.state === this.STATE.TOUCH_ROTATE ||
+        this.state === this.STATE.TOUCH_DOLLY_ROTATE) &&
+      this.isRotateArmed()
     );
+  }
+
+  /** Held longer than a click — see `rotateArmMs` */
+  isRotateArmed(): boolean {
+    return performance.now() - this._firstDownMs >= this.rotateArmMs;
   }
 
   /** Moves the view between its stops, and marks the gesture as still going */
@@ -699,6 +717,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     this.ctrlHeld = event.ctrlKey || event.metaKey;
 
     if (this.pointers.length === 0) {
+      this._firstDownMs = performance.now();
       this.domElement?.ownerDocument.addEventListener("pointermove", this.onPointerMove);
       this.domElement?.ownerDocument.addEventListener("pointerup", this.onPointerUp);
       this.pointerFirstDown.x = event.clientX;

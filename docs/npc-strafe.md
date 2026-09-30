@@ -6,7 +6,7 @@ separate, simpler rule, covered at the end.
 
 ## Turning it on
 
-`w.npc.move({ ..., strafe })` in `NPCs.tsx` sets the move's intent on `npc.anim`:
+`w.e.move({ ..., strafe })` in `use-world-events.ts` sets the move's intent on `npc.anim`:
 
 - `strafe` defaults to whether they aim: `strafe ?? Boolean(npc.anim.face.aim)`.
 - **Left to that default, it follows the aim mid-move** (`strafeFollowsAim`): `NpcAnimation.tick`
@@ -18,7 +18,7 @@ separate, simpler rule, covered at the end.
 - The npc tick stops steering `face` by velocity (`face.rate = 0`), so facing holds, unless
   `face.aim` turns them.
 
-jsh: `move rob --strafe to:$( pick 1 )`, or `aim rob at:$( pick 1 )` then any `move`.
+jsh: `move rob --strafe to:$( pick 1 )`, or `look rob --strafe at:$( pick 1 )` then any `move`.
 
 ## Facing: `face.aim`
 
@@ -31,9 +31,9 @@ turning to it is the usual exponential ease.
   the spot: it sets the aim to the look's angle, `untilRest`, and returns at once. `startIdle` clears an
   `untilRest` aim, so it lasts for the move, and turns them the rest of the way on the spot, since
   they may arrive before the ease lands. Otherwise a look is the usual timed turn on the spot.
-- **jsh `aim`**: `aim rob at:$( pick 1 )`, `aim rob at:1.57`, `aim rob at:kate rate:0.5`; a bare
-  `aim rob` clears it. Piped (`pick --right | aim rob`), each pick re-aims them until killed, and
-  picking them clears it.
+- **jsh `look --strafe`**: `look rob --strafe at:$( pick 1 )`, `look rob --strafe at:1.57`,
+  `look rob --strafe at:kate rate:0.5`; a bare `look rob --strafe` clears it. Piped
+  (`pick --right | look rob --strafe`), each pick re-aims them until killed, and picking them clears it.
 - A drawn sword (`w.swords`, jsh `sword`, `q` for the player) aims at its lock's target every tick, but
   replaces or clears only an aim it set, so a look still turns them. Drawn at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
@@ -107,7 +107,7 @@ node scripts/src/bins/gen-strafe-keys.ts --stride 0.6 --harmonics 2 --blockbench
 
 ## `backstep`
 
-Separate from strafing: with `w.npc.move({ ..., backstep: true })` (jsh `move --backstep`), a target
+Separate from strafing: with `w.e.move({ ..., backstep: true })` (jsh `move --backstep`), a target
 within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from their facing is
 **backed onto** (`backwards`) rather than turned to — see `isBackStep`. Off by default. An explicit
 `backwards` wins, and strafing wins over both. For `wasd_delta rob | move rob --backstep`, holding
@@ -117,7 +117,8 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 
 - `components/npc-animation.ts` — `setPose`, `setStrafe`, `syncStrafe`, `startMoving`, `face.aim`
 - `components/npc.ts` — `look`, which aims instead whilst strafing
-- `components/NPCs.tsx` — `w.npc.move`, `turnBeforeMoving`, the tick's facing, `isBackStep`, `moveClipFadedIn`
+- `components/use-world-events.ts` — `w.e.move`, `isBackStep`
+- `components/NPCs.tsx` — `turnBeforeMoving`, the tick's facing, `moveClipFadedIn`
 - `components/Swords.tsx` — `wield`, which sets or withholds a drawn sword's aim
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
-- `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `aim`
+- `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `look --strafe`

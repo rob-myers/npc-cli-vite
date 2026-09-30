@@ -214,7 +214,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           at: { x: npc.point.x, y: npc.point.y },
           angle: npc.rotation.y,
           skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
-          decorKey: w.e.npcToDoable[npc.key] ?? undefined,
+          decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
           lit: npc.lit === true ? true : undefined,
           netId,
           idleClipKey: npc.anim.idleClip.name as AnimationClipKey,

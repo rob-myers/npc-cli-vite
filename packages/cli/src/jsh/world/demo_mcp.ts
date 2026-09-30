@@ -12,7 +12,7 @@ export function npcs({ args, w }: JshCli.RunArg) {
     return {
       key,
       point: { x: npc.point.x, y: npc.point.y },
-      grKey: w.e.npcToRoom.get(key)?.grKey ?? null,
+      grKey: w.npc.npcToRoom.get(key)?.grKey ?? null,
       player: w.player?.key === key,
     };
   });

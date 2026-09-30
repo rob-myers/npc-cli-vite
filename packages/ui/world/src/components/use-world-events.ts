@@ -1,7 +1,6 @@
 import { ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
-import { crowd as crowdApi } from "navcat/blocks";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { npcDims } from "../const.both";
@@ -18,7 +17,6 @@ import {
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
 import { helper } from "../service/helper";
-import { npcToBodyKey } from "../service/physics-bijection";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
 import type { Npc } from "./npc";
@@ -28,7 +26,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       changingMap: false,
-      doableToNpc: {},
       doorOpen: {},
       doorToNpcs: {},
       externalNpcs: new Set(),
@@ -36,12 +33,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       keyedListener: new Map(),
       litRooms: new Map(),
       npcToAccess: {},
-      npcToDoable: {},
       npcToDoors: {},
-      npcToRoom: new Map(),
       pendingRaycast: {},
       pendingUnreachable: {},
-      roomToNpcs: [],
 
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
@@ -81,41 +75,116 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           listener(e, w);
         }
       },
-      findGmIdContaining(input) {
-        if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
-          return input.meta.gmId;
-        }
-        return w.gmGraph.findGmIdContaining(helper.parseGroundPoint(input));
-      },
       findPathAsync(srcGrKey, dstGrKey, opts) {
         return w.gmRoomGraph.findPathAsync(srcGrKey, dstGrKey, {
           setNodeWeights: opts?.setNodeWeights,
         });
-      },
-      findRoomContaining(input, includeDoors = false) {
-        if (helper.isGmRoomId(input.meta) === true) {
-          // existing input.meta overrides includeDoors `false`
-          // return { ...input.meta };
-          return { gmId: input.meta.gmId, roomId: input.meta.roomId, grKey: input.meta.grKey };
-        }
-        const gmId = state.findGmIdContaining(input);
-        if (typeof gmId === "number") {
-          const point = helper.parseGroundPoint(input);
-          const gm = w.gms[gmId];
-          const localPoint = gm.inverseMatrix.transformPoint({ x: point.x, y: point.y });
-          const roomId = w.gmsData.findRoomIdContaining(gm, localPoint, includeDoors);
-          return roomId === null ? null : { gmId, roomId, grKey: helper.getGmRoomKey(gmId, roomId) };
-        } else {
-          return null;
-        }
       },
       getPoint(npcKey) {
         const npc = w.npc.get(npcKey);
         return {
           x: npc.position.x,
           y: npc.position.z,
-          meta: { npcKey, ...state.npcToRoom.get(npcKey) },
+          meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
         };
+      },
+      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe }) {
+        /** Can be overriden if unreachable due to locked doors */
+        let groundPoint = helper.parseGroundPoint(to);
+
+        const npc = w.npc.get(npcKey);
+        const result = w.npc.getClosestPoly(groundPoint, 0.5);
+        const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
+        const { config } = w.npc;
+
+        if (doResult.type === "occupied") {
+          throw Error("occupied");
+        }
+
+        // so can resume doable or nav
+        npc.last.dst = helper.parseGroundPoint(to);
+
+        npc.rejectAll(new Error("move again"));
+
+        if (doResult.type !== "none") {
+          // doable overrides navigable
+          if (doResult.type === "use-current") {
+            await w.npc.spawn({ npcKey, at: to }); // respawn
+          } else {
+            w.events.next({ key: "npc-pre-do", npcKey });
+
+            if (w.npc.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < config.dist.doableLook) {
+              // look when standing nearby
+              // else an npc interrupted mid-move keeps its momentum and slides through the look
+              w.npc.clearMomentum(npc);
+              await npc.look({ at: to, minMs: config.time.look * 1000 });
+            }
+
+            await npc.fadeSpawn({ at: to });
+          }
+          // fix contiguous move
+          npc.anim.moving = false;
+          return;
+        }
+
+        if (!result.success) {
+          throw Error("not navigable");
+        }
+
+        if (npc.agentId === null) {
+          // fade spawn from doable to nav
+          await npc.fadeSpawn({ at: result.position, facingTarget: true });
+          return;
+        }
+
+        w.npc.setNpcDo(npcKey, null); // in case do=stand
+
+        await npc.ensureLegalPosition();
+
+        // code below is interruptible by next move
+        try {
+          // navigation unreachable relative to locked doors?
+          const unreachableResult = await state.testTargetUnreachable(npc, w.findRoomContaining(groundPoint));
+          npc.last.unreachableResult = unreachableResult;
+
+          if (unreachableResult !== null) {
+            // destination unreachable
+            if (npc.distanceTo(unreachableResult.nearbyPoint) < config.dist.blockedLook) {
+              // too close: look instead of walk
+              await npc.look({ at: unreachableResult.nearbyPoint, minMs: config.time.look * 1000 });
+              return;
+            }
+            // change destination to point near eventual locked door
+            const nearDoor = w.npc.getClosestPoly(unreachableResult.nearbyPoint);
+            groundPoint = helper.parseGroundPoint(nearDoor.position);
+          }
+
+          npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
+          npc.anim.strafeFollowsAim = strafe === undefined; // so a sword drawn mid-move strafes at once
+          npc.anim.backwards =
+            npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
+          npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
+          npc.anim.fastAsked = fast === true;
+          npc.anim.aimAt({ groundPoint, result });
+          await w.npc.turnBeforeMoving(npc);
+          npc.anim.startMoving(arrive);
+
+          w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey });
+
+          await new Promise<string>((resolve, reject) => {
+            npc.resolve.move = resolve;
+            npc.reject.move = reject;
+          });
+        } catch (e) {
+          if (e instanceof Error && e.message === "move again") {
+            return; // interrupting move owns npc now
+          }
+          if (!(e instanceof Error && e.message === "look again")) {
+            npc.anim.startIdle({ force: true }); // delegated to look
+          }
+          w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey });
+          throw e;
+        }
       },
       npcCanAccess(npcKey, gdKey, planning = true) {
         const door = w.d[gdKey];
@@ -225,17 +294,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // runtime decor is per-map, like the npcs — the incoming map restores its own
         w.decor.remove(...Object.keys(w.decor.runtime.byKey));
 
-        state.doableToNpc = {};
         state.doorOpen = {};
         state.doorToNpcs = {};
         state.externalNpcs = new Set();
         state.npcToAccess = {};
-        state.npcToDoable = {};
+        Object.assign(w.npc, { doableToNpc: {}, npcToDoable: {}, npcToRoom: new Map(), roomToNpcs: [] });
         state.npcToDoors = {};
         state.handLitRooms = new Set(); // a `grKey` means nothing to the map coming in
         state.litRooms = new Map(); // the map's own save carries these across, via `restoreNpcs`
-        state.npcToRoom = new Map();
-        state.roomToNpcs = [];
 
         // anything still waiting on the worker asked about the old map's rooms
         state.rejectPendingUnreachable(new Error("map changed"));
@@ -282,7 +348,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           return;
         }
         for (const npc of Object.values(w.n)) {
-          const decorKey = state.npcToDoable[npc.key];
+          const decorKey = w.npc.npcToDoable[npc.key];
           if (typeof decorKey !== "string" || w.decor.byKey[decorKey] !== undefined) {
             continue; // idle, or what they are doing is still there
           }
@@ -340,7 +406,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         if (e.type === "inside") {
-          const gmRoomId = state.npcToRoom.get(npc.key) as Geomorph.GmRoomId;
+          const gmRoomId = w.npc.npcToRoom.get(npc.key) as Geomorph.GmRoomId;
           const nextGmRoomId = w.gmGraph.getOtherGmRoomId(door, gmRoomId.roomId);
           nextGmRoomId !== null && w.events.next({ key: "enter-doorway", npcKey: npc.key, gmRoomId, nextGmRoomId });
         }
@@ -390,10 +456,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "removed-npcs": {
             for (const npcKey of e.npcKeys) {
-              const gmRoomId = state.npcToRoom.get(npcKey);
+              const gmRoomId = w.npc.npcToRoom.get(npcKey);
               if (gmRoomId !== undefined) {
-                state.npcToRoom.delete(npcKey);
-                state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npcKey);
+                w.npc.npcToRoom.delete(npcKey);
+                w.npc.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npcKey);
               } else {
                 state.externalNpcs.delete(npcKey);
               }
@@ -476,11 +542,24 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // `spawnMany` goes via `rawSpawn`, which does not fire `spawned` — so this is where its
             // npcs are put into the rooms they stand in, as that would have done
             for (const npcKey of e.npcKeys) {
-              if (w.n[npcKey] !== undefined) state.tryPutNpcIntoRoom(w.n[npcKey]);
+              if (npcKey in w.n) state.tryPutNpcIntoRoom(w.n[npcKey]);
             }
             state.syncFadeRooms();
             break;
           }
+          case "swords":
+            if (!e.drawn) return;
+            for (const npcKey of e.npcKeys) {
+              if (npcKey === w.player.key) {
+                w.psi.choose(null);
+              } else {
+                const npc = w.n[npcKey];
+                if (npc.anim.hasUpper("psi") || npc.anim.hasUpper("psi_avoid")) {
+                  npc.anim.setUpper(null);
+                }
+              }
+            }
+            break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
             break;
@@ -499,8 +578,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (e.type === "inside") {
           state.tryCloseDoor(e.meta.gdKey);
 
-          const gmRoomId = state.npcToRoom.get(npc.key);
-          const nextGmRoomId = state.findRoomContaining(npc.position, true);
+          const gmRoomId = w.npc.npcToRoom.get(npc.key);
+          const nextGmRoomId = w.findRoomContaining(npc.position, true);
           if (gmRoomId === undefined || nextGmRoomId === null) {
             return;
           }
@@ -539,15 +618,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "enter-room": {
             if (e.reEntered === false) {
               // changed room
-              const gmRoomId = state.npcToRoom.get(npc.key);
+              const gmRoomId = w.npc.npcToRoom.get(npc.key);
               if (gmRoomId) {
-                state.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npc.key);
+                w.npc.roomToNpcs[gmRoomId.gmId]?.[gmRoomId.roomId]?.delete(npc.key);
               } else {
                 state.externalNpcs.delete(npc.key);
               }
-              state.npcToRoom.set(npc.key, e.gmRoomId);
-              if (state.roomToNpcs[e.gmRoomId.gmId]) {
-                (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
+              w.npc.npcToRoom.set(npc.key, e.gmRoomId);
+              if (w.npc.roomToNpcs[e.gmRoomId.gmId]) {
+                (w.npc.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(npc.key);
               }
             }
 
@@ -581,14 +660,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               }
             } else {
               // respawn
-              const prevGrId = state.npcToRoom.get(npc.key);
+              const prevGrId = w.npc.npcToRoom.get(npc.key);
               if (prevGrId !== undefined) {
-                state.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
+                w.npc.roomToNpcs[prevGrId.gmId][prevGrId.roomId]?.delete(npc.key);
               }
+              if (e.npcKey === w.player.key) w.view.onPlayerRespawn();
             }
 
-            state.npcToRoom.set(npc.key, { ...e.gmRoomId });
-            (state.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(e.npcKey);
+            w.npc.npcToRoom.set(npc.key, { ...e.gmRoomId });
+            (w.npc.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(e.npcKey);
             // a spawn is how an npc ARRIVES somewhere: `fadeSpawn` and teleports land here rather
             // than at `enter-room`, which only fires for one who walked there
             state.syncFadeRooms();
@@ -607,6 +687,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           }
+          case "npc-pre-do":
+            if (w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            break;
+          case "npc-do":
+            if (e.decorKey !== null && w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both
             if (state.syncLitRoom(npc, e.nextGmRoomId) === true) {
@@ -636,7 +722,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               at: { x: npc.point.x, y: npc.point.y },
               angle: npc.rotation.y,
               skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
-              decorKey: state.npcToDoable[npc.key] ?? undefined,
+              decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
               lit: npc.lit === true ? true : undefined,
             })),
           },
@@ -647,8 +733,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const dst = helper.parseGroundPoint(origDst);
 
         // Both points must reside in a room or doorway
-        const srcGrId = state.findRoomContaining(src, true);
-        const dstGrId = state.findRoomContaining(dst, true);
+        const srcGrId = w.findRoomContaining(src, true);
+        const dstGrId = w.findRoomContaining(dst, true);
         if (srcGrId === null) {
           throw Error(`${"raycast"}: src must be in a room/doorway ${JSON.stringify({ x: src.x, y: src.y })}`);
         } else if (dstGrId === null) {
@@ -844,33 +930,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       recomputeNpcRoomRelationships() {
-        state.roomToNpcs = w.gms.map(() => []);
+        w.npc.roomToNpcs = w.gms.map(() => []);
         state.externalNpcs = new Set();
         // every npc: a map edit can drop a whole gmId, and one left out keeps a stale `grKey`
         for (const npc of Object.values(w.n)) {
           state.tryPutNpcIntoRoom(npc);
         }
       },
-      removeAgents(npcs, { keepPhysics = false } = {}) {
-        for (const npc of npcs) {
-          if (npc.agentId === null) continue;
-          crowdApi.removeAgent(w.npc.crowd, npc.agentId);
-          delete w.npc.byAgentId[npc.agentId];
-          npc.agentId = null;
-        }
-
-        if (keepPhysics === true) return;
-
-        // physics worker will fire exit colliders
-        w.physics.worker.postMessage({
-          type: "remove-physics-bodies",
-          bodyKeys: npcs.map((npc) => npcToBodyKey(npc.key)),
-        } satisfies WW.MsgToWorker);
-      },
       removeNpcs(...npcKeys) {
         const npcs = npcKeys.flatMap((npcKey) => w.n[npcKey] ?? []);
 
-        state.removeAgents(npcs);
+        w.npc.removeAgents(npcs);
 
         for (const npc of npcs) {
           npc.anim.mixer.stopAllAction();
@@ -878,7 +948,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           npc.geometry.dispose();
           delete w.npc.byPickId[npc.pickId];
           delete w.n[npc.key];
-          w.e.setNpcDo(npc.key, null);
+          w.npc.setNpcDo(npc.key, null);
           state.litRooms.delete(npc.key);
           npc.rejectAll(new Error("removed npc"));
         }
@@ -921,16 +991,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         w.events.next({ key: "npcs-restored" });
       },
-      setNpcDo(npcKey, decorKey) {
-        const currentDecorKey = w.e.npcToDoable[npcKey];
-        if (typeof currentDecorKey === "string") {
-          w.e.doableToNpc[currentDecorKey] = null;
-        }
-        if (typeof decorKey === "string") {
-          w.e.doableToNpc[decorKey] = npcKey;
-        }
-        w.e.npcToDoable[npcKey] = decorKey;
-      },
       setNpcLit(npc, next = npc.lit === false) {
         if (npc.key === w.player.key) {
           return;
@@ -953,7 +1013,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       async spawnMany(opts) {
         const baseKey = opts.baseKey ?? "npc";
-        const numPermitted = MAX_NPCS - (state.npcToRoom.size + state.externalNpcs.size);
+        const numPermitted = MAX_NPCS - (w.npc.npcToRoom.size + state.externalNpcs.size);
         const groundPoints = opts.ats.slice(0, numPermitted).map(helper.parseGroundPoint);
         const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
 
@@ -1012,7 +1072,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.key === w.player.key) {
           return true; // player must sync
         }
-        const at = npc.lit === true ? state.npcToRoom.get(npc.key) : undefined;
+        const at = npc.lit === true ? w.npc.npcToRoom.get(npc.key) : undefined;
         if (at === undefined) {
           return state.litRooms.delete(npc.key);
         }
@@ -1026,12 +1086,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (w.gms[gmId]?.rooms[roomId] === undefined) state.handLitRooms.delete(grKey);
         }
       },
+      postNpcTick() {
+        // before the shadows, which read the slot it settles — and every tick, since an npc waiting
+        // on a room to arrive takes it the moment it lands rather than at the next door event
+        state.syncNpcRoomSlots();
+        w.shadows?.onTick();
+        w.rings?.onTick();
+        w.psi?.onTick();
+        w.swords?.onTick();
+      },
       syncNpcRoomSlots() {
         const fx = w.view.fadeRoomsFx;
         // Every npc, not just the player: an npc MOVES between rooms, so where they stand is a
         // uniform of their own rather than an attribute fixed when the map loaded
         for (const npc of Object.values(w.n)) {
-          const at = state.npcToRoom.get(npc.key);
+          const at = w.npc.npcToRoom.get(npc.key);
           const next = at === undefined ? alwaysShownSlot : slotOf(at.gmId, at.roomId);
           if (next === npc.roomSlot.value) continue;
           // Somebody walking INTO a room that is still arriving keeps the room they came from,
@@ -1043,7 +1112,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       async testTargetUnreachable(npc, dstGrId = npc.last.dstGrId) {
-        const grId = state.npcToRoom.get(npc.key) ?? null;
+        const grId = w.npc.npcToRoom.get(npc.key) ?? null;
 
         if (grId === null || dstGrId === null || grId.grKey === dstGrId.grKey) {
           return null; // invalid or same room
@@ -1137,14 +1206,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }, defaultDoorCloseMs);
       },
       tryPutNpcIntoRoom(npc) {
-        const grId = state.findRoomContaining(npc.position, true);
+        const grId = w.findRoomContaining(npc.position, true);
         if (grId !== null) {
-          state.npcToRoom.set(npc.key, grId);
+          w.npc.npcToRoom.set(npc.key, grId);
           state.externalNpcs.delete(npc.key);
-          (state.roomToNpcs[grId.gmId][grId.roomId] ??= new Set()).add(npc.key);
+          (w.npc.roomToNpcs[grId.gmId][grId.roomId] ??= new Set()).add(npc.key);
         } else {
           // Erase stale info and warn
-          state.npcToRoom.delete(npc.key);
+          w.npc.npcToRoom.delete(npc.key);
           state.externalNpcs.add(npc.key);
           warn(`${npc.key}: no longer inside any room`);
         }
@@ -1165,12 +1234,10 @@ export type State = {
   /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
   changingMap: boolean;
   /** Doable to the npc using it or null */
-  doableToNpc: { [decorKey: string]: string | null };
   doorOpen: { [gmDoorKey: Geomorph.GmDoorKey]: boolean | undefined };
   doorToNpcs: { [gmDoorKey: Geomorph.GmDoorKey]: { nearby: Set<string>; inside: Set<string> } };
   externalNpcs: Set<string>;
   npcToAccess: { [npcKey: string]: { [gdKey: string]: boolean } };
-  npcToDoable: { [npcKey: string]: string | null };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
   /**
    * Rooms lit BY HAND, shown whatever the player can see — see `setRoomLit`. Distinct from
@@ -1204,18 +1271,10 @@ export type State = {
   syncLitRoom(npc: Npc, alsoAt?: Geomorph.GmRoomId): boolean;
   /** Re-derives `litRooms` off every npc, and drops `handLitRooms` the map no longer has */
   syncLitRooms(): void;
-  /**
-   * Relates `npcKey` to current room.
-   */
-  npcToRoom: Map<string, Geomorph.GmRoomId>;
   pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(err: Error): void } };
   pendingUnreachable: {
     [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };
   };
-  /**
-   * The "inverse" of npcToRoom i.e. `roomToNpc[gmId][roomId]` is a set of `npcKey`s
-   */
-  roomToNpcs: { [roomId: number]: Set<string> }[];
 
   /**
    * Example usage:
@@ -1231,17 +1290,6 @@ export type State = {
    */
   addKeyedListener(key: string, listener: (event: JshCli.Event, w: JshCli.WorldState) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
-  /**
-   * - When an npc is moving its destination should be inside a room.
-   * - When the npc is in a room adjacent to the destination room,
-   *   and the room is inaccessible (e.g. locked doors) we want to avoid
-   *   the crowd system redirecting the npc to the "other side of the wall".
-   */
-  /**
-   * Defaults to the npc's current destination. Rejects if the question is abandoned — see
-   * `requestUnreachable`, whose rejection it passes on unchanged
-   */
-  testTargetUnreachable(npc: Npc, dstGrId?: null | Geomorph.GmRoomId): Promise<null | JshCli.NpcUnreachableResult>;
   /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
   findPathAsync(
     srcGrKey: Geomorph.GmRoomKey,
@@ -1250,7 +1298,6 @@ export type State = {
       setNodeWeights?(nodes: Graph.GmRoomGraphNode[]): void;
     },
   ): Promise<AStarSearchResult<Graph.GmRoomGraphNode>>;
-  findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   /**
    * Asks the worker whether this npc can get from one room node to another, and which shut door
    * would stop them if not — see `worker/room-graph.ts`. Resolves `null` for "they can get there".
@@ -1262,8 +1309,8 @@ export type State = {
   rejectPendingUnreachable(err: Error): void;
   /** ...and on `raycast`, e.g. because the nav worker is going */
   rejectPendingRaycast(err: Error): void;
-  findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
+  move(opts: JshCli.MoveOpts): Promise<void>;
   /**
    * @param planning asks whether they COULD pass it, rather than whether they could pass it from
    * where they stand — a locked door standing open counts, since walking up to it is what grants
@@ -1309,10 +1356,19 @@ export type State = {
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
   raycast(src: MaybeMeta<JshCli.PointAnyFormat>, dst: MaybeMeta<JshCli.PointAnyFormat>): Promise<JshCli.RaycastResult>;
-  removeAgents(npcs: Npc[], opts?: { keepPhysics?: boolean }): void;
   removeNpcs(...npcKeys: string[]): void;
-  setNpcDo(npcKey: string, decorKey: string | null): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
+  /**
+   * - When an npc is moving its destination should be inside a room.
+   * - When the npc is in a room adjacent to the destination room,
+   *   and the room is inaccessible (e.g. locked doors) we want to avoid
+   *   the crowd system redirecting the npc to the "other side of the wall".
+   */
+  /**
+   * Defaults to the npc's current destination. Rejects if the question is abandoned — see
+   * `requestUnreachable`, whose rejection it passes on unchanged
+   */
+  testTargetUnreachable(npc: Npc, dstGrId?: null | Geomorph.GmRoomId): Promise<null | JshCli.NpcUnreachableResult>;
   toggleDoor(
     gdKey: Geomorph.GmDoorKey,
     opts?: {
@@ -1337,6 +1393,8 @@ export type State = {
   openDoorwaysWithNpcs(): Promise<void>;
   /** Re-reads which rooms the world is shown in — a door swinging, or the player moving room */
   syncFadeRooms(): void;
+  /** What follows `w.npc.onTick`: room slots, then whatever draws on the npcs */
+  postNpcTick(): void;
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
   syncNpcRoomSlots(): void;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;
@@ -1349,6 +1407,14 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
  * How far CLEAR of a door an npc it cannot pass is kept: their own radius, and a margin on top.
  * Their body would otherwise stand through the panel, and reach far enough to trip its inside sensor
  */
-const shutDoorKeepOut = npcDims.agentRadius + npcDims.shutDoorKeepOut;
 
 const emptyMeta = {};
+const shutDoorKeepOut = npcDims.agentRadius + npcDims.shutDoorKeepOut;
+
+/** Is `to` close behind `npc`, where stepping back beats turning round? */
+function isBackStep(npc: Npc, to: Geom.VectJson, config: import("./NPCs").State["config"]) {
+  const [dx, dz] = [to.x - npc.position.x, to.y - npc.position.z];
+  const dist = Math.hypot(dx, dz);
+  const ahead = -dx * Math.sin(npc.rotation.y) - dz * Math.cos(npc.rotation.y);
+  return dist < config.dist.backStep && ahead < dist * Math.cos(config.angle.backStep);
+}

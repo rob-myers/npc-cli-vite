@@ -34,12 +34,12 @@ export default function NpcBubbles() {
 }
 
 function NpcBubble({ w, npcKey }: { w: WorldState; npcKey: string }) {
-  const [grKey, setGrKey] = useState(() => w.e.npcToRoom.get(npcKey)?.grKey);
+  const [grKey, setGrKey] = useState(() => w.npc.npcToRoom.get(npcKey)?.grKey);
   const [pose, setPose] = useState(() => w.n[npcKey]?.anim.pose);
 
   useEffect(() => {
     // not only theirs e.g. "spawned-many", "nav-updated" — and an unchanged key re-renders nothing
-    const sub = w.events.subscribe({ next: () => setGrKey(w.e.npcToRoom.get(npcKey)?.grKey) });
+    const sub = w.events.subscribe({ next: () => setGrKey(w.npc.npcToRoom.get(npcKey)?.grKey) });
     // the pose changes on its own too e.g. walking, idling
     const id = setInterval(() => setPose(w.n[npcKey]?.anim.pose), posePollMs);
     return () => (sub.unsubscribe(), clearInterval(id));

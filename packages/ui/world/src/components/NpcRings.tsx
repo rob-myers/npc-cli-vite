@@ -151,7 +151,7 @@ export default function NpcRings() {
       showSpawnRing(npcKey, at, y = spawnRingDefaultHeight) {
         // it marks a patch of FLOOR, so its room is settled once here rather than read per tick as
         // a select ring's is — and the npc it is for may not have arrived to be asked
-        const gmRoomId = w.e.findRoomContaining({ x: at.x, y: at.y }, true);
+        const gmRoomId = w.findRoomContaining({ x: at.x, y: at.y }, true);
         const roomSlot = gmRoomId === null ? alwaysShownSlot : slotOf(gmRoomId.gmId, gmRoomId.roomId);
         // from nothing, as a select ring is: the shader widens a ring as its opacity drops, so it
         // closes onto the spot over the npc's fade OUT — there by the time they have gone, and

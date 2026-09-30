@@ -43,7 +43,7 @@ export const agentConfig = {
     idleSeparating: 0.005,
     walk: 1.5,
     run: 4,
-    /** Backing away — see `w.npc.move`'s `backwards` */
+    /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
   },
   /**
@@ -76,7 +76,7 @@ export const npcConfig = {
   angle: {
     /** Opening turn beyond which an npc shuffles round before walking off */
     turnBeforeMove: Math.PI * 0.75,
-    /** A target further than this from their facing, and within `dist.backStep`, is backed onto — see `w.npc.move` */
+    /** A target further than this from their facing, and within `dist.backStep`, is backed onto — see `w.e.move` */
     backStep: (Math.PI * 2) / 3,
   },
   dist: {
@@ -251,9 +251,9 @@ export type PsiTune = {
 /** `Swords`: wielding, and the rope from a pointer's right hand — see `w.swords` */
 export const swordConfig = {
   /** Where the rope leaves the right forearm, above the wrist — its `+x` is up whilst pointing — in model units */
-  ropeFrom: [0.07, -0.26, 0] as [number, number, number],
-  /** Metres the unlocked stub reaches, level, from above the wrist: just past the hand */
-  stub: 0.05,
+  ropeFrom: [0.12, -0.26, 0] as [number, number, number],
+  /** Metres the unlocked stub reaches, on down the forearm: the hand ends at `0.074`, so just past it */
+  stub: 0.11,
   /** Metres above the target's head bone the rope lands, for no body part */
   headAbove: 0.3,
   /** Metres of radius of the rope, and of the ball at its end */
@@ -284,7 +284,7 @@ export const swordConfig = {
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
 export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };
-/** Metres per second strafing each way, blended as the gaits are — see `w.npc.move`'s `strafe` */
+/** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe` */
 export const strafeSpeed = { walk: 1.2, strafe_right: 0.5, backwards: 1, strafe_left: 0.5 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;

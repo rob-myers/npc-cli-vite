@@ -91,7 +91,7 @@ export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
         const { by, minMove } = backOffConfig;
         const slide = npc.getSlideResult({ x: ux * by, y: uz * by });
         if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < minMove) continue;
-        void w.npc.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true }).catch(() => {}); // a new push may interrupt
+        void w.e.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true }).catch(() => {}); // a new push may interrupt
       }
     }
   } finally {

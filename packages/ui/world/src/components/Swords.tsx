@@ -25,13 +25,15 @@ export default function Swords() {
       tickedMs: performance.now(),
 
       draw(...npcKeys) {
-        for (const npcKey of npcKeys) state.ensure(npcKey).drawn = true;
+        const swordsDrawn = npcKeys.map((npcKey) => state.ensure(npcKey)).filter((s) => !s.drawn && (s.drawn = true));
         state.sync();
+        swordsDrawn.length && w.events.next({ key: "swords", drawn: true, npcKeys: swordsDrawn.map((s) => s.key) });
       },
       ensure(npcKey) {
         let sword = state.swords.get(npcKey);
         if (sword === undefined) {
           sword = {
+            key: npcKey,
             drawn: false,
             target: null,
             holdUntil: 0,
@@ -73,7 +75,6 @@ export default function Swords() {
         return sword.drawn;
       },
       onTick(instant = false) {
-        if (w.n === null) return; // <NPCs> mounts after us
         const now = performance.now();
         const step = Math.min((now - state.tickedMs) / 1000, 0.1) / swordConfig.fadeSecs;
         state.tickedMs = now;
@@ -99,8 +100,9 @@ export default function Swords() {
           if (hand === undefined) continue;
           hand.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
           const tip = hand.localToWorld(tmpTip.fromArray(swordConfig.ropeFrom));
+          const along = tmpAlong.set(0, -1, 0).transformDirection(hand.matrixWorld); // the forearm, towards the hand
           const dst = rope.to === null ? undefined : w.n[rope.to.npcKey];
-          const end = ropeEnd(rope, tip, npc.rotation.y, dst);
+          const end = ropeEnd(rope, tip, along, dst);
           state.srcData.set([tip.x, tip.y, tip.z, eased(rope.shown.presence)], count * 4);
           state.dstData.set([end.x, end.y, end.z, eased(rope.locked.presence)], count * 4);
           const to = dst ?? npc;
@@ -219,7 +221,7 @@ export default function Swords() {
 }
 
 export type State = SwordResources & {
-  /** Per npc with a sword drawn, fading, or locked on to someone */
+  /** By npcKey, i.e. whether sword is drawn, fading, or locked onto someone */
   swords: Map<string, SwordEntry>;
   tickedMs: number;
 
@@ -245,6 +247,8 @@ export type State = SwordResources & {
 };
 
 type SwordEntry = {
+  /** npcKey */
+  key: string;
   drawn: boolean;
   /** Whom they lock on to whilst drawn and in sight */
   target: null | RopeTarget;
@@ -280,3 +284,4 @@ const isSwordPose = (key: null | string) => key === "point" || key === "defensiv
 /** Turns them not at all, at `rate` `0`, but is an aim: a move strafes */
 const heldAim = { at: 0, rate: 0, untilRest: false };
 const tmpTip = new THREE.Vector3();
+const tmpAlong = new THREE.Vector3();
