@@ -12,7 +12,6 @@ import {
   MAX_NPCS,
   mapVeilMs,
   roomLabelRevealMs,
-  unfoldDelayMs,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
@@ -258,10 +257,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         } finally {
           if (firstBootstrap === true) {
-            // the first map is on screen as a flat hull; hold it a beat, bring the fade on, then
-            // unfold the world with a delayed floor fade-in
-            await pause(unfoldDelayMs);
-            w.view.setFadeRoomsActive(w.view.fadeRoomsMode);
+            // the first map is on screen as a flat hull: held a beat with the fade brought on,
+            // then unfolded with a delayed floor fade-in
+            await w.view.holdBeforeUnfold();
             const rising = w.foldTo(1);
             await pause(floorFadeDelayMs);
             void w.floor?.fadeTo(1);

@@ -39,6 +39,7 @@ import {
   roomLabelNearAlpha,
   rotateSpeedDesktop,
   rotateSpeedMobile,
+  unfoldDelayMs,
   zoomSpeedDesktop,
   zoomSpeedMobile,
 } from "../const.env";
@@ -52,6 +53,7 @@ import {
   type FadeRooms,
   type FadeRoomsMode,
   fadeRoomsModeByKey,
+  MODE_FADE_SECS,
   nextFadeRoomsMode,
   parseFadeRoomsMode,
 } from "../service/fade-rooms";
@@ -1399,6 +1401,17 @@ export function WorldView(props: React.PropsWithChildren) {
         state.fadeRoomsFx.mode = mode;
         state.fadeRoomsFx.sync(w);
       },
+      async holdBeforeUnfold() {
+        const mode = state.fadeRoomsMode;
+        if (mode === "sight") {
+          // what the player cannot see goes FIRST, off the flat hull, so only their rooms rise
+          state.setFadeRoomsActive(mode);
+          await pause(Math.max(unfoldDelayMs, MODE_FADE_SECS * 1000));
+        } else {
+          await pause(unfoldDelayMs);
+          state.setFadeRoomsActive(mode);
+        }
+      },
       setNpcOutlineEnabled(next = !state.npcOutline) {
         state.npcOutline = next;
         store.patch({ npcOutline: next });
@@ -1952,6 +1965,8 @@ export type State = {
   setRgbShiftEnabled(next?: boolean): void;
   /** How much of the world is shown by room, cycling round when asked for no mode in particular */
   setFadeRoomsMode(next?: FadeRoomsMode): void;
+  /** The beat the first map is held flat for, and the fade brought on: before it in `sight`, else after */
+  holdBeforeUnfold(): Promise<void>;
   /** Puts the world into `mode` WITHOUT persisting it — see within */
   setFadeRoomsActive(mode: FadeRoomsMode): void;
   /** Puts the circular fade on or off, which showing by room turns off whilst it is on */
