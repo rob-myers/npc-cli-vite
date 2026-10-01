@@ -127,6 +127,7 @@ export const uiStoreFactory: () => UseBoundStore<WithImmer<StoreApi<UiStoreState
               state.persistedPanes = getDefaultPanes();
             }
             state.persistedPanes.root = withUniqueIds(state.persistedPanes.root);
+            state.persistedPanes.toUi = withoutUnknownUis(state.persistedPanes.toUi);
 
             const rehydratedUis = Object.values(state.persistedPanes.toUi);
             for (const ui of rehydratedUis) {
@@ -215,6 +216,18 @@ export function getDefaultPanes(): PersistedPanesLayout {
     },
     toUi,
   };
+}
+
+/** A ui package since renamed or removed leaves its uis behind, and a Tabs still listing them */
+function withoutUnknownUis(toUi: PersistedPanesLayout["toUi"]): PersistedPanesLayout["toUi"] {
+  const known = Object.fromEntries(Object.entries(toUi).filter(([, meta]) => meta.uiKey in uiSchemas));
+  for (const [id, meta] of Object.entries(known)) {
+    if (!Array.isArray(meta.items)) continue;
+    const items = meta.items.filter((itemId) => itemId in known);
+    const currentTabId = items.includes(meta.currentTabId as string) ? meta.currentTabId : items[0];
+    known[id] = { ...meta, items, currentTabId };
+  }
+  return known;
 }
 
 /** Older default layouts gave the root and a leaf id `0`, so closing that leaf closed everything */
