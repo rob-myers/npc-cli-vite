@@ -18,6 +18,7 @@ import {
   uv,
   vec2,
   vec3,
+  vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHeight } from "../const.env";
@@ -570,7 +571,8 @@ export default function Doors() {
     // when both are hidden — and never for a HULL door, which merely blacks out. Nothing is drawn
     // behind one, so its coverage reaching zero flips the pixel from the dark behind the world to
     // the page beyond it in a single frame: the flash at either end of a mode change
-    const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.sightNode.mul(isHull.oneMinus()));
+    const sight = w.view.fadeRoomsFx.sightNode;
+    const alphaFade = mix(float(1), fade, sight.mul(isHull.oneMinus()));
     // Dissolving, a door goes pixel by pixel in an order fixed on the screen, its coverage left
     // alone: coverage has only as many levels as samples, and fading through them flickers on a
     // light page. Interleaved gradient noise, even enough that any share of it gone looks even
@@ -597,7 +599,11 @@ export default function Doors() {
           ),
         );
         Discard(dissolved);
-        return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
+        const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door) as THREE.Node<"vec4">;
+        // a HULL door keeps its coverage, so in `sight` it goes by colour — HERE, past the lighting,
+        // which a faded albedo alone still shows through
+        const hidden = w.view.objectPick.equal(0).select(fade.oneMinus().mul(sight).mul(isHull), float(0));
+        return vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, hidden.oneMinus()), lit.a);
       })();
     }
 
