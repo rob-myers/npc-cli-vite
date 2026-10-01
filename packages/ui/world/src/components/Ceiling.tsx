@@ -13,6 +13,7 @@ import {
   select,
   texture,
   transformNormalToView,
+  uniform,
   uv,
   vec3,
   vec4,
@@ -25,12 +26,15 @@ import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import type { SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
+const defaultCeilingOpacity = 0.7;
+
 export default function Ceiling() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
     (): State => ({
       inst: null,
+      opacity: uniform(defaultCeilingOpacity),
       quad: createTwoSidedXzQuad(),
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
@@ -80,6 +84,7 @@ export default function Ceiling() {
 
         // door/wall tops
         const { ceiling: tc } = w.getTheme();
+        state.opacity.value = tc.opacity ?? defaultCeilingOpacity;
         drawPolygons(ct, tops.nonHullDoor, {
           fillStyle: tc.hull.stroke,
           strokeStyle: tc.hull.stroke,
@@ -167,7 +172,7 @@ export default function Ceiling() {
     const opacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores ceiling for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      float(0.7).mul(alphaFade), // beauty render
+      state.opacity.mul(alphaFade), // beauty render
     );
 
     return {
@@ -229,6 +234,8 @@ export default function Ceiling() {
 
 export type State = {
   inst: null | THREE.InstancedMesh;
+  /** The lid's alpha, from `theme.ceiling.opacity` */
+  opacity: THREE.UniformNode<"float", number>;
   quad: THREE.BufferGeometry;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;

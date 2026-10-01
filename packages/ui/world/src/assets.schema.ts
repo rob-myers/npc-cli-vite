@@ -162,6 +162,8 @@ export const WorldThemeSchema = z.object({
   ceiling: z.object({
     hull: z.object({ fill: z.string(), stroke: z.string() }),
     nonHull: z.object({ fill: z.string(), stroke: z.string() }),
+    /** The lid's alpha, else `0.7` */
+    opacity: z.number().min(0).max(1).optional(),
   }),
   floor: z
     .object({

@@ -48214,19 +48214,20 @@
         "fadedObstacleTint": 0.6
       },
       "ceiling": {
-        "hull": {"fill": "#c9ced6", "stroke": "#6b7686"},
-        "nonHull": {"fill": "#e3e7ec", "stroke": "#6b7686"}
+        "hull": {"fill": "#000", "stroke": "#000"},
+        "nonHull": {"fill": "#000", "stroke": "#000"},
+        "opacity": 1
       },
       "floor": {"hullFill": "#bfc6cf", "deck": "light"},
       "lights": {"unlit": 1, "unlitTint": "#2b333d", "cone": 0.5},
       "obstacles": {"brightness": 1.6},
-      "npcs": {"ambient": 0.8, "fx": {"additive": true, "shade": 1, "gain": 1}},
+      "npcs": {"ambient": 0.8},
       "doors": {
         "brightness": 10,
         "opacity": 0.75,
-        "labelOpacity": 1,
         "panel": "light",
-        "dissolve": true
+        "dissolve": true,
+        "labelOpacity": 1
       },
       "walls": {"color": "#5b6573", "opacity": 0.25}
     }
