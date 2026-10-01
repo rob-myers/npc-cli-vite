@@ -168,6 +168,8 @@ export default function Ceiling() {
     // `sight` alone fades a lid away; the other modes keep it and take its colour to black.
     // `alphaTest` finishes the job, dropping it once what is left falls under `0.01`
     const alphaFade = mix(float(1), ceilFade, w.view.fadeRoomsFx.sightNode);
+    /** In `sight` the lid fades via black, never the page's shade: white, on a light one, is a flash */
+    const fadeTo = mix(w.view.fadeRoomsFx.shade, vec3(0), w.view.fadeRoomsFx.sightNode);
 
     const opacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores ceiling for easier picking
@@ -183,15 +185,14 @@ export default function Ceiling() {
       pickNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling) as THREE.Node<"vec4">;
         const shown = ceilFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-        return (select as SelectAnyType)(
-          w.view.objectPick.notEqual(0),
-          lit,
-          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
-        );
+        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(mix(fadeTo, lit.rgb, shown), lit.a));
       })(),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`
-      texNode: w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds)), ceilFade),
+      texNode: (() => {
+        const unlit = w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds));
+        return vec4(mix(fadeTo, unlit.rgb, ceilFade), unlit.a);
+      })(),
       uid: generateUUID(),
     };
   }, [w.texCeil.hash, w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
