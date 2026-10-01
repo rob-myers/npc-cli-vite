@@ -75,7 +75,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
   return (
     <svg
       ref={preventPopupGestures}
-      className="size-full touch-none select-none bg-[#050608]"
+      className="size-full touch-none select-none bg-(--deco-bg)"
       style={{ cursor }}
       viewBox={zoom.viewBox}
       onWheel={zoom.onWheel}
@@ -135,9 +135,9 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
       <rect
         ref={marqueeEl}
         style={{ display: "none" }}
-        fill="#ffe066"
+        fill="var(--deco-selected)"
         fillOpacity={0.1}
-        stroke="#ffe066"
+        stroke="var(--deco-selected)"
         strokeWidth={1}
         strokeDasharray="4 2"
         vectorEffect="non-scaling-stroke"
@@ -334,23 +334,23 @@ const tmpMat = new Mat();
 
 const keyFontSize = 0.13;
 
-/** The World's own steel: its hull fill, its panel lips, its amber doors */
+/** The World's own steel: its hull fill, its panel lips, its amber doors — per theme, in `decorator.css` */
 const ink = {
-  hull: "#0b0d10",
-  room: "#1e2226",
-  nav: "rgba(190, 205, 225, 0.04)",
-  navEdge: "rgba(190, 205, 225, 0.09)",
-  obstacle: "#383e45",
-  wall: "rgba(190, 205, 225, 0.28)",
-  wallStroke: "rgba(205, 220, 240, 0.55)",
-  window: "rgba(120, 190, 235, 0.75)",
-  door: "#d9a83a",
-  doorOpen: "#8fbf7a",
-  doorLocked: "#e86052",
-  grid: "rgba(190, 205, 225, 0.13)",
-  label: "rgba(225, 240, 255, 0.7)",
-  key: "rgba(225, 240, 255, 0.45)",
-  npc: "#e8f0ff",
+  hull: "var(--deco-hull)",
+  room: "var(--deco-room)",
+  nav: "var(--deco-nav)",
+  navEdge: "var(--deco-nav-edge)",
+  obstacle: "var(--deco-obstacle)",
+  wall: "var(--deco-wall)",
+  wallStroke: "var(--deco-wall-stroke)",
+  window: "var(--deco-window)",
+  door: "var(--deco-door)",
+  doorOpen: "var(--deco-door-open)",
+  doorLocked: "var(--deco-door-locked)",
+  grid: "var(--deco-grid)",
+  label: "var(--deco-label)",
+  key: "var(--deco-key)",
+  npc: "var(--deco-npc)",
 };
 
 /** A key can be selected, to copy */

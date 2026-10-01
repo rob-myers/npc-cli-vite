@@ -11,6 +11,8 @@ import type { LoreEntry } from "./lore/lore.schema";
 import type { NavMap2dApi } from "./NavMap2d";
 import type { DecoratorUiMeta } from "./schema";
 
+import "./decorator.css";
+
 const LorePane = lazy(() => import("./lore/LorePane"));
 
 /**
@@ -39,7 +41,7 @@ export default function Decorator({ meta }: { meta: DecoratorUiMeta }) {
   }, [hidden]);
 
   return (
-    <div className="size-full relative bg-zinc-950">
+    <div className="decorator size-full relative bg-zinc-950">
       {hidden !== null && (
         <button
           type="button"

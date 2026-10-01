@@ -1,0 +1,81 @@
+/* The map's ink — see `ink` in `NavMap2d`, `DecorLayer` and `LoreLayer` */
+.decorator {
+  --deco-bg: #050608;
+  --deco-hull: #0b0d10;
+  --deco-room: #1e2226;
+  --deco-nav: rgba(190, 205, 225, 0.04);
+  --deco-nav-edge: rgba(190, 205, 225, 0.09);
+  --deco-obstacle: #383e45;
+  --deco-wall: rgba(190, 205, 225, 0.28);
+  --deco-wall-stroke: rgba(205, 220, 240, 0.55);
+  --deco-window: rgba(120, 190, 235, 0.75);
+  --deco-door: #d9a83a;
+  --deco-door-open: #8fbf7a;
+  --deco-door-locked: #e86052;
+  --deco-grid: rgba(190, 205, 225, 0.13);
+  --deco-label: rgba(225, 240, 255, 0.7);
+  --deco-key: rgba(225, 240, 255, 0.45);
+  --deco-npc: #e8f0ff;
+
+  --deco-static: #8a97a8;
+  --deco-selected: #ffe066;
+  --deco-handle-edge: #000;
+  --deco-point: #9fb4cc;
+  --deco-rect: #7fc3d9;
+  --deco-circle: #9ccf8f;
+  --deco-quad: #e09a6a;
+
+  --deco-lore-room: rgba(250, 204, 21, 0.12);
+  --deco-lore-edge: rgba(250, 204, 21, 0.8);
+}
+
+.theme-light .decorator {
+  --deco-bg: #dfe3e8;
+  --deco-hull: #c3c9d1;
+  --deco-room: #f4f6f8;
+  --deco-nav: rgba(40, 60, 90, 0.05);
+  --deco-nav-edge: rgba(40, 60, 90, 0.1);
+  --deco-obstacle: #b4bcc6;
+  --deco-wall: rgba(30, 40, 55, 0.5);
+  --deco-wall-stroke: rgba(20, 30, 45, 0.8);
+  --deco-window: rgba(40, 130, 200, 0.8);
+  --deco-door: #b07a00;
+  --deco-door-open: #3f8f3a;
+  --deco-door-locked: #c8362a;
+  --deco-grid: rgba(40, 60, 90, 0.14);
+  --deco-label: rgba(20, 30, 45, 0.8);
+  --deco-key: rgba(20, 30, 45, 0.55);
+  --deco-npc: #1d3a6b;
+
+  --deco-static: #6b7686;
+  --deco-selected: #c2410c;
+  --deco-handle-edge: #fff;
+  --deco-point: #3d5a80;
+  --deco-rect: #1f7a99;
+  --deco-circle: #3d8a2e;
+  --deco-quad: #b55a1e;
+
+  --deco-lore-room: rgba(194, 65, 12, 0.12);
+  --deco-lore-edge: rgba(65, 194, 12, 0.85);
+
+  /* The panels are written in dark zinc: turn the scale over, and darken each accent */
+  --color-zinc-950: #fafafa;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-600: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #52525b;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-200: #27272a;
+  --color-zinc-100: #18181b;
+
+  --color-red-300: #b91c1c;
+  --color-red-400: #dc2626;
+  --color-red-500: #dc2626;
+  --color-yellow-200: #854d0e;
+  --color-yellow-400: #ca8a04;
+  --color-amber-300: #b45309;
+  --color-sky-300: #0369a1;
+  --color-emerald-300: #047857;
+}

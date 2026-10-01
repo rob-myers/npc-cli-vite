@@ -354,7 +354,7 @@ export function Editor(props: {
           </Select.Trigger>
           <Select.Portal>
             <Select.Positioner className="z-50" sideOffset={4} align="end" alignItemWithTrigger={false}>
-              <Select.Popup className="bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300">
+              <Select.Popup className="decorator bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300">
                 {state.npcOptions.length === 0 && <div className="px-3 py-1 text-zinc-500">no npcs</div>}
                 {state.npcOptions.map((npcKey) => (
                   <Select.Item

@@ -47,4 +47,4 @@ export function LoreLayer({ w, entry }: { w: WorldState; entry: LoreEntry }) {
   );
 }
 
-const ink = { room: "rgba(250, 204, 21, 0.12)", edge: "rgba(250, 204, 21, 0.8)" };
+const ink = { room: "var(--deco-lore-room)", edge: "var(--deco-lore-edge)" };
