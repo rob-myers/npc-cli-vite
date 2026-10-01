@@ -1,7 +1,7 @@
 import { geomService } from "@npc-cli/util/geom-service";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { drawPolygons } from "@npc-cli/util/service/canvas";
-import { float, mix, step, texture } from "three/tsl";
+import { float, mix, step, texture, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   floorTextureDimension,
@@ -143,7 +143,8 @@ export function createRoomSlots(): RoomSlots {
         .add(gmIndex.toFloat().mul(MAX_BROAD_WALLS_PER_GEOMORPH))
         .add(broadCode)
         .sub(1);
-      return mix(slot, broadSlot, step(0.5, broadCode));
+      const heeded = mix(slot, broadSlot, step(0.5, broadCode));
+      return opts.both === true ? (vec2(slot, heeded) as never) : heeded;
     },
   };
 
@@ -262,6 +263,8 @@ export type RoomSlots = {
        * a broad wall abuts many rooms and is shown whilst any of them is.
        */
       heedBroadWalls?: boolean;
+      /** With `heedBroadWalls`: a `vec2` of the slot without and with, off the one sample */
+      both?: boolean;
     },
   ): THREE.Node<"float">;
 };

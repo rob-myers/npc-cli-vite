@@ -12,6 +12,7 @@ import {
   int,
   mix,
   select,
+  step,
   texture,
   transformNormalToView,
   uniform,
@@ -342,8 +343,15 @@ export default function Floor() {
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
     const texel = texNode.depth(instanceIndex);
 
-    // Shown in room, doorway, or broad wall
-    const slot = w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true });
+    // Shown in room or doorway — and under a broad wall, but only its BASE, drawn pure black. Its
+    // footprint is wider, e.g. a hull window it spans, and shown whole whilst any room it abuts is:
+    // that strip lay far outside the rooms in view, stair-edged on a light page
+    const slots = w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, {
+      heedBroadWalls: true,
+      both: true,
+    }) as unknown as THREE.Node<"vec2">;
+    const isWallBase = step(texel.r.max(texel.g).max(texel.b), wallBaseBelow);
+    const slot = mix(slots.x, slots.y, isWallBase);
     const floorFade = w.view.objectPick.notEqual(0).select(float(1), w.view.fadeRoomsFx.getVisiblity(slot));
 
     return {
@@ -418,6 +426,9 @@ export default function Floor() {
     </instancedMesh>
   );
 }
+
+/** A wall's base is `#000`, and nothing else on the floor is this dark — see `draw` */
+const wallBaseBelow = 0.01;
 
 export type State = {
   inst: null | THREE.InstancedMesh;
