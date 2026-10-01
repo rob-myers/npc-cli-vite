@@ -19,14 +19,14 @@ function drawDoorBasePanel() {
   // metal, not a silhouette: it needs an albedo of its own, the player light only ever tinting
   // what is here DOWN (see `service/player-light`) — near black would stay near black
   const base = ct.createLinearGradient(0, 0, 0, h);
-  base.addColorStop(0, doorPanelTop);
-  base.addColorStop(1, doorPanelBottom);
+  base.addColorStop(0, doorInks[doorInksKey].top);
+  base.addColorStop(1, doorInks[doorInksKey].bottom);
   ct.fillStyle = base;
   ct.fillRect(0, 0, w, h);
 
   // 4 recessed panels: sunk a shade below the face, then bevelled light over dark
   for (const p of panels) {
-    ct.fillStyle = doorPanelRecess;
+    ct.fillStyle = doorInks[doorInksKey].recess;
     ct.fillRect(panelInset, p.y, w - panelInset * 2, p.h);
 
     ct.strokeStyle = "rgba(150,170,190,0.25)";
@@ -92,10 +92,24 @@ function drawDoorBasePanel() {
 
 // --- panel layout constants ---
 
+/** A panel alpha a shade under the label's: how `Doors` tells them apart, to keep a label solid */
+export const doorPanelMark = 254 / 255;
+
 /** The door's own colour, lit down from here by `player-light` — see `drawDoorBasePanel` */
-const doorPanelTop = "#3f464e";
-const doorPanelBottom = "#2f353b";
-const doorPanelRecess = "#343a41";
+const doorInks = {
+  dark: { top: "#3f464e", bottom: "#2f353b", recess: "#343a41", plate: "rgba(24, 24, 24, 255)", panelAlpha: 1 },
+  /** Under a far higher `theme.doors.brightness`, which is what whitens the letters — so the plate is near black */
+  light: { top: "#d3d9e0", bottom: "#bcc4cd", recess: "#c4ccd5", plate: "#030303", panelAlpha: doorPanelMark },
+};
+
+let doorInksKey: keyof typeof doorInks = "dark";
+
+/** Which of `doorInks` the next panels are drawn in, from `theme.doors.panel` */
+export function setDoorInks(key: keyof typeof doorInks) {
+  if (key === doorInksKey) return;
+  doorInksKey = key;
+  basePanelCanvas = null;
+}
 
 const panelInset = 14;
 const panels = [
@@ -243,6 +257,49 @@ export const deckConfig = {
     lineWidth: 0.02,
   },
 };
+
+/** The deck's colours per theme: every other value of `deckConfig` is shared */
+const deckInks = {
+  dark: {
+    tone: deckConfig.tone,
+    plate: { seamInk: deckConfig.plate.seamInk, lipInk: deckConfig.plate.lipInk },
+    rivet: { ink: deckConfig.rivet.ink, lipInk: deckConfig.rivet.lipInk },
+    wiring: {
+      inks: deckConfig.wiring.inks,
+      backingInk: deckConfig.wiring.backingInk,
+      clampInk: deckConfig.wiring.clampInk,
+    },
+    doorTicks: { grooveInk: deckConfig.doorTicks.grooveInk, lipInk: deckConfig.doorTicks.lipInk },
+    nav: { fill: deckConfig.nav.fill, ink: deckConfig.nav.ink },
+  },
+  light: {
+    tone: "#d5dae0",
+    plate: { seamInk: "rgba(40, 55, 75, 0.35)", lipInk: "rgba(255, 255, 255, 0.7)" },
+    rivet: { ink: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.8)" },
+    wiring: {
+      inks: ["rgba(200, 60, 45, 0.55)", "rgba(30, 120, 190, 0.55)"],
+      backingInk: "rgba(40, 55, 75, 0.25)",
+      clampInk: "rgba(70, 85, 105, 0.7)",
+    },
+    doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.75)" },
+    nav: { fill: "rgba(255, 255, 255, 0.35)", ink: "rgba(30, 120, 190, 0.08)" },
+  },
+};
+
+let deckInksKey: keyof typeof deckInks = "dark";
+
+/** Only on a change of theme, so inks tuned from the console survive a redraw */
+export function setDeckInks(key: keyof typeof deckInks) {
+  if (key === deckInksKey) return;
+  deckInksKey = key;
+  const { tone, plate, rivet, wiring, doorTicks, nav } = deckInks[key];
+  deckConfig.tone = tone;
+  Object.assign(deckConfig.plate, plate);
+  Object.assign(deckConfig.rivet, rivet);
+  Object.assign(deckConfig.wiring, wiring);
+  Object.assign(deckConfig.doorTicks, doorTicks);
+  Object.assign(deckConfig.nav, nav);
+}
 
 /** Every room's deck, and the doorways between them */
 export function drawRoomFloors(
@@ -762,7 +819,9 @@ const doorLabelAlpha = 0.9;
 export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label: string) {
   const { ct } = texArray;
   ct.clearRect(0, 0, texW, texH);
+  ct.globalAlpha = doorInks[doorInksKey].panelAlpha;
   ct.drawImage((basePanelCanvas ??= drawDoorBasePanel()), 0, 0);
+  ct.globalAlpha = 1;
 
   if (label !== "") {
     const logoY = (panels[2].y + panels[2].h / 2 + panels[3].y) / 2;
@@ -785,7 +844,7 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
       width: rw,
       height: rh,
       radius: 6,
-      fillStyle: "rgba(24, 24, 24, 255)",
+      fillStyle: doorInks[doorInksKey].plate,
       strokeStyle: "rgba(235, 235, 235, 0.34)",
       lineWidth: 3,
     });

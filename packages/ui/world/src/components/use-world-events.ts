@@ -383,13 +383,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onChangeTheme() {
-        const { obstacles, doors, post } = w.getTheme();
+        const { obstacles, doors, npcs, lights, post } = w.getTheme();
         w.obs.setBrightness(obstacles.brightness);
         w.door.setBrightness(doors.brightness);
+        w.door.setOpacity(doors.opacity, doors.labelOpacity);
+        w.door.setDissolve(doors.dissolve);
+        w.npc?.setAmbient(npcs.ambient);
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
         w.view.postFx.darkBg.value.set(post.darkBg);
+        w.view.fadeRoomsFx.shade.value.set(post.darkBg);
+        w.view.playerLight.shade.value.set(lights.unlitTint);
+        w.view.playerLight.unlitScale.value = lights.unlit;
+        w.view.playerLight.coneAmount.value = lights.cone;
         // w.view.forceUpdate();
       },
       onEnterCollider(e, npc) {

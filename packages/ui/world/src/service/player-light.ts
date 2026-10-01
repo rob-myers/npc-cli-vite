@@ -49,6 +49,9 @@ export function createPlayerLight(): PlayerLight {
    * none of them multiplies a constant by a uniform per fragment
    */
   const unlitAmount = uniform(0);
+  const shade = uniform(new THREE.Color("#000"));
+  const unlitScale = uniform(1);
+  const coneAmount = uniform(defaultConeAmount);
   /** Whether the light is on — `unlitAmount` folds it in, a caller taking an AMOUNT cannot */
   const strength = uniform(0);
   /**
@@ -292,9 +295,7 @@ export function createPlayerLight(): PlayerLight {
     // and none at all on a face turned away — branched in js, so a caller with no normal to give
     // emits nothing of this
     const shaded = outwardXZ === null ? lit : lit.mul(facingAt(outwardXZ, away, fromPlayer));
-    // towards black, written as the multiply it is rather than as a `mix` against a colour the
-    // compiler would have to carry three zeroes for
-    return color.mul(float(1).sub(unlitAmount.mul(shaded.oneMinus())));
+    return mix(color, shade, unlitAmount.mul(unlitScale).min(1).mul(shaded.oneMinus()));
   }
 
   /**
@@ -333,6 +334,9 @@ export function createPlayerLight(): PlayerLight {
 
   return {
     uid: crypto.randomUUID(),
+    shade,
+    unlitScale,
+    coneAmount,
 
     litAt,
     applyLight,
@@ -368,7 +372,7 @@ export function createPlayerLight(): PlayerLight {
     applyUnlitRgba(color) {
       // the same tint the unseen parts of the world take, so a dark ceiling matches a dark room
       // rather than being its own shade of black — and identity whilst the light is off
-      return vec4(color.rgb.mul(unlitAmount.oneMinus()), color.a);
+      return vec4(mix(color.rgb, shade, unlitAmount.mul(unlitScale).min(1)), color.a);
     },
 
     syncWalls(gms, gmsData) {
@@ -488,8 +492,14 @@ export type PlayerLight = {
    * material, and an hmr of this file reaches the screen. See `WorldView`'s `reset`
    */
   uid: string;
+  /** What the unseen is tinted towards, from `theme.lights.unlitTint` */
+  shade: THREE.UniformNode<"color", THREE.Color>;
+  /** How much of that tint the theme keeps, from `theme.lights.unlit` */
+  unlitScale: THREE.UniformNode<"float", number>;
+  /** How much of the light what is not ahead of them loses, from `theme.lights.cone` */
+  coneAmount: THREE.UniformNode<"float", number>;
   /**
-   * Tints `color` towards black wherever the fragment cannot be seen from the light. Identity
+   * Tints `color` towards `shade` wherever the fragment cannot be seen from the light. Identity
    * whilst the light is off, so a material can wrap its colour unconditionally.
    * @param outwardXZ unit outward normal in world XZ: a face turned away takes none of the light.
    * Omit it for anything horizontal, or whose normal means nothing — a billboard
@@ -614,7 +624,7 @@ const unlitTintOther = 0.4;
  * out the dimming takes hold: nearer than that the ground they stand on keeps its light whichever
  * way they turn
  */
-const coneAmount = 0.7;
+const defaultConeAmount = 0.7;
 const coneFrom = lightRadius * 0.2;
 /** Its half angle, and how many degrees either side that is softened over — enough to antialias */
 const coneHalfDeg = 60;

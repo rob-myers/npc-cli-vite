@@ -31,6 +31,7 @@ import {
   drawDoorTicks,
   drawFloorGrid,
   drawRoomFloors,
+  setDeckInks,
   softEdges,
   toEdgeOpts,
   worldToCanvas,
@@ -50,8 +51,7 @@ export default function Floor() {
       drawnGmsHash: 0,
       drawnMapKey: null,
 
-      fade: { texAmount: uniform(0), animId: 0, resolve: null }, // initially `fadeColor`
-      fadeColor: vec3(0, 0, 0),
+      fade: { texAmount: uniform(0), animId: 0, resolve: null }, // initially the fade's `shade`
       fadedTint: uniform(0.1),
 
       addUvs(gms = w.gms) {
@@ -76,6 +76,7 @@ export default function Floor() {
       },
       async draw() {
         w.setNextPending({ floor: true });
+        setDeckInks(w.getTheme().floor.deck);
 
         // one texture per gmId = texId (nav tris can change near hull doors)
         for (const [gmId] of w.gms.entries()) {
@@ -84,9 +85,6 @@ export default function Floor() {
           await pause();
         }
 
-        if (w.assets !== null) {
-          await w.view.dimBackground(false);
-        }
         w.setNextPending({ floor: false });
       },
       drawGm(gmId) {
@@ -231,8 +229,6 @@ export default function Floor() {
         // a map change is a fade through black — the world stays standing, so there is no fold
         // to play out and nothing to hold on screen whilst the next map loads
         await w.view.veilCanvas(true, mapVeilMs);
-        // the background goes black unseen beneath it, ready for the gaps in the next map's floor
-        void w.view.dimBackground(true, 0);
       },
       fadeTo(to, ms = floorFadeMs) {
         return new Promise<void>((resolve) => {
@@ -362,15 +358,21 @@ export default function Floor() {
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1) as THREE.Node<"vec4">;
         const shown = floorFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+        return (select as SelectAnyType)(
+          w.view.objectPick.notEqual(0),
+          lit,
+          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
+        );
       })(),
-      // `texAmount` takes the art to `fadeColor` whilst keeping the hull it lies in — a map
+      // `texAmount` takes the art to the fade's `shade` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`
       // tinted by what the player can see from where they stand — see `service/player-light`
       // DARKENED rather than faded, as everything else is — and never quite to black, so what the
       // player half sees keeps its shape. Where it ENDS UP is `outputNode`'s business
       texNode: w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(vec4(mix(state.fadeColor, texel.rgb, state.fade.texAmount), texel.a)),
+        w.view.playerLight.applyLightRgba(
+          vec4(mix(w.view.fadeRoomsFx.shade, texel.rgb, state.fade.texAmount), texel.a),
+        ),
         floorFade.max(state.fadedTint),
       ),
       uid: generateUUID(),
@@ -389,7 +391,7 @@ export default function Floor() {
     }
 
     state.drawAll();
-  }, [w.hash, w.nav, w.gmsData, w.decor.ready]);
+  }, [w.hash, w.themeKey, w.nav, w.gmsData, w.decor.ready]);
 
   return (
     <instancedMesh
@@ -432,8 +434,6 @@ export type State = {
     animId: number;
     resolve: null | (() => void);
   };
-  /** What a folded map shows in place of its art: the hull as a flat black shape */
-  fadeColor: THREE.Node<"vec3">;
   /** How much of a floor is left once its room is out of view — from `theme.post.fadedFloorTint` */
   fadedTint: THREE.UniformNode<"float", number>;
 

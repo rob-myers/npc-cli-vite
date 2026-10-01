@@ -161,7 +161,7 @@ export default function Ceiling() {
       w.view.roomSlots.decodeUvVisibility(transformedUv, instanceIndex, { heedBroadWalls: true }),
     );
     // `sight` alone fades a lid away; the other modes keep it and take its colour to black.
-    // `alphaTest` finishes the job, dropping it once what is left falls under `0.1`
+    // `alphaTest` finishes the job, dropping it once what is left falls under `0.01`
     const alphaFade = mix(float(1), ceilFade, w.view.fadeRoomsFx.sightNode);
 
     const opacityNode = w.view.objectPick.notEqual(0).select(
@@ -178,7 +178,11 @@ export default function Ceiling() {
       pickNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling) as THREE.Node<"vec4">;
         const shown = ceilFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+        return (select as SelectAnyType)(
+          w.view.objectPick.notEqual(0),
+          lit,
+          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
+        );
       })(),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`
@@ -191,7 +195,7 @@ export default function Ceiling() {
     state.transformInstances();
     state.addUvs();
     state.draw().then(() => w.update());
-  }, [w.hash, w.nav, w.gmsData]);
+  }, [w.hash, w.themeKey, w.nav, w.gmsData]);
 
   return (
     <instancedMesh
@@ -217,7 +221,7 @@ export default function Ceiling() {
         opacityNode={material.opacityNode}
         // depthWrite // use depth buffer to fix editable lighting
         depthWrite={false}
-        alphaTest={0.1}
+        alphaTest={0.01}
       />
     </instancedMesh>
   );

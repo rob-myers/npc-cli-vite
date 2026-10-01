@@ -48205,16 +48205,45 @@
         "fadedFloorTint": 0.5,
         "fadedObstacleTint": 0.5
       },
-      "background": "bg-[#000]",
       "ceiling": {
         "hull": {"fill": "#000", "stroke": "#111"},
         "nonHull": {"fill": "#000", "stroke": "#6666"}
       },
-      "floor": {"hullFill": "#0b0d10"},
-      "lights": {"ambientIntensity": 1},
+      "floor": {"hullFill": "#0b0d10", "deck": "dark"},
+      "lights": {"unlit": 1, "unlitTint": "#000000", "cone": 0.7},
       "obstacles": {"brightness": 1},
-      "doors": {"brightness": 2},
+      "npcs": {"ambient": 0},
+      "doors": {
+        "brightness": 2,
+        "opacity": 0.8,
+        "panel": "dark",
+        "dissolve": false
+      },
       "walls": {"color": "#000", "opacity": 0.25}
+    },
+    "light-theme": {
+      "post": {
+        "lightBg": "#ffffff",
+        "darkBg": "#ffffff",
+        "fadedFloorTint": 0.6,
+        "fadedObstacleTint": 0.6
+      },
+      "ceiling": {
+        "hull": {"fill": "#c9ced6", "stroke": "#6b7686"},
+        "nonHull": {"fill": "#e3e7ec", "stroke": "#6b7686"}
+      },
+      "floor": {"hullFill": "#bfc6cf", "deck": "light"},
+      "lights": {"unlit": 1, "unlitTint": "#2b333d", "cone": 0.5},
+      "obstacles": {"brightness": 1.6},
+      "npcs": {"ambient": 0.8},
+      "doors": {
+        "brightness": 10,
+        "opacity": 0.75,
+        "panel": "light",
+        "dissolve": true,
+        "labelOpacity": 1
+      },
+      "walls": {"color": "#5b6573", "opacity": 0.25}
     }
   },
   "hash": {"obstacles": -1967721018}

@@ -11,6 +11,8 @@ import {
   lights,
   mix,
   positionLocal,
+  screenCoordinate,
+  smoothstep,
   texture,
   uniform,
   uv,
@@ -24,7 +26,7 @@ import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import { getWorldMapStore } from "../service/storage";
-import { drawDoorLabelLayer } from "../service/texture";
+import { doorPanelMark, drawDoorLabelLayer, setDoorInks } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 export default function Doors() {
@@ -35,6 +37,9 @@ export default function Doors() {
       animTargets: new Map(),
       box: createDoorBox(),
       brightnessNode: uniform(1),
+      opacityNode: uniform(defaultDoorOpacity),
+      labelOpacityNode: uniform(defaultDoorOpacity),
+      dissolveNode: uniform(0),
       builtMapKey: null,
       builtGmsHash: 0,
       byKey: {},
@@ -209,6 +214,7 @@ export default function Doors() {
       drawDoorTextures() {
         // layer 0 is the door without a label; each distinct label gets its own layer after it
         state.labelToLayer.clear();
+        setDoorInks(w.getTheme().doors.panel);
         drawDoorLabelLayer(w.texDoorLabel, LAYER_PLAIN, "");
         state.labelToLayer.set("", LAYER_PLAIN);
 
@@ -393,6 +399,13 @@ export default function Doors() {
 
         inst.computeBoundingSphere();
       },
+      setDissolve(next) {
+        state.dissolveNode.value = next ? 1 : 0;
+      },
+      setOpacity(next, label = next) {
+        state.opacityNode.value = next;
+        state.labelOpacityNode.value = label;
+      },
       setBrightness(next) {
         state.brightnessNode.value = next;
       },
@@ -558,6 +571,15 @@ export default function Doors() {
     // behind one, so its coverage reaching zero flips the pixel from the dark behind the world to
     // the page beyond it in a single frame: the flash at either end of a mode change
     const alphaFade = mix(float(1), fade, w.view.fadeRoomsFx.sightNode.mul(isHull.oneMinus()));
+    // Dissolving, a door goes pixel by pixel in an order fixed on the screen, its coverage left
+    // alone: coverage has only as many levels as samples, and fading through them flickers on a
+    // light page. Interleaved gradient noise, even enough that any share of it gone looks even
+    const grain = screenCoordinate.xy.dot(vec2(0.06711056, 0.00583715)).fract().mul(52.9829189).fract();
+    const dissolved = w.view.objectPick
+      .equal(0)
+      .and(state.dissolveNode.greaterThan(0.5))
+      .and(alphaFade.lessThanEqual(grain));
+    const coverFade = mix(alphaFade, float(1), state.dissolveNode);
 
     for (const mat of [edge, front, back]) {
       mat.positionNode = vec3(collapsedX, positionLocal.y, positionLocal.z);
@@ -574,16 +596,13 @@ export default function Doors() {
               .or(fade.lessThan(0.5).and(w.view.fadeRoomsFx.sightNode.greaterThan(0.5))),
           ),
         );
+        Discard(dissolved);
         return w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.door);
       })();
     }
 
-    for (const mat of [front, back]) {
-      // full whilst picking, else a door could be picked through the samples coverage drops
-      mat.opacityNode = w.view.objectPick.equal(0).select(float(defaultDoorOpacity).mul(alphaFade), float(1));
-    }
     // opaque by default, so it needs its own or the frame is left behind
-    edge.opacityNode = w.view.objectPick.equal(0).select(alphaFade, float(1));
+    edge.opacityNode = w.view.objectPick.equal(0).select(coverFade, float(1));
 
     const frontOffset = slideSign.negate().greaterThan(0).select(openRatio, float(0));
     const backOffset = slideSign.greaterThan(0).select(openRatio, float(0));
@@ -591,23 +610,31 @@ export default function Doors() {
     // `doorMeta` carries each face's layer already oriented, so there is no swap here
     // each tinted by what the player can see from where they stand — see `service/player-light`
     // black whilst its rooms are hidden rather than transparent — see `applyFadeRgba`
+    const frontTexel = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y)).depth(
+      doorMeta.y.toInt(),
+    );
+    const backTexel = texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y)).depth(
+      doorMeta.z.toInt(),
+    );
+    for (const [mat, texel] of [
+      [front, frontTexel],
+      [back, backTexel],
+    ] as const) {
+      // a marked panel is a shade under full alpha, and its label is not — see `doorPanelMark`
+      const isLabel = smoothstep(float(doorPanelMark), float(1), texel.a);
+      const opacity = mix(state.opacityNode, state.labelOpacityNode, isLabel);
+      // full whilst picking, else a door could be picked through the samples coverage drops
+      mat.opacityNode = w.view.objectPick.equal(0).select(opacity.mul(coverFade), float(1));
+    }
     front.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-      w.view.playerLight.applyLightRgba(
-        texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(frontOffset), uv().y))
-          .depth(doorMeta.y.toInt())
-          .mul(vec3(state.brightnessNode)),
-      ),
+      w.view.playerLight.applyLightRgba(frontTexel.mul(vec3(state.brightnessNode))),
       fade,
     );
     back.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-      w.view.playerLight.applyLightRgba(
-        texture(w.texDoorLabel.tex, vec2(uv().x.mul(cs).add(backOffset), uv().y))
-          .depth(doorMeta.z.toInt())
-          .mul(vec3(state.brightnessNode)),
-      ),
+      w.view.playerLight.applyLightRgba(backTexel.mul(vec3(state.brightnessNode))),
       fade,
     );
-    edge.colorNode = w.view.playerLight.applyLight(color(doorEdgeColor).rgb).mul(fade);
+    edge.colorNode = w.view.fadeRoomsFx.fadeRgb(w.view.playerLight.applyLight(color(doorEdgeColor).rgb), fade);
 
     // only 3 groups in door box
     const output = [edge, front, back];
@@ -632,7 +659,7 @@ export default function Doors() {
     state.syncLockTints();
     state.update();
     // `w.gmsHash`: the geomorphs arrive after the map key changes, and the doors are theirs
-  }, [w.mapKey, w.gmsHash, w.hash, state.lastHmr, w.decor.ready]);
+  }, [w.mapKey, w.gmsHash, w.hash, w.themeKey, state.lastHmr, w.decor.ready]);
 
   return (
     <instancedMesh
@@ -654,6 +681,12 @@ export type State = {
   animTargets: Map<number, number>;
   box: THREE.BoxGeometry;
   brightnessNode: THREE.UniformNode<"float", number>;
+  /** How solid a panel is, from `theme.doors.opacity` — dithered, so part-solid stipples on a light page */
+  opacityNode: THREE.UniformNode<"float", number>;
+  /** …and its label, from `theme.doors.labelOpacity` */
+  labelOpacityNode: THREE.UniformNode<"float", number>;
+  /** `1` where a door fades by dissolving, not by coverage — from `theme.doors.dissolve` */
+  dissolveNode: THREE.UniformNode<"float", number>;
   /** Which map `byKey` describes, so a rebuild knows whether its live state still applies */
   builtMapKey: null | string;
   /** And which geomorphs, the map key alone changing a beat before they do */
@@ -717,6 +750,10 @@ export type State = {
   snapOpen: (door: Geomorph.DoorState) => boolean;
   /** Sets `brightnessNode`'s value — called by `onChangeTheme` (see `use-world-events.ts`), never `.value` directly */
   setBrightness: (next: number) => void;
+  /** Sets `opacityNode`'s value, and the label's — its own, else the same. Called by `onChangeTheme` */
+  setOpacity: (next: number, label?: number) => void;
+  /** Sets `dissolveNode`'s value — called by `onChangeTheme` */
+  setDissolve: (next: boolean) => void;
   /** Save which doors are locked for `w.mapKey`, so `buildByKey` can restore them */
   persistLocks: () => void;
   /** Lock exactly these doors, e.g. having restored them from another world */

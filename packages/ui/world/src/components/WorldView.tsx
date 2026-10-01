@@ -80,7 +80,7 @@ import NpcBubbles from "./NpcBubbles";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
-export function WorldView(props: React.PropsWithChildren<{ className?: string }>) {
+export function WorldView(props: React.PropsWithChildren) {
   const { uiStoreApi } = useContext(UiContext);
   const w = useContext(WorldContext);
 
@@ -1357,11 +1357,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
           state.persistCamera();
         }
       },
-      dimBackground(darken, durationMs = bgDimMs) {
-        w.rootEl?.style.setProperty("--world-dim-duration", `${durationMs}ms`);
-        w.rootEl?.style.setProperty("--world-dim", `${darken ? 1 : 0}`);
-        return pause(durationMs);
-      },
       veilCanvas(opaque, durationMs = veilMs) {
         setVeiled(w.key, opaque); // so a fresh root element can be given it back — see `setupDom`
         w.rootEl?.style.setProperty("--world-veil-duration", `${durationMs}ms`);
@@ -1554,9 +1549,6 @@ export function WorldView(props: React.PropsWithChildren<{ className?: string }>
   return (
     <div className="size-full" ref={ref}>
       <Canvas
-        className={props.className}
-        // the page behind the canvas keeps the theme's own colour whatever the ambient is — see
-        // `World`'s className. Dimming it with the world made the stripes vanish at ambient 0
         style={{ filter: `brightness(${w.brightness})` }}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
@@ -1934,8 +1926,6 @@ export type State = {
   revealRoomLabels(to: number, ms?: number, delayMs?: number): void;
   /** How much of a label the ZOOM leaves: `1` at the outer stop, `roomLabelNearAlpha` in to `roomLabelFadeFrom` */
   labelZoomFade: THREE.UniformNode<"float", number>;
-  /** Takes the page background to black and back, whilst a map loads */
-  dimBackground(darken: boolean, durationMs?: number): Promise<void>;
   /** Black over the canvas contents, hiding a floor swap — see `world.css` */
   veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
   resetCamera(): void;
@@ -2030,9 +2020,6 @@ const lookAtMaxMs = 2500;
 const respawnPanMinMs = 900;
 /** Warps time before the smootherstep, so it brakes over the last ~63% */
 const softLandingWarp = 0.7;
-/** How long the background takes to go black, or to come back */
-const bgDimMs = 300;
-
 /** How long the veil over the canvas takes to fade, either way */
 const veilMs = 250;
 /** How long the offer to centre on the player is up for, fade and all, and how small it starts */

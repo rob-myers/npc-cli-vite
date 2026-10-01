@@ -924,7 +924,7 @@ export default function Decor() {
         (select as SelectAnyType)(
           w.view.objectPick.notEqual(0),
           node,
-          vec4(node.rgb.mul(shown), node.a),
+          vec4(w.view.fadeRoomsFx.fadeRgb(node.rgb, shown), node.a),
         ) as THREE.Node<"vec4">;
 
       const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest });

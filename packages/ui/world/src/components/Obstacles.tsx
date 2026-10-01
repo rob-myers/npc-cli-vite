@@ -293,7 +293,11 @@ export default function Obstacles(_props: Props) {
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle) as THREE.Node<"vec4">;
         const shown = topFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+        return (select as SelectAnyType)(
+          w.view.objectPick.notEqual(0),
+          lit,
+          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
+        );
       })(),
       uid: generateUUID(),
     };
@@ -336,7 +340,11 @@ export default function Obstacles(_props: Props) {
       attribute<"float">("obstacleIds", "float"),
     ) as THREE.Node<"vec4">;
     const shown = skirtFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-    mat.outputNode = (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(lit.rgb.mul(shown), lit.a));
+    mat.outputNode = (select as SelectAnyType)(
+      w.view.objectPick.notEqual(0),
+      lit,
+      vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
+    );
     return mat;
   }, [w.view.playerLight.uid, w.view.fadeRoomsFx.uid]);
 
