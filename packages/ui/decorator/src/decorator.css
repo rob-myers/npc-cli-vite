@@ -79,3 +79,14 @@
   --color-sky-300: #0369a1;
   --color-emerald-300: #047857;
 }
+
+/* fades in, so what settles on mount (panes, the map's fit) is not seen doing so */
+.decorator {
+  animation: decorator-fade-in 300ms ease-out both;
+}
+
+@keyframes decorator-fade-in {
+  from {
+    opacity: 0;
+  }
+}
