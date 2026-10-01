@@ -1,5 +1,7 @@
 /**
  * Based on https://www.npmjs.com/package/cli-high
+ *
+ * Jsh highlighting as opposed to xterm.js theme.
  */
 
 import { tokenize } from "sugar-high";
