@@ -182,6 +182,17 @@ export function WorldSpeech() {
     return () => sub.unsubscribe();
   }, []);
 
+  // a select-all disarms the spoken words, so it never takes them — see `SpokenWords`
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "a") {
+        for (const el of document.querySelectorAll(`[${spokenArmedAttr}]`)) el.removeAttribute(spokenArmedAttr);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, []);
+
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
 
@@ -283,7 +294,7 @@ export function WorldSpeech() {
                         )}
                       >
                         <NpcKeyMenu npcKey={entry.npcKey} />
-                        <span className="wrap-break-word">{entry.words}</span>
+                        <SpokenWords words={entry.words} />
                       </div>
                     ))}
                 </div>
@@ -325,7 +336,8 @@ export function WorldSpeech() {
             >
               <NpcKeyMenu npcKey={npcKey} onOpenChange={(open) => state.pinToast(id, open)} />
 
-              <span className="wrap-break-word">{words}</span>
+              {/* held open whilst the pointer is over it, so it cannot fade from under a selection */}
+              <SpokenWords words={words} onHover={(over) => state.pinToast(id, over)} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -333,6 +345,27 @@ export function WorldSpeech() {
     </>
   );
 }
+
+/**
+ * What was said, selectable by a drag or double-click — but only once pressed, so a select-all
+ * elsewhere on the page leaves it alone
+ */
+function SpokenWords({ words, onHover }: { words: string; onHover?: (over: boolean) => void }) {
+  return (
+    <span
+      // `pointer-events-auto`: the toast strip is click-through
+      className="pointer-events-auto wrap-break-word cursor-text select-none data-spoken-armed:select-text"
+      // set before the press's `mousedown`, which is what starts a selection
+      onPointerDown={(e) => e.currentTarget.setAttribute(spokenArmedAttr, "")}
+      onPointerEnter={onHover && (() => onHover(true))}
+      onPointerLeave={onHover && (() => onHover(false))}
+    >
+      {words}
+    </span>
+  );
+}
+
+const spokenArmedAttr = "data-spoken-armed";
 
 /**
  * The npc's key, as a menu: it is the only handle onto an npc the speech UI has, so what you can do
@@ -371,7 +404,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
               <Menu.Item
                 className={speechMenuItemClassName}
                 closeOnClick={false}
-                onClick={() => w.bubble.ensure(npcKey)}
+                onClick={() => w.bubble.toggle(npcKey)}
               >
                 debug
               </Menu.Item>

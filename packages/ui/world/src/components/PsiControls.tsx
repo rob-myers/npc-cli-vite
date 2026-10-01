@@ -1,3 +1,5 @@
+import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import * as THREE from "three/webgpu";
 import { defaultPsiTune, type PsiTune, psiTuneRanges } from "../const.npc";
@@ -6,6 +8,8 @@ import type { State as WorldState } from "./World";
 /** The player's psi, as `Psi` draws it */
 export default function PsiControls({ w }: { w: WorldState }) {
   const [tune, setTune] = useState(() => ({ ...w.psi.tune }));
+  const [open, setOpen] = useState(() => tryLocalStorageGetParsed<boolean>(openStorageKey) === true);
+  const Caret = open === true ? CaretDownIcon : CaretRightIcon;
   const apply = (partial: Partial<PsiTune>) => {
     w.psi.setTune(partial);
     setTune({ ...w.psi.tune });
@@ -14,15 +18,35 @@ export default function PsiControls({ w }: { w: WorldState }) {
   return (
     <div className="flex flex-col gap-1.5 border-t-2 border-white/20 pt-3 text-lg">
       <div className="flex items-center gap-3">
-        <span className="text-white/50">psi</span>
         <button
           type="button"
-          className="ml-auto cursor-pointer rounded-lg border-2 border-white/20 px-3 text-white/60 hover:text-white"
-          onClick={() => apply(defaultPsiTune)}
+          className="flex flex-1 cursor-pointer items-center gap-2 text-left text-white/50 hover:text-white"
+          onClick={() => {
+            tryLocalStorageSet(openStorageKey, String(!open));
+            setOpen(!open);
+          }}
         >
-          reset
+          <Caret className="size-5 shrink-0" />
+          psi
         </button>
+        {open === true && (
+          <button
+            type="button"
+            className="cursor-pointer rounded-lg border-2 border-white/20 px-3 text-white/60 hover:text-white"
+            onClick={() => apply(defaultPsiTune)}
+          >
+            reset
+          </button>
+        )}
       </div>
+      {open === true && <PsiSliders tune={tune} apply={apply} />}
+    </div>
+  );
+}
+
+function PsiSliders({ tune, apply }: { tune: PsiTune; apply: (partial: Partial<PsiTune>) => void }) {
+  return (
+    <>
       {psiSliders.map(([key, label]) => {
         const [min, max, step] = psiTuneRanges[key];
         return (
@@ -57,9 +81,11 @@ export default function PsiControls({ w }: { w: WorldState }) {
           <span className="h-4 w-8 rounded" style={{ background: tune.color }} />
         </span>
       </label>
-    </div>
+    </>
   );
 }
+
+const openStorageKey = "psi-controls-open";
 
 /** Saturation and lightness of the default, so every hue is as pale a glow */
 const { s, l } = new THREE.Color(defaultPsiTune.color).getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
