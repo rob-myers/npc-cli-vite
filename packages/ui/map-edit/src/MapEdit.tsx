@@ -28,9 +28,10 @@ import {
   tryLocalStorageSet,
   warn,
 } from "@npc-cli/util/legacy/generic";
-import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
+import { MapTrifoldIcon, TreeViewIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type PointerEvent, useCallback, useContext, useEffect, useMemo } from "react";
+import { Allotment, type AllotmentHandle } from "allotment";
+import { type PointerEvent, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import z from "zod";
 import {
   type BaseRect,
@@ -152,10 +153,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       selectionBox: null as SelectionBox | null,
       selectionBoundsOffset: { x: 0, y: 0 },
       editingId: null,
-      asideWidth: defaultAsideWidth,
-      lastAsideWidth: defaultAsideWidth,
-      isResizing: false,
-      isAsideCollapsed: false,
       undoStack: [] as HistoryEntry[],
       redoStack: [] as HistoryEntry[],
 
@@ -263,28 +260,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       onTouchEnd() {
         state.isPinching = false;
         state.lastTouchDist = 0;
-      },
-
-      onResizeInspectorPointerDown(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        state.isResizing = true;
-        state.firstPointerPos = { x: e.clientX, y: e.clientY };
-        state.lastPointerPos = { x: e.clientX, y: e.clientY };
-        document.body.addEventListener("pointermove", state.onResizeInspectorPointerMove);
-        document.body.addEventListener("pointerup", state.onResizeInspectorPointerUp);
-      },
-      onResizeInspectorPointerMove(e) {
-        const dx = -(e.clientX - state.lastPointerPos.x);
-        state.lastPointerPos = { x: e.clientX, y: e.clientY };
-        state.set({
-          asideWidth: Math.max(minAsideWidth, Math.min(maxAsideWidth, state.asideWidth + dx)),
-        });
-      },
-      onResizeInspectorPointerUp() {
-        state.isResizing = false;
-        document.body.removeEventListener("pointermove", state.onResizeInspectorPointerMove);
-        document.body.removeEventListener("pointerup", state.onResizeInspectorPointerUp);
       },
 
       onSelect(id, opts) {
@@ -1246,8 +1221,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         expand(state.nodes, nodeId);
       },
       scrollInspectorNodeIntoView(nodeId) {
-        const inspectorParentEl = state.containerEl?.parentElement;
-        const inspectorNodeEl = inspectorParentEl?.querySelector(`aside [data-node-id="${nodeId}"]`);
+        const inspectorNodeEl = state.wrapperEl?.querySelector(`aside [data-node-id="${nodeId}"]`);
         inspectorNodeEl?.scrollIntoView({ block: "nearest" });
       },
       startDragSelection(e) {
@@ -1500,7 +1474,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         localStorage.removeItem(getFileSpecifierLocalStorageKey(file));
         // a draft-only file leaves the selector with it — see `deleteFile`, which does the same
         state.updateSavedFileSpecifiers(getLocalStorageFileSpecs());
-        
+
         state.wrapperEl?.focus(); // keep focus
         // the draft's nodes go onto the undo stack, so a discard is undoable — but NOT dirty with
         // it, or `useBeforeUnloadOrVisibilityChange` would autosave the draft straight back
@@ -1557,7 +1531,6 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           // - in prod we only restore playground files (maps, symbols)
           import.meta.env.PROD && !state.isPlaygroundFile(),
       });
-      isTouchDevice() && state.set({ isAsideCollapsed: true });
     }
   }, []); // load
 
@@ -1781,72 +1754,72 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     return node && node.type === "image" ? node : null;
   }, [state.selectedIds, state.nodes]);
 
-  const isMobile = isTouchDevice();
+  const allotment = useRef<AllotmentHandle>(null);
+  const hidden = props.meta.hidden === undefined ? (isTouchDevice() ? "inspector" : null) : props.meta.hidden;
+  const setPanes = (patch: Partial<Pick<MapEditUiMeta, "hidden" | "split">>) =>
+    uiStoreApi.setUiMeta(props.meta.id, (draft) => void Object.assign(draft as MapEditUiMeta, patch));
+
+  // allotment re-shows a pane at the sliver it was dragged shut from
+  useEffect(() => {
+    if (hidden === null) allotment.current?.reset();
+  }, [hidden]);
 
   return (
-    <div
-      ref={state.ref("wrapperEl")}
-      tabIndex={0}
-      className="overflow-auto size-full flex justify-center items-start outline-none relative"
-    >
-      {isMobile &&
-        (state.isAsideCollapsed ? (
-          <button
-            className="md:hidden left-4 z-50 p-2 bg-slate-800 text-white border border-slate-700 rounded-md shadow-lg"
-            onClick={() => state.set({ isAsideCollapsed: !state.isAsideCollapsed })}
-          >
-            {state.isAsideCollapsed ? <CaretRightIcon className="size-5" /> : <CaretLeftIcon className="size-5" />}
-          </button>
-        ) : (
+    <div ref={state.ref("wrapperEl")} tabIndex={0} className="size-full overflow-hidden outline-none relative">
+      {hidden !== null && (
+        <button
+          type="button"
+          title={`show ${hidden}`}
+          className={cn(
+            "absolute z-10 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-10 cursor-pointer",
+            // over the open pane, taking none of its width
+            "border border-slate-700 bg-slate-900/80 text-slate-400 opacity-70 hover:opacity-100 hover:text-slate-100",
+            hidden === "map" ? "left-0 rounded-r" : "right-0 rounded-l",
+          )}
+          onClick={() => setPanes({ hidden: null })}
+        >
+          {hidden === "map" ? <MapTrifoldIcon className="size-3.5" /> : <TreeViewIcon className="size-3.5" />}
+        </button>
+      )}
+      <Allotment
+        ref={allotment}
+        defaultSizes={props.meta.split}
+        snap
+        onDragEnd={(split) => setPanes({ split })}
+        onVisibleChange={(index, visible) => setPanes({ hidden: visible ? null : index === 0 ? "map" : "inspector" })}
+      >
+        <Allotment.Pane visible={hidden !== "map"} snap minSize={120}>
           <div
-            className="md:hidden absolute inset-0 bg-black/50 z-30 transition-opacity"
-            onClick={() => state.set({ isAsideCollapsed: true })}
-          />
-        ))}
-      <div
-        ref={state.ref("containerEl")}
-        className={cn(
-          "w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing touch-none",
-          theme === "dark" ? "bg-gray-700/30" : "bg-white",
-        )}
-        onPointerDown={state.onPanPointerDown}
-        onPointerMove={state.onPanPointerMove}
-        onPointerUp={state.onPanPointerUp}
-      >
-        <MapEditSvg root={state} uiId={props.meta.id} />
-      </div>
+            ref={state.ref("containerEl")}
+            className={cn(
+              "w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing touch-none",
+              theme === "dark" ? "bg-gray-700/30" : "bg-white",
+            )}
+            onPointerDown={state.onPanPointerDown}
+            onPointerMove={state.onPanPointerMove}
+            onPointerUp={state.onPanPointerUp}
+          >
+            <MapEditSvg root={state} uiId={props.meta.id} />
+          </div>
+        </Allotment.Pane>
+        <Allotment.Pane visible={hidden !== "inspector"} snap minSize={minAsideWidth} preferredSize={defaultAsideWidth}>
+          <aside className="size-full flex flex-col bg-background">
+            <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center min-h-10 pl-3 pr-2 py-2 bg-slate-900/20">
+              <MainMenu state={state} />
+              <FileMenu state={state} />
+            </div>
 
-      <aside
-        className={cn(
-          "relative h-full border-r border-slate-800 flex flex-col",
-          ...(isMobile
-            ? [
-                "md:relative md:translate-x-0",
-                "max-md:absolute max-md:top-0 max-md:left-0 max-md:z-40 max-md:shadow-2xl",
-                "transition-transform duration-300",
-                state.isAsideCollapsed && "max-md:-translate-x-full",
-                "bg-background",
-              ]
-            : []),
-        )}
-        style={{ width: state.asideWidth, minWidth: state.asideWidth }}
-      >
-        <div className="overflow-auto grid grid-cols-[1fr_auto] gap-1 items-center min-h-10 pl-3 pr-2 py-2 bg-slate-900/20">
-          <MainMenu state={state} />
-          <FileMenu state={state} />
-        </div>
+            {/* inspector must scroll */}
+            <div className="overflow-auto scrollbar-thin pl-1 pb-8">
+              {state.nodes.map((node) => (
+                <InspectorNode key={node.id} node={node} level={0} root={state} />
+              ))}
+            </div>
 
-        {/* inspector must scroll */}
-        <div className="overflow-auto scrollbar-thin pl-1 pb-8">
-          {state.nodes.map((node) => (
-            <InspectorNode key={node.id} node={node} level={0} root={state} />
-          ))}
-        </div>
-
-        {selectedImageNode && <SelectedImageNodeUI node={selectedImageNode} state={state} />}
-
-        <InspectorResizer state={state} />
-      </aside>
+            {selectedImageNode && <SelectedImageNodeUI node={selectedImageNode} state={state} />}
+          </aside>
+        </Allotment.Pane>
+      </Allotment>
 
       <ImagePickerModal
         open={state.pickImageForId !== null}
@@ -1936,10 +1909,6 @@ export type State = {
   selectionBox: SelectionBox | null;
   selectionBoundsOffset: { x: number; y: number };
   editingId: string | null;
-  asideWidth: number;
-  lastAsideWidth: number;
-  isResizing: boolean;
-  isAsideCollapsed: boolean;
   nodes: MapNode[];
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
@@ -2010,9 +1979,6 @@ export type State = {
   onTouchStart: (e: TouchEvent) => void;
   onTouchMove: (e: TouchEvent) => void;
   onTouchEnd: () => void;
-  onResizeInspectorPointerDown: (e: PointerEvent<HTMLDivElement>) => void;
-  onResizeInspectorPointerMove: (e: globalThis.PointerEvent) => void;
-  onResizeInspectorPointerUp: () => void;
   onSelect: (id: string, opts?: { shiftKey?: boolean; metaKey?: boolean }) => void;
   onToggleVisibility: (id: string) => void;
   add: (type: MapNodeType, opts?: { selectionAsParent?: boolean; rect?: SelectionBox }) => void;
@@ -2118,23 +2084,9 @@ function SelectedImageNodeUI({ node, state }: { node: ImageMapNode; state: UseSt
   );
 }
 
-function InspectorResizer({ state }: { state: UseStateRef<State> }) {
-  return (
-    <div
-      className={cn(
-        "z-2 w-1 absolute left-0 top-0 h-full cursor-ew-resize hover:bg-blue-500/50 transition-colors touch-none",
-        "bg-blue-500/50",
-        "max-md:hidden",
-      )}
-      onPointerDown={state.onResizeInspectorPointerDown}
-    />
-  );
-}
-
 const emptyNodes = [] as MapNode[];
 
 const minAsideWidth = 100;
-const maxAsideWidth = 300;
 const defaultAsideWidth = 200;
 const zoomDelta = 0.04;
 const minZoomScale = 0.25;

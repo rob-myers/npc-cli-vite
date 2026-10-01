@@ -15,6 +15,7 @@
     "@npc-cli/ui__jsh": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
+    "allotment": "catalog:",
     "@tanstack/react-query": "catalog:",
     "debounce": "catalog:",
     "motion": "catalog:",
