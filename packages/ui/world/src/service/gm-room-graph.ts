@@ -133,7 +133,7 @@ export class GmRoomGraph extends BaseGraph<Graph.GmRoomGraphNode, Graph.GmRoomGr
 }
 
 /**
- * Resolve tag `rel=sees:{name}` against tag `name={name}`, over this geomorph's doors ⋃ windows,
+ * Resolve tag `rel=sees:{name}` — or several, `rel=sees:{name},{name}` — against tag `name={name}`, over this geomorph's doors ⋃ windows,
  * i.e. either end can be a door or a window. `service/geomorph` numbers each name per symbol file
  * and per copy of that symbol, so a name means one thing only.
  *
@@ -159,19 +159,20 @@ function decorateLineOfSight(graph: GmRoomGraph, gm: Geomorph.LayoutInstance, gm
   };
 
   for (const { meta, key } of connectors) {
-    // `meta.rel` is `{relation}:{name}` — only `sees` for now
-    const name = typeof meta.rel === "string" && meta.rel.startsWith("sees:") ? meta.rel.slice(5) : null;
-    if (name === null) continue;
-    // exclude self i.e. `name=x sees=x`
-    const dsts = (byName.get(name) ?? []).filter((dst) => dst !== key);
-    if (dsts.length === 0) {
-      warn(`${gm.key}: rel=sees:${name}: no connector has tag name=${name}`);
-      continue;
-    }
-    // seeing is mutual, so only one end need say so
-    for (const dst of dsts) {
-      see(key, dst);
-      see(dst, key);
+    // `meta.rel` is `{relation}:{name},{name}…` — only `sees` for now
+    if (typeof meta.rel !== "string" || meta.rel.startsWith("sees:") === false) continue;
+    for (const name of meta.rel.slice(5).split(",")) {
+      // exclude self i.e. `name=x sees=x`
+      const dsts = (byName.get(name) ?? []).filter((dst) => dst !== key);
+      if (dsts.length === 0) {
+        warn(`${gm.key}: rel=sees:${name}: no connector has tag name=${name}`);
+        continue;
+      }
+      // seeing is mutual, so only one end need say so
+      for (const dst of dsts) {
+        see(key, dst);
+        see(dst, key);
+      }
     }
   }
 }
