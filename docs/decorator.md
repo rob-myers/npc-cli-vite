@@ -59,7 +59,8 @@ shows behind its graphs — so it is where things really are:
   their geomorph. Memoised on `w.nav`;
 - **doors** from `w.door.byKey`, in world space, so they are live: amber closed, green dashed open,
   red locked;
-- room labels from the labelled decor points.
+- room labels from the labelled decor points, each with its `grKey` beneath; a room without one shows
+  its `grKey` at its centre, and every door its `gdKey`.
 
 `meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m, on by default) and `static` — the map's
 own decor, faint, for context (off by default). The sidebar's width and whether it is out (not by default)
