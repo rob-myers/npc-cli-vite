@@ -9,7 +9,7 @@ in the 3D World from the shell, at picked points. It is configured in the 3D Wor
 neither the panel nor a terminal.
 
 The panel is two panes, split by `allotment`: the map, and the setting's lore (`docs/lore.md`).
-Either drags shut (`meta.hidden`, by default the lore), leaving its icon at that edge to bring it
+Either drags shut (`meta.hidden`, by default the lore), leaving its icon over that edge to bring it
 back; `meta.split` keeps their sizes.
 
 | file | what it holds |

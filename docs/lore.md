@@ -36,7 +36,9 @@ An entry's grammar is merged from, later winning rule by rule:
 
 ## The pane: `lore/LorePane.tsx`
 
-The Decorator's second pane (`docs/decorator.md`), lazy, and mounted only once shown. Entries by
+The Decorator's second pane (`docs/decorator.md`), lazy, and mounted only once shown. Wide enough
+(`wideWidth`, at the text's zoom) its three columns sit side by side and resize (`meta.loreSplit`);
+narrower, they stack. The text zoom buttons (`meta.loreZoom`) float over its top right corner. Entries by
 kind; a card to edit (DEV only; an edit saves itself `autosaveMs` after the last keystroke); and a preview sampling one rule, each line
 sayable by an npc via `w.speech.say`. The grammar is JSON, compact (a short rule on one line) and
 coloured by `GrammarEditor`: a layer beneath a textarea of transparent text, `#tags#` and

@@ -39,15 +39,15 @@ export default function Decorator({ meta }: { meta: DecoratorUiMeta }) {
   }, [hidden]);
 
   return (
-    // the gutter keeps a shut pane's icon off the open one
-    <div className={cn("size-full relative bg-zinc-950", hidden === "map" && "pl-5", hidden === "lore" && "pr-5")}>
+    <div className="size-full relative bg-zinc-950">
       {hidden !== null && (
         <button
           type="button"
           title={`show ${hidden}`}
           className={cn(
             "absolute z-10 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-10 cursor-pointer",
-            "border border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-100",
+            // over the open pane, taking none of its width
+            "border border-zinc-700 bg-zinc-900/80 text-zinc-400 opacity-70 hover:opacity-100 hover:text-zinc-100",
             hidden === "map" ? "left-0 rounded-r" : "right-0 rounded-l",
           )}
           onClick={() => setPanes({ hidden: null })}
