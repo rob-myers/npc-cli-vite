@@ -19,6 +19,8 @@ export const DecoratorUiMetaSchema = z.object({
   loreZoom: z.number().default(1),
   /** The lore pane's three columns' sizes, when wide enough to have them */
   loreSplit: z.array(z.number()).optional(),
+  /** The sections of the lore card folded away */
+  loreFolded: z.array(z.string()).default([]),
   /** The lore entry shown */
   entryKey: z.string().optional(),
   /** Layers of the map */

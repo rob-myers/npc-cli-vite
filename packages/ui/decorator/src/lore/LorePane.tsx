@@ -4,6 +4,8 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import {
   ArrowsClockwiseIcon,
+  CaretDownIcon,
+  CaretRightIcon,
   ChatCircleTextIcon,
   FloppyDiskIcon,
   MagnifyingGlassMinusIcon,
@@ -15,6 +17,7 @@ import {
 import { Allotment } from "allotment";
 import stringify from "json-stringify-pretty-compact";
 import { useContext, useEffect, useRef, useState } from "react";
+import { Picker } from "../Picker";
 import type { DecoratorUiMeta } from "../schema";
 import { GrammarEditor } from "./GrammarEditor";
 import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
@@ -159,6 +162,12 @@ export default function LorePane(props: Props) {
         npc.setSkin(skin);
         w.view.forceUpdate();
       },
+      toggleFold(name) {
+        uiStoreApi.setUiMeta(meta.id, (draft) => {
+          const d = draft as DecoratorUiMeta;
+          d.loreFolded = d.loreFolded.includes(name) ? d.loreFolded.filter((x) => x !== name) : [...d.loreFolded, name];
+        });
+      },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           const d = draft as DecoratorUiMeta;
@@ -230,6 +239,10 @@ export default function LorePane(props: Props) {
   const samples =
     rule === undefined ? [] : sampleSeeds.map((i) => expand(grammar, rule, seededRng(state.seed * 1000 + i)));
 
+  const hereKeys = draft === null || w === undefined ? undefined : draft.maps[w.mapKey];
+  const keyCount = (hereKeys?.rooms.length ?? 0) + (hereKeys?.doors.length ?? 0) + (draft?.links.length ?? 0);
+  const ruleCount = Object.keys(draft?.grammar ?? {}).length;
+
   const entriesCol = (
     <div className="p-2 flex flex-col gap-2">
       {loreKinds.map((kind) => {
@@ -258,15 +271,7 @@ export default function LorePane(props: Props) {
       })}
       {editable && (
         <div className="flex gap-1 mt-auto">
-          <select
-            className={inputClass}
-            value={state.newKind}
-            onChange={(e) => state.set({ newKind: e.currentTarget.value as LoreKind })}
-          >
-            {loreKinds.map((kind) => (
-              <option key={kind}>{kind}</option>
-            ))}
-          </select>
+          <Picker value={state.newKind} options={loreKinds} onChange={(newKind) => state.set({ newKind })} />
           <input
             className={cn(inputClass, "min-w-0 flex-1")}
             placeholder="new-slug"
@@ -285,7 +290,7 @@ export default function LorePane(props: Props) {
         {state.error ?? (Object.keys(entries).length === 0 ? "no lore yet" : "choose an entry")}
       </div>
     ) : (
-      <div className="p-2 flex flex-col gap-2">
+      <div className="p-2 flex flex-col gap-1">
         <div className="flex items-center gap-1">
           <span className="text-zinc-500 mr-auto">
             {draft.key}
@@ -303,28 +308,26 @@ export default function LorePane(props: Props) {
             </>
           )}
         </div>
-        <Field label="title">
+        <Section name="about" hint={draft.title} folded={meta.loreFolded} onToggle={state.toggleFold}>
           <input
-            className={inputClass}
+            className={cn(inputClass, "text-zinc-100")}
             readOnly={!editable}
+            placeholder="title"
             value={draft.title}
             onChange={(e) => state.patch({ title: e.currentTarget.value })}
           />
-        </Field>
-        <Field label="summary">
           <textarea
             // grows with its text; two rows where `field-sizing` is unsupported
             className={cn(inputClass, "field-sizing-content resize-none")}
             rows={2}
             readOnly={!editable}
+            placeholder="summary"
             value={draft.summary}
             onChange={(e) => state.patch({ summary: e.currentTarget.value })}
           />
-        </Field>
-        <Field label="facts">
           {Object.entries(draft.facts).map(([key, value], i) => (
             // keyed by position: a key being typed must not remount its row
-            <div key={i} className="flex gap-1">
+            <div key={i} className="flex items-center gap-1">
               <input
                 className={cn(inputClass, "w-24")}
                 readOnly={!editable}
@@ -338,77 +341,63 @@ export default function LorePane(props: Props) {
                 onChange={(e) => state.patch({ facts: withFact(draft.facts, i, key, e.currentTarget.value) })}
               />
               {editable && (
-                <IconButton
+                <button
+                  type="button"
                   title="remove fact"
-                  icon={XIcon}
+                  className={bareButtonClass}
                   onClick={() => state.patch({ facts: withFact(draft.facts, i) })}
-                />
+                >
+                  <XIcon />
+                </button>
               )}
             </div>
           ))}
           {editable && (
-            <IconButton
-              title="add fact"
-              icon={PlusIcon}
+            <button
+              type="button"
+              className={cn(bareButtonClass, "self-start flex items-center gap-1")}
               onClick={() => state.patch({ facts: { ...draft.facts, [`fact${Object.keys(draft.facts).length}`]: "" } })}
-            />
+            >
+              <PlusIcon /> fact
+            </button>
           )}
-        </Field>
-        {w !== undefined && (
-          <WorldFields w={w} draft={draft} onPatch={state.patch} onNpcKey={state.setNpcKey} onSkin={state.setSkin} />
-        )}
-        <Field label="links">
-          <div className="flex flex-wrap gap-1">
-            {draft.links.map((key) => (
-              <span key={key} className="flex items-center gap-1 px-1 rounded border border-zinc-800">
-                <button type="button" className="cursor-pointer hover:text-zinc-100" onClick={() => state.select(key)}>
-                  {key}
-                </button>
-                {editable && (
-                  <button
-                    type="button"
-                    title="unlink"
-                    className="cursor-pointer text-zinc-500 hover:text-zinc-100"
-                    onClick={() => state.patch({ links: draft.links.filter((k) => k !== key) })}
-                  >
-                    <XIcon />
-                  </button>
-                )}
-              </span>
-            ))}
-            {editable && (
-              <select
-                className={inputClass}
-                value=""
-                onChange={(e) => state.patch({ links: [...draft.links, e.currentTarget.value] })}
-              >
-                <option value="">+ link</option>
-                {Object.keys(entries)
-                  .filter((key) => key !== draft.key && !draft.links.includes(key))
-                  .map((key) => (
-                    <option key={key}>{key}</option>
-                  ))}
-              </select>
-            )}
-          </div>
-        </Field>
-        <Field label="backstory">
+        </Section>
+        <Section
+          name="world"
+          hint={[draft.npcKey, keyCount > 0 && `${keyCount} key${keyCount === 1 ? "" : "s"}`]
+            .filter(Boolean)
+            .join(" · ")}
+          folded={meta.loreFolded}
+          onToggle={state.toggleFold}
+        >
+          {w !== undefined && draft.kind === "character" && (
+            <NpcFields w={w} draft={draft} onNpcKey={state.setNpcKey} onSkin={state.setSkin} />
+          )}
+          <KeyBox w={w} draft={draft} entries={entries} onPatch={state.patch} onSelect={state.select} />
+        </Section>
+        <Section name="story" hint={draft.backstory} folded={meta.loreFolded} onToggle={state.toggleFold}>
           <textarea
             className={cn(inputClass, "h-40 resize-y leading-relaxed")}
             readOnly={!editable}
+            placeholder="backstory"
             value={draft.backstory}
             onChange={(e) => state.patch({ backstory: e.currentTarget.value })}
           />
-        </Field>
-        <Field label="voice">
           <textarea
             className={cn(inputClass, "h-12 resize-y")}
             readOnly={!editable}
+            placeholder="voice: how they speak"
             value={draft.voice}
             onChange={(e) => state.patch({ voice: e.currentTarget.value })}
           />
-        </Field>
-        <Field label="grammar">
+        </Section>
+        <Section
+          name="grammar"
+          hint={state.grammarError ?? `${ruleCount} rule${ruleCount === 1 ? "" : "s"}`}
+          alert={state.grammarError !== null}
+          folded={meta.loreFolded}
+          onToggle={state.toggleFold}
+        >
           <GrammarEditor
             value={state.grammarText}
             invalid={state.grammarError !== null}
@@ -416,52 +405,47 @@ export default function LorePane(props: Props) {
             onChange={state.setGrammarText}
           />
           {state.grammarError !== null && <div className="text-red-400">{state.grammarError}</div>}
-        </Field>
+        </Section>
         {state.error !== null && <div className="text-red-400 break-all">{state.error}</div>}
       </div>
     );
   const previewCol = draft !== null && (
-    <div className="p-2 flex flex-col gap-2">
-      <div className="flex items-center gap-1">
-        <select
-          className={cn(inputClass, "flex-1 min-w-0")}
-          value={rule ?? ""}
-          onChange={(e) => state.set({ rule: e.currentTarget.value })}
-        >
-          {rules.map((key) => (
-            <option key={key}>{key}</option>
-          ))}
-        </select>
-        <IconButton title="resample" icon={ArrowsClockwiseIcon} onClick={() => state.set({ seed: state.seed + 1 })} />
-      </div>
-      {w !== undefined && (
-        <label className="flex items-center gap-1 text-zinc-500">
-          says
-          <select
-            className={cn(inputClass, "flex-1 min-w-0")}
-            value={npcKey ?? ""}
-            onChange={(e) => state.set({ npcKey: e.currentTarget.value })}
-          >
-            {npcKey === null && <option value="">no npc</option>}
-            {npcKeys.map((key) => (
-              <option key={key}>{key}</option>
-            ))}
-          </select>
-        </label>
-      )}
-      {samples.map((line, i) => (
-        <div key={i} className="flex items-start gap-1">
-          <span className="flex-1 leading-relaxed">{line}</span>
-          {w !== undefined && npcKey !== null && (
-            <IconButton
-              title={`${npcKey} says it`}
-              icon={ChatCircleTextIcon}
-              onClick={() => w.speech.say(npcKey, line)}
+    <div className="p-2">
+      <Section name="say" hint={rule ?? ""} folded={meta.loreFolded} onToggle={state.toggleFold}>
+        <div className="flex items-center gap-1 text-zinc-500">
+          {w !== undefined && (
+            <Picker
+              value={npcKey ?? ""}
+              options={npcKey === null ? [{ value: "", label: "no npc" }, ...npcKeys] : npcKeys}
+              onChange={(npcKey) => state.set({ npcKey })}
             />
           )}
+          {w !== undefined && "says"}
+          <Picker value={rule ?? ""} options={rules} onChange={(rule) => state.set({ rule })} />
+          <IconButton title="resample" icon={ArrowsClockwiseIcon} onClick={() => state.set({ seed: state.seed + 1 })} />
         </div>
-      ))}
-      {rule === undefined && <div className="text-zinc-500">no grammar rules yet</div>}
+        {samples.length > 0 && (
+          // dragged shorter or taller by its corner, as the backstory is
+          <div className="h-40 min-h-8 resize-y overflow-hidden rounded border border-zinc-800">
+            {/* fades out at the foot, so more below is seen to be there; padded, so the last line clears it */}
+            <div className="size-full overflow-auto scrollbar-thin flex flex-col gap-2 p-1 pb-6" style={fadeFootStyle}>
+              {samples.map((line, i) => (
+                <div key={i} className="flex items-start gap-1">
+                  <span className="flex-1 leading-relaxed">{line}</span>
+                  {w !== undefined && npcKey !== null && (
+                    <IconButton
+                      title={`${npcKey} says it`}
+                      icon={ChatCircleTextIcon}
+                      onClick={() => w.speech.say(npcKey, line)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {rule === undefined && <div className="text-zinc-500">no grammar rules yet</div>}
+      </Section>
     </div>
   );
 
@@ -554,68 +538,26 @@ function withFact(facts: Record<string, string>, index: number, key?: string, va
   );
 }
 
-/** What an entry has in the World: a character's npc, skin and doors, and anyone's rooms on this map */
-function WorldFields(props: {
+/** A character's npc and skin in the World */
+function NpcFields(props: {
   w: WorldState;
   draft: LoreEntry;
-  onPatch(partial: Partial<LoreEntry>): void;
   onNpcKey(npcKey: string | undefined): void;
   onSkin(skin: string | undefined): void;
 }) {
-  const { w, draft, onPatch } = props;
-  const here = draft.maps[w.mapKey] ?? { rooms: [], doors: [] };
-  const patchHere = (partial: Partial<typeof here>) =>
-    onPatch({ maps: { ...draft.maps, [w.mapKey]: { ...here, ...partial } } });
-
-  const roomLabels = new Map(
-    Object.values(w.decor?.byKey ?? {})
-      .filter(helper.isRoomLabel)
-      .map((d) => [d.meta.grKey as string, d.meta.label]),
-  );
-  const rooms = w.gms.flatMap((gm, gmId) =>
-    gm.rooms.map((_, roomId) => {
-      const grKey = helper.getGmRoomKey(gmId, roomId);
-      return { key: grKey as string, label: roomLabels.has(grKey) ? `${grKey} ${roomLabels.get(grKey)}` : grKey };
-    }),
-  );
-  // their rooms' doors first: those are the ones they would hold keys to
-  const near = new Set(here.rooms.flatMap((grKey) => roomDoorKeys(w, grKey)));
-  const doors = Object.keys(w.door?.byKey ?? {})
-    .sort((a, b) => Number(near.has(b)) - Number(near.has(a)))
-    .map((key) => ({ key, label: near.has(key) ? `${key} (of their rooms)` : key }));
-  const isCharacter = draft.kind === "character";
-
+  const { w, draft } = props;
   return (
-    <>
-      {isCharacter && (
-        <div className="flex gap-2">
-          <Field label="npc">
-            <NpcKeyInput key={draft.key} value={draft.npcKey ?? ""} onCommit={(v) => props.onNpcKey(v || undefined)} />
-          </Field>
-          <Field label="skin">
-            <select
-              className={inputClass}
-              disabled={!editable}
-              value={draft.skin ?? ""}
-              onChange={(e) => props.onSkin(e.currentTarget.value || undefined)}
-            >
-              <option value="">default</option>
-              {(w.npc?.skin.entries ?? []).map(({ key }) => (
-                <option key={key}>{key}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
-      )}
-      <Field label={`rooms on ${w.mapKey}`}>
-        <Chips items={here.rooms} options={rooms} add="+ room" onChange={(rooms) => patchHere({ rooms })} />
-      </Field>
-      {isCharacter && (
-        <Field label={`door keys on ${w.mapKey}`}>
-          <Chips items={here.doors} options={doors} add="+ door" onChange={(doors) => patchHere({ doors })} />
-        </Field>
-      )}
-    </>
+    <div className="flex items-center gap-1 text-zinc-500">
+      npc
+      <NpcKeyInput key={draft.key} value={draft.npcKey ?? ""} onCommit={(v) => props.onNpcKey(v || undefined)} />
+      skin
+      <Picker
+        value={draft.skin ?? ""}
+        options={[{ value: "", label: "default" }, ...(w.npc?.skin.entries ?? []).map(({ key }) => key)]}
+        disabled={!editable}
+        onChange={(skin) => props.onSkin(skin || undefined)}
+      />
+    </div>
   );
 }
 
@@ -626,7 +568,7 @@ function NpcKeyInput({ value, onCommit }: { value: string; onCommit(value: strin
   const commit = () => text.trim() !== value && onCommit(text.trim());
   return (
     <input
-      className={cn(inputClass, "w-28")}
+      className={cn(inputClass, "w-24 text-zinc-300")}
       readOnly={!editable}
       placeholder="npcKey"
       value={text}
@@ -641,68 +583,169 @@ function hasSkin(w: WorldState, skin: string) {
   return w.npc?.getSkinIndexBySkinKey(skin) !== -1;
 }
 
-function roomDoorKeys(w: WorldState, grKey: string): string[] {
-  const node = w.gmRoomGraph?.getNode(grKey as Geomorph.GmRoomKey) ?? null;
-  return node === null ? [] : w.gmRoomGraph.getSuccs(node).flatMap((succ) => (succ.type === "door" ? succ.gdKey : []));
+function hasRoom(w: WorldState, key: string) {
+  const [, gmId, roomId] = key.match(/^g(\d+)r(\d+)$/) ?? [];
+  return gmId !== undefined && w.gms[Number(gmId)]?.rooms[Number(roomId)] !== undefined;
 }
 
-/** Keys as removable chips, and a select to add one of `options` */
-function Chips(props: {
-  items: string[];
-  options: { key: string; label: string }[];
-  add: string;
-  onChange(items: string[]): void;
+/**
+ * The keys an entry holds, as badges, and ONE box to add to them: a room's or a door's on this map,
+ * or another entry's — each becomes a badge once it is found to exist, and what is not stays typed
+ */
+function KeyBox(props: {
+  w: WorldState | undefined;
+  draft: LoreEntry;
+  entries: Record<string, LoreEntry>;
+  onPatch(partial: Partial<LoreEntry>): void;
+  onSelect(key: string): void;
 }) {
-  const labels = new Map(props.options.map((o) => [o.key, o.label]));
+  const { w, draft, entries } = props;
+  const [text, setText] = useState("");
+  const [invalid, setInvalid] = useState(false);
+  const here = (w !== undefined && draft.maps[w.mapKey]) || { rooms: [], doors: [] };
+  const isCharacter = draft.kind === "character";
+  const held = { rooms: here.rooms, doors: here.doors, links: draft.links };
+
+  const kindOf = (key: string): null | keyof typeof held => {
+    if (key in entries) return key === draft.key ? null : "links";
+    if (w === undefined) return null;
+    if (isCharacter && w.door?.byKey[key as Geomorph.GmDoorKey] !== undefined) return "doors";
+    return hasRoom(w, key) ? "rooms" : null;
+  };
+  const apply = ({ rooms, doors, links }: typeof held) =>
+    props.onPatch({
+      links,
+      // per map, and so only with one
+      ...(w !== undefined && { maps: { ...draft.maps, [w.mapKey]: { rooms, doors } } }),
+    });
+  const commit = (typed: string) => {
+    const next = { rooms: [...held.rooms], doors: [...held.doors], links: [...held.links] };
+    const unknown: string[] = [];
+    let added = false;
+    for (const key of typed.split(/[\s,]+/).filter(Boolean)) {
+      const kind = kindOf(key);
+      if (kind === null) unknown.push(key);
+      else if (next[kind].includes(key) === false) {
+        next[kind].push(key);
+        added = true;
+      }
+    }
+    if (added) apply(next);
+    setText(unknown.join(" "));
+    setInvalid(unknown.length > 0);
+  };
+  const remove = (kind: keyof typeof held, key: string) =>
+    apply({ ...held, [kind]: held[kind].filter((k) => k !== key) });
+
+  const roomLabels = new Map(
+    Object.values(w?.decor?.byKey ?? {})
+      .filter(helper.isRoomLabel)
+      .map((d) => [d.meta.grKey as string, d.meta.label]),
+  );
+  const badges = [
+    ...held.rooms.map((key) => ({
+      key,
+      kind: "rooms" as const,
+      known: w === undefined || hasRoom(w, key),
+      title: roomLabels.get(key) ?? "room",
+    })),
+    ...held.doors.map((key) => ({
+      key,
+      kind: "doors" as const,
+      known: w === undefined || w.door?.byKey[key as Geomorph.GmDoorKey] !== undefined,
+      title: "a door they hold the key to",
+    })),
+    ...held.links.map((key) => ({
+      key,
+      kind: "links" as const,
+      known: key in entries,
+      title: entries[key]?.title ?? "",
+    })),
+  ];
+
   return (
-    <div className="flex flex-wrap gap-1">
-      {props.items.map((key) => (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-1 p-1 rounded border bg-zinc-900",
+        invalid ? "border-red-500" : "border-zinc-800 focus-within:border-zinc-600",
+      )}
+    >
+      {badges.map(({ key, kind, known, title }) => (
         <span
-          key={key}
-          title={labels.get(key) ?? "not on this map"}
-          className={cn(
-            "flex items-center gap-1 px-1 rounded border border-zinc-800",
-            !labels.has(key) && "text-red-400",
-          )}
+          key={`${kind} ${key}`}
+          title={known ? title : kind === "links" ? "no such entry" : "not on this map"}
+          className={cn("flex items-center gap-1 px-1 rounded border border-zinc-700", !known && "text-red-400")}
         >
-          {key}
+          {kind === "links" ? (
+            <button type="button" className="cursor-pointer hover:text-zinc-100" onClick={() => props.onSelect(key)}>
+              {key}
+            </button>
+          ) : (
+            key
+          )}
           {editable && (
-            <button
-              type="button"
-              title="remove"
-              className="cursor-pointer text-zinc-500 hover:text-zinc-100"
-              onClick={() => props.onChange(props.items.filter((k) => k !== key))}
-            >
+            <button type="button" title="remove" className={bareButtonClass} onClick={() => remove(kind, key)}>
               <XIcon />
             </button>
           )}
         </span>
       ))}
       {editable && (
-        <select
-          className={inputClass}
-          value=""
-          onChange={(e) => props.onChange([...props.items, e.currentTarget.value])}
-        >
-          <option value="">{props.add}</option>
-          {props.options
-            .filter((o) => !props.items.includes(o.key))
-            .map((o) => (
-              <option key={o.key} value={o.key}>
-                {o.label}
-              </option>
-            ))}
-        </select>
+        <input
+          className="flex-1 min-w-24 bg-transparent outline-none"
+          placeholder={badges.length === 0 ? keyBoxHint(w !== undefined, isCharacter) : ""}
+          value={text}
+          onChange={(e) => {
+            const typed = e.currentTarget.value;
+            // a separator ends a key, as does a paste of several
+            if (/[\s,]/.test(typed)) return commit(typed);
+            setText(typed);
+            setInvalid(false);
+          }}
+          onBlur={() => commit(text)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") return commit(text);
+            const last = badges[badges.length - 1];
+            if (e.key === "Backspace" && text === "" && last !== undefined) remove(last.kind, last.key);
+          }}
+        />
       )}
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** What the box takes, by what there is to name */
+function keyBoxHint(hasWorld: boolean, isCharacter: boolean) {
+  const world = hasWorld ? (isCharacter ? "g0r1 g0d29 " : "g0r1 ") : "";
+  return `${world}place/dock`;
+}
+
+/** A group of the card's fields, under a header which folds it away — `hint` is what a folded one says */
+function Section(props: {
+  name: SectionName;
+  hint: string;
+  /** Shown even folded, e.g. a grammar which does not parse */
+  alert?: boolean;
+  folded: string[];
+  onToggle(name: SectionName): void;
+  children: React.ReactNode;
+}) {
+  const folded = props.folded.includes(props.name);
+  const Caret = folded ? CaretRightIcon : CaretDownIcon;
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-zinc-500 text-[10px] uppercase">{label}</span>
-      {children}
+      <button
+        type="button"
+        className="flex items-center gap-1 min-w-0 text-left cursor-pointer text-zinc-500 hover:text-zinc-300"
+        onClick={() => props.onToggle(props.name)}
+      >
+        <Caret className="size-3 shrink-0" />
+        <span className="text-[10px] uppercase">{props.name}</span>
+        {(folded || props.alert === true) && (
+          <span className={cn("truncate", props.alert === true ? "text-red-400" : "text-zinc-400")}>{props.hint}</span>
+        )}
+      </button>
+      {folded === false && props.children}
     </div>
   );
 }
@@ -729,6 +772,8 @@ function IconButton(props: {
 /** Files are only writable through the DEV server */
 const editable = import.meta.env.DEV;
 const inputClass = "px-1 py-0.5 rounded border border-zinc-800 bg-zinc-900 outline-none focus:border-zinc-600";
+const fadeFootStyle = { maskImage: "linear-gradient(to bottom, black calc(100% - 1.5rem), transparent)" };
+const bareButtonClass = "shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100";
 /** After the last edit, how long until it saves itself */
 const autosaveMs = 800;
 /** A short rule stays on one line */
@@ -741,6 +786,8 @@ const minZoom = 0.7;
 const maxZoom = 2;
 const sampleSeeds = [0, 1, 2, 3, 4, 5, 6, 7];
 const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {}, facts: {}, links: [], grammar: {} };
+
+type SectionName = "about" | "world" | "story" | "grammar" | "say";
 
 type Props = {
   meta: DecoratorUiMeta;
@@ -774,6 +821,8 @@ type State = {
   /** Replaces the draft by what is on disk */
   show(key: string | undefined): void;
   select(key: string): void;
+  /** Folds a section of the card, or unfolds it — kept in `meta.loreFolded` */
+  toggleFold(name: SectionName): void;
   zoomBy(delta: number): void;
   /** Their npc in the World, if there, is respawned under the new key */
   setNpcKey(npcKey: string | undefined): Promise<void>;

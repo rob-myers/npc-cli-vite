@@ -6,6 +6,7 @@
   "backstory": "Rob has no ship and no fixed trade. He takes low passage to wherever the next berth is going, and picks up work at the far end: a watch to stand, a door to open, something to carry and not ask about.\n\nWaking from a low berth is never clean. He is slow for the first hour and remembers the last port better than the last ship. He has learned to read a deck quickly: who is in charge, which doors are locked, where the stunners are kept.\n\nHe can sometimes hear what the person nearest him is about to do. He has never told anyone, and he does not rely on it.\n\nDeliberately thin: enough to drop him into any scenario, on either side of it.",
   "voice": "Brief, wry, a little groggy. Talks to himself when alone. Polite to robots. Understates danger.",
   "npcKey": "rob",
+  "skin": "medic-0",
   "maps": {"301-only": {"rooms": ["g0r1"], "doors": ["g0d29", "g0d30"]}},
   "facts": {"trade": "low passenger"},
   "links": [],

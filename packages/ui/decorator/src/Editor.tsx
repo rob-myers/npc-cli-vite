@@ -30,6 +30,7 @@ import { DecorHistory, mergeKey } from "./history";
 import { LoreLayer } from "./lore/LoreLayer";
 import type { LoreEntry } from "./lore/lore.schema";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { Picker } from "./Picker";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
 
 /** The map pane, once there is a World */
@@ -291,18 +292,14 @@ export function Editor(props: {
           />
         ))}
         {(state.tool === "point" || state.tool === "quad") && (
-          <select
-            className="px-1 py-0.5 rounded border border-zinc-800 bg-zinc-950 outline-none"
+          <Picker
             value={state.img ?? ""}
-            onChange={(e) => state.set({ img: e.currentTarget.value === "" ? undefined : e.currentTarget.value })}
-          >
-            {state.tool === "point" && <option value="">no image</option>}
-            {Object.keys(w.sheets?.decor ?? {}).map((img) => (
-              <option key={img} value={img}>
-                {img}
-              </option>
-            ))}
-          </select>
+            options={[
+              ...(state.tool === "point" ? [{ value: "", label: "no image" }] : []),
+              ...Object.keys(w.sheets?.decor ?? {}),
+            ]}
+            onChange={(img) => state.set({ img: img === "" ? undefined : img })}
+          />
         )}
         {state.heightShown() && (
           <label className="flex items-center gap-1" title="height off the floor (m)">

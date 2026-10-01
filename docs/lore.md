@@ -40,7 +40,17 @@ The Decorator's second pane (`docs/decorator.md`), lazy, and mounted only once s
 (`wideWidth`, at the text's zoom) its three columns sit side by side and resize (`meta.loreSplit`);
 narrower, they stack. The text zoom buttons (`meta.loreZoom`) float over its top right corner. Entries by
 kind; a card to edit (DEV only; an edit saves itself `autosaveMs` after the last keystroke); and a preview sampling one rule, each line
-sayable by an npc via `w.speech.say`. The grammar is JSON, compact (a short rule on one line) and
+sayable by an npc via `w.speech.say`.
+
+The card is four sections, each folding under its header (`meta.loreFolded`) as the preview's
+**say** does, which then says what
+it holds: **about** (title, summary, facts), **world** (npc, skin, keys), **story** (backstory,
+voice) and **grammar**, whose header shows a parse error even folded.
+
+Keys are typed into ONE box (`KeyBox`): a room's (`g0r1`) or a door's (`g0d29`) on this map, or
+another entry's (`place/dock`), ended by a space, comma, enter, paste or blur. Each becomes a badge
+once it is found to exist; what is not stays typed, and the box goes red. Backspace in the empty box
+takes the last badge off. A badge whose key this map lacks is red. The grammar is JSON, compact (a short rule on one line) and
 coloured by `GrammarEditor`: a layer beneath a textarea of transparent text, `#tags#` and
 `[actions:` picked out. Who says it: the one chosen there, else the entry's
 `facts.npcKey`, else the last npc chosen on the map, else the psi target, else the player.
@@ -52,6 +62,7 @@ shows the entry whose `npcKey` they are. Without a World the pane still edits.
 
 An entry has `maps[mapKey].rooms` (grKeys); a character also `npcKey`, `skin` and
 `maps[mapKey].doors` (the gdKeys they hold keys to). Per map, as a `g0r21` means nothing on another.
+Rooms, doors and `links` are all entered in the card's key box.
 
 - The map pane outlines the shown entry's rooms and doors (`lore/LoreLayer.tsx`).
 - Its **spawn {npcKey}** button puts them where the map is next clicked (`Editor.spawnAt`): spawned
