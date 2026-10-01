@@ -74,7 +74,11 @@ export function createPostProcessing(): PostProcessing {
 
         // What the world amounts to at this pixel, PREMULTIPLIED — colour already scaled by the
         // coverage beside it, which is what makes the composite a plain sum rather than a `mix`
-        const composed = backdrop.mul(drawn.oneMinus()).add(sceneColor.rgb.mul(drawn));
+        // …and the backdrop through what part coverage leaves. Nothing against the dark; on a light
+        // page, without it every part-covered pixel — an edge, a soft outline — comes out greyer
+        // than the page, and a room faded to the page's own colour leaves its lines behind
+        const through = backdrop.mul(drawn).mul(sceneColor.a.oneMinus());
+        const composed = backdrop.mul(drawn.oneMinus()).add(sceneColor.rgb.mul(drawn)).add(through);
 
         return vec4(composed, 1);
       })();

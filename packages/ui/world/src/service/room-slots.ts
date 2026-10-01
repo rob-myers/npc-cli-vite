@@ -52,10 +52,10 @@ export function createRoomSlots(): RoomSlots {
     height: slotTextureDimension,
   });
   /**
-   * Per gmId, the drawn RED channel and the bounds it was drawn from — both wanted by `roomAt`. Red
-   * alone: the CPU asks about rooms and nothing else, and the other three would triple what is held
+   * Per gmId, the drawn RED and GREEN channels and the bounds they were drawn from — wanted by
+   * `roomAt` and `broadWallAt`. Those alone: the CPU asks nothing of the other two
    */
-  const drawn: (undefined | { red: Uint8Array; bounds: Geom.RectJson })[] = [];
+  const drawn: (undefined | { red: Uint8Array; broad: Uint8Array; bounds: Geom.RectJson })[] = [];
   /** What was last drawn, so repeated calls within one map cost nothing */
   let drawnHash = Number.NaN;
 
@@ -107,12 +107,16 @@ export function createRoomSlots(): RoomSlots {
         }
 
         tex.updateIndex(gmId, data);
-        drawn[gmId] = { red, bounds: gm.bounds };
+        drawn[gmId] = { red, broad, bounds: gm.bounds };
       }
     },
 
     roomAt(gmId, local) {
-      return ownRoomAt(gmId, local.x, local.y);
+      return codeAt("red", gmId, local.x, local.y);
+    },
+
+    broadWallAt(gmId, local) {
+      return codeAt("broad", gmId, local.x, local.y);
     },
 
     roomOfSeg(gmId, u, v) {
@@ -122,7 +126,7 @@ export function createRoomSlots(): RoomSlots {
       // room the half of the wall nearest its OWN face, so that face has the room beyond it and the
       // room's own collar within it, and the pixel under the midpoint reads as that room from either
       // direction. A face with no room past it — against a broad wall, or the void — reads as blank
-      return ownRoomAt(gmId, (u.x + v.x) / 2, (u.y + v.y) / 2);
+      return codeAt("red", gmId, (u.x + v.x) / 2, (u.y + v.y) / 2);
     },
 
     decodeUvVisibility(uvNode, gmIndex, opts) {
@@ -148,14 +152,14 @@ export function createRoomSlots(): RoomSlots {
     },
   };
 
-  function ownRoomAt(gmId: number, x: number, y: number) {
+  function codeAt(channel: "red" | "broad", gmId: number, x: number, y: number) {
     const at = drawn[gmId];
     if (at === undefined) return null;
     const px = Math.round((x - at.bounds.x) * slotScale);
     const py = Math.round((y - at.bounds.y) * slotScale);
     if (px < 0 || py < 0 || px >= slotTextureDimension || py >= slotTextureDimension) return null;
-    // red carries `roomId + 1`, so a zero is nothing at all rather than room zero
-    const code = at.red[py * slotTextureDimension + px];
+    // each carries an `id + 1`, so a zero is nothing at all rather than id zero
+    const code = at[channel][py * slotTextureDimension + px];
     return code === 0 ? null : code - 1;
   }
 }
@@ -251,6 +255,8 @@ export type RoomSlots = {
    * or `null` otherwise. Reads the drawn pixels, so it sees the `roomOutset` below
    */
   roomAt(gmId: number, localPoint: Geom.VectJson): null | number;
+  /** Which broad wall's footprint covers `localPoint`, likewise — wider than the wall, e.g. over a window bay */
+  broadWallAt(gmId: number, localPoint: Geom.VectJson): null | number;
   /** Whose wall a segment is, in the geomorph's own space — or `null` where it faces no room at all */
   roomOfSeg(gmId: number, u: Geom.VectJson, v: Geom.VectJson): null | number;
   /** The slot at `uvNode` of layer `gmIndex` — for floor and the ceiling (one instance per geomorph) */

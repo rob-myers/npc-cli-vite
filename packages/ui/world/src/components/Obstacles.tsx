@@ -13,9 +13,11 @@ import {
   color,
   instanceIndex,
   int,
+  mix,
   normalWorld,
   positionWorld,
   select,
+  step,
   texture,
   transformNormalToView,
   uniform,
@@ -28,7 +30,7 @@ import { getObstacleSheetKey } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { alwaysShownSlot, ensureRoomSlots, slotOf } from "../service/room-slots";
+import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -60,17 +62,28 @@ export default function Obstacles(_props: Props) {
         state.fromInstanceId = [];
         state.roomSlotByInstanceId = [];
         const roomIdsByGmKey: Partial<Record<Geomorph.StarShipGeomorphKey, (null | number)[]>> = {};
+        const broadIdsByGmKey: typeof roomIdsByGmKey = {};
         let nextId = 0;
         for (const [gmId, gm] of w.gms.entries()) {
           // avoid recompute roomId for multiple instances
           const roomIds = (roomIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.roomIdOf(gmId, o)));
+          const broadIds = (broadIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.broadWallIdOf(gmId, o)));
           state.toInstanceId[gmId] = [];
           for (const [obstacleId] of gm.obstacles.entries()) {
             if (nextId < MAX_OBSTACLE_QUAD_INSTANCES) {
               const roomId = roomIds[obstacleId];
               state.toInstanceId[gmId][obstacleId] = nextId;
               state.fromInstanceId[nextId] = { gmId, obstacleId };
-              state.roomSlotByInstanceId[nextId] = roomId === null ? alwaysShownSlot : slotOf(gmId, roomId);
+              const broadId = broadIds[obstacleId];
+              // within a broad wall's footprint it goes as the floor under it does, e.g. a hull
+              // window's bench: hidden on a shown floor it was a cut-out, its seams the floor's.
+              // In no room at all, it is shown only with everything
+              state.roomSlotByInstanceId[nextId] =
+                broadId !== null
+                  ? broadWallSlotOf(gmId, broadId)
+                  : roomId === null
+                    ? neverShownSlot
+                    : slotOf(gmId, roomId);
             }
             nextId++;
           }
@@ -179,11 +192,27 @@ export default function Obstacles(_props: Props) {
         // Kept off `obstacle.meta`, unlike the `gmId` `instantiateDecor` stamps onto decor: a room
         // is a property of the LAYOUT, so it would be the same answer written once per instance
         const { rect } = origPoly;
-        const at = tmpMat2.setMatrixValue(transform).transformPoint({
-          x: rect.x + rect.width / 2,
-          y: rect.y + rect.height / 2,
-        });
-        return w.view.roomSlots.roomAt(gmId, at);
+        const toGm = tmpMat2.setMatrixValue(transform);
+        const centre = toGm.transformPoint({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+        const roomId = w.view.roomSlots.roomAt(gmId, centre);
+        if (roomId !== null) return roomId;
+        // a curved one's centre can lie outside it, e.g. a hull window's bench: ask its corners
+        for (const p of origPoly.outline) {
+          const cornerRoomId = w.view.roomSlots.roomAt(gmId, toGm.transformPoint({ x: p.x, y: p.y }));
+          if (cornerRoomId !== null) return cornerRoomId;
+        }
+        return null;
+      },
+      broadWallIdOf(gmId, { origPoly, transform }) {
+        // by HALF its corners or more: one merely against such a wall has only a few within
+        const toGm = tmpMat2.setMatrixValue(transform);
+        const counts = new Map<number, number>();
+        for (const p of origPoly.outline) {
+          const id = w.view.roomSlots.broadWallAt(gmId, toGm.transformPoint({ x: p.x, y: p.y }));
+          if (id !== null) counts.set(id, (counts.get(id) ?? 0) + 1);
+        }
+        for (const [id, count] of counts) if (count * 2 >= origPoly.outline.length) return id;
+        return null;
       },
       transformAndColorObstacles() {
         if (!state.inst) return;
@@ -293,10 +322,13 @@ export default function Obstacles(_props: Props) {
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.obstacle) as THREE.Node<"vec4">;
         const shown = topFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
+        // a sprite's soft edge lets the floor through, a grey line once the top is the page's
+        // colour: so as it goes its edge hardens, any coverage at all counting as full
+        const alpha = mix(step(softEdgeFrom, lit.a), lit.a, shown);
         return (select as SelectAnyType)(
           w.view.objectPick.notEqual(0),
           lit,
-          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
+          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), alpha),
         );
       })(),
       uid: generateUUID(),
@@ -390,7 +422,7 @@ export default function Obstacles(_props: Props) {
           key={material.uid}
           side={THREE.FrontSide} // 1 draw call
           transparent
-          alphaTest={0.1}
+          alphaTest={0.01}
           colorNode={material.colorNode}
           outputNode={material.outputNode}
           normalNode={material.normalNode}
@@ -412,6 +444,9 @@ export default function Obstacles(_props: Props) {
 type Props = {
   disabled?: boolean;
 };
+
+/** The least alpha of a top's sprite that counts as there — see its `outputNode` */
+const softEdgeFrom = 0.02;
 
 export type State = {
   inst: THREE.InstancedMesh;
@@ -448,6 +483,8 @@ export type State = {
   encodeInstanceId(gmId: number, obstacleId: number): null | number;
   /** Which room an obstacle stands in — a property of the layout, not of the instance. See within */
   roomIdOf(gmId: number, obstacle: Geomorph.LayoutObstacle): null | number;
+  /** The broad wall whose footprint it mostly stands within, if any */
+  broadWallIdOf(gmId: number, obstacle: Geomorph.LayoutObstacle): null | number;
   setBrightness(next: number): void;
   setFadedTint(next: number): void;
   transformAndColorObstacles(): void;
