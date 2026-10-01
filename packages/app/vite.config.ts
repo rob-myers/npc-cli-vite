@@ -1,9 +1,10 @@
 import mdx from "@mdx-js/rollup";
 import { assetHistoryPlugin } from "@npc-cli/scripts/vite-plugin-asset-history";
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
-import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
+import { lorePlugin } from "@npc-cli/scripts/vite-plugin-lore";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
+import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import { worldRtcPlugin } from "@npc-cli/scripts/vite-plugin-world-rtc";
 import rehypeShiki from "@shikijs/rehype";
@@ -35,6 +36,7 @@ export default defineConfig({
     mapEditApiPlugin(),
     watchAssetsPlugin(),
     jobsExamplesPlugin(),
+    lorePlugin(),
     worldRtcPlugin(),
     buildIdPlugin(),
     assetHistoryPlugin(),

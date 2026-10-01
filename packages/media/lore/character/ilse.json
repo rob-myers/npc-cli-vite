@@ -1,0 +1,31 @@
+{
+  "key": "character/ilse",
+  "kind": "character",
+  "title": "Ilse, watchman",
+  "summary": "Keeps the door to the long stair; has turned back everyone but one.",
+  "backstory": "Placeholder, to be rewritten. Ilse has kept the watch at the head of the long stair for longer than the player has been alive. Her mother kept it before her. She has opened the door downward exactly once, and does not speak of who went through.",
+  "voice": "Short sentences. Addresses people by their work, not their name. Never raises her voice.",
+  "facts": {
+    "role": "watchman",
+    "post": "the long stair"
+  },
+  "links": [],
+  "grammar": {
+    "address": [
+      "cousin",
+      "runner",
+      "you there"
+    ],
+    "greeting": [
+      "Stay close",
+      "Keep your voice down",
+      "You again",
+      "Not tonight"
+    ],
+    "origin": [
+      "#greeting#, #address#. #place.capitalize# #state#.",
+      "I am #role.a#, not a guide. #warning#.",
+      "Nobody goes down #post# without my leave, #address#."
+    ]
+  }
+}
