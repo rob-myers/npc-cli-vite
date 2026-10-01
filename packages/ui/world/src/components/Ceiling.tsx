@@ -11,6 +11,7 @@ import {
   int,
   mix,
   select,
+  step,
   texture,
   transformNormalToView,
   uniform,
@@ -27,6 +28,8 @@ import type { SelectAnyType } from "../service/texture";
 import { WorldContext } from "./world-context";
 
 const defaultCeilingOpacity = 0.7;
+/** A broad top's alpha, a shade under full: how the shader tells one from the rest of the lid */
+const broadTopMark = 254 / 255;
 
 export default function Ceiling() {
   const w = useContext(WorldContext);
@@ -35,6 +38,8 @@ export default function Ceiling() {
     (): State => ({
       inst: null,
       opacity: uniform(defaultCeilingOpacity),
+      nonSightAmount: uniform(0),
+      nonSightRgb: uniform(new THREE.Color("#fff")),
       quad: createTwoSidedXzQuad(),
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
@@ -136,6 +141,21 @@ export default function Ceiling() {
         ct.strokeRect(hullRect.right - cornerDim, hullRect.y, cornerDim, cornerDim);
         ct.strokeRect(hullRect.x, hullRect.bottom - cornerDim, cornerDim, cornerDim);
         ct.strokeRect(hullRect.right - cornerDim, hullRect.bottom - cornerDim, cornerDim, cornerDim);
+
+        state.nonSightAmount.value = tc.nonSight === undefined ? 0 : 1;
+        if (tc.nonSight === undefined) return;
+        state.nonSightRgb.value.set(tc.nonSight);
+        // a broad top and all drawn on it is MARKED by its alpha, so that leaves it be — see `broadTopMark`
+        ct.globalCompositeOperation = "destination-in";
+        ct.fillStyle = `rgba(0, 0, 0, ${broadTopMark})`;
+        for (const poly of tops.broad) {
+          const { rect } = poly;
+          ct.save();
+          drawPolygons(ct, poly, { clip: true, strokeStyle: null }); // one at a time: clips intersect
+          ct.fillRect(rect.x - 1, rect.y - 1, rect.width + 2, rect.height + 2);
+          ct.restore();
+        }
+        ct.globalCompositeOperation = "source-over";
       },
       transformInstances() {
         if (!state.inst) return;
@@ -190,7 +210,12 @@ export default function Ceiling() {
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`
       texNode: (() => {
-        const unlit = w.view.playerLight.applyUnlitRgba(texNode.depth(uvTexIds));
+        const texel = texNode.depth(uvTexIds);
+        const isBroad = step(broadTopMark - 0.5 / 255, texel.a).mul(step(texel.a, broadTopMark + 0.5 / 255));
+        // every other top takes `theme.ceiling.nonSight` outside `sight` — in `sense` too, where a
+        // hidden room's is the page's shade already, and would flash on its way to `ship`
+        const recoloured = w.view.fadeRoomsFx.sightNode.oneMinus().mul(state.nonSightAmount).mul(isBroad.oneMinus());
+        const unlit = w.view.playerLight.applyUnlitRgba(vec4(mix(texel.rgb, state.nonSightRgb, recoloured), texel.a));
         return vec4(mix(fadeTo, unlit.rgb, ceilFade), unlit.a);
       })(),
       uid: generateUUID(),
@@ -237,6 +262,9 @@ export type State = {
   inst: null | THREE.InstancedMesh;
   /** The lid's alpha, from `theme.ceiling.opacity` */
   opacity: THREE.UniformNode<"float", number>;
+  /** `1` whilst `theme.ceiling.nonSight` recolours the lid outside `sight` — to `nonSightRgb` */
+  nonSightAmount: THREE.UniformNode<"float", number>;
+  nonSightRgb: THREE.UniformNode<"color", THREE.Color>;
   quad: THREE.BufferGeometry;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
