@@ -1,0 +1,38 @@
+{
+  "key": "setting/low-berth",
+  "kind": "setting",
+  "title": "Low Berth",
+  "summary": "Ships and stations on a settled fringe. Each scenario is one incident aboard one of them.",
+  "backstory": "A loose backdrop, not a plot. Scenarios are small and self-contained; some may later connect.\n\nShips come in every size, from a trader with a handful of crew to a liner carrying hundreds. A scenario only ever sees a few decks of one: some crew, a robot or two, and whoever paid for passage. Travel between ports takes days, and no message outruns a ship, so news is always old and nobody can call for help.\n\nA low berth is the cheap way to travel: frozen in a drawer, thawed at the far end. Low passengers wake up on ships they have never seen, among people they do not know. That is how one person can turn up in any scenario.\n\nStunners are the everyday sidearm: nobody wants a hole in the hull. Robots do the dull work and notice more than people think. A few people can reach into another mind. It is rare, it is distrusted, and those who can do it keep quiet.\n\nNothing here is fixed. Add a ship, a port or a custom when a scenario needs one.",
+  "voice": "Plain and practical. Shipboard talk: decks, watches, berths, ports. Dry humour. No grand speeches.",
+  "maps": {},
+  "facts": {},
+  "links": [],
+  "grammar": {
+    "ship": ["the Marigold", "the Patient Debt", "the Second Opinion", "the Kestrel", "the Honest Mistake"],
+    "room": [
+      "the bridge",
+      "the corridor",
+      "the fresher",
+      "the briefing room",
+      "the locker room",
+      "the office",
+      "the cartography room"
+    ],
+    "roomState": [
+      "is too quiet",
+      "smells of coolant",
+      "has a light out",
+      "is colder than it should be",
+      "was locked a minute ago"
+    ],
+    "watch": ["first watch", "second watch", "the dog watch", "the middle of ship's night"],
+    "notice": [
+      "Low passengers thaw at #watch#.",
+      "All hands, #room# is off limits until further notice.",
+      "Whoever left a stunner in #room#, collect it.",
+      "#ship.capitalize# docks at the end of #watch#."
+    ],
+    "origin": ["#room.capitalize# #roomState#.", "#notice#"]
+  }
+}

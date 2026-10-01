@@ -1,7 +1,7 @@
 # Lore
 
-Backstories and speech for the setting (see `docs/chats/DESIGN-storyline-and-ai.md`), authored in
-DEV and shipped as data. No model runs: variety comes from Tracery-style grammars.
+Backstories and speech for **NPC CLI: Low Berth**, authored in DEV and shipped as data. The setting is
+itself an entry (`setting/low-berth`): a loose backdrop for many small scenarios, not a plot. No model runs: variety comes from Tracery-style grammars.
 
 ## Data
 
