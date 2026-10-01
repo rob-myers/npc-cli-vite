@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
+import * as THREE from "three/webgpu";
 import { defaultPsiTune, type PsiTune, psiMaxReach } from "../const.npc";
 import { eased } from "../service/fade";
 import {
@@ -133,7 +134,11 @@ export default function Psi() {
         state.gap.value = gap;
         state.width.value = width;
         state.opacity.value = opacity;
-        state.color.value.set(color);
+        const { additive, shade, gain } = w.getTheme().npcs.fx;
+        state.color.value.set(color).multiplyScalar(shade);
+        state.gain.value = gain;
+        state.mat.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending;
+        state.mat.needsUpdate = true;
       },
     }),
     // a new `psiMaxReach` or `cell` needs a new geometry, and the mesh and material go with it

@@ -62,12 +62,24 @@ export function createSwordResources() {
   ball.renderOrder = +6;
   const group = new THREE.Group().add(tube, ball);
 
-  return { tube, ball, group, attrs, srcData, dstData, roomData, phase: uniform(0) };
+  return {
+    tube,
+    ball,
+    group,
+    attrs,
+    srcData,
+    dstData,
+    roomData,
+    phase: uniform(0),
+    color: uniform(new THREE.Color(swordConfig.color)),
+    /** From `theme.npcs.fx.gain` */
+    gain: uniform(1),
+  };
 }
 
 /** The rope's nodes, else with `tip` its end's ball */
 export function swordNodes(
-  { phase }: SwordResources,
+  { phase, color, gain }: SwordResources,
   {
     objectPick,
     foldNode,
@@ -81,7 +93,7 @@ export function swordNodes(
   },
   tip: boolean,
 ) {
-  const { radius, tipRadius, alpha, faint, solid, nearMetres, bands, color } = swordConfig;
+  const { radius, tipRadius, alpha, faint, solid, nearMetres, bands } = swordConfig;
   const src = attribute<"vec4">("swordSrc", "vec4");
   const dst = attribute<"vec4">("swordDst", "vec4");
   const [shown, locked] = [src.w, dst.w];
@@ -115,9 +127,9 @@ export function swordNodes(
     /** Faint and pulsing on the way, solid as it nears the part */
     const lockedOn = mix(flow.mul(faint), float(solid), smoothstep(0, nearMetres, toEnd).oneMinus());
     const body = tip ? float(solid) : mix(flow.mul(alpha), lockedOn, vLocked);
-    const a = objectPick.notEqual(0).select(0, vShown.mul(vSeen).mul(body).mul(foldNode));
+    const a = objectPick.notEqual(0).select(0, vShown.mul(vSeen).mul(body.mul(gain).min(1)).mul(foldNode));
     Discard(a.lessThan(1 / 512));
-    return vec4(uniform(new THREE.Color(color)), a);
+    return vec4(color, a);
   })();
 
   return { vertexNode, colorNode };

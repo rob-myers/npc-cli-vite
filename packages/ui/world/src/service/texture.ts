@@ -273,7 +273,7 @@ const deckInks = {
     nav: { fill: deckConfig.nav.fill, ink: deckConfig.nav.ink },
   },
   light: {
-    tone: "#d5dae0",
+    tone: "#a5aab0",
     plate: { seamInk: "rgba(40, 55, 75, 0.35)", lipInk: "rgba(255, 255, 255, 0.7)" },
     rivet: { ink: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.8)" },
     wiring: {

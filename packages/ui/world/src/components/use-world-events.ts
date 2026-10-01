@@ -389,6 +389,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
         w.npc?.setAmbient(npcs.ambient);
+        w.psi?.syncTune();
+        w.swords?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);

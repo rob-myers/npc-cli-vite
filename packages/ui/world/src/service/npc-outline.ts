@@ -53,19 +53,24 @@ export function applyNpcOutline(
   return Fn(() => {
     const onePx = vec2(1, 1).div(screenSize);
 
-    // How much npc is HERE. DILATED by a pixel because a door sees through by dithered COVERAGE
-    // rather than by blending, so it leaves the mask a pixel-wide checker rather than dimming it —
-    // and every hole in that checker would take a border of its own
+    // How much npc is HERE. A door sees through by dithered COVERAGE rather than by blending, so
+    // it leaves the mask a pixel-wide checker rather than dimming it — and every hole in that
+    // checker would take a border of its own. So a hole is filled: npc on BOTH sides of it, where
+    // the pixel just outside a silhouette has it on one — dilating that one too left a gap between
+    // them and their border, which a light floor shows
     const here = npcMask.r.toVar();
+    const sides: THREE.Node<"float">[] = [];
     // …and how much CAPTION: a label is drawn over the npcs as a caption on them, so a border
     // creeping onto it reads as the text being scribbled on. Dilated alongside `here`, which also
     // keeps the border from hugging the label's edge
     const caption = npcMask.g.toVar();
     for (const [dx, dy] of crossTaps) {
       const tap = npcMask.sample(screenUV.add(onePx.mul(vec2(dx, dy))));
-      here.assign(here.max(tap.r));
+      sides.push(tap.r);
       caption.assign(caption.max(tap.g));
     }
+    // `crossTaps` is right, left, up, down
+    here.assign(here.max(sides[0].min(sides[1])).max(sides[2].min(sides[3])));
 
     // The most npc within reach, unrolled so no loop reaches the shader. A tap is IGNORED where
     // what is drawn here is nearer than the npc it found: we are in front of them, so the boundary
@@ -113,7 +118,7 @@ const maskFloor = 1e-4;
 /** Guards the depth comparison where two surfaces nearly touch */
 const depthBias = 0.00002;
 
-/** The four immediate neighbours, whence `here` is dilated */
+/** The four immediate neighbours, in opposite pairs — see `here` */
 const crossTaps = [
   [1, 0],
   [-1, 0],

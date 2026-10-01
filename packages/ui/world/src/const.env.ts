@@ -194,7 +194,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   obstacles: {
     brightness: 1,
   },
-  npcs: { ambient: 0 },
+  npcs: { ambient: 0, fx: { additive: true, shade: 1, gain: 1 } },
   doors: {
     brightness: 1,
     opacity: 0.8,

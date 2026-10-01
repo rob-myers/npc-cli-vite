@@ -61,6 +61,16 @@ export default function Swords() {
       markDirty() {
         for (const sword of state.swords.values()) sword.cast = null;
       },
+      syncTheme() {
+        const { additive, shade, gain } = w.getTheme().npcs.fx;
+        state.color.value.set(swordConfig.color).multiplyScalar(shade);
+        state.gain.value = gain;
+        for (const { material } of [state.tube, state.ball]) {
+          material.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending;
+          material.needsUpdate = true;
+        }
+        w.r3f?.invalidate();
+      },
       sheathe(...npcKeys) {
         for (const npcKey of npcKeys) {
           const sword = state.swords.get(npcKey);
@@ -202,6 +212,8 @@ export default function Swords() {
 
   w.swords = state;
 
+  useEffect(() => state.syncTheme(), []);
+
   useEffect(() => {
     // a door opening or closing may clear an arm or a line of sight
     const sub = w.events.subscribe({
@@ -234,6 +246,8 @@ export type State = SwordResources & {
   lock(srcKey: string, dstKey: null | string, part?: null | string): void;
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
+  /** Takes the rope's colour and blending from `theme.npcs.fx` — called by `onChangeTheme` */
+  syncTheme(): void;
   /** Sheathe their swords: the pose and aim are let go of, and the rope fades */
   sheathe(...npcKeys: string[]): void;
   toggle(npcKey: string): boolean;
