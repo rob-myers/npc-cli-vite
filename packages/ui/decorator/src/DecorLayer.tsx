@@ -163,7 +163,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit, onPres
             key={d.key}
             data-decor={d.key}
             data-no-pan
-            className={cn("cursor-move", isSelected && "drop-shadow-[0_0_3px_#ffe066]")}
+            className={cn("cursor-move", isSelected && "drop-shadow-[0_0_3px_var(--deco-selected)]")}
             onPointerDown={(e) => onItemPointerDown(e, d.key)}
             onPointerMove={onItemPointerMove}
             onPointerUp={onItemPointerUp}
@@ -225,7 +225,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit, onPres
                 cy={rotate.at.y}
                 r={size / 2}
                 fill={ink.selected}
-                stroke="#000"
+                stroke="var(--deco-handle-edge)"
                 strokeWidth={1}
                 vectorEffect="non-scaling-stroke"
                 className="cursor-grab"
@@ -246,7 +246,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit, onPres
               width={size}
               height={size}
               fill={ink.selected}
-              stroke="#000"
+              stroke="var(--deco-handle-edge)"
               strokeWidth={1}
               vectorEffect="non-scaling-stroke"
               className="cursor-crosshair"
@@ -433,10 +433,10 @@ const pinTipFrac = 232 / 256;
 /** In map metres: less is a click */
 const dragThreshold = 0.02;
 const ink = {
-  static: "#8a97a8",
-  selected: "#ffe066",
-  point: "#9fb4cc",
-  rect: "#7fc3d9",
-  circle: "#9ccf8f",
-  quad: "#e09a6a",
+  static: "var(--deco-static)",
+  selected: "var(--deco-selected)",
+  point: "var(--deco-point)",
+  rect: "var(--deco-rect)",
+  circle: "var(--deco-circle)",
+  quad: "var(--deco-quad)",
 };

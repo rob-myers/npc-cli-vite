@@ -3,7 +3,7 @@ import { geomorphGridMeters } from "@npc-cli/ui__world/const.env";
 import { helper } from "@npc-cli/ui__world/helper";
 import { Mat } from "@npc-cli/util/geom";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { toMap } from "./decor-edit";
 import type { DecoratorUiMeta } from "./schema";
 import { getDecoratorMapStore } from "./storage";
@@ -70,72 +70,12 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
     }
   }
 
-  // each geomorph's layout as path data in ITS OWN space: the group's transform places it
-  const gmPaths = useMemo(
-    () =>
-      w.gms.map((gm) => ({
-        hull: gm.hullPoly.map((p) => p.svgPath).join(" "),
-        rooms: gm.rooms.map((p) => p.svgPath).join(" "),
-        walls: gm.walls.map((p) => p.svgPath).join(" "),
-        windows: gm.windows.map((c) => c.poly.svgPath).join(" "),
-        // one path EACH: merged, an obstacle overlapping another would cut a hole in it, the two
-        // windings cancelling under the nonzero rule
-        obstacles: gm.obstacles.map((o) => o.origPoly.clone().applyMatrix(tmpMat.setMatrixValue(o.transform)).svgPath),
-      })),
-    [w.gmsHash],
-  );
-
-  // the navigable area, as the floor itself draws it: triangles, local to their geomorph
-  const navPaths = useMemo(
-    () =>
-      w.gms.map((_, gmId) => {
-        let d = "";
-        for (const [ps] of w.nav?.toNavTris[gmId] ?? []) {
-          for (let i = 0; i < ps.length; i += 9) {
-            d += `M${ps[i]} ${ps[i + 2]}L${ps[i + 3]} ${ps[i + 5]}L${ps[i + 6]} ${ps[i + 8]}Z`;
-          }
-        }
-        return d;
-      }),
-    [w.gmsHash, w.nav],
-  );
-
-  // the geomorphs themselves, kept over the renders a pan or a selection brings
-  const gmGroups = useMemo(
-    () =>
-      w.gms.map((gm, gmId) => {
-        const { a, b, c, d, e, f } = gm.transform;
-        const paths = gmPaths[gmId];
-        return (
-          <g key={gmId} transform={`matrix(${a},${b},${c},${d},${e},${f})`}>
-            <path d={paths.hull} fill={ink.hull} fillRule="evenodd" />
-            <path d={paths.rooms} fill={ink.room} />
-            {show.nav && (
-              <path
-                d={navPaths[gmId]}
-                fill={ink.nav}
-                stroke={ink.navEdge}
-                strokeWidth={0.5}
-                vectorEffect="non-scaling-stroke"
-              />
-            )}
-            {show.obstacles && paths.obstacles.map((d, i) => <path key={i} d={d} fill={ink.obstacle} />)}
-            <path d={paths.walls} fill={ink.wall} strokeWidth={0.04} stroke={ink.wallStroke} />
-            <path d={paths.windows} fill={ink.window} />
-          </g>
-        );
-      }),
-    [gmPaths, navPaths, show.nav, show.obstacles],
-  );
-
-  // `byKey` is remade whenever the decor are
-  const labels = useMemo(() => Object.values(w.decor?.byKey ?? {}).filter(helper.isRoomLabel), [w.decor?.byKey]);
   const doors = Object.values(w.door?.byKey ?? {});
 
   return (
     <svg
       ref={preventPopupGestures}
-      className="size-full touch-none select-none bg-[#050608]"
+      className="size-full touch-none select-none bg-(--deco-bg)"
       style={{ cursor }}
       viewBox={zoom.viewBox}
       onWheel={zoom.onWheel}
@@ -158,7 +98,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
         </pattern>
       </defs>
 
-      {gmGroups}
+      <Geomorphs w={w} gmsHash={w.gmsHash} nav={w.nav} showNav={show.nav} showObstacles={show.obstacles} />
 
       {show.grid && (
         <rect
@@ -188,31 +128,16 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
         </line>
       ))}
 
-      {show.labels &&
-        labels.map((decor) => (
-          <text
-            key={decor.key}
-            x={decor.x}
-            y={decor.y}
-            fontSize={0.22}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fill={ink.label}
-            pointerEvents="none"
-            style={{ letterSpacing: "0.04em" }}
-          >
-            {decor.meta.label}
-          </text>
-        ))}
+      {show.labels && <Labels w={w} doors={doors} />}
 
       {children}
 
       <rect
         ref={marqueeEl}
         style={{ display: "none" }}
-        fill="#ffe066"
+        fill="var(--deco-selected)"
         fillOpacity={0.1}
-        stroke="#ffe066"
+        stroke="var(--deco-selected)"
         strokeWidth={1}
         strokeDasharray="4 2"
         vectorEffect="non-scaling-stroke"
@@ -221,6 +146,120 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
 
       <NpcDots w={w} npcKeys={npcKeys} />
     </svg>
+  );
+}
+
+/**
+ * The geomorphs themselves, each drawn in ITS OWN space and placed by its transform. Memoised, so
+ * a pan or a selection does not redraw them: `gmsHash` and `nav` say when the layout has changed
+ */
+const Geomorphs = memo(function Geomorphs(props: {
+  w: WorldState;
+  gmsHash: WorldState["gmsHash"];
+  nav: WorldState["nav"];
+  showNav: boolean;
+  showObstacles: boolean;
+}) {
+  const { w, nav, showNav, showObstacles } = props;
+  return w.gms.map((gm, gmId) => {
+    const { a, b, c, d, e, f } = gm.transform;
+    return (
+      <g key={gmId} transform={`matrix(${a},${b},${c},${d},${e},${f})`}>
+        <path d={gm.hullPoly.map((p) => p.svgPath).join(" ")} fill={ink.hull} fillRule="evenodd" />
+        <path d={gm.rooms.map((p) => p.svgPath).join(" ")} fill={ink.room} />
+        {showNav && (
+          <path
+            d={navPath(nav?.toNavTris[gmId])}
+            fill={ink.nav}
+            stroke={ink.navEdge}
+            strokeWidth={0.5}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {/* one path EACH: merged, overlapping obstacles would cut holes in each other under the nonzero rule */}
+        {showObstacles &&
+          gm.obstacles.map((o, i) => (
+            <path
+              key={i}
+              d={o.origPoly.clone().applyMatrix(tmpMat.setMatrixValue(o.transform)).svgPath}
+              fill={ink.obstacle}
+            />
+          ))}
+        <path d={gm.walls.map((p) => p.svgPath).join(" ")} fill={ink.wall} strokeWidth={0.04} stroke={ink.wallStroke} />
+        <path d={gm.windows.map((c) => c.poly.svgPath).join(" ")} fill={ink.window} />
+      </g>
+    );
+  });
+});
+
+/** The navigable area as the floor itself draws it: triangles, as `x y z` triples */
+function navPath(tris: NonNullable<WorldState["nav"]>["toNavTris"][number] = []) {
+  let d = "";
+  for (const [ps] of tris) {
+    for (let i = 0; i < ps.length; i += 9) {
+      d += `M${ps[i]} ${ps[i + 2]}L${ps[i + 3]} ${ps[i + 5]}L${ps[i + 6]} ${ps[i + 8]}Z`;
+    }
+  }
+  return d;
+}
+
+/** Room labels, and the keys the shell and the lore name things by: every room's and every door's */
+function Labels({ w, doors }: { w: WorldState; doors: Geomorph.DoorState[] }) {
+  // `byKey` is remade whenever the decor are
+  const labels = useMemo(() => Object.values(w.decor?.byKey ?? {}).filter(helper.isRoomLabel), [w.decor?.byKey]);
+
+  /** A room's key goes beneath its label, else at its centre */
+  const roomKeys = useMemo(() => {
+    const labelOf = new Map(labels.map((label) => [label.meta.grKey, label]));
+    return w.gms.flatMap((gm, gmId) =>
+      gm.rooms.map((room, roomId) => {
+        const grKey = helper.getGmRoomKey(gmId, roomId);
+        const label = labelOf.get(grKey);
+        if (label !== undefined) return { grKey, x: label.x, y: label.y + keyFontSize * 1.3 };
+        const { a, b, c, d, e, f } = gm.transform;
+        const { x, y } = room.center;
+        return { grKey, x: a * x + c * y + e, y: b * x + d * y + f };
+      }),
+    );
+  }, [w.gmsHash, labels]);
+
+  return (
+    <>
+      {labels.map((label) => (
+        <text
+          key={label.key}
+          x={label.x}
+          y={label.y}
+          fontSize={0.22}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill={ink.label}
+          pointerEvents="none"
+          style={{ letterSpacing: "0.04em" }}
+        >
+          {label.meta.label}
+        </text>
+      ))}
+      {roomKeys.map(({ grKey, x, y }) => (
+        <text key={grKey} x={x} y={y} {...keyTextProps}>
+          {grKey}
+        </text>
+      ))}
+      {doors.map((door) => (
+        <text
+          key={door.gdKey}
+          x={(door.src.x + door.dst.x) / 2}
+          y={(door.src.y + door.dst.y) / 2}
+          {...keyTextProps}
+          // legible over the door's own line
+          stroke={ink.hull}
+          strokeWidth={0.05}
+          paintOrder="stroke"
+        >
+          {door.gdKey}
+        </text>
+      ))}
+    </>
   );
 }
 
@@ -293,20 +332,34 @@ const clickSlopPx = 4;
 const gridId = "nav-map-2d-grid";
 const tmpMat = new Mat();
 
-/** The World's own steel: its hull fill, its panel lips, its amber doors */
+const keyFontSize = 0.13;
+
+/** The World's own steel: its hull fill, its panel lips, its amber doors — per theme, in `decorator.css` */
 const ink = {
-  hull: "#0b0d10",
-  room: "#1e2226",
-  nav: "rgba(190, 205, 225, 0.04)",
-  navEdge: "rgba(190, 205, 225, 0.09)",
-  obstacle: "#383e45",
-  wall: "rgba(190, 205, 225, 0.28)",
-  wallStroke: "rgba(205, 220, 240, 0.55)",
-  window: "rgba(120, 190, 235, 0.75)",
-  door: "#d9a83a",
-  doorOpen: "#8fbf7a",
-  doorLocked: "#e86052",
-  grid: "rgba(190, 205, 225, 0.13)",
-  label: "rgba(225, 240, 255, 0.7)",
-  npc: "#e8f0ff",
+  hull: "var(--deco-hull)",
+  room: "var(--deco-room)",
+  nav: "var(--deco-nav)",
+  navEdge: "var(--deco-nav-edge)",
+  obstacle: "var(--deco-obstacle)",
+  wall: "var(--deco-wall)",
+  wallStroke: "var(--deco-wall-stroke)",
+  window: "var(--deco-window)",
+  door: "var(--deco-door)",
+  doorOpen: "var(--deco-door-open)",
+  doorLocked: "var(--deco-door-locked)",
+  grid: "var(--deco-grid)",
+  label: "var(--deco-label)",
+  key: "var(--deco-key)",
+  npc: "var(--deco-npc)",
 };
+
+/** A key can be selected, to copy */
+const keyTextProps = {
+  fontSize: keyFontSize,
+  textAnchor: "middle",
+  dominantBaseline: "central",
+  fill: ink.key,
+  className: "select-text cursor-text",
+  // else the press pans the map, or starts a marquee
+  onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+} as const;

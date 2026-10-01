@@ -12,7 +12,6 @@ import {
   MAX_NPCS,
   mapVeilMs,
   roomLabelRevealMs,
-  unfoldDelayMs,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
@@ -258,10 +257,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
         } finally {
           if (firstBootstrap === true) {
-            // the first map is on screen as a flat hull; hold it a beat, bring the fade on, then
-            // unfold the world with a delayed floor fade-in
-            await pause(unfoldDelayMs);
-            w.view.setFadeRoomsActive(w.view.fadeRoomsMode);
+            // the first map is on screen as a flat hull: held a beat with the fade brought on,
+            // then unfolded with a delayed floor fade-in
+            await w.view.holdBeforeUnfold();
             const rising = w.foldTo(1);
             await pause(floorFadeDelayMs);
             void w.floor?.fadeTo(1);
@@ -383,13 +381,22 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onChangeTheme() {
-        const { obstacles, doors, post } = w.getTheme();
+        const { obstacles, doors, npcs, lights, post } = w.getTheme();
         w.obs.setBrightness(obstacles.brightness);
         w.door.setBrightness(doors.brightness);
+        w.door.setOpacity(doors.opacity, doors.labelOpacity);
+        w.door.setDissolve(doors.dissolve);
+        w.npc?.setAmbient(npcs.ambient);
+        w.psi?.syncTune();
+        w.swords?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
         w.view.postFx.darkBg.value.set(post.darkBg);
+        w.view.fadeRoomsFx.shade.value.set(post.darkBg);
+        w.view.playerLight.shade.value.set(lights.unlitTint);
+        w.view.playerLight.unlitScale.value = lights.unlit;
+        w.view.playerLight.coneAmount.value = lights.cone;
         // w.view.forceUpdate();
       },
       onEnterCollider(e, npc) {

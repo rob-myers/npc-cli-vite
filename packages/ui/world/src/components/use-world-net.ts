@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { defaultSkinKey, floorFadeDelayMs, introPanDelayMs, mapVeilMs, unfoldDelayMs } from "../const.env";
+import { defaultSkinKey, floorFadeDelayMs, introPanDelayMs, mapVeilMs } from "../const.env";
 import {
   decodeTransforms,
   encodeTransforms,
@@ -677,8 +677,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
 
         if (w.fold.amount < 1) {
           void w.view.veilCanvas(false, mapVeilMs);
-          await pause(unfoldDelayMs);
-          w.view.setFadeRoomsActive(w.view.fadeRoomsMode);
+          await w.view.holdBeforeUnfold();
           const rising = w.foldTo(1);
           await pause(floorFadeDelayMs);
           void w.floor?.fadeTo(1);

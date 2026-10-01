@@ -3,6 +3,10 @@ lastPicked () {
 }
 
 pickGdKey () {
+  pick as:meta.gdKey 1
+}
+
+pickGdKeys () {
   pick as:meta.gdKey $@
 }
 

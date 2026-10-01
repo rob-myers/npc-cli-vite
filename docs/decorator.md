@@ -8,9 +8,14 @@ Decor is made two ways, both ending in `w.decor.create(def)`: placed on the pane
 in the 3D World from the shell, at picked points. It is configured in the 3D World, which needs
 neither the panel nor a terminal.
 
+The panel is two panes, split by `allotment`: the map, and the setting's lore (`docs/lore.md`).
+Either drags shut (`meta.hidden`, by default the lore), leaving its icon over that edge to bring it
+back; `meta.split` keeps their sizes.
+
 | file | what it holds |
 |---|---|
-| `ui/decorator/src/Decorator.tsx` | the panel: finds the World; the tools, selection, keys, npc picker |
+| `ui/decorator/src/Decorator.tsx` | the panel: finds the World, splits the panes |
+| `ui/decorator/src/Editor.tsx` | the map pane: the tools, selection, keys, npc picker |
 | `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots |
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
 | `ui/decorator/src/DecorMenu.tsx` | the map's context menu: add on empty map, edit a decor; `HeightInput` |
@@ -54,7 +59,8 @@ shows behind its graphs — so it is where things really are:
   their geomorph. Memoised on `w.nav`;
 - **doors** from `w.door.byKey`, in world space, so they are live: amber closed, green dashed open,
   red locked;
-- room labels from the labelled decor points.
+- room labels from the labelled decor points, each with its `grKey` beneath; a room without one shows
+  its `grKey` at its centre, and every door its `gdKey`.
 
 `meta.show` toggles `nav`, `labels`, `obstacles`, `grid` (1.5m, on by default) and `static` — the map's
 own decor, faint, for context (off by default). The sidebar's width and whether it is out (not by default)

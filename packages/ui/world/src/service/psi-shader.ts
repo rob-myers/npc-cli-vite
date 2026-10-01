@@ -58,12 +58,14 @@ export function createPsiResources() {
   const width = uniform(defaultPsiTune.width);
   const opacity = uniform(defaultPsiTune.opacity);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
+  /** From `theme.npcs.fx.gain` */
+  const gain = uniform(1);
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
   const gmArray = uniformArray<"vec4">(gmValues, "vec4");
   const gmCount = uniform(0);
 
-  // additive, so the lines glow over a dark floor
+  // additive, so the lines glow over a dark floor — bar a theme whose `npcs.fx` says otherwise
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
@@ -88,6 +90,7 @@ export function createPsiResources() {
     width,
     opacity,
     color,
+    gain,
     gmValues,
     gmArray,
     gmCount,
@@ -95,7 +98,7 @@ export function createPsiResources() {
 }
 
 export function psiNodes(
-  { npcTex, slotCount, flowPhase, reach, gap, width, opacity, color, gmArray, gmCount }: PsiResources,
+  { npcTex, slotCount, flowPhase, reach, gap, width, opacity, color, gain, gmArray, gmCount }: PsiResources,
   {
     fadeRoomsFx,
     playerLight,
@@ -214,7 +217,7 @@ export function psiNodes(
 
     const a = objectPick
       .notEqual(0)
-      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity));
+      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity.mul(gain).min(1)));
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
     return playerLight.applyLightRgba(vec4(color, a));
   })();

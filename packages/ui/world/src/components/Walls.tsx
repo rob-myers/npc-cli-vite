@@ -145,7 +145,11 @@ export default function Walls() {
       // NOT tinted by `service/player-light`: a wall is flat colour at half opacity, so the light
       // only ever muddied what was behind it — and this runs on every wall fragment in the world
       // out of the pick pass whilst hidden, so a click reaches the floor behind it
-      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(baseColorUniform.rgb.mul(colorFade), fade, w.view.objectPick),
+      colorNode: w.view.fadeRoomsFx.dropPickWhenHidden(
+        w.view.fadeRoomsFx.fadeRgb(baseColorUniform.rgb, colorFade),
+        fade,
+        w.view.objectPick,
+      ),
       outputNode,
       baseColorUniform,
       uuid: crypto.randomUUID(),
@@ -158,7 +162,7 @@ export default function Walls() {
     mat.baseColorUniform.value.set(w.getTheme().walls.color);
 
     w.update(); // 🔔 must sync onchange theme
-  }, [w.mapKey, w.hash, w.decor.ready, mat.uuid]);
+  }, [w.mapKey, w.hash, w.themeKey, w.decor.ready, mat.uuid]);
 
   return wallCount ? (
     <>

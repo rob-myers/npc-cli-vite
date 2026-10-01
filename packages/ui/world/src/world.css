@@ -1,31 +1,6 @@
 /*
- * Flat white over the page background whilst a map loads, lifting once its floor is drawn — the
- * colour a map's floor itself fades to, so the two agree (see `Floor`'s `fadeColor`; when this
- * was black the white hulls read as a negative of the world). A layer of the canvas's own
- * background, so the canvas's contents paint above it and the world is unaffected. `@property`
- * is what makes it transitionable, and `inherits` lets it be set on an ancestor — see
- * `dimBackground`. Starts at 1, so the first paint is flat.
- */
-@property --world-dim {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 1;
-}
-
-.world-background {
-  /* Black whilst a map changes over, matching the hull each map arrives as — so the held frame
-     * cross-fades to the next one without either shape showing against a lit page. Only ever seen
-     * where the canvas is transparent, which the starfield leaves nothing of once the post pass is
-     * running — see `post-processing`. */
-  background-image: linear-gradient(rgb(0 0 0 / var(--world-dim)), rgb(0 0 0 / var(--world-dim)));
-  background-attachment: fixed;
-  transition: --world-dim var(--world-dim-duration, 300ms) ease-in-out;
-}
-
-/*
  * Over the canvas whilst the first map's floor arrives, so it fades up rather than appearing
- * whole. Above the canvas contents, unlike `--world-dim`, which is a layer of its background and
- * so cannot cover them. Opaque until then — see `veilCanvas`.
+ * whole. Opaque until then — see `veilCanvas`.
  */
 .world-veil {
   position: absolute;

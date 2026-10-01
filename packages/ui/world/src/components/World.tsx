@@ -2,7 +2,7 @@ import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { isPlaygroundMapKey, isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { devMessageFromServer } from "@npc-cli/ui__map-edit/map-node-api";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
-import { Broadcaster, cn, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
+import { Broadcaster, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { isTouchDevice, loadImage } from "@npc-cli/util/legacy/dom";
 import { debug, entries, hashJson } from "@npc-cli/util/legacy/generic";
@@ -65,7 +65,7 @@ import { WorldContext } from "./world-context";
 import "../world.css";
 
 export default function World({ meta }: { meta: WorldUiMeta }) {
-  const { uiStoreApi } = useContext(UiContext);
+  const { uiStoreApi, theme } = useContext(UiContext);
 
   const state = useStateRef(
     (): State => ({
@@ -75,7 +75,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       disabled: meta.disabled,
       mapKey: meta.mapKey,
       rootEl: null as any,
-      themeKey: "dark-theme",
+      themeKey: `${theme}-theme`,
       worldGroup: null,
       worldQueryPrefix: ["world", meta.worldKey],
 
@@ -362,6 +362,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   state.disabled = meta.disabled;
   state.mapKey = meta.mapKey;
+  state.themeKey = `${theme}-theme`;
+
+  useEffect(() => {
+    if (state.hash !== 0) state.e.onChangeTheme();
+  }, [state.themeKey]);
 
   useEffect(() => {
     queryClientApi.set([meta.worldKey], state);
@@ -483,14 +488,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
     <WorldContext.Provider value={state}>
       <div ref={state.ref("rootEl")} className="relative size-full">
         {state.rootEl && (
-          <WorldView
-            className={
-              state.assets &&
-              // `world-background`: the stripes that can show through the floor, and the black
-              // over them whilst a map loads — see `main.css`
-              cn(state.getTheme().background, "world-background")
-            }
-          >
+          <WorldView>
             <ambientLight intensity={ambientLightIntensity} color="#fff" />
 
             <Floor key="floor" />
@@ -538,7 +536,8 @@ export type State = {
   client: boolean;
   disabled: boolean;
   mapKey: string;
-  readonly themeKey: "dark-theme";
+  /** Follows the site theme: what draws from `getTheme` redraws on it */
+  themeKey: `${import("@npc-cli/ui-sdk/UiContext").ThemeName}-theme`;
   worldQueryPrefix: ["world", worldKey: string];
 
   brightness: number;

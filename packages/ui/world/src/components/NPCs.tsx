@@ -86,6 +86,7 @@ export default function NPCs() {
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       // ONE uniform every npc material reads, so the slider is a value write rather than a rebuild
       dimNode: uniform(w.npcBrightness),
+      ambientNode: uniform(w.getTheme().npcs.ambient),
       gltf: null,
       gltfHash: 0,
       skin: {
@@ -185,7 +186,9 @@ export default function NPCs() {
         const facing = normalWorld.dot(toEye).clamp(0, 1);
 
         // ambient + the player's light + more whilst lit, the light taking what the ambient leaves
-        const ambientNow = mix(float(ambient), float(ambientInSight), w.view.fadeRoomsFx.sightNode);
+        const ambientNow = mix(float(ambient), float(ambientInSight), w.view.fadeRoomsFx.sightNode).max(
+          state.ambientNode,
+        );
         const exposure = ambientNow
           .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
           .add(litAmount.mul(litAmbient))
@@ -268,7 +271,11 @@ export default function NPCs() {
         );
         // blacked out at the OUTPUT: `colorNode` is only the albedo, and a standard material still
         // adds specular off the scene lights to an albedo of zero
-        const beauty = (select as SelectAnyType)(isMain, vec4(output.rgb.mul(bodyTint), output.a), output);
+        const beauty = (select as SelectAnyType)(
+          isMain,
+          vec4(w.view.fadeRoomsFx.fadeRgb(output.rgb, bodyTint), output.a),
+          output,
+        );
         material.outputNode = (select as SelectAnyType)(isPickMode, npcPick, beauty);
         // The label writes no silhouette — it is not part of the figure — but marks itself in `g`
         // as a caption the border may not paint over: it sits a few pixels above the head, well
@@ -741,6 +748,10 @@ export default function NPCs() {
 
         w.events.next({ key: "spawned", npcKey, gmRoomId, spawns: npc.spawns });
       },
+      setAmbient(next) {
+        state.ambientNode.value = next;
+        w.r3f?.invalidate();
+      },
       setBrightness(next) {
         state.dimNode.value = next;
         w.r3f?.invalidate(); // a uniform write draws nothing by itself, the frameloop being on demand
@@ -898,6 +909,8 @@ export type State = {
   crowd: crowdApi.Crowd;
   /** How much of their skin every npc keeps — see `setBrightness`, and `w.npcBrightness` behind it */
   dimNode: THREE.UniformNode<"float", number>;
+  /** The least exposure an npc has, from `theme.npcs.ambient` — a light theme has no dark to stand in */
+  ambientNode: THREE.UniformNode<"float", number>;
   gltf: GLTF | null;
   /** DEV: hash of the gltf the npc meshes were built from — see `devHotReload` */
   gltfHash: number;
@@ -931,6 +944,8 @@ export type State = {
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
   configureCrowd(): void;
+  /** Sets `ambientNode`'s value — called by `onChangeTheme` */
+  setAmbient(next: number): void;
   /** Sets `dimNode`'s value — called by `WorldMenu`'s slider, never `.value` directly */
   setBrightness(next: number): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */

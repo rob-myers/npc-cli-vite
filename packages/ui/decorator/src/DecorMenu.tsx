@@ -281,7 +281,7 @@ type Target = { key: string | null; at: Geom.VectJson };
 const touchDevice = isTouchDevice();
 const addTypes: DecorType[] = ["point", "rect", "circle", "quad"];
 const popupCls =
-  "min-w-36 py-1 rounded border border-zinc-700 bg-zinc-900 text-xs text-zinc-300 shadow-lg outline-none";
+  "decorator min-w-36 py-1 rounded border border-zinc-700 bg-zinc-900 text-xs text-zinc-300 shadow-lg outline-none";
 const itemCls =
   "flex items-center gap-2 px-3 py-1 cursor-pointer select-none outline-none data-highlighted:bg-zinc-700";
 const labelCls = "px-3 py-1 text-zinc-500";

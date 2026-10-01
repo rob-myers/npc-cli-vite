@@ -544,10 +544,10 @@ function numberRelatedNames(polys: Poly[], only: "bare" | "numbered", scope: str
       next !== null && (meta.name = next);
     }
     if (typeof meta.rel === "string") {
-      // `meta.rel` is `{relation}:{name}`
+      // `meta.rel` is `{relation}:{name},{name}…`, each name numbered on its own
       const at = meta.rel.indexOf(":");
-      const next = renumber(meta.rel.slice(at + 1));
-      next !== null && (meta.rel = `${meta.rel.slice(0, at + 1)}${next}`);
+      const names = meta.rel.slice(at + 1).split(",");
+      meta.rel = `${meta.rel.slice(0, at + 1)}${names.map((name) => renumber(name) ?? name).join(",")}`;
     }
   }
 }

@@ -100,8 +100,6 @@ export const defaultPlayerKey = "rob";
 export const spawnPlayerAttempts = 10;
 /** Room labels the player may be spawned in, when there is nowhere better */
 export const spawnRoomLabels = ["corridor", "common"];
-/** Upper bound of the "npc radius" slider in `WorldMenu.tsx` — also used to size the occlusion march. */
-export const defaultAmbientIntensity = 1;
 
 export const defaultCameraMode: import("./components/CameraControls").CameraModeType = isTouchDevice()
   ? "free"
@@ -175,7 +173,6 @@ export const zoomSpeedMobile = 0.8;
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   post: { lightBg: "#ffffff", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
-  background: "bg-[#000]", // seeing initial flicker
   ceiling: {
     hull: { fill: "#000", stroke: "#666" },
     nonHull: { fill: "#444", stroke: "#000" },
@@ -187,15 +184,22 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
      * it is one mutable object to tune against
      */
     hullFill: "#0b0d10",
+    deck: "dark",
   },
   lights: {
-    ambientIntensity: defaultAmbientIntensity,
+    unlit: 1,
+    unlitTint: "#000000",
+    cone: 0.7,
   },
   obstacles: {
     brightness: 1,
   },
+  npcs: { ambient: 0, fx: { additive: true, shade: 1, gain: 1 } },
   doors: {
     brightness: 1,
+    opacity: 0.8,
+    panel: "dark",
+    dissolve: false,
   },
   walls: { color: "#000000", opacity: 0.5 },
 };

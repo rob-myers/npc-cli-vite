@@ -1,4 +1,4 @@
-import { Discard, Fn, float, select, uniform, uniformArray, vec4 } from "three/tsl";
+import { Discard, Fn, float, mix, select, uniform, uniformArray, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
@@ -35,6 +35,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
   let framesUntilMs = 0;
   let framesRaf = 0;
 
+  const shade = uniform(new THREE.Color("#000"));
+
   function fadeAt(slot: THREE.Node<"float">) {
     const packed = morphArray.element(slot.toInt());
     // heading up is a fade IN, which is the quicker — see `fadeSecsOf`
@@ -48,6 +50,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
     snapNext: true,
     rooms,
     getVisiblity: fadeAt,
+    shade,
     sightNode: sightAmount,
 
     isArriving(slot) {
@@ -66,7 +69,11 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
     },
 
     applyFadeRgba(color, fade) {
-      return vec4(color.rgb.mul(fade), color.a);
+      return vec4(mix(shade, color.rgb, fade), color.a);
+    },
+
+    fadeRgb(rgb, fade) {
+      return mix(shade, rgb, fade) as THREE.Node<"vec3">;
     },
 
     applyFadeAlpha(color, fade) {
@@ -290,6 +297,8 @@ export type FadeRooms = {
    * takes all the way to black
    */
   sightNode: THREE.Node<"float">;
+  /** What a hidden room goes to, from `theme.post.darkBg` — black, bar a light theme */
+  shade: THREE.UniformNode<"color", THREE.Color>;
   /** The more opaque of the two slots: walls are (x, x) but in connectors (x, y) satisfies x ≠ y */
   fadeAtPair(slots: THREE.Node<"vec2">): THREE.Node<"float">;
   /**
@@ -301,6 +310,8 @@ export type FadeRooms = {
    * which against the near-black backdrop reads as absent anyway
    */
   applyFadeRgba(color: THREE.Node<"vec4">, fade: THREE.Node<"float">): THREE.Node<"vec4">;
+  /** The same of a bare colour: `shade` at `0`, its own at `1` — for an `outputNode`, past the lighting */
+  fadeRgb(rgb: THREE.Node<"vec3">, fade: THREE.Node<"float">): THREE.Node<"vec3">;
   /**
    * `color` with its ALPHA taken by `fade` instead — for the FLOOR, which lies under everything and
    * so can go without hiding anything behind it. Blacking it out would leave a black floor where

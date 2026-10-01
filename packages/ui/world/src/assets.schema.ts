@@ -159,7 +159,6 @@ export const WorldThemeSchema = z.object({
       fadedObstacleTint: z.number().min(0).max(1).default(0.1),
     })
     .default({ lightBg: "#ffffff", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 }),
-  background: z.string(),
   ceiling: z.object({
     hull: z.object({ fill: z.string(), stroke: z.string() }),
     nonHull: z.object({ fill: z.string(), stroke: z.string() }),
@@ -168,14 +167,23 @@ export const WorldThemeSchema = z.object({
     .object({
       /** The structural ground inside the hull. The deck on top is `deckConfig`, not the theme */
       hullFill: z.string().default("#0b0d10"),
+      /** Which of `deckInks` the deck on top is drawn in — see `service/texture` */
+      deck: z.enum(["dark", "light"]).default("dark"),
     })
-    .default({ hullFill: "#0b0d10" }),
+    .default({ hullFill: "#0b0d10", deck: "dark" }),
   lights: z
     .object({
-      ambientIntensity: z.number(),
+      /** How much of the player light's tint the UNSEEN takes — see `service/player-light` */
+      unlit: z.number().min(0).max(3).default(1),
+      /** …and towards what */
+      unlitTint: z.string().default("#000000"),
+      /** How much of the light what is not ahead of the player loses */
+      cone: z.number().min(0).max(1).default(0.7),
     })
     .default({
-      ambientIntensity: 1 satisfies typeof import("./const.env.ts").defaultAmbientIntensity,
+      unlit: 1,
+      unlitTint: "#000000",
+      cone: 0.7,
     }),
   obstacles: z
     .object({
@@ -184,12 +192,42 @@ export const WorldThemeSchema = z.object({
     .default({
       brightness: 1,
     }),
+  npcs: z
+    .object({
+      /** The least exposure an npc has, whatever the light — see `NPCs`' `ambientNode` */
+      ambient: z.number().min(0).max(1).default(0),
+      /** What an npc draws in light — `Psi`'s rings, a sword's rope — which glows on the dark alone */
+      fx: z
+        .object({
+          additive: z.boolean().default(true),
+          /** Their colour, scaled: an ink on a light page must be darker than a glow */
+          shade: z.number().min(0).max(1).default(1),
+          /** Their alpha, scaled: an ink takes more than a glow to read */
+          gain: z.number().min(0).max(8).default(1),
+        })
+        .default({ additive: true, shade: 1, gain: 1 }),
+    })
+    .default({ ambient: 0, fx: { additive: true, shade: 1, gain: 1 } }),
   doors: z
     .object({
       brightness: z.number(),
+      opacity: z
+        .number()
+        .min(0)
+        .max(1)
+        .default(0.8 satisfies typeof import("./const.env.ts").defaultDoorOpacity),
+      /** The label's own, on a `light` panel: solid whilst the panel is seen through. The panel's if absent */
+      labelOpacity: z.number().min(0).max(1).optional(),
+      /** Which of `doorInks` the panels are drawn in — see `service/texture` */
+      panel: z.enum(["dark", "light"]).default("dark"),
+      /** Fades by dissolving, its coverage left alone — see `Doors`' `dissolveNode` */
+      dissolve: z.boolean().default(false),
     })
     .default({
       brightness: 1,
+      opacity: 0.8,
+      panel: "dark",
+      dissolve: false,
     }),
   walls: z
     .object({

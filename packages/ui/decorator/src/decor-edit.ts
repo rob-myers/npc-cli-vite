@@ -321,3 +321,6 @@ const minScale = 0.1;
 export const defaultQuadImg = "screen-0";
 /** Where a tilted quad's top sits, as the symbols' screens do */
 export const tiltedQuadHeight = 1.35;
+
+/** Locating something on the map zooms in at least this far */
+export const locateZoom = 3;

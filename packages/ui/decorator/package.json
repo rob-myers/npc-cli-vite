@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./lore-schema": "./src/lore/lore.schema.ts"
   },
   "scripts": {},
   "dependencies": {
@@ -16,6 +17,8 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "allotment": "catalog:",
+    "json-stringify-pretty-compact": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:"
