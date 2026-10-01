@@ -279,16 +279,19 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       case "post fx":
-        // both rebuild the post pass, whose shader compile can stall a phone for a moment
+        // both rebuild the post pass, whose shader compile can stall a phone for a moment — and
+        // change the pick pass's attachments, so that is warmed again rather than on the next tap
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setPostProcessingEnabled();
           state.update();
+          return w.view.warmPick();
         });
         break;
       case "npc outline":
         void w.view.runBusy(compilingShadersText, () => {
           w.view.setNpcOutlineEnabled();
           state.update();
+          return w.view.warmPick();
         });
         break;
       case "rgb shift":
