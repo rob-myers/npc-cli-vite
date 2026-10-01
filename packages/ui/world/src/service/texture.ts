@@ -99,7 +99,7 @@ export const doorPanelMark = 254 / 255;
 const doorInks = {
   dark: { top: "#3f464e", bottom: "#2f353b", recess: "#343a41", plate: "rgba(24, 24, 24, 255)", panelAlpha: 1 },
   /** Under a far higher `theme.doors.brightness`, which is what whitens the letters — so the plate is near black */
-  light: { top: "#d3d9e0", bottom: "#bcc4cd", recess: "#c4ccd5", plate: "#030303", panelAlpha: doorPanelMark },
+  light: { top: "#7a828c", bottom: "#454b53", recess: "#5a616a", plate: "#030303", panelAlpha: doorPanelMark },
 };
 
 let doorInksKey: keyof typeof doorInks = "dark";

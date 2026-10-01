@@ -48220,8 +48220,8 @@
     },
     "light-theme": {
       "post": {
-        "lightBg": "#ffffff",
-        "darkBg": "#ffffff",
+        "lightBg": "#333",
+        "darkBg": "#000",
         "fadedFloorTint": 0.6,
         "fadedObstacleTint": 0.6
       },
@@ -48241,7 +48241,7 @@
         "panel": "light",
         "dissolve": true
       },
-      "walls": {"color": "#5b6573", "opacity": 0.5}
+      "walls": {"color": "#5b6573", "opacity": 0.25}
     }
   },
   "hash": {"obstacles": 770656442}
