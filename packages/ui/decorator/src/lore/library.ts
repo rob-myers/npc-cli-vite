@@ -1,11 +1,14 @@
 import "./virtual.d";
 import bundledLore from "virtual:lore";
-import { type LoreEntry, loreApiPath } from "./lore.schema";
+import z from "zod";
+import { type LoreEntry, LoreEntrySchema, loreApiPath } from "./lore.schema";
+
+const LoreEntriesSchema = z.record(z.string(), LoreEntrySchema);
 
 /** Every entry by key. Fetched during development, so a new file need not trigger a full reload */
 export async function loadLore(): Promise<Record<string, LoreEntry>> {
-  if (import.meta.env.DEV !== true) return bundledLore;
-  return await request("GET", loreApiPath);
+  // parsed, so an entry written before a field existed gains its default
+  return LoreEntriesSchema.parse(import.meta.env.DEV !== true ? bundledLore : await request("GET", loreApiPath));
 }
 
 /** DEV only */

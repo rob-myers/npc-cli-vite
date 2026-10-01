@@ -27,12 +27,20 @@ import {
   withHeight,
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
+import { LoreLayer } from "./lore/LoreLayer";
+import type { LoreEntry } from "./lore/lore.schema";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
 
 /** The map pane, once there is a World */
-export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React.RefObject<NavMap2dApi | null> }) {
-  const { w, meta, map } = props;
+export function Editor(props: {
+  w: WorldState;
+  meta: DecoratorUiMeta;
+  map: React.RefObject<NavMap2dApi | null>;
+  /** The lore pane's entry: drawn on the map, and a character's npc can be spawned */
+  lore: null | LoreEntry;
+}) {
+  const { w, meta, map, lore } = props;
   const { uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(
@@ -42,6 +50,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React
       selected: [],
       history: new DecorHistory(w),
       tool: "select",
+      lore,
+      spawning: false,
+      spawnError: null,
       /** For the point and quad tools */
       img: undefined,
       tilt: true,
@@ -123,8 +134,27 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React
       isMenuBlocked() {
         return performance.now() < state.menuBlockedUntil;
       },
+      async spawnAt(at) {
+        const { npcKey, skin, maps } = state.lore ?? {};
+        if (npcKey === undefined) return;
+        try {
+          const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
+          await w.npc.spawn({ npcKey, at, as: hasSkin ? skin : undefined });
+          if (hasSkin) w.n[npcKey]?.setSkin(skin); // a respawn keeps the old one
+          const access = (w.e.npcToAccess[npcKey] ??= {}) as Record<string, true>;
+          for (const gdKey of maps?.[w.mapKey]?.doors ?? []) {
+            if (gdKey in w.door.byKey) access[gdKey] = true;
+          }
+          w.view.forceUpdate();
+          if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
+          state.set({ spawning: false, spawnError: null });
+        } catch (e) {
+          state.set({ spawnError: e instanceof Error ? e.message : String(e) });
+        }
+      },
       onMapClick(at) {
         if (state.menuOpen) return; // a long press let go
+        if (state.spawning) return void state.spawnAt(at);
         if (state.tool === "select") return state.select([]);
         state.add(state.tool, at);
       },
@@ -170,7 +200,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React
           e.preventDefault();
           state.redo();
         } else if (e.key === "Escape") {
-          state.tool === "select" ? state.select([]) : state.set({ tool: "select" });
+          if (state.spawning) state.set({ spawning: false, spawnError: null });
+          else state.tool === "select" ? state.select([]) : state.set({ tool: "select" });
         } else if (e.key === "a" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
           state.select(Object.keys(w.decor.runtime.byKey));
@@ -197,6 +228,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React
     { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen], reset: { history: false } },
   );
 
+  state.lore = lore; // its handlers run long after this render
+
   useEffect(() => {
     // what the map is drawn from changes under it
     const sub = w.events.subscribe({
@@ -220,6 +253,20 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React
         <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
+        {lore?.kind === "character" && lore.npcKey !== undefined && (
+          <button
+            type="button"
+            title="click the map to put them there, with their skin and their doors"
+            className={cn(
+              "px-2 py-0.5 rounded border cursor-pointer",
+              state.spawning ? "border-yellow-400 text-yellow-200 bg-zinc-800" : "border-zinc-700 text-zinc-300",
+            )}
+            onClick={() => state.set({ spawning: !state.spawning, spawnError: null })}
+          >
+            spawn {lore.npcKey}
+          </button>
+        )}
+        {state.spawnError !== null && <span className="text-red-400">{state.spawnError}</span>}
         <ToolButton
           icon={SidebarSimpleIcon}
           title={meta.sidebarOpen ? "hide the list" : "show the list"}
@@ -366,12 +413,13 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta; map: React
             w={w}
             show={meta.show}
             npcKeys={meta.npcKeys}
-            cursor={state.tool === "select" ? undefined : "crosshair"}
+            cursor={state.tool === "select" && !state.spawning ? undefined : "crosshair"}
             onClick={state.onMapClick}
             onMarquee={(rect, e) =>
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
             }
           >
+            {lore !== null && <LoreLayer w={w} entry={lore} />}
             <DecorLayer
               w={w}
               selected={state.selected}
@@ -413,6 +461,12 @@ type State = {
   selected: string[];
   history: DecorHistory;
   tool: "select" | DecorType;
+  /** The lore pane's entry, as of the last render */
+  lore: null | LoreEntry;
+  /** Is the next click on the map where `lore`'s npc goes? */
+  spawning: boolean;
+  spawnError: null | string;
+  spawnAt(at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;
   y3d: number | undefined;

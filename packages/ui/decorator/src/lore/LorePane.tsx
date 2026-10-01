@@ -13,7 +13,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import stringify from "json-stringify-pretty-compact";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { DecoratorUiMeta } from "../schema";
 import { GrammarEditor } from "./GrammarEditor";
 import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
@@ -125,6 +125,39 @@ export default function LorePane(props: Props) {
           state.set({ error: String(e) });
         }
       },
+      async setNpcKey(next) {
+        const prev = state.draft?.npcKey;
+        state.patch({ npcKey: next });
+        const npc = prev === undefined ? undefined : w?.n?.[prev];
+        if (w === undefined || npc === undefined || prev === undefined) return;
+        // removed, then added back under the new name: where they stood, with their doors
+        try {
+          const at = { x: npc.point.x, y: npc.point.y };
+          const access = w.e.npcToAccess[prev];
+          const wasPlayer = w.player?.key === prev;
+          const skin = state.draft?.skin;
+          w.e.removeNpcs(prev);
+          if (next !== undefined) {
+            await w.npc.spawn({ npcKey: next, at, as: skin !== undefined && hasSkin(w, skin) ? skin : undefined });
+            if (access !== undefined) w.e.npcToAccess[next] = access;
+            if (wasPlayer) w.player.assign(next);
+          }
+          w.view.forceUpdate();
+          uiStoreApi.setUiMeta(meta.id, (draft) => {
+            const d = draft as DecoratorUiMeta;
+            d.npcKeys = d.npcKeys.flatMap((key) => (key !== prev ? key : (next ?? [])));
+          });
+        } catch (e) {
+          state.set({ error: String(e) });
+        }
+      },
+      setSkin(skin) {
+        state.patch({ skin });
+        const npc = state.draft?.npcKey === undefined ? undefined : w?.n?.[state.draft.npcKey];
+        if (w === undefined || npc === undefined || skin === undefined || !hasSkin(w, skin)) return;
+        npc.setSkin(skin);
+        w.view.forceUpdate();
+      },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           const d = draft as DecoratorUiMeta;
@@ -133,10 +166,11 @@ export default function LorePane(props: Props) {
       },
       locate(entry) {
         if (w === undefined) return;
-        const npc = w.n?.[entry.facts.npcKey];
+        const npc = entry.npcKey === undefined ? undefined : w.n?.[entry.npcKey];
         if (npc !== undefined) return props.onLocate(npc.point.x, npc.point.y);
-        if (entry.facts.grKey === undefined) return;
-        const { gmId, roomId } = helper.getGmRoomId(entry.facts.grKey as Geomorph.GmRoomKey);
+        const grKey = entry.maps[w.mapKey]?.rooms[0];
+        if (grKey === undefined) return;
+        const { gmId, roomId } = helper.getGmRoomId(grKey as Geomorph.GmRoomKey);
         const gm = w.gms[gmId];
         const room = gm?.rooms[roomId];
         if (room === undefined) return;
@@ -158,10 +192,16 @@ export default function LorePane(props: Props) {
     };
   }, []);
 
+  // the map pane draws the entry's rooms and doors, and can spawn its npc
+  useEffect(() => {
+    props.onEntry(state.draft === null ? null : { ...state.draft });
+    return () => props.onEntry(null);
+  }, [state.draft, state.rev]);
+
   // choosing an npc on the map shows their entry
   const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1];
   useEffect(() => {
-    const entry = Object.values(state.entries).find((e) => mapNpcKey !== undefined && e.facts.npcKey === mapNpcKey);
+    const entry = Object.values(state.entries).find((e) => mapNpcKey !== undefined && e.npcKey === mapNpcKey);
     if (entry !== undefined) state.select(entry.key);
   }, [mapNpcKey]);
 
@@ -178,7 +218,7 @@ export default function LorePane(props: Props) {
   );
   const npcKeys = Object.keys(w?.n ?? {});
   const npcKey =
-    [state.npcKey, draft?.facts.npcKey, mapNpcKey, w?.psi?.getTarget(), w?.player?.key].find(
+    [state.npcKey, draft?.npcKey, mapNpcKey, w?.psi?.getTarget(), w?.player?.key].find(
       (key) => typeof key === "string" && npcKeys.includes(key),
     ) ?? null;
 
@@ -279,8 +319,10 @@ export default function LorePane(props: Props) {
                 />
               </Field>
               <Field label="summary">
-                <input
-                  className={inputClass}
+                <textarea
+                  // grows with its text; two rows where `field-sizing` is unsupported
+                  className={cn(inputClass, "field-sizing-content resize-none")}
+                  rows={2}
                   readOnly={!editable}
                   value={draft.summary}
                   onChange={(e) => state.patch({ summary: e.currentTarget.value })}
@@ -321,6 +363,15 @@ export default function LorePane(props: Props) {
                   />
                 )}
               </Field>
+              {w !== undefined && (
+                <WorldFields
+                  w={w}
+                  draft={draft}
+                  onPatch={state.patch}
+                  onNpcKey={state.setNpcKey}
+                  onSkin={state.setSkin}
+                />
+              )}
               <Field label="links">
                 <div className="flex flex-wrap gap-1">
                   {draft.links.map((key) => (
@@ -485,6 +536,150 @@ function withFact(facts: Record<string, string>, index: number, key?: string, va
   );
 }
 
+/** What an entry has in the World: a character's npc, skin and doors, and anyone's rooms on this map */
+function WorldFields(props: {
+  w: WorldState;
+  draft: LoreEntry;
+  onPatch(partial: Partial<LoreEntry>): void;
+  onNpcKey(npcKey: string | undefined): void;
+  onSkin(skin: string | undefined): void;
+}) {
+  const { w, draft, onPatch } = props;
+  const here = draft.maps[w.mapKey] ?? { rooms: [], doors: [] };
+  const patchHere = (partial: Partial<typeof here>) =>
+    onPatch({ maps: { ...draft.maps, [w.mapKey]: { ...here, ...partial } } });
+
+  const roomLabels = new Map(
+    Object.values(w.decor?.byKey ?? {})
+      .filter(helper.isRoomLabel)
+      .map((d) => [d.meta.grKey as string, d.meta.label]),
+  );
+  const rooms = w.gms.flatMap((gm, gmId) =>
+    gm.rooms.map((_, roomId) => {
+      const grKey = helper.getGmRoomKey(gmId, roomId);
+      return { key: grKey as string, label: roomLabels.has(grKey) ? `${grKey} ${roomLabels.get(grKey)}` : grKey };
+    }),
+  );
+  // their rooms' doors first: those are the ones they would hold keys to
+  const near = new Set(here.rooms.flatMap((grKey) => roomDoorKeys(w, grKey)));
+  const doors = Object.keys(w.door?.byKey ?? {})
+    .sort((a, b) => Number(near.has(b)) - Number(near.has(a)))
+    .map((key) => ({ key, label: near.has(key) ? `${key} (of their rooms)` : key }));
+  const isCharacter = draft.kind === "character";
+
+  return (
+    <>
+      {isCharacter && (
+        <div className="flex gap-2">
+          <Field label="npc">
+            <NpcKeyInput key={draft.key} value={draft.npcKey ?? ""} onCommit={(v) => props.onNpcKey(v || undefined)} />
+          </Field>
+          <Field label="skin">
+            <select
+              className={inputClass}
+              disabled={!editable}
+              value={draft.skin ?? ""}
+              onChange={(e) => props.onSkin(e.currentTarget.value || undefined)}
+            >
+              <option value="">default</option>
+              {(w.npc?.skin.entries ?? []).map(({ key }) => (
+                <option key={key}>{key}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
+      <Field label={`rooms on ${w.mapKey}`}>
+        <Chips items={here.rooms} options={rooms} add="+ room" onChange={(rooms) => patchHere({ rooms })} />
+      </Field>
+      {isCharacter && (
+        <Field label={`door keys on ${w.mapKey}`}>
+          <Chips items={here.doors} options={doors} add="+ door" onChange={(doors) => patchHere({ doors })} />
+        </Field>
+      )}
+    </>
+  );
+}
+
+/** Committed on enter or blur, not per keystroke: a commit renames their npc in the World */
+function NpcKeyInput({ value, onCommit }: { value: string; onCommit(value: string): void }) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const commit = () => text.trim() !== value && onCommit(text.trim());
+  return (
+    <input
+      className={cn(inputClass, "w-28")}
+      readOnly={!editable}
+      placeholder="npcKey"
+      value={text}
+      onChange={(e) => setText(e.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === "Enter" && commit()}
+    />
+  );
+}
+
+function hasSkin(w: WorldState, skin: string) {
+  return w.npc?.getSkinIndexBySkinKey(skin) !== -1;
+}
+
+function roomDoorKeys(w: WorldState, grKey: string): string[] {
+  const node = w.gmRoomGraph?.getNode(grKey as Geomorph.GmRoomKey) ?? null;
+  return node === null ? [] : w.gmRoomGraph.getSuccs(node).flatMap((succ) => (succ.type === "door" ? succ.gdKey : []));
+}
+
+/** Keys as removable chips, and a select to add one of `options` */
+function Chips(props: {
+  items: string[];
+  options: { key: string; label: string }[];
+  add: string;
+  onChange(items: string[]): void;
+}) {
+  const labels = new Map(props.options.map((o) => [o.key, o.label]));
+  return (
+    <div className="flex flex-wrap gap-1">
+      {props.items.map((key) => (
+        <span
+          key={key}
+          title={labels.get(key) ?? "not on this map"}
+          className={cn(
+            "flex items-center gap-1 px-1 rounded border border-zinc-800",
+            !labels.has(key) && "text-red-400",
+          )}
+        >
+          {key}
+          {editable && (
+            <button
+              type="button"
+              title="remove"
+              className="cursor-pointer text-zinc-500 hover:text-zinc-100"
+              onClick={() => props.onChange(props.items.filter((k) => k !== key))}
+            >
+              <XIcon />
+            </button>
+          )}
+        </span>
+      ))}
+      {editable && (
+        <select
+          className={inputClass}
+          value=""
+          onChange={(e) => props.onChange([...props.items, e.currentTarget.value])}
+        >
+          <option value="">{props.add}</option>
+          {props.options
+            .filter((o) => !props.items.includes(o.key))
+            .map((o) => (
+              <option key={o.key} value={o.key}>
+                {o.label}
+              </option>
+            ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
@@ -524,12 +719,14 @@ const zoomStep = 0.1;
 const minZoom = 0.7;
 const maxZoom = 2;
 const sampleSeeds = [0, 1, 2, 3, 4, 5, 6, 7];
-const emptyEntry = { title: "", summary: "", backstory: "", voice: "", facts: {}, links: [], grammar: {} };
+const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {}, facts: {}, links: [], grammar: {} };
 
 type Props = {
   meta: DecoratorUiMeta;
   /** Absent, nothing can be said or located */
   w: WorldState | undefined;
+  /** The entry shown, as edited — a copy each time, so it can be compared by identity */
+  onEntry(entry: null | LoreEntry): void;
   /** Centre the map pane on a world point */
   onLocate(x: number, y: number): void;
 };
@@ -557,6 +754,10 @@ type State = {
   show(key: string | undefined): void;
   select(key: string): void;
   zoomBy(delta: number): void;
+  /** Their npc in the World, if there, is respawned under the new key */
+  setNpcKey(npcKey: string | undefined): Promise<void>;
+  /** Their npc in the World, if there, takes it */
+  setSkin(skin: string | undefined): void;
   patch(partial: Partial<LoreEntry>): void;
   setGrammarText(text: string): void;
   save(): Promise<void>;

@@ -17,7 +17,15 @@ export const LoreEntrySchema = z.object({
   backstory: z.string().default(""),
   /** How they speak */
   voice: z.string().default(""),
-  /** e.g. `{ role: "watchman", npcKey: "kate", grKey: "g0r3" }` — each is a grammar rule too */
+  /** A character's npc in the World */
+  npcKey: z.string().optional(),
+  /** A character's skin, e.g. `medic-0` */
+  skin: z.string().optional(),
+  /** By mapKey: the rooms that are theirs (or are this place), and the doors a character may open */
+  maps: z
+    .record(z.string(), z.object({ rooms: z.array(z.string()).default([]), doors: z.array(z.string()).default([]) }))
+    .default({}),
+  /** e.g. `{ role: "watchman" }` — each is a grammar rule too */
   facts: z.record(z.string(), z.string()).default({}),
   /** Other entries' keys, whose grammars this one inherits */
   links: z.array(z.string()).default([]),

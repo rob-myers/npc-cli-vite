@@ -19,6 +19,7 @@ const VIRTUAL_ID = "virtual:lore";
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 const DEBOUNCE_MS = 100;
 const FILE_PREFIX = `${loreApiPath}/file/`;
+const SCHEMA_PATH = path.join(PROJECT_ROOT, "packages/ui/decorator/src/lore/lore.schema.ts");
 
 /**
  * Provides `packages/media/lore/{kind}/{slug}.json` to the Decorator's lore pane — see `docs/lore.md`.
@@ -55,8 +56,10 @@ export function lorePlugin(): Plugin {
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Cache-Control", "no-store");
         try {
+          // loaded afresh, so an edit to the schema needs no restart: the static import is cached
+          const { LoreEntrySchema } = (await server.ssrLoadModule(SCHEMA_PATH)) as LoreSchemaModule;
           if (url === loreApiPath && req.method === "GET") {
-            return res.end(JSON.stringify(readEntries()));
+            return res.end(JSON.stringify(readEntries(LoreEntrySchema)));
           }
           const key = url.slice(FILE_PREFIX.length);
           const filePath = path.join(LORE_DIR, `${key}.json`);
@@ -113,7 +116,7 @@ export function lorePlugin(): Plugin {
 }
 
 /** By key; a file that does not parse is skipped with a warning */
-function readEntries(): Record<string, LoreEntry> {
+function readEntries(schema: LoreSchemaModule["LoreEntrySchema"] = LoreEntrySchema): Record<string, LoreEntry> {
   const entries: Record<string, LoreEntry> = {};
   for (const kind of loreKinds) {
     const dir = path.join(LORE_DIR, kind);
@@ -121,7 +124,7 @@ function readEntries(): Record<string, LoreEntry> {
     for (const filename of fs.readdirSync(dir).filter((x) => x.endsWith(".json"))) {
       const key = `${kind}/${filename.slice(0, -".json".length)}`;
       try {
-        const entry = LoreEntrySchema.parse(JSON.parse(fs.readFileSync(path.join(dir, filename), "utf8")));
+        const entry = schema.parse(JSON.parse(fs.readFileSync(path.join(dir, filename), "utf8")));
         entries[key] = { ...entry, key, kind };
       } catch (e) {
         console.warn(`[lore] skipped ${key}: ${e instanceof Error ? e.message : e}`);
@@ -130,3 +133,5 @@ function readEntries(): Record<string, LoreEntry> {
   }
   return entries;
 }
+
+type LoreSchemaModule = typeof import("@npc-cli/ui__decorator/lore-schema");

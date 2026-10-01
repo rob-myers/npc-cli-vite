@@ -8,7 +8,7 @@ DEV and shipped as data. No model runs: variety comes from Tracery-style grammar
 One JSON file per entry, `packages/media/lore/{kind}/{slug}.json`, its key `{kind}/{slug}`. Kinds:
 `setting`, `level`, `place`, `faction`, `character`. `LoreEntrySchema`
 (`ui/decorator/src/lore/lore.schema.ts`) has `title`, `summary`, `backstory`, `voice`, `facts`,
-`links`, `grammar`, and `dialogue` (unused as yet).
+`links`, `grammar`, `dialogue` (unused as yet), and what it has in the World (below).
 
 `scripts/src/vite-plugin-lore.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -43,5 +43,19 @@ coloured by `GrammarEditor`: a layer beneath a textarea of transparent text, `#t
 `[actions:` picked out. Who says it: the one chosen there, else the entry's
 `facts.npcKey`, else the last npc chosen on the map, else the psi target, else the player.
 
-Selecting an entry centres the map on its `facts.npcKey`, else its `facts.grKey`; choosing an npc on
-the map shows the entry whose `facts.npcKey` they are. Without a World the pane still edits.
+Selecting an entry centres the map on its npc, else its first room; choosing an npc on the map
+shows the entry whose `npcKey` they are. Without a World the pane still edits.
+
+## In the World
+
+An entry has `maps[mapKey].rooms` (grKeys); a character also `npcKey`, `skin` and
+`maps[mapKey].doors` (the gdKeys they hold keys to). Per map, as a `g0r21` means nothing on another.
+
+- The map pane outlines the shown entry's rooms and doors (`lore/LoreLayer.tsx`).
+- Its **spawn {npcKey}** button puts them where the map is next clicked (`Editor.spawnAt`): spawned
+  or moved, in their skin, and granted their doors.
+- Editing `npcKey` (committed on enter or blur) removes their npc and adds it back under the new
+  key where they stood, keeping their doors; clearing it only removes. Editing `skin` reskins them.
+
+The DEV endpoints load the schema with `ssrLoadModule`, so a schema edit needs no restart; an edit to
+the plugin itself does.

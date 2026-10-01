@@ -4,9 +4,10 @@ import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn } from "@npc-cli/util";
 import { BookOpenTextIcon, MapTrifoldIcon } from "@phosphor-icons/react";
 import { Allotment, type AllotmentHandle } from "allotment";
-import { lazy, Suspense, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
+import { lazy, Suspense, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { locateZoom } from "./decor-edit";
 import { Editor } from "./Editor";
+import type { LoreEntry } from "./lore/lore.schema";
 import type { NavMap2dApi } from "./NavMap2d";
 import type { DecoratorUiMeta } from "./schema";
 
@@ -21,6 +22,8 @@ export default function Decorator({ meta }: { meta: DecoratorUiMeta }) {
   const { uiStoreApi } = useContext(UiContext);
   const map = useRef<NavMap2dApi>(null);
   const allotment = useRef<AllotmentHandle>(null);
+  /** The lore pane's entry as edited, which the map draws and can spawn */
+  const [lore, setLore] = useState<null | LoreEntry>(null);
   // a meta persisted before there were panes has neither field
   const hidden = meta.hidden === undefined ? "lore" : meta.hidden;
   /** Mounted once first shown, so a map-only Decorator never fetches it */
@@ -64,13 +67,18 @@ export default function Decorator({ meta }: { meta: DecoratorUiMeta }) {
             <div className="size-full grid place-items-center text-zinc-400 text-sm">waiting for {meta.worldKey}…</div>
           ) : (
             // keyed by the state OBJECT: a World remade by HMR is a new one, and the editor starts over on it
-            <Editor key={epochOf(w)} w={w} meta={meta} map={map} />
+            <Editor key={epochOf(w)} w={w} meta={meta} map={map} lore={lore} />
           )}
         </Allotment.Pane>
         <Allotment.Pane visible={hidden !== "lore"} snap minSize={240} preferredSize="50%">
           {loreSeen.current && (
             <Suspense fallback={null}>
-              <LorePane meta={meta} w={w} onLocate={(x, y) => map.current?.centreOn(x, y, locateZoom)} />
+              <LorePane
+                meta={meta}
+                w={w}
+                onEntry={setLore}
+                onLocate={(x, y) => map.current?.centreOn(x, y, locateZoom)}
+              />
             </Suspense>
           )}
         </Allotment.Pane>
