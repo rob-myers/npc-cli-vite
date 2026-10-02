@@ -99,6 +99,10 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
         }
         // and whatever was lit by hand, which nothing about the player decides — see `setRoomLit`
         for (const grKey of w.e.handLitRooms) rooms.push(helper.getGmRoomId(grKey));
+        // and the room of whoever the player's psi is on
+        const { at, also } = w.psi?.targetRoom ?? {};
+        if (at != null) rooms.push(at);
+        if (also != null) rooms.push(also);
       }
 
       const showAll = this.mode === "ship" || inView === null;
