@@ -48231,7 +48231,7 @@
         "opacity": 1
       },
       "floor": {"hullFill": "#bfc6cf", "deck": "light"},
-      "lights": {"unlit": 1, "unlitTint": "#2b333d", "cone": 0.5},
+      "lights": {"unlit": 1, "unlitTint": "#111", "cone": 0.5},
       "obstacles": {"brightness": 1.6},
       "npcs": {"ambient": 0.8, "fx": {"additive": true, "shade": 1, "gain": 5}},
       "doors": {
