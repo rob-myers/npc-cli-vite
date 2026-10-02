@@ -30,6 +30,8 @@ const FlatBaseUiMetaSchema = z.looseObject({
   disableOnRehydrate: z.boolean().optional(),
   /** Force UI initially enabled */
   enableOnRehydrate: z.boolean().optional(),
+  /** Changing it remounts the ui */
+  mountKey: z.number().optional(),
   /** For sub-uis e.g. individual tabs */
   parentId: z.string().optional(),
   /** e.g. tab header */

@@ -32,6 +32,8 @@ export type WorldSettings = {
   brightness: number;
   /** The npcs' own, a multiplier on their skin — see `NPCs`' `dimNode` */
   npcBrightness: number;
+  /** Which of the two the menu's one slider last adjusted */
+  lightKey: "world" | "npc";
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
   /** How the camera follows the player — an option of either `cameraMode` */
@@ -78,6 +80,7 @@ export type WorldSettings = {
 const defaultWorldSettings: WorldSettings = {
   brightness: defaultBrightness,
   npcBrightness: defaultNpcBrightness,
+  lightKey: "world",
   cameraMode: isTouchDevice() ? "free" : "canonical",
   cameraInitial: null,
   followMode: defaultFollowMode,
