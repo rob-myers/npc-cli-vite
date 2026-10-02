@@ -1,4 +1,4 @@
-/* The map's ink — see `ink` in `NavMap2d`, `DecorLayer` and `LoreLayer` */
+/* The map's ink — see `ink` in `NavMap2d`, `DecorLayer` and `ManifestLoreLayer` */
 .decorator {
   --deco-bg: #050608;
   --deco-hull: #0b0d10;
@@ -25,8 +25,8 @@
   --deco-circle: #9ccf8f;
   --deco-quad: #e09a6a;
 
-  --deco-lore-room: rgba(250, 204, 21, 0.12);
-  --deco-lore-edge: rgba(250, 204, 21, 0.8);
+  --deco-manifest-lore-room: rgba(250, 204, 21, 0.12);
+  --deco-manifest-lore-edge: rgba(250, 204, 21, 0.8);
 }
 
 .theme-light .decorator {
@@ -55,8 +55,8 @@
   --deco-circle: #3d8a2e;
   --deco-quad: #b55a1e;
 
-  --deco-lore-room: rgba(194, 65, 12, 0.12);
-  --deco-lore-edge: rgba(65, 194, 12, 0.85);
+  --deco-manifest-lore-room: rgba(194, 65, 12, 0.12);
+  --deco-manifest-lore-edge: rgba(65, 194, 12, 0.85);
 
   /* The panels are written in dark zinc: turn the scale over, and darken each accent */
   --color-zinc-950: #fafafa;
@@ -99,51 +99,4 @@
   /* ...and the muted greys sit too near the page to read at this size */
   --color-zinc-500: #8e8e99;
   --color-zinc-400: #b4b4bd;
-}
-
-/*
- * The lore is read rather than drawn on: its dark is lifted off black, and each step of the scale
- * leans a different way for depth — indigo ground, violet surfaces, teal edges, warm text
- */
-.theme-dark .decorator .lore-pane {
-  --color-zinc-950: #232632;
-  --color-zinc-900: #2e2e40;
-  --color-zinc-800: #3a444e;
-  --color-zinc-700: #4a555f;
-  --color-zinc-600: #717d87;
-  --color-zinc-500: #aea797;
-  --color-zinc-400: #c8c4b9;
-  --color-zinc-300: #e2e0da;
-  --color-zinc-100: #f6f3ec;
-
-  /* a cool corner and a warm one, barely there, over a hexagonal deck plate */
-  background-image:
-    linear-gradient(155deg, rgba(110, 130, 255, 0.07), transparent 45%, rgba(255, 160, 110, 0.05)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19.05' height='33'%3E%3Cpath d='M9.525 0L19.05 5.5V16.5L9.525 22L0 16.5V5.5ZM9.525 22V33' fill='none' stroke='rgb%28190,200,230%29' stroke-opacity='0.13' stroke-width='1'/%3E%3C/svg%3E");
-}
-
-/* Each section of a lore card is shaded, deepest at its head: greys, each leaning faintly its own way */
-.decorator .lore-section {
-  --lore-shade: rgba(40, 50, 70, 0.06);
-  background-image: linear-gradient(180deg, var(--lore-shade), transparent 140%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-/* plain over the hexagons, so nothing is read against them */
-.theme-dark .decorator .lore-section {
-  background-color: var(--color-zinc-950);
-}
-.theme-dark .decorator .lore-section[data-section="about"] {
-  --lore-shade: rgba(190, 196, 214, 0.09);
-}
-.theme-dark .decorator .lore-section[data-section="world"] {
-  --lore-shade: rgba(186, 204, 204, 0.06);
-}
-.theme-dark .decorator .lore-section[data-section="story"] {
-  --lore-shade: rgba(202, 192, 214, 0.075);
-}
-.theme-dark .decorator .lore-section[data-section="grammar"] {
-  --lore-shade: rgba(214, 202, 190, 0.06);
-}
-.theme-dark .decorator .lore-section[data-section="say"] {
-  --lore-shade: rgba(190, 200, 216, 0.1);
 }

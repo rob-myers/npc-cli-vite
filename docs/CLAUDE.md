@@ -126,8 +126,8 @@ toggle labels it and opens a card per pick.
 
 ## Lore
 
-See `docs/lore.md` — the ONLY doc for it. In short: backstories and Tracery grammars, one JSON per
-entry in `packages/media/lore/{kind}/{slug}.json`, edited in the Decorator's second pane (DEV saves
+See `docs/manifest-lore.md` — the ONLY doc for it. In short: backstories and Tracery grammars, one JSON per
+entry in `packages/media/lore/{kind}/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest` (DEV saves
 through `/api/lore`; a build bundles them as `virtual:lore`) and said in the World via `w.speech.say`.
 
 ## MapEdit saving
@@ -175,7 +175,7 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 ## Conventions
 
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
-- A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — in the Decorator, `Picker`.
+- A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — `Picker`, from `@npc-cli/util/picker`.
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
 - `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`' `onTick` via `useMemo`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.

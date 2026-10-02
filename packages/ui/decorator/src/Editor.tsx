@@ -1,7 +1,9 @@
 import { Menu } from "@base-ui/react/menu";
+import { manifestShared, useManifestLoreCharacters, useManifestShared } from "@npc-cli/ui__manifest/shared";
 import type { WorldState } from "@npc-cli/ui__world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import { Picker as BasePicker } from "@npc-cli/util/picker";
 import {
   ArrowUUpLeftIcon,
   ArrowUUpRightIcon,
@@ -10,7 +12,7 @@ import {
   EyeSlashIcon,
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
@@ -26,23 +28,19 @@ import {
   withHeight,
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
-import { LoreLayer } from "./lore/LoreLayer";
-import type { LoreCharacter, LoreEntry } from "./lore/lore.schema";
+import { ManifestLoreLayer } from "./ManifestLoreLayer";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
-import { Picker } from "./Picker";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
 
 /** The map pane, once there is a World */
-export function Editor(props: {
-  w: WorldState;
-  meta: DecoratorUiMeta;
-  map: React.RefObject<NavMap2dApi | null>;
-  /** The lore pane's entry, drawn on the map */
-  lore: null | LoreEntry;
+export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
+  const { w, meta } = props;
+  const map = useRef<NavMap2dApi>(null);
+  /** What a Manifest on this World shows, should there be one: its entry is drawn on the map */
+  const shared = useManifestShared(meta.worldKey);
+  const manifestLore = shared.entry;
   /** Each can be spawned, with their skin and their doors */
-  characters: LoreCharacter[];
-}) {
-  const { w, meta, map, lore, characters } = props;
+  const characters = useManifestLoreCharacters(manifestLore);
   const { uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(
@@ -220,6 +218,24 @@ export function Editor(props: {
   /** The lore's characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
 
+  // a Manifest shows the entry of whoever was last chosen here
+  const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1] ?? null;
+  useEffect(() => {
+    manifestShared.set(meta.worldKey, { npcKey: mapNpcKey });
+  }, [meta.worldKey, mapNpcKey]);
+
+  // ...and asks for the map to be centred on its entry's npc, else its first room
+  useEffect(() => {
+    if (shared.locate !== null) map.current?.centreOn(shared.locate.x, shared.locate.y, locateZoom);
+  }, [shared.locate]);
+
+  // ...and whoever it renames is followed here under their new key
+  useEffect(() => {
+    const { renamed } = shared;
+    if (renamed === null || meta.npcKeys.includes(renamed.from) === false) return;
+    state.setNpcKeys(meta.npcKeys.flatMap((key) => (key !== renamed.from ? key : (renamed.to ?? []))));
+  }, [shared.renamed]);
+
   useEffect(() => {
     // what the map is drawn from changes under it
     const sub = w.events.subscribe({
@@ -368,7 +384,7 @@ export function Editor(props: {
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
             }
           >
-            {lore !== null && <LoreLayer w={w} entry={lore} />}
+            {manifestLore !== null && <ManifestLoreLayer w={w} entry={manifestLore} />}
             <DecorLayer
               w={w}
               selected={state.selected}
@@ -534,3 +550,8 @@ const redrawOn = new Set<string>([
   "door-locked",
   "door-unlocked",
 ]);
+
+/** Its popup is portalled out of the panel, so it is told whose theme to take */
+function Picker<T extends string>(props: Omit<Parameters<typeof BasePicker<T>>[0], "popupClassName">) {
+  return <BasePicker {...props} popupClassName="decorator" />;
+}

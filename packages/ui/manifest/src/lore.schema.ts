@@ -6,7 +6,7 @@ export type LoreKind = (typeof loreKinds)[number];
 /** A file's name, and an entry's key after its kind */
 export const loreSlugRe = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-/** One file, `packages/media/lore/{kind}/{slug}.json` — see `docs/lore.md` */
+/** One file, `packages/media/lore/{kind}/{slug}.json` — see `docs/manifest-lore.md` */
 export const LoreEntrySchema = z.object({
   /** `{kind}/{slug}`, as its path */
   key: z.string(),

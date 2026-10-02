@@ -7,7 +7,7 @@ itself an entry (`setting/low-berth`): a loose backdrop for many small scenarios
 
 One JSON file per entry, `packages/media/lore/{kind}/{slug}.json`, its key `{kind}/{slug}`. Kinds:
 `setting`, `level`, `place`, `faction`, `character`. `LoreEntrySchema`
-(`ui/decorator/src/lore/lore.schema.ts`) has `title`, `summary`, `backstory`, `voice`, `facts`,
+(`ui/manifest/src/lore.schema.ts`) has `title`, `summary`, `backstory`, `voice`, `facts`,
 `links`, `grammar`, `dialogue` (unused as yet), and what it has in the World (below).
 
 `scripts/src/vite-plugin-lore.ts` provides them, as `jobsExamplesPlugin` does its examples:
@@ -20,7 +20,7 @@ One JSON file per entry, `packages/media/lore/{kind}/{slug}.json`, its key `{kin
 
 A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write inside the folder.
 
-## Grammars: `lore/tracery.ts`
+## Grammars: `tracery.ts`
 
 `#rule#` expands to one of the rule's options; `#rule.capitalize#`, `.capitalizeAll`, `.a` and `.s`
 modify it; `[name:#rule#]` fixes a choice as `name` for the rest of the line; `\#` is a literal. A
@@ -34,15 +34,17 @@ An entry's grammar is merged from, later winning rule by rule:
 4. the entry's own `grammar`;
 5. the World's facts: `npc`, `room` (their `grKey`) and `player`.
 
-## The pane: `lore/LorePane.tsx`
+## The panel: `ui/manifest`
 
-The Decorator's second pane (`docs/decorator.md`), lazy, and mounted only once shown. Wide enough
-(`wideWidth`, at the text's zoom) its three columns sit side by side and resize (`meta.loreSplit`);
-narrower, they stack. The text zoom buttons (`meta.loreZoom`) float over its top right corner. Entries by
+`@npc-cli/ui__manifest` (uiKey `Manifest`), a panel of its own: `Manifest.tsx`. `meta.worldKey`
+names the World it says lines in (default `world-0`), found by `useWorld`; without one it still
+edits. Wide enough
+(`wideWidth`, at the text's zoom) its three columns sit side by side and resize (`meta.split`);
+narrower, they stack. The text zoom buttons (`meta.zoom`) float over its top right corner. Entries by
 kind; a card to edit (DEV only; an edit saves itself `autosaveMs` after the last keystroke); and a preview sampling one rule, each line
 sayable by an npc via `w.speech.say`.
 
-The card is four sections, each folding under its header (`meta.loreFolded`) as the preview's
+The card is four sections, each folding under its header (`meta.folded`) as the preview's
 **say** does, which then says what
 it holds: **about** (title, summary, facts), **world** (npc, skin, keys), **story** (backstory,
 voice) and **grammar**, whose header shows a parse error even folded.
@@ -55,8 +57,10 @@ coloured by `GrammarEditor`: a layer beneath a textarea of transparent text, `#t
 `[actions:` picked out. Who says it: the one chosen there, else the entry's
 `facts.npcKey`, else the last npc chosen on the map, else the psi target, else the player.
 
-Selecting an entry centres the map on its npc, else its first room; choosing an npc on the map
-shows the entry whose `npcKey` they are. Without a World the pane still edits.
+Selecting an entry centres a Decorator's map on its npc, else its first room; choosing an npc on
+that map shows the entry whose `npcKey` they are. Both go through `manifestShared` (`shared.ts`), a
+small store keyed by `worldKey` — `entry`, `npcKey`, `locate`, `renamed` — so neither panel imports
+the other, and either may be absent.
 
 ## In the World
 
@@ -64,9 +68,10 @@ An entry has `maps[mapKey].rooms` (grKeys); a character also `npcKey`, `skin` an
 `maps[mapKey].doors` (the gdKeys they hold keys to). Per map, as a `g0r21` means nothing on another.
 Rooms, doors and `links` are all entered in the card's key box.
 
-- The map pane outlines the shown entry's rooms and doors (`lore/LoreLayer.tsx`).
-- Its **spawn {npcKey}** button puts them where the map is next clicked (`Editor.spawnAt`): spawned
-  or moved, in their skin, and granted their doors.
+- The Decorator's map outlines the shown entry's rooms and doors (`ui/decorator/src/ManifestLoreLayer.tsx`).
+- Its **npcs** menu lists every character with an npc (`useManifestLoreCharacters`); choosing one puts them
+  where the map is next clicked (`Editor.spawnNpc`): spawned or moved, in their skin, and granted
+  their doors.
 - Editing `npcKey` (committed on enter or blur) removes their npc and adds it back under the new
   key where they stood, keeping their doors; clearing it only removes. Editing `skin` reskins them.
 

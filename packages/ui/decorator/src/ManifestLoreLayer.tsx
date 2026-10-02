@@ -1,9 +1,9 @@
+import type { LoreEntry } from "@npc-cli/ui__manifest/lore-schema";
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
-import type { LoreEntry } from "./lore.schema";
 
-/** On the map, the rooms and doors the lore pane's entry has on this World's map */
-export function LoreLayer({ w, entry }: { w: WorldState; entry: LoreEntry }) {
+/** On the map, the rooms and doors the Manifest's entry has on this World's map */
+export function ManifestLoreLayer({ w, entry }: { w: WorldState; entry: LoreEntry }) {
   const here = entry.maps[w.mapKey];
   if (here === undefined) return null;
   return (
@@ -47,4 +47,4 @@ export function LoreLayer({ w, entry }: { w: WorldState; entry: LoreEntry }) {
   );
 }
 
-const ink = { room: "var(--deco-lore-room)", edge: "var(--deco-lore-edge)" };
+const ink = { room: "var(--deco-manifest-lore-room)", edge: "var(--deco-manifest-lore-edge)" };

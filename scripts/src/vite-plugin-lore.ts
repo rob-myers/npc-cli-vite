@@ -8,7 +8,7 @@ import {
   loreApiPath,
   loreChangedEvent,
   loreKinds,
-} from "@npc-cli/ui__decorator/lore-schema";
+} from "@npc-cli/ui__manifest/lore-schema";
 import stringify from "json-stringify-pretty-compact";
 import type { Plugin } from "vite";
 
@@ -19,10 +19,10 @@ const VIRTUAL_ID = "virtual:lore";
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 const DEBOUNCE_MS = 100;
 const FILE_PREFIX = `${loreApiPath}/file/`;
-const SCHEMA_PATH = path.join(PROJECT_ROOT, "packages/ui/decorator/src/lore/lore.schema.ts");
+const SCHEMA_PATH = path.join(PROJECT_ROOT, "packages/ui/manifest/src/lore.schema.ts");
 
 /**
- * Provides `packages/media/lore/{kind}/{slug}.json` to the Decorator's lore pane — see `docs/lore.md`.
+ * Provides `packages/media/lore/{kind}/{slug}.json` to the Manifest — see `docs/manifest-lore.md`.
  *
  * Bundled for production, but fetched (and saved) during development, as `jobsExamplesPlugin` does.
  */
@@ -134,4 +134,4 @@ function readEntries(schema: LoreSchemaModule["LoreEntrySchema"] = LoreEntrySche
   return entries;
 }
 
-type LoreSchemaModule = typeof import("@npc-cli/ui__decorator/lore-schema");
+type LoreSchemaModule = typeof import("@npc-cli/ui__manifest/lore-schema");

@@ -19,6 +19,7 @@
     "./legacy/dom": "./src/legacy/dom.js",
     "./service/canvas": "./src/service/canvas.ts",
     "./local-store": "./src/service/local-store.ts",
+    "./picker": "./src/components/Picker.tsx",
     "./use-svg-zoom": "./src/hooks/use-svg-zoom.ts",
     "./build-info": "./src/service/build-info.ts"
   },

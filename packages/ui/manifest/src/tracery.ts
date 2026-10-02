@@ -1,6 +1,6 @@
 /**
  * A small Tracery: `#rule#` expands to one of the rule's options, `#rule.mod#` modifies it, and
- * `[name:#rule#]` fixes a choice as `name` for the rest of the line — see `docs/lore.md`
+ * `[name:#rule#]` fixes a choice as `name` for the rest of the line — see `docs/manifest-lore.md`
  */
 export type Grammar = Record<string, string[]>;
 

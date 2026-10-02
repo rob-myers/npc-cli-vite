@@ -1,7 +1,9 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
+import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
+import { Picker as BasePicker } from "@npc-cli/util/picker";
 import {
   ArrowsClockwiseIcon,
   CaretDownIcon,
@@ -16,24 +18,21 @@ import {
 import { Allotment } from "allotment";
 import stringify from "json-stringify-pretty-compact";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Picker } from "../Picker";
-import type { DecoratorUiMeta } from "../schema";
 import { GrammarEditor } from "./GrammarEditor";
 import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
-import {
-  isLoreCharacter,
-  type LoreCharacter,
-  type LoreEntry,
-  type LoreKind,
-  loreChangedEvent,
-  loreKinds,
-  loreSlugRe,
-} from "./lore.schema";
+import { type LoreEntry, type LoreKind, loreChangedEvent, loreKinds, loreSlugRe } from "./lore.schema";
+import type { ManifestUiMeta } from "./schema";
+import { manifestShared, useManifestShared } from "./shared";
 import { expand, factsGrammar, type Grammar, mergeGrammars, seededRng } from "./tracery";
 
-/** Backstories and grammars for the setting, and a line of them said in the World — see `docs/lore.md` */
-export default function LorePane(props: Props) {
-  const { meta, w } = props;
+import "./manifest.css";
+
+/**
+ * The setting's lore: backstories and grammars, and a line of them said in a live World, should
+ * there be one — see `docs/manifest-lore.md`
+ */
+export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
+  const w = useWorld(meta.worldKey);
   const { uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(
@@ -78,7 +77,7 @@ export default function LorePane(props: Props) {
         // what is typed is kept, bar a grammar that does not parse
         if (state.grammarError === null) state.dirty === true && state.save();
         else if (window.confirm("Discard the unparsed grammar?") === false) return;
-        uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as DecoratorUiMeta).entryKey = key));
+        uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).entryKey = key));
         state.show(key);
         const entry = state.entries[key];
         if (entry !== undefined) state.locate(entry);
@@ -154,10 +153,7 @@ export default function LorePane(props: Props) {
             if (wasPlayer) w.player.assign(next);
           }
           w.view.forceUpdate();
-          uiStoreApi.setUiMeta(meta.id, (draft) => {
-            const d = draft as DecoratorUiMeta;
-            d.npcKeys = d.npcKeys.flatMap((key) => (key !== prev ? key : (next ?? [])));
-          });
+          manifestShared.set(meta.worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
         } catch (e) {
           state.set({ error: String(e) });
         }
@@ -171,20 +167,20 @@ export default function LorePane(props: Props) {
       },
       toggleFold(name) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
-          const d = draft as DecoratorUiMeta;
-          d.loreFolded = d.loreFolded.includes(name) ? d.loreFolded.filter((x) => x !== name) : [...d.loreFolded, name];
+          const d = draft as ManifestUiMeta;
+          d.folded = d.folded.includes(name) ? d.folded.filter((x) => x !== name) : [...d.folded, name];
         });
       },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
-          const d = draft as DecoratorUiMeta;
-          d.loreZoom = Math.min(maxZoom, Math.max(minZoom, Math.round(((d.loreZoom ?? 1) + delta) * 10) / 10));
+          const d = draft as ManifestUiMeta;
+          d.zoom = Math.min(maxZoom, Math.max(minZoom, Math.round(((d.zoom ?? 1) + delta) * 10) / 10));
         });
       },
       locate(entry) {
         if (w === undefined) return;
         const npc = entry.npcKey === undefined ? undefined : w.n?.[entry.npcKey];
-        if (npc !== undefined) return props.onLocate(npc.point.x, npc.point.y);
+        if (npc !== undefined) return manifestShared.set(meta.worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
         const grKey = entry.maps[w.mapKey]?.rooms[0];
         if (grKey === undefined) return;
         const { gmId, roomId } = helper.getGmRoomId(grKey as Geomorph.GmRoomKey);
@@ -193,7 +189,7 @@ export default function LorePane(props: Props) {
         if (room === undefined) return;
         const { x, y } = room.center;
         const { a, b, c, d, e, f } = gm.transform;
-        props.onLocate(a * x + c * y + e, b * x + d * y + f);
+        manifestShared.set(meta.worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
       },
     }),
     { deps: [w, meta.entryKey] },
@@ -209,23 +205,16 @@ export default function LorePane(props: Props) {
     };
   }, []);
 
-  // the map pane draws the entry's rooms and doors, and can spawn its npc
+  // a map of this World outlines the entry's rooms and doors, and spawns its npc as edited
   useEffect(() => {
-    props.onEntry(state.draft === null ? null : { ...state.draft });
-    return () => props.onEntry(null);
-  }, [state.draft, state.rev]);
+    manifestShared.set(meta.worldKey, { entry: state.draft === null ? null : { ...state.draft } });
+    return () => manifestShared.set(meta.worldKey, { entry: null });
+  }, [meta.worldKey, state.draft, state.rev]);
 
-  // the map pane can spawn any character with an npc, as edited
+  // choosing an npc on such a map shows their entry
+  const { npcKey: mapNpcKey } = useManifestShared(meta.worldKey);
   useEffect(() => {
-    const entries = { ...state.entries, ...(state.draft !== null && { [state.draft.key]: state.draft }) };
-    props.onCharacters(Object.values(entries).filter(isLoreCharacter));
-    return () => props.onCharacters([]);
-  }, [state.entries, state.draft, state.rev]);
-
-  // choosing an npc on the map shows their entry
-  const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1];
-  useEffect(() => {
-    const entry = Object.values(state.entries).find((e) => mapNpcKey !== undefined && e.npcKey === mapNpcKey);
+    const entry = Object.values(state.entries).find((e) => mapNpcKey !== null && e.npcKey === mapNpcKey);
     if (entry !== undefined) state.select(entry.key);
   }, [mapNpcKey]);
 
@@ -238,7 +227,7 @@ export default function LorePane(props: Props) {
   }, []);
 
   const { draft, entries } = state;
-  const zoom = meta.loreZoom ?? 1;
+  const zoom = meta.zoom ?? 1;
   /** Room for three columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
   const npcKeys = Object.keys(w?.n ?? {});
@@ -322,7 +311,7 @@ export default function LorePane(props: Props) {
             </>
           )}
         </div>
-        <Section name="about" hint={draft.title} folded={meta.loreFolded} onToggle={state.toggleFold}>
+        <Section name="about" hint={draft.title} folded={meta.folded} onToggle={state.toggleFold}>
           <input
             className={cn(inputClass, "text-zinc-100")}
             readOnly={!editable}
@@ -381,7 +370,7 @@ export default function LorePane(props: Props) {
           hint={[draft.npcKey, keyCount > 0 && `${keyCount} key${keyCount === 1 ? "" : "s"}`]
             .filter(Boolean)
             .join(" · ")}
-          folded={meta.loreFolded}
+          folded={meta.folded}
           onToggle={state.toggleFold}
         >
           {w !== undefined && draft.kind === "character" && (
@@ -389,7 +378,7 @@ export default function LorePane(props: Props) {
           )}
           <KeyBox w={w} draft={draft} entries={entries} onPatch={state.patch} onSelect={state.select} />
         </Section>
-        <Section name="story" hint={draft.backstory} folded={meta.loreFolded} onToggle={state.toggleFold}>
+        <Section name="story" hint={draft.backstory} folded={meta.folded} onToggle={state.toggleFold}>
           <textarea
             className={cn(inputClass, "h-40 resize-y leading-relaxed")}
             readOnly={!editable}
@@ -409,7 +398,7 @@ export default function LorePane(props: Props) {
           name="grammar"
           hint={state.grammarError ?? `${ruleCount} rule${ruleCount === 1 ? "" : "s"}`}
           alert={state.grammarError !== null}
-          folded={meta.loreFolded}
+          folded={meta.folded}
           onToggle={state.toggleFold}
         >
           <GrammarEditor
@@ -425,7 +414,7 @@ export default function LorePane(props: Props) {
     );
   const previewCol = draft !== null && (
     <div className="p-3">
-      <Section name="say" hint={rule ?? ""} folded={meta.loreFolded} onToggle={state.toggleFold}>
+      <Section name="say" hint={rule ?? ""} folded={meta.folded} onToggle={state.toggleFold}>
         <div className="flex items-center gap-1 text-zinc-500">
           {w !== undefined && (
             <Picker
@@ -477,7 +466,7 @@ export default function LorePane(props: Props) {
   return (
     <div
       ref={root}
-      className="lore-pane relative size-full bg-zinc-950 text-zinc-300 text-xs tracking-wide leading-relaxed"
+      className="manifest relative size-full bg-zinc-950 text-zinc-300 text-xs tracking-wide leading-relaxed"
     >
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
@@ -488,9 +477,9 @@ export default function LorePane(props: Props) {
       {wide ? (
         // `zoom` goes inside each pane: on the allotment itself a drag would move its sash too little
         <Allotment
-          defaultSizes={meta.loreSplit}
-          onDragEnd={(loreSplit) =>
-            uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as DecoratorUiMeta).loreSplit = loreSplit))
+          defaultSizes={meta.split}
+          onDragEnd={(split) =>
+            uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).split = split))
           }
         >
           <Allotment.Pane minSize={120} preferredSize={190}>
@@ -761,8 +750,8 @@ function Section(props: {
   const folded = props.folded.includes(props.name);
   const Caret = folded ? CaretRightIcon : CaretDownIcon;
   return (
-    // shaded by `data-section` — see `decorator.css`
-    <div className="lore-section flex flex-col gap-1 rounded px-2 py-1.5" data-section={props.name}>
+    // shaded by `data-section` — see `manifest.css`
+    <div className="manifest-section flex flex-col gap-1 rounded px-2 py-1.5" data-section={props.name}>
       <button
         type="button"
         className="flex items-center gap-1 min-w-0 text-left cursor-pointer text-zinc-500 hover:text-zinc-300"
@@ -818,18 +807,6 @@ const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {},
 
 type SectionName = "about" | "world" | "story" | "grammar" | "say";
 
-type Props = {
-  meta: DecoratorUiMeta;
-  /** Absent, nothing can be said or located */
-  w: WorldState | undefined;
-  /** The entry shown, as edited — a copy each time, so it can be compared by identity */
-  onEntry(entry: null | LoreEntry): void;
-  /** Every character with an npc, the one shown as edited */
-  onCharacters(characters: LoreCharacter[]): void;
-  /** Centre the map pane on a world point */
-  onLocate(x: number, y: number): void;
-};
-
 type State = {
   entries: Record<string, LoreEntry>;
   error: null | string;
@@ -852,7 +829,7 @@ type State = {
   /** Replaces the draft by what is on disk */
   show(key: string | undefined): void;
   select(key: string): void;
-  /** Folds a section of the card, or unfolds it — kept in `meta.loreFolded` */
+  /** Folds a section of the card, or unfolds it — kept in `meta.folded` */
   toggleFold(name: SectionName): void;
   zoomBy(delta: number): void;
   /** Their npc in the World, if there, is respawned under the new key */
@@ -867,3 +844,8 @@ type State = {
   /** Centre the map on the entry's npc, else its room */
   locate(entry: LoreEntry): void;
 };
+
+/** Its popup is portalled out of the panel, so it is told whose theme to take */
+function Picker<T extends string>(props: Omit<Parameters<typeof BasePicker<T>>[0], "popupClassName">) {
+  return <BasePicker {...props} popupClassName="manifest" />;
+}

@@ -1,6 +1,6 @@
 import { Select } from "@base-ui/react/select";
-import { cn } from "@npc-cli/util";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import { cn } from "../service/tailwind-cn";
 
 /** One of `options`, chosen from a base-ui `Select` — as wide as what is chosen, and no wider */
 export function Picker<T extends string>(props: {
@@ -10,6 +10,8 @@ export function Picker<T extends string>(props: {
   disabled?: boolean;
   title?: string;
   className?: string;
+  /** The popup is portalled out of its panel, whose theme it takes by this class */
+  popupClassName: string;
 }) {
   const options = props.options.map((o) => (typeof o === "string" ? { value: o, label: o } : o));
   const label = options.find((o) => o.value === props.value)?.label ?? props.value;
@@ -29,8 +31,12 @@ export function Picker<T extends string>(props: {
       </Select.Trigger>
       <Select.Portal>
         <Select.Positioner className="z-50" sideOffset={4} align="start" alignItemWithTrigger={false}>
-          {/* `decorator`: portalled out of the root, whose theme it must still take */}
-          <Select.Popup className="decorator bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300">
+          <Select.Popup
+            className={cn(
+              props.popupClassName,
+              "bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300",
+            )}
+          >
             {options.map(({ value, label }) => (
               <Select.Item
                 key={value}
