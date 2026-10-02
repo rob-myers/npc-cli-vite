@@ -29,11 +29,13 @@ export default function Psi() {
       tune: { ...defaultPsiTune, ...getWorldStore(w.key).read().psiTune },
       influence: createInfluence(),
       handsOn: null,
+      targetRoom: { at: null, also: null },
       flowAt: 0,
       tickedMs: performance.now(),
 
       choose(target) {
         chooseInfluence(state.influence, target, w.player?.key, w.disabled);
+        state.syncTargetRoom();
         state.upload();
         w.r3f?.invalidate();
         return state.getTarget();
@@ -57,7 +59,15 @@ export default function Psi() {
         state.tickedMs = now;
 
         advanceInfluence(state.influence, secs / state.tune.fadeSecs, w.player?.key, (npcKey) => npcKey in w.n);
+        state.syncTargetRoom();
         state.upload();
+      },
+      syncTargetRoom() {
+        const target = state.getTarget();
+        const at = (target === null ? undefined : w.npc?.npcToRoom.get(target)) ?? null;
+        if (at?.grKey === state.targetRoom.at?.grKey) return;
+        state.targetRoom = { at, also: null };
+        w.e?.syncFadeRooms();
       },
       upload() {
         if (w.n === null) return;
@@ -167,6 +177,8 @@ export type State = PsiResources & {
   influence: Influence;
   /** Whose hands we move: the player, as last seen */
   handsOn: null | string;
+  /** The target's room, shown by the fade, and `also` the far side of a doorway they stand in */
+  targetRoom: { at: null | Geomorph.GmRoomId; also: null | Geomorph.GmRoomId };
   /** World seconds `flowPhase` was last advanced at */
   flowAt: number;
   tickedMs: number;
@@ -178,6 +190,8 @@ export type State = PsiResources & {
   /** The target, or the one taken up once a fade-out ends */
   getTarget(): null | string;
   onTick(): void;
+  /** Re-syncs the rooms shown once the target's room changes — theirs is shown too */
+  syncTargetRoom(): void;
   /** The slots onto the gpu, and whether to draw them at all */
   upload(): void;
   /** The player's hands to their temples whilst influencing, elbows forward (`psi_avoid`) near a neighbour or in a doorway */

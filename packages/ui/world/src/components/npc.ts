@@ -72,7 +72,7 @@ export class Npc {
     dstGrId: null as Geomorph.GmRoomId | null,
     /** World time (seconds) when NPC last became idle */
     idleTime: 0,
-    /** Look target */
+    /** Look target, a point or a world angle */
     look: { x: 0, y: 0 },
     /** World time (seconds) when the current move started */
     moveTime: 0,
@@ -415,18 +415,18 @@ export class Npc {
   }
 
   /**
-   * Can look at `npcKey` or point.
+   * Can look at `npcKey`, point or angle.
    */
   async look({ at, minMs = 0, immediate = false, rate = 1 }: JshCli.LookOpts) {
-    const groundPoint = helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
-    this.last.look = groundPoint;
+    this.last.look =
+      typeof at === "number" ? at : helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
 
     const cannotLook = npcCannotLookForClip[this.anim.idleClip.name];
     if (cannotLook !== undefined) {
       throw Error(cannotLook);
     }
 
-    const target = geomService.getThreeRotationY(groundPoint.y - this.position.z, groundPoint.x - this.position.x);
+    const target = this.anim.bearingOf(this.last.look);
     if (immediate) {
       this.skinnedMesh.rotation.y = target;
       return;

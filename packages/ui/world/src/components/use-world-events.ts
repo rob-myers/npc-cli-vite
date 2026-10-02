@@ -11,7 +11,7 @@ import {
   floorFadeDelayMs,
   MAX_NPCS,
   mapVeilMs,
-  roomLabelRevealMs,
+  roomLabel,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
@@ -267,7 +267,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // the names come back once the fade the unfold started has settled — by then only the
             // rooms that stay are still shown, so only their labels appear. Not awaited: the
             // intro pan has nothing to do with it
-            w.view.revealRoomLabels(1, roomLabelRevealMs, MODE_FADE_SECS * 1000);
+            w.view.revealRoomLabels(1, roomLabel.revealMs, MODE_FADE_SECS * 1000);
           } else {
             // behind black since `fadeOut` — snap onto the player, so it lifts onto them
             await player.panTo({ animate: false });
@@ -1079,9 +1079,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.key === w.player.key) {
           return true; // player must sync
         }
+        // a psi target's rooms are shown too — see `fadeRoomsFx.sync`
+        const psiTarget = npc.key === w.psi?.getTarget();
+        if (psiTarget === true) w.psi.targetRoom = { at: w.npc.npcToRoom.get(npc.key) ?? null, also: alsoAt ?? null };
         const at = npc.lit === true ? w.npc.npcToRoom.get(npc.key) : undefined;
         if (at === undefined) {
-          return state.litRooms.delete(npc.key);
+          return state.litRooms.delete(npc.key) || psiTarget;
         }
         state.litRooms.set(npc.key, alsoAt === undefined ? [at] : [at, alsoAt]);
         return true;
@@ -1272,7 +1275,7 @@ export type State = {
   /**
    * Puts `npc` into `litRooms`, or takes them out of it — see `setNpcLit`.
    *
-   * Returns `true` iff npc lit and something was deleted or set.
+   * Returns `true` iff the rooms shown may have changed: the player, a psi target, or a lit npc set or deleted.
    * @param alsoAt the far side of the doorway they stand in, if they stand in one
    */
   syncLitRoom(npc: Npc, alsoAt?: Geomorph.GmRoomId): boolean;

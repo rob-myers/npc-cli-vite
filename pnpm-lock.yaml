@@ -677,6 +677,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.90.12(react@19.2.1)
+      allotment:
+        specifier: 'catalog:'
+        version: 1.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       debounce:
         specifier: 'catalog:'
         version: 3.0.0
@@ -758,6 +761,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.90.12(react@19.2.1)
+      allotment:
+        specifier: 'catalog:'
+        version: 1.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       motion:
         specifier: 'catalog:'
         version: 12.23.26(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

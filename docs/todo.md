@@ -2,14 +2,17 @@
 
 ## World
 
-### Animation
+### Animation and Npc
 
 - skin remapping
   - currently only have skinIndex
 
+- ✅ npc-outline offset, particularly noticeable in light-theme
+
 ### Camera
 
 - improve fov based on dimension
+- ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
 ### Cleanliness
 
@@ -26,12 +29,13 @@
 
 - clean up unused parts of WorldMenu theme (textarea)
 
-
 ### Decor
 
 - labels as decor point
   - ✅ already support room labels i.e. induced by decor point with label in room
   - provide example of label via dynamic decor
+- ✅ separate dynamic/static decor into colliders and quads/points (2 more draw calls)
+  - add docs/decor
 
 ### DevX
 
@@ -48,6 +52,12 @@
 ### Performance
 
 - consider pruning navcat of unused stuff
+- ✅ try eliminate some draw calls
+
+### Player
+
+- ✅ bug: sight mode: all hull doors showing
+
 
 ### Playground
 
@@ -72,6 +82,10 @@
 - 🚧 consider using `npc.getSlideResult` instead of worker in `nudge` and `demo_back_off`
   - ✅ demo_back_off
 
+### WorldSpeech
+
+- ✅ can select text in WorldSpeech toast and modal
+
 ## Blockbench
 
 ## Blog
@@ -81,28 +95,7 @@
   - 🚧 larger tty text (120%) 
   - 🚧 brighter (1x global, 0.7x npc)
 
-## HMR
-
-- on hmr recreate tty session `move` stops working?
-- hot reloading of `pick | move npc:rob` while change `move`?
-  - maybe just clarify current setup vs previous "hot reloading"
-
-## Jsh and Jobs
-
-- 🚧 Jobs: can be confusing whether process is paused due to World or explicitly
-  - indicate process tags
-  - put back process tag `always` and can set from ui
-
-- Jobs: indicate stale processes after hmr
-
-## MapEdit
-
-- 🚧 extend existing symbols
-- 🚧 finish geomorph 101
-- 🚧 finish geomorph 302
-- BUG MapEdit drafts fighting: with 2 instances open for same file
-
-## Decorator
+## Decorator with Lore
 
 - 🚧 Decorator refinements
   - ✅ can tilt e.g. screen, switch
@@ -117,6 +110,40 @@
   - ✅ can set 3d height 
     - live update of control
   - 🚧 book, box, key
+
+- ✅ reskin Lore
+  - room/door keys added as text directly and validated
+
+## HMR
+
+- on hmr recreate tty session `move` stops working?
+- hot reloading of `pick | move npc:rob` while change `move`?
+  - maybe just clarify current setup vs previous "hot reloading"
+- hmr `service/player-light.ts`: rebuild `w.view.playerLight` on its own hmr only
+  - `reset.playerLight: true` does it on every `WorldView` hmr, rebuilding decor
+  - e.g. a `playerLightEpoch` bumped via `import.meta.hot.data`, then re-apply theme uniforms, `syncWalls`, `w.update()`
+
+## Jsh and Jobs
+
+- 🚧 Jobs: can be confusing whether process is paused due to World or explicitly
+  - indicate process tags
+  - put back process tag `always` and can set from ui
+
+- Jobs: indicate stale processes after hmr
+- ✅ support look at:angle
+- ✅ Jobs uses allotment for 2 panes
+
+## MapEdit
+
+- 🚧 extend existing symbols
+- 🚧 finish geomorph 101
+- 🚧 finish geomorph 302
+- BUG MapEdit drafts fighting: with 2 instances open for same file
+- ✅ MapEdit uses allotment for 2 panes
+
+## Media
+
+- ask Claude to create some sub-symbols of 101
 
 ## Shell
 

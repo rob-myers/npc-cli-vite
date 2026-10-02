@@ -19,6 +19,10 @@ export default function NpcBubbles() {
         w.html.show(bubbleKey(npcKey), tracked, <NpcBubble w={w} npcKey={npcKey} />);
         if (focus === true) w.html.focus(bubbleKey(npcKey));
       },
+      toggle(npcKey) {
+        if (w.html.byKey.has(bubbleKey(npcKey))) state.delete(npcKey);
+        else state.ensure(npcKey);
+      },
       delete(...npcKeys) {
         w.html.hide(...npcKeys.map(bubbleKey));
       },
@@ -102,6 +106,7 @@ const posePollMs = 250;
 export type State = {
   /** Up, redrawn if already — `focus` its close button, open already or not */
   ensure(npcKey: string, opts?: { focus?: boolean }): void;
+  toggle(npcKey: string): void;
   delete(...npcKeys: string[]): void;
   setShown(npcKey: string, shown: boolean): void;
 };

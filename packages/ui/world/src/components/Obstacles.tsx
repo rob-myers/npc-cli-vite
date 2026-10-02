@@ -56,7 +56,6 @@ export default function Obstacles(_props: Props) {
       toInstanceId: [],
       fromInstanceId: [],
       roomSlotByInstanceId: [],
-
       buildInstanceIds() {
         state.toInstanceId = [];
         state.fromInstanceId = [];
@@ -75,15 +74,14 @@ export default function Obstacles(_props: Props) {
               state.toInstanceId[gmId][obstacleId] = nextId;
               state.fromInstanceId[nextId] = { gmId, obstacleId };
               const broadId = broadIds[obstacleId];
-              // within a broad wall's footprint it goes as the floor under it does, e.g. a hull
-              // window's bench: hidden on a shown floor it was a cut-out, its seams the floor's.
-              // In no room at all, it is shown only with everything
+              // shown with its ROOM: a broad wall abuts many, and would show it from any of them.
+              // In no room it goes as the broad wall it stands on, else only with everything
               state.roomSlotByInstanceId[nextId] =
-                broadId !== null
-                  ? broadWallSlotOf(gmId, broadId)
-                  : roomId === null
-                    ? neverShownSlot
-                    : slotOf(gmId, roomId);
+                roomId !== null
+                  ? slotOf(gmId, roomId)
+                  : broadId !== null
+                    ? broadWallSlotOf(gmId, broadId)
+                    : neverShownSlot;
             }
             nextId++;
           }

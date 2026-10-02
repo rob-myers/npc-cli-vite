@@ -11,9 +11,10 @@ import {
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
-import { error, throttle, tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
+import { error, throttle } from "@npc-cli/util/legacy/generic";
 import {
   ArrowCounterClockwiseIcon,
+  BookOpenTextIcon,
   CaretRightIcon,
   ListBulletsIcon,
   PauseIcon,
@@ -22,10 +23,11 @@ import {
   PlugsIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import { Allotment, type AllotmentHandle } from "allotment";
 import debounce from "debounce";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import JobsLibrary from "./JobsLibrary";
 import type { TemplateUiMeta } from "./schema";
@@ -51,19 +53,15 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       copiedTimeoutId: 0,
       debouncedUpdate: debounce(() => state.update(), 200, { immediate: true }),
       expandedUids: new Set(),
-      listEl: null,
       ordered: [],
       pending: { src: null, timeoutId: 0, until: 0 },
       processes: [],
-      processesHeight: tryLocalStorageGetParsed<number>(processesHeightStorageKey(meta.id)) ?? defaultProcessesHeight,
       spawning: { src: null, startedAt: 0, timeoutId: 0 },
       reorder: throttle(() => state.set({ ordered: toOrdered(state.processes) }), 200),
       resetPids: new Set(),
       resetting: new Map(),
-      resizing: false,
       sessionDisconnector: null,
       sessionKey: null,
-      showProcesses: (tryLocalStorageGetParsed(showProcessesStorageKey(meta.id)) ?? true) === true,
       ttyMeta: null,
 
       changeProcess(e) {
@@ -93,11 +91,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           default:
             throw new ExhaustiveError(act);
         }
-      },
-      clampProcessesHeight(height) {
-        const rootHeight = state.listEl?.parentElement?.clientHeight ?? 0;
-        const max = rootHeight > 0 ? rootHeight * maxProcessesFraction : Infinity;
-        return Math.round(Math.min(Math.max(height, minProcessesHeight), Math.max(minProcessesHeight, max)));
       },
       cleanupDead() {
         const alive = [] as ProcessLeader[];
@@ -317,28 +310,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           sessionApi.kill(state.sessionKey, [pid], { GROUP: true, SIGINT: true });
         }
       },
-      onResizeStart(e) {
-        e.preventDefault();
-        const handle = e.currentTarget;
-        handle.setPointerCapture(e.pointerId);
-        const startY = e.clientY;
-        const startHeight = state.processesHeight;
-
-        const onMove = (ev: PointerEvent) => {
-          state.set({ processesHeight: state.clampProcessesHeight(startHeight + (ev.clientY - startY)) });
-        };
-        const onUp = () => {
-          handle.removeEventListener("pointermove", onMove);
-          handle.removeEventListener("pointerup", onUp);
-          handle.removeEventListener("pointercancel", onUp);
-          tryLocalStorageSet(processesHeightStorageKey(meta.id), String(state.processesHeight));
-          state.set({ resizing: false });
-        };
-        handle.addEventListener("pointermove", onMove);
-        handle.addEventListener("pointerup", onUp);
-        handle.addEventListener("pointercancel", onUp);
-        state.set({ resizing: true });
-      },
       async rerunProcess(src) {
         const session = state.getSession();
         if (session === undefined || !src) {
@@ -366,9 +337,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         }
         state.flushPending();
       },
-      setListEl(el) {
-        state.listEl = el;
-      },
       setSpawning(src) {
         if (src === null) {
           state.set({ spawning: { ...state.spawning, src: null } });
@@ -382,11 +350,6 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       toggleExpanded(e) {
         const uid = Number(e.currentTarget.dataset.uid);
         state.expandedUids.delete(uid) === false && state.expandedUids.add(uid);
-        state.update();
-      },
-      toggleShowProcesses() {
-        state.showProcesses = !state.showProcesses;
-        tryLocalStorageSet(showProcessesStorageKey(meta.id), String(state.showProcesses));
         state.update();
       },
       toggleTtyDisabled() {
@@ -431,6 +394,16 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   }, [state.connected, state.ttyMeta?.id, state.ttyMeta?.sessionBootedAt]); // sync onchange session
 
   const sessionsExist = ttyMetas.length > 0;
+  const hasProcesses = state.ordered.length > 0;
+  const showProcesses = meta.hidden !== "processes";
+  const allotment = useRef<AllotmentHandle>(null);
+  const setPanes = (patch: Partial<Pick<TemplateUiMeta, "hidden" | "split">>) =>
+    uiStoreApi.setUiMeta(meta.id, (draft) => void Object.assign(draft as TemplateUiMeta, patch));
+
+  // allotment re-shows a pane at the sliver it was dragged shut from
+  useEffect(() => {
+    if (meta.hidden === null) allotment.current?.reset();
+  }, [meta.hidden]);
   const sessionExists = state.getSession() !== undefined;
   const ttyToggleAvailable = state.connected === true && state.ttyMeta !== null;
 
@@ -524,13 +497,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         {/* toggles the processes below, and says how many there are */}
         <button
           type="button"
-          title={state.showProcesses ? "hide processes" : "show processes"}
+          title={showProcesses ? "hide processes" : "show processes"}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1 rounded-sm text-sm cursor-pointer",
             "border border-term-surface shadow-sm shadow-black/50 transition-colors hover:bg-term-hover-strong",
-            state.showProcesses ? "text-term-accent" : "text-term-muted",
+            showProcesses ? "text-term-accent" : "text-term-muted",
           )}
-          onClick={state.toggleShowProcesses}
+          onClick={() => setPanes({ hidden: showProcesses ? "processes" : null })}
         >
           <ListBulletsIcon alt="processes" className="size-4" />
           {state.ordered.length}
@@ -548,143 +521,151 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
       {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
 
-      {/* nothing to show whilst disconnected, so no empty box either */}
-      {state.showProcesses && state.ordered.length > 0 && (
-        <div
-          ref={state.setListEl}
-          style={{ height: state.processesHeight }}
-          // a few items tall, resized by the handle below, up to `maxProcessesFraction` of the pane
-          className="shrink-0 min-h-12 max-h-[40%] flex flex-col"
+      <div className="flex-1 min-h-0 relative">
+        {meta.hidden === "library" && hasProcesses && (
+          <button
+            type="button"
+            title="show library"
+            className={cn(
+              "absolute z-10 bottom-0 left-1/2 -translate-x-1/2 grid place-items-center w-10 h-5 cursor-pointer rounded-t",
+              // over the open pane, taking none of its height
+              "border border-term-border bg-term-inset/80 text-term-muted opacity-70 hover:opacity-100 hover:text-term-foreground",
+            )}
+            onClick={() => setPanes({ hidden: null })}
+          >
+            <BookOpenTextIcon className="size-3.5" />
+          </button>
+        )}
+        <Allotment
+          ref={allotment}
+          vertical
+          defaultSizes={meta.split}
+          snap
+          onDragEnd={(split) => setPanes({ split })}
+          onVisibleChange={(index, visible) =>
+            setPanes({ hidden: visible ? null : index === 0 ? "processes" : "library" })
+          }
         >
-          <div
-            className={cn(
-              "flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
-              "p-2 rounded border border-term-border-subtle bg-term-inset/40",
-            )}
-          >
-            <div className="flex flex-col text-base text-term-foreground">
-              {/* keyed, so switching session swaps items without exit animations */}
-              <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
-                {state.ordered.map((p) => {
-                  const killed = p.status === toProcessStatus.Killed;
-                  const paused = p.status === toProcessStatus.Suspended;
-                  const expanded = state.expandedUids.has(p.uid);
-                  return (
-                    <motion.div
-                      key={p.uid}
-                      // position only: a size animation would scale the card, text and all, as the
-                      // source cell grows — that cell eases its own height instead
-                      layout="position"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="min-w-32 flex flex-col w-full rounded text-term-running font-mono"
-                    >
-                      {/* never wraps: a src too wide for the row truncates instead */}
-                      {/* dark mode has too little contrast between the cells to separate them by fill alone */}
-                      <div className="flex items-stretch dark:border-b dark:border-term-border-subtle">
-                        {/* fixed width so cards align */}
-                        <div className="relative flex shrink-0 bg-term-inset dark:border-r dark:border-term-border-subtle">
-                          <div className="w-12 px-1 flex items-center justify-center text-sm text-term-accent">
-                            {p.pid}
-                          </div>
-                        </div>
-
-                        <div className="flex shrink-0 items-stretch text-term-foreground">
-                          <div
-                            className={cn(controlCss, killed && "pointer-events-none text-term-faint")}
-                            onClick={!killed ? state.changeProcess : undefined}
-                            data-act={paused ? "resume" : "pause"}
-                            data-pid={p.pid}
-                          >
-                            {paused ? (
-                              <PlayIcon alt="resume" className="size-3" />
-                            ) : (
-                              <PauseIcon alt="pause" className="size-3" />
-                            )}
-                          </div>
-                          <div
-                            className={cn(
-                              controlCss,
-                              "text-term-danger",
-                              killed && "pointer-events-none text-term-faint",
-                            )}
-                            onClick={!killed ? state.changeProcess : undefined}
-                            data-act="kill"
-                            data-pid={p.pid}
-                          >
-                            <XIcon alt="kill" className="size-4" />
-                          </div>
-                          {/* available when killed, where it just re-runs */}
-                          <div
-                            className={controlCss}
-                            title={p.pid === 0 ? "re-run in background" : "reset"}
-                            onClick={state.changeProcess}
-                            data-act="reset"
-                            data-pid={p.pid}
-                          >
-                            {p.pid === 0 ? (
-                              <span className="text-sm leading-none text-term-muted">{"&"}</span>
-                            ) : (
-                              <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
-                            )}
-                          </div>
-                        </div>
-
-                        {/* `data-more` whilst the source scrolls on below, which the fade shows */}
-                        <div className="group relative grow min-w-0 flex">
-                          <div
-                            title={p.src}
-                            data-uid={p.uid}
-                            onClick={state.toggleExpanded}
-                            ref={(el) => syncMoreBelow(el, expanded)}
-                            onScroll={(e) => syncMoreBelow(e.currentTarget, expanded)}
-                            onTransitionEnd={(e) => syncMoreBelow(e.currentTarget, expanded)}
-                            className={cn(
-                              // `min-w-0` lets it shrink past its content, so `truncate` bites
-                              "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
-                              "dark:border-l dark:border-term-border-subtle",
-                              "transition-[max-height] duration-200",
-                              expanded
-                                ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
-                                  "max-h-12 overflow-auto scrollbar-thin break-words"
-                                : // one line, however long the source
-                                  "max-h-7 truncate",
-                              killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
-                            )}
-                          >
-                            {p.src || "[empty]"}
-                          </div>
-                          <div className={moreBelowFadeCss} />
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          <div
-            title="drag to resize"
-            onPointerDown={state.onResizeStart}
-            className={cn(
-              "shrink-0 h-5 flex items-center justify-center cursor-ns-resize touch-none select-none group",
-              state.resizing && "cursor-grabbing",
-            )}
-          >
+          {/* nothing to show whilst disconnected, so no empty pane either */}
+          <Allotment.Pane visible={showProcesses && hasProcesses} snap minSize={64} preferredSize="30%">
             <div
               className={cn(
-                "h-0.5 w-10 rounded-full transition-colors",
-                state.resizing ? "bg-term-accent" : "bg-term-border group-hover:bg-term-muted",
+                "size-full overflow-y-auto [scrollbar-width:thin] [scrollbar-gutter:stable]",
+                "p-2 rounded border border-term-border-subtle bg-term-inset/40",
               )}
-            />
-          </div>
-        </div>
-      )}
+            >
+              <div className="flex flex-col text-base text-term-foreground">
+                {/* keyed, so switching session swaps items without exit animations */}
+                <AnimatePresence key={state.sessionKey ?? ""} initial={false}>
+                  {state.ordered.map((p) => {
+                    const killed = p.status === toProcessStatus.Killed;
+                    const paused = p.status === toProcessStatus.Suspended;
+                    const expanded = state.expandedUids.has(p.uid);
+                    return (
+                      <motion.div
+                        key={p.uid}
+                        // position only: a size animation would scale the card, text and all, as the
+                        // source cell grows — that cell eases its own height instead
+                        layout="position"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="min-w-32 flex flex-col w-full rounded text-term-running font-mono"
+                      >
+                        {/* never wraps: a src too wide for the row truncates instead */}
+                        {/* dark mode has too little contrast between the cells to separate them by fill alone */}
+                        <div className="flex items-stretch dark:border-b dark:border-term-border-subtle">
+                          {/* fixed width so cards align */}
+                          <div className="relative flex shrink-0 bg-term-inset dark:border-r dark:border-term-border-subtle">
+                            <div className="w-12 px-1 flex items-center justify-center text-sm text-term-accent">
+                              {p.pid}
+                            </div>
+                          </div>
 
-      <JobsLibrary uiId={meta.id} copiedSrc={state.copiedSrc} onCopy={state.copySrc} onRun={state.runSrc} />
+                          <div className="flex shrink-0 items-stretch text-term-foreground">
+                            <div
+                              className={cn(controlCss, killed && "pointer-events-none text-term-faint")}
+                              onClick={!killed ? state.changeProcess : undefined}
+                              data-act={paused ? "resume" : "pause"}
+                              data-pid={p.pid}
+                            >
+                              {paused ? (
+                                <PlayIcon alt="resume" className="size-3" />
+                              ) : (
+                                <PauseIcon alt="pause" className="size-3" />
+                              )}
+                            </div>
+                            <div
+                              className={cn(
+                                controlCss,
+                                "text-term-danger",
+                                killed && "pointer-events-none text-term-faint",
+                              )}
+                              onClick={!killed ? state.changeProcess : undefined}
+                              data-act="kill"
+                              data-pid={p.pid}
+                            >
+                              <XIcon alt="kill" className="size-4" />
+                            </div>
+                            {/* available when killed, where it just re-runs */}
+                            <div
+                              className={controlCss}
+                              title={p.pid === 0 ? "re-run in background" : "reset"}
+                              onClick={state.changeProcess}
+                              data-act="reset"
+                              data-pid={p.pid}
+                            >
+                              {p.pid === 0 ? (
+                                <span className="text-sm leading-none text-term-muted">{"&"}</span>
+                              ) : (
+                                <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* `data-more` whilst the source scrolls on below, which the fade shows */}
+                          <div className="group relative grow min-w-0 flex">
+                            <div
+                              title={p.src}
+                              data-uid={p.uid}
+                              onClick={state.toggleExpanded}
+                              ref={(el) => syncMoreBelow(el, expanded)}
+                              onScroll={(e) => syncMoreBelow(e.currentTarget, expanded)}
+                              onTransitionEnd={(e) => syncMoreBelow(e.currentTarget, expanded)}
+                              className={cn(
+                                // `min-w-0` lets it shrink past its content, so `truncate` bites
+                                "grow min-w-0 cursor-pointer px-2 py-1 bg-term-inset text-sm",
+                                "dark:border-l dark:border-term-border-subtle",
+                                "transition-[max-height] duration-200",
+                                expanded
+                                  ? // up to two lines i.e. 2 * 1.25rem + py-1, thereafter scrolling
+                                    "max-h-12 overflow-auto scrollbar-thin break-words"
+                                  : // one line, however long the source
+                                    "max-h-7 truncate",
+                                killed ? "text-term-danger" : paused ? "text-term-paused" : "text-term-running",
+                              )}
+                            >
+                              {p.src || "[empty]"}
+                            </div>
+                            <div className={moreBelowFadeCss} />
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </div>
+          </Allotment.Pane>
+          {/* with no processes it is all there is, so it shows regardless */}
+          <Allotment.Pane visible={meta.hidden !== "library" || !hasProcesses} snap minSize={120}>
+            <div className="size-full flex flex-col">
+              <JobsLibrary uiId={meta.id} copiedSrc={state.copiedSrc} onCopy={state.copySrc} onRun={state.runSrc} />
+            </div>
+          </Allotment.Pane>
+        </Allotment>
+      </div>
     </div>
   );
 }
@@ -713,18 +694,6 @@ const minShownMs = 1000;
 const copiedMs = 1000;
 /** Held briefly, else a process which starts at once just flickers the spinner */
 const spinnerMinMs = 500;
-
-function showProcessesStorageKey(uiId: string) {
-  return `jobs-show-processes:${uiId}`;
-}
-function processesHeightStorageKey(uiId: string) {
-  return `jobs-processes-height:${uiId}`;
-}
-/** A few items tall */
-const defaultProcessesHeight = 96;
-const minProcessesHeight = 48;
-/** Most of the pane the process leaders may take */
-const maxProcessesFraction = 0.4;
 
 /** How often we check whether a queued `src` can run yet */
 const pendingPollMs = 250;
@@ -774,18 +743,6 @@ type State = {
   toggleTtyDisabled: () => void;
   /** Forget killed processes */
   cleanupDead: () => void;
-  /** Are the process leaders shown below the header? Persisted */
-  showProcesses: boolean;
-  toggleShowProcesses: () => void;
-  /** Height (px) of the process leaders, persisted */
-  processesHeight: number;
-  /** Wraps the process leaders and their resize handle */
-  listEl: null | HTMLDivElement;
-  setListEl: (el: null | HTMLDivElement) => void;
-  /** Whilst the resize handle is being dragged */
-  resizing: boolean;
-  onResizeStart: (e: React.PointerEvent<HTMLDivElement>) => void;
-  clampProcessesHeight: (height: number) => number;
   /** `uid`s whose `src` is shown over two lines, rather than one */
   expandedUids: Set<number>;
   toggleExpanded: (e: React.MouseEvent<HTMLDivElement>) => void;

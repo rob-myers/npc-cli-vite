@@ -35,8 +35,7 @@ import {
   frontierPanFrac,
   frontierRate,
   rgbShiftZoomedOutScale,
-  roomLabelFadeFrom,
-  roomLabelNearAlpha,
+  roomLabel,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   unfoldDelayMs,
@@ -142,6 +141,7 @@ export function WorldView(props: React.PropsWithChildren) {
       labelReveal: uniform(1),
       labelRevealAnimId: 0,
       labelZoomFade: uniform(1),
+      labelScale: uniform(1),
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
       // by getter: an hmr of the light rebuilds it — see `reset` — and this must follow. A reading
@@ -279,15 +279,16 @@ export function WorldView(props: React.PropsWithChildren) {
             const decoded = w.door.decodeInstanceId(pick.instanceId);
             return { ...pick, door: true, ...decoded };
           }
-          case "decor": {
-            const decoded = w.decor.decodeStaticInstanceId(pick.instanceId);
+          case "decor":
+          case "decorShape":
+          case "runtimeDecor":
+          case "runtimeDecorShape": {
+            // four meshes, each with ids of its own: all are picked as "decor"
+            const runtime = pick.type === "runtimeDecor" || pick.type === "runtimeDecorShape";
+            const shape = pick.type === "decorShape" || pick.type === "runtimeDecorShape";
+            const decoded = w.decor.decodeInstanceId(pick.instanceId, runtime, shape);
             if (!decoded) return null;
-            return { ...pick, decor: true, ...decoded, decorKey: decoded.decorKey };
-          }
-          case "runtimeDecor": {
-            const decoded = w.decor.decodeRuntimeInstanceId(pick.instanceId);
-            if (!decoded) return null;
-            return { ...pick, type: "decor", decor: true, runtime: true, ...decoded, decorKey: decoded.decorKey };
+            return { ...pick, type: "decor", decor: true, runtime, shape, ...decoded, decorKey: decoded.decorKey };
           }
           case "debugPoint": {
             const decoded = w.debug.decodeDebugPointInstanceId(pick.instanceId);
@@ -365,11 +366,10 @@ export function WorldView(props: React.PropsWithChildren) {
             mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
             break;
           case "decor":
-            if (picked.runtime) {
-              mesh = getTempInstanceMesh(w.decor.instRuntime as THREE.InstancedMesh, picked.instanceId);
-            } else {
-              mesh = getTempInstanceMesh(w.decor.inst as THREE.InstancedMesh, picked.instanceId);
-            }
+            mesh = getTempInstanceMesh(
+              w.decor.batchOf(picked.runtime === true, picked.shape === true).inst,
+              picked.instanceId,
+            );
             break;
           case "debugPoint":
             mesh = getTempInstanceMesh(w.debug.debugPointsInst as THREE.InstancedMesh, picked.instanceId);
@@ -565,9 +565,17 @@ export function WorldView(props: React.PropsWithChildren) {
         // the room, which is what keeps it attached to the floor rather than floating over it.
         // Measured off the radius rather than `zoomProgress`, which a free (touch) zoom does not
         // keep. Every mode, unlike what follows
-        const u = clamp01((t - roomLabelFadeFrom) / (1 - roomLabelFadeFrom));
+        const u = clamp01((t - roomLabel.fadeFrom) / (1 - roomLabel.fadeFrom));
         const eased = u * u * (3 - 2 * u); // eased, so it neither snaps out nor lingers
-        state.labelZoomFade.value = roomLabelNearAlpha + (1 - roomLabelNearAlpha) * eased;
+        // a follow draws the outer stop in, where a label fixed in metres would loom: it keeps
+        // the size on screen it has at the persisted stop, and thins
+        const { minDistance: inner, maxDistance: outer } = state.ctrlOpts;
+        state.labelScale.value = clamp01(max / outer);
+        /** `0` with the outer stop as near as `easeFrontier` draws it, `1` at the persisted one */
+        const drawnOut = clamp01(((max - inner) / (outer - inner) - frontierNearFrac) / (1 - frontierNearFrac));
+        state.labelZoomFade.value =
+          (roomLabel.nearAlpha + (roomLabel.farAlpha - roomLabel.nearAlpha) * eased) *
+          (roomLabel.drawnInAlpha + (1 - roomLabel.drawnInAlpha) * drawnOut);
 
         // the channels part less the further out the view is, on the same easing: every mode
         state.rgbShiftFx.setAmount(rgbShiftAmount * (1 - (1 - rgbShiftZoomedOutScale) * eased));
@@ -1937,8 +1945,10 @@ export type State = {
   labelRevealAnimId: number;
   /** Fade the room labels to `to` over `ms`, after waiting `delayMs` */
   revealRoomLabels(to: number, ms?: number, delayMs?: number): void;
-  /** How much of a label the ZOOM leaves: `1` at the outer stop, `roomLabelNearAlpha` in to `roomLabelFadeFrom` */
+  /** How much of a label the ZOOM leaves: `farAlpha` at the outer stop, `nearAlpha` in to `fadeFrom` — see `roomLabel` */
   labelZoomFade: THREE.UniformNode<"float", number>;
+  /** A label's size: `1`, less by however far a follow has drawn the outer zoom stop in */
+  labelScale: THREE.UniformNode<"float", number>;
   /** Black over the canvas contents, hiding a floor swap — see `world.css` */
   veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
   resetCamera(): void;
@@ -2180,7 +2190,7 @@ export type Picked = {
   | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
   | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
   // static and runtime decor have same decode format
-  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
+  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)

@@ -245,19 +245,21 @@ export const MAX_DOOR_LABELS = 32;
 export const MAX_ROOM_LABELS = 32;
 /** Cap on the billboards themselves — one per labelled decor point */
 export const MAX_ROOM_LABEL_INSTANCES = 256;
-/** How big a room label stands in the world (metres) */
-export const roomLabelWidth = 1.6;
-export const roomLabelHeight = 0.4;
-/** How long the room labels take to come in, once the first boot's reveal has settled */
-export const roomLabelRevealMs = 0;
-/**
- * A room label fades with the zoom: `roomLabelNearAlpha` until this far out of the travel between
- * the stops, and fully back only at the outer stop. Anything but zoomed out the room is plain to
- * see and its name is mostly in the way
- */
-export const roomLabelFadeFrom = 0.8;
-/** How much of a room label is left at the near stop */
-export const roomLabelNearAlpha = 0;
+export const roomLabel = {
+  /** How big one stands in the world (metres) */
+  width: 1.6,
+  height: 0.4,
+  /** How long they take to come in, once the first boot's reveal has settled */
+  revealMs: 0,
+  /** How far out of the zoom's travel it starts to show: nearer, the room speaks for itself */
+  fadeFrom: 0.8,
+  /** How much is left at the near stop */
+  nearAlpha: 0,
+  /** How much there is at the outer stop, not following: the most it ever has */
+  farAlpha: 0.5,
+  /** How much of that is left with the outer stop fully drawn in — a follow at a wall */
+  drawnInAlpha: 0.2,
+};
 /** The texture array behind them — see `RoomLabels` */
 export const roomLabelTexOpts = {
   ctKey: "room-labels",

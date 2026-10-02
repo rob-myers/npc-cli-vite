@@ -43,7 +43,7 @@ export function watchAssetsPlugin(): Plugin {
 
       const symbolGlob = path.join(PUBLIC_DIR, "symbol/*.json");
       const mapGlob = path.join(PUBLIC_DIR, "map/*.json");
-      server.watcher.add([symbolGlob, mapGlob, GEOMORPH_SERVICE]);
+      server.watcher.add([symbolGlob, mapGlob, GEOMORPH_SERVICE, ASSETS_JSON_PATH]);
 
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let running = false;
@@ -89,7 +89,20 @@ export function watchAssetsPlugin(): Plugin {
         }
       };
 
+      /** A hand edit of assets.json, e.g. a theme value: the browser is only told of our own writes otherwise */
+      let handEditTimer: ReturnType<typeof setTimeout> | null = null;
+      const onAssetsJsonChange = () => {
+        if (running || Date.now() - themeSavedAt < selfWriteGraceMs) return; // ours: already announced, or the page's own
+        if (handEditTimer) clearTimeout(handEditTimer);
+        handEditTimer = setTimeout(() => {
+          if (running) return;
+          console.log("[watch-assets] assets.json edited by hand");
+          server.hot.send({ type: "custom", event: assetsJsonChangedEvent });
+        }, 100);
+      };
+
       const onFileChange = (filePath: string) => {
+        if (filePath === ASSETS_JSON_PATH) return onAssetsJsonChange();
         if (!isWatchedFile(filePath)) return;
         if (isAssetInputFile(filePath)) changed.set(filePath, Date.now());
         if (debounceTimer) clearTimeout(debounceTimer);
@@ -214,6 +227,10 @@ async function handleGenAssetsJson(res: ServerResponse) {
   }
 }
 
+/** When the page last saved a theme, which it has applied already — see `onAssetsJsonChange` */
+let themeSavedAt = 0;
+const selfWriteGraceMs = 1000;
+
 async function handleAssetsTheme(req: IncomingMessage, res: ServerResponse, themeKey: string) {
   let body = "";
   for await (const chunk of req) body += chunk;
@@ -225,6 +242,7 @@ async function handleAssetsTheme(req: IncomingMessage, res: ServerResponse, them
   const assets = JSON.parse(fs.readFileSync(ASSETS_JSON_PATH, "utf-8"));
   assets.theme ??= {};
   assets.theme[decodeURIComponent(themeKey)] = parsed.data;
+  themeSavedAt = Date.now();
   fs.writeFileSync(ASSETS_JSON_PATH, safeJsonCompact(assets));
   res.writeHead(200).end();
 }

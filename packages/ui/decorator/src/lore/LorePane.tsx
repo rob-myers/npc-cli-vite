@@ -244,7 +244,7 @@ export default function LorePane(props: Props) {
   const ruleCount = Object.keys(draft?.grammar ?? {}).length;
 
   const entriesCol = (
-    <div className="p-2 flex flex-col gap-2">
+    <div className="p-3 flex flex-col gap-2">
       {loreKinds.map((kind) => {
         const ofKind = Object.values(entries).filter((e) => e.kind === kind);
         return (
@@ -290,7 +290,7 @@ export default function LorePane(props: Props) {
         {state.error ?? (Object.keys(entries).length === 0 ? "no lore yet" : "choose an entry")}
       </div>
     ) : (
-      <div className="p-2 flex flex-col gap-1">
+      <div className="p-3 flex flex-col gap-2">
         <div className="flex items-center gap-1">
           <span className="text-zinc-500 mr-auto">
             {draft.key}
@@ -410,7 +410,7 @@ export default function LorePane(props: Props) {
       </div>
     );
   const previewCol = draft !== null && (
-    <div className="p-2">
+    <div className="p-3">
       <Section name="say" hint={rule ?? ""} folded={meta.loreFolded} onToggle={state.toggleFold}>
         <div className="flex items-center gap-1 text-zinc-500">
           {w !== undefined && (
@@ -450,7 +450,7 @@ export default function LorePane(props: Props) {
   );
 
   return (
-    <div ref={root} className="relative size-full bg-zinc-950 text-zinc-300 text-xs">
+    <div ref={root} className="relative size-full bg-zinc-950 text-zinc-300 text-xs tracking-wide leading-relaxed">
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
@@ -771,7 +771,7 @@ function IconButton(props: {
 
 /** Files are only writable through the DEV server */
 const editable = import.meta.env.DEV;
-const inputClass = "px-1 py-0.5 rounded border border-zinc-800 bg-zinc-900 outline-none focus:border-zinc-600";
+const inputClass = "px-2 py-1 rounded border border-zinc-800 bg-zinc-900 outline-none focus:border-zinc-600";
 const fadeFootStyle = { maskImage: "linear-gradient(to bottom, black calc(100% - 1.5rem), transparent)" };
 const bareButtonClass = "shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100";
 /** After the last edit, how long until it saves itself */

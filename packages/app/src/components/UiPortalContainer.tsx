@@ -39,7 +39,7 @@ const UiPortal = ({ meta, portal, everSeen }: UiStoreByIdEntry) => {
             {simulatedStaleUi === meta.uiKey ? (
               <SimulatedChunkFailure uiKey={meta.uiKey} />
             ) : result.success ? (
-              <C meta={result.data} />
+              <C key={meta.mountKey} meta={result.data} />
             ) : (
               <UiParseError uiKey={meta.uiKey} zodError={result.error} />
             )}

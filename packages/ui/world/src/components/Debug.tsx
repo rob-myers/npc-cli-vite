@@ -171,6 +171,7 @@ export function Debug() {
         // written straight through the ref, nothing rendering — the caller asks for a frame if it
         // needs one. Rarely changes, and shares nothing with `drawPolylines`
         writeSegmentInstances(state.boundaryInst, state.localBoundary, debugSegHeight);
+        if (state.boundaryInst) state.boundaryInst.visible = state.boundaryInst.count > 0; // empty, it is not drawn
       },
       drawPolylines() {
         const inst = state.polylinesInst;
@@ -193,6 +194,7 @@ export function Debug() {
           offset += ps.length + segs.length;
         }
         inst.count = offset;
+        inst.visible = offset > 0; // empty, it is not drawn
         inst.instanceMatrix.needsUpdate = true;
         polylinesGeo.getAttribute("isDisc").needsUpdate = true;
         polylinesGeo.getAttribute("lineColor").needsUpdate = true;
@@ -264,7 +266,7 @@ export function Debug() {
       (select as SelectFloatType)(w.view.objectPick.notEqual(0), float(0), opacity);
     const create = (color: THREE.ColorRepresentation, opacity: THREE.Node<"float">, depthTest = true) => {
       // biome-ignore format: succint
-      const mat = new THREE.MeshBasicNodeMaterial({ color, side: THREE.DoubleSide, transparent: true, depthTest, alphaTest: 0.01 });
+      const mat = new THREE.MeshBasicNodeMaterial({ color, side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthTest, alphaTest: 0.01 });
       mat.opacityNode = hideWhenPicking(opacity);
       return mat;
     };
@@ -290,7 +292,12 @@ export function Debug() {
     const transformedUv = vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs);
     const texNode = texture(w.texDecor.tex, transformedUv);
     texNode.depthNode = uvTexIds;
-    const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest: 0.5 });
+    const mat = new THREE.MeshBasicNodeMaterial({
+      side: THREE.DoubleSide,
+      forceSinglePass: true,
+      transparent: true,
+      alphaTest: 0.5,
+    });
     mat.colorNode = texNode;
     mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.debugPoint);
     return { material: mat, uid: crypto.randomUUID() };
@@ -307,6 +314,7 @@ export function Debug() {
         ref={state.ref("boundaryInst")}
         args={[quad, materials.boundary, maxBoundarySegs]}
         count={0}
+        visible={false}
         frustumCulled={false}
         renderOrder={-6}
       />
@@ -316,6 +324,7 @@ export function Debug() {
         ref={state.ref("polylinesInst")}
         args={[polylinesGeo, materials.polylines, maxPolylineInstances]}
         count={0}
+        visible={false}
         frustumCulled={false}
         renderOrder={-5}
       />

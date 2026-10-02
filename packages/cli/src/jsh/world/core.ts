@@ -209,13 +209,14 @@ export function lock(
 }
 
 /**
- * - Turn to face a point or npc, via args or read points from stdin.
+ * - Turn to face a point, npc or angle, via args or read them from stdin.
  * - Fixate at constant point or angle via --strafe, clearable via `look rob --strafe` or killed pipe.
  * ```sh
  * look npc:rob at:$( pick 1 )
  * look rob at:$( pick 1 )
  * pick | look npc:rob
  * look npc:rob at:kate
+ * look rob at:1.57
  * wasd_delta rob | look rob
  * look rob at:kate --strafe rate:0.5
  * look rob at:1.57 --strafe
@@ -250,15 +251,15 @@ export async function look(
     const { api } = ct;
 
     if (api.isTtyAt(0)) {
-      pendingLooks.push(opts.at as string | JshCli.PointAnyFormat); // `lookPausable` rejects anything else
+      pendingLooks.push(opts.at as (typeof pendingLooks)[number]); // `lookPausable` rejects anything else
 
-      while ((next = pendingLooks.shift())) {
+      while ((next = pendingLooks.shift()) !== undefined) {
         await lookPausable({ at: next, rate: opts.rate });
       }
     } else {
       let pendingRead = api.read();
 
-      while ((next = pendingLooks.shift() ?? (await pendingRead)) !== api.eof && next) {
+      while ((next = pendingLooks.shift() ?? (await pendingRead)) !== api.eof && next !== undefined && next !== null) {
         const lookPromise = lookPausable({ at: next, rate: opts.rate });
         await Promise.race([lookPromise, (pendingRead = api.read())]);
       }
@@ -318,16 +319,17 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
     }
   }
 
-  // npcKey or point
-  const pendingLooks: (string | JshCli.PointAnyFormat)[] = [];
+  // npcKey, point or angle
+  const pendingLooks: (string | number | JshCli.PointAnyFormat)[] = [];
 
   return {
     pendingLooks,
     getNpcOrUndefined,
     getNpcOrThrow,
     async lookPausable(lookOpts: JshCli.LookOpts, extra?: NamedErrorHandlers) {
-      if (!(typeof lookOpts.at === "string" || w.helper.isPointAnyFormat(lookOpts.at))) {
-        throw Error("lookOpts.at must be a string or point");
+      const { at } = lookOpts;
+      if (!(typeof at === "string" || Number.isFinite(at) || w.helper.isPointAnyFormat(at))) {
+        throw Error("lookOpts.at must be a string, point or angle");
       }
 
       await getNpcOrThrow()
@@ -343,7 +345,8 @@ function lookHandling({ api, w }: JshCli.RunArg, opts: { npcKey: string; force?:
       paused: () => {
         const npc = getNpcOrUndefined();
         if (!npc) return;
-        pendingLooks.unshift({ ...npc.last.look });
+        const { look } = npc.last;
+        pendingLooks.unshift(typeof look === "number" ? look : { ...look });
         npc.rejectAll(Error("paused"));
       },
     }),

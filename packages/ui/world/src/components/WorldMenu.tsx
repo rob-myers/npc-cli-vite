@@ -12,13 +12,12 @@ import {
   GlobeSimpleIcon,
   GlobeStandIcon,
   type Icon,
-  type IconWeight,
   PauseIcon,
   PersonSimpleCircleIcon,
   PersonSimpleIcon,
   PlayIcon,
+  PowerIcon,
   RobotIcon,
-  SunIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -37,6 +36,7 @@ import {
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
+import { clearWorldFlags } from "../service/world-flags";
 import type { CameraModeType } from "./CameraControls";
 import { WorldContext } from "./world-context";
 
@@ -117,6 +117,12 @@ export function WorldMenu() {
       onResetCamera() {
         if (state.confirm("reset-camera") === true) {
           w.view.resetCamera();
+        }
+      },
+      onRemountWorld() {
+        if (state.confirm("remount-world") === true) {
+          clearWorldFlags(w.key); // else it arrives unveiled, with no bootstrap to see
+          uiStoreApi.setUiMeta(w.id, (draft) => void (draft.mountKey = Date.now()));
         }
       },
 
@@ -416,7 +422,22 @@ export function WorldMenu() {
         <div className="flex flex-col gap-0.5" style={{ zoom: w.touchDevice ? touchDeviceZoom : undefined }}>
           {/* main menu */}
           <MenuShell state={state} touch={touch} trigger={menuTrigger}>
-            <div className={cn("flex justify-end", touch && "max-w-none items-stretch")}>
+            <div className={cn("flex justify-between items-center", touch && "max-w-none")}>
+              <span
+                title="remount world"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  state.onRemountWorld();
+                }}
+                className={cn(
+                  "flex items-center gap-1 pl-2 text-xs text-neutral-300 cursor-pointer",
+                  touch && "pl-3 text-sm",
+                  state.unconfirmed === "remount-world" ? "text-red-300" : "hover:text-white",
+                )}
+              >
+                <PowerIcon className="size-3.5" />
+                {state.unconfirmed === "remount-world" && "remount"}
+              </span>
               <LightSlider touch={touch} />
             </div>
             <div
@@ -459,7 +480,7 @@ export function WorldMenu() {
                   )}
                 >
                   {/* the word too: a title says nothing on touch */}
-                  {state.unconfirmed === "reset-camera" && "confirm"}
+                  {state.unconfirmed === "reset-camera" && "reset"}
                   <ArrowsClockwiseIcon className="size-3.5" />
                 </span>
               </div>
@@ -1008,21 +1029,27 @@ function MenuShell({
 /** A menu row: a real `Menu.Item` in the desktop popup, a plain row in the touch panel */
 /** The two lights the slider below switches between: the environment's, and the npcs' own */
 const lights = {
-  world: { icon: GlobeSimpleIcon, label: "environment", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness },
-  npc: { icon: PersonSimpleIcon, label: "npc", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness },
+  // biome-ignore format: succinct
+  world: { icon: GlobeSimpleIcon, label: "environment", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness, color: "text-orange-400" },
+  // biome-ignore format: succinct
+  npc: { icon: PersonSimpleIcon, label: "npc", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness, color: "text-yellow-300" },
 } as const;
 
-/** How long the icon must be held to restore a light's default */
+/** How long the button must be held to restore its light's default */
 const lightResetHoldMs = 500;
 
-/** ONE slider for both: a toggle says which, the brightness icon shows its level and a hold resets it */
+/** ONE slider for both: the button says which and a click swaps them, a hold resets the one shown */
 function LightSlider({ touch }: { touch: boolean }) {
   const w = useContext(WorldContext);
   const store = getWorldStore(w.key);
-  const [key, setKey] = useState<keyof typeof lights>("world");
-  const { icon: WhichIcon, label, min, max, step, fallback } = lights[key];
+  const [key, setKey] = useState(() => store.read().lightKey);
+  const { icon: WhichIcon, label, min, max, step, fallback, color } = lights[key];
   const other = key === "npc" ? "world" : "npc";
   const value = key === "npc" ? w.npcBrightness : w.brightness;
+  const timeoutId = useRef(0);
+  /** Whether the hold already fired, so the click ending it does not also swap */
+  const held = useRef(false);
+  const endPress = () => window.clearTimeout(timeoutId.current);
 
   function apply(next: number) {
     if (key === "npc") {
@@ -1043,21 +1070,28 @@ function LightSlider({ touch }: { touch: boolean }) {
         touch && "flex-1 min-w-0 gap-2 px-3 py-2 text-sm",
       )}
     >
-      <BrightnessPie
-        icon={SunIcon}
-        weight="bold"
-        title={`${label} brightness — hold to reset`}
-        // the world's is detented at its default, the npcs' plainly linear
-        ratio={key === "npc" ? (value - min) / (max - min) : brightnessToRatio(value)}
-        onHold={() => apply(fallback)}
-      />
       <button
         type="button"
-        className="cursor-pointer text-neutral-300 hover:text-white"
-        title={`${label} brightness — click for ${lights[other].label}`}
+        className={cn("cursor-pointer select-none hover:brightness-125", color)}
+        title={`${label} brightness — click for ${lights[other].label}, hold to reset`}
+        // the panel drags off a pointerdown anywhere in it, which a press being held is not
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          held.current = false;
+          timeoutId.current = window.setTimeout(() => {
+            held.current = true;
+            apply(fallback);
+          }, lightResetHoldMs);
+        }}
+        onPointerUp={endPress}
+        onPointerLeave={endPress}
+        onPointerCancel={endPress}
+        onContextMenu={(e) => e.preventDefault()} // touch's own long press
         onClick={(e) => {
           e.stopPropagation();
+          if (held.current === true) return;
           setKey(other);
+          store.patch({ lightKey: other });
         }}
       >
         <WhichIcon className="size-4" weight="bold" />
@@ -1077,74 +1111,7 @@ function LightSlider({ touch }: { touch: boolean }) {
   );
 }
 
-/** An icon with a pie-chart fill showing a brightness ratio (0–1), and a press that can be held */
-function BrightnessPie({
-  icon: IconCmp,
-  weight,
-  ratio,
-  title,
-  onClick,
-  onHold,
-}: {
-  icon: Icon;
-  weight?: IconWeight;
-  ratio: number;
-  title?: string;
-  onClick?: () => void;
-  onHold?: () => void;
-}) {
-  const a = Math.min(1, Math.max(0, ratio)) * Math.PI * 2;
-  const timeoutId = useRef(0);
-  /** Whether the hold already fired, so the click ending it is not also taken as a tap */
-  const held = useRef(false);
-  const endPress = () => window.clearTimeout(timeoutId.current);
-
-  return (
-    <div
-      className="relative size-4 cursor-pointer select-none"
-      title={title}
-      // the panel drags off a pointerdown anywhere in it, which a press being held is not
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        held.current = false;
-        timeoutId.current = window.setTimeout(() => {
-          held.current = true;
-          onHold?.();
-        }, lightResetHoldMs);
-      }}
-      onPointerUp={endPress}
-      onPointerLeave={endPress}
-      onPointerCancel={endPress}
-      onContextMenu={(e) => e.preventDefault()} // touch's own long press
-      onClick={(e) => {
-        e.stopPropagation();
-        held.current === false && onClick?.();
-      }}
-    >
-      {ratio > 0 && (
-        <svg className="absolute inset-0 size-4" viewBox="0 0 16 16">
-          <path
-            d={
-              ratio >= 1
-                ? "M8,8 m-8,0 a8,8 0 1,1 16,0 a8,8 0 1,1 -16,0"
-                : `M8,8 L8,0 A8,8 0 ${a > Math.PI ? 1 : 0},1 ${8 + 8 * Math.sin(a)},${8 - 8 * Math.cos(a)} Z`
-            }
-            fill="rgba(250,220,100,0.45)"
-          />
-        </svg>
-      )}
-      {/* over the fill, never under it — `relative` puts it last in the paint order */}
-      <IconCmp className="relative size-4 text-white" weight={weight} />
-    </div>
-  );
-}
-
 /** Small square icon button used to pack several toggles/actions into one row in the lights menu */
-/** Map brightness (0.5–2.0) so that 1.0 = 50% pie fill */
-function brightnessToRatio(b: number) {
-  return b <= 1 ? b - 0.5 : 0.5 + (b - 1) * 0.5;
-}
-
 function _LightsIconButton({
   active,
   danger,
@@ -1241,7 +1208,7 @@ function _LightsMenuSlider({
  * Something whose click must be confirmed by a second one — extend as more controls need it.
  * A plain `string` is a `worldKey`, whose map state the `state` select restores from
  */
-export type Unconfirmed = "reset-camera" | "reset-world-state" | (string & {});
+export type Unconfirmed = "reset-camera" | "remount-world" | "reset-world-state" | (string & {});
 
 export type State = {
   debugHitOpen: boolean;
@@ -1280,6 +1247,8 @@ export type State = {
   onSelectState(value: null | string): void;
   /** Resets the camera, after confirming */
   onResetCamera(): void;
+  /** Remounts the World via its ui meta's `mountKey`, after confirming */
+  onRemountWorld(): void;
   onStateSelectOpenChange(open: boolean, reason: Select.Root.ChangeEventReason): void;
   getMaxY(): number;
   getClampedY(y: number): number;

@@ -154,7 +154,8 @@ declare namespace JshCli {
   };
   /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {
-    at: string | MaybeMeta<JshCli.PointAnyFormat>;
+    /** An npcKey, a point, or a world angle (`rotation.y`, radians) */
+    at: string | number | MaybeMeta<JshCli.PointAnyFormat>;
     minMs?: number;
     immediate?: boolean;
     /** Turn this many times faster than usual, e.g. startled */
@@ -188,7 +189,7 @@ declare namespace JshCli {
     /** Target ground point */
     dst: Geom.VectJson;
     /** Look target */
-    look: Geom.VectJson;
+    look: Geom.VectJson | number;
     /** Seen blocking area in navmesh */
     blockingArea: number;
     /** Target room */

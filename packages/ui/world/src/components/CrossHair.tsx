@@ -18,7 +18,7 @@ export default function CrossHair() {
       geometry={groundCrosshairGeometry}
       position={[0, crosshairY, 0]}
     >
-      <meshBasicMaterial color="white" transparent depthTest={false} side={THREE.DoubleSide} />
+      <meshBasicMaterial color="white" transparent depthTest={false} side={THREE.DoubleSide} forceSinglePass />
     </mesh>
   );
 }
