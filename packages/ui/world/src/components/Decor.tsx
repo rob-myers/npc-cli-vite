@@ -928,7 +928,13 @@ export default function Decor() {
           vec4(w.view.fadeRoomsFx.fadeRgb(node.rgb, shown), node.a.mul(arrived)),
         ) as THREE.Node<"vec4">;
 
-      const texMat = new THREE.MeshStandardNodeMaterial({ side: THREE.DoubleSide, transparent: true, alphaTest });
+      // one draw, not two: it writes depth and discards by `alphaTest`, so back and front need no ordering
+      const texMat = new THREE.MeshStandardNodeMaterial({
+        side: THREE.DoubleSide,
+        forceSinglePass: true,
+        transparent: true,
+        alphaTest,
+      });
       // tinted by what the player can see from where they stand — see `service/player-light`
       // unpickable whilst its room is hidden, so a click reaches the floor behind it
       texMat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
@@ -968,6 +974,7 @@ export default function Decor() {
 
       const runtimeTexMat = new THREE.MeshStandardNodeMaterial({
         side: THREE.DoubleSide,
+        forceSinglePass: true,
         transparent: true,
         alphaTest,
       });
@@ -995,6 +1002,7 @@ export default function Decor() {
 
       const runtimeBlackMat = new THREE.MeshStandardNodeMaterial({
         side: THREE.DoubleSide,
+        forceSinglePass: true,
         color: "#000",
         transparent: true,
         alphaTest,
@@ -1253,6 +1261,7 @@ const alphaTest = 0.1;
 
 const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({
   side: THREE.DoubleSide,
+  forceSinglePass: true,
   color: "#000",
   transparent: true,
   alphaTest,
