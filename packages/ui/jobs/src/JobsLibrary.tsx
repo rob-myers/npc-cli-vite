@@ -41,7 +41,8 @@ export default function JobsLibrary(props: Props) {
     return {
       articleEl: null,
       categoryKey: stored?.categoryKey ?? "",
-      edits: {},
+      drafts: {},
+      edits: stored?.npc?.match(npcKeyPattern) ? { npc: stored.npc } : {},
       props,
       ranId: null,
       rootEl: null,
@@ -49,8 +50,14 @@ export default function JobsLibrary(props: Props) {
       view: stored?.view ?? "preview",
 
       onEditArg(e) {
-        state.edits[e.currentTarget.dataset.editKey ?? ""] = e.currentTarget.value;
-        state.update();
+        const key = e.currentTarget.dataset.editKey ?? "";
+        const { value } = e.currentTarget;
+        if (key === "npc" && !npcKeyPattern.test(value)) {
+          return state.set({ drafts: { [key]: value } });
+        }
+        state.edits[key] = value;
+        state.persist();
+        state.set({ drafts: {} });
       },
       onExampleCopy(e) {
         e.stopPropagation(); // the preview's row runs it, and this button sits within
@@ -66,6 +73,7 @@ export default function JobsLibrary(props: Props) {
       persist() {
         const stored: Stored = {
           categoryKey: state.categoryKey,
+          npc: state.edits.npc,
           sectionKeys: state.sectionKeys,
           view: state.view,
         };
@@ -252,16 +260,19 @@ export default function JobsLibrary(props: Props) {
               {/* a textarea sized to its content both ways: as wide as the value, then wrapping onto more lines */}
               <textarea
                 data-edit-key={key}
-                value={state.edits[key] ?? ""}
+                value={state.drafts[key] ?? state.edits[key] ?? ""}
+                aria-invalid={key in state.drafts}
                 rows={1}
                 spellCheck={false}
                 autoComplete="off"
                 className={cn(
                   "min-w-16 max-w-full px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
                   "text-sh-command text-xs outline-none focus:border-term-focus",
+                  "aria-invalid:border-term-danger aria-invalid:text-term-danger",
                   "field-sizing-content resize-none break-all",
                 )}
                 onChange={state.onEditArg}
+                onBlur={() => state.set({ drafts: {} })} // back to the last valid
                 onKeyDown={(e) => e.key === "Enter" && e.preventDefault()} // one value, no newlines
               />
             </label>
@@ -485,6 +496,9 @@ function getExampleData(e: React.SyntheticEvent) {
 
 const noCategories: ExampleCategory[] = [];
 
+/** As `npcSpawnConfig.keyPattern` */
+const npcKeyPattern = /^[a-z][a-z0-9-]*$/;
+
 /** How far below the top of the view a section must start before it counts as current */
 const sectionSpyOffset = 8;
 /** Matches the `text-[13px]/[1.45]` of an example's `code`, so a gap is a whole number of lines */
@@ -503,14 +517,16 @@ type Props = {
 };
 
 /** Persisted per UI instance */
-type Stored = Pick<State, "categoryKey" | "sectionKeys" | "view">;
+type Stored = Pick<State, "categoryKey" | "sectionKeys" | "view"> & { npc?: string };
 
 type State = {
   /** The scroll container, whose sections the preview observes */
   articleEl: null | HTMLElement;
   /** Currently shown category i.e. tab */
   categoryKey: string;
-  /** Shared arg key -> value, applied to every example; not persisted */
+  /** Shared arg key -> invalid text being typed, whilst `edits` keeps the last valid */
+  drafts: Record<string, string>;
+  /** Shared arg key -> value, applied to every example; `npc` is persisted */
   edits: Record<string, string>;
   /** Synced each render, so the handlers below never read stale props */
   props: Props;
