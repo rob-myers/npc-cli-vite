@@ -4,24 +4,8 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
-import {
-  atan,
-  attribute,
-  float,
-  fract,
-  instanceIndex,
-  int,
-  output,
-  select,
-  texture,
-  min as tslMin,
-  uniform,
-  uv,
-  vec2,
-  vec4,
-} from "three/tsl";
+import { atan, attribute, float, fract, int, select, texture, min as tslMin, uniform, uv, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import type { DecorSheetEntry } from "../assets.schema";
 import {
   decorKeyFallback,
   decorPointDefaultRadius,
@@ -32,7 +16,13 @@ import {
   sguToWorldScale,
   unlockedDoorTint,
 } from "../const.env";
-import { createUnitBox, embedXZMat4, getRotAxisMatrix, setRotMatrixAboutPoint } from "../service/geometry";
+import {
+  createUnitBox,
+  createXzQuad,
+  embedXZMat4,
+  getRotAxisMatrix,
+  setRotMatrixAboutPoint,
+} from "../service/geometry";
 import { addToDecorGrid, queryDecorGridRect, removeFromDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -52,34 +42,11 @@ export default function Decor() {
       lastHmr: 0,
       ready: false,
 
-      inst: null as any,
-      static: {
-        decorKeyToId: {},
-        gdKeyToDecorKeys: {}, // door related
-        idToDecorKey: [],
-
-        box: createUnitBox({ singleFaceGroup: true }),
-        materials: [],
-        shapeParams: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 3), // x=flatKind, yz=shapeDims
-        uvData: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
-        // decor knows its own room, so both components carry it — see `service/room-slots`
-        roomSlots: new Float32Array(MAX_DECOR_QUAD_INSTANCES * 2).fill(alwaysShownSlot),
-      },
-
-      instRuntime: null as any,
-      runtime: {
-        byKey: {},
-        defByKey: {},
-        decorKeyToId: {},
-        idToDecorKey: [] as string[],
-
-        box: createUnitBox({ singleFaceGroup: true }),
-        materials: [],
-        shapeParams: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 3), // x=flatKind, yz=shapeDims
-        uvData: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 4), // [offX, offY+texId, dimX, dimY]
-        roomSlots: new Float32Array(MAX_RUNTIME_DECOR_INSTANCES * 2).fill(alwaysShownSlot),
-        count: 0,
-      },
+      // assigned rather than spread: a batch's `ref` writes to the batch itself
+      static: Object.assign(createTexBatch(MAX_DECOR_QUAD_INSTANCES), { gdKeyToDecorKeys: {} }),
+      staticShapes: createShapeBatch(MAX_DECOR_QUAD_INSTANCES),
+      runtime: Object.assign(createTexBatch(MAX_RUNTIME_DECOR_INSTANCES), { byKey: {}, defByKey: {} }),
+      runtimeShapes: createShapeBatch(MAX_RUNTIME_DECOR_INSTANCES),
 
       addDecorColliders(...decorDefs) {
         w.physics.worker.postMessage({
@@ -99,27 +66,42 @@ export default function Decor() {
         }
       },
       addRuntimeInstance(decor) {
-        const inst = state.instRuntime;
-        const { runtime } = state;
-        if (!inst || !w.sheets || runtime.materials.length === 0) return;
-        const id = runtime.count;
-        if (id >= MAX_RUNTIME_DECOR_INSTANCES) {
-          warn(`cannot add runtime decor ${decor.key}: capacity exceeded`);
-          return;
-        }
-        if (!state.writeRuntimeSlot(id, decor)) {
-          warn(`failed to add runtime decor ${decor.key}`);
-          return;
-        }
-        runtime.decorKeyToId[decor.key] = id;
-        runtime.idToDecorKey[id] = decor.key;
-        runtime.count++;
-        inst.count = runtime.count;
+        if (!state.runtime.inst || !w.sheets || state.runtime.materials.length === 0) return;
+        if (state.pushInstance(decor, true)) state.flush(state.batchOf(true, isShape(decor)));
+      },
+      batchOf(runtime, shape) {
+        if (runtime) return shape ? state.runtimeShapes : state.runtime;
+        return shape ? state.staticShapes : state.static;
+      },
+      clearBatch(batch) {
+        batch.decorKeyToId = {};
+        batch.idToDecorKey = [];
+        batch.count = 0;
+      },
+      flush(batch) {
+        const { inst } = batch;
+        inst.count = batch.count;
         inst.instanceMatrix.needsUpdate = true;
         if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        runtime.box.getAttribute("uvData").needsUpdate = true;
-        runtime.box.getAttribute("shapeParams").needsUpdate = true;
-        runtime.box.getAttribute("roomSlots").needsUpdate = true;
+        for (const attr of Object.values(batch.geo.attributes)) {
+          if ((attr as THREE.InstancedBufferAttribute).isInstancedBufferAttribute === true) attr.needsUpdate = true;
+        }
+      },
+      pushInstance(decor, runtime) {
+        const batch = state.batchOf(runtime, isShape(decor));
+        const id = batch.count;
+        if (id >= batch.inst.instanceMatrix.count) {
+          warn(`cannot add decor ${decor.key}: capacity exceeded`);
+          return false;
+        }
+        if (state.writeSlot(id, decor, runtime) === false) {
+          warn(`cannot add decor ${decor.key}: "${state.getDecorImgKey(decor)}" not found in sheets.json`);
+          return false;
+        }
+        batch.decorKeyToId[decor.key] = id;
+        batch.idToDecorKey[id] = decor.key;
+        batch.count++;
+        return true;
       },
       writeRoomSlot(slots, id, decor) {
         const { gmId, roomId } = decor.meta;
@@ -301,16 +283,9 @@ export default function Decor() {
 
         return d;
       },
-      decodeStaticInstanceId(instanceId) {
-        const key = state.static.idToDecorKey[instanceId];
-        if (key === undefined) return null;
-        const decor = state.byKey[key];
-        return decor ? { ...decor.meta, decorKey: key } : null;
-      },
-      decodeRuntimeInstanceId(instanceId) {
-        const key = state.runtime.idToDecorKey[instanceId];
-        if (key === undefined) return null;
-        const decor = state.runtime.byKey[key];
+      decodeInstanceId(instanceId, runtime, shape) {
+        const key = state.batchOf(runtime, shape).idToDecorKey[instanceId];
+        const decor = key === undefined ? undefined : state.byKey[key];
         return decor ? { ...decor.meta, decorKey: key } : null;
       },
       ensureGmRoomId(decor) {
@@ -415,8 +390,7 @@ export default function Decor() {
       },
       remove(...decorKeys) {
         const runtime = state.runtime;
-        const inst = state.instRuntime;
-        if (!inst) return;
+        if (!runtime.inst) return;
 
         const removed = [] as string[];
         for (const decorKey of decorKeys) {
@@ -433,30 +407,25 @@ export default function Decor() {
           delete state.byKey[decorKey];
           state.byRoom[d.meta.gmId]?.[d.meta.roomId]?.delete(d);
 
-          const id = runtime.decorKeyToId[decorKey];
+          const batch = state.batchOf(true, isShape(d));
+          const id = batch.decorKeyToId[decorKey];
           if (id === undefined) {
             continue;
           }
-          delete runtime.decorKeyToId[decorKey];
+          delete batch.decorKeyToId[decorKey];
 
-          const lastId = runtime.count - 1;
+          const lastId = batch.count - 1;
           if (id !== lastId) {
             // swap last decor into removed slot
-            const lastKey = runtime.idToDecorKey[lastId];
-            const lastDecor = runtime.byKey[lastKey];
-            state.writeRuntimeSlot(id, lastDecor);
-            runtime.decorKeyToId[lastKey] = id;
-            runtime.idToDecorKey[id] = lastKey;
+            const lastKey = batch.idToDecorKey[lastId];
+            state.writeSlot(id, runtime.byKey[lastKey], true);
+            batch.decorKeyToId[lastKey] = id;
+            batch.idToDecorKey[id] = lastKey;
           }
 
-          runtime.count--;
-          inst.count = runtime.count;
-          inst.setMatrixAt(lastId, zeroMat4);
-
-          inst.instanceMatrix.needsUpdate = true;
-          if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-          runtime.box.getAttribute("uvData").needsUpdate = true;
-          runtime.box.getAttribute("shapeParams").needsUpdate = true;
+          batch.idToDecorKey.length = --batch.count;
+          batch.inst.setMatrixAt(lastId, zeroMat4);
+          state.flush(batch);
 
           if (d.meta.collider === true && (d.type === "circle" || d.type === "rect")) {
             state.removeDecorColliders(d); // 🚧 prefer batch
@@ -476,108 +445,85 @@ export default function Decor() {
         } satisfies WW.MsgToWorker);
       },
       setupRuntimeInstances() {
-        const inst = state.instRuntime;
-        const { runtime } = state;
-        if (!inst || !w.sheets || runtime.materials.length === 0) {
+        if (!state.runtime.inst || !w.sheets || state.runtime.materials.length === 0) {
           return;
         }
-
-        runtime.decorKeyToId = {};
-        runtime.idToDecorKey = [];
-        let id = 0;
-        for (const decor of Object.values(runtime.byKey)) {
-          if (!state.hasInstance(decor) || id >= MAX_RUNTIME_DECOR_INSTANCES) {
-            continue;
-          }
-          if (state.writeRuntimeSlot(id, decor)) {
-            runtime.decorKeyToId[decor.key] = id;
-            runtime.idToDecorKey[id] = decor.key;
-            id++;
-          }
+        const batches = [state.runtime, state.runtimeShapes];
+        batches.forEach(state.clearBatch);
+        for (const decor of Object.values(state.runtime.byKey)) {
+          if (state.hasInstance(decor)) state.pushInstance(decor, true);
         }
-        runtime.count = id;
-        inst.count = id;
-        inst.instanceMatrix.needsUpdate = true;
-        if (inst.instanceColor) inst.instanceColor.needsUpdate = true;
-        runtime.box.getAttribute("uvData").needsUpdate = true;
-        runtime.box.getAttribute("shapeParams").needsUpdate = true;
-        runtime.box.getAttribute("roomSlots").needsUpdate = true;
+        batches.forEach(state.flush);
       },
       tintDecor(colorRep, ...decorKeys) {
+        const batches = [state.runtime, state.runtimeShapes, state.static, state.staticShapes];
         for (const decorKey of decorKeys) {
-          if (decorKey in state.runtime.decorKeyToId) {
-            const id = state.runtime.decorKeyToId[decorKey];
-            state.instRuntime.setColorAt(id, tmpColor.set(colorRep));
-          } else if (decorKey in state.byKey) {
-            const id = state.static.decorKeyToId[decorKey];
-            state.inst.setColorAt(id, tmpColor.set(colorRep));
-          }
+          const batch = batches.find((x) => decorKey in x.decorKeyToId);
+          batch?.inst.setColorAt(batch.decorKeyToId[decorKey], tmpColor.set(colorRep));
         }
-
-        if (state.instRuntime.instanceColor) state.instRuntime.instanceColor.needsUpdate = true;
-        if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
+        for (const { inst } of batches) {
+          if (inst?.instanceColor) inst.instanceColor.needsUpdate = true;
+        }
         if (w.disabled) w.view.forceUpdate();
       },
-      writeRuntimeSlot(id, decor) {
-        state.writeRoomSlot(state.runtime.roomSlots, id, decor);
+      writeSlot(id, decor, runtime) {
+        if (isShape(decor)) {
+          const batch = runtime ? state.runtimeShapes : state.staticShapes;
+          state.writeRoomSlot(batch.roomSlots, id, decor);
+          state.writeShape(batch, id, decor, runtime);
+          return true;
+        }
+        const batch = runtime ? state.runtime : state.static;
+        state.writeRoomSlot(batch.roomSlots, id, decor);
+        return state.writeTextured(batch, id, decor);
+      },
+      writeShape(batch, id, decor, runtime) {
+        const y = { yHeight: shapeY, mat4: tmpMat4 };
         if (decor.type === "rect") {
-          const h0 = decor.points[0].distanceTo(decor.points[1]);
-          const w0 = decor.points[1].distanceTo(decor.points[2]);
-          const cos = Math.cos(decor.angle),
-            sin = Math.sin(decor.angle);
+          const along01 = decor.points[0].distanceTo(decor.points[1]);
+          const along12 = decor.points[1].distanceTo(decor.points[2]);
+          const [w0, h0] = runtime ? [along12, along01] : [along01, along12];
+          const cos = Math.cos(decor.angle);
+          const sin = Math.sin(decor.angle);
           //biome-ignore format: preserve newlines
-          state.instRuntime.setMatrixAt(id, embedXZMat4(
+          batch.inst.setMatrixAt(id, embedXZMat4(
             { a: w0*cos, b: w0*sin, c: -h0*sin, d: h0*cos,
               e: decor.center.x - w0/2*cos + h0/2*sin,
               f: decor.center.y - w0/2*sin - h0/2*cos },
-            { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
+            y,
           ));
-          state.instRuntime.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
-          state.runtime.shapeParams.set([2, w0, h0], id * 3);
-          return true;
-        }
-        if (decor.type === "circle") {
+          batch.shapeParams.set([0, w0, h0], id * 3);
+        } else {
           const r = decor.radius;
           //biome-ignore format: preserve newlines
-          state.instRuntime.setMatrixAt(id, embedXZMat4(
+          batch.inst.setMatrixAt(id, embedXZMat4(
             { a: 2*r, b: 0, c: 0, d: 2*r, e: decor.center.x - r, f: decor.center.y - r },
-            { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
+            y,
           ));
-          state.instRuntime.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
-          state.runtime.shapeParams.set([3, r, r], id * 3);
-          return true;
+          batch.shapeParams.set([1, r, r], id * 3);
         }
-
-        const imgKey = state.getDecorImgKey(decor);
-        const entry = w.sheets?.decor[imgKey];
+        batch.inst.setColorAt(id, tmpColor.set(decor.meta.color ?? "#00ff88"));
+      },
+      writeTextured(batch, id, decor) {
+        const entry = w.sheets?.decor[state.getDecorImgKey(decor)];
         const dims = entry === undefined ? undefined : w.sheets?.decorSheetDims[entry.sheetId];
         if (!entry || !dims) return false;
 
+        // a flipped decor reads its image right to left; the sheet goes in `offY`'s integer part
         const k = typeof decor.meta.inset === "number" ? decor.meta.inset : 0;
-        if (decor.det === -1) {
-          const dimX = -entry.rect.width / dims.width;
-          const dimY = entry.rect.height / dims.height;
-          const offX = (entry.rect.x + entry.rect.width) / dims.width;
-          const offY = entry.rect.y / dims.height;
-          state.runtime.uvData.set(
-            [offX + dimX * k, offY + dimY * k + entry.sheetId, dimX * (1 - 2 * k), dimY * (1 - 2 * k)],
-            id * 4,
-          );
-        } else {
-          const dimX = entry.rect.width / dims.width;
-          const dimY = entry.rect.height / dims.height;
-          const offX = entry.rect.x / dims.width;
-          const offY = entry.rect.y / dims.height;
-          state.runtime.uvData.set(
-            [offX + dimX * k, offY + dimY * k + entry.sheetId, dimX * (1 - 2 * k), dimY * (1 - 2 * k)],
-            id * 4,
-          );
-        }
+        const flipped = decor.det === -1;
+        const dimX = ((flipped ? -1 : 1) * entry.rect.width) / dims.width;
+        const dimY = entry.rect.height / dims.height;
+        const offX = (entry.rect.x + (flipped ? entry.rect.width : 0)) / dims.width;
+        const offY = entry.rect.y / dims.height;
+        batch.uvData.set(
+          [offX + dimX * k, offY + dimY * k + entry.sheetId, dimX * (1 - 2 * k), dimY * (1 - 2 * k)],
+          id * 4,
+        );
 
-        const inst = state.instRuntime;
-
+        tmpMat.setMatrixValue(decor.transform);
         if (decor.type === "quad") {
-          tmpMat.setMatrixValue(decor.transform);
+          // e.g. key=switch and screen
           const shouldTilt = decor.meta.tilt === true;
           let tiltMat4: THREE.Matrix4 | null = null;
           if (shouldTilt) {
@@ -591,21 +537,22 @@ export default function Decor() {
           }
           //biome-ignore format: preserve newlines
           tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
+          // meta.y is top and meta.h is height (unsupported for tilt)
           const yScale = decor.meta.h ?? cuboidHeight;
           //biome-ignore format: preserve newlines
           const mat4 = embedXZMat4(tmpMat, { yScale, yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale), mat4: tmpMat4 });
           if (tiltMat4) mat4.premultiply(tiltMat4);
-          inst.setMatrixAt(id, mat4);
+          batch.inst.setMatrixAt(id, mat4);
         } else {
-          tmpMat.setMatrixValue(decor.transform);
+          // a flat face-up quad
           const s = decor.scale * sguToWorldScale;
           //biome-ignore format: preserve newlines
           tmpMat.preMultiply([ entry.originalWidth * s, 0, 0, entry.originalHeight * s, 0, 0]);
           //biome-ignore format: preserve newlines
-          inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
+          batch.inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }
-        inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-        state.runtime.shapeParams[id * 3] = decor.type === "point" ? 1 : 0;
+        batch.inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
+        batch.isPoint[id] = decor.type === "point" ? 1 : 0;
         return true;
       },
     }),
@@ -655,57 +602,7 @@ export default function Decor() {
         w.texDecor.updateIndex(sheetId);
       }
 
-      // 3. compute UVs
-      state.static.uvData.fill(0);
-      let uvIdx = 0;
-      for (const gm of w.gms) {
-        for (const item of gm.decor) {
-          if (!state.hasInstance(item)) {
-            continue;
-          }
-          if (item.type === "rect" || item.type === "circle") {
-            uvIdx++; // shapes don't use UV atlas — leave zeros
-            continue;
-          }
-          const imgKey = state.getDecorImgKey(item);
-          const entry = w.sheets.decor[imgKey] as DecorSheetEntry | undefined;
-          if (!entry) {
-            warn(`decor "${imgKey}" not found in sheets.json`);
-            uvIdx++;
-            continue;
-          }
-          const dims = w.sheets.decorSheetDims[entry.sheetId];
-          if (!dims) continue;
-
-          // fix flipped decor; encode texId in integer part of offY
-          if (item.det === -1) {
-            state.static.uvData.set(
-              [
-                (entry.rect.x + entry.rect.width) / dims.width,
-                entry.rect.y / dims.height + entry.sheetId,
-                -entry.rect.width / dims.width,
-                entry.rect.height / dims.height,
-              ],
-              uvIdx * 4,
-            );
-          } else {
-            state.static.uvData.set(
-              [
-                entry.rect.x / dims.width,
-                entry.rect.y / dims.height + entry.sheetId,
-                entry.rect.width / dims.width,
-                entry.rect.height / dims.height,
-              ],
-              uvIdx * 4,
-            );
-          }
-          uvIdx++;
-        }
-      }
-
-      await pause(100);
-
-      // 4. build `state.byKey`, `state.grid`, enrich decor.meta
+      // 3. build `state.byKey`, `state.grid`, enrich decor.meta
       // - for all decor, not only those with an instancedMesh instance
       // - preserves runtime decor across HMR
       // - obstacles induce decor rects with `d.meta.gridOutline`
@@ -777,130 +674,36 @@ export default function Decor() {
 
       await pause(100);
 
-      // 5. transform instances
+      // 4. write instances
       state.static.gdKeyToDecorKeys = {};
-      state.inst.instanceMatrix.array.fill(0);
-      let instanceId = 0;
-      let tiltMat4 = new THREE.Matrix4();
+      for (const batch of [state.static, state.staticShapes]) {
+        state.clearBatch(batch);
+        batch.inst.instanceMatrix.array.fill(0);
+      }
 
       for (const [gmId, gm] of w.gms.entries()) {
-        for (const [_decorId, decor] of gm.decor.entries()) {
-          if (!state.hasInstance(decor)) {
+        for (const decor of gm.decor) {
+          if (!state.hasInstance(decor) || !state.pushInstance(decor, false)) {
             continue;
           }
-
-          if (decor.type === "rect") {
-            const w0 = decor.points[0].distanceTo(decor.points[1]);
-            const h0 = decor.points[1].distanceTo(decor.points[2]);
-            const cos = Math.cos(decor.angle),
-              sin = Math.sin(decor.angle);
-            // biome-ignore format: preserve newlines
-            state.inst.setMatrixAt(instanceId, embedXZMat4(
-              { a: w0*cos, b: w0*sin, c: -h0*sin, d: h0*cos,
-                e: decor.center.x - w0/2*cos + h0/2*sin,
-                f: decor.center.y - w0/2*sin - h0/2*cos },
-              { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
-            ));
-            state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
-            state.static.shapeParams.set([2, w0, h0], instanceId * 3);
-            instanceId++;
-            continue;
+          if (decor.type === "quad" && typeof decor.meta.doorId === "number") {
+            // e.g. a switch, tinted by whether its door is locked
+            const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
+            (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);
+            const locked = w.door.byKey[gdKey]?.locked === true;
+            state.tintDecor(locked ? lockedDoorTint : unlockedDoorTint, decor.key);
           }
-
-          if (decor.type === "circle") {
-            const r = decor.radius;
-            // biome-ignore format: preserve newlines
-            state.inst.setMatrixAt(instanceId, embedXZMat4(
-              { a: 2*r, b: 0, c: 0, d: 2*r, e: decor.center.x - r, f: decor.center.y - r },
-              { yScale: shapeYScale, yHeight: shapeYHeight, mat4: tmpMat4 },
-            ));
-            state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.color ?? "#00ff88"));
-            state.static.shapeParams.set([3, r, r], instanceId * 3);
-            instanceId++;
-            continue;
-          }
-
-          const imgKey = state.getDecorImgKey(decor);
-          const entry = w.sheets.decor[imgKey];
-          if (!entry) {
-            instanceId++;
-            continue;
-          }
-
-          if (decor.type === "quad") {
-            tmpMat.setMatrixValue(decor.transform);
-
-            // e.g. key=switch and screen
-            const shouldTilt = decor.meta.tilt === true;
-            if (shouldTilt) {
-              const { a, b, c, d } = tmpMat;
-              const det = a * d - b * c;
-              // as above: a unit axis, or a scaled decor tilts into a skew
-              const axisLength = Math.hypot(a, b) || 1;
-              tiltMat4 = getRotAxisMatrix(a / axisLength, 0, b / axisLength, (det > 0 ? 1 : -1) * 90);
-              setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
-            }
-
-            // biome-ignore format: preserve newlines
-            tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
-            const yScale = decor.meta.h ?? cuboidHeight;
-            const mat4 = embedXZMat4(tmpMat, {
-              yScale,
-              // meta.y is top and meta.h is height (unsupported for tilt)
-              yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale),
-              mat4: tmpMat4,
-            });
-            if (shouldTilt) mat4.premultiply(tiltMat4);
-
-            state.inst.setMatrixAt(instanceId, mat4);
-
-            if (typeof decor.meta.doorId === "number") {
-              const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
-              const locked = w.door.byKey[gdKey]?.locked === true;
-              state.inst.setColorAt(instanceId, tmpColor.set(locked ? lockedDoorTint : unlockedDoorTint));
-              // build gdKey -> decorKeys
-              (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);
-            } else {
-              state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-            }
-          }
-
-          if (decor.type === "point") {
-            // point: flat face-up quad centered at (decor.x, decor.y) in XZ plane
-            tmpMat.setMatrixValue(decor.transform);
-            // biome-ignore format: preserve newlines
-            tmpMat.preMultiply([entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
-
-            const mat4 = embedXZMat4(tmpMat, {
-              yScale: cuboidIconHeight,
-              yHeight: (decor.meta.y ?? 0) + cuboidIconHeight,
-              mat4: tmpMat4,
-            });
-            state.inst.setMatrixAt(instanceId, mat4);
-            state.inst.setColorAt(instanceId, tmpColor.set(decor.meta.tint ?? "#ffffff"));
-          }
-
-          state.writeRoomSlot(state.static.roomSlots, instanceId, decor);
-          state.static.decorKeyToId[decor.key] = instanceId;
-          state.static.idToDecorKey[instanceId] = decor.key;
-          state.static.shapeParams[instanceId * 3] = decor.type === "point" ? 1 : 0;
-          instanceId++;
         }
       }
-      state.inst.count = instanceId;
-      state.inst.computeBoundingSphere();
+
+      for (const batch of [state.static, state.staticShapes]) {
+        state.flush(batch);
+        batch.inst.computeBoundingSphere();
+      }
 
       await pause(100);
 
-      // 6. send to GPU
-      const geo = state.inst.geometry;
-      geo.getAttribute("uvData").needsUpdate = true;
-      geo.getAttribute("shapeParams").needsUpdate = true;
-      geo.getAttribute("roomSlots").needsUpdate = true;
-      state.inst.instanceMatrix.needsUpdate = true;
-      if (state.inst.instanceColor) state.inst.instanceColor.needsUpdate = true;
-
-      // 7. build materials
+      // 5. build materials
       const uvDataAttr = attribute<"vec4">("uvData", "vec4");
       // flip V: DataArrayTexture data is top-to-bottom but BoxGeometry +Y face has v=0 at bottom
       const flippedUv = vec2(uv().x, uv().y.oneMinus());
@@ -910,9 +713,6 @@ export default function Decor() {
       const texNode = texture(w.texDecor.tex, transformedUv);
       texNode.depthNode = int(uvDataAttr.y.floor()); // decode sheetId
 
-      // Shapes (shapeParams.x >= 2): colorNode=white so `output` carries instanceColor (set via setColorAt).
-      // Quads/points: colorNode=atlas texture (unchanged behavior).
-      const shapeKindAttr = attribute<"vec3">("shapeParams", "vec3").x;
       // decor stands in one room, so both components of `roomSlots` carry it and `.x` will do
       const fade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
       // `1` outside `sight`, which alone takes hidden decor to the fade's `shade`
@@ -921,100 +721,64 @@ export default function Decor() {
       const arrived = w.floor.fade.texAmount;
 
       /** Shaded at the OUTPUT: `colorNode` is albedo alone, which specular survives. Not whilst picking */
-      const shadeWhenHidden = (node: THREE.Node<"vec4">) =>
+      const shadeWhenHidden = (node: THREE.Node) =>
         (select as SelectAnyType)(
           w.view.objectPick.notEqual(0),
           node,
-          vec4(w.view.fadeRoomsFx.fadeRgb(node.rgb, shown), node.a.mul(arrived)),
+          vec4(
+            w.view.fadeRoomsFx.fadeRgb((node as THREE.Node<"vec4">).rgb, shown),
+            (node as THREE.Node<"vec4">).a.mul(arrived),
+          ),
         ) as THREE.Node<"vec4">;
 
+      /**
+       * Tinted by what the player can see from where they stand — see `service/player-light` —
+       * and unpickable whilst its room is hidden, so a click reaches the floor behind it
+       */
+      const lit = (color: THREE.Node<"vec4">) =>
+        w.view.fadeRoomsFx.dropPickWhenHidden(
+          w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyLightRgba(color), fade),
+          fade,
+          w.view.objectPick,
+        );
+
       // one draw, not two: it writes depth and discards by `alphaTest`, so back and front need no ordering
-      const texMat = new THREE.MeshStandardNodeMaterial({
-        side: THREE.DoubleSide,
-        forceSinglePass: true,
-        transparent: true,
-        alphaTest,
-      });
-      // tinted by what the player can see from where they stand — see `service/player-light`
-      // unpickable whilst its room is hidden, so a click reaches the floor behind it
-      texMat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.applyFadeRgba(
-          w.view.playerLight.applyLightRgba(
-            (select as SelectAnyType)(
-              shapeKindAttr.greaterThan(1.5),
-              vec4(1, 1, 1, 1),
-              texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-            ) as THREE.Node<"vec4">,
+      const createMaterial = () =>
+        new THREE.MeshStandardNodeMaterial({
+          side: THREE.DoubleSide,
+          forceSinglePass: true,
+          transparent: true,
+          alphaTest,
+        });
+
+      /** A cuboid's sides, then its top — see `createUnitBox` */
+      const createTexMaterials = (typeId: number) => {
+        // black either way: the fade only takes them out of the pick. A point has none
+        const sides = createMaterial();
+        sides.color.set("#000");
+        sides.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
+        sides.outputNode = shadeWhenHidden(
+          (select as SelectAnyType)(
+            attribute<"float">("isPoint", "float").greaterThan(0.5),
+            vec4(0, 0, 0, 0),
+            w.view.withPickOutput(typeId),
           ),
-          fade,
-        ),
-        fade,
-        w.view.objectPick,
-      );
+        );
+        const top = createMaterial();
+        top.colorNode = lit(texNode.mul(vec4(0.4, 0.4, 0.4, 1)));
+        // opaque, else blending scrambles the id — and a transparent icon is hard to pick
+        top.outputNode = shadeWhenHidden(w.view.withPickOutput(typeId, 1));
+        return [sides, top];
+      };
 
-      // transparent icon can be hard to pick so permit pick any place on cuboid
-      // hide non-top faces for flat instances (points, rects, circles)
-      // the black sides of a cuboid are black either way — the fade only takes them out of the pick
-      plainBlackMaterial.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
-      plainBlackMaterial.outputNode = shadeWhenHidden(
-        (select as SelectAnyType)(
-          shapeKindAttr.greaterThan(0.5),
-          vec4(0, 0, 0, 0),
-          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor),
-        ) as THREE.Node<"vec4">,
-      );
-
-      texMat.outputNode = shadeWhenHidden(
-        buildShapeOutputNode(
-          OBJECT_PICK_KEY_TO_RED.decor,
-          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.decor, 1), // opaque, else blending scrambles the id
-          w.view.objectPick,
-        ) as THREE.Node<"vec4">,
-      );
-
-      const runtimeTexMat = new THREE.MeshStandardNodeMaterial({
-        side: THREE.DoubleSide,
-        forceSinglePass: true,
-        transparent: true,
-        alphaTest,
-      });
-      runtimeTexMat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
-        w.view.fadeRoomsFx.applyFadeRgba(
-          w.view.playerLight.applyLightRgba(
-            (select as SelectAnyType)(
-              shapeKindAttr.greaterThan(1.5),
-              vec4(1, 1, 1, 1),
-              texNode.mul(vec4(0.4, 0.4, 0.4, 1)),
-            ) as THREE.Node<"vec4">,
-          ),
-          fade,
-        ),
-        fade,
-        w.view.objectPick,
-      );
-      runtimeTexMat.outputNode = shadeWhenHidden(
-        buildShapeOutputNode(
-          OBJECT_PICK_KEY_TO_RED.runtimeDecor,
-          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor, 1), // opaque, else blending scrambles the id
-          w.view.objectPick,
-        ) as THREE.Node<"vec4">,
-      );
-
-      const runtimeBlackMat = new THREE.MeshStandardNodeMaterial({
-        side: THREE.DoubleSide,
-        forceSinglePass: true,
-        color: "#000",
-        transparent: true,
-        alphaTest,
-      });
-      runtimeBlackMat.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
-      runtimeBlackMat.outputNode = shadeWhenHidden(
-        (select as SelectAnyType)(
-          shapeKindAttr.greaterThan(0.5),
-          vec4(0, 0, 0, 0),
-          w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
-        ) as THREE.Node<"vec4">,
-      );
+      const createShapeMaterial = (typeId: number) => {
+        const material = createMaterial();
+        material.colorNode = lit(vec4(1, 1, 1, 1)); // white, so `output` carries the instance colour
+        material.outputNode = shadeWhenHidden(
+          buildShapeOutputNode(w.view.withPickOutput(typeId, 1), w.view.objectPick),
+        );
+        return material;
+      };
 
       // a run the map change overtook must not claim readiness: its `byKey` predates the new map,
       // and every dependant redraws off `ready` alone
@@ -1026,8 +790,10 @@ export default function Decor() {
       w.setNextPending({ decor: false });
 
       return {
-        static: [plainBlackMaterial, texMat],
-        runtime: [runtimeBlackMat, runtimeTexMat],
+        static: createTexMaterials(OBJECT_PICK_KEY_TO_RED.decor),
+        staticShapes: createShapeMaterial(OBJECT_PICK_KEY_TO_RED.decorShape),
+        runtime: createTexMaterials(OBJECT_PICK_KEY_TO_RED.runtimeDecor),
+        runtimeShapes: createShapeMaterial(OBJECT_PICK_KEY_TO_RED.runtimeDecorShape),
       };
     },
     enabled: !!w.hash && !!w.sheets && !w.pending.nav && w.gms.length > 0,
@@ -1035,8 +801,12 @@ export default function Decor() {
     gcTime: 0,
   });
 
-  state.static.materials = materials?.static ?? state.static.materials;
-  state.runtime.materials = materials?.runtime ?? state.runtime.materials;
+  if (materials != null) {
+    state.static.materials = materials.static;
+    state.staticShapes.material = materials.staticShapes;
+    state.runtime.materials = materials.runtime;
+    state.runtimeShapes.material = materials.runtimeShapes;
+  }
 
   useEffect(() => {
     state.setupRuntimeInstances();
@@ -1046,43 +816,40 @@ export default function Decor() {
     <>
       <instancedMesh
         name="static-decor"
-        ref={state.ref("inst", bootstrapInstanceColor)}
-        args={[undefined, undefined, MAX_DECOR_QUAD_INSTANCES]}
+        ref={state.static.ref}
+        args={[state.static.geo, undefined, MAX_DECOR_QUAD_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
         material={state.static.materials}
         visible={state.static.materials.length > 0}
-      >
-        <bufferGeometry
-          attributes={state.static.box.attributes}
-          index={state.static.box.index}
-          groups={state.static.box.groups}
-        >
-          <instancedBufferAttribute attach="attributes-uvData" args={[state.static.uvData, 4]} />
-          <instancedBufferAttribute attach="attributes-shapeParams" args={[state.static.shapeParams, 3]} />
-          <instancedBufferAttribute attach="attributes-roomSlots" args={[state.static.roomSlots, 2]} />
-        </bufferGeometry>
-      </instancedMesh>
-
+      />
+      <instancedMesh
+        name="static-decor-shapes"
+        ref={state.staticShapes.ref}
+        args={[state.staticShapes.geo, undefined, MAX_DECOR_QUAD_INSTANCES]}
+        frustumCulled={false}
+        renderOrder={-2}
+        material={state.staticShapes.material ?? undefined}
+        visible={state.staticShapes.material !== null}
+      />
       <instancedMesh
         name="runtime-decor"
-        ref={state.ref("instRuntime", bootstrapInstanceColor)}
-        args={[undefined, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
+        ref={state.runtime.ref}
+        args={[state.runtime.geo, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
         frustumCulled={false}
         renderOrder={-2}
         material={state.runtime.materials}
         visible={state.runtime.materials.length > 0}
-      >
-        <bufferGeometry
-          attributes={state.runtime.box.attributes}
-          index={state.runtime.box.index}
-          groups={state.runtime.box.groups}
-        >
-          <instancedBufferAttribute attach="attributes-uvData" args={[state.runtime.uvData, 4]} />
-          <instancedBufferAttribute attach="attributes-shapeParams" args={[state.runtime.shapeParams, 3]} />
-          <instancedBufferAttribute attach="attributes-roomSlots" args={[state.runtime.roomSlots, 2]} />
-        </bufferGeometry>
-      </instancedMesh>
+      />
+      <instancedMesh
+        name="runtime-decor-shapes"
+        ref={state.runtimeShapes.ref}
+        args={[state.runtimeShapes.geo, undefined, MAX_RUNTIME_DECOR_INSTANCES]}
+        frustumCulled={false}
+        renderOrder={-2}
+        material={state.runtimeShapes.material ?? undefined}
+        visible={state.runtimeShapes.material !== null}
+      />
     </>
   );
 }
@@ -1097,45 +864,41 @@ export type State = {
   /** Also false briefly after HMR */
   ready: boolean;
 
-  inst: THREE.InstancedMesh;
-  static: {
-    decorKeyToId: Record<string, number>;
-    idToDecorKey: string[];
+  /** Static quads and points */
+  static: TexBatch & {
     /** Static decor related to a specific door e.g. switches */
     gdKeyToDecorKeys: { [gdKey: string]: string[] };
-
-    box: THREE.BufferGeometry;
-    materials: THREE.MeshStandardNodeMaterial[];
-    uvData: Float32Array;
-    shapeParams: Float32Array;
-    /** Per instance, the slot of the room the decor stands in — see `service/room-slots` */
-    roomSlots: Float32Array;
   };
-
-  instRuntime: THREE.InstancedMesh;
-  runtime: {
+  /** Static rects and circles */
+  staticShapes: ShapeBatch;
+  /** Runtime quads and points */
+  runtime: TexBatch & {
     byKey: Record<string, Geomorph.Decor>;
     /** The original defs, for persistence and replication — see `w.e.persistDecor` */
     defByKey: Record<string, Geomorph.DecorDef>;
-    decorKeyToId: Record<string, number>;
-    idToDecorKey: string[];
-
-    box: THREE.BufferGeometry;
-    materials: THREE.MeshStandardNodeMaterial[];
-    uvData: Float32Array;
-    shapeParams: Float32Array;
-    /** Per instance, the slot of the room the decor stands in — see `service/room-slots` */
-    roomSlots: Float32Array;
-    count: number;
   };
+  /** Runtime rects and circles */
+  runtimeShapes: ShapeBatch;
 
   addDecorColliders(...colliders: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>[]): void;
   addRuntimeDecorAgain(): void;
-  addRuntimeInstance(decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle): void;
+  addRuntimeInstance(decor: Geomorph.Decor): void;
+  /** The mesh, and its bookkeeping, drawing decor of this sort */
+  batchOf(runtime: boolean, shape: boolean): Batch;
+  /** Forgets who is at which instance */
+  clearBatch(batch: Batch): void;
+  /** A batch's count and buffers onto the gpu */
+  flush(batch: Batch): void;
+  /** Gives `decor` the next instance of whichever mesh draws it; `false` if it could not be */
+  pushInstance(decor: Geomorph.Decor, runtime: boolean): boolean;
   clearGridAndRoomLookup(): void;
   create(def: Geomorph.DecorDef): Geomorph.Decor;
-  decodeStaticInstanceId(instanceId: number): Meta<Geomorph.GmRoomId & { decorKey: string }> | null;
-  decodeRuntimeInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
+  /** @param shape whether it was a rect or circle that was picked, whose ids are their own */
+  decodeInstanceId(
+    instanceId: number,
+    runtime: boolean,
+    shape: boolean,
+  ): Meta<Geomorph.GmRoomId & { decorKey: string }> | null;
   ensureGmRoomId(d: Geomorph.Decor): Geomorph.GmRoomId | null;
   getColliderDefFromDecorDef(def: Extract<Geomorph.DecorDef, { type: "rect" | "circle" }>): WW.PhysicsColliderDef;
   getDecorImgKey(decor: Geomorph.Decor): string;
@@ -1164,17 +927,88 @@ export type State = {
   setupRuntimeInstances(): void;
   /** Writes where a decor stands into `slots`, both components alike */
   writeRoomSlot(slots: Float32Array, id: number, decor: Geomorph.Decor): void;
-  writeRuntimeSlot(
-    id: number,
-    decor: Geomorph.DecorPoint | Geomorph.DecorQuad | Geomorph.DecorRect | Geomorph.DecorCircle,
-  ): boolean;
+  /** Writes `decor` at `id` of whichever mesh draws it; `false` if it has no image to draw */
+  writeSlot(id: number, decor: Geomorph.Decor, runtime: boolean): boolean;
+  /** @param runtime a def's points run down its height first, a symbol's along its width */
+  writeShape(batch: ShapeBatch, id: number, decor: Geomorph.DecorRect | Geomorph.DecorCircle, runtime: boolean): void;
+  writeTextured(batch: TexBatch, id: number, decor: Geomorph.DecorPoint | Geomorph.DecorQuad): boolean;
+};
+
+type Batch = {
+  /** `null` until mounted, despite the type */
+  inst: THREE.InstancedMesh;
+  /** Stable, so the mesh is not re-attached every render */
+  ref(inst: THREE.InstancedMesh | null): void;
+  decorKeyToId: Record<string, number>;
+  idToDecorKey: string[];
+  count: number;
+  geo: THREE.BufferGeometry;
+  /** Per instance, the slot of the room the decor stands in — see `service/room-slots` */
+  roomSlots: Float32Array;
+};
+
+type TexBatch = Batch & {
+  /** The cuboid's sides, then its top */
+  materials: THREE.MeshStandardNodeMaterial[];
+  /** `[offX, offY + sheetId, dimX, dimY]` */
+  uvData: Float32Array;
+  /** `1` for a point, which has no sides */
+  isPoint: Float32Array;
+};
+
+type ShapeBatch = Batch & {
+  material: null | THREE.MeshStandardNodeMaterial;
+  /** `[isCircle, width, height]`, a circle's two being its radius */
+  shapeParams: Float32Array;
 };
 
 const MAX_RUNTIME_DECOR_INSTANCES = 1024;
 const cuboidHeight = 0.05;
-const shapeYScale = 0.001;
-const shapeYHeight = 0.002;
+/** How far off the floor a rect or circle lies */
+const shapeY = 0.003;
 const cuboidIconHeight = 0.005;
+
+/** What each of decor's instanced meshes keeps: who is at which instance, and where each stands */
+function createBatch(geo: THREE.BufferGeometry, max: number): Batch {
+  const roomSlots = new Float32Array(max * 2).fill(alwaysShownSlot);
+  geo.setAttribute("roomSlots", new THREE.InstancedBufferAttribute(roomSlots, 2));
+  const batch: Batch = {
+    inst: null as unknown as THREE.InstancedMesh,
+    ref(inst) {
+      batch.inst = inst as THREE.InstancedMesh;
+      bootstrapInstanceColor(inst);
+    },
+    decorKeyToId: {},
+    idToDecorKey: [],
+    count: 0,
+    geo,
+    roomSlots,
+  };
+  return batch;
+}
+
+/** Quads and points: a cuboid whose top carries an image off the decor sheets */
+function createTexBatch(max: number): TexBatch {
+  const geo = createUnitBox({ singleFaceGroup: true });
+  const uvData = new Float32Array(max * 4);
+  const isPoint = new Float32Array(max);
+  geo.setAttribute("uvData", new THREE.InstancedBufferAttribute(uvData, 4));
+  geo.setAttribute("isPoint", new THREE.InstancedBufferAttribute(isPoint, 1));
+  return Object.assign(createBatch(geo, max), { materials: [], uvData, isPoint });
+}
+
+/** Rects and circles: a flat quad with a dashed outline */
+function createShapeBatch(max: number): ShapeBatch {
+  const geo = createXzQuad();
+  const shapeParams = new Float32Array(max * 3);
+  geo.setAttribute("shapeParams", new THREE.InstancedBufferAttribute(shapeParams, 3));
+  return Object.assign(createBatch(geo, max), { material: null, shapeParams });
+}
+
+function isShape(decor: Geomorph.Decor): decor is Geomorph.DecorRect | Geomorph.DecorCircle {
+  return decor.type === "rect" || decor.type === "circle";
+}
+
 const tmpVect = new Vect();
 const tmpRect = new Rect();
 const tmpMat = new Mat();
@@ -1184,18 +1018,12 @@ const tmpColor = new THREE.Color();
 const emptyMeta = {};
 
 /**
- * TSL outputNode for the top face of the box geometry.
- * - Shapes (rect/circle): dashed outline in beauty; solid fill in pick.
- * - Quads/points: use existing withPickOutput node.
+ * Output of a rect or circle: a dashed outline, yet a solid fill whilst picking so it can be hit.
+ * @param pickOutput the pick id whilst picking, else the lit colour
  */
-function buildShapeOutputNode(
-  typeId: number,
-  texPickOutput: THREE.Node,
-  objectPick: THREE.UniformNode<"float", number>,
-) {
+function buildShapeOutputNode(pickOutput: THREE.Node, objectPick: THREE.UniformNode<"float", number>) {
   const sp = attribute<"vec3">("shapeParams", "vec3");
-  const isShape = sp.x.greaterThan(1.5);
-  const isCircle = sp.x.greaterThan(2.5);
+  const isCircle = sp.x.greaterThan(0.5);
   const dims = vec2(sp.y, sp.z);
 
   const uvCoord = uv();
@@ -1231,25 +1059,12 @@ function buildShapeOutputNode(
     fract(rectParam.div(DASH_PERIOD)).lessThan(0.5),
   ) as THREE.Node<"bool">;
 
-  const isPicking = objectPick.notEqual(0);
-  const inFill = (select as SelectAnyType)(
-    isCircle,
-    dist.lessThan(float(0.5)),
-    float(1).greaterThan(0),
-  ) as THREE.Node<"bool">;
-  const pickCol = vec4(
-    float(typeId / 255),
-    instanceIndex.shiftRight(8).bitAnd(0xff).toFloat().div(255),
-    instanceIndex.bitAnd(0xff).toFloat().div(255),
-    1,
-  );
-  const shapeOutput = (select as SelectAnyType)(
-    (select as SelectAnyType)(isPicking, inFill, inBorder.and(inDash)) as THREE.Node<"bool">,
-    (select as SelectAnyType)(isPicking, pickCol, output),
+  const inFill = isCircle.not().or(dist.lessThan(float(0.5)));
+  return (select as SelectAnyType)(
+    (select as SelectAnyType)(objectPick.notEqual(0), inFill, inBorder.and(inDash)) as THREE.Node<"bool">,
+    pickOutput,
     vec4(0, 0, 0, 0),
   );
-
-  return (select as SelectAnyType)(isShape, shapeOutput, texPickOutput);
 }
 
 /**
@@ -1258,14 +1073,6 @@ function buildShapeOutputNode(
  * enough that the fade reads as a fade rather than a pop
  */
 const alphaTest = 0.1;
-
-const plainBlackMaterial = new THREE.MeshStandardNodeMaterial({
-  side: THREE.DoubleSide,
-  forceSinglePass: true,
-  color: "#000",
-  transparent: true,
-  alphaTest,
-});
 
 // used to ignore stale queryFn and trigger fresh one
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {

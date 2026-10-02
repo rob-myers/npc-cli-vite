@@ -279,15 +279,16 @@ export function WorldView(props: React.PropsWithChildren) {
             const decoded = w.door.decodeInstanceId(pick.instanceId);
             return { ...pick, door: true, ...decoded };
           }
-          case "decor": {
-            const decoded = w.decor.decodeStaticInstanceId(pick.instanceId);
+          case "decor":
+          case "decorShape":
+          case "runtimeDecor":
+          case "runtimeDecorShape": {
+            // four meshes, each with ids of its own: all are picked as "decor"
+            const runtime = pick.type === "runtimeDecor" || pick.type === "runtimeDecorShape";
+            const shape = pick.type === "decorShape" || pick.type === "runtimeDecorShape";
+            const decoded = w.decor.decodeInstanceId(pick.instanceId, runtime, shape);
             if (!decoded) return null;
-            return { ...pick, decor: true, ...decoded, decorKey: decoded.decorKey };
-          }
-          case "runtimeDecor": {
-            const decoded = w.decor.decodeRuntimeInstanceId(pick.instanceId);
-            if (!decoded) return null;
-            return { ...pick, type: "decor", decor: true, runtime: true, ...decoded, decorKey: decoded.decorKey };
+            return { ...pick, type: "decor", decor: true, runtime, shape, ...decoded, decorKey: decoded.decorKey };
           }
           case "debugPoint": {
             const decoded = w.debug.decodeDebugPointInstanceId(pick.instanceId);
@@ -365,11 +366,10 @@ export function WorldView(props: React.PropsWithChildren) {
             mesh = getTempInstanceMesh(w.ceil.inst as THREE.InstancedMesh, picked.instanceId);
             break;
           case "decor":
-            if (picked.runtime) {
-              mesh = getTempInstanceMesh(w.decor.instRuntime as THREE.InstancedMesh, picked.instanceId);
-            } else {
-              mesh = getTempInstanceMesh(w.decor.inst as THREE.InstancedMesh, picked.instanceId);
-            }
+            mesh = getTempInstanceMesh(
+              w.decor.batchOf(picked.runtime === true, picked.shape === true).inst,
+              picked.instanceId,
+            );
             break;
           case "debugPoint":
             mesh = getTempInstanceMesh(w.debug.debugPointsInst as THREE.InstancedMesh, picked.instanceId);
@@ -2190,7 +2190,7 @@ export type Picked = {
   | ({ type: "wall"; wall: true } & ReturnType<import("./Walls").State["decodeInstanceId"]>)
   | ({ type: "obstacle"; obstacle: true } & ReturnType<import("./Obstacles").State["decodeInstanceId"]>)
   // static and runtime decor have same decode format
-  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeStaticInstanceId"]>)
+  | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)
