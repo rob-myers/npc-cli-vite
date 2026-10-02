@@ -35,8 +35,7 @@ import {
   frontierPanFrac,
   frontierRate,
   rgbShiftZoomedOutScale,
-  roomLabelFadeFrom,
-  roomLabelNearAlpha,
+  roomLabel,
   rotateSpeedDesktop,
   rotateSpeedMobile,
   unfoldDelayMs,
@@ -142,6 +141,7 @@ export function WorldView(props: React.PropsWithChildren) {
       labelReveal: uniform(1),
       labelRevealAnimId: 0,
       labelZoomFade: uniform(1),
+      labelScale: uniform(1),
       objectPick: uniform(0),
       playerLight: createPlayerLight(),
       // by getter: an hmr of the light rebuilds it — see `reset` — and this must follow. A reading
@@ -565,9 +565,17 @@ export function WorldView(props: React.PropsWithChildren) {
         // the room, which is what keeps it attached to the floor rather than floating over it.
         // Measured off the radius rather than `zoomProgress`, which a free (touch) zoom does not
         // keep. Every mode, unlike what follows
-        const u = clamp01((t - roomLabelFadeFrom) / (1 - roomLabelFadeFrom));
+        const u = clamp01((t - roomLabel.fadeFrom) / (1 - roomLabel.fadeFrom));
         const eased = u * u * (3 - 2 * u); // eased, so it neither snaps out nor lingers
-        state.labelZoomFade.value = roomLabelNearAlpha + (1 - roomLabelNearAlpha) * eased;
+        // a follow draws the outer stop in, where a label fixed in metres would loom: it keeps
+        // the size on screen it has at the persisted stop, and thins
+        const { minDistance: inner, maxDistance: outer } = state.ctrlOpts;
+        state.labelScale.value = clamp01(max / outer);
+        /** `0` with the outer stop as near as `easeFrontier` draws it, `1` at the persisted one */
+        const drawnOut = clamp01(((max - inner) / (outer - inner) - frontierNearFrac) / (1 - frontierNearFrac));
+        state.labelZoomFade.value =
+          (roomLabel.nearAlpha + (roomLabel.farAlpha - roomLabel.nearAlpha) * eased) *
+          (roomLabel.drawnInAlpha + (1 - roomLabel.drawnInAlpha) * drawnOut);
 
         // the channels part less the further out the view is, on the same easing: every mode
         state.rgbShiftFx.setAmount(rgbShiftAmount * (1 - (1 - rgbShiftZoomedOutScale) * eased));
@@ -1937,8 +1945,10 @@ export type State = {
   labelRevealAnimId: number;
   /** Fade the room labels to `to` over `ms`, after waiting `delayMs` */
   revealRoomLabels(to: number, ms?: number, delayMs?: number): void;
-  /** How much of a label the ZOOM leaves: `1` at the outer stop, `roomLabelNearAlpha` in to `roomLabelFadeFrom` */
+  /** How much of a label the ZOOM leaves: `farAlpha` at the outer stop, `nearAlpha` in to `fadeFrom` — see `roomLabel` */
   labelZoomFade: THREE.UniformNode<"float", number>;
+  /** A label's size: `1`, less by however far a follow has drawn the outer zoom stop in */
+  labelScale: THREE.UniformNode<"float", number>;
   /** Black over the canvas contents, hiding a floor swap — see `world.css` */
   veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
   resetCamera(): void;

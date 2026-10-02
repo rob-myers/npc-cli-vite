@@ -2,7 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
 import { cameraProjectionMatrix, cameraViewMatrix, float, mrt, select, texture, uv, vec4 } from "three/tsl";
 import type * as THREE from "three/webgpu";
-import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabelHeight, roomLabelWidth, wallHeight } from "../const.env";
+import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabel, wallHeight } from "../const.env";
 import { helper } from "../service/helper";
 import { createLabelResources, drawLabel } from "../service/labels";
 import { slotOf } from "../service/room-slots";
@@ -91,7 +91,9 @@ export default function RoomLabels() {
     // it always faces us — flat to the floor from birdseye, upright as the view tilts in
     const viewCentre = cameraViewMatrix.mul(vec4(inst.x, inst.y, inst.z, 1));
     mat.vertexNode = cameraProjectionMatrix.mul(
-      viewCentre.add(vec4(sign.x.mul(roomLabelWidth / 2), sign.y.mul(roomLabelHeight / 2), 0, 0)),
+      viewCentre.add(
+        vec4(sign.x.mul(roomLabel.width / 2), sign.y.mul(roomLabel.height / 2), 0, 0).mul(w.view.labelScale),
+      ),
     );
 
     const tex = texture(w.texRoomLabel.tex, uv()).depth(inst.w.toInt());

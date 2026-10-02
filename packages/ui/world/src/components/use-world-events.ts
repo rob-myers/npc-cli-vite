@@ -11,7 +11,7 @@ import {
   floorFadeDelayMs,
   MAX_NPCS,
   mapVeilMs,
-  roomLabelRevealMs,
+  roomLabel,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
@@ -267,7 +267,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             // the names come back once the fade the unfold started has settled — by then only the
             // rooms that stay are still shown, so only their labels appear. Not awaited: the
             // intro pan has nothing to do with it
-            w.view.revealRoomLabels(1, roomLabelRevealMs, MODE_FADE_SECS * 1000);
+            w.view.revealRoomLabels(1, roomLabel.revealMs, MODE_FADE_SECS * 1000);
           } else {
             // behind black since `fadeOut` — snap onto the player, so it lifts onto them
             await player.panTo({ animate: false });
