@@ -90,3 +90,13 @@
     opacity: 0;
   }
 }
+
+/* Light text on dark is fattened by subpixel smoothing: greyscale thins it back to how the light theme reads */
+.theme-dark .decorator {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ...and the muted greys sit too near the page to read at this size */
+  --color-zinc-500: #8e8e99;
+  --color-zinc-400: #b4b4bd;
+}
