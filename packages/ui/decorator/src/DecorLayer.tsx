@@ -6,7 +6,9 @@ import {
   anchorOf,
   circleResized,
   imgSize,
+  isPress,
   moved,
+  onGrid,
   pointCorner,
   pointResized,
   quadCorners,
@@ -16,6 +18,7 @@ import {
   rectResized,
   rotated,
   rotateHandle,
+  stepOf,
   toMap,
 } from "./decor-edit";
 
@@ -44,7 +47,7 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit, onPres
     onPressing(true);
     const onMove = (ev: PointerEvent) => {
       const at = toMap(svg, ev.clientX, ev.clientY);
-      const step = stepOf(ev);
+      const step = stepOf(ev, onGrid(def));
       resized.current =
         i === rotateIndex && (def.type === "rect" || def.type === "quad")
           ? rotated(w, def, at, angleStepOf(ev))
@@ -86,14 +89,14 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit, onPres
     onPressing(true);
     const start = toMap(svg, e.clientX, e.clientY);
     const shift = e.shiftKey === false ? null : keys === selected ? "remove" : "added";
-    drag.current = { svg, key, start, anchor: anchorOf(def), dx: 0, dy: 0, travel: 0, keys, shift };
+    drag.current = { svg, key, start, anchor: anchorOf(def), grid: onGrid(def), dx: 0, dy: 0, travel: 0, keys, shift };
   }
 
   function onItemPointerMove(e: React.PointerEvent<SVGGElement>) {
     const d = drag.current;
     if (d === null) return;
     const at = toMap(d.svg, e.clientX, e.clientY);
-    const step = stepOf(e);
+    const step = stepOf(e, d.grid);
     d.dx = at.x - d.start.x;
     d.dy = at.y - d.start.y;
     d.travel = Math.max(d.travel, Math.hypot(d.dx, d.dy));
@@ -264,16 +267,6 @@ function preventDefault(e: Pick<Event, "preventDefault">) {
   e.preventDefault();
 }
 
-/** A primary press, or a ctrl one: macOS makes ctrl-click a right one */
-function isPress(e: React.PointerEvent) {
-  return e.button === 0 || (e.button === 2 && e.ctrlKey);
-}
-
-/** Shift is the coarse step, ctrl or alt the fine */
-function stepOf(e: { shiftKey: boolean; ctrlKey: boolean; altKey: boolean }) {
-  return e.shiftKey ? coarseStep : e.ctrlKey || e.altKey ? fineStep : undefined;
-}
-
 /** Radians: a rotation with shift held goes by 15°, with ctrl or alt by 5° */
 function angleStepOf(e: { shiftKey: boolean; ctrlKey: boolean; altKey: boolean }) {
   return e.shiftKey ? Math.PI / 12 : e.ctrlKey || e.altKey ? Math.PI / 36 : undefined;
@@ -400,6 +393,8 @@ type Drag = {
   start: Geom.VectJson;
   /** The pressed decor's, which a snapped drag puts on the grid */
   anchor: Geom.VectJson;
+  /** Whether it snaps by the half grid — see `stepOf` */
+  grid: boolean;
   dx: number;
   dy: number;
   /** The furthest the pointer got, unsnapped: less than `dragThreshold` is a click */
@@ -425,8 +420,6 @@ const rotateIndex = 4;
 const handleSize = 0.16;
 const handleShare = 0.4;
 /** Metres: a drag or resize with shift held goes by this, with ctrl or alt by the finer */
-const coarseStep = 0.5;
-const fineStep = 0.1;
 /** Metres: the pin stands this tall; its tip is this far down its box */
 const pinHeight = 0.5;
 const pinTipFrac = 232 / 256;

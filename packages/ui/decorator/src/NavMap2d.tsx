@@ -4,7 +4,7 @@ import { helper } from "@npc-cli/ui__world/helper";
 import { Mat } from "@npc-cli/util/geom";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { memo, useEffect, useMemo, useRef } from "react";
-import { toMap } from "./decor-edit";
+import { halfGridMeters, isPress, stepOf, toMap } from "./decor-edit";
 import type { DecoratorUiMeta } from "./schema";
 import { getDecoratorMapStore } from "./storage";
 
@@ -96,20 +96,32 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpc
             strokeWidth={0.03}
           />
         </pattern>
+        {/* and each square halved, fainter */}
+        <pattern id={halfGridId} width={halfGridMeters} height={halfGridMeters} patternUnits="userSpaceOnUse">
+          <path
+            d={`M${halfGridMeters} 0H0V${halfGridMeters}`}
+            fill="none"
+            stroke={ink.grid}
+            strokeOpacity={0.8}
+            strokeWidth={0.02}
+          />
+        </pattern>
       </defs>
 
       <Geomorphs w={w} gmsHash={w.gmsHash} nav={w.nav} showNav={show.nav} showObstacles={show.obstacles} />
 
-      {show.grid && (
-        <rect
-          x={bounds.minX}
-          y={bounds.minY}
-          width={bounds.width}
-          height={bounds.height}
-          fill={`url(#${gridId})`}
-          pointerEvents="none"
-        />
-      )}
+      {show.grid &&
+        [halfGridId, gridId].map((id) => (
+          <rect
+            key={id}
+            x={bounds.minX}
+            y={bounds.minY}
+            width={bounds.width}
+            height={bounds.height}
+            fill={`url(#${id})`}
+            pointerEvents="none"
+          />
+        ))}
 
       {/* doors are the World's own, in world space, so they show what is open and what is locked */}
       {doors.map((door) => (
@@ -265,7 +277,7 @@ function Labels({ w, doors }: { w: WorldState; doors: Geomorph.DoorState[] }) {
 
 /**
  * The chosen npcs, moved straight through their refs on the World's frames, not by rendering.
- * One can be dragged and dropped — let go off the map, or Escape, cancels
+ * One can be dragged and dropped, onto the grid with shift or ctrl — let go off the map, or Escape, cancels
  */
 function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpcDrop">) {
   const els = useRef(new Map<string, SVGGElement>());
@@ -313,8 +325,13 @@ function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpc
       "data-no-pan": true,
       pointerEvents: "all",
       className: "cursor-grab active:cursor-grabbing",
+      // ctrl is the fine step, not the decor menu
+      onContextMenu(e: React.MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+      },
       onPointerDown(e: React.PointerEvent<SVGCircleElement>) {
-        if (e.button !== 0) return;
+        if (isPress(e) === false) return;
         e.stopPropagation();
         e.currentTarget.setPointerCapture(e.pointerId);
         drag.current = { npcKey, client: { x: e.clientX, y: e.clientY }, at: null };
@@ -326,7 +343,10 @@ function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpc
         if (d?.npcKey !== npcKey || svg === null) return;
         // a press let go where it landed moves nobody
         if (d.at === null && Math.hypot(e.clientX - d.client.x, e.clientY - d.client.y) < clickSlopPx) return;
-        d.at = toMap(svg, e.clientX, e.clientY);
+        const at = toMap(svg, e.clientX, e.clientY);
+        // by the half grid, as drawn
+        const step = stepOf(e, true);
+        d.at = step === undefined ? at : { x: Math.round(at.x / step) * step, y: Math.round(at.y / step) * step };
         // fainter off the map, where letting go cancels
         els.current.get(npcKey)?.setAttribute("opacity", isOverMap(e) ? "1" : "0.3");
         place(npcKey);
@@ -354,6 +374,9 @@ function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpc
         vectorEffect="non-scaling-stroke"
         {...dragProps(npcKey)}
       />
+      {onNpcDrop !== undefined && (
+        <title>{`${npcKey}: drag to put them elsewhere, with shift or ctrl onto the grid`}</title>
+      )}
       <text y={-0.45} fontSize={0.3} textAnchor="middle" fill={ink.npc}>
         {npcKey}
       </text>
@@ -392,6 +415,7 @@ function rectFrom(a: Geom.VectJson, b: Geom.VectJson): Geom.RectJson {
 const clickSlopPx = 4;
 
 const gridId = "nav-map-2d-grid";
+const halfGridId = "nav-map-2d-half-grid";
 const tmpMat = new Mat();
 
 const keyFontSize = 0.13;
