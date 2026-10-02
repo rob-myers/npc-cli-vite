@@ -6,7 +6,6 @@ import {
   ArrowsClockwiseIcon,
   CaretDownIcon,
   CaretRightIcon,
-  ChatCircleTextIcon,
   FloppyDiskIcon,
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
@@ -428,19 +427,30 @@ export default function LorePane(props: Props) {
           // dragged shorter or taller by its corner, as the backstory is
           <div className="h-40 min-h-8 resize-y overflow-hidden rounded border border-zinc-800">
             {/* fades out at the foot, so more below is seen to be there; padded, so the last line clears it */}
-            <div className="size-full overflow-auto scrollbar-thin flex flex-col gap-2 p-1 pb-6" style={fadeFootStyle}>
-              {samples.map((line, i) => (
-                <div key={i} className="flex items-start gap-1">
-                  <span className="flex-1 leading-relaxed">{line}</span>
-                  {w !== undefined && npcKey !== null && (
-                    <IconButton
-                      title={`${npcKey} says it`}
-                      icon={ChatCircleTextIcon}
-                      onClick={() => w.speech.say(npcKey, line)}
-                    />
-                  )}
-                </div>
-              ))}
+            <div
+              className="size-full overflow-auto scrollbar-thin flex flex-wrap content-start gap-1.5 p-1 pb-6"
+              style={fadeFootStyle}
+            >
+              {samples.map((line, i) => {
+                const speaker = w !== undefined ? npcKey : null;
+                return (
+                  <span
+                    key={i}
+                    title={speaker === null ? undefined : `${speaker} says it`}
+                    className={cn(
+                      "px-1.5 py-0.5 rounded bg-zinc-900 leading-relaxed select-text",
+                      speaker !== null && "cursor-pointer hover:bg-zinc-800 hover:text-zinc-100",
+                    )}
+                    // a drag that selected text is a copy, not a click
+                    onClick={() => {
+                      if (speaker === null || window.getSelection()?.isCollapsed === false) return;
+                      w?.speech.say(speaker, line);
+                    }}
+                  >
+                    {line}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
