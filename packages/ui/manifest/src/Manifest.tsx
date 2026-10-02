@@ -469,10 +469,10 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   return (
     <div
       ref={root}
-      className="manifest relative size-full bg-zinc-950 text-zinc-300 text-xs tracking-wide leading-relaxed"
+      className="manifest relative size-full bg-gray-950 text-zinc-300 text-xs tracking-wide leading-relaxed"
     >
       {/* over the pane, so in reach however far it has scrolled */}
-      <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
+      <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-gray-950/80 opacity-60 hover:opacity-100">
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
         <IconButton title="smaller text" icon={MagnifyingGlassMinusIcon} onClick={() => state.zoomBy(-zoomStep)} />
         <IconButton title="larger text" icon={MagnifyingGlassPlusIcon} onClick={() => state.zoomBy(zoomStep)} />
