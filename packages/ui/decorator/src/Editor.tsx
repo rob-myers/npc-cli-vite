@@ -1,4 +1,4 @@
-import { Select } from "@base-ui/react/select";
+import { Menu } from "@base-ui/react/menu";
 import type { WorldState } from "@npc-cli/ui__world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
@@ -6,8 +6,8 @@ import {
   ArrowUUpLeftIcon,
   ArrowUUpRightIcon,
   CaretDownIcon,
-  CheckIcon,
-  CursorIcon,
+  EyeIcon,
+  EyeSlashIcon,
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect } from "react";
@@ -23,12 +23,11 @@ import {
   newDef,
   nextKey,
   tiltedQuadHeight,
-  typeIcon,
   withHeight,
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { LoreLayer } from "./lore/LoreLayer";
-import type { LoreEntry } from "./lore/lore.schema";
+import type { LoreCharacter, LoreEntry } from "./lore/lore.schema";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import { Picker } from "./Picker";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
@@ -38,21 +37,20 @@ export function Editor(props: {
   w: WorldState;
   meta: DecoratorUiMeta;
   map: React.RefObject<NavMap2dApi | null>;
-  /** The lore pane's entry: drawn on the map, and a character's npc can be spawned */
+  /** The lore pane's entry, drawn on the map */
   lore: null | LoreEntry;
+  /** Each can be spawned, with their skin and their doors */
+  characters: LoreCharacter[];
 }) {
-  const { w, meta, map, lore } = props;
+  const { w, meta, map, lore, characters } = props;
   const { uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(
     (): State => ({
-      /** The npcs there were when the picker was last opened: it need not keep up */
-      npcOptions: [],
       selected: [],
       history: new DecorHistory(w),
       tool: "select",
-      lore,
-      spawning: false,
+      spawning: null,
       spawnError: null,
       /** For the point and quad tools */
       img: undefined,
@@ -66,9 +64,6 @@ export function Editor(props: {
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
         state.update();
-      },
-      setTool(tool) {
-        state.set({ tool: state.tool === tool ? "select" : tool });
       },
       commit(defs, merge) {
         state.history.mark(merge);
@@ -135,9 +130,9 @@ export function Editor(props: {
       isMenuBlocked() {
         return performance.now() < state.menuBlockedUntil;
       },
-      async spawnAt(at) {
-        const { npcKey, skin, maps } = state.lore ?? {};
-        if (npcKey === undefined) return;
+      async spawnNpc(npcKey, at) {
+        // theirs, should the lore have them: its skin and its doors
+        const { skin, maps } = characters.find((x) => x.npcKey === npcKey) ?? {};
         try {
           const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
           await w.npc.spawn({ npcKey, at, as: hasSkin ? skin : undefined });
@@ -148,14 +143,14 @@ export function Editor(props: {
           }
           w.view.forceUpdate();
           if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
-          state.set({ spawning: false, spawnError: null });
+          state.set({ spawning: null, spawnError: null });
         } catch (e) {
           state.set({ spawnError: e instanceof Error ? e.message : String(e) });
         }
       },
       onMapClick(at) {
         if (state.menuOpen) return; // a long press let go
-        if (state.spawning) return void state.spawnAt(at);
+        if (state.spawning !== null) return void state.spawnNpc(state.spawning, at);
         if (state.tool === "select") return state.select([]);
         state.add(state.tool, at);
       },
@@ -201,7 +196,7 @@ export function Editor(props: {
           e.preventDefault();
           state.redo();
         } else if (e.key === "Escape") {
-          if (state.spawning) state.set({ spawning: false, spawnError: null });
+          if (state.spawning !== null) state.set({ spawning: null, spawnError: null });
           else state.tool === "select" ? state.select([]) : state.set({ tool: "select" });
         } else if (e.key === "a" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault();
@@ -209,13 +204,6 @@ export function Editor(props: {
         }
       },
 
-      onNpcsOpenChange(open) {
-        if (open === false) return;
-        const npcKeys = Object.keys(w.n ?? {});
-        state.npcOptions = npcKeys;
-        // those gone since are dropped
-        state.setNpcKeys(meta.npcKeys.filter((npcKey) => npcKeys.includes(npcKey)));
-      },
       setNpcKeys(npcKeys) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as DecoratorUiMeta).npcKeys = npcKeys));
       },
@@ -226,10 +214,11 @@ export function Editor(props: {
         });
       },
     }),
-    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen], reset: { history: false } },
+    { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters], reset: { history: false } },
   );
 
-  state.lore = lore; // its handlers run long after this render
+  /** The lore's characters first, then whoever else is in the World */
+  const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
 
   useEffect(() => {
     // what the map is drawn from changes under it
@@ -254,19 +243,6 @@ export function Editor(props: {
         <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
-        {lore?.kind === "character" && lore.npcKey !== undefined && (
-          <button
-            type="button"
-            title="click the map to put them there, with their skin and their doors"
-            className={cn(
-              "px-2 py-0.5 rounded border cursor-pointer",
-              state.spawning ? "border-yellow-400 text-yellow-200 bg-zinc-800" : "border-zinc-700 text-zinc-300",
-            )}
-            onClick={() => state.set({ spawning: !state.spawning, spawnError: null })}
-          >
-            spawn {lore.npcKey}
-          </button>
-        )}
         {state.spawnError !== null && <span className="text-red-400">{state.spawnError}</span>}
         <ToolButton
           icon={SidebarSimpleIcon}
@@ -275,22 +251,15 @@ export function Editor(props: {
           onClick={() => state.setSidebar({ sidebarOpen: !meta.sidebarOpen })}
         />
         <span className="w-px h-4 mx-1 bg-zinc-800" />
-        {/* the tools: select, or add one of each type where the map is clicked */}
-        <ToolButton
-          icon={CursorIcon}
-          title="select (V, Esc)"
-          active={state.tool === "select"}
-          onClick={() => state.setTool("select")}
+        {/* the tool: select, or add one of a type where the map is clicked */}
+        <Picker
+          title="tool: select (V, Esc), or add a point (P), rect (R), circle (C) or quad (Q)"
+          value={state.tool}
+          options={tools}
+          // fixed, as each select here is: the bar keeps still as what is chosen changes
+          className={cn("w-18 justify-between", state.tool !== "select" && "border-zinc-400 text-zinc-100")}
+          onChange={(tool) => state.set({ tool })}
         />
-        {decorTypes.map((type) => (
-          <ToolButton
-            key={type}
-            icon={typeIcon[type]}
-            title={`add ${type} (${type[0].toUpperCase()})`}
-            active={state.tool === type}
-            onClick={() => state.setTool(type)}
-          />
-        ))}
         {(state.tool === "point" || state.tool === "quad") && (
           <Picker
             value={state.img ?? ""}
@@ -298,18 +267,9 @@ export function Editor(props: {
               ...(state.tool === "point" ? [{ value: "", label: "no image" }] : []),
               ...Object.keys(w.sheets?.decor ?? {}),
             ]}
+            className="w-32 justify-between"
             onChange={(img) => state.set({ img: img === "" ? undefined : img })}
           />
-        )}
-        {state.heightShown() && (
-          <label className="flex items-center gap-1" title="height off the floor (m)">
-            height
-            <NumberInput
-              value={state.heightValue()}
-              placeholder={state.tool === "quad" && state.tilt ? String(tiltedQuadHeight) : "0"}
-              onCommit={state.setHeight}
-            />
-          </label>
         )}
         {state.tool === "quad" && (
           <label className="flex items-center gap-1 cursor-pointer">
@@ -321,6 +281,28 @@ export function Editor(props: {
             tilt
           </label>
         )}
+        {state.heightShown() && (
+          <label className="flex items-stretch" title="height off the floor (m)">
+            <span className="grid place-items-center px-1.5 rounded-l border border-r-0 border-zinc-700 bg-zinc-900 text-zinc-500">
+              h
+            </span>
+            <NumberInput
+              className="rounded-l-none"
+              value={state.heightValue()}
+              placeholder={state.tool === "quad" && state.tilt ? String(tiltedQuadHeight) : "0"}
+              onCommit={state.setHeight}
+            />
+          </label>
+        )}
+        <NpcsMenu
+          npcKeys={npcKeys}
+          spawned={Object.keys(w.n ?? {})}
+          shown={meta.npcKeys}
+          spawning={state.spawning}
+          onOpen={state.update}
+          onSpawning={(spawning) => state.set({ spawning, spawnError: null })}
+          onShown={state.setNpcKeys}
+        />
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         <ToolButton icon={ArrowUUpLeftIcon} title="undo (cmd-Z)" active={false} onClick={state.undo} />
         <ToolButton icon={ArrowUUpRightIcon} title="redo (shift-cmd-Z)" active={false} onClick={state.redo} />
@@ -338,37 +320,6 @@ export function Editor(props: {
             {layer}
           </button>
         ))}
-
-        <Select.Root
-          multiple
-          value={meta.npcKeys}
-          onValueChange={state.setNpcKeys}
-          onOpenChange={state.onNpcsOpenChange}
-        >
-          <Select.Trigger className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded border border-zinc-800 cursor-pointer hover:bg-zinc-800">
-            <Select.Value>{(npcKeys: string[]) => (npcKeys.length === 0 ? "npcs" : npcKeys.join(", "))}</Select.Value>
-            <CaretDownIcon className="size-3" />
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Positioner className="z-50" sideOffset={4} align="end" alignItemWithTrigger={false}>
-              <Select.Popup className="decorator bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs text-zinc-300">
-                {state.npcOptions.length === 0 && <div className="px-3 py-1 text-zinc-500">no npcs</div>}
-                {state.npcOptions.map((npcKey) => (
-                  <Select.Item
-                    key={npcKey}
-                    value={npcKey}
-                    className="flex items-center gap-2 px-3 py-1 cursor-pointer data-highlighted:bg-zinc-700"
-                  >
-                    <Select.ItemIndicator className="w-3">
-                      <CheckIcon className="size-3" />
-                    </Select.ItemIndicator>
-                    <Select.ItemText>{npcKey}</Select.ItemText>
-                  </Select.Item>
-                ))}
-              </Select.Popup>
-            </Select.Positioner>
-          </Select.Portal>
-        </Select.Root>
       </div>
 
       <div className="flex-1 min-h-0 flex">
@@ -410,7 +361,8 @@ export function Editor(props: {
             w={w}
             show={meta.show}
             npcKeys={meta.npcKeys}
-            cursor={state.tool === "select" && !state.spawning ? undefined : "crosshair"}
+            onNpcDrop={state.spawnNpc}
+            cursor={state.tool === "select" && state.spawning === null ? undefined : "crosshair"}
             onClick={state.onMapClick}
             onMarquee={(rect, e) =>
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
@@ -453,17 +405,87 @@ function ToolButton(props: {
   );
 }
 
+/**
+ * The lore's characters and whoever else is in the World. A name arms a spawn, where the map is
+ * next clicked; the eye beside it says whether they are drawn on the map
+ */
+function NpcsMenu(props: {
+  npcKeys: string[];
+  /** Those in the World: the rest are grey */
+  spawned: string[];
+  /** Those drawn on the map */
+  shown: string[];
+  spawning: null | string;
+  onOpen(): void;
+  onSpawning(npcKey: null | string): void;
+  onShown(npcKeys: string[]): void;
+}) {
+  const { npcKeys, spawned, shown, spawning } = props;
+  return (
+    <Menu.Root onOpenChange={(open) => open && props.onOpen()}>
+      <Menu.Trigger
+        title={
+          spawning === null
+            ? "npcs: click one, then the map, to put them there — or drag them on the map"
+            : `click the map to put ${spawning} there (Esc cancels)`
+        }
+        className={cn(
+          // fixed, as each select in the bar is
+          "flex items-center justify-between gap-1 w-16 px-1 py-0.5 rounded border border-zinc-800 bg-zinc-900",
+          "outline-none cursor-pointer hover:bg-zinc-800",
+          spawning !== null && "border-yellow-400 text-yellow-200",
+        )}
+      >
+        npcs
+        <CaretDownIcon className="size-3 shrink-0 text-zinc-500" />
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Positioner className="z-50" sideOffset={4} align="start">
+          {/* `decorator`: portalled out of the root, whose theme it must still take */}
+          <Menu.Popup className="decorator bg-zinc-800 border border-zinc-700 rounded shadow-lg py-1 max-h-60 overflow-auto text-xs outline-none">
+            {npcKeys.length === 0 && <div className="px-3 py-1 text-zinc-500">no npcs</div>}
+            {npcKeys.map((npcKey) => {
+              const isShown = shown.includes(npcKey);
+              const EyeOrNot = isShown ? EyeIcon : EyeSlashIcon;
+              return (
+                <div key={npcKey} className="flex items-stretch">
+                  <Menu.Item
+                    className={cn(
+                      "flex-1 px-3 py-1 cursor-pointer outline-none data-highlighted:bg-zinc-700",
+                      spawned.includes(npcKey) ? "text-zinc-100" : "text-zinc-500",
+                      spawning === npcKey && "text-yellow-200",
+                    )}
+                    onClick={() => props.onSpawning(spawning === npcKey ? null : npcKey)}
+                  >
+                    {npcKey}
+                  </Menu.Item>
+                  <Menu.Item
+                    closeOnClick={false}
+                    title={isShown ? "hide on the map" : "show on the map"}
+                    className="grid place-items-center px-2 cursor-pointer outline-none data-highlighted:bg-zinc-700"
+                    onClick={() => props.onShown(isShown ? shown.filter((x) => x !== npcKey) : [...shown, npcKey])}
+                  >
+                    <EyeOrNot className={cn("size-3.5", isShown ? "text-zinc-200" : "text-zinc-500")} />
+                  </Menu.Item>
+                </div>
+              );
+            })}
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
 type State = {
-  npcOptions: string[];
   selected: string[];
   history: DecorHistory;
   tool: "select" | DecorType;
-  /** The lore pane's entry, as of the last render */
-  lore: null | LoreEntry;
-  /** Is the next click on the map where `lore`'s npc goes? */
-  spawning: boolean;
+  /** The npc who goes where the map is next clicked */
+  spawning: null | string;
   spawnError: null | string;
-  spawnAt(at: Geom.VectJson): Promise<void>;
+  /** Spawns them there, or respawns them — as the lore has them, if it does */
+  spawnNpc(npcKey: string, at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;
   y3d: number | undefined;
@@ -472,7 +494,6 @@ type State = {
   onPressing(pressing: boolean): void;
   isMenuBlocked(): boolean;
   select(keys: string[]): void;
-  setTool(tool: "select" | DecorType): void;
   /** Each def replaces its decor, which the World persists; every edit is undoable */
   commit(defs: Geomorph.DecorDef[], merge?: string): void;
   remove(keys: string[]): void;
@@ -489,13 +510,12 @@ type State = {
   heightShown(): boolean;
   heightValue(): number | undefined;
   onKeyDown(e: React.KeyboardEvent): void;
-  onNpcsOpenChange(open: boolean): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
 const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static"];
-const decorTypes: DecorType[] = ["point", "rect", "circle", "quad"];
+const tools: ("select" | DecorType)[] = ["select", "point", "rect", "circle", "quad"];
 type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
 const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };
 const minSidebarWidth = 120;

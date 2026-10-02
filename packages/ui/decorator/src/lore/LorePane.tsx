@@ -20,7 +20,15 @@ import { Picker } from "../Picker";
 import type { DecoratorUiMeta } from "../schema";
 import { GrammarEditor } from "./GrammarEditor";
 import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
-import { type LoreEntry, type LoreKind, loreChangedEvent, loreKinds, loreSlugRe } from "./lore.schema";
+import {
+  isLoreCharacter,
+  type LoreCharacter,
+  type LoreEntry,
+  type LoreKind,
+  loreChangedEvent,
+  loreKinds,
+  loreSlugRe,
+} from "./lore.schema";
 import { expand, factsGrammar, type Grammar, mergeGrammars, seededRng } from "./tracery";
 
 /** Backstories and grammars for the setting, and a line of them said in the World — see `docs/lore.md` */
@@ -206,6 +214,13 @@ export default function LorePane(props: Props) {
     props.onEntry(state.draft === null ? null : { ...state.draft });
     return () => props.onEntry(null);
   }, [state.draft, state.rev]);
+
+  // the map pane can spawn any character with an npc, as edited
+  useEffect(() => {
+    const entries = { ...state.entries, ...(state.draft !== null && { [state.draft.key]: state.draft }) };
+    props.onCharacters(Object.values(entries).filter(isLoreCharacter));
+    return () => props.onCharacters([]);
+  }, [state.entries, state.draft, state.rev]);
 
   // choosing an npc on the map shows their entry
   const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1];
@@ -460,7 +475,10 @@ export default function LorePane(props: Props) {
   );
 
   return (
-    <div ref={root} className="relative size-full bg-zinc-950 text-zinc-300 text-xs tracking-wide leading-relaxed">
+    <div
+      ref={root}
+      className="lore-pane relative size-full bg-zinc-950 text-zinc-300 text-xs tracking-wide leading-relaxed"
+    >
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
@@ -743,14 +761,15 @@ function Section(props: {
   const folded = props.folded.includes(props.name);
   const Caret = folded ? CaretRightIcon : CaretDownIcon;
   return (
-    <div className="flex flex-col gap-1">
+    // shaded by `data-section` — see `decorator.css`
+    <div className="lore-section flex flex-col gap-1 rounded px-2 py-1.5" data-section={props.name}>
       <button
         type="button"
         className="flex items-center gap-1 min-w-0 text-left cursor-pointer text-zinc-500 hover:text-zinc-300"
         onClick={() => props.onToggle(props.name)}
       >
         <Caret className="size-3 shrink-0" />
-        <span className="text-[10px] uppercase">{props.name}</span>
+        <span className="pr-2 text-[10px] uppercase">{props.name}</span>
         {(folded || props.alert === true) && (
           <span className={cn("truncate", props.alert === true ? "text-red-400" : "text-zinc-400")}>{props.hint}</span>
         )}
@@ -805,6 +824,8 @@ type Props = {
   w: WorldState | undefined;
   /** The entry shown, as edited — a copy each time, so it can be compared by identity */
   onEntry(entry: null | LoreEntry): void;
+  /** Every character with an npc, the one shown as edited */
+  onCharacters(characters: LoreCharacter[]): void;
   /** Centre the map pane on a world point */
   onLocate(x: number, y: number): void;
 };

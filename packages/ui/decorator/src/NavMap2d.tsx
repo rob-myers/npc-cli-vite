@@ -12,7 +12,7 @@ import { getDecoratorMapStore } from "./storage";
  * The map from above, in world metres: 2D `x/y` is world `x/z`. Drawn from each geomorph's own
  * layout and the navmesh, so it is where things really are — see `docs/decorator.md`
  */
-export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, cursor, apiRef }: Props) {
+export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpcDrop, cursor, apiRef }: Props) {
   const press = useRef<Press | null>(null);
   const marqueeEl = useRef<SVGRectElement>(null);
 
@@ -144,7 +144,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
         pointerEvents="none"
       />
 
-      <NpcDots w={w} npcKeys={npcKeys} />
+      <NpcDots w={w} npcKeys={npcKeys} onNpcDrop={onNpcDrop} />
     </svg>
   );
 }
@@ -263,22 +263,81 @@ function Labels({ w, doors }: { w: WorldState; doors: Geomorph.DoorState[] }) {
   );
 }
 
-/** The chosen npcs, moved straight through their refs on the World's frames, not by rendering */
-function NpcDots({ w, npcKeys }: Pick<Props, "w" | "npcKeys">) {
+/**
+ * The chosen npcs, moved straight through their refs on the World's frames, not by rendering.
+ * One can be dragged and dropped — let go off the map, or Escape, cancels
+ */
+function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpcDrop">) {
   const els = useRef(new Map<string, SVGGElement>());
+  /** Whoever is being dragged follows the pointer, not themself: `at` once it has moved */
+  const drag = useRef<null | { npcKey: string; client: Geom.VectJson; at: null | Geom.VectJson }>(null);
   const shown = npcKeys.filter((npcKey) => w.n?.[npcKey] !== undefined);
+
+  function place(npcKey: string) {
+    const position = w.n[npcKey]?.position;
+    const dragged = drag.current?.npcKey === npcKey ? drag.current.at : null;
+    const at = dragged ?? (position === undefined ? null : { x: position.x, y: position.z });
+    if (at !== null) els.current.get(npcKey)?.setAttribute("transform", `translate(${at.x} ${at.y})`);
+  }
 
   useEffect(() => {
     if (shown.length === 0) return;
-    const place = () => {
-      for (const [npcKey, el] of els.current) {
-        const position = w.n[npcKey]?.position;
-        if (position !== undefined) el.setAttribute("transform", `translate(${position.x} ${position.z})`);
-      }
-    };
-    place();
-    return w.e.addFrameCallback(place);
+    const placeAll = () => shown.forEach(place);
+    placeAll();
+    return w.e.addFrameCallback(placeAll);
   }, [w, shown.join(" ")]);
+
+  /** Lets go of whoever is dragged, back where they stand */
+  function endDrag() {
+    const npcKey = drag.current?.npcKey;
+    drag.current = null;
+    window.removeEventListener("keydown", onDragKey, true);
+    if (npcKey === undefined) return;
+    els.current.get(npcKey)?.removeAttribute("opacity");
+    place(npcKey);
+  }
+  function onDragKey(e: KeyboardEvent) {
+    if (e.key !== "Escape") return;
+    e.stopPropagation(); // else it changes the tool too
+    endDrag();
+  }
+  function isOverMap(e: React.PointerEvent<SVGElement>) {
+    const r = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
+    return (
+      r !== undefined && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+    );
+  }
+
+  const dragProps = (npcKey: string) =>
+    onNpcDrop !== undefined && {
+      "data-no-pan": true,
+      pointerEvents: "all",
+      className: "cursor-grab active:cursor-grabbing",
+      onPointerDown(e: React.PointerEvent<SVGCircleElement>) {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        drag.current = { npcKey, client: { x: e.clientX, y: e.clientY }, at: null };
+        window.addEventListener("keydown", onDragKey, true);
+      },
+      onPointerMove(e: React.PointerEvent<SVGCircleElement>) {
+        const d = drag.current;
+        const svg = e.currentTarget.ownerSVGElement;
+        if (d?.npcKey !== npcKey || svg === null) return;
+        // a press let go where it landed moves nobody
+        if (d.at === null && Math.hypot(e.clientX - d.client.x, e.clientY - d.client.y) < clickSlopPx) return;
+        d.at = toMap(svg, e.clientX, e.clientY);
+        // fainter off the map, where letting go cancels
+        els.current.get(npcKey)?.setAttribute("opacity", isOverMap(e) ? "1" : "0.3");
+        place(npcKey);
+      },
+      onPointerUp(e: React.PointerEvent<SVGCircleElement>) {
+        const d = drag.current;
+        endDrag();
+        if (d?.npcKey === npcKey && d.at !== null && isOverMap(e)) onNpcDrop(npcKey, d.at);
+      },
+      onPointerCancel: endDrag,
+    };
 
   return shown.map((npcKey) => (
     <g
@@ -293,6 +352,7 @@ function NpcDots({ w, npcKeys }: Pick<Props, "w" | "npcKeys">) {
         stroke={ink.npc}
         strokeWidth={1.5}
         vectorEffect="non-scaling-stroke"
+        {...dragProps(npcKey)}
       />
       <text y={-0.45} fontSize={0.3} textAnchor="middle" fill={ink.npc}>
         {npcKey}
@@ -311,6 +371,8 @@ type Props = {
   onClick?(at: Geom.VectJson, e: PointerEvent): void;
   /** A shift-drag on the map itself, let go */
   onMarquee?(rect: Geom.RectJson, e: PointerEvent): void;
+  /** A shown npc dragged, and let go on the map: without it they cannot be */
+  onNpcDrop?(npcKey: string, at: Geom.VectJson): void;
   cursor?: string;
   /** For whoever renders it to steer the map */
   apiRef?: React.RefObject<NavMap2dApi | null>;

@@ -37,6 +37,13 @@ export const LoreEntrySchema = z.object({
 
 export type LoreEntry = z.infer<typeof LoreEntrySchema>;
 
+/** A character with an npc, who can be spawned */
+export type LoreCharacter = LoreEntry & { kind: "character"; npcKey: string };
+
+export function isLoreCharacter(entry: LoreEntry): entry is LoreCharacter {
+  return entry.kind === "character" && entry.npcKey !== undefined;
+}
+
 export function isLoreKey(key: string) {
   const [kind, slug, ...rest] = key.split("/");
   return rest.length === 0 && (loreKinds as readonly string[]).includes(kind) && loreSlugRe.test(slug ?? "");
