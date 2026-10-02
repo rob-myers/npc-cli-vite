@@ -165,10 +165,13 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         npc.setSkin(skin);
         w.view.forceUpdate();
       },
-      toggleFold(name) {
+      toggleFold(name, all) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           const d = draft as ManifestUiMeta;
-          d.folded = d.folded.includes(name) ? d.folded.filter((x) => x !== name) : [...d.folded, name];
+          const folded = d.folded.includes(name);
+          // every section goes the way the pressed one does
+          if (all) d.folded = folded ? [] : [...sectionNames];
+          else d.folded = folded ? d.folded.filter((x) => x !== name) : [...d.folded, name];
         });
       },
       zoomBy(delta) {
@@ -744,7 +747,7 @@ function Section(props: {
   /** Shown even folded, e.g. a grammar which does not parse */
   alert?: boolean;
   folded: string[];
-  onToggle(name: SectionName): void;
+  onToggle(name: SectionName, all: boolean): void;
   children: React.ReactNode;
 }) {
   const folded = props.folded.includes(props.name);
@@ -755,7 +758,14 @@ function Section(props: {
       <button
         type="button"
         className="flex items-center gap-1 min-w-0 text-left cursor-pointer text-zinc-500 hover:text-zinc-300"
-        onClick={() => props.onToggle(props.name)}
+        title="alt-click folds or unfolds them all"
+        onClick={(e) => {
+          const header = e.currentTarget;
+          props.onToggle(props.name, e.altKey);
+          // they all moved: back to the one pressed, once that has been laid out
+          if (e.altKey)
+            requestAnimationFrame(() => requestAnimationFrame(() => header.scrollIntoView({ block: "start" })));
+        }}
       >
         <Caret className="size-3 shrink-0" />
         <span className="pr-2 text-[10px] uppercase">{props.name}</span>
@@ -805,7 +815,8 @@ const maxZoom = 2;
 const sampleSeeds = [0, 1, 2, 3, 4, 5, 6, 7];
 const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {}, facts: {}, links: [], grammar: {} };
 
-type SectionName = "about" | "world" | "story" | "grammar" | "say";
+const sectionNames = ["about", "world", "story", "grammar", "say"] as const;
+type SectionName = (typeof sectionNames)[number];
 
 type State = {
   entries: Record<string, LoreEntry>;
@@ -829,8 +840,8 @@ type State = {
   /** Replaces the draft by what is on disk */
   show(key: string | undefined): void;
   select(key: string): void;
-  /** Folds a section of the card, or unfolds it — kept in `meta.folded` */
-  toggleFold(name: SectionName): void;
+  /** Folds a section of the card, or unfolds it — `all` of them, its way. Kept in `meta.folded` */
+  toggleFold(name: SectionName, all: boolean): void;
   zoomBy(delta: number): void;
   /** Their npc in the World, if there, is respawned under the new key */
   setNpcKey(npcKey: string | undefined): Promise<void>;
