@@ -277,7 +277,7 @@ export function WorldSpeech() {
               {state.panelTab === "worlds" && <NetMenu />}
 
               {state.panelTab === "speech" && (
-                <div className="flex flex-col gap-1 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
+                <div className="flex flex-col gap-2 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
                   {state.history.length === 0 && (
                     <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>
                       nothing said yet
@@ -289,12 +289,9 @@ export function WorldSpeech() {
                     .map((entry) => (
                       <div
                         key={entry.id}
-                        className={cn(
-                          "flex gap-2 px-2 py-1 text-xs rounded bg-slate-900/60 text-slate-300",
-                          big && "px-3 py-1.5 text-sm",
-                        )}
+                        className={cn(bubbleCss, historyBubbleCss, "bg-gray-800 rounded-none w-full", big && "text-sm")}
                       >
-                        <NpcKeyMenu npcKey={entry.npcKey} />
+                        <NpcKeyMenu npcKey={entry.npcKey} className="px-0 text-xs" />
                         <SpokenWords words={entry.words} />
                       </div>
                     ))}
@@ -324,11 +321,7 @@ export function WorldSpeech() {
             {state.toasts.map(({ id, npcKey, words }, index) => (
               <motion.div
                 key={id}
-                className={cn(
-                  "relative flex w-fit flex-col items-start gap-0.5 px-3.5 py-2",
-                  "rounded-2xl border border-zinc-600 bg-zinc-800 text-slate-200 text-[1rem] leading-snug shadow-lg shadow-black/40",
-                  big && "text-sm",
-                )}
+                className={cn(bubbleCss, big && "text-sm")}
                 // clear of the menu's icon column on the left, however narrow the pane
                 style={{ maxWidth: Math.min(big ? 512 : 448, (w.rootEl?.clientWidth ?? Infinity) - toastGutter) }}
                 initial={{ opacity: 0, y: 8 }}
@@ -378,6 +371,15 @@ function SpokenWords({ words, onHover }: { words: string; onHover?: (over: boole
 }
 
 const spokenArmedAttr = "data-spoken-armed";
+
+/** A speech bubble: the npc's key above what they said, as a toast and in the history alike */
+const bubbleCss = cn(
+  "relative flex w-fit flex-col items-start gap-0.5 px-3.5 py-2",
+  "rounded-2xl border border-zinc-600 bg-zinc-800/80 text-slate-200 text-[1rem] leading-snug shadow-lg shadow-black/40",
+);
+
+/** Smaller than a toast, there being many */
+const historyBubbleCss = "shrink-0 max-w-full gap-0 px-2.5 py-1 rounded-xl text-xs shadow-none";
 
 /**
  * The npc's key, as a menu: it is the only handle onto an npc the speech UI has, so what you can do
