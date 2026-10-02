@@ -112,13 +112,13 @@ export default function Psi() {
         if (player === undefined) return;
 
         const { nearDist, avoidSecs } = psiConfig;
-        const { current } = state.influence;
-        /** Another, since their own rings alone raise no hands */
+        const { self, current } = state.influence;
+        /** Another, whom alone they aim at */
         const influencing = current !== null && current.npcKey !== player.key;
         const near =
           player.agent?.neis.some(({ dist }) => dist < nearDist ** 2) === true || // `dist` squared
           w.e.npcToDoors[player.key]?.inside != null; // in a doorway
-        const pose = influencing === false ? null : near ? "psi_avoid" : "psi";
+        const pose = self.target === 0 ? null : near ? "psi_avoid" : "psi";
         const { upper } = player.anim;
         const shown = upper.target === 1 ? upper.key : null;
         if (pose === null) {
@@ -206,7 +206,7 @@ export type State = PsiResources & {
   syncTargetRoom(): void;
   /** The slots onto the gpu, and whether to draw them at all */
   upload(): void;
-  /** The player's hands to their temples whilst influencing, elbows forward (`psi_avoid`) near a neighbour or in a doorway */
+  /** The player's hands to their temples whilst psi is on, elbows forward (`psi_avoid`) near a neighbour or in a doorway */
   syncHands(player: undefined | Npc): void;
   /** Each geomorph's inverse transform and local bounds, for the shader to find a pixel's room */
   syncGms(): void;
