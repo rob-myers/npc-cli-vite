@@ -48209,7 +48209,7 @@
       "floor": {"hullFill": "#0b0d10", "deck": "dark"},
       "lights": {"unlit": 1, "unlitTint": "#000000", "cone": 0.7},
       "obstacles": {"brightness": 1},
-      "npcs": {"ambient": 0, "fx": {"additive": true, "shade": 1, "gain": 1}},
+      "npcs": {"ambient": 0, "fx": {"additive": true, "shade": 1, "gain": 2}},
       "doors": {
         "brightness": 2,
         "opacity": 0.8,
