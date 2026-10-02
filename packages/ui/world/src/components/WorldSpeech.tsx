@@ -200,7 +200,8 @@ export function WorldSpeech() {
     <>
       {/* history toggle — only the icon starts a drag, so scrolling the panel below never fights it */}
       <motion.div
-        className="absolute top-0 right-px z-10 select-none flex flex-col items-end"
+        // click-through, bar what is in it: the toasts make it as wide as they are
+        className="absolute top-0 right-px z-10 select-none flex flex-col items-end pointer-events-none"
         style={{ y }}
         drag="y"
         dragListener={false}
@@ -215,7 +216,7 @@ export function WorldSpeech() {
       >
         <div
           className={cn(
-            "relative outline-width-1 grid touch-none place-items-center cursor-pointer bg-neutral-800 text-white hover:bg-neutral-700",
+            "relative pointer-events-auto outline-width-1 grid touch-none place-items-center cursor-pointer bg-neutral-800 text-white hover:bg-neutral-700",
             big ? "size-12" : "size-9",
           )}
           onPointerDown={(e) => dragControls.start(e)}
@@ -236,7 +237,7 @@ export function WorldSpeech() {
               exit={{ opacity: 0, x: 8 }}
               transition={{ duration: 0.15 }}
               className={cn(
-                "relative mt-1 flex flex-col bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1",
+                "relative pointer-events-auto mt-1 flex flex-col bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1",
                 big && "py-2",
               )}
               style={{ width: state.historyWidth }}
@@ -316,32 +317,43 @@ export function WorldSpeech() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* toasts — below the trigger, each a speech bubble coming off it */}
+        <div className="mt-2 mr-1 flex flex-col items-end gap-2.5">
+          <AnimatePresence>
+            {state.toasts.map(({ id, npcKey, words }, index) => (
+              <motion.div
+                key={id}
+                className={cn(
+                  "relative flex w-fit flex-col items-start gap-0.5 px-3.5 py-2",
+                  "rounded-2xl border border-zinc-600 bg-zinc-800 text-slate-200 text-[1rem] leading-snug shadow-lg shadow-black/40",
+                  big && "text-sm",
+                )}
+                // clear of the menu's icon column on the left, however narrow the pane
+                style={{ maxWidth: Math.min(big ? 512 : 448, (w.rootEl?.clientWidth ?? Infinity) - toastGutter) }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <NpcKeyMenu
+                  npcKey={npcKey}
+                  className="px-0 text-xs"
+                  onOpenChange={(open) => state.pinToast(id, open)}
+                />
+
+                {/* held open whilst the pointer is over it, so it cannot fade from under a selection */}
+                <SpokenWords words={words} onHover={(over) => state.pinToast(id, over)} />
+
+                {/* the tail, towards the trigger: a square on its corner, its outer edges carrying the border on */}
+                {index === 0 && (
+                  <span className="absolute -top-[6px] right-3 size-2.5 rotate-45 border-l border-t border-zinc-600 bg-zinc-800" />
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </motion.div>
-
-      {/* toasts — bottom-center, where subtitles usually go; non-interactive so they don't block World */}
-      <div className="absolute top-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col gap-1 pointer-events-none">
-        <AnimatePresence>
-          {state.toasts.map(({ id, npcKey, words }) => (
-            <motion.div
-              key={id}
-              className={cn(
-                "pr-3",
-                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] py-1.5 max-w-md",
-                big && "text-sm py-1.5 max-w-lg",
-              )}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <NpcKeyMenu npcKey={npcKey} onOpenChange={(open) => state.pinToast(id, open)} />
-
-              {/* held open whilst the pointer is over it, so it cannot fade from under a selection */}
-              <SpokenWords words={words} onHover={(over) => state.pinToast(id, over)} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
     </>
   );
 }
@@ -371,7 +383,15 @@ const spokenArmedAttr = "data-spoken-armed";
  * The npc's key, as a menu: it is the only handle onto an npc the speech UI has, so what you can do
  * to them hangs off it. `onOpenChange` lets a toast hold itself open whilst the menu is up
  */
-function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (open: boolean) => void }) {
+function NpcKeyMenu({
+  npcKey,
+  className,
+  onOpenChange,
+}: {
+  npcKey: string;
+  className?: string;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const w = useContext(WorldContext);
   /** `remove` is armed by its first click and takes effect on the second, in the same place */
   const [armed, setArmed] = useState(false);
@@ -393,6 +413,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
           "pointer-events-auto shrink-0 px-3 inline-flex items-center gap-1 font-medium tracking-wider text-blue-200/80 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100",
 
           npc?.lit === true && "text-yellow-200/80",
+          className,
         )}
       >
         {npcKey}
@@ -528,3 +549,5 @@ const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
 const defaultToastSecs = 4;
+/** Pixels of the pane's width a toast leaves free */
+const toastGutter = 80;
