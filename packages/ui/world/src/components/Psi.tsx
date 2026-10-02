@@ -1,6 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
-import * as THREE from "three/webgpu";
 import { defaultPsiTune, type PsiTune, psiMaxReach } from "../const.npc";
 import { eased } from "../service/fade";
 import {
@@ -29,6 +28,7 @@ export default function Psi() {
       tune: { ...defaultPsiTune, ...getWorldStore(w.key).read().psiTune },
       influence: createInfluence(),
       handsOn: null,
+      ownAim: null,
       targetRoom: { at: null, also: null },
       flowAt: 0,
       tickedMs: performance.now(),
@@ -80,6 +80,10 @@ export default function Psi() {
         state.mesh.visible = off === false; // else no draw call
         if (player === undefined || state.mesh.visible === false) return; // nor any upload
 
+        // as `player-light` has it
+        const lookAngle = -player.rotation.y - Math.PI / 2;
+        state.facing.value.set(Math.cos(lookAngle), Math.sin(lookAngle));
+
         const slots = [{ npc: player, presence: self.presence }].concat(
           others.map((x) => ({ npc: w.n[x.npcKey], presence: x.presence })),
         );
@@ -101,6 +105,8 @@ export default function Psi() {
         if (state.handsOn !== (player?.key ?? null)) {
           const prev = state.handsOn === null ? undefined : w.n[state.handsOn];
           if (prev !== undefined && isPsiPose(prev.anim.upper.key)) prev.anim.setUpper(null); // the player changed
+          if (prev !== undefined && prev.anim.face.aim === state.ownAim) prev.anim.face.aim = null;
+          state.ownAim = null;
           state.handsOn = player?.key ?? null;
         }
         if (player === undefined) return;
@@ -119,6 +125,13 @@ export default function Psi() {
           if (isPsiPose(shown)) player.anim.setUpper(null);
         } else if (pose !== shown && (shown === null || isPsiPose(shown))) {
           player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined }); // not over another's e.g. `point`
+        }
+
+        // the aim, at whom they influence, so a move strafes — only ours, as a drawn sword's is
+        const { face } = player.anim;
+        if (face.aim === null || face.aim === state.ownAim) {
+          const target = influencing ? w.n[current.npcKey] : undefined;
+          face.aim = state.ownAim = target === undefined ? null : { at: target.point, rate: 1, untilRest: false };
         }
       },
       syncGms() {
@@ -144,11 +157,8 @@ export default function Psi() {
         state.gap.value = gap;
         state.width.value = width;
         state.opacity.value = opacity;
-        const { additive, shade, gain } = w.getTheme().npcs.fx;
-        state.color.value.set(color).multiplyScalar(shade);
-        state.gain.value = gain;
-        state.mat.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending;
-        state.mat.needsUpdate = true;
+        state.color.value.set(color);
+        state.gain.value = w.getTheme().npcs.fxStrength;
       },
     }),
     // a new `psiMaxReach` or `cell` needs a new geometry, and the mesh and material go with it
@@ -177,6 +187,8 @@ export type State = PsiResources & {
   influence: Influence;
   /** Whose hands we move: the player, as last seen */
   handsOn: null | string;
+  /** The aim we gave them, so another's is neither replaced nor cleared */
+  ownAim: Npc["anim"]["face"]["aim"];
   /** The target's room, shown by the fade, and `also` the far side of a doorway they stand in */
   targetRoom: { at: null | Geomorph.GmRoomId; also: null | Geomorph.GmRoomId };
   /** World seconds `flowPhase` was last advanced at */

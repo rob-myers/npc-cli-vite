@@ -72,7 +72,7 @@ export function createSwordResources() {
     roomData,
     phase: uniform(0),
     color: uniform(new THREE.Color(swordConfig.color)),
-    /** From `theme.npcs.fx.gain` */
+    /** From `theme.npcs.fxStrength` */
     gain: uniform(1),
   };
 }

@@ -26,13 +26,7 @@ import type React from "react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
-import {
-  compilingShadersText,
-  defaultBrightness,
-  defaultNpcBrightness,
-  type FollowMode,
-  followModes,
-} from "../const.env";
+import { compilingShadersText, defaultBrightness, type FollowMode, followModes } from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
@@ -1032,7 +1026,7 @@ const lights = {
   // biome-ignore format: succinct
   world: { icon: GlobeSimpleIcon, label: "environment", min: 0.5, max: 2, step: 0.1, fallback: defaultBrightness, color: "text-orange-400" },
   // biome-ignore format: succinct
-  npc: { icon: PersonSimpleIcon, label: "npc", min: 0.1, max: 1.5, step: 0.05, fallback: defaultNpcBrightness, color: "text-yellow-300" },
+  npc: { icon: PersonSimpleIcon, label: "npc", min: 0.1, max: 1.5, step: 0.05, fallback: null, color: "text-yellow-300" },
 } as const;
 
 /** How long the button must be held to restore its light's default */
@@ -1051,12 +1045,14 @@ function LightSlider({ touch }: { touch: boolean }) {
   const held = useRef(false);
   const endPress = () => window.clearTimeout(timeoutId.current);
 
-  function apply(next: number) {
+  /** `null` is the default: the npcs' is their theme's, so the override of it is dropped */
+  function apply(next: null | number) {
     if (key === "npc") {
-      w.npcBrightness = next;
-      w.npc?.setBrightness(next); // a uniform, unlike the world's css filter; absent until they are
-      store.patch({ npcBrightness: next });
-    } else {
+      const { [w.themeKey]: _, ...rest } = store.read().npcBrightnessByTheme;
+      store.patch({ npcBrightnessByTheme: next === null ? rest : { ...rest, [w.themeKey]: next } });
+      w.npcBrightness = next ?? w.getTheme().npcs.brightness;
+      w.npc?.setBrightness(w.npcBrightness); // a uniform, unlike the world's css filter; absent until they are
+    } else if (next !== null) {
       w.brightness = next;
       store.patch({ brightness: next });
     }

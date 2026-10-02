@@ -200,18 +200,16 @@ export const WorldThemeSchema = z.object({
     .object({
       /** The least exposure an npc has, whatever the light — see `NPCs`' `ambientNode` */
       ambient: z.number().min(0).max(1).default(0),
-      /** What an npc draws in light — `Psi`'s rings, a sword's rope — which glows on the dark alone */
-      fx: z
-        .object({
-          additive: z.boolean().default(true),
-          /** Their colour, scaled: an ink on a light page must be darker than a glow */
-          shade: z.number().min(0).max(1).default(1),
-          /** Their alpha, scaled: an ink takes more than a glow to read */
-          gain: z.number().min(0).max(8).default(1),
-        })
-        .default({ additive: true, shade: 1, gain: 1 }),
+      /** How much of their skin an npc keeps, unless the World menu's slider says otherwise */
+      brightness: z
+        .number()
+        .min(0)
+        .max(2)
+        .default(0.25 satisfies typeof import("./const.env.ts").defaultNpcBrightness),
+      /** How strongly what an npc draws in light shows — `Psi`'s rings, a sword's rope: their alpha, scaled */
+      fxStrength: z.number().min(0).max(8).default(1),
     })
-    .default({ ambient: 0, fx: { additive: true, shade: 1, gain: 1 } }),
+    .default({ ambient: 0, brightness: 0.25, fxStrength: 1 }),
   doors: z
     .object({
       brightness: z.number(),

@@ -387,6 +387,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
         w.npc?.setAmbient(npcs.ambient);
+        w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
+        w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
         w.swords?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
@@ -696,9 +698,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "npc-pre-do":
             if (w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            if (e.npcKey === w.player.key) w.psi?.choose(null); // psi is the player's alone
             break;
           case "npc-do":
             if (e.decorKey !== null && w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            if (e.decorKey !== null && e.npcKey === w.player.key) w.psi?.choose(null);
             break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both

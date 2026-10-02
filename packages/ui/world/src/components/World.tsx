@@ -18,6 +18,7 @@ import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "..
 import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
+  defaultNpcBrightness,
   defaultWorldTheme,
   emptyMapDef,
   floorTextureDimension,
@@ -80,7 +81,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       worldQueryPrefix: ["world", meta.worldKey],
 
       brightness: getWorldStore(meta.worldKey).read().brightness,
-      npcBrightness: getWorldStore(meta.worldKey).read().npcBrightness,
+      npcBrightness: defaultNpcBrightness, // the theme's, once there is one — see `onChangeTheme`
 
       events: new Broadcaster(),
       reqAnimId: -1,
@@ -541,6 +542,7 @@ export type State = {
   worldQueryPrefix: ["world", worldKey: string];
 
   brightness: number;
+  /** The theme's `npcs.brightness`, else the menu slider's override of it for that theme */
   npcBrightness: number;
 
   events: Broadcaster<JshCli.Event>;

@@ -52,20 +52,22 @@ export function createPsiResources() {
   npcTex.minFilter = npcTex.magFilter = THREE.NearestFilter;
   npcTex.needsUpdate = true;
   const slotCount = uniform(0);
+  /** Unit, the way the player faces in world `xz` — see `Psi.upload` */
+  const facing = uniform(new THREE.Vector2(1, 0));
   const flowPhase = uniform(0);
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
   const width = uniform(defaultPsiTune.width);
   const opacity = uniform(defaultPsiTune.opacity);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
-  /** From `theme.npcs.fx.gain` */
+  /** From `theme.npcs.fxStrength` */
   const gain = uniform(1);
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
   const gmArray = uniformArray<"vec4">(gmValues, "vec4");
   const gmCount = uniform(0);
 
-  // additive, so the lines glow over a dark floor — bar a theme whose `npcs.fx` says otherwise
+  // additive, so the lines glow over a dark floor
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
@@ -84,6 +86,7 @@ export function createPsiResources() {
     npcData,
     npcTex,
     slotCount,
+    facing,
     flowPhase,
     reach,
     gap,
@@ -98,7 +101,7 @@ export function createPsiResources() {
 }
 
 export function psiNodes(
-  { npcTex, slotCount, flowPhase, reach, gap, width, opacity, color, gain, gmArray, gmCount }: PsiResources,
+  { npcTex, slotCount, facing, flowPhase, reach, gap, width, opacity, color, gain, gmArray, gmCount }: PsiResources,
   {
     fadeRoomsFx,
     playerLight,
@@ -113,7 +116,7 @@ export function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, lift, cell } = shaderConfig;
+  const { reachFade, blend, lift, cell, coneHalfDeg, coneSoftDeg } = shaderConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const maxPush = reach.sub(reachFade);
@@ -185,7 +188,21 @@ export function psiNodes(
   // each contour at a fixed height, as on a relief map
   const field = reliefAt(worldXZ);
   const y = max(field.x.div(reach.negate()).add(1), 0).mul(field.z).add(lift); // `z` is the peak
-  const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
+  // a vertex well outside the cone the fragments keep is drawn onto the player, so a triangle of
+  // them has no area and is never rasterised. "Well": by more than a triangle is wide, so none that
+  // reaches into the cone is bent. Metres outside the wedge's nearer edge, as a half-plane
+  const playerXZ = slotAt(int(0)).xy;
+  const fromPlayer = worldXZ.sub(playerXZ);
+  const coneRad = ((coneHalfDeg + coneSoftDeg) * Math.PI) / 180;
+  const outside = fromPlayer
+    .dot(vec2(facing.y.negate(), facing.x))
+    .abs()
+    .mul(Math.cos(coneRad))
+    .sub(fromPlayer.dot(facing).mul(Math.sin(coneRad)));
+  const culled = outside.greaterThan(cell * 3);
+  const vertexNode = cameraProjectionMatrix.mul(
+    cameraViewMatrix.mul(culled.select(vec4(playerXZ.x, lift, playerXZ.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1))),
+  );
 
   const p = varying(worldXZ, "vPsiXZ");
   const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vPsiOwn");
@@ -206,6 +223,11 @@ export function psiNodes(
     // the outermost dies away rather than ringing the reach
     const edge = smoothstep(maxPush, maxPush.add(gap), g).oneMinus();
 
+    // only ahead of the player, within the cone they face down
+    const away = p.sub(slotAt(int(0)).xy);
+    const ahead = away.dot(facing).div(away.length().max(1e-4));
+    const cone = smoothstep(cosDeg(coneHalfDeg + coneSoftDeg), cosDeg(coneHalfDeg - coneSoftDeg), ahead);
+
     // as the floor has it: an unlit room hides them, but only in `sight`
     const gmId = gmUv.z.round();
     // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
@@ -217,7 +239,10 @@ export function psiNodes(
 
     const a = objectPick
       .notEqual(0)
-      .select(0, line.mul(edge).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity.mul(gain).min(1)));
+      .select(
+        0,
+        line.mul(edge).mul(cone).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity.mul(gain).min(1)),
+      );
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
     return playerLight.applyLightRgba(vec4(color, a));
   })();
@@ -234,7 +259,12 @@ const shaderConfig = {
   lift: 0,
   /** Metres between relief vertices, on a grid shared by every npc */
   cell: 0.2,
+  /** Degrees either side of the player's facing the contours are drawn within, and the softening of that edge */
+  coneHalfDeg: 30,
+  coneSoftDeg: 3,
 } as const;
+
+const cosDeg = (degrees: number) => Math.cos((degrees * Math.PI) / 180);
 
 /** The player, whom they influence, and whom they did */
 const MAX_PSI = 3;

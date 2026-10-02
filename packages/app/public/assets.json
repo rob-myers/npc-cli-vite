@@ -48220,7 +48220,7 @@
     },
     "light-theme": {
       "post": {
-        "lightBg": "#333",
+        "lightBg": "#555",
         "darkBg": "#000",
         "fadedFloorTint": 0.6,
         "fadedObstacleTint": 0.6
@@ -48233,7 +48233,7 @@
       "floor": {"hullFill": "#bfc6cf", "deck": "light"},
       "lights": {"unlit": 1, "unlitTint": "#111", "cone": 0.5},
       "obstacles": {"brightness": 1.6},
-      "npcs": {"ambient": 0.8, "brightness": 0.4, "fxStrength": 5},
+      "npcs": {"ambient": 0.8, "brightness": 0.3, "fxStrength": 5},
       "doors": {
         "brightness": 10,
         "opacity": 0.75,
