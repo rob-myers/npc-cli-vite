@@ -1,6 +1,6 @@
-import { Fn, float, mix, select, smoothstep, uniform, vec4 } from "three/tsl";
+import { Fn, float, mix, smoothstep, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import type { SelectAnyType } from "./texture";
+import { selectAs } from "./tsl";
 
 export type PostProcessing = {
   /**
@@ -59,9 +59,7 @@ export function createPostProcessing(): PostProcessing {
         // the ship then reads as a floorplan on — and the dark in `"sight"`, where what the player
         // cannot see is not there and the space around the world is no different from it
         const beyond = mix(lightBg, darkBg, sight);
-        const backdrop = (select as SelectAnyType)(sceneColor.a.greaterThan(0), darkBg, beyond) as THREE.Node<
-          "color" | "vec3"
-        >;
+        const backdrop = selectAs(sceneColor.a.greaterThan(0), darkBg, beyond) as THREE.Node<"color" | "vec3">;
 
         // Coverage counts for MORE than it is, so a door at `defaultDoorOpacity` reads solid
         // against the backdrop and gives way only as the world dissolves it. Smoothstep rather than

@@ -9,7 +9,7 @@ import { sguToWorldScale } from "../const.env";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
-import type { SelectFloatType } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { MemoizedDebugPhysicsColliders } from "./DebugPhysicsColliders";
 import { DecorInspector } from "./DecorInspector";
 import { WorldContext } from "./world-context";
@@ -263,7 +263,7 @@ export function Debug() {
     // none of these are pickable, so they all vanish during object-picking. `alphaTest` discards
     // the fragment outright, rather than trusting a zero alpha to blend away
     const hideWhenPicking = (opacity: THREE.Node<"float">) =>
-      (select as SelectFloatType)(w.view.objectPick.notEqual(0), float(0), opacity);
+      selectAs<"float">(w.view.objectPick.notEqual(0), float(0), opacity);
     const create = (color: THREE.ColorRepresentation, opacity: THREE.Node<"float">, depthTest = true) => {
       // biome-ignore format: succint
       const mat = new THREE.MeshBasicNodeMaterial({ color, side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthTest, alphaTest: 0.01 });
@@ -273,7 +273,7 @@ export function Debug() {
     // a disc is cut out of the quad, rather than given a geometry of its own
     const disc = smoothstep(0.45, 0.5, uv().sub(0.5).length()).oneMinus();
     const isDisc = attribute<"float">("isDisc", "float").greaterThan(0.5);
-    const polylines = create("white", (select as SelectFloatType)(isDisc, disc, float(1)), false);
+    const polylines = create("white", selectAs<"float">(isDisc, disc, float(1)), false);
     polylines.colorNode = attribute<"vec3">("lineColor", "vec3"); // each polyline its own
     return {
       navPath: create("rgb(255, 50, 0)", float(1)),

@@ -884,22 +884,6 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
   texArray.updateIndex(layerIndex);
 }
 
-/**
- * TypeScript is having trouble:
- * >  error TS2590: Expression produces a union type that is too complex to represent.
- */
-export type SelectFloatType = (
-  x: THREE.Node<"bool">,
-  y: THREE.Node<"float">,
-  z: THREE.Node<"float">,
-) => THREE.Node<"float">;
-
-/**
- * TypeScript is having trouble:
- * >  error TS2590: Expression produces a union type that is too complex to represent.
- */
-export type SelectAnyType = (x: THREE.Node<"bool">, y: THREE.Node, z: THREE.Node) => THREE.Node;
-
 export function bootstrapInstanceColor(mesh: THREE.InstancedMesh | null) {
   if (mesh) {
     mesh.instanceColor ??= new THREE.InstancedBufferAttribute(new Float32Array(mesh.count * 3), 3);

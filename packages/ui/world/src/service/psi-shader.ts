@@ -31,6 +31,7 @@ import { defaultPsiTune, psiMaxReach } from "../const.npc";
 import type { FadeRooms } from "./fade-rooms";
 import type { PlayerLight } from "./player-light";
 import { type RoomSlots, slotUvPerMetre } from "./room-slots";
+import { selectAs } from "./tsl";
 
 export type PsiResources = ReturnType<typeof createPsiResources>;
 
@@ -201,7 +202,9 @@ export function psiNodes(
     .sub(fromPlayer.dot(facing).mul(Math.sin(coneRad)));
   const culled = outside.greaterThan(cell * 3);
   const vertexNode = cameraProjectionMatrix.mul(
-    cameraViewMatrix.mul(culled.select(vec4(playerXZ.x, lift, playerXZ.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1))),
+    cameraViewMatrix.mul(
+      selectAs<"vec4">(culled, vec4(playerXZ.x, lift, playerXZ.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1)),
+    ),
   );
 
   const p = varying(worldXZ, "vPsiXZ");

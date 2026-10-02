@@ -4,7 +4,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
-import { atan, attribute, float, fract, int, select, texture, min as tslMin, uniform, uv, vec2, vec4 } from "three/tsl";
+import { atan, attribute, float, fract, int, texture, min as tslMin, uniform, uv, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   decorKeyFallback,
@@ -27,7 +27,8 @@ import { addToDecorGrid, queryDecorGridRect, removeFromDecorGrid } from "../serv
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
-import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
+import { bootstrapInstanceColor } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
 export default function Decor() {
@@ -722,14 +723,14 @@ export default function Decor() {
 
       /** Shaded at the OUTPUT: `colorNode` is albedo alone, which specular survives. Not whilst picking */
       const shadeWhenHidden = (node: THREE.Node) =>
-        (select as SelectAnyType)(
+        selectAs<"vec4">(
           w.view.objectPick.notEqual(0),
           node,
           vec4(
             w.view.fadeRoomsFx.fadeRgb((node as THREE.Node<"vec4">).rgb, shown),
             (node as THREE.Node<"vec4">).a.mul(arrived),
           ),
-        ) as THREE.Node<"vec4">;
+        );
 
       /**
        * Tinted by what the player can see from where they stand — see `service/player-light` —
@@ -758,7 +759,7 @@ export default function Decor() {
         sides.color.set("#000");
         sides.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
         sides.outputNode = shadeWhenHidden(
-          (select as SelectAnyType)(
+          selectAs(
             attribute<"float">("isPoint", "float").greaterThan(0.5),
             vec4(0, 0, 0, 0),
             w.view.withPickOutput(typeId),
@@ -1036,19 +1037,19 @@ function buildShapeOutputNode(pickOutput: THREE.Node, objectPick: THREE.UniformN
   const BORDER_W = uniform(0.02);
   const DASH_PERIOD = uniform(0.25);
 
-  const inBorder = (select as SelectAnyType)(
+  const inBorder = selectAs<"bool">(
     isCircle,
     dist.greaterThan(float(0.5).sub(BORDER_W.div(dims.x.mul(2)))).and(dist.lessThan(float(0.5))),
     edgeX.lessThan(BORDER_W.div(dims.x)).or(edgeY.lessThan(BORDER_W.div(dims.y))),
-  ) as THREE.Node<"bool">;
+  );
 
   // dashed along the nearer edge, nearer in world units: in uv a thin rect's ends would take the short axis
-  const rectParam = (select as SelectAnyType)(
+  const rectParam = selectAs<"float">(
     edgeY.mul(dims.y).greaterThan(edgeX.mul(dims.x)),
     uvCoord.y.mul(dims.y),
     uvCoord.x.mul(dims.x),
-  ) as THREE.Node<"float">;
-  const inDash = (select as SelectAnyType)(
+  );
+  const inDash = selectAs<"bool">(
     isCircle,
     fract(
       atan(dy, dx)
@@ -1057,14 +1058,10 @@ function buildShapeOutputNode(pickOutput: THREE.Node, objectPick: THREE.UniformN
         .mul(dims.x.mul(Math.PI * 2).div(DASH_PERIOD)),
     ).lessThan(0.5),
     fract(rectParam.div(DASH_PERIOD)).lessThan(0.5),
-  ) as THREE.Node<"bool">;
+  );
 
   const inFill = isCircle.not().or(dist.lessThan(float(0.5)));
-  return (select as SelectAnyType)(
-    (select as SelectAnyType)(objectPick.notEqual(0), inFill, inBorder.and(inDash)) as THREE.Node<"bool">,
-    pickOutput,
-    vec4(0, 0, 0, 0),
-  );
+  return selectAs(selectAs<"bool">(objectPick.notEqual(0), inFill, inBorder.and(inDash)), pickOutput, vec4(0, 0, 0, 0));
 }
 
 /**
