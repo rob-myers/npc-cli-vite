@@ -1,9 +1,11 @@
+import { Popover } from "@base-ui/react/popover";
 import { Select } from "@base-ui/react/select";
 import {
   type ExternalMessageProcessLeader,
   getPtagsPreview,
   type ProcessMeta,
   type ProcessStatus,
+  ProcessTag,
   type Session,
   sessionApi,
   toProcessStatus,
@@ -16,6 +18,7 @@ import {
   ArrowCounterClockwiseIcon,
   BookOpenTextIcon,
   CaretRightIcon,
+  DotsThreeIcon,
   ListBulletsIcon,
   PauseIcon,
   PlayIcon,
@@ -69,9 +72,15 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           return;
         }
         const pid = Number(e.currentTarget.dataset.pid);
-        const act = e.currentTarget.dataset.act as "kill" | "pause" | "reset" | "resume";
+        const act = e.currentTarget.dataset.act as "always" | "kill" | "pause" | "reset" | "resume";
 
         switch (act) {
+          case "always": {
+            const item = state.processes[pid];
+            sessionApi.setAlways(state.sessionKey, pid, (item.always = !item.always));
+            state.update();
+            break;
+          }
           case "kill":
             if (pid === 0) {
               sessionApi.killSessionLeader(state.sessionKey);
@@ -246,7 +255,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             if (state.resetPids.delete(msg.pid)) {
               // interactive becomes a new background item, others keep theirs
               msg.pid !== 0 && state.resetting.set(item.src, item);
-              void state.rerunProcess(item.origSrc);
+              void state.rerunProcess(item.origSrc, item.always);
             }
             msg.pid === 0 ? state.debouncedUpdate() : state.update();
             break;
@@ -263,6 +272,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
             item.status = toProcessStatus.Running;
             item.src = process.src;
             item.origSrc = process.origSrc;
+            item.always = process.ptags[ProcessTag.always] === true;
             // a reset reuses the item, so its window restarts too
             item.startedAt = Date.now();
             if (process.origSrc === state.spawning.src) {
@@ -298,7 +308,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           return;
         }
         if (item.status === toProcessStatus.Killed) {
-          void state.rerunProcess(item.origSrc);
+          void state.rerunProcess(item.origSrc, item.always);
           return;
         }
 
@@ -310,7 +320,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           sessionApi.kill(state.sessionKey, [pid], { GROUP: true, SIGINT: true });
         }
       },
-      async rerunProcess(src) {
+      async rerunProcess(src, always = false) {
         const session = state.getSession();
         if (session === undefined || !src) {
           return;
@@ -318,7 +328,10 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
         try {
           // relaunched as a background process even when interactive
-          await session.ttyShell.sourceExternal(src, { background: true });
+          await session.ttyShell.sourceExternal(src, {
+            background: true,
+            ptags: always ? { [ProcessTag.always]: true } : undefined,
+          });
         } catch (e) {
           state.clearSpawning();
           error(e);
@@ -404,7 +417,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   useEffect(() => {
     if (meta.hidden === null) allotment.current?.reset();
   }, [meta.hidden]);
-  const sessionExists = state.getSession() !== undefined;
+  const session = state.getSession();
+  const sessionExists = session !== undefined;
   const ttyToggleAvailable = state.connected === true && state.ttyMeta !== null;
 
   const sessionHeader = sessionsExist ? (
@@ -622,6 +636,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                                 <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
                               )}
                             </div>
+                            <JobTags job={p} session={session} onToggle={state.changeProcess} />
                           </div>
 
                           {/* `data-more` whilst the source scrolls on below, which the fade shows */}
@@ -670,6 +685,71 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   );
 }
 
+/** A job's tags take no room in its row: an ellipsis lists them on demand, `always` as a toggle */
+function JobTags(props: { job: ProcessLeader; session: undefined | Session; onToggle: State["changeProcess"] }) {
+  const { always, pid, status } = props.job;
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        title="process tags"
+        disabled={status === toProcessStatus.Killed}
+        className={cn(
+          controlCss,
+          always && "text-term-accent",
+          "disabled:pointer-events-none disabled:text-term-faint",
+        )}
+      >
+        <DotsThreeIcon alt="process tags" weight="bold" className="size-4" />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner className="z-50" side="bottom" align="start" sideOffset={4}>
+          <Popover.Popup className={cn(popupCss, "max-w-64 flex flex-wrap gap-1 p-2")}>
+            <div
+              className={cn(
+                ptagCss,
+                "cursor-pointer hover:bg-term-hover-strong",
+                always ? "border-term-accent text-term-accent" : "border-dashed text-term-faint",
+              )}
+              onClick={props.onToggle}
+              data-act="always"
+              data-pid={pid}
+            >
+              {ProcessTag.always}
+            </div>
+            {Object.entries(getJobPtags(props.session, pid)).map(([key, values]) => (
+              // a popover rather than a tooltip, which a tap would not open
+              <Popover.Root key={key}>
+                <Popover.Trigger openOnHover delay={100} className={cn(ptagCss, "cursor-pointer text-term-muted")}>
+                  {key}
+                </Popover.Trigger>
+                <Popover.Portal>
+                  <Popover.Positioner className="z-50" side="top" sideOffset={4}>
+                    <Popover.Popup className={cn(popupCss, "px-1.5 py-0.5 text-term-ok")}>
+                      {[...values].join(", ")}
+                    </Popover.Popup>
+                  </Popover.Positioner>
+                </Popover.Portal>
+              </Popover.Root>
+            ))}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+/** Each tag bar `always`, with its distinct values over the job: `pick | move` is `WORLD_PAUSABLE` both ways */
+function getJobPtags(session: undefined | Session, pgid: number) {
+  const ptags: Record<string, Set<string>> = {};
+  for (const p of Object.values(session?.process ?? {})) {
+    if (p.pgid !== pgid) continue;
+    for (const [key, value] of Object.entries(p.ptags)) {
+      if (key !== ProcessTag.always) (ptags[key] ??= new Set()).add(String(value));
+    }
+  }
+  return ptags;
+}
+
 /** Sets `data-more` on the wrapper: whether the expanded source scrolls on below */
 function syncMoreBelow(el: null | HTMLElement, expanded: boolean) {
   const more = expanded === true && el !== null && el.scrollTop + el.clientHeight < el.scrollHeight - 1;
@@ -684,6 +764,13 @@ const moreBelowFadeCss = cn(
 
 const controlCss = cn(
   "flex items-center justify-center w-7 px-2 py-0.5 cursor-pointer transition-colors hover:bg-term-hover-strong",
+);
+
+const ptagCss = "px-1.5 py-0.5 rounded-sm border border-term-border-subtle select-none transition-colors";
+
+const popupCss = cn(
+  "rounded-sm outline-0 font-mono text-xs",
+  "border border-term-border shadow-lg shadow-black/50 bg-term-inset",
 );
 
 /** How often killed processes are forgotten */
@@ -716,7 +803,8 @@ type State = {
   resetting: Map<string, ProcessLeader>;
   /** Kill the process group of `pid`, then re-run its `src` */
   onReset: (pid: number) => void;
-  rerunProcess: (src: string) => Promise<void>;
+  /** `always` re-tags it so, as a reset keeps what its job was tagged */
+  rerunProcess: (src: string, always?: boolean) => Promise<void>;
   /** Run `src`, first connecting (and mounting the tty) if we aren't ready */
   runSrc: (src: string) => void;
   /** Does a process lead `src` — as given, not as the shell re-prints it — and remain unkilled? */
@@ -776,6 +864,8 @@ type ProcessLeader = {
   /** As given, e.g. with its comments — see `ProcessMeta.origSrc` */
   origSrc: string;
   status: ProcessStatus;
+  /** Tagged `always`, kept once it dies so a re-run can be too */
+  always: boolean;
   ptagsText: string;
   /** When the current run started, so we don't clean up too soon */
   startedAt: number;
@@ -809,6 +899,7 @@ function processMetaToProcessLeader({ key: pid, src, origSrc, status, ptags }: P
     src,
     origSrc,
     status,
+    always: ptags[ProcessTag.always] === true,
     ptagsText: getPtagsPreview(ptags).join(""),
     startedAt: Date.now(),
   };

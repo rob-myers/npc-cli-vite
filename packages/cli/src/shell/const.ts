@@ -41,11 +41,14 @@ export const bracesOpts: braces.Options = {
 export const EOF = Symbol.for("EOF");
 
 export const ProcessTag = {
+  /** Never paused with the Jsh pane, nor by any pause group — see `docs/jsh-pause.md` */
+  always: "always",
   /** Interactive processes e.g. a non-background pipeline spawned from shell */
   interactive: "interactive",
 } as const;
 
 export const ProcessTagPreview = {
+  always: "a",
   interactive: "i",
 } as const;
 

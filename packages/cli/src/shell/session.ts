@@ -10,7 +10,7 @@ import {
   warn,
 } from "@npc-cli/util/legacy/generic";
 import { create } from "zustand";
-import { type ProcessStatus, toProcessStatus } from "./const";
+import { type ProcessStatus, ProcessTag, toProcessStatus } from "./const";
 import {
   type Device,
   FifoDevice,
@@ -233,6 +233,7 @@ export const sessionApi = {
       const byPtags = !!opts.byPtags;
       for (const p of processes) {
         if (opts.reason !== undefined) {
+          if (p.ptags[ProcessTag.always] === true) continue; // only ever paused by hand
           const holds = (p.holds ??= new Set());
           if (holds.has(opts.reason)) continue;
           // paused outright before any hold: keep it so, until a plain CONT
@@ -272,6 +273,23 @@ export const sessionApi = {
 
     if (opts.ptags !== undefined) {
       processes.forEach((p) => void Object.assign(p.ptags, opts.ptags));
+    }
+  },
+  /** Tag a whole job `always`, or not — see `docs/jsh-pause.md` */
+  setAlways(sessionKey: string, pgid: number, always: boolean) {
+    for (const p of sessionApi.getProcesses(sessionKey, pgid)) {
+      if (always === true) {
+        p.ptags[ProcessTag.always] = true;
+        sessionApi.shedHolds(p);
+      } else {
+        delete p.ptags[ProcessTag.always];
+      }
+    }
+  },
+  /** Release every hold bar one by hand, resuming if none remains */
+  shedHolds(p: ProcessMeta) {
+    for (const reason of [...(p.holds ?? [])]) {
+      reason !== "manual" && sessionApi.killProcesses([p], { CONT: true, reason });
     }
   },
   killSessionLeader(sessionKey: string) {

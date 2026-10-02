@@ -19,7 +19,7 @@ import {
   truncateOneLine,
 } from "@npc-cli/util/legacy/generic";
 import cliColumns from "cli-columns";
-import { ansi, EOF, type ProcessStatus, toProcessStatus } from "./const";
+import { ansi, EOF, type ProcessStatus, ProcessTag, toProcessStatus } from "./const";
 import {
   type Device,
   dataChunk,
@@ -963,8 +963,7 @@ class CmdService {
         if (args.length === 0) {
           yield process.ptags;
         } else {
-          const ptagUpdates = tagsToMeta(args);
-          applyPtagUpdates(process.ptags, ptagUpdates);
+          this.setPtags(meta, tagsToMeta(args));
         }
         break;
       }
@@ -1177,6 +1176,9 @@ class CmdService {
   setPtags(meta: JSh.BaseMeta, updates: Ptags) {
     const process = sessionApi.getProcess(meta);
     applyPtagUpdates(process.ptags, updates);
+    if (updates[ProcessTag.always] === true) {
+      sessionApi.shedHolds(process);
+    }
     for (const ptag of Object.keys(updates)) {
       // ptags usually have value `true`
       if (process.ptags[ptag] === true) continue;
