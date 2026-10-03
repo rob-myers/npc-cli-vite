@@ -3,9 +3,7 @@ import { helper } from "@npc-cli/ui__world/helper";
 import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
-import { Picker as BasePicker } from "@npc-cli/util/picker";
 import {
-  ArrowsClockwiseIcon,
   CaretDownIcon,
   CaretRightIcon,
   FloppyDiskIcon,
@@ -16,20 +14,20 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
-import stringify from "json-stringify-pretty-compact";
 import { useContext, useEffect, useRef, useState } from "react";
-import { GrammarEditor } from "./GrammarEditor";
+import { columnClass, inputClass } from "./classes";
 import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
 import { type LoreEntry, type LoreKind, loreChangedEvent, loreKinds, loreSlugRe } from "./lore.schema";
-import type { ManifestUiMeta } from "./schema";
+import { IconButton, Picker } from "./parts";
+import { type ManifestUiMeta, manifestTabs } from "./schema";
 import { manifestShared, useManifestShared } from "./shared";
-import { expand, factsGrammar, type Grammar, mergeGrammars, seededRng } from "./tracery";
+import { TalkTab } from "./TalkTab";
 
 import "./manifest.css";
 
 /**
- * The setting's lore: backstories and grammars, and a line of them said in a live World, should
- * there be one — see `docs/manifest-lore.md`
+ * The setting's lore, its entries tied to a live World's rooms, doors and npcs should there be one,
+ * and conversation trees — see `docs/manifest-lore.md`
  */
 export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   const w = useWorld(meta.worldKey);
@@ -43,19 +41,14 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       dirty: false,
       rev: 0,
       saveTimer: undefined,
-      grammarText: "{}",
-      grammarError: null,
       newKind: "character",
       newSlug: "",
-      rule: "origin",
-      seed: 1,
-      npcKey: null,
 
       async load() {
         try {
           const entries = await loadLore();
           state.set({ entries, error: null });
-          // an edit under way is kept, and our own save left alone: re-showing would reformat the grammar
+          // an edit under way is kept, and our own save left alone
           const key = state.draft?.key ?? meta.entryKey;
           const same = key !== undefined && JSON.stringify(entries[key]) === JSON.stringify(state.draft);
           if (state.dirty === false && same === false) state.show(key);
@@ -65,18 +58,11 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       },
       show(key) {
         const entry = key === undefined ? undefined : state.entries[key];
-        state.set({
-          draft: entry === undefined ? null : structuredClone(entry),
-          dirty: false,
-          grammarText: stringify(entry?.grammar ?? {}, { maxLength: grammarLineLength }),
-          grammarError: null,
-        });
+        state.set({ draft: entry === undefined ? null : structuredClone(entry), dirty: false });
       },
       select(key) {
         if (key === state.draft?.key) return;
-        // what is typed is kept, bar a grammar that does not parse
-        if (state.grammarError === null) state.dirty === true && state.save();
-        else if (window.confirm("Discard the unparsed grammar?") === false) return;
+        if (state.dirty === true) state.save(); // what is typed is kept
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).entryKey = key));
         state.show(key);
         const entry = state.entries[key];
@@ -90,18 +76,9 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         clearTimeout(state.saveTimer);
         if (editable) state.saveTimer = setTimeout(() => state.save(), autosaveMs);
       },
-      setGrammarText(grammarText) {
-        try {
-          const grammar = parseGrammar(grammarText);
-          state.set({ grammarText, grammarError: null });
-          state.patch({ grammar });
-        } catch (e) {
-          state.set({ grammarText, grammarError: e instanceof Error ? e.message : String(e), dirty: true });
-        }
-      },
       async save() {
         clearTimeout(state.saveTimer);
-        if (state.draft === null || state.grammarError !== null || editable === false) return;
+        if (state.draft === null || editable === false) return;
         const { rev } = state;
         try {
           await saveLoreEntry(state.draft);
@@ -231,23 +208,11 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
 
   const { draft, entries } = state;
   const zoom = meta.zoom ?? 1;
-  /** Room for three columns, which are then resizable; else they stack */
+  /** Room for both columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
-  const npcKeys = Object.keys(w?.n ?? {});
-  const npcKey =
-    [state.npcKey, draft?.npcKey, mapNpcKey, w?.psi?.getTarget(), w?.player?.key].find(
-      (key) => typeof key === "string" && npcKeys.includes(key),
-    ) ?? null;
-
-  const grammar = draft === null ? {} : toGrammar(entries, draft, w, npcKey);
-  const rules = Object.keys(grammar).sort();
-  const rule = rules.includes(state.rule) ? state.rule : (Object.keys(draft?.grammar ?? {})[0] ?? rules[0]);
-  const samples =
-    rule === undefined ? [] : sampleSeeds.map((i) => expand(grammar, rule, seededRng(state.seed * 1000 + i)));
 
   const hereKeys = draft === null || w === undefined ? undefined : draft.maps[w.mapKey];
   const keyCount = (hereKeys?.rooms.length ?? 0) + (hereKeys?.doors.length ?? 0) + (draft?.links.length ?? 0);
-  const ruleCount = Object.keys(draft?.grammar ?? {}).length;
 
   const entriesCol = (
     <div className="p-3 flex flex-col gap-2">
@@ -307,7 +272,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
               <IconButton
                 title="save now (edits save themselves)"
                 icon={FloppyDiskIcon}
-                disabled={state.dirty === false || state.grammarError !== null}
+                disabled={state.dirty === false}
                 onClick={state.save}
               />
               <IconButton title="delete" icon={TrashIcon} onClick={state.remove} />
@@ -397,87 +362,36 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
             onChange={(e) => state.patch({ voice: e.currentTarget.value })}
           />
         </Section>
-        <Section
-          name="grammar"
-          hint={state.grammarError ?? `${ruleCount} rule${ruleCount === 1 ? "" : "s"}`}
-          alert={state.grammarError !== null}
-          folded={meta.folded}
-          onToggle={state.toggleFold}
-        >
-          <GrammarEditor
-            value={state.grammarText}
-            invalid={state.grammarError !== null}
-            readOnly={!editable}
-            onChange={state.setGrammarText}
-          />
-          {state.grammarError !== null && <div className="text-red-400">{state.grammarError}</div>}
-        </Section>
         {state.error !== null && <div className="text-red-400 break-all">{state.error}</div>}
       </div>
     );
-  const previewCol = draft !== null && (
-    <div className="p-3">
-      <Section name="say" hint={rule ?? ""} folded={meta.folded} onToggle={state.toggleFold}>
-        <div className="flex items-center gap-1 text-zinc-500">
-          {w !== undefined && (
-            <Picker
-              value={npcKey ?? ""}
-              options={npcKey === null ? [{ value: "", label: "no npc" }, ...npcKeys] : npcKeys}
-              onChange={(npcKey) => state.set({ npcKey })}
-            />
-          )}
-          {w !== undefined && "says"}
-          <Picker value={rule ?? ""} options={rules} onChange={(rule) => state.set({ rule })} />
-          <IconButton title="resample" icon={ArrowsClockwiseIcon} onClick={() => state.set({ seed: state.seed + 1 })} />
-        </div>
-        {samples.length > 0 && (
-          // dragged shorter or taller by its corner, as the backstory is
-          <div className="h-40 min-h-8 resize-y overflow-hidden rounded border border-zinc-800">
-            {/* fades out at the foot, so more below is seen to be there; padded, so the last line clears it */}
-            <div
-              className="size-full overflow-auto scrollbar-thin flex flex-wrap content-start gap-1.5 p-1 pb-6"
-              style={fadeFootStyle}
-            >
-              {samples.map((line, i) => {
-                const speaker = w !== undefined ? npcKey : null;
-                return (
-                  <span
-                    key={i}
-                    title={speaker === null ? undefined : `${speaker} says it`}
-                    className={cn(
-                      "px-1.5 py-0.5 rounded bg-zinc-900 leading-relaxed select-text",
-                      speaker !== null && "cursor-pointer hover:bg-zinc-800 hover:text-zinc-100",
-                    )}
-                    // a drag that selected text is a copy, not a click
-                    onClick={() => {
-                      if (speaker === null || window.getSelection()?.isCollapsed === false) return;
-                      w?.speech.say(speaker, line);
-                    }}
-                  >
-                    {line}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {rule === undefined && <div className="text-zinc-500">no grammar rules yet</div>}
-      </Section>
-    </div>
-  );
-
   return (
     <div
       ref={root}
-      className="manifest relative size-full bg-gray-950 text-zinc-300 text-xs tracking-wide leading-relaxed"
+      className="manifest relative size-full bg-gray-650 text-zinc-300 text-xs tracking-wide leading-relaxed"
     >
       {/* over the pane, so in reach however far it has scrolled */}
-      <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-gray-950/80 opacity-60 hover:opacity-100">
+      <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-gray-800/80 opacity-60 hover:opacity-100">
+        {manifestTabs.map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={cn(
+              "px-1 cursor-pointer",
+              tab === meta.tab ? "text-zinc-100" : "text-zinc-500 hover:text-zinc-300",
+            )}
+            onClick={() => uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).tab = tab))}
+          >
+            {tab}
+          </button>
+        ))}
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
         <IconButton title="smaller text" icon={MagnifyingGlassMinusIcon} onClick={() => state.zoomBy(-zoomStep)} />
         <IconButton title="larger text" icon={MagnifyingGlassPlusIcon} onClick={() => state.zoomBy(zoomStep)} />
       </div>
-      {wide ? (
+      {meta.tab === "talk" ? (
+        <TalkTab w={w} zoom={zoom} />
+      ) : wide ? (
         // `zoom` goes inside each pane: on the allotment itself a drag would move its sash too little
         <Allotment
           defaultSizes={meta.split}
@@ -491,15 +405,10 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
             </div>
           </Allotment.Pane>
           <Allotment.Pane minSize={220}>
-            <div className={columnClass} style={{ zoom }}>
-              {cardCol}
-            </div>
-          </Allotment.Pane>
-          <Allotment.Pane minSize={180} preferredSize={300}>
-            {/* clear of the zoom buttons */}
+            {/* clear of the tabs and the zoom buttons */}
             <div className="size-full pt-8">
               <div className={columnClass} style={{ zoom }}>
-                {previewCol}
+                {cardCol}
               </div>
             </div>
           </Allotment.Pane>
@@ -508,45 +417,10 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         <div className={cn(columnClass, "divide-y divide-zinc-800")} style={{ zoom }}>
           {entriesCol}
           {cardCol}
-          {previewCol}
         </div>
       )}
     </div>
   );
-}
-
-/** Setting, then linked entries, then this entry's facts and rules, then the World's — later wins */
-function toGrammar(
-  entries: Record<string, LoreEntry>,
-  draft: LoreEntry,
-  w: WorldState | undefined,
-  npcKey: null | string,
-): Grammar {
-  const settings = Object.values(entries).filter((e) => e.kind === "setting" && e.key !== draft.key);
-  const linked = draft.links.flatMap((key) => entries[key] ?? []);
-  const world: Record<string, string> = {};
-  if (npcKey !== null) world.npc = npcKey;
-  const grKey = npcKey === null ? undefined : w?.npc.npcToRoom.get(npcKey)?.grKey;
-  if (grKey !== undefined) world.room = grKey;
-  if (typeof w?.player?.key === "string") world.player = w.player.key;
-  return mergeGrammars(
-    ...settings.map((e) => e.grammar),
-    ...linked.map((e) => e.grammar),
-    factsGrammar(draft.facts),
-    draft.grammar,
-    factsGrammar(world),
-  );
-}
-
-function parseGrammar(text: string): Grammar {
-  const json = JSON.parse(text);
-  const ok =
-    typeof json === "object" &&
-    json !== null &&
-    !Array.isArray(json) &&
-    Object.values(json).every((v) => Array.isArray(v) && v.every((x) => typeof x === "string"));
-  if (!ok) throw Error("expected { rule: [option, …] }");
-  return json;
 }
 
 /** `facts` with its `index`th renamed or revalued, or without it — order kept */
@@ -744,8 +618,6 @@ function keyBoxHint(hasWorld: boolean, isCharacter: boolean) {
 function Section(props: {
   name: SectionName;
   hint: string;
-  /** Shown even folded, e.g. a grammar which does not parse */
-  alert?: boolean;
   folded: string[];
   onToggle(name: SectionName, all: boolean): void;
   children: React.ReactNode;
@@ -769,53 +641,26 @@ function Section(props: {
       >
         <Caret className="size-3 shrink-0" />
         <span className="pr-2 text-[10px] uppercase">{props.name}</span>
-        {(folded || props.alert === true) && (
-          <span className={cn("truncate", props.alert === true ? "text-red-400" : "text-zinc-400")}>{props.hint}</span>
-        )}
+        {folded && <span className="truncate text-zinc-400">{props.hint}</span>}
       </button>
       {folded === false && props.children}
     </div>
   );
 }
 
-function IconButton(props: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  disabled?: boolean;
-  onClick(): void;
-}) {
-  return (
-    <button
-      type="button"
-      title={props.title}
-      disabled={props.disabled}
-      className="grid place-items-center size-6 shrink-0 rounded border border-zinc-800 text-zinc-400 cursor-pointer hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-default"
-      onClick={props.onClick}
-    >
-      <props.icon className="size-3.5" />
-    </button>
-  );
-}
-
 /** Files are only writable through the DEV server */
 const editable = import.meta.env.DEV;
-const inputClass = "px-2 py-1 rounded border border-zinc-800 bg-zinc-900 outline-none focus:border-zinc-600";
-const fadeFootStyle = { maskImage: "linear-gradient(to bottom, black calc(100% - 1.5rem), transparent)" };
 const bareButtonClass = "shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100";
 /** After the last edit, how long until it saves itself */
 const autosaveMs = 800;
-/** A short rule stays on one line */
-const grammarLineLength = 96;
-const columnClass = "size-full overflow-auto scrollbar-thin";
-/** In px at 100% text: narrower, the three columns stack */
-const wideWidth = 768;
+/** In px at 100% text: narrower, the columns stack */
+const wideWidth = 520;
 const zoomStep = 0.1;
 const minZoom = 0.7;
 const maxZoom = 2;
-const sampleSeeds = [0, 1, 2, 3, 4, 5, 6, 7];
-const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {}, facts: {}, links: [], grammar: {} };
+const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {}, facts: {}, links: [] };
 
-const sectionNames = ["about", "world", "story", "grammar", "say"] as const;
+const sectionNames = ["about", "world", "story"] as const;
 type SectionName = (typeof sectionNames)[number];
 
 type State = {
@@ -827,15 +672,8 @@ type State = {
   /** Counts edits, so a save knows whether more came whilst it was under way */
   rev: number;
   saveTimer: undefined | ReturnType<typeof setTimeout>;
-  grammarText: string;
-  grammarError: null | string;
   newKind: LoreKind;
   newSlug: string;
-  /** The rule sampled */
-  rule: string;
-  seed: number;
-  /** Who says a line, when chosen here */
-  npcKey: null | string;
   load(): Promise<void>;
   /** Replaces the draft by what is on disk */
   show(key: string | undefined): void;
@@ -848,15 +686,9 @@ type State = {
   /** Their npc in the World, if there, takes it */
   setSkin(skin: string | undefined): void;
   patch(partial: Partial<LoreEntry>): void;
-  setGrammarText(text: string): void;
   save(): Promise<void>;
   remove(): Promise<void>;
   add(): Promise<void>;
   /** Centre the map on the entry's npc, else its room */
   locate(entry: LoreEntry): void;
 };
-
-/** Its popup is portalled out of the panel, so it is told whose theme to take */
-function Picker<T extends string>(props: Omit<Parameters<typeof BasePicker<T>>[0], "popupClassName">) {
-  return <BasePicker {...props} popupClassName="manifest" />;
-}

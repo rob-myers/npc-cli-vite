@@ -1,0 +1,161 @@
+/* `TalkThread`: lines as speech bubbles, each with a tail at its speaker's corner */
+.talk-bubble {
+  position: relative;
+  border-radius: 0.9rem;
+  animation: talk-pop 240ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+.talk-bubble[data-side="left"] {
+  border-bottom-left-radius: 0.15rem;
+  transform-origin: 0 100%;
+}
+.talk-bubble[data-side="right"] {
+  border-bottom-right-radius: 0.15rem;
+  transform-origin: 100% 100%;
+}
+/* outside the bubble, so a tinted one is not doubled where they would overlap */
+.talk-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 0.45rem;
+  height: 0.6rem;
+  background: inherit;
+}
+.talk-bubble[data-side="left"]::after {
+  right: 100%;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+.talk-bubble[data-side="right"]::after {
+  left: 100%;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.talk-dots span {
+  display: inline-block;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: 0 0.1rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: talk-dot 900ms infinite;
+}
+.talk-dots span:nth-child(2) {
+  animation-delay: 150ms;
+}
+.talk-dots span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+/* an answer not yet given: a bubble in outline, filled once it is leant on */
+.talk-choice {
+  border: 1px dashed var(--color-zinc-600);
+  border-radius: 0.9rem 0.9rem 0.15rem 0.9rem;
+  animation: talk-pop 240ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  transform-origin: 100% 100%;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    translate 120ms;
+}
+.talk-choice:not(:disabled):hover {
+  border-style: solid;
+  border-color: var(--color-zinc-300);
+  background: var(--color-zinc-300);
+  color: var(--color-zinc-950);
+  translate: 0 -1px;
+}
+
+/* a rule either side of the topic turned to */
+.talk-topic {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.15em;
+}
+.talk-topic::before,
+.talk-topic::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.35;
+}
+
+@keyframes talk-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(0.4rem);
+  }
+}
+@keyframes talk-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-0.15rem);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .talk-bubble,
+  .talk-choice,
+  .talk-dots span {
+    animation: none;
+  }
+}
+
+/* an emoji grows under the pointer, and overshoots on the way; a choice leant on grows its own */
+.talk-glyph {
+  display: inline-block;
+  font-size: 1.15em;
+  line-height: 1;
+  cursor: default;
+  transition: scale 220ms cubic-bezier(0.3, 2, 0.5, 1);
+}
+.talk-glyph:hover {
+  scale: 1.7;
+}
+.talk-choice:not(:disabled):hover .talk-glyph {
+  scale: 1.35;
+}
+
+/* the exchange before the latest is dimmed; those before it are folded into an ellipsis */
+.talk-row {
+  transition: filter 220ms ease-out;
+}
+.talk-row.talk-dim {
+  filter: brightness(0.8) saturate(0.6);
+}
+
+/* a reply waiting on a test is greyed, and says nothing when pressed */
+.talk-choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* one segment per test: grey until met, then green; outlined where nothing is tested */
+.talk-pip {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.3rem;
+  border-radius: 0.15rem;
+  border: 1px solid var(--color-zinc-500);
+  transition: background-color 200ms;
+}
+.talk-pip[data-met="false"] {
+  border-color: transparent;
+  background: var(--color-zinc-600);
+}
+.talk-pip[data-met="true"] {
+  border-color: transparent;
+  background: #4ade80;
+}
+
+/* the line replied to, when it is not the latest */
+.talk-bubble.talk-marked {
+  outline: 1px solid #7dd3fc;
+  outline-offset: 2px;
+}

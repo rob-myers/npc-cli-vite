@@ -16,7 +16,6 @@
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
     "allotment": "catalog:",
-    "json-stringify-pretty-compact": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "zod": "catalog:"

@@ -126,9 +126,10 @@ toggle labels it and opens a card per pick.
 
 ## Lore
 
-See `docs/manifest-lore.md` — the ONLY doc for it. In short: backstories and Tracery grammars, one JSON per
-entry in `packages/media/lore/{kind}/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest` (DEV saves
-through `/api/lore`; a build bundles them as `virtual:lore`) and said in the World via `w.speech.say`.
+See `docs/manifest-lore.md` — the ONLY doc for it. In short: terse backstories, one JSON per entry in
+`packages/media/lore/{kind}/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest` (DEV saves through
+`/api/lore`; a build bundles them as `virtual:lore`). Conversation trees (`ui/world/src/service/talk.ts`) are
+outlined there and played in `WorldSpeech`'s history, by thread, each reply waiting on tests shown as pips.
 
 ## MapEdit saving
 

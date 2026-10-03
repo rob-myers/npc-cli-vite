@@ -254,7 +254,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             state.sendToAll({ key: "door", kind: "unlocked", gdKey: e.gdKey });
             break;
           case "speech":
-            state.sendToAll({ key: "speech", npcKey: e.npcKey, words: e.words, epochMs: e.epochMs });
+            state.sendToAll({ key: "speech", npcKey: e.npcKey, words: e.words, epochMs: e.epochMs, to: e.to });
             break;
           case "decor-created": {
             const defs = e.decorKeys.flatMap((key) => w.decor.runtime.defByKey[key] ?? []);
@@ -563,7 +563,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             break;
           }
           case "speech":
-            w.speech?.say(msg.npcKey, msg.words);
+            w.speech?.say(msg.npcKey, msg.words, undefined, { to: msg.to });
             break;
           case "decor":
             if (msg.op === "create") {

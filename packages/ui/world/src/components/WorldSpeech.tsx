@@ -6,7 +6,9 @@ import { useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
 
 import { getWorldStore } from "../service/storage";
+import { type Conversation, type ConversationChoice, talkNeeds, threadKeyOf } from "../service/talk";
 import { NetBadge, NetMenu } from "./NetMenu";
+import { type TalkLine, type TalkPip, TalkThread } from "./TalkThread";
 import { WorldContext } from "./world-context";
 
 export function WorldSpeech() {
@@ -32,6 +34,9 @@ export function WorldSpeech() {
       historyHeight: saved.speechHeight ?? (big ? 384 : 288),
       historyWidth: saved.speechWidth ?? (big ? 320 : 288),
       resizing: false,
+      talks: {},
+      needsSig: "",
+      needsSecs: 0,
 
       addMenuItem(item) {
         // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
@@ -46,7 +51,61 @@ export function WorldSpeech() {
       },
       clear() {
         state.history = [];
+        state.talks = {};
         state.update();
+      },
+      startTalk(conv, npcKey) {
+        const playerKey = w.player?.key;
+        if (playerKey === undefined || playerKey === npcKey || !(playerKey in w.n) || !(npcKey in w.n)) return false;
+        const at = conv.start;
+        state.talks[threadKeyOf([playerKey, npcKey])] = {
+          conv,
+          npcKey,
+          playerKey,
+          at,
+          from: null,
+          pending: false,
+          seen: new Set([at]),
+        };
+        state.set({ panelOpen: true, panelTab: "speech" });
+        state.say(npcKey, conv.nodes[at]?.text ?? "…", undefined, { to: [playerKey], nodeId: at });
+        return true;
+      },
+      chooseTalk(threadKey, index) {
+        const talk = state.talks[threadKey];
+        const choice = talk?.conv.nodes[talk.at]?.choices?.[index];
+        if (talk === undefined || choice === undefined || talk.pending) return;
+        if (state.getPips(talk, choice).some((pip) => pip.met === false)) return;
+        talk.pending = true;
+        talk.from = null;
+        state.say(talk.playerKey, choice.text, undefined, { to: [talk.npcKey] });
+        // they take a moment to answer, and may be gone by then
+        setTimeout(() => {
+          talk.pending = false;
+          const next = talk.conv.nodes[choice.to];
+          if (state.talks[threadKey] !== talk || next === undefined || !(talk.npcKey in w.n)) return state.update();
+          talk.at = choice.to;
+          talk.seen.add(choice.to);
+          state.say(talk.npcKey, next.text, undefined, { to: [talk.playerKey], nodeId: choice.to });
+        }, typingMs);
+      },
+      revisitTalk(threadKey, entryId) {
+        const talk = state.talks[threadKey];
+        const nodeId = state.history.find((entry) => entry.id === entryId)?.nodeId;
+        if (talk === undefined || nodeId === undefined || talk.pending) return;
+        talk.at = nodeId;
+        talk.from = entryId;
+        state.update();
+      },
+      getPips(talk, choice) {
+        const player = w.n[talk.playerKey];
+        const npc = w.n[talk.npcKey];
+        // nobody to talk to, or someone else is the player now
+        const able = player !== undefined && npc !== undefined && w.player?.key === talk.playerKey;
+        return (choice.needs ?? []).map((need) => ({
+          label: talkNeeds[need].label,
+          met: able && talkNeeds[need].met(w, player, npc),
+        }));
       },
       getMaxY() {
         return Math.max(state.minY, (w.rootEl?.clientHeight ?? Infinity) - 120);
@@ -132,6 +191,15 @@ export function WorldSpeech() {
         const n = state.toasts.length;
         state.toasts = state.toasts.filter((t) => t.id === state.pinnedId || (t.secs -= delta) > 0);
         if (state.toasts.length !== n) state.update();
+
+        // a reply's pips follow the player about, so are looked at again now and then
+        if (state.panelOpen === false || (state.needsSecs -= delta) > 0) return;
+        state.needsSecs = needsPollSecs;
+        const needsSig = Object.values(state.talks)
+          .flatMap((talk) => (talk.conv.nodes[talk.at]?.choices ?? []).map((c) => state.getPips(talk, c)))
+          .map((pips) => pips.map((pip) => Number(pip.met)).join(""))
+          .join();
+        if (needsSig !== state.needsSig) state.set({ needsSig });
       },
       removeNpcToasts(...npcKeys) {
         // dropping them from `toasts` is what fades them: `AnimatePresence` plays their exit
@@ -150,9 +218,11 @@ export function WorldSpeech() {
         }
         state.update();
       },
-      say(npcKey, words, secs) {
+      say(npcKey, words, secs, opts) {
         const epochMs = Date.now();
-        const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs };
+        const to = opts?.to;
+        const parties = [npcKey, ...(to ?? [])];
+        const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs, parties, nodeId: opts?.nodeId };
 
         state.history.push(entry);
         if (state.history.length > maxHistory) state.history.shift();
@@ -163,7 +233,7 @@ export function WorldSpeech() {
 
         state.update();
 
-        w.events.next({ key: "speech", npcKey, words, epochMs });
+        w.events.next({ key: "speech", npcKey, words, epochMs, to });
       },
     }),
   );
@@ -277,24 +347,16 @@ export function WorldSpeech() {
               {state.panelTab === "worlds" && <NetMenu />}
 
               {state.panelTab === "speech" && (
-                <div className="flex flex-col gap-2 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
+                <div
+                  className={cn("flex flex-col gap-3 px-2 pb-2 overflow-y-auto text-xs", big && "text-sm")}
+                  style={{ height: state.historyHeight }}
+                >
                   {state.history.length === 0 && (
-                    <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>
-                      nothing said yet
-                    </div>
+                    <div className="px-1 py-2 text-slate-500 italic">nothing said yet</div>
                   )}
-                  {state.history
-                    .slice()
-                    .reverse()
-                    .map((entry) => (
-                      <div
-                        key={entry.id}
-                        className={cn(bubbleCss, historyBubbleCss, "bg-gray-800 rounded-none w-full", big && "text-sm")}
-                      >
-                        <NpcKeyMenu npcKey={entry.npcKey} className="px-0 text-xs" />
-                        <SpokenWords words={entry.words} />
-                      </div>
-                    ))}
+                  {toThreads(state.history).map((thread) => (
+                    <SpeechThread key={thread.key} thread={thread} />
+                  ))}
                 </div>
               )}
 
@@ -378,8 +440,85 @@ const bubbleCss = cn(
   "rounded-2xl border border-zinc-600 bg-zinc-800/80 text-slate-200 text-[1rem] leading-snug shadow-lg shadow-black/40",
 );
 
-/** Smaller than a toast, there being many */
-const historyBubbleCss = "shrink-0 max-w-full gap-0 px-2.5 py-1 rounded-xl text-xs shadow-none";
+/** The history by who spoke in it and to whom, the latest spoken in first */
+function toThreads(history: SpeechEntry[]) {
+  const byKey = new Map<string, Thread>();
+  for (const entry of history) {
+    const parties = entry.parties ?? [entry.npcKey];
+    const key = threadKeyOf(parties);
+    const thread = byKey.get(key) ?? { key, parties: [...new Set(parties)].sort(), entries: [] };
+    thread.entries.push(entry);
+    byKey.set(key, thread);
+  }
+  return [...byKey.values()].sort((a, b) => (b.entries.at(-1)?.id ?? 0) - (a.entries.at(-1)?.id ?? 0));
+}
+
+/** One thread of the history, and should it be a talk with the player, their replies */
+function SpeechThread({ thread }: { thread: Thread }) {
+  const w = useContext(WorldContext);
+  const talk = w.speech.talks[thread.key] as Talk | undefined;
+  const playerKey = w.player?.key;
+  const node = talk?.conv.nodes[talk.at];
+  const lastId = thread.entries.at(-1)?.id;
+  const gone = talk !== undefined && !(talk.npcKey in w.n);
+
+  const lines = thread.entries.map(
+    (entry): TalkLine => ({
+      id: entry.id,
+      // the player's on the right; between npcs, the first of them on the left
+      side:
+        entry.npcKey === (playerKey !== undefined && thread.parties.includes(playerKey) ? playerKey : thread.parties[1])
+          ? "right"
+          : "left",
+      text: entry.words,
+      topic: entry.nodeId === undefined ? undefined : talk?.conv.nodes[entry.nodeId]?.topic,
+      who: thread.parties.length > 2 ? entry.npcKey : undefined,
+      marked: talk?.from === entry.id,
+      title: "answer this again",
+      onClick:
+        talk !== undefined && entry.nodeId !== undefined && entry.id !== lastId && gone === false
+          ? () => w.speech.revisitTalk(thread.key, entry.id)
+          : undefined,
+    }),
+  );
+  const replies =
+    talk === undefined || gone || talk.pending
+      ? []
+      : (node?.choices ?? []).map((choice, i) => ({
+          text: choice.text,
+          pips: w.speech.getPips(talk, choice),
+          seen: talk.seen.has(choice.to),
+          onChoose: () => w.speech.chooseTalk(thread.key, i),
+        }));
+
+  return (
+    <div className="flex flex-col gap-1 border-t border-slate-700 pt-1 first:border-t-0">
+      <div className="flex flex-wrap items-center text-slate-500">
+        {thread.parties.map((npcKey, i) => (
+          <span key={npcKey} className="flex items-center">
+            {i > 0 && "·"}
+            <NpcKeyMenu npcKey={npcKey} className="px-1 text-xs" />
+          </span>
+        ))}
+      </div>
+      <TalkThread
+        lines={lines}
+        replies={replies}
+        repliesKey={`${talk?.at}:${talk?.from}`}
+        typing={talk?.pending}
+        footer={
+          talk !== undefined &&
+          (gone ? (
+            <div className="self-center text-slate-500 italic">{talk.npcKey} is gone</div>
+          ) : (
+            talk.pending === false &&
+            replies.length === 0 && <div className="self-center text-slate-500 italic">the end</div>
+          ))
+        }
+      />
+    </div>
+  );
+}
 
 /**
  * The npc's key, as a menu: it is the only handle onto an npc the speech UI has, so what you can do
@@ -494,7 +633,28 @@ export type SpeechEntry = {
   npcKey: string;
   words: string;
   epochMs: number;
+  /** Who said it, and to whom: its thread */
+  parties?: string[];
+  /** The line of a talk it is */
+  nodeId?: string;
 };
+
+/** A conversation tree the player is having with `npcKey`, in the thread of the two */
+export type Talk = {
+  conv: Conversation;
+  npcKey: string;
+  playerKey: string;
+  /** The line now replied to */
+  at: string;
+  /** The earlier entry `at` was taken back to, if any */
+  from: null | number;
+  /** The player has spoken, and the npc is yet to answer */
+  pending: boolean;
+  /** Lines reached, so a reply leading to one is ticked */
+  seen: Set<string>;
+};
+
+type Thread = { key: string; parties: string[]; entries: SpeechEntry[] };
 
 /** An item added to every `NpcKeyMenu` by e.g. a jsh command — see `addMenuItem` */
 export type SpeechMenuItem = {
@@ -521,6 +681,11 @@ export type State = {
   /** Width (px) of the whole history panel — resizable, persisted */
   historyWidth: number;
   resizing: boolean;
+  /** By `threadKeyOf` the player and npc */
+  talks: Record<string, Talk>;
+  /** The pips last drawn, so a poll re-renders only on a change */
+  needsSig: string;
+  needsSecs: number;
   addMenuItem(item: SpeechMenuItem): void;
   removeMenuItem(key: string): void;
   clear(): void;
@@ -542,7 +707,15 @@ export type State = {
   persistY(): void;
   persistHistorySize(): void;
   /** Their last toast is refreshed rather than duplicated when it already says this — see below */
-  say(npcKey: string, words: string, secs?: number): void;
+  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; nodeId?: string }): void;
+  /** The npc opens `conv` with the player, in the thread of the two. False without either */
+  startTalk(conv: Conversation, npcKey: string): boolean;
+  /** The player says a reply of the line replied to, once its tests pass, and the npc answers */
+  chooseTalk(threadKey: string, index: number): void;
+  /** Replies to an earlier line again: whatever is said next is appended, nothing removed */
+  revisitTalk(threadKey: string, entryId: number): void;
+  /** A reply's tests, as pips */
+  getPips(talk: Talk, choice: ConversationChoice): TalkPip[];
 };
 
 const speechPanelTabs = ["worlds", "speech"] as const;
@@ -551,5 +724,9 @@ const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
 const defaultToastSecs = 4;
+/** Seconds between looks at the replies' tests */
+const needsPollSecs = 0.2;
+/** Milliseconds an npc takes to answer */
+const typingMs = 450;
 /** Pixels of the pane's width a toast leaves free */
 const toastGutter = 80;

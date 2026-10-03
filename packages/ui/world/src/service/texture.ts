@@ -283,7 +283,7 @@ const deckInks = {
     plate: {
       seamInk: "rgba(40, 55, 75, 0.35)",
       lipInk: "rgba(255, 255, 255, 0.7)",
-      chequerInk: "rgba(40, 55, 75, 0.05)",
+      chequerInk: "rgba(40, 55, 75, 0.075)",
     },
     rivet: { ink: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.8)" },
     wiring: {

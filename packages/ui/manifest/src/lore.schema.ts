@@ -25,14 +25,10 @@ export const LoreEntrySchema = z.object({
   maps: z
     .record(z.string(), z.object({ rooms: z.array(z.string()).default([]), doors: z.array(z.string()).default([]) }))
     .default({}),
-  /** e.g. `{ role: "watchman" }` — each is a grammar rule too */
+  /** e.g. `{ role: "watchman" }` */
   facts: z.record(z.string(), z.string()).default({}),
-  /** Other entries' keys, whose grammars this one inherits */
+  /** Other entries' keys, it is tied to */
   links: z.array(z.string()).default([]),
-  /** Tracery rules — see `tracery.ts` */
-  grammar: z.record(z.string(), z.array(z.string())).default({}),
-  /** Ink or Yarn source, unused as yet */
-  dialogue: z.string().optional(),
 });
 
 export type LoreEntry = z.infer<typeof LoreEntrySchema>;
