@@ -12,46 +12,13 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 import { inputClass } from "./classes";
-import { dogWatch } from "./demo/dog-watch";
-import { thawed } from "./demo/thawed";
 import { IconButton, Picker } from "./parts";
 
 /**
  * A conversation tree as an outline to find a way about, and talked through in a World's speech
- * history — demo, hand-written trees: see `docs/manifest-lore.md`
+ * history — demo trees, hand-written: see `docs/manifest-lore.md`
  */
-export function TalkTab(props: { w: WorldState | undefined; zoom: number }) {
-  const [convKey, setConvKey] = useState(conversations[0].key);
-  const conv = conversations.find((c) => c.key === convKey) ?? conversations[0];
-  return (
-    // keyed, so another tree starts folded afresh
-    <Talk
-      key={conv.key}
-      {...props}
-      conv={conv}
-      picker={
-        <Picker
-          value={conv.key}
-          options={conversations.map((c) => ({ value: c.key, label: c.title }))}
-          onChange={setConvKey}
-        />
-      }
-    />
-  );
-}
-
-function Talk({
-  w,
-  zoom,
-  conv,
-  picker,
-}: {
-  w: WorldState | undefined;
-  zoom: number;
-  conv: Conversation;
-  /** Chooses the tree, shown as its title */
-  picker: React.ReactNode;
-}) {
+export function ConversationCard({ w, conv }: { w: WorldState | undefined; conv: Conversation }) {
   const outline = useMemo(() => toOutline(conv), [conv]);
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set([conv.start]));
   const [query, setQuery] = useState("");
@@ -84,74 +51,71 @@ function Talk({
   const gated = outline.rows.filter((row) => row.ref === false && row.needs.length > 0).length;
 
   return (
-    // clear of the tabs and the zoom buttons
-    <div className="size-full overflow-auto scrollbar-thin pt-8">
-      <div className="flex flex-col gap-2 p-3" style={{ zoom }}>
-        <div>
-          {picker}
-          <div className="text-zinc-500">
-            <Glyphed text={conv.summary} />
-          </div>
+    <div className="p-3 flex flex-col gap-2">
+      <div>
+        <div className="text-zinc-100">{conv.title}</div>
+        <div className="text-zinc-500">
+          <Glyphed text={conv.summary} />
         </div>
-        {w !== undefined && (
-          <div className="flex items-center gap-1 text-zinc-500">
-            the player talks to
-            <Picker
-              value={chosen}
-              options={chosen === "" ? [{ value: "", label: "nobody" }] : npcKeys}
-              onChange={setNpcKey}
-            />
-            <IconButton
-              title="talk in the World: see its speech history"
-              icon={ChatCircleTextIcon}
-              disabled={chosen === "" || playerKey === undefined}
-              onClick={() => w.speech.startTalk(conv, chosen)}
-            />
-          </div>
-        )}
-        <div className="flex items-center gap-1">
-          <input
-            className={cn(inputClass, "min-w-0 flex-1")}
-            placeholder="find a line, a topic or an id"
-            value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
+      </div>
+      {w !== undefined && (
+        <div className="flex items-center gap-1 text-zinc-500">
+          the player talks to
+          <Picker
+            value={chosen}
+            options={chosen === "" ? [{ value: "", label: "nobody" }] : npcKeys}
+            onChange={setNpcKey}
           />
           <IconButton
-            title="unfold all"
-            icon={ArrowsOutLineVerticalIcon}
-            onClick={() => setOpen(new Set(outline.rows.map((row) => row.key)))}
+            title="talk in the World: see its speech history"
+            icon={ChatCircleTextIcon}
+            disabled={chosen === "" || playerKey === undefined}
+            onClick={() => w.speech.startTalk(conv, chosen)}
           />
-          <IconButton title="fold all" icon={ArrowsInLineVerticalIcon} onClick={() => setOpen(new Set([conv.start]))} />
         </div>
-        <div className="text-zinc-500">
-          {nodeCount} lines · {outline.endings} endings · {gated} replies tested
-          {needle !== "" && ` · ${rows.length} found`}
-          {outline.missing > 0 && <span className="text-red-400"> · {outline.missing} lead nowhere</span>}
-          {outline.unreachable.length > 0 && (
-            <span className="text-red-400" title={outline.unreachable.join(", ")}>
-              {" "}
-              · {outline.unreachable.length} unreachable
-            </span>
-          )}
-        </div>
-        <div>
-          {rows.map((row) => (
-            <OutlineRowView
-              key={row.key}
-              row={row}
-              text={conv.nodes[row.nodeId]?.text}
-              flat={needle !== ""}
-              open={open.has(row.key)}
-              onFold={() =>
-                setOpen((prev) => {
-                  const next = new Set(prev);
-                  if (next.delete(row.key) === false) next.add(row.key);
-                  return next;
-                })
-              }
-            />
-          ))}
-        </div>
+      )}
+      <div className="flex items-center gap-1">
+        <input
+          className={cn(inputClass, "min-w-0 flex-1")}
+          placeholder="find a line, a topic or an id"
+          value={query}
+          onChange={(e) => setQuery(e.currentTarget.value)}
+        />
+        <IconButton
+          title="unfold all"
+          icon={ArrowsOutLineVerticalIcon}
+          onClick={() => setOpen(new Set(outline.rows.map((row) => row.key)))}
+        />
+        <IconButton title="fold all" icon={ArrowsInLineVerticalIcon} onClick={() => setOpen(new Set([conv.start]))} />
+      </div>
+      <div className="text-zinc-500">
+        {nodeCount} lines · {outline.endings} endings · {gated} replies tested
+        {needle !== "" && ` · ${rows.length} found`}
+        {outline.missing > 0 && <span className="text-red-400"> · {outline.missing} lead nowhere</span>}
+        {outline.unreachable.length > 0 && (
+          <span className="text-red-400" title={outline.unreachable.join(", ")}>
+            {" "}
+            · {outline.unreachable.length} unreachable
+          </span>
+        )}
+      </div>
+      <div>
+        {rows.map((row) => (
+          <OutlineRowView
+            key={row.key}
+            row={row}
+            text={conv.nodes[row.nodeId]?.text}
+            flat={needle !== ""}
+            open={open.has(row.key)}
+            onFold={() =>
+              setOpen((prev) => {
+                const next = new Set(prev);
+                if (next.delete(row.key) === false) next.add(row.key);
+                return next;
+              })
+            }
+          />
+        ))}
       </div>
     </div>
   );
@@ -207,5 +171,4 @@ function OutlineRowView(props: {
 
 /** Per level of the outline */
 const indentPx = 12;
-const conversations = [thawed, dogWatch];
 const rosterEvents = new Set(["spawned", "spawned-many", "removed-npcs", "npcs-restored", "set-player"]);

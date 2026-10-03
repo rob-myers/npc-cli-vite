@@ -4,8 +4,6 @@ import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import {
-  CaretDownIcon,
-  CaretRightIcon,
   FloppyDiskIcon,
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
@@ -15,19 +13,20 @@ import {
 } from "@phosphor-icons/react";
 import { Allotment } from "allotment";
 import { useContext, useEffect, useRef, useState } from "react";
+import { ConversationCard } from "./ConversationCard";
 import { columnClass, inputClass } from "./classes";
+import { conversations } from "./demo/trees";
 import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
-import { type LoreEntry, type LoreKind, loreChangedEvent, loreKinds, loreSlugRe } from "./lore.schema";
+import { type LoreEntry, loreChangedEvent, loreSlugRe } from "./lore.schema";
 import { IconButton, Picker } from "./parts";
-import { type ManifestUiMeta, manifestTabs } from "./schema";
+import type { ManifestUiMeta } from "./schema";
 import { manifestShared, useManifestShared } from "./shared";
-import { TalkTab } from "./TalkTab";
 
 import "./manifest.css";
 
 /**
- * The setting's lore, its entries tied to a live World's rooms, doors and npcs should there be one,
- * and conversation trees — see `docs/manifest-lore.md`
+ * Characters, tied to a live World's rooms, doors and npcs should there be one, and conversation
+ * trees, beside the one chosen — see `docs/manifest-lore.md`
  */
 export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   const w = useWorld(meta.worldKey);
@@ -41,7 +40,6 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       dirty: false,
       rev: 0,
       saveTimer: undefined,
-      newKind: "character",
       newSlug: "",
 
       async load() {
@@ -101,10 +99,10 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         }
       },
       async add() {
-        const key = `${state.newKind}/${state.newSlug}`;
+        const key = `character/${state.newSlug}`;
         if (loreSlugRe.test(state.newSlug) === false || key in state.entries) return;
         try {
-          await saveLoreEntry({ ...emptyEntry, key, kind: state.newKind, title: state.newSlug });
+          await saveLoreEntry({ key, kind: "character", name: state.newSlug, maps: {} });
           state.set({ newSlug: "", dirty: false });
           await state.load();
           state.select(key);
@@ -141,15 +139,6 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         if (w === undefined || npc === undefined || skin === undefined || !hasSkin(w, skin)) return;
         npc.setSkin(skin);
         w.view.forceUpdate();
-      },
-      toggleFold(name, all) {
-        uiStoreApi.setUiMeta(meta.id, (draft) => {
-          const d = draft as ManifestUiMeta;
-          const folded = d.folded.includes(name);
-          // every section goes the way the pressed one does
-          if (all) d.folded = folded ? [] : [...sectionNames];
-          else d.folded = folded ? d.folded.filter((x) => x !== name) : [...d.folded, name];
-        });
       },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -211,54 +200,60 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   /** Room for both columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
 
-  const hereKeys = draft === null || w === undefined ? undefined : draft.maps[w.mapKey];
-  const keyCount = (hereKeys?.rooms.length ?? 0) + (hereKeys?.doors.length ?? 0) + (draft?.links.length ?? 0);
-
   const entriesCol = (
     <div className="p-3 flex flex-col gap-2">
-      {loreKinds.map((kind) => {
-        const ofKind = Object.values(entries).filter((e) => e.kind === kind);
-        return (
-          ofKind.length > 0 && (
-            <div key={kind}>
-              <div className="text-zinc-500 uppercase text-[10px]">{kind}</div>
-              {ofKind.map((e) => (
-                <button
-                  key={e.key}
-                  type="button"
-                  title={e.summary}
-                  className={cn(
-                    "block w-full text-left px-1 py-0.5 rounded cursor-pointer truncate",
-                    e.key === draft?.key ? "bg-zinc-800 text-zinc-100" : "hover:bg-zinc-900",
-                  )}
-                  onClick={() => state.select(e.key)}
-                >
-                  {e.title || e.key}
-                </button>
-              ))}
-            </div>
-          )
-        );
-      })}
+      <div>
+        <div className={sectionClass}>characters</div>
+        {Object.values(entries).map((e) => (
+          <button
+            key={e.key}
+            type="button"
+            title={e.npcKey}
+            className={cn(
+              "block w-full text-left px-1 py-0.5 rounded cursor-pointer truncate",
+              e.key === draft?.key ? "bg-zinc-800 text-zinc-100" : "hover:bg-zinc-900",
+            )}
+            onClick={() => state.select(e.key)}
+          >
+            {e.name || e.key}
+          </button>
+        ))}
+      </div>
       {editable && (
-        <div className="flex gap-1 mt-auto">
-          <Picker value={state.newKind} options={loreKinds} onChange={(newKind) => state.set({ newKind })} />
+        <div className="flex gap-1">
           <input
             className={cn(inputClass, "min-w-0 flex-1")}
-            placeholder="new-slug"
+            placeholder="new-character"
             value={state.newSlug}
             onChange={(e) => state.set({ newSlug: e.currentTarget.value })}
             onKeyDown={(e) => e.key === "Enter" && state.add()}
           />
-          <IconButton title="add entry" icon={PlusIcon} onClick={state.add} />
+          <IconButton title="add a character" icon={PlusIcon} onClick={state.add} />
         </div>
       )}
+      <div>
+        <div className={sectionClass}>conversations</div>
+        {conversations.map((c) => (
+          <button
+            key={c.key}
+            type="button"
+            title={c.summary}
+            className={cn(
+              "block w-full text-left px-1 py-0.5 rounded cursor-pointer truncate",
+              `${talkPrefix}${c.key}` === meta.entryKey ? "bg-zinc-800 text-zinc-100" : "hover:bg-zinc-900",
+            )}
+            onClick={() => state.select(`${talkPrefix}${c.key}`)}
+          >
+            {c.title}
+          </button>
+        ))}
+      </div>
     </div>
   );
   const cardCol =
     draft === null ? (
       <div className="h-full grid place-items-center text-zinc-500 p-4">
-        {state.error ?? (Object.keys(entries).length === 0 ? "no lore yet" : "choose an entry")}
+        {state.error ?? "choose a character or a conversation"}
       </div>
     ) : (
       <div className="p-3 flex flex-col gap-2">
@@ -279,92 +274,22 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
             </>
           )}
         </div>
-        <Section name="about" hint={draft.title} folded={meta.folded} onToggle={state.toggleFold}>
-          <input
-            className={cn(inputClass, "text-zinc-100")}
-            readOnly={!editable}
-            placeholder="title"
-            value={draft.title}
-            onChange={(e) => state.patch({ title: e.currentTarget.value })}
-          />
-          <textarea
-            // grows with its text; two rows where `field-sizing` is unsupported
-            className={cn(inputClass, "field-sizing-content resize-none")}
-            rows={2}
-            readOnly={!editable}
-            placeholder="summary"
-            value={draft.summary}
-            onChange={(e) => state.patch({ summary: e.currentTarget.value })}
-          />
-          {Object.entries(draft.facts).map(([key, value], i) => (
-            // keyed by position: a key being typed must not remount its row
-            <div key={i} className="flex items-center gap-1">
-              <input
-                className={cn(inputClass, "w-24")}
-                readOnly={!editable}
-                value={key}
-                onChange={(e) => state.patch({ facts: withFact(draft.facts, i, e.currentTarget.value, value) })}
-              />
-              <input
-                className={cn(inputClass, "flex-1 min-w-0")}
-                readOnly={!editable}
-                value={value}
-                onChange={(e) => state.patch({ facts: withFact(draft.facts, i, key, e.currentTarget.value) })}
-              />
-              {editable && (
-                <button
-                  type="button"
-                  title="remove fact"
-                  className={bareButtonClass}
-                  onClick={() => state.patch({ facts: withFact(draft.facts, i) })}
-                >
-                  <XIcon />
-                </button>
-              )}
-            </div>
-          ))}
-          {editable && (
-            <button
-              type="button"
-              className={cn(bareButtonClass, "self-start flex items-center gap-1")}
-              onClick={() => state.patch({ facts: { ...draft.facts, [`fact${Object.keys(draft.facts).length}`]: "" } })}
-            >
-              <PlusIcon /> fact
-            </button>
-          )}
-        </Section>
-        <Section
-          name="world"
-          hint={[draft.npcKey, keyCount > 0 && `${keyCount} key${keyCount === 1 ? "" : "s"}`]
-            .filter(Boolean)
-            .join(" · ")}
-          folded={meta.folded}
-          onToggle={state.toggleFold}
-        >
-          {w !== undefined && draft.kind === "character" && (
-            <NpcFields w={w} draft={draft} onNpcKey={state.setNpcKey} onSkin={state.setSkin} />
-          )}
-          <KeyBox w={w} draft={draft} entries={entries} onPatch={state.patch} onSelect={state.select} />
-        </Section>
-        <Section name="story" hint={draft.backstory} folded={meta.folded} onToggle={state.toggleFold}>
-          <textarea
-            className={cn(inputClass, "h-40 resize-y leading-relaxed")}
-            readOnly={!editable}
-            placeholder="backstory"
-            value={draft.backstory}
-            onChange={(e) => state.patch({ backstory: e.currentTarget.value })}
-          />
-          <textarea
-            className={cn(inputClass, "h-12 resize-y")}
-            readOnly={!editable}
-            placeholder="voice: how they speak"
-            value={draft.voice}
-            onChange={(e) => state.patch({ voice: e.currentTarget.value })}
-          />
-        </Section>
+        <input
+          className={cn(inputClass, "text-zinc-100")}
+          readOnly={!editable}
+          placeholder="name"
+          value={draft.name}
+          onChange={(e) => state.patch({ name: e.currentTarget.value })}
+        />
+        {w !== undefined && <NpcFields w={w} draft={draft} onNpcKey={state.setNpcKey} onSkin={state.setSkin} />}
+        <KeyBox w={w} draft={draft} onPatch={state.patch} />
         {state.error !== null && <div className="text-red-400 break-all">{state.error}</div>}
       </div>
     );
+  const conv = conversations.find((c) => `${talkPrefix}${c.key}` === meta.entryKey);
+  /** The conversation chosen, else the character */
+  const shownCol = conv === undefined ? cardCol : <ConversationCard key={conv.key} w={w} conv={conv} />;
+
   return (
     <div
       ref={root}
@@ -372,26 +297,11 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
     >
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-gray-800/80 opacity-60 hover:opacity-100">
-        {manifestTabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={cn(
-              "px-1 cursor-pointer",
-              tab === meta.tab ? "text-zinc-100" : "text-zinc-500 hover:text-zinc-300",
-            )}
-            onClick={() => uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).tab = tab))}
-          >
-            {tab}
-          </button>
-        ))}
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
         <IconButton title="smaller text" icon={MagnifyingGlassMinusIcon} onClick={() => state.zoomBy(-zoomStep)} />
         <IconButton title="larger text" icon={MagnifyingGlassPlusIcon} onClick={() => state.zoomBy(zoomStep)} />
       </div>
-      {meta.tab === "talk" ? (
-        <TalkTab w={w} zoom={zoom} />
-      ) : wide ? (
+      {wide ? (
         // `zoom` goes inside each pane: on the allotment itself a drag would move its sash too little
         <Allotment
           defaultSizes={meta.split}
@@ -405,10 +315,10 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
             </div>
           </Allotment.Pane>
           <Allotment.Pane minSize={220}>
-            {/* clear of the tabs and the zoom buttons */}
+            {/* clear of the zoom buttons */}
             <div className="size-full pt-8">
               <div className={columnClass} style={{ zoom }}>
-                {cardCol}
+                {shownCol}
               </div>
             </div>
           </Allotment.Pane>
@@ -416,23 +326,14 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       ) : (
         <div className={cn(columnClass, "divide-y divide-zinc-800")} style={{ zoom }}>
           {entriesCol}
-          {cardCol}
+          {shownCol}
         </div>
       )}
     </div>
   );
 }
 
-/** `facts` with its `index`th renamed or revalued, or without it — order kept */
-function withFact(facts: Record<string, string>, index: number, key?: string, value?: string) {
-  return Object.fromEntries(
-    Object.entries(facts).flatMap((fact, i) =>
-      i !== index ? [fact] : key === undefined || value === undefined ? [] : [[key, value]],
-    ),
-  );
-}
-
-/** A character's npc and skin in the World */
+/** Their npc and skin in the World */
 function NpcFields(props: {
   w: WorldState;
   draft: LoreEntry;
@@ -483,37 +384,26 @@ function hasRoom(w: WorldState, key: string) {
 }
 
 /**
- * The keys an entry holds, as badges, and ONE box to add to them: a room's or a door's on this map,
- * or another entry's — each becomes a badge once it is found to exist, and what is not stays typed
+ * The rooms that are theirs and the doors they hold keys to on this map, as badges, and ONE box to
+ * add to them — each becomes a badge once it is found to exist, and what is not stays typed
  */
-function KeyBox(props: {
-  w: WorldState | undefined;
-  draft: LoreEntry;
-  entries: Record<string, LoreEntry>;
-  onPatch(partial: Partial<LoreEntry>): void;
-  onSelect(key: string): void;
-}) {
-  const { w, draft, entries } = props;
+function KeyBox(props: { w: WorldState | undefined; draft: LoreEntry; onPatch(partial: Partial<LoreEntry>): void }) {
+  const { w, draft } = props;
   const [text, setText] = useState("");
   const [invalid, setInvalid] = useState(false);
   const here = (w !== undefined && draft.maps[w.mapKey]) || { rooms: [], doors: [] };
-  const isCharacter = draft.kind === "character";
-  const held = { rooms: here.rooms, doors: here.doors, links: draft.links };
+  const held = { rooms: here.rooms, doors: here.doors };
 
   const kindOf = (key: string): null | keyof typeof held => {
-    if (key in entries) return key === draft.key ? null : "links";
     if (w === undefined) return null;
-    if (isCharacter && w.door?.byKey[key as Geomorph.GmDoorKey] !== undefined) return "doors";
+    if (w.door?.byKey[key as Geomorph.GmDoorKey] !== undefined) return "doors";
     return hasRoom(w, key) ? "rooms" : null;
   };
-  const apply = ({ rooms, doors, links }: typeof held) =>
-    props.onPatch({
-      links,
-      // per map, and so only with one
-      ...(w !== undefined && { maps: { ...draft.maps, [w.mapKey]: { rooms, doors } } }),
-    });
+  // per map, and so only with one
+  const apply = ({ rooms, doors }: typeof held) =>
+    w !== undefined && props.onPatch({ maps: { ...draft.maps, [w.mapKey]: { rooms, doors } } });
   const commit = (typed: string) => {
-    const next = { rooms: [...held.rooms], doors: [...held.doors], links: [...held.links] };
+    const next = { rooms: [...held.rooms], doors: [...held.doors] };
     const unknown: string[] = [];
     let added = false;
     for (const key of typed.split(/[\s,]+/).filter(Boolean)) {
@@ -549,12 +439,6 @@ function KeyBox(props: {
       known: w === undefined || w.door?.byKey[key as Geomorph.GmDoorKey] !== undefined,
       title: "a door they hold the key to",
     })),
-    ...held.links.map((key) => ({
-      key,
-      kind: "links" as const,
-      known: key in entries,
-      title: entries[key]?.title ?? "",
-    })),
   ];
 
   return (
@@ -567,16 +451,10 @@ function KeyBox(props: {
       {badges.map(({ key, kind, known, title }) => (
         <span
           key={`${kind} ${key}`}
-          title={known ? title : kind === "links" ? "no such entry" : "not on this map"}
+          title={known ? title : "not on this map"}
           className={cn("flex items-center gap-1 px-1 rounded border border-zinc-700", !known && "text-red-400")}
         >
-          {kind === "links" ? (
-            <button type="button" className="cursor-pointer hover:text-zinc-100" onClick={() => props.onSelect(key)}>
-              {key}
-            </button>
-          ) : (
-            key
-          )}
+          {key}
           {editable && (
             <button type="button" title="remove" className={bareButtonClass} onClick={() => remove(kind, key)}>
               <XIcon />
@@ -584,10 +462,10 @@ function KeyBox(props: {
           )}
         </span>
       ))}
-      {editable && (
+      {editable && w !== undefined && (
         <input
           className="flex-1 min-w-24 bg-transparent outline-none"
-          placeholder={badges.length === 0 ? keyBoxHint(w !== undefined, isCharacter) : ""}
+          placeholder={badges.length === 0 ? "rooms, doors: g0r1 g0d29" : ""}
           value={text}
           onChange={(e) => {
             const typed = e.currentTarget.value;
@@ -608,46 +486,9 @@ function KeyBox(props: {
   );
 }
 
-/** What the box takes, by what there is to name */
-function keyBoxHint(hasWorld: boolean, isCharacter: boolean) {
-  const world = hasWorld ? (isCharacter ? "g0r1 g0d29 " : "g0r1 ") : "";
-  return `${world}place/dock`;
-}
-
-/** A group of the card's fields, under a header which folds it away — `hint` is what a folded one says */
-function Section(props: {
-  name: SectionName;
-  hint: string;
-  folded: string[];
-  onToggle(name: SectionName, all: boolean): void;
-  children: React.ReactNode;
-}) {
-  const folded = props.folded.includes(props.name);
-  const Caret = folded ? CaretRightIcon : CaretDownIcon;
-  return (
-    // shaded by `data-section` — see `manifest.css`
-    <div className="manifest-section flex flex-col gap-1 rounded px-2 py-1.5" data-section={props.name}>
-      <button
-        type="button"
-        className="flex items-center gap-1 min-w-0 text-left cursor-pointer text-zinc-500 hover:text-zinc-300"
-        title="alt-click folds or unfolds them all"
-        onClick={(e) => {
-          const header = e.currentTarget;
-          props.onToggle(props.name, e.altKey);
-          // they all moved: back to the one pressed, once that has been laid out
-          if (e.altKey)
-            requestAnimationFrame(() => requestAnimationFrame(() => header.scrollIntoView({ block: "start" })));
-        }}
-      >
-        <Caret className="size-3 shrink-0" />
-        <span className="pr-2 text-[10px] uppercase">{props.name}</span>
-        {folded && <span className="truncate text-zinc-400">{props.hint}</span>}
-      </button>
-      {folded === false && props.children}
-    </div>
-  );
-}
-
+/** Prefixes a conversation's key in `meta.entryKey`, where a character's is `character/{slug}` */
+const talkPrefix = "talk/";
+const sectionClass = "text-zinc-500 uppercase text-[10px]";
 /** Files are only writable through the DEV server */
 const editable = import.meta.env.DEV;
 const bareButtonClass = "shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100";
@@ -658,10 +499,6 @@ const wideWidth = 520;
 const zoomStep = 0.1;
 const minZoom = 0.7;
 const maxZoom = 2;
-const emptyEntry = { title: "", summary: "", backstory: "", voice: "", maps: {}, facts: {}, links: [] };
-
-const sectionNames = ["about", "world", "story"] as const;
-type SectionName = (typeof sectionNames)[number];
 
 type State = {
   entries: Record<string, LoreEntry>;
@@ -672,14 +509,11 @@ type State = {
   /** Counts edits, so a save knows whether more came whilst it was under way */
   rev: number;
   saveTimer: undefined | ReturnType<typeof setTimeout>;
-  newKind: LoreKind;
   newSlug: string;
   load(): Promise<void>;
   /** Replaces the draft by what is on disk */
   show(key: string | undefined): void;
   select(key: string): void;
-  /** Folds a section of the card, or unfolds it — `all` of them, its way. Kept in `meta.folded` */
-  toggleFold(name: SectionName, all: boolean): void;
   zoomBy(delta: number): void;
   /** Their npc in the World, if there, is respawned under the new key */
   setNpcKey(npcKey: string | undefined): Promise<void>;
@@ -689,6 +523,6 @@ type State = {
   save(): Promise<void>;
   remove(): Promise<void>;
   add(): Promise<void>;
-  /** Centre the map on the entry's npc, else its room */
+  /** Centre the map on their npc, else their room */
   locate(entry: LoreEntry): void;
 };

@@ -126,9 +126,9 @@ toggle labels it and opens a card per pick.
 
 ## Lore
 
-See `docs/manifest-lore.md` — the ONLY doc for it. In short: terse backstories, one JSON per entry in
-`packages/media/lore/{kind}/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest` (DEV saves through
-`/api/lore`; a build bundles them as `virtual:lore`). Conversation trees (`ui/world/src/service/talk.ts`) are
+See `docs/manifest-lore.md` — the ONLY doc for it. In short: characters (name, npc, skin, rooms and door keys),
+one JSON each in `packages/media/lore/character/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest`
+(DEV saves through `/api/lore`; a build bundles them as `virtual:lore`). Conversation trees (`ui/world/src/service/talk.ts`) are
 outlined there and played in `WorldSpeech`'s history, by thread, each reply waiting on tests shown as pips.
 
 ## MapEdit saving

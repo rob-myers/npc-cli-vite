@@ -1,7 +1,7 @@
 import z from "zod";
 
-export const loreKinds = ["setting", "level", "place", "faction", "character"] as const;
-export type LoreKind = (typeof loreKinds)[number];
+/** Only characters, as yet: still a folder of their own, so another kind can join them */
+export const loreKinds = ["character"] as const;
 
 /** A file's name, and an entry's key after its kind */
 export const loreSlugRe = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -11,24 +11,15 @@ export const LoreEntrySchema = z.object({
   /** `{kind}/{slug}`, as its path */
   key: z.string(),
   kind: z.enum(loreKinds),
-  title: z.string().default(""),
-  /** One line */
-  summary: z.string().default(""),
-  backstory: z.string().default(""),
-  /** How they speak */
-  voice: z.string().default(""),
-  /** A character's npc in the World */
+  name: z.string().default(""),
+  /** Their npc in the World */
   npcKey: z.string().optional(),
-  /** A character's skin, e.g. `medic-0` */
+  /** e.g. `medic-0` */
   skin: z.string().optional(),
-  /** By mapKey: the rooms that are theirs (or are this place), and the doors a character may open */
+  /** By mapKey: the rooms that are theirs, and the doors they hold keys to */
   maps: z
     .record(z.string(), z.object({ rooms: z.array(z.string()).default([]), doors: z.array(z.string()).default([]) }))
     .default({}),
-  /** e.g. `{ role: "watchman" }` */
-  facts: z.record(z.string(), z.string()).default({}),
-  /** Other entries' keys, it is tied to */
-  links: z.array(z.string()).default([]),
 });
 
 export type LoreEntry = z.infer<typeof LoreEntrySchema>;

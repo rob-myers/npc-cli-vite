@@ -1,15 +1,13 @@
 # Lore
 
-Backstories and conversations for **NPC CLI: Low Berth**, authored in DEV and shipped as data. The
-setting is itself an entry (`setting/low-berth`): a loose backdrop for many small scenarios, not a
-plot. Everything is terse: sentences of one to five words, to be decoded, not read.
+Characters and conversations, authored in DEV and shipped as data. Generic sci-fi, no fixed setting.
+Conversations are terse: lines of one to five words, to be decoded, not read.
 
 ## Data
 
-One JSON file per entry, `packages/media/lore/{kind}/{slug}.json`, its key `{kind}/{slug}`. Kinds:
-`setting`, `level`, `place`, `faction`, `character`. `LoreEntrySchema`
-(`ui/manifest/src/lore.schema.ts`) has `title`, `summary`, `backstory`, `voice`, `facts`, `links`
-(other entries it is tied to), and what it has in the World (below).
+One JSON file per character, `packages/media/lore/character/{slug}.json`, its key `character/{slug}`.
+`LoreEntrySchema` (`ui/manifest/src/lore.schema.ts`) has `name`, `npcKey`, `skin`, and `maps`: what
+they have in the World (below). `loreKinds` is `character` alone, as yet.
 
 `scripts/src/vite-plugin-lore.ts` provides them, as `jobsExamplesPlugin` does its examples:
 
@@ -24,22 +22,21 @@ A key must be a known kind and a `[a-z0-9-]` slug, which is what keeps a write i
 ## The panel: `ui/manifest`
 
 `@npc-cli/ui__manifest` (uiKey `Manifest`), a panel of its own: `Manifest.tsx`. `meta.worldKey`
-names its World (default `world-0`), found by `useWorld`; without one it still edits. **lore** and
-**talk** beside the text zoom buttons (`meta.zoom`) switch it (`meta.tab`).
+names its World (default `world-0`), found by `useWorld`; without one it still edits. The text zoom
+buttons (`meta.zoom`) float over its top right corner.
 
-**lore**: entries by kind, and a card to edit (DEV only; an edit saves itself `autosaveMs` after
-the last keystroke). Wide enough (`wideWidth`, at the text's zoom) the two sit side by side and
-resize (`meta.split`); narrower, they stack. The card is three sections, each folding under its
-header (`meta.folded`), which then says what it holds: **about** (title, summary, facts), **world**
-(npc, skin, keys) and **story** (backstory, voice).
+On the left, the characters and the conversations; beside them, the one chosen (`meta.entryKey`:
+`character/{slug}`, or `talk/{key}`). Wide enough (`wideWidth`, at the text's zoom) the two sit side
+by side and resize (`meta.split`); narrower, they stack. A character's card (DEV only to edit; an
+edit saves itself `autosaveMs` after the last keystroke) has name, npc, skin and keys.
 
-Keys are typed into ONE box (`KeyBox`): a room's (`g0r1`) or a door's (`g0d29`) on this map, or
-another entry's (`place/dock`), ended by a space, comma, enter, paste or blur. Each becomes a badge
+Keys are typed into ONE box (`KeyBox`), with a World: a room's (`g0r1`) or a door's (`g0d29`) on
+this map, ended by a space, comma, enter, paste or blur. Each becomes a badge
 once it is found to exist; what is not stays typed, and the box goes red. Backspace in the empty box
 takes the last badge off. A badge whose key this map lacks is red.
 
-Selecting an entry centres a Decorator's map on its npc, else its first room; choosing an npc on
-that map shows the entry whose `npcKey` they are. Both go through `manifestShared` (`shared.ts`), a
+Selecting a character centres a Decorator's map on their npc, else their first room; choosing an
+npc on that map shows the character whose `npcKey` they are. Both go through `manifestShared` (`shared.ts`), a
 small store keyed by `worldKey` — `entry`, `npcKey`, `locate`, `renamed` — so neither panel imports
 the other, and either may be absent.
 
@@ -47,12 +44,12 @@ the other, and either may be absent.
 
 A `Conversation` (`ui/world/src/service/talk.ts`, imported as `@npc-cli/ui__world/talk`) is
 two-party: `nodes` by id, each the npc's `text` and `topic`, and the player's `choices` (`text`,
-`to`, `needs`); none is an ending. It is a graph, as choices lead back. As yet the trees are
-hand-written demos in `ui/manifest/src/demo/`: `thawed`, and the larger `dog-watch`, whose talk keeps
-turning to philosophy. An emoji is inline, and only where it explains the word before it
-(`Tam 🤖`) or stands for a word (`🔑.`).
+`to`, `needs`); none is an ending. It is a graph, as choices lead back. As yet the trees are ten
+short hand-written demos, `ui/manifest/src/demo/trees.ts` (an airlock guard, a medic, a
+quartermaster...). An emoji is inline, and only where it explains the word before it (`Cells 🔋.`)
+or stands for a word (`👍.`).
 
-**talk** (`TalkTab.tsx`) outlines a tree (`toOutline`): each node unfolded once, under the parent a
+A conversation's card (`ConversationCard.tsx`) outlines its tree (`toOutline`): each node unfolded once, under the parent a
 breadth-first walk meets it by, so nearest the start; elsewhere a reference. A row is the choice,
 then what is said back, with its needs as neutral pips. The box finds a line, topic or id; the count
 flags a choice leading nowhere, or a line nothing leads to. **the player talks to** an npc starts it
@@ -80,11 +77,10 @@ offers nothing. Talks are the panel's own state, unsaved; no variables as yet.
 
 ## In the World
 
-An entry has `maps[mapKey].rooms` (grKeys); a character also `npcKey`, `skin` and
-`maps[mapKey].doors` (the gdKeys they hold keys to). Per map, as a `g0r21` means nothing on another.
-Rooms, doors and `links` are all entered in the card's key box.
+A character has, per map, `maps[mapKey].rooms` (grKeys) and `.doors` (the gdKeys they hold keys
+to), as a `g0r21` means nothing on another; both are entered in the card's key box.
 
-- The Decorator's map outlines the shown entry's rooms and doors (`ui/decorator/src/ManifestLoreLayer.tsx`).
+- The Decorator's map outlines the shown character's rooms and doors (`ui/decorator/src/ManifestLoreLayer.tsx`).
 - Its **npcs** menu lists every character with an npc (`useManifestLoreCharacters`); choosing one puts them
   where the map is next clicked (`Editor.spawnNpc`): spawned or moved, in their skin, and granted
   their doors.

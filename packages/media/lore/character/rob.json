@@ -1,20 +1,18 @@
 {
   "key": "character/rob",
   "kind": "character",
-  "title": "Rob, low passenger",
-  "summary": "Low passenger. Wakes amid trouble.",
-  "backstory": "No ship. No trade.\nTravels frozen. Travels cheap.\nWorks at the far end.\nWatches. Opens doors. Carries.\nNever asks.\n\nWakes slow. Groggy awhile.\nReads a deck fast.\nWho rules. What's locked.\nWhere stunners are kept.\n\nHears what's coming. Sometimes.\nTells nobody.\nTrusts it little.\n\nKept thin on purpose.\nFits any scenario.",
-  "voice": "Brief. Wry. Groggy.\nTalks to himself.\nPolite to robots.\nUnderstates danger.",
+  "name": "Rob",
   "npcKey": "rob",
   "skin": "medic-0",
   "maps": {
     "301-only": {
-      "rooms": ["g0r1"],
-      "doors": ["g0d29", "g0d30"]
+      "rooms": [
+        "g0r1"
+      ],
+      "doors": [
+        "g0d29",
+        "g0d30"
+      ]
     }
-  },
-  "facts": {
-    "trade": "low passenger"
-  },
-  "links": []
+  }
 }
