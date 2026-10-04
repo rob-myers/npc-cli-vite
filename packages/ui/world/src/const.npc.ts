@@ -156,6 +156,8 @@ export const npcMaterialConfig = {
   ambient: 0.3,
   ambientInSight: 0.12,
   litAmbient: 0.4,
+  /** A light of the npcs' own, from straight above: how far an underside darkens, a side half as far */
+  faceShade: 0.85,
 } as const;
 
 export const fromAnimationClipKey = {

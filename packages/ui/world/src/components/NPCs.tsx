@@ -139,6 +139,7 @@ export default function NPCs() {
           ambient,
           ambientInSight,
           litAmbient,
+          faceShade,
         } = npcMaterialConfig;
         const skinIndexUniform = uniform(skinIndex);
         // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
@@ -181,7 +182,6 @@ export default function NPCs() {
         const fold = w.view.foldNode;
 
         const toEye = cameraPosition.sub(positionWorld).normalize();
-        // the rim alone: `N·V` is near 1 over all the camera sees, so on skin it shaded a silhouette
         const facing = normalWorld.dot(toEye).clamp(0, 1);
 
         // ambient + the player's light + more whilst lit, the light taking what the ambient leaves
@@ -192,6 +192,8 @@ export default function NPCs() {
           .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
           .add(litAmount.mul(litAmbient))
           .clamp(0, 1)
+          // flat-shaded from straight above, half-Lambert: whatever the light, and steady as the camera turns
+          .mul(normalWorld.y.mul(faceShade / 2).add(1 - faceShade / 2))
           .mul(fold)
           .mul(state.dimNode);
 
@@ -869,6 +871,9 @@ export default function NPCs() {
       npc.anim.mixer.stopAllAction();
       for (const oldClip of staleClips) npc.anim.mixer.uncacheClip(oldClip);
       npc.anim.setPose(npc.anim.pose, { fade: 0, force: true });
+      // at once: stopping left the bind pose, and no tick comes whilst paused
+      npc.anim.mixer.update(0);
+      npc.anim.tickUpper(0);
     }
 
     state.skin = { entries: Object.values(w.sheets.skin), manifest: queryData.skinManifest };
