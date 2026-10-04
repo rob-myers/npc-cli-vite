@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
+import * as THREE from "three/webgpu";
 import { defaultPsiTune, type PsiTune, psiMaxReach } from "../const.npc";
 import { eased } from "../service/fade";
 import {
@@ -152,13 +153,36 @@ export default function Psi() {
       },
       syncTune() {
         state.tune = { ...defaultPsiTune, ...state.tune }; // a field added since, e.g. over hmr
-        const { reach, gap, width, opacity, color } = state.tune;
+        const { reach, gap, width, opacity, color, tint } = state.tune;
         state.reach.value = Math.min(reach, psiMaxReach);
         state.gap.value = gap;
         state.width.value = width;
         state.opacity.value = opacity;
         state.color.value.set(color);
-        state.gain.value = w.getTheme().npcs.fxStrength;
+        const theme = w.getTheme();
+        // light cannot be added to a pale deck, so there the lines are laid over it, in a deeper ink
+        const pale = theme.floor.deck === "light";
+        if (pale) {
+          // as seen, not as worked in: linear lightness would come out far paler
+          const { h } = state.color.value.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
+          state.color.value.setHSL(h, 1, psiConfig.paleLightness, THREE.SRGBColorSpace);
+          const coreLightness = 1 - tint * (1 - psiConfig.paleCoreLightness);
+          state.coreColor.value.setHSL(h, 1, coreLightness, THREE.SRGBColorSpace);
+        } else {
+          state.color.value.lerp(white, 1 - tint);
+        }
+        // there the strength is fixed, to firm the line up, and `opacity` fades it once drawn
+        state.gain.value = pale ? psiConfig.paleFirm / opacity : theme.npcs.fxStrength;
+        state.fade.value = pale ? Math.min(1, Math.sqrt(opacity) * theme.npcs.fxStrength * psiConfig.paleFade) : 1;
+        state.whiten.value = pale ? 0 : 1;
+        state.casing.value = pale ? psiConfig.paleCasing : 0;
+        state.width.value = width * (pale ? psiConfig.paleWidth : 1);
+        const blending = pale ? THREE.NormalBlending : THREE.AdditiveBlending;
+        if (state.mat.blending !== blending) {
+          state.mat.blending = blending;
+          state.mat.needsUpdate = true;
+        }
+        w.r3f?.invalidate();
       },
     }),
     // a new `psiMaxReach` or `cell` needs a new geometry, and the mesh and material go with it
@@ -176,7 +200,7 @@ export default function Psi() {
     state.mat.colorNode = colorNode;
     state.mat.needsUpdate = true;
     state.upload(); // a fresh geometry has no instances yet
-  }, [w.view.fadeRoomsFx.uid, w.view.playerLight.uid]);
+  }, [w.view.fadeRoomsFx.uid]);
 
   return <primitive object={state.mesh} />;
 }
@@ -224,7 +248,21 @@ const psiConfig = {
   avoidSecs: 0.3,
   /** Metres off the player the stand-in for no one sits, far past any `reach` */
   loneFar: 1e4,
+  /** Over a pale deck: the lightness the tuned hue is drawn at, fully saturated — its casing's ink */
+  paleLightness: 0.36,
+  /** Over a pale deck: the lightness of a line's core at full `tint`, white at none */
+  paleCoreLightness: 0.8,
+  /** Over a pale deck: the strength every line is drawn at, past full so its edges are firm */
+  paleFirm: 4,
+  /** Over a pale deck: of `fxStrength`, by the root of the opacity — `0.25` is opaque at `5` */
+  paleFade: 0.4,
+  /** Over a pale deck: how much wider, having no glow to carry it */
+  paleWidth: 1.5,
+  /** Over a pale deck: pixels of dark edging either side of a line */
+  paleCasing: 1.5,
 } as const;
+
+const white = new THREE.Color("#fff");
 
 /** Ours to clear: never another's upper pose e.g. `point` */
 const isPsiPose = (key: null | string) => key === "psi" || key === "psi_avoid";

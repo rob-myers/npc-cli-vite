@@ -15,6 +15,7 @@ import {
   Loop,
   log,
   max,
+  mix,
   positionLocal,
   smoothstep,
   textureLoad,
@@ -29,7 +30,6 @@ import * as THREE from "three/webgpu";
 import { MAX_GEOMORPH_INSTANCES } from "../const.env";
 import { defaultPsiTune, psiMaxReach } from "../const.npc";
 import type { FadeRooms } from "./fade-rooms";
-import type { PlayerLight } from "./player-light";
 import { type RoomSlots, slotUvPerMetre } from "./room-slots";
 import { selectAs } from "./tsl";
 
@@ -63,12 +63,20 @@ export function createPsiResources() {
   const color = uniform(new THREE.Color(defaultPsiTune.color));
   /** From `theme.npcs.fxStrength` */
   const gain = uniform(1);
+  /** `1` whilst additive, when strength past full whitens the line; `0` over a pale deck */
+  const whiten = uniform(1);
+  /** Pixels of dark edging either side of a line, for contrast over a pale deck; `0` whilst additive */
+  const casing = uniform(0);
+  /** A cased line's core: the hue at its palest, down to white */
+  const coreColor = uniform(new THREE.Color("#fff"));
+  /** Scales the finished line's alpha: over a pale deck, where its strength only firms it up */
+  const fade = uniform(1);
   // per geomorph, three `vec4`s — see `syncGms`
   const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
   const gmArray = uniformArray<"vec4">(gmValues, "vec4");
   const gmCount = uniform(0);
 
-  // additive, so the lines glow over a dark floor
+  // additive, so the lines glow over a dark floor — `Psi.syncTune` lays them over a pale one instead
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
@@ -95,6 +103,10 @@ export function createPsiResources() {
     opacity,
     color,
     gain,
+    whiten,
+    casing,
+    coreColor,
+    fade,
     gmValues,
     gmArray,
     gmCount,
@@ -102,17 +114,32 @@ export function createPsiResources() {
 }
 
 export function psiNodes(
-  { npcTex, slotCount, facing, flowPhase, reach, gap, width, opacity, color, gain, gmArray, gmCount }: PsiResources,
+  {
+    npcTex,
+    slotCount,
+    facing,
+    flowPhase,
+    reach,
+    gap,
+    width,
+    opacity,
+    color,
+    gain,
+    whiten,
+    casing,
+    coreColor,
+    fade,
+    gmArray,
+    gmCount,
+  }: PsiResources,
   {
     fadeRoomsFx,
-    playerLight,
     objectPick,
     foldNode,
     roomSlots,
   }: {
     fadeRoomsFx: FadeRooms;
     roomSlots: RoomSlots;
-    playerLight: PlayerLight;
     objectPick: THREE.UniformNode<"float", number>;
     foldNode: THREE.UniformNode<"float", number>;
   },
@@ -218,7 +245,10 @@ export function psiNodes(
     const v = g.div(gap).sub(flowPhase);
     const toLine = float(0.5).sub(fract(v).sub(0.5).abs()); // 0 on a contour
     const px = toLine.div(max(fwidth(v), 1e-6));
-    const line = smoothstep(width.mul(0.5).sub(0.5), width.mul(0.5).add(0.5), px).oneMinus(); // solid core, 1px edge
+    const half = width.mul(0.5);
+    const core = smoothstep(half.sub(0.5), half.add(0.5), px).oneMinus(); // solid, 1px edge
+    // the core and its casing, should it have one
+    const line = smoothstep(half.add(casing).sub(0.5), half.add(casing).add(0.5), px).oneMinus();
     // the outermost dies away rather than ringing the reach
     const edge = smoothstep(maxPush, maxPush.add(gap), g).oneMinus();
 
@@ -227,26 +257,39 @@ export function psiNodes(
     const ahead = away.dot(facing).div(away.length().max(1e-4));
     const cone = smoothstep(cosDeg(coneHalfDeg + coneSoftDeg), cosDeg(coneHalfDeg - coneSoftDeg), ahead);
 
-    // as the floor has it: an unlit room hides them, but only in `sight`
-    const gmId = gmUv.z.round();
-    // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
-    const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">);
-    const roomShown = gmId
-      .greaterThanEqual(0)
-      .select(fadeRoomsFx.getVisiblity(slot), float(0))
-      .max(fadeRoomsFx.sightNode.oneMinus());
+    const strength = opacity.mul(gain);
+    // the player's presence: another fades by its push alone, else its part of the field would dim as it rose
+    // clamped after the strength, so one past full firms up the line's soft edges too
+    const shape = line.mul(edge).mul(cone).mul(owned).mul(player.z).mul(foldNode).mul(strength).min(1);
 
-    const a = objectPick.notEqual(0).select(
-      0,
-      // the player's presence: another fades by its push alone, else its part of the field would dim as it rose
-      line.mul(edge).mul(cone).mul(owned).mul(player.z).mul(roomShown).mul(foldNode).mul(opacity.mul(gain).min(1)),
-    );
-    Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
-    return playerLight.applyLightRgba(vec4(color, a));
+    // most of a quad is off every line, and a discard alone would still look its room up
+    const a = float(0).toVar();
+    If(objectPick.equal(0).and(shape.greaterThanEqual(1 / 512)), () => {
+      // a room out of view takes from them, but only in `sight`…
+      const gmId = gmUv.z.round();
+      // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
+      const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">, {
+        branched: true,
+      });
+      // …where it dims them rather than hides them: sensed past what is seen. Off the map they go
+      const unseen = fadeRoomsFx.sightNode.oneMinus();
+      const roomShown = gmId
+        .greaterThanEqual(0)
+        .select(fadeRoomsFx.getVisiblity(slot).max(unseen.max(unseenShown)), unseen);
+      a.assign(shape.mul(roomShown));
+    });
+    Discard(a.lessThan(1 / 512)); // which would otherwise still blend
+    // alpha stops at one, so strength past it whitens an additive line
+    const ink = color.mul(mix(float(1), strength.max(1), whiten));
+    // over a pale deck, near white cased in its own ink, darkened: read over white and grey alike
+    return vec4(mix(ink.mul(casingShade), mix(coreColor, ink, whiten), core.max(whiten)), a.mul(fade));
   })();
 
   return { vertexNode, colorNode };
 }
+
+/** How much of a contour is left in a room out of view, in `sight` */
+const unseenShown = 0.3;
 
 const shaderConfig = {
   /** Metres before `reach` over which it fades out */
@@ -266,3 +309,6 @@ const cosDeg = (degrees: number) => Math.cos((degrees * Math.PI) / 180);
 
 /** The player, whom they influence, and whom they did */
 const MAX_PSI = 3;
+
+/** How dark a line's casing is, of its ink */
+const casingShade = 0.18;

@@ -102,4 +102,5 @@ const psiSliders = [
   ["width", "width"],
   ["opacity", "opacity"],
   ["fadeSecs", "fade"],
+  ["tint", "tint"],
 ] as const satisfies [keyof typeof psiTuneRanges, string][];

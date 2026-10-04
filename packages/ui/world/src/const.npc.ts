@@ -219,6 +219,7 @@ export const defaultPsiTune: PsiTune = {
   opacity: 0.5,
   fadeSecs: 1.2,
   color: "#9fe8ff",
+  tint: 1,
 };
 
 /** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
@@ -229,6 +230,7 @@ export const psiTuneRanges = {
   width: [0.5, 8, 0.25],
   opacity: [0.05, 1, 0.05],
   fadeSecs: [0.1, 3, 0.1],
+  tint: [0, 1, 0.05],
 } as const;
 
 /** What the player's bubble adjusts of `Psi`, persisted */
@@ -246,6 +248,8 @@ export type PsiTune = {
   /** Seconds an influence takes to come, and to go */
   fadeSecs: number;
   color: string;
+  /** How much of `color`'s hue a contour carries: none is white */
+  tint: number;
 };
 
 /** `Swords`: wielding, and the rope from a pointer's right hand — see `w.swords` */

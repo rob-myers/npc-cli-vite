@@ -133,7 +133,8 @@ export function createRoomSlots(): RoomSlots {
       // red carries `roomId + 1`, so a zero is nothing at all rather than room zero. Nearest
       // filtered: a `DataArrayTexture` is by default, and interpolating ids means nothing.
       // Sampled ONCE, both channels off the one texel
-      const texel = texture(tex.tex, uvNode).depth(gmIndex);
+      const sampled = texture(tex.tex, uvNode).depth(gmIndex);
+      const texel = opts?.branched === true ? (sampled.level(float(0)) as typeof sampled) : sampled;
       const code = texel.r.mul(255).round();
       const roomSlot = gmIndex.toFloat().mul(MAX_ROOMS_PER_GEOMORPH).add(code).sub(1);
       // what no room reaches — the rim of the geomorph, the far half of a hull wall — reads as a
@@ -269,6 +270,8 @@ export type RoomSlots = {
        * a broad wall abuts many rooms and is shown whilst any of them is.
        */
       heedBroadWalls?: boolean;
+      /** Read within an `If`, where a sample may not find its own level: there is only the one */
+      branched?: boolean;
       /** With `heedBroadWalls`: a `vec2` of the slot without and with, off the one sample */
       both?: boolean;
     },
