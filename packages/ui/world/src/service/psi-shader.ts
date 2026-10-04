@@ -120,12 +120,12 @@ export function psiNodes(
   const { reachFade, blend, lift, cell, coneHalfDeg, coneSoftDeg } = shaderConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
+  const player = slotAt(int(0));
+  /** The furthest a slot is pushed: not past `reachFade`, where `log` races the rings */
   const maxPush = reach.sub(reachFade);
-  /** Distance to a slot, `pushed` out as its presence falls — not past `reachFade`, where `log` races the rings */
-  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, pushed: boolean) => {
-    const r = q.sub(slot.xy).length();
-    return pushed ? r.add(slot.z.oneMinus().mul(maxPush)) : r;
-  };
+  /** Distance to a slot, out by up to `push` as its presence falls */
+  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, push: THREE.Node<"float">) =>
+    q.sub(slot.xy).length().add(slot.z.oneMinus().mul(push));
   /** Each eased to nought at `reach`, since a hard cut steps the contours */
   const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
 
@@ -135,14 +135,14 @@ export function psiNodes(
    */
   const fieldOf = (pushed: boolean) =>
     Fn(([q]: [THREE.Node<"vec2">]) => {
-      const player = slotAt(int(0));
-      const rPlayer = distTo(q, player, pushed);
+      const rPlayer = distTo(q, player, pushed ? maxPush : float(0));
       const rOther = float(1e9).toVar();
       const hOther = float(1).toVar();
       const nearest = float(0).toVar();
       Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
         const slot = slotAt(i);
-        const r = distTo(q, slot, true); // else a fading other's hill would stand until dropped
+        // to just under the player's field, so it rises out of theirs for the whole of its fade
+        const r = distTo(q, slot, distTo(slot.xy, player, float(blend * 2)).min(maxPush));
         If(r.lessThan(rOther), () => {
           rOther.assign(r);
           hOther.assign(slot.w);
@@ -192,8 +192,7 @@ export function psiNodes(
   // a vertex well outside the cone the fragments keep is drawn onto the player, so a triangle of
   // them has no area and is never rasterised. "Well": by more than a triangle is wide, so none that
   // reaches into the cone is bent. Metres outside the wedge's nearer edge, as a half-plane
-  const playerXZ = slotAt(int(0)).xy;
-  const fromPlayer = worldXZ.sub(playerXZ);
+  const fromPlayer = worldXZ.sub(player.xy);
   const coneRad = ((coneHalfDeg + coneSoftDeg) * Math.PI) / 180;
   const outside = fromPlayer
     .dot(vec2(facing.y.negate(), facing.x))
@@ -202,14 +201,11 @@ export function psiNodes(
     .sub(fromPlayer.dot(facing).mul(Math.sin(coneRad)));
   const culled = outside.greaterThan(cell * 3);
   const vertexNode = cameraProjectionMatrix.mul(
-    cameraViewMatrix.mul(
-      selectAs<"vec4">(culled, vec4(playerXZ.x, lift, playerXZ.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1)),
-    ),
+    cameraViewMatrix.mul(selectAs<"vec4">(culled, vec4(player.x, lift, player.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1))),
   );
 
   const p = varying(worldXZ, "vPsiXZ");
   const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vPsiOwn");
-  const presence = varying(ownSlot.z, "vPsiPresence");
   // found per vertex, the uv being affine in position: the texture is read per pixel
   const gmUv = varying<"vec3">(gmUvAt(worldXZ) as THREE.Node<"vec3">, "vPsiGmUv");
 
@@ -227,7 +223,7 @@ export function psiNodes(
     const edge = smoothstep(maxPush, maxPush.add(gap), g).oneMinus();
 
     // only ahead of the player, within the cone they face down
-    const away = p.sub(slotAt(int(0)).xy);
+    const away = p.sub(player.xy);
     const ahead = away.dot(facing).div(away.length().max(1e-4));
     const cone = smoothstep(cosDeg(coneHalfDeg + coneSoftDeg), cosDeg(coneHalfDeg - coneSoftDeg), ahead);
 
@@ -240,12 +236,11 @@ export function psiNodes(
       .select(fadeRoomsFx.getVisiblity(slot), float(0))
       .max(fadeRoomsFx.sightNode.oneMinus());
 
-    const a = objectPick
-      .notEqual(0)
-      .select(
-        0,
-        line.mul(edge).mul(cone).mul(owned).mul(presence).mul(roomShown).mul(foldNode).mul(opacity.mul(gain).min(1)),
-      );
+    const a = objectPick.notEqual(0).select(
+      0,
+      // the player's presence: another fades by its push alone, else its part of the field would dim as it rose
+      line.mul(edge).mul(cone).mul(owned).mul(player.z).mul(roomShown).mul(foldNode).mul(opacity.mul(gain).min(1)),
+    );
     Discard(a.lessThan(1 / 512)); // most of a quad, which would otherwise still blend
     return playerLight.applyLightRgba(vec4(color, a));
   })();
