@@ -156,15 +156,17 @@ export const npcMaterialConfig = {
   ambient: 0.3,
   ambientInSight: 0.12,
   litAmbient: 0.4,
+  /** A light of the npcs' own, from straight above: how far an underside darkens, a side half as far */
+  faceShade: 0.85,
 } as const;
 
 export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
-  defensive: true,
   idle: true,
   lie: true,
   point: true,
+  point_avoid: true,
   psi: true,
   psi_avoid: true,
   run: true,
@@ -172,6 +174,8 @@ export const fromAnimationClipKey = {
   sit: true,
   strafe_left: true,
   strafe_right: true,
+  stun_aim: true,
+  stun_aim_avoid: true,
   walk: true,
 };
 
@@ -193,10 +197,10 @@ export const fadeSecs: Record<
 > = {
   backwards: {},
   breathe: { shuffle: 0.15 },
-  defensive: {},
   idle: { shuffle: 0.15 },
   lie: {},
   point: {},
+  point_avoid: {},
   psi: {},
   psi_avoid: {},
   run: { shuffle: 0.15, walk: 0.25 },
@@ -205,6 +209,8 @@ export const fadeSecs: Record<
   sit: {},
   strafe_left: {},
   strafe_right: {},
+  stun_aim: { shuffle: 0.15 },
+  stun_aim_avoid: {},
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
@@ -252,39 +258,22 @@ export type PsiTune = {
   tint: number;
 };
 
-/** `Swords`: wielding, and the rope from a pointer's right hand — see `w.swords` */
-export const swordConfig = {
-  /** Where the rope leaves the right forearm, above the wrist — its `+x` is up whilst pointing — in model units */
-  ropeFrom: [0.12, -0.26, 0] as [number, number, number],
-  /** Metres the unlocked stub reaches, on down the forearm: the hand ends at `0.074`, so just past it */
-  stub: 0.11,
-  /** Metres above the target's head bone the rope lands, for no body part */
-  headAbove: 0.3,
-  /** Metres of radius of the rope, and of the ball at its end */
-  radius: 0.01,
-  tipRadius: 0.035,
-  /** The stub's alpha, and the locked rope's on the way, and within `nearMetres` of the body part */
-  alpha: 0.35,
-  faint: 0.04,
-  solid: 0.9,
-  nearMetres: 0.25,
-  /** Pulses along the rope, drifting towards the target a band per second */
-  bands: 4,
-  color: "#ff8a5c",
-  fadeSecs: 0.3,
-  sides: 6,
-  segments: 24,
-  /** Metres ahead a wall or closed door blocks — just past the outstretched arm's `0.51`, so it is drawn in in time */
-  reach: 0.6,
-  /** Seconds they stay defensive at least — longer whilst something stays in reach */
+/** What an npc may be posed as — see jsh `pose` */
+export type PoseKey = keyof typeof poseConfig.poses;
+
+/** jsh `pose`: each one's upper clip, and the one drawn in to whilst a crowd neighbour is within `near` metres */
+export const poseConfig = {
+  poses: {
+    point: { upper: "point", avoid: "point_avoid" },
+  },
+  near: 0.65,
+  /** Seconds they stay drawn in at least, and take to draw in */
   holdSecs: 0.5,
   drawInSecs: 0.15,
-  /** Seconds between raycasts at most, and only once they, their target or a door has changed */
-  sampleSecs: 0.1,
-  /** Metres moved, or radians turned, that call for another raycast */
-  recastMoved: 0.05,
-  recastTurned: 0.05,
-};
+  /** Seconds the arm takes to come onto whom they pose `at`, from the fist's end in the right forearm's frame */
+  aimSecs: 0.3,
+  aimFrom: [0, -0.37, 0],
+} as const;
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
 export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };

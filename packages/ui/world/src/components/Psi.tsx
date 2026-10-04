@@ -35,7 +35,7 @@ export default function Psi() {
       tickedMs: performance.now(),
 
       choose(target) {
-        chooseInfluence(state.influence, target, w.player?.key, w.disabled);
+        chooseInfluence(state.influence, target, w.player?.key);
         state.syncTargetRoom();
         state.upload();
         w.r3f?.invalidate();
@@ -59,11 +59,14 @@ export default function Psi() {
         const secs = Math.min((now - state.tickedMs) / 1000, 0.1);
         state.tickedMs = now;
 
-        advanceInfluence(state.influence, secs / state.tune.fadeSecs, w.player?.key, (npcKey) => npcKey in w.n);
+        // held whilst paused: a choice made then shows once they play on
+        const step = w.disabled === true ? 0 : secs / state.tune.fadeSecs;
+        advanceInfluence(state.influence, step, w.player?.key, (npcKey) => npcKey in w.n);
         state.syncTargetRoom();
         state.upload();
       },
       syncTargetRoom() {
+        if (w.disabled === true) return; // as the rings: nothing changes whilst paused
         const target = state.getTarget();
         const at = (target === null ? undefined : w.npc?.npcToRoom.get(target)) ?? null;
         if (at?.grKey === state.targetRoom.at?.grKey) return;
@@ -128,7 +131,7 @@ export default function Psi() {
           player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined }); // not over another's e.g. `point`
         }
 
-        // the aim, at whom they influence, so a move strafes — only ours, as a drawn sword's is
+        // the aim, at whom they influence, so a move strafes — only ours, as a weapon's is
         const { face } = player.anim;
         if (face.aim === null || face.aim === state.ownAim) {
           const target = influencing ? w.n[current.npcKey] : undefined;
@@ -219,7 +222,7 @@ export type State = PsiResources & {
   flowAt: number;
   tickedMs: number;
 
-  /** Target `npcKey` — the player themself for their rings alone, `null` for off. At once whilst paused */
+  /** Target `npcKey` — the player themself for their rings alone, `null` for off. Shown once playing, if paused */
   choose(target: null | string): null | string;
   /** Off, else back on to the last target, or the player */
   toggle(): null | string;

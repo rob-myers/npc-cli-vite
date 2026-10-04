@@ -1,35 +1,48 @@
 import * as THREE from "three/webgpu";
 import type { Npc } from "../components/npc";
-import { swordConfig } from "../const.npc";
 import { eased, type Fade, stepFade } from "./fade";
 
-/** Whom a sword locks on to, and which of their bones' parts — `null`, or none such, is over their head */
-export type RopeTarget = { npcKey: string; part: null | string };
+/** Whom a weapon locks on to, and which of their bones' parts — `null`, or none such, is over their head */
+export type BeamTarget = { npcKey: string; part: null | string };
 
 /**
- * A sword's rope: a stub whilst `shown`, locked on to `to` as `locked` comes in. A new target waits
- * for the old to fade out — bar whilst locked on, when the end glides straight there.
+ * A weapon's beam, `shown` and `locked` on to `to` together, and the `gun` it leaves. A new target
+ * waits for the old to fade out — bar whilst locked on, when the end glides straight there.
  */
-export type Rope = {
+export type Beam = {
+  gun: Fade;
   shown: Fade;
   locked: Fade;
   /** Whom it is locked on to, or fading off */
-  to: null | RopeTarget;
+  to: null | BeamTarget;
   /** Whom it is to be: pointing, and in sight */
-  next: null | RopeTarget;
+  next: null | BeamTarget;
   /** Gliding to a new `to`: from where the end was, and how far along */
   glide: null | { from: THREE.Vector3; t: number };
-  /** Where it ended, last tick */
+  /** Where it ended, last tick, and where it is drawn to: the body part, gliding */
   end: THREE.Vector3;
+  at: THREE.Vector3;
 };
 
-export function createRope(): Rope {
+export function createBeam(): Beam {
   const off = (): Fade => ({ presence: 0, target: 0 });
-  return { shown: off(), locked: off(), to: null, next: null, glide: null, end: new THREE.Vector3() };
+  return {
+    gun: off(),
+    shown: off(),
+    locked: off(),
+    to: null,
+    next: null,
+    glide: null,
+    end: new THREE.Vector3(),
+    at: new THREE.Vector3(),
+  };
 }
 
-/** Every fade a `step` further, forgetting a `next` that `exists` denies — `instant` lands it all, as whilst paused */
-export function advanceRope(x: Rope, step: number, exists: (npcKey: string) => boolean, instant: boolean) {
+/**
+ * Every fade a `step` further, forgetting a `next` that `exists` denies — `instant` lands the beam, as whilst
+ * paused, but holds the gun: it comes and goes with the arm, which is then still
+ */
+export function advanceBeam(x: Beam, step: number, exists: (npcKey: string) => boolean, instant: boolean) {
   if (x.next !== null && exists(x.next.npcKey) === false) x.next = null;
   if (sameTarget(x.to, x.next) === false) {
     const gliding = instant === false && x.to !== null && x.next !== null && x.locked.presence > 0;
@@ -38,24 +51,25 @@ export function advanceRope(x: Rope, step: number, exists: (npcKey: string) => b
   }
   x.locked.target = x.to !== null && x.next !== null ? 1 : 0;
 
+  stepFade(x.gun, instant ? 0 : step);
   if (instant) step = 1;
   stepFade(x.shown, step);
   stepFade(x.locked, step);
   if (x.glide !== null && (x.glide.t = Math.min(1, x.glide.t + step)) === 1) x.glide = null;
 }
 
-/** Where the rope from `tip` ends: its stub, on down the arm `along`, drawn to `dst` as it locks on */
-export function ropeEnd(x: Rope, tip: THREE.Vector3, along: THREE.Vector3, dst: undefined | Npc) {
-  const end = x.end.copy(tip).addScaledVector(along, swordConfig.stub);
+/** Where the beam from `tip` ends: its stub, on down the arm `along`, drawn to `dst` as it locks on */
+export function beamEnd(x: Beam, tip: THREE.Vector3, along: THREE.Vector3, dst: undefined | Npc) {
+  const end = x.end.copy(tip).addScaledVector(along, beamConfig.stub);
   if (dst !== undefined) {
-    const at = bodyPartPoint(dst, x.to?.part ?? null, tmpAt);
+    const at = bodyPartPoint(dst, x.to?.part ?? null, x.at);
     if (x.glide !== null) at.lerpVectors(x.glide.from, tmpGlide.copy(at), eased(x.glide.t)); // tracks the target meanwhile
     end.lerp(at, eased(x.locked.presence));
   }
   return end;
 }
 
-const sameTarget = (a: null | RopeTarget, b: null | RopeTarget) =>
+const sameTarget = (a: null | BeamTarget, b: null | BeamTarget) =>
   a === b || (a !== null && b !== null && a.npcKey === b.npcKey && a.part === b.part);
 
 /** The middle of `part` on `npc`, in world space — over their head, where their label is, for none */
@@ -63,7 +77,7 @@ function bodyPartPoint(npc: Npc, part: null | string, out: THREE.Vector3) {
   const bone = part === null || part === "label" ? undefined : npc.skinnedMesh.skeleton.getBoneByName(part);
   const centre = bone === undefined ? undefined : partCentres(npc.skinnedMesh).get(bone.name);
   if (bone === undefined || centre === undefined) {
-    return out.set(npc.position.x, npc.position.y + npc.anim.headY + swordConfig.headAbove, npc.position.z);
+    return out.set(npc.position.x, npc.position.y + npc.anim.headY + beamConfig.headAbove, npc.position.z);
   }
   bone.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
   return out.copy(centre).applyMatrix4(bone.matrixWorld);
@@ -95,5 +109,11 @@ function partCentres(mesh: THREE.SkinnedMesh) {
 }
 
 const partCentresByGeo = new WeakMap<THREE.BufferGeometry, Map<string, THREE.Vector3>>();
-const tmpAt = new THREE.Vector3();
 const tmpGlide = new THREE.Vector3();
+
+const beamConfig = {
+  /** Metres the beam is drawn back to as it lets go, on past the muzzle */
+  stub: 0.05,
+  /** Metres above the target's head bone the beam lands, for no body part */
+  headAbove: 0.3,
+} as const;

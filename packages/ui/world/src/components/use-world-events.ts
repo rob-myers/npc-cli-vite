@@ -159,7 +159,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
 
           npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
-          npc.anim.strafeFollowsAim = strafe === undefined; // so a sword drawn mid-move strafes at once
+          npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
           npc.anim.backwards =
             npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
           npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
@@ -390,7 +390,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
-        w.swords?.syncTheme();
+        w.arms?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
@@ -557,8 +557,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.syncFadeRooms();
             break;
           }
-          case "swords":
-            if (!e.drawn) return;
+          case "arms":
+            if (!e.armed) return;
             for (const npcKey of e.npcKeys) {
               if (npcKey === w.player.key) {
                 w.psi.choose(null);
@@ -698,11 +698,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "npc-pre-do":
-            if (w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            if (w.arms?.isArmed(e.npcKey)) w.arms.disarm(e.npcKey);
             if (e.npcKey === w.player.key) w.psi?.choose(null); // psi is the player's alone
             break;
           case "npc-do":
-            if (e.decorKey !== null && w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            if (e.decorKey !== null && w.arms?.isArmed(e.npcKey)) w.arms.disarm(e.npcKey);
             if (e.decorKey !== null && e.npcKey === w.player.key) w.psi?.choose(null);
             break;
           case "enter-doorway":
@@ -1107,7 +1107,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.psi?.onTick();
-        w.swords?.onTick();
+        w.arms?.onTick();
       },
       syncNpcRoomSlots() {
         const fx = w.view.fadeRoomsFx;

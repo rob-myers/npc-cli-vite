@@ -68,12 +68,11 @@ import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
 import { loadSkinSheets } from "../service/skin-sheets";
-import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
 import { selectAs } from "../service/tsl";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
-import { NpcAnimation } from "./npc-animation";
+import { emptyAnimationClip, NpcAnimation } from "./npc-animation";
 import { WorldContext } from "./world-context";
 
 export default function NPCs() {
@@ -140,6 +139,7 @@ export default function NPCs() {
           ambient,
           ambientInSight,
           litAmbient,
+          faceShade,
         } = npcMaterialConfig;
         const skinIndexUniform = uniform(skinIndex);
         // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
@@ -182,7 +182,6 @@ export default function NPCs() {
         const fold = w.view.foldNode;
 
         const toEye = cameraPosition.sub(positionWorld).normalize();
-        // the rim alone: `N·V` is near 1 over all the camera sees, so on skin it shaded a silhouette
         const facing = normalWorld.dot(toEye).clamp(0, 1);
 
         // ambient + the player's light + more whilst lit, the light taking what the ambient leaves
@@ -193,6 +192,8 @@ export default function NPCs() {
           .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
           .add(litAmount.mul(litAmbient))
           .clamp(0, 1)
+          // flat-shaded from straight above, half-Lambert: whatever the light, and steady as the camera turns
+          .mul(normalWorld.y.mul(faceShade / 2).add(1 - faceShade / 2))
           .mul(fold)
           .mul(state.dimNode);
 
@@ -861,17 +862,18 @@ export default function NPCs() {
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
 
-    /** on new clips fade old ones, else hmr can break animations */
+    const staleClips = pairedClips.flatMap(([oldClip, clip]) => (oldClip === clip ? [] : [oldClip]));
+    /** on new clips show the pose afresh: carrying each old action over revives one caught fading out */
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
       npc.anim.idleClip = clips[npc.anim.idleClip.name as AnimationClipKey] ?? clips[defaultIdleAnimationClipKey];
-      for (const [oldClip, clip] of pairedClips) {
-        if (oldClip === clip) continue;
-        const oldAct = npc.anim.mixer.existingAction(oldClip);
-        if (!oldAct || !oldAct.isRunning()) continue;
-        const act = npc.anim.mixer.clipAction(clip);
-        crossFadeSynchronized(oldAct, act, 0);
-      }
+      if (staleClips.length === 0 || npc.group === null) continue; // unmounted: the mount shows it
+      npc.anim.mixer.stopAllAction();
+      for (const oldClip of staleClips) npc.anim.mixer.uncacheClip(oldClip);
+      npc.anim.setPose(npc.anim.pose, { fade: 0, force: true });
+      // at once: stopping left the bind pose, and no tick comes whilst paused
+      npc.anim.mixer.update(0);
+      npc.anim.tickUpper(0);
     }
 
     state.skin = { entries: Object.values(w.sheets.skin), manifest: queryData.skinManifest };

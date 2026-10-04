@@ -10,8 +10,8 @@ separate, simpler rule, covered at the end.
 
 - `strafe` defaults to whether they aim: `strafe ?? Boolean(npc.anim.face.aim)`.
 - **Left to that default, it follows the aim mid-move** (`strafeFollowsAim`): `NpcAnimation.tick`
-  calls `setStrafe` as `face.aim` comes or goes, so a sword drawn whilst moving strafes at once and a
-  sheathed one lets go. A move told `strafe` either way keeps it. Letting go restores the move's own
+  calls `setStrafe` as `face.aim` comes or goes, so an npc armed whilst moving strafes at once and a
+  disarmed one lets go. A move told `strafe` either way keeps it. Letting go restores the move's own
   `fast` (`fastAsked`), so they run again.
 - Strafing rules out `backwards` and `fast`: one gait blend, never running.
 - `turnBeforeMoving` returns at once: they set off without turning.
@@ -34,8 +34,8 @@ turning to it is the usual exponential ease.
 - **jsh `look --strafe`**: `look rob --strafe at:$( pick 1 )`, `look rob --strafe at:1.57`,
   `look rob --strafe at:kate rate:0.5`; a bare `look rob --strafe` clears it. Piped
   (`pick --right | look rob --strafe`), each pick re-aims them until killed, and picking them clears it.
-- A drawn sword (`w.swords`, jsh `sword`, `q` for the player) aims at its lock's target every tick, but
-  replaces or clears only an aim it set, so a look still turns them. Drawn at nobody, it holds their
+- An armed npc (`w.arms`, jsh `arm` / `disarm`, `q` for the player) aims at their target every tick, but
+  replaces or clears only an aim it set, so a look still turns them. Armed at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.
 - Psi on another (`w.psi`, `Psi.syncHands`) aims the player at them every tick, likewise only an aim it
@@ -75,7 +75,7 @@ Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
 out as above.
 `moveClipFadedIn`, which holds up arrival until the gait has faded in, counts all four.
 
-The upper-body overlay (`setUpper`, e.g. `point`, `psi`) is unaffected: it blends the arms and head
+The upper-body overlay (`setUpper`, e.g. `stun_aim`, `psi`) is unaffected: it blends the arms and head
 from whatever the mixer wrote.
 
 ## The clips
@@ -121,6 +121,6 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 - `components/npc.ts` — `look`, which aims instead whilst strafing
 - `components/use-world-events.ts` — `w.e.move`, `isBackStep`
 - `components/NPCs.tsx` — `turnBeforeMoving`, the tick's facing, `moveClipFadedIn`
-- `components/Swords.tsx` — `wield`, which sets or withholds a drawn sword's aim
+- `components/Arms.tsx` — `wield`, which sets or withholds an armed npc's aim
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
 - `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `look --strafe`
