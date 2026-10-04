@@ -88,6 +88,7 @@ export default function Arms() {
           const { h } = state.color.value.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
           state.color.value.setHSL(h, 1, shaderConfig.paleLightness, THREE.SRGBColorSpace);
         }
+        state.gunColor.value.set(pale ? shaderConfig.paleGunColor : shaderConfig.gunColor);
         state.gain.value = pale ? 1 : theme.npcs.fxStrength;
         state.faint.value = pale ? shaderConfig.paleFaint : shaderConfig.faint;
         const blending = pale ? THREE.NormalBlending : THREE.AdditiveBlending;
@@ -304,7 +305,7 @@ export type State = ArmsResources & {
   isArmed(npcKey: string): boolean;
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
-  /** The beam's gain, ink and blending from the theme — called by `onChangeTheme` */
+  /** The gun's colour and the beam's gain, ink and blending from the theme — called by `onChangeTheme` */
   syncTheme(): void;
   /** Armed, unlocked, else disarmed: returns whether they now are */
   toggle(npcKey: string): boolean;

@@ -48227,7 +48227,7 @@
       "floor": {"hullFill": "#0b0d10", "deck": "dark"},
       "lights": {"unlit": 1, "unlitTint": "#000000", "cone": 0.7},
       "obstacles": {"brightness": 1},
-      "npcs": {"ambient": 0, "brightness": 0.25, "fxStrength": 2},
+      "npcs": {"ambient": 0, "brightness": 0.45, "fxStrength": 2},
       "doors": {
         "brightness": 2,
         "opacity": 0.8,

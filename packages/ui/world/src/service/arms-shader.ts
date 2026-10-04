@@ -8,12 +8,14 @@ import {
   Fn,
   float,
   fract,
+  fwidth,
   mix,
   normalize,
   normalLocal,
   positionLocal,
   smoothstep,
   uniform,
+  uv,
   varying,
   vec3,
   vec4,
@@ -67,7 +69,7 @@ export function createArmsResources() {
   const base = mergeGeometries([gun, beam, ball], true); // a group apiece, as `armsParts`
 
   const geo = new THREE.InstancedBufferGeometry();
-  for (const key of ["position", "normal", "armsGlow"]) geo.setAttribute(key, base.getAttribute(key));
+  for (const key of ["position", "normal", "uv", "armsGlow"]) geo.setAttribute(key, base.getAttribute(key));
   geo.setIndex(base.getIndex());
   for (const { start, count, materialIndex } of base.groups) geo.addGroup(start, count, materialIndex);
   ["armsSrc", "armsDst", "armsRooms", "armsGun", "armsQuat"].forEach((key, i) => geo.setAttribute(key, attrs[i]));
@@ -122,6 +124,7 @@ const seenBy =
 
 /** The gun, held along the forearm */
 function gunNodes({ color, gunColor, gain }: ArmsResources, view: ArmsView) {
+  const { edgePx, edgeDarken } = shaderConfig;
   const gun = attribute<"vec4">("armsGun", "vec4");
   const quat = attribute<"vec4">("armsQuat", "vec4");
   /** `v` turned by the forearm's quaternion */
@@ -142,7 +145,12 @@ function gunNodes({ color, gunColor, gain }: ArmsResources, view: ArmsView) {
   const colorNode = Fn(() => {
     const a = view.objectPick.notEqual(0).select(0, vSeen.mul(view.foldNode));
     Discard(a.lessThan(1 / 512));
-    return vec4(mix(gunColor.mul(vShade), color.mul(gain.min(1)), vGlow), a);
+    // each face edged in a darker line, a constant few pixels wide: `uv` runs `0` to `1` across a box's face
+    const face = uv();
+    const fromEdge = face.min(face.oneMinus()).div(fwidth(face).max(1e-6));
+    const edge = smoothstep(edgePx - 0.5, edgePx + 0.5, fromEdge.x.min(fromEdge.y)).oneMinus();
+    const body = mix(gunColor.mul(vShade), color.mul(gain.min(1)), vGlow);
+    return vec4(body.mul(edge.mul(edgeDarken).oneMinus()), a);
   })();
 
   return { vertexNode, colorNode };
@@ -210,7 +218,12 @@ export const shaderConfig = {
       [0.15, -0.48, 0.025],
     ],
   ] as [number[], number[]][],
-  gunColor: "#8a94a3",
+  /** Pale against a dark deck, and dark against a pale one */
+  /** Pixels of darker line along each of the gun's edges, and how far it darkens */
+  edgePx: 1,
+  edgeDarken: 0.6,
+  gunColor: "#5f6875",
+  paleGunColor: "#474d57",
   /** Metres of radius of the beam, and of the ball at its end */
   radius: 0.01,
   tipRadius: 0.035,
