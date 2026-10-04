@@ -148,6 +148,7 @@ export default function WorldHtml() {
         r3f={w.r3f}
         tracked={tracked}
         visible={visible}
+        minScale={bare ? bareMinScale : undefined}
       >
         <div
           ref={(el) => void (entry.frame = el)}
@@ -278,5 +279,7 @@ const zeroVec = new THREE.Vector3();
 const tmpVec = new THREE.Vector3();
 /** `Html3d` scales the content down, as `NpcBubble` compensates with large rem sizes */
 const htmlZoom = 2;
+/** A bare entry is words to be read: about 10px of them at the furthest zoom, where it would be 6px */
+const bareMinScale = 0.25;
 const minWidth = 240;
 const minHeight = 120;

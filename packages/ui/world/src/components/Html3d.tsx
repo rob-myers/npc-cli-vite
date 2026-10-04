@@ -32,7 +32,7 @@ export const Html3d = forwardRef<State, Props>((props, ref) => {
           state.rootDiv.style.transform = `translate3d(${vec.x}px,${vec.y}px,0)`;
 
           v1.setFromMatrixPosition(props.tracked.object.matrixWorld).add(props.tracked.offset);
-          const scale = objectScale(v1, props.r3f.camera) * baseScale;
+          const scale = Math.max(props.minScale ?? 0, objectScale(v1, props.r3f.camera) * baseScale);
           state.innerDiv.style.transform = `scale(${scale})`;
 
           state.delta = vec;
@@ -54,7 +54,7 @@ export const Html3d = forwardRef<State, Props>((props, ref) => {
         return calculatePosition(v1, props.r3f.camera, props.r3f.get().size);
       },
     }),
-    { deps: [props.offset, props.position, props.tracked] },
+    { deps: [props.offset, props.position, props.tracked, props.minScale] },
   );
 
   useImperativeHandle(ref, () => state, []);
@@ -137,6 +137,8 @@ type Props = Omit<React.HTMLAttributes<HTMLDivElement>, "ref"> & {
   position: THREE.Vector3;
   tracked: TrackedObject3D;
   visible: boolean;
+  /** The least it is drawn at however far off, e.g. words which must stay legible */
+  minScale?: number;
 };
 
 export type State = {
