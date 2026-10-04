@@ -54,6 +54,23 @@ export function WorldSpeech() {
         state.talks = {};
         state.update();
       },
+      clearThread(threadKey) {
+        const parties = new Set<string>();
+        state.history = state.history.filter((entry) => {
+          const theirs = entry.parties ?? [entry.npcKey];
+          if (threadKeyOf(theirs) !== threadKey) return true;
+          for (const npcKey of theirs) parties.add(npcKey);
+          return false;
+        });
+        delete state.talks[threadKey];
+        w.bubble.release(...parties); // a line held for an answer has none coming
+        state.update();
+      },
+      clearEntries(ids) {
+        const gone = new Set(ids);
+        state.history = state.history.filter((entry) => gone.has(entry.id) === false);
+        state.update();
+      },
       startTalk(conv, npcKey) {
         const playerKey = w.player?.key;
         if (playerKey === undefined || playerKey === npcKey || !(playerKey in w.n) || !(npcKey in w.n)) return false;
@@ -63,7 +80,6 @@ export function WorldSpeech() {
           npcKey,
           playerKey,
           at,
-          from: null,
           answer: null,
           seen: new Set([at]),
         };
@@ -79,7 +95,6 @@ export function WorldSpeech() {
         if (state.getPips(talk, choice).some((pip) => pip.met === false)) return;
         // they take a moment to answer, in world time — see `onTick`
         talk.answer = { nodeId: choice.to, secs: answerSecs };
-        talk.from = null;
         state.say(talk.playerKey, choice.text, undefined, { to: [talk.npcKey], hold: true });
       },
       answerTalk(threadKey) {
@@ -98,10 +113,13 @@ export function WorldSpeech() {
       revisitTalk(threadKey, entryId) {
         const talk = state.talks[threadKey];
         const nodeId = state.history.find((entry) => entry.id === entryId)?.nodeId;
-        if (talk === undefined || nodeId === undefined || talk.answer !== null) return;
+        const node = nodeId === undefined ? undefined : talk?.conv.nodes[nodeId];
+        if (talk === undefined || nodeId === undefined || node === undefined || talk.answer !== null) return;
+        if (!(talk.npcKey in w.n)) return;
+        // said again, at the foot: what was said since stays as it was
         talk.at = nodeId;
-        talk.from = entryId;
-        state.update();
+        const hold = (node.choices?.length ?? 0) > 0;
+        state.say(talk.npcKey, node.text, undefined, { to: [talk.playerKey], nodeId, hold });
       },
       getPips(talk, choice) {
         const player = w.n[talk.playerKey];
@@ -296,7 +314,8 @@ export function WorldSpeech() {
               exit={{ opacity: 0, x: 8 }}
               transition={{ duration: 0.15 }}
               className={cn(
-                "relative pointer-events-auto mt-1 flex flex-col bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1",
+                // see-through, the World behind it softened: what is said keeps its own ground
+                "relative pointer-events-auto mt-1 flex flex-col bg-slate-800/45 backdrop-blur-xs border border-slate-700/70 rounded-md shadow-lg py-1",
                 big && "py-2",
               )}
               style={{ width: state.historyWidth }}
@@ -339,7 +358,7 @@ export function WorldSpeech() {
                 <div
                   // its own ink: the panel is dark in either theme
                   className={cn(
-                    "flex flex-col gap-3 px-2 pb-2 overflow-y-auto text-xs text-slate-300",
+                    "flex flex-col gap-3 px-2 pb-2 overflow-y-auto scrollbar-thin text-xs text-slate-300",
                     big && "text-sm",
                   )}
                   style={{ height: state.historyHeight }}
@@ -418,12 +437,13 @@ function SpeechThread({ thread }: { thread: Thread }) {
       text: entry.words,
       topic: said === undefined ? undefined : topic,
       who: thread.parties.length > 2 ? entry.npcKey : undefined,
-      marked: talk?.from === entry.id,
-      title: "answer this again",
-      onClick:
-        talk !== undefined && entry.nodeId !== undefined && entry.id !== lastId && gone === false
-          ? () => w.speech.revisitTalk(thread.key, entry.id)
-          : undefined,
+      ...(talk !== undefined &&
+        entry.nodeId !== undefined &&
+        entry.id !== lastId &&
+        gone === false && {
+          title: "answer this again",
+          onClick: () => w.speech.revisitTalk(thread.key, entry.id),
+        }),
     };
   });
   const replies =
@@ -445,12 +465,19 @@ function SpeechThread({ thread }: { thread: Thread }) {
             <NpcKeyMenu npcKey={npcKey} className="px-1 text-xs" />
           </span>
         ))}
+        <XIcon
+          className="ml-auto size-3.5 shrink-0 cursor-pointer text-slate-600 hover:text-red-300"
+          onClick={() => w.speech.clearThread(thread.key)}
+        >
+          <title>clear this conversation</title>
+        </XIcon>
       </div>
       <TalkThread
         lines={lines}
         replies={replies}
-        repliesKey={`${talk?.at}:${talk?.from}`}
+        repliesKey={`${talk?.at}:${lastId}`}
         typing={talk !== undefined && talk.answer !== null}
+        onClear={(ids) => w.speech.clearEntries(ids.filter((id) => typeof id === "number"))}
         footer={
           talk !== undefined &&
           (gone ? (
@@ -577,8 +604,6 @@ export type Talk = {
   playerKey: string;
   /** The line now replied to */
   at: string;
-  /** The earlier entry `at` was taken back to, if any */
-  from: null | number;
   /** The player has spoken, and the npc will answer with `nodeId` in `secs` of world time */
   answer: null | { nodeId: string; secs: number };
   /** Lines reached, so a reply leading to one is ticked */
@@ -618,6 +643,10 @@ export type State = {
   addMenuItem(item: SpeechMenuItem): void;
   removeMenuItem(key: string): void;
   clear(): void;
+  /** Some lines of the history, e.g. a talk's run about one topic — the talk carries on */
+  clearEntries(ids: number[]): void;
+  /** One thread's history, and its talk — two parties, one, or a group's */
+  clearThread(threadKey: string): void;
   getMaxY(): number;
   getClampedY(y: number): number;
   getMaxHistoryHeight(): number;
@@ -640,7 +669,7 @@ export type State = {
   chooseTalk(threadKey: string, index: number): void;
   /** The npc says the line the player's reply led to, unless gone */
   answerTalk(threadKey: string): void;
-  /** Replies to an earlier line again: whatever is said next is appended, nothing removed */
+  /** The npc says an earlier line again, at the foot, and it is replied to there: nothing is removed */
   revisitTalk(threadKey: string, entryId: number): void;
   /** A reply's tests, as pips */
   getPips(talk: Talk, choice: ConversationChoice): TalkPip[];

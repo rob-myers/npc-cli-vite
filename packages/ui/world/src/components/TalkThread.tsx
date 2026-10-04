@@ -1,5 +1,5 @@
 import { cn } from "@npc-cli/util";
-import { CaretUpIcon, CheckIcon, DotsThreeIcon } from "@phosphor-icons/react";
+import { CaretUpIcon, CheckIcon, DotsThreeIcon, XIcon } from "@phosphor-icons/react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
 import "./talk-thread.css";
@@ -18,6 +18,8 @@ export function TalkThread(props: {
   typing?: boolean;
   /** Under the replies, or instead of them */
   footer?: React.ReactNode;
+  /** Given, each topic's rule clears its run of lines: theirs by `id` */
+  onClear?(ids: TalkLine["id"][]): void;
 }) {
   const [spread, setSpread] = useState(false);
   useEffect(() => setSpread(false), [props.lines.length]);
@@ -36,14 +38,18 @@ export function TalkThread(props: {
     last.left = { id: "typing", side: "left", text: "" };
   }
 
+  /** Enough rows that folding hides more than the pill it costs */
+  const foldable = rows.length - 2 >= minFolded;
+  const folded = foldable && spread === false;
+
   return (
     // room for the tails either side
     <div className="flex flex-col gap-3 px-2 py-1">
-      {rows.length > 2 && (
+      {foldable && (
         <button
           type="button"
           title={spread ? "fold them away" : "show them"}
-          className="self-center flex items-center gap-1 px-2 rounded-full border border-zinc-700 text-[10px] text-zinc-500 cursor-pointer hover:bg-zinc-800 hover:text-zinc-100"
+          className="self-center flex items-center gap-1 px-2 rounded-full border border-zinc-700 bg-zinc-900/70 text-[10px] text-zinc-400 cursor-pointer hover:bg-zinc-800 hover:text-zinc-100"
           onClick={() => setSpread(spread === false)}
         >
           {spread ? (
@@ -57,18 +63,26 @@ export function TalkThread(props: {
       {rows.map((row, i) => {
         const latest = i === rows.length - 1;
         /** The one before the latest: dimmed, whilst those before it are folded into the ellipsis */
-        const piled = i === rows.length - 2 && spread === false;
+        const piled = i === rows.length - 2 && folded;
         /** The latest, with the earlier ones spread above it: a click folds them again */
-        const piles = latest && spread && rows.length > 2;
-        if (spread === false && i < rows.length - 2) return null;
+        const piles = latest && spread && foldable;
+        if (folded && i < rows.length - 2) return null;
         const topic = row.left?.topic;
         /** Folded, the first row shown names its topic whether or not it turned to it there */
-        const heads = spread === false && i === Math.max(0, rows.length - 2);
+        const heads = folded && i === rows.length - 2;
         return (
           <Fragment key={row.left?.id ?? row.right?.id}>
             {topic !== undefined && (heads || topic !== rows[i - 1]?.left?.topic) && (
               <div className="talk-topic text-[10px] uppercase" style={{ color: `hsl(${topicHue(topic)} 60% 60%)` }}>
                 {topic}
+                {props.onClear !== undefined && (
+                  <XIcon
+                    className="size-3 cursor-pointer opacity-50 hover:opacity-100"
+                    onClick={() => props.onClear?.(runIds(rows, i))}
+                  >
+                    <title>clear these lines</title>
+                  </XIcon>
+                )}
               </div>
             )}
             {/* said and answered on one row, the answer a little lower: on its own only when too long */}
@@ -171,7 +185,6 @@ function Bubble(props: { line: TalkLine; faded: boolean; typing?: boolean; activ
         "talk-bubble max-w-[85%] px-2.5 py-1 select-text",
         line.side === "left" ? "mr-auto mt-3 bg-zinc-900" : "bg-zinc-300 text-zinc-950",
         props.faded ? "brightness-75 hover:brightness-100" : line.side === "left" && "text-zinc-100",
-        line.marked === true && "talk-marked",
         onClick !== undefined && "cursor-pointer",
       )}
       style={
@@ -191,6 +204,19 @@ function Bubble(props: { line: TalkLine; faded: boolean; typing?: boolean; activ
       )}
     </div>
   );
+}
+
+/** The lines of the run of rows about one topic which row `at` is in, a row with none going with those before */
+function runIds(rows: ReturnType<typeof toRows>, at: number) {
+  const topics: (string | undefined)[] = [];
+  for (const row of rows) topics.push(row.left?.topic ?? topics.at(-1));
+  let [from, to] = [at, at];
+  while (from > 0 && topics[from - 1] === topics[at]) from--;
+  while (to < rows.length - 1 && topics[to + 1] === topics[at]) to++;
+  return rows
+    .slice(from, to + 1)
+    .flatMap((row) => [row.right, row.left])
+    .flatMap((line) => (line === undefined || line.id === "typing" ? [] : [line.id]));
 }
 
 /** A reply and the answer to it share a row */
@@ -220,8 +246,6 @@ export type TalkLine = {
   topic?: string;
   /** Who says it, where more than two talk */
   who?: string;
-  /** Where the replies come from, when not the latest */
-  marked?: boolean;
   title?: string;
   onClick?(): void;
 };
@@ -234,3 +258,5 @@ export type TalkPip = { label: string; met?: boolean };
 /** An emoji whole: its variation selector, and whatever a joiner ties on */
 const emojiRe = /\p{Extended_Pictographic}️?(?:‍\p{Extended_Pictographic}️?)*/gu;
 const choiceStaggerMs = 40;
+/** The fewest earlier rows worth folding away */
+const minFolded = 2;
