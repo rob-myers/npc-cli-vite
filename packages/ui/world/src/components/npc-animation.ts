@@ -115,17 +115,21 @@ export class NpcAnimation {
     const { clips } = this.npc;
     const shown = next === "walk" && this.strafe === true ? strafeClipKeys : [next];
     for (const clip of Object.values(clips)) {
-      if (shown.every((key) => clips[key] !== clip)) this.mixer.existingAction(clip)?.fadeOut(fade);
+      if (shown.some((key) => clips[key] === clip)) continue;
+      const hidden = this.mixer.existingAction(clip);
+      // a fade of no length weighs nothing until time moves on, which whilst paused it does not
+      if (fade > 0) hidden?.fadeOut(fade);
+      else hidden?.stop();
     }
     const action = this.mixer.clipAction(clips[next]);
     /** Already on show, e.g. walk as a strafe starts: restarting it would pop the feet and dip its weight */
     const kept = next === this.pose && action.isRunning();
-    if (kept === false) action.reset().fadeIn(fade).play();
+    if (kept === false) (fade > 0 ? action.reset().fadeIn(fade) : action.reset()).play();
     action.weight = 1; // `syncStrafe` weighs the four, fading or not
     for (const key of shown.slice(1)) {
       const other = this.mixer.clipAction(clips[key]).reset().play();
       other.weight = 0;
-      if (kept === false) other.fadeIn(fade); // else `syncStrafe` eases them in from nought
+      if (kept === false && fade > 0) other.fadeIn(fade); // else `syncStrafe` eases them in from nought
     }
     this.strafing = shown.length > 1;
     // walk <-> run: the phase carries over, else the feet pop

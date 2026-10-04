@@ -335,6 +335,7 @@ export class Npc {
     const clip = this.anim.moving === true ? this.anim.moveClip : this.anim.idleClip;
     this.anim.setPose(clip.name as AnimationClipKey, { fade: 0, force: true });
     this.anim.mixer.update(0);
+    this.anim.tickUpper(0); // an upper pose too, e.g. whilst paused
   };
 
   /**
