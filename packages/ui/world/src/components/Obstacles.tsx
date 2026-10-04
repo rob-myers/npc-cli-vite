@@ -16,7 +16,6 @@ import {
   mix,
   normalWorld,
   positionWorld,
-  select,
   step,
   texture,
   transformNormalToView,
@@ -31,7 +30,8 @@ import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../co
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
-import { bootstrapInstanceColor, type SelectAnyType } from "../service/texture";
+import { bootstrapInstanceColor } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
 export default function Obstacles(_props: Props) {
@@ -323,11 +323,7 @@ export default function Obstacles(_props: Props) {
         // a sprite's soft edge lets the floor through, a grey line once the top is the page's
         // colour: so as it goes its edge hardens, any coverage at all counting as full
         const alpha = mix(step(softEdgeFrom, lit.a), lit.a, shown);
-        return (select as SelectAnyType)(
-          w.view.objectPick.notEqual(0),
-          lit,
-          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), alpha),
-        );
+        return selectAs(w.view.objectPick.notEqual(0), lit, vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), alpha));
       })(),
       uid: generateUUID(),
     };
@@ -370,7 +366,7 @@ export default function Obstacles(_props: Props) {
       attribute<"float">("obstacleIds", "float"),
     ) as THREE.Node<"vec4">;
     const shown = skirtFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-    mat.outputNode = (select as SelectAnyType)(
+    mat.outputNode = selectAs(
       w.view.objectPick.notEqual(0),
       lit,
       vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),

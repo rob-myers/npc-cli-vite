@@ -348,7 +348,8 @@ export class TtyShell implements Device {
 
       if (
         this.disabled === true &&
-        // paused, except those tagged interactive
+        // paused, except those tagged always or interactive
+        process.ptags[ProcessTag.always] !== true &&
         !(ProcessTag.interactive in process.ptags) &&
         this.spawnBgPaused === true
       ) {
@@ -469,12 +470,12 @@ export class TtyShell implements Device {
   /**
    * 🔔 This runs code `src` in a process whose parent is the session leader.
    */
-  async sourceExternal(src: string, opts: { background?: boolean } = {}) {
+  async sourceExternal(src: string, opts: { background?: boolean; ptags?: Ptags } = {}) {
     const term = await parseService.parse(src);
     this.provideContextToParsed(term);
 
     if (opts.background !== true) {
-      return await this.spawn(term, { by: "source-external", origSrc: src });
+      return await this.spawn(term, { by: "source-external", origSrc: src, ptags: opts.ptags });
     }
 
     // own process group so it leads and emits external events
@@ -483,7 +484,7 @@ export class TtyShell implements Device {
       by: "source-external",
       origSrc: src,
       localVar: true,
-      ptags: { [ProcessTag.interactive]: undefined },
+      ptags: { ...opts.ptags, [ProcessTag.interactive]: undefined },
     });
   }
 

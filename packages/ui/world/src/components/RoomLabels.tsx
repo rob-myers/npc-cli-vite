@@ -1,12 +1,12 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
-import { cameraProjectionMatrix, cameraViewMatrix, float, mrt, select, texture, uv, vec4 } from "three/tsl";
+import { cameraProjectionMatrix, cameraViewMatrix, float, mrt, texture, uv, vec4 } from "three/tsl";
 import type * as THREE from "three/webgpu";
 import { MAX_ROOM_LABEL_INSTANCES, MAX_ROOM_LABELS, roomLabel, wallHeight } from "../const.env";
 import { helper } from "../service/helper";
 import { createLabelResources, drawLabel } from "../service/labels";
 import { slotOf } from "../service/room-slots";
-import type { SelectAnyType } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
 /**
@@ -97,11 +97,11 @@ export default function RoomLabels() {
     );
 
     const tex = texture(w.texRoomLabel.tex, uv()).depth(inst.w.toInt());
-    const alpha = (select as SelectAnyType)(
+    const alpha = selectAs<"float">(
       w.view.objectPick.notEqual(0),
       float(0), // never pickable: it is an annotation, not a thing in the world
       tex.a.mul(w.view.foldNode).mul(w.view.labelReveal).mul(w.view.labelZoomFade).mul(fade),
-    ) as THREE.Node<"float">;
+    );
     mat.colorNode = vec4(tex.rgb, alpha);
     // a name is drawn OVER the world, so the border round an npc must not creep onto it: the label
     // marks itself a caption in `npcMask.g`, by however much of it is there — see `npc-outline`

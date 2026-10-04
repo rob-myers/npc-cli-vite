@@ -68,8 +68,8 @@ import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
 import { loadSkinSheets } from "../service/skin-sheets";
-import type { SelectAnyType, SelectFloatType } from "../service/texture";
 import { crossFadeSynchronized, emptyAnimationClip } from "../service/three-animation";
+import { selectAs } from "../service/tsl";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
@@ -223,7 +223,7 @@ export default function NPCs() {
           .mul(step(uv().x, labelRect.z))
           .mul(step(uv().y, labelRect.w));
         // picked as a solid box round the text, else only its ink would be
-        const labelAlpha = (select as SelectFloatType)(isPickMode, inRect, labelTex.a);
+        const labelAlpha = selectAs<"float">(isPickMode, inRect, labelTex.a);
         // fades WITH the body: unlit, a cut label hung over a half-there figure
         const labelColor = vec4(labelTex.rgb, labelAlpha.mul(colorScale).mul(fold));
 
@@ -251,12 +251,8 @@ export default function NPCs() {
         });
         // - label/body fade in during unfold
         // - label fades in/out with room, whereas the body is cut away rather than faded
-        material.alphaTestNode = (select as SelectAnyType)(
-          isLabel,
-          float(0.1).mul(fold).mul(roomFade),
-          float(0.9).mul(fold),
-        );
-        material.vertexNode = (select as SelectAnyType)(isLabel, labelPos, stdPos);
+        material.alphaTestNode = selectAs(isLabel, float(0.1).mul(fold).mul(roomFade), float(0.9).mul(fold));
+        material.vertexNode = selectAs(isLabel, labelPos, stdPos);
         // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
         // fade, well before and after the body's own share of it, and eased at both ends
         const labelFade = smoothstep(float(0), float(1), roomFade).max(litAmount);
@@ -271,19 +267,15 @@ export default function NPCs() {
         );
         // blacked out at the OUTPUT: `colorNode` is only the albedo, and a standard material still
         // adds specular off the scene lights to an albedo of zero
-        const beauty = (select as SelectAnyType)(
-          isMain,
-          vec4(w.view.fadeRoomsFx.fadeRgb(output.rgb, bodyTint), output.a),
-          output,
-        );
-        material.outputNode = (select as SelectAnyType)(isPickMode, npcPick, beauty);
+        const beauty = selectAs(isMain, vec4(w.view.fadeRoomsFx.fadeRgb(output.rgb, bodyTint), output.a), output);
+        material.outputNode = selectAs(isPickMode, npcPick, beauty);
         // The label writes no silhouette — it is not part of the figure — but marks itself in `g`
         // as a caption the border may not paint over: it sits a few pixels above the head, well
         // inside the border's reach. Keyed to the label's OWN alpha, so a faded one protects
         // nothing; that alpha also scales `r` back under it, which only ever costs mask the
         // caption is covering anyway
         const maskMrt = mrt({
-          npcMask: (select as SelectAnyType)(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 1, 0, label.a)),
+          npcMask: selectAs(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 1, 0, label.a)),
         });
         // attached only whilst the scene pass declares the extra output — see `syncOutlineMask`
         material.mrtNode = w.view.npcMaskMrt === null ? null : maskMrt;

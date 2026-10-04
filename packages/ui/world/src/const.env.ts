@@ -87,7 +87,7 @@ export const cameraRefAspect = 1.8;
 
 export const defaultBrightness = 1;
 
-/** How much of their skin an npc keeps, so the player's light reads as light ON them */
+/** How much of their skin an npc keeps, so the player's light reads as light ON them — a theme may say otherwise */
 export const defaultNpcBrightness = 0.25;
 
 export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
@@ -194,7 +194,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   obstacles: {
     brightness: 1,
   },
-  npcs: { ambient: 0, fx: { additive: true, shade: 1, gain: 1 } },
+  npcs: { ambient: 0, brightness: 0.25, fxStrength: 1 },
   doors: {
     brightness: 1,
     opacity: 0.8,

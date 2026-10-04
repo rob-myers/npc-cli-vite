@@ -11,7 +11,6 @@ import {
   instanceIndex,
   int,
   mix,
-  select,
   step,
   texture,
   transformNormalToView,
@@ -26,7 +25,6 @@ import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { createLayoutInstance, isEdgeGm } from "../service/geomorph";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import type { SelectAnyType } from "../service/texture";
 import {
   deckConfig,
   drawDoorTicks,
@@ -37,6 +35,7 @@ import {
   toEdgeOpts,
   worldToCanvas,
 } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { WorldContext } from "./world-context";
 
@@ -366,11 +365,7 @@ export default function Floor() {
       outputNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.floor, 1) as THREE.Node<"vec4">;
         const shown = floorFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-        return (select as SelectAnyType)(
-          w.view.objectPick.notEqual(0),
-          lit,
-          vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a),
-        );
+        return selectAs(w.view.objectPick.notEqual(0), lit, vec4(w.view.fadeRoomsFx.fadeRgb(lit.rgb, shown), lit.a));
       })(),
       // `texAmount` takes the art to the fade's `shade` whilst keeping the hull it lies in — a map
       // leaves as a flat shape, and the next arrives as one. See `draw`

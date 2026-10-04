@@ -156,6 +156,8 @@ export const deckConfig = {
     seamInk: "rgba(0, 0, 0, 0.55)",
     lipWidth: 0.02,
     lipInk: "rgba(190, 205, 225, 0.16)",
+    /** Laid over every other plate, chequering the deck — `null` for none */
+    chequerInk: null as null | string,
   },
 
   /** A rivet at each plate corner, lit from the upper-left like the seams */
@@ -262,7 +264,11 @@ export const deckConfig = {
 const deckInks = {
   dark: {
     tone: deckConfig.tone,
-    plate: { seamInk: deckConfig.plate.seamInk, lipInk: deckConfig.plate.lipInk },
+    plate: {
+      seamInk: deckConfig.plate.seamInk,
+      lipInk: deckConfig.plate.lipInk,
+      chequerInk: deckConfig.plate.chequerInk,
+    },
     rivet: { ink: deckConfig.rivet.ink, lipInk: deckConfig.rivet.lipInk },
     wiring: {
       inks: deckConfig.wiring.inks,
@@ -274,7 +280,11 @@ const deckInks = {
   },
   light: {
     tone: "#a5aab0",
-    plate: { seamInk: "rgba(40, 55, 75, 0.35)", lipInk: "rgba(255, 255, 255, 0.7)" },
+    plate: {
+      seamInk: "rgba(40, 55, 75, 0.35)",
+      lipInk: "rgba(255, 255, 255, 0.7)",
+      chequerInk: "rgba(40, 55, 75, 0.075)",
+    },
     rivet: { ink: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.8)" },
     wiring: {
       inks: ["rgba(200, 60, 45, 0.55)", "rgba(30, 120, 190, 0.55)"],
@@ -282,7 +292,7 @@ const deckInks = {
       clampInk: "rgba(70, 85, 105, 0.7)",
     },
     doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.75)" },
-    nav: { fill: "rgba(255, 255, 255, 0.35)", ink: "rgba(30, 120, 190, 0.08)" },
+    nav: { fill: "rgba(255, 255, 255, 0.0)", ink: "rgba(30, 30, 30, 0.08)" },
   },
 };
 
@@ -737,12 +747,27 @@ function drawDeck(ct: CanvasRenderingContext2D, poly: Geom.Poly) {
   ct.fillRect(rect.x, rect.y, rect.width, rect.height);
 
   if (deckConfig.plate.shown === true) {
+    drawChequer(ct, rect);
     drawSeams(ct, rect);
     ct.fillStyle = getPlatePattern();
     ct.fillRect(rect.x, rect.y, rect.width, rect.height);
   }
 
   ct.restore();
+}
+
+/** Every other plate dimmed, by the grid's own indices so neighbouring decks agree */
+function drawChequer(ct: CanvasRenderingContext2D, rect: Geom.RectJson) {
+  const { size, chequerInk } = deckConfig.plate;
+  if (chequerInk === null) return;
+  ct.beginPath();
+  for (let i = Math.floor(rect.x / size); i * size <= rect.x + rect.width; i++) {
+    for (let j = Math.floor(rect.y / size); j * size <= rect.y + rect.height; j++) {
+      if ((i + j) % 2 !== 0) ct.rect(i * size, j * size, size, size);
+    }
+  }
+  ct.fillStyle = chequerInk;
+  ct.fill();
 }
 
 /**
@@ -858,22 +883,6 @@ export function drawDoorLabelLayer(texArray: TexArray, layerIndex: number, label
 
   texArray.updateIndex(layerIndex);
 }
-
-/**
- * TypeScript is having trouble:
- * >  error TS2590: Expression produces a union type that is too complex to represent.
- */
-export type SelectFloatType = (
-  x: THREE.Node<"bool">,
-  y: THREE.Node<"float">,
-  z: THREE.Node<"float">,
-) => THREE.Node<"float">;
-
-/**
- * TypeScript is having trouble:
- * >  error TS2590: Expression produces a union type that is too complex to represent.
- */
-export type SelectAnyType = (x: THREE.Node<"bool">, y: THREE.Node, z: THREE.Node) => THREE.Node;
 
 export function bootstrapInstanceColor(mesh: THREE.InstancedMesh | null) {
   if (mesh) {

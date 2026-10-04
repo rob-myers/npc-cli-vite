@@ -93,7 +93,11 @@ export function GlobalMenu() {
   return (
     <>
       <motion.div
-        className="fixed text-white bg-gray-800 z-9999 touch-none flex flex-col gap-1"
+        className={cn(
+          "fixed z-9999 touch-none flex flex-col gap-1 rounded-l-md shadow-md shadow-black/50",
+          // a light tab on the dark page, where a dark one is lost among the panels
+          theme === "dark" ? "text-slate-900 bg-slate-200 hover:bg-white" : "text-white bg-gray-800 hover:bg-gray-700",
+        )}
         style={{
           y: menu.y,
           left: vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - triggerPx,

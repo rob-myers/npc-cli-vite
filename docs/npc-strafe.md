@@ -38,6 +38,8 @@ turning to it is the usual exponential ease.
   replaces or clears only an aim it set, so a look still turns them. Drawn at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.
+- Psi on another (`w.psi`, `Psi.syncHands`) aims the player at them every tick, likewise only an aim it
+  set, so a move strafes whilst they influence. Their own rings alone set none.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 

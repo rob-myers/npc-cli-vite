@@ -45,7 +45,7 @@ declare namespace JshCli {
       }
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId; spawns: number }
     | { key: "spawned-many"; npcKeys: string[] }
-    | { key: "speech"; npcKey: string; words: string; epochMs: number }
+    | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
     | { key: "started-moving"; npcKey: string }
     | {
         /** Arrived, or the move was stopped — not one cut short by the next move */

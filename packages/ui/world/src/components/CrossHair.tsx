@@ -14,11 +14,19 @@ export default function CrossHair() {
     <mesh
       ref={w.view.ref("zoomCrossEl")}
       visible={false}
-      renderOrder={10}
+      // straight after the floor and obstacles (`-3`), so all else draws over it
+      renderOrder={-2.5}
       geometry={groundCrosshairGeometry}
       position={[0, crosshairY, 0]}
     >
-      <meshBasicMaterial color="white" transparent depthTest={false} side={THREE.DoubleSide} forceSinglePass />
+      <meshBasicMaterial
+        color="white"
+        transparent
+        depthTest
+        depthWrite={false}
+        side={THREE.DoubleSide}
+        forceSinglePass
+      />
     </mesh>
   );
 }

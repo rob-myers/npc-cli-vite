@@ -35,6 +35,7 @@ export default function WorldHtml() {
           node,
           visible: prev?.visible ?? true,
           onHide: opts?.onHide,
+          bare: opts?.bare === true,
           frame: prev?.frame ?? null,
           offset: prev?.offset ?? kept?.offset ?? new THREE.Vector3(),
           width: prev?.width ?? kept?.width ?? null,
@@ -137,7 +138,7 @@ export default function WorldHtml() {
   };
 
   return [...state.byKey].map(([key, entry]) => {
-    const { tracked, node, offset, width, height, visible } = entry;
+    const { tracked, node, offset, width, height, visible, bare } = entry;
     return (
       <Html3d
         key={key}
@@ -147,6 +148,7 @@ export default function WorldHtml() {
         r3f={w.r3f}
         tracked={tracked}
         visible={visible}
+        minScale={bare ? bareMinScale : undefined}
       >
         <div
           ref={(el) => void (entry.frame = el)}
@@ -156,62 +158,71 @@ export default function WorldHtml() {
           onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={(e) => e.stopPropagation()}
           // no text selection, bar inside a focused field
-          className="pointer-events-auto relative transform-[translate(-50%,-100%)] select-none outline-none [&_:is(input,textarea,[contenteditable]):focus]:select-text"
+          className={cn(
+            "relative transform-[translate(-50%,-100%)] select-none outline-none [&_:is(input,textarea,[contenteditable]):focus]:select-text",
+            bare ? "pointer-events-none" : "pointer-events-auto",
+          )}
           style={{
             zoom: htmlZoom,
             ...(width !== null && { "--html-width": `${width}px` }),
             ...(height !== null && { "--html-height": `${height}px` }),
           }}
         >
-          <div
-            className={cn(
-              handleClass,
-              "top-full left-1/2 mt-2 h-9 w-16 -translate-x-1/2 cursor-grab active:cursor-grabbing",
-            )}
-            onMouseDown={(e) => {
-              const p = pointerOf(e);
-              state.onDragStart(key, p.clientX, p.clientY);
-            }}
-            onTouchStart={(e) => {
-              const p = pointerOf(e);
-              if (p) state.onDragStart(key, p.clientX, p.clientY);
-            }}
-          >
-            <DotsSixIcon className="size-6" weight="bold" />
-          </div>
-          <button
-            type="button"
-            ref={(el) => {
-              if (el !== null && entry.wantsFocus === true) {
-                entry.wantsFocus = false;
-                el.focus({ preventScroll: true });
-              }
-            }}
-            className={cn(
-              handleClass,
-              "-top-3 -right-3 z-10 size-9 cursor-pointer outline-none hover:border-red-400/70 hover:text-red-300",
-              "focus:outline-2 focus:outline-solid focus:outline-offset-2 focus:outline-white/30", // Enter closes it
-            )}
-            onClick={() => state.hide(key)}
-            // the World reads keys off its root, and Enter there unpauses
-            onKeyDown={(e) => e.key === "Enter" && e.stopPropagation()}
-          >
-            <XIcon className="size-6" weight="bold" />
-          </button>
+          {bare === false && (
+            <>
+              <div
+                className={cn(
+                  handleClass,
+                  "top-full left-1/2 mt-2 h-9 w-16 -translate-x-1/2 cursor-grab active:cursor-grabbing",
+                )}
+                onMouseDown={(e) => {
+                  const p = pointerOf(e);
+                  state.onDragStart(key, p.clientX, p.clientY);
+                }}
+                onTouchStart={(e) => {
+                  const p = pointerOf(e);
+                  if (p) state.onDragStart(key, p.clientX, p.clientY);
+                }}
+              >
+                <DotsSixIcon className="size-6" weight="bold" />
+              </div>
+              <button
+                type="button"
+                ref={(el) => {
+                  if (el !== null && entry.wantsFocus === true) {
+                    entry.wantsFocus = false;
+                    el.focus({ preventScroll: true });
+                  }
+                }}
+                className={cn(
+                  handleClass,
+                  "-top-3 -right-3 z-10 size-9 cursor-pointer outline-none hover:border-red-400/70 hover:text-red-300",
+                  "focus:outline-2 focus:outline-solid focus:outline-offset-2 focus:outline-white/30", // Enter closes it
+                )}
+                onClick={() => state.hide(key)}
+                // the World reads keys off its root, and Enter there unpauses
+                onKeyDown={(e) => e.key === "Enter" && e.stopPropagation()}
+              >
+                <XIcon className="size-6" weight="bold" />
+              </button>
+            </>
+          )}
           {node}
-          <div
-            className={cn(handleClass, "-right-3 -bottom-3 size-9 cursor-nwse-resize")}
-            onMouseDown={(e) => {
-              const p = pointerOf(e);
-              state.onResizeStart(key, p.clientX, p.clientY);
-            }}
-            onTouchStart={(e) => {
-              const p = pointerOf(e);
-              if (p) state.onResizeStart(key, p.clientX, p.clientY);
-            }}
-          >
-            <ResizeIcon className="size-6" weight="bold" />
-          </div>
+          {bare === false && (
+            <div
+              className={cn(handleClass, "-right-3 -bottom-3 size-9 cursor-nwse-resize")}
+              onMouseDown={(e) => {
+                const p = pointerOf(e);
+                state.onResizeStart(key, p.clientX, p.clientY);
+              }}
+              onTouchStart={(e) => {
+                const p = pointerOf(e);
+                if (p) state.onResizeStart(key, p.clientX, p.clientY);
+              }}
+            >
+              <ResizeIcon className="size-6" weight="bold" />
+            </div>
+          )}
         </div>
       </Html3d>
     );
@@ -239,6 +250,8 @@ export type WorldHtmlOpts = {
   onHide?: () => void;
   /** Desktop: focus its close button as it opens, so Enter closes it */
   focus?: boolean;
+  /** Click-through, with no close button, grip or corner handle e.g. a line said */
+  bare?: boolean;
 };
 
 type WorldHtmlEntry = {
@@ -246,6 +259,7 @@ type WorldHtmlEntry = {
   node: React.ReactNode;
   visible: boolean;
   onHide?: () => void;
+  bare: boolean;
   frame: HTMLDivElement | null;
   offset: THREE.Vector3;
   /** CSS px, or the content's own */
@@ -265,5 +279,7 @@ const zeroVec = new THREE.Vector3();
 const tmpVec = new THREE.Vector3();
 /** `Html3d` scales the content down, as `NpcBubble` compensates with large rem sizes */
 const htmlZoom = 2;
+/** A bare entry is words to be read: about 10px of them at the furthest zoom, where it would be 6px */
+const bareMinScale = 0.25;
 const minWidth = 240;
 const minHeight = 120;

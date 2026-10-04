@@ -1,12 +1,11 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect, useMemo } from "react";
-import { cameraProjectionMatrix, cameraViewMatrix, float, select, texture, uv, vec4 } from "three/tsl";
-import type * as THREE from "three/webgpu";
+import { cameraProjectionMatrix, cameraViewMatrix, float, texture, uv, vec4 } from "three/tsl";
 import { MAX_ROOM_LABELS, roomLabelTexOpts } from "../const.env";
 import { createLabelResources, drawLabel } from "../service/labels";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import { TexArray } from "../service/tex-array";
-import type { SelectAnyType } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
 /**
@@ -88,11 +87,11 @@ export default function Labels() {
       viewCentre.add(vec4(sign.x.mul(labelWidth / 2), sign.y.mul(labelHeight / 2), 0, 0)),
     );
     const tex = texture(state.tex.tex, uv()).depth(inst.w.toInt());
-    const alpha = (select as SelectAnyType)(
+    const alpha = selectAs<"float">(
       w.view.objectPick.notEqual(0),
       float(0), // an annotation, never a thing to pick
       tex.a.mul(w.view.foldNode).mul(fade),
-    ) as THREE.Node<"float">;
+    );
     mat.colorNode = vec4(tex.rgb, alpha);
   }, [state.tex.hash, w.view.fadeRoomsFx.uid]);
 

@@ -10,7 +10,6 @@ import {
   instanceIndex,
   int,
   mix,
-  select,
   step,
   texture,
   transformNormalToView,
@@ -24,7 +23,7 @@ import { gmFloorExtraScale, MAX_GEOMORPH_INSTANCES, sguToWorldScale, wallHeight,
 import { createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
 import { isEdgeGm } from "../service/geomorph";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import type { SelectAnyType } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
 const defaultCeilingOpacity = 0.7;
@@ -205,7 +204,7 @@ export default function Ceiling() {
       pickNode: (() => {
         const lit = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.ceiling) as THREE.Node<"vec4">;
         const shown = ceilFade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
-        return (select as SelectAnyType)(w.view.objectPick.notEqual(0), lit, vec4(mix(fadeTo, lit.rgb, shown), lit.a));
+        return selectAs(w.view.objectPick.notEqual(0), lit, vec4(mix(fadeTo, lit.rgb, shown), lit.a));
       })(),
       // dark throughout: the sweep is a 2D polygon on the floor, so lighting the ceiling by it
       // would light the lid of whatever room the player stands in — see `service/player-light`

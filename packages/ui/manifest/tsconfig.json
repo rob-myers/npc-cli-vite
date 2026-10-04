@@ -1,0 +1,6 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  // the World's sources first, in the order its own project checks them: a dependent project
+  // re-checks them, and their TSL types sit at TS2590's limit, passing or failing by that order
+  "include": ["../world/src", "./src"]
+}

@@ -8,13 +8,15 @@ Decor is made two ways, both ending in `w.decor.create(def)`: placed on the pane
 in the 3D World from the shell, at picked points. It is configured in the 3D World, which needs
 neither the panel nor a terminal.
 
-The panel is two panes, split by `allotment`: the map, and the setting's lore (`docs/lore.md`).
-Either drags shut (`meta.hidden`, by default the lore), leaving its icon over that edge to bring it
-back; `meta.split` keeps their sizes.
+The setting's lore is a panel of its own, the Manifest (`docs/manifest-lore.md`). The two neither import nor
+contain each other: on the same World they talk through `manifestShared` (`ui/manifest/src/shared.ts`).
+The map outlines the Manifest's entry (`ManifestLoreLayer.tsx`), centres where it asks, and tells it which
+npc was last chosen; the lore's characters, for the npcs menu, the map loads for itself
+(`useManifestLoreCharacters`), so no Manifest need be open.
 
 | file | what it holds |
 |---|---|
-| `ui/decorator/src/Decorator.tsx` | the panel: finds the World, splits the panes |
+| `ui/decorator/src/Decorator.tsx` | the panel: finds the World (`useWorld`, from `ui/world`) |
 | `ui/decorator/src/Editor.tsx` | the map pane: the tools, selection, keys, npc picker |
 | `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots |
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |

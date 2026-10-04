@@ -1,0 +1,55 @@
+/* fades in, so what settles on mount (the columns) is not seen doing so */
+.manifest {
+  animation: manifest-fade-in 300ms ease-out both;
+}
+
+@keyframes manifest-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The panel is written in dark zinc: a light theme turns the scale over, and darkens each accent */
+.theme-light .manifest {
+  --color-zinc-950: #fafafa;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-600: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #52525b;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-200: #27272a;
+  --color-zinc-100: #18181b;
+
+  --color-red-300: #b91c1c;
+  --color-red-400: #dc2626;
+  --color-red-500: #dc2626;
+  --color-yellow-200: #854d0e;
+  --color-yellow-400: #ca8a04;
+  --color-amber-300: #b45309;
+  --color-sky-300: #0369a1;
+  --color-emerald-300: #047857;
+}
+
+/* Light text on dark is fattened by subpixel smoothing: greyscale thins it back to how the light theme reads */
+.theme-dark .manifest {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*
+ * The lore is read rather than drawn on: its dark is lifted off black, and each step of the scale
+ * leans a different way for depth — indigo ground, violet surfaces, teal edges, warm text
+ */
+.theme-dark .manifest {
+  --color-zinc-950: #232632;
+  --color-zinc-900: #2e2e40;
+  --color-zinc-800: #3a444e;
+  --color-zinc-700: #4a555f;
+  --color-zinc-600: #717d87;
+  --color-zinc-500: #aea797;
+  --color-zinc-400: #c8c4b9;
+  --color-zinc-300: #e2e0da;
+  --color-zinc-100: #f6f3ec;
+}

@@ -387,6 +387,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
         w.npc?.setAmbient(npcs.ambient);
+        w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
+        w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
         w.swords?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
@@ -522,8 +524,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
-            // a long press is how you get at an npc: they say "...", and the speech's own npcKey
-            // is the handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
+            // a long press is how you get at an npc: they say "...", and the history opens on it, its
+            // npcKey the handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
             // forwarded, and the server's mirrored speech comes back instead
             if (
               e.longDown === true &&
@@ -532,6 +534,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               w.client === false
             ) {
               w.speech.say(e.meta.npcKey, "...");
+              w.speech.set({ panelOpen: true, panelTab: "speech" });
             }
             // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
             if (
@@ -541,7 +544,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               e.srcWorld === w.key &&
               w.debug?.npcContextMenu === true
             ) {
-              w.bubble.ensure(e.meta.npcKey, { focus: true });
+              w.bubble.openDebug(e.meta.npcKey, { focus: true });
             }
             break;
           }
@@ -696,9 +699,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "npc-pre-do":
             if (w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            if (e.npcKey === w.player.key) w.psi?.choose(null); // psi is the player's alone
             break;
           case "npc-do":
             if (e.decorKey !== null && w.swords?.isDrawn(e.npcKey)) w.swords.sheathe(e.npcKey);
+            if (e.decorKey !== null && e.npcKey === w.player.key) w.psi?.choose(null);
             break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both
@@ -963,7 +968,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.psi?.onTick();
-        w.speech?.removeNpcToasts(...npcKeys);
         w.npc.update();
         // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
         // draws on demand — so nothing would draw the world without them, and it goes on showing

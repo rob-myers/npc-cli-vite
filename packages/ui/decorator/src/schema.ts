@@ -11,18 +11,6 @@ export const DecoratorUiMetaSchema = z.object({
   /** The sidebar: its width, and whether it is out */
   sidebarWidth: z.number().default(208),
   sidebarOpen: z.boolean().default(false),
-  /** The pane dragged shut, if either: the map, or the lore (see `docs/lore.md`) */
-  hidden: z.enum(["map", "lore"]).nullable().default("lore"),
-  /** The two panes' sizes, map then lore */
-  split: z.array(z.number()).optional(),
-  /** The lore pane's text size, as a multiple */
-  loreZoom: z.number().default(1),
-  /** The lore pane's three columns' sizes, when wide enough to have them */
-  loreSplit: z.array(z.number()).optional(),
-  /** The sections of the lore card folded away */
-  loreFolded: z.array(z.string()).default([]),
-  /** The lore entry shown */
-  entryKey: z.string().optional(),
   /** Layers of the map */
   show: z
     .object({

@@ -6,7 +6,9 @@ import { useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
 
 import { getWorldStore } from "../service/storage";
+import { type Conversation, type ConversationChoice, talkNeeds, threadKeyOf } from "../service/talk";
 import { NetBadge, NetMenu } from "./NetMenu";
+import { type TalkLine, type TalkPip, TalkThread } from "./TalkThread";
 import { WorldContext } from "./world-context";
 
 export function WorldSpeech() {
@@ -26,12 +28,14 @@ export function WorldSpeech() {
       menuItems: [],
       minY: 40,
       nextId: 0,
-      pinnedId: null,
-      toasts: [],
+      unread: false,
       y: saved.speechY,
       historyHeight: saved.speechHeight ?? (big ? 384 : 288),
       historyWidth: saved.speechWidth ?? (big ? 320 : 288),
       resizing: false,
+      talks: {},
+      needsSig: "",
+      needsSecs: 0,
 
       addMenuItem(item) {
         // keyed, so a command re-run (or its hot-reload) replaces its item rather than doubling it
@@ -45,8 +49,87 @@ export function WorldSpeech() {
         state.update();
       },
       clear() {
+        for (const talk of Object.values(state.talks)) w.bubble.release(talk.npcKey, talk.playerKey);
         state.history = [];
+        state.talks = {};
         state.update();
+      },
+      clearThread(threadKey) {
+        const parties = new Set<string>();
+        state.history = state.history.filter((entry) => {
+          const theirs = entry.parties ?? [entry.npcKey];
+          if (threadKeyOf(theirs) !== threadKey) return true;
+          for (const npcKey of theirs) parties.add(npcKey);
+          return false;
+        });
+        delete state.talks[threadKey];
+        w.bubble.release(...parties); // a line held for an answer has none coming
+        state.update();
+      },
+      clearEntries(ids) {
+        const gone = new Set(ids);
+        state.history = state.history.filter((entry) => gone.has(entry.id) === false);
+        state.update();
+      },
+      startTalk(conv, npcKey) {
+        const playerKey = w.player?.key;
+        if (playerKey === undefined || playerKey === npcKey || !(playerKey in w.n) || !(npcKey in w.n)) return false;
+        const at = conv.start;
+        state.talks[threadKeyOf([playerKey, npcKey])] = {
+          conv,
+          npcKey,
+          playerKey,
+          at,
+          answer: null,
+          seen: new Set([at]),
+        };
+        state.set({ panelOpen: true, panelTab: "speech" });
+        const hold = (conv.nodes[at]?.choices?.length ?? 0) > 0;
+        state.say(npcKey, conv.nodes[at]?.text ?? "…", undefined, { to: [playerKey], nodeId: at, hold });
+        return true;
+      },
+      chooseTalk(threadKey, index) {
+        const talk = state.talks[threadKey];
+        const choice = talk?.conv.nodes[talk.at]?.choices?.[index];
+        if (talk === undefined || choice === undefined || talk.answer !== null) return;
+        if (state.getPips(talk, choice).some((pip) => pip.met === false)) return;
+        // they take a moment to answer, in world time — see `onTick`
+        talk.answer = { nodeId: choice.to, secs: answerSecs };
+        state.say(talk.playerKey, choice.text, undefined, { to: [talk.npcKey], hold: true });
+      },
+      answerTalk(threadKey) {
+        const talk = state.talks[threadKey];
+        if (talk?.answer === undefined || talk.answer === null) return;
+        const { nodeId } = talk.answer;
+        talk.answer = null;
+        const next = talk.conv.nodes[nodeId];
+        // they may be gone by then
+        if (next === undefined || !(talk.npcKey in w.n)) return state.update();
+        talk.at = nodeId;
+        talk.seen.add(nodeId);
+        const hold = (next.choices?.length ?? 0) > 0;
+        state.say(talk.npcKey, next.text, undefined, { to: [talk.playerKey], nodeId, hold });
+      },
+      revisitTalk(threadKey, entryId) {
+        const talk = state.talks[threadKey];
+        const nodeId = state.history.find((entry) => entry.id === entryId)?.nodeId;
+        const node = nodeId === undefined ? undefined : talk?.conv.nodes[nodeId];
+        if (talk === undefined || nodeId === undefined || node === undefined || talk.answer !== null) return;
+        if (!(talk.npcKey in w.n)) return;
+        // said again, at the foot: what was said since stays as it was
+        talk.at = nodeId;
+        const hold = (node.choices?.length ?? 0) > 0;
+        state.say(talk.npcKey, node.text, undefined, { to: [talk.playerKey], nodeId, hold });
+      },
+      getPips(talk, choice) {
+        const player = w.n[talk.playerKey];
+        const npc = w.n[talk.npcKey];
+        // nobody to talk to, or someone else is the player now
+        const able = player !== undefined && npc !== undefined && w.player?.key === talk.playerKey;
+        return (choice.needs ?? []).map((need) => ({
+          label: talkNeeds[need].label,
+          met: able && talkNeeds[need].met(w, player, npc),
+        }));
       },
       getMaxY() {
         return Math.max(state.minY, (w.rootEl?.clientHeight ?? Infinity) - 120);
@@ -72,7 +155,7 @@ export function WorldSpeech() {
         state.historyWidth = state.getClampedHistoryWidth(state.historyWidth);
         state.update();
       },
-      onResizeMouseDown(e) {
+      onResizeMouseDown(e, heightOnly = false) {
         e.stopPropagation();
         const startX = e.clientX;
         const startY = e.clientY;
@@ -81,7 +164,8 @@ export function WorldSpeech() {
         state.resizing = true;
         const onMove = (ev: MouseEvent) => {
           // panel is right-anchored, so dragging the corner left (negative dx) widens it
-          state.historyWidth = state.getClampedHistoryWidth(startWidth - (ev.clientX - startX));
+          if (heightOnly === false)
+            state.historyWidth = state.getClampedHistoryWidth(startWidth - (ev.clientX - startX));
           state.historyHeight = state.getClampedHistoryHeight(startHeight + (ev.clientY - startY));
           state.update();
         };
@@ -94,7 +178,7 @@ export function WorldSpeech() {
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
       },
-      onResizeTouchStart(e) {
+      onResizeTouchStart(e, heightOnly = false) {
         e.stopPropagation();
         const t = e.touches[0];
         if (!t) return;
@@ -106,7 +190,8 @@ export function WorldSpeech() {
         const onMove = (ev: TouchEvent) => {
           const t2 = ev.touches[0];
           if (t2) {
-            state.historyWidth = state.getClampedHistoryWidth(startWidth - (t2.clientX - startX));
+            if (heightOnly === false)
+              state.historyWidth = state.getClampedHistoryWidth(startWidth - (t2.clientX - startX));
             state.historyHeight = state.getClampedHistoryHeight(startHeight + (t2.clientY - startY));
             state.update();
           }
@@ -127,43 +212,39 @@ export function WorldSpeech() {
         store.patch({ speechHeight: state.historyHeight, speechWidth: state.historyWidth });
       },
       onTick(delta) {
-        // ticks only advance while the world is unpaused (see World.tsx), so this doesn't drain
-        // away in real-time while paused
-        const n = state.toasts.length;
-        state.toasts = state.toasts.filter((t) => t.id === state.pinnedId || (t.secs -= delta) > 0);
-        if (state.toasts.length !== n) state.update();
-      },
-      removeNpcToasts(...npcKeys) {
-        // dropping them from `toasts` is what fades them: `AnimatePresence` plays their exit
-        const keys = new Set(npcKeys);
-        state.toasts = state.toasts.filter((t) => keys.has(t.npcKey) === false);
-        if (state.toasts.some((t) => t.id === state.pinnedId) === false) state.pinnedId = null;
-        state.update();
-      },
-      pinToast(id, pinned) {
-        // a toast must not fade out from under an open menu, so it stops counting down whilst
-        // one is up — and is given its full time back on the way out, not whatever was left
-        state.pinnedId = pinned === true ? id : null;
-        if (pinned === false) {
-          const toast = state.toasts.find((t) => t.id === id);
-          if (toast !== undefined) toast.secs = defaultToastSecs;
+        // only whilst the world is unpaused (see `World`), so nobody answers during a pause
+        for (const [threadKey, talk] of Object.entries(state.talks)) {
+          if (talk.answer !== null && (talk.answer.secs -= delta) <= 0) state.answerTalk(threadKey);
         }
-        state.update();
+
+        // a reply's pips follow the player about, so are looked at again now and then
+        if (state.panelOpen === false || (state.needsSecs -= delta) > 0) return;
+        state.needsSecs = needsPollSecs;
+        const needsSig = Object.values(state.talks)
+          .flatMap((talk) => (talk.conv.nodes[talk.at]?.choices ?? []).map((c) => state.getPips(talk, c)))
+          .map((pips) => pips.map((pip) => Number(pip.met)).join(""))
+          .join();
+        if (needsSig !== state.needsSig) state.set({ needsSig });
       },
-      say(npcKey, words, secs) {
+      say(npcKey, words, secs, opts) {
         const epochMs = Date.now();
-        const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs };
+        const to = opts?.to;
+        // those addressed have been answered, so their lines may go
+        if (to !== undefined) w.bubble?.release(...to);
+        const parties = [npcKey, ...(to ?? [])];
+        const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs, parties, nodeId: opts?.nodeId };
 
         state.history.push(entry);
         if (state.history.length > maxHistory) state.history.shift();
 
-        const last = state.toasts.at(-1);
-        if (last?.npcKey === npcKey && last.words === words) last.secs = secs ?? defaultToastSecs;
-        else state.toasts.push({ ...entry, secs: secs ?? defaultToastSecs });
-
+        // unseen, with the history shut: the button says so
+        if (state.panelOpen === false || state.panelTab !== "speech") state.unread = true;
         state.update();
 
-        w.events.next({ key: "speech", npcKey, words, epochMs });
+        // over their head
+        w.bubble?.say(npcKey, words, { secs, hold: opts?.hold });
+
+        w.events.next({ key: "speech", npcKey, words, epochMs, to });
       },
     }),
   );
@@ -182,16 +263,9 @@ export function WorldSpeech() {
     return () => sub.unsubscribe();
   }, []);
 
-  // a select-all disarms the spoken words, so it never takes them — see `SpokenWords`
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "a") {
-        for (const el of document.querySelectorAll(`[${spokenArmedAttr}]`)) el.removeAttribute(spokenArmedAttr);
-      }
-    };
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, []);
+  // seen, once the history is open on what was said
+  const unread = state.unread && (state.panelOpen === false || state.panelTab !== "speech");
+  if (unread === false) state.unread = false;
 
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
@@ -200,7 +274,8 @@ export function WorldSpeech() {
     <>
       {/* history toggle — only the icon starts a drag, so scrolling the panel below never fights it */}
       <motion.div
-        className="absolute top-0 right-px z-10 select-none flex flex-col items-end"
+        // click-through, bar what is in it
+        className="absolute top-0 right-px z-10 select-none flex flex-col items-end pointer-events-none"
         style={{ y }}
         drag="y"
         dragListener={false}
@@ -215,7 +290,7 @@ export function WorldSpeech() {
       >
         <div
           className={cn(
-            "relative outline-width-1 grid touch-none place-items-center cursor-pointer bg-neutral-800 text-white hover:bg-neutral-700",
+            "relative pointer-events-auto outline-width-1 grid touch-none place-items-center cursor-pointer bg-neutral-800 text-white hover:bg-neutral-700",
             big ? "size-12" : "size-9",
           )}
           onPointerDown={(e) => dragControls.start(e)}
@@ -226,6 +301,9 @@ export function WorldSpeech() {
         >
           <ChatCircleTextIcon className={big ? "size-6" : "size-5"} weight="bold" />
           <NetBadge />
+          {unread && (
+            <span className="absolute bottom-0.5 left-0.5 size-2 rounded-full bg-sky-300 pointer-events-none" />
+          )}
         </div>
 
         <AnimatePresence>
@@ -236,7 +314,8 @@ export function WorldSpeech() {
               exit={{ opacity: 0, x: 8 }}
               transition={{ duration: 0.15 }}
               className={cn(
-                "relative mt-1 flex flex-col bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1",
+                // see-through, the World behind it softened: what is said keeps its own ground
+                "relative pointer-events-auto mt-1 flex flex-col bg-slate-800/45 backdrop-blur-xs border border-slate-700/70 rounded-md shadow-lg py-1",
                 big && "py-2",
               )}
               style={{ width: state.historyWidth }}
@@ -276,35 +355,35 @@ export function WorldSpeech() {
               {state.panelTab === "worlds" && <NetMenu />}
 
               {state.panelTab === "speech" && (
-                <div className="flex flex-col gap-1 px-2 pb-2 overflow-y-auto" style={{ height: state.historyHeight }}>
-                  {state.history.length === 0 && (
-                    <div className={cn("px-1 py-2 text-xs text-slate-500 italic", big && "text-sm")}>
-                      nothing said yet
-                    </div>
+                <div
+                  // its own ink: the panel is dark in either theme
+                  className={cn(
+                    "flex flex-col gap-3 px-2 pb-2 overflow-y-auto scrollbar-thin text-xs text-slate-300",
+                    big && "text-sm",
                   )}
-                  {state.history
-                    .slice()
-                    .reverse()
-                    .map((entry) => (
-                      <div
-                        key={entry.id}
-                        className={cn(
-                          "flex gap-2 px-2 py-1 text-xs rounded bg-slate-900/60 text-slate-300",
-                          big && "px-3 py-1.5 text-sm",
-                        )}
-                      >
-                        <NpcKeyMenu npcKey={entry.npcKey} />
-                        <SpokenWords words={entry.words} />
-                      </div>
-                    ))}
+                  style={{ height: state.historyHeight }}
+                >
+                  {state.history.length === 0 && (
+                    <div className="px-1 py-2 text-slate-500 italic">nothing said yet</div>
+                  )}
+                  {toThreads(state.history).map((thread) => (
+                    <SpeechThread key={thread.key} thread={thread} />
+                  ))}
                 </div>
               )}
+
+              {/* drag its foot to set the height alone: clear of the corner, which sets both */}
+              <div
+                className="absolute bottom-0 left-5 right-0 h-1.5 touch-none cursor-ns-resize"
+                onMouseDown={(e) => state.onResizeMouseDown(e, true)}
+                onTouchStart={(e) => state.onResizeTouchStart(e, true)}
+              />
 
               {/* drag to resize the panel — bottom-left corner, since the panel is right-anchored */}
               <div
                 className="absolute bottom-0 left-0 size-5 touch-none cursor-nesw-resize"
-                onMouseDown={state.onResizeMouseDown}
-                onTouchStart={state.onResizeTouchStart}
+                onMouseDown={(e) => state.onResizeMouseDown(e)}
+                onTouchStart={(e) => state.onResizeTouchStart(e)}
               >
                 <div
                   className={cn(
@@ -317,61 +396,107 @@ export function WorldSpeech() {
           )}
         </AnimatePresence>
       </motion.div>
-
-      {/* toasts — bottom-center, where subtitles usually go; non-interactive so they don't block World */}
-      <div className="absolute top-10 left-1/2 z-10 flex max-w-[90%] -translate-x-1/2 flex-col gap-1 pointer-events-none">
-        <AnimatePresence>
-          {state.toasts.map(({ id, npcKey, words }) => (
-            <motion.div
-              key={id}
-              className={cn(
-                "pr-3",
-                "flex gap-2 rounded bg-zinc-800/90 text-slate-300 text-[1rem] py-1.5 max-w-md",
-                big && "text-sm py-1.5 max-w-lg",
-              )}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <NpcKeyMenu npcKey={npcKey} onOpenChange={(open) => state.pinToast(id, open)} />
-
-              {/* held open whilst the pointer is over it, so it cannot fade from under a selection */}
-              <SpokenWords words={words} onHover={(over) => state.pinToast(id, over)} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
     </>
   );
 }
 
-/**
- * What was said, selectable by a drag or double-click — but only once pressed, so a select-all
- * elsewhere on the page leaves it alone
- */
-function SpokenWords({ words, onHover }: { words: string; onHover?: (over: boolean) => void }) {
+/** The history by who spoke in it and to whom, the latest spoken in first */
+function toThreads(history: SpeechEntry[]) {
+  const byKey = new Map<string, Thread>();
+  for (const entry of history) {
+    const parties = entry.parties ?? [entry.npcKey];
+    const key = threadKeyOf(parties);
+    const thread = byKey.get(key) ?? { key, parties: [...new Set(parties)].sort(), entries: [] };
+    thread.entries.push(entry);
+    byKey.set(key, thread);
+  }
+  return [...byKey.values()].sort((a, b) => (b.entries.at(-1)?.id ?? 0) - (a.entries.at(-1)?.id ?? 0));
+}
+
+/** One thread of the history, and should it be a talk with the player, their replies */
+function SpeechThread({ thread }: { thread: Thread }) {
+  const w = useContext(WorldContext);
+  const talk = w.speech.talks[thread.key] as Talk | undefined;
+  const playerKey = w.player?.key;
+  const node = talk?.conv.nodes[talk.at];
+  const lastId = thread.entries.at(-1)?.id;
+  const gone = talk !== undefined && !(talk.npcKey in w.n);
+
+  /** An ending keeps the topic it follows: "the end" below says the rest */
+  let topic: string | undefined;
+  const lines = thread.entries.map((entry): TalkLine => {
+    const said = entry.nodeId === undefined ? undefined : talk?.conv.nodes[entry.nodeId];
+    if (said !== undefined && (said.choices?.length ?? 0) > 0) topic = said.topic;
+    return {
+      id: entry.id,
+      // the player's on the right; between npcs, the first of them on the left
+      side:
+        entry.npcKey === (playerKey !== undefined && thread.parties.includes(playerKey) ? playerKey : thread.parties[1])
+          ? "right"
+          : "left",
+      text: entry.words,
+      topic: said === undefined ? undefined : topic,
+      who: thread.parties.length > 2 ? entry.npcKey : undefined,
+      ...(talk !== undefined &&
+        entry.nodeId !== undefined &&
+        entry.id !== lastId &&
+        gone === false && {
+          title: "answer this again",
+          onClick: () => w.speech.revisitTalk(thread.key, entry.id),
+        }),
+    };
+  });
+  const replies =
+    talk === undefined || gone || talk.answer !== null
+      ? []
+      : (node?.choices ?? []).map((choice, i) => ({
+          text: choice.text,
+          pips: w.speech.getPips(talk, choice),
+          seen: talk.seen.has(choice.to),
+          onChoose: () => w.speech.chooseTalk(thread.key, i),
+        }));
+
   return (
-    <span
-      // `pointer-events-auto`: the toast strip is click-through
-      className="pointer-events-auto wrap-break-word cursor-text select-none data-spoken-armed:select-text"
-      // set before the press's `mousedown`, which is what starts a selection
-      onPointerDown={(e) => e.currentTarget.setAttribute(spokenArmedAttr, "")}
-      onPointerEnter={onHover && (() => onHover(true))}
-      onPointerLeave={onHover && (() => onHover(false))}
-    >
-      {words}
-    </span>
+    <div className="flex flex-col gap-1 border-t border-slate-700 pt-1 first:border-t-0">
+      <div className="flex flex-wrap items-center text-slate-500">
+        {thread.parties.map((npcKey, i) => (
+          <span key={npcKey} className="flex items-center">
+            {i > 0 && "·"}
+            <NpcKeyMenu npcKey={npcKey} className="px-1 text-xs" />
+          </span>
+        ))}
+        <XIcon
+          className="ml-auto size-3.5 shrink-0 cursor-pointer text-slate-600 hover:text-red-300"
+          onClick={() => w.speech.clearThread(thread.key)}
+        >
+          <title>clear this conversation</title>
+        </XIcon>
+      </div>
+      <TalkThread
+        lines={lines}
+        replies={replies}
+        repliesKey={`${talk?.at}:${lastId}`}
+        typing={talk !== undefined && talk.answer !== null}
+        onClear={(ids) => w.speech.clearEntries(ids.filter((id) => typeof id === "number"))}
+        footer={
+          talk !== undefined &&
+          (gone ? (
+            <div className="self-center text-slate-500 italic">{talk.npcKey} is gone</div>
+          ) : (
+            talk.answer === null &&
+            replies.length === 0 && <div className="self-center text-slate-500 italic">the end</div>
+          ))
+        }
+      />
+    </div>
   );
 }
 
-const spokenArmedAttr = "data-spoken-armed";
-
 /**
  * The npc's key, as a menu: it is the only handle onto an npc the speech UI has, so what you can do
- * to them hangs off it. `onOpenChange` lets a toast hold itself open whilst the menu is up
+ * to them hangs off it
  */
-function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (open: boolean) => void }) {
+function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string }) {
   const w = useContext(WorldContext);
   /** `remove` is armed by its first click and takes effect on the second, in the same place */
   const [armed, setArmed] = useState(false);
@@ -381,18 +506,13 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
   const canLightOrDelete = npc !== undefined && npc.key !== w.player?.key;
 
   return (
-    <Menu.Root
-      onOpenChange={(open) => {
-        setArmed(false); // never opens already armed
-        onOpenChange?.(open);
-      }}
-    >
-      {/* `pointer-events-auto`: the toast strip is click-through, so only the key itself takes a click */}
+    <Menu.Root onOpenChange={() => setArmed(false)}>
       <Menu.Trigger
         className={cn(
           "pointer-events-auto shrink-0 px-3 inline-flex items-center gap-1 font-medium tracking-wider text-blue-200/80 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100",
 
           npc?.lit === true && "text-yellow-200/80",
+          className,
         )}
       >
         {npcKey}
@@ -404,7 +524,7 @@ function NpcKeyMenu({ npcKey, onOpenChange }: { npcKey: string; onOpenChange?: (
               <Menu.Item
                 className={speechMenuItemClassName}
                 closeOnClick={false}
-                onClick={() => w.bubble.toggle(npcKey)}
+                onClick={() => w.bubble.toggleDebug(npcKey)}
               >
                 debug
               </Menu.Item>
@@ -471,7 +591,26 @@ export type SpeechEntry = {
   npcKey: string;
   words: string;
   epochMs: number;
+  /** Who said it, and to whom: its thread */
+  parties?: string[];
+  /** The line of a talk it is */
+  nodeId?: string;
 };
+
+/** A conversation tree the player is having with `npcKey`, in the thread of the two */
+export type Talk = {
+  conv: Conversation;
+  npcKey: string;
+  playerKey: string;
+  /** The line now replied to */
+  at: string;
+  /** The player has spoken, and the npc will answer with `nodeId` in `secs` of world time */
+  answer: null | { nodeId: string; secs: number };
+  /** Lines reached, so a reply leading to one is ticked */
+  seen: Set<string>;
+};
+
+type Thread = { key: string; parties: string[]; entries: SpeechEntry[] };
 
 /** An item added to every `NpcKeyMenu` by e.g. a jsh command — see `addMenuItem` */
 export type SpeechMenuItem = {
@@ -488,38 +627,52 @@ export type State = {
   menuItems: SpeechMenuItem[];
   minY: number;
   nextId: number;
-  /** The toast held open by an `NpcKeyMenu`, which must not fade whilst it is up */
-  pinnedId: null | number;
-  /** `secs` ticks down in `onTick` (see `World`'s `onTick`) — only while the world is unpaused */
-  toasts: (SpeechEntry & { secs: number })[];
+  /** Something was said since the history was last open on it */
+  unread: boolean;
   y: number;
   /** Height (px) of the scrollable history list — resizable, persisted */
   historyHeight: number;
   /** Width (px) of the whole history panel — resizable, persisted */
   historyWidth: number;
   resizing: boolean;
+  /** By `threadKeyOf` the player and npc */
+  talks: Record<string, Talk>;
+  /** The pips last drawn, so a poll re-renders only on a change */
+  needsSig: string;
+  needsSecs: number;
   addMenuItem(item: SpeechMenuItem): void;
   removeMenuItem(key: string): void;
   clear(): void;
+  /** Some lines of the history, e.g. a talk's run about one topic — the talk carries on */
+  clearEntries(ids: number[]): void;
+  /** One thread's history, and its talk — two parties, one, or a group's */
+  clearThread(threadKey: string): void;
   getMaxY(): number;
   getClampedY(y: number): number;
   getMaxHistoryHeight(): number;
   getClampedHistoryHeight(height: number): number;
   getMaxHistoryWidth(): number;
   getClampedHistoryWidth(width: number): number;
-  /** Ticks down each toast's `secs`, removing expired ones — called from `World`'s `onTick` while unpaused */
+  /** Answers fall due and pips are looked at again — called from `World`'s `onTick` while unpaused */
   onTick(delta: number): void;
-  /** Holds a toast open, or lets it start counting down again with its full time */
-  pinToast(id: number, pinned: boolean): void;
-  /** Fades out whatever these npcs are currently saying — see `removeNpcs`. History is kept */
-  removeNpcToasts(...npcKeys: string[]): void;
   onResize(): void;
-  onResizeMouseDown(e: React.MouseEvent): void;
-  onResizeTouchStart(e: React.TouchEvent): void;
+  /** From the corner, both ways; from the foot, `heightOnly` */
+  onResizeMouseDown(e: React.MouseEvent, heightOnly?: boolean): void;
+  onResizeTouchStart(e: React.TouchEvent, heightOnly?: boolean): void;
   persistY(): void;
   persistHistorySize(): void;
-  /** Their last toast is refreshed rather than duplicated when it already says this — see below */
-  say(npcKey: string, words: string, secs?: number): void;
+  /** Into the history, and over their head for `secs` — or, on `hold`, until someone it addresses answers */
+  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; nodeId?: string; hold?: boolean }): void;
+  /** The npc opens `conv` with the player, in the thread of the two. False without either */
+  startTalk(conv: Conversation, npcKey: string): boolean;
+  /** The player says a reply of the line replied to, once its tests pass, and the npc answers */
+  chooseTalk(threadKey: string, index: number): void;
+  /** The npc says the line the player's reply led to, unless gone */
+  answerTalk(threadKey: string): void;
+  /** The npc says an earlier line again, at the foot, and it is replied to there: nothing is removed */
+  revisitTalk(threadKey: string, entryId: number): void;
+  /** A reply's tests, as pips */
+  getPips(talk: Talk, choice: ConversationChoice): TalkPip[];
 };
 
 const speechPanelTabs = ["worlds", "speech"] as const;
@@ -527,4 +680,7 @@ const speechPanelTabs = ["worlds", "speech"] as const;
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
 const maxHistory = 200;
-const defaultToastSecs = 4;
+/** Seconds between looks at the replies' tests */
+const needsPollSecs = 0.2;
+/** Seconds of world time an npc takes to answer: none pass whilst paused */
+const answerSecs = 0.45;

@@ -12,10 +12,13 @@
     "./assets.schema": "./src/assets.schema.ts",
     "./connector": "./src/service/Connector.ts",
     "./query-client": "./src/service/query-client.ts",
+    "./use-world": "./src/service/use-world.ts",
     "./const.both": "./src/const.both.ts",
     "./const.env": "./src/const.env.ts",
     "./const.npc": "./src/const.npc.ts",
     "./helper": "./src/service/helper.ts",
+    "./talk": "./src/service/talk.ts",
+    "./talk-thread": "./src/components/TalkThread.tsx",
     "./worker/nav": "./src/worker/nav.worker.ts",
     "./worker/nav-util": "./src/worker/nav-util.ts",
     "./nav-worker-factory": "./src/service/nav-worker-factory.ts"

@@ -125,13 +125,14 @@
 
 ## Jsh and Jobs
 
-- 🚧 Jobs: can be confusing whether process is paused due to World or explicitly
-  - indicate process tags
-  - put back process tag `always` and can set from ui
+- ✅ Jobs: can be confusing whether process is paused due to World or explicitly
+  - ✅ indicate process tags
+  - ✅ put back process tag `always` and can set from ui
 
-- Jobs: indicate stale processes after hmr
 - ✅ support look at:angle
 - ✅ Jobs uses allotment for 2 panes
+
+- Jobs: indicate stale processes after hmr
 
 ## MapEdit
 

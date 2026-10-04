@@ -1,5 +1,5 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import { sguToWorldScale } from "@npc-cli/ui__world/const.env";
+import { geomorphGridMeters, sguToWorldScale } from "@npc-cli/ui__world/const.env";
 import { CircleIcon, type Icon, MapPinIcon, MonitorIcon, RectangleIcon } from "@phosphor-icons/react";
 
 /** Pure helpers over decor defs, for the panel's editing. Every change ends in `w.decor.create` */
@@ -208,6 +208,30 @@ export function circleResized(def: CircleDef, at: Geom.VectJson, step?: number):
 /** No smaller than `minSize`, and a multiple of `step` when given */
 function sized(length: number, step?: number) {
   return Math.max(minSize, snap(length, step));
+}
+
+/** A primary press, or a ctrl one: macOS makes ctrl-click a right one */
+export function isPress(e: React.PointerEvent) {
+  return e.button === 0 || (e.button === 2 && e.ctrlKey);
+}
+
+/**
+ * Metres a drag snaps to: shift is the coarse step, ctrl or alt the fine.
+ * @param grid by the map's half grid, as rects, circles and npcs are: a scale has no business on it
+ */
+export function stepOf(e: { shiftKey: boolean; ctrlKey: boolean; altKey: boolean }, grid: boolean) {
+  const [coarse, fine] = grid ? gridSteps : plainSteps;
+  return e.shiftKey ? coarse : e.ctrlKey || e.altKey ? fine : undefined;
+}
+/** The map's grid, halved — see `NavMap2d` */
+export const halfGridMeters = geomorphGridMeters / 2;
+/** The fine one divides the half grid, so it still meets its lines */
+const gridSteps = [halfGridMeters, 0.125];
+const plainSteps = [0.5, 0.1];
+
+/** Whether a decor is laid out by the half grid */
+export function onGrid(def: Geomorph.DecorDef) {
+  return def.type === "rect" || def.type === "circle";
 }
 
 /** To a multiple of `step` when given */

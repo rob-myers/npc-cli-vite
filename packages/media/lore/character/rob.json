@@ -1,30 +1,18 @@
 {
   "key": "character/rob",
   "kind": "character",
-  "title": "Rob, low passenger",
-  "summary": "Travels frozen and cheap, and wakes up in the middle of other people's trouble.",
-  "backstory": "Rob has no ship and no fixed trade. He takes low passage to wherever the next berth is going, and picks up work at the far end: a watch to stand, a door to open, something to carry and not ask about.\n\nWaking from a low berth is never clean. He is slow for the first hour and remembers the last port better than the last ship. He has learned to read a deck quickly: who is in charge, which doors are locked, where the stunners are kept.\n\nHe can sometimes hear what the person nearest him is about to do. He has never told anyone, and he does not rely on it.\n\nDeliberately thin: enough to drop him into any scenario, on either side of it.",
-  "voice": "Brief, wry, a little groggy. Talks to himself when alone. Polite to robots. Understates danger.",
+  "name": "Rob",
   "npcKey": "rob",
   "skin": "medic-0",
-  "maps": {"301-only": {"rooms": ["g0r1"], "doors": ["g0d29", "g0d30"]}},
-  "facts": {"trade": "low passenger"},
-  "links": [],
-  "grammar": {
-    "wake": [
-      "Thawed again. Where is this?",
-      "Cold. Always cold first.",
-      "I don't know this ceiling.",
-      "Whose ship is this, then?"
-    ],
-    "sneak": ["Quietly now.", "Nobody's looking. Good.", "One door at a time.", "Don't run. Running looks guilty."],
-    "caught": [
-      "I can explain. Give me a moment to think of how.",
-      "I'm #trade.a#. I got lost.",
-      "Easy. I'm not armed. Mostly."
-    ],
-    "greet": ["Morning. Is it morning?", "Rob. Just passing through.", "I was told there'd be work."],
-    "aside": ["#room.capitalize# #roomState#. Naturally.", "#wake#", "#sneak#"],
-    "origin": ["#wake#", "#sneak#", "#caught#", "#greet#", "#aside#"]
+  "maps": {
+    "301-only": {
+      "rooms": [
+        "g0r1"
+      ],
+      "doors": [
+        "g0d29",
+        "g0d30"
+      ]
+    }
   }
 }

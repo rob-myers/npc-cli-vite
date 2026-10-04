@@ -1,0 +1,23 @@
+{
+  "name": "@npc-cli/ui__manifest",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./lore-schema": "./src/lore.schema.ts",
+    "./shared": "./src/shared.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "allotment": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  }
+}

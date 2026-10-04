@@ -42,7 +42,7 @@ export type WorldNetMessage =
   | { key: "remove-npcs"; npcKeys: string[] }
   | { key: "enter-room"; npcKey: string; gmRoomId: Geomorph.GmRoomId; reEntered: boolean }
   | { key: "door"; kind: "opening" | "closing" | "locked" | "unlocked"; gdKey: Geomorph.GmDoorKey }
-  | { key: "speech"; npcKey: string; words: string; epochMs: number }
+  | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
   | { key: "decor"; op: "create"; defs: Geomorph.DecorDef[] }
   | { key: "decor"; op: "remove"; decorKeys: string[] }
   | { key: "map-changed"; mapKey: string }

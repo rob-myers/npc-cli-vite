@@ -54,6 +54,9 @@
     },
     {
       "path": "./packages/ui/decorator"
+    },
+    {
+      "path": "./packages/ui/manifest"
     }
   ]
 }

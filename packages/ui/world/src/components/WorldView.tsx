@@ -12,7 +12,7 @@ import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
-import { float, instanceIndex, output, pass, select, uniform, vec4 } from "three/tsl";
+import { float, instanceIndex, output, pass, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import {
@@ -72,7 +72,7 @@ import { createRgbShift, type RgbShiftFx, rgbShiftAmount } from "../service/rgb-
 import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import { getWorldStore, type PersistedCamera } from "../service/storage";
-import type { SelectAnyType } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import CrossHair from "./CrossHair";
@@ -1522,8 +1522,7 @@ export function WorldView(props: React.PropsWithChildren) {
           idx.mod(256).div(255),
           forceAlpha ?? output.a,
         );
-        // 🔔 SelectAnyType fixes horrible: Expression produces a union type that is too complex to represent.
-        return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
+        return selectAs(state.objectPick.notEqual(0), pickVec, output);
       },
       withPickOutputId(typeId, idUniform, forceAlpha) {
         const idx = float(idUniform);
@@ -1533,7 +1532,7 @@ export function WorldView(props: React.PropsWithChildren) {
           idx.mod(256).div(255),
           forceAlpha ?? output.a,
         );
-        return (select as SelectAnyType)(state.objectPick.notEqual(0), pickVec, output);
+        return selectAs(state.objectPick.notEqual(0), pickVec, output);
       },
     }),
     {

@@ -1,4 +1,4 @@
-/* The map's ink — see `ink` in `NavMap2d`, `DecorLayer` and `LoreLayer` */
+/* The map's ink — see `ink` in `NavMap2d`, `DecorLayer` and `ManifestLoreLayer` */
 .decorator {
   --deco-bg: #050608;
   --deco-hull: #0b0d10;
@@ -25,8 +25,8 @@
   --deco-circle: #9ccf8f;
   --deco-quad: #e09a6a;
 
-  --deco-lore-room: rgba(250, 204, 21, 0.12);
-  --deco-lore-edge: rgba(250, 204, 21, 0.8);
+  --deco-manifest-lore-room: rgba(250, 204, 21, 0.12);
+  --deco-manifest-lore-edge: rgba(250, 204, 21, 0.8);
 }
 
 .theme-light .decorator {
@@ -55,8 +55,8 @@
   --deco-circle: #3d8a2e;
   --deco-quad: #b55a1e;
 
-  --deco-lore-room: rgba(194, 65, 12, 0.12);
-  --deco-lore-edge: rgba(65, 194, 12, 0.85);
+  --deco-manifest-lore-room: rgba(194, 65, 12, 0.12);
+  --deco-manifest-lore-edge: rgba(65, 194, 12, 0.85);
 
   /* The panels are written in dark zinc: turn the scale over, and darken each accent */
   --color-zinc-950: #fafafa;

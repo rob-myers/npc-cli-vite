@@ -4,7 +4,7 @@ import { helper } from "@npc-cli/ui__world/helper";
 import { Mat } from "@npc-cli/util/geom";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { memo, useEffect, useMemo, useRef } from "react";
-import { toMap } from "./decor-edit";
+import { halfGridMeters, isPress, stepOf, toMap } from "./decor-edit";
 import type { DecoratorUiMeta } from "./schema";
 import { getDecoratorMapStore } from "./storage";
 
@@ -12,7 +12,7 @@ import { getDecoratorMapStore } from "./storage";
  * The map from above, in world metres: 2D `x/y` is world `x/z`. Drawn from each geomorph's own
  * layout and the navmesh, so it is where things really are — see `docs/decorator.md`
  */
-export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, cursor, apiRef }: Props) {
+export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpcDrop, cursor, apiRef }: Props) {
   const press = useRef<Press | null>(null);
   const marqueeEl = useRef<SVGRectElement>(null);
 
@@ -96,20 +96,32 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
             strokeWidth={0.03}
           />
         </pattern>
+        {/* and each square halved, fainter */}
+        <pattern id={halfGridId} width={halfGridMeters} height={halfGridMeters} patternUnits="userSpaceOnUse">
+          <path
+            d={`M${halfGridMeters} 0H0V${halfGridMeters}`}
+            fill="none"
+            stroke={ink.grid}
+            strokeOpacity={0.8}
+            strokeWidth={0.02}
+          />
+        </pattern>
       </defs>
 
       <Geomorphs w={w} gmsHash={w.gmsHash} nav={w.nav} showNav={show.nav} showObstacles={show.obstacles} />
 
-      {show.grid && (
-        <rect
-          x={bounds.minX}
-          y={bounds.minY}
-          width={bounds.width}
-          height={bounds.height}
-          fill={`url(#${gridId})`}
-          pointerEvents="none"
-        />
-      )}
+      {show.grid &&
+        [halfGridId, gridId].map((id) => (
+          <rect
+            key={id}
+            x={bounds.minX}
+            y={bounds.minY}
+            width={bounds.width}
+            height={bounds.height}
+            fill={`url(#${id})`}
+            pointerEvents="none"
+          />
+        ))}
 
       {/* doors are the World's own, in world space, so they show what is open and what is locked */}
       {doors.map((door) => (
@@ -144,7 +156,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, curso
         pointerEvents="none"
       />
 
-      <NpcDots w={w} npcKeys={npcKeys} />
+      <NpcDots w={w} npcKeys={npcKeys} onNpcDrop={onNpcDrop} />
     </svg>
   );
 }
@@ -263,22 +275,89 @@ function Labels({ w, doors }: { w: WorldState; doors: Geomorph.DoorState[] }) {
   );
 }
 
-/** The chosen npcs, moved straight through their refs on the World's frames, not by rendering */
-function NpcDots({ w, npcKeys }: Pick<Props, "w" | "npcKeys">) {
+/**
+ * The chosen npcs, moved straight through their refs on the World's frames, not by rendering.
+ * One can be dragged and dropped, onto the grid with shift or ctrl — let go off the map, or Escape, cancels
+ */
+function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpcDrop">) {
   const els = useRef(new Map<string, SVGGElement>());
+  /** Whoever is being dragged follows the pointer, not themself: `at` once it has moved */
+  const drag = useRef<null | { npcKey: string; client: Geom.VectJson; at: null | Geom.VectJson }>(null);
   const shown = npcKeys.filter((npcKey) => w.n?.[npcKey] !== undefined);
+
+  function place(npcKey: string) {
+    const position = w.n[npcKey]?.position;
+    const dragged = drag.current?.npcKey === npcKey ? drag.current.at : null;
+    const at = dragged ?? (position === undefined ? null : { x: position.x, y: position.z });
+    if (at !== null) els.current.get(npcKey)?.setAttribute("transform", `translate(${at.x} ${at.y})`);
+  }
 
   useEffect(() => {
     if (shown.length === 0) return;
-    const place = () => {
-      for (const [npcKey, el] of els.current) {
-        const position = w.n[npcKey]?.position;
-        if (position !== undefined) el.setAttribute("transform", `translate(${position.x} ${position.z})`);
-      }
-    };
-    place();
-    return w.e.addFrameCallback(place);
+    const placeAll = () => shown.forEach(place);
+    placeAll();
+    return w.e.addFrameCallback(placeAll);
   }, [w, shown.join(" ")]);
+
+  /** Lets go of whoever is dragged, back where they stand */
+  function endDrag() {
+    const npcKey = drag.current?.npcKey;
+    drag.current = null;
+    window.removeEventListener("keydown", onDragKey, true);
+    if (npcKey === undefined) return;
+    els.current.get(npcKey)?.removeAttribute("opacity");
+    place(npcKey);
+  }
+  function onDragKey(e: KeyboardEvent) {
+    if (e.key !== "Escape") return;
+    e.stopPropagation(); // else it changes the tool too
+    endDrag();
+  }
+  function isOverMap(e: React.PointerEvent<SVGElement>) {
+    const r = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
+    return (
+      r !== undefined && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+    );
+  }
+
+  const dragProps = (npcKey: string) =>
+    onNpcDrop !== undefined && {
+      "data-no-pan": true,
+      pointerEvents: "all",
+      className: "cursor-grab active:cursor-grabbing",
+      // ctrl is the fine step, not the decor menu
+      onContextMenu(e: React.MouseEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+      },
+      onPointerDown(e: React.PointerEvent<SVGCircleElement>) {
+        if (isPress(e) === false) return;
+        e.stopPropagation();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        drag.current = { npcKey, client: { x: e.clientX, y: e.clientY }, at: null };
+        window.addEventListener("keydown", onDragKey, true);
+      },
+      onPointerMove(e: React.PointerEvent<SVGCircleElement>) {
+        const d = drag.current;
+        const svg = e.currentTarget.ownerSVGElement;
+        if (d?.npcKey !== npcKey || svg === null) return;
+        // a press let go where it landed moves nobody
+        if (d.at === null && Math.hypot(e.clientX - d.client.x, e.clientY - d.client.y) < clickSlopPx) return;
+        const at = toMap(svg, e.clientX, e.clientY);
+        // by the half grid, as drawn
+        const step = stepOf(e, true);
+        d.at = step === undefined ? at : { x: Math.round(at.x / step) * step, y: Math.round(at.y / step) * step };
+        // fainter off the map, where letting go cancels
+        els.current.get(npcKey)?.setAttribute("opacity", isOverMap(e) ? "1" : "0.3");
+        place(npcKey);
+      },
+      onPointerUp(e: React.PointerEvent<SVGCircleElement>) {
+        const d = drag.current;
+        endDrag();
+        if (d?.npcKey === npcKey && d.at !== null && isOverMap(e)) onNpcDrop(npcKey, d.at);
+      },
+      onPointerCancel: endDrag,
+    };
 
   return shown.map((npcKey) => (
     <g
@@ -293,7 +372,11 @@ function NpcDots({ w, npcKeys }: Pick<Props, "w" | "npcKeys">) {
         stroke={ink.npc}
         strokeWidth={1.5}
         vectorEffect="non-scaling-stroke"
+        {...dragProps(npcKey)}
       />
+      {onNpcDrop !== undefined && (
+        <title>{`${npcKey}: drag to put them elsewhere, with shift or ctrl onto the grid`}</title>
+      )}
       <text y={-0.45} fontSize={0.3} textAnchor="middle" fill={ink.npc}>
         {npcKey}
       </text>
@@ -311,6 +394,8 @@ type Props = {
   onClick?(at: Geom.VectJson, e: PointerEvent): void;
   /** A shift-drag on the map itself, let go */
   onMarquee?(rect: Geom.RectJson, e: PointerEvent): void;
+  /** A shown npc dragged, and let go on the map: without it they cannot be */
+  onNpcDrop?(npcKey: string, at: Geom.VectJson): void;
   cursor?: string;
   /** For whoever renders it to steer the map */
   apiRef?: React.RefObject<NavMap2dApi | null>;
@@ -330,6 +415,7 @@ function rectFrom(a: Geom.VectJson, b: Geom.VectJson): Geom.RectJson {
 const clickSlopPx = 4;
 
 const gridId = "nav-map-2d-grid";
+const halfGridId = "nav-map-2d-half-grid";
 const tmpMat = new Mat();
 
 const keyFontSize = 0.13;

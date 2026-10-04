@@ -1,20 +1,11 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useMemo } from "react";
-import {
-  attribute,
-  cameraProjectionMatrix,
-  cameraViewMatrix,
-  float,
-  positionLocal,
-  select,
-  vec2,
-  vec4,
-} from "three/tsl";
+import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS } from "../const.env";
 import { npcShadowRadius } from "../const.npc";
 import { createXzQuad } from "../service/geometry";
-import type { SelectFloatType } from "../service/texture";
+import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
 export default function NpcShadows() {
@@ -129,7 +120,7 @@ function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THR
     .clamp(0, 1)
     .mul(npcShadowAlphaFactor)
     .mul(xzo.z);
-  const alpha = (select as SelectFloatType)(objectPick.notEqual(0), float(0), baseAlpha);
+  const alpha = selectAs<"float">(objectPick.notEqual(0), float(0), baseAlpha);
 
   return {
     vertexNode: cameraProjectionMatrix.mul(cameraViewMatrix.mul(worldPos)),

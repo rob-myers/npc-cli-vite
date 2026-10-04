@@ -44,6 +44,21 @@ The reasons in use:
 
 It is typed `HoldReason` (`session.ts`): `"jsh-pane"`, `"manual"`, else any string, i.e. a pause group's key.
 
+## The `always` ptag
+
+A process tagged `always: true` (`ProcessTag.always`) is only ever paused by hand: `killProcesses` skips it
+for any STOP with a reason, so neither the Jsh pane nor any pause group holds it, and one spawned
+whilst the pane is paused starts running. Unlike `setPausable`, which leaves one group, it leaves them all
+— and stays out, where a plain CONT lasts only until the next pause.
+
+- **A job**: `sessionApi.setAlways(sessionKey, pgid, always)` tags every process of it, as the tags
+  popover of `<Jobs>` does (the row's ellipsis, which also lists the job's other ptags).
+- **A process**: `ptags always` or `api.setPtags({ always: true })`, inherited by children spawned
+  later; `ptags always=false` or `always=undefined` undoes it — only `true` counts, as with `WORLD_PAUSABLE`.
+- Gaining it sheds every hold bar `"manual"` (`sessionApi.shedHolds`), so a job paused by the World
+  resumes at once. Losing it pauses nothing until the next pause.
+- Per process, so tag the whole job: in `pick | move` tagging `move` alone leaves `pick` to pause.
+
 ## The Jsh pane's pause
 
 Pausing the pane (`<Tty disabled>`) does not pause the terminal: it suspends whatever is running at
