@@ -128,7 +128,7 @@ export default function Psi() {
           player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined }); // not over another's e.g. `point`
         }
 
-        // the aim, at whom they influence, so a move strafes — only ours, as a drawn sword's is
+        // the aim, at whom they influence, so a move strafes — only ours, as a weapon's is
         const { face } = player.anim;
         if (face.aim === null || face.aim === state.ownAim) {
           const target = influencing ? w.n[current.npcKey] : undefined;

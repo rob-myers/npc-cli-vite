@@ -16,11 +16,12 @@ import {
   upperFadeSecs,
 } from "../const.npc";
 import { helper } from "../service/helper";
-import { emptyAnimationClip } from "../service/three-animation";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
+/** Stands in until the gltf loads, and for a clip it lacks */
+export const emptyAnimationClip = new THREE.AnimationClip("empty-animation-clip");
 
 /**
  * What an npc's skeleton is doing. One pose at a time, changed only by `setPose`; one `tick`;
@@ -75,7 +76,11 @@ export class NpcAnimation {
     /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
     swap: 1,
     swapSecs: upperFadeSecs,
+    /** Turns both arms so the right forearm, seen from `from` in its own frame, points `at` a world point */
+    aim: null as null | UpperAim,
     group: null as null | THREE.Group,
+    /** The pose's stomach and chest, whose lean the clip's replaces */
+    torso: [] as THREE.Object3D[],
     /** Each bone, the pose's rotation of it, and ours as last written — see `tickUpper` */
     bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion }[],
   };
@@ -161,7 +166,7 @@ export class NpcAnimation {
     }
     const aiming = aim !== null;
     if (this.moving === true && this.strafeFollowsAim === true && aiming !== this.strafe) {
-      this.setStrafe(aiming); // e.g. a sword drawn mid-move
+      this.setStrafe(aiming); // e.g. armed mid-move
     }
 
     if (f.delta !== 0) {
@@ -218,6 +223,7 @@ export class NpcAnimation {
 
     if (u.group !== group) {
       u.group = group; // a fresh group, or hmr
+      u.torso = ["stomach", "chest"].flatMap((name) => group.getObjectByName(name) ?? []);
       u.bones = upperBodyBones.flatMap((name) => {
         const bone = group.getObjectByName(name);
         // `written` equals nothing, so the first tick reads the pose
@@ -237,7 +243,11 @@ export class NpcAnimation {
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
     u.time = (u.time + delta) % (clip.duration || 1);
-    const { tracks, lean } = upperTracksOf(clip);
+    const { tracks, lean: clipLean } = upperTracksOf(clip);
+    // the clip's lean in place of the pose's own, else a pose that leans too e.g. a stance doubles it
+    const lean = tmpLean.identity();
+    for (const bone of u.torso) lean.multiply(bone.quaternion);
+    lean.invert().multiply(clipLean);
     const t = u.blend * u.blend * (3 - 2 * u.blend);
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
@@ -246,11 +256,40 @@ export class NpcAnimation {
       if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
       const track = tracks.get(bone.name);
       let q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
-      if (track !== undefined && bone.parent?.name === "chest") q.premultiply(lean); // the chest stays the pose's
+      if (track !== undefined && bone.parent?.name === "chest") q.premultiply(lean);
       if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
       written.copy(bone.quaternion.slerpQuaternions(base, q, t));
     }
+    if (u.aim !== null && u.aim.weight * t > 0) this.aimArms(u.aim, u.aim.weight * t);
     if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
+  }
+
+  /** Swing both arms at the shoulder, by `weight` of the turn that lines the right forearm up on `aim.at` */
+  aimArms(aim: UpperAim, weight: number) {
+    const [arm, forearm, other] = ["rightarm", "rightforearm", "leftarm"].map(
+      (name) => this.upper.bones.find((b) => b.bone.name === name)?.bone,
+    );
+    if (arm?.parent == null || forearm === undefined) return;
+    arm.parent.updateWorldMatrix(true, false);
+    arm.updateWorldMatrix(false, true); // just written, and read at once
+    const shoulder = tmpShoulder.setFromMatrixPosition(arm.matrixWorld);
+    const along = tmpAlong.set(0, -1, 0).transformDirection(forearm.matrixWorld);
+    const from = forearm.localToWorld(tmpFrom.copy(aim.from)).sub(shoulder);
+    const want = tmpWant.copy(aim.at).sub(shoulder);
+    // the point of the line of fire as far from the shoulder as the target is: turned onto it, the line runs through
+    const b = from.dot(along);
+    const reach = Math.sqrt(Math.max(0, b * b - from.lengthSq() + want.lengthSq())) - b;
+    from.addScaledVector(along, reach).normalize();
+    want.normalize();
+    const angle = from.angleTo(want);
+    if (angle < 1e-4) return;
+    // about the shoulders, so in the chest's frame
+    const chest = arm.parent.getWorldQuaternion(tmpSwap);
+    const axis = tmpAxis.crossVectors(from, want).normalize().applyQuaternion(tmpQuat.copy(chest).invert());
+    const turn = tmpQuat.setFromAxisAngle(axis, Math.min(angle, upperAimMaxRad) * weight);
+    for (const b of this.upper.bones) {
+      if (b.bone === arm || b.bone === other) b.written.copy(b.bone.quaternion.premultiply(turn));
+    }
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
@@ -501,10 +540,21 @@ const upperTracks = new WeakMap<
   THREE.AnimationClip,
   { tracks: Map<string, THREE.Interpolant>; lean: THREE.Quaternion }
 >();
-/** The chest stays the pose's, so its breath and sway carry the arms */
+/** The chest stays the pose's, though its lean is the clip's — see `tickUpper` */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
+/** The most an `UpperAim` swings the arms off their pose */
+const upperAimMaxRad = Math.PI / 5;
 const tmpQuat = new THREE.Quaternion();
 const tmpSwap = new THREE.Quaternion();
+const tmpLean = new THREE.Quaternion();
+const tmpShoulder = new THREE.Vector3();
+const tmpAlong = new THREE.Vector3();
+const tmpWant = new THREE.Vector3();
+const tmpFrom = new THREE.Vector3();
+const tmpAxis = new THREE.Vector3();
+
+/** `weight` `0` to `1` eases it in: `at` and `from` are read each tick, so may be moved */
+export type UpperAim = { at: THREE.Vector3; from: THREE.Vector3; weight: number };
 
 function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;

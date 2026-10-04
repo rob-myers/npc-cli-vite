@@ -141,6 +141,40 @@ left foot forward. t=1.25 is the push: deeper lean, arm rises and shoves forward
 Stomach/chest position and leg z are idle's; the root rotation is zeroed and the legs pinned, so the
 feet stay put (see *Legs and the floor*).
 
+## stun_aim / stun_aim_avoid (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+
+`Arms`' stun gun: a stance stood in at rest, and played over the upper body on the move. Root rotation
+zeroed and the feet pinned flat (0.27 / 0.21), left foot forward. The right forearm is level and dead
+ahead at t=0 (`along` `(0, 0, -1)`, its `+x` up), the arm's x rising with the lean as it breathes; the
+left hand cups it from below. `stun_aim_avoid` shares the legs, torso and head, the right forearm
+raised beside the shoulder, muzzle up — solved from a target basis via `Euler.setFromQuaternion(q, 'ZYX')`.
+
+| Bone | channel | t=0 / t=2.5 | t=1.25 |
+|------|---------|-------------|--------|
+| stomach / chest | rotation x | -5 / -4 | -7.5 / -6.5 |
+| stomach / chest | position y | -0.1 / -0.1 | 0.1 / 0.2 |
+| head | rotation x | 9 | 14 |
+| rightarm | rotation | [99,0,0] | [104,0,0] |
+| rightforearm | rotation | [0,90,0] | same |
+| leftarm | rotation | [68,-40,0] | [73,-40,0] |
+| leftforearm | rotation | [43,0,0] | same |
+| leftthigh / leftshin / leftfoot | rotation x | 9 / -16 / 7 | same |
+| rightthigh / rightshin / rightfoot | rotation x | -14 / -16 / 30 | same |
+| skeleton-root | position | [0,-0.04,1] | — |
+| avoid: rightarm | rotation | [15,0,6] | [17,0,6] |
+| avoid: rightforearm | rotation | [84.97,-72.01,88.98] | same |
+| avoid: leftarm / leftforearm | rotation | [8,0,-6] / [118,0,12] | [11,0,-6] / [120,0,12] |
+
+Export from the rest pose: after any `Animator.preview()` run `Animator.showDefaultPose(true); Canvas.updateAllBones()`
+first, else the glTF's nodes keep the pose.
+
+## point / point_avoid
+
+jsh `pose`'s pair, upper body only. Idle's legs, sway and left arm, so it reads as pointing, not a guard:
+`point` leans a little (stomach -3, chest -2, head 5) with the right arm level and dead ahead
+(`rightarm` x 95, `rightforearm` [0,90,0]); `point_avoid` stands as idle does, the right forearm raised
+before the shoulder (`rightarm` [12,0,5], `rightforearm` [88.07,-57.53,86.74]: `along` `(0, 0.93, -0.37)`).
+
 ## walk / run — planted feet (legs and root solved, not hand-keyed)
 
 The npc moves `1 / gait` metres per cycle (`gait` in `npc-animation.ts`: walk `1`, run `0.5`), i.e.

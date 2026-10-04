@@ -32,7 +32,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       onKeyDown(e) {
         if (isTypingTarget(e) || e.repeat === true) return;
-        if (e.key === "q" || e.key === "Q") state.toggleSword();
+        if (e.key === "q" || e.key === "Q") state.toggleArm();
         else if (e.key === "e" || e.key === "E") state.togglePsi();
       },
       onTouch(e) {
@@ -52,16 +52,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         else if (e.touches.length === 0) {
           state.twoTap = null;
           const { top, height } = w.view.canvas.getBoundingClientRect();
-          (tap.downs[0].clientY + tap.downs[1].clientY) / 2 < top + height / 2
-            ? state.toggleSword()
-            : state.togglePsi();
+          (tap.downs[0].clientY + tap.downs[1].clientY) / 2 < top + height / 2 ? state.toggleArm() : state.togglePsi();
         }
       },
-      toggleSword() {
-        if (state.key in w.n) w.swords.toggle(state.key) && state.psi(null);
+      toggleArm() {
+        if (state.key in w.n) w.arms.toggle(state.key) && state.psi(null);
       },
       togglePsi() {
-        if (state.key in w.n) w.psi.toggle() && w.swords.sheathe(state.key);
+        if (state.key in w.n) w.psi.toggle() && w.arms.disarm(state.key);
       },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
@@ -193,13 +191,13 @@ export type State = {
   /** Two fingers down on the canvas that may yet be a tap: since when, and where */
   twoTap: null | { startMs: number; downs: [Touch, Touch] };
 
-  /** The player's controls, e.g. `q` draws or sheathes their sword — the view's own keys are WorldView's */
+  /** The player's controls, e.g. `q` arms or disarms them — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
-  /** Touch's `q` and `e`: a two-finger tap on the canvas, its top half the sword, its bottom half psi */
+  /** Touch's `q` and `e`: a two-finger tap on the canvas, its top half their weapon, its bottom half psi */
   onTouch(e: TouchEvent): void;
-  /** Draws or sheathes their sword, letting go of psi */
-  toggleSword(): void;
-  /** Psi off, else back on to the last target, sheathing their sword */
+  /** Arms or disarms them, letting go of psi */
+  toggleArm(): void;
+  /** Psi off, else back on to the last target, disarming them */
   togglePsi(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;

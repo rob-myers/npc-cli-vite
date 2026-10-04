@@ -1,5 +1,5 @@
 import { npcDims } from "@npc-cli/ui__world/const.both";
-import { agentConfig, standConfig } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
@@ -938,8 +938,94 @@ export function play({ api, w }: JshCli.RunArg) {
 }
 
 /**
+ * Pose an npc `as` something, facing and pointing `at` an npc — until they move, are armed, something else takes
+ * their upper body, or it is killed. Drawn in whilst another npc is too close
+ * ```sh
+ * pose rob as:point
+ * pose rob as:point at:npc-0
+ * ```
+ */
+export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string; at?: string } = api.jsArg(args)) {
+  const [npcKey] = api.getJsOperands(args, opts);
+  if (npcKey === undefined || opts.as === undefined) throw Error("usage: pose npcKey as:pose [at:npcKey]");
+  if (!(opts.as in poseConfig.poses)) throw Error(`as: expected one of: ${keys(poseConfig.poses)}`);
+  const npc = w.npc.get(npcKey);
+  const target = opts.at === undefined || opts.at === npc.key ? undefined : w.npc.get(opts.at);
+  const { upper: clipKey, avoid } = poseConfig.poses[opts.as as PoseKey];
+  const { upper, face } = npc.anim;
+  const mine = () => upper.target === 1 && (upper.key === clipKey || upper.key === avoid);
+  if (upper.target === 1 && mine() === false) throw Error(`${npc.key}: their upper body is taken: ${upper.key}`);
+
+  posing.get(npc.key)?.("replaced");
+  let ended: undefined | "killed" | "moved" | "replaced";
+  let end = (_why: NonNullable<typeof ended>) => {};
+  const done = new Promise<void>((resolve) => {
+    end = (why) => {
+      ended ??= why;
+      resolve();
+    };
+  });
+  posing.set(npc.key, end);
+  const sub = w.events.subscribe({
+    next(e) {
+      if (e.key === "started-moving" && e.npcKey === npc.key) end("moved");
+      if (e.key === "arms" && e.armed === true && e.npcKeys.includes(npc.key)) {
+        if (mine()) npc.anim.setUpper(null); // at once, for theirs to take
+        end("replaced");
+      }
+    },
+  });
+  const handlers = api.handleStatus({ cleanup: () => end("killed") });
+
+  /** Ours alone to clear: where their arm points, and the facing behind it */
+  const armAim = { at: npc.position.clone(), from: npc.position.clone().fromArray(poseConfig.aimFrom), weight: 0 };
+  let ownAim: typeof face.aim = null;
+  let holdUntil = 0;
+  let secs = w.timer.getElapsedTime();
+  try {
+    if (npc.isMoving()) end("moved");
+    else npc.anim.setUpper(clipKey);
+    while (ended === undefined && w.n[npc.key] === npc && mine()) {
+      const delta = w.timer.getElapsedTime() - secs;
+      secs += delta;
+      if (npc.agent?.neis.some(({ dist }) => dist < poseConfig.near ** 2) === true) {
+        holdUntil = secs + poseConfig.holdSecs; // `dist` squared
+      }
+      const next = holdUntil > secs ? avoid : clipKey;
+      if (upper.key !== next) {
+        npc.anim.setUpper(next, { swapSecs: next === avoid ? poseConfig.drawInSecs : undefined });
+      }
+
+      const aimed = target !== undefined && w.n[target.key] === target;
+      if (aimed && (face.aim === null || face.aim === ownAim)) {
+        face.aim = ownAim = { at: target.point, rate: 1, untilRest: false };
+      }
+      if (aimed && (upper.aim === null || upper.aim === armAim)) {
+        const { x, y, z } = target.position;
+        armAim.at.set(x, y + target.anim.headY, z);
+        const step = delta / poseConfig.aimSecs;
+        armAim.weight = Math.max(0, Math.min(1, armAim.weight + (next === avoid ? -step : step)));
+        upper.aim = armAim;
+      }
+      await Promise.race([w.npc.nextTick(), done]); // a tick never comes whilst paused
+    }
+  } finally {
+    if (ended !== "replaced" && mine()) npc.anim.setUpper(null);
+    if (face.aim === ownAim) face.aim = null;
+    if (upper.aim === armAim) upper.aim = null;
+    if (posing.get(npc.key) === end) posing.delete(npc.key);
+    sub.unsubscribe();
+    handlers.dispose();
+  }
+  if (ended === "killed") throw api.getKillError();
+}
+
+/** By npcKey, how to end their pose: a new one replaces it */
+const posing = new Map<string, (why: "replaced") => void>();
+
+/**
  * The player targets an npc — themself for their rings alone, a bare `psi` for off. See `w.player.psi`.
- * It is the player's, not a process's, so like `sword` it returns at once
+ * It is the player's, not a process's, so like `arm` it returns at once
  * ```sh
  * psi abe
  * psi $( w player.key )
@@ -1190,52 +1276,30 @@ export async function spawn(
 }
 
 /**
- * Draw or sheathe npcs' swords, or lock them on to an npc, through a body part — see `w.swords`. The swords are
- * theirs, so a kill changes nothing. Piped, each pick is drawn, sheathed, or locked on to through the part picked;
- * picking one of them unlocks
+ * Arm npcs with their stun guns, locked on `at` an npc, through a body `part` — no `at` unlocks. See `w.arms`.
+ * Their arms are theirs, so a kill changes nothing
  * ```sh
- * sword --on rob kate
- * sword --off rob
- * sword rob kate lock:will
- * sword rob --lock:npc-0 part:hips
- * sword rob lock:null
- * pick | sword --on
- * pick | sword rob kate
+ * arm rob kate
+ * arm rob at:npc-0
+ * arm rob at:npc-0 part:hips
  * ```
  */
-export async function sword(
-  { api, args, w }: JshCli.RunArg,
-  opts: { on?: boolean; off?: boolean; lock?: null | string; part?: string } = api.jsArg(args, {
-    "--on": "on",
-    "--off": "off",
-    "--lock": "lock",
-    "--unlock": "lock:false",
-  }),
-) {
-  api.setPausable("world", false); // picks whilst paused
-  const srcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
+export function arm({ api, args, w }: JshCli.RunArg, opts: { at?: string; part?: string } = api.jsArg(args)) {
+  api.setPausable("world", false); // arms whilst paused
+  const npcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
+  if (npcKeys.length === 0) throw Error("usage: arm npcKey... [at:npcKey] [part:bodyPart]");
+  const at = opts.at === undefined ? null : w.npc.get(opts.at).key;
+  for (const npcKey of npcKeys) w.arms.arm(npcKey, { at, part: opts.part ?? "head" });
+}
 
-  if (api.isTtyAt(0)) {
-    if (opts.on === true) w.swords.draw(...srcKeys);
-    else if (opts.off === true) w.swords.sheathe(...srcKeys);
-    else if ("lock" in opts) {
-      const dstKey = opts.lock ? w.npc.get(opts.lock).key : null;
-      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, opts.part ?? "head");
-    } else
-      throw Error("usage: sword --on npcKey...; sword --off npcKey...; sword npcKey... --lock:npcKey; sword --unlock");
-    return;
-  }
-
-  for (let datum = await api.read(); datum !== api.eof; datum = await api.read()) {
-    const npcKey = npcKeyOf(datum);
-    if (npcKey === undefined || !(npcKey in w.n)) continue;
-    if (opts.on === true) w.swords.draw(npcKey);
-    else if (opts.off === true) w.swords.sheathe(npcKey);
-    else {
-      const dstKey = srcKeys.includes(npcKey) ? null : npcKey; // one of them unlocks all
-      for (const srcKey of srcKeys) w.swords.lock(srcKey, dstKey, bodyPartOf(datum));
-    }
-  }
+/**
+ * ```sh
+ * disarm rob kate
+ * ```
+ */
+export function disarm({ api, args, w }: JshCli.RunArg) {
+  api.setPausable("world", false); // disarms whilst paused
+  w.arms.disarm(...args.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**
@@ -1378,19 +1442,6 @@ const wasdConfig = {
 /** How each move is made, as the command line gave it */
 function moveFlags({ fast, backwards, backstep, strafe }: Omit<JshCli.MoveOpts, "to">) {
   return { fast, backwards, backstep, strafe };
-}
-
-/** A named npc, or a picked one's */
-function npcKeyOf(datum: unknown) {
-  if (typeof datum === "string") return datum;
-  const { meta } = (datum as JshCli.PickEvent | undefined) ?? {};
-  return meta?.type === "npc" ? meta.npcKey : undefined;
-}
-
-/** The npc body part a pick hit, e.g. `head` */
-function bodyPartOf(datum: unknown) {
-  const { meta } = (typeof datum === "object" ? (datum as JshCli.PickEvent | null) : null) ?? {};
-  return meta?.type === "npc" ? meta.bodyPart : undefined;
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
