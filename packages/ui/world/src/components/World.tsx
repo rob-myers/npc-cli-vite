@@ -271,6 +271,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         state.npc.onTick(delta);
         state.e.postNpcTick();
         state.speech?.onTick(delta);
+        state.bubble?.onTick(delta);
         state.view.followPlayer(delta);
       },
       setDisabled(disabled) {

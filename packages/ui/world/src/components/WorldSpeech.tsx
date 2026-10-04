@@ -50,6 +50,7 @@ export function WorldSpeech() {
         state.update();
       },
       clear() {
+        for (const talk of Object.values(state.talks)) w.bubble.release(talk.npcKey, talk.playerKey);
         state.history = [];
         state.talks = {};
         state.update();
@@ -64,35 +65,41 @@ export function WorldSpeech() {
           playerKey,
           at,
           from: null,
-          pending: false,
+          answer: null,
           seen: new Set([at]),
         };
         state.set({ panelOpen: true, panelTab: "speech" });
-        state.say(npcKey, conv.nodes[at]?.text ?? "…", undefined, { to: [playerKey], nodeId: at });
+        const hold = (conv.nodes[at]?.choices?.length ?? 0) > 0;
+        state.say(npcKey, conv.nodes[at]?.text ?? "…", undefined, { to: [playerKey], nodeId: at, hold });
         return true;
       },
       chooseTalk(threadKey, index) {
         const talk = state.talks[threadKey];
         const choice = talk?.conv.nodes[talk.at]?.choices?.[index];
-        if (talk === undefined || choice === undefined || talk.pending) return;
+        if (talk === undefined || choice === undefined || talk.answer !== null) return;
         if (state.getPips(talk, choice).some((pip) => pip.met === false)) return;
-        talk.pending = true;
+        // they take a moment to answer, in world time — see `onTick`
+        talk.answer = { nodeId: choice.to, secs: answerSecs };
         talk.from = null;
-        state.say(talk.playerKey, choice.text, undefined, { to: [talk.npcKey] });
-        // they take a moment to answer, and may be gone by then
-        setTimeout(() => {
-          talk.pending = false;
-          const next = talk.conv.nodes[choice.to];
-          if (state.talks[threadKey] !== talk || next === undefined || !(talk.npcKey in w.n)) return state.update();
-          talk.at = choice.to;
-          talk.seen.add(choice.to);
-          state.say(talk.npcKey, next.text, undefined, { to: [talk.playerKey], nodeId: choice.to });
-        }, typingMs);
+        state.say(talk.playerKey, choice.text, undefined, { to: [talk.npcKey], hold: true });
+      },
+      answerTalk(threadKey) {
+        const talk = state.talks[threadKey];
+        if (talk?.answer === undefined || talk.answer === null) return;
+        const { nodeId } = talk.answer;
+        talk.answer = null;
+        const next = talk.conv.nodes[nodeId];
+        // they may be gone by then
+        if (next === undefined || !(talk.npcKey in w.n)) return state.update();
+        talk.at = nodeId;
+        talk.seen.add(nodeId);
+        const hold = (next.choices?.length ?? 0) > 0;
+        state.say(talk.npcKey, next.text, undefined, { to: [talk.playerKey], nodeId, hold });
       },
       revisitTalk(threadKey, entryId) {
         const talk = state.talks[threadKey];
         const nodeId = state.history.find((entry) => entry.id === entryId)?.nodeId;
-        if (talk === undefined || nodeId === undefined || talk.pending) return;
+        if (talk === undefined || nodeId === undefined || talk.answer !== null) return;
         talk.at = nodeId;
         talk.from = entryId;
         state.update();
@@ -192,6 +199,10 @@ export function WorldSpeech() {
         state.toasts = state.toasts.filter((t) => t.id === state.pinnedId || (t.secs -= delta) > 0);
         if (state.toasts.length !== n) state.update();
 
+        for (const [threadKey, talk] of Object.entries(state.talks)) {
+          if (talk.answer !== null && (talk.answer.secs -= delta) <= 0) state.answerTalk(threadKey);
+        }
+
         // a reply's pips follow the player about, so are looked at again now and then
         if (state.panelOpen === false || (state.needsSecs -= delta) > 0) return;
         state.needsSecs = needsPollSecs;
@@ -221,6 +232,8 @@ export function WorldSpeech() {
       say(npcKey, words, secs, opts) {
         const epochMs = Date.now();
         const to = opts?.to;
+        // those addressed have been answered, so their lines may go
+        if (to !== undefined) w.bubble?.release(...to);
         const parties = [npcKey, ...(to ?? [])];
         const entry: SpeechEntry = { id: state.nextId++, npcKey, words, epochMs, parties, nodeId: opts?.nodeId };
 
@@ -232,6 +245,9 @@ export function WorldSpeech() {
         else state.toasts.push({ ...entry, secs: secs ?? defaultToastSecs });
 
         state.update();
+
+        // over their head too, when said to someone
+        if (to !== undefined && to.length > 0) w.bubble?.say(npcKey, words, { secs, hold: opts?.hold });
 
         w.events.next({ key: "speech", npcKey, words, epochMs, to });
       },
@@ -482,7 +498,7 @@ function SpeechThread({ thread }: { thread: Thread }) {
     }),
   );
   const replies =
-    talk === undefined || gone || talk.pending
+    talk === undefined || gone || talk.answer !== null
       ? []
       : (node?.choices ?? []).map((choice, i) => ({
           text: choice.text,
@@ -505,13 +521,13 @@ function SpeechThread({ thread }: { thread: Thread }) {
         lines={lines}
         replies={replies}
         repliesKey={`${talk?.at}:${talk?.from}`}
-        typing={talk?.pending}
+        typing={talk !== undefined && talk.answer !== null}
         footer={
           talk !== undefined &&
           (gone ? (
             <div className="self-center text-slate-500 italic">{talk.npcKey} is gone</div>
           ) : (
-            talk.pending === false &&
+            talk.answer === null &&
             replies.length === 0 && <div className="self-center text-slate-500 italic">the end</div>
           ))
         }
@@ -566,7 +582,7 @@ function NpcKeyMenu({
               <Menu.Item
                 className={speechMenuItemClassName}
                 closeOnClick={false}
-                onClick={() => w.bubble.toggle(npcKey)}
+                onClick={() => w.bubble.toggleDebug(npcKey)}
               >
                 debug
               </Menu.Item>
@@ -648,8 +664,8 @@ export type Talk = {
   at: string;
   /** The earlier entry `at` was taken back to, if any */
   from: null | number;
-  /** The player has spoken, and the npc is yet to answer */
-  pending: boolean;
+  /** The player has spoken, and the npc will answer with `nodeId` in `secs` of world time */
+  answer: null | { nodeId: string; secs: number };
   /** Lines reached, so a reply leading to one is ticked */
   seen: Set<string>;
 };
@@ -707,11 +723,14 @@ export type State = {
   persistY(): void;
   persistHistorySize(): void;
   /** Their last toast is refreshed rather than duplicated when it already says this — see below */
-  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; nodeId?: string }): void;
+  /** `hold` keeps it over their head until someone addressed by it answers */
+  say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; nodeId?: string; hold?: boolean }): void;
   /** The npc opens `conv` with the player, in the thread of the two. False without either */
   startTalk(conv: Conversation, npcKey: string): boolean;
   /** The player says a reply of the line replied to, once its tests pass, and the npc answers */
   chooseTalk(threadKey: string, index: number): void;
+  /** The npc says the line the player's reply led to, unless gone */
+  answerTalk(threadKey: string): void;
   /** Replies to an earlier line again: whatever is said next is appended, nothing removed */
   revisitTalk(threadKey: string, entryId: number): void;
   /** A reply's tests, as pips */
@@ -726,7 +745,7 @@ const maxHistory = 200;
 const defaultToastSecs = 4;
 /** Seconds between looks at the replies' tests */
 const needsPollSecs = 0.2;
-/** Milliseconds an npc takes to answer */
-const typingMs = 450;
+/** Seconds of world time an npc takes to answer: none pass whilst paused */
+const answerSecs = 0.45;
 /** Pixels of the pane's width a toast leaves free */
 const toastGutter = 80;

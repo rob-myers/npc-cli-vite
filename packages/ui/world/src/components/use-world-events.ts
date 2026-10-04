@@ -543,7 +543,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               e.srcWorld === w.key &&
               w.debug?.npcContextMenu === true
             ) {
-              w.bubble.ensure(e.meta.npcKey, { focus: true });
+              w.bubble.openDebug(e.meta.npcKey, { focus: true });
             }
             break;
           }
