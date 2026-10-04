@@ -9,8 +9,8 @@ import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
 
 /**
- * One bubble over an npc, following them: the line they last said to someone, for a few seconds,
- * and a debug section when opened (`openDebug`) — shown through `w.html`, as a route node's is
+ * One bubble over an npc, following them: the line they last said, for a few seconds, and a debug
+ * section when opened (`openDebug`) — shown through `w.html`, as a route node's is
  */
 export default function NpcBubbles() {
   const w = useContext(WorldContext);
@@ -164,7 +164,7 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
 }
 
 const bubbleKey = (npcKey: string) => `bubble:${npcKey}`;
-/** Seconds a line said stays over them, whilst unpaused: twice its toast's, as it must be found first */
+/** Seconds a line said stays over them, whilst unpaused: long enough to be found, then read */
 const lineSecs = 8;
 /** Their pose changes on its own, and nothing announces it */
 const posePollMs = 250;
@@ -182,7 +182,7 @@ export type State = {
   say(npcKey: string, words: string, opts?: { secs?: number; hold?: boolean }): void;
   /** A held line starts its `lineSecs`, e.g. once answered */
   release(...npcKeys: string[]): void;
-  /** Lines run down whilst unpaused, as toasts do — see `World`'s `onTick` */
+  /** Lines run down whilst unpaused — see `World`'s `onTick` */
   onTick(delta: number): void;
   /** Their bubble as it should be: a line, a debug section, both, or gone */
   sync(npcKey: string): void;

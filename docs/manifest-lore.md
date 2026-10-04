@@ -57,7 +57,8 @@ in the World: `w.speech.startTalk(conv, npcKey)`.
 
 ### Played in the World: `WorldSpeech`
 
-The speech history is grouped into threads by who spoke and to whom (`threadKeyOf`): a plain
+`WorldSpeech` is a button, marked when something was said since its history was last open, and that
+history, grouped into threads by who spoke and to whom (`threadKeyOf`): a plain
 `w.speech.say` is a thread of one, a talk is the player's and the npc's. `say` takes `to`, which the
 `speech` event carries, so a client's history groups alike. A thread is drawn by `TalkThread`
 (`@npc-cli/ui__world/talk-thread`, styled by `talk-thread.css`): speech bubbles, the player's on the
@@ -65,7 +66,7 @@ right, an npc's tinted by topic (`topicHue`) with a rule naming each topic turne
 answer share a row; only the latest row and the one before, dimmed, show, the rest folded into an
 ellipsis until clicked — and a click on the latest folds them again.
 
-A line said to someone (`say`'s `to`) also shows over the speaker's head: ONE bubble per npc (`NpcBubbles`, through `w.html`, bare: click-through, no handles). Its
+Every line said also shows over the speaker's head: ONE bubble per npc (`NpcBubbles`, through `w.html`, bare: click-through, no handles). Its
 debug section (room, pose, and for the player `PsiControls`) opens on right-click with the debug
 `npcContextMenu` on, or from the speech menu's **debug** (`w.bubble.openDebug`); its close button
 closes that section alone. A talk's line awaiting an answer is `hold`: it stays until someone it

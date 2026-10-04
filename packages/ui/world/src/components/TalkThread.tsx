@@ -1,12 +1,13 @@
 import { cn } from "@npc-cli/util";
-import { CheckIcon, DotsThreeIcon } from "@phosphor-icons/react";
-import { Fragment, useEffect, useState } from "react";
+import { CaretUpIcon, CheckIcon, DotsThreeIcon } from "@phosphor-icons/react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import "./talk-thread.css";
 
 /**
  * A conversation as speech bubbles: only the latest exchange and the one before it, dimmed, the rest
- * folded into an ellipsis until clicked — then the replies, each waiting on its pips
+ * folded into an ellipsis which shows them, and folds them again — then the replies, each waiting on
+ * its pips
  */
 export function TalkThread(props: {
   lines: TalkLine[];
@@ -21,6 +22,14 @@ export function TalkThread(props: {
   const [spread, setSpread] = useState(false);
   useEffect(() => setSpread(false), [props.lines.length]);
 
+  // what was just said, or is now to be answered, is brought into view — not so as it mounts
+  const foot = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (mounted.current) foot.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    mounted.current = true;
+  }, [props.lines.length, props.repliesKey, props.typing]);
+
   const rows = toRows(props.lines);
   const last = rows.at(-1);
   if (props.typing === true && last !== undefined && last.left === undefined) {
@@ -30,14 +39,18 @@ export function TalkThread(props: {
   return (
     // room for the tails either side
     <div className="flex flex-col gap-3 px-2 py-1">
-      {spread === false && rows.length > 2 && (
+      {rows.length > 2 && (
         <button
           type="button"
-          title="show them"
+          title={spread ? "fold them away" : "show them"}
           className="self-center flex items-center gap-1 px-2 rounded-full border border-zinc-700 text-[10px] text-zinc-500 cursor-pointer hover:bg-zinc-800 hover:text-zinc-100"
-          onClick={() => setSpread(true)}
+          onClick={() => setSpread(spread === false)}
         >
-          <DotsThreeIcon weight="bold" className="size-4" />
+          {spread ? (
+            <CaretUpIcon weight="bold" className="size-4" />
+          ) : (
+            <DotsThreeIcon weight="bold" className="size-4" />
+          )}
           {rows.length - 2} earlier
         </button>
       )}
@@ -49,9 +62,11 @@ export function TalkThread(props: {
         const piles = latest && spread && rows.length > 2;
         if (spread === false && i < rows.length - 2) return null;
         const topic = row.left?.topic;
+        /** Folded, the first row shown names its topic whether or not it turned to it there */
+        const heads = spread === false && i === Math.max(0, rows.length - 2);
         return (
           <Fragment key={row.left?.id ?? row.right?.id}>
-            {piled === false && topic !== undefined && topic !== rows[i - 1]?.left?.topic && (
+            {topic !== undefined && (heads || topic !== rows[i - 1]?.left?.topic) && (
               <div className="talk-topic text-[10px] uppercase" style={{ color: `hsl(${topicHue(topic)} 60% 60%)` }}>
                 {topic}
               </div>
@@ -108,6 +123,8 @@ export function TalkThread(props: {
         </div>
       )}
       {props.footer}
+      {/* no row of its own: the gap before it is taken back */}
+      <div ref={foot} className="-mt-3" />
     </div>
   );
 }
