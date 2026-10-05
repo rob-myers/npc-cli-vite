@@ -19,9 +19,9 @@ nor phasers are mirrored.
 
 | slot | shows | a press |
 | --- | --- | --- |
-| `1` psi | faded unless granted | `w.player.togglePsi()` |
-| `2` phaser | faded unless carried; a beam from it whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
-| `3` keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door |
+| `1` psi | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
+| `2` phaser | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
+| `3` keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door; right-click splits a key off |
 | `4`-`9` | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
@@ -41,17 +41,21 @@ to `carried` or to access) and on the player's own door and spawn events.
 ## Items
 
 An item is a runtime quad (or, if flat, point) decor with `meta.item`, one of `inventoryConfig.kinds`. A quad is a
-cuboid with ONE textured face: `meta.h` is its height, and it stands on the floor.
+cuboid with ONE textured face: `meta.h` is its height, and it stands on the floor. A kind with no
+`inventoryConfig.height` is a point — the `keycard` — and `give` makes it one.
 
 ```sh
 pick 1 | decor type:quad img:book meta:'{ item: "book", h: 0.05 }' y3d:0.05
-pick 1 | decor type:quad img:keycard meta:'{ item: "keycard", h: 0.02, door: "g0d29" }' y3d:0.02
+pick 1 | decor type:point img:keycard scale:2 meta:'{ item: "keycard", door: "g0d29" }'
 give rob items:"psi phaser"
 drop rob items:phaser
 ```
 
-A `keycard` with `meta.door` is not carried: taking it grants that door (`w.e.setAccess`), which is
-what `grant` and `revoke` do too. Held doors are saved with the npc, per map. Not `meta.gdKey` —
+A `keycard` may have `meta.door`, a gdKey. Carried, it is just an item and opens nothing: its slot's
+right-click menu has "add to keychain", which grants that door (`w.e.chainKey`) and uses the card up.
+The keys slot's menu lists each held door, "split g0d8" taking it off the keys as a carried keycard
+again (`w.e.unchainKey`, which stamps `meta.map` — a gdKey means nothing on another map, so that
+card only goes back on there). Held doors are saved with the npc, per map. Not `meta.gdKey` —
 Debug's door toggle reads that off any pick.
 
 ## kamma

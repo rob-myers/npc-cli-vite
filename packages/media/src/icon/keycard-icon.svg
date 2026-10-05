@@ -1,41 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#c3ccd8"/>
-    </linearGradient>
-  </defs>
-  <!-- the ring, behind: it comes out of the back of the cards' shared hole -->
-  <circle cx="32" cy="14" r="9" fill="none" stroke="#1a2230" stroke-width="3.600"/>
-  <circle cx="32" cy="14" r="9" fill="none" stroke="#c9d2dc" stroke-width="2"/>
-  <g transform="translate(32 23)">
-    <g transform="rotate(44) translate(0 -7)">
-      <rect x="-11" y="2" width="22" height="34" rx="3" fill="url(#card)" stroke="#1a2230" stroke-width="1.4"/>
-      <path d="M-11 12H11V5a3 3 0 0 0-3-3H-8a3 3 0 0 0-3 3Z" fill="#d1493f" stroke="#1a2230" stroke-width="1.4"/>
-      <path d="M-11 30H11V33a3 3 0 0 1-3 3H-8a3 3 0 0 1-3-3Z" fill="#d1493f" stroke="#1a2230" stroke-width="1.4"/>
-      <circle cx="0" cy="7" r="2.800" fill="#0d1622" stroke="#1a2230" stroke-width="1"/>
-      <rect x="-6.500" y="18" width="7" height="6" rx="1" fill="#e0bb5e" stroke="#1a2230" stroke-width="0.8"/>
-      <path d="M-6.500 26.500H6.500" stroke="#1a2230" stroke-width="1.4" stroke-linecap="round"/>
-    </g>
-    <g transform="rotate(-44) translate(0 -7)">
-      <rect x="-11" y="2" width="22" height="34" rx="3" fill="url(#card)" stroke="#1a2230" stroke-width="1.4"/>
-      <path d="M-11 12H11V5a3 3 0 0 0-3-3H-8a3 3 0 0 0-3 3Z" fill="#3fae6a" stroke="#1a2230" stroke-width="1.4"/>
-      <path d="M-11 30H11V33a3 3 0 0 1-3 3H-8a3 3 0 0 1-3-3Z" fill="#3fae6a" stroke="#1a2230" stroke-width="1.4"/>
-      <circle cx="0" cy="7" r="2.800" fill="#0d1622" stroke="#1a2230" stroke-width="1"/>
-      <rect x="-6.500" y="18" width="7" height="6" rx="1" fill="#e0bb5e" stroke="#1a2230" stroke-width="0.8"/>
-      <path d="M-6.500 26.500H6.500" stroke="#1a2230" stroke-width="1.4" stroke-linecap="round"/>
-    </g>
-    <g transform="rotate(0) translate(0 -7)">
-      <rect x="-11" y="2" width="22" height="34" rx="3" fill="url(#card)" stroke="#1a2230" stroke-width="1.4"/>
-      <path d="M-11 12H11V5a3 3 0 0 0-3-3H-8a3 3 0 0 0-3 3Z" fill="#2f7fd1" stroke="#1a2230" stroke-width="1.4"/>
-      <path d="M-11 30H11V33a3 3 0 0 1-3 3H-8a3 3 0 0 1-3-3Z" fill="#2f7fd1" stroke="#1a2230" stroke-width="1.4"/>
-      <circle cx="0" cy="7" r="2.800" fill="#0d1622" stroke="#1a2230" stroke-width="1"/>
-      <rect x="-6.500" y="18" width="7" height="6" rx="1" fill="#e0bb5e" stroke="#1a2230" stroke-width="0.8"/>
-      <path d="M-6.500 26.500H6.500" stroke="#1a2230" stroke-width="1.4" stroke-linecap="round"/>
-    </g>
+  <!-- as `decor/keycard.svg`, fitted to the square -->
+  <g transform="translate(2 9.500) scale(0.750)">
+    <rect x="1.500" y="1.500" width="77" height="57" rx="6" fill="#e9edf2" stroke="#1a2230" stroke-width="3"/>
+    <rect x="1.500" y="1.500" width="77" height="16" rx="6" fill="#2f7fd1"/>
+    <rect x="1.500" y="12" width="77" height="6" fill="#2f7fd1"/>
+    <rect x="1.500" y="1.500" width="77" height="57" rx="6" fill="none" stroke="#1a2230" stroke-width="3"/>
+    <rect x="9" y="26" width="18" height="14" rx="2" fill="#d6b35a" stroke="#1a2230" stroke-width="1.500"/>
+    <path d="M9 33H27M18 26V40" stroke="#1a2230" stroke-width="1"/>
+    <path d="M34 28H70M34 35H62" stroke="#1a2230" stroke-width="3"/>
+    <rect x="9" y="47" width="62" height="5" fill="#1a2230"/>
   </g>
-  <!-- ...and in front, where it goes into the hole -->
-  <path d="M32 23A9 9 0 0 1 23.100 15.400" fill="none" stroke="#1a2230" stroke-width="3.600"/>
-  <path d="M32.300 23A9 9 0 0 1 23 14.800" fill="none" stroke="#c9d2dc" stroke-width="2"/>
-  <path d="M25 8.500a9 9 0 0 1 8-3.400" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
 </svg>

@@ -1,3 +1,4 @@
+import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
 import { LockIcon, LockOpenIcon, XIcon } from "@phosphor-icons/react";
@@ -14,6 +15,7 @@ export default function WorldHud() {
 
   const state = useStateRef(
     (): State => ({
+      menu: null,
       selected: null,
 
       drop(name) {
@@ -76,25 +78,38 @@ export default function WorldHud() {
 
   const { key: playerKey } = w.player;
   const big = w.touchDevice;
-  const keyCount = w.e.getHeldDoors(playerKey)?.length ?? 0;
+  const heldDoors = w.e.getHeldDoors(playerKey) ?? [];
+  const keyCount = heldDoors.length;
   const keyDoor = state.getKeyDoor();
   const KeyLock = keyDoor?.locked === true ? LockIcon : LockOpenIcon;
   const psiOn = (w.psi?.getTarget() ?? null) !== null;
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
+  const armed = w.phasers?.isArmed(playerKey) === true;
 
-  const slot = (index: number, opts: SlotOpts, children: React.ReactNode) => (
+  /** By slot, what a right-click on it offers */
+  const menus: Record<number, undefined | SlotMenuItem[]> = {};
+
+  const slot = (index: number, opts: SlotOpts, children: React.ReactNode) => {
+    menus[index] = opts.menu || undefined;
+    return slotEl(index, opts, children);
+  };
+  const slotEl = (index: number, opts: SlotOpts, children: React.ReactNode) => (
     <div
       key={index}
       title={opts.title}
       className={cn(
-        "relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md hover:bg-sky-700/40",
+        "relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
+        opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
         big ? "size-12" : "size-18",
-        opts.active === true && "bg-amber-300/25 ring-1 ring-amber-300/80",
+        opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
         opts.had === false && "*:opacity-25",
       )}
       // the canvas keeps the focus: Enter there unpauses, and would press this again too
       onMouseDown={(e) => e.preventDefault()}
-      onContextMenu={(e) => e.preventDefault()}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (opts.menu?.length) state.set({ menu: { index, el: e.currentTarget } });
+      }}
       onClick={() => {
         state.press(index);
         w.view.focus();
@@ -133,7 +148,7 @@ export default function WorldHud() {
       <div className="pointer-events-auto mx-auto flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-300/30 bg-linear-to-b from-slate-400/35 via-slate-600/30 to-slate-800/45 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] [scrollbar-width:none] @lg:gap-3 @lg:px-3 @lg:py-2">
         {slot(
           0,
-          { title: "psi", had: w.e.hasItem(playerKey, "psi"), active: psiOn },
+          { title: "psi", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
           <BrainIcon firing={psiOn} paused={w.disabled} />,
         )}
         {slot(
@@ -141,16 +156,22 @@ export default function WorldHud() {
           {
             title: "phaser",
             had: hasPhaser,
-            active: w.phasers?.isArmed(playerKey) === true,
+            active: armed,
+            plain: true,
             drop: hasPhaser ? "phaser" : undefined,
           },
-          <PhaserIcon locked={w.phasers?.isLocked(playerKey) === true} paused={w.disabled} />,
+          <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} />,
         )}
         {slot(
           2,
-          { title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`, had: keyCount > 0, active: keyDoor !== null },
+          {
+            title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
+            had: keyCount > 0,
+            active: keyDoor !== null,
+            menu: heldDoors.map((gdKey) => ({ label: `split ${gdKey}`, run: () => w.e.unchainKey(playerKey, gdKey) })),
+          },
           <>
-            <ItemIcon kind="keycard" />
+            <ItemIcon kind="keychain" />
             {keyCount > 0 && (
               <span className="absolute right-1 bottom-0.5 text-xs leading-3 text-sky-100">{keyCount}</span>
             )}
@@ -161,15 +182,48 @@ export default function WorldHud() {
           slot(
             i + 3,
             {
-              title: String(def.meta?.label ?? def.meta?.item),
+              title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
               had: true,
               active: state.selected === def.key,
               drop: def.key,
+              // a keycard for a door joins the keys
+              menu: def.meta?.door && [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }],
             },
-            <ItemIcon kind={def.meta?.item} />,
+            <>
+              <ItemIcon kind={def.meta?.item} />
+              {def.meta?.door && (
+                <span className="absolute right-1 bottom-0.5 text-[10px] leading-3 text-sky-100 [text-shadow:0_0_3px_#000,0_0_3px_#000]">
+                  {def.meta.door}
+                </span>
+              )}
+            </>,
           ),
         )}
       </div>
+
+      <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
+        <Menu.Portal container={w.rootEl}>
+          <Menu.Positioner anchor={state.menu?.el} side="top" sideOffset={6} className="z-50">
+            <Menu.Popup className="pointer-events-auto max-h-48 select-none overflow-y-auto rounded-md border border-neutral-700 bg-neutral-800/90 py-1 text-xs shadow-lg">
+              {menus[state.menu?.index ?? -1]?.map(({ label, run }) => (
+                <Menu.Item
+                  key={label}
+                  className={cn(
+                    "cursor-pointer px-3 py-1 text-neutral-300 hover:bg-neutral-700",
+                    big && "py-2 text-sm",
+                  )}
+                  onClick={() => {
+                    run();
+                    w.view.focus();
+                  }}
+                >
+                  {label}
+                </Menu.Item>
+              ))}
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
     </div>
   );
 }
@@ -186,7 +240,7 @@ function useSvgPause(paused: boolean) {
 /** The shadow is each icon's own: on a slot it would be redrawn with every frame of the brain */
 const iconClass = "size-[85%] drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
 
-const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind }) {
+const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" }) {
   return <img className={cn(iconClass, "object-contain")} src={itemIconUrl[kind]} alt={kind} draggable={false} />;
 });
 
@@ -194,14 +248,22 @@ const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind }) {
  * The gun `Phasers` draws, its boxes turned a little towards us — and whilst `locked`, its beam.
  * Generated: `shaderConfig.gunBoxes` projected at azimuth -38°, elevation 28°
  */
-const PhaserIcon = memo(function PhaserIcon({ locked, paused }: { locked: boolean; paused: boolean }) {
+const PhaserIcon = memo(function PhaserIcon({ armed, locked }: { armed: boolean; locked: boolean }) {
   return (
-    <svg ref={useSvgPause(paused)} className={iconClass} viewBox="0 0 64 64" aria-label="phaser">
+    <svg className={iconClass} viewBox="0 0 64 64" aria-label="phaser">
+      <defs>
+        <radialGradient id="hud-phaser-glow">
+          <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#ff8a5c" stopOpacity="0" />
+        </radialGradient>
+      </defs>
       <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
         {phaserFaces.map(([face, d]) => (
-          <path key={d} d={d} fill={phaserFill[face]} />
+          // holstered, its emitter is as dull as the rest
+          <path key={d} d={d} fill={phaserFill[armed ? face : phaserOff[face]]} />
         ))}
       </g>
+      {armed === true && <circle cx="41" cy="31.3" r="9" fill="url(#hud-phaser-glow)" />}
       {locked === true && (
         <g>
           <path
@@ -213,7 +275,6 @@ const PhaserIcon = memo(function PhaserIcon({ locked, paused }: { locked: boolea
           />
           <path d="M44.4 32.5 59.0 37.8" stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
           <circle cx="59.0" cy="37.8" r="2.4" fill="#ffb596" />
-          <animate attributeName="opacity" values="1;0.55;1" dur="1.2s" repeatCount="indefinite" />
         </g>
       )}
     </svg>
@@ -229,6 +290,9 @@ const phaserFill = {
   glowSide: "#ff8a5c",
   glowEnd: "#d9744d",
 };
+
+/** Each face as it is with the gun put away */
+const phaserOff = { top: "top", side: "side", end: "end", glowTop: "top", glowSide: "side", glowEnd: "end" } as const;
 
 const phaserFaces: [keyof typeof phaserFill, string][] = [
   ["top", "M14.5 24.0 23.5 27.3 18.2 30.4 9.2 27.2Z"],
@@ -368,14 +432,22 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
 ]);
 
 /** `drop` names what its "x" puts down, shown whilst `active` */
+type SlotMenuItem = { label: string; run(): void };
+
 type SlotOpts = {
   title: string;
   had: boolean;
   active: boolean;
   drop?: string;
+  /** Neither hover nor `active` tints it: its icon's own animation says it is on */
+  plain?: true;
+  /** What a right-click on it offers */
+  menu?: SlotMenuItem[];
 };
 
 export type State = {
+  /** The slot whose right-click menu shows, hung off its element */
+  menu: null | { index: number; el: HTMLElement };
   /** The key of the carried item a press chose, a second press letting it go */
   selected: null | string;
   /** Puts an item of the player's at their feet: the slot's "x" */
