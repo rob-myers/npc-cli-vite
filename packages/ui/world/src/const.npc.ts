@@ -35,7 +35,7 @@ export const agentConfig = {
     idle: 4.0,
     /** An idle npc separating: `onTick` drops anyone at rest to this, else walk -> idle slides */
     idleSeparating: 0.25,
-    walk: 8.0,
+    walk: 18.0,
   },
   maxSpeed: {
     idle: 0.5,
