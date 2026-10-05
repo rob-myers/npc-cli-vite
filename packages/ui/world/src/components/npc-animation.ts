@@ -247,11 +247,13 @@ export class NpcAnimation {
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
     u.time = (u.time + delta) % (clip.duration || 1);
-    const { tracks, lean: clipLean } = upperTracksOf(clip);
-    // the clip's lean in place of the pose's own, else a pose that leans too e.g. a stance doubles it
+    const { tracks, torso } = upperTracksOf(clip);
+    // the clip's lean in place of the pose's own, else a pose that leans too e.g. a stance doubles it —
+    // its lean NOW: the arms are keyed against it, so one frame's would tip them as the torso breathes
     const lean = tmpLean.identity();
     for (const bone of u.torso) lean.multiply(bone.quaternion);
-    lean.invert().multiply(clipLean);
+    lean.invert();
+    for (const interpolant of torso) lean.multiply(tmpQuat.fromArray(interpolant.evaluate(u.time)));
     const t = u.blend * u.blend * (3 - 2 * u.blend);
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
@@ -523,7 +525,7 @@ function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
 }
 
-/** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and its torso's lean at the start — cached per clip */
+/** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and likewise its `torso`'s — cached per clip */
 function upperTracksOf(clip: THREE.AnimationClip) {
   let cached = upperTracks.get(clip);
   if (cached === undefined) {
@@ -538,12 +540,8 @@ function upperTracksOf(clip: THREE.AnimationClip) {
         return interpolant === undefined ? [] : [[name, interpolant] as const];
       }),
     );
-    const lean = new THREE.Quaternion();
-    for (const name of ["stomach", "chest"]) {
-      const values = interpolantOf(name)?.evaluate(0);
-      if (values !== undefined) lean.multiply(tmpQuat.fromArray(values));
-    }
-    upperTracks.set(clip, (cached = { tracks, lean }));
+    const torso = ["stomach", "chest"].flatMap((name) => interpolantOf(name) ?? []);
+    upperTracks.set(clip, (cached = { tracks, torso }));
   }
   return cached;
 }
@@ -553,7 +551,7 @@ const strafeClipKeys = ["walk", "strafe_right", "backwards", "strafe_left"] sati
 
 const upperTracks = new WeakMap<
   THREE.AnimationClip,
-  { tracks: Map<string, THREE.Interpolant>; lean: THREE.Quaternion }
+  { tracks: Map<string, THREE.Interpolant>; torso: THREE.Interpolant[] }
 >();
 /** The chest stays the pose's, though its lean is the clip's — see `tickUpper` */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
