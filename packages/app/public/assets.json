@@ -4598,6 +4598,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.8,
             "h": 0.4,
             "inset": 0.05,
@@ -6082,6 +6083,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -6096,6 +6098,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -12826,6 +12829,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.3,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -12846,6 +12850,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.3,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -21154,6 +21159,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.8,
             "h": 0.4,
             "inset": 0.05,
@@ -22513,6 +22519,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.8,
             "h": 0.4,
             "inset": 0.05,
@@ -23728,6 +23735,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.8,
             "h": 0.4,
             "inset": 0.05,
@@ -25471,6 +25479,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.3,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -25491,6 +25500,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.3,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -25716,6 +25726,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -25730,6 +25741,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -34416,6 +34428,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": -0.1,
               "h": 0.2,
               "symKey": "couch-and-chairs--006",
@@ -34434,6 +34447,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -34452,6 +34466,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": -0.1,
               "h": 0.2,
               "symKey": "couch-and-chairs--006",
@@ -34470,6 +34485,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -41711,6 +41727,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.8,
               "h": 0.4,
               "inset": 0.05,
@@ -41723,6 +41740,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.8,
             "h": 0.4,
             "inset": 0.05,
@@ -44097,6 +44115,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.8,
               "h": 0.4,
               "inset": 0.05,
@@ -44109,6 +44128,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.8,
             "h": 0.4,
             "inset": 0.05,
@@ -46982,6 +47002,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": -0.1,
               "h": 0.2,
               "symKey": "couch-and-chairs--006",
@@ -47000,6 +47021,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -47018,6 +47040,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": -0.1,
               "h": 0.2,
               "symKey": "couch-and-chairs--006",
@@ -47036,6 +47059,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": -0.1,
             "h": 0.2,
             "symKey": "couch-and-chairs--006",
@@ -48259,5 +48283,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": -1704922200}
+  "hash": {"obstacles": -960860527}
 }
