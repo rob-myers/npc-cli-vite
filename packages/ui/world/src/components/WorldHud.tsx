@@ -172,6 +172,8 @@ export default function WorldHud() {
             active: armed,
             plain: true,
             drop: hasPhaser ? "phaser" : undefined,
+            // dropped without drawing it first
+            menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
           },
           <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} />,
         )}
@@ -200,7 +202,10 @@ export default function WorldHud() {
               active: state.selected === def.key,
               drop: def.key,
               // a keycard for a door joins the keys
-              menu: def.meta?.door && [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }],
+              menu: [
+                ...(def.meta?.door ? [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }] : []),
+                { label: "drop", run: () => state.drop(def.key) },
+              ],
             },
             <>
               <ItemIcon kind={def.meta?.item} />

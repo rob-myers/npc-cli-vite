@@ -25,7 +25,8 @@ nor phasers are mirrored.
 | `4`-`9` | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
-A selected item, and a drawn phaser, show an "x" which puts it down.
+A selected item, and a drawn phaser, show an "x" which puts it down — as does "drop" in the
+right-click menu of either, with no need to select or draw it first.
 
 The bar re-renders when nudged (`w.hud?.update()`, from `Psi.choose`, `Phasers.sync` and every change
 to `carried` or to access) and on the player's own door and spawn events.
