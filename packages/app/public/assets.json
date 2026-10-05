@@ -1281,6 +1281,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0
@@ -1292,6 +1293,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1
@@ -1305,6 +1307,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2
@@ -16342,6 +16345,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0
@@ -16353,6 +16357,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1
@@ -16366,6 +16371,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2
@@ -17734,6 +17740,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0,
@@ -17746,6 +17753,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1,
@@ -17765,6 +17773,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2,
@@ -21094,6 +21103,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0,
@@ -21106,6 +21116,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1,
@@ -21125,6 +21136,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2,
@@ -22318,6 +22330,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0,
@@ -22330,6 +22343,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1,
@@ -22349,6 +22363,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2,
@@ -41589,6 +41604,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.6,
               "symKey": "console--019",
               "origObstacleId": 0
@@ -41599,6 +41615,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0
@@ -41614,6 +41631,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.6,
               "symKey": "console--019",
               "origObstacleId": 1
@@ -41624,6 +41642,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1
@@ -41641,6 +41660,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.6,
               "symKey": "console--019",
               "origObstacleId": 2
@@ -41651,6 +41671,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2
@@ -43727,6 +43748,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.6,
               "symKey": "console--019",
               "origObstacleId": 0
@@ -43737,6 +43759,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 0
@@ -43752,6 +43775,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.6,
               "symKey": "console--019",
               "origObstacleId": 1
@@ -43762,6 +43786,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 1
@@ -43779,6 +43804,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.6,
               "symKey": "console--019",
               "origObstacleId": 2
@@ -43789,6 +43815,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "console--019",
             "origObstacleId": 2
@@ -48262,5 +48289,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": 435397736}
+  "hash": {"obstacles": 1949770971}
 }
