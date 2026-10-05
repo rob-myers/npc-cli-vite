@@ -14,10 +14,10 @@ pick meta.{floor,do,point} | move rob --strafe --force
 wasd_delta npc:rob | move npc:rob --strafe --force
 
 # move player
-pick meta.{floor,do,point} | move npc:/shared/pred/player --force
+pick meta.{floor,do,point} | move $( playerKey ) --force
 
 # move last picked
-pick meta.{floor,do,point} | move npc:/shared/pred/lastPicked --force
+pick meta.{floor,do,point} | move $( lastPicked ) --force
 
 # look on long press
 pick --long | look npc:rob --force
