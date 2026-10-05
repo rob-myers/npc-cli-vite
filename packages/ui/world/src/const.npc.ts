@@ -7,7 +7,7 @@
 /** An npc's label, unless `label` or the predicates say otherwise */
 export const defaultNpcLabelColor = "#ff9";
 
-export const npcScale = 0.7;
+export const npcScale = 0.8;
 
 export const npcShadowRadius = npcScale / 2.5;
 
@@ -220,7 +220,7 @@ export const psiMaxReach = 8;
 export const defaultPsiTune: PsiTune = {
   reach: 5,
   speed: 0.4,
-  gap: 0.5,
+  gap: 1.5,
   width: 2.5,
   opacity: 0.5,
   fadeInSecs: 1.8,
