@@ -141,12 +141,12 @@ left foot forward. t=1.25 is the push: deeper lean, arm rises and shoves forward
 Stomach/chest position and leg z are idle's; the root rotation is zeroed and the legs pinned, so the
 feet stay put (see *Legs and the floor*).
 
-## stun_aim / stun_aim_avoid (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+## phaser_aim / phaser_aim_avoid (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
 
-`Arms`' stun gun: a stance stood in at rest, and played over the upper body on the move. Root rotation
+`Phasers`' phaser: a stance stood in at rest, and played over the upper body on the move. Root rotation
 zeroed and the feet pinned flat (0.27 / 0.21), left foot forward. The right forearm is level and dead
 ahead at t=0 (`along` `(0, 0, -1)`, its `+x` up), the arm's x rising with the lean as it breathes; the
-left hand cups it from below. `stun_aim_avoid` shares the legs, torso and head, the right forearm
+left hand cups it from below. `phaser_aim_avoid` shares the legs, torso and head, the right forearm
 raised beside the shoulder, muzzle up — solved from a target basis via `Euler.setFromQuaternion(q, 'ZYX')`.
 
 | Bone | channel | t=0 / t=2.5 | t=1.25 |
