@@ -35,6 +35,7 @@ export default function Psi() {
       tickedMs: performance.now(),
 
       choose(target) {
+        if (target !== null && w.npc?.npcToDoable[w.player?.key] != null) return state.getTarget(); // not whilst sat or lain
         chooseInfluence(state.influence, target, w.player?.key);
         state.syncTargetRoom();
         state.upload();
@@ -62,7 +63,9 @@ export default function Psi() {
 
         // held whilst paused: a choice made then shows once they play on
         const played = w.disabled === true ? 0 : secs;
-        const steps = { in: played / state.tune.fadeInSecs, out: played / state.tune.fadeOutSecs };
+        // nothing comes in until their phaser is put away: the contours start with the hands
+        const holstering = w.phasers?.arms.has(w.player?.key) === true;
+        const steps = { in: holstering ? 0 : played / state.tune.fadeInSecs, out: played / state.tune.fadeOutSecs };
         advanceInfluence(state.influence, steps, w.player?.key, (npcKey) => npcKey in w.n);
         state.syncTargetRoom();
         state.upload();
@@ -129,8 +132,9 @@ export default function Psi() {
         const shown = upper.target === 1 ? upper.key : null;
         if (pose === null) {
           if (isPsiPose(shown)) player.anim.setUpper(null);
-        } else if (pose !== shown && (shown === null || isPsiPose(shown))) {
-          player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined }); // not over another's e.g. `point`
+        } else if (pose !== shown && (shown === null || isPsiPose(shown)) && w.phasers?.arms.has(player.key) !== true) {
+          // not over another's e.g. `point` — nor until their phaser is put away, and gone from their hand
+          player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined });
         }
 
         // the aim, at whom they influence, so a move strafes — only ours, as a weapon's is

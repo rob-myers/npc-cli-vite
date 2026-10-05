@@ -34,6 +34,7 @@ export default function Phasers() {
       tickedMs: performance.now(),
 
       arm(npcKey, opts = {}) {
+        if (w.npc.npcToDoable[npcKey] != null) return; // not whilst sat or lain
         const arm = state.ensure(npcKey);
         const at = opts.at ?? null;
         arm.target = at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null };
@@ -160,7 +161,14 @@ export default function Phasers() {
           const to = dst ?? npc;
           state.roomData.set([npc.roomSlot.value, to.roomSlot.value, npc.npcLit.value, to.npcLit.value], count * 4);
           hand.matrixWorld.decompose(tmpAt, tmpQuat, tmpScale);
-          state.gunData.set([tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * eased(beam.gun.presence)], count * 4);
+          // the forearm is rolled a quarter turn in our pose alone: undone as it leaves, so the gun stays gripped
+          const { upper } = npc.anim;
+          const roll = (1 - (isPhaserPose(upper.key) ? eased(upper.blend) : 0)) * (phaserConfig.restRoll / 2);
+          if (roll > 0) tmpQuat.multiply(tmpRoll.set(0, Math.sin(roll), 0, Math.cos(roll))); // about the forearm, its `y`
+          const present = eased(beam.gun.presence);
+          // scaled about the forearm's origin, their elbow: slid down it, so it shrinks into the hand instead
+          tmpAt.addScaledVector(along, phaserConfig.grip * tmpScale.x * (1 - present));
+          state.gunData.set([tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present], count * 4);
           state.quatData.set([tmpQuat.x, tmpQuat.y, tmpQuat.z, tmpQuat.w], count * 4);
           count++;
         }
@@ -189,14 +197,16 @@ export default function Phasers() {
         const pose = armed === false ? null : avoid ? phaserConfig.avoid : phaserConfig.pose;
         const { anim } = npc;
         const shown = anim.upper.target === 1 ? anim.upper.key : null;
+        /** Another's pose still on its way out e.g. psi's hands: ours, the stance and the gun wait for it */
+        const waiting = anim.upper.key !== null && isPhaserPose(anim.upper.key) === false && anim.upper.blend > 0;
         if (pose === null) {
           if (isPhaserPose(shown)) anim.setUpper(null);
-        } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
+        } else if (waiting === false && pose !== shown && (shown === null || isPhaserPose(shown))) {
           anim.setUpper(pose, { swapSecs: avoid ? phaserConfig.drawInSecs : undefined }); // in before the hand goes through
         }
 
         // the stance — theirs to stand in, and only ours to put back
-        const stance = armed === true ? phaserConfig.pose : null;
+        const stance = armed === true && waiting === false ? phaserConfig.pose : null;
         if (stance !== arm.ownIdle) {
           const from = anim.idleClip.name as AnimationClipKey;
           if (arm.ownIdle === null) arm.idleBefore = from;
@@ -226,7 +236,8 @@ export default function Phasers() {
         arm.armAim ??= { at: beam.at, from: muzzle, weight: 0 };
         arm.armAim.weight = eased(beam.shown.presence); // the arm follows the beam
         if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = armed ? arm.armAim : null;
-        beam.gun.target = armed === true ? 1 : 0;
+        // in hand with our pose: once it is theirs, and put away until the arm is back
+        beam.gun.target = isPhaserPose(anim.upper.key) && (armed === true || anim.upper.blend > 0) ? 1 : 0;
         const locking = target !== undefined && arm.inSight === true;
         beam.shown.target = locking && avoid === false ? 1 : 0;
         if (avoid === false) beam.next = locking ? arm.target : null;
@@ -399,7 +410,11 @@ const phaserConfig = {
   reach: 0.75,
   /** The gun's muzzle, where the beam leaves, off the right forearm — its `+x` is up whilst aiming — in model units */
   beamFrom: [0.12, -0.54, 0] as [number, number, number],
+  /** How far down the forearm the hand holds it, which it fades into and out of — model units */
+  grip: 0.29,
   fadeSecs: 0.3,
+  /** Radians about the right forearm between an arm at rest and the pose's — see `onTick` */
+  restRoll: Math.PI / 2,
   /** Seconds they stay drawn in at least — longer whilst something stays in reach */
   holdSecs: 0.5,
   drawInSecs: 0.15,
@@ -421,3 +436,4 @@ const tmpAlong = new THREE.Vector3();
 const tmpAt = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 const tmpScale = new THREE.Vector3();
+const tmpRoll = new THREE.Quaternion();
