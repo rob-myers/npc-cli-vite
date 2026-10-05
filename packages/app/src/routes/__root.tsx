@@ -24,7 +24,7 @@ function RootComponent() {
       <NewVersionToast />
 
       {/* ordering fixes weird mount animation bug of WorldMenu */}
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
       {/* <TanStackRouterDevtools position="bottom-right" /> */}
     </div>
   );
