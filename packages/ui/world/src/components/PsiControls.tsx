@@ -51,7 +51,7 @@ function PsiSliders({ tune, apply }: { tune: PsiTune; apply: (partial: Partial<P
         const [min, max, step] = psiTuneRanges[key];
         return (
           <label key={key} className="flex items-center gap-3">
-            <span className="w-20 shrink-0 text-white/50">{label}</span>
+            <span className="w-24 shrink-0 whitespace-nowrap text-white/50">{label}</span>
             <input
               type="range"
               min={min}
@@ -67,7 +67,7 @@ function PsiSliders({ tune, apply }: { tune: PsiTune; apply: (partial: Partial<P
       })}
       {/* not `<input type="color">`, whose native picker the card's zoom blows up */}
       <label className="flex items-center gap-3">
-        <span className="w-20 shrink-0 text-white/50">hue</span>
+        <span className="w-24 shrink-0 whitespace-nowrap text-white/50">hue</span>
         <input
           type="range"
           min={0}
@@ -101,6 +101,7 @@ const psiSliders = [
   ["gap", "gap"],
   ["width", "width"],
   ["opacity", "opacity"],
-  ["fadeSecs", "fade"],
+  ["fadeInSecs", "fade in"],
+  ["fadeOutSecs", "fade out"],
   ["tint", "tint"],
 ] as const satisfies [keyof typeof psiTuneRanges, string][];

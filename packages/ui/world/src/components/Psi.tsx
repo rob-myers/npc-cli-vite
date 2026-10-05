@@ -61,8 +61,9 @@ export default function Psi() {
         state.tickedMs = now;
 
         // held whilst paused: a choice made then shows once they play on
-        const step = w.disabled === true ? 0 : secs / state.tune.fadeSecs;
-        advanceInfluence(state.influence, step, w.player?.key, (npcKey) => npcKey in w.n);
+        const played = w.disabled === true ? 0 : secs;
+        const steps = { in: played / state.tune.fadeInSecs, out: played / state.tune.fadeOutSecs };
+        advanceInfluence(state.influence, steps, w.player?.key, (npcKey) => npcKey in w.n);
         state.syncTargetRoom();
         state.upload();
       },

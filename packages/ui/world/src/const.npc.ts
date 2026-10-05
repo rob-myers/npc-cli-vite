@@ -223,7 +223,8 @@ export const defaultPsiTune: PsiTune = {
   gap: 0.5,
   width: 2.5,
   opacity: 0.5,
-  fadeSecs: 1.2,
+  fadeInSecs: 1.8,
+  fadeOutSecs: 0.2,
   color: "#9fe8ff",
   tint: 1,
 };
@@ -235,7 +236,8 @@ export const psiTuneRanges = {
   gap: [0.15, 1.5, 0.05],
   width: [0.5, 8, 0.25],
   opacity: [0.05, 1, 0.05],
-  fadeSecs: [0.1, 3, 0.1],
+  fadeInSecs: [0.1, 3, 0.1],
+  fadeOutSecs: [0.1, 3, 0.1],
   tint: [0, 1, 0.05],
 } as const;
 
@@ -252,7 +254,8 @@ export type PsiTune = {
   /** Of each contour, which glows additively: lower is fainter */
   opacity: number;
   /** Seconds an influence takes to come, and to go */
-  fadeSecs: number;
+  fadeInSecs: number;
+  fadeOutSecs: number;
   color: string;
   /** How much of `color`'s hue a contour carries: none is white */
   tint: number;

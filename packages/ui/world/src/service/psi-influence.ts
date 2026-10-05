@@ -45,15 +45,15 @@ export function chooseInfluence(x: Influence, target: null | string, playerKey: 
   }
 }
 
-/** Every fade a `step` further, forgetting npcs `exists` denies, then a queued target once `leaving` has gone */
+/** Every fade a step `in` or `out`, as it is headed, forgetting npcs `exists` denies, then a queued target once `leaving` has gone */
 export function advanceInfluence(
   x: Influence,
-  step: number,
+  steps: { in: number; out: number },
   playerKey: undefined | string,
   exists: (npcKey: string) => boolean,
 ) {
   for (const fade of [x.self, x.current, x.leaving]) {
-    if (fade !== null) stepFade(fade, step);
+    if (fade !== null) stepFade(fade, fade.target === 1 ? steps.in : steps.out);
   }
   if (x.current !== null && exists(x.current.npcKey) === false) x.current = null; // the player's rings stay
   if (x.leaving !== null && (x.leaving.presence === 0 || exists(x.leaving.npcKey) === false)) x.leaving = null;
