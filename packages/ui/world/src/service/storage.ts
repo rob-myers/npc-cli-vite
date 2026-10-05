@@ -86,7 +86,7 @@ const defaultWorldSettings: WorldSettings = {
   followMode: defaultFollowMode,
   followLast: "pan",
   postProcessing: true,
-  rgbShift: false,
+  rgbShift: true,
   fadeRoomsMode: "sight",
   fadeRoomOutlines: false,
   npcOutline: isTouchDevice() === false,
