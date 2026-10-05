@@ -46,7 +46,8 @@ other items by `surface.gap` — and with none `dropItem` is `false`: the bar sa
 ## Items
 
 An item is a runtime quad (or, if flat, point) decor with `meta.item`, one of `inventoryConfig.kinds`. A quad is a
-cuboid with ONE textured face: `meta.h` is its height, and `y3d` its top. A kind with no
+cuboid with ONE textured face: `meta.h` is its height, and `y3d` its top. Its other faces are
+`inventoryConfig.sides`, where any other decor quad's are black — `meta.sides`, a colour, says otherwise for either. A kind with no
 `inventoryConfig.height` is a point — the `keycard` — and `give` makes it one.
 
 ```sh

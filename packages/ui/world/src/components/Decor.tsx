@@ -11,6 +11,7 @@ import {
   decorKeyFallback,
   decorPointDefaultRadius,
   decorPointKeyFallback,
+  inventoryConfig,
   lockedDoorTint,
   MAX_DECOR_QUAD_INSTANCES,
   precision,
@@ -554,6 +555,9 @@ export default function Decor() {
           batch.inst.setMatrixAt(id, embedXZMat4(tmpMat, { yScale: cuboidIconHeight, yHeight: (decor.meta.y ?? 0) + cuboidIconHeight, mat4: tmpMat4 }));
         }
         batch.inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
+        // black, bar an item's — or whatever `meta.sides` says
+        const sides = decor.meta.sides ?? (decor.meta.item === undefined ? "#000" : inventoryConfig.sides);
+        tmpColor.set(sides).toArray(batch.sideRgb, id * 3);
         batch.isPoint[id] = decor.type === "point" ? 1 : 0;
         return true;
       },
@@ -755,9 +759,12 @@ export default function Decor() {
 
       /** A cuboid's sides, then its top — see `createUnitBox` */
       const createTexMaterials = (typeId: number) => {
-        // black either way: the fade only takes them out of the pick. A point has none
+        // black unless `meta.sides` says otherwise: the fade only takes them out of the pick. A point has none
         const sides = createMaterial();
-        sides.color.set("#000");
+        sides.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
+          w.view.playerLight.applyLightRgba(vec4(attribute<"vec3">("sideRgb", "vec3"), 1)),
+          fade,
+        );
         sides.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
         sides.outputNode = shadeWhenHidden(
           selectAs(
@@ -956,6 +963,8 @@ type TexBatch = Batch & {
   uvData: Float32Array;
   /** `1` for a point, which has no sides */
   isPoint: Float32Array;
+  /** Each cuboid's sides, from `meta.sides` */
+  sideRgb: Float32Array;
 };
 
 type ShapeBatch = Batch & {
@@ -995,8 +1004,10 @@ function createTexBatch(max: number): TexBatch {
   const uvData = new Float32Array(max * 4);
   const isPoint = new Float32Array(max);
   geo.setAttribute("uvData", new THREE.InstancedBufferAttribute(uvData, 4));
+  const sideRgb = new Float32Array(max * 3);
   geo.setAttribute("isPoint", new THREE.InstancedBufferAttribute(isPoint, 1));
-  return Object.assign(createBatch(geo, max), { materials: [], uvData, isPoint });
+  geo.setAttribute("sideRgb", new THREE.InstancedBufferAttribute(sideRgb, 3));
+  return Object.assign(createBatch(geo, max), { materials: [], uvData, isPoint, sideRgb });
 }
 
 /** Rects and circles: a flat quad with a dashed outline */

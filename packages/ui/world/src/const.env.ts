@@ -104,6 +104,8 @@ export const inventoryConfig = {
   height: { phaser: 0.1, book: 0.05, box: 0.06 } as Partial<Record<string, number>>,
   /** A quad is put down only on a surface: metres in from its edge, apart from another item, and tried along that edge */
   surface: { inset: 0.25, gap: 0.3, along: [0, 0.35, -0.35, 0.7, -0.7] },
+  /** An item quad's sides, unless its `meta.sides` says otherwise: what is not its one textured face */
+  sides: "#222",
   /** How much larger than life a point is drawn, to be seen and pressed */
   pointScale: 2,
   /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk */
