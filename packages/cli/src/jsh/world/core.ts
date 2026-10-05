@@ -172,7 +172,7 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  */
 export function give(
   { api, args, w }: JshCli.RunArg,
-  opts: CarryOpts = api.jsArg(args, { npc: "npcKey" }, { array: { items: true } }),
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
 ) {
   api.setPausable("world", false);
 
