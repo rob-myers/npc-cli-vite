@@ -7,6 +7,7 @@ import React, { useEffect } from "react";
 import { atan, attribute, float, fract, int, texture, min as tslMin, uniform, uv, vec2, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
+  decorCuboidHeight,
   decorKeyFallback,
   decorPointDefaultRadius,
   decorPointKeyFallback,
@@ -964,7 +965,7 @@ type ShapeBatch = Batch & {
 };
 
 const MAX_RUNTIME_DECOR_INSTANCES = 1024;
-const cuboidHeight = 0.05;
+const cuboidHeight = decorCuboidHeight;
 /** How far off the floor a rect or circle lies */
 const shapeY = 0.003;
 const cuboidIconHeight = 0.005;

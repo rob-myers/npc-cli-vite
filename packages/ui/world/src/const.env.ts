@@ -102,6 +102,8 @@ export const inventoryConfig = {
   kinds: ["phaser", "book", "box", "keycard"],
   /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
   height: { phaser: 0.1, book: 0.05, box: 0.06 } as Partial<Record<string, number>>,
+  /** A quad is put down only on a surface: metres in from its edge, apart from another item, and tried along that edge */
+  surface: { inset: 0.25, gap: 0.3, along: [0, 0.35, -0.35, 0.7, -0.7] },
   /** How much larger than life a point is drawn, to be seen and pressed */
   pointScale: 2,
   /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk */
@@ -286,6 +288,9 @@ export const roomLabelTexOpts = {
 
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;
+
+/** Metres tall a decor quad's cuboid is, without a `meta.h` */
+export const decorCuboidHeight = 0.05;
 
 export const decorKeyFallback = "icon--warn";
 export const decorPointKeyFallback = "abstract-point";

@@ -25,7 +25,7 @@ nor phasers are mirrored.
 | `4`-`9` | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
-A selected item, and a drawn phaser, show an "x" which puts it down at their feet.
+A selected item, and a drawn phaser, show an "x" which puts it down.
 
 The bar re-renders when nudged (`w.hud?.update()`, from `Psi.choose`, `Phasers.sync` and every change
 to `carried` or to access) and on the player's own door and spawn events.
@@ -33,7 +33,12 @@ to `carried` or to access) and on the player's own door and spawn events.
 ## Having
 
 `w.e.carried[npcKey]` is `{ items, psi? }`, persisted per World so it goes with them between maps.
-`items` are the DEFS of the decor they took, so putting one down is `w.decor.create` of it at their feet.
+`items` are the DEFS of the decor they took, so putting one down is `w.decor.create` of it.
+
+A point (the keycard) goes down at their feet. A quad goes down ONLY onto a table: an obstacle with
+`meta.surface` in their room, an edge of it within `inventoryConfig.reach.raised`. `w.e.getDropSpot`
+picks the spot — in from the nearest edge by `surface.inset`, tried along it until one is clear of
+other items by `surface.gap` — and with none `dropItem` is `false`: the bar says "cannot drop here" above itself, `drop` throws.
 
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
 - `takeItem(npcKey, decorKey)` takes a runtime decor off the map.
@@ -41,7 +46,7 @@ to `carried` or to access) and on the player's own door and spawn events.
 ## Items
 
 An item is a runtime quad (or, if flat, point) decor with `meta.item`, one of `inventoryConfig.kinds`. A quad is a
-cuboid with ONE textured face: `meta.h` is its height, and it stands on the floor. A kind with no
+cuboid with ONE textured face: `meta.h` is its height, and `y3d` its top. A kind with no
 `inventoryConfig.height` is a point — the `keycard` — and `give` makes it one.
 
 ```sh

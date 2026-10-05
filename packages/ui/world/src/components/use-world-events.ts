@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { npcDims } from "../const.both";
 import {
+  decorCuboidHeight,
   defaultDoorCloseMs,
   defaultPlayerKey,
   defaultSkinKey,
@@ -96,6 +97,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           const index = had.items.findIndex((def) => def.key === name || def.meta?.item === name);
           const npc = w.n?.[npcKey];
           if (index === -1 || npc === undefined) return false;
+          // a quad only onto a surface in reach: a point lies at their feet
+          const spot = had.items[index].type === "quad" ? state.getDropSpot(npcKey) : { ...npc.point, y3d: 0 };
+          if (spot === null) return false;
           if (had.items[index].meta?.item === "phaser" && w.phasers?.arms.has(npcKey) === true) {
             // put away first, so it is not in their hand and at their feet at once
             w.phasers.disarm(npcKey);
@@ -103,7 +107,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             return true;
           }
           const [def] = had.items.splice(index, 1);
-          w.decor.create(state.getItemDefAt(def, npc.point));
+          w.decor.create(state.getItemDefAt(def, spot, spot.y3d));
           w.view.forceUpdate();
         }
         state.onCarriedChange(npcKey);
@@ -240,11 +244,44 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
       },
-      getItemDefAt(def, at) {
+      getDropSpot(npcKey) {
+        const [npc, room] = [w.n?.[npcKey], w.npc.npcToRoom.get(npcKey)];
+        if (npc === undefined || room === undefined) return null;
+        const { reach, surface } = inventoryConfig;
+        const items = Object.values(w.decor.runtime.byKey).filter((d) => d.meta.item !== undefined);
+        /** Every edge of a surface in reach, nearest first */
+        const edges = [...(w.decor.byRoom[room.gmId]?.[room.roomId] ?? [])]
+          .flatMap((decor) => {
+            const outline: Geom.VectJson[] = decor.meta.surface === true ? (decor.meta.refinedOutline ?? []) : [];
+            return outline.map((a, i) => {
+              const b = outline[(i + 1) % outline.length];
+              return { decor, outline, a, b, near: geomService.getClosestOnSeg(npc.point, a, b) };
+            });
+          })
+          .filter((edge) => edge.near.dst <= reach.raised)
+          .sort((p, q) => p.near.dst - q.near.dst);
+
+        for (const { decor, outline, a, b, near } of edges) {
+          const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+          const [tx, ty] = [(b.x - a.x) / length, (b.y - a.y) / length];
+          // inwards is whichever normal faces the middle
+          const { center } = decor.bounds;
+          const side = Math.sign((center.x - near.x) * -ty + (center.y - near.y) * tx) || 1;
+          for (const along of surface.along) {
+            const x = near.x + tx * along - ty * side * surface.inset;
+            const y = near.y + ty * along + tx * side * surface.inset;
+            if (geomService.outlineProperlyContains(outline, { x, y }) === false) continue;
+            const taken = items.some((d) => Math.hypot(d.bounds.center.x - x, d.bounds.center.y - y) < surface.gap);
+            if (taken === false) return { x, y, y3d: Number(decor.meta.y) || 0 };
+          }
+        }
+        return null;
+      },
+      getItemDefAt(def, at, base = 0) {
         const kind = String(def.meta?.item);
         let key = def.key;
         for (let i = 1; key in w.decor.byKey; i++) key = `${kind}-${i}`;
-        if (def.type !== "quad") return { ...def, key, ...at, transform: undefined } as Geomorph.DecorDef;
+        if (def.type !== "quad") return { ...def, key, x: at.x, y: at.y, transform: undefined } as Geomorph.DecorDef;
         // a quad's transform starts at its image's corner
         const entry = w.sheets.decor[def.img];
         const [halfW, halfH] = [entry?.originalWidth ?? 0, entry?.originalHeight ?? 0].map(
@@ -252,7 +289,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         );
         const [a, b, c, d] = def.transform ?? [1, 0, 0, 1];
         const transform: Geom.SixTuple = [a, b, c, d, at.x - (a * halfW + c * halfH), at.y - (b * halfW + d * halfH)];
-        return { ...def, key, transform, y3d: def.meta?.h }; // stood on the floor
+        return { ...def, key, transform, y3d: base + (def.meta?.h ?? decorCuboidHeight) }; // its top: stood on it
       },
       getHeldDoors(npcKey) {
         const held = Object.entries(state.npcToAccess[npcKey] ?? {}).flatMap(([gdKey, has]) =>
@@ -1376,12 +1413,14 @@ export type State = {
   unchainKey(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
   /** By npcKey, what each has — persisted per World, so it goes with them between maps. See `docs/inventory.md` */
   carried: Record<string, persisted.Carried>;
-  /** Puts an item of theirs (by its key, or the first of a kind) at their feet, or revokes `psi` — a drawn phaser once put away */
+  /** Puts an item of theirs (by its key, or the first of a kind) down, or revokes `psi` — `false` if a quad has no surface in reach */
   dropItem(npcKey: string, name: string): boolean;
   /** The doors they hold keys to, if any */
   getHeldDoors(npcKey: string): undefined | Geomorph.GmDoorKey[];
-  /** A carried def as it would stand at the point, under a key no decor has */
-  getItemDefAt(def: Geomorph.DecorDef, at: Geom.VectJson): Geomorph.DecorDef;
+  /** Where they could put a quad down: a free spot on a `meta.surface` obstacle in reach, in their room */
+  getDropSpot(npcKey: string): null | (Geom.VectJson & { y3d: number });
+  /** A carried def as it would stand at the point, `base` metres up, under a key no decor has */
+  getItemDefAt(def: Geomorph.DecorDef, at: Geom.VectJson, base?: number): Geomorph.DecorDef;
   /** Grants `psi`, or makes them an item out of nothing — `false` if they have no room */
   giveItem(npcKey: string, name: "psi" | ItemKind, extraMeta?: Meta): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;

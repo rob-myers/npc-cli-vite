@@ -197,7 +197,7 @@
       "children": [
         {
           "id": "e98701ab-8a05-410c-9e40-4359e9d90911",
-          "name": "decor point shown",
+          "name": "decor point shown=false",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 95, "f": 49.5},
@@ -207,19 +207,6 @@
           "baseRect": {"width": 10, "height": 10},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, 1, 95, 49.5)"
-        },
-        {
-          "id": "f85b5fed-f93a-4ffb-9709-138c5c5e3f8b",
-          "name": "decor quad tint=#ddf y=0.7 h=0.05",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 90, "f": 12},
-          "type": "image",
-          "srcType": "decor",
-          "srcKey": "number-one",
-          "baseRect": {"width": 10, "height": 10},
-          "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 90, 12)"
         },
         {
           "id": "2de24072-a090-41d1-8893-b3ea8f56ef71",

@@ -16,11 +16,18 @@ export default function WorldHud() {
   const state = useStateRef(
     (): State => ({
       menu: null,
+      refused: false,
+      refusedTimer: 0,
       selected: null,
 
       drop(name) {
         if (w.client === true) return;
-        w.e.dropItem(w.player.key, name);
+        if (w.e.dropItem(w.player.key, name) === false) {
+          // a quad needs a table: said over the bar, a moment
+          window.clearTimeout(state.refusedTimer);
+          state.refusedTimer = window.setTimeout(() => state.set({ refused: false }), refusedMs);
+          return state.set({ refused: true });
+        }
         if (state.selected === name) state.selected = null;
         state.update();
         w.view.forceUpdate();
@@ -144,6 +151,12 @@ export default function WorldHud() {
 
   return (
     <div className="@container pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2">
+      {/* out here, not in the row: it scrolls, so would clip it */}
+      {state.refused === true && (
+        <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200">
+          cannot drop here
+        </div>
+      )}
       {/* one row, scrolled sideways once it outgrows a narrow World */}
       <div className="pointer-events-auto mx-auto flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-300/30 bg-linear-to-b from-slate-400/35 via-slate-600/30 to-slate-800/45 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] [scrollbar-width:none] @lg:gap-3 @lg:px-3 @lg:py-2">
         {slot(
@@ -432,6 +445,9 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
 ]);
 
 /** `drop` names what its "x" puts down, shown whilst `active` */
+/** How long "cannot drop here" shows */
+const refusedMs = 1500;
+
 type SlotMenuItem = { label: string; run(): void };
 
 type SlotOpts = {
@@ -452,6 +468,9 @@ export type State = {
   selected: null | string;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
+  /** A drop was just refused, and the bar says so */
+  refused: boolean;
+  refusedTimer: number;
   /** What they carry, in slot order — their phaser has a slot of its own */
   getItems(): Geomorph.DecorDef[];
   /** The door at hand that the player holds the key to */

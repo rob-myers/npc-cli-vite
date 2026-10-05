@@ -123,7 +123,7 @@ export function drop(
 
   const npc = w.npc.get(opts.npcKey);
   for (const name of opts.items) {
-    if (w.e.dropItem(npc.key, name) === false) throw Error(`${npc.key} has no ${name}`);
+    if (w.e.dropItem(npc.key, name) === false) throw Error(`${npc.key} has no ${name}, or no surface in reach`);
   }
   w.view.forceUpdate();
 }
