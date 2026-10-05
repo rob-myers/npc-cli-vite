@@ -724,6 +724,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.81,
             "h": 0.2,
             "inset": 0.025,
@@ -1172,7 +1173,7 @@
           "width": 4.5,
           "height": 0.3,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 4.5, "f": 7.5125},
-          "meta": {"window--007": true, "y": 1.7, "name": "window"}
+          "meta": {"window--007": true, "y": 1.8, "name": "window"}
         },
         {
           "symbolKey": "table--004",
@@ -4783,6 +4784,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "misc-stellar-cartography--023",
             "origObstacleId": 0
@@ -15375,6 +15377,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.81,
             "h": 0.2,
             "inset": 0.025,
@@ -15569,7 +15572,7 @@
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0,
-            "y": 1.7,
+            "y": 1.8,
             "transform": [1, 0, 0, 1, 4.5, 7.5125]
           }
         },
@@ -15588,7 +15591,7 @@
             "windowId": 0,
             "force-y": 0.4,
             "dupOf": 0,
-            "y": 1.7,
+            "y": 1.8,
             "transform": [1, 0, 0, 1, 4.5, 7.5125]
           }
         },
@@ -21607,6 +21610,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.81,
             "h": 0.2,
             "inset": 0.025,
@@ -21819,7 +21823,7 @@
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 1,
-            "y": 1.7,
+            "y": 1.8,
             "transform": [1, 0, 0, 1, 13.5125, 9.025]
           }
         },
@@ -21843,7 +21847,7 @@
             "windowId": 1,
             "force-y": 0.4,
             "dupOf": 0,
-            "y": 1.7,
+            "y": 1.8,
             "transform": [1, 0, 0, 1, 13.5125, 9.025]
           }
         },
@@ -22591,6 +22595,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "misc-stellar-cartography--023",
             "origObstacleId": 0,
@@ -23989,6 +23994,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "misc-stellar-cartography--023",
             "origObstacleId": 0
@@ -42490,6 +42496,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.81,
               "h": 0.2,
               "inset": 0.025,
@@ -42509,6 +42516,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.81,
             "h": 0.2,
             "inset": 0.025,
@@ -42843,7 +42851,7 @@
         {
           "symbolKey": "window--007",
           "obstacleId": 0,
-          "height": 1.7,
+          "height": 1.8,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -44243,6 +44251,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.7,
               "symKey": "misc-stellar-cartography--023",
               "origObstacleId": 0
@@ -44260,6 +44269,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "misc-stellar-cartography--023",
             "origObstacleId": 0
@@ -48315,5 +48325,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": -204086380}
+  "hash": {"obstacles": 1536903226}
 }

@@ -75,7 +75,7 @@
         },
         {
           "id": "3ce3b38b-0558-4d97-ad7a-eefcb361c604",
-          "name": "window--007 y=1.7 name=window",
+          "name": "window--007 y=1.8 name=window",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180, "f": 300.5},
@@ -673,7 +673,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "ae340bb5-68e2-48b7-953f-766ee413d811",
@@ -710,7 +710,7 @@
         },
         {
           "id": "d13b07f6-877c-4926-abfc-9675ac7b8fe7",
-          "name": "obstacle table y=0.81 h=0.2 inset=1",
+          "name": "obstacle table surface y=0.81 h=0.2 inset=1",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 1},
