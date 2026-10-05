@@ -76,7 +76,7 @@ export class NpcAnimation {
     /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
     swap: 1,
     swapSecs: upperFadeSecs,
-    /** Turns both arms so the right forearm, seen from `from` in its own frame, points `at` a world point */
+    /** Turns both arms so the right forearm, seen from `from` in its own frame, points `at` a world point — and the head to look there */
     aim: null as null | UpperAim,
     group: null as null | THREE.Group,
     /** The pose's stomach and chest, whose lean the clip's replaces */
@@ -264,7 +264,10 @@ export class NpcAnimation {
       if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
       written.copy(bone.quaternion.slerpQuaternions(base, q, t));
     }
-    if (u.aim !== null && u.aim.weight * t > 0) this.aimArms(u.aim, u.aim.weight * t);
+    if (u.aim !== null && u.aim.weight * t > 0) {
+      this.aimArms(u.aim, u.aim.weight * t);
+      this.aimHead(u.aim, u.aim.weight * t);
+    }
     if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
   }
 
@@ -284,16 +287,24 @@ export class NpcAnimation {
     const b = from.dot(along);
     const reach = Math.sqrt(Math.max(0, b * b - from.lengthSq() + want.lengthSq())) - b;
     from.addScaledVector(along, reach).normalize();
-    want.normalize();
-    const angle = from.angleTo(want);
-    if (angle < 1e-4) return;
-    // about the shoulders, so in the chest's frame
-    const chest = arm.parent.getWorldQuaternion(tmpSwap);
-    const axis = tmpAxis.crossVectors(from, want).normalize().applyQuaternion(tmpQuat.copy(chest).invert());
-    const turn = tmpQuat.setFromAxisAngle(axis, Math.min(angle, upperAimMaxRad) * weight);
+    const turn = turnWithin(arm.parent, from, want.normalize(), upperAimMaxRad, weight);
+    if (turn === null) return;
     for (const b of this.upper.bones) {
       if (b.bone === arm || b.bone === other) b.written.copy(b.bone.quaternion.premultiply(turn));
     }
+  }
+
+  /** Turn the head from their facing to look where the arms aim */
+  aimHead(aim: UpperAim, weight: number) {
+    const entry = this.upper.bones.find((b) => b.bone.name === "head");
+    const chest = entry?.bone.parent;
+    if (entry === undefined || chest == null) return;
+    const ry = this.npc.rotation.y;
+    const from = tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
+    // the chest's matrix is fresh: `aimArms` has just run
+    const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
+    const turn = turnWithin(chest, from, tmpWant.copy(aim.at).sub(neck).normalize(), headAimMaxRad, weight);
+    if (turn !== null) entry.written.copy(entry.bone.quaternion.premultiply(turn));
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
@@ -548,6 +559,8 @@ const upperTracks = new WeakMap<
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
 /** The most an `UpperAim` swings the arms off their pose */
 const upperAimMaxRad = Math.PI / 5;
+/** …and the most it turns the head off their facing */
+const headAimMaxRad = Math.PI / 4;
 const tmpQuat = new THREE.Quaternion();
 const tmpSwap = new THREE.Quaternion();
 const tmpLean = new THREE.Quaternion();
@@ -556,6 +569,15 @@ const tmpAlong = new THREE.Vector3();
 const tmpWant = new THREE.Vector3();
 const tmpFrom = new THREE.Vector3();
 const tmpAxis = new THREE.Vector3();
+
+/** `weight` of the turn from `from` onto `want`, world and unit, `maxRad` at most: about `parent`'s child, so in its frame */
+function turnWithin(parent: THREE.Object3D, from: THREE.Vector3, want: THREE.Vector3, maxRad: number, weight: number) {
+  const angle = from.angleTo(want);
+  if (angle < 1e-4) return null;
+  const axis = tmpAxis.crossVectors(from, want).normalize();
+  axis.applyQuaternion(parent.getWorldQuaternion(tmpQuat).invert());
+  return tmpQuat.setFromAxisAngle(axis, Math.min(angle, maxRad) * weight);
+}
 
 /** `weight` `0` to `1` eases it in: `at` and `from` are read each tick, so may be moved */
 export type UpperAim = { at: THREE.Vector3; from: THREE.Vector3; weight: number };
