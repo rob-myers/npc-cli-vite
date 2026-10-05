@@ -24,6 +24,8 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
   const state = useStateRef(
     () => ({
       isDropTarget: false,
+      /** Over the bar yet no tab, so a drop goes last */
+      isDropAtEnd: false,
       onAddNewTab(e: React.MouseEvent<HTMLElement>) {
         e.stopPropagation();
         pause(30); // avoid immediate select context menu item
@@ -136,23 +138,23 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
     return dropTargetForElements({
       element: el,
       canDrop: ({ source }) => source.data.type === "tab",
-      onDragEnter: () => state.set({ isDropTarget: true }),
-      onDragLeave: () => state.set({ isDropTarget: false }),
+      onDropTargetChange: ({ location: { current } }) =>
+        state.set({
+          isDropTarget: current.dropTargets.some((t) => t.element === el),
+          isDropAtEnd: current.dropTargets[0]?.element === el,
+        }),
       onDrop: ({ source }) => {
-        state.set({ isDropTarget: false });
-        const draggedId = source.data.id as string;
-        const sourceTabsMetaId = source.data.tabsMetaId as string;
-
-        // Don't do anything if dropping within the same Tabs instance
-        if (sourceTabsMetaId === meta.id) return;
-
-        // Move tab from source to end of target Tabs
-        const sourceWasEmptied = moveTabBetweenPanes(uiStore, {
-          draggedId,
-          sourceTabsMetaId,
-          targetTabsMetaId: meta.id,
-        });
-        if (sourceWasEmptied) layoutApi.closePane(sourceTabsMetaId);
+        // a drop on a tab is that tab's
+        if (state.isDropAtEnd) {
+          const sourceTabsMetaId = source.data.tabsMetaId as string;
+          const sourceWasEmptied = moveTab(uiStore, {
+            draggedId: source.data.id as string,
+            sourceTabsMetaId,
+            targetTabsMetaId: meta.id,
+          });
+          if (sourceWasEmptied) layoutApi.closePane(sourceTabsMetaId);
+        }
+        state.set({ isDropTarget: false, isDropAtEnd: false });
       },
     });
   }, [meta.id]);
@@ -208,15 +210,16 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
           ref={tabBarRef}
           className={cn(
             "w-full", // easier drag between tabs
-            "flex items-end overflow-x-auto [scrollbar-width:thin] touch-pan-x",
+            "flex items-end overflow-x-auto scrollbar-thin touch-pan-x",
             state.isDropTarget && "bg-blue-400/10",
           )}
         >
-          {tabs.map((tab) => (
+          {tabs.map((tab, i) => (
             <TabHeaderItem
               key={tab.id}
               tab={tab}
               isCurrentTab={meta.currentTabId === tab.id}
+              isDropAtEnd={state.isDropAtEnd && i === tabs.length - 1}
               onClickTab={() => state.onClickTab(tab)}
               onDeleteTab={() => state.onDeleteTab(tab)}
               tabsMetaId={meta.id}
@@ -261,6 +264,7 @@ export default function Tabs({ meta }: { meta: TabsUiMeta }): React.ReactNode {
 interface TabHeaderItemProps {
   tab: UiInstanceMeta;
   isCurrentTab: boolean;
+  isDropAtEnd: boolean;
   onClickTab: () => void;
   onDeleteTab: () => void;
   tabsMetaId: string;
@@ -271,6 +275,7 @@ interface TabHeaderItemProps {
 function TabHeaderItem({
   tab,
   isCurrentTab,
+  isDropAtEnd,
   onClickTab,
   onDeleteTab,
   tabsMetaId,
@@ -291,8 +296,12 @@ function TabHeaderItem({
     if (!el) return;
     const id = tab.id;
     const touchCleanup = setupTouchLongPressDrag(el);
+    /** Else the browser's default is "copy", seen wherever nothing sets it */
+    const onDragStart = (e: DragEvent) => e.dataTransfer && (e.dataTransfer.effectAllowed = "move");
+    el.addEventListener("dragstart", onDragStart);
 
     return combine(
+      () => el.removeEventListener("dragstart", onDragStart),
       draggable({
         element: el,
         getInitialData: () => ({ type: "tab", id, tabsMetaId }),
@@ -331,37 +340,19 @@ function TabHeaderItem({
       }),
       dropTargetForElements({
         element: el,
-        canDrop: ({ source }) => source.data.type === "tab" && source.data.id !== id,
+        canDrop: ({ source }) => source.data.type === "tab",
         onDragEnter: () => state.set({ isDropTarget: true }),
         onDragLeave: () => state.set({ isDropTarget: false }),
         onDrop: ({ source }) => {
           state.set({ isDropTarget: false });
-          const draggedId = source.data.id as string;
           const sourceTabsMetaId = source.data.tabsMetaId as string;
-          if (draggedId === id) return;
-
-          // Check if moving within the same Tabs instance or between different ones
-          if (sourceTabsMetaId === tabsMetaId) {
-            // Reorder within same Tabs instance
-            uiStoreApi.setUiMeta(tabsMetaId, (draft) => {
-              if (!draft.items) return;
-              const draggedIndex = draft.items.indexOf(draggedId);
-              const targetIndex = draft.items.indexOf(id);
-              // Remove dragged item
-              draft.items.splice(draggedIndex, 1);
-              // Insert at target position
-              draft.items.splice(targetIndex, 0, draggedId);
-            });
-          } else {
-            // Move tab between different Tabs instances
-            const sourceWasEmptied = moveTabBetweenPanes(uiStore, {
-              draggedId,
-              sourceTabsMetaId,
-              targetTabsMetaId: tabsMetaId,
-              insertBeforeId: id,
-            });
-            if (sourceWasEmptied) layoutApi.closePane(sourceTabsMetaId);
-          }
+          const sourceWasEmptied = moveTab(uiStore, {
+            draggedId: source.data.id as string,
+            sourceTabsMetaId,
+            targetTabsMetaId: tabsMetaId,
+            insertBeforeId: id,
+          });
+          if (sourceWasEmptied) layoutApi.closePane(sourceTabsMetaId);
         },
       }),
       touchCleanup,
@@ -376,6 +367,7 @@ function TabHeaderItem({
         !isCurrentTab && "opacity-50 hover:opacity-80",
         state.isDragging && "opacity-30",
         state.isDropTarget && "border-l-2 border-l-blue-400",
+        isDropAtEnd && "border-r-2 border-r-blue-400",
       )}
       onClick={onClickTab}
     >
@@ -439,14 +431,14 @@ function TabHeaderItem({
   );
 }
 
-function moveTabBetweenPanes(
+/** Moves a tab before `insertBeforeId`, else last — true if that emptied another Tabs */
+function moveTab(
   uiStore: typeof import("@npc-cli/ui-sdk/ui.store").uiStore,
   opts: {
     draggedId: string;
     sourceTabsMetaId: string;
     targetTabsMetaId: string;
     insertBeforeId?: string;
-    copyDisabled?: boolean;
   },
 ): boolean {
   let sourceWasEmptied = false;
@@ -455,25 +447,21 @@ function moveTabBetweenPanes(
     const targetMeta = draft.byId[opts.targetTabsMetaId]?.meta as TabsUiMeta | undefined;
     const draggedTab = draft.byId[opts.draggedId];
     if (!sourceMeta || !targetMeta || !draggedTab) return;
-    if (targetMeta.items.includes(opts.draggedId)) return;
+    if (opts.insertBeforeId === opts.draggedId) return;
 
     sourceMeta.items = sourceMeta.items.filter((id) => id !== opts.draggedId);
-    if (sourceMeta.currentTabId === opts.draggedId) {
-      sourceMeta.currentTabId = sourceMeta.items[0];
-    }
-    sourceWasEmptied = sourceMeta.items.length === 0;
 
-    draggedTab.meta.parentId = opts.targetTabsMetaId;
-    if (opts.copyDisabled) draggedTab.meta.disabled = targetMeta.disabled;
-
-    if (opts.insertBeforeId !== undefined) {
-      const idx = targetMeta.items.indexOf(opts.insertBeforeId);
-      targetMeta.items.splice(idx !== -1 ? idx : targetMeta.items.length, 0, opts.draggedId);
-    } else {
-      targetMeta.items.push(opts.draggedId);
+    if (opts.sourceTabsMetaId !== opts.targetTabsMetaId) {
+      if (sourceMeta.currentTabId === opts.draggedId) {
+        sourceMeta.currentTabId = sourceMeta.items[0];
+      }
+      sourceWasEmptied = sourceMeta.items.length === 0;
+      draggedTab.meta.parentId = opts.targetTabsMetaId;
+      targetMeta.currentTabId = opts.draggedId;
     }
 
-    targetMeta.currentTabId = opts.draggedId;
+    const idx = opts.insertBeforeId === undefined ? -1 : targetMeta.items.indexOf(opts.insertBeforeId);
+    targetMeta.items.splice(idx === -1 ? targetMeta.items.length : idx, 0, opts.draggedId);
   });
   return sourceWasEmptied;
 }
