@@ -121,11 +121,7 @@ function FileSelect({ state }: { state: UseStateRef<State> }) {
       onValueChange={(key) => {
         if (!key || key === state.currentFile.key) return;
         if (folderType === "symbol") {
-          const parsedKey = SymbolKeySchema.parse(key);
-          const fileSpecifier = { type: "symbol", filename: `${parsedKey}.json`, key: parsedKey } as const;
-          const existsOnDisk = savedSymbolKeys.has(parsedKey) || !!state.symbolsManifest?.byKey[parsedKey];
-          if (existsOnDisk) state.load(fileSpecifier);
-          else state.openFresh(fileSpecifier);
+          state.openSymbol(SymbolKeySchema.parse(key));
         } else {
           if (key !== newMapKey) {
             state.load({ type: "map", filename: `${key}.json`, key });

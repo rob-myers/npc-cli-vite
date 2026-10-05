@@ -5,8 +5,10 @@ import {
   type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import { Menu } from "@base-ui/react/menu";
 import { cn, type UseStateRef, useDoubleTap, useStateRef } from "@npc-cli/util";
 import {
+  ArrowSquareOutIcon,
   FolderIcon,
   FolderOpenIcon,
   ImageIcon,
@@ -33,6 +35,8 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
     inputEl: null as HTMLInputElement | null,
     rowEl: null as HTMLDivElement | null,
     closestEdge: null as Edge | null,
+    /** Where a symbol's row was right-clicked, whilst its menu shows */
+    menuAt: null as DOMRect | null,
     dropInside: false,
     /** The prop as of the latest render — a reload or undo hands the same id a fresh object */
     node,
@@ -42,6 +46,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
   const isSelected = root.selectedIds.has(node.id);
   const isEditing = root.editingId === node.id;
   const isGroup = node.type === "group";
+  const symbolKey = node.type === "symbol" ? node.srcKey : null;
 
   useEffect(() => {
     const el = state.rowEl;
@@ -128,6 +133,11 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           state.dropInside && "bg-blue-400/20 ring-1 ring-inset ring-blue-400",
         )}
         style={{ paddingLeft: 8 + level * 2 }}
+        onContextMenu={(e) => {
+          if (symbolKey === null) return;
+          e.preventDefault();
+          state.set({ menuAt: new DOMRect(e.clientX, e.clientY) });
+        }}
         onClick={(e) => {
           root.onSelect(node.id, { shiftKey: e.shiftKey, metaKey: e.metaKey });
           onDoubleTap.onClick(e.nativeEvent);
@@ -190,6 +200,28 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
           {node.locked ? <LockIcon className="size-3 text-red-400" /> : <LockOpenIcon className="size-3" />}
         </button>
       </div>
+
+      {symbolKey !== null && (
+        <Menu.Root open={state.menuAt !== null} onOpenChange={(open) => open || state.set({ menuAt: null })}>
+          <Menu.Portal>
+            <Menu.Positioner
+              className="z-50"
+              align="start"
+              anchor={{ getBoundingClientRect: () => state.menuAt ?? new DOMRect() }}
+            >
+              <Menu.Popup className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1">
+                <Menu.Item
+                  className="flex items-center gap-2 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+                  onClick={() => root.openSymbol(symbolKey)}
+                >
+                  <ArrowSquareOutIcon className="size-4" />
+                  open symbol
+                </Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner>
+          </Menu.Portal>
+        </Menu.Root>
+      )}
 
       {isGroup === true && node.type === "group" && node.expanded === true && (
         <div className="border-l border-slate-700/50">

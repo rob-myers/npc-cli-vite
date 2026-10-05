@@ -158,10 +158,10 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
 
               <div className="my-1 border-t border-slate-700" />
 
-              <div className="px-1 border-2 border-l-8 border-slate-700 text-[0.7rem]">
+              <div className="text-[0.7rem] text-slate-400">
                 {!state.isLocked() && (
                   <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="px-2 py-1 hover:bg-slate-700 hover:text-slate-300 cursor-pointer"
                     closeOnClick
                     onClick={() => {
                       if (
@@ -180,7 +180,7 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
 
                 {import.meta.env.DEV && (
                   <Menu.Item
-                    className="flex items-center gap-2 px-2 py-1 text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    className="px-2 py-1 hover:bg-slate-700 hover:text-slate-300 cursor-pointer"
                     closeOnClick
                     onClick={() => {
                       state.set({ devForceReadOnly: !state.devForceReadOnly });
@@ -195,7 +195,8 @@ export function MainMenu({ state }: { state: UseStateRef<State> }) {
         </Menu.Portal>
       </Menu.Root>
 
-      <div className="absolute mt-1 flex flex-col gap-1 pointer-events-none z-50">
+      {/* `fixed`, else the scrolling header clips it: left where it lies, a trigger's height down */}
+      <div className="fixed mt-8 flex flex-col gap-1 pointer-events-none z-50">
         <AnimatePresence>
           {toastKeys.map((key) => (
             <motion.div
