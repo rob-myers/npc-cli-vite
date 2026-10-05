@@ -6,7 +6,7 @@
     </linearGradient>
   </defs>
   <g stroke="#1c0b10" stroke-width="1.4" stroke-linejoin="round">
-    <path d="M11 16 25 52V60L11 24Z" fill="#3d1620"/>
+    <path d="M11 16 25 52V60L11 24Z" fill="#3d1621"/>
     <path d="M25 52 54 44V52L25 60Z" fill="#5b2330"/>
     <path d="M11 16 40 8 54 44 25 52Z" fill="url(#cover)"/>
   </g>

@@ -14,6 +14,7 @@ const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 const WATCH_DECOR_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-decor-svgs.ts");
 const WATCH_SKIN_PNGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-skin-pngs.ts");
 const WATCH_SKIN_SVGS_PATH = path.join(PROJECT_ROOT, "scripts/src/service/watch-skin-svgs.ts");
+const ICON_DIR = path.join(PROJECT_ROOT, "packages/media/src/icon");
 const ASSETS_JSON_PATH = path.join(PUBLIC_DIR, "assets.json");
 const GEN_ASSETS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-assets-json.ts");
 const GEOMORPH_SERVICE = path.join(PROJECT_ROOT, "packages/ui/world/src/service/geomorph.ts");
@@ -40,6 +41,9 @@ export function watchAssetsPlugin(): Plugin {
       server.ssrLoadModule(WATCH_SKIN_SVGS_PATH).then((mod) => {
         (mod as typeof import("./service/watch-skin-svgs")).watchSkinSvgs(server);
       });
+
+      // imported assets outside the app's root are not watched, so an edited icon would never hot-reload
+      server.watcher.add(ICON_DIR);
 
       const symbolGlob = path.join(PUBLIC_DIR, "symbol/*.json");
       const mapGlob = path.join(PUBLIC_DIR, "map/*.json");
