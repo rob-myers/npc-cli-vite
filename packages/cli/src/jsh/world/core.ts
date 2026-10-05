@@ -1,4 +1,5 @@
 import { npcDims } from "@npc-cli/ui__world/const.both";
+import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
@@ -104,6 +105,30 @@ function doorAction(
 }
 
 /**
+ * Their items go to their feet, and `psi` is revoked — see `docs/inventory.md`
+ * ```sh
+ * drop rob items:phaser
+ * drop npc:rob items:'["psi","book-1"]'
+ * drop npc:rob items:"psi book-1"
+ * ```
+ */
+export function drop(
+  { api, args, w }: JshCli.RunArg,
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey" }, { array: { items: true } }),
+) {
+  api.setPausable("world", false);
+
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  opts.items ??= [];
+
+  const npc = w.npc.get(opts.npcKey);
+  for (const name of opts.items) {
+    if (w.e.dropItem(npc.key, name) === false) throw Error(`${npc.key} has no ${name}`);
+  }
+  w.view.forceUpdate();
+}
+
+/**
  * Examples:
  * ```sh
  * events
@@ -138,6 +163,33 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
 }
 
 /**
+ * `psi`, or items out of nothing — see `docs/inventory.md`
+ * ```sh
+ * give rob items:psi
+ * give rob items:"psi phaser"
+ * give npc:rob items:'["phaser","book","box"]'
+ * ```
+ */
+export function give(
+  { api, args, w }: JshCli.RunArg,
+  opts: CarryOpts = api.jsArg(args, { npc: "npcKey" }, { array: { items: true } }),
+) {
+  api.setPausable("world", false);
+
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  opts.items ??= [];
+
+  const npc = w.npc.get(opts.npcKey);
+  for (const name of opts.items) {
+    if (name !== "psi" && inventoryConfig.kinds.includes(name as ItemKind) === false)
+      throw Error(`unknown item: ${name}`);
+    if (w.e.giveItem(npc.key, name as ItemKind) === false) throw Error(`${npc.key} has no room for ${name}`);
+  }
+}
+
+type CarryOpts = { npcKey?: string; items?: string[] };
+
+/**
  * ```sh
  * grant npc:rob g0d29
  * grant npc:rob g0d{0..5}
@@ -152,11 +204,57 @@ export function grant(
   const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
 
   const npc = w.npc.get(opts.npcKey);
-  const entry = (w.e.npcToAccess[npc.key] ??= {});
   for (const gdKey of gdKeys) {
-    if (w.helper.isGmDoorKey(gdKey)) entry[gdKey] = true;
+    if (w.helper.isGmDoorKey(gdKey)) w.e.setAccess(npc.key, gdKey, true);
     else throw Error(`invalid gdKey: ${gdKey}`);
   }
+}
+
+/**
+ * What the player's presses do: an item is walked to and taken, and whilst psi or their phaser is out
+ * an npc is its target. Idempotent, as `predicates` — see `docs/inventory.md`
+ * ```sh
+ * kamma
+ * kamma off
+ * ```
+ */
+export function kamma({ args, w }: JshCli.RunArg) {
+  if (args[0] === "off") w.e.keyedListener.delete("kamma");
+  else w.e.addKeyedListener("kamma", onKammaEvent);
+}
+
+/** The latest press, which a walk to an item must still be to take it */
+let kammaPress = 0;
+
+function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
+  if (e.key !== "picked" || e.longDown === true || e.rightDown === true || e.clickId !== undefined) return;
+  const press = ++kammaPress;
+  const { key: playerKey } = w.player;
+  if (w.client === true || w.debug?.decorShown === true || w.n[playerKey] === undefined) return;
+  const { meta } = e;
+  if (meta.type === "decor" && typeof meta.item === "string") {
+    void commitKamma(w, playerKey, meta.decorKey, press);
+  } else if (meta.type === "npc") {
+    if (w.phasers?.isArmed(playerKey) === true) {
+      // themselves unlocks it, so only by the arm that holds it
+      const own = meta.npcKey === playerKey;
+      if (own === false || meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm") {
+        w.phasers.arm(playerKey, { at: meta.npcKey, part: meta.bodyPart });
+      }
+    } else if ((w.psi?.getTarget() ?? null) !== null) w.player.psi(meta.npcKey);
+  }
+}
+
+async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: string, press: number) {
+  await null; // out of the dispatch: a move pushes events
+  const decor = w.decor.byKey[decorKey];
+  if (decor === undefined || (decor.type !== "quad" && decor.type !== "point")) return;
+  const at = decor.type === "quad" ? decor.center : { x: decor.x, y: decor.y };
+  const { reach: reaches } = inventoryConfig;
+  const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? reaches.raised : reaches.floor;
+  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach;
+  if (inReach() === false) await w.e.move({ npcKey, to: { x: at.x, y: at.y } }).catch(() => {});
+  if (press === kammaPress && inReach() === true) w.e.takeItem(npcKey, decorKey);
 }
 
 /**
@@ -969,7 +1067,7 @@ export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string;
   const sub = w.events.subscribe({
     next(e) {
       if (e.key === "started-moving" && e.npcKey === npc.key) end("moved");
-      if (e.key === "arms" && e.armed === true && e.npcKeys.includes(npc.key)) {
+      if (e.key === "phasers" && e.armed === true && e.npcKeys.includes(npc.key)) {
         if (mine()) npc.anim.setUpper(null); // at once, for theirs to take
         end("replaced");
       }
@@ -1147,9 +1245,8 @@ export function revoke(
   const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
 
   const npc = w.npc.get(opts.npcKey);
-  const entry = (w.e.npcToAccess[npc.key] ??= {});
   for (const gdKey of gdKeys) {
-    if (w.helper.isGmDoorKey(gdKey)) entry[gdKey] = false;
+    if (w.helper.isGmDoorKey(gdKey)) w.e.setAccess(npc.key, gdKey, false);
     else throw Error(`invalid gdKey: ${gdKey}`);
   }
 }
@@ -1276,7 +1373,7 @@ export async function spawn(
 }
 
 /**
- * Arm npcs with their stun guns, locked on `at` an npc, through a body `part` — no `at` unlocks. See `w.arms`.
+ * Arm npcs with their phasers, locked on `at` an npc, through a body `part` — no `at` unlocks. See `w.phasers`.
  * Their arms are theirs, so a kill changes nothing
  * ```sh
  * arm rob kate
@@ -1289,7 +1386,7 @@ export function arm({ api, args, w }: JshCli.RunArg, opts: { at?: string; part?:
   const npcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
   if (npcKeys.length === 0) throw Error("usage: arm npcKey... [at:npcKey] [part:bodyPart]");
   const at = opts.at === undefined ? null : w.npc.get(opts.at).key;
-  for (const npcKey of npcKeys) w.arms.arm(npcKey, { at, part: opts.part ?? "head" });
+  for (const npcKey of npcKeys) w.phasers.arm(npcKey, { at, part: opts.part ?? "head" });
 }
 
 /**
@@ -1299,7 +1396,7 @@ export function arm({ api, args, w }: JshCli.RunArg, opts: { at?: string; part?:
  */
 export function disarm({ api, args, w }: JshCli.RunArg) {
   api.setPausable("world", false); // disarms whilst paused
-  w.arms.disarm(...args.map((npcKey) => w.npc.get(npcKey).key));
+  w.phasers.disarm(...args.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**

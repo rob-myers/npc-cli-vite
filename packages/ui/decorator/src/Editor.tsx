@@ -135,9 +135,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
           await w.npc.spawn({ npcKey, at, as: hasSkin ? skin : undefined });
           if (hasSkin) w.n[npcKey]?.setSkin(skin); // a respawn keeps the old one
-          const access = (w.e.npcToAccess[npcKey] ??= {}) as Record<string, true>;
           for (const gdKey of maps?.[w.mapKey]?.doors ?? []) {
-            if (gdKey in w.door.byKey) access[gdKey] = true;
+            if (gdKey in w.door.byKey) w.e.setAccess(npcKey, gdKey as Geomorph.GmDoorKey, true);
           }
           w.view.forceUpdate();
           if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);

@@ -124,6 +124,12 @@ The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.to
 doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **decorations**
 toggle labels it and opens a card per pick.
 
+## Inventory
+
+See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
+keys, then carried items; digits `1`-`9`), over `w.e.carried` — the defs of decor taken, by npcKey, per
+World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `kamma` for what a press does.
+
 ## Lore
 
 See `docs/manifest-lore.md` — the ONLY doc for it. In short: characters (name, npc, skin, rooms and door keys),

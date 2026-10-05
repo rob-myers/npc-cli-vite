@@ -96,6 +96,18 @@ export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
 export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
+/** What can be carried, and how — see `docs/inventory.md` */
+export const inventoryConfig = {
+  /** A decor's `meta.item` */
+  kinds: ["phaser", "book", "box", "keycard"],
+  /** Metres each stands off the floor, as its quad's `meta.h` */
+  height: { phaser: 0.1, book: 0.05, box: 0.06, keycard: 0.02 },
+  /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk */
+  reach: { floor: 0.6, raised: 1.4, raisedFrom: 0.5 },
+  /** Items an npc carries at most, their phaser aside */
+  maxCarried: 6,
+} as const;
+export type ItemKind = (typeof inventoryConfig.kinds)[number];
 /** How many random rooms we'll try when spawning the player */
 export const spawnPlayerAttempts = 10;
 /** Room labels the player may be spawned in, when there is nowhere better */

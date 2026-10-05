@@ -1,0 +1,68 @@
+# Inventory
+
+What an npc has, and the bar that shows the player's. The ONLY doc for it.
+
+| file | what |
+| --- | --- |
+| `ui/world/src/components/WorldHud.tsx` | the bar, `w.hud` |
+| `ui/world/src/components/use-world-events.ts` | what is carried, `w.e.carried`, and held keys |
+| `ui/world/src/service/storage.ts` | `carried` (per World), `PersistedNpc.access` (per map) |
+| `ui/world/src/const.env.ts` | `inventoryConfig`: kinds, heights, reach, the most carried |
+| `cli/src/jsh/world/core.ts` | `give`, `drop`, `kamma` |
+| `media/src/decor/{phaser,book,box,keycard}.svg` | an item's one textured face, as decor |
+| `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
+
+## The bar
+
+Bottom centre of a World; a slot is pressed, or its digit is. None on a net client, where neither psi
+nor phasers are mirrored.
+
+| slot | shows | a press |
+| --- | --- | --- |
+| `1` psi | faded unless granted | `w.player.togglePsi()` |
+| `2` phaser | faded unless carried; a beam from it whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
+| `3` keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door |
+| `4`-`9` | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
+
+Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
+A selected item, and a drawn phaser, show an "x" which puts it down at their feet.
+
+The bar re-renders when nudged (`w.hud?.update()`, from `Psi.choose`, `Phasers.sync` and every change
+to `carried` or to access) and on the player's own door and spawn events.
+
+## Having
+
+`w.e.carried[npcKey]` is `{ items, psi? }`, persisted per World so it goes with them between maps.
+`items` are the DEFS of the decor they took, so putting one down is `w.decor.create` of it at their feet.
+
+- `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
+- `takeItem(npcKey, decorKey)` takes a runtime decor off the map.
+
+## Items
+
+An item is a runtime quad (or, if flat, point) decor with `meta.item`, one of `inventoryConfig.kinds`. A quad is a
+cuboid with ONE textured face: `meta.h` is its height, and it stands on the floor.
+
+```sh
+pick 1 | decor type:quad img:book meta:'{ item: "book", h: 0.05 }' y3d:0.05
+pick 1 | decor type:quad img:keycard meta:'{ item: "keycard", h: 0.02, door: "g0d29" }' y3d:0.02
+give rob items:"psi phaser"
+drop rob items:phaser
+```
+
+A `keycard` with `meta.door` is not carried: taking it grants that door (`w.e.setAccess`), which is
+what `grant` and `revoke` do too. Held doors are saved with the npc, per map. Not `meta.gdKey` —
+Debug's door toggle reads that off any pick.
+
+## kamma
+
+`kamma` (in the default profile, `kamma off` to stop) decides what a short press does:
+
+- on an item, the player walks to it and takes it once within reach; a newer press abandons it.
+  `inventoryConfig.reach` is tight for one on the floor, looser for one whose top (`y3d`) is higher e.g. on a desk
+  — which they cannot walk onto, so they must already be beside it;
+- on an npc whilst the phaser is drawn, the beam locks onto the part pressed. A press on the
+  player's own right arm unlocks it instead, and one elsewhere on them does nothing; whilst psi is on, they
+  become its target. `predicates`' pick ring stands down meanwhile.
+
+It is a keyed listener (`w.e.addKeyedListener`), as `predicates` is, so there is no process to kill.

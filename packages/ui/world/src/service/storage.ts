@@ -69,6 +69,8 @@ export type WorldSettings = {
   speechY: number;
   speechWidth: null | number;
   speechHeight: null | number;
+  /** By npcKey, so it goes with them from map to map — see `w.e.carried` */
+  carried: Record<string, Carried>;
   /**
    * The server world we were a client of — drives auto-reconnect on load. `remote` scopes the
    * search: a same-page parent never resolves to another tab's world of the same key, nor
@@ -103,8 +105,12 @@ const defaultWorldSettings: WorldSettings = {
   speechY: 40,
   speechWidth: null,
   speechHeight: null,
+  carried: {},
   netParent: null,
 };
+
+/** What an npc has: the defs of the decor they took, and psi if granted */
+export type Carried = { items: Geomorph.DecorDef[]; psi?: true };
 
 /** What we left behind on some map, restored on returning to it */
 export type WorldMapState = {
@@ -141,6 +147,8 @@ export type PersistedNpc = {
   decorKey?: string;
   /** Set whilst they were lit up — absent in an older save, which restores nobody lit */
   lit?: boolean;
+  /** The doors of this map they hold keys to */
+  access?: string[];
 };
 
 const worldStores = {} as Record<string, LocalStore<WorldSettings>>;

@@ -34,7 +34,7 @@ turning to it is the usual exponential ease.
 - **jsh `look --strafe`**: `look rob --strafe at:$( pick 1 )`, `look rob --strafe at:1.57`,
   `look rob --strafe at:kate rate:0.5`; a bare `look rob --strafe` clears it. Piped
   (`pick --right | look rob --strafe`), each pick re-aims them until killed, and picking them clears it.
-- An armed npc (`w.arms`, jsh `arm` / `disarm`, `q` for the player) aims at their target every tick, but
+- An armed npc (`w.phasers`, jsh `arm` / `disarm`, the bar's slot `2` for the player) aims at their target every tick, but
   replaces or clears only an aim it set, so a look still turns them. Armed at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.
@@ -75,7 +75,7 @@ Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
 out as above.
 `moveClipFadedIn`, which holds up arrival until the gait has faded in, counts all four.
 
-The upper-body overlay (`setUpper`, e.g. `stun_aim`, `psi`) is unaffected: it blends the arms and head
+The upper-body overlay (`setUpper`, e.g. `phaser_aim`, `psi`) is unaffected: it blends the arms and head
 from whatever the mixer wrote.
 
 ## The clips
@@ -121,6 +121,6 @@ within `npcConfig.dist.backStep` and more than `npcConfig.angle.backStep` from t
 - `components/npc.ts` — `look`, which aims instead whilst strafing
 - `components/use-world-events.ts` — `w.e.move`, `isBackStep`
 - `components/NPCs.tsx` — `turnBeforeMoving`, the tick's facing, `moveClipFadedIn`
-- `components/Arms.tsx` — `wield`, which sets or withholds an armed npc's aim
+- `components/Phasers.tsx` — `wield`, which sets or withholds an armed npc's aim
 - `const.npc.ts` — `gaitStride`, `strafeSpeed`, `strafeEaseSecs`, `npcConfig.{angle,dist}.backStep`
 - `packages/cli/src/jsh/world/core.ts` — `move --strafe --backstep`, `look --strafe`

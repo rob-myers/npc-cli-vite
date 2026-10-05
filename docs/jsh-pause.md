@@ -105,7 +105,7 @@ Opted out today, because each must work whilst the World is paused (e.g. `arm ro
 
 - `pick` (picking whilst paused),
 - `events` (it reports the pause itself),
-- `psi`, `arm` and `disarm` (each switches whilst paused) — `pose` pauses, though a kill still ends it,
+- `psi`, `arm`, `disarm`, `give` and `drop` (each switches whilst paused) — `pose` pauses, though a kill still ends it,
 - `spawn` (spawning whilst paused),
 - `pause` and `play` (else `pause` would pause itself, and `play` start paused),
 - `awaitWorld` (it sets up the group).

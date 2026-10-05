@@ -39,6 +39,7 @@ export default function Psi() {
         state.syncTargetRoom();
         state.upload();
         w.r3f?.invalidate();
+        w.hud?.update();
         return state.getTarget();
       },
       toggle() {

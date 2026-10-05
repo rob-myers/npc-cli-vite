@@ -9,9 +9,12 @@ import {
   defaultPlayerKey,
   defaultSkinKey,
   floorFadeDelayMs,
+  type ItemKind,
+  inventoryConfig,
   MAX_NPCS,
   mapVeilMs,
   roomLabel,
+  sguToWorldScale,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
@@ -24,6 +27,7 @@ import type { State as WorldState } from "./World";
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
+      carried: structuredClone(persisted.getWorldStore(w.key).read().carried), // the default is shared
       changingMap: false,
       doorOpen: {},
       doorToNpcs: {},
@@ -68,6 +72,30 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      dropItem(npcKey, name) {
+        const had = state.carried[npcKey];
+        if (had === undefined) return false;
+        if (name === "psi") {
+          if (had.psi !== true) return false;
+          delete had.psi;
+          if (npcKey === w.player.key) w.psi?.choose(null);
+        } else {
+          const index = had.items.findIndex((def) => def.key === name || def.meta?.item === name);
+          const npc = w.n?.[npcKey];
+          if (index === -1 || npc === undefined) return false;
+          if (had.items[index].meta?.item === "phaser" && w.phasers?.arms.has(npcKey) === true) {
+            // put away first, so it is not in their hand and at their feet at once
+            w.phasers.disarm(npcKey);
+            void w.phasers.whenAway(npcKey).then((away) => away && state.dropItem(npcKey, name));
+            return true;
+          }
+          const [def] = had.items.splice(index, 1);
+          w.decor.create(state.getItemDefAt(def, npc.point));
+          w.view.forceUpdate();
+        }
+        state.onCarriedChange(npcKey);
+        return true;
       },
       dispatchToKeyedListeners(e) {
         for (const listener of state.keyedListener.values()) {
@@ -199,6 +227,55 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
+      },
+      getItemDefAt(def, at) {
+        const kind = String(def.meta?.item);
+        let key = def.key;
+        for (let i = 1; key in w.decor.byKey; i++) key = `${kind}-${i}`;
+        if (def.type !== "quad") return { ...def, key, ...at, transform: undefined } as Geomorph.DecorDef;
+        // a quad's transform starts at its image's corner
+        const entry = w.sheets.decor[def.img];
+        const [halfW, halfH] = [entry?.originalWidth ?? 0, entry?.originalHeight ?? 0].map(
+          (x) => (x * sguToWorldScale) / 2,
+        );
+        const [a, b, c, d] = def.transform ?? [1, 0, 0, 1];
+        const transform: Geom.SixTuple = [a, b, c, d, at.x - (a * halfW + c * halfH), at.y - (b * halfW + d * halfH)];
+        return { ...def, key, transform, y3d: def.meta?.h }; // stood on the floor
+      },
+      getHeldDoors(npcKey) {
+        const held = Object.entries(state.npcToAccess[npcKey] ?? {}).flatMap(([gdKey, has]) =>
+          has === true ? gdKey : [],
+        );
+        return held.length === 0 ? undefined : (held as Geomorph.GmDoorKey[]);
+      },
+      giveItem(npcKey, name) {
+        const had = (state.carried[npcKey] ??= { items: [] });
+        if (name === "psi") {
+          had.psi = true;
+        } else {
+          if (state.hasRoomFor(npcKey, name) === false) return false;
+          let key = `${name}-0`;
+          for (let i = 1; had.items.some((def) => def.key === key); i++) key = `${name}-${i}`;
+          const meta = { item: name, h: inventoryConfig.height[name], shown: true };
+          had.items.push({ type: "quad", key, img: name, transform: [1, 0, 0, 1, 0, 0], meta });
+        }
+        state.onCarriedChange(npcKey);
+        return true;
+      },
+      hasItem(npcKey, name) {
+        const had = state.carried[npcKey];
+        return name === "psi" ? had?.psi === true : had?.items.some((def) => def.meta?.item === name) === true;
+      },
+      hasRoomFor(npcKey, kind) {
+        const items = state.carried[npcKey]?.items ?? [];
+        if (kind === "phaser") return items.every((def) => def.meta?.item !== "phaser");
+        return items.filter((def) => def.meta?.item !== "phaser").length < inventoryConfig.maxCarried;
+      },
+      onCarriedChange(npcKey) {
+        const had = state.carried[npcKey];
+        if (had !== undefined && had.items.length === 0 && had.psi !== true) delete state.carried[npcKey];
+        state.persistCarried();
+        w.hud?.update();
       },
       async openDoorwaysWithNpcs() {
         await w.physics?.settle();
@@ -361,6 +438,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.key !== w.player.key) return void state.removeNpcs(npc.key);
         void w.player.restoreFromSpawnPoint().then((ok) => ok || w.player.spawnSomewhere());
       },
+      restoreAccess(saved) {
+        for (const gdKey of saved.access ?? []) {
+          if (gdKey in w.door.byKey) state.setAccess(saved.key, gdKey as Geomorph.GmDoorKey, true);
+        }
+      },
+      setAccess(npcKey, gdKey, held) {
+        (state.npcToAccess[npcKey] ??= {})[gdKey] = held;
+        if (npcKey === w.player.key) w.hud?.update();
+      },
       syncDoorsState() {
         for (const gdKey of Object.keys(state.doorOpen) as Geomorph.GmDoorKey[]) {
           if (w.d[gdKey] === undefined) delete state.doorOpen[gdKey];
@@ -390,7 +476,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
-        w.arms?.syncTheme();
+        w.phasers?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
@@ -506,6 +592,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "set-player":
             state.syncFadeRooms(); // the rooms in view are the player's
+            if (e.playerKey !== null && state.hasItem(e.playerKey, "psi") === false) w.psi?.choose(null);
             break;
           case "nav-updated":
             // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
@@ -557,7 +644,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.syncFadeRooms();
             break;
           }
-          case "arms":
+          case "phasers":
             if (!e.armed) return;
             for (const npcKey of e.npcKeys) {
               if (npcKey === w.player.key) {
@@ -698,11 +785,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "npc-pre-do":
-            if (w.arms?.isArmed(e.npcKey)) w.arms.disarm(e.npcKey);
+            if (w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
             if (e.npcKey === w.player.key) w.psi?.choose(null); // psi is the player's alone
             break;
           case "npc-do":
-            if (e.decorKey !== null && w.arms?.isArmed(e.npcKey)) w.arms.disarm(e.npcKey);
+            if (e.decorKey !== null && w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
             if (e.decorKey !== null && e.npcKey === w.player.key) w.psi?.choose(null);
             break;
           case "enter-doorway":
@@ -717,6 +804,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           default:
             throw new ExhaustiveError(e);
         }
+      },
+      persistCarried() {
+        if (w.client === true) return;
+        persisted.getWorldStore(w.key).patch({ carried: structuredClone(state.carried) });
       },
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
@@ -736,6 +827,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
               decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
               lit: npc.lit === true ? true : undefined,
+              access: state.getHeldDoors(npc.key),
             })),
           },
         });
@@ -871,8 +963,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             uid,
             srcIndex,
             dstIndex,
-            // likewise: an npc holds few keys, and `grant` / `revoke` write straight to
-            // `npcToAccess`, so nothing needs telling when they change
+            // likewise: an npc holds few keys, read afresh each time
             accessDoorIndices: Object.entries(state.npcToAccess[npc.key] ?? {}).flatMap(([gdKey, granted]) =>
               granted === true ? (w.gmRoomGraph.getNode(gdKey as Geomorph.GmDoorKey)?.index ?? []) : [],
             ),
@@ -982,7 +1073,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npcKeys.includes(w.player.key)) w.events.next({ key: "set-player", playerKey: null });
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        for (const { key, at, angle, skinKey, decorKey, lit } of saved?.npcs ?? []) {
+        for (const { key, at, angle, skinKey, decorKey, lit, access } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
@@ -996,6 +1087,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
+            state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
           }
@@ -1107,7 +1199,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.psi?.onTick();
-        w.arms?.onTick();
+        w.phasers?.onTick();
       },
       syncNpcRoomSlots() {
         const fx = w.view.fadeRoomsFx;
@@ -1185,6 +1277,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return w.door.toggleDoor(door, opts);
       },
+      takeItem(npcKey, decorKey) {
+        const def = w.decor.runtime.defByKey[decorKey];
+        const kind = def?.meta?.item as ItemKind;
+        if (def === undefined || inventoryConfig.kinds.includes(kind) === false) return false;
+        if (def.type !== "quad" && def.type !== "point") return false;
+        if (kind === "keycard" && helper.isGmDoorKey(def.meta?.door)) {
+          state.setAccess(npcKey, def.meta.door, true); // joins their keys, not their items
+        } else {
+          if (state.hasRoomFor(npcKey, kind) === false) return false;
+          (state.carried[npcKey] ??= { items: [] }).items.push(structuredClone(def));
+        }
+        w.decor.remove(decorKey);
+        state.onCarriedChange(npcKey);
+        return true;
+      },
       toggleLock(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -1245,6 +1352,27 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 }
 
 export type State = {
+  /** By npcKey, what each has — persisted per World, so it goes with them between maps. See `docs/inventory.md` */
+  carried: Record<string, persisted.Carried>;
+  /** Puts an item of theirs (by its key, or the first of a kind) at their feet, or revokes `psi` — a drawn phaser once put away */
+  dropItem(npcKey: string, name: string): boolean;
+  /** The doors they hold keys to, if any */
+  getHeldDoors(npcKey: string): undefined | Geomorph.GmDoorKey[];
+  /** A carried def as it would stand at the point, under a key no decor has */
+  getItemDefAt(def: Geomorph.DecorDef, at: Geom.VectJson): Geomorph.DecorDef;
+  /** Grants `psi`, or makes them an item out of nothing — `false` if they have no room */
+  giveItem(npcKey: string, name: "psi" | ItemKind): boolean;
+  hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
+  /** One phaser, and `inventoryConfig.maxCarried` of the rest */
+  hasRoomFor(npcKey: string, kind: ItemKind): boolean;
+  onCarriedChange(npcKey: string): void;
+  persistCarried(): void;
+  /** The keys a save says they held, bar doors since gone */
+  restoreAccess(saved: Pick<persisted.PersistedNpc, "key" | "access">): void;
+  /** Gives or takes a door's key — the one way to write `npcToAccess`, so the bar hears */
+  setAccess(npcKey: string, gdKey: Geomorph.GmDoorKey, held: boolean): void;
+  /** Takes a runtime decor with `meta.item` off the map: a keycard with `meta.door` becomes a key */
+  takeItem(npcKey: string, decorKey: string): boolean;
   /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
   changingMap: boolean;
   /** Doable to the npc using it or null */

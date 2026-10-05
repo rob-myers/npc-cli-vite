@@ -2,34 +2,35 @@ import { useStateRef } from "@npc-cli/util";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { advanceBeam, type Beam, type BeamTarget, beamEnd, createBeam } from "../service/arms-beam";
-import {
-  type ArmsResources,
-  armsNodes,
-  armsParts,
-  createArmsResources,
-  MAX_ARMS,
-  shaderConfig,
-} from "../service/arms-shader";
 import { eased } from "../service/fade";
+import { advanceBeam, type Beam, type BeamTarget, beamEnd, createBeam } from "../service/phaser-beam";
+import {
+  createPhaserResources,
+  MAX_PHASERS,
+  type PhaserResources,
+  phaserNodes,
+  phaserParts,
+  shaderConfig,
+} from "../service/phaser-shader";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { UpperAim } from "./npc-animation";
 import { WorldContext } from "./world-context";
 
 /**
- * Npcs' stun guns: whilst armed they stand and aim (`stun_aim`, over the upper body on the move), drawn in to
- * `stun_aim_avoid` whenever the arm would touch a crowd neighbour, a wall or a closed door. The gun shows in their
+ * Npcs' phasers: whilst armed they stand and aim (`phaser_aim`, over the upper body on the move), drawn in to
+ * `phaser_aim_avoid` whenever the arm would touch a crowd neighbour, a wall or a closed door. The gun shows in their
  * right hand, and a beam runs from it to the middle of a body part of their target whilst nothing is between
- * them. Theirs, not a process's: see `w.arms`, jsh `arm` and `disarm`, and `service/arms-beam` for the fades
+ * them. Theirs, not a process's: see `w.phasers`, jsh `arm` and `disarm`, and `service/phaser-beam` for the fades
  */
-export default function Arms() {
+export default function Phasers() {
   const w = useContext(WorldContext);
 
   const state = useStateRef(
     (): State => ({
-      ...createArmsResources(),
+      ...createPhaserResources(),
       arms: new Map(),
+      awaited: new Map(),
       tickedMs: performance.now(),
 
       arm(npcKey, opts = {}) {
@@ -39,8 +40,9 @@ export default function Arms() {
         arm.cast = null; // look again, at once
         const drawn = arm.armed === false;
         arm.armed = true;
+        state.settleAway(npcKey, false);
         state.sync();
-        drawn && w.events.next({ key: "arms", armed: true, npcKeys: [npcKey] });
+        drawn && w.events.next({ key: "phasers", armed: true, npcKeys: [npcKey] });
       },
       disarm(...npcKeys) {
         for (const npcKey of npcKeys) {
@@ -73,8 +75,23 @@ export default function Arms() {
         }
         return arm;
       },
+      settleAway(npcKey, away) {
+        const resolves = state.awaited.get(npcKey);
+        state.awaited.delete(npcKey);
+        for (const resolve of resolves ?? []) resolve(away);
+      },
+      whenAway(npcKey) {
+        if (state.arms.has(npcKey) === false) return Promise.resolve(true);
+        return new Promise((resolve) => {
+          state.awaited.set(npcKey, [...(state.awaited.get(npcKey) ?? []), resolve]);
+        });
+      },
       isArmed(npcKey) {
         return state.arms.get(npcKey)?.armed === true;
+      },
+      isLocked(npcKey) {
+        const arm = state.arms.get(npcKey);
+        return arm?.armed === true && arm.target !== null;
       },
       markDirty() {
         for (const arm of state.arms.values()) arm.cast = null;
@@ -106,7 +123,7 @@ export default function Arms() {
       },
       onTick(instant = false) {
         const now = performance.now();
-        const step = Math.min((now - state.tickedMs) / 1000, 0.1) / armsConfig.fadeSecs;
+        const step = Math.min((now - state.tickedMs) / 1000, 0.1) / phaserConfig.fadeSecs;
         state.tickedMs = now;
         state.phase.value = w.timer.getElapsedTime();
 
@@ -115,6 +132,7 @@ export default function Arms() {
           const npc = w.n[srcKey];
           if (npc === undefined) {
             state.arms.delete(srcKey);
+            state.settleAway(srcKey, false);
             continue;
           }
           state.wield(npc, arm);
@@ -123,14 +141,15 @@ export default function Arms() {
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden) {
             state.arms.delete(srcKey); // disarmed, its pose, stance and aim already let go of
+            state.settleAway(srcKey, true);
             continue;
           }
-          if (hidden || count === MAX_ARMS) continue;
+          if (hidden || count === MAX_PHASERS) continue;
 
           const hand = npc.group?.getObjectByName("rightforearm");
           if (hand === undefined) continue;
           hand.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
-          const tip = hand.localToWorld(tmpTip.fromArray(armsConfig.beamFrom));
+          const tip = hand.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
           const ry = npc.rotation.y;
           arm.muzzleRight = (tip.x - npc.position.x) * Math.cos(ry) - (tip.z - npc.position.z) * Math.sin(ry);
           const along = tmpAlong.set(0, -1, 0).transformDirection(hand.matrixWorld); // the forearm, towards the hand
@@ -154,6 +173,7 @@ export default function Arms() {
       sync() {
         state.onTick(w.disabled === true); // paused: nothing fades, so a change is at once
         w.r3f?.invalidate();
+        w.hud?.update();
       },
       wield(npc, arm) {
         const secs = w.timer.getElapsedTime();
@@ -161,22 +181,22 @@ export default function Arms() {
         const target = armed === true && arm.target !== null ? w.n[arm.target.npcKey] : undefined;
         state.recast(npc, arm, target, secs);
         if (armed === true && (arm.armHit === true || npcAhead(w, npc))) {
-          arm.holdUntil = secs + armsConfig.holdSecs;
+          arm.holdUntil = secs + phaserConfig.holdSecs;
         }
         const avoid = armed === true && arm.holdUntil > secs;
 
         // the pose — only ours, never another's e.g. psi's hands
-        const pose = armed === false ? null : avoid ? armsConfig.avoid : armsConfig.pose;
+        const pose = armed === false ? null : avoid ? phaserConfig.avoid : phaserConfig.pose;
         const { anim } = npc;
         const shown = anim.upper.target === 1 ? anim.upper.key : null;
         if (pose === null) {
-          if (isArmsPose(shown)) anim.setUpper(null);
-        } else if (pose !== shown && (shown === null || isArmsPose(shown))) {
-          anim.setUpper(pose, { swapSecs: avoid ? armsConfig.drawInSecs : undefined }); // in before the hand goes through
+          if (isPhaserPose(shown)) anim.setUpper(null);
+        } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
+          anim.setUpper(pose, { swapSecs: avoid ? phaserConfig.drawInSecs : undefined }); // in before the hand goes through
         }
 
         // the stance — theirs to stand in, and only ours to put back
-        const stance = armed === true ? armsConfig.pose : null;
+        const stance = armed === true ? phaserConfig.pose : null;
         if (stance !== arm.ownIdle) {
           const from = anim.idleClip.name as AnimationClipKey;
           if (arm.ownIdle === null) arm.idleBefore = from;
@@ -212,19 +232,19 @@ export default function Arms() {
         if (avoid === false) beam.next = locking ? arm.target : null;
       },
       recast(npc, arm, target, secs) {
-        const { reach } = armsConfig;
-        if (arm.armed === false || arm.casting === true || secs - arm.castSecs < armsConfig.sampleSecs) return;
+        const { reach } = phaserConfig;
+        if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
         const { x, z } = npc.position;
         const ry = npc.rotation.y;
         const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
         const { cast } = arm;
         const moved = (ax: number, az: number, bx: number, bz: number) =>
-          Math.hypot(ax - bx, az - bz) > armsConfig.recastMoved;
+          Math.hypot(ax - bx, az - bz) > phaserConfig.recastMoved;
         if (
           cast !== null &&
           cast.target === (target?.key ?? null) &&
           moved(cast.x, cast.z, x, z) === false &&
-          Math.abs(deltaAngle(cast.ry, ry)) <= armsConfig.recastTurned &&
+          Math.abs(deltaAngle(cast.ry, ry)) <= phaserConfig.recastTurned &&
           moved(cast.tx, cast.tz, tx, tz) === false
         ) {
           return; // nothing has changed: neither they, their target, nor a door
@@ -269,7 +289,7 @@ export default function Arms() {
     },
   );
 
-  w.arms = state;
+  w.phasers = state;
 
   useEffect(() => state.syncTheme(), []);
 
@@ -282,8 +302,8 @@ export default function Arms() {
   }, []);
 
   useEffect(() => {
-    armsParts.forEach((part, i) => {
-      Object.assign(state.mats[i], armsNodes(state, w.view, part), { needsUpdate: true });
+    phaserParts.forEach((part, i) => {
+      Object.assign(state.mats[i], phaserNodes(state, w.view, part), { needsUpdate: true });
     });
     state.onTick(); // a fresh geometry has no instances yet
   }, [w.view.fadeRoomsFx.uid]);
@@ -291,7 +311,7 @@ export default function Arms() {
   return <primitive object={state.mesh} />;
 }
 
-export type State = ArmsResources & {
+export type State = PhaserResources & {
   /** By npcKey: whoever is armed, or whose gun or beam still fades */
   arms: Map<string, ArmEntry>;
   tickedMs: number;
@@ -302,7 +322,14 @@ export type State = ArmsResources & {
   disarm(...npcKeys: string[]): void;
   /** Their entry, made if absent */
   ensure(npcKey: string): ArmEntry;
+  /** By npcKey, those waiting on `whenAway` */
+  awaited: Map<string, ((away: boolean) => void)[]>;
+  settleAway(npcKey: string, away: boolean): void;
+  /** Once their gun has faded from their hand — `false` if they drew it again first, or are gone */
+  whenAway(npcKey: string): Promise<boolean>;
   isArmed(npcKey: string): boolean;
+  /** Armed, and locked on someone */
+  isLocked(npcKey: string): boolean;
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
   /** The gun's colour and the beam's gain, ink and blending from the theme — called by `onChangeTheme` */
@@ -364,10 +391,10 @@ function bearingPast(npc: Npc, target: Npc, right: number) {
   return npc.anim.bearingOf(target.point) + turn;
 }
 
-const armsConfig = {
+const phaserConfig = {
   /** The pose they stand in and aim with, and the one drawn in to whenever the arm would touch someone or something */
-  pose: "stun_aim",
-  avoid: "stun_aim_avoid",
+  pose: "phaser_aim",
+  avoid: "phaser_aim_avoid",
   /** Metres ahead a wall or closed door blocks — just past the gun at arm's length, so it is drawn in in time */
   reach: 0.75,
   /** The gun's muzzle, where the beam leaves, off the right forearm — its `+x` is up whilst aiming — in model units */
@@ -384,11 +411,11 @@ const armsConfig = {
 } as const;
 
 /** Ours to clear: never another's upper pose e.g. psi's hands */
-const isArmsPose = (key: null | string) => key === armsConfig.pose || key === armsConfig.avoid;
+const isPhaserPose = (key: null | string) => key === phaserConfig.pose || key === phaserConfig.avoid;
 
 /** Turns them not at all, at `rate` `0`, but is an aim: a move strafes */
 const heldAim = { at: 0, rate: 0, untilRest: false };
-const muzzle = new THREE.Vector3(...armsConfig.beamFrom);
+const muzzle = new THREE.Vector3(...phaserConfig.beamFrom);
 const tmpTip = new THREE.Vector3();
 const tmpAlong = new THREE.Vector3();
 const tmpAt = new THREE.Vector3();

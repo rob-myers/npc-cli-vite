@@ -31,9 +31,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         return restored;
       },
       onKeyDown(e) {
-        if (isTypingTarget(e) || e.repeat === true) return;
-        if (e.key === "q" || e.key === "Q") state.toggleArm();
-        else if (e.key === "e" || e.key === "E") state.togglePsi();
+        if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const digit = /^Digit([1-9])$/.exec(e.code);
+        if (digit !== null) w.hud?.press(Number(digit[1]) - 1);
       },
       onTouch(e) {
         if (e.type === "touchstart") {
@@ -56,10 +57,17 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
       },
       toggleArm() {
-        if (state.key in w.n) w.arms.toggle(state.key) && state.psi(null);
+        if (w.n?.[state.key] === undefined || w.phasers === null) return;
+        // holstering needs no phaser e.g. after jsh `arm`
+        if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
+        if (w.phasers.isLocked(state.key))
+          w.phasers.arm(state.key); // lets go of them first, still drawn
+        else w.phasers.toggle(state.key) && state.psi(null);
       },
       togglePsi() {
-        if (state.key in w.n) w.psi.toggle() && w.arms.disarm(state.key);
+        if (w.n?.[state.key] === undefined || w.psi === null) return;
+        if (w.psi.getTarget() === null && w.e.hasItem(state.key, "psi") === false) return;
+        w.psi.toggle() && w.phasers.disarm(state.key);
       },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
@@ -99,6 +107,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
             angle: saved.angle,
             as: saved.skinKey,
           });
+          w.e.restoreAccess(saved);
           return true;
         } catch (e) {
           error(e); // e.g. no longer placable
@@ -191,13 +200,13 @@ export type State = {
   /** Two fingers down on the canvas that may yet be a tap: since when, and where */
   twoTap: null | { startMs: number; downs: [Touch, Touch] };
 
-  /** The player's controls, e.g. `q` arms or disarms them — the view's own keys are WorldView's */
+  /** The player's controls: a digit presses that slot of `WorldHud` — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
-  /** Touch's `q` and `e`: a two-finger tap on the canvas, its top half their weapon, its bottom half psi */
+  /** A two-finger tap on the canvas, its top half their weapon, its bottom half psi */
   onTouch(e: TouchEvent): void;
-  /** Arms or disarms them, letting go of psi */
+  /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser, and lets go of psi */
   toggleArm(): void;
-  /** Psi off, else back on to the last target, disarming them */
+  /** Psi off, else back on to the last target, disarming them — on needs psi */
   togglePsi(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;

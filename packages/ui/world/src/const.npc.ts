@@ -174,8 +174,8 @@ export const fromAnimationClipKey = {
   sit: true,
   strafe_left: true,
   strafe_right: true,
-  stun_aim: true,
-  stun_aim_avoid: true,
+  phaser_aim: true,
+  phaser_aim_avoid: true,
   walk: true,
 };
 
@@ -209,8 +209,8 @@ export const fadeSecs: Record<
   sit: {},
   strafe_left: {},
   strafe_right: {},
-  stun_aim: { shuffle: 0.15 },
-  stun_aim_avoid: {},
+  phaser_aim: { shuffle: 0.15 },
+  phaser_aim_avoid: {},
   walk: { shuffle: 0.15, run: 0.25 },
 };
 

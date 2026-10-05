@@ -51,7 +51,6 @@ import {
   createFadeRooms,
   type FadeRooms,
   type FadeRoomsMode,
-  fadeRoomsModeByKey,
   MODE_FADE_SECS,
   nextFadeRoomsMode,
   parseFadeRoomsMode,
@@ -882,12 +881,6 @@ export function WorldView(props: React.PropsWithChildren) {
           } else if (state.fHeld === false) {
             state.fHeld = true;
             state.onLookGesture(true);
-          }
-        } else if (fadeRoomsModeByKey[e.key] !== undefined) {
-          // `1`, `2` and `3` go straight to a mode, where the button cycles round them
-          if (e.repeat === false) {
-            state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
-            w.menu?.update();
           }
         }
       },
