@@ -153,14 +153,18 @@ export function psiNodes(
   /** Distance to a slot, out by up to `push` as its presence falls */
   const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, push: THREE.Node<"float">) =>
     q.sub(slot.xy).length().add(slot.z.oneMinus().mul(push));
-  /** Each eased to nought at `reach`, since a hard cut steps the contours */
-  const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
+  /**
+   * Each `eased` to nought at `reach`, since a hard cut steps the contours — not for the relief, whose
+   * height that would plunge within a few vertices of the rim, faceting the outermost contour
+   */
+  const weigh = (r: THREE.Node<"float">, eased: boolean) =>
+    eased ? exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus()) : exp(r.div(-blend));
 
   /**
    * `(g, slot of nearest, peak)` at world `q`: a smooth min of the distances to the player and to
    * the nearest other, so each keeps rings of their own — the player's `pushed` or not
    */
-  const fieldOf = (pushed: boolean) =>
+  const fieldOf = (pushed: boolean, eased: boolean) =>
     Fn(([q]: [THREE.Node<"vec2">]) => {
       const rPlayer = distTo(q, player, pushed ? maxPush : float(0));
       const rOther = float(1e9).toVar();
@@ -177,8 +181,8 @@ export function psiNodes(
         });
       });
 
-      const wPlayer = weigh(rPlayer);
-      const wOther = weigh(rOther);
+      const wPlayer = weigh(rPlayer, eased);
+      const wOther = weigh(rOther, eased);
       const total = max(wPlayer.add(wOther), 1e-20);
       const g = log(total).mul(-blend); // huge beyond reach
       // their peaks blended as their fields are, so the relief has no step between them
@@ -186,9 +190,9 @@ export function psiNodes(
       return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
     });
 
-  const fieldAt = fieldOf(true);
+  const fieldAt = fieldOf(true, true);
   /** The player's unpushed, so their rings fade in from the peak rather than the floor */
-  const reliefAt = fieldOf(false);
+  const reliefAt = fieldOf(false, false);
 
   /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
   const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
