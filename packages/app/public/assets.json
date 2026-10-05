@@ -17,6 +17,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -8524,6 +8525,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -11829,6 +11831,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -11954,6 +11957,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -12077,6 +12081,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -12430,6 +12435,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -12464,6 +12470,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -12582,6 +12589,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -16562,6 +16570,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.9,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -16779,6 +16788,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -17064,6 +17074,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -21192,6 +21203,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -21259,6 +21271,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -25111,6 +25124,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -26756,6 +26770,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -26790,6 +26805,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.6,
             "symKey": "bed--003",
             "origObstacleId": 0,
@@ -32583,6 +32599,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -32600,6 +32617,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -32813,6 +32831,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -32830,6 +32849,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -33043,6 +33063,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -33060,6 +33081,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -33673,6 +33695,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -33690,6 +33713,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -33733,6 +33757,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -33750,6 +33775,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -33962,6 +33988,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -33972,6 +33999,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -41802,6 +41830,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -41812,6 +41841,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -41908,6 +41938,7 @@
             "meta": {
               "obstacle": true,
               "table": true,
+              "surface": true,
               "y": 0.1,
               "symKey": "bed--003",
               "origObstacleId": 0
@@ -41918,6 +41949,7 @@
           "meta": {
             "obstacle": true,
             "table": true,
+            "surface": true,
             "y": 0.1,
             "symKey": "bed--003",
             "origObstacleId": 0
@@ -48283,5 +48315,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": -960860527}
+  "hash": {"obstacles": -204086380}
 }
