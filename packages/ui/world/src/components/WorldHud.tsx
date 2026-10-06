@@ -18,22 +18,24 @@ export default function WorldHud() {
       menu: null,
       pressTimer: 0,
       longPressed: false,
-      refused: false,
-      refusedTimer: 0,
+      notice: null,
+      noticeTimer: 0,
 
       selected: null,
 
       drop(name) {
         if (w.client === true) return;
         if (w.e.dropItem(w.player.key, name) === false) {
-          // a quad needs a table: said over the bar, a moment
-          window.clearTimeout(state.refusedTimer);
-          state.refusedTimer = window.setTimeout(() => state.set({ refused: false }), refusedMs);
-          return state.set({ refused: true });
+          return state.say("cannot drop here"); // a quad needs a table
         }
         if (state.selected === name) state.selected = null;
         state.update();
         w.view.forceUpdate();
+      },
+      say(notice) {
+        window.clearTimeout(state.noticeTimer);
+        state.noticeTimer = window.setTimeout(() => state.set({ notice: null }), noticeMs);
+        state.set({ notice });
       },
       getItems() {
         return (w.e.carried[w.player.key]?.items ?? []).filter((def) => def.meta?.item !== "phaser");
@@ -166,9 +168,9 @@ export default function WorldHud() {
   return (
     <div className="@container pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2">
       {/* out here, not in the row: it scrolls, so would clip it */}
-      {state.refused === true && (
+      {state.notice !== null && (
         <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200">
-          cannot drop here
+          {state.notice}
         </div>
       )}
       {/* one row, scrolled sideways once it outgrows a narrow World */}
@@ -487,8 +489,8 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
 /** How long a touch is held before a slot's menu opens */
 const longPressMs = 500;
 
-/** How long "cannot drop here" shows */
-const refusedMs = 1500;
+/** How long the bar's notice shows */
+const noticeMs = 1500;
 
 type SlotMenuItem = { label: string; run(): void };
 
@@ -516,9 +518,10 @@ export type State = {
   selected: null | string;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
-  /** A drop was just refused, and the bar says so */
-  refused: boolean;
-  refusedTimer: number;
+  /** What the bar says above itself, a moment: something of theirs was refused */
+  notice: null | string;
+  noticeTimer: number;
+  say(notice: string): void;
   /** What they carry, in slot order — their phaser has a slot of its own */
   getItems(): Geomorph.DecorDef[];
   /** The door at hand that the player holds the key to */

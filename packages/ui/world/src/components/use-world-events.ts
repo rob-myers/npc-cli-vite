@@ -1423,7 +1423,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const npc = w.n?.[npcKey];
         if (def === undefined || npc === undefined || inventoryConfig.kinds.includes(kind) === false) return false;
         if (def.type !== "quad" && def.type !== "point") return false;
-        if (state.hasRoomFor(npcKey, kind) === false) return false;
+        if (state.hasRoomFor(npcKey, kind) === false) {
+          if (npcKey === w.player.key) w.hud?.say(kind === "phaser" ? "already have one" : "inventory full");
+          return false;
+        }
         const { bounds, meta } = w.decor.runtime.byKey[decorKey];
         const room = w.npc.npcToRoom.get(npcKey);
         if (room?.gmId !== meta.gmId || room?.roomId !== meta.roomId) return false; // not through a wall

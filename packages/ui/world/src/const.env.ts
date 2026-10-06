@@ -117,7 +117,7 @@ export const inventoryConfig = {
   /** How much larger than life a point is drawn, to be seen and pressed */
   pointScale: 2,
   /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk, and further again sat at it */
-  reach: { floor: 0.6, raised: 1, seated: 1, raisedFrom: 0.5 },
+  reach: { floor: 0.6, raised: 1, seated: 1.1, raisedFrom: 0.5 },
   /** Items an npc carries at most, their phaser aside */
   maxCarried: 6,
 } as const;
