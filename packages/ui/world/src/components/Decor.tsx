@@ -183,17 +183,15 @@ export default function Decor() {
             const poly = Poly.fromRect({ x: 0, y: 0, width: entry.originalWidth * sguToWorldScale, height: entry.originalHeight * sguToWorldScale }).applyMatrix(matrix);
 
             const center = poly.center.precision(3);
-            const { baseRect } = geomService.polyToAngledRect(poly);
-            // half the rect's height back along its own "up". That direction is the transform's
-            // second column NORMALISED: `baseRect` is measured after the transform, so its height
-            // already carries the scale, and using the raw column would count it twice
+            // half its extent back along its own "up", the transform's second column NORMALISED.
+            // MEASURED along it: `polyToAngledRect` swaps the sides of a quad taller than it is wide
             const upLength = Math.hypot(transform[2], transform[3]) || 1;
+            const [upX, upY] = [transform[2] / upLength, transform[3] / upLength];
+            const along = poly.outline.map((p) => p.x * upX + p.y * upY);
+            const upHeight = Math.max(...along) - Math.min(...along);
             const topCenter = center
               .clone()
-              .translate(
-                -((transform[2] / upLength) * baseRect.height) / 2,
-                -((transform[3] / upLength) * baseRect.height) / 2,
-              )
+              .translate(-(upX * upHeight) / 2, -(upY * upHeight) / 2)
               .precision(3);
 
             d = {

@@ -347,13 +347,15 @@ export function createLayoutDecorFromPoly(poly: Poly): Geomorph.Decor {
     delete quadMeta.transform; // already provided one-level-up
 
     const center = poly.center.precision(3);
-    const { baseRect } = geomService.polyToAngledRect(poly);
-    // half the rect's height back along its own "up" — see `Decor`'s copy: the direction is the
-    // transform's second column NORMALISED, since `baseRect` already carries the scale
+    // half its extent back along its own "up", the transform's second column — see `Decor`'s copy.
+    // MEASURED along it: `polyToAngledRect` swaps the sides of a quad taller than it is wide
     const upLength = Math.hypot(transform[2], transform[3]) || 1;
+    const [upX, upY] = [transform[2] / upLength, transform[3] / upLength];
+    const along = poly.outline.map((p) => p.x * upX + p.y * upY);
+    const upHeight = Math.max(...along) - Math.min(...along);
     const topCenter = center
       .clone()
-      .translate(-((transform[2] / upLength) * baseRect.height) / 2, -((transform[3] / upLength) * baseRect.height) / 2)
+      .translate(-(upX * upHeight) / 2, -(upY * upHeight) / 2)
       .precision(3);
 
     return {
