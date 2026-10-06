@@ -27,7 +27,7 @@ export const doorSwitchHeight = 1.2;
 
 export const wallOutsetSgu = 10;
 
-export const obstacleOutset = 8 * sguToWorldScale;
+export const obstacleOutset = 10 * sguToWorldScale;
 /**
  * Walls with any of these tags will not be merged with adjacent walls
  * - `y` (numeric) Height of base off the floor
