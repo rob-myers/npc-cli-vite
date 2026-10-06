@@ -128,7 +128,7 @@ at `z = 1.5` to `g0d29` at `z = 6`.
    look button's long-press menu would.
 
    ```sh
-   w view.setFollowMode pan
+   w view.setFollow true
    move rob to:[2.08,0,6.8]
    ```
 

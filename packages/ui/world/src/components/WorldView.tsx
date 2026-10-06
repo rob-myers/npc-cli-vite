@@ -27,8 +27,6 @@ import {
   defaultCameraMaxDistance,
   defaultCameraMinDistance,
   defaultCameraMode,
-  defaultFollowMode,
-  type FollowMode,
   frontierMargin,
   frontierNearest,
   frontierNearFrac,
@@ -98,9 +96,7 @@ export function WorldView(props: React.PropsWithChildren) {
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
       cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
-      followMode:
-        (saved.cameraMode as string) === "follow" ? "pan" : renamedFollow(saved.followMode ?? defaultFollowMode),
-      followLast: renamedFollow(saved.followLast ?? "pan"),
+      follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
       canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
       canonicalFrom: 0,
       canonicalDragging: false,
@@ -153,8 +149,6 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierMs: 0,
       frontierOffset: { x: 0, z: 0 },
       frontierHold: false,
-      followTurnSign: 0,
-      wasdAzimuth: 0,
       keysDown: new Set(),
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
@@ -465,15 +459,11 @@ export function WorldView(props: React.PropsWithChildren) {
         const m = state.controls.object.matrixWorld.elements; // its x and y axes: its forward points down at birdseye
         const x = right * m[0] + up * m[4];
         const z = right * m[2] + up * m[6];
-        if (state.getFollowAzimuth() === undefined) return new Vect(x, z);
-        // as seen when the hold began, since `full` turns the camera with them
-        const turned = state.wasdAzimuth - state.controls.getAzimuthalAngle();
-        const [cos, sin] = [Math.cos(turned), Math.sin(turned)];
-        return new Vect(x * cos + z * sin, z * cos - x * sin);
+        return new Vect(x, z);
       },
       getFollowedPlayer() {
         const player = state.getPlayer();
-        return state.followMode !== "off" || state.frontierHold === true ? player : undefined;
+        return state.follow === true || state.frontierHold === true ? player : undefined;
       },
       getFollowGoal(out) {
         const player = state.getFollowedPlayer();
@@ -546,8 +536,6 @@ export function WorldView(props: React.PropsWithChildren) {
       onCameraFrame(spherical) {
         // outside the mode check, so a fade underway still finishes if the mode changes beneath it
         state.fadeCrosshair();
-        // a click neither stops nor nudges `full`'s own turn
-        state.controls.rotateArmMs = state.followMode === "full" ? followRotateArmMs : 0;
         // wherever the camera has got to — a gesture's end fires before its damping has, and a
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
@@ -743,7 +731,7 @@ export function WorldView(props: React.PropsWithChildren) {
       getFrontierStops() {
         const { controls } = state;
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
-        const player = state.followMode !== "off" ? state.getPlayer() : undefined; // a look press only pans
+        const player = state.follow === true ? state.getPlayer() : undefined; // a look press only pans
         let wanted = outer;
         let wantedMin = min;
         if (player !== undefined && state.playerFrontier.ahead(tmpAhead) === true) {
@@ -802,8 +790,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.canonicalDragging === false) return;
         if (state.lookAtAnimId !== 0) return; // `lookAt` owns the camera whilst it runs
         state.canonicalDragging = false;
-        // `full` owns the azimuth
-        if (controls.ctrlHeld === false || state.followMode === "full") return;
+        if (controls.ctrlHeld === false) return;
 
         // decided ON RELEASE ONLY, else measured against a point still being turned to
         const from = state.canonicalFrom / halfPi;
@@ -845,9 +832,9 @@ export function WorldView(props: React.PropsWithChildren) {
         w.update();
       },
       onLookGesture(held) {
-        // a short press looks, or stops a follow; a long one turns the follow off, or back to the last one on
-        if (held === false && state.followMode === "off") return state.holdFrontier();
-        state.setFollowMode(state.followMode === "off" ? state.followLast : "off");
+        // a short press looks, or stops a follow; a long one toggles the follow
+        if (held === false && state.follow === false) return state.holdFrontier();
+        state.setFollow(!state.follow);
       },
       holdFrontier() {
         if (state.getPlayer() === undefined) return;
@@ -865,9 +852,6 @@ export function WorldView(props: React.PropsWithChildren) {
       onKeyDown(e) {
         if (isTypingTarget(e)) return;
         const key = e.key.toLowerCase();
-        if (wasdKeys.includes(key) && !wasdKeys.some((k) => state.keysDown.has(k))) {
-          state.wasdAzimuth = state.controls?.getAzimuthalAngle() ?? 0; // a hold begins — see `getWasdDirection`
-        }
         state.keysDown.add(key);
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
@@ -1140,33 +1124,6 @@ export function WorldView(props: React.PropsWithChildren) {
         // the player, or part way to their frontier — none when not following nor holding
         if (state.getFollowGoal(tmpGoal) === false) return;
 
-        const azimuth = state.getFollowAzimuth();
-        if (azimuth !== undefined) {
-          // turned about `target`, `spherical` kept in step for whatever reads it before `update`
-          let off = deltaAngle(controls.getAzimuthalAngle(), azimuth);
-          // carry on round past ±π rather than reverse
-          if (Math.sign(off) === -state.followTurnSign && Math.abs(off) > Math.PI - followTurnKeep) {
-            off -= Math.sign(off) * 2 * Math.PI;
-          }
-          if (controls.isRotating() === true) off = 0; // eased back once let go
-          state.followTurnSign = Math.abs(off) < followTurnKeep ? 0 : Math.sign(off); // only whilst swinging round
-          // no faster than about `followTurnRate * followTurnSoftAngle`
-          const turn = (off / (1 + Math.abs(off) / followTurnSoftAngle)) * (1 - Math.exp(-followTurnRate * deltaSecs));
-          if (turn !== 0) {
-            const { object, target } = controls;
-            const [ox, oz, cos, sin] = [
-              object.position.x - target.x,
-              object.position.z - target.z,
-              Math.cos(turn),
-              Math.sin(turn),
-            ];
-            object.position.x = target.x + ox * cos + oz * sin;
-            object.position.z = target.z + oz * cos - ox * sin;
-            controls.spherical.theta += turn;
-            w.r3f?.invalidate();
-          }
-        }
-
         const { target } = controls;
         const dx = tmpGoal.x - target.x;
         const dz = tmpGoal.z - target.z;
@@ -1185,15 +1142,12 @@ export function WorldView(props: React.PropsWithChildren) {
       showCentreHint() {
         state.set({ centreHint: true });
       },
-      setFollowMode(followMode) {
+      setFollow(follow) {
         state.frontierHold = false; // superseded either way
-        state.followMode = followMode; // before the look, whose goal is the follow's
-        if (followMode !== "off") {
-          state.followLast = followMode;
-          state.lookAtPlayer(); // to the player at once rather than waiting for them to move
-        }
-        store.patch({ followMode, followLast: state.followLast });
-        state.set({ followMode });
+        state.follow = follow; // before the look, whose goal is the follow's
+        if (follow === true) state.lookAtPlayer(); // to the player at once rather than waiting for them to move
+        store.patch({ follow });
+        state.set({ follow });
         w.update(); // the look button shows it
         w.r3f?.invalidate();
       },
@@ -1226,10 +1180,6 @@ export function WorldView(props: React.PropsWithChildren) {
         // eased at both ends, unlike the follow's approach
         if (state.getFollowedPlayer() !== undefined) state.lookAtPlayer({ minMs: respawnPanMinMs, softLanding: true });
       },
-      getFollowAzimuth() {
-        const player = state.followMode === "full" ? state.getFollowedPlayer() : undefined;
-        return player === undefined ? undefined : player.rotation.y + Math.PI;
-      },
       lookAtPlayer(opts) {
         // a `lookAt` rather than leaving it to the follow, which runs on the world tick — a paused
         // world runs none, and the move onto them would wait until it resumed. This animates on
@@ -1239,14 +1189,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const track = () => (state.getFollowGoal(tmpGoal) === true ? { x: tmpGoal.x, y: tmpGoal.z } : undefined);
         const at = track();
         if (at === undefined) return;
-        // `full` turns as it pans
-        void state.lookAt(at, {
-          animate: true,
-          height: npcDims.height,
-          track,
-          azimuth: state.getFollowAzimuth,
-          ...opts,
-        });
+        void state.lookAt(at, { animate: true, height: npcDims.height, track, ...opts });
       },
       async lookAt(groundPoint, opts = {}) {
         const { controls } = state;
@@ -1264,9 +1207,6 @@ export function WorldView(props: React.PropsWithChildren) {
           opts.radius === undefined
             ? fromRadius
             : THREE.MathUtils.clamp(opts.radius, controls.minDistance, controls.maxDistance);
-        const fromTheta = controls.spherical.theta;
-        /** Kept continuous across ±π, so a tracked azimuth cannot flip it */
-        let turn = deltaAngle(fromTheta, opts.azimuth?.() ?? fromTheta);
 
         /**
          * Keeps the current orientation, moving the orbit target and (optionally) the zoom.
@@ -1284,12 +1224,6 @@ export function WorldView(props: React.PropsWithChildren) {
             to.lerp(tmpTracked.set(at.x, opts.height ?? 0, at.y), 1 - Math.exp((-lookAtTrackRate * stepMs) / 1000));
 
           controls.target.copy(from).lerp(to, alpha);
-          const azimuth = opts.azimuth?.();
-          if (azimuth !== undefined) {
-            const next = deltaAngle(fromTheta, azimuth);
-            turn = next + 2 * Math.PI * Math.round((turn - next) / (2 * Math.PI));
-            controls.spherical.theta = fromTheta + turn * alpha; // read just below
-          }
           // live `phi` and `theta`, so a tilt or turn underway still applies mid-pan
           const radius = fromRadius + (toRadius - fromRadius) * alpha;
           tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, controls.spherical.theta);
@@ -1301,7 +1235,7 @@ export function WorldView(props: React.PropsWithChildren) {
           // Nothing to travel — pressing the look button whilst already on them, say. Taken as an
           // instant move rather than animated: the taper below would give it a zero duration, and
           // the first frame's `0 / 0` would lerp the target to NaN and take the camera with it
-          if (opts.animate !== true || (from.distanceTo(to) < lookAtUntil && Math.abs(turn) < lookAtTurnUntil)) {
+          if (opts.animate !== true || from.distanceTo(to) < lookAtUntil) {
             applyTarget(1);
             controls.update(); // no frame to wait for
             return;
@@ -1320,9 +1254,7 @@ export function WorldView(props: React.PropsWithChildren) {
           const durationMs = Math.max(
             opts.minMs ?? 0,
             Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits),
-            Math.abs(turn) * lookAtMsPerRadian,
           );
-          state.followTurnSign = 0; // it lands facing them
           let elapsedMs = 0;
           let lastEpochMs = performance.now();
           /** `canonical`'s stops ride the pan — see `easeFrontier` */
@@ -1375,7 +1307,7 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       resetCamera() {
         // first, else the follow would pull the reset view straight back onto the player
-        if (state.followMode !== "off") state.setFollowMode("off");
+        if (state.follow === true) state.setFollow(false);
         state.frontierHold = false;
         const initial = defaultInitialCamera;
         state.initial = initial;
@@ -1601,11 +1533,11 @@ export function WorldView(props: React.PropsWithChildren) {
           // Aiming at the pointer instead moves the target, which the follow would only undo —
           // and a pan would do the same, so it is simply off for the duration
           // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
-          zoomToCursor={state.cameraMode === "free" && state.followMode === "off"}
+          zoomToCursor={state.cameraMode === "free" && state.follow === false}
           // a turn goes about the zoom crosshair whilst it shows: what the zoom is heading for
           // stays put. Otherwise, and whilst following, about `target`
           rotateAbout={state.getCrosshairPivot}
-          enablePan={state.followMode === "off"}
+          enablePan={state.follow === false}
           domElement={state.canvas}
           initialAzimuthal={state.initial.azimuthal}
           initialPolar={state.initial.polar}
@@ -1709,10 +1641,8 @@ export function WorldView(props: React.PropsWithChildren) {
 export type State = {
   bounds: Geom.RectJson;
   cameraMode: CameraModeType;
-  /** How the view follows the player — an option of EITHER mode: `full` also turns it with their facing */
-  followMode: FollowMode;
-  /** The follow a long look press turns back on */
-  followLast: Exclude<FollowMode, "off">;
+  /** Whether the view follows the player — an option of EITHER mode */
+  follow: boolean;
   /** `canonical`'s tilt, the same at every zoom */
   canonicalPolar: number;
   /** The azimuth the current turn set out from */
@@ -1786,12 +1716,8 @@ export type State = {
   frontierOffset: { x: number; z: number };
   /** Whether a short look press is holding the view on the player and their frontier, not following */
   frontierHold: boolean;
-  /** Which way `followPlayer` last swung round, `0` once near — see `followTurnKeep` */
-  followTurnSign: number;
   /** The keys held down over the world, lowercased — `wasd_delta` reads them */
   keysDown: Set<string>;
-  /** The camera's azimuth when the held `wasd` keys were first pressed — see `getWasdDirection` */
-  wasdAzimuth: number;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
   holdFrontier(): void;
   /** Draws `canonical`'s zoom stops in by how little the player sees ahead — see within */
@@ -1848,8 +1774,6 @@ export type State = {
   onLookGesture(held: boolean): void;
   /** Pans onto the player, following them as they walk — what turning `follow` on does */
   lookAtPlayer(opts?: { minMs?: number; softLanding?: boolean }): void;
-  /** The azimuth `full` holds the camera at, in front of the player */
-  getFollowAzimuth(): undefined | number;
   /** A teleport of the player, e.g. `fadeSpawn`: the frontier is read afresh, and a follow pans there */
   onPlayerRespawn(): void;
   onResize(): void;
@@ -1902,9 +1826,9 @@ export type State = {
   onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
   setupDom(): () => void;
-  setFollowMode(followMode: FollowMode): void;
+  setFollow(follow: boolean): void;
   setCameraMode(cameraMode: CameraModeType): void;
-  /** Keeps the player framed whilst following, and faced under `full` — called every tick from `World` */
+  /** Keeps the player framed whilst following — called every tick from `World` */
   followPlayer(deltaSecs: number): void;
   /** Where the follow sits relative to the player, in world XZ — a pan is what sets it */
   /** Whether the "centre on the player" UI is shown */
@@ -1927,8 +1851,6 @@ export type State = {
       minMs?: number;
       /** Brakes over more of the pan than it sets off in — see `softLandingWarp` */
       softLanding?: boolean;
-      /** Where to turn to NOW, re-read each frame — turned on the pan's own alpha */
-      azimuth?: () => undefined | number;
     },
   ): Promise<void>;
   /** Takes the centre offer down, whether it was taken or simply ran out */
@@ -1996,13 +1918,6 @@ function getCameraFov(aspect: number) {
   return 2 * Math.atan((halfTan * cameraRefAspect) / aspect) * THREE.MathUtils.RAD2DEG;
 }
 
-const wasdKeys = ["w", "a", "s", "d"];
-
-/** A follow stored under an old name, or one since dropped: `loose` is `pan`, `watch` is `full` */
-function renamedFollow<T extends FollowMode>(mode: T): T {
-  return ({ loose: "pan", tight: "pan", pov: "pan", watch: "full" }[mode as string] ?? mode) as T;
-}
-
 /** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
 function getPixelRatio() {
   return Math.min(Math.max(1, window.devicePixelRatio), 2);
@@ -2010,14 +1925,6 @@ function getPixelRatio() {
 
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
-/** How fast `full` swings round the player, per second — slower than the pan, so a turn does not whip it */
-const followTurnRate = 3;
-/** How long a drag must be held before it turns `full` — longer than a click */
-const followRotateArmMs = 250;
-/** Radians beyond which `full`'s swing levels off */
-const followTurnSoftAngle = 0.5;
-/** Radians past ±π a swing keeps its direction */
-const followTurnKeep = 0.5;
 const followUntil = 0.01;
 /** Near enough the outer stop it is easing to that it simply lands there */
 const frontierSettleUntil = 0.001;
@@ -2031,10 +1938,6 @@ const lookAtShortUnits = 2.5;
 /** Below this much to travel (metres) a `lookAt` simply arrives, rather than animating */
 const lookAtUntil = 0.01;
 const lookAtMsPerUnit = 60;
-/** The least a turn riding a pan takes, per radian */
-const lookAtMsPerRadian = 400;
-/** Below this much to turn (radians) a `lookAt` with nothing to travel simply arrives */
-const lookAtTurnUntil = 0.01;
 /** The most a single frame may advance a pan, so a stall is a slow pan rather than a jump */
 const lookAtMaxStepMs = 50;
 /** How fast a tracked destination is eased onto, per second */
