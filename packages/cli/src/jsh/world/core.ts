@@ -256,7 +256,8 @@ async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: strin
   if (decor === undefined || (decor.type !== "quad" && decor.type !== "point")) return;
   const at = decor.type === "quad" ? decor.center : { x: decor.x, y: decor.y };
   const { reach: reaches } = inventoryConfig;
-  const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? reaches.raised : reaches.floor;
+  const raised = w.n[npcKey]?.anim.pose === "sit" ? reaches.seated : reaches.raised;
+  const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? raised : reaches.floor;
   const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach;
   const from = w.n[npcKey]?.point;
   if (from !== undefined) {

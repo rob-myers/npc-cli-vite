@@ -40,7 +40,7 @@ to `carried` or to access) and on the player's own door and spawn events.
 `items` are the DEFS of the decor they took, so putting one down is `w.decor.create` of it.
 
 An item goes down onto a table if one is in reach: an obstacle with `meta.surface` in their room, the
-spot no further than `inventoryConfig.reach.raised` — as far as it could be taken back from. A quad goes nowhere else. A point (the keycard)
+spot no further than `inventoryConfig.reach.raised` (`seated` whilst sat, a little more) — as far as it could be taken back from. A quad goes nowhere else. A point (the keycard)
 otherwise lies at their feet — unless they are sat or lain, off the floor, when it cannot be put down.
 `w.e.getDropSpot`
 picks the spot NEAREST them: squared up to an edge long enough to take it, `surface.margin` in, ALL

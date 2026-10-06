@@ -281,7 +281,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         let best: null | DropSpot = null;
         /** No further than it could be taken back from */
-        let bestDist: number = reach.raised;
+        const within = npc.anim.pose === "sit" ? reach.seated : reach.raised;
+        let bestDist: number = within;
         for (const { outline, y3d } of tables) {
           /** Tables are often several obstacles abutting, as one top: it may lie across them */
           const onTop = (p: Geom.VectJson) =>
@@ -292,7 +293,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           for (const [a, b] of edges) {
             const near = geomService.getClosestOnSeg(npc.point, a, b);
             const length = Math.hypot(b.x - a.x, b.y - a.y);
-            if (near.dst > reach.raised || length === 0) continue;
+            if (near.dst > within || length === 0) continue;
             const [tx, ty] = [(b.x - a.x) / length, (b.y - a.y) / length];
             const [nx, ny] = [-ty * side, tx * side]; // inwards
             // slid along the edge: the nearest place that is all on a table, and on no other item
