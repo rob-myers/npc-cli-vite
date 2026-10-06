@@ -1310,6 +1310,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.rings?.onTick();
         w.psi?.onTick();
         w.phasers?.onTick();
+        w.player?.aimAtPointer();
       },
       syncDoorways() {
         for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {

@@ -2,6 +2,7 @@ import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { error, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
+import * as THREE from "three/webgpu";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
 import { getWorldMapStore } from "../service/storage";
 import type { State as WorldState } from "./World";
@@ -34,11 +35,29 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         // a hand each: by `code`, so wherever a layout puts the letters
+        if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") state.toggleArm();
         else return;
         w.hud?.update();
         w.view.forceUpdate();
+      },
+      aimAtPointer() {
+        const face = w.n?.[state.key]?.anim.face;
+        if (face === undefined) return;
+        // not whilst locked on: the phaser's target is whom they face
+        if (w.view.keysDown.has("r") === false || w.phasers?.isLocked(state.key) === true) {
+          if (face.aim === pointerAim) face.aim = null;
+          return;
+        }
+        const { raycaster, lastPointer, canvas } = w.view;
+        const { width, height } = canvas.getBoundingClientRect();
+        tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
+        raycaster.setFromCamera(tmpNdc, w.r3f.camera);
+        if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
+        Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
+        face.aim = pointerAim;
+        w.r3f.invalidate(); // a held key draws nothing of itself
       },
       onTouch(e) {
         if (e.type === "touchstart") {
@@ -192,6 +211,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 }
 
 /** A two-finger tap's longest, second finger down to last up, and how far either may stray — as `isPointDiffDrag` */
+/** The aim `aimAtPointer` gives the player: ours alone to clear */
+const pointerAim = { at: { x: 0, y: 0 }, rate: 1, untilRest: false };
+const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const tmpNdc = new THREE.Vector2();
+const tmpHit = new THREE.Vector3();
 const twoTapMs = 300;
 const twoTapSlopPx = 20;
 
@@ -201,6 +225,8 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
+  /** Whilst `r` is held they face where the pointer meets the floor — each tick, and let go on release */
+  aimAtPointer(): void;
   /** Two fingers down on the canvas that may yet be a tap: since when, and where */
   twoTap: null | { startMs: number; downs: [Touch, Touch] };
 
