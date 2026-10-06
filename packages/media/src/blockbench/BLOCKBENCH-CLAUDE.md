@@ -177,6 +177,24 @@ The legs are SOLVED so both ankles stay put and both soles flat, keyed every fif
 Export from the rest pose: after any `Animator.preview()` run `Animator.showDefaultPose(true); Canvas.updateAllBones()`
 first, else the glTF's nodes keep the pose.
 
+## drop
+
+Putting an item down on a table (`w.e.dropItem`), upper body only and a still pose — the game eases it
+in and out. A lean (stomach -6, chest -4, head 4) with the right arm reaching forward and down to table
+height (`rightarm` x 56, `rightforearm` x 8); the left arm is idle's (`leftarm` [5,0,-2], `leftforearm` x 9).
+
+## pick_up
+
+`drop`'s counterpart (`w.e.takeItem`), likewise a still upper-body pose: a deeper lean (stomach -9, chest
+-7, head 3) and the right arm lower with the elbow bent to grasp (`rightarm` x 50, `rightforearm` x 28).
+
+## crouch
+
+Putting down on, or taking off, the FLOOR (`w.e.reachFor`): a still whole-body squat. Feet where they
+rest, the root 8.5 down and 3 back, legs solved to them; the torso leans 60 (stomach and chest -30
+each, head 40), the right arm hangs 22 forward of plumb so the hand touches the floor ahead, the left
+rests on the knee. Keyed from code, recipe `crouch`.
+
 ## Clips keyed from code
 
 `scripts/src/bins/gen-clip-keys.ts` re-keys clips whose motion is solved rather than posed. It writes the
@@ -191,8 +209,8 @@ node scripts/src/bins/gen-clip-keys.ts                        # every recipe
 node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 ```
 
-Recipes now: `sit` (`knee`) and `phaser_aim` (`rock drop sink lean breathe`, also keying
-`phaser_aim_avoid`). It appends to the glTF's buffer, so restore both files first — `git checkout`, or
+Recipes now: `sit` (`knee`), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
+breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
 re-export from Blockbench. Reload the project in Blockbench afterwards, else a save puts the old keys back.
 
 ## point / point_avoid
