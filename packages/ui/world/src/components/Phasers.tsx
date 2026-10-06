@@ -18,9 +18,9 @@ import type { UpperAim } from "./npc-animation";
 import { WorldContext } from "./world-context";
 
 /**
- * Npcs' phasers: whilst armed they stand and aim (`phaser_aim`, over the upper body on the move), drawn in to
- * `phaser_aim_avoid` whenever the arm would touch a crowd neighbour, a wall or a closed door. The gun shows in their
- * right hand, and a beam runs from it to the middle of a body part of their target whilst nothing is between
+ * Npcs' phasers: whilst armed they stand and aim (`phaser_aim`, over the right arm on the move), drawn in to
+ * `phaser_aim_avoid` whenever the arm would touch a crowd neighbour, a wall or a closed door. The gun is in their
+ * right hand whenever they carry one and stand, and a beam runs from it to the middle of a body part of their target whilst nothing is between
  * them. Theirs, not a process's: see `w.phasers`, jsh `arm` and `disarm`, and `service/phaser-beam` for the fades
  */
 export default function Phasers() {
@@ -30,7 +30,6 @@ export default function Phasers() {
     (): State => ({
       ...createPhaserResources(),
       arms: new Map(),
-      awaited: new Map(),
       tickedMs: performance.now(),
 
       arm(npcKey, opts = {}) {
@@ -41,7 +40,6 @@ export default function Phasers() {
         arm.cast = null; // look again, at once
         const drawn = arm.armed === false;
         arm.armed = true;
-        state.settleAway(npcKey, false);
         state.sync();
         drawn && w.events.next({ key: "phasers", armed: true, npcKeys: [npcKey] });
       },
@@ -76,16 +74,8 @@ export default function Phasers() {
         }
         return arm;
       },
-      settleAway(npcKey, away) {
-        const resolves = state.awaited.get(npcKey);
-        state.awaited.delete(npcKey);
-        for (const resolve of resolves ?? []) resolve(away);
-      },
-      whenAway(npcKey) {
-        if (state.arms.has(npcKey) === false) return Promise.resolve(true);
-        return new Promise((resolve) => {
-          state.awaited.set(npcKey, [...(state.awaited.get(npcKey) ?? []), resolve]);
-        });
+      holds(npcKey) {
+        return w.e.hasItem(npcKey, "phaser") === true && w.npc.npcToDoable[npcKey] == null;
       },
       isArmed(npcKey) {
         return state.arms.get(npcKey)?.armed === true;
@@ -119,7 +109,11 @@ export default function Phasers() {
       },
       toggle(npcKey) {
         if (state.isArmed(npcKey)) state.disarm(npcKey);
-        else state.arm(npcKey);
+        else {
+          // back onto whom they were locked on when lowered, if still in hand since
+          const { npcKey: at, part } = state.arms.get(npcKey)?.target ?? {};
+          state.arm(npcKey, { at, part });
+        }
         return state.isArmed(npcKey);
       },
       onTick(instant = false) {
@@ -128,12 +122,18 @@ export default function Phasers() {
         state.tickedMs = now;
         state.phase.value = w.timer.getElapsedTime();
 
+        // whoever carries one has it in hand, raised or not
+        for (const npcKey in w.e.carried) {
+          const npc = w.n[npcKey];
+          if (state.arms.has(npcKey) || npc === undefined || state.holds(npcKey) === false || leaving(npc)) continue;
+          state.ensure(npcKey).beam.gun.presence = 1; // there at once: taken up, stood up, or arrived
+        }
+
         let count = 0;
         for (const [srcKey, arm] of state.arms) {
           const npc = w.n[srcKey];
           if (npc === undefined) {
             state.arms.delete(srcKey);
-            state.settleAway(srcKey, false);
             continue;
           }
           state.wield(npc, arm);
@@ -141,8 +141,7 @@ export default function Phasers() {
           advanceBeam(beam, step, (npcKey) => npcKey in w.n, instant);
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden) {
-            state.arms.delete(srcKey); // disarmed, its pose, stance and aim already let go of
-            state.settleAway(srcKey, true);
+            state.arms.delete(srcKey); // no longer held, its pose, stance and aim already let go of
             continue;
           }
           if (hidden || count === MAX_PHASERS) continue;
@@ -161,10 +160,16 @@ export default function Phasers() {
           const to = dst ?? npc;
           state.roomData.set([npc.roomSlot.value, to.roomSlot.value, npc.npcLit.value, to.npcLit.value], count * 4);
           hand.matrixWorld.decompose(tmpAt, tmpQuat, tmpScale);
-          // the forearm is rolled a quarter turn in our pose alone: undone as it leaves, so the gun stays gripped
+          // the forearm is rolled a quarter turn in our pose alone: undone by however much it is NOT, so the
+          // gun never turns about its barrel as the arm comes up or down — drawn in, by the blend instead
           const { upper } = npc.anim;
-          const roll = (1 - (isPhaserPose(upper.key) ? eased(upper.blend) : 0)) * (phaserConfig.restRoll / 2);
-          if (roll > 0) tmpQuat.multiply(tmpRoll.set(0, Math.sin(roll), 0, Math.cos(roll))); // about the forearm, its `y`
+          const { restRoll } = phaserConfig;
+          const twist = 2 * Math.atan2(hand.quaternion.y, hand.quaternion.w);
+          const roll =
+            upper.key === phaserConfig.avoid
+              ? (1 - eased(upper.blend)) * restRoll
+              : THREE.MathUtils.clamp(restRoll - Math.abs(deltaAngle(0, twist)), 0, restRoll);
+          if (roll > 0) tmpQuat.multiply(tmpRoll.set(0, Math.sin(roll / 2), 0, Math.cos(roll / 2))); // about the forearm, its `y`
           const present = eased(beam.gun.presence);
           // scaled about the forearm's origin, their elbow: slid down it, so it shrinks into the hand instead
           tmpAt.addScaledVector(along, phaserConfig.grip * tmpScale.x * (1 - present));
@@ -193,20 +198,18 @@ export default function Phasers() {
         }
         const avoid = armed === true && arm.holdUntil > secs;
 
-        // the pose — only ours, never another's e.g. psi's hands
+        // the pose, over their right arm — only ours, never another's e.g. a reach
         const pose = armed === false ? null : avoid ? phaserConfig.avoid : phaserConfig.pose;
         const { anim } = npc;
         const shown = anim.upper.target === 1 ? anim.upper.key : null;
-        /** Another's pose still on its way out e.g. psi's hands: ours, the stance and the gun wait for it */
-        const waiting = anim.upper.key !== null && isPhaserPose(anim.upper.key) === false && anim.upper.blend > 0;
         if (pose === null) {
           if (isPhaserPose(shown)) anim.setUpper(null);
-        } else if (waiting === false && pose !== shown && (shown === null || isPhaserPose(shown))) {
+        } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
           anim.setUpper(pose, { swapSecs: avoid ? phaserConfig.drawInSecs : undefined }); // in before the hand goes through
         }
 
         // the stance — theirs to stand in, and only ours to put back
-        const stance = armed === true && waiting === false ? phaserConfig.pose : null;
+        const stance = armed === true ? phaserConfig.pose : null;
         if (stance !== arm.ownIdle) {
           const from = anim.idleClip.name as AnimationClipKey;
           if (arm.ownIdle === null) arm.idleBefore = from;
@@ -236,10 +239,16 @@ export default function Phasers() {
         arm.armAim ??= { at: beam.at, from: muzzle, weight: 0 };
         arm.armAim.weight = eased(beam.shown.presence); // the arm follows the beam
         if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = armed ? arm.armAim : null;
-        // in hand with our pose: once it is theirs, and put away until the arm is back
-        beam.gun.target = isPhaserPose(anim.upper.key) && (armed === true || anim.upper.blend > 0) ? 1 : 0;
+        // in hand whilst they carry it and stand, raised or lowered — or whilst armed without one, by jsh
+        beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
+        // gone at once between the two halves of a teleport, and as they sit or lie
+        if (leaving(npc) || w.npc.npcToDoable[npc.key] != null) beam.gun.target = beam.gun.presence = 0;
+        else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
         const locking = target !== undefined && arm.inSight === true;
-        beam.shown.target = locking && avoid === false ? 1 : 0;
+        /** The arm is all the way up: no beam on its way there, nor any left as it comes down */
+        const raised = armed === true && isPhaserPose(anim.upper.key) && anim.upper.blend === 1;
+        beam.shown.target = locking && avoid === false && raised ? 1 : 0;
+        if (armed === false) beam.shown.presence = beam.locked.presence = 0;
         if (avoid === false) beam.next = locking ? arm.target : null;
       },
       recast(npc, arm, target, secs) {
@@ -333,11 +342,8 @@ export type State = PhaserResources & {
   disarm(...npcKeys: string[]): void;
   /** Their entry, made if absent */
   ensure(npcKey: string): ArmEntry;
-  /** By npcKey, those waiting on `whenAway` */
-  awaited: Map<string, ((away: boolean) => void)[]>;
-  settleAway(npcKey: string, away: boolean): void;
-  /** Once their gun has faded from their hand — `false` if they drew it again first, or are gone */
-  whenAway(npcKey: string): Promise<boolean>;
+  /** Carries one and stands, so has it in hand — raised or not */
+  holds(npcKey: string): boolean;
   isArmed(npcKey: string): boolean;
   /** Armed, and locked on someone */
   isLocked(npcKey: string): boolean;
@@ -424,6 +430,9 @@ const phaserConfig = {
   recastMoved: 0.05,
   recastTurned: 0.05,
 } as const;
+
+/** Faded right out, mid-teleport: in their hand until then, and again as they fade back in */
+const leaving = (npc: Npc) => npc.colorScale.value === 0;
 
 /** Ours to clear: never another's upper pose e.g. psi's hands */
 const isPhaserPose = (key: null | string) => key === phaserConfig.pose || key === phaserConfig.avoid;

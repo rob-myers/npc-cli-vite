@@ -38,8 +38,7 @@ turning to it is the usual exponential ease.
   replaces or clears only an aim it set, so a look still turns them. Armed at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.
-- Psi on another (`w.psi`, `Psi.syncHands`) aims the player at them every tick, likewise only an aim it
-  set, so a move strafes whilst they influence. Their own rings alone set none.
+- Psi sets no aim: its contours show where the target is, and the phaser's aim is the only one.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 
@@ -75,7 +74,7 @@ Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
 out as above.
 `moveClipFadedIn`, which holds up arrival until the gait has faded in, counts all four.
 
-The upper-body overlay (`setUpper`, e.g. `phaser_aim`, `psi`) is unaffected: it blends the arms and head
+The arm overlays (`setUpper`, e.g. `phaser_aim` on the right, `psi` on the left) are unaffected: they blend an arm and the head
 from whatever the mixer wrote.
 
 ## The clips

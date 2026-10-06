@@ -231,9 +231,9 @@ const clips = {
       /** `[clip, bone, pitch in the world at the back and at the front, y, z]` */
       const arms: [string, string, number, number, number, number][] = [
         ["phaser_aim", "rightarm", 90, 90, 0, 0],
-        ["phaser_aim", "leftarm", 59, 59, -40, 0],
+        ["phaser_aim", "leftarm", -10, -8, 0, -2], // free, as idle's: the aim is one-handed
         ["phaser_aim_avoid", "rightarm", 6, 3, 0, 6],
-        ["phaser_aim_avoid", "leftarm", -1, -3, 0, -6],
+        ["phaser_aim_avoid", "leftarm", -10, -8, 0, -2],
       ];
       return [
         ...plantedLegs(both, rootAt, keyed.legs, { left, right }),
@@ -241,6 +241,7 @@ const clips = {
           turn(clip, "stomach", (t) => [-lean(t) / 2, 0, 0]),
           turn(clip, "chest", (t) => [-lean(t) / 2, 0, 0]),
           turn(clip, "head", (t) => [lean(t), 0, 0]),
+          turn(clip, "leftforearm", (t) => [breathe(9, 4)(t), 0, 0]),
         ]),
         ...arms.map(([clip, bone, back, front, y, z]) =>
           turn(clip, bone, (t) => [breathe(back, front)(t) + lean(t), y, z]),

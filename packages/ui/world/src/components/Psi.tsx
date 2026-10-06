@@ -29,13 +29,11 @@ export default function Psi() {
       tune: { ...defaultPsiTune, ...getWorldStore(w.key).read().psiTune },
       influence: createInfluence(),
       handsOn: null,
-      ownAim: null,
       targetRoom: { at: null, also: null },
       flowAt: 0,
       tickedMs: performance.now(),
 
       choose(target) {
-        if (target !== null && w.npc?.npcToDoable[w.player?.key] != null) return state.getTarget(); // not whilst sat or lain
         chooseInfluence(state.influence, target, w.player?.key);
         state.syncTargetRoom();
         state.upload();
@@ -63,9 +61,7 @@ export default function Psi() {
 
         // held whilst paused: a choice made then shows once they play on
         const played = w.disabled === true ? 0 : secs;
-        // nothing comes in until their phaser is put away: the contours start with the hands
-        const holstering = w.phasers?.arms.has(w.player?.key) === true;
-        const steps = { in: holstering ? 0 : played / state.tune.fadeInSecs, out: played / state.tune.fadeOutSecs };
+        const steps = { in: played / state.tune.fadeInSecs, out: played / state.tune.fadeOutSecs };
         advanceInfluence(state.influence, steps, w.player?.key, (npcKey) => npcKey in w.n);
         state.syncTargetRoom();
         state.upload();
@@ -89,9 +85,15 @@ export default function Psi() {
         state.mesh.visible = off === false; // else no draw call
         if (player === undefined || state.mesh.visible === false) return; // nor any upload
 
-        // as `player-light` has it
+        // towards whom they influence, since they no longer turn to them — else as `player-light` has it, ahead
+        const at = others.length > 0 ? w.n[others[others.length - 1].npcKey].position : null;
         const lookAngle = -player.rotation.y - Math.PI / 2;
-        state.facing.value.set(Math.cos(lookAngle), Math.sin(lookAngle));
+        tmpWay.set(Math.cos(lookAngle), Math.sin(lookAngle));
+        if (at !== null && at.distanceToSquared(player.position) > 1e-6) {
+          tmpWay.set(at.x - player.position.x, at.z - player.position.z).normalize();
+        }
+        // swung round, not snapped, as the target changes
+        state.facing.value.lerp(tmpWay, psiConfig.swing).normalize();
 
         const slots = [{ npc: player, presence: self.presence }].concat(
           others.map((x) => ({ npc: w.n[x.npcKey], presence: x.presence })),
@@ -106,6 +108,9 @@ export default function Psi() {
           // a far stand-in, weightless there: alone, the field's loop over the others draws only the first ring
           state.npcData.set([player.position.x + psiConfig.loneFar, player.position.z, 0, 0], 4);
         }
+        // held level over anyone lain down, eased so it neither drops into them nor jumps
+        const flat = slots.some(({ npc }) => npc.anim.pose === "lie") ? psiConfig.lieFlat : 0;
+        state.flat.value += (flat - state.flat.value) * psiConfig.flatEase;
         state.slotCount.value = Math.max(2, slots.length); // drawn by `instanceCount`, which omits the stand-in
         state.geo.instanceCount = slots.length;
         state.npcTex.needsUpdate = true;
@@ -113,35 +118,23 @@ export default function Psi() {
       syncHands(player) {
         if (state.handsOn !== (player?.key ?? null)) {
           const prev = state.handsOn === null ? undefined : w.n[state.handsOn];
-          if (prev !== undefined && isPsiPose(prev.anim.upper.key)) prev.anim.setUpper(null); // the player changed
-          if (prev !== undefined && prev.anim.face.aim === state.ownAim) prev.anim.face.aim = null;
-          state.ownAim = null;
+          if (prev !== undefined && isPsiPose(prev.anim.upperLeft.key)) prev.anim.setUpper(null, left); // the player changed
           state.handsOn = player?.key ?? null;
         }
         if (player === undefined) return;
 
         const { nearDist, avoidSecs } = psiConfig;
-        const { self, current } = state.influence;
-        /** Another, whom alone they aim at */
-        const influencing = current !== null && current.npcKey !== player.key;
         const near =
           player.agent?.neis.some(({ dist }) => dist < nearDist ** 2) === true || // `dist` squared
           w.e.npcToDoors[player.key]?.inside != null; // in a doorway
-        const pose = self.target === 0 ? null : near ? "psi_avoid" : "psi";
-        const { upper } = player.anim;
-        const shown = upper.target === 1 ? upper.key : null;
+        const pose = state.influence.self.target === 0 ? null : near ? "psi_avoid" : "psi";
+        const { upperLeft } = player.anim;
+        const shown = upperLeft.target === 1 ? upperLeft.key : null;
         if (pose === null) {
-          if (isPsiPose(shown)) player.anim.setUpper(null);
-        } else if (pose !== shown && (shown === null || isPsiPose(shown)) && w.phasers?.arms.has(player.key) !== true) {
-          // not over another's e.g. `point` — nor until their phaser is put away, and gone from their hand
-          player.anim.setUpper(pose, { swapSecs: near ? avoidSecs : undefined });
-        }
-
-        // the aim, at whom they influence, so a move strafes — only ours, as a weapon's is
-        const { face } = player.anim;
-        if (face.aim === null || face.aim === state.ownAim) {
-          const target = influencing ? w.n[current.npcKey] : undefined;
-          face.aim = state.ownAim = target === undefined ? null : { at: target.point, rate: 1, untilRest: false };
+          if (isPsiPose(shown)) player.anim.setUpper(null, left);
+        } else if (pose !== shown && (shown === null || isPsiPose(shown))) {
+          // their left hand alone, and not over another's e.g. reaching to put something down
+          player.anim.setUpper(pose, { side: "left", swapSecs: near ? avoidSecs : undefined });
         }
       },
       syncGms() {
@@ -220,8 +213,6 @@ export type State = PsiResources & {
   influence: Influence;
   /** Whose hands we move: the player, as last seen */
   handsOn: null | string;
-  /** The aim we gave them, so another's is neither replaced nor cleared */
-  ownAim: Npc["anim"]["face"]["aim"];
   /** The target's room, shown by the fade, and `also` the far side of a doorway they stand in */
   targetRoom: { at: null | Geomorph.GmRoomId; also: null | Geomorph.GmRoomId };
   /** World seconds `flowPhase` was last advanced at */
@@ -239,7 +230,7 @@ export type State = PsiResources & {
   syncTargetRoom(): void;
   /** The slots onto the gpu, and whether to draw them at all */
   upload(): void;
-  /** The player's hands to their temples whilst psi is on, elbows forward (`psi_avoid`) near a neighbour or in a doorway */
+  /** The player's left hand to their temple whilst psi is on, elbow tucked (`psi_avoid`) near a neighbour or in a doorway */
   syncHands(player: undefined | Npc): void;
   /** Each geomorph's inverse transform and local bounds, for the shader to find a pixel's room */
   syncGms(): void;
@@ -251,6 +242,11 @@ export type State = PsiResources & {
 const psiConfig = {
   /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */
   headAbove: 0.24,
+  /** The share of the way the contours' cone swings to a new bearing per tick */
+  swing: 0.2,
+  /** Metres the relief stays at its peak about someone lain down: their length — and the share of the way there per tick */
+  lieFlat: 1.3,
+  flatEase: 0.1,
   /** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
   nearDist: 0.65,
   /** Seconds the player's elbows take to come forward */
@@ -274,4 +270,6 @@ const psiConfig = {
 const white = new THREE.Color("#fff");
 
 /** Ours to clear: never another's upper pose e.g. `point` */
+const tmpWay = new THREE.Vector2();
 const isPsiPose = (key: null | string) => key === "psi" || key === "psi_avoid";
+const left = { side: "left" } as const;

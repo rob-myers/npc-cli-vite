@@ -18,6 +18,7 @@ export default function WorldHud() {
       menu: null,
       refused: false,
       refusedTimer: 0,
+
       selected: null,
 
       drop(name) {
@@ -103,7 +104,7 @@ export default function WorldHud() {
   const slotEl = (index: number, opts: SlotOpts, children: React.ReactNode) => (
     <div
       key={index}
-      title={opts.title}
+      title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
       className={cn(
         "relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
         opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
@@ -141,11 +142,6 @@ export default function WorldHud() {
           <XIcon className="size-3" weight="bold" />
         </button>
       )}
-      {big === false && (
-        <span className="absolute top-0.5 left-1 text-xs leading-3 text-sky-100 opacity-100! [text-shadow:0_0_3px_#000,0_0_3px_#000]">
-          {index + 1}
-        </span>
-      )}
     </div>
   );
 
@@ -159,40 +155,49 @@ export default function WorldHud() {
       )}
       {/* one row, scrolled sideways once it outgrows a narrow World */}
       <div className="pointer-events-auto mx-auto flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-300/30 bg-linear-to-b from-slate-400/35 via-slate-600/30 to-slate-800/45 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] [scrollbar-width:none] @lg:gap-3 @lg:px-3 @lg:py-2">
-        {slot(
-          0,
-          { title: "psi", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
-          <BrainIcon firing={psiOn} paused={w.disabled} />,
-        )}
-        {slot(
-          1,
-          {
-            title: "phaser",
-            had: hasPhaser,
-            active: armed,
-            plain: true,
-            drop: hasPhaser ? "phaser" : undefined,
-            // dropped without drawing it first
-            menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
-          },
-          <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} />,
-        )}
-        {slot(
-          2,
-          {
-            title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
-            had: keyCount > 0,
-            active: keyDoor !== null,
-            menu: heldDoors.map((gdKey) => ({ label: `split ${gdKey}`, run: () => w.e.unchainKey(playerKey, gdKey) })),
-          },
-          <>
-            <ItemIcon kind="keychain" />
-            {keyCount > 0 && (
-              <span className="absolute right-1 bottom-0.5 text-xs leading-3 text-sky-100">{keyCount}</span>
-            )}
-            {keyDoor !== null && <KeyLock className="absolute top-0.5 right-0.5 size-4 text-amber-300" weight="fill" />}
-          </>,
-        )}
+        {/* what they are, apart from what they carry */}
+        <div className="flex shrink-0 gap-1 rounded-md bg-slate-950/25 ring-1 ring-slate-300/15 @lg:gap-3">
+          {slot(
+            0,
+            { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
+            <BrainIcon firing={psiOn} paused={w.disabled} />,
+          )}
+          {slot(
+            1,
+            {
+              title: "phaser",
+              hotkey: "e",
+              had: hasPhaser,
+              active: armed,
+              plain: true,
+              drop: hasPhaser ? "phaser" : undefined,
+              // dropped without drawing it first
+              menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
+            },
+            <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} />,
+          )}
+          {slot(
+            2,
+            {
+              title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
+              had: keyCount > 0,
+              active: keyDoor !== null,
+              menu: heldDoors.map((gdKey) => ({
+                label: `split ${gdKey}`,
+                run: () => w.e.unchainKey(playerKey, gdKey),
+              })),
+            },
+            <>
+              <ItemIcon kind="keychain" />
+              {keyCount > 0 && (
+                <span className="absolute right-1 bottom-0.5 text-xs leading-3 text-sky-100">{keyCount}</span>
+              )}
+              {keyDoor !== null && (
+                <KeyLock className="absolute top-0.5 right-0.5 size-4 text-amber-300" weight="fill" />
+              )}
+            </>,
+          )}
+        </div>
         {state.getItems().map((def, i) =>
           slot(
             i + 3,
@@ -457,6 +462,8 @@ type SlotMenuItem = { label: string; run(): void };
 
 type SlotOpts = {
   title: string;
+  /** The key that presses it, after its name in the tooltip */
+  hotkey?: string;
   had: boolean;
   active: boolean;
   drop?: string;

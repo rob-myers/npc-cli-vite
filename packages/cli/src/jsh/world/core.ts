@@ -235,13 +235,18 @@ function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
   if (meta.type === "decor" && typeof meta.item === "string") {
     void commitKamma(w, playerKey, meta.decorKey, press);
   } else if (meta.type === "npc") {
-    if (w.phasers?.isArmed(playerKey) === true) {
-      // themselves unlocks it, so only by the arm that holds it
-      const own = meta.npcKey === playerKey;
-      if (own === false || meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm") {
+    const own = meta.npcKey === playerKey;
+    const psiOn = (w.psi?.getTarget() ?? null) !== null;
+    if (own === true && psiOn === true && (meta.bodyPart === "leftarm" || meta.bodyPart === "leftforearm")) {
+      w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not: its target is kept for next time
+    } else if (w.phasers?.isArmed(playerKey) === true) {
+      // the arm that holds it lowers it, its target kept for next time — elsewhere on themselves, nothing
+      if (own === true) {
+        if (meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm") w.phasers.disarm(playerKey);
+      } else {
         w.phasers.arm(playerKey, { at: meta.npcKey, part: meta.bodyPart });
       }
-    } else if ((w.psi?.getTarget() ?? null) !== null) w.player.psi(meta.npcKey);
+    } else if (psiOn === true && own === false) w.player.psi(meta.npcKey);
   }
 }
 

@@ -717,8 +717,9 @@ export function WorldMenu() {
           </button>
 
           {/* the world shown by room, everything the player cannot see into faded away — see
-              `service/fade-rooms`. Cycles `sight` to `sense` to `ship`. The rooms fade INTO the post
-              pass's backdrop, so asking for either fading mode switches that on too */}
+              `service/fade-rooms`. Cycles `sight` to `sense` to `ship`, the same three the keys `1`,
+              `2` and `3` select. The rooms fade INTO the post pass's backdrop, so asking for
+              either fading mode switches that on too */}
           <div
             data-keep-menu-open
             title={w.view.fadeRoomsMode}

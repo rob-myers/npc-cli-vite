@@ -14,17 +14,19 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 
 ## The bar
 
-Bottom centre of a World; a slot is pressed, or its digit is. None on a net client, where neither psi
+Bottom centre of a World; a slot is pressed. None on a net client, where neither psi
 nor phasers are mirrored.
 
 | slot | shows | a press |
 | --- | --- | --- |
-| `1` psi | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| `2` phaser | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
-| `3` keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door; right-click splits a key off |
-| `4`-`9` | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
+| psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
+| keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door; right-click splits a key off |
+| items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
+The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
+are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`. On touch a two-finger tap on the World does the same: its left half psi, its right half the phaser.
 A selected item, and a drawn phaser, show an "x" which puts it down — as does "drop" in the
 right-click menu of either, with no need to select or draw it first.
 
@@ -44,19 +46,35 @@ picks the spot NEAREST them: squared up to an edge long enough to take it, `surf
 of it on the table top — which may be several abutting obstacles of one height — and overlapping no
 other item (they may touch). Every edge in reach is tried, slid along a `surface.step` at a time. With none `dropItem` is `false`: the bar says "cannot drop here" above itself, `drop` throws.
 
-Putting down takes a moment (`w.e.dropItem` starts it): a drawn phaser is put away, they turn to the spot, and
-reach out — the `drop` clip over their upper body — and after `reachSecs` the item is there and their
-arm comes back. It stays in its slot until then, and they put down one thing at a time.
+Putting down takes a moment (`w.e.dropItem` starts it): they turn to the spot and reach out — the
+`drop` clip over ONE arm — and after `reachSecs` the item is there and their arm comes back. It stays
+in its slot until then, and they put down one thing at a time.
+
+Which arm: the left (`drop_left`, `pick_up_left`, `crouch_left`) if a gun is in their right hand, the
+right if psi has their left at their temple, else each in turn. With both, the left hand leaves the
+temple and goes back; psi stays on. The phaser itself is put down from the right hand, straight from an aim.
 
 Taking is the same in reverse (`w.e.takeItem`): they turn to the item, reach — the
 `pick_up` clip — and after `reachSecs` it is theirs and gone from the map. Both share `w.e.reachFor`.
 
 On the FLOOR (below `reach.raisedFrom`) either is a squat instead: the whole-body `crouch` pose for
-`crouchSecs`, then back to idle. Not whilst sat or lain, nor with their arms busy (phaser drawn, psi):
-then it is the upper-body clip as above.
+`crouchSecs`, then back to idle. Not whilst sat or lain: then it is the arm clip as above.
+
+Psi and the phaser run together, an arm each (`anim.upperLeft`, `anim.upper`). Whoever carries a
+phaser and stands has it in their right hand, raised or not — `w.phasers.holds`; sat or lain it is gone.
+
+- The gun shows and hides at once, never fading, bar a drop: it is in hand right through a teleport's
+  fade-out, gone only whilst they are faded right out, and back as they fade in.
+- Its roll about the forearm undoes whatever twist the forearm has NOT got (`restRoll`), read off the
+  bone, so it never turns about its barrel as the arm comes up or down.
+- The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
+- Lowered, their target is kept for the next raise (`Phasers.toggle`) — whilst the gun stays in hand.
+- Psi's contours fan out TOWARDS its target, the player no longer turning to them — ahead, with none
+  — swung round as it changes (`psiConfig.swing`). Over anyone lain down the relief holds its peak
+  for `lieFlat` metres before it falls, so it does not drop into them.
 
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
-- `takeItem(npcKey, decorKey)` takes a runtime decor off the map.
+- `takeItem(npcKey, decorKey)` takes a runtime decor off the map — one in their own room only, never through a wall.
 
 ## Items
 
@@ -88,7 +106,9 @@ Debug's door toggle reads that off any pick.
   floor, looser for one whose top (`y3d`) is higher. Sat or lain in reach they take it from there. A
   newer press abandons it;
 - on an npc whilst the phaser is drawn, the beam locks onto the part pressed. A press on the
-  player's own right arm unlocks it instead, and one elsewhere on them does nothing; whilst psi is on, they
-  become its target. `predicates`' pick ring stands down meanwhile.
+  player's own right arm lowers it instead, its target kept for when it is next raised, and one
+  elsewhere on them does nothing. With the phaser
+  lowered and psi on, another npc pressed becomes psi's target. A press on the player's own LEFT
+  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised. `predicates`' pick ring stands down meanwhile.
 
 It is a keyed listener (`w.e.addKeyedListener`), as `predicates` is, so there is no process to kill.

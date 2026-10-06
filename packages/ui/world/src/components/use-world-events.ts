@@ -33,6 +33,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       carried: structuredClone(persisted.getWorldStore(w.key).read().carried), // the default is shared
       changingMap: false,
       handling: new Set(),
+      reachedRight: new Set(),
       insideDoorways: new Map(),
       doorOpen: {},
       doorToNpcs: {},
@@ -103,24 +104,31 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const def = had.items.find((def) => def.key === name || def.meta?.item === name);
         const npc = w.n?.[npcKey];
         if (def === undefined || npc === undefined) return false;
-        // onto a surface in reach — else a point lies at their feet, unless sat or lain: those are not on the floor
-        const atFeet = def.type !== "quad" && w.npc.npcToDoable[npcKey] == null;
-        const spot = state.getDropSpot(npcKey, def) ?? (atFeet ? { ...npc.point, y3d: 0 } : null);
+        // onto a surface in reach — else a point goes on the floor, unless sat or lain: those are not on it
+        let spot = state.getDropSpot(npcKey, def);
+        if (spot === null && def.type !== "quad" && w.npc.npcToDoable[npcKey] == null) {
+          // where their hand comes down, so it is taken up again from where they stand — else at their feet
+          const { x, y } = npc.point;
+          const ry = npc.rotation.y;
+          const ahead = {
+            x: x - Math.sin(ry) * inventoryConfig.standOff,
+            y: y - Math.cos(ry) * inventoryConfig.standOff,
+          };
+          spot = { ...(w.npc.getClosestPoly(ahead, 0.1).success === true ? ahead : { x, y }), y3d: 0 };
+        }
         if (spot === null) return false;
         state.handle(npcKey, async () => {
-          if (def.meta?.item === "phaser" && w.phasers?.arms.has(npcKey) === true) {
-            // put away first, so it is not in their hand and before them at once
-            w.phasers.disarm(npcKey);
-            if ((await w.phasers.whenAway(npcKey)) === false) return;
-          }
-          await state.reachFor(npc, "drop", spot, () => {
+          /** Out of the hand it is in */
+          const gun = def.meta?.item === "phaser";
+          const put = () => {
             const items = state.carried[npcKey]?.items ?? [];
             const index = items.indexOf(def);
             if (index === -1) return; // gone meanwhile
             items.splice(index, 1);
             w.decor.create(state.getItemDefAt(def, spot));
             state.onCarriedChange(npcKey);
-          });
+          };
+          await state.reachFor(npc, "drop", spot, put, gun === true ? "right" : undefined);
         });
         return true;
       },
@@ -727,17 +735,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "phasers":
-            if (!e.armed) return;
-            for (const npcKey of e.npcKeys) {
-              if (npcKey === w.player.key) {
-                w.psi.choose(null);
-              } else {
-                const npc = w.n[npcKey];
-                if (npc.anim.hasUpper("psi") || npc.anim.hasUpper("psi_avoid")) {
-                  npc.anim.setUpper(null);
-                }
-              }
-            }
             break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
@@ -870,11 +867,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "npc-pre-do":
             if (w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
-            if (e.npcKey === w.player.key) w.psi?.choose(null); // psi is the player's alone
             break;
           case "npc-do":
             if (e.decorKey !== null && w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
-            if (e.decorKey !== null && e.npcKey === w.player.key) w.psi?.choose(null);
             break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both
@@ -916,23 +911,34 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           },
         });
       },
-      async reachFor(npc, clip, at, act) {
+      async reachFor(npc, clip, at, act, side) {
         // turned to it, unless it is at their own feet
         if (npc.distanceTo(at) > 0.05) await npc.look({ at }).catch(() => {});
-        /** Down to the floor for it, unless off it themselves or their arms are busy */
-        const crouch =
-          (at.y3d ?? 0) < inventoryConfig.reach.raisedFrom &&
-          w.npc.npcToDoable[npc.key] == null &&
-          npc.anim.upper.key === null;
-        if (crouch) npc.anim.setPose("crouch");
-        else npc.anim.setUpper(clip);
+        const { anim, key } = npc;
+        // the free hand: not the one with a gun in it, nor one at their temple — else each in turn
+        side ??=
+          w.phasers?.holds(key) === true
+            ? "left"
+            : anim.upperLeft.target === 1 || state.reachedRight.delete(key) === false
+              ? (state.reachedRight.add(key), "right")
+              : "left";
+        /** Down to the floor for it, unless off it themselves */
+        const crouch = (at.y3d ?? 0) < inventoryConfig.reach.raisedFrom && w.npc.npcToDoable[key] == null;
+        const shown = `${crouch ? "crouch" : clip}${side === "left" ? "_left" : ""}` as const;
+        /** What that hand was doing e.g. psi, which it goes back to */
+        const u = anim.upperOf(side);
+        const before = u.target === 1 ? u.key : null;
+        if (crouch) anim.setPose(shown);
+        anim.setUpper(shown, { side });
+        // an aim is let go only now, so the arm goes from it straight to the reach
+        if (side === "right") w.phasers?.disarm(key);
         const until = w.timer.getElapsedTime() + inventoryConfig[crouch ? "crouchSecs" : "reachSecs"];
         while (w.timer.getElapsedTime() < until) await w.npc.nextTick(); // held whilst paused
-        if (w.n[npc.key] === npc) act();
+        if (w.n[key] === npc) act();
         w.view.forceUpdate();
         // back as they were, unless something else has moved them on
-        if (npc.anim.pose === "crouch") npc.anim.setPose(npc.anim.idleClip.name as AnimationClipKey);
-        if (npc.anim.upper.key === clip) npc.anim.setUpper(null);
+        if (anim.pose === shown) anim.setPose(anim.idleClip.name as AnimationClipKey);
+        if (u.key === shown) anim.setUpper(before, { side });
       },
       async raycast(origSrc, origDst) {
         let src = helper.parseGroundPoint(origSrc);
@@ -1518,8 +1524,16 @@ export type State = {
   getItemDefAt(def: Geomorph.DecorDef, at: DropSpot): Geomorph.DecorDef;
   /** Runs it unless they are `handling` something already */
   handle(npcKey: string, run: () => Promise<void>): void;
-  /** They turn to the point and reach out as `clip` has it, over their upper body — then `act`, as their arm gets there */
-  reachFor(npc: Npc, clip: "drop" | "pick_up", at: Geom.VectJson & { y3d?: number }, act: () => void): Promise<void>;
+  /** They turn to the point and reach out as `clip` has it, with their free hand unless told which — then `act`, as it gets there */
+  reachFor(
+    npc: Npc,
+    clip: "drop" | "pick_up",
+    at: Geom.VectJson & { y3d?: number },
+    act: () => void,
+    side?: "left" | "right",
+  ): Promise<void>;
+  /** Those who last reached with their right, so with neither hand busy they take turns */
+  reachedRight: Set<string>;
   /** Grants `psi`, or makes them an item out of nothing — `false` if they have no room */
   giveItem(npcKey: string, name: "psi" | ItemKind, extraMeta?: Meta): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;

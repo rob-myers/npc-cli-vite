@@ -65,6 +65,8 @@ from `ct.w` and returning plain data.
   their frontier. `w view.onLookGesture false` is the press itself, but stops a follow instead of looking.
 - **The World is often paused**, e.g. after a reload: a `move` then waits, and just after load `npcs`
   may print `[]`. Unpause it with `query` `w => w.setDisabled(false)`.
+- **Subscribe to `w.events` with `{ next }`**, never a bare function: that makes EVERY event throw
+  "listener is not a function" until unsubscribed, breaking the user's commands meanwhile.
 - **To switch tabs, type a line there**: a typed line brings its tty to the front.
 
 ## Recipes

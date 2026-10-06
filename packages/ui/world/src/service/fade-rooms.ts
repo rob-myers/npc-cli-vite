@@ -231,7 +231,14 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
  */
 export type FadeRoomsMode = "sight" | "sense" | "ship";
 
-/** The next mode round, for the fade button */
+/** Which key selects which mode */
+export const fadeRoomsModeByKey: Record<string, FadeRoomsMode> = {
+  "1": "sight",
+  "2": "sense",
+  "3": "ship",
+};
+
+/** The next mode round, for the fade button: `1` to `2` to `3` and back */
 export function nextFadeRoomsMode(mode: FadeRoomsMode): FadeRoomsMode {
   return mode === "sight" ? "sense" : mode === "sense" ? "ship" : "sight";
 }

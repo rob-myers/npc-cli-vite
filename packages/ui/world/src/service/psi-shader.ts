@@ -56,6 +56,8 @@ export function createPsiResources() {
   /** Unit, the way the player faces in world `xz` — see `Psi.upload` */
   const facing = uniform(new THREE.Vector2(1, 0));
   const flowPhase = uniform(0);
+  /** Metres out the relief holds its peak before it falls, so it clears someone lain along it */
+  const flat = uniform(0);
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
   const width = uniform(defaultPsiTune.width);
@@ -97,6 +99,7 @@ export function createPsiResources() {
     slotCount,
     facing,
     flowPhase,
+    flat,
     reach,
     gap,
     width,
@@ -119,6 +122,7 @@ export function psiNodes(
     slotCount,
     facing,
     flowPhase,
+    flat,
     reach,
     gap,
     width,
@@ -219,7 +223,9 @@ export function psiNodes(
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
   // each contour at a fixed height, as on a relief map
   const field = reliefAt(worldXZ);
-  const y = max(field.x.div(reach.negate()).add(1), 0).mul(field.z).add(lift); // `z` is the peak
+  const y = max(max(field.x.sub(flat), 0).div(flat.sub(reach)).add(1), 0)
+    .mul(field.z)
+    .add(lift); // `z` is the peak
   // a vertex well outside the cone the fragments keep is drawn onto the player, so a triangle of
   // them has no area and is never rasterised. "Well": by more than a triangle is wide, so none that
   // reaches into the cone is bent. Metres outside the wedge's nearer edge, as a half-plane
