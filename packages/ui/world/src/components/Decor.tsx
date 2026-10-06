@@ -4,7 +4,22 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect } from "react";
-import { atan, attribute, float, fract, int, texture, min as tslMin, uniform, uv, vec2, vec4 } from "three/tsl";
+import {
+  atan,
+  attribute,
+  cameraPosition,
+  float,
+  fract,
+  int,
+  normalWorld,
+  positionWorld,
+  texture,
+  min as tslMin,
+  uniform,
+  uv,
+  vec2,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
   decorCuboidHeight,
@@ -556,7 +571,9 @@ export default function Decor() {
         }
         batch.inst.setColorAt(id, tmpColor.set(decor.meta.tint ?? "#ffffff"));
         // black, bar an item's — or whatever `meta.sides` says
-        const sides = decor.meta.sides ?? (decor.meta.item === undefined ? "#000" : inventoryConfig.sides);
+        const sides =
+          decor.meta.sides ??
+          (decor.meta.item === undefined ? "#000" : (inventoryConfig.sideOf[decor.meta.item] ?? inventoryConfig.sides));
         tmpColor.set(sides).toArray(batch.sideRgb, id * 3);
         batch.isPoint[id] = decor.type === "point" ? 1 : 0;
         return true;
@@ -761,8 +778,14 @@ export default function Decor() {
       const createTexMaterials = (typeId: number) => {
         // black unless `meta.sides` says otherwise: the fade only takes them out of the pick. A point has none
         const sides = createMaterial();
+        /** Flat shading by the camera: a face seen edge-on is darkest, so the faces tell apart */
+        const facing = normalWorld
+          .dot(cameraPosition.sub(positionWorld).normalize())
+          .abs()
+          .mul(1 - sideShade)
+          .add(sideShade);
         sides.colorNode = w.view.fadeRoomsFx.applyFadeRgba(
-          w.view.playerLight.applyLightRgba(vec4(attribute<"vec3">("sideRgb", "vec3"), 1)),
+          w.view.playerLight.applyLightRgba(vec4(attribute<"vec3">("sideRgb", "vec3").mul(facing), 1)),
           fade,
         );
         sides.opacityNode = w.view.fadeRoomsFx.dropPickWhenHidden(float(1), fade, w.view.objectPick);
@@ -978,6 +1001,8 @@ const cuboidHeight = decorCuboidHeight;
 /** How far off the floor a rect or circle lies */
 const shapeY = 0.003;
 const cuboidIconHeight = 0.005;
+/** How bright a cuboid side seen edge-on stays, of one seen face-on */
+const sideShade = 0.45;
 
 /** What each of decor's instanced meshes keeps: who is at which instance, and where each stands */
 function createBatch(geo: THREE.BufferGeometry, max: number): Batch {
