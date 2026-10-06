@@ -253,7 +253,21 @@ async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: strin
   const { reach: reaches } = inventoryConfig;
   const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? reaches.raised : reaches.floor;
   const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach;
-  if (inReach() === false) await w.e.move({ npcKey, to: { x: at.x, y: at.y } }).catch(() => {});
+  const from = w.n[npcKey]?.point;
+  if (from !== undefined) {
+    const away = Math.hypot(from.x - at.x, from.y - at.y) || 1;
+    const short = (d: number) => ({ x: at.x + ((from.x - at.x) / away) * d, y: at.y + ((from.y - at.y) / away) * d });
+    /** As near as the mesh allows: a table is not on it */
+    let d = inventoryConfig.standOff;
+    while (d < reach && w.npc.getClosestPoly(short(d), 0.1).success === false) d += 0.1;
+    // close enough already — or sat in reach, and not to be got up for it
+    if (away <= d + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
+      return void w.e.takeItem(npcKey, decorKey);
+    }
+    await w.e.move({ npcKey, to: short(d) }).catch(() => {});
+    // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
+    while (press === kammaPress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
+  }
   if (press === kammaPress && inReach() === true) w.e.takeItem(npcKey, decorKey);
 }
 

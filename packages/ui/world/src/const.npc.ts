@@ -163,8 +163,11 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
+  crouch: true,
+  drop: true,
   idle: true,
   lie: true,
+  pick_up: true,
   point: true,
   point_avoid: true,
   psi: true,
@@ -197,8 +200,11 @@ export const fadeSecs: Record<
 > = {
   backwards: {},
   breathe: { shuffle: 0.15 },
+  crouch: {},
+  drop: {},
   idle: { shuffle: 0.15 },
   lie: {},
+  pick_up: {},
   point: {},
   point_avoid: {},
   psi: {},

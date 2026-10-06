@@ -87,6 +87,7 @@ function plantedLegs(
   rootAt: (t: number) => Triple,
   legs: Record<Side, Leg>,
   feet: Record<Side, THREE.Vector3>,
+  keys = dense,
 ): Track[] {
   /** `[thigh, shin, foot]` `x` of `side` with the root there */
   const solve = (side: Side, root: Triple): Triple => {
@@ -107,19 +108,19 @@ function plantedLegs(
       shin -= (dThigh.y * off.z - off.y * dThigh.z) / det;
     }
     const off = miss(thigh, shin);
-    if (!(Math.hypot(off.y, off.z) < 1e-4) || shin > -2) {
+    if (!(Math.hypot(off.y, off.z) < 1e-4) || shin > -2 || shin < -170) {
       throw Error(`${clips[0]}: the ${side} leg cannot reach its foot with the root at ${root}`);
     }
     return [thigh, shin, -(thigh + shin)];
   };
   return clips.flatMap((clip) => [
-    { clip, bone: "skeleton-root", channel: "position" as const, keys: dense, at: rootAt },
+    { clip, bone: "skeleton-root", channel: "position" as const, keys, at: rootAt },
     ...sides.flatMap((side) => {
       const [, y, z] = legs[side].thigh;
       return [
-        turn(clip, `${side}thigh`, (t) => [solve(side, rootAt(t))[0], y, z], dense),
-        turn(clip, `${side}shin`, (t) => [solve(side, rootAt(t))[1], 0, 0], dense),
-        turn(clip, `${side}foot`, (t) => [solve(side, rootAt(t))[2], 0, 0], dense),
+        turn(clip, `${side}thigh`, (t) => [solve(side, rootAt(t))[0], y, z], keys),
+        turn(clip, `${side}shin`, (t) => [solve(side, rootAt(t))[1], 0, 0], keys),
+        turn(clip, `${side}foot`, (t) => [solve(side, rootAt(t))[2], 0, 0], keys),
       ];
     }),
   ]);
@@ -143,6 +144,45 @@ const clips = {
         turn("sit", `${side}shin`, () => [-knee, 0, 0], [0]),
         turn("sit", `${side}foot`, (t) => [breathe(knee - 92, knee - 87)(t), 0, 0]),
       ]),
+  }),
+
+  /**
+   * A squat to the floor, to put something down on it or take something off it: a still pose the game
+   * eases in and out of. Feet where they stand at rest, the hips down and back, the torso over the knees
+   */
+  crouch: recipe({
+    params: {
+      /** Model units the hips come down, and go back */
+      down: 8.5,
+      back: 3,
+      /** Degrees the torso leans forward */
+      lean: 60,
+      /** Degrees the right arm hangs forward of straight down, to touch the floor ahead */
+      reach: 22,
+    },
+    tracks(p) {
+      const still = [0];
+      const upright: Record<Side, Leg> = {
+        left: { thigh: [0, 0, 0], shinX: 0 },
+        right: { thigh: [0, 0, 0], shinX: 0 },
+      };
+      const [left, right] = sides.map((side) => ankleOf(side, upright[side], [0, 0, 0], 0, 0));
+      /** Where the solve sets out from: knees well bent */
+      const bent: Record<Side, Leg> = {
+        left: { thigh: [90, 0, 0], shinX: -130 },
+        right: { thigh: [90, 0, 0], shinX: -130 },
+      };
+      return [
+        ...plantedLegs(["crouch"], () => [0, -p.down, p.back], bent, { left, right }, still),
+        turn("crouch", "stomach", () => [-p.lean / 2, 0, 0], still),
+        turn("crouch", "chest", () => [-p.lean / 2, 0, 0], still),
+        turn("crouch", "head", () => [p.lean - 20, 0, 0], still), // looking down at it
+        turn("crouch", "rightarm", () => [p.lean + p.reach, 0, 0], still),
+        turn("crouch", "rightforearm", () => [0, 0, 0], still),
+        turn("crouch", "leftarm", () => [p.lean - 25, 0, -4], still), // resting on the knee
+        turn("crouch", "leftforearm", () => [75, 0, 0], still),
+      ];
+    },
   }),
 
   /**
@@ -286,7 +326,8 @@ const times = {
 };
 
 for (const { clip, bone, channel, at } of tracks) {
-  const animation = gltf.animations.find((a: { name: string }) => a.name === clip);
+  let animation = gltf.animations.find((a: { name: string }) => a.name === clip);
+  if (animation === undefined) gltf.animations.push((animation = { name: clip, channels: [], samplers: [] })); // new to it
   const node = gltf.nodes.findIndex((n: { name: string }) => n.name === bone);
   const path = channel === "rotation" ? "rotation" : "translation";
   const rows = frames.map((t) =>

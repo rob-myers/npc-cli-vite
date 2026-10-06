@@ -101,15 +101,23 @@ export const inventoryConfig = {
   /** A decor's `meta.item` */
   kinds: ["phaser", "book", "box", "keycard"],
   /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
-  height: { phaser: 0.1, book: 0.05, box: 0.06 } as Partial<Record<string, number>>,
-  /** A quad is put down only on a surface: metres in from its edge, apart from another item, and tried along that edge */
-  surface: { inset: 0.25, gap: 0.3, along: [0, 0.35, -0.35, 0.7, -0.7] },
+  height: { phaser: 0.1, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
+  /** Put down on a surface: `margin` metres in from its edge, tried every `step` along that edge as far as `span` either way */
+  surface: { margin: 0.05, step: 0.02, span: 1 },
+  /** Seconds their arm is given to reach out, before what they put down is there, or what they take is gone */
+  reachSecs: 0.45,
+  /** Seconds squatted to the floor before it is done */
+  crouchSecs: 0.55,
+  /** Metres short of an item they walk up to before taking it, or as near as the navmesh lets them */
+  standOff: 0.3,
   /** An item quad's sides, unless its `meta.sides` says otherwise: what is not its one textured face */
   sides: "#222",
+  /** Sides of its own, by kind */
+  sideOf: { box: "#5e4526" } as Partial<Record<string, string>>,
   /** How much larger than life a point is drawn, to be seen and pressed */
   pointScale: 2,
   /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk */
-  reach: { floor: 0.6, raised: 1.4, raisedFrom: 0.5 },
+  reach: { floor: 0.6, raised: 1, raisedFrom: 0.5 },
   /** Items an npc carries at most, their phaser aside */
   maxCarried: 6,
 } as const;
@@ -222,7 +230,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   walls: { color: "#000000", opacity: 0.5 },
 };
 
-export const wallHeight = 2;
+export const wallHeight = 1.8;
 
 export const floorFadeDelayMs = 260;
 
