@@ -1,6 +1,6 @@
 import { cn, type UseStateRef } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { ImageMapNode, MapNode, RectMapNode } from "./editor.schema";
 import type { ResizeHandle, State } from "./MapEdit";
 import { baseSvgSize, findNodeById, getNodeBounds } from "./map-node-api";
@@ -246,11 +246,24 @@ function cursorTowards(dx: number, dy: number) {
   return ["cursor-ew-resize", "cursor-nwse-resize", "cursor-ns-resize", "cursor-nesw-resize"][octant];
 }
 
+/** The shorter side of `el` on screen, in px, kept up as a pane's sash moves — `baseSvgSize` whilst it has none */
+function useShownSide(el: SVGSVGElement | null) {
+  const [side, setSide] = useState(() => shownSideOf(el?.getBoundingClientRect()));
+  useEffect(() => {
+    if (el === null) return;
+    const observer = new ResizeObserver(([entry]) => setSide(shownSideOf(entry.contentRect)));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [el]);
+  return side;
+}
+
+const shownSideOf = (rect?: { width: number; height: number }) =>
+  Math.min(rect?.width ?? 0, rect?.height ?? 0) || baseSvgSize;
+
 function ResizeHandles({ selectedNode, root }: { selectedNode: RectMapNode | ImageMapNode; root: UseStateRef<State> }) {
-  // svg units per screen px: the viewBox is `baseSvgSize / zoom` across, shown `meet` in the element —
-  // whose css size, not `svgWidth`/`svgHeight` (the document's), is what is on screen
-  const bounds = root.svgEl?.getBoundingClientRect();
-  const unitsPerPx = baseSvgSize / root.zoom / (bounds ? Math.min(bounds.width, bounds.height) : baseSvgSize);
+  /** Svg units per screen px: the viewBox, `baseSvgSize / zoom` across, is shown `meet` in the element */
+  const unitsPerPx = baseSvgSize / root.zoom / useShownSide(root.svgEl);
   const sizeHandles = (minSide: number) => Math.min(handlePx * unitsPerPx, minSide * handleMaxFrac);
 
   if (selectedNode.type === "image") {
