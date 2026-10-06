@@ -7,6 +7,23 @@ import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
 import { padded, parked } from "./pred";
 
 /**
+ * Arm npcs with their phasers, locked on `at` an npc, through a body `part` — no `at` unlocks. See `w.phasers`.
+ * Their arms are theirs, so a kill changes nothing
+ * ```sh
+ * arm rob kate
+ * arm rob at:npc-0
+ * arm rob at:npc-0 part:hips
+ * ```
+ */
+export function arm({ api, args, w }: JshCli.RunArg, opts: { at?: string; part?: string } = api.jsArg(args)) {
+  api.setPausable("world", false); // arms whilst paused
+  const npcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
+  if (npcKeys.length === 0) throw Error("usage: arm npcKey... [at:npcKey] [part:bodyPart]");
+  const at = opts.at === undefined ? null : w.npc.get(opts.at).key;
+  for (const npcKey of npcKeys) w.phasers.arm(npcKey, { at, part: opts.part ?? "head" });
+}
+
+/**
  * Get at most one decor containing a given point.
  * Accounts for height e.g. bunk beds.
  * - opts
@@ -102,6 +119,16 @@ function doorAction(
   }
 
   w.view.forceUpdate();
+}
+
+/**
+ * ```sh
+ * disarm rob kate
+ * ```
+ */
+export function disarm({ api, args, w }: JshCli.RunArg) {
+  api.setPausable("world", false); // disarms whilst paused
+  w.phasers.disarm(...args.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**
@@ -1392,33 +1419,6 @@ export async function spawn(
       })
       .catch(ignoreSpawnErrors);
   }
-}
-
-/**
- * Arm npcs with their phasers, locked on `at` an npc, through a body `part` — no `at` unlocks. See `w.phasers`.
- * Their arms are theirs, so a kill changes nothing
- * ```sh
- * arm rob kate
- * arm rob at:npc-0
- * arm rob at:npc-0 part:hips
- * ```
- */
-export function arm({ api, args, w }: JshCli.RunArg, opts: { at?: string; part?: string } = api.jsArg(args)) {
-  api.setPausable("world", false); // arms whilst paused
-  const npcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
-  if (npcKeys.length === 0) throw Error("usage: arm npcKey... [at:npcKey] [part:bodyPart]");
-  const at = opts.at === undefined ? null : w.npc.get(opts.at).key;
-  for (const npcKey of npcKeys) w.phasers.arm(npcKey, { at, part: opts.part ?? "head" });
-}
-
-/**
- * ```sh
- * disarm rob kate
- * ```
- */
-export function disarm({ api, args, w }: JshCli.RunArg) {
-  api.setPausable("world", false); // disarms whilst paused
-  w.phasers.disarm(...args.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**
