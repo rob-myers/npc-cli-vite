@@ -230,7 +230,7 @@ function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
   if (e.key !== "picked" || e.longDown === true || e.rightDown === true || e.clickId !== undefined) return;
   const press = ++kammaPress;
   const { key: playerKey } = w.player;
-  if (w.client === true || w.debug?.decorShown === true || w.n[playerKey] === undefined) return;
+  if (w.client === true || w.n[playerKey] === undefined) return;
   const { meta } = e;
   if (meta.type === "decor" && typeof meta.item === "string") {
     void commitKamma(w, playerKey, meta.decorKey, press);

@@ -21,14 +21,15 @@ nor phasers are mirrored.
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
 | phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
-| keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door; right-click splits a key off |
+| keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
 The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
 are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`. On touch a two-finger tap on the World does the same: its left half psi, its right half the phaser.
-A selected item, and a drawn phaser, show an "x" which puts it down — as does "drop" in the
-right-click menu of either, with no need to select or draw it first.
+An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
+too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
+a slot's menu opens on a long press.
 
 The bar re-renders when nudged (`w.hud?.update()`, from `Psi.choose`, `Phasers.sync` and every change
 to `carried` or to access) and on the player's own door and spawn events.

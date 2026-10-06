@@ -207,7 +207,9 @@ export default function Phasers() {
         if (pose === null) {
           if (isPhaserPose(shown)) anim.setUpper(null);
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
-          anim.setUpper(pose, { swapSecs: avoid ? phaserConfig.drawInSecs : undefined }); // in before the hand goes through
+          // in before the hand goes through — and a raise from rest keeps the clip's own pace
+          const swapSecs = avoid ? phaserConfig.drawInSecs : shown === null ? undefined : phaserConfig.drawOutSecs;
+          anim.setUpper(pose, { swapSecs });
         }
 
         // the stance — theirs to stand in, and only ours to put back
@@ -426,6 +428,8 @@ const phaserConfig = {
   /** Seconds they stay drawn in at least — longer whilst something stays in reach */
   holdSecs: 0.5,
   drawInSecs: 0.15,
+  /** Seconds back out to the aim, once clear */
+  drawOutSecs: 0.2,
   /** Seconds between raycasts at most, and only once they, their target or a door has changed */
   sampleSecs: 0.1,
   /** Metres moved, or radians turned, that call for another raycast */
