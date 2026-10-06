@@ -281,8 +281,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           for (const [a, b] of edges) {
             const near = geomService.getClosestOnSeg(npc.point, a, b);
             const length = Math.hypot(b.x - a.x, b.y - a.y);
-            // out of reach — or e.g. a cut corner, with nothing to square up to
-            if (near.dst > reach.raised || length < 2 * halfW) continue;
+            if (near.dst > reach.raised || length === 0) continue;
             const [tx, ty] = [(b.x - a.x) / length, (b.y - a.y) / length];
             const [nx, ny] = [-ty * side, tx * side]; // inwards
             // slid along the edge: the nearest place that is all on a table, and on no other item
