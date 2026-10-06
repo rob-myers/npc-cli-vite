@@ -79,6 +79,8 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
   for `lieFlat` metres before it falls, so it does not drop into them.
 
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
+- `revokeItem(npcKey, "psi" | kind)` takes it away outright, never put down — the `psi` and `phaser`
+  buttons in an npc's debug bubble, lit whilst they have it.
 - `takeItem(npcKey, decorKey)` takes a runtime decor off the map — one in their own room only, never through a wall. With no room
   for it the bar says "inventory full" (`w.hud.say`), and a click does not walk them over.
 

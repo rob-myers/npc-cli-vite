@@ -1,7 +1,7 @@
 import { Select } from "@base-ui/react/select";
-import { useStateRef } from "@npc-cli/util";
+import { cn, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useReducer, useState } from "react";
 import type { AnimationClipKey } from "./NPCs";
 import PsiControls from "./PsiControls";
 import { Glyphed } from "./TalkThread";
@@ -99,6 +99,7 @@ function SaidBubble({ words }: { words: string }) {
 function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?: string }) {
   const [grKey, setGrKey] = useState(() => w.npc.npcToRoom.get(npcKey)?.grKey);
   const [pose, setPose] = useState(() => w.n[npcKey]?.anim.pose);
+  const [, rerender] = useReducer((count: number) => count + 1, 0);
 
   useEffect(() => {
     // not only theirs e.g. "spawned-many", "nav-updated" — and an unchanged key re-renders nothing
@@ -158,6 +159,29 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
           </Select.Portal>
         </Select.Root>
       )}
+      {/* what they have: lit if so, and a press gives or takes it away */}
+      <div className="flex gap-2">
+        {(["psi", "phaser"] as const).map((name) => {
+          const had = w.e.hasItem(npcKey, name);
+          return (
+            <button
+              key={name}
+              type="button"
+              title={`${had ? "take away" : "give"} ${name}`}
+              className={cn(
+                "cursor-pointer rounded-lg border-2 px-3 py-0.5",
+                had ? "border-amber-300/60 text-amber-200" : "border-white/20 text-white/40",
+              )}
+              onClick={() => {
+                had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name);
+                rerender();
+              }}
+            >
+              {name}
+            </button>
+          );
+        })}
+      </div>
       {npcKey === w.player?.key && <PsiControls w={w} />}
     </div>
   );

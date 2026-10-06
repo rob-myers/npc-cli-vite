@@ -371,6 +371,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.persistCarried();
         w.hud?.update();
       },
+      revokeItem(npcKey, name) {
+        if (name === "psi") return state.dropItem(npcKey, name);
+        const items = state.carried[npcKey]?.items ?? [];
+        const index = items.findIndex((def) => def.meta?.item === name);
+        if (index === -1) return false;
+        items.splice(index, 1);
+        if (name === "phaser") w.phasers?.disarm(npcKey);
+        state.onCarriedChange(npcKey);
+        return true;
+      },
       async openDoorwaysWithNpcs() {
         await w.physics?.settle();
         for (const npcKey in w.n) {
@@ -1559,6 +1569,8 @@ export type State = {
   reachedRight: Set<string>;
   /** Grants `psi`, or makes them an item out of nothing — `false` if they have no room */
   giveItem(npcKey: string, name: "psi" | ItemKind, extraMeta?: Meta): boolean;
+  /** Revokes `psi`, or takes an item of theirs away outright, never put down — `false` if they have none */
+  revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
   /** One phaser, and `inventoryConfig.maxCarried` of the rest */
   hasRoomFor(npcKey: string, kind: ItemKind): boolean;

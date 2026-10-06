@@ -27,7 +27,7 @@ export default function PsiControls({ w }: { w: WorldState }) {
           }}
         >
           <Caret className="size-5 shrink-0" />
-          psi
+          psi contours
         </button>
         {open === true && (
           <button
