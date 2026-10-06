@@ -193,7 +193,9 @@ export default function Phasers() {
         const { armed } = arm;
         const target = armed === true && arm.target !== null ? w.n[arm.target.npcKey] : undefined;
         state.recast(npc, arm, target, secs);
-        if (armed === true && (arm.armHit === true || npcAhead(w, npc))) {
+        /** Locked on someone the last cast could not see: drawn in until it can */
+        const blind = target !== undefined && arm.casting === false && arm.inSight === false;
+        if (armed === true && (arm.armHit === true || blind || npcAhead(w, npc))) {
           arm.holdUntil = secs + phaserConfig.holdSecs;
         }
         const avoid = armed === true && arm.holdUntil > secs;
