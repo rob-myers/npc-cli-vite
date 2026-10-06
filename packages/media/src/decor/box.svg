@@ -2,17 +2,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="16" height="16">
   <g>
     <title>px-per-tile=512</title>
-    <rect x="2" y="2" width="156" height="156" rx="6" fill="#aab3bf" stroke="#1c2026" stroke-width="3"/>
-    <rect x="12" y="12" width="136" height="136" rx="3" fill="#bfc7d1" stroke="#6c7683" stroke-width="2"/>
-    <path d="M12 46H148M12 80H148M12 114H148" stroke="#99a2ae" stroke-width="2"/>
-    <rect x="58" y="68" width="44" height="24" rx="4" fill="#8b95a2" stroke="#1c2026" stroke-width="2"/>
-    <rect x="66" y="76" width="28" height="8" rx="4" fill="#1c2026"/>
-    <circle cx="22" cy="22" r="3.500" fill="#6c7683"/>
-    <circle cx="138" cy="22" r="3.500" fill="#6c7683"/>
-    <circle cx="22" cy="138" r="3.500" fill="#6c7683"/>
-    <circle cx="138" cy="138" r="3.500" fill="#6c7683"/>
-    <rect x="30" y="148" width="14" height="10" fill="#56606c"/>
-    <rect x="116" y="148" width="14" height="10" fill="#56606c"/>
-    <circle cx="80" cy="134" r="4" fill="#59d2ff"/>
+    <rect x="2" y="2" width="156" height="156" rx="3" fill="#b88d5a" stroke="#4a3520" stroke-width="3"/>
+    <path d="M2 80H158" stroke="#7a5a36" stroke-width="2"/>
+    <path d="M10 14H150M10 28H150M10 132H150M10 146H150" stroke="#a67c4c" stroke-width="1.500"/>
+    <rect x="66" y="2" width="28" height="156" fill="#d9bd8a" fill-opacity="0.85" stroke="#8f6f45" stroke-width="1.500"/>
+    <path d="M66 80H94" stroke="#8f6f45" stroke-width="1.500"/>
+    <rect x="108" y="96" width="34" height="22" fill="#ead9b8" stroke="#7a5a36" stroke-width="1.500"/>
+    <path d="M113 103H137M113 109H130" stroke="#4a3520" stroke-width="2"/>
+    <path d="M22 44V60M16 50 22 44 28 50M40 44V60M34 50 40 44 46 50" fill="none" stroke="#4a3520" stroke-width="2.500" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
