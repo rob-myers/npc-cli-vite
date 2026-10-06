@@ -56,6 +56,8 @@ export function createPsiResources() {
   /** Unit, the way the player faces in world `xz` — see `Psi.upload` */
   const facing = uniform(new THREE.Vector2(1, 0));
   const flowPhase = uniform(0);
+  /** Metres out the relief holds its peak before it falls, so it clears someone lain along it */
+  const flat = uniform(0);
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
   const width = uniform(defaultPsiTune.width);
@@ -97,6 +99,7 @@ export function createPsiResources() {
     slotCount,
     facing,
     flowPhase,
+    flat,
     reach,
     gap,
     width,
@@ -119,6 +122,7 @@ export function psiNodes(
     slotCount,
     facing,
     flowPhase,
+    flat,
     reach,
     gap,
     width,
@@ -153,14 +157,18 @@ export function psiNodes(
   /** Distance to a slot, out by up to `push` as its presence falls */
   const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, push: THREE.Node<"float">) =>
     q.sub(slot.xy).length().add(slot.z.oneMinus().mul(push));
-  /** Each eased to nought at `reach`, since a hard cut steps the contours */
-  const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
+  /**
+   * Each `eased` to nought at `reach`, since a hard cut steps the contours — not for the relief, whose
+   * height that would plunge within a few vertices of the rim, faceting the outermost contour
+   */
+  const weigh = (r: THREE.Node<"float">, eased: boolean) =>
+    eased ? exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus()) : exp(r.div(-blend));
 
   /**
    * `(g, slot of nearest, peak)` at world `q`: a smooth min of the distances to the player and to
    * the nearest other, so each keeps rings of their own — the player's `pushed` or not
    */
-  const fieldOf = (pushed: boolean) =>
+  const fieldOf = (pushed: boolean, eased: boolean) =>
     Fn(([q]: [THREE.Node<"vec2">]) => {
       const rPlayer = distTo(q, player, pushed ? maxPush : float(0));
       const rOther = float(1e9).toVar();
@@ -177,8 +185,8 @@ export function psiNodes(
         });
       });
 
-      const wPlayer = weigh(rPlayer);
-      const wOther = weigh(rOther);
+      const wPlayer = weigh(rPlayer, eased);
+      const wOther = weigh(rOther, eased);
       const total = max(wPlayer.add(wOther), 1e-20);
       const g = log(total).mul(-blend); // huge beyond reach
       // their peaks blended as their fields are, so the relief has no step between them
@@ -186,9 +194,9 @@ export function psiNodes(
       return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
     });
 
-  const fieldAt = fieldOf(true);
+  const fieldAt = fieldOf(true, true);
   /** The player's unpushed, so their rings fade in from the peak rather than the floor */
-  const reliefAt = fieldOf(false);
+  const reliefAt = fieldOf(false, false);
 
   /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
   const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
@@ -215,7 +223,9 @@ export function psiNodes(
   const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
   // each contour at a fixed height, as on a relief map
   const field = reliefAt(worldXZ);
-  const y = max(field.x.div(reach.negate()).add(1), 0).mul(field.z).add(lift); // `z` is the peak
+  const y = max(max(field.x.sub(flat), 0).div(flat.sub(reach)).add(1), 0)
+    .mul(field.z)
+    .add(lift); // `z` is the peak
   // a vertex well outside the cone the fragments keep is drawn onto the player, so a triangle of
   // them has no area and is never rasterised. "Well": by more than a triangle is wide, so none that
   // reaches into the cone is bent. Metres outside the wedge's nearer edge, as a half-plane

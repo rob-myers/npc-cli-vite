@@ -1337,6 +1337,15 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         });
       },
 
+      openSymbol(key) {
+        if (state.currentFile.type === "symbol" && state.currentFile.key === key) return;
+        const file = { type: "symbol", filename: `${key}.json`, key } as const;
+        const saved =
+          state.symbolsManifest?.byKey[key] !== undefined ||
+          state.savedFileSpecifiers.some((f) => f.type === "symbol" && f.key === key);
+        if (saved) void state.load(file);
+        else state.openFresh(file);
+      },
       openFresh(file) {
         state.set({
           nodes: [],
@@ -2019,6 +2028,8 @@ export type State = {
   reflectSelected: (type: "horizontal" | "vertical") => void;
   applyBoundsOffset: () => void;
   translateSelected: (dx: number, dy: number, snapToGrid?: boolean) => void;
+  /** Shows that symbol's file in this MapEdit, a fresh one if it was never saved */
+  openSymbol: (key: StarshipSymbolImageKey) => void;
   openFresh: (file: MapEditFileSpecifier) => void;
   save: (file?: MapEditFileSpecifier, options?: { autoSaveDraftOnDirtyExit?: boolean }) => void;
   load: (

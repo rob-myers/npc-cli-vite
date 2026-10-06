@@ -16,6 +16,22 @@
       "outputWidth": 52,
       "outputHeight": 52
     },
+    "book": {
+      "key": "book",
+      "filename": "book.svg",
+      "width": 8,
+      "height": 10,
+      "outputWidth": 103,
+      "outputHeight": 128
+    },
+    "box": {
+      "key": "box",
+      "filename": "box.svg",
+      "width": 16,
+      "height": 16,
+      "outputWidth": 137,
+      "outputHeight": 137
+    },
     "icon--warn": {
       "key": "icon--warn",
       "filename": "icon--warn.svg",
@@ -23,6 +39,14 @@
       "height": 6,
       "outputWidth": 52,
       "outputHeight": 52
+    },
+    "keycard": {
+      "key": "keycard",
+      "filename": "keycard.svg",
+      "width": 4,
+      "height": 3,
+      "outputWidth": 103,
+      "outputHeight": 77
     },
     "label": {
       "key": "label",
@@ -47,6 +71,14 @@
       "height": 10,
       "outputWidth": 43,
       "outputHeight": 43
+    },
+    "phaser": {
+      "key": "phaser",
+      "filename": "phaser.svg",
+      "width": 12,
+      "height": 8,
+      "outputWidth": 154,
+      "outputHeight": 103
     },
     "screen-0": {
       "key": "screen-0",

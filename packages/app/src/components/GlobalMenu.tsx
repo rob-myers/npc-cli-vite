@@ -40,7 +40,7 @@ export function GlobalMenu() {
   const vpOffset = useVisualViewportOffset();
   const theme = useThemeName();
 
-  const menu = useStateRef(() => ({
+  const state = useStateRef(() => ({
     y,
     menuOpen: false,
     aboutOpen: false,
@@ -53,39 +53,39 @@ export function GlobalMenu() {
 
     close() {
       // a reset half-asked-for is forgotten with the menu
-      menu.set({ menuOpen: false, resetArmed: false });
+      state.set({ menuOpen: false, resetArmed: false });
     },
     onPointerDown() {
       // base-ui opens on pointerdown, whereas we open on click, so a drag never opens us
-      menu.canOpen = menu.menuOpen === false;
+      state.canOpen = state.menuOpen === false;
     },
     onDragStart() {
-      menu.canOpen = false;
+      state.canOpen = false;
     },
     onDragEnd() {
-      localStorage.setItem(storageKey, String(menu.y.get()));
+      localStorage.setItem(storageKey, String(state.y.get()));
     },
     onOpenChange(open: boolean) {
       if (open === false) {
-        menu.close(); // opening is onTriggerClick's job
+        state.close(); // opening is onTriggerClick's job
       }
     },
     onReset() {
-      if (menu.resetArmed === false) {
-        menu.set({ resetArmed: true });
+      if (state.resetArmed === false) {
+        state.set({ resetArmed: true });
       } else {
         resetPanes();
-        menu.close();
+        state.close();
       }
     },
     onToggleTracking() {
       // umami re-reads the key on every send, so this bites without a reload
-      setTrackingDisabled(menu.trackingOff === false);
-      menu.set({ trackingOff: isTrackingDisabled() });
+      setTrackingDisabled(state.trackingOff === false);
+      state.set({ trackingOff: isTrackingDisabled() });
     },
     onTriggerClick() {
-      if (menu.canOpen === true) {
-        menu.set({ menuOpen: true, resetArmed: false });
+      if (state.canOpen === true) {
+        state.set({ menuOpen: true, resetArmed: false });
       }
     },
   }));
@@ -94,28 +94,29 @@ export function GlobalMenu() {
     <>
       <motion.div
         className={cn(
-          "fixed z-9999 touch-none flex flex-col gap-1 rounded-l-md shadow-md shadow-black/50",
+          "fixed z-9999 touch-none flex flex-col gap-1 shadow-md shadow-black/50",
+          !state.menuOpen && "rounded-l-md",
           // a light tab on the dark page, where a dark one is lost among the panels
           theme === "dark" ? "text-slate-900 bg-slate-200 hover:bg-white" : "text-white bg-gray-800 hover:bg-gray-700",
         )}
         style={{
-          y: menu.y,
+          y: state.y,
           left: vpOffset.x + (window.visualViewport?.width ?? window.innerWidth) - triggerPx,
           top: vpOffset.y,
         }}
         drag="y"
         dragMomentum={false}
         dragConstraints={{ top: minY, bottom: window.innerHeight - minY }}
-        onPointerDown={menu.onPointerDown}
-        onDragStart={menu.onDragStart}
-        onDragEnd={menu.onDragEnd}
+        onPointerDown={state.onPointerDown}
+        onDragStart={state.onDragStart}
+        onDragEnd={state.onDragEnd}
       >
-        <Menu.Root open={menu.menuOpen} onOpenChange={menu.onOpenChange} modal={false}>
+        <Menu.Root open={state.menuOpen} onOpenChange={state.onOpenChange} modal={false}>
           <Menu.Trigger
             className={cn("grid place-items-center cursor-pointer", triggerCls)}
             render={<span />}
             nativeButton={false}
-            onClick={menu.onTriggerClick}
+            onClick={state.onTriggerClick}
           >
             <GearIcon className={gearCls} weight="bold" />
           </Menu.Trigger>
@@ -153,37 +154,37 @@ export function GlobalMenu() {
                 </div>
 
                 <Menu.Item
-                  className={cn(itemCls, menu.resetArmed && "text-red-300")}
+                  className={cn(itemCls, state.resetArmed && "text-red-300")}
                   closeOnClick={false}
-                  onClick={menu.onReset}
+                  onClick={state.onReset}
                 >
-                  {menu.resetArmed ? (
+                  {state.resetArmed ? (
                     <WarningIcon className={iconCls} />
                   ) : (
                     <ArrowCounterClockwiseIcon className={iconCls} />
                   )}
                   {/* both labels share a cell, so the item is as wide as the wider whichever shows */}
                   <span className="grid *:col-start-1 *:row-start-1">
-                    <span className={cn(menu.resetArmed && "invisible")}>Reset layout</span>
-                    <span className={cn(!menu.resetArmed && "invisible")}>Confirm reset</span>
+                    <span className={cn(state.resetArmed && "invisible")}>Reset layout</span>
+                    <span className={cn(!state.resetArmed && "invisible")}>Confirm reset</span>
                   </span>
                 </Menu.Item>
 
                 <Menu.Separator className={separatorCls} />
 
-                <Menu.Item className={itemCls} onClick={() => menu.set({ aboutOpen: true })}>
+                <Menu.Item className={itemCls} onClick={() => state.set({ aboutOpen: true })}>
                   <InfoIcon className={iconCls} />
                   About
                 </Menu.Item>
 
                 {import.meta.env.DEV && (
                   <Menu.Item
-                    className={cn(itemCls, menu.trackingOff && "text-slate-500")}
+                    className={cn(itemCls, state.trackingOff && "text-slate-500")}
                     closeOnClick={false}
-                    onClick={menu.onToggleTracking}
+                    onClick={state.onToggleTracking}
                   >
                     <ChartLineIcon className={iconCls} />
-                    {menu.trackingOff ? "Tracking: off" : "Tracking: on"}
+                    {state.trackingOff ? "Tracking: off" : "Tracking: on"}
                   </Menu.Item>
                 )}
               </Menu.Popup>
@@ -199,7 +200,7 @@ export function GlobalMenu() {
       </motion.div>
 
       {/* not inside the draggable, which a press in the dialog would otherwise bubble to */}
-      <AboutModal open={menu.aboutOpen} onOpenChange={(aboutOpen) => menu.set({ aboutOpen })} />
+      <AboutModal open={state.aboutOpen} onOpenChange={(aboutOpen) => state.set({ aboutOpen })} />
     </>
   );
 }

@@ -23,24 +23,24 @@ import {
 import * as THREE from "three/webgpu";
 import type { FadeRooms } from "./fade-rooms";
 
-export const MAX_ARMS = 128;
+export const MAX_PHASERS = 128;
 
 /** The mesh's parts, a geometry group and a material apiece, in this order */
-export const armsParts = ["gun", "beam", "ball"] as const;
-export type ArmsPart = (typeof armsParts)[number];
+export const phaserParts = ["gun", "beam", "ball"] as const;
+export type PhaserPart = (typeof phaserParts)[number];
 
-export type ArmsResources = ReturnType<typeof createArmsResources>;
+export type PhaserResources = ReturnType<typeof createPhaserResources>;
 
-export function createArmsResources() {
+export function createPhaserResources() {
   const { sides, segments, gunBoxes } = shaderConfig;
   // the muzzle and eased shown, the end and eased locked
-  const srcData = new Float32Array(MAX_ARMS * 4);
-  const dstData = new Float32Array(MAX_ARMS * 4);
+  const srcData = new Float32Array(MAX_PHASERS * 4);
+  const dstData = new Float32Array(MAX_PHASERS * 4);
   /** Each end's npc's room slot, then whether they are lit — they fade with it as the npcs do */
-  const roomData = new Float32Array(MAX_ARMS * 4);
+  const roomData = new Float32Array(MAX_PHASERS * 4);
   /** The right forearm's origin, and its world scale by the gun's eased presence — then its world quaternion */
-  const gunData = new Float32Array(MAX_ARMS * 4);
-  const quatData = new Float32Array(MAX_ARMS * 4);
+  const gunData = new Float32Array(MAX_PHASERS * 4);
+  const quatData = new Float32Array(MAX_PHASERS * 4);
   const attrs = [srcData, dstData, roomData, gunData, quatData].map((data) =>
     new THREE.InstancedBufferAttribute(data, 4).setUsage(THREE.DynamicDrawUsage),
   );
@@ -48,7 +48,7 @@ export function createArmsResources() {
   /** `glow` marks the gun's emitter, lit as the beam is */
   const glowing = (geo: THREE.BufferGeometry, glow: number) =>
     geo.setAttribute(
-      "armsGlow",
+      "phaserGlow",
       new THREE.BufferAttribute(new Float32Array(geo.getAttribute("position").count).fill(glow), 1),
     );
   const gun = mergeGeometries(
@@ -66,16 +66,18 @@ export function createArmsResources() {
   /** Unit ring about `y`, open-ended: `y + 0.5` is how far along the beam */
   const beam = glowing(new THREE.CylinderGeometry(1, 1, 1, sides, segments, true), 0);
   const ball = glowing(new THREE.SphereGeometry(1, sides * 2, sides), 0);
-  const base = mergeGeometries([gun, beam, ball], true); // a group apiece, as `armsParts`
+  const base = mergeGeometries([gun, beam, ball], true); // a group apiece, as `phaserParts`
 
   const geo = new THREE.InstancedBufferGeometry();
-  for (const key of ["position", "normal", "uv", "armsGlow"]) geo.setAttribute(key, base.getAttribute(key));
+  for (const key of ["position", "normal", "uv", "phaserGlow"]) geo.setAttribute(key, base.getAttribute(key));
   geo.setIndex(base.getIndex());
   for (const { start, count, materialIndex } of base.groups) geo.addGroup(start, count, materialIndex);
-  ["armsSrc", "armsDst", "armsRooms", "armsGun", "armsQuat"].forEach((key, i) => geo.setAttribute(key, attrs[i]));
+  ["phaserSrc", "phaserDst", "phaserRooms", "phaserGun", "phaserQuat"].forEach((key, i) =>
+    geo.setAttribute(key, attrs[i]),
+  );
   geo.instanceCount = 0;
 
-  // additive, glowing over a dark floor — `Arms.syncTheme` lays them over a pale one instead
+  // additive, glowing over a dark floor — `Phasers.syncTheme` lays them over a pale one instead
   const glowOpts = { depthWrite: false, forceSinglePass: true, blending: THREE.AdditiveBlending };
   const mats = [
     new THREE.MeshBasicNodeMaterial({ transparent: true }),
@@ -101,32 +103,32 @@ export function createArmsResources() {
     gunColor: uniform(new THREE.Color(shaderConfig.gunColor)),
     /** From `theme.npcs.fxStrength` */
     gain: uniform(1),
-    /** The beam's alpha on the way: more over a pale deck — see `Arms.syncTheme` */
+    /** The beam's alpha on the way: more over a pale deck — see `Phasers.syncTheme` */
     faint: uniform(shaderConfig.faint as number),
   };
 }
 
-type ArmsView = {
+type PhaserView = {
   objectPick: THREE.UniformNode<"float", number>;
   foldNode: THREE.UniformNode<"float", number>;
   fadeRoomsFx: FadeRooms;
   litNpcsEnabled: THREE.UniformNode<"float", number>;
 };
 
-export function armsNodes(resources: ArmsResources, view: ArmsView, part: ArmsPart) {
+export function phaserNodes(resources: PhaserResources, view: PhaserView, part: PhaserPart) {
   return part === "gun" ? gunNodes(resources, view) : beamNodes(resources, view, part === "ball");
 }
 
 const seenBy =
-  ({ fadeRoomsFx, litNpcsEnabled }: ArmsView) =>
+  ({ fadeRoomsFx, litNpcsEnabled }: PhaserView) =>
   (slot: THREE.Node<"float">, lit: THREE.Node<"float">) =>
     fadeRoomsFx.getVisiblity(slot).max(lit.mul(litNpcsEnabled));
 
 /** The gun, held along the forearm */
-function gunNodes({ color, gunColor, gain }: ArmsResources, view: ArmsView) {
+function gunNodes({ color, gunColor, gain }: PhaserResources, view: PhaserView) {
   const { edgePx, edgeDarken } = shaderConfig;
-  const gun = attribute<"vec4">("armsGun", "vec4");
-  const quat = attribute<"vec4">("armsQuat", "vec4");
+  const gun = attribute<"vec4">("phaserGun", "vec4");
+  const quat = attribute<"vec4">("phaserQuat", "vec4");
   /** `v` turned by the forearm's quaternion */
   const turned = (v: THREE.Node<"vec3">) => {
     const inner = cross(quat.xyz, v).add(v.mul(quat.w)) as THREE.Node<"vec3">;
@@ -135,9 +137,9 @@ function gunNodes({ color, gunColor, gain }: ArmsResources, view: ArmsView) {
   const p = gun.xyz.add(turned(positionLocal.mul(gun.w) as THREE.Node<"vec3">));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
 
-  const rooms = attribute<"vec4">("armsRooms", "vec4");
+  const rooms = attribute<"vec4">("phaserRooms", "vec4");
   const vSeen = varying(seenBy(view)(rooms.x, rooms.z), "vGunSeen");
-  const glow = attribute<"float">("armsGlow", "float");
+  const glow = attribute<"float">("phaserGlow", "float");
   const vGlow = varying<"float">(glow as THREE.Node<"float">, "vGunGlow");
   /** Lit from above, so its faces tell apart */
   const lit = turned(normalLocal as THREE.Node<"vec3">).dot(normalize(vec3(0.3, 1, 0.2)));
@@ -157,10 +159,10 @@ function gunNodes({ color, gunColor, gain }: ArmsResources, view: ArmsView) {
 }
 
 /** The beam's nodes, else with `tip` its end's ball */
-function beamNodes({ phase, color, gain, faint }: ArmsResources, view: ArmsView, tip: boolean) {
+function beamNodes({ phase, color, gain, faint }: PhaserResources, view: PhaserView, tip: boolean) {
   const { radius, tipRadius, solid, nearMetres, bands } = shaderConfig;
-  const src = attribute<"vec4">("armsSrc", "vec4");
-  const dst = attribute<"vec4">("armsDst", "vec4");
+  const src = attribute<"vec4">("phaserSrc", "vec4");
+  const dst = attribute<"vec4">("phaserDst", "vec4");
   const [shown, locked] = [src.w, dst.w];
   const t = tip ? float(1) : positionLocal.y.add(0.5);
 
@@ -172,7 +174,7 @@ function beamNodes({ phase, color, gain, faint }: ArmsResources, view: ArmsView,
   const p = mix(src.xyz, dst.xyz, t).add(offset.mul(shown));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
 
-  const rooms = attribute<"vec4">("armsRooms", "vec4");
+  const rooms = attribute<"vec4">("phaserRooms", "vec4");
   const seen = seenBy(view);
   /** As their npcs are: the ball the target, the beam each end nearer it */
   const vSeen = varying(

@@ -27,7 +27,7 @@ export const doorSwitchHeight = 1.2;
 
 export const wallOutsetSgu = 10;
 
-export const obstacleOutset = 8 * sguToWorldScale;
+export const obstacleOutset = 10 * sguToWorldScale;
 /**
  * Walls with any of these tags will not be merged with adjacent walls
  * - `y` (numeric) Height of base off the floor
@@ -96,6 +96,32 @@ export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
 export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
+/** What can be carried, and how — see `docs/inventory.md` */
+export const inventoryConfig = {
+  /** A decor's `meta.item` */
+  kinds: ["phaser", "book", "box", "keycard"],
+  /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
+  height: { phaser: 0.1, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
+  /** Put down on a surface: `margin` metres in from its edge, tried every `step` along that edge as far as `span` either way */
+  surface: { margin: 0.05, step: 0.02, span: 1 },
+  /** Seconds their arm is given to reach out, before what they put down is there, or what they take is gone */
+  reachSecs: 0.45,
+  /** Seconds squatted to the floor before it is done */
+  crouchSecs: 0.55,
+  /** Metres short of an item they walk up to before taking it, or as near as the navmesh lets them */
+  standOff: 0.3,
+  /** An item quad's sides, unless its `meta.sides` says otherwise: what is not its one textured face */
+  sides: "#222",
+  /** Sides of its own, by kind */
+  sideOf: { box: "#5e4526" } as Partial<Record<string, string>>,
+  /** How much larger than life a point is drawn, to be seen and pressed */
+  pointScale: 2,
+  /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk */
+  reach: { floor: 0.6, raised: 1, raisedFrom: 0.5 },
+  /** Items an npc carries at most, their phaser aside */
+  maxCarried: 6,
+} as const;
+export type ItemKind = (typeof inventoryConfig.kinds)[number];
 /** How many random rooms we'll try when spawning the player */
 export const spawnPlayerAttempts = 10;
 /** Room labels the player may be spawned in, when there is nowhere better */
@@ -204,7 +230,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   walls: { color: "#000000", opacity: 0.5 },
 };
 
-export const wallHeight = 1.7;
+export const wallHeight = 1.8;
 
 export const floorFadeDelayMs = 260;
 
@@ -272,6 +298,9 @@ export const roomLabelTexOpts = {
 
 /** In meters, or equivalently 2 grid squares */
 export const decorGridSize = geomorphGridMeters * 2;
+
+/** Metres tall a decor quad's cuboid is, without a `meta.h` */
+export const decorCuboidHeight = 0.05;
 
 export const decorKeyFallback = "icon--warn";
 export const decorPointKeyFallback = "abstract-point";

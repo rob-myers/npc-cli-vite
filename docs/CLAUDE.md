@@ -41,7 +41,8 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 - **A surface turned away takes less.** `applyLight` accepts a unit outward XZ normal, cut at
   edge-on (obstacle skirts pass one per instance). A FIGURE asks `litBody(normalWorld)` for the
   AMOUNT instead, `0`–`1`, wrapped round them half-Lambert off a lamp hung in front of the player
-  — whoever stands on the light has no bearing from it, and the player always does. Npcs add up
+  — whoever stands on the light has no bearing from it, and the player always does. The lamp is
+  hung off the player's own height (`originY`), so it stays above one lain on a top bunk. Npcs add up
   their own exposure from it (`ambient` + that + `litAmbient` whilst lit, all in `const.npc`)
   rather than taking a tint, which `unlitTint` would cap at a 0.4 swing.
 - Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances
@@ -69,6 +70,8 @@ it, so a build fetches neither. Load a DEV World before committing.
 
 Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.
 
+`1`, `2` and `3` select the fade mode — `sight`, `sense`, `ship` (`fadeRoomsModeByKey`) — as the menu's button cycles them.
+
 **Zoom has two stops**, `minDistance` and `maxDistance`; there is no continuous dolly. `zoomProgress` (0 at `maxDistance`, 1 at `minDistance`) is what gestures move — wheel by `deltaY`, pinch by the `ln` of its spread — and `getZoomRadius()` maps it to the radius. Once input pauses (`zoomSettleMs`), `syncZoom()` eases to whichever stop is nearer, so reversing partway cancels a zoom. It self-sustains via `dispatchEvent(changeEvent)` → `r3f.invalidate()`, which is what makes it work in a demand frameloop; the arriving frame dispatches nothing so the frames can stop.
 
 The radius is **not** persistent state — `update()` re-derives it from `position - target` each frame, so zoom must be written inside `update()`. Anything that moves the camera itself (e.g. `WorldView.lookAt`) must call `setZoomFromRadius` afterwards, else the next settle undoes it.
@@ -92,6 +95,14 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 **Strafing** — see `docs/npc-strafe.md`, the ONLY doc for it. In short: whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing, and `syncStrafe` blends four directional gaits by heading, paced to the ground each covers.
 
 `navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, and a desired velocity that folds round a touched npc. See `docs/navcat-patch.md`, including how to edit the patch.
+
+## Which room an npc is in
+
+`w.npc.npcToRoom`, changed by `enter-room` (`use-world-events`). A walker's room changes as they cross a
+door's centre LINE, not as their body leaves its "inside" sensor: `trackDoorway` notes the door on the
+sensor's `enter-collider` — its line, and the room to each side, a hull door's far one being the next
+geomorph's — and `syncDoorways`, each tick, reads off the side they stand on (`w.e.insideDoorways`).
+The sensor's exit still fires its own `enter-room`, usually `reEntered`. A spawn sets the room itself.
 
 ## Spawning NPCs
 
@@ -123,6 +134,12 @@ See `docs/decorator.md` — the ONLY doc for it. In short: `packages/ui/decorato
 The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live
 doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **decorations**
 toggle labels it and opens a card per pick.
+
+## Inventory
+
+See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
+keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
+World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `kamma` for what a press does.
 
 ## Lore
 

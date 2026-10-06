@@ -7,7 +7,7 @@
 /** An npc's label, unless `label` or the predicates say otherwise */
 export const defaultNpcLabelColor = "#ff9";
 
-export const npcScale = 0.7;
+export const npcScale = 0.8;
 
 export const npcShadowRadius = npcScale / 2.5;
 
@@ -35,7 +35,7 @@ export const agentConfig = {
     idle: 4.0,
     /** An idle npc separating: `onTick` drops anyone at rest to this, else walk -> idle slides */
     idleSeparating: 0.25,
-    walk: 8.0,
+    walk: 18.0,
   },
   maxSpeed: {
     idle: 0.5,
@@ -163,8 +163,14 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
+  crouch: true,
+  crouch_left: true,
+  drop: true,
+  drop_left: true,
   idle: true,
   lie: true,
+  pick_up: true,
+  pick_up_left: true,
   point: true,
   point_avoid: true,
   psi: true,
@@ -174,8 +180,8 @@ export const fromAnimationClipKey = {
   sit: true,
   strafe_left: true,
   strafe_right: true,
-  stun_aim: true,
-  stun_aim_avoid: true,
+  phaser_aim: true,
+  phaser_aim_avoid: true,
   walk: true,
 };
 
@@ -197,8 +203,14 @@ export const fadeSecs: Record<
 > = {
   backwards: {},
   breathe: { shuffle: 0.15 },
+  crouch: {},
+  crouch_left: {},
+  drop: {},
+  drop_left: {},
   idle: { shuffle: 0.15 },
   lie: {},
+  pick_up: {},
+  pick_up_left: {},
   point: {},
   point_avoid: {},
   psi: {},
@@ -209,8 +221,8 @@ export const fadeSecs: Record<
   sit: {},
   strafe_left: {},
   strafe_right: {},
-  stun_aim: { shuffle: 0.15 },
-  stun_aim_avoid: {},
+  phaser_aim: { shuffle: 0.15 },
+  phaser_aim_avoid: {},
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
@@ -220,10 +232,11 @@ export const psiMaxReach = 8;
 export const defaultPsiTune: PsiTune = {
   reach: 5,
   speed: 0.4,
-  gap: 0.5,
+  gap: 1.5,
   width: 2.5,
   opacity: 0.5,
-  fadeSecs: 1.2,
+  fadeInSecs: 1.8,
+  fadeOutSecs: 0.2,
   color: "#9fe8ff",
   tint: 1,
 };
@@ -235,7 +248,8 @@ export const psiTuneRanges = {
   gap: [0.15, 1.5, 0.05],
   width: [0.5, 8, 0.25],
   opacity: [0.05, 1, 0.05],
-  fadeSecs: [0.1, 3, 0.1],
+  fadeInSecs: [0.1, 3, 0.1],
+  fadeOutSecs: [0.1, 3, 0.1],
   tint: [0, 1, 0.05],
 } as const;
 
@@ -252,7 +266,8 @@ export type PsiTune = {
   /** Of each contour, which glows additively: lower is fainter */
   opacity: number;
   /** Seconds an influence takes to come, and to go */
-  fadeSecs: number;
+  fadeInSecs: number;
+  fadeOutSecs: number;
   color: string;
   /** How much of `color`'s hue a contour carries: none is white */
   tint: number;

@@ -126,6 +126,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
             await w.npc.spawn({ npcKey: next, at, as: skin !== undefined && hasSkin(w, skin) ? skin : undefined });
             if (access !== undefined) w.e.npcToAccess[next] = access;
             if (wasPlayer) w.player.assign(next);
+            w.hud?.update();
           }
           w.view.forceUpdate();
           manifestShared.set(meta.worldKey, { renamed: { from: prev, to: next } }); // a map shows them still

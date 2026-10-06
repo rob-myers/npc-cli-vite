@@ -157,7 +157,7 @@ export const deckConfig = {
     lipWidth: 0.02,
     lipInk: "rgba(190, 205, 225, 0.16)",
     /** Laid over every other plate, chequering the deck — `null` for none */
-    chequerInk: null as null | string,
+    chequerInk: "rgba(190, 205, 225, 0.03)" as null | string,
   },
 
   /** A rivet at each plate corner, lit from the upper-left like the seams */

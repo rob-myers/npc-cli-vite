@@ -873,6 +873,12 @@ export function WorldView(props: React.PropsWithChildren) {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
+        } else if (fadeRoomsModeByKey[e.key] !== undefined) {
+          // `1`, `2` and `3` go straight to a mode, where the button cycles round them
+          if (e.repeat === false) {
+            state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
+            w.menu?.update();
+          }
         } else if (e.key === "f" || e.key === "F") {
           // the look button's gesture on a key: a held key REPEATS, which is the long press — no
           // timer of our own, and a tap never gets there. The short press waits for the release,
@@ -882,12 +888,6 @@ export function WorldView(props: React.PropsWithChildren) {
           } else if (state.fHeld === false) {
             state.fHeld = true;
             state.onLookGesture(true);
-          }
-        } else if (fadeRoomsModeByKey[e.key] !== undefined) {
-          // `1`, `2` and `3` go straight to a mode, where the button cycles round them
-          if (e.repeat === false) {
-            state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
-            w.menu?.update();
           }
         }
       },

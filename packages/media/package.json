@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./icon": "./src/icon/index.ts",
     "./starship-symbol": "./src/starship-symbol/index.ts"
   },
   "scripts": {},

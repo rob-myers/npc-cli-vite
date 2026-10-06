@@ -66,24 +66,12 @@ export class NpcAnimation {
 
   /** The colour fade of `Npc.fadeIn`/`fadeOut`: `delta` per second towards `target`, `0` at rest */
   fadeState = { delta: 0, target: 1 };
-  /** A clip over the upper body alone, eased in and out over the pose by `blend` — see `tickUpper` */
-  upper = {
-    key: null as null | AnimationClipKey,
-    blend: 0,
-    target: 0,
-    /** Seconds into its clip */
-    time: 0,
-    /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
-    swap: 1,
-    swapSecs: upperFadeSecs,
-    /** Turns both arms so the right forearm, seen from `from` in its own frame, points `at` a world point */
-    aim: null as null | UpperAim,
-    group: null as null | THREE.Group,
-    /** The pose's stomach and chest, whose lean the clip's replaces */
-    torso: [] as THREE.Object3D[],
-    /** Each bone, the pose's rotation of it, and ours as last written — see `tickUpper` */
-    bones: [] as { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion }[],
-  };
+  /** A clip over the RIGHT arm, eased in and out over the pose by `blend` — see `tickUpper` */
+  upper = newUpper();
+  /** …and one over the LEFT arm, so each hand has its own e.g. psi and a phaser: the head takes both, the right's last */
+  upperLeft = newUpper();
+  /** The head, shared by both */
+  upperHead = { group: null as null | THREE.Group, entry: null as null | UpperBone };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
   face = {
     target: 0,
@@ -144,15 +132,20 @@ export class NpcAnimation {
     this.npc.setLabelYShift(labelYShiftForClip(next));
   }
 
-  /** Ease `key` in over the upper body, or out with `null` — from another shown, in `swapSecs` */
-  setUpper(key: null | AnimationClipKey, { swapSecs = upperFadeSecs } = {}) {
-    const u = this.upper;
+  /** Ease `key` in over an arm (and the head), or out with `null` — from another shown, in `swapSecs` */
+  setUpper(key: null | AnimationClipKey, { swapSecs = upperFadeSecs, side = "right" as Side } = {}) {
+    const u = this.upperOf(side);
     if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
-      u.bones.forEach((b) => b.from.copy(b.written)); // shown: ease over from where they are, in `swapSecs`
+      // shown: ease over from where they are, in `swapSecs`
+      for (const b of u.bones) b.from.copy(b.written);
       Object.assign(u, { swap: 0, swapSecs });
     }
     if (key !== null) u.key = key;
     u.target = key === null ? 0 : 1;
+  }
+
+  upperOf(side: Side) {
+    return side === "right" ? this.upper : this.upperLeft;
   }
 
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
@@ -218,9 +211,27 @@ export class NpcAnimation {
     }
   }
 
-  /** Slerp the upper body from the pose towards `upper.key`, by `blend` */
+  /** Slerp each arm from the pose towards its clip, by `blend` — and the head towards the left's, then the right's over it */
   tickUpper(delta: number) {
-    const u = this.upper;
+    const [l, r] = [this.upperLeft, this.upper];
+    this.tickUpperSide("left", delta);
+    this.tickUpperSide("right", delta);
+    const { entry } = this.upperHead;
+    if (entry === null || (l.key === null && r.key === null)) return;
+    const { bone, base, written } = entry;
+    if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+    bone.quaternion.copy(base);
+    for (const u of [l, r]) if (u.key !== null && u.hasHead === true) bone.quaternion.slerp(u.head, u.eased);
+    written.copy(bone.quaternion);
+    if (r.key !== null && r.aim !== null && r.aim.weight * r.eased > 0) {
+      this.aimArm(r.aim, r.aim.weight * r.eased);
+      this.aimHead(r.aim, r.aim.weight * r.eased);
+    }
+    for (const u of [l, r]) if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
+  }
+
+  tickUpperSide(side: Side, delta: number) {
+    const u = this.upperOf(side);
     const { group } = this.npc;
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
     if (u.key === null || group === null) return;
@@ -228,31 +239,22 @@ export class NpcAnimation {
     if (u.group !== group) {
       u.group = group; // a fresh group, or hmr
       u.torso = ["stomach", "chest"].flatMap((name) => group.getObjectByName(name) ?? []);
-      u.bones = upperBodyBones.flatMap((name) => {
-        const bone = group.getObjectByName(name);
-        // `written` equals nothing, so the first tick reads the pose
-        return bone === undefined
-          ? []
-          : [
-              {
-                bone,
-                base: new THREE.Quaternion(),
-                written: new THREE.Quaternion(Number.NaN),
-                from: new THREE.Quaternion(),
-              },
-            ];
-      });
+      u.bones = [`${side}arm`, `${side}forearm`].flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
     }
+    const h = this.upperHead;
+    if (h.group !== group) Object.assign(h, { group, entry: newUpperBone(group.getObjectByName("head")) });
 
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
     u.time = (u.time + delta) % (clip.duration || 1);
-    const { tracks, lean: clipLean } = upperTracksOf(clip);
-    // the clip's lean in place of the pose's own, else a pose that leans too e.g. a stance doubles it
+    const { tracks, torso } = upperTracksOf(clip);
+    // the clip's lean in place of the pose's own, else a pose that leans too e.g. a stance doubles it —
+    // its lean NOW: the arms are keyed against it, so one frame's would tip them as the torso breathes
     const lean = tmpLean.identity();
     for (const bone of u.torso) lean.multiply(bone.quaternion);
-    lean.invert().multiply(clipLean);
-    const t = u.blend * u.blend * (3 - 2 * u.blend);
+    lean.invert();
+    for (const interpolant of torso) lean.multiply(tmpQuat.fromArray(interpolant.evaluate(u.time)));
+    const t = (u.eased = u.blend * u.blend * (3 - 2 * u.blend));
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
     for (const { bone, base, written, from } of u.bones) {
@@ -264,15 +266,15 @@ export class NpcAnimation {
       if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
       written.copy(bone.quaternion.slerpQuaternions(base, q, t));
     }
-    if (u.aim !== null && u.aim.weight * t > 0) this.aimArms(u.aim, u.aim.weight * t);
-    if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
+    const head = tracks.get("head");
+    u.hasHead = head !== undefined;
+    if (head !== undefined) u.head.fromArray(head.evaluate(u.time)).premultiply(lean);
   }
 
-  /** Swing both arms at the shoulder, by `weight` of the turn that lines the right forearm up on `aim.at` */
-  aimArms(aim: UpperAim, weight: number) {
-    const [arm, forearm, other] = ["rightarm", "rightforearm", "leftarm"].map(
-      (name) => this.upper.bones.find((b) => b.bone.name === name)?.bone,
-    );
+  /** Swing the right arm at the shoulder, by `weight` of the turn that lines its forearm up on `aim.at` */
+  aimArm(aim: UpperAim, weight: number) {
+    const [entry, forearm] = [this.upper.bones[0], this.upper.bones[1]?.bone];
+    const arm = entry?.bone;
     if (arm?.parent == null || forearm === undefined) return;
     arm.parent.updateWorldMatrix(true, false);
     arm.updateWorldMatrix(false, true); // just written, and read at once
@@ -284,16 +286,22 @@ export class NpcAnimation {
     const b = from.dot(along);
     const reach = Math.sqrt(Math.max(0, b * b - from.lengthSq() + want.lengthSq())) - b;
     from.addScaledVector(along, reach).normalize();
-    want.normalize();
-    const angle = from.angleTo(want);
-    if (angle < 1e-4) return;
-    // about the shoulders, so in the chest's frame
-    const chest = arm.parent.getWorldQuaternion(tmpSwap);
-    const axis = tmpAxis.crossVectors(from, want).normalize().applyQuaternion(tmpQuat.copy(chest).invert());
-    const turn = tmpQuat.setFromAxisAngle(axis, Math.min(angle, upperAimMaxRad) * weight);
-    for (const b of this.upper.bones) {
-      if (b.bone === arm || b.bone === other) b.written.copy(b.bone.quaternion.premultiply(turn));
-    }
+    const turn = turnWithin(arm.parent, from, want.normalize(), upperAimMaxRad, weight);
+    if (turn === null) return;
+    entry.written.copy(arm.quaternion.premultiply(turn));
+  }
+
+  /** Turn the head from their facing to look where the arms aim */
+  aimHead(aim: UpperAim, weight: number) {
+    const { entry } = this.upperHead;
+    const chest = entry?.bone.parent;
+    if (entry === null || chest == null) return;
+    const ry = this.npc.rotation.y;
+    const from = tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
+    // the chest's matrix is fresh: `aimArm` has just run
+    const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
+    const turn = turnWithin(chest, from, tmpWant.copy(aim.at).sub(neck).normalize(), headAimMaxRad, weight);
+    if (turn !== null) entry.written.copy(entry.bone.quaternion.premultiply(turn));
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
@@ -512,7 +520,7 @@ function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
 }
 
-/** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and its torso's lean at the start — cached per clip */
+/** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and likewise its `torso`'s — cached per clip */
 function upperTracksOf(clip: THREE.AnimationClip) {
   let cached = upperTracks.get(clip);
   if (cached === undefined) {
@@ -527,12 +535,8 @@ function upperTracksOf(clip: THREE.AnimationClip) {
         return interpolant === undefined ? [] : [[name, interpolant] as const];
       }),
     );
-    const lean = new THREE.Quaternion();
-    for (const name of ["stomach", "chest"]) {
-      const values = interpolantOf(name)?.evaluate(0);
-      if (values !== undefined) lean.multiply(tmpQuat.fromArray(values));
-    }
-    upperTracks.set(clip, (cached = { tracks, lean }));
+    const torso = ["stomach", "chest"].flatMap((name) => interpolantOf(name) ?? []);
+    upperTracks.set(clip, (cached = { tracks, torso }));
   }
   return cached;
 }
@@ -542,12 +546,47 @@ const strafeClipKeys = ["walk", "strafe_right", "backwards", "strafe_left"] sati
 
 const upperTracks = new WeakMap<
   THREE.AnimationClip,
-  { tracks: Map<string, THREE.Interpolant>; lean: THREE.Quaternion }
+  { tracks: Map<string, THREE.Interpolant>; torso: THREE.Interpolant[] }
 >();
 /** The chest stays the pose's, though its lean is the clip's — see `tickUpper` */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
+
+type Side = "left" | "right";
+/** A bone, the pose's rotation of it, ours as last written, and where a swap set out from — see `tickUpper` */
+type UpperBone = { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion };
+
+/** `written` equals nothing, so the first tick reads the pose */
+const newUpperBone = (bone?: THREE.Object3D): null | UpperBone =>
+  bone === undefined
+    ? null
+    : { bone, base: new THREE.Quaternion(), written: new THREE.Quaternion(Number.NaN), from: new THREE.Quaternion() };
+
+const newUpper = () => ({
+  key: null as null | AnimationClipKey,
+  blend: 0,
+  target: 0,
+  /** Seconds into its clip */
+  time: 0,
+  /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
+  swap: 1,
+  swapSecs: upperFadeSecs,
+  /** Turns the right arm so its forearm, seen from `from` in its own frame, points `at` a world point — and the head to look there */
+  aim: null as null | UpperAim,
+  group: null as null | THREE.Group,
+  /** The pose's stomach and chest, whose lean the clip's replaces */
+  torso: [] as THREE.Object3D[],
+  /** Its arm, then its forearm */
+  bones: [] as UpperBone[],
+  /** `blend`, eased */
+  eased: 0,
+  /** Where its clip has the head, if it keys it */
+  head: new THREE.Quaternion(),
+  hasHead: false,
+});
 /** The most an `UpperAim` swings the arms off their pose */
 const upperAimMaxRad = Math.PI / 5;
+/** …and the most it turns the head off their facing */
+const headAimMaxRad = Math.PI / 4;
 const tmpQuat = new THREE.Quaternion();
 const tmpSwap = new THREE.Quaternion();
 const tmpLean = new THREE.Quaternion();
@@ -556,6 +595,15 @@ const tmpAlong = new THREE.Vector3();
 const tmpWant = new THREE.Vector3();
 const tmpFrom = new THREE.Vector3();
 const tmpAxis = new THREE.Vector3();
+
+/** `weight` of the turn from `from` onto `want`, world and unit, `maxRad` at most: about `parent`'s child, so in its frame */
+function turnWithin(parent: THREE.Object3D, from: THREE.Vector3, want: THREE.Vector3, maxRad: number, weight: number) {
+  const angle = from.angleTo(want);
+  if (angle < 1e-4) return null;
+  const axis = tmpAxis.crossVectors(from, want).normalize();
+  axis.applyQuaternion(parent.getWorldQuaternion(tmpQuat).invert());
+  return tmpQuat.setFromAxisAngle(axis, Math.min(angle, maxRad) * weight);
+}
 
 /** `weight` `0` to `1` eases it in: `at` and `from` are read each tick, so may be moved */
 export type UpperAim = { at: THREE.Vector3; from: THREE.Vector3; weight: number };

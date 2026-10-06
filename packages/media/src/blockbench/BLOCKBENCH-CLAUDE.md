@@ -141,32 +141,89 @@ left foot forward. t=1.25 is the push: deeper lean, arm rises and shoves forward
 Stomach/chest position and leg z are idle's; the root rotation is zeroed and the legs pinned, so the
 feet stay put (see *Legs and the floor*).
 
-## stun_aim / stun_aim_avoid (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+## psi / psi_avoid (2.5s loop)
 
-`Arms`' stun gun: a stance stood in at rest, and played over the upper body on the move. Root rotation
+`Psi`'s hand, the LEFT arm alone so the right is free for a phaser — played over that arm only, so no
+legs or root. Hand at the temple: `psi` with the elbow out to the side (`leftarm` [110,35,0],
+`leftforearm` [130,0,-8]), `psi_avoid` with it tucked in front (`leftarm` [112,0,20], `leftforearm`
+[128,0,-20]) for when a neighbour is close. Both keep the small lean (stomach -8, chest -5, head -2).
+
+## drop_left / pick_up_left / crouch_left
+
+Mirrors of `drop`, `pick_up` and `crouch` for the other hand: left and right bones swapped, rotation
+`y` and `z` and position `x` negated. Re-mirror after changing the originals.
+
+## phaser_aim / phaser_aim_avoid (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+
+`Phasers`' phaser: a stance stood in at rest, and played over the upper body on the move. Root rotation
 zeroed and the feet pinned flat (0.27 / 0.21), left foot forward. The right forearm is level and dead
 ahead at t=0 (`along` `(0, 0, -1)`, its `+x` up), the arm's x rising with the lean as it breathes; the
-left hand cups it from below. `stun_aim_avoid` shares the legs, torso and head, the right forearm
+left arm is idle's, free for psi. `phaser_aim_avoid` shares the legs, torso and head, the right forearm
 raised beside the shoulder, muzzle up — solved from a target basis via `Euler.setFromQuaternion(q, 'ZYX')`.
 
 | Bone | channel | t=0 / t=2.5 | t=1.25 |
 |------|---------|-------------|--------|
-| stomach / chest | rotation x | -5 / -4 | -7.5 / -6.5 |
+| stomach / chest | rotation x | -1 / -1 | -2.5 / -2.5 |
 | stomach / chest | position y | -0.1 / -0.1 | 0.1 / 0.2 |
-| head | rotation x | 9 | 14 |
-| rightarm | rotation | [99,0,0] | [104,0,0] |
+| head | rotation x | 2 | 5 |
+| rightarm | rotation | [92,0,0] | [95,0,0] |
 | rightforearm | rotation | [0,90,0] | same |
-| leftarm | rotation | [68,-40,0] | [73,-40,0] |
+| leftarm | rotation | [61,-40,0] | [64,-40,0] |
 | leftforearm | rotation | [43,0,0] | same |
-| leftthigh / leftshin / leftfoot | rotation x | 9 / -16 / 7 | same |
-| rightthigh / rightshin / rightfoot | rotation x | -14 / -16 / 30 | same |
-| skeleton-root | position | [0,-0.04,1] | — |
-| avoid: rightarm | rotation | [15,0,6] | [17,0,6] |
+| leftthigh / leftshin / leftfoot | rotation x | 22 / -29.2 / 7.2 | 26.5 / -47.6 / 21.1 |
+| rightthigh / rightshin / rightfoot | rotation x | 6.9 / -47.3 / 40.4 | 3.3 / -50.8 / 47.5 |
+| skeleton-root | position | [0,-0.54,1.45] | [0,-0.79,0.55] |
+| avoid: rightarm | rotation | [8,0,6] | [8,0,6] |
 | avoid: rightforearm | rotation | [84.97,-72.01,88.98] | same |
-| avoid: leftarm / leftforearm | rotation | [8,0,-6] / [118,0,12] | [11,0,-6] / [120,0,12] |
+| avoid: leftarm / leftforearm | rotation | [1,0,-6] / [118,0,12] | [2,0,-6] / [120,0,12] |
+
+**The stance is balanced, and rocks.** As first keyed it stood over its front foot, the other trailing,
+and leant 9°-14°. Now the feet keep that spacing but are planted either side of the hips (ankles `z`
+-1.17 and 3.17 about the root's 1), the hips 0.5 lower to reach them; the torso leans 2° at the back of
+the rock and 5° at the front, the head countering it and each arm's `x` raised by as much, so the gun
+stays level. The root rocks 0.9 end to end about where it stood, sinking 0.25 as it goes forward.
+
+The legs are SOLVED so both ankles stay put and both soles flat, keyed every fifth frame;
+`phaser_aim_avoid` has the same root, legs, torso and head. Not hand-keyed: see *Clips keyed from code*.
 
 Export from the rest pose: after any `Animator.preview()` run `Animator.showDefaultPose(true); Canvas.updateAllBones()`
 first, else the glTF's nodes keep the pose.
+
+## drop
+
+Putting an item down on a table (`w.e.dropItem`), upper body only and a still pose — the game eases it
+in and out. A lean (stomach -6, chest -4, head 4) with the right arm reaching forward and down to table
+height (`rightarm` x 56, `rightforearm` x 8); the left arm is idle's (`leftarm` [5,0,-2], `leftforearm` x 9).
+
+## pick_up
+
+`drop`'s counterpart (`w.e.takeItem`), likewise a still upper-body pose: a deeper lean (stomach -9, chest
+-7, head 3) and the right arm lower with the elbow bent to grasp (`rightarm` x 50, `rightforearm` x 28).
+
+## crouch
+
+Putting down on, or taking off, the FLOOR (`w.e.reachFor`): a still whole-body squat. Feet where they
+rest, the root 8.5 down and 3 back, legs solved to them; the torso leans 60 (stomach and chest -30
+each, head 40), the right arm hangs 22 forward of plumb so the hand touches the floor ahead, the left
+rests on the knee. Keyed from code, recipe `crouch`.
+
+## Clips keyed from code
+
+`scripts/src/bins/gen-clip-keys.ts` re-keys clips whose motion is solved rather than posed. It writes the
+keyframes into `current.bbmodel` AND bakes them into `current.gltf` as the exporter would (a key a
+frame, `LINEAR`), so Blockbench need not be open. Each entry of its `clips` is a RECIPE: default
+`params`, and `tracks(params)` returning one `Track` per bone channel — `turn` for a posed rotation,
+`breathe(a, b)` for a value that swells with the cycle, `plantedLegs` for a root and legs solved so
+both feet stay put (it throws if a leg cannot reach).
+
+```sh
+node scripts/src/bins/gen-clip-keys.ts                        # every recipe
+node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
+```
+
+Recipes now: `sit` (`knee`), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
+breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
+re-export from Blockbench. Reload the project in Blockbench afterwards, else a save puts the old keys back.
 
 ## point / point_avoid
 
@@ -191,6 +248,12 @@ channels were dropped, and run's root rotation `-2` moved onto `hips` x.
   down with the body; arms raised +10.5 / +7 over their original swing so they still hang.
 - Run: left lands at t=0, duty 0.27; bob −0.87…−0.29; swing knee to −115°.
 - Hand-tweaking one leg key breaks the plant — re-measure a foot's lowest vertex per sample.
+
+## Sit animation — legs
+
+Thighs level (`x` 90), knees bent 80° (`shin` x -80), feet `x` -12 at 0 / 2.5 and -7 at 1.25 so the
+soles sit near flat and breathe — the `sit` recipe of *Clips keyed from code*. The legs are short: the
+shin and foot hang 0.28m, so on any seat above that the feet dangle — one clip serves every seat height.
 
 ## Sit animation — arm position keyframes
 

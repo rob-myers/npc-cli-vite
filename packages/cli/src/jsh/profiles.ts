@@ -4,6 +4,7 @@ source /etc/{util,alias}.sh
 source /etc/{util,core,demo,demo_mcp,debug,decor,pred}.js.sh
 awaitWorld
 predicates
+kamma
 
 `.trim();
 

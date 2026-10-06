@@ -32,7 +32,7 @@ pred.setHandler(function onWorldEvent(e, w) {
   const p = pred.get();
   switch (e.key) {
     case "picked":
-      if (w.helper.isNpcPickEvent(e) === true && e.longDown === false) {
+      if (w.helper.isNpcPickEvent(e) === true && e.longDown === false && isTargeting(w) === false) {
         visualisePredicates(w, onPickNpc(e));
       }
       break;
@@ -150,6 +150,12 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   }
 
   return changed;
+}
+
+/** Whether `kamma` takes a press on an npc as psi's or the phaser's target */
+function isTargeting(w: JshCli.WorldState) {
+  if (w.e.keyedListener.has("kamma") === false) return false;
+  return w.phasers?.isArmed(w.player.key) === true || (w.psi?.getTarget() ?? null) !== null;
 }
 
 /** In or out again, as a shift-click does */

@@ -2,7 +2,7 @@ import RAPIER, { ColliderDesc, RigidBodyType } from "@dimforge/rapier3d-compat";
 import { addBodyKeyUidRelation, npcToBodyKey, parsePhysicsBodyKey } from "../service/physics-bijection";
 import { type WorkerStoreState, workerStore } from "./physics.store";
 
-export const wallHeight: typeof import("../const.env")["wallHeight"] = 1.7;
+export const wallHeight: typeof import("../const.env")["wallHeight"] = 1.8;
 const geomorphGridMeters: typeof import("../const.env")["geomorphGridMeters"] = 1.5;
 const wallOutsetSgu: typeof import("../const.env")["wallOutsetSgu"] = 10;
 

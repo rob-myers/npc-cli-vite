@@ -39,7 +39,6 @@ import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
-import Arms from "./Arms";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
@@ -51,6 +50,7 @@ import NPCs from "./NPCs";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
+import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
 import Psi from "./Psi";
 import RoomLabels from "./RoomLabels";
@@ -59,6 +59,7 @@ import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
 import Walls from "./Walls";
 import WorldHtml from "./WorldHtml";
+import WorldHud from "./WorldHud";
 import { WorldMenu } from "./WorldMenu";
 import { WorldSpeech } from "./WorldSpeech";
 import { WorldView } from "./WorldView";
@@ -170,10 +171,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       obs: null as any,
       physics: { worker: { postMessage() {} } } as any,
       html: null as any,
+      hud: null as any,
       labels: null as any,
       rings: null as any,
       psi: null as any,
-      arms: null as any,
+      phasers: null as any,
       roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
@@ -515,7 +517,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
                 <NpcRings key="npc-rings" />
                 <NpcShadows key="npc-shadows" />
                 <Psi key="psi" />
-                <Arms key="arms" />
+                <Phasers key="phasers" />
               </>
             )}
           </WorldView>
@@ -526,6 +528,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
         {state.view && <WorldMenu />}
         <WorldSpeech />
+        <WorldHud />
       </div>
     </WorldContext.Provider>
   );
@@ -605,6 +608,7 @@ export type State = {
   player: UseStateRef<import("./use-world-player").State>;
   floor: UseStateRef<import("./Floor").State>;
   html: UseStateRef<import("./WorldHtml").State>;
+  hud: UseStateRef<import("./WorldHud").State>;
   labels: UseStateRef<import("./Labels").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
   n: UseStateRef<import("./NPCs").State>["npc"];
@@ -613,7 +617,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   psi: UseStateRef<import("./Psi").State>;
-  arms: UseStateRef<import("./Arms").State>;
+  phasers: UseStateRef<import("./Phasers").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
   roomLabels: UseStateRef<import("./RoomLabels").State>;
   speech: UseStateRef<import("./WorldSpeech").State>;

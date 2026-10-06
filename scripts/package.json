@@ -20,6 +20,7 @@
     "gen-decor-sheets": "./src/bins/gen-decor-sheets.ts",
     "gen-skin-sheets": "./src/bins/gen-skin-sheets.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
+    "gen-clip-keys": "./src/bins/gen-clip-keys.ts",
     "gen-strafe-keys": "./src/bins/gen-strafe-keys.ts",
     "gen-ui": "./src/bins/gen-ui.ts"
   },

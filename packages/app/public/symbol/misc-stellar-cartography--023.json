@@ -108,19 +108,6 @@
       ]
     },
     {
-      "id": "05e71ceb-3545-4ff2-8ab0-a987b51876d1",
-      "name": "decor point label=cartography",
-      "locked": true,
-      "visible": true,
-      "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 124.5, "f": 97.5},
-      "type": "image",
-      "srcType": "decor",
-      "srcKey": "label",
-      "baseRect": {"width": 40, "height": 15},
-      "offset": {"x": 0, "y": 0},
-      "cssTransform": "matrix(0.5, 0, 0, 0.5, 124.5, 97.5)"
-    },
-    {
       "id": "02e99fe1-9d00-4f42-9783-574bdc776d03",
       "name": "doors",
       "locked": true,
@@ -129,6 +116,26 @@
       "type": "group",
       "expanded": false,
       "children": [
+        {
+          "id": "05e71ceb-3545-4ff2-8ab0-a987b51876d1",
+          "name": "decor point label=cartography",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 124.5,
+            "f": 97.5
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 124.5, 97.5)"
+        },
         {
           "id": "4ed77ad5-6329-4506-ad16-8d9f535e7f90",
           "name": "door slide=[-1,-1]",
@@ -231,7 +238,7 @@
     },
     {
       "id": "50c90fc2-60ee-4fe1-b01a-76a134c72a95",
-      "name": "obstacle table y=0.7",
+      "name": "obstacle table surface y=0.7",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},

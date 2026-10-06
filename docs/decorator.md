@@ -89,7 +89,8 @@ this makes it the World's own. See the TODO on project references.
 Runtime decor is the World's: `w.decor.create(def)` makes or REPLACES one — there is no update —
 `w.decor.remove(...keys)`, `w.decor.rename(key, next)`. `create` copies the def's `meta` and finds
 the room afresh, so a def made from an old decor — one the panel moved — does not carry that decor's
-room along, and fades with the room it is now in. A rect or circle gets `meta.floor`. The defs are persisted per World and map
+room along, and fades with the room it is now in. A rect or circle gets `meta.floor`; one with
+`meta.item` can be carried — see `docs/inventory.md`. The defs are persisted per World and map
 (`getWorldMapStore(w.key, w.mapKey).decor`) and replayed on boot. `use-world-events` now saves on
 every `decor-created` / `decor-removed`, so whoever edits is saved; not whilst a map changes, which
 removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor out of the save.

@@ -1,30 +1,40 @@
 import { ExhaustiveError, type UseStateRef, useStateRef } from "@npc-cli/util";
+import { Rect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
 import { npcDims } from "../const.both";
 import {
+  decorCuboidHeight,
   defaultDoorCloseMs,
   defaultPlayerKey,
   defaultSkinKey,
   floorFadeDelayMs,
+  type ItemKind,
+  inventoryConfig,
   MAX_NPCS,
   mapVeilMs,
   roomLabel,
+  sguToWorldScale,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
+import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
 
 export default function useWorldEvents(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
+      carried: structuredClone(persisted.getWorldStore(w.key).read().carried), // the default is shared
       changingMap: false,
+      handling: new Set(),
+      reachedRight: new Set(),
+      insideDoorways: new Map(),
       doorOpen: {},
       doorToNpcs: {},
       externalNpcs: new Set(),
@@ -65,9 +75,62 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return [...closeNpcs.nearby].every((npcKey) => w.n[npcKey].isMoving() === false);
       },
+      chainKey(npcKey, itemKey) {
+        const had = state.carried[npcKey];
+        const index = had?.items.findIndex((def) => def.key === itemKey) ?? -1;
+        const { door, map } = had?.items[index]?.meta ?? {};
+        // a gdKey means nothing on another map
+        if (helper.isGmDoorKey(door) === false || !(door in w.door.byKey) || (map ?? w.mapKey) !== w.mapKey)
+          return false;
+        had.items.splice(index, 1);
+        state.setAccess(npcKey, door, true);
+        state.onCarriedChange(npcKey);
+        return true;
+      },
       clearHandLitRooms() {
         state.handLitRooms.clear();
         state.syncFadeRooms();
+      },
+      dropItem(npcKey, name) {
+        const had = state.carried[npcKey];
+        if (had === undefined) return false;
+        if (name === "psi") {
+          if (had.psi !== true) return false;
+          delete had.psi;
+          if (npcKey === w.player.key) w.psi?.choose(null);
+          state.onCarriedChange(npcKey);
+          return true;
+        }
+        const def = had.items.find((def) => def.key === name || def.meta?.item === name);
+        const npc = w.n?.[npcKey];
+        if (def === undefined || npc === undefined) return false;
+        // onto a surface in reach — else a point goes on the floor, unless sat or lain: those are not on it
+        let spot = state.getDropSpot(npcKey, def);
+        if (spot === null && def.type !== "quad" && w.npc.npcToDoable[npcKey] == null) {
+          // where their hand comes down, so it is taken up again from where they stand — else at their feet
+          const { x, y } = npc.point;
+          const ry = npc.rotation.y;
+          const ahead = {
+            x: x - Math.sin(ry) * inventoryConfig.standOff,
+            y: y - Math.cos(ry) * inventoryConfig.standOff,
+          };
+          spot = { ...(w.npc.getClosestPoly(ahead, 0.1).success === true ? ahead : { x, y }), y3d: 0 };
+        }
+        if (spot === null) return false;
+        state.handle(npcKey, async () => {
+          /** Out of the hand it is in */
+          const gun = def.meta?.item === "phaser";
+          const put = () => {
+            const items = state.carried[npcKey]?.items ?? [];
+            const index = items.indexOf(def);
+            if (index === -1) return; // gone meanwhile
+            items.splice(index, 1);
+            w.decor.create(state.getItemDefAt(def, spot));
+            state.onCarriedChange(npcKey);
+          };
+          await state.reachFor(npc, "drop", spot, put, gun === true ? "right" : undefined);
+        });
+        return true;
       },
       dispatchToKeyedListeners(e) {
         for (const listener of state.keyedListener.values()) {
@@ -199,6 +262,110 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
         // only if npc has been granted access
         return !!state.npcToAccess[npcKey]?.[door.gdKey];
+      },
+      getDropSpot(npcKey, def) {
+        const [npc, room] = [w.n?.[npcKey], w.npc.npcToRoom.get(npcKey)];
+        if (npc === undefined || room === undefined) return null;
+        const { reach, surface } = inventoryConfig;
+        const { x: px, y: py } = npc.point;
+        /** Half its footprint: along the edge it is laid by, and in from it */
+        const [halfW, halfH] = halfSizeOf(w.sheets, def);
+        const inset = halfH + surface.margin;
+        const items = Object.values(w.decor.runtime.byKey).filter((d) => d.meta.item !== undefined);
+        const tables = [...(w.decor.byRoom[room.gmId]?.[room.roomId] ?? [])]
+          .filter((d) => d.meta.surface === true && d.meta.refinedOutline !== undefined)
+          .map((d) => ({ outline: d.meta.refinedOutline as Geom.VectJson[], y3d: Number(d.meta.y) || 0 }));
+
+        let best: null | DropSpot = null;
+        /** No further than it could be taken back from */
+        let bestDist: number = reach.raised;
+        for (const { outline, y3d } of tables) {
+          /** Tables are often several obstacles abutting, as one top: it may lie across them */
+          const onTop = (p: Geom.VectJson) =>
+            tables.some((t) => t.y3d === y3d && geomService.outlineProperlyContains(t.outline, p));
+          const edges = outline.map((a, i) => [a, outline[(i + 1) % outline.length]]);
+          /** Which way round it runs: its inside is to that side of every edge, concave or not */
+          const side = Math.sign(edges.reduce((sum, [a, b]) => sum + a.x * b.y - b.x * a.y, 0)) || 1;
+          for (const [a, b] of edges) {
+            const near = geomService.getClosestOnSeg(npc.point, a, b);
+            const length = Math.hypot(b.x - a.x, b.y - a.y);
+            if (near.dst > reach.raised || length === 0) continue;
+            const [tx, ty] = [(b.x - a.x) / length, (b.y - a.y) / length];
+            const [nx, ny] = [-ty * side, tx * side]; // inwards
+            // slid along the edge: the nearest place that is all on a table, and on no other item
+            for (let along = -surface.span; along <= surface.span; along += surface.step) {
+              const [x, y] = [near.x + tx * along + nx * inset, near.y + ty * along + ny * inset];
+              const dist = Math.hypot(x - px, y - py);
+              if (dist >= bestDist) continue;
+              const corners = [-halfW, halfW].flatMap((u) =>
+                [-halfH, halfH].map((v) => ({ x: x + u * tx + v * nx, y: y + u * ty + v * ny })),
+              );
+              const box = Rect.fromPoints(...corners).inset(0.01); // they may touch
+              if (corners.every(onTop) === false || items.some((d) => d.bounds.intersects(box))) continue;
+              // squared up to the edge, its image the right way up for whoever stands there: turned, never mirrored
+              [best, bestDist] = [{ x, y, y3d, linear: [-tx * side, -ty * side, -nx, -ny] }, dist];
+            }
+          }
+        }
+        return best;
+      },
+      getItemDefAt(def, at) {
+        const kind = String(def.meta?.item);
+        let key = def.key;
+        for (let i = 1; key in w.decor.byKey; i++) key = `${kind}-${i}`;
+        if (def.type !== "quad") {
+          return { ...def, key, x: at.x, y: at.y, y3d: at.y3d || undefined, transform: undefined } as Geomorph.DecorDef;
+        }
+        // a quad's transform starts at its image's corner
+        const [halfW, halfH] = halfSizeOf(w.sheets, def);
+        const [a, b, c, d] = at.linear ?? def.transform ?? [1, 0, 0, 1];
+        const transform: Geom.SixTuple = [a, b, c, d, at.x - (a * halfW + c * halfH), at.y - (b * halfW + d * halfH)];
+        return { ...def, key, transform, y3d: at.y3d + (def.meta?.h ?? decorCuboidHeight) }; // its top: stood on it
+      },
+      getHeldDoors(npcKey) {
+        const held = Object.entries(state.npcToAccess[npcKey] ?? {}).flatMap(([gdKey, has]) =>
+          has === true ? gdKey : [],
+        );
+        return held.length === 0 ? undefined : (held as Geomorph.GmDoorKey[]);
+      },
+      giveItem(npcKey, name, extra) {
+        const had = (state.carried[npcKey] ??= { items: [] });
+        if (name === "psi") {
+          had.psi = true;
+        } else {
+          if (state.hasRoomFor(npcKey, name) === false) return false;
+          let key = `${name}-0`;
+          for (let i = 1; had.items.some((def) => def.key === key); i++) key = `${name}-${i}`;
+          const h = inventoryConfig.height[name];
+          const meta = { item: name, h, shown: true, ...extra };
+          had.items.push(
+            h === undefined
+              ? { type: "point", key, img: name, x: 0, y: 0, scale: inventoryConfig.pointScale, meta }
+              : { type: "quad", key, img: name, transform: [1, 0, 0, 1, 0, 0], meta },
+          );
+        }
+        state.onCarriedChange(npcKey);
+        return true;
+      },
+      handle(npcKey, run) {
+        if (state.handling.has(npcKey)) return; // one thing at a time
+        state.handling.add(npcKey);
+        void run().finally(() => state.handling.delete(npcKey));
+      },
+      hasItem(npcKey, name) {
+        const had = state.carried[npcKey];
+        return name === "psi" ? had?.psi === true : had?.items.some((def) => def.meta?.item === name) === true;
+      },
+      hasRoomFor(npcKey, kind) {
+        const items = state.carried[npcKey]?.items ?? [];
+        if (kind === "phaser") return items.every((def) => def.meta?.item !== "phaser");
+        return items.filter((def) => def.meta?.item !== "phaser").length < inventoryConfig.maxCarried;
+      },
+      onCarriedChange(npcKey) {
+        const had = state.carried[npcKey];
+        if (had !== undefined && had.items.length === 0 && had.psi !== true) delete state.carried[npcKey];
+        state.persistCarried();
+        w.hud?.update();
       },
       async openDoorwaysWithNpcs() {
         await w.physics?.settle();
@@ -361,6 +528,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.key !== w.player.key) return void state.removeNpcs(npc.key);
         void w.player.restoreFromSpawnPoint().then((ok) => ok || w.player.spawnSomewhere());
       },
+      restoreAccess(saved) {
+        for (const gdKey of saved.access ?? []) {
+          if (gdKey in w.door.byKey) state.setAccess(saved.key, gdKey as Geomorph.GmDoorKey, true);
+        }
+      },
+      setAccess(npcKey, gdKey, held) {
+        (state.npcToAccess[npcKey] ??= {})[gdKey] = held;
+        if (npcKey === w.player.key) w.hud?.update();
+      },
       syncDoorsState() {
         for (const gdKey of Object.keys(state.doorOpen) as Geomorph.GmDoorKey[]) {
           if (w.d[gdKey] === undefined) delete state.doorOpen[gdKey];
@@ -390,7 +566,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
-        w.arms?.syncTheme();
+        w.phasers?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
@@ -506,6 +682,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "set-player":
             state.syncFadeRooms(); // the rooms in view are the player's
+            if (e.playerKey !== null && state.hasItem(e.playerKey, "psi") === false) w.psi?.choose(null);
             break;
           case "nav-updated":
             // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
@@ -557,18 +734,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             state.syncFadeRooms();
             break;
           }
-          case "arms":
-            if (!e.armed) return;
-            for (const npcKey of e.npcKeys) {
-              if (npcKey === w.player.key) {
-                w.psi.choose(null);
-              } else {
-                const npc = w.n[npcKey];
-                if (npc.anim.hasUpper("psi") || npc.anim.hasUpper("psi_avoid")) {
-                  npc.anim.setUpper(null);
-                }
-              }
-            }
+          case "phasers":
             break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
@@ -620,6 +786,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.type === "inside") {
               (state.doorToNpcs[e.meta.gdKey] ??= { inside: new Set(), nearby: new Set() }).inside.add(npc.key);
               (state.npcToDoors[e.npcKey] ??= { inside: null, nearby: new Set() }).inside = e.meta.gdKey;
+              state.trackDoorway(npc.key, e.meta.gdKey);
             }
 
             state.onEnterCollider(e, npc);
@@ -654,6 +821,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.type === "inside") {
               state.doorToNpcs[e.meta.gdKey]?.inside.delete(npc.key);
               if (state.npcToDoors[e.npcKey]) state.npcToDoors[e.npcKey].inside = null;
+              if (state.insideDoorways.get(npc.key)?.gdKey === e.meta.gdKey) state.insideDoorways.delete(npc.key);
             }
 
             state.onExitCollider(e, npc);
@@ -698,12 +866,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "npc-pre-do":
-            if (w.arms?.isArmed(e.npcKey)) w.arms.disarm(e.npcKey);
-            if (e.npcKey === w.player.key) w.psi?.choose(null); // psi is the player's alone
+            if (w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
             break;
           case "npc-do":
-            if (e.decorKey !== null && w.arms?.isArmed(e.npcKey)) w.arms.disarm(e.npcKey);
-            if (e.decorKey !== null && e.npcKey === w.player.key) w.psi?.choose(null);
+            if (e.decorKey !== null && w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
             break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both
@@ -717,6 +883,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           default:
             throw new ExhaustiveError(e);
         }
+      },
+      persistCarried() {
+        if (w.client === true) return;
+        persisted.getWorldStore(w.key).patch({ carried: structuredClone(state.carried) });
       },
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
@@ -736,9 +906,39 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
               decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
               lit: npc.lit === true ? true : undefined,
+              access: state.getHeldDoors(npc.key),
             })),
           },
         });
+      },
+      async reachFor(npc, clip, at, act, side) {
+        // turned to it, unless it is at their own feet
+        if (npc.distanceTo(at) > 0.05) await npc.look({ at }).catch(() => {});
+        const { anim, key } = npc;
+        // the free hand: not the one with a gun in it, nor one at their temple — else each in turn
+        side ??=
+          w.phasers?.holds(key) === true
+            ? "left"
+            : anim.upperLeft.target === 1 || state.reachedRight.delete(key) === false
+              ? (state.reachedRight.add(key), "right")
+              : "left";
+        /** Down to the floor for it, unless off it themselves */
+        const crouch = (at.y3d ?? 0) < inventoryConfig.reach.raisedFrom && w.npc.npcToDoable[key] == null;
+        const shown = `${crouch ? "crouch" : clip}${side === "left" ? "_left" : ""}` as const;
+        /** What that hand was doing e.g. psi, which it goes back to */
+        const u = anim.upperOf(side);
+        const before = u.target === 1 ? u.key : null;
+        if (crouch) anim.setPose(shown);
+        anim.setUpper(shown, { side });
+        // an aim is let go only now, so the arm goes from it straight to the reach
+        if (side === "right") w.phasers?.disarm(key);
+        const until = w.timer.getElapsedTime() + inventoryConfig[crouch ? "crouchSecs" : "reachSecs"];
+        while (w.timer.getElapsedTime() < until) await w.npc.nextTick(); // held whilst paused
+        if (w.n[key] === npc) act();
+        w.view.forceUpdate();
+        // back as they were, unless something else has moved them on
+        if (anim.pose === shown) anim.setPose(anim.idleClip.name as AnimationClipKey);
+        if (u.key === shown) anim.setUpper(before, { side });
       },
       async raycast(origSrc, origDst) {
         let src = helper.parseGroundPoint(origSrc);
@@ -871,8 +1071,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             uid,
             srcIndex,
             dstIndex,
-            // likewise: an npc holds few keys, and `grant` / `revoke` write straight to
-            // `npcToAccess`, so nothing needs telling when they change
+            // likewise: an npc holds few keys, read afresh each time
             accessDoorIndices: Object.entries(state.npcToAccess[npc.key] ?? {}).flatMap(([gdKey, granted]) =>
               granted === true ? (w.gmRoomGraph.getNode(gdKey as Geomorph.GmDoorKey)?.index ?? []) : [],
             ),
@@ -962,6 +1161,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           delete w.n[npc.key];
           w.npc.setNpcDo(npc.key, null);
           state.litRooms.delete(npc.key);
+          state.insideDoorways.delete(npc.key); // their exit colliders come too late
           npc.rejectAll(new Error("removed npc"));
         }
 
@@ -982,7 +1182,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npcKeys.includes(w.player.key)) w.events.next({ key: "set-player", playerKey: null });
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
-        for (const { key, at, angle, skinKey, decorKey, lit } of saved?.npcs ?? []) {
+        for (const { key, at, angle, skinKey, decorKey, lit, access } of saved?.npcs ?? []) {
           if (key === w.player.key || w.n[key] !== undefined) {
             continue;
           }
@@ -996,6 +1196,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             });
             const spawned = w.npc.npc[key];
             if (lit === true && spawned !== undefined) state.setNpcLit(spawned, true);
+            state.restoreAccess({ key, access });
           } catch (e) {
             warn(`${key}: could not restore`, e); // e.g. no longer placable
           }
@@ -1101,13 +1302,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       postNpcTick() {
+        state.syncDoorways();
         // before the shadows, which read the slot it settles — and every tick, since an npc waiting
         // on a room to arrive takes it the moment it lands rather than at the next door event
         state.syncNpcRoomSlots();
         w.shadows?.onTick();
         w.rings?.onTick();
         w.psi?.onTick();
-        w.arms?.onTick();
+        w.phasers?.onTick();
+        w.player?.aimAtPointer();
+      },
+      syncDoorways() {
+        for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
+          const npc = w.n[npcKey];
+          if (npc === undefined) continue;
+          const gmRoomId = rooms[normal.x * npc.point.x + normal.y * npc.point.y > offset ? 0 : 1];
+          if (gmRoomId !== null && gmRoomId.grKey !== w.npc.npcToRoom.get(npcKey)?.grKey) {
+            w.events.next({ key: "enter-room", npcKey, gmRoomId, reEntered: false });
+          }
+        }
       },
       syncNpcRoomSlots() {
         const fx = w.view.fadeRoomsFx;
@@ -1185,6 +1398,45 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         return w.door.toggleDoor(door, opts);
       },
+      takeItem(npcKey, decorKey) {
+        const def = w.decor.runtime.defByKey[decorKey];
+        const kind = def?.meta?.item as ItemKind;
+        const npc = w.n?.[npcKey];
+        if (def === undefined || npc === undefined || inventoryConfig.kinds.includes(kind) === false) return false;
+        if (def.type !== "quad" && def.type !== "point") return false;
+        if (state.hasRoomFor(npcKey, kind) === false) return false;
+        const { bounds, meta } = w.decor.runtime.byKey[decorKey];
+        const room = w.npc.npcToRoom.get(npcKey);
+        if (room?.gmId !== meta.gmId || room?.roomId !== meta.roomId) return false; // not through a wall
+        const at = { ...bounds.center, y3d: Number(def.y3d) || 0 };
+        state.handle(npcKey, () =>
+          state.reachFor(npc, "pick_up", at, () => {
+            // still there, and still room for it
+            if (w.decor.runtime.defByKey[decorKey] !== def || state.hasRoomFor(npcKey, kind) === false) return;
+            (state.carried[npcKey] ??= { items: [] }).items.push(structuredClone(def));
+            w.decor.remove(decorKey);
+            state.onCarriedChange(npcKey);
+          }),
+        );
+        return true;
+      },
+      trackDoorway(npcKey, gdKey) {
+        const door = w.door.byKey[gdKey];
+        if (door === undefined) return; // onchange map
+        const { src, normal, gmId, connector } = door;
+        /** Its normal points into the first: a hull door's other side is the next geomorph's */
+        const rooms = connector.roomIds.map((roomId, i) =>
+          roomId === null
+            ? w.gmGraph.getOtherGmRoomId(door, connector.roomIds[1 - i] ?? -1)
+            : helper.getGmRoomId(gmId, roomId),
+        );
+        state.insideDoorways.set(npcKey, { gdKey, normal, offset: normal.x * src.x + normal.y * src.y, rooms });
+      },
+      unchainKey(npcKey, gdKey) {
+        if (state.npcToAccess[npcKey]?.[gdKey] !== true || state.hasRoomFor(npcKey, "keycard") === false) return false;
+        state.setAccess(npcKey, gdKey, false);
+        return state.giveItem(npcKey, "keycard", { door: gdKey, map: w.mapKey });
+      },
       toggleLock(gdKey, opts = {}) {
         const door = w.door.byKey[gdKey];
 
@@ -1244,7 +1496,58 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
   }, []);
 }
 
+/** Half a quad's or point's width and height in metres, as its image has them: nought for anything else */
+function halfSizeOf(sheets: WorldState["sheets"], def: Geomorph.DecorDef) {
+  const entry = def.type === "quad" || def.type === "point" ? sheets.decor[def.img ?? ""] : undefined;
+  const scale = (sguToWorldScale / 2) * (def.type === "point" ? (def.scale ?? 1) : 1);
+  return [entry?.originalWidth ?? 0, entry?.originalHeight ?? 0].map((x) => x * scale);
+}
+
+/** Where an item is put down: its middle, how high what it stands on is, and how a quad is turned */
+type DropSpot = Geom.VectJson & { y3d: number; linear?: [number, number, number, number] };
+
 export type State = {
+  /** A carried keycard's `meta.door` joins their keys, and the card is gone — only on the map it is of */
+  chainKey(npcKey: string, itemKey: string): boolean;
+  /** A door's key comes off their keys as a keycard they carry — `false` if they have no room */
+  unchainKey(npcKey: string, gdKey: Geomorph.GmDoorKey): boolean;
+  /** By npcKey, what each has — persisted per World, so it goes with them between maps. See `docs/inventory.md` */
+  carried: Record<string, persisted.Carried>;
+  /** Starts putting an item of theirs (by its key, or the first of a kind) down, a drawn phaser put away first — or revokes `psi`. `false` with no surface in reach that it fits, bar a point which may lie at their feet */
+  dropItem(npcKey: string, name: string): boolean;
+  /** The doors they hold keys to, if any */
+  getHeldDoors(npcKey: string): undefined | Geomorph.GmDoorKey[];
+  /** Those putting something down or picking something up right now */
+  handling: Set<string>;
+  /** Where they could put that item down: on a `meta.surface` obstacle in reach, in their room, all of it fitting and squared up to the edge */
+  getDropSpot(npcKey: string, def: Geomorph.DecorDef): null | DropSpot;
+  /** A carried def as it would stand at the spot, under a key no decor has */
+  getItemDefAt(def: Geomorph.DecorDef, at: DropSpot): Geomorph.DecorDef;
+  /** Runs it unless they are `handling` something already */
+  handle(npcKey: string, run: () => Promise<void>): void;
+  /** They turn to the point and reach out as `clip` has it, with their free hand unless told which — then `act`, as it gets there */
+  reachFor(
+    npc: Npc,
+    clip: "drop" | "pick_up",
+    at: Geom.VectJson & { y3d?: number },
+    act: () => void,
+    side?: "left" | "right",
+  ): Promise<void>;
+  /** Those who last reached with their right, so with neither hand busy they take turns */
+  reachedRight: Set<string>;
+  /** Grants `psi`, or makes them an item out of nothing — `false` if they have no room */
+  giveItem(npcKey: string, name: "psi" | ItemKind, extraMeta?: Meta): boolean;
+  hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
+  /** One phaser, and `inventoryConfig.maxCarried` of the rest */
+  hasRoomFor(npcKey: string, kind: ItemKind): boolean;
+  onCarriedChange(npcKey: string): void;
+  persistCarried(): void;
+  /** The keys a save says they held, bar doors since gone */
+  restoreAccess(saved: Pick<persisted.PersistedNpc, "key" | "access">): void;
+  /** Gives or takes a door's key — the one way to write `npcToAccess`, so the bar hears */
+  setAccess(npcKey: string, gdKey: Geomorph.GmDoorKey, held: boolean): void;
+  /** Starts taking a runtime decor with `meta.item` off the map — `false` if it is no item, in another room, or they have no room */
+  takeItem(npcKey: string, decorKey: string): boolean;
   /** Set by `onChangeMap`, consumed by `onBootstrapMap`: this map is not the page's first */
   changingMap: boolean;
   /** Doable to the npc using it or null */
@@ -1407,6 +1710,15 @@ export type State = {
   openDoorwaysWithNpcs(): Promise<void>;
   /** Re-reads which rooms the world is shown in — a door swinging, or the player moving room */
   syncFadeRooms(): void;
+  /** By npcKey, the door whose "inside" sensor they are in: its line, and the room to each side — first where `normal` points */
+  insideDoorways: Map<
+    string,
+    { gdKey: Geomorph.GmDoorKey; normal: Geom.VectJson; offset: number; rooms: (null | Geomorph.GmRoomId)[] }
+  >;
+  /** Notes the door an npc has stepped into, for `syncDoorways` */
+  trackDoorway(npcKey: string, gdKey: Geomorph.GmDoorKey): void;
+  /** Whilst in a doorway, their room is whichever is on their side of the door's line */
+  syncDoorways(): void;
   /** What follows `w.npc.onTick`: room slots, then whatever draws on the npcs */
   postNpcTick(): void;
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */

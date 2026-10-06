@@ -445,7 +445,10 @@ export function jsArg(args, alias = {}, opts) {
           let value = parseJsArg(arg.slice(colonIndex + 1));
 
           if (opts?.array?.[key] === true && Array.isArray(value) === false) {
-            value = parseJsArg(`[${arg.slice(colonIndex + 1).split(/\s+/)}]`);
+            value = arg
+              .slice(colonIndex + 1)
+              .split(/\s+/)
+              .map(parseJsArg);
           }
 
           agg[key] = value;

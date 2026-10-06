@@ -28,8 +28,8 @@ deckConfig.nav.ink = "rgba(255,120,120,0.2)";
 w.floor.drawAll();
 ```
 
-`plate.chequerInk`, if not `null`, is laid over every other plate (`drawChequer`), which the light
-theme uses to chequer the deck; the dark one leaves it off.
+`plate.chequerInk`, if not `null`, is laid over every other plate (`drawChequer`), which chequers
+the deck: darker plates in the light theme, faintly lighter ones in the dark.
 
 Six parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `nav`. Each but `tone` and
 `nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
