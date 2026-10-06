@@ -1,6 +1,7 @@
 import { type UseStateRef, useStateRef } from "@npc-cli/util";
 import { isTypingTarget } from "@npc-cli/util/legacy/dom";
 import { error, warn } from "@npc-cli/util/legacy/generic";
+import { deltaAngle } from "maath/misc";
 import { useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { defaultPlayerKey, spawnPlayerAttempts, spawnRoomLabels } from "../const.env";
@@ -19,6 +20,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
     (): State => ({
       key: defaultPlayerKey,
       twoTap: null,
+      idleLook: null,
 
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -43,11 +45,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       aimAtPointer() {
-        const face = w.n?.[state.key]?.anim.face;
-        if (face === undefined) return;
+        const npc = w.n?.[state.key];
+        if (npc === undefined) return;
+        const { anim } = npc;
+        const { face } = anim;
         // not whilst locked on: the phaser's target is whom they face
         if (w.view.keysDown.has("r") === false || w.phasers?.isLocked(state.key) === true) {
           if (face.aim === pointerAim) face.aim = null;
+          state.idleLook = null;
           return;
         }
         const { raycaster, lastPointer, canvas } = w.view;
@@ -56,7 +61,18 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         raycaster.setFromCamera(tmpNdc, w.r3f.camera);
         if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
-        face.aim = pointerAim;
+        face.aim = pointerAim; // at rest too, so a move from it strafes
+        // moving or armed they keep the aim's ease: a look would shuffle them
+        if (npc.isMoving() === true || w.phasers?.isArmed(state.key) === true) {
+          if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
+          state.idleLook = null;
+        } else if (npc.isNotStanding() === false) {
+          const bearing = anim.bearingOf(pointerAim.at);
+          if (state.idleLook === null || Math.abs(deltaAngle(state.idleLook, bearing)) > idleLookEps) {
+            anim.lookAt(bearing, 0, 1, anim.getTurnRate()); // not `npc.look`: its `rejectAll` drops a planned move
+            state.idleLook = bearing;
+          }
+        }
         w.r3f.invalidate(); // a held key draws nothing of itself
       },
       onTouch(e) {
@@ -216,6 +232,8 @@ const pointerAim = { at: { x: 0, y: 0 }, rate: 1, untilRest: false };
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
+/** How far the pointer's bearing must shift, radians, before a player at rest looks again */
+const idleLookEps = 0.01;
 const twoTapMs = 300;
 const twoTapSlopPx = 20;
 
@@ -225,8 +243,10 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held they face where the pointer meets the floor — each tick, and let go on release */
+  /** Whilst `r` is held they face where the pointer meets the floor: aimed on the move or armed, else a look */
   aimAtPointer(): void;
+  /** The bearing `aimAtPointer` last looked to at rest, else `null` */
+  idleLook: null | number;
   /** Two fingers down on the canvas that may yet be a tap: since when, and where */
   twoTap: null | { startMs: number; downs: [Touch, Touch] };
 
