@@ -58,6 +58,10 @@ temple and goes back; psi stays on. The phaser itself is put down from the right
 Taking is the same in reverse (`w.e.takeItem`): they turn to the item, reach — the
 `pick_up` clip — and after `reachSecs` it is theirs and gone from the map. Both share `w.e.reachFor`.
 
+Sat or lain it is always the right arm — no gun is in it there — and it is AIMED: swung at the shoulder
+until the forearm lines up on the spot (`anim.upper.aim`, as a phaser's, but with `maxRad` a half turn),
+so they reach back to a shelf behind their head.
+
 On the FLOOR (below `reach.raisedFrom`) either is a squat instead: the whole-body `crouch` pose for
 `crouchSecs`, then back to idle. Not whilst sat or lain: then it is the arm clip as above.
 

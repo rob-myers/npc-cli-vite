@@ -4,6 +4,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
+import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import {
   decorCuboidHeight,
@@ -128,7 +129,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.decor.create(state.getItemDefAt(def, spot));
             state.onCarriedChange(npcKey);
           };
-          await state.reachFor(npc, "drop", spot, put, gun === true ? "right" : undefined);
+          /** Its top, as it is taken from: so the arm goes out the same either way */
+          const top = { ...spot, y3d: spot.y3d + (Number(def.meta?.h) || 0) };
+          await state.reachFor(npc, "drop", top, put, gun === true ? "right" : undefined);
         });
         return true;
       },
@@ -916,6 +919,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.distanceTo(at) > 0.05) await npc.look({ at }).catch(() => {});
         const { anim, key } = npc;
         // the free hand: not the one with a gun in it, nor one at their temple — else each in turn
+        /** Sat or lain: no stepping up to it, so their right arm goes out to it */
+        const seated = w.npc.npcToDoable[key] != null;
+        if (seated) side ??= "right";
         side ??=
           w.phasers?.holds(key) === true
             ? "left"
@@ -930,6 +936,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const before = u.target === 1 ? u.key : null;
         if (crouch) anim.setPose(shown);
         anim.setUpper(shown, { side });
+        const aim =
+          seated && side === "right"
+            ? {
+                at: new THREE.Vector3(at.x, at.y3d ?? 0, at.y),
+                from: reachFrom,
+                weight: reachAimWeight,
+                maxRad: Math.PI,
+              }
+            : null;
+        if (aim !== null) anim.upper.aim = aim;
         // an aim is let go only now, so the arm goes from it straight to the reach
         if (side === "right") w.phasers?.disarm(key);
         const until = w.timer.getElapsedTime() + inventoryConfig[crouch ? "crouchSecs" : "reachSecs"];
@@ -939,6 +955,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // back as they were, unless something else has moved them on
         if (anim.pose === shown) anim.setPose(anim.idleClip.name as AnimationClipKey);
         if (u.key === shown) anim.setUpper(before, { side });
+        // let go with the arm, unless another pose takes it over at once
+        if (before !== null && anim.upper.aim === aim) anim.upper.aim = null;
       },
       async raycast(origSrc, origDst) {
         let src = helper.parseGroundPoint(origSrc);
@@ -1735,6 +1753,10 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
  */
 
 const emptyMeta = {};
+/** Their hand, down the forearm that an aimed reach lines up on its target — model units */
+const reachFrom = new THREE.Vector3(0, -0.3, 0);
+/** How far of the way an aimed reach swings: short of all of it, else the arm lies flat back */
+const reachAimWeight = 0.75;
 const shutDoorKeepOut = npcDims.agentRadius + npcDims.shutDoorKeepOut;
 
 /** Is `to` close behind `npc`, where stepping back beats turning round? */
