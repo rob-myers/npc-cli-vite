@@ -43,6 +43,8 @@ import { arrivedAt, morphAt, retarget } from "./morph";
 export function createPlayerLight(): PlayerLight {
   /** Where the light stands in world XZ */
   const origin = uniform(new THREE.Vector2());
+  /** How high the player is off the floor e.g. on a bunk: their lamp goes up with them */
+  const originY = uniform(0);
   /**
    * How black an unseen fragment goes: the mode's tint whilst there is a player, `0` otherwise. The
    * two are folded into one uniform, so every material is exactly identity with the light off and
@@ -273,7 +275,7 @@ export function createPlayerLight(): PlayerLight {
    */
   function facingBody(normalWorld: THREE.Node<"vec3">) {
     const lampXZ = origin.add(facing.mul(bodyLightAhead));
-    const toLight = vec3(lampXZ.x, float(bodyLightY), lampXZ.y).sub(positionWorld);
+    const toLight = vec3(lampXZ.x, originY.add(bodyLightY), lampXZ.y).sub(positionWorld);
     // half Lambert: a figure is curved, and `backSoft`'s terminator seams down their flank
     const towards = normalWorld.normalize().dot(toLight.normalize());
     return towards.mul(0.5).add(0.5);
@@ -433,6 +435,7 @@ export function createPlayerLight(): PlayerLight {
 
       const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
       origin.value.set(at.x, at.z);
+      originY.value = at.y ?? 0;
       // three's rotation-Y back to a direction in world XZ — the inverse of `getThreeRotationY`.
       // A direction rather than an angle, so the test above is a dot rather than another `atan`
       const lookAngle = -rotationY - Math.PI / 2;
@@ -543,7 +546,7 @@ export type PlayerLight = {
    */
   update(
     renderer: THREE.WebGPURenderer,
-    origin: null | { x: number; z: number },
+    origin: null | { x: number; z: number; y?: number },
     rotationY: number,
     doors: Record<string, Geomorph.DoorState>,
     openRatios: Float32Array,
