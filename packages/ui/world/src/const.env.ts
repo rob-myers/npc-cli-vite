@@ -101,7 +101,7 @@ export const inventoryConfig = {
   /** A decor's `meta.item` */
   kinds: ["phaser", "book", "box", "keycard"],
   /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
-  height: { phaser: 0.1, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
+  height: { phaser: 0.12, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
   /** Put down on a surface: `margin` metres in from its edge, tried every `step` along that edge as far as `span` either way */
   surface: { margin: 0.05, step: 0.02, span: 1 },
   /** Seconds their arm is given to reach out, before what they put down is there, or what they take is gone */

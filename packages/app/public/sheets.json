@@ -244,93 +244,93 @@
   "symbolSheetDims": [{"width": 2727, "height": 2930}],
   "maxSymbolSheetDim": {"width": 2727, "height": 2930},
   "decor": {
+    "phaser": {
+      "key": "phaser",
+      "rect": {"x": 2, "y": 2, "width": 205, "height": 154},
+      "sheetId": 0,
+      "originalWidth": 16,
+      "originalHeight": 12
+    },
     "screen-0": {
       "key": "screen-0",
-      "rect": {"x": 2, "y": 2, "width": 188, "height": 137},
+      "rect": {"x": 2, "y": 158, "width": 188, "height": 137},
       "sheetId": 0,
       "originalWidth": 44,
       "originalHeight": 32
     },
     "label": {
       "key": "label",
-      "rect": {"x": 2, "y": 141, "width": 171, "height": 64},
+      "rect": {"x": 209, "y": 2, "width": 171, "height": 64},
       "sheetId": 0,
       "originalWidth": 40,
       "originalHeight": 15
     },
-    "phaser": {
-      "key": "phaser",
-      "rect": {"x": 192, "y": 2, "width": 154, "height": 103},
-      "sheetId": 0,
-      "originalWidth": 12,
-      "originalHeight": 8
-    },
     "box": {
       "key": "box",
-      "rect": {"x": 2, "y": 207, "width": 137, "height": 137},
+      "rect": {"x": 192, "y": 158, "width": 137, "height": 137},
       "sheetId": 0,
       "originalWidth": 16,
       "originalHeight": 16
     },
     "book": {
       "key": "book",
-      "rect": {"x": 141, "y": 207, "width": 103, "height": 128},
+      "rect": {"x": 2, "y": 297, "width": 103, "height": 128},
       "sheetId": 0,
       "originalWidth": 8,
       "originalHeight": 10
     },
     "keycard": {
       "key": "keycard",
-      "rect": {"x": 192, "y": 107, "width": 103, "height": 77},
+      "rect": {"x": 209, "y": 68, "width": 103, "height": 77},
       "sheetId": 0,
       "originalWidth": 4,
       "originalHeight": 3
     },
     "abstract-point": {
       "key": "abstract-point",
-      "rect": {"x": 246, "y": 186, "width": 52, "height": 52},
+      "rect": {"x": 314, "y": 68, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "arrow": {
       "key": "arrow",
-      "rect": {"x": 246, "y": 240, "width": 52, "height": 52},
+      "rect": {"x": 107, "y": 297, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 2, "y": 346, "width": 52, "height": 52},
+      "rect": {"x": 107, "y": 351, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 300, "y": 107, "width": 43, "height": 43},
+      "rect": {"x": 331, "y": 122, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 300, "y": 152, "width": 43, "height": 43},
+      "rect": {"x": 331, "y": 167, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 300, "y": 197, "width": 26, "height": 26},
+      "rect": {"x": 331, "y": 212, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 348, "height": 400}],
-  "maxDecorSheetDim": {"width": 348, "height": 400},
+  "decorSheetDims": [{"width": 382, "height": 427}],
+  "maxDecorSheetDim": {"width": 382, "height": 427},
   "skin": {
     "human-0": {
       "key": "human-0",
