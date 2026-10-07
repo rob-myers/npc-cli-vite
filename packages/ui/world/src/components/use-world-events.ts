@@ -4,6 +4,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { useEffect } from "react";
 import shortUuid from "short-uuid";
+import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import {
   decorCuboidHeight,
@@ -128,7 +129,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.decor.create(state.getItemDefAt(def, spot));
             state.onCarriedChange(npcKey);
           };
-          await state.reachFor(npc, "drop", spot, put, gun === true ? "right" : undefined);
+          /** Its top, as it is taken from: so the arm goes out the same either way */
+          const top = { ...spot, y3d: spot.y3d + (Number(def.meta?.h) || 0) };
+          await state.reachFor(npc, "drop", top, put, gun === true ? "right" : undefined);
         });
         return true;
       },
@@ -150,13 +153,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
         };
       },
-      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe }) {
-        /** Can be overriden if unreachable due to locked doors */
+      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near }) {
+        /** Can be overridden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
 
         const npc = w.npc.get(npcKey);
-        const result = w.npc.getClosestPoly(groundPoint, 0.5);
+        let result = w.npc.getClosestPoly(groundPoint, 0.5);
         const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
+        if (doResult.type === "none") {
+          // `near`: as near as they can get, e.g. beside the table picked
+          if (near === true && result.success === false) result = w.npc.getClosestPoly(groundPoint, 4);
+          // a target off the mesh could never be arrived at: the mesh nearest it instead
+          if (result.success === true) groundPoint = { x: result.position[0], y: result.position[2] };
+        }
         const { config } = w.npc;
 
         if (doResult.type === "occupied") {
@@ -278,7 +287,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         let best: null | DropSpot = null;
         /** No further than it could be taken back from */
-        let bestDist: number = reach.raised;
+        const within = npc.anim.pose === "sit" ? reach.seated : reach.raised;
+        let bestDist: number = within;
         for (const { outline, y3d } of tables) {
           /** Tables are often several obstacles abutting, as one top: it may lie across them */
           const onTop = (p: Geom.VectJson) =>
@@ -289,7 +299,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           for (const [a, b] of edges) {
             const near = geomService.getClosestOnSeg(npc.point, a, b);
             const length = Math.hypot(b.x - a.x, b.y - a.y);
-            if (near.dst > reach.raised || length === 0) continue;
+            if (near.dst > within || length === 0) continue;
             const [tx, ty] = [(b.x - a.x) / length, (b.y - a.y) / length];
             const [nx, ny] = [-ty * side, tx * side]; // inwards
             // slid along the edge: the nearest place that is all on a table, and on no other item
@@ -366,6 +376,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (had !== undefined && had.items.length === 0 && had.psi !== true) delete state.carried[npcKey];
         state.persistCarried();
         w.hud?.update();
+        w.events.next({ key: "carried", npcKey });
+      },
+      revokeItem(npcKey, name) {
+        if (name === "psi") return state.dropItem(npcKey, name);
+        const items = state.carried[npcKey]?.items ?? [];
+        const index = items.findIndex((def) => def.meta?.item === name);
+        if (index === -1) return false;
+        items.splice(index, 1);
+        if (name === "phaser") w.phasers?.disarm(npcKey);
+        state.onCarriedChange(npcKey);
+        return true;
       },
       async openDoorwaysWithNpcs() {
         await w.physics?.settle();
@@ -567,6 +588,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
         w.phasers?.syncTheme();
+        w.shields?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
@@ -877,6 +899,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               state.syncFadeRooms();
             }
             break;
+          case "carried":
           case "speech":
           case "stopped-moving":
             break;
@@ -916,6 +939,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.distanceTo(at) > 0.05) await npc.look({ at }).catch(() => {});
         const { anim, key } = npc;
         // the free hand: not the one with a gun in it, nor one at their temple — else each in turn
+        /** Sat or lain: no stepping up to it, so their right arm goes out to it */
+        const seated = w.npc.npcToDoable[key] != null;
+        if (seated) side ??= "right";
         side ??=
           w.phasers?.holds(key) === true
             ? "left"
@@ -930,6 +956,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const before = u.target === 1 ? u.key : null;
         if (crouch) anim.setPose(shown);
         anim.setUpper(shown, { side });
+        const aim =
+          seated && side === "right"
+            ? {
+                at: new THREE.Vector3(at.x, at.y3d ?? 0, at.y),
+                from: reachFrom,
+                weight: reachAimWeight,
+                maxRad: Math.PI,
+              }
+            : null;
+        if (aim !== null) anim.upper.aim = aim;
         // an aim is let go only now, so the arm goes from it straight to the reach
         if (side === "right") w.phasers?.disarm(key);
         const until = w.timer.getElapsedTime() + inventoryConfig[crouch ? "crouchSecs" : "reachSecs"];
@@ -939,6 +975,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // back as they were, unless something else has moved them on
         if (anim.pose === shown) anim.setPose(anim.idleClip.name as AnimationClipKey);
         if (u.key === shown) anim.setUpper(before, { side });
+        // let go with the arm, unless another pose takes it over at once
+        if (before !== null && anim.upper.aim === aim) anim.upper.aim = null;
       },
       async raycast(origSrc, origDst) {
         let src = helper.parseGroundPoint(origSrc);
@@ -955,10 +993,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (Math.abs(src.x - dst.x) < 0.01 && Math.abs(src.y - dst.y) < 0.01) {
           // avoid 'detect-collisions' throw on zero-length rays
-          return { success: true, hit: null, gmDoorIds: [], rooms: [srcGrId.grKey], doors: [], hitDoor: null };
+          return { success: true, hit: null, rooms: [srcGrId.grKey], doors: [], hitDoor: null, shields: [] };
         }
 
         const [grIds, gdIds] = [[] as Geomorph.GmRoomId[], [] as Geomorph.GmDoorId[]];
+        /** The first leg's: shields are in world space, so it has the whole ray's */
+        let shields: undefined | string[];
         let gmId = srcGrId.gmId;
         let roomId = srcGrId.roomId;
         let hit: null | Geom.VectJson = null;
@@ -983,6 +1023,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           );
 
           hit = result.hit;
+          shields ??= result.shields;
           // check whether ray is blocked by a door panel (accounting for partial open)
           for (const gdId of result.gmDoorIds) {
             const door = w.d[gdId.gdKey];
@@ -1033,6 +1074,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           hitDoor,
           doors: gdIds.map(({ gdKey }) => gdKey),
           rooms: grIds.map(({ grKey }) => grKey),
+          shields: shields ?? [],
         };
       },
       rejectPendingUnreachable(err) {
@@ -1310,6 +1352,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.rings?.onTick();
         w.psi?.onTick();
         w.phasers?.onTick();
+        w.shields?.onTick();
         w.player?.aimAtPointer();
       },
       syncDoorways() {
@@ -1404,7 +1447,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const npc = w.n?.[npcKey];
         if (def === undefined || npc === undefined || inventoryConfig.kinds.includes(kind) === false) return false;
         if (def.type !== "quad" && def.type !== "point") return false;
-        if (state.hasRoomFor(npcKey, kind) === false) return false;
+        if (state.hasRoomFor(npcKey, kind) === false) {
+          if (npcKey === w.player.key) w.hud?.say(kind === "phaser" ? "already have one" : "inventory full");
+          return false;
+        }
         const { bounds, meta } = w.decor.runtime.byKey[decorKey];
         const room = w.npc.npcToRoom.get(npcKey);
         if (room?.gmId !== meta.gmId || room?.roomId !== meta.roomId) return false; // not through a wall
@@ -1537,6 +1583,8 @@ export type State = {
   reachedRight: Set<string>;
   /** Grants `psi`, or makes them an item out of nothing — `false` if they have no room */
   giveItem(npcKey: string, name: "psi" | ItemKind, extraMeta?: Meta): boolean;
+  /** Revokes `psi`, or takes an item of theirs away outright, never put down — `false` if they have none */
+  revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
   /** One phaser, and `inventoryConfig.maxCarried` of the rest */
   hasRoomFor(npcKey: string, kind: ItemKind): boolean;
@@ -1735,6 +1783,10 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
  */
 
 const emptyMeta = {};
+/** Their hand, down the forearm that an aimed reach lines up on its target — model units */
+const reachFrom = new THREE.Vector3(0, -0.3, 0);
+/** How far of the way an aimed reach swings: short of all of it, else the arm lies flat back */
+const reachAimWeight = 0.75;
 const shutDoorKeepOut = npcDims.agentRadius + npcDims.shutDoorKeepOut;
 
 /** Is `to` close behind `npc`, where stepping back beats turning round? */

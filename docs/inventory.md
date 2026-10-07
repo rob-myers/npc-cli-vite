@@ -21,14 +21,16 @@ nor phasers are mirrored.
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
 | phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
-| keys | how many doors they hold keys to; lit at one of them | locks or unlocks that door; right-click splits a key off |
+| keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
-Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
+Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
+A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
 The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
 are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`. On touch a two-finger tap on the World does the same: its left half psi, its right half the phaser.
-A selected item, and a drawn phaser, show an "x" which puts it down — as does "drop" in the
-right-click menu of either, with no need to select or draw it first.
+An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
+too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
+a slot's menu opens on a long press.
 
 The bar re-renders when nudged (`w.hud?.update()`, from `Psi.choose`, `Phasers.sync` and every change
 to `carried` or to access) and on the player's own door and spawn events.
@@ -39,7 +41,7 @@ to `carried` or to access) and on the player's own door and spawn events.
 `items` are the DEFS of the decor they took, so putting one down is `w.decor.create` of it.
 
 An item goes down onto a table if one is in reach: an obstacle with `meta.surface` in their room, the
-spot no further than `inventoryConfig.reach.raised` — as far as it could be taken back from. A quad goes nowhere else. A point (the keycard)
+spot no further than `inventoryConfig.reach.raised` (`seated` whilst sat, a little more) — as far as it could be taken back from. A quad goes nowhere else. A point (the keycard)
 otherwise lies at their feet — unless they are sat or lain, off the floor, when it cannot be put down.
 `w.e.getDropSpot`
 picks the spot NEAREST them: squared up to an edge long enough to take it, `surface.margin` in, ALL
@@ -56,6 +58,10 @@ temple and goes back; psi stays on. The phaser itself is put down from the right
 
 Taking is the same in reverse (`w.e.takeItem`): they turn to the item, reach — the
 `pick_up` clip — and after `reachSecs` it is theirs and gone from the map. Both share `w.e.reachFor`.
+
+Sat or lain it is always the right arm — no gun is in it there — and it is AIMED: swung at the shoulder
+until the forearm lines up on the spot (`anim.upper.aim`, as a phaser's, but with `maxRad` a half turn),
+so they reach back to a shelf behind their head.
 
 On the FLOOR (below `reach.raisedFrom`) either is a squat instead: the whole-body `crouch` pose for
 `crouchSecs`, then back to idle. Not whilst sat or lain: then it is the arm clip as above.
@@ -74,7 +80,10 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
   for `lieFlat` metres before it falls, so it does not drop into them.
 
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
-- `takeItem(npcKey, decorKey)` takes a runtime decor off the map — one in their own room only, never through a wall.
+- `revokeItem(npcKey, "psi" | kind)` takes it away outright, never put down — the `psi` and `phaser`
+  buttons in an npc's debug bubble, lit whilst they have it.
+- `takeItem(npcKey, decorKey)` takes a runtime decor off the map — one in their own room only, never through a wall. With no room
+  for it the bar says "inventory full" (`w.hud.say`), and a click does not walk them over.
 
 ## Items
 

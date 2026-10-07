@@ -663,6 +663,8 @@ export default function NPCs() {
         npc.position.setY(positionY);
         npc.rotation.y = rotationY;
         npc.anim.face.rate = 0;
+        // a spawn is a rest: else a look made on the move turns them where they land e.g. in bed
+        if (npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
 
         return npc;
       },

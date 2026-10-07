@@ -4,8 +4,23 @@
 
 ### Animation and Npc
 
+- implement phaser action animations
+  - minor pain
+  - major pain
+  - pacify (can control)
+
+- improve `walk` animation: elbows should stick out more
+
+- ✅ improve `phaser_aim` animation idle legs
+
+- ✅ simplify psi animation
+  - ✅ single hand animation (left arm)
+  - ✅ do not turn towards target
+  - ✅ can psi whilst sit or lie
+
 - skin remapping
   - currently only have skinIndex
+  - need example skin with a bunch of stuff in its overlays
 
 - ✅ npc-outline offset, particularly noticeable in light-theme
 
@@ -15,6 +30,8 @@
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
 ### Cleanliness
+
+- w.npc.npcToRoom -> w.npc.toRoom etc
 
 - fix precision in `assets.json`
 
@@ -30,6 +47,9 @@
 - clean up unused parts of WorldMenu theme (textarea)
 
 ### Decor
+
+- ✅ improve gun box
+- ❌ add shelves
 
 - labels as decor point
   - ✅ already support room labels i.e. induced by decor point with label in room
@@ -47,6 +67,12 @@
 - improve hmr (avoid full page reload): packages/util/src/index.ts into individual barrels
   - e.g. for QueryClientApi
 
+### Inventory
+
+- ✅ refine drop inventory
+  - can drop decor points on floor e.g. keycard
+  - can only drop decor quads on meta.surface
+
 ### Navigation
 
 ### Performance
@@ -56,8 +82,8 @@
 
 ### Player
 
+- ✅ long held r aims with pointer
 - ✅ bug: sight mode: all hull doors showing
-
 
 ### Playground
 
@@ -67,11 +93,21 @@
 
 ### Sword and Psi
 
-- sword/psi: cancel when do e.g. sit
-- sword: non-locked-on should look better
-- sword: no bodyPart defaults to head
-- sword/psi: command for setting player's target
-- psi: improve no-target animation
+- ✅ sword/psi: cancel when do e.g. sit
+- ✅ sword: no bodyPart defaults to head
+- ✅ sword/psi: command for setting player's target
+- ✅ psi: improve no-target animation
+
+- ✅ sword -> phaser (only arms)
+  - ✅ non-locked-on looks better: phaser
+  - ✅ locked-on should look better
+    - angle: (polar, azimuthal)
+  - ✅ player psi/phaser targetting: `kamma`
+
+- phaser action
+  - arms, legs -> pain
+  - head -> pacified, controlled
+  - hips, stomach, chest -> stunned
 
 ### Unorganised Bugs
 
@@ -95,7 +131,7 @@
   - 🚧 larger tty text (120%) 
   - 🚧 brighter (1x global, 0.7x npc)
 
-## Decorator with Lore
+## Decorator
 
 - 🚧 Decorator refinements
   - ✅ can tilt e.g. screen, switch
@@ -110,9 +146,12 @@
   - ✅ can set 3d height 
     - live update of control
   - 🚧 book, box, key
+    - ✅ `book`, `box`, `keycard`, `phaser` decor, carried via `meta.item`
 
-- ✅ reskin Lore
-  - room/door keys added as text directly and validated
+## Inventory
+
+- ✅ inventory bar: psi, phaser, keys, carried items
+- item textures and icons need an artist's eye
 
 ## HMR
 
@@ -133,6 +172,17 @@
 - ✅ Jobs uses allotment for 2 panes
 
 - Jobs: indicate stale processes after hmr
+
+## Manifest
+
+- ✅ reskin Lore
+  - room/door keys added as text directly and validated
+
+- World applies a lore character's door keys on their npc's first spawn, whoever spawned them
+  - today only the Decorator's spawn does: jsh `spawn` and the player's restore give none
+  - move the lore schema and loader below both e.g. `packages/media` (`ui/manifest` depends on World)
+  - first spawn per map only, so a `revoke` sticks
+
 
 ## MapEdit
 

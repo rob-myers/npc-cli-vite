@@ -22,6 +22,8 @@ export type Beam = {
   /** Where it ended, last tick, and where it is drawn to: the body part, gliding */
   end: THREE.Vector3;
   at: THREE.Vector3;
+  /** Whether a shield stops it short of them */
+  blocked: boolean;
 };
 
 export function createBeam(): Beam {
@@ -35,15 +37,16 @@ export function createBeam(): Beam {
     glide: null,
     end: new THREE.Vector3(),
     at: new THREE.Vector3(),
+    blocked: false,
   };
 }
 
 /**
- * Every fade a `step` further, forgetting a `next` that `exists` denies — `instant` lands the beam, as whilst
+ * Every fade a `step` further, forgetting a `next` no longer among `npcs` — `instant` lands the beam, as whilst
  * paused, but holds the gun: it comes and goes with the arm, which is then still
  */
-export function advanceBeam(x: Beam, step: number, exists: (npcKey: string) => boolean, instant: boolean) {
-  if (x.next !== null && exists(x.next.npcKey) === false) x.next = null;
+export function advanceBeam(x: Beam, step: number, npcs: Record<string, unknown>, instant: boolean) {
+  if (x.next !== null && !(x.next.npcKey in npcs)) x.next = null;
   if (sameTarget(x.to, x.next) === false) {
     const gliding = instant === false && x.to !== null && x.next !== null && x.locked.presence > 0;
     if (gliding) x.glide = { from: x.end.clone(), t: 0 };
@@ -58,11 +61,23 @@ export function advanceBeam(x: Beam, step: number, exists: (npcKey: string) => b
   if (x.glide !== null && (x.glide.t = Math.min(1, x.glide.t + step)) === 1) x.glide = null;
 }
 
-/** Where the beam from `tip` ends: its stub, on down the arm `along`, drawn to `dst` as it locks on */
-export function beamEnd(x: Beam, tip: THREE.Vector3, along: THREE.Vector3, dst: undefined | Npc) {
+/**
+ * Where the beam from `tip` ends: its stub, on down the arm `along`, drawn to `part` of their target as it locks
+ * on — to `stopped` instead, where a shield stops it
+ */
+export function beamEnd(
+  x: Beam,
+  tip: THREE.Vector3,
+  along: THREE.Vector3,
+  part: null | THREE.Vector3,
+  stopped: null | THREE.Vector3,
+) {
+  // a shield in the way, or no longer: the end glides between where it stops and their part
+  if ((stopped !== null) !== x.blocked && x.locked.presence > 0) x.glide = { from: x.end.clone(), t: 0 };
+  x.blocked = stopped !== null;
   const end = x.end.copy(tip).addScaledVector(along, beamConfig.stub);
-  if (dst !== undefined) {
-    const at = bodyPartPoint(dst, x.to?.part ?? null, x.at);
+  if (part !== null) {
+    const at = x.at.copy(stopped ?? part);
     if (x.glide !== null) at.lerpVectors(x.glide.from, tmpGlide.copy(at), eased(x.glide.t)); // tracks the target meanwhile
     end.lerp(at, eased(x.locked.presence));
   }
@@ -73,7 +88,7 @@ const sameTarget = (a: null | BeamTarget, b: null | BeamTarget) =>
   a === b || (a !== null && b !== null && a.npcKey === b.npcKey && a.part === b.part);
 
 /** The middle of `part` on `npc`, in world space — over their head, where their label is, for none */
-function bodyPartPoint(npc: Npc, part: null | string, out: THREE.Vector3) {
+export function bodyPartPoint(npc: Npc, part: null | string, out: THREE.Vector3) {
   const bone = part === null || part === "label" ? undefined : npc.skinnedMesh.skeleton.getBoneByName(part);
   const centre = bone === undefined ? undefined : partCentres(npc.skinnedMesh).get(bone.name);
   if (bone === undefined || centre === undefined) {

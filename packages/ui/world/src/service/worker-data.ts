@@ -74,22 +74,19 @@ export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSet
   );
 }
 
+/** A rect or circle that senses whoever stands in it: tagged `collider`, or a shield */
+export function isColliderDecor(d: Geomorph.Decor): d is Geomorph.DecorRect | Geomorph.DecorCircle {
+  return (d.type === "rect" || d.type === "circle") && (d.meta.collider === true || Boolean(d.meta.shield));
+}
+
 /**
  * 🚧 must align collider creation with decor circle/rect creation
  * - userData is decor.meta
- * - decor.meta.collider must be `true`
  * - colliderKey is always decor.key
  */
-export function getRuntimeCollidersPayload(byKey: Record<string, Geomorph.Decor>): WW.PhysicsColliderDef[] {
-  return Object.values(byKey).flatMap((d) => {
-    if (d.type === "point" || d.type === "quad") {
-      return [];
-    }
-
-    if (d.meta.collider !== true) {
-      return [];
-    }
-
+export function getDecorCollidersPayload(decor: Geomorph.Decor[]): WW.PhysicsColliderDef[] {
+  return decor.flatMap((d) => {
+    if (isColliderDecor(d) === false) return [];
     const colliderKey = d.key;
 
     switch (d.type) {
@@ -104,14 +101,7 @@ export function getRuntimeCollidersPayload(byKey: Record<string, Geomorph.Decor>
         };
       }
       case "rect": {
-        const poly = new Poly(d.points);
-        const { angle, baseRect } = geomService.polyToAngledRect(poly);
-        console.log({
-          poly,
-          angle,
-          baseRect,
-        });
-
+        const { angle, baseRect } = geomService.polyToAngledRect(new Poly(d.points));
         return {
           type: "rect",
           colliderKey,

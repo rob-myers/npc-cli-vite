@@ -43,8 +43,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.view.forceUpdate();
       },
       aimAtPointer() {
-        const face = w.n?.[state.key]?.anim.face;
-        if (face === undefined) return;
+        const npc = w.n?.[state.key];
+        if (npc === undefined) return;
+        const { face } = npc.anim;
         // not whilst locked on: the phaser's target is whom they face
         if (w.view.keysDown.has("r") === false || w.phasers?.isLocked(state.key) === true) {
           if (face.aim === pointerAim) face.aim = null;
@@ -56,7 +57,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         raycaster.setFromCamera(tmpNdc, w.r3f.camera);
         if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
+        // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = pointerAim;
+        if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
         w.r3f.invalidate(); // a held key draws nothing of itself
       },
       onTouch(e) {
@@ -81,7 +84,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       toggleArm() {
         if (w.n?.[state.key] === undefined || w.phasers === null) return;
-        // holstering needs no phaser e.g. after jsh `arm`
+        // holstering needs no phaser
         if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
         if (w.phasers.isLocked(state.key))
           w.phasers.arm(state.key); // lets go of them first, still drawn
@@ -225,7 +228,7 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held they face where the pointer meets the floor — each tick, and let go on release */
+  /** Whilst `r` is held they face where the pointer meets the floor, eased round by `face.aim` */
   aimAtPointer(): void;
   /** Two fingers down on the canvas that may yet be a tap: since when, and where */
   twoTap: null | { startMs: number; downs: [Touch, Touch] };

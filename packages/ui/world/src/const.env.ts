@@ -101,7 +101,7 @@ export const inventoryConfig = {
   /** A decor's `meta.item` */
   kinds: ["phaser", "book", "box", "keycard"],
   /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
-  height: { phaser: 0.1, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
+  height: { phaser: 0.12, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
   /** Put down on a surface: `margin` metres in from its edge, tried every `step` along that edge as far as `span` either way */
   surface: { margin: 0.05, step: 0.02, span: 1 },
   /** Seconds their arm is given to reach out, before what they put down is there, or what they take is gone */
@@ -116,8 +116,8 @@ export const inventoryConfig = {
   sideOf: { box: "#5e4526" } as Partial<Record<string, string>>,
   /** How much larger than life a point is drawn, to be seen and pressed */
   pointScale: 2,
-  /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk */
-  reach: { floor: 0.6, raised: 1, raisedFrom: 0.5 },
+  /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk, and further again sat at it */
+  reach: { floor: 0.6, raised: 1, seated: 1.1, raisedFrom: 0.5 },
   /** Items an npc carries at most, their phaser aside */
   maxCarried: 6,
 } as const;
@@ -130,14 +130,6 @@ export const spawnRoomLabels = ["corridor", "common"];
 export const defaultCameraMode: import("./components/CameraControls").CameraModeType = isTouchDevice()
   ? "free"
   : "canonical";
-/**
- * How the camera follows the player — an option of EITHER mode, not a mode of its own: `pan` keeps them
- * framed, `full` also keeps it in front of them, facing them
- */
-export const followModes = ["off", "pan", "full"] as const;
-export type FollowMode = (typeof followModes)[number];
-export const defaultFollowMode: FollowMode = "off";
-
 /**
  * `canonical` camera mode: how far out — as a fraction of the travel between the zoom's stops —
  * the polar starts easing towards birdseye. See `WorldView`'s `onCameraFrame`

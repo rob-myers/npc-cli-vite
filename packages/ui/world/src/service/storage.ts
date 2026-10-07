@@ -2,7 +2,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness, defaultFollowMode, type FollowMode } from "../const.env";
+import { defaultBrightness } from "../const.env";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
@@ -36,10 +36,8 @@ export type WorldSettings = {
   lightKey: "world" | "npc";
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
-  /** How the camera follows the player — an option of either `cameraMode` */
-  followMode: FollowMode;
-  /** The follow a long `f` press turns back on */
-  followLast: Exclude<FollowMode, "off">;
+  /** Whether the camera follows the player — an option of either `cameraMode` */
+  follow: boolean;
   postProcessing: boolean;
   /** Whether the channels are parted over the finished frame — see `service/rgb-shift` */
   rgbShift: boolean;
@@ -85,8 +83,7 @@ const defaultWorldSettings: WorldSettings = {
   lightKey: "world",
   cameraMode: isTouchDevice() ? "free" : "canonical",
   cameraInitial: null,
-  followMode: defaultFollowMode,
-  followLast: "pan",
+  follow: false,
   postProcessing: true,
   rgbShift: true,
   fadeRoomsMode: "sight",

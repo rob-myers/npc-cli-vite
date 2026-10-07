@@ -227,7 +227,11 @@ export class NpcAnimation {
       this.aimArm(r.aim, r.aim.weight * r.eased);
       this.aimHead(r.aim, r.aim.weight * r.eased);
     }
-    for (const u of [l, r]) if (u.blend === 0 && u.target === 0) u.key = null; // the pose's own again
+    for (const u of [l, r]) {
+      if (u.blend !== 0 || u.target !== 0) continue;
+      u.key = null; // the pose's own again
+      u.aim = null;
+    }
   }
 
   tickUpperSide(side: Side, delta: number) {
@@ -286,7 +290,7 @@ export class NpcAnimation {
     const b = from.dot(along);
     const reach = Math.sqrt(Math.max(0, b * b - from.lengthSq() + want.lengthSq())) - b;
     from.addScaledVector(along, reach).normalize();
-    const turn = turnWithin(arm.parent, from, want.normalize(), upperAimMaxRad, weight);
+    const turn = turnWithin(arm.parent, from, want.normalize(), aim.maxRad ?? upperAimMaxRad, weight);
     if (turn === null) return;
     entry.written.copy(arm.quaternion.premultiply(turn));
   }
@@ -606,7 +610,13 @@ function turnWithin(parent: THREE.Object3D, from: THREE.Vector3, want: THREE.Vec
 }
 
 /** `weight` `0` to `1` eases it in: `at` and `from` are read each tick, so may be moved */
-export type UpperAim = { at: THREE.Vector3; from: THREE.Vector3; weight: number };
+export type UpperAim = {
+  at: THREE.Vector3;
+  from: THREE.Vector3;
+  weight: number;
+  /** The most it swings the arm off its pose, `upperAimMaxRad` unless given */
+  maxRad?: number;
+};
 
 function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;

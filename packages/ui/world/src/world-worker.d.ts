@@ -13,6 +13,11 @@ declare namespace WW {
       }
     | RoomGraphMsgToWorker
     | {
+        /** Every shield there is, in world space: a ray notes those it passes */
+        type: "set-raycast-shields";
+        shields: { key: string; points: Geom.VectJson[] }[];
+      }
+    | {
         type: "get-raycast";
         uid: string;
         src: Geom.VectJson;
@@ -141,7 +146,10 @@ declare namespace WW {
         type: "raycast-result";
         uid: string;
         hit: null | Geom.VectJson;
+        /** The doors it reached, nearest first */
         gmDoorIds: Geomorph.GmDoorId[];
+        /** Decor keys of the shields it reached, nearest first */
+        shields: string[];
       };
 
   type PhysicsMsgFromWorker =

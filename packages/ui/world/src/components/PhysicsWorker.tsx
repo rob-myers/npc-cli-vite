@@ -3,7 +3,7 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import { useContext, useEffect } from "react";
 import { helper } from "../service/helper";
 import { parsePhysicsBodyKey } from "../service/physics-bijection";
-import { getPhysicsDoorsPayload, getRuntimeCollidersPayload } from "../service/worker-data";
+import { getDecorCollidersPayload, getPhysicsDoorsPayload } from "../service/worker-data";
 import { useWorkerLoadRetry } from "./use-worker-load-retry";
 import { WorldContext } from "./world-context";
 
@@ -81,6 +81,7 @@ export default function PhysicsWorker() {
           }
           case "world-setup-response": {
             state.physicsRebuilds++;
+            if (w.decor?.ready === true) w.decor.syncStaticColliders(); // a fresh world has only runtime ones
             break;
           }
           default:
@@ -143,7 +144,7 @@ export default function PhysicsWorker() {
         position: npc.position,
       })),
       doors: getPhysicsDoorsPayload(w.gms),
-      runtimeColliderDefs: getRuntimeCollidersPayload(w.decor.runtime?.byKey ?? {}),
+      runtimeColliderDefs: getDecorCollidersPayload(Object.values(w.decor.runtime?.byKey ?? {})),
     } satisfies WW.MsgToWorker);
 
     w.events.next({ key: "requested-physics" });

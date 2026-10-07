@@ -78,7 +78,7 @@ The radius is **not** persistent state — `update()` re-derives it from `positi
 
 **`canonical` restricts what may be steered, by zoom.** Its azimuth is free at every zoom and untouched by zooming, but a turn let go with ctrl or cmd held (`controls.ctrlHeld`) is a detented compass dial (`detentCanonicalAzimuth`): it advances a point per `canonicalSnapArm` turned, else springs back to the point nearest where it set out, and a turn-back within the same drag is a cancel only whilst it stayed within a quarter turn. Zoomed out (`t > canonicalAxisLockFrom`) a drag locks to one axis. The polar is never clamped by the zoom, and ONE tilt is tracked, `canonicalPolar`: a zoom neither flattens the view nor tips it back, so both angles survive it. A drag owns the polar at every zoom and `shapeCanonicalPolar` takes whatever tilt it leaves. Entering the mode and a reset set it to the camera's own tilt. Zoom past the outer stop there is none — the radius is only ever a zoom stop.
 
-**Zoomed out, the view frames the player and their frontier.** `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`, into one kept `ReadbackBuffer`, one read in flight at a time and at most one per `frontierReadMinMs`) and keeps the furthest as `reach`, with `ahead` giving the vector to the frontier point. `followPlayer` holds the target `frontierPanFrac` of the way along it at every zoom (`getFollowGoal`, which the aimed zoom-in heads for too). Not following, a short look press (`f`, or the button) calls `holdFrontier` — following, it stops the follow: a `lookAt` tracking the goal, then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`). `followMode` is `off`, `pan` or `full` — a long press on the button picks one from a menu, holding `f` toggles off and the last on (`followLast`); `full` also swings the camera round in front of the player, facing them (`followTurnRate`). A drag still turns it, but once let go it eases back. Nor does a ctrl or cmd turn snap there. A `lookAt` in `canonical` carries the stops on its own alpha, so the zoom lands with the pan. A player respawn (`spawned`, e.g. `fadeSpawn`) calls `onPlayerRespawn`: the frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`. Under `full` a `lookAt` onto the player turns too, on the same alpha (`azimuth`), so the swing and the pan land together. `easeFrontier` in `onCameraFrame` eases `controls.maxDistance` to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare, clamped between `frontierNearFrac` of the travel and the persisted stop, and `controls.minDistance` to the same fit clamped between `frontierNearest` and the persisted inner stop — both back to persisted when not following (a look press only pans) or there is nothing to read. `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
+**Zoomed out, the view frames the player and their frontier.** `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`, into one kept `ReadbackBuffer`, one read in flight at a time and at most one per `frontierReadMinMs`) and keeps the furthest as `reach`, with `ahead` giving the vector to the frontier point. `followPlayer` holds the target `frontierPanFrac` of the way along it at every zoom (`getFollowGoal`, which the aimed zoom-in heads for too). Not following, a short look press (`f`, or the button) calls `holdFrontier` — following, it stops the follow: a `lookAt` tracking the goal, then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`). `follow` is on or off (`setFollow`) — a long press on the button, or holding `f`, toggles it. A `lookAt` in `canonical` carries the stops on its own alpha, so the zoom lands with the pan. A player respawn (`spawned`, e.g. `fadeSpawn`) calls `onPlayerRespawn`: the frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`. `easeFrontier` in `onCameraFrame` eases `controls.maxDistance` to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare, clamped between `frontierNearFrac` of the travel and the persisted stop, and `controls.minDistance` to the same fit clamped between `frontierNearest` and the persisted inner stop — both back to persisted when not following (a look press only pans) or there is nothing to read. `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
 
 **Turns can pivot on a point too**: `rotateAbout` names one — `WorldView` gives the zoom crosshair whilst it shows, and nothing whilst following — and `setRotateAbout` takes it as a turn begins, mouse or touch alike. `update` then slides the whole rig by `slideAboutPivot`. Turning about the pivot and turning about `target` leave `position - target` identical, so they differ by a pure translation — which is all that helper applies. With no point named the turn is about `target`.
 
@@ -94,7 +94,7 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 
 **Strafing** — see `docs/npc-strafe.md`, the ONLY doc for it. In short: whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing, and `syncStrafe` blends four directional gaits by heading, paced to the ground each covers.
 
-`navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, and a desired velocity that folds round a touched npc. See `docs/navcat-patch.md`, including how to edit the patch.
+`navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. See `docs/navcat-patch.md`, including how to edit the patch.
 
 ## Which room an npc is in
 
@@ -140,6 +140,13 @@ toggle labels it and opens a card per pick.
 See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
 keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
 World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `kamma` for what a press does.
+
+## Shields
+
+See `docs/shields.md` — the ONLY doc for them. In short: a decor rect with `meta.shield` stands as a
+see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav
+worker. One of a frequency (`meta.freq`, jsh `shield`) lets a phaser granted it through (jsh `phaser`) and
+deactivates any other carried through it; `freq: null` stops all fire and deactivates none.
 
 ## Lore
 
@@ -203,5 +210,7 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
   doesn't already say. Prefer none to a restatement. Where one does clarify, attach it to the syntax
   it explains — a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.
   A JSDoc is two lines at most: give the "why" in a clause, never recap a mechanism the reader can see
+- Never scale a decor quad non-uniformly: to reshape one e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`
+- To darken or recolour ONE placed decor, tint it — `tint=#777` in its symbol name (`meta.tint`, multiplied in) — rather than redrawing its svg, which changes every use
 - Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
 - Never stage (`git add`) — leave the index alone, even after editing a file that was already staged. Staging and committing are the user's

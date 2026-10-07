@@ -54,6 +54,7 @@ import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
 import Psi from "./Psi";
 import RoomLabels from "./RoomLabels";
+import Shields from "./Shields";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
@@ -176,6 +177,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       rings: null as any,
       psi: null as any,
       phasers: null as any,
+      shields: null as any,
       roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
@@ -504,6 +506,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <Doors key="doors" />
               <Obstacles key="obstacles" />
               <Decor key="decor" />
+              <Shields key="shields" />
               <RoomLabels key="room-labels" />
               <Labels key="labels" />
               <Debug key="debug" />
@@ -618,6 +621,7 @@ export type State = {
   rings: UseStateRef<import("./NpcRings").State>;
   psi: UseStateRef<import("./Psi").State>;
   phasers: UseStateRef<import("./Phasers").State>;
+  shields: UseStateRef<import("./Shields").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
   roomLabels: UseStateRef<import("./RoomLabels").State>;
   speech: UseStateRef<import("./WorldSpeech").State>;

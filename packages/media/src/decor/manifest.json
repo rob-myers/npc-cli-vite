@@ -75,10 +75,10 @@
     "phaser": {
       "key": "phaser",
       "filename": "phaser.svg",
-      "width": 12,
-      "height": 8,
-      "outputWidth": 154,
-      "outputHeight": 103
+      "width": 16,
+      "height": 12,
+      "outputWidth": 205,
+      "outputHeight": 154
     },
     "screen-0": {
       "key": "screen-0",

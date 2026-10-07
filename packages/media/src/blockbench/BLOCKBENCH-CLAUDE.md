@@ -189,6 +189,23 @@ The legs are SOLVED so both ankles stay put and both soles flat, keyed every fif
 Export from the rest pose: after any `Animator.preview()` run `Animator.showDefaultPose(true); Canvas.updateAllBones()`
 first, else the glTF's nodes keep the pose.
 
+## Psi's effect on its target: pain_* / pacify_in / pacified
+
+Drafts, posed by search in Blockbench (`risky_eval`): legs solved so feet stay planted, hands solved
+onto a bone, by the forearm's tip `(0, -5.6, 0)`.
+
+- `pain_high` (1.6s loop, whole body): doubled over ~50 from hips, stomach and chest, forearms
+  crossed on the stomach; the fold deepens at 0.8, and `hips` z / `head` shake a key every 0.1s, linear.
+- `pain_leg_left` / `_right` (1.2s loop, whole body): the other foot planted, this one lifted onto its
+  toe, torso tipped over it, the same-side hand on the thigh. `_right` is the mirror.
+- `pain_arm_left` / `_right` (1.2s loop, torso, head and BOTH arms, no legs or root): the arm folded
+  across the body, the other hand on its forearm. `_right` is the mirror.
+- `pacify_in` (1.5s, once): a jolt back at 0.25, knees buckling at 0.6, a half recovery at 1.0, ending
+  on `pacified`'s first key. `pacified` (3s loop): slack, head lolled, arms dead, a slow sway of `hips` z.
+
+**Solve with ONE animation playing.** `Animator.preview()` adds every animation whose `playing` is
+set, so a solve run with another still playing lands on the sum: clear `playing` on the rest first.
+
 ## drop
 
 Putting an item down on a table (`w.e.dropItem`), upper body only and a still pose — the game eases it

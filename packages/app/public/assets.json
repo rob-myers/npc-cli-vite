@@ -48202,7 +48202,7 @@
       "floor": {"hullFill": "#0b0d10", "deck": "dark"},
       "lights": {"unlit": 1, "unlitTint": "#000", "cone": 0.7},
       "obstacles": {"brightness": 1},
-      "npcs": {"ambient": 0, "brightness": 0.5, "fxStrength": 2},
+      "npcs": {"ambient": 0, "brightness": 0.4, "fxStrength": 2},
       "doors": {
         "brightness": 2,
         "opacity": 0.8,
@@ -48226,7 +48226,7 @@
       "floor": {"hullFill": "#bfc6cf", "deck": "light"},
       "lights": {"unlit": 1, "unlitTint": "#111", "cone": 0.5},
       "obstacles": {"brightness": 1.6},
-      "npcs": {"ambient": 0.1, "brightness": 0.75, "fxStrength": 5},
+      "npcs": {"ambient": 0.2, "brightness": 0.75, "fxStrength": 5},
       "doors": {
         "brightness": 10,
         "opacity": 0.75,

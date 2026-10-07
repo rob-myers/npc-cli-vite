@@ -279,19 +279,19 @@ const deckInks = {
     nav: { fill: deckConfig.nav.fill, ink: deckConfig.nav.ink },
   },
   light: {
-    tone: "#a5aab0",
+    tone: "#838990",
     plate: {
       seamInk: "rgba(40, 55, 75, 0.35)",
-      lipInk: "rgba(255, 255, 255, 0.7)",
+      lipInk: "rgba(255, 255, 255, 0.5)",
       chequerInk: "rgba(40, 55, 75, 0.075)",
     },
-    rivet: { ink: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.8)" },
+    rivet: { ink: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.6)" },
     wiring: {
       inks: ["rgba(200, 60, 45, 0.55)", "rgba(30, 120, 190, 0.55)"],
       backingInk: "rgba(40, 55, 75, 0.25)",
       clampInk: "rgba(70, 85, 105, 0.7)",
     },
-    doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.75)" },
+    doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.55)" },
     nav: { fill: "rgba(255, 255, 255, 0.0)", ink: "rgba(30, 30, 30, 0.08)" },
   },
 };

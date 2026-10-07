@@ -16,22 +16,26 @@ export default function WorldHud() {
   const state = useStateRef(
     (): State => ({
       menu: null,
-      refused: false,
-      refusedTimer: 0,
+      pressTimer: 0,
+      longPressed: false,
+      notice: null,
+      noticeTimer: 0,
 
       selected: null,
 
       drop(name) {
         if (w.client === true) return;
         if (w.e.dropItem(w.player.key, name) === false) {
-          // a quad needs a table: said over the bar, a moment
-          window.clearTimeout(state.refusedTimer);
-          state.refusedTimer = window.setTimeout(() => state.set({ refused: false }), refusedMs);
-          return state.set({ refused: true });
+          return state.say("cannot drop here"); // a quad needs a table
         }
         if (state.selected === name) state.selected = null;
         state.update();
         w.view.forceUpdate();
+      },
+      say(notice) {
+        window.clearTimeout(state.noticeTimer);
+        state.noticeTimer = window.setTimeout(() => state.set({ notice: null }), noticeMs);
+        state.set({ notice });
       },
       getItems() {
         return (w.e.carried[w.player.key]?.items ?? []).filter((def) => def.meta?.item !== "phaser");
@@ -93,6 +97,7 @@ export default function WorldHud() {
   const psiOn = (w.psi?.getTarget() ?? null) !== null;
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
+  const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
   const menus: Record<number, undefined | SlotMenuItem[]> = {};
@@ -106,7 +111,7 @@ export default function WorldHud() {
       key={index}
       title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
       className={cn(
-        "relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
+        "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
         opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
         big ? "size-12" : "size-18",
         opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
@@ -118,20 +123,36 @@ export default function WorldHud() {
         e.preventDefault();
         if (opts.menu?.length) state.set({ menu: { index, el: e.currentTarget } });
       }}
+      // touch has no right-click: a hold opens the menu, and a scroll of the row calls it off
+      onPointerDown={(e) => {
+        state.longPressed = false;
+        if (e.pointerType !== "touch" || !opts.menu?.length) return;
+        const el = e.currentTarget;
+        window.clearTimeout(state.pressTimer);
+        state.pressTimer = window.setTimeout(() => {
+          state.longPressed = true;
+          state.set({ menu: { index, el } });
+        }, longPressMs);
+      }}
+      onPointerUp={() => window.clearTimeout(state.pressTimer)}
+      onPointerCancel={() => window.clearTimeout(state.pressTimer)}
+      onPointerLeave={() => window.clearTimeout(state.pressTimer)}
       onClick={() => {
+        if (state.longPressed === true) return; // the hold was the press
         state.press(index);
         w.view.focus();
       }}
     >
       {children}
-      {opts.active === true && opts.drop !== undefined && (
+      {opts.drop !== undefined && (
         <button
           type="button"
           tabIndex={-1}
           title={`drop ${opts.title}`}
           className={cn(
-            "absolute top-0.5 right-0.5 grid cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
+            "absolute top-0.5 right-0.5 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
             big ? "size-6" : "size-5",
+            opts.active === true && opts.plain !== true ? "grid" : "hidden group-hover:grid",
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -148,15 +169,21 @@ export default function WorldHud() {
   return (
     <div className="@container pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2">
       {/* out here, not in the row: it scrolls, so would clip it */}
-      {state.refused === true && (
+      {state.notice !== null && (
         <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200">
-          cannot drop here
+          {state.notice}
         </div>
       )}
       {/* one row, scrolled sideways once it outgrows a narrow World */}
-      <div className="pointer-events-auto mx-auto flex max-w-full gap-1 overflow-x-auto rounded-lg border border-slate-300/30 bg-linear-to-b from-slate-400/35 via-slate-600/30 to-slate-800/45 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] [scrollbar-width:none] @lg:gap-3 @lg:px-3 @lg:py-2">
-        {/* what they are, apart from what they carry */}
-        <div className="flex shrink-0 gap-1 rounded-md bg-slate-950/25 ring-1 ring-slate-300/15 @lg:gap-3">
+      {/* padded, else the scroll clips a slot's ring */}
+      <div className="pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]">
+        {/* what they are, apart from what they carry: no gap, as each icon's own margin is one */}
+        <div
+          className={cn(
+            "mr-1 flex shrink-0 rounded-md bg-slate-950/25 ring-1 ring-slate-300/15",
+            big ? "px-2.5" : "px-3.5",
+          )}
+        >
           {slot(
             0,
             { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
@@ -165,7 +192,7 @@ export default function WorldHud() {
           {slot(
             1,
             {
-              title: "phaser",
+              title: dead ? "phaser (deactivated)" : "phaser",
               hotkey: "e",
               had: hasPhaser,
               active: armed,
@@ -174,7 +201,7 @@ export default function WorldHud() {
               // dropped without drawing it first
               menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
             },
-            <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} />,
+            <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />,
           )}
           {slot(
             2,
@@ -182,6 +209,7 @@ export default function WorldHud() {
               title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
               had: keyCount > 0,
               active: keyDoor !== null,
+              plain: true,
               menu: heldDoors.map((gdKey) => ({
                 label: `split ${gdKey}`,
                 run: () => w.e.unchainKey(playerKey, gdKey),
@@ -271,7 +299,15 @@ const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" 
  * The gun `Phasers` draws, its boxes turned a little towards us — and whilst `locked`, its beam.
  * Generated: `shaderConfig.gunBoxes` projected at azimuth -38°, elevation 28°
  */
-const PhaserIcon = memo(function PhaserIcon({ armed, locked }: { armed: boolean; locked: boolean }) {
+const PhaserIcon = memo(function PhaserIcon({
+  armed,
+  locked,
+  dead,
+}: {
+  armed: boolean;
+  locked: boolean;
+  dead: boolean;
+}) {
   return (
     <svg className={iconClass} viewBox="0 0 64 64" aria-label="phaser">
       <defs>
@@ -279,27 +315,32 @@ const PhaserIcon = memo(function PhaserIcon({ armed, locked }: { armed: boolean;
           <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
           <stop offset="1" stopColor="#ff8a5c" stopOpacity="0" />
         </radialGradient>
+        <linearGradient id="hud-phaser-beam" gradientUnits="userSpaceOnUse" x1="44.4" y1="32.5" x2="56" y2="36.7">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <mask id="hud-phaser-fade">
+          <rect x="40" y="26" width="20" height="16" fill="url(#hud-phaser-beam)" />
+        </mask>
       </defs>
-      <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
-        {phaserFaces.map(([face, d]) => (
-          // holstered, its emitter is as dull as the rest
-          <path key={d} d={d} fill={phaserFill[armed ? face : phaserOff[face]]} />
-        ))}
-      </g>
-      {armed === true && <circle cx="41" cy="31.3" r="9" fill="url(#hud-phaser-glow)" />}
-      {locked === true && (
-        <g>
-          <path
-            d="M44.4 32.5 59.0 37.8"
-            stroke="#ff8a5c"
-            strokeOpacity="0.35"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-          <path d="M44.4 32.5 59.0 37.8" stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
-          <circle cx="59.0" cy="37.8" r="2.4" fill="#ffb596" />
+      {/* the gun centred, whatever it is doing */}
+      <g transform="translate(8)">
+        <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
+          {phaserFaces.map(([face, d]) => (
+            // holstered, its emitter is as dull as the rest
+            <path key={d} d={d} fill={phaserFill[armed ? face : dead ? phaserDead[face] : phaserOff[face]]} />
+          ))}
         </g>
-      )}
+        {armed === true && <circle cx="41" cy="31.3" r="9" fill="url(#hud-phaser-glow)" />}
+        {/* its beam fades in, and out towards the edge rather than ending in a dot */}
+        <g
+          mask="url(#hud-phaser-fade)"
+          className={cn("transition-opacity duration-300", locked ? "opacity-100" : "opacity-0")}
+        >
+          <path d="M44.4 32.5 56 36.7" stroke="#ff8a5c" strokeOpacity="0.45" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M44.4 32.5 56 36.7" stroke="#ffd2bf" strokeWidth="1" strokeLinecap="round" />
+        </g>
+      </g>
     </svg>
   );
 });
@@ -312,12 +353,18 @@ const phaserFill = {
   glowTop: "#ffa784",
   glowSide: "#ff8a5c",
   glowEnd: "#d9744d",
+  deadTop: "#6ea4ee",
+  deadSide: "#3d7fd9",
+  deadEnd: "#2f63ab",
 };
 
 /** Each face as it is with the gun put away */
 const phaserOff = { top: "top", side: "side", end: "end", glowTop: "top", glowSide: "side", glowEnd: "end" } as const;
 
-const phaserFaces: [keyof typeof phaserFill, string][] = [
+// biome-ignore format: a row
+const phaserDead = { top: "top", side: "side", end: "end", glowTop: "deadTop", glowSide: "deadSide", glowEnd: "deadEnd" } as const;
+
+const phaserFaces: [keyof typeof phaserOff, string][] = [
   ["top", "M14.5 24.0 23.5 27.3 18.2 30.4 9.2 27.2Z"],
   ["side", "M9.2 49.8 18.2 53.1 18.2 30.4 9.2 27.2Z"],
   ["end", "M23.5 49.9 18.2 53.1 18.2 30.4 23.5 27.3Z"],
@@ -454,9 +501,11 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
   "door-unlocked",
 ]);
 
-/** `drop` names what its "x" puts down, shown whilst `active` */
-/** How long "cannot drop here" shows */
-const refusedMs = 1500;
+/** How long a touch is held before a slot's menu opens */
+const longPressMs = 500;
+
+/** How long the bar's notice shows */
+const noticeMs = 1500;
 
 type SlotMenuItem = { label: string; run(): void };
 
@@ -466,8 +515,9 @@ type SlotOpts = {
   hotkey?: string;
   had: boolean;
   active: boolean;
+  /** What its "x" puts down, shown on hover — and whilst `active`, unless `plain` */
   drop?: string;
-  /** Neither hover nor `active` tints it: its icon's own animation says it is on */
+  /** Neither hover nor `active` tints it: its icon says it is on */
   plain?: true;
   /** What a right-click on it offers */
   menu?: SlotMenuItem[];
@@ -476,13 +526,17 @@ type SlotOpts = {
 export type State = {
   /** The slot whose right-click menu shows, hung off its element */
   menu: null | { index: number; el: HTMLElement };
+  pressTimer: number;
+  /** The touch now ending opened the menu, so is no press */
+  longPressed: boolean;
   /** The key of the carried item a press chose, a second press letting it go */
   selected: null | string;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
-  /** A drop was just refused, and the bar says so */
-  refused: boolean;
-  refusedTimer: number;
+  /** What the bar says above itself, a moment: something of theirs was refused */
+  notice: null | string;
+  noticeTimer: number;
+  say(notice: string): void;
   /** What they carry, in slot order — their phaser has a slot of its own */
   getItems(): Geomorph.DecorDef[];
   /** The door at hand that the player holds the key to */

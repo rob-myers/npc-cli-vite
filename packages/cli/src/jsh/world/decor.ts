@@ -34,7 +34,7 @@ type AddOpts = {
  * pick 1 | decor type:rect width:2 height:1
  * pick 1 | decor type:circle radius:1.5
  * pick 1 | decor type:quad img:screen-0
- * decor to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
+ * decor to:[3,4.5] key:lamp meta:'{ label: "lamp" }'   # replacing any `lamp` there is
  * decor ls
  * decor rm point-3 point-4
  * decor ls | map key | decor rm
@@ -47,7 +47,7 @@ export async function* decor(ct: JshCli.RunArg) {
     case "rm":
       return await remove(ct, ct.args.slice(1));
     default:
-      return yield* add(ct, ct.api.jsArg(ct.args));
+      return yield* add(ct, ct.api.jsArg(ct.args, { h: "height", w: "width" }));
   }
 }
 
@@ -62,12 +62,19 @@ async function* add({ api, w }: JshCli.RunArg, opts: AddOpts) {
   // a rect with no size of its own takes two points, as opposite corners
   const perDecor = type === "rect" && opts.width === undefined && opts.height === undefined ? 2 : 1;
 
+  let keyed = false;
   function* place(point: unknown) {
     if (!w.helper.isPointAnyFormat(point)) throw Error(`expected point: ${JSON.stringify(point)}`);
     const { x, y } = w.helper.parseGroundPoint(point); // sans any pick meta
     points.push({ x, y });
     if (points.length < perDecor) return;
-    const key = opts.key !== undefined && !(opts.key in w.decor.byKey) ? opts.key : nextKey(w, type);
+    // the first takes `key`, in place of whatever runtime decor has it: the rest, the next free
+    const named = keyed === false ? opts.key : undefined;
+    if (named !== undefined && named in w.decor.byKey && !(named in w.decor.runtime.byKey)) {
+      throw Error(`key: "${named}" is the map's own decor`);
+    }
+    const key = named ?? nextKey(w, type);
+    keyed = true;
     w.decor.create(toDef(type, key, points.splice(0), opts));
     yield key;
   }
@@ -96,7 +103,8 @@ async function remove({ api, w }: JshCli.RunArg, keys: string[]) {
 }
 
 function toDef(type: DecorType, key: string, [p, q]: Geom.VectJson[], opts: AddOpts): Geomorph.DecorDef {
-  const meta = { shown: true, ...opts.meta }; // else it could not be seen where it was put
+  // else it could not be seen where it was put — bar a shield, which draws itself
+  const meta = { shown: !opts.meta?.shield, ...opts.meta };
   switch (type) {
     case "point":
       return { type, key, x: p.x, y: p.y, img: opts.img, orient: opts.orient, scale: opts.scale, y3d: opts.y3d, meta };
@@ -119,7 +127,11 @@ function toDef(type: DecorType, key: string, [p, q]: Geom.VectJson[], opts: AddO
         return { type, key, x: Math.min(p.x, q.x), y: Math.min(p.y, q.y), width: Math.abs(q.x - p.x), height: Math.abs(q.y - p.y), meta };
       }
       const [width, height] = [opts.width ?? opts.height ?? 1, opts.height ?? opts.width ?? 1];
-      return { type, key, x: p.x - width / 2, y: p.y - height / 2, width, height, angle: opts.angle, meta };
+      // a rect turns about its corner, so that goes where the turn leaves it: about the pick, as it is seen
+      const [cos, sin] = [Math.cos(opts.angle ?? 0), Math.sin(opts.angle ?? 0)];
+      const x = p.x - (width / 2) * cos + (height / 2) * sin;
+      const y = p.y - (width / 2) * sin - (height / 2) * cos;
+      return { type, key, x, y, width, height, angle: opts.angle, meta };
     }
   }
 }
