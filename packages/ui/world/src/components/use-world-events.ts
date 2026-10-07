@@ -153,13 +153,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
         };
       },
-      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe }) {
-        /** Can be overriden if unreachable due to locked doors */
+      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near }) {
+        /** Can be overridden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
 
         const npc = w.npc.get(npcKey);
-        const result = w.npc.getClosestPoly(groundPoint, 0.5);
+        let result = w.npc.getClosestPoly(groundPoint, 0.5);
         const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
+        if (doResult.type === "none") {
+          // `near`: as near as they can get, e.g. beside the table picked
+          if (near === true && result.success === false) result = w.npc.getClosestPoly(groundPoint, 4);
+          // a target off the mesh could never be arrived at: the mesh nearest it instead
+          if (result.success === true) groundPoint = { x: result.position[0], y: result.position[2] };
+        }
         const { config } = w.npc;
 
         if (doResult.type === "occupied") {
@@ -370,6 +376,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (had !== undefined && had.items.length === 0 && had.psi !== true) delete state.carried[npcKey];
         state.persistCarried();
         w.hud?.update();
+        w.events.next({ key: "carried", npcKey });
       },
       revokeItem(npcKey, name) {
         if (name === "psi") return state.dropItem(npcKey, name);
@@ -581,6 +588,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npc?.setBrightness(w.npcBrightness);
         w.psi?.syncTune();
         w.phasers?.syncTheme();
+        w.shields?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
         w.obs.setFadedTint(post.fadedObstacleTint);
         w.view.postFx.lightBg.value.set(post.lightBg);
@@ -891,6 +899,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               state.syncFadeRooms();
             }
             break;
+          case "carried":
           case "speech":
           case "stopped-moving":
             break;
@@ -984,10 +993,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (Math.abs(src.x - dst.x) < 0.01 && Math.abs(src.y - dst.y) < 0.01) {
           // avoid 'detect-collisions' throw on zero-length rays
-          return { success: true, hit: null, gmDoorIds: [], rooms: [srcGrId.grKey], doors: [], hitDoor: null };
+          return { success: true, hit: null, rooms: [srcGrId.grKey], doors: [], hitDoor: null, shields: [] };
         }
 
         const [grIds, gdIds] = [[] as Geomorph.GmRoomId[], [] as Geomorph.GmDoorId[]];
+        /** The first leg's: shields are in world space, so it has the whole ray's */
+        let shields: undefined | string[];
         let gmId = srcGrId.gmId;
         let roomId = srcGrId.roomId;
         let hit: null | Geom.VectJson = null;
@@ -1012,6 +1023,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           );
 
           hit = result.hit;
+          shields ??= result.shields;
           // check whether ray is blocked by a door panel (accounting for partial open)
           for (const gdId of result.gmDoorIds) {
             const door = w.d[gdId.gdKey];
@@ -1062,6 +1074,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           hitDoor,
           doors: gdIds.map(({ gdKey }) => gdKey),
           rooms: grIds.map(({ grKey }) => grKey),
+          shields: shields ?? [],
         };
       },
       rejectPendingUnreachable(err) {
@@ -1339,6 +1352,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.rings?.onTick();
         w.psi?.onTick();
         w.phasers?.onTick();
+        w.shields?.onTick();
         w.player?.aimAtPointer();
       },
       syncDoorways() {

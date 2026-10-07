@@ -126,3 +126,16 @@ index 4cd9cfc8a1c95402ebfda2dd0b646ff109e25b0c..96fba97c76da11f988eba547f30be8f3
          agent.corners = corners;
          // check to see if the corner after the next corner is directly visible, and short cut to there
          if ((agent.updateFlags & CrowdUpdateFlags.OPTIMIZE_VIS) !== 0 && agent.corners.length > 0) {
+diff --git a/dist/index.js b/dist/index.js
+index 93583b74389691ae1a484313806ba14c22823d0d..fc6d163809b30283cb15bd8d45f90a7a5eb8da11 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -9966,6 +9966,8 @@ const appendVertex = (position, nodeRef, flags, outPoints, nodeType, maxPoints =
+             // the vertices are equal, update
+             outPoints[outPoints.length - 1].nodeRef = nodeRef;
+             outPoints[outPoints.length - 1].type = nodeType;
++            // PATCH: its flags too, as Detour does — else a path ending ON a mesh vertex never has an END
++            outPoints[outPoints.length - 1].flags = flags;
+             return AppendVertexStatus.IN_PROGRESS;
+         }
+         // for off-mesh connections or mixed types, fall through to append a new point

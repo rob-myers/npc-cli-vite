@@ -94,7 +94,7 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 
 **Strafing** — see `docs/npc-strafe.md`, the ONLY doc for it. In short: whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing, and `syncStrafe` blends four directional gaits by heading, paced to the ground each covers.
 
-`navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, and a desired velocity that folds round a touched npc. See `docs/navcat-patch.md`, including how to edit the patch.
+`navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. See `docs/navcat-patch.md`, including how to edit the patch.
 
 ## Which room an npc is in
 
@@ -140,6 +140,13 @@ toggle labels it and opens a card per pick.
 See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
 keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
 World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `kamma` for what a press does.
+
+## Shields
+
+See `docs/shields.md` — the ONLY doc for them. In short: a decor rect with `meta.shield` stands as a
+see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav
+worker. One of a frequency (`meta.freq`, jsh `shield`) lets a phaser granted it through (jsh `phaser`) and
+deactivates any other carried through it; `freq: null` stops all fire and deactivates none.
 
 ## Lore
 

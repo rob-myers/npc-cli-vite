@@ -671,7 +671,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
           return { x: toPrecision(q.x), y: toPrecision(q.y) };
         }),
         center: { x: toPrecision(center.x), y: toPrecision(center.y) },
-        angle: toPrecision((180 / Math.PI) * matrix.transformAngle(d.angle * (Math.PI / 180))),
+        angle: toPrecision(matrix.transformAngle(d.angle), 4), // radians, as a runtime rect's
       };
     }
     case "circle": {
@@ -859,8 +859,8 @@ export function parseSymbolFromSavedFile(savedFile: MapEditSavedSymbol): Geomorp
       polysLookup.obstacles.push(poly);
     } else if (
       meta.decor === true &&
-      // should come from image node of type decor
-      typeof meta.img === "string"
+      // an image node of type decor — else a rect or circle node, which needs no image
+      (typeof meta.img === "string" || meta.rect === true || meta.circle === true)
     ) {
       polysLookup.decor.push(poly);
     } else if (meta.window === true) {

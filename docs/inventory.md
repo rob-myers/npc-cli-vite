@@ -24,7 +24,8 @@ nor phasers are mirrored.
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
-Turning psi or the phaser ON needs it; turning it off never does, so a jsh `arm rob` can be holstered.
+Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
+A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
 The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
 are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`. On touch a two-finger tap on the World does the same: its left half psi, its right half the phaser.
 An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected

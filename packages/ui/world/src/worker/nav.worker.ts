@@ -3,7 +3,7 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh } from "navcat";
 import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
 import { navForFloorDraw } from "./nav-util";
-import { createGmRayCastSystems, sendRaycastResult } from "./ray-cast";
+import { createGmRayCastSystems, sendRaycastResult, setRayCastShields } from "./ray-cast";
 import { findUnreachableResult, setRoomGraph } from "./room-graph";
 
 /** The navmesh, once generated — for queries here, e.g. jsh's ops */
@@ -51,6 +51,10 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
         ...tiledNavMeshResult,
         toNavTris: navForFloorDraw(msg.gmGeoms, tiledNavMeshResult.navMesh),
       } satisfies WW.MsgFromNavWorker);
+      break;
+    }
+    case "set-raycast-shields": {
+      setRayCastShields(msg);
       break;
     }
     case "get-raycast": {

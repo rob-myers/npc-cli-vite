@@ -97,6 +97,7 @@ export default function WorldHud() {
   const psiOn = (w.psi?.getTarget() ?? null) !== null;
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
+  const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
   const menus: Record<number, undefined | SlotMenuItem[]> = {};
@@ -191,7 +192,7 @@ export default function WorldHud() {
           {slot(
             1,
             {
-              title: "phaser",
+              title: dead ? "phaser (deactivated)" : "phaser",
               hotkey: "e",
               had: hasPhaser,
               active: armed,
@@ -200,7 +201,7 @@ export default function WorldHud() {
               // dropped without drawing it first
               menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
             },
-            <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} />,
+            <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />,
           )}
           {slot(
             2,
@@ -298,7 +299,15 @@ const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" 
  * The gun `Phasers` draws, its boxes turned a little towards us — and whilst `locked`, its beam.
  * Generated: `shaderConfig.gunBoxes` projected at azimuth -38°, elevation 28°
  */
-const PhaserIcon = memo(function PhaserIcon({ armed, locked }: { armed: boolean; locked: boolean }) {
+const PhaserIcon = memo(function PhaserIcon({
+  armed,
+  locked,
+  dead,
+}: {
+  armed: boolean;
+  locked: boolean;
+  dead: boolean;
+}) {
   return (
     <svg className={iconClass} viewBox="0 0 64 64" aria-label="phaser">
       <defs>
@@ -319,7 +328,7 @@ const PhaserIcon = memo(function PhaserIcon({ armed, locked }: { armed: boolean;
         <g stroke="#2b3038" strokeWidth="0.5" strokeLinejoin="round">
           {phaserFaces.map(([face, d]) => (
             // holstered, its emitter is as dull as the rest
-            <path key={d} d={d} fill={phaserFill[armed ? face : phaserOff[face]]} />
+            <path key={d} d={d} fill={phaserFill[armed ? face : dead ? phaserDead[face] : phaserOff[face]]} />
           ))}
         </g>
         {armed === true && <circle cx="41" cy="31.3" r="9" fill="url(#hud-phaser-glow)" />}
@@ -344,12 +353,18 @@ const phaserFill = {
   glowTop: "#ffa784",
   glowSide: "#ff8a5c",
   glowEnd: "#d9744d",
+  deadTop: "#6ea4ee",
+  deadSide: "#3d7fd9",
+  deadEnd: "#2f63ab",
 };
 
 /** Each face as it is with the gun put away */
 const phaserOff = { top: "top", side: "side", end: "end", glowTop: "top", glowSide: "side", glowEnd: "end" } as const;
 
-const phaserFaces: [keyof typeof phaserFill, string][] = [
+// biome-ignore format: a row
+const phaserDead = { top: "top", side: "side", end: "end", glowTop: "deadTop", glowSide: "deadSide", glowEnd: "deadEnd" } as const;
+
+const phaserFaces: [keyof typeof phaserOff, string][] = [
   ["top", "M14.5 24.0 23.5 27.3 18.2 30.4 9.2 27.2Z"],
   ["side", "M9.2 49.8 18.2 53.1 18.2 30.4 9.2 27.2Z"],
   ["end", "M23.5 49.9 18.2 53.1 18.2 30.4 23.5 27.3Z"],

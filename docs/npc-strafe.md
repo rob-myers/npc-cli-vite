@@ -34,7 +34,7 @@ turning to it is the usual exponential ease.
 - **jsh `look --strafe`**: `look rob --strafe at:$( pick 1 )`, `look rob --strafe at:1.57`,
   `look rob --strafe at:kate rate:0.5`; a bare `look rob --strafe` clears it. Piped
   (`pick --right | look rob --strafe`), each pick re-aims them until killed, and picking them clears it.
-- An armed npc (`w.phasers`, jsh `arm` / `disarm`, the bar's slot `2` for the player) aims at their target every tick, but
+- An armed npc (`w.phasers`, jsh `phaser`, the bar's slot `2` for the player) aims at their target every tick, but
   replaces or clears only an aim it set, so a look still turns them. Armed at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.

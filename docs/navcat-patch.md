@@ -2,7 +2,7 @@
 
 `navcat` (the recast/detour port the crowd runs on) is patched via pnpm —
 `patches/navcat@0.4.1.patch`, under `patchedDependencies` in `pnpm-workspace.yaml`. Four changes
-in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`.
+in `dist/blocks.js`, with types in `dist/blocks/agents/crowd.d.ts`, and one in `dist/index.js`.
 
 ## 1. Four corners, not three
 
@@ -58,11 +58,28 @@ at its speed; only the sampler's copy changes. The side is the lean of `dvel`, e
 corner comes and goes over, and re-choosing each tick would turn them back at every flip. Contact
 only (`0.02`): folding from wider, a corner just past their far side is folded away from for ever.
 
+## 5. A path ending ON a mesh vertex keeps its END
+
+In `dist/index.js`. `findStraightPath` appends the target last, flagged `END`. When the point before it
+is the same point (the target is itself a vertex of the mesh, e.g. the mesh nearest a click just off
+it), `appendVertex` merges the two, and navcat kept the earlier point's flags: no `END`. Detour copies
+the flags across, and so does the patch.
+
+Three things read that flag, so without it an npc walking to such a point crept in the last 40 cm
+and ended `stuck` rather than arriving:
+
+- `isAgentAtTarget`, which `NPCs.onTick` uses both to drop obstacle avoidance once nearly there
+  (else the mesh's own edge holds them back) and to call the move arrived;
+- navcat's slowing-down into the target.
+
+`w.e.move` does its part too: a target off the mesh is aimed at the mesh nearest it, as nothing could
+arrive at the point itself.
+
 ## Editing the patch
 
 ```sh
 pnpm patch navcat@0.4.1          # extracts WITH the current patch applied, prints the dir
-# edit dist/blocks.js and the .d.ts beside it, under the printed dir
+# edit dist/blocks.js (or dist/index.js) and the .d.ts beside it, under the printed dir
 pnpm patch-commit "$PWD/node_modules/.pnpm_patches/navcat@0.4.1"   # rewrites the patch, reinstalls
 ```
 

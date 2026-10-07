@@ -46,6 +46,7 @@ import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
 import { selectAs } from "../service/tsl";
+import { getDecorCollidersPayload, isColliderDecor } from "../service/worker-data";
 import { WorldContext } from "./world-context";
 
 export default function Decor() {
@@ -291,7 +292,7 @@ export default function Decor() {
           state.addRuntimeInstance(d);
         }
 
-        if (d.meta.collider === true && (def.type === "circle" || def.type === "rect")) {
+        if (isColliderDecor(d) && (def.type === "circle" || def.type === "rect")) {
           state.addDecorColliders(def);
         }
 
@@ -443,7 +444,7 @@ export default function Decor() {
           batch.inst.setMatrixAt(lastId, zeroMat4);
           state.flush(batch);
 
-          if (d.meta.collider === true && (d.type === "circle" || d.type === "rect")) {
+          if (isColliderDecor(d)) {
             state.removeDecorColliders(d); // 🚧 prefer batch
           }
         }
@@ -453,6 +454,14 @@ export default function Decor() {
         }
 
         w.view.forceUpdate();
+      },
+      syncStaticColliders() {
+        const statics = Object.values(state.byKey).filter((d) => !(d.key in state.runtime.byKey));
+        const colliders = getDecorCollidersPayload(statics);
+        if (colliders.length === 0) return;
+        // gone first: the worker will not add one it has
+        w.physics.worker.postMessage({ type: "remove-physics-colliders", colliders } satisfies WW.MsgToWorker);
+        w.physics.worker.postMessage({ type: "add-physics-colliders", colliders } satisfies WW.MsgToWorker);
       },
       removeDecorColliders(...decor) {
         w.physics.worker.postMessage({
@@ -815,6 +824,7 @@ export default function Decor() {
       if (buildId !== state.buildId) return null;
 
       state.ready = true;
+      if (w.physics.physicsRebuilds > 0) state.syncStaticColliders(); // else its setup's reply does
       w.door?.syncLockTints();
       w.events.next({ key: "decor-ready" });
       w.setNextPending({ decor: false });
@@ -953,6 +963,8 @@ export type State = {
   /** Runtime decor only; `false` when there is none such, or `next` is taken */
   rename(decorKey: string, next: string): boolean;
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
+  /** Sends the physics worker every static decor that senses — see `isColliderDecor` */
+  syncStaticColliders(): void;
   removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
   setupRuntimeInstances(): void;
   /** Writes where a decor stands into `slots`, both components alike */
@@ -1069,7 +1081,7 @@ function buildShapeOutputNode(pickOutput: THREE.Node, objectPick: THREE.UniformN
   const dy = uvCoord.y.sub(0.5);
   const dist = dx.mul(dx).add(dy.mul(dy)).sqrt();
 
-  const BORDER_W = uniform(0.02);
+  const BORDER_W = uniform(0.01);
   const DASH_PERIOD = uniform(0.25);
 
   const inBorder = selectAs<"bool">(

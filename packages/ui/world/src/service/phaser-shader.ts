@@ -101,6 +101,7 @@ export function createPhaserResources() {
     phase: uniform(0),
     color: uniform(new THREE.Color(shaderConfig.color)),
     gunColor: uniform(new THREE.Color(shaderConfig.gunColor)),
+    deadColor: uniform(new THREE.Color(shaderConfig.deadColor)),
     /** From `theme.npcs.fxStrength` */
     gain: uniform(1),
     /** The beam's alpha on the way: more over a pale deck — see `Phasers.syncTheme` */
@@ -125,7 +126,7 @@ const seenBy =
     fadeRoomsFx.getVisiblity(slot).max(lit.mul(litNpcsEnabled));
 
 /** The gun, held along the forearm */
-function gunNodes({ color, gunColor, gain }: PhaserResources, view: PhaserView) {
+function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: PhaserView) {
   const { edgePx, edgeDarken } = shaderConfig;
   const gun = attribute<"vec4">("phaserGun", "vec4");
   const quat = attribute<"vec4">("phaserQuat", "vec4");
@@ -134,13 +135,15 @@ function gunNodes({ color, gunColor, gain }: PhaserResources, view: PhaserView) 
     const inner = cross(quat.xyz, v).add(v.mul(quat.w)) as THREE.Node<"vec3">;
     return v.add(cross(quat.xyz, inner).mul(2)) as THREE.Node<"vec3">;
   };
-  const p = gun.xyz.add(turned(positionLocal.mul(gun.w) as THREE.Node<"vec3">));
+  const p = gun.xyz.add(turned(positionLocal.mul(gun.w.abs()) as THREE.Node<"vec3">));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
 
   const rooms = attribute<"vec4">("phaserRooms", "vec4");
   const vSeen = varying(seenBy(view)(rooms.x, rooms.z), "vGunSeen");
   const glow = attribute<"float">("phaserGlow", "float");
   const vGlow = varying<"float">(glow as THREE.Node<"float">, "vGunGlow");
+  /** A dead one's scale is negative */
+  const vDead = varying<"float">(gun.w.lessThan(0).select(1, 0) as THREE.Node<"float">, "vGunDead");
   /** Lit from above, so its faces tell apart */
   const lit = turned(normalLocal as THREE.Node<"vec3">).dot(normalize(vec3(0.3, 1, 0.2)));
   const vShade = varying(lit.mul(0.3).add(0.7), "vGunShade");
@@ -151,7 +154,8 @@ function gunNodes({ color, gunColor, gain }: PhaserResources, view: PhaserView) 
     const face = uv();
     const fromEdge = face.min(face.oneMinus()).div(fwidth(face).max(1e-6));
     const edge = smoothstep(edgePx - 0.5, edgePx + 0.5, fromEdge.x.min(fromEdge.y)).oneMinus();
-    const body = mix(gunColor.mul(vShade), color.mul(gain.min(1)), vGlow);
+    const emitter = mix(color.mul(gain.min(1)), deadColor.mul(vShade), vDead);
+    const body = mix(gunColor.mul(vShade), emitter, vGlow);
     return vec4(body.mul(edge.mul(edgeDarken).oneMinus()), a);
   })();
 
@@ -225,6 +229,8 @@ export const shaderConfig = {
   edgePx: 1,
   edgeDarken: 0.6,
   gunColor: "#5f6875",
+  /** Its emitter, deactivated */
+  deadColor: "#3d7fd9",
   paleGunColor: "#474d57",
   /** Metres of radius of the beam, and of the ball at its end */
   radius: 0.01,

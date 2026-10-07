@@ -89,6 +89,7 @@ export default function NavWorker() {
       mapKey: w.mapKey,
       roomGraph: getRoomGraphPayload(w.gmRoomGraph),
     } satisfies WW.MsgToNavWorker);
+    w.shields?.sendToRaycast(); // a fresh worker has none
   }, [w.gmsHash, state.reloads]); // request navmesh, room graph
 
   return null;

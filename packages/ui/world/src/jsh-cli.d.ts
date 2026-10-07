@@ -1,5 +1,6 @@
 declare namespace JshCli {
   type Event =
+    | { key: "carried"; npcKey: string }
     | { key: "decor-created"; decorKeys: string[] }
     | { key: "decor-removed"; decorKeys: string[] }
     | { key: "decor-ready" }
@@ -151,6 +152,8 @@ declare namespace JshCli {
     backstep?: boolean;
     /** Keep their facing, the gait blended by heading — by default whilst `npc.anim.face.aim` */
     strafe?: boolean;
+    /** A target neither doable nor navigable becomes the navigable point nearest it, rather than throwing */
+    near?: boolean;
   };
   /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {
@@ -167,6 +170,8 @@ declare namespace JshCli {
     hit: null | Geom.VectJson;
     hitDoor: null | Geomorph.GmDoorKey;
     doors: Geomorph.GmDoorKey[];
+    /** Decor keys of the shields it passed, nearest first, which stop no ray */
+    shields: string[];
     /** Alternated with `gdKeys` i.e. `firstGrKey -> firstGdKey ->  ... -> lastGrKey` */
     rooms: Geomorph.GmRoomKey[];
   };

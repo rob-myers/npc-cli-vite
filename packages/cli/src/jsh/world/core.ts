@@ -7,23 +7,6 @@ import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
 import { padded, parked } from "./pred";
 
 /**
- * Arm npcs with their phasers, locked on `at` an npc, through a body `part` — no `at` unlocks. See `w.phasers`.
- * Their arms are theirs, so a kill changes nothing
- * ```sh
- * arm rob kate
- * arm rob at:npc-0
- * arm rob at:npc-0 part:hips
- * ```
- */
-export function arm({ api, args, w }: JshCli.RunArg, opts: { at?: string; part?: string } = api.jsArg(args)) {
-  api.setPausable("world", false); // arms whilst paused
-  const npcKeys = api.getJsOperands(args, opts).map((npcKey) => w.npc.get(npcKey).key);
-  if (npcKeys.length === 0) throw Error("usage: arm npcKey... [at:npcKey] [part:bodyPart]");
-  const at = opts.at === undefined ? null : w.npc.get(opts.at).key;
-  for (const npcKey of npcKeys) w.phasers.arm(npcKey, { at, part: opts.part ?? "head" });
-}
-
-/**
  * Get at most one decor containing a given point.
  * Accounts for height e.g. bunk beds.
  * - opts
@@ -119,16 +102,6 @@ function doorAction(
   }
 
   w.view.forceUpdate();
-}
-
-/**
- * ```sh
- * disarm rob kate
- * ```
- */
-export function disarm({ api, args, w }: JshCli.RunArg) {
-  api.setPausable("world", false); // disarms whilst paused
-  w.phasers.disarm(...args.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**
@@ -250,6 +223,9 @@ export function kamma({ args, w }: JshCli.RunArg) {
   else w.e.addKeyedListener("kamma", onKammaEvent);
 }
 
+/** Metres past an item's reach it is still taken from: a walk up to it stops a little short */
+const kammaSlack = 0.2;
+
 /** The latest press, which a walk to an item must still be to take it */
 let kammaPress = 0;
 
@@ -287,7 +263,7 @@ async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: strin
   const { reach: reaches } = inventoryConfig;
   const raised = w.n[npcKey]?.anim.pose === "sit" ? reaches.seated : reaches.raised;
   const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? raised : reaches.floor;
-  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach;
+  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + kammaSlack;
   const from = w.n[npcKey]?.point;
   if (from !== undefined) {
     const away = Math.hypot(from.x - at.x, from.y - at.y) || 1;
@@ -299,7 +275,8 @@ async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: strin
     if (away <= d + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
       return void w.e.takeItem(npcKey, decorKey);
     }
-    await w.e.move({ npcKey, to: short(d) }).catch(() => {});
+    // no floor in reach along their own line, e.g. across a deep desk: the floor nearest the item instead
+    await w.e.move({ npcKey, to: d < reach ? short(d) : at, near: true }).catch(() => {});
     // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
     while (press === kammaPress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
   }
@@ -582,6 +559,9 @@ type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
  *
  * # move along picked path
  * pick | move npc:rob along
+ *
+ * # to the navigable point nearest a target which is neither doable nor navigable
+ * move rob near to:$( pick 1 )
  *
  * move rob to:$( pick 1 ) facing:$( pick 1 )
  * move rob --fast to:$( pick 1 )
@@ -980,14 +960,8 @@ export async function* pick(ct: JshCli.RunArg) {
   }
   opts.long ??= false;
 
-  // if (!isStringInt(operands[0]) && isStringInt(operands[1])) {
-  //   // support reverse order `pick meta.nav 2`
-  //   operands = [operands[1], operands[0]];
-  // }
   const lastNumericOperand = operands.findLast(isStringInt);
   const hasNumericOperand = lastNumericOperand !== undefined;
-  // operands = operands.filter(x => !isStringInt(x));
-  // const explicitNumPicks = isStringInt(operands[0]) ? parseInt(operands[0], 10) : undefined;
   const explicitNumPicks = hasNumericOperand ? parseInt(lastNumericOperand, 10) : undefined;
   const maxExplicitPicks = 1024;
 
@@ -1078,6 +1052,58 @@ export async function* pick(ct: JshCli.RunArg) {
     handlers.dispose();
   }
 }
+
+/**
+ * An npc's phaser: `shoot` raises it, locked on an npc through a body `part`; `grant` and `revoke` are the shield
+ * frequencies it knows — bare, what it knows. Theirs, so it returns at once: see `docs/shields.md`
+ * ```sh
+ * phaser rob
+ * phaser rob shoot:npc-0
+ * phaser rob shoot:npc-0 part:hips
+ * phaser rob --raise
+ * phaser rob --lower
+ * phaser rob grant:"1 2 3"
+ * phaser npc:rob revoke:"[1, 2]"
+ * ```
+ */
+export function phaser(
+  { api, args, w }: JshCli.RunArg,
+  opts: PhaserOpts = api.jsArg(
+    args,
+    { npc: "npcKey", "--raise": "raise", "--lower": "lower" },
+    { array: { grant: true, revoke: true } },
+  ),
+) {
+  api.setPausable("world", false); // raises whilst paused
+  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
+  const { key } = w.npc.get(opts.npcKey);
+  if (opts.lower === true) return void w.phasers.disarm(key); // which needs no phaser
+  if (w.e.hasItem(key, "phaser") === false) throw Error(`${key} carries no phaser: give ${key} item:phaser`);
+
+  if (opts.grant !== undefined || opts.revoke !== undefined) {
+    const [grant, revoke] = [opts.grant ?? [], opts.revoke ?? []].map((freqs) => freqs.map(Number));
+    if ([...grant, ...revoke].some(Number.isNaN)) throw Error("grant, revoke: expected numbers");
+    const known = new Set([...w.shields.freqsOf(key), ...grant]);
+    for (const freq of revoke) known.delete(freq);
+    w.shields.tune(key, [...known]);
+  }
+  if (opts.shoot !== undefined || opts.raise === true) {
+    const at = opts.shoot === undefined ? null : w.npc.get(opts.shoot).key;
+    return void w.phasers.arm(key, { at, part: opts.part ?? "head" });
+  }
+  const { freqs = [], dead = [] } = w.shields.phaserOf(key)?.meta ?? {};
+  return { freqs, dead };
+}
+
+type PhaserOpts = {
+  npcKey?: string;
+  shoot?: string;
+  part?: string;
+  raise?: boolean;
+  lower?: boolean;
+  grant?: (number | string)[];
+  revoke?: (number | string)[];
+};
 
 export function play({ api, w }: JshCli.RunArg) {
   api.setPausable("world", false); // else it starts paused
@@ -1172,7 +1198,7 @@ const posing = new Map<string, (why: "replaced") => void>();
 
 /**
  * The player targets an npc — themself for their rings alone, a bare `psi` for off. See `w.player.psi`.
- * It is the player's, not a process's, so like `arm` it returns at once
+ * It is the player's, not a process's, so like `phaser` it returns at once
  * ```sh
  * psi abe
  * psi $( w player.key )
@@ -1329,6 +1355,37 @@ export function say(
 
   if (words) {
     w.speech.say(npc.key, words, opts.secs);
+  }
+}
+
+/**
+ * Switch shields on/off, define their frequency, or just list them all.
+ * A shield is a decor rect with `meta.shield`, see `w.shields` and `phaser`.
+ * ```sh
+ * shield
+ * shield shield-1 --off
+ * shield shield-1 --on
+ * shield shield-1 shield-2 freq:3
+ * shield shield-1 freq:null     # stops every phaser, kills none
+ * ```
+ */
+export function shield(
+  { api, args, w }: JshCli.RunArg,
+  opts: { keys: string[]; freq?: null | number; enabled?: boolean } = api.jsArg(args, {
+    "--on": "enabled",
+    "--off": "enabled:false",
+  }),
+) {
+  const keys = opts.keys ?? api.getJsOperands(args, opts);
+  if (keys.length === 0 || (opts.enabled === undefined && opts.freq === undefined)) {
+    if (keys.length > 0) throw Error("usage: shield [decorKey... [--on|--off] [freq:n]]");
+    return [...w.shields.segs].map(([key, seg]) => `${key} freq:${seg.freq} (${seg.on ? "on" : "off"})`);
+  }
+  for (const key of keys) {
+    w.shields.configure(key, {
+      ...(opts.enabled !== undefined && { on: opts.enabled }),
+      ...(opts.freq !== undefined && { freq: opts.freq }),
+    });
   }
 }
 
@@ -1559,8 +1616,8 @@ const wasdConfig = {
 } as const;
 
 /** How each move is made, as the command line gave it */
-function moveFlags({ fast, backwards, backstep, strafe }: Omit<JshCli.MoveOpts, "to">) {
-  return { fast, backwards, backstep, strafe };
+function moveFlags({ fast, backwards, backstep, strafe, near }: Omit<JshCli.MoveOpts, "to">) {
+  return { fast, backwards, backstep, strafe, near };
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
@@ -1599,7 +1656,10 @@ const booleanJsOptSomewhere = {
   facing: true,
   fast: true,
   force: true,
+  lower: true,
   nav: true,
+  near: true,
   point: true,
+  raise: true,
   strafe: true,
 };

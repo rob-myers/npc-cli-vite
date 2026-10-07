@@ -64,6 +64,11 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
       return morph !== undefined && morph.to === 1 && settled(morph, fadeSecsOf(morph), nowSecs()) === true;
     },
 
+    isHidden(slot) {
+      const morph = morphs[slot];
+      return morph !== undefined && morph.to === 0 && settled(morph, fadeSecsOf(morph), nowSecs()) === true;
+    },
+
     fadeAtPair(slots) {
       return fadeAt(slots.x).max(fadeAt(slots.y));
     },
@@ -295,6 +300,8 @@ export type FadeRooms = {
   isArriving(slot: number): boolean;
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
+  /** Whether `slot` is out of view and settled so: nothing in it is drawn */
+  isHidden(slot: number): boolean;
   /**
    * `1` in `"sight"` mode and `0` in the others, easing between the two as the mode changes — for
    * what the two modes do differently. See the tints in `Floor` and `Obstacles`, which `sight`
