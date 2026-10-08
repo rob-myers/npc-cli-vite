@@ -1,15 +1,16 @@
 # TODO
 
-- try web synth for background music
-- apply phaser-action animations on hit
+- improve walk/run arms e.g. bent out a bit
 - improve psi animation e.g. no height steps
-- restyle inventory icons e.g. darker
-- walk animation legs needn't reset on stop
-- predicates -> preds
+- can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
+- try web synth for background music
 
 ## World
 
 ### Animation and Npc
+
+- ✅ apply phaser-action animations on hit
+- ✅ walk animation legs needn't reset on stop
 
 - ✅ implement phaser action animations
   - minor pain
@@ -40,6 +41,8 @@
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
 ### Cleanliness
+
+- ✅ predicates -> preds
 
 - w.npc.npcToRoom -> w.npc.toRoom etc
 
@@ -79,6 +82,8 @@
 
 ### Inventory
 
+- ❌ restyle inventory icons e.g. darker
+
 - ✅ refine drop inventory
   - can drop decor points on floor e.g. keycard
   - can only drop decor quads on meta.surface
@@ -100,6 +105,12 @@
 - precompute tall obstacles by grKey (e.g. bunk beds) and avoid
 
 - check mobile performance
+
+### Shield
+
+- ✅ improve shield phaser suppression
+  - can raise weapon when not pointing towards shield
+  - cannot turn into shield
 
 ### Sword and Psi
 
