@@ -53,6 +53,12 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 See `docs/floor.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
 object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
 
+## Crisp fills
+
+See `docs/crisp-fills.md` — the ONLY doc for it. In short: a canvas read back as ids (the room-hit canvas,
+room slots) must be filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids
+into a third.
+
 ## Obstacle spritesheets
 
 See `docs/starship-sheets.md` — the ONLY doc for them. In short: `gen-starship-sheets` packs one rect
