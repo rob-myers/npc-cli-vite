@@ -576,6 +576,7 @@ export async function move(
   } = ct.api.jsArg(ct.args, {
     npc: "npcKey",
     "--fast": "fast",
+    "--walk": "fast:false",
     "--force": "force",
     "--backwards": "backwards",
     "--back": "backwards",
@@ -1585,13 +1586,14 @@ export async function* wasd_delta(
 ) {
   const { api, w } = ct;
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  const length = (opts.fast === true ? agentConfig.maxSpeed.run : agentConfig.maxSpeed.walk) * wasdConfig.stepSecs;
 
   while (true) {
     await api.sleep(wasdConfig.intervalSecs); // a kill rejects it
     const direction = w.view.getWasdDirection();
     if (direction.length === 0) continue; // none held or opposites
     const npc = w.npc.get(opts.npcKey);
+    const fast = opts.fast === true || npc.anim.hurry === true; // e.g. the player's run key
+    const length = agentConfig.maxSpeed[fast ? "run" : "walk"] * wasdConfig.stepSecs;
 
     if (opts.nav === true) {
       const slide = npc.getSlideResult(direction.normalize(length));

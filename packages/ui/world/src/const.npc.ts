@@ -42,7 +42,7 @@ export const agentConfig = {
     /** Separating idle npcs should not move by default */
     idleSeparating: 0.005,
     walk: 1.5,
-    run: 4,
+    run: 3,
     /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
   },

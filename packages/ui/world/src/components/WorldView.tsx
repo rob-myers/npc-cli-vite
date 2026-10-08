@@ -106,7 +106,7 @@ export function WorldView(props: React.PropsWithChildren) {
       zoomCrossFadeMs: 0,
       zoomInSlow: false,
       centreHint: false,
-      fHeld: false,
+      cHeld: false,
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
@@ -863,14 +863,14 @@ export function WorldView(props: React.PropsWithChildren) {
             state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
             w.menu?.update();
           }
-        } else if (e.key === "f" || e.key === "F") {
+        } else if (e.key === "c" || e.key === "C") {
           // the look button's gesture on a key: a held key REPEATS, which is the long press — no
           // timer of our own, and a tap never gets there. The short press waits for the release,
           // since only by then is it known not to have been a hold
           if (e.repeat === false) {
-            state.fHeld = false;
-          } else if (state.fHeld === false) {
-            state.fHeld = true;
+            state.cHeld = false;
+          } else if (state.cHeld === false) {
+            state.cHeld = true;
             state.onLookGesture(true);
           }
         }
@@ -878,7 +878,7 @@ export function WorldView(props: React.PropsWithChildren) {
       onKeyUp(e) {
         state.keysDown.delete(e.key.toLowerCase());
         if (isTypingTarget(e)) return;
-        if ((e.key === "f" || e.key === "F") && state.fHeld === false) {
+        if ((e.key === "c" || e.key === "C") && state.cHeld === false) {
           state.onLookGesture(false);
         }
       },
@@ -1149,6 +1149,7 @@ export function WorldView(props: React.PropsWithChildren) {
         store.patch({ follow });
         state.set({ follow });
         w.update(); // the look button shows it
+        w.hud?.update();
         w.r3f?.invalidate();
       },
       setCameraMode(cameraMode) {
@@ -1245,7 +1246,7 @@ export function WorldView(props: React.PropsWithChildren) {
           controls.u.panOffset.set(0, 0, 0);
           controls.sphericalDelta.set(0, 0, 0);
           state.lookingAt = true; // the look button shows it, e.g. a pan nobody can see yet
-          w.menu?.update();
+          w.hud?.update();
 
           // Further pans take longer, so the apparent speed stays similar. The floor tapers away
           // over the last `lookAtShortUnits`, else a pan onto a player already under the crosshair
@@ -1292,7 +1293,7 @@ export function WorldView(props: React.PropsWithChildren) {
           // `followPlayer` stands down whilst this is non-zero, so every way out must clear it
           state.lookAtAnimId = 0;
           state.lookingAt = false;
-          w.menu?.update();
+          w.hud?.update();
           // else the next frame's settle would pull the view off the radius just reached
           controls.setZoomFromRadius(controls.spherical.radius);
           // as a gesture's end does: a pan on load is otherwise lost to the next load
@@ -1765,10 +1766,10 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onKeyUp(e: KeyboardEvent): void;
-  /** Whether the `f` key has been held long enough to have done its long press */
-  fHeld: boolean;
+  /** Whether the `c` key has been held long enough to have done its long press */
+  cHeld: boolean;
   /**
-   * The look BUTTON's gesture and `f`'s alike, so the two cannot drift apart: a press looks, a hold
+   * The look BUTTON's gesture and `c`'s alike, so the two cannot drift apart: a press looks, a hold
    * takes up the follow, and whilst following either one leaves it. See `WorldMenu`'s look button
    */
   onLookGesture(held: boolean): void;

@@ -234,8 +234,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
           npc.anim.backwards =
             npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
-          npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
-          npc.anim.fastAsked = fast === true;
+          if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
           await w.npc.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);

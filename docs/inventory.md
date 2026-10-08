@@ -17,6 +17,10 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 Bottom centre of a World; a slot is pressed. None on a net client, where neither psi
 nor phasers are mirrored.
 
+At its left end, ahead of the slots, are two buttons for the player themself — all a client gets:
+look/follow (a press looks, a long press toggles the follow, as `c`) and, not on a client, walk/run
+(`f`, `w.player.toggleRun()`: their `anim.hurry`).
+
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |

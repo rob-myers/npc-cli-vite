@@ -40,16 +40,18 @@ export class NpcAnimation {
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
   idleClip = emptyAnimationClip;
   moveClip = emptyAnimationClip;
-  /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
-  fast = false;
+  /** They run where they can, until told otherwise — by a move's `fast`, or the player's shift */
+  hurry = false;
+  /** They may run. Not which gait shows — that is `moveClip` */
+  get fast() {
+    return this.hurry === true && this.backwards === false && this.strafe === false;
+  }
   /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */
   strafe = false;
   /** The move left `strafe` to `face.aim`, so it follows the aim mid-move — see `setStrafe` */
   strafeFollowsAim = false;
-  /** The move asked to run, so a strafe let go mid-move may run again */
-  fastAsked = false;
   /** Is `walk` on show as the four directional gaits — see `setPose` */
   strafing = false;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
@@ -325,9 +327,17 @@ export class NpcAnimation {
   setStrafe(strafe: boolean) {
     this.strafe = strafe;
     this.backwards = false;
-    this.fast = strafe === false && this.fastAsked; // strafing never runs
     if (this.npc.agent !== null) this.npc.agent.maxSpeed = this.maxSpeedFor();
     this.showGait();
+  }
+
+  /** Run, or stop running, mid-move: the gait follows their speed — see `syncGait` */
+  setHurry(hurry: boolean) {
+    this.hurry = hurry;
+    const { agent } = this.npc;
+    // `0` is pinned for the turn, and a strafe's is `syncStrafe`'s
+    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
+      agent.maxSpeed = this.maxSpeedFor();
   }
 
   /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
