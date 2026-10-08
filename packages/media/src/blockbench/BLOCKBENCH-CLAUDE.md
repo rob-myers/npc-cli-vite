@@ -203,6 +203,27 @@ onto a bone, by the forearm's tip `(0, -5.6, 0)`.
 - `pacify_in` (1.5s, once): a jolt back at 0.25, knees buckling at 0.6, a half recovery at 1.0, ending
   on `pacified`'s first key. `pacified` (3s loop): slack, head lolled, arms dead, a slow sway of `hips` z.
 
+### Sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
+
+Drafts too. Each keeps its base's root and seat or bed: `sit`'s root and legs (feet -10, still), `lie`'s root.
+No `_in` for the pacified pair, the game fades in from `sit` / `lie`. Lengths are the standing set's.
+
+- `sit_pain_high` (1.6s): folded ~26, ~33 at 0.8 (stomach -14 / -18, chest -12 / -15), `pain_high`'s crossed
+  forearms. The shake is `stomach` z and `head`, a key every 0.1s, linear: `hips` would swing the legs.
+- `sit_pain_low` (1.2s): stomach -9 / -11, chest -8 / -9, head bowed -6 / -10 with a small `y` shake, shoulders
+  up (arm position y 0.3 / 0.45), hands forward onto the knees (arms x 18).
+- `sit_pacified` (3s): `sit`'s arms, in the lap. Slumped (stomach -8, chest -7), head lolled as `pacified`
+  ([-14,5,12]), `stomach` z swaying 2.5 / -2.5.
+- `lie_pain_high` (1.6s): a curl, not an arch. Stomach -10 / -14, chest -8 / -11, knees up (thighs 35 / 40,
+  shins -60 / -66, feet 10), the crossed forearms and the same shake.
+- `lie_pain_low` (1.2s): stomach -3 / -5, head turned aside (y 20) with a small shake, fists drawn up over the
+  chest (arms [8,0,±8], forearms [128,0,±22]), the right knee a little raised (thigh 14, shin -24).
+- `lie_pacified` (3s): head rolled aside ([0,24,5], position z -0.5 so it stays on the pillow), arms and legs
+  splayed a little, a shallow breath (stomach position z -0.15 at 1.5).
+
+Measured, mid-clip: no sat hand rises above the lap bar `sit_pain_high`'s, at y 4.4 - 5.6 against the stomach.
+The table top was ASSUMED at y ~6, as no clip records it. Lain, the lowest point is the head, 0.4 under `lie`'s.
+
 **Solve with ONE animation playing.** `Animator.preview()` adds every animation whose `playing` is
 set, so a solve run with another still playing lands on the sum: clear `playing` on the rest first.
 
