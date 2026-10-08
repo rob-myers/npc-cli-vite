@@ -4883,7 +4883,7 @@
             "window": true,
             "h": 0.2,
             "inset": 0.025,
-            "dup": {"force-y": 0.4},
+            "dup": {"force-y": 0.4, "h": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0
@@ -4902,7 +4902,7 @@
           "meta": {
             "obstacle": true,
             "window": true,
-            "h": 0.2,
+            "h": 0.4,
             "inset": 0.025,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -15557,7 +15557,7 @@
             "window": true,
             "h": 0.2,
             "inset": 0.025,
-            "dup": {"force-y": 0.4},
+            "dup": {"force-y": 0.4, "h": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0,
@@ -15573,7 +15573,7 @@
           "meta": {
             "obstacle": true,
             "window": true,
-            "h": 0.2,
+            "h": 0.4,
             "inset": 0.025,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -21797,7 +21797,7 @@
             "window": true,
             "h": 0.2,
             "inset": 0.025,
-            "dup": {"force-y": 0.4},
+            "dup": {"force-y": 0.4, "h": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 1,
@@ -21818,7 +21818,7 @@
           "meta": {
             "obstacle": true,
             "window": true,
-            "h": 0.2,
+            "h": 0.4,
             "inset": 0.025,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -24071,7 +24071,7 @@
             "window": true,
             "h": 0.2,
             "inset": 0.025,
-            "dup": {"force-y": 0.4},
+            "dup": {"force-y": 0.4, "h": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 0
@@ -24090,7 +24090,7 @@
           "meta": {
             "obstacle": true,
             "window": true,
-            "h": 0.2,
+            "h": 0.4,
             "inset": 0.025,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -42783,7 +42783,7 @@
               "window": true,
               "h": 0.2,
               "inset": 0.025,
-              "dup": {"force-y": 0.4},
+              "dup": {"force-y": 0.4, "h": 0.4},
               "symKey": "window--007",
               "origObstacleId": 0,
               "windowId": 0
@@ -42803,7 +42803,7 @@
             "window": true,
             "h": 0.2,
             "inset": 0.025,
-            "dup": {"force-y": 0.4},
+            "dup": {"force-y": 0.4, "h": 0.4},
             "symKey": "window--007",
             "origObstacleId": 0,
             "windowId": 1
@@ -42826,7 +42826,7 @@
             "meta": {
               "obstacle": true,
               "window": true,
-              "h": 0.2,
+              "h": 0.4,
               "inset": 0.025,
               "symKey": "window--007",
               "origObstacleId": 1,
@@ -42847,7 +42847,7 @@
           "meta": {
             "obstacle": true,
             "window": true,
-            "h": 0.2,
+            "h": 0.4,
             "inset": 0.025,
             "symKey": "window--007",
             "origObstacleId": 1,
@@ -48180,5 +48180,5 @@
       "walls": {"color": "#000", "opacity": 0.5}
     }
   },
-  "hash": {"obstacles": -917390588}
+  "hash": {"obstacles": 109360686}
 }
