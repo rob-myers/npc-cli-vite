@@ -67,6 +67,17 @@ Sat or lain it is always the right arm — no gun is in it there — and it is A
 until the forearm lines up on the spot (`anim.upper.aim`, as a phaser's, but with `maxRad` a half turn),
 so they reach back to a shelf behind their head.
 
+SAT, the clip is `sit_reach` instead, for either: their hand rests under the table, so it is drawn back
+beside the hip, up by the ribs and over the edge before it goes out, then home the same way. It is
+played from its start at full weight (`setUpper`'s `played`), sets out from `sit`'s own arm, and takes
+`inventoryConfig.sitReach`: out by `outSecs`, when the item moves, and home by `homeSecs`. The aim is
+eased in only once the hand is over the edge, and out before it comes back under. The clip turns
+their torso too — a lean back as the elbow comes back, forward into the reach — ON `sit`'s own, which
+breathes on under it (`upperAddsTorso`). Their head is held level against those turns, and only glances
+at the spot (`sitReach.look`). What they put down goes where that
+hand comes down: `sitReach.at` ahead of them, so further onto the table than its edge (`getDropSpot`
+tries deeper in, and takes the spot nearest it).
+
 On the FLOOR (below `reach.raisedFrom`) either is a squat instead: the whole-body `crouch` pose for
 `crouchSecs`, then back to idle. Not whilst sat or lain: then it is the arm clip as above.
 

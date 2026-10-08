@@ -101,11 +101,17 @@ export const inventoryConfig = {
   /** A decor's `meta.item` */
   kinds: ["phaser", "book", "box", "keycard"],
   /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
-  height: { phaser: 0.12, book: 0.05, box: 0.25 } as Partial<Record<string, number>>,
+  height: { phaser: 0.12, book: 0.05, box: 0.1 } as Partial<Record<string, number>>,
   /** Put down on a surface: `margin` metres in from its edge, tried every `step` along that edge as far as `span` either way */
   surface: { margin: 0.05, step: 0.02, span: 1 },
   /** Seconds their arm is given to reach out, before what they put down is there, or what they take is gone */
   reachSecs: 0.45,
+  /**
+   * Sat, the `sit_reach` clip instead: seconds till the hand is out, and till it is home. Their aim
+   * eases `in` once the hand is over the table's edge, and `out` before it comes back under; their head
+   * turns to it by `look` alone, a glance. What they put down goes `at` metres ahead, where the hand lands
+   */
+  sitReach: { outSecs: 0.73, homeSecs: 1.46, aimIn: [0.5, 0.67], aimOut: [0.79, 0.96], look: 0.08, at: 0.55 },
   /** Seconds squatted to the floor before it is done */
   crouchSecs: 0.55,
   /** Metres short of an item they walk up to before taking it, or as near as the navmesh lets them */

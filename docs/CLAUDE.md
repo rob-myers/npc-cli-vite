@@ -210,6 +210,9 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
   doesn't already say. Prefer none to a restatement. Where one does clarify, attach it to the syntax
   it explains — a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.
   A JSDoc is two lines at most: give the "why" in a clause, never recap a mechanism the reader can see
+- Comments must also be CLEAR: a plain statement, subject first, one idea to a sentence. No
+  stream of consciousness: no clauses strung together on commas, dashes and colons, no "X, so Y — unless
+  Z: W". A second idea is a second short sentence, or left out. Say what the thing is or returns before why
 - Never scale a decor quad non-uniformly: to reshape one e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`
 - To darken or recolour ONE placed decor, tint it — `tint=#777` in its symbol name (`meta.tint`, multiplied in) — rather than redrawing its svg, which changes every use
 - Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
