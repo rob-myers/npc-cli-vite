@@ -128,7 +128,8 @@ export default function WorldHud() {
         className={cn(
           "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
           opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-          big ? "size-12" : "size-18",
+          big ? "h-12" : "h-18",
+          opts.narrow === true ? (big ? "w-9" : "w-13") : big ? "w-12" : "w-18",
           opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
           opts.had === false && "*:opacity-25",
         )}
@@ -242,6 +243,7 @@ export default function WorldHud() {
             {
               title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
               had: true,
+              narrow: true,
               active: state.selected === def.key,
               drop: def.key,
               // a keycard for a door joins the keys
@@ -395,11 +397,32 @@ const barClass = "@container pointer-events-none absolute inset-x-0 bottom-6 z-1
 /** Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring */
 const rowClass = "pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
 
+/** Each icon's size, as a fraction of its slot's height: what they merely carry is drawn smaller */
+const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
+  psi: 0.85,
+  phaser: 0.85,
+  keychain: 0.85,
+  book: 0.65,
+  box: 0.65,
+  /** It fills its square, so reads larger than the rest */
+  keycard: 0.53,
+};
+const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });
+
 /** The shadow is each icon's own: on a slot it would be redrawn with every frame of the brain */
-const iconClass = "size-[85%] drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
+const iconShadow = "drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
+const iconClass = cn("aspect-square", iconShadow);
 
 const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" }) {
-  return <img className={cn(iconClass, "object-contain")} src={itemIconUrl[kind]} alt={kind} draggable={false} />;
+  return (
+    <img
+      className={cn(iconClass, "object-contain")}
+      style={iconStyle(kind)}
+      src={itemIconUrl[kind]}
+      alt={kind}
+      draggable={false}
+    />
+  );
 });
 
 /**
@@ -416,7 +439,7 @@ const PhaserIcon = memo(function PhaserIcon({
   dead: boolean;
 }) {
   return (
-    <svg className={iconClass} viewBox="0 0 64 64" aria-label="phaser">
+    <svg className={iconClass} style={iconStyle("phaser")} viewBox="0 0 64 64" aria-label="phaser">
       <defs>
         <radialGradient id="hud-phaser-glow">
           <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
@@ -491,7 +514,8 @@ const BrainIcon = memo(function BrainIcon({ firing, paused }: { firing: boolean;
   return (
     <svg
       ref={useSvgPause(paused)}
-      className={firing && paused === false ? "size-[85%]" : iconClass}
+      className={firing && paused === false ? "aspect-square" : iconClass}
+      style={iconStyle("psi")}
       viewBox="0 0 64 64"
       aria-label="psi"
     >
@@ -634,6 +658,8 @@ type SlotOpts = {
   plain?: true;
   /** What a right-click on it offers */
   menu?: SlotMenuItem[];
+  /** A carried item's: they sit closer together */
+  narrow?: true;
 };
 
 export type State = {
