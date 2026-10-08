@@ -339,7 +339,7 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
     <div
       className={cn(
         // `term-hover` is darker than the `term-fence` it sits on, so it vanishes in dark mode
-        "px-3 py-1 cursor-pointer hover:bg-term-hover-strong",
+        "group/example relative px-3 py-1 cursor-pointer hover:bg-term-hover-strong",
         // bordered throughout, so gaining the colour shifts nothing
         "border border-transparent",
         example.id === state.ranId && "border-term-ok/50 bg-term-ok/10",
@@ -362,16 +362,24 @@ function PreviewExample({ example, state }: { example: Example; state: UseStateR
       )}
 
       <div className="flex items-start">
-        {/* `data-src` is the command alone, comment lines excluded, so that is what it copies */}
-        <button type="button" title="copy command" className={copyColumnCss} onClick={state.onExampleCopy}>
+        <span className={cn(copyColumnCss, "group-has-[button:hover]/example:text-term-foreground")}>
           {copiedSrc === src ? (
             <CheckIcon alt="copied" className={cn(copyIconCss, "text-term-ok")} />
           ) : (
             <CopyIcon alt="copy" className={copyIconCss} />
           )}
-        </button>
+        </span>
         <code className={cn(exampleCodeCss, "flex-1 min-w-0")}>{srcSegments(example, state.edits)}</code>
       </div>
+
+      {/* the whole left column, so a tap near the icon copies rather than runs */}
+      <button
+        type="button"
+        title="copy command"
+        aria-label="copy command"
+        className="absolute inset-y-0 left-0 w-10 cursor-pointer"
+        onClick={state.onExampleCopy}
+      />
     </div>
   );
 }
@@ -401,16 +409,13 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
           className={cn(
             "block w-full text-left cursor-pointer select-none transition-colors",
             // as the preview: the hover tints the background, and the last run keeps its border
-            "px-3 py-2 rounded border bg-term-fence hover:bg-term-hover-strong",
+            // `pr-10` keeps the text clear of the copy button over its right edge
+            "pl-3 pr-10 py-2 rounded border bg-term-fence hover:bg-term-hover-strong",
             example.id === state.ranId ? "border-term-ok" : "border-term-border-subtle",
           )}
           onClick={state.onExampleRun}
         >
-          <code className={exampleCodeCss}>
-            {/* only the first line makes room for the overlaid toolbar */}
-            <span aria-hidden className="float-right w-8 h-[1.45em]" />
-            {srcSegments(example, state.edits)}
-          </code>
+          <code className={exampleCodeCss}>{srcSegments(example, state.edits)}</code>
         </Tooltip.Trigger>
 
         {/* portalled to the library, else the scrolling article would clip it, or Jobs show it */}
@@ -428,15 +433,19 @@ function LibraryExample({ example, state }: { example: Example; state: UseStateR
         </Tooltip.Portal>
       </Tooltip.Root>
 
-      <div className="absolute right-1.5 top-1.5 flex items-center rounded bg-term-fence/90 px-1 py-0.5">
-        <button type="button" title="copy" className={iconCss} onClick={state.onExampleCopy}>
-          {copiedSrc === src ? (
-            <CheckIcon alt="copied" className="size-4 text-term-ok" />
-          ) : (
-            <CopyIcon alt="copy" className="size-4" />
-          )}
-        </button>
-      </div>
+      {/* full height, so a tap near the icon copies rather than runs */}
+      <button
+        type="button"
+        title="copy"
+        className={cn(iconCss, "absolute inset-y-0 right-0 w-10 flex items-start justify-end pt-2 pr-2.5")}
+        onClick={state.onExampleCopy}
+      >
+        {copiedSrc === src ? (
+          <CheckIcon alt="copied" className="size-4 text-term-ok" />
+        ) : (
+          <CopyIcon alt="copy" className="size-4" />
+        )}
+      </button>
     </div>
   );
 }
@@ -456,14 +465,14 @@ const exampleCodeCss = cn(
 );
 
 /**
- * The column left of every preview line, holding the copy button on the command's own line.
+ * The column left of every preview line, holding the copy icon on the command's own line.
  * The comment above it leaves the same width empty, so the two align.
  */
 const copyColumnCss = cn(
   // its own font size, so `1.45em` is one line of the code beside it
   "shrink-0 w-7 h-[1.45em] flex items-center text-[13px]",
   touchDevice && "text-[15px]",
-  "cursor-pointer text-term-faint transition-colors hover:text-term-foreground",
+  "text-term-faint transition-colors",
 );
 
 const copyIconCss = "size-3.5";
