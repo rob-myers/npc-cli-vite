@@ -653,6 +653,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
               adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
             }
+            state.syncFadeRooms(); // seen through at once
             break;
           }
           case "door-closed":

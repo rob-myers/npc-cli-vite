@@ -273,6 +273,11 @@ export default function Doors() {
       isOpen(gmId, doorId) {
         return state.openRatioArray[state.encodeGmDoorId(gmId, doorId)] > doorOpenTest;
       },
+      isSeenThrough(gdKey) {
+        const door = state.byKey[gdKey];
+        if (door === undefined) return false;
+        return door.open === true || state.animTargets.has(state.encodeGmDoorId(door.gmId, door.doorId));
+      },
       onDoorChanged(instanceId, target) {
         state.openRatioArray[instanceId] = target;
         state.animTargets.delete(instanceId);
@@ -744,6 +749,8 @@ export type State = {
   drawDoorTextures: () => void;
   encodeGmDoorId: (gmId: number, doorId: number) => number;
   isOpen: (gmId: number, doorId: number) => boolean;
+  /** Open, or on its way either way: seen through from the moment it starts to open, until it has shut */
+  isSeenThrough: (gdKey: Geomorph.GmDoorKey) => boolean;
   /** Toggles when `open` is `undefined`. */
   forceDoor: (gmId: number, doorId: number, open?: boolean) => void;
   onDoorChanged: (instanceId: number, target: number) => void;

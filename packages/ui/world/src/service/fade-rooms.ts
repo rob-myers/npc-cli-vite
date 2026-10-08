@@ -181,6 +181,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
  *
  * `gmRoomGraph` already joins a room to its doors and windows, and a hull door to the one facing it
  * in the next geomorph — so this is that graph walked outwards, stopping at any door that is SHUT.
+ * One on its way open already counts as open, so the room beyond fades in as it opens.
  *
  * The player's own room's windows are always seen through; any further off only where an
  * open door already reached declares a line of sight to it (tag `rel=sees:{name}`).
@@ -215,7 +216,7 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
   return w.gmRoomGraph
     .getReachableUpTo(gmRoomId.grKey, (node, depth) => {
       if (node.type === "door") {
-        if (w.d[node.gdKey]?.open !== true) return true;
+        if (w.door.isSeenThrough(node.gdKey) === false) return true;
         // an open door we have reached vouches for whatever it says it can see
         for (const key of node.lineOfSight ?? []) vouched.add(key);
         return false;
@@ -267,7 +268,7 @@ function nowSecs() {
  * How long a room takes to fade in, and to fade out, in seconds — in is the quicker: a room
  * arriving is wanted at once, whilst one leaving may go at its leisure
  */
-const ROOM_FADE_IN_SECS = 0.35;
+const ROOM_FADE_IN_SECS = 0.15;
 const ROOM_FADE_OUT_SECS = 0.7;
 
 /** The pace of the fade a morph is on — heading up is a fade in. The shader's `fadeAt` agrees */
