@@ -94,6 +94,8 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 
 **Strafing** — see `docs/npc-strafe.md`, the ONLY doc for it. In short: whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing, and `syncStrafe` blends four directional gaits by heading, paced to the ground each covers.
 
+**Stance** — see `docs/npc-stance.md`, the ONLY doc for it. In short: after any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it.
+
 `navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. See `docs/navcat-patch.md`, including how to edit the patch.
 
 ## Which room an npc is in

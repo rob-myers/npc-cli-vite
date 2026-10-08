@@ -11,6 +11,7 @@ import {
   fadeSecs,
   gaitStride,
   npcScale,
+  stanceConfig,
   strafeEaseSecs,
   strafeSpeed,
   upperFadeSecs,
@@ -18,6 +19,7 @@ import {
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
+import { newStance, takeStance, tickStance } from "./npc-stance";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 /** Stands in until the gltf loads, and for a clip it lacks */
@@ -72,6 +74,8 @@ export class NpcAnimation {
   upper = newUpper();
   /** …and one over the LEFT arm, so each hand has its own e.g. psi and a phaser: the head takes both, the right's last */
   upperLeft = newUpper();
+  /** Their feet kept apart after a gait — see `npc-stance` */
+  stance = newStance();
   /** The head, shared by both */
   upperHead = { group: null as null | THREE.Group, entry: null as null | UpperBone };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
@@ -128,6 +132,9 @@ export class NpcAnimation {
       action.time = (prev.time / clips[this.pose].duration) * clips[next].duration;
     }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
+    const { group } = this.npc;
+    if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
+      takeStance(this.stance, group, this.npc);
     this.pose = next;
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
@@ -158,6 +165,9 @@ export class NpcAnimation {
   tick(delta: number) {
     this.mixer.update(delta);
     this.tickUpper(delta);
+    const { stance } = this;
+    if (stance.held === true && this.npc.group !== null)
+      tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
 
     const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
@@ -563,6 +573,16 @@ export class NpcAnimation {
 
 function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
+}
+
+/** A pose that leaves the feet apart as it ends */
+function isStride(key: AnimationClipKey) {
+  return isGait(key) || key === "backwards";
+}
+
+/** A pose stood still in, whose feet a stance may hold apart */
+function isStill(key: AnimationClipKey) {
+  return key === "idle" || key === "breathe";
 }
 
 /** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and likewise its `torso`'s — cached per clip */

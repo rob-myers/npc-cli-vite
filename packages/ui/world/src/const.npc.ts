@@ -306,6 +306,27 @@ export const poseConfig = {
   aimFrom: [0, -0.37, 0],
 } as const;
 
+/**
+ * Stood still after a gait, their feet stay roughly where they stopped — see `npc-stance`. `on: false`
+ * for none of it. Lengths are in the model's own metres.
+ * - `maxOff`: the furthest a foot is held from where the standing pose has it.
+ * - `keep`, `maxSplit`: the share kept of how far apart the feet were, and the most.
+ * - `minOff`: feet nearer the pose's places than this are not held at all.
+ * - `maxShift`: the furthest the hips move to stand over the feet. `maxLean`: the slant left to the legs.
+ * - `level`: ankles within this of one another count as both down, and the one ahead is the planted one.
+ */
+export const stanceConfig = {
+  on: true,
+  keep: 0.6,
+  maxSplit: 0.24,
+  maxOff: 0.2,
+  minOff: 0.01,
+  maxShift: 0.08,
+  maxLean: 0.04,
+  level: 0.02,
+  fadeSecs: 0.3,
+};
+
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
 export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe` */
