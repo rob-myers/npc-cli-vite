@@ -140,7 +140,8 @@ decor to:[3,4.5] key:lamp meta:'{ label: "lamp" }'
 decor ls | map key | decor rm
 ```
 
-Keys are the next free `<type>-<n>` unless `key:` is given and free. `meta.shown` defaults on, so
+Keys are the next free `<type>-<n>` unless `key:` is given and free. Piped to, `key:` is a prefix,
+e.g. `pick | decor key:shield-` gives `shield-0`, `shield-1`, counted from 0 each run and replacing any there. `meta.shown` defaults on, so
 what was placed can be seen. A pick's own meta is dropped: only its `{ x, y }` is kept, and `Decor`
 finds the room. `decor` yields each key it makes.
 

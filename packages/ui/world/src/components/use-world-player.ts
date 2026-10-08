@@ -38,6 +38,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") state.toggleArm();
+        else if (e.code === "KeyF") state.toggleRun();
         else return;
         w.hud?.update();
         w.view.forceUpdate();
@@ -89,6 +90,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (w.phasers.isLocked(state.key))
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
+      },
+      toggleRun() {
+        const npc = w.n?.[state.key];
+        npc?.anim.setHurry(!npc.anim.hurry);
+        w.hud?.update();
       },
       togglePsi() {
         if (w.n?.[state.key] === undefined || w.psi === null) return;
@@ -233,12 +239,14 @@ export type State = {
   /** Two fingers down on the canvas that may yet be a tap: since when, and where */
   twoTap: null | { startMs: number; downs: [Touch, Touch] };
 
-  /** The player's controls: `q` psi, `e` their phaser — the view's own keys are WorldView's */
+  /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
   /** A two-finger tap on the canvas: its left half psi, its right half their phaser — as their hands, and the bar */
   onTouch(e: TouchEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
+  /** Run or walk — their `anim.hurry` */
+  toggleRun(): void;
   /** Psi off, else back on to the last target — on needs psi */
   togglePsi(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */

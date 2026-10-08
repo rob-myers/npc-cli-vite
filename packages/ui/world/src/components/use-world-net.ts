@@ -805,7 +805,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           if (a.moving !== mirror.prevMoving) {
             mirror.prevMoving = a.moving;
             if (a.moving === true) {
-              npc.anim.fast = a.run; // the clip follows their streamed speed — see `syncGait`
+              npc.anim.hurry = a.run; // the clip follows their streamed speed — see `syncGait`
               npc.anim.startMoving();
             } else {
               npc.anim.startIdle();

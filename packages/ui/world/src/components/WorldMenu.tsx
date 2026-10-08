@@ -13,7 +13,6 @@ import {
   GlobeStandIcon,
   type Icon,
   PauseIcon,
-  PersonSimpleCircleIcon,
   PersonSimpleIcon,
   PlayIcon,
   PowerIcon,
@@ -56,8 +55,6 @@ export function WorldMenu() {
       debugHitOpen: false,
       dragged: false,
       gmGraphsOpen: false,
-      lookLongPressed: false,
-      lookTimeoutId: 0,
       menuWidth: saved.menuWidth,
       minY: 40,
       menuOpen: false,
@@ -115,22 +112,6 @@ export function WorldMenu() {
         if (state.confirm("remount-world") === true) {
           clearWorldFlags(w.key); // else it arrives unveiled, with no bootstrap to see
           uiStoreApi.setUiMeta(w.id, (draft) => void (draft.mountKey = Date.now()));
-        }
-      },
-
-      // `WorldView`'s `onLookGesture`, short or long, as `f` pressed or held is
-      onLookPressStart() {
-        state.lookLongPressed = false;
-        state.lookTimeoutId = window.setTimeout(() => {
-          if (state.dragged === true) return; // dragging the column is not a press
-          state.lookLongPressed = true;
-          w.view.onLookGesture(true);
-        }, lookLongPressMs);
-      },
-      onLookPressEnd(cancelled = false) {
-        window.clearTimeout(state.lookTimeoutId);
-        if (cancelled === false && state.dragged === false && state.lookLongPressed === false) {
-          w.view.onLookGesture(false);
         }
       },
 
@@ -380,9 +361,6 @@ export function WorldMenu() {
   // held briefly, else a fast load just flickers the trigger
   const spinnerKeys = useToastKeys(pendingKeys, spinnerMinMs);
   const toggleToastKeys = useToastTs(state.toastTs);
-  // a flash over the look button whenever follow is toggled — by this button, by the row in the
-  // debug list, or by `f`. Any of them lands here, since it watches the VALUE
-  const followFlash = useChangeCount(w.view.follow);
 
   const menuTrigger = (
     <div className="outline-width-1 grid place-items-center size-9 bg-neutral-800 text-white">
@@ -735,49 +713,6 @@ export function WorldMenu() {
             ) : (
               <RobotIcon className="size-5 text-neutral-200" alt="ship" weight="bold" />
             )}
-          </div>
-
-          {/* a press looks at the player, or stops a follow (amber); a long press toggles the follow.
-              `f` is the same, pressed or held — see `WorldView`'s `onLookGesture` */}
-          <div
-            data-keep-menu-open
-            className="relative cursor-pointer outline-width-1 grid place-items-center bg-neutral-800 text-white hover:bg-neutral-700 size-9 touch-none select-none"
-            title={`camera: ${w.view.cameraMode}, follow ${w.view.follow ? "on" : "off"} (long press, or hold f, to toggle)`}
-            onPointerDown={() => state.onLookPressStart()}
-            onPointerUp={() => state.onLookPressEnd()}
-            onPointerLeave={() => state.onLookPressEnd(true)}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            <AnimatePresence>
-              {w.view.lookingAt === true && (
-                // pulses whilst a pan is under way, which a black screen or a paused world would
-                // otherwise hide — and fades out from wherever the pulse is once it lands
-                <motion.div
-                  className="absolute inset-0 pointer-events-none bg-white/60"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.5 }}
-                  exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
-                  transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
-                />
-              )}
-            </AnimatePresence>
-            {followFlash > 0 && (
-              // keyed by the count, so each toggle remounts it and replays the fade from the top
-              <motion.div
-                key={followFlash}
-                className={cn(
-                  "absolute inset-0 pointer-events-none",
-                  w.view.follow === true ? "bg-amber-300" : "bg-neutral-400",
-                )}
-                initial={{ opacity: 0.55 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
-              />
-            )}
-            <PersonSimpleCircleIcon
-              className={cn("size-5 relative", w.view.follow === true && "text-amber-300")}
-              alt="look/follow"
-            />
           </div>
         </div>
 
@@ -1185,12 +1120,6 @@ export type State = {
   /** Clicked once and awaiting its confirming click — `null` when nothing is */
   unconfirmed: null | Unconfirmed;
   unconfirmedTimeoutId: number;
-  /** Whether the look button has been held long enough to have toggled the follow */
-  lookLongPressed: boolean;
-  lookTimeoutId: number;
-  /** A click looks at the player; a long press toggles the follow */
-  onLookPressStart(): void;
-  onLookPressEnd(cancelled?: boolean): void;
   /** Controlled, so an unconfirmed option can keep the popup open — see `onStateSelectOpenChange` */
   stateSelectOpen: boolean;
   /** `true` if this click confirms `value`; otherwise `value` becomes the unconfirmed one */
@@ -1247,14 +1176,6 @@ const minMenuHeight = 120;
 const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
 const spinnerMinMs = 300;
-/** How long the look button must be held before it switches camera mode rather than looking */
-const lookLongPressMs = 500;
-/** How long the look button's flash takes to fade, when follow is turned on or off */
-const followFlashMs = 550;
-/** Half a pulse of the look button, whilst a pan is under way */
-const lookingAtPulseMs = 700;
-/** How long the pulse takes to fade once the pan lands */
-const lookingAtFadeMs = 400;
 
 const cameraModes: CameraModeType[] = ["free", "canonical"];
 const debugItems = [
@@ -1352,20 +1273,6 @@ export function MenuSelect<T extends string>({
       </Select.Portal>
     </Select.Root>
   );
-}
-
-/** How many times `value` has changed since mount — `0` until the first, so nothing flashes on load */
-function useChangeCount(value: unknown): number {
-  const [count, setCount] = useState(0);
-  const previous = useRef(value);
-
-  useEffect(() => {
-    if (previous.current === value) return;
-    previous.current = value;
-    setCount((x) => x + 1);
-  }, [value]);
-
-  return count;
 }
 
 function useToastTs(tsRecord: Record<string, number>, delayMs = 2000): string[] {

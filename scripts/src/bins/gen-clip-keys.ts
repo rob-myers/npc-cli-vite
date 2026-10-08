@@ -65,6 +65,20 @@ const turn = (clip: string, bone: string, at: Track["at"], keys = thirds): Track
   at,
 });
 
+/** Catmull-Rom through `[frame, value]`s, as Blockbench eases its own keys: held past the last */
+const through = (keyed: [number, Triple][]) => (t: number) => {
+  const at = (i: number) => keyed[Math.max(0, Math.min(keyed.length - 1, i))][1];
+  const i = keyed.findLastIndex(([frame]) => frame / fps <= t);
+  if (i >= keyed.length - 1) return at(i);
+  const u = (t * fps - keyed[i][0]) / (keyed[i + 1][0] - keyed[i][0]);
+  return at(i).map((p1, c) => {
+    const [p0, p2, p3] = [at(i - 1)[c], at(i + 1)[c], at(i + 2)[c]];
+    return (
+      0.5 * (2 * p1 + (p2 - p0) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u ** 2 + (3 * p1 - p0 - 3 * p2 + p3) * u ** 3)
+    );
+  }) as Triple;
+};
+
 /** A leg as posed: its thigh's rotation and its shin's `x`. The sole is flat when thigh, shin and foot `x` sum to nought */
 type Leg = { thigh: Triple; shinX: number };
 
@@ -144,6 +158,62 @@ const clips = {
         turn("sit", `${side}shin`, () => [-knee, 0, 0], [0]),
         turn("sit", `${side}foot`, (t) => [breathe(knee - 92, knee - 87)(t), 0, 0]),
       ]),
+  }),
+
+  /**
+   * A reach from `sit`, whose hand rests UNDER a table: drawn back beside the hip, up by the ribs and
+   * over the edge before it goes out, then home the same way, the torso going with it — see `w.e.reachFor`
+   */
+  sit_reach: recipe({
+    params: {
+      /** Frames each leg of it takes, and the reach is held */
+      leg: 4,
+      hold: 3,
+    },
+    tracks({ leg, hold }) {
+      const bones = ["stomach", "chest", "rightarm", "rightforearm"];
+      /** By `bones`. The torso's are turns ON `sit`'s own, which breathes; the arm's set out from that clip's */
+      const poses: Record<string, Triple[]> = {
+        sit: [
+          [0, 0, 0],
+          [0, 0, 0],
+          [5.7842, 7.0689, 5.1276],
+          [50, 0, 0],
+        ],
+        back: [
+          [1.5, 0, 0],
+          [1.5, -5, 0],
+          [-30, 0, 10],
+          [75, 0, 0],
+        ],
+        up: [
+          [3, 0, 0],
+          [3, -8, 0],
+          [-55, 0, 20],
+          [130, 0, 0],
+        ],
+        over: [
+          [0, 0, 0],
+          [-1, 2, 0],
+          [5, 0, 0],
+          [115, 0, 0],
+        ],
+        out: [
+          [-4, 0, 0],
+          [-4, 6, 0],
+          [84, 0, 0],
+          [15, 0, 0],
+        ],
+      };
+      const there = ["sit", "back", "up", "over", "out"];
+      const order = [...there, ...there.toReversed()];
+      /** The frame each is at: the reach held between the two `out`s */
+      const frame = (i: number) => i * leg + (i >= there.length ? hold - leg : 0);
+      return bones.map((bone, b) => {
+        const keyed = order.map((name, i): [number, Triple] => [frame(i), poses[name][b]]);
+        return turn("sit_reach", bone, through(keyed), [...keyed.map(([f]) => f / fps), length]);
+      });
+    },
   }),
 
   /**
@@ -282,7 +352,7 @@ for (const { clip, bone, channel, keys, at } of tracks) {
   const animation = bbmodel.animations.find((a: { name: string }) => a.name === clip);
   const animator = Object.values<any>(animation.animators).find((a) => a.name === bone);
   if (animator === undefined) throw Error(`${clip}: no animator for ${bone}`);
-  animator.keyframes = animator.keyframes
+  animator.keyframes = (animator.keyframes ?? []) // none, and Blockbench saves no list
     .filter((k: { channel: string }) => k.channel !== channel)
     .concat(
       keys.map((time) => {

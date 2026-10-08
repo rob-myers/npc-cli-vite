@@ -42,7 +42,7 @@ export const agentConfig = {
     /** Separating idle npcs should not move by default */
     idleSeparating: 0.005,
     walk: 1.5,
-    run: 4,
+    run: 3,
     /** Backing away — see `w.e.move`'s `backwards` */
     backwards: 0.8,
   },
@@ -169,6 +169,10 @@ export const fromAnimationClipKey = {
   drop_left: true,
   idle: true,
   lie: true,
+  lie_pacified: true,
+  lie_pacify_in: true,
+  lie_pain_high: true,
+  lie_pain_low: true,
   pacified: true,
   pacify_in: true,
   pain_arm_left: true,
@@ -185,6 +189,11 @@ export const fromAnimationClipKey = {
   run: true,
   shuffle: true,
   sit: true,
+  sit_pacified: true,
+  sit_pacify_in: true,
+  sit_pain_high: true,
+  sit_pain_low: true,
+  sit_reach: true,
   strafe_left: true,
   strafe_right: true,
   phaser_aim: true,
@@ -199,6 +208,65 @@ export const defaultFadeSecs = 0.3;
 
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
+
+/** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
+export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
+
+type ClipKey = keyof typeof fromAnimationClipKey;
+type HitRegion = "head" | "torso" | `${"arm" | "leg"}_${"left" | "right"}`;
+
+/** What a phaser hit does: the clip played, by where it lands and how they are — see `w.npc.hit` */
+export const hitConfig = {
+  /** Where a bone's part is */
+  region: {
+    head: "head",
+    chest: "torso",
+    stomach: "torso",
+    hips: "torso",
+    leftarm: "arm_left",
+    leftforearm: "arm_left",
+    rightarm: "arm_right",
+    rightforearm: "arm_right",
+    leftthigh: "leg_left",
+    leftshin: "leg_left",
+    leftfoot: "leg_left",
+    rightthigh: "leg_right",
+    rightshin: "leg_right",
+    rightfoot: "leg_right",
+  } as Record<string, undefined | HitRegion>,
+  clips: {
+    stand: {
+      head: "pacify_in",
+      torso: "pain_high",
+      arm_left: "pain_arm_left",
+      arm_right: "pain_arm_right",
+      leg_left: "pain_leg_left",
+      leg_right: "pain_leg_right",
+    },
+    sit: {
+      head: "sit_pacify_in",
+      torso: "sit_pain_high",
+      arm_left: "sit_pain_low",
+      arm_right: "sit_pain_low",
+      leg_left: "sit_pain_low",
+      leg_right: "sit_pain_low",
+    },
+    lie: {
+      head: "lie_pacify_in",
+      torso: "lie_pain_high",
+      arm_left: "lie_pain_low",
+      arm_right: "lie_pain_low",
+      leg_left: "lie_pain_low",
+      leg_right: "lie_pain_low",
+    },
+  } satisfies Record<string, Record<HitRegion, ClipKey>>,
+  /** Looped until released: every other clip above plays once */
+  pacified: ["pacified", "sit_pacified", "lie_pacified"] as ClipKey[],
+  /** What a clip played once goes on to, where that is not back to idle */
+  next: { pacify_in: "pacified", sit_pacify_in: "sit_pacified", lie_pacify_in: "lie_pacified" } as Partial<
+    Record<ClipKey, ClipKey>
+  >,
+};
 
 /**
  * Cross-fade seconds `fadeSecs[src][dst]`, from one animation clip into another.
@@ -216,6 +284,10 @@ export const fadeSecs: Record<
   drop_left: {},
   idle: { shuffle: 0.15 },
   lie: {},
+  lie_pacified: {},
+  lie_pacify_in: {},
+  lie_pain_high: {},
+  lie_pain_low: {},
   pacified: {},
   pacify_in: {},
   pain_arm_left: {},
@@ -233,6 +305,11 @@ export const fadeSecs: Record<
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
+  sit_pacified: {},
+  sit_pacify_in: {},
+  sit_pain_high: {},
+  sit_pain_low: {},
+  sit_reach: {},
   strafe_left: {},
   strafe_right: {},
   phaser_aim: { shuffle: 0.15 },
@@ -303,6 +380,27 @@ export const poseConfig = {
   aimSecs: 0.3,
   aimFrom: [0, -0.37, 0],
 } as const;
+
+/**
+ * Stood still after a gait, their feet stay roughly where they stopped — see `npc-stance`. `on: false`
+ * for none of it. Lengths are in the model's own metres.
+ * - `maxOff`: the furthest a foot is held from where the standing pose has it.
+ * - `keep`, `maxSplit`: the share kept of how far apart the feet were, and the most.
+ * - `minOff`: feet nearer the pose's places than this are not held at all.
+ * - `maxShift`: the furthest the hips move to stand over the feet. `maxLean`: the slant left to the legs.
+ * - `level`: ankles within this of one another count as both down, and the one ahead is the planted one.
+ */
+export const stanceConfig = {
+  on: true,
+  keep: 0.6,
+  maxSplit: 0.24,
+  maxOff: 0.2,
+  minOff: 0.01,
+  maxShift: 0.08,
+  maxLean: 0.04,
+  level: 0.02,
+  fadeSecs: 0.3,
+};
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
 export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };

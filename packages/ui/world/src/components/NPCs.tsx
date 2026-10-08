@@ -425,6 +425,14 @@ export default function NPCs() {
             { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
           : { type: "none", meta };
       },
+      hit(npcKey, part) {
+        const npc = state.npc[npcKey];
+        const clip = npc?.anim.hitClipFor(part) ?? null;
+        if (npc === undefined || part === null || clip === null) return;
+        npc.rejectAll(new Error("hit")); // a move's own catch idles them, onto the clip
+        npc.anim.setHurt(clip);
+        w.events.next({ key: "npc-hit", npcKey, part, clip });
+      },
       get(npcKey) {
         const npc = state.npc[npcKey];
         if (npc === undefined) {
@@ -1013,6 +1021,8 @@ export type State = {
     queryFilter?: QueryFilter,
   ): FindNearestPolyResult;
   get(npcKey: string): Npc;
+  /** A phaser's beam reached `part` of them: stops them, and plays its clip if it has one */
+  hit(npcKey: string, part: null | string): void;
   getSkinIndexBySkinKey(skinKey: string): number;
   getSkinKeyBySkinIndex(skinIndex: number): string | null;
   getSkinMeta(skinKey: string): Meta;

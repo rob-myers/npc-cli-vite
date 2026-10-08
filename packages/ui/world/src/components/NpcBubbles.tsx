@@ -133,6 +133,7 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
           value={pose}
           onValueChange={(next) => {
             if (next === null || w.n[npcKey] === undefined) return;
+            w.n[npcKey].anim.setHurt(null); // else they go back to it
             w.n[npcKey].anim.setPose(next);
             setPose(next);
           }}

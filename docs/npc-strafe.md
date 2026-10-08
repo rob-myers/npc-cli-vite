@@ -12,7 +12,7 @@ separate, simpler rule, covered at the end.
 - **Left to that default, it follows the aim mid-move** (`strafeFollowsAim`): `NpcAnimation.tick`
   calls `setStrafe` as `face.aim` comes or goes, so an npc armed whilst moving strafes at once and a
   disarmed one lets go. A move told `strafe` either way keeps it. Letting go restores the move's own
-  `fast` (`fastAsked`), so they run again.
+  `fast` (`hurry`), so they run again.
 - Strafing rules out `backwards` and `fast`: one gait blend, never running.
 - `turnBeforeMoving` returns at once: they set off without turning.
 - The npc tick stops steering `face` by velocity (`face.rate = 0`), so facing holds, unless

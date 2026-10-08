@@ -203,6 +203,31 @@ onto a bone, by the forearm's tip `(0, -5.6, 0)`.
 - `pacify_in` (1.5s, once): a jolt back at 0.25, knees buckling at 0.6, a half recovery at 1.0, ending
   on `pacified`'s first key. `pacified` (3s loop): slack, head lolled, arms dead, a slow sway of `hips` z.
 
+### Sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
+
+Drafts too. Each keeps its base's root and seat or bed: `sit`'s root and legs (feet -10, still), `lie`'s root.
+Lengths are the standing set's.
+
+- `sit_pain_high` (1.6s): folded ~26, ~33 at 0.8 (stomach -14 / -18, chest -12 / -15), `pain_high`'s crossed
+  forearms. The shake is `stomach` z and `head`, a key every 0.1s, linear: `hips` would swing the legs.
+- `sit_pain_low` (1.2s): stomach -9 / -11, chest -8 / -9, head bowed -6 / -10 with a small `y` shake, shoulders
+  up (arm position y 0.3 / 0.45), hands forward onto the knees (arms x 18).
+- `sit_pacified` (3s): `sit`'s arms, in the lap. Slumped (stomach -8, chest -7), head lolled as `pacified`
+  ([-14,5,12]), `stomach` z swaying 2.5 / -2.5.
+- `sit_pacify_in` / `lie_pacify_in` (1.5s, once): from the base's first key to the pacified one's, keyed at
+  `pacify_in`'s times. Sat: thrown back at 0.25 (stomach 5, chest 6, head 18, arms flung out, shins kicked
+  to -70), slumped past it at 0.6 (stomach -14, head -22). Lain: a start at 0.25 (stomach -7, chest -5, arms
+  and knees lifted), then the head rolls over, past its rest at 0.6 (y 30).
+- `lie_pain_high` (1.6s): a curl, not an arch. Stomach -10 / -14, chest -8 / -11, knees up (thighs 35 / 40,
+  shins -60 / -66, feet 10), the crossed forearms and the same shake.
+- `lie_pain_low` (1.2s): stomach -3 / -5, head turned aside (y 20) with a small shake, fists drawn up over the
+  chest (arms [8,0,±8], forearms [128,0,±22]), the right knee a little raised (thigh 14, shin -24).
+- `lie_pacified` (3s): head rolled aside ([0,24,5], position z -0.5 so it stays on the pillow), arms and legs
+  splayed a little, a shallow breath (stomach position z -0.15 at 1.5).
+
+Measured, mid-clip: no sat hand rises above the lap bar `sit_pain_high`'s, at y 4.4 - 5.6 against the stomach.
+The table top was ASSUMED at y ~6, as no clip records it. Lain, the lowest point is the head, 0.4 under `lie`'s.
+
 **Solve with ONE animation playing.** `Animator.preview()` adds every animation whose `playing` is
 set, so a solve run with another still playing lands on the sum: clear `playing` on the rest first.
 
@@ -216,6 +241,27 @@ height (`rightarm` x 56, `rightforearm` x 8); the left arm is idle's (`leftarm` 
 
 `drop`'s counterpart (`w.e.takeItem`), likewise a still upper-body pose: a deeper lean (stomach -9, chest
 -7, head 3) and the right arm lower with the elbow bent to grasp (`rightarm` x 50, `rightforearm` x 28).
+
+## sit_reach
+
+`drop` and `pick_up` for the SAT (`w.e.reachFor`): `sit` rests the hand on the lap, under a table, and
+easing straight to a reach pose brought it up through the top. So this one MOVES: a pose every 4 frames, the reach held 3,
+then back — 35 frames, the rest of the 2.5s held on `sit`'s arm. Keyed from code, recipe `sit_reach`.
+Its `stomach` and `chest` keys are turns ON `sit`'s own torso, not poses of it (the game's
+`upperAddsTorso`), so alone in Blockbench it shows them off an upright one; the arm is keyed against that.
+
+| pose | stomach | chest | rightarm | rightforearm | hand |
+|------|---------|-------|----------|--------------|------|
+| sit | 0 | 0 | [5.7842, 7.0689, 5.1276] | [50,0,0] | on the lap |
+| back | [1.5,0,0] | [1.5,-5,0] | [-30,0,10] | [75,0,0] | beside the hip, clear of the edge |
+| up | [3,0,0] | [3,-8,0] | [-55,0,20] | [130,0,0] | by the ribs, above the top |
+| over | 0 | [-1,2,0] | [5,0,0] | [115,0,0] | before the chest, over the edge |
+| out | [-4,0,0] | [-4,6,0] | [84,0,0] | [15,0,0] | reaching: the game aims it from here |
+
+`chest` +y brings the right shoulder forward. A deeper lean at `out` dips the hand into the top.
+
+Solved against a table 0.6m high whose edge is 0.15m ahead of the hips — the end seat of `table--004` —
+the forearm's tip staying a unit clear of it. Change `sit`'s arm and its first pose must follow.
 
 ## crouch
 
@@ -238,8 +284,8 @@ node scripts/src/bins/gen-clip-keys.ts                        # every recipe
 node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 ```
 
-Recipes now: `sit` (`knee`), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
-breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
+Recipes now: `sit` (`knee`), `sit_reach` (`leg hold`, frames), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
+breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in Blockbench, and save. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
 re-export from Blockbench. Reload the project in Blockbench afterwards, else a save puts the old keys back.
 
 ## point / point_avoid

@@ -35,11 +35,18 @@ export default function Phasers() {
       arm(npcKey, opts = {}) {
         if (w.npc.npcToDoable[npcKey] != null) return; // not whilst sat or lain
         if (w.e.hasItem(npcKey, "phaser") === false) return; // nor without one
-        if (w.shields?.isIn(npcKey) === true) return; // nor stood in a shield
+        if (w.shields?.isIn(npcKey) === true) {
+          if (npcKey === w.player.key) {
+            w.hud?.say("phaser suppressed");
+            w.n[npcKey]?.anim.shakeHead();
+          }
+          return; // nor stood in a shield
+        }
         if (w.shields?.isDead(npcKey) === true) {
           if (npcKey === w.player.key) w.hud?.say("phaser deactivated");
           return;
         }
+        if (w.n?.[npcKey]?.anim.hurt != null) return; // nor in pain, or pacified
         const arm = state.ensure(npcKey);
         const at = opts.at ?? null;
         arm.target = at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null };
@@ -79,6 +86,7 @@ export default function Phasers() {
             inSight: false,
             shields: [],
             firedSecs: null,
+            struck: null,
           };
           state.arms.set(npcKey, arm);
         }
@@ -147,6 +155,8 @@ export default function Phasers() {
           state.wield(npc, arm);
           const { beam } = arm;
           advanceBeam(beam, step, w.n, instant);
+          if (beam.locked.presence === 0) arm.struck = null;
+          else if (beam.locked.presence === 1 && beam.to !== arm.struck) state.strike(npc, arm);
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden && state.holds(srcKey) === false) {
             state.arms.delete(srcKey); // no longer held, its pose, stance and aim already let go of
@@ -208,6 +218,20 @@ export default function Phasers() {
         put(state.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
         put(state.quatData, i, tmpQuat.x, tmpQuat.y, tmpQuat.z, tmpQuat.w);
         return true;
+      },
+      strike(npc, arm) {
+        const to = (arm.struck = arm.beam.to);
+        const dst = to === null ? undefined : w.n[to.npcKey];
+        if (to === null || dst === undefined) return;
+        const part = bodyPartPoint(dst, to.part, tmpPart);
+        const from = tmpBody.set(npc.position.x, part.y, npc.position.z);
+        const freqs = w.shields?.phaserOf(npc.key)?.meta?.freqs;
+        if (w.shields?.stop(arm.shields, from, from, part, freqs) != null) return;
+        w.npc.hit(dst.key, to.part);
+        // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
+        const theirs = state.arms.get(dst.key);
+        if (dst.anim.hurt !== null && theirs !== undefined) theirs.armed = false;
+        w.hud?.update();
       },
       sync() {
         state.onTick(w.disabled === true); // paused: nothing fades, so a change is at once
@@ -401,6 +425,8 @@ export type State = PhaserResources & {
   toggle(npcKey: string): boolean;
   /** `instant` lands every fade at once */
   onTick(instant?: boolean): void;
+  /** Their beam has locked on: its effect on whom it reaches, unless a shield stops it */
+  strike(npc: Npc, arm: ArmEntry): void;
   sync(): void;
   /** Their pose, stance, aim, gun and beam from their entry */
   wield(npc: Npc, arm: ArmEntry): void;
@@ -443,6 +469,8 @@ type ArmEntry = {
   firedSecs: null | number;
   /** Decor keys of the shields between them, as of the last cast */
   shields: string[];
+  /** The lock already struck with, so one shot hits once */
+  struck: null | BeamTarget;
 };
 
 /** Is a crowd neighbour in front of `npc`, within 45° of their facing? */

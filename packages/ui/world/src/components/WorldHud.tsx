@@ -1,20 +1,31 @@
 import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
-import { LockIcon, LockOpenIcon, XIcon } from "@phosphor-icons/react";
-import { memo, useContext, useEffect, useRef } from "react";
+import {
+  LockIcon,
+  LockOpenIcon,
+  PersonSimpleCircleIcon,
+  PersonSimpleRunIcon,
+  PersonSimpleWalkIcon,
+  XIcon,
+} from "@phosphor-icons/react";
+import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
+import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
+import { getWorldStore } from "../service/storage";
 import { WorldContext } from "./world-context";
 
 /**
- * The player's inventory bar: psi, their phaser, their keys, then what they carry — see
- * `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
+ * The player's bar: psi, their phaser, their keys and what they carry, then walk/run and
+ * look/follow — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
  */
 export default function WorldHud() {
   const w = useContext(WorldContext);
+  const store = getWorldStore(w.key);
 
   const state = useStateRef(
     (): State => ({
+      dragged: false,
       menu: null,
       pressTimer: 0,
       longPressed: false,
@@ -31,6 +42,9 @@ export default function WorldHud() {
         if (state.selected === name) state.selected = null;
         state.update();
         w.view.forceUpdate();
+      },
+      getMinY() {
+        return Math.min(0, hudDragTop + hudBarHeight - (w.rootEl?.clientHeight ?? 0));
       },
       say(notice) {
         window.clearTimeout(state.noticeTimer);
@@ -75,6 +89,25 @@ export default function WorldHud() {
 
   w.hud = state;
 
+  const y = useMotionValue(Math.max(state.getMinY(), store.read().hudY ?? 0));
+  const dragControls = useDragControls();
+  /** Dragged up and down by any part of it, as the menu is: a slot pressed is then no press */
+  const dragProps = {
+    style: { y },
+    drag: "y",
+    dragListener: false,
+    dragControls,
+    dragConstraints: { top: state.getMinY(), bottom: 0 },
+    dragMomentum: false,
+    dragElastic: 0,
+    onPointerDown: (e: React.PointerEvent) => dragControls.start(e),
+    onDragStart: () => void (state.dragged = true),
+    onDragEnd() {
+      store.patch({ hudY: y.get() });
+      requestAnimationFrame(() => (state.dragged = false));
+    },
+  } as const;
+
   useEffect(() => {
     const sub = w.events.subscribe({
       next(e) {
@@ -86,10 +119,19 @@ export default function WorldHud() {
     return () => sub.unsubscribe();
   }, []);
 
-  if (w.client === true) return null; // neither psi nor phasers are mirrored
+  // neither psi nor phasers are mirrored
+  if (w.client === true)
+    return (
+      <div className={barClass}>
+        <motion.div className={rowClass} {...dragProps}>
+          <PlayerButtons />
+        </motion.div>
+      </div>
+    );
 
   const { key: playerKey } = w.player;
   const big = w.touchDevice;
+
   const heldDoors = w.e.getHeldDoors(playerKey) ?? [];
   const keyCount = heldDoors.length;
   const keyDoor = state.getKeyDoor();
@@ -103,87 +145,83 @@ export default function WorldHud() {
   const menus: Record<number, undefined | SlotMenuItem[]> = {};
 
   const slot = (index: number, opts: SlotOpts, children: React.ReactNode) => {
-    menus[index] = opts.menu || undefined;
-    return slotEl(index, opts, children);
+    menus[index] = opts.menu;
+    return (
+      <div
+        key={index}
+        title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
+        className={cn(
+          "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
+          opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
+          big ? "h-12 w-10" : "h-18 w-15",
+          opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
+          opts.had === false && "*:opacity-25",
+        )}
+        // the canvas keeps the focus: Enter there unpauses, and would press this again too
+        onMouseDown={(e) => e.preventDefault()}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (opts.menu?.length) state.set({ menu: { index, el: e.currentTarget } });
+        }}
+        // touch has no right-click: a hold opens the menu, and a scroll of the row calls it off
+        onPointerDown={(e) => {
+          state.longPressed = false;
+          if (e.pointerType !== "touch" || !opts.menu?.length) return;
+          const el = e.currentTarget;
+          window.clearTimeout(state.pressTimer);
+          state.pressTimer = window.setTimeout(() => {
+            if (state.dragged === true) return;
+            state.longPressed = true;
+            state.set({ menu: { index, el } });
+          }, longPressMs);
+        }}
+        onPointerUp={() => window.clearTimeout(state.pressTimer)}
+        onPointerCancel={() => window.clearTimeout(state.pressTimer)}
+        onPointerLeave={() => window.clearTimeout(state.pressTimer)}
+        onClick={() => {
+          if (state.longPressed === true || state.dragged === true) return; // the hold was the press, or a drag
+          state.press(index);
+          w.view.focus();
+        }}
+      >
+        {children}
+        {opts.drop !== undefined && (
+          <button
+            type="button"
+            tabIndex={-1}
+            title={`drop ${opts.title}`}
+            className={cn(
+              "absolute top-0.5 right-0.5 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
+              big ? "size-6" : "size-5",
+              opts.active === true && opts.plain !== true ? "grid" : "hidden group-hover:grid",
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              state.drop(opts.drop as string);
+              w.view.focus();
+            }}
+          >
+            <XIcon className="size-3" weight="bold" />
+          </button>
+        )}
+      </div>
+    );
   };
-  const slotEl = (index: number, opts: SlotOpts, children: React.ReactNode) => (
-    <div
-      key={index}
-      title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
-      className={cn(
-        "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
-        opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-        big ? "size-12" : "size-18",
-        opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
-        opts.had === false && "*:opacity-25",
-      )}
-      // the canvas keeps the focus: Enter there unpauses, and would press this again too
-      onMouseDown={(e) => e.preventDefault()}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        if (opts.menu?.length) state.set({ menu: { index, el: e.currentTarget } });
-      }}
-      // touch has no right-click: a hold opens the menu, and a scroll of the row calls it off
-      onPointerDown={(e) => {
-        state.longPressed = false;
-        if (e.pointerType !== "touch" || !opts.menu?.length) return;
-        const el = e.currentTarget;
-        window.clearTimeout(state.pressTimer);
-        state.pressTimer = window.setTimeout(() => {
-          state.longPressed = true;
-          state.set({ menu: { index, el } });
-        }, longPressMs);
-      }}
-      onPointerUp={() => window.clearTimeout(state.pressTimer)}
-      onPointerCancel={() => window.clearTimeout(state.pressTimer)}
-      onPointerLeave={() => window.clearTimeout(state.pressTimer)}
-      onClick={() => {
-        if (state.longPressed === true) return; // the hold was the press
-        state.press(index);
-        w.view.focus();
-      }}
-    >
-      {children}
-      {opts.drop !== undefined && (
-        <button
-          type="button"
-          tabIndex={-1}
-          title={`drop ${opts.title}`}
-          className={cn(
-            "absolute top-0.5 right-0.5 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
-            big ? "size-6" : "size-5",
-            opts.active === true && opts.plain !== true ? "grid" : "hidden group-hover:grid",
-          )}
-          onClick={(e) => {
-            e.stopPropagation();
-            state.drop(opts.drop as string);
-            w.view.focus();
-          }}
-        >
-          <XIcon className="size-3" weight="bold" />
-        </button>
-      )}
-    </div>
-  );
 
   return (
-    <div className="@container pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2">
+    <div className={barClass}>
       {/* out here, not in the row: it scrolls, so would clip it */}
       {state.notice !== null && (
-        <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200">
-          {state.notice}
-        </div>
-      )}
-      {/* one row, scrolled sideways once it outgrows a narrow World */}
-      {/* padded, else the scroll clips a slot's ring */}
-      <div className="pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]">
-        {/* what they are, apart from what they carry: no gap, as each icon's own margin is one */}
-        <div
-          className={cn(
-            "mr-1 flex shrink-0 rounded-md bg-slate-950/25 ring-1 ring-slate-300/15",
-            big ? "px-2.5" : "px-3.5",
-          )}
+        <motion.div
+          style={{ y }}
+          className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200"
         >
+          {state.notice}
+        </motion.div>
+      )}
+      <motion.div className={rowClass} {...dragProps}>
+        {/* what they are, then what they carry: spaced alike */}
+        <div className="flex shrink-0">
           {slot(
             0,
             { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
@@ -250,7 +288,8 @@ export default function WorldHud() {
             </>,
           ),
         )}
-      </div>
+        <PlayerButtons />
+      </motion.div>
 
       <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
         <Menu.Portal container={w.rootEl}>
@@ -279,6 +318,101 @@ export default function WorldHud() {
   );
 }
 
+/** The player themself, after the slots: where the camera stands by them, and how they go */
+function PlayerButtons() {
+  const w = useContext(WorldContext);
+  const press = useRef({ timer: 0, long: false });
+  const follow = w.view?.follow === true; // the view mounts after us
+  const followFlash = useChangeCount(follow);
+  const big = w.touchDevice;
+  const hurry = w.n?.[w.player.key]?.anim.hurry === true;
+  const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
+  const buttonClass = cn(
+    "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden rounded-md hover:ring-1 hover:ring-yellow-200/25",
+    big ? "size-12" : "size-9",
+  );
+  const buttonIcon = (lit: boolean) =>
+    cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", lit ? "text-amber-300" : "text-neutral-200");
+
+  const endPress = (cancelled: boolean) => {
+    window.clearTimeout(press.current.timer);
+    if (cancelled === false && press.current.long === false && w.hud?.dragged !== true) w.view.onLookGesture(false);
+  };
+
+  return (
+    <div
+      className="ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
+      // the canvas keeps the focus
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {/* a client's moves are not theirs to pace */}
+      {w.client !== true && (
+        <div
+          className={buttonClass}
+          title={`${hurry ? "run" : "walk"}: f`}
+          onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
+        >
+          <GaitIcon className={cn(buttonIcon(hurry), "size-5")} weight="bold" />
+        </div>
+      )}
+      {/* a press looks at the player, or stops a follow (amber); a long press toggles it — as `c` */}
+      <div
+        className={buttonClass}
+        title={`follow ${follow ? "on" : "off"}: c`}
+        onPointerDown={() => {
+          press.current.long = false;
+          press.current.timer = window.setTimeout(() => {
+            if (w.hud?.dragged === true) return; // dragging the bar is not a press
+            press.current.long = true;
+            w.view.onLookGesture(true);
+          }, longPressMs);
+        }}
+        onPointerUp={() => endPress(false)}
+        onPointerLeave={() => endPress(true)}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <AnimatePresence>
+          {w.view?.lookingAt === true && (
+            // pulses whilst a pan is under way, which a black screen or a paused world would hide
+            <motion.div
+              className="pointer-events-none absolute inset-0 bg-white/60"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
+              transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
+            />
+          )}
+        </AnimatePresence>
+        {followFlash > 0 && (
+          // keyed by the count, so each toggle replays the fade
+          <motion.div
+            key={followFlash}
+            className={cn("pointer-events-none absolute inset-0", follow ? "bg-amber-300" : "bg-neutral-400")}
+            initial={{ opacity: 0.55 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
+          />
+        )}
+        <PersonSimpleCircleIcon className={cn(buttonIcon(follow), "size-6")} />
+      </div>
+    </div>
+  );
+}
+
+/** How many times `value` has changed since mount — `0` until the first, so nothing flashes on load */
+function useChangeCount(value: unknown): number {
+  const [count, setCount] = useState(0);
+  const previous = useRef(value);
+
+  useEffect(() => {
+    if (previous.current === value) return;
+    previous.current = value;
+    setCount((x) => x + 1);
+  }, [value]);
+
+  return count;
+}
+
 /** Holds an svg's animations where they are whilst `paused`, as the World is */
 function useSvgPause(paused: boolean) {
   const ref = useRef<SVGSVGElement>(null);
@@ -288,11 +422,35 @@ function useSvgPause(paused: boolean) {
   return ref;
 }
 
+const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
+/** Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring */
+const rowClass = "pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
+
+/** Each icon's size, as a fraction of its slot's height: alike, bar art that fills its square */
+const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
+  psi: 0.7,
+  phaser: 0.7,
+  keychain: 0.7,
+  book: 0.7,
+  box: 0.7,
+  keycard: 0.58,
+};
+const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });
+
 /** The shadow is each icon's own: on a slot it would be redrawn with every frame of the brain */
-const iconClass = "size-[85%] drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
+const iconShadow = "drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
+const iconClass = cn("aspect-square", iconShadow);
 
 const ItemIcon = memo(function ItemIcon({ kind }: { kind: ItemKind | "keychain" }) {
-  return <img className={cn(iconClass, "object-contain")} src={itemIconUrl[kind]} alt={kind} draggable={false} />;
+  return (
+    <img
+      className={cn(iconClass, "object-contain")}
+      style={iconStyle(kind)}
+      src={itemIconUrl[kind]}
+      alt={kind}
+      draggable={false}
+    />
+  );
 });
 
 /**
@@ -309,7 +467,7 @@ const PhaserIcon = memo(function PhaserIcon({
   dead: boolean;
 }) {
   return (
-    <svg className={iconClass} viewBox="0 0 64 64" aria-label="phaser">
+    <svg className={iconClass} style={iconStyle("phaser")} viewBox="0 0 64 64" aria-label="phaser">
       <defs>
         <radialGradient id="hud-phaser-glow">
           <stop offset="0" stopColor="#ff8a5c" stopOpacity="0.8" />
@@ -384,7 +542,8 @@ const BrainIcon = memo(function BrainIcon({ firing, paused }: { firing: boolean;
   return (
     <svg
       ref={useSvgPause(paused)}
-      className={firing && paused === false ? "size-[85%]" : iconClass}
+      className={firing && paused === false ? "aspect-square" : iconClass}
+      style={iconStyle("psi")}
       viewBox="0 0 64 64"
       aria-label="psi"
     >
@@ -501,8 +660,17 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
   "door-unlocked",
 ]);
 
-/** How long a touch is held before a slot's menu opens */
+/** The bar's height, and how near the World's top it may be dragged */
+const hudBarHeight = 110;
+const hudDragTop = 8;
+/** How long a touch is held before a slot's menu opens, or the look button before it toggles the follow */
 const longPressMs = 500;
+/** How long the look button's flash takes to fade, when follow is turned on or off */
+const followFlashMs = 550;
+/** Half a pulse of the look button, whilst a pan is under way */
+const lookingAtPulseMs = 700;
+/** How long the pulse takes to fade once the pan lands */
+const lookingAtFadeMs = 400;
 
 /** How long the bar's notice shows */
 const noticeMs = 1500;
@@ -524,6 +692,10 @@ type SlotOpts = {
 };
 
 export type State = {
+  /** The bar is being dragged, so what ends on it is no press */
+  dragged: boolean;
+  /** The furthest up it may be dragged, as a `y` offset */
+  getMinY(): number;
   /** The slot whose right-click menu shows, hung off its element */
   menu: null | { index: number; el: HTMLElement };
   pressTimer: number;

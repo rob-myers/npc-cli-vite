@@ -65,6 +65,8 @@ export type WorldSettings = {
   menuWidth: number;
   menuHeight: number;
   speechY: number;
+  /** How far the player's bar was dragged up from its place, as a `y` offset: never positive */
+  hudY: number;
   speechWidth: null | number;
   speechHeight: null | number;
   /** By npcKey, so it goes with them from map to map — see `w.e.carried` */
@@ -100,6 +102,7 @@ const defaultWorldSettings: WorldSettings = {
   menuWidth: 288,
   menuHeight: 288,
   speechY: 40,
+  hudY: 0,
   speechWidth: null,
   speechHeight: null,
   carried: {},

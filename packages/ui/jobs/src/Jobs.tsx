@@ -10,6 +10,7 @@ import {
   sessionApi,
   toProcessStatus,
 } from "@npc-cli/cli";
+import { queryClientApi } from "@npc-cli/cli/shell/query-client";
 import type { JshUiMeta } from "@npc-cli/ui__jsh/schema";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, Spinner, useStateRef } from "@npc-cli/util";
@@ -51,6 +52,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
   const state = useStateRef(
     (): State => ({
+      awaitedWorldKey: null,
+      awaitedWorldTimeoutId: 0,
       connected: false,
       copiedSrc: null,
       copiedTimeoutId: 0,
@@ -138,6 +141,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       connect() {
         state.connected = true;
         state.connectOrMount();
+        state.syncAwaitedWorld();
       },
       connectOrMount() {
         if (state.connectSession() === true) {
@@ -199,6 +203,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         state.pending.src = null;
         state.clearSpawning();
         state.set({ connected: false, processes: [], ordered: [] });
+        state.syncAwaitedWorld();
       },
       flushPending() {
         window.clearTimeout(state.pending.timeoutId);
@@ -301,6 +306,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
         state.clearSpawning();
         state.expandedUids.clear();
         state.set({ processes: [], ordered: [] });
+        state.syncAwaitedWorld();
       },
       onReset(pid) {
         const item = state.processes[pid];
@@ -360,6 +366,17 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
           spawning: { src, startedAt: Date.now(), timeoutId: window.setTimeout(state.clearSpawning, pendingTimeoutMs) },
         });
       },
+      syncAwaitedWorld() {
+        window.clearTimeout(state.awaitedWorldTimeoutId);
+        const session = state.connected === true ? state.getSession() : undefined;
+        const worldKey = session?.ttyShell.isProfileFinished() === false ? session.var.WORLD_KEY : undefined;
+        const awaited = typeof worldKey === "string" && queryClientApi.get(worldKey) === undefined ? worldKey : null;
+        awaited !== state.awaitedWorldKey && state.set({ awaitedWorldKey: awaited });
+        // polls from connecting until the session's world is there
+        if (state.connected === true && (session === undefined || awaited !== null)) {
+          state.awaitedWorldTimeoutId = window.setTimeout(state.syncAwaitedWorld, pendingPollMs);
+        }
+      },
       toggleExpanded(e) {
         const uid = Number(e.currentTarget.dataset.uid);
         state.expandedUids.delete(uid) === false && state.expandedUids.add(uid);
@@ -392,6 +409,7 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 
     return () => {
       clearInterval(intervalId);
+      window.clearTimeout(state.awaitedWorldTimeoutId);
       window.clearTimeout(state.copiedTimeoutId);
       window.clearTimeout(state.pending.timeoutId);
       window.clearTimeout(state.spawning.timeoutId);
@@ -534,6 +552,15 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
       </header>
 
       {sessionsExist === false && <div className="font-mono text-term-muted">{`[No sessions]`}</div>}
+
+      {/* the profile's `awaitWorld` holds every command until that World has mounted */}
+      {state.awaitedWorldKey !== null && (
+        <div className="shrink-0 px-3 pt-1 font-mono text-sm text-term-paused">
+          {state.pending.src !== null
+            ? `runs if ${state.awaitedWorldKey} is opened within ${pendingTimeoutMs / 1000}s`
+            : `nothing queued: open ${state.awaitedWorldKey} before running a command`}
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 relative">
         {meta.hidden === "library" && hasProcesses && (
@@ -788,6 +815,10 @@ const pendingPollMs = 250;
 const pendingTimeoutMs = 20000;
 
 type State = {
+  /** The session's world, whilst its profile waits on it */
+  awaitedWorldKey: null | string;
+  awaitedWorldTimeoutId: number;
+  syncAwaitedWorld: () => void;
   /** We use an array to represent mapping `pid -> processLeader` */
   processes: ProcessLeader[];
   /**  Re-ordered `processes` */

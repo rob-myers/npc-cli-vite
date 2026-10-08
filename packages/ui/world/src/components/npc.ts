@@ -20,7 +20,7 @@ import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import type { AnimationClipKey } from "./NPCs";
-import { NpcAnimation } from "./npc-animation";
+import { NpcAnimation, postureOf } from "./npc-animation";
 
 export class Npc {
   key: string;
@@ -328,12 +328,13 @@ export class Npc {
     this.position = this.skinnedMesh.position;
     this.rotation = this.skinnedMesh.rotation;
     this.anim.mixer = new THREE.AnimationMixer(group);
+    this.anim.setGroup(group);
 
     this.resolve.spawn("spawned");
 
     // fresh mixer needs pose + handle gltf hot-reload (?)
-    const clip = this.anim.moving === true ? this.anim.moveClip : this.anim.idleClip;
-    this.anim.setPose(clip.name as AnimationClipKey, { fade: 0, force: true });
+    const clipKey = this.anim.moving === true ? (this.anim.moveClip.name as AnimationClipKey) : this.anim.restKey;
+    this.anim.setPose(clipKey, { fade: 0, force: true });
     this.anim.mixer.update(0);
     this.anim.tickUpper(0); // an upper pose too, e.g. whilst paused
   };
@@ -412,7 +413,7 @@ export class Npc {
 
   /** Whether their current clip has them off their feet, i.e. `sit` or `lie` */
   isNotStanding() {
-    return this.anim.pose === "sit" || this.anim.pose === "lie";
+    return postureOf(this.anim.pose) !== "stand";
   }
 
   /**
@@ -422,6 +423,7 @@ export class Npc {
     this.last.look =
       typeof at === "number" ? at : helper.parseGroundPoint(typeof at === "string" ? this.w.npc.get(at).position : at);
 
+    if (this.anim.hurt !== null) throw Error("hurt");
     const cannotLook = npcCannotLookForClip[this.anim.idleClip.name];
     if (cannotLook !== undefined) {
       throw Error(cannotLook);

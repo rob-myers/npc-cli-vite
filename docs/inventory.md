@@ -17,6 +17,10 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 Bottom centre of a World; a slot is pressed. None on a net client, where neither psi
 nor phasers are mirrored.
 
+At its right end, after the slots, are two buttons for the player themself — all a client gets:
+look/follow (a press looks, a long press toggles the follow, as `c`) and, not on a client, walk/run
+(`f`, `w.player.toggleRun()`: their `anim.hurry`).
+
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
@@ -63,6 +67,17 @@ Sat or lain it is always the right arm — no gun is in it there — and it is A
 until the forearm lines up on the spot (`anim.upper.aim`, as a phaser's, but with `maxRad` a half turn),
 so they reach back to a shelf behind their head.
 
+SAT, the clip is `sit_reach` instead, for either: their hand rests under the table, so it is drawn back
+beside the hip, up by the ribs and over the edge before it goes out, then home the same way. It is
+played from its start at full weight (`setUpper`'s `played`), sets out from `sit`'s own arm, and takes
+`inventoryConfig.sitReach`: out by `outSecs`, when the item moves, and home by `homeSecs`. The aim is
+eased in only once the hand is over the edge, and out before it comes back under. The clip turns
+their torso too — a lean back as the elbow comes back, forward into the reach — ON `sit`'s own, which
+breathes on under it (`upperAddsTorso`). Their head is held level against those turns, and only glances
+at the spot (`sitReach.look`). What they put down goes where that
+hand comes down: `sitReach.at` ahead of them, so further onto the table than its edge (`getDropSpot`
+tries deeper in, and takes the spot nearest it).
+
 On the FLOOR (below `reach.raisedFrom`) either is a squat instead: the whole-body `crouch` pose for
 `crouchSecs`, then back to idle. Not whilst sat or lain: then it is the arm clip as above.
 
@@ -78,6 +93,25 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
 - Psi's contours fan out TOWARDS its target, the player no longer turning to them — ahead, with none
   — swung round as it changes (`psiConfig.swing`). Over anyone lain down the relief holds its peak
   for `lieFlat` metres before it falls, so it does not drop into them.
+
+### What a hit does
+
+As a beam locks on, and no shield stops it, `w.npc.hit` plays a clip on its target, by the part locked on to
+and whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-hit`.
+
+| part | stood | sat / lain |
+| --- | --- | --- |
+| head | `pacify_in`, then `pacified` looped | `{sit,lie}_pacify_in`, then `{sit,lie}_pacified` looped |
+| chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
+| an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
+
+- A pain clip plays once, then they are back as they were. Pacified lasts until released: `pose npc-0 as:breathe`,
+  or `as:sit` / `as:lie`.
+- Whilst either (`anim.hurt`) they can do nothing: a move under way is stopped (it rejects with `hit`), their
+  phaser is lowered, and `move`, `look` and arming are refused.
+- Pain on someone pacified leaves them pacified after. The label, or no part, has no effect.
+- One lock hits once. Not mirrored over the network.
+
 
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
 - `revokeItem(npcKey, "psi" | kind)` takes it away outright, never put down — the `psi` and `phaser`
@@ -118,6 +152,6 @@ Debug's door toggle reads that off any pick.
   player's own right arm lowers it instead, its target kept for when it is next raised, and one
   elsewhere on them does nothing. With the phaser
   lowered and psi on, another npc pressed becomes psi's target. A press on the player's own LEFT
-  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised. `predicates`' pick ring stands down meanwhile.
+  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised. `preds`' pick ring stands down meanwhile.
 
-It is a keyed listener (`w.e.addKeyedListener`), as `predicates` is, so there is no process to kill.
+It is a keyed listener (`w.e.addKeyedListener`), as `preds` is, so there is no process to kill.

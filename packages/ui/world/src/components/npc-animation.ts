@@ -10,7 +10,10 @@ import {
   defaultIdleAnimationClipKey,
   fadeSecs,
   gaitStride,
+  headShakeConfig,
+  hitConfig,
   npcScale,
+  stanceConfig,
   strafeEaseSecs,
   strafeSpeed,
   upperFadeSecs,
@@ -18,6 +21,7 @@ import {
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
+import { newStance, takeStance, tickStance } from "./npc-stance";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 /** Stands in until the gltf loads, and for a clip it lacks */
@@ -40,16 +44,18 @@ export class NpcAnimation {
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
   idleClip = emptyAnimationClip;
   moveClip = emptyAnimationClip;
-  /** The move's INTENT: they may run. Not which gait shows — that is `moveClip` */
-  fast = false;
+  /** They run where they can, until told otherwise — by a move's `fast`, or the player's `f` */
+  hurry = false;
+  /** They may run. Not which gait shows — that is `moveClip` */
+  get fast() {
+    return this.hurry === true && this.backwards === false && this.strafe === false;
+  }
   /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
   /** The move's INTENT: they keep their facing, the gait blended by heading — see `syncStrafe` */
   strafe = false;
   /** The move left `strafe` to `face.aim`, so it follows the aim mid-move — see `setStrafe` */
   strafeFollowsAim = false;
-  /** The move asked to run, so a strafe let go mid-move may run again */
-  fastAsked = false;
   /** Is `walk` on show as the four directional gaits — see `setPose` */
   strafing = false;
   /** Seconds the gait on show has been on, against `agentConfig.gait.minSecs` */
@@ -70,8 +76,14 @@ export class NpcAnimation {
   upper = newUpper();
   /** …and one over the LEFT arm, so each hand has its own e.g. psi and a phaser: the head takes both, the right's last */
   upperLeft = newUpper();
+  /** Their feet kept apart after a gait — see `npc-stance` */
+  stance = newStance();
   /** The head, shared by both */
-  upperHead = { group: null as null | THREE.Group, entry: null as null | UpperBone };
+  upperHead = { entry: null as null | UpperBone };
+  /** In pain, or pacified: the clip shown instead of idle, seconds into it, and what follows it — see `setHurt` */
+  hurt = null as null | { key: AnimationClipKey; secs: number; next: null | AnimationClipKey };
+  /** Seconds into a shake of the head, else `null` — see `shakeHead` */
+  headShake = null as null | number;
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
   face = {
     target: 0,
@@ -110,6 +122,10 @@ export class NpcAnimation {
       else hidden?.stop();
     }
     const action = this.mixer.clipAction(clips[next]);
+    // held on its last frame, so it does not wrap as it fades out
+    const once = onceClips.has(next);
+    action.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    action.clampWhenFinished = once;
     /** Already on show, e.g. walk as a strafe starts: restarting it would pop the feet and dip its weight */
     const kept = next === this.pose && action.isRunning();
     if (kept === false) (fade > 0 ? action.reset().fadeIn(fade) : action.reset()).play();
@@ -126,15 +142,22 @@ export class NpcAnimation {
       action.time = (prev.time / clips[this.pose].duration) * clips[next].duration;
     }
     if (this.pose === "shuffle") this.mixer.timeScale = 1; // see `lookAt`
+    const { group } = this.npc;
+    if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
+      takeStance(this.stance, group, this.npc);
     this.pose = next;
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
     this.npc.setLabelYShift(labelYShiftForClip(next));
   }
 
-  /** Ease `key` in over an arm (and the head), or out with `null` — from another shown, in `swapSecs` */
-  setUpper(key: null | AnimationClipKey, { swapSecs = upperFadeSecs, side = "right" as Side } = {}) {
+  /**
+   * Ease `key` in over an arm (and the head), or out with `null` — from another shown, in `swapSecs`.
+   * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`
+   */
+  setUpper(key: null | AnimationClipKey, { swapSecs = upperFadeSecs, side = "right" as Side, played = false } = {}) {
     const u = this.upperOf(side);
+    if (played === true) Object.assign(u, { time: 0, blend: 1 });
     if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
       // shown: ease over from where they are, in `swapSecs`
       for (const b of u.bones) b.from.copy(b.written);
@@ -142,6 +165,46 @@ export class NpcAnimation {
     }
     if (key !== null) u.key = key;
     u.target = key === null ? 0 : 1;
+  }
+
+  /** What they stand, sit or lie in at rest: the hurt clip whilst there is one */
+  get restKey() {
+    return this.hurt?.key ?? keyOf(this.idleClip);
+  }
+
+  /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
+  hitClipFor(part: null | string): null | AnimationClipKey {
+    const region = hitConfig.region[part ?? ""];
+    return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
+  }
+
+  /** Show `key` in place of idle: a pain clip once, a pacified one until `null` releases them */
+  setHurt(key: null | AnimationClipKey) {
+    const pacified = this.hurt !== null && isPacified(this.hurt.key) ? this.hurt.key : null;
+    if (key !== null && pacified !== null && (isPacified(key) || hitConfig.next[key] !== undefined)) return;
+    this.hurt = key === null ? null : { key, secs: 0, next: hitConfig.next[key] ?? pacified };
+    this.setPose(this.restKey, { force: key !== null });
+    this.w.r3f?.invalidate();
+  }
+
+  tickHurt(delta: number) {
+    const { hurt } = this;
+    if (hurt === null || onceClips.has(hurt.key) === false) return;
+    hurt.secs += delta;
+    if (hurt.secs < this.npc.clips[hurt.key].duration) return;
+    if (hurt.next === null) return this.setHurt(null);
+    this.hurt = { key: hurt.next, secs: 0, next: null };
+    this.setPose(hurt.next);
+  }
+
+  /** A fresh skeleton: the bones an upper clip, or a shake of the head, writes */
+  setGroup(group: THREE.Group) {
+    const bonesOf = (...names: string[]) => names.flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
+    for (const side of ["left", "right"] as const) {
+      const bones = bonesOf(`${side}arm`, `${side}forearm`);
+      Object.assign(this.upperOf(side), { torso: bonesOf("stomach", "chest"), bones });
+    }
+    this.upperHead.entry = bonesOf("head")[0] ?? null;
   }
 
   upperOf(side: Side) {
@@ -152,6 +215,11 @@ export class NpcAnimation {
   tick(delta: number) {
     this.mixer.update(delta);
     this.tickUpper(delta);
+    this.tickHeadShake(delta);
+    this.tickHurt(delta);
+    const { stance } = this;
+    if (stance.held === true && this.npc.group !== null)
+      tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
 
     const { fadeState: f, face } = this;
     const { colorScale, rotation } = this.npc;
@@ -193,7 +261,7 @@ export class NpcAnimation {
         const idleFade = Math.min(lookIdleFadeMs / 1000, t.duration);
         if (t.elapsed >= t.duration - idleFade) {
           t.longLook = false;
-          this.setPose(keyOf(this.idleClip), { fade: idleFade });
+          this.setPose(this.restKey, { fade: idleFade });
         }
       }
       if (t.elapsed >= t.duration) {
@@ -222,10 +290,12 @@ export class NpcAnimation {
     if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
     bone.quaternion.copy(base);
     for (const u of [l, r]) if (u.key !== null && u.hasHead === true) bone.quaternion.slerp(u.head, u.eased);
+    for (const u of [l, r]) if (u.key !== null) bone.quaternion.premultiply(u.level);
     written.copy(bone.quaternion);
-    if (r.key !== null && r.aim !== null && r.aim.weight * r.eased > 0) {
-      this.aimArm(r.aim, r.aim.weight * r.eased);
-      this.aimHead(r.aim, r.aim.weight * r.eased);
+    if (r.key !== null && r.aim !== null) {
+      const [arm, head] = [r.aim.weight * r.eased, (r.aim.head ?? r.aim.weight) * r.eased];
+      if (arm > 0) this.aimArm(r.aim, arm);
+      if (head > 0) this.aimHead(r.aim, head);
     }
     for (const u of [l, r]) {
       if (u.blend !== 0 || u.target !== 0) continue;
@@ -234,31 +304,41 @@ export class NpcAnimation {
     }
   }
 
+  /** A "no": they shake their head, over whatever pose or upper clip has it */
+  shakeHead() {
+    this.headShake = 0;
+    this.w.r3f?.invalidate();
+  }
+
+  tickHeadShake(delta: number) {
+    const { entry } = this.upperHead;
+    if (this.headShake === null || entry === null) return;
+    const { bone, base, written } = entry;
+    // with no upper clip, `tickUpper` has not put the head back to its pose
+    if (this.upper.key === null && this.upperLeft.key === null) {
+      if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
+      else base.copy(bone.quaternion);
+    }
+    const { secs, slowing, turns, rad } = headShakeConfig;
+    const p = Math.min(1, (this.headShake += delta) / secs);
+    const t = 1 - (1 - p) ** slowing;
+    /** Nought at either end */
+    const angle = rad * Math.sin(2 * Math.PI * turns * t) * Math.sin(Math.PI * t);
+    written.copy(bone.quaternion.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle)));
+    if (p === 1) this.headShake = null;
+  }
+
   tickUpperSide(side: Side, delta: number) {
     const u = this.upperOf(side);
-    const { group } = this.npc;
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
-    if (u.key === null || group === null) return;
-
-    if (u.group !== group) {
-      u.group = group; // a fresh group, or hmr
-      u.torso = ["stomach", "chest"].flatMap((name) => group.getObjectByName(name) ?? []);
-      u.bones = [`${side}arm`, `${side}forearm`].flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
-    }
-    const h = this.upperHead;
-    if (h.group !== group) Object.assign(h, { group, entry: newUpperBone(group.getObjectByName("head")) });
+    if (u.key === null || this.npc.group === null) return;
 
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
     u.time = (u.time + delta) % (clip.duration || 1);
-    const { tracks, torso } = upperTracksOf(clip);
-    // the clip's lean in place of the pose's own, else a pose that leans too e.g. a stance doubles it —
-    // its lean NOW: the arms are keyed against it, so one frame's would tip them as the torso breathes
-    const lean = tmpLean.identity();
-    for (const bone of u.torso) lean.multiply(bone.quaternion);
-    lean.invert();
-    for (const interpolant of torso) lean.multiply(tmpQuat.fromArray(interpolant.evaluate(u.time)));
+    const { tracks, torso, adds } = upperTracksOf(clip);
     const t = (u.eased = u.blend * u.blend * (3 - 2 * u.blend));
+    const lean = adds === true ? this.turnUpperTorso(u, torso, t) : this.leanOfUpper(u, torso);
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
     for (const { bone, base, written, from } of u.bones) {
@@ -273,6 +353,36 @@ export class NpcAnimation {
     const head = tracks.get("head");
     u.hasHead = head !== undefined;
     if (head !== undefined) u.head.fromArray(head.evaluate(u.time)).premultiply(lean);
+  }
+
+  /**
+   * An upper clip was drawn with its own torso lean, yet only its arms and head are applied. Returns the
+   * turn from the pose's torso, as it is this frame, to the clip's: those keys are corrected by it
+   */
+  leanOfUpper(u: Upper, torso: THREE.Interpolant[]) {
+    const lean = tmpLean.identity();
+    u.level.identity();
+    for (const { bone } of u.torso) lean.multiply(bone.quaternion);
+    lean.invert();
+    for (const interpolant of torso) lean.multiply(tmpQuat.fromArray(interpolant.evaluate(u.time)));
+    return lean;
+  }
+
+  /**
+   * For an `upperAddsTorso` clip: adds its stomach and chest turns to the pose's, eased by `t`, so the
+   * torso really moves and still breathes. Sets `u.level`; returns no lean, the arms needing none
+   */
+  turnUpperTorso(u: Upper, torso: THREE.Interpolant[], t: number) {
+    u.level.identity();
+    u.torso.forEach(({ bone, base, written }, i) => {
+      if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+      const turn = tmpSwap.identity().slerp(tmpQuat.fromArray(torso[i].evaluate(u.time)), t);
+      written.copy(bone.quaternion.copy(base).multiply(turn));
+      // cancels both for the head: the stomach's turn as the chest sees it, then the chest's own
+      if (i === 0) u.level.copy(turn).invert();
+      else u.level.premultiply(tmpQuat.copy(base).invert()).multiply(base).premultiply(turn.invert());
+    });
+    return tmpLean.identity();
   }
 
   /** Swing the right arm at the shoulder, by `weight` of the turn that lines its forearm up on `aim.at` */
@@ -302,7 +412,7 @@ export class NpcAnimation {
     if (entry === null || chest == null) return;
     const ry = this.npc.rotation.y;
     const from = tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
-    // the chest's matrix is fresh: `aimArm` has just run
+    chest.updateWorldMatrix(true, false);
     const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
     const turn = turnWithin(chest, from, tmpWant.copy(aim.at).sub(neck).normalize(), headAimMaxRad, weight);
     if (turn !== null) entry.written.copy(entry.bone.quaternion.premultiply(turn));
@@ -325,9 +435,17 @@ export class NpcAnimation {
   setStrafe(strafe: boolean) {
     this.strafe = strafe;
     this.backwards = false;
-    this.fast = strafe === false && this.fastAsked; // strafing never runs
     if (this.npc.agent !== null) this.npc.agent.maxSpeed = this.maxSpeedFor();
     this.showGait();
+  }
+
+  /** Run, or stop running, mid-move: the gait follows their speed — see `syncGait` */
+  setHurry(hurry: boolean) {
+    this.hurry = hurry;
+    const { agent } = this.npc;
+    // `0` is pinned for the turn, and a strafe's is `syncStrafe`'s
+    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
+      agent.maxSpeed = this.maxSpeedFor();
   }
 
   /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
@@ -462,7 +580,7 @@ export class NpcAnimation {
     this.face.rate = 0;
     const { aim } = this.face;
     if (aim?.untilRest === true) this.face.aim = null;
-    this.setPose(keyOf(this.idleClip), { force: this.moving });
+    this.setPose(this.restKey, { force: this.moving });
     this.moving = false;
     // a look on the move they arrived before finishing: the rest of it on the spot
     if (aim?.untilRest === true) this.lookAt(this.bearingOf(aim.at), 0, aim.rate);
@@ -515,13 +633,35 @@ export class NpcAnimation {
       const rate = duration > 0 ? arc / duration : lookShuffleRate;
       this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
     } else if (this.pose === "shuffle") {
-      this.setPose(keyOf(this.idleClip)); // a short look superseding a long one
+      this.setPose(this.restKey); // a short look superseding a long one
     }
   }
 }
 
 function isGait(key: AnimationClipKey) {
   return key === "walk" || key === "run";
+}
+
+/** A pose that leaves the feet apart as it ends */
+function isStride(key: AnimationClipKey) {
+  return isGait(key) || key === "backwards";
+}
+
+/** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips of each */
+export function postureOf(key: AnimationClipKey) {
+  return key === "sit" || key.startsWith("sit_pa") ? "sit" : key === "lie" || key.startsWith("lie_") ? "lie" : "stand";
+}
+
+const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
+
+/** Hit clips played once, then left */
+const onceClips = new Set<AnimationClipKey>(
+  Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
+);
+
+/** A pose stood still in, whose feet a stance may hold apart */
+function isStill(key: AnimationClipKey) {
+  return key === "idle" || key === "breathe";
 }
 
 /** Per bone of `upperBodyBones`, the rotation of `clip` at a time, and likewise its `torso`'s — cached per clip */
@@ -540,7 +680,7 @@ function upperTracksOf(clip: THREE.AnimationClip) {
       }),
     );
     const torso = ["stomach", "chest"].flatMap((name) => interpolantOf(name) ?? []);
-    upperTracks.set(clip, (cached = { tracks, torso }));
+    upperTracks.set(clip, (cached = { tracks, torso, adds: upperAddsTorso.has(clip.name) }));
   }
   return cached;
 }
@@ -550,8 +690,10 @@ const strafeClipKeys = ["walk", "strafe_right", "backwards", "strafe_left"] sati
 
 const upperTracks = new WeakMap<
   THREE.AnimationClip,
-  { tracks: Map<string, THREE.Interpolant>; torso: THREE.Interpolant[] }
+  { tracks: Map<string, THREE.Interpolant>; torso: THREE.Interpolant[]; adds: boolean }
 >();
+/** Clips whose stomach and chest keys are ADDED to the pose's torso, moving it. Any other's only say how its arms lean */
+const upperAddsTorso = new Set<string>(["sit_reach"]);
 /** The chest stays the pose's, though its lean is the clip's — see `tickUpper` */
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
 
@@ -565,6 +707,7 @@ const newUpperBone = (bone?: THREE.Object3D): null | UpperBone =>
     ? null
     : { bone, base: new THREE.Quaternion(), written: new THREE.Quaternion(Number.NaN), from: new THREE.Quaternion() };
 
+type Upper = ReturnType<typeof newUpper>;
 const newUpper = () => ({
   key: null as null | AnimationClipKey,
   blend: 0,
@@ -576,13 +719,14 @@ const newUpper = () => ({
   swapSecs: upperFadeSecs,
   /** Turns the right arm so its forearm, seen from `from` in its own frame, points `at` a world point — and the head to look there */
   aim: null as null | UpperAim,
-  group: null as null | THREE.Group,
-  /** The pose's stomach and chest, whose lean the clip's replaces */
-  torso: [] as THREE.Object3D[],
+  /** The pose's stomach and chest: read for the lean, or written by an `upperAddsTorso` clip */
+  torso: [] as UpperBone[],
   /** Its arm, then its forearm */
   bones: [] as UpperBone[],
   /** `blend`, eased */
   eased: 0,
+  /** Cancels an `upperAddsTorso` clip's torso turns for the head, so it stays level */
+  level: new THREE.Quaternion(),
   /** Where its clip has the head, if it keys it */
   head: new THREE.Quaternion(),
   hasHead: false,
@@ -614,6 +758,8 @@ export type UpperAim = {
   at: THREE.Vector3;
   from: THREE.Vector3;
   weight: number;
+  /** How far the head turns to look, where that is not as far as the arm swings (`weight`) */
+  head?: number;
   /** The most it swings the arm off its pose, `upperAimMaxRad` unless given */
   maxRad?: number;
 };
@@ -622,18 +768,20 @@ function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;
 }
 
-function bubbleHeightForClip(clipName: string): number {
-  if (clipName === "sit") return 1.4;
-  if (clipName === "lie") return 0.9;
+function bubbleHeightForClip(clipName: AnimationClipKey): number {
+  const posture = postureOf(clipName);
+  if (posture === "sit") return 1.4;
+  if (posture === "lie") return 0.9;
   return 2;
 }
 
 /** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;
 
-function labelYShiftForClip(clipName: string): number {
-  if (clipName === "sit") return 1.6;
-  if (clipName === "lie") return 0.75;
+function labelYShiftForClip(clipName: AnimationClipKey): number {
+  const posture = postureOf(clipName);
+  if (posture === "sit") return 1.6;
+  if (posture === "lie") return 0.75;
   return labelYShiftMax;
 }
 

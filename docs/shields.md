@@ -18,8 +18,8 @@ A shield is a decor **rect** whose meta has `shield`. The panel stands on the re
 line, floor to `wallHeight`. The rect itself is the shield's collider: who is "in" the shield.
 
 ```sh
-pick 1 | decor key:shield-0 type:rect w:3 h:1 meta:'{ shield: true }'
-pick 1 | decor key:shield-1 type:rect w:3 h:1 meta:'{ shield: true, freq: 2 }'
+decor to:$( pick 1 ) key:shield-0 type:rect w:3 h:1 meta:'{ shield: true }'
+decor to:$( pick 1 ) key:shield-1 type:rect w:3 h:1 meta:'{ shield: true, freq: 2 }'
 pick 1 | decor type:rect w:3 h:0.15 meta:'{ shield: true, freq: null }'
 ```
 
@@ -92,6 +92,8 @@ rect, with `lineSlack` (5cm) past the line before it counts, so someone stood on
 
 - Anyone entering a live shield's rect lowers their phaser, and it cannot be raised until they leave
   (`w.shields.isIn`). That is what makes the line safe: live or dead, nothing fires from inside.
+  The player is told "phaser suppressed": on entering one of a frequency, and on trying to raise it in any.
+  They shake their head too, on that try.
 - Switching a shield off leaves a dead phaser dead.
 - NOT handled: a teleport or spawn skips the crossing, and an npc already in a rect when the page
   loads gets a fresh `enter-collider`.

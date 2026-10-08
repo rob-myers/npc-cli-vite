@@ -1,15 +1,25 @@
 # TODO
 
+- try web synth for background music
+- apply phaser-action animations on hit
+- improve psi animation e.g. no height steps
+- restyle inventory icons e.g. darker
+- walk animation legs needn't reset on stop
+- predicates -> preds
+
 ## World
 
 ### Animation and Npc
 
-- implement phaser action animations
+- ✅ implement phaser action animations
   - minor pain
   - major pain
   - pacify (can control)
 
 - improve `walk` animation: elbows should stick out more
+
+- fix phaser going through a closed door
+  - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
 
 - ✅ improve `phaser_aim` animation idle legs
 

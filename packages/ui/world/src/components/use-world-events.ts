@@ -158,6 +158,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         let groundPoint = helper.parseGroundPoint(to);
 
         const npc = w.npc.get(npcKey);
+        if (npc.anim.hurt !== null) throw Error("hurt");
         let result = w.npc.getClosestPoly(groundPoint, 0.5);
         const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
         if (doResult.type === "none") {
@@ -234,8 +235,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
           npc.anim.backwards =
             npc.anim.strafe === false && (backwards ?? (backstep === true && isBackStep(npc, groundPoint, config)));
-          npc.anim.fast = fast === true && npc.anim.backwards === false && npc.anim.strafe === false; // the gait itself follows their speed — see `syncGait`
-          npc.anim.fastAsked = fast === true;
+          if (fast !== undefined) npc.anim.hurry = fast;
           npc.anim.aimAt({ groundPoint, result });
           await w.npc.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);
@@ -275,7 +275,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       getDropSpot(npcKey, def) {
         const [npc, room] = [w.n?.[npcKey], w.npc.npcToRoom.get(npcKey)];
         if (npc === undefined || room === undefined) return null;
-        const { reach, surface } = inventoryConfig;
+        const { reach, surface, sitReach } = inventoryConfig;
         const { x: px, y: py } = npc.point;
         /** Half its footprint: along the edge it is laid by, and in from it */
         const [halfW, halfH] = halfSizeOf(w.sheets, def);
@@ -285,10 +285,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           .filter((d) => d.meta.surface === true && d.meta.refinedOutline !== undefined)
           .map((d) => ({ outline: d.meta.refinedOutline as Geom.VectJson[], y3d: Number(d.meta.y) || 0 }));
 
-        let best: null | DropSpot = null;
+        const sat = npc.anim.pose === "sit";
         /** No further than it could be taken back from */
-        const within = npc.anim.pose === "sit" ? reach.seated : reach.raised;
-        let bestDist: number = within;
+        const within = sat ? reach.seated : reach.raised;
+        const ry = npc.rotation.y;
+        /** The nearest to this wins: them — or sat, where their hand comes down, further onto the table */
+        const goal = sat ? { x: px - Math.sin(ry) * sitReach.at, y: py - Math.cos(ry) * sitReach.at } : npc.point;
+        /** How far in from an edge is tried: sat, as far as that hand */
+        const deepest = sat ? sitReach.at : 0;
+        let [best, bestDist] = [null as null | DropSpot, Number.POSITIVE_INFINITY];
         for (const { outline, y3d } of tables) {
           /** Tables are often several obstacles abutting, as one top: it may lie across them */
           const onTop = (p: Geom.VectJson) =>
@@ -303,18 +308,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             const [tx, ty] = [(b.x - a.x) / length, (b.y - a.y) / length];
             const [nx, ny] = [-ty * side, tx * side]; // inwards
             // slid along the edge: the nearest place that is all on a table, and on no other item
-            for (let along = -surface.span; along <= surface.span; along += surface.step) {
-              const [x, y] = [near.x + tx * along + nx * inset, near.y + ty * along + ny * inset];
-              const dist = Math.hypot(x - px, y - py);
-              if (dist >= bestDist) continue;
-              const corners = [-halfW, halfW].flatMap((u) =>
-                [-halfH, halfH].map((v) => ({ x: x + u * tx + v * nx, y: y + u * ty + v * ny })),
-              );
-              const box = Rect.fromPoints(...corners).inset(0.01); // they may touch
-              if (corners.every(onTop) === false || items.some((d) => d.bounds.intersects(box))) continue;
-              // squared up to the edge, its image the right way up for whoever stands there: turned, never mirrored
-              [best, bestDist] = [{ x, y, y3d, linear: [-tx * side, -ty * side, -nx, -ny] }, dist];
-            }
+            for (let deep = inset; deep <= inset + deepest; deep += 2 * surface.step)
+              for (let along = -surface.span; along <= surface.span; along += surface.step) {
+                const [x, y] = [near.x + tx * along + nx * deep, near.y + ty * along + ny * deep];
+                const dist = Math.hypot(x - goal.x, y - goal.y);
+                if (dist >= bestDist || Math.hypot(x - px, y - py) > within) continue;
+                const corners = [-halfW, halfW].flatMap((u) =>
+                  [-halfH, halfH].map((v) => ({ x: x + u * tx + v * nx, y: y + u * ty + v * ny })),
+                );
+                const box = Rect.fromPoints(...corners).inset(0.01); // they may touch
+                if (corners.every(onTop) === false || items.some((d) => d.bounds.intersects(box))) continue;
+                // squared up to the edge, its image the right way up for whoever stands there: turned, never mirrored
+                [best, bestDist] = [{ x, y, y3d, linear: [-tx * side, -ty * side, -nx, -ny] }, dist];
+              }
           }
         }
         return best;
@@ -900,6 +906,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "carried":
+          case "npc-hit":
           case "speech":
           case "stopped-moving":
             break;
@@ -938,10 +945,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // turned to it, unless it is at their own feet
         if (npc.distanceTo(at) > 0.05) await npc.look({ at }).catch(() => {});
         const { anim, key } = npc;
-        // the free hand: not the one with a gun in it, nor one at their temple — else each in turn
         /** Sat or lain: no stepping up to it, so their right arm goes out to it */
         const seated = w.npc.npcToDoable[key] != null;
         if (seated) side ??= "right";
+        // the free hand: not the one with a gun in it, nor one at their temple — else each in turn
         side ??=
           w.phasers?.holds(key) === true
             ? "left"
@@ -949,29 +956,41 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               ? (state.reachedRight.add(key), "right")
               : "left";
         /** Down to the floor for it, unless off it themselves */
-        const crouch = (at.y3d ?? 0) < inventoryConfig.reach.raisedFrom && w.npc.npcToDoable[key] == null;
-        const shown = `${crouch ? "crouch" : clip}${side === "left" ? "_left" : ""}` as const;
+        const crouch = (at.y3d ?? 0) < inventoryConfig.reach.raisedFrom && seated === false;
+        /** Sat, their hand rests under the table: a clip that brings it out and round the edge */
+        const sat = seated && side === "right" && anim.pose === "sit";
+        const shown = sat ? "sit_reach" : (`${crouch ? "crouch" : clip}${side === "left" ? "_left" : ""}` as const);
         /** What that hand was doing e.g. psi, which it goes back to */
         const u = anim.upperOf(side);
         const before = u.target === 1 ? u.key : null;
         if (crouch) anim.setPose(shown);
-        anim.setUpper(shown, { side });
+        anim.setUpper(shown, { side, played: sat });
         const aim =
           seated && side === "right"
             ? {
                 at: new THREE.Vector3(at.x, at.y3d ?? 0, at.y),
                 from: reachFrom,
-                weight: reachAimWeight,
+                weight: sat ? 0 : reachAimWeight,
+                head: sat ? 0 : undefined,
                 maxRad: Math.PI,
               }
             : null;
         if (aim !== null) anim.upper.aim = aim;
         // an aim is let go only now, so the arm goes from it straight to the reach
         if (side === "right") w.phasers?.disarm(key);
-        const until = w.timer.getElapsedTime() + inventoryConfig[crouch ? "crouchSecs" : "reachSecs"];
-        while (w.timer.getElapsedTime() < until) await w.npc.nextTick(); // held whilst paused
+        const { sitReach } = inventoryConfig;
+        const start = w.timer.getElapsedTime();
+        /** Held whilst paused */
+        const wait = async (secs: number) => {
+          for (let t = w.timer.getElapsedTime() - start; t < secs; t = w.timer.getElapsedTime() - start) {
+            if (sat && aim !== null) easeSitAim(aim, t);
+            await w.npc.nextTick();
+          }
+        };
+        await wait(sat ? sitReach.outSecs : inventoryConfig[crouch ? "crouchSecs" : "reachSecs"]);
         if (w.n[key] === npc) act();
         w.view.forceUpdate();
+        if (sat) await wait(sitReach.homeSecs); // their hand home, before the arm is let go
         // back as they were, unless something else has moved them on
         if (anim.pose === shown) anim.setPose(anim.idleClip.name as AnimationClipKey);
         if (u.key === shown) anim.setUpper(before, { side });
@@ -1783,6 +1802,14 @@ const emptySet = new Set<Geomorph.GmDoorKey>();
  */
 
 const emptyMeta = {};
+/** Sat, the arm's aim waits for the hand to clear the table, and lets go before it comes back under; the head only glances, the whole way */
+function easeSitAim(aim: { weight: number; head?: number }, t: number) {
+  const { smoothstep } = THREE.MathUtils;
+  const { aimIn, aimOut, look, homeSecs } = inventoryConfig.sitReach;
+  aim.weight = reachAimWeight * smoothstep(t, ...aimIn) * (1 - smoothstep(t, ...aimOut));
+  aim.head = look * smoothstep(t, 0, aimIn[1]) * (1 - smoothstep(t, aimOut[0], homeSecs));
+}
+
 /** Their hand, down the forearm that an aimed reach lines up on its target — model units */
 const reachFrom = new THREE.Vector3(0, -0.3, 0);
 /** How far of the way an aimed reach swings: short of all of it, else the arm lies flat back */
