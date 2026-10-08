@@ -178,12 +178,7 @@ export default function WorldHud() {
       {/* padded, else the scroll clips a slot's ring */}
       <div className="pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]">
         {/* what they are, apart from what they carry: no gap, as each icon's own margin is one */}
-        <div
-          className={cn(
-            "mr-1 flex shrink-0 rounded-md bg-slate-950/25 ring-1 ring-slate-300/15",
-            big ? "px-2.5" : "px-3.5",
-          )}
-        >
+        <div className={cn("mr-1 flex shrink-0 rounded-md", big ? "px-2.5" : "px-3.5")}>
           {slot(
             0,
             { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
