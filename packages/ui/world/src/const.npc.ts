@@ -185,6 +185,7 @@ export const fromAnimationClipKey = {
   run: true,
   shuffle: true,
   sit: true,
+  sit_reach: true,
   strafe_left: true,
   strafe_right: true,
   phaser_aim: true,
@@ -233,6 +234,7 @@ export const fadeSecs: Record<
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
+  sit_reach: {},
   strafe_left: {},
   strafe_right: {},
   phaser_aim: { shuffle: 0.15 },

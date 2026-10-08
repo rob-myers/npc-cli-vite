@@ -217,6 +217,27 @@ height (`rightarm` x 56, `rightforearm` x 8); the left arm is idle's (`leftarm` 
 `drop`'s counterpart (`w.e.takeItem`), likewise a still upper-body pose: a deeper lean (stomach -9, chest
 -7, head 3) and the right arm lower with the elbow bent to grasp (`rightarm` x 50, `rightforearm` x 28).
 
+## sit_reach
+
+`drop` and `pick_up` for the SAT (`w.e.reachFor`): `sit` rests the hand on the lap, under a table, and
+easing straight to a reach pose brought it up through the top. So this one MOVES: a pose every 4 frames, the reach held 3,
+then back — 35 frames, the rest of the 2.5s held on `sit`'s arm. Keyed from code, recipe `sit_reach`.
+Its `stomach` and `chest` keys are turns ON `sit`'s own torso, not poses of it (the game's
+`upperAddsTorso`), so alone in Blockbench it shows them off an upright one; the arm is keyed against that.
+
+| pose | stomach | chest | rightarm | rightforearm | hand |
+|------|---------|-------|----------|--------------|------|
+| sit | 0 | 0 | [5.7842, 7.0689, 5.1276] | [50,0,0] | on the lap |
+| back | [1.5,0,0] | [1.5,-5,0] | [-30,0,10] | [75,0,0] | beside the hip, clear of the edge |
+| up | [3,0,0] | [3,-8,0] | [-55,0,20] | [130,0,0] | by the ribs, above the top |
+| over | 0 | [-1,2,0] | [5,0,0] | [115,0,0] | before the chest, over the edge |
+| out | [-4,0,0] | [-4,6,0] | [84,0,0] | [15,0,0] | reaching: the game aims it from here |
+
+`chest` +y brings the right shoulder forward. A deeper lean at `out` dips the hand into the top.
+
+Solved against a table 0.6m high whose edge is 0.15m ahead of the hips — the end seat of `table--004` —
+the forearm's tip staying a unit clear of it. Change `sit`'s arm and its first pose must follow.
+
 ## crouch
 
 Putting down on, or taking off, the FLOOR (`w.e.reachFor`): a still whole-body squat. Feet where they
@@ -238,8 +259,8 @@ node scripts/src/bins/gen-clip-keys.ts                        # every recipe
 node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 ```
 
-Recipes now: `sit` (`knee`), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
-breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
+Recipes now: `sit` (`knee`), `sit_reach` (`leg hold`, frames), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
+breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in Blockbench, and save. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
 re-export from Blockbench. Reload the project in Blockbench afterwards, else a save puts the old keys back.
 
 ## point / point_avoid
