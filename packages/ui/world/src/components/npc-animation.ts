@@ -10,6 +10,7 @@ import {
   defaultIdleAnimationClipKey,
   fadeSecs,
   gaitStride,
+  headShakeConfig,
   npcScale,
   stanceConfig,
   strafeEaseSecs,
@@ -77,7 +78,9 @@ export class NpcAnimation {
   /** Their feet kept apart after a gait — see `npc-stance` */
   stance = newStance();
   /** The head, shared by both */
-  upperHead = { group: null as null | THREE.Group, entry: null as null | UpperBone };
+  upperHead = { entry: null as null | UpperBone };
+  /** Seconds into a shake of the head, else `null` — see `shakeHead` */
+  headShake = null as null | number;
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
   face = {
     target: 0,
@@ -157,6 +160,16 @@ export class NpcAnimation {
     u.target = key === null ? 0 : 1;
   }
 
+  /** A fresh skeleton: the bones an upper clip, or a shake of the head, writes */
+  setGroup(group: THREE.Group) {
+    const bonesOf = (...names: string[]) => names.flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
+    for (const side of ["left", "right"] as const) {
+      const bones = bonesOf(`${side}arm`, `${side}forearm`);
+      Object.assign(this.upperOf(side), { torso: bonesOf("stomach", "chest"), bones });
+    }
+    this.upperHead.entry = bonesOf("head")[0] ?? null;
+  }
+
   upperOf(side: Side) {
     return side === "right" ? this.upper : this.upperLeft;
   }
@@ -165,6 +178,7 @@ export class NpcAnimation {
   tick(delta: number) {
     this.mixer.update(delta);
     this.tickUpper(delta);
+    this.tickHeadShake(delta);
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
       tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
@@ -252,19 +266,34 @@ export class NpcAnimation {
     }
   }
 
+  /** A "no": they shake their head, over whatever pose or upper clip has it */
+  shakeHead() {
+    this.headShake = 0;
+    this.w.r3f?.invalidate();
+  }
+
+  tickHeadShake(delta: number) {
+    const { entry } = this.upperHead;
+    if (this.headShake === null || entry === null) return;
+    const { bone, base, written } = entry;
+    // with no upper clip, `tickUpper` has not put the head back to its pose
+    if (this.upper.key === null && this.upperLeft.key === null) {
+      if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
+      else base.copy(bone.quaternion);
+    }
+    const { secs, slowing, turns, rad } = headShakeConfig;
+    const p = Math.min(1, (this.headShake += delta) / secs);
+    const t = 1 - (1 - p) ** slowing;
+    /** Nought at either end */
+    const angle = rad * Math.sin(2 * Math.PI * turns * t) * Math.sin(Math.PI * t);
+    written.copy(bone.quaternion.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle)));
+    if (p === 1) this.headShake = null;
+  }
+
   tickUpperSide(side: Side, delta: number) {
     const u = this.upperOf(side);
-    const { group } = this.npc;
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
-    if (u.key === null || group === null) return;
-
-    if (u.group !== group) {
-      u.group = group; // a fresh group, or hmr
-      u.torso = ["stomach", "chest"].flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
-      u.bones = [`${side}arm`, `${side}forearm`].flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
-    }
-    const h = this.upperHead;
-    if (h.group !== group) Object.assign(h, { group, entry: newUpperBone(group.getObjectByName("head")) });
+    if (u.key === null || this.npc.group === null) return;
 
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
@@ -640,7 +669,6 @@ const newUpper = () => ({
   swapSecs: upperFadeSecs,
   /** Turns the right arm so its forearm, seen from `from` in its own frame, points `at` a world point — and the head to look there */
   aim: null as null | UpperAim,
-  group: null as null | THREE.Group,
   /** The pose's stomach and chest: read for the lean, or written by an `upperAddsTorso` clip */
   torso: [] as UpperBone[],
   /** Its arm, then its forearm */

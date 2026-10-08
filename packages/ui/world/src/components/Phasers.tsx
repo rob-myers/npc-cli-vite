@@ -35,7 +35,13 @@ export default function Phasers() {
       arm(npcKey, opts = {}) {
         if (w.npc.npcToDoable[npcKey] != null) return; // not whilst sat or lain
         if (w.e.hasItem(npcKey, "phaser") === false) return; // nor without one
-        if (w.shields?.isIn(npcKey) === true) return; // nor stood in a shield
+        if (w.shields?.isIn(npcKey) === true) {
+          if (npcKey === w.player.key) {
+            w.hud?.say("phaser suppressed");
+            w.n[npcKey]?.anim.shakeHead();
+          }
+          return; // nor stood in a shield
+        }
         if (w.shields?.isDead(npcKey) === true) {
           if (npcKey === w.player.key) w.hud?.say("phaser deactivated");
           return;

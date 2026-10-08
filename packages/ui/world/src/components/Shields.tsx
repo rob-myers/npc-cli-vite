@@ -252,6 +252,8 @@ export default function Shields() {
             npcs.set(e.npcKey, Math.sign(offOf(seg, npc)) || 1);
             // none is raised in one: so a gun may die, or revive, at its line — see `crossLines`
             if (seg.on === true) w.phasers?.disarm(e.npcKey);
+            if (seg.on === true && seg.freq !== null && e.npcKey === w.player.key && state.phaserOf(e.npcKey))
+              w.hud?.say("phaser suppressed");
           }
           npcs.size === 0 ? state.crossing.delete(key) : state.crossing.set(key, npcs);
         }

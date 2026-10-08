@@ -92,6 +92,8 @@ rect, with `lineSlack` (5cm) past the line before it counts, so someone stood on
 
 - Anyone entering a live shield's rect lowers their phaser, and it cannot be raised until they leave
   (`w.shields.isIn`). That is what makes the line safe: live or dead, nothing fires from inside.
+  The player is told "phaser suppressed": on entering one of a frequency, and on trying to raise it in any.
+  They shake their head too, on that try.
 - Switching a shield off leaves a dead phaser dead.
 - NOT handled: a teleport or spawn skips the crossing, and an npc already in a rect when the page
   loads gets a fresh `enter-collider`.

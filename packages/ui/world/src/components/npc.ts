@@ -328,6 +328,7 @@ export class Npc {
     this.position = this.skinnedMesh.position;
     this.rotation = this.skinnedMesh.rotation;
     this.anim.mixer = new THREE.AnimationMixer(group);
+    this.anim.setGroup(group);
 
     this.resolve.spawn("spawned");
 

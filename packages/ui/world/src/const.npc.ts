@@ -201,6 +201,9 @@ export const defaultFadeSecs = 0.3;
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
 
+/** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
+export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
+
 /**
  * Cross-fade seconds `fadeSecs[src][dst]`, from one animation clip into another.
  * A missing destination falls back to @see {defaultFadeSecs}.
