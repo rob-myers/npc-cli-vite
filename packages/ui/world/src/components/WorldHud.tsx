@@ -9,20 +9,23 @@ import {
   PersonSimpleWalkIcon,
   XIcon,
 } from "@phosphor-icons/react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
+import { getWorldStore } from "../service/storage";
 import { WorldContext } from "./world-context";
 
 /**
- * The player's bar: look/follow and walk/run, then psi, their phaser, their keys and what they
- * carry — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
+ * The player's bar: psi, their phaser, their keys and what they carry, then walk/run and
+ * look/follow — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
  */
 export default function WorldHud() {
   const w = useContext(WorldContext);
+  const store = getWorldStore(w.key);
 
   const state = useStateRef(
     (): State => ({
+      dragged: false,
       menu: null,
       pressTimer: 0,
       longPressed: false,
@@ -39,6 +42,9 @@ export default function WorldHud() {
         if (state.selected === name) state.selected = null;
         state.update();
         w.view.forceUpdate();
+      },
+      getMinY() {
+        return Math.min(0, hudDragTop + hudBarHeight - (w.rootEl?.clientHeight ?? 0));
       },
       say(notice) {
         window.clearTimeout(state.noticeTimer);
@@ -83,6 +89,25 @@ export default function WorldHud() {
 
   w.hud = state;
 
+  const y = useMotionValue(Math.max(state.getMinY(), store.read().hudY ?? 0));
+  const dragControls = useDragControls();
+  /** Dragged up and down by any part of it, as the menu is: a slot pressed is then no press */
+  const dragProps = {
+    style: { y },
+    drag: "y",
+    dragListener: false,
+    dragControls,
+    dragConstraints: { top: state.getMinY(), bottom: 0 },
+    dragMomentum: false,
+    dragElastic: 0,
+    onPointerDown: (e: React.PointerEvent) => dragControls.start(e),
+    onDragStart: () => void (state.dragged = true),
+    onDragEnd() {
+      store.patch({ hudY: y.get() });
+      requestAnimationFrame(() => (state.dragged = false));
+    },
+  } as const;
+
   useEffect(() => {
     const sub = w.events.subscribe({
       next(e) {
@@ -98,9 +123,9 @@ export default function WorldHud() {
   if (w.client === true)
     return (
       <div className={barClass}>
-        <div className={rowClass}>
+        <motion.div className={rowClass} {...dragProps}>
           <PlayerButtons />
-        </div>
+        </motion.div>
       </div>
     );
 
@@ -128,8 +153,7 @@ export default function WorldHud() {
         className={cn(
           "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
           opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-          big ? "h-12" : "h-18",
-          opts.narrow === true ? (big ? "w-9" : "w-13") : big ? "w-12" : "w-18",
+          big ? "h-12 w-10" : "h-18 w-15",
           opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
           opts.had === false && "*:opacity-25",
         )}
@@ -146,6 +170,7 @@ export default function WorldHud() {
           const el = e.currentTarget;
           window.clearTimeout(state.pressTimer);
           state.pressTimer = window.setTimeout(() => {
+            if (state.dragged === true) return;
             state.longPressed = true;
             state.set({ menu: { index, el } });
           }, longPressMs);
@@ -154,7 +179,7 @@ export default function WorldHud() {
         onPointerCancel={() => window.clearTimeout(state.pressTimer)}
         onPointerLeave={() => window.clearTimeout(state.pressTimer)}
         onClick={() => {
-          if (state.longPressed === true) return; // the hold was the press
+          if (state.longPressed === true || state.dragged === true) return; // the hold was the press, or a drag
           state.press(index);
           w.view.focus();
         }}
@@ -187,14 +212,16 @@ export default function WorldHud() {
     <div className={barClass}>
       {/* out here, not in the row: it scrolls, so would clip it */}
       {state.notice !== null && (
-        <div className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200">
+        <motion.div
+          style={{ y }}
+          className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200"
+        >
           {state.notice}
-        </div>
+        </motion.div>
       )}
-      <div className={rowClass}>
-        <PlayerButtons />
-        {/* what they are, apart from what they carry: no gap, as each icon's own margin is one */}
-        <div className={cn("mr-1 flex shrink-0 rounded-md", big ? "px-2.5" : "px-3.5")}>
+      <motion.div className={rowClass} {...dragProps}>
+        {/* what they are, then what they carry: spaced alike */}
+        <div className="flex shrink-0">
           {slot(
             0,
             { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
@@ -243,7 +270,6 @@ export default function WorldHud() {
             {
               title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
               had: true,
-              narrow: true,
               active: state.selected === def.key,
               drop: def.key,
               // a keycard for a door joins the keys
@@ -262,7 +288,8 @@ export default function WorldHud() {
             </>,
           ),
         )}
-      </div>
+        <PlayerButtons />
+      </motion.div>
 
       <Menu.Root open={state.menu !== null} onOpenChange={(open) => open || state.set({ menu: null })} modal={false}>
         <Menu.Portal container={w.rootEl}>
@@ -291,11 +318,11 @@ export default function WorldHud() {
   );
 }
 
-/** The player themself, ahead of the slots: where the camera stands by them, and how they go */
+/** The player themself, after the slots: where the camera stands by them, and how they go */
 function PlayerButtons() {
   const w = useContext(WorldContext);
   const press = useRef({ timer: 0, long: false });
-  const { follow } = w.view;
+  const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
   const big = w.touchDevice;
   const hurry = w.n?.[w.player.key]?.anim.hurry === true;
@@ -309,21 +336,22 @@ function PlayerButtons() {
 
   const endPress = (cancelled: boolean) => {
     window.clearTimeout(press.current.timer);
-    if (cancelled === false && press.current.long === false) w.view.onLookGesture(false);
+    if (cancelled === false && press.current.long === false && w.hud?.dragged !== true) w.view.onLookGesture(false);
   };
 
   return (
     <div
-      className={cn(
-        "mr-1 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60",
-        big ? "flex-row" : "flex-col",
-      )}
+      className="ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
     >
       {/* a client's moves are not theirs to pace */}
       {w.client !== true && (
-        <div className={buttonClass} title={`${hurry ? "run" : "walk"}: f`} onClick={() => w.player.toggleRun()}>
+        <div
+          className={buttonClass}
+          title={`${hurry ? "run" : "walk"}: f`}
+          onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
+        >
           <GaitIcon className={cn(buttonIcon(hurry), "size-5")} weight="bold" />
         </div>
       )}
@@ -334,6 +362,7 @@ function PlayerButtons() {
         onPointerDown={() => {
           press.current.long = false;
           press.current.timer = window.setTimeout(() => {
+            if (w.hud?.dragged === true) return; // dragging the bar is not a press
             press.current.long = true;
             w.view.onLookGesture(true);
           }, longPressMs);
@@ -343,7 +372,7 @@ function PlayerButtons() {
         onContextMenu={(e) => e.preventDefault()}
       >
         <AnimatePresence>
-          {w.view.lookingAt === true && (
+          {w.view?.lookingAt === true && (
             // pulses whilst a pan is under way, which a black screen or a paused world would hide
             <motion.div
               className="pointer-events-none absolute inset-0 bg-white/60"
@@ -393,19 +422,18 @@ function useSvgPause(paused: boolean) {
   return ref;
 }
 
-const barClass = "@container pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
+const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
 /** Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring */
 const rowClass = "pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
 
-/** Each icon's size, as a fraction of its slot's height: what they merely carry is drawn smaller */
+/** Each icon's size, as a fraction of its slot's height: alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
-  psi: 0.85,
-  phaser: 0.85,
-  keychain: 0.85,
-  book: 0.65,
-  box: 0.65,
-  /** It fills its square, so reads larger than the rest */
-  keycard: 0.53,
+  psi: 0.7,
+  phaser: 0.7,
+  keychain: 0.7,
+  book: 0.7,
+  box: 0.7,
+  keycard: 0.58,
 };
 const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });
 
@@ -632,6 +660,9 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
   "door-unlocked",
 ]);
 
+/** The bar's height, and how near the World's top it may be dragged */
+const hudBarHeight = 110;
+const hudDragTop = 8;
 /** How long a touch is held before a slot's menu opens, or the look button before it toggles the follow */
 const longPressMs = 500;
 /** How long the look button's flash takes to fade, when follow is turned on or off */
@@ -658,11 +689,13 @@ type SlotOpts = {
   plain?: true;
   /** What a right-click on it offers */
   menu?: SlotMenuItem[];
-  /** A carried item's: they sit closer together */
-  narrow?: true;
 };
 
 export type State = {
+  /** The bar is being dragged, so what ends on it is no press */
+  dragged: boolean;
+  /** The furthest up it may be dragged, as a `y` offset */
+  getMinY(): number;
   /** The slot whose right-click menu shows, hung off its element */
   menu: null | { index: number; el: HTMLElement };
   pressTimer: number;
