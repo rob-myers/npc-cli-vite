@@ -212,7 +212,7 @@ export function grant(
 
 /**
  * What the player's presses do: an item is walked to and taken, and whilst psi or their phaser is out
- * an npc is its target. Idempotent, as `predicates` — see `docs/inventory.md`
+ * an npc is its target. Idempotent, as `preds` — see `docs/inventory.md`
  * ```sh
  * kamma
  * kamma off

@@ -133,6 +133,6 @@ Debug's door toggle reads that off any pick.
   player's own right arm lowers it instead, its target kept for when it is next raised, and one
   elsewhere on them does nothing. With the phaser
   lowered and psi on, another npc pressed becomes psi's target. A press on the player's own LEFT
-  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised. `predicates`' pick ring stands down meanwhile.
+  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised. `preds`' pick ring stands down meanwhile.
 
-It is a keyed listener (`w.e.addKeyedListener`), as `predicates` is, so there is no process to kill.
+It is a keyed listener (`w.e.addKeyedListener`), as `preds` is, so there is no process to kill.

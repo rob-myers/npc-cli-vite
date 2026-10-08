@@ -168,9 +168,9 @@ function togglePicked(w: JshCli.WorldState, npcKey: string) {
 }
 
 /**
- * `predicates` is idempotent and must be invoked to commence tracking.
+ * `preds` is idempotent and must be invoked to commence tracking.
  */
-export function predicates(ct: JshCli.RunArg) {
+export function preds(ct: JshCli.RunArg) {
   const p = restorePred(ct.w.mapKey);
   p.player = ct.w.player.key;
   visualisePredicates(ct.w);
