@@ -90,10 +90,11 @@ It happens at the shield's centre line, in either direction: going in kills it, 
 revives it. No event tells of that, so `crossLines` checks each tick for whoever stands in a shield's
 rect, with `lineSlack` (5cm) past the line before it counts, so someone stood on it does not flicker.
 
-- Anyone entering a live shield's rect lowers their phaser, and it cannot be raised until they leave
-  (`w.shields.isIn`). That is what makes the line safe: live or dead, nothing fires from inside.
-  The player is told "phaser suppressed": on entering one of a frequency, and on trying to raise it in any.
-  They shake their head too, on that try.
+- A live shield is a wall to the gun arm. Whilst their arm at full reach would meet its centre line
+  (`w.shields.reaches`, each tick) the phaser is drawn in, `phaser_aim_avoid`, and fires nothing. So it can be
+  raised, and fired, beside a shield or facing away from one. One tuned to the shield is not drawn in.
+  The player is told "phaser suppressed" as theirs is drawn in.
+- Crossing a live line lowers a phaser not tuned to it: none is carried through raised.
 - Switching a shield off leaves a dead phaser dead.
 - NOT handled: a teleport or spawn skips the crossing, and an npc already in a rect when the page
   loads gets a fresh `enter-collider`.

@@ -117,9 +117,10 @@ export default function Shields() {
         } satisfies WW.MsgToNavWorker);
         w.phasers?.markDirty();
       },
-      isIn(npcKey) {
-        for (const [key, npcs] of state.crossing) {
-          if (npcs.has(npcKey) && state.segs.get(key)?.on === true) return true;
+      reaches(from, to, freqs) {
+        for (const seg of state.segs.values()) {
+          if (seg.on === false || passes(freqs, seg)) continue;
+          if (geomService.getLineSegsIntersection(from, to, seg.a, seg.b) !== null) return true;
         }
         return false;
       },
@@ -154,7 +155,9 @@ export default function Shields() {
       },
       onCross(npcKey, seg) {
         const meta = state.phaserOf(npcKey)?.meta;
-        if (meta === undefined || seg.on === false || seg.freq === null || passes(meta.freqs, seg)) return;
+        if (seg.on === false || passes(meta?.freqs, seg)) return;
+        w.phasers?.disarm(npcKey); // none is carried through raised
+        if (meta === undefined || seg.freq === null) return;
         const { freq } = seg;
         const dead: number[] = meta.dead ?? [];
         state.setDead(npcKey, meta, dead.includes(freq) ? dead.filter((f) => f !== freq) : [...dead, freq]);
@@ -248,13 +251,7 @@ export default function Shields() {
           if (seg === undefined || npc === undefined) return;
           const npcs = state.crossing.get(key) ?? new Map<string, number>();
           if (e.key === "exit-collider") npcs.delete(e.npcKey);
-          else {
-            npcs.set(e.npcKey, Math.sign(offOf(seg, npc)) || 1);
-            // none is raised in one: so a gun may die, or revive, at its line — see `crossLines`
-            if (seg.on === true) w.phasers?.disarm(e.npcKey);
-            if (seg.on === true && seg.freq !== null && e.npcKey === w.player.key && state.phaserOf(e.npcKey))
-              w.hud?.say("phaser suppressed");
-          }
+          else npcs.set(e.npcKey, Math.sign(offOf(seg, npc)) || 1);
           npcs.size === 0 ? state.crossing.delete(key) : state.crossing.set(key, npcs);
         }
       },
@@ -368,8 +365,8 @@ export type State = ShieldResources & {
   configure(key: string, opts: { on?: boolean; freq?: null | number }): void;
   /** Writes a shield's frequency to its decor's meta, and a runtime one's def: kept */
   setFreq(key: string, freq: null | number): void;
-  /** Whether they stand in a shield that is on, where no phaser may be raised */
-  isIn(npcKey: string): boolean;
+  /** Whether the line `from` to `to` meets a shield that is on, and not let through by `freqs` */
+  reaches(from: Geom.VectJson, to: Geom.VectJson, freqs?: readonly number[]): boolean;
   /** The phaser they carry, whose `meta` has the `freqs` it knows and those it went `dead` to */
   phaserOf(npcKey: string): undefined | Geomorph.DecorDef;
   freqsOf(npcKey: string): readonly number[];
