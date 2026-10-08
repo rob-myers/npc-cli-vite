@@ -35,6 +35,7 @@ type AddOpts = {
  * pick 1 | decor type:circle radius:1.5
  * pick 1 | decor type:quad img:screen-0
  * decor to:[3,4.5] key:lamp meta:'{ label: "lamp" }'   # replacing any `lamp` there is
+ * pick | decor key:shield- type:rect w:3 h:1          # piped to, `key` is a prefix: shield-0, shield-1, … replacing any there
  * decor ls
  * decor rm point-3 point-4
  * decor ls | map key | decor rm
@@ -62,14 +63,16 @@ async function* add({ api, w }: JshCli.RunArg, opts: AddOpts) {
   // a rect with no size of its own takes two points, as opposite corners
   const perDecor = type === "rect" && opts.width === undefined && opts.height === undefined ? 2 : 1;
 
-  let keyed = false;
+  /** Piped to, `key` is a prefix, counted up from `0` */
+  const prefix = api.isTtyAt(0) ? undefined : opts.key;
+  let [keyed, count] = [false, 0];
   function* place(point: unknown) {
     if (!w.helper.isPointAnyFormat(point)) throw Error(`expected point: ${JSON.stringify(point)}`);
     const { x, y } = w.helper.parseGroundPoint(point); // sans any pick meta
     points.push({ x, y });
     if (points.length < perDecor) return;
-    // the first takes `key`, in place of whatever runtime decor has it: the rest, the next free
-    const named = keyed === false ? opts.key : undefined;
+    // in place of whatever runtime decor has it. Unpiped the first takes `key`: the rest, the next free
+    const named = prefix !== undefined ? `${prefix}${count++}` : keyed === false ? opts.key : undefined;
     if (named !== undefined && named in w.decor.byKey && !(named in w.decor.runtime.byKey)) {
       throw Error(`key: "${named}" is the map's own decor`);
     }

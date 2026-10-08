@@ -11,6 +11,7 @@ import {
   fadeSecs,
   gaitStride,
   headShakeConfig,
+  hitConfig,
   npcScale,
   stanceConfig,
   strafeEaseSecs,
@@ -79,6 +80,8 @@ export class NpcAnimation {
   stance = newStance();
   /** The head, shared by both */
   upperHead = { entry: null as null | UpperBone };
+  /** In pain, or pacified: the clip shown instead of idle, seconds into it, and what follows it — see `setHurt` */
+  hurt = null as null | { key: AnimationClipKey; secs: number; next: null | AnimationClipKey };
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
@@ -119,6 +122,10 @@ export class NpcAnimation {
       else hidden?.stop();
     }
     const action = this.mixer.clipAction(clips[next]);
+    // held on its last frame, so it does not wrap as it fades out
+    const once = onceClips.has(next);
+    action.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, Infinity);
+    action.clampWhenFinished = once;
     /** Already on show, e.g. walk as a strafe starts: restarting it would pop the feet and dip its weight */
     const kept = next === this.pose && action.isRunning();
     if (kept === false) (fade > 0 ? action.reset().fadeIn(fade) : action.reset()).play();
@@ -160,6 +167,36 @@ export class NpcAnimation {
     u.target = key === null ? 0 : 1;
   }
 
+  /** What they stand, sit or lie in at rest: the hurt clip whilst there is one */
+  get restKey() {
+    return this.hurt?.key ?? keyOf(this.idleClip);
+  }
+
+  /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
+  hitClipFor(part: null | string): null | AnimationClipKey {
+    const region = hitConfig.region[part ?? ""];
+    return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
+  }
+
+  /** Show `key` in place of idle: a pain clip once, a pacified one until `null` releases them */
+  setHurt(key: null | AnimationClipKey) {
+    const pacified = this.hurt !== null && isPacified(this.hurt.key) ? this.hurt.key : null;
+    if (key !== null && pacified !== null && (isPacified(key) || hitConfig.next[key] !== undefined)) return;
+    this.hurt = key === null ? null : { key, secs: 0, next: hitConfig.next[key] ?? pacified };
+    this.setPose(this.restKey, { force: key !== null });
+    this.w.r3f?.invalidate();
+  }
+
+  tickHurt(delta: number) {
+    const { hurt } = this;
+    if (hurt === null || onceClips.has(hurt.key) === false) return;
+    hurt.secs += delta;
+    if (hurt.secs < this.npc.clips[hurt.key].duration) return;
+    if (hurt.next === null) return this.setHurt(null);
+    this.hurt = { key: hurt.next, secs: 0, next: null };
+    this.setPose(hurt.next);
+  }
+
   /** A fresh skeleton: the bones an upper clip, or a shake of the head, writes */
   setGroup(group: THREE.Group) {
     const bonesOf = (...names: string[]) => names.flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
@@ -179,6 +216,7 @@ export class NpcAnimation {
     this.mixer.update(delta);
     this.tickUpper(delta);
     this.tickHeadShake(delta);
+    this.tickHurt(delta);
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
       tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
@@ -223,7 +261,7 @@ export class NpcAnimation {
         const idleFade = Math.min(lookIdleFadeMs / 1000, t.duration);
         if (t.elapsed >= t.duration - idleFade) {
           t.longLook = false;
-          this.setPose(keyOf(this.idleClip), { fade: idleFade });
+          this.setPose(this.restKey, { fade: idleFade });
         }
       }
       if (t.elapsed >= t.duration) {
@@ -542,7 +580,7 @@ export class NpcAnimation {
     this.face.rate = 0;
     const { aim } = this.face;
     if (aim?.untilRest === true) this.face.aim = null;
-    this.setPose(keyOf(this.idleClip), { force: this.moving });
+    this.setPose(this.restKey, { force: this.moving });
     this.moving = false;
     // a look on the move they arrived before finishing: the rest of it on the spot
     if (aim?.untilRest === true) this.lookAt(this.bearingOf(aim.at), 0, aim.rate);
@@ -595,7 +633,7 @@ export class NpcAnimation {
       const rate = duration > 0 ? arc / duration : lookShuffleRate;
       this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
     } else if (this.pose === "shuffle") {
-      this.setPose(keyOf(this.idleClip)); // a short look superseding a long one
+      this.setPose(this.restKey); // a short look superseding a long one
     }
   }
 }
@@ -608,6 +646,18 @@ function isGait(key: AnimationClipKey) {
 function isStride(key: AnimationClipKey) {
   return isGait(key) || key === "backwards";
 }
+
+/** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips of each */
+export function postureOf(key: AnimationClipKey) {
+  return key === "sit" || key.startsWith("sit_pa") ? "sit" : key === "lie" || key.startsWith("lie_") ? "lie" : "stand";
+}
+
+const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
+
+/** Hit clips played once, then left */
+const onceClips = new Set<AnimationClipKey>(
+  Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
+);
 
 /** A pose stood still in, whose feet a stance may hold apart */
 function isStill(key: AnimationClipKey) {
@@ -718,18 +768,20 @@ function keyOf(clip: THREE.AnimationClip) {
   return clip.name as AnimationClipKey;
 }
 
-function bubbleHeightForClip(clipName: string): number {
-  if (clipName === "sit") return 1.4;
-  if (clipName === "lie") return 0.9;
+function bubbleHeightForClip(clipName: AnimationClipKey): number {
+  const posture = postureOf(clipName);
+  if (posture === "sit") return 1.4;
+  if (posture === "lie") return 0.9;
   return 2;
 }
 
 /** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;
 
-function labelYShiftForClip(clipName: string): number {
-  if (clipName === "sit") return 1.6;
-  if (clipName === "lie") return 0.75;
+function labelYShiftForClip(clipName: AnimationClipKey): number {
+  const posture = postureOf(clipName);
+  if (posture === "sit") return 1.6;
+  if (posture === "lie") return 0.75;
   return labelYShiftMax;
 }
 

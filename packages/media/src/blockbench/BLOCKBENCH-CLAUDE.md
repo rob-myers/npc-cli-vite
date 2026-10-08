@@ -206,7 +206,7 @@ onto a bone, by the forearm's tip `(0, -5.6, 0)`.
 ### Sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
 
 Drafts too. Each keeps its base's root and seat or bed: `sit`'s root and legs (feet -10, still), `lie`'s root.
-No `_in` for the pacified pair, the game fades in from `sit` / `lie`. Lengths are the standing set's.
+Lengths are the standing set's.
 
 - `sit_pain_high` (1.6s): folded ~26, ~33 at 0.8 (stomach -14 / -18, chest -12 / -15), `pain_high`'s crossed
   forearms. The shake is `stomach` z and `head`, a key every 0.1s, linear: `hips` would swing the legs.
@@ -214,6 +214,10 @@ No `_in` for the pacified pair, the game fades in from `sit` / `lie`. Lengths ar
   up (arm position y 0.3 / 0.45), hands forward onto the knees (arms x 18).
 - `sit_pacified` (3s): `sit`'s arms, in the lap. Slumped (stomach -8, chest -7), head lolled as `pacified`
   ([-14,5,12]), `stomach` z swaying 2.5 / -2.5.
+- `sit_pacify_in` / `lie_pacify_in` (1.5s, once): from the base's first key to the pacified one's, keyed at
+  `pacify_in`'s times. Sat: thrown back at 0.25 (stomach 5, chest 6, head 18, arms flung out, shins kicked
+  to -70), slumped past it at 0.6 (stomach -14, head -22). Lain: a start at 0.25 (stomach -7, chest -5, arms
+  and knees lifted), then the head rolls over, past its rest at 0.6 (y 30).
 - `lie_pain_high` (1.6s): a curl, not an arch. Stomach -10 / -14, chest -8 / -11, knees up (thighs 35 / 40,
   shins -60 / -66, feet 10), the crossed forearms and the same shake.
 - `lie_pain_low` (1.2s): stomach -3 / -5, head turned aside (y 20) with a small shake, fists drawn up over the

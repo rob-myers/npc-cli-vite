@@ -24,6 +24,8 @@ export type Beam = {
   at: THREE.Vector3;
   /** Whether a shield stops it short of them */
   blocked: boolean;
+  /** How far out it has reached, `0` to `1`. Kept as it lets go, so it fades where it is */
+  reach: number;
 };
 
 export function createBeam(): Beam {
@@ -38,6 +40,7 @@ export function createBeam(): Beam {
     end: new THREE.Vector3(),
     at: new THREE.Vector3(),
     blocked: false,
+    reach: 0,
   };
 }
 
@@ -63,7 +66,7 @@ export function advanceBeam(x: Beam, step: number, npcs: Record<string, unknown>
 
 /**
  * Where the beam from `tip` ends: its stub, on down the arm `along`, drawn to `part` of their target as it locks
- * on — to `stopped` instead, where a shield stops it
+ * on — to `stopped` instead, where a shield stops it. Letting go it stays there, and only fades
  */
 export function beamEnd(
   x: Beam,
@@ -79,7 +82,8 @@ export function beamEnd(
   if (part !== null) {
     const at = x.at.copy(stopped ?? part);
     if (x.glide !== null) at.lerpVectors(x.glide.from, tmpGlide.copy(at), eased(x.glide.t)); // tracks the target meanwhile
-    end.lerp(at, eased(x.locked.presence));
+    if (x.locked.target === 1 || x.locked.presence === 0) x.reach = eased(x.locked.presence);
+    end.lerp(at, x.reach);
   }
   return end;
 }

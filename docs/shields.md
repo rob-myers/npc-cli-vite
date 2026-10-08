@@ -18,8 +18,8 @@ A shield is a decor **rect** whose meta has `shield`. The panel stands on the re
 line, floor to `wallHeight`. The rect itself is the shield's collider: who is "in" the shield.
 
 ```sh
-pick 1 | decor key:shield-0 type:rect w:3 h:1 meta:'{ shield: true }'
-pick 1 | decor key:shield-1 type:rect w:3 h:1 meta:'{ shield: true, freq: 2 }'
+decor to:$( pick 1 ) key:shield-0 type:rect w:3 h:1 meta:'{ shield: true }'
+decor to:$( pick 1 ) key:shield-1 type:rect w:3 h:1 meta:'{ shield: true, freq: 2 }'
 pick 1 | decor type:rect w:3 h:0.15 meta:'{ shield: true, freq: null }'
 ```
 

@@ -1113,19 +1113,26 @@ export function play({ api, w }: JshCli.RunArg) {
 
 /**
  * Pose an npc `as` something, facing and pointing `at` an npc — until they move, are armed, something else takes
- * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head
+ * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head.
+ * A clip's own name shows it whole, releasing one in pain or pacified
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
  * pose rob as:shake
+ * pose npc-0 as:breathe
  * ```
  */
 export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string; at?: string } = api.jsArg(args)) {
   const [npcKey] = api.getJsOperands(args, opts);
   if (npcKey === undefined || opts.as === undefined) throw Error("usage: pose npcKey as:pose [at:npcKey]");
   if (opts.as === "shake") return w.npc.get(npcKey).anim.shakeHead(); // over any pose
-  if (!(opts.as in poseConfig.poses)) throw Error(`as: expected one of: ${[...keys(poseConfig.poses), "shake"]}`);
   const npc = w.npc.get(npcKey);
+  if (!(opts.as in poseConfig.poses) && opts.as in w.npc.clips) {
+    npc.anim.setHurt(null);
+    return npc.anim.setPose(opts.as as keyof typeof w.npc.clips);
+  }
+  if (!(opts.as in poseConfig.poses))
+    throw Error(`as: expected one of: ${[...keys(poseConfig.poses), "shake"]}, or a clip`);
   const target = opts.at === undefined || opts.at === npc.key ? undefined : w.npc.get(opts.at);
   const { upper: clipKey, avoid } = poseConfig.poses[opts.as as PoseKey];
   const { upper, face } = npc.anim;

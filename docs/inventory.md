@@ -94,6 +94,25 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
   — swung round as it changes (`psiConfig.swing`). Over anyone lain down the relief holds its peak
   for `lieFlat` metres before it falls, so it does not drop into them.
 
+### What a hit does
+
+As a beam locks on, and no shield stops it, `w.npc.hit` plays a clip on its target, by the part locked on to
+and whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-hit`.
+
+| part | stood | sat / lain |
+| --- | --- | --- |
+| head | `pacify_in`, then `pacified` looped | `{sit,lie}_pacify_in`, then `{sit,lie}_pacified` looped |
+| chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
+| an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
+
+- A pain clip plays once, then they are back as they were. Pacified lasts until released: `pose npc-0 as:breathe`,
+  or `as:sit` / `as:lie`.
+- Whilst either (`anim.hurt`) they can do nothing: a move under way is stopped (it rejects with `hit`), their
+  phaser is lowered, and `move`, `look` and arming are refused.
+- Pain on someone pacified leaves them pacified after. The label, or no part, has no effect.
+- One lock hits once. Not mirrored over the network.
+
+
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
 - `revokeItem(npcKey, "psi" | kind)` takes it away outright, never put down — the `psi` and `phaser`
   buttons in an npc's debug bubble, lit whilst they have it.

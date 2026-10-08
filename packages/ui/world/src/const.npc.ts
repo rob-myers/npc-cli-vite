@@ -170,6 +170,7 @@ export const fromAnimationClipKey = {
   idle: true,
   lie: true,
   lie_pacified: true,
+  lie_pacify_in: true,
   lie_pain_high: true,
   lie_pain_low: true,
   pacified: true,
@@ -189,6 +190,7 @@ export const fromAnimationClipKey = {
   shuffle: true,
   sit: true,
   sit_pacified: true,
+  sit_pacify_in: true,
   sit_pain_high: true,
   sit_pain_low: true,
   sit_reach: true,
@@ -210,6 +212,62 @@ export const upperFadeSecs = 0.4;
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
 
+type ClipKey = keyof typeof fromAnimationClipKey;
+type HitRegion = "head" | "torso" | `${"arm" | "leg"}_${"left" | "right"}`;
+
+/** What a phaser hit does: the clip played, by where it lands and how they are — see `w.npc.hit` */
+export const hitConfig = {
+  /** Where a bone's part is */
+  region: {
+    head: "head",
+    chest: "torso",
+    stomach: "torso",
+    hips: "torso",
+    leftarm: "arm_left",
+    leftforearm: "arm_left",
+    rightarm: "arm_right",
+    rightforearm: "arm_right",
+    leftthigh: "leg_left",
+    leftshin: "leg_left",
+    leftfoot: "leg_left",
+    rightthigh: "leg_right",
+    rightshin: "leg_right",
+    rightfoot: "leg_right",
+  } as Record<string, undefined | HitRegion>,
+  clips: {
+    stand: {
+      head: "pacify_in",
+      torso: "pain_high",
+      arm_left: "pain_arm_left",
+      arm_right: "pain_arm_right",
+      leg_left: "pain_leg_left",
+      leg_right: "pain_leg_right",
+    },
+    sit: {
+      head: "sit_pacify_in",
+      torso: "sit_pain_high",
+      arm_left: "sit_pain_low",
+      arm_right: "sit_pain_low",
+      leg_left: "sit_pain_low",
+      leg_right: "sit_pain_low",
+    },
+    lie: {
+      head: "lie_pacify_in",
+      torso: "lie_pain_high",
+      arm_left: "lie_pain_low",
+      arm_right: "lie_pain_low",
+      leg_left: "lie_pain_low",
+      leg_right: "lie_pain_low",
+    },
+  } satisfies Record<string, Record<HitRegion, ClipKey>>,
+  /** Looped until released: every other clip above plays once */
+  pacified: ["pacified", "sit_pacified", "lie_pacified"] as ClipKey[],
+  /** What a clip played once goes on to, where that is not back to idle */
+  next: { pacify_in: "pacified", sit_pacify_in: "sit_pacified", lie_pacify_in: "lie_pacified" } as Partial<
+    Record<ClipKey, ClipKey>
+  >,
+};
+
 /**
  * Cross-fade seconds `fadeSecs[src][dst]`, from one animation clip into another.
  * A missing destination falls back to @see {defaultFadeSecs}.
@@ -227,6 +285,7 @@ export const fadeSecs: Record<
   idle: { shuffle: 0.15 },
   lie: {},
   lie_pacified: {},
+  lie_pacify_in: {},
   lie_pain_high: {},
   lie_pain_low: {},
   pacified: {},
@@ -247,6 +306,7 @@ export const fadeSecs: Record<
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
   sit_pacified: {},
+  sit_pacify_in: {},
   sit_pain_high: {},
   sit_pain_low: {},
   sit_reach: {},

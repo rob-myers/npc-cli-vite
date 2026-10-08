@@ -158,6 +158,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         let groundPoint = helper.parseGroundPoint(to);
 
         const npc = w.npc.get(npcKey);
+        if (npc.anim.hurt !== null) throw Error("hurt");
         let result = w.npc.getClosestPoly(groundPoint, 0.5);
         const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
         if (doResult.type === "none") {
@@ -905,6 +906,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "carried":
+          case "npc-hit":
           case "speech":
           case "stopped-moving":
             break;

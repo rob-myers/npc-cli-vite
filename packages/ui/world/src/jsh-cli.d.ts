@@ -55,6 +55,13 @@ declare namespace JshCli {
       }
     | { key: "phasers"; armed: boolean; npcKeys: string[] }
     | {
+        /** A phaser's beam reached `part` of them, and `clip` is its effect */
+        key: "npc-hit";
+        npcKey: string;
+        part: string;
+        clip: import("./components/NPCs").AnimationClipKey;
+      }
+    | {
         /** About to look at (if close enough), then fade onto, a free doable */
         key: "npc-pre-do";
         npcKey: string;
