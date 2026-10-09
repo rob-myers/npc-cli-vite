@@ -5,11 +5,9 @@ import {
   exp,
   Fn,
   float,
-  floor,
   fract,
   fwidth,
   If,
-  instanceIndex,
   int,
   ivec2,
   Loop,
@@ -28,26 +26,19 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_GEOMORPH_INSTANCES } from "../const.env";
-import { defaultPsiTune, psiMaxReach } from "../const.npc";
+import { defaultPsiTune } from "../const.npc";
 import type { FadeRooms } from "./fade-rooms";
 import { type RoomSlots, slotUvPerMetre } from "./room-slots";
-import { selectAs } from "./tsl";
 
 export type PsiResources = ReturnType<typeof createPsiResources>;
 
 export function createPsiResources() {
-  // subdivided, since the vertex shader raises it by the field. Even, with a cell to spare each side,
-  // so a quad snapped to the world grid still covers its npc's reach
-  const { cell } = shaderConfig;
-  const segments = 2 * Math.ceil(psiMaxReach / cell) + 2;
-  const side = segments * cell;
-  const base = new THREE.PlaneGeometry(side, side, segments, segments).rotateX(-Math.PI / 2);
-  const geo = new THREE.InstancedBufferGeometry();
-  geo.setAttribute("position", base.getAttribute("position"));
-  geo.setIndex(base.getIndex());
-  geo.instanceCount = 0;
+  // a wedge off the player: its apex, a row at the ramp's end, a row at the span — see `psiNodes`
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, -1, 1, 0, 1, 0, 1, -1, 0, 1, 1], 3));
+  geo.setIndex([0, 1, 2, 1, 3, 4, 1, 4, 2]);
 
-  // a texel per slot, the player's first: world `xz`, eased presence
+  // a texel per slot, the player's first: world `xz`, eased presence, peak
   const npcData = new Float32Array(MAX_PSI * 4);
   const npcTex = new THREE.DataTexture(npcData, MAX_PSI, 1, THREE.RGBAFormat, THREE.FloatType);
   npcTex.minFilter = npcTex.magFilter = THREE.NearestFilter;
@@ -56,8 +47,12 @@ export function createPsiResources() {
   /** Unit, the way the player faces in world `xz` — see `Psi.upload` */
   const facing = uniform(new THREE.Vector2(1, 0));
   const flowPhase = uniform(0);
-  /** Metres out the relief holds its peak before it falls, so it clears someone lain along it */
-  const flat = uniform(0);
+  /** Metres along `facing` the sheet takes to reach `rampPeak`, level beyond */
+  const rampEnd = uniform(0);
+  /** The height of the sheet from `rampEnd` on: the target's peak, the player's own with none */
+  const rampPeak = uniform(0);
+  /** Metres along `facing` the wedge runs: past everyone's reach */
+  const span = uniform(0);
   const reach = uniform(defaultPsiTune.reach);
   const gap = uniform(defaultPsiTune.gap);
   const width = uniform(defaultPsiTune.width);
@@ -82,8 +77,8 @@ export function createPsiResources() {
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
-    side: THREE.DoubleSide, // a hill's far slope faces away, and its rings show through the near one
-    forceSinglePass: true, // additive, so back and front need no ordering: one draw, not two
+    side: THREE.DoubleSide,
+    forceSinglePass: true,
     blending: THREE.AdditiveBlending,
   });
   const mesh = new THREE.Mesh(geo, mat);
@@ -99,7 +94,9 @@ export function createPsiResources() {
     slotCount,
     facing,
     flowPhase,
-    flat,
+    rampEnd,
+    rampPeak,
+    span,
     reach,
     gap,
     width,
@@ -122,7 +119,9 @@ export function psiNodes(
     slotCount,
     facing,
     flowPhase,
-    flat,
+    rampEnd,
+    rampPeak,
+    span,
     reach,
     gap,
     width,
@@ -148,7 +147,7 @@ export function psiNodes(
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, lift, cell, coneHalfDeg, coneSoftDeg } = shaderConfig;
+  const { reachFade, blend, coneHalfDeg, coneSoftDeg } = shaderConfig;
   const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
   const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
   const player = slotAt(int(0));
@@ -157,46 +156,20 @@ export function psiNodes(
   /** Distance to a slot, out by up to `push` as its presence falls */
   const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, push: THREE.Node<"float">) =>
     q.sub(slot.xy).length().add(slot.z.oneMinus().mul(push));
-  /**
-   * Each `eased` to nought at `reach`, since a hard cut steps the contours — not for the relief, whose
-   * height that would plunge within a few vertices of the rim, faceting the outermost contour
-   */
-  const weigh = (r: THREE.Node<"float">, eased: boolean) =>
-    eased ? exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus()) : exp(r.div(-blend));
+  /** Eased to nought at `reach`, since a hard cut steps the contours */
+  const weigh = (r: THREE.Node<"float">) => exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus());
 
-  /**
-   * `(g, slot of nearest, peak)` at world `q`: a smooth min of the distances to the player and to
-   * the nearest other, so each keeps rings of their own — the player's `pushed` or not
-   */
-  const fieldOf = (pushed: boolean, eased: boolean) =>
-    Fn(([q]: [THREE.Node<"vec2">]) => {
-      const rPlayer = distTo(q, player, pushed ? maxPush : float(0));
-      const rOther = float(1e9).toVar();
-      const hOther = float(1).toVar();
-      const nearest = float(0).toVar();
-      Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
-        const slot = slotAt(i);
-        // to just under the player's field, so it rises out of theirs for the whole of its fade
-        const r = distTo(q, slot, distTo(slot.xy, player, float(blend * 2)).min(maxPush));
-        If(r.lessThan(rOther), () => {
-          rOther.assign(r);
-          hOther.assign(slot.w);
-          nearest.assign(i.toFloat());
-        });
-      });
-
-      const wPlayer = weigh(rPlayer, eased);
-      const wOther = weigh(rOther, eased);
-      const total = max(wPlayer.add(wOther), 1e-20);
-      const g = log(total).mul(-blend); // huge beyond reach
-      // their peaks blended as their fields are, so the relief has no step between them
-      const h = wPlayer.mul(player.w).add(wOther.mul(hOther)).div(total);
-      return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
+  /** The field at world `q`: a smooth min of the distances to the player and the nearest other, so each keeps rings of their own */
+  const fieldAt = Fn(([q]: [THREE.Node<"vec2">]) => {
+    const rPlayer = distTo(q, player, maxPush);
+    const rOther = float(1e9).toVar();
+    Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
+      const slot = slotAt(i);
+      // to just under the player's field, so it rises out of theirs for the whole of its fade
+      rOther.assign(rOther.min(distTo(q, slot, distTo(slot.xy, player, float(blend * 2)).min(maxPush))));
     });
-
-  const fieldAt = fieldOf(true, true);
-  /** The player's unpushed, so their rings fade in from the peak rather than the floor */
-  const reliefAt = fieldOf(false, false);
+    return log(max(weigh(rPlayer).add(weigh(rOther)), 1e-20)).mul(-blend); // huge beyond reach
+  });
 
   /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
   const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
@@ -218,39 +191,19 @@ export function psiNodes(
     return vec3(uvAt, gmId);
   });
 
-  const ownSlot = slotAt(instanceIndex.toInt() as THREE.Node<"int">);
-  // on one world grid, so overlapping quads share vertices and their reliefs agree
-  const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
-  // each contour at a fixed height, as on a relief map
-  const field = reliefAt(worldXZ);
-  const y = max(max(field.x.sub(flat), 0).div(flat.sub(reach)).add(1), 0)
-    .mul(field.z)
-    .add(lift); // `z` is the peak
-  // a vertex well outside the cone the fragments keep is drawn onto the player, so a triangle of
-  // them has no area and is never rasterised. "Well": by more than a triangle is wide, so none that
-  // reaches into the cone is bent. Metres outside the wedge's nearer edge, as a half-plane
-  const fromPlayer = worldXZ.sub(player.xy);
-  const coneRad = ((coneHalfDeg + coneSoftDeg) * Math.PI) / 180;
-  const outside = fromPlayer
-    .dot(vec2(facing.y.negate(), facing.x))
-    .abs()
-    .mul(Math.cos(coneRad))
-    .sub(fromPlayer.dot(facing).mul(Math.sin(coneRad)));
-  const culled = outside.greaterThan(cell * 3);
-  const vertexNode = cameraProjectionMatrix.mul(
-    cameraViewMatrix.mul(selectAs<"vec4">(culled, vec4(player.x, lift, player.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1))),
-  );
+  // the wedge the fragments' cone keeps, so no vertex is wasted outside it
+  const along = positionLocal.x.mul(rampEnd).add(positionLocal.y.mul(span));
+  const across = positionLocal.z.mul(along).mul(Math.tan(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180));
+  const worldXZ = player.xy.add(facing.mul(along)).add(vec2(facing.y.negate(), facing.x).mul(across));
+  // a sheet from the player's peak to the target's, level beyond
+  const y = mix(player.w, rampPeak, positionLocal.x.add(positionLocal.y));
+  const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(worldXZ.x, y, worldXZ.y, 1)));
 
   const p = varying(worldXZ, "vPsiXZ");
-  const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vPsiOwn");
-  // found per vertex, the uv being affine in position: the texture is read per pixel
-  const gmUv = varying<"vec3">(gmUvAt(worldXZ) as THREE.Node<"vec3">, "vPsiGmUv");
 
   const colorNode = Fn(() => {
     // per fragment rather than a varying, so a line keeps its shape between vertices
-    const found = fieldAt(p).toVar();
-    const g = found.x;
-    const owned = found.y.sub(own).abs().lessThan(0.5).select(float(1), float(0)); // drawn once, by the nearest
+    const g = fieldAt(p).toVar();
 
     const v = g.div(gap).sub(flowPhase);
     const toLine = float(0.5).sub(fract(v).sub(0.5).abs()); // 0 on a contour
@@ -270,13 +223,14 @@ export function psiNodes(
     const strength = opacity.mul(gain);
     // the player's presence: another fades by its push alone, else its part of the field would dim as it rose
     // clamped after the strength, so one past full firms up the line's soft edges too
-    const shape = line.mul(edge).mul(cone).mul(owned).mul(player.z).mul(foldNode).mul(strength).min(1);
+    const shape = line.mul(edge).mul(cone).mul(player.z).mul(foldNode).mul(strength).min(1);
 
-    // most of a quad is off every line, and a discard alone would still look its room up
+    // most of the wedge is off every line, and a discard alone would still look its room up
     const a = float(0).toVar();
     If(objectPick.equal(0).and(shape.greaterThanEqual(1 / 512)), () => {
       // a room out of view takes from them, but only in `sight`…
-      const gmId = gmUv.z.round();
+      const gmUv = gmUvAt(p).toVar();
+      const gmId = gmUv.z;
       // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
       const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">, {
         branched: true,
@@ -306,10 +260,6 @@ const shaderConfig = {
   reachFade: 0.75,
   /** Metres over which the player's and another's rings merge: smaller gives a sharper waist */
   blend: 0.3,
-  /** Metres the relief's rim sits above the floor */
-  lift: 0,
-  /** Metres between relief vertices, on a grid shared by every npc */
-  cell: 0.2,
   /** Degrees either side of the player's facing the contours are drawn within, and the softening of that edge */
   coneHalfDeg: 30,
   coneSoftDeg: 3,

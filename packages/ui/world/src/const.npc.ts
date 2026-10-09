@@ -317,7 +317,7 @@ export const fadeSecs: Record<
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
-/** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
+/** The most `PsiTune.reach` may be, in metres */
 export const psiMaxReach = 8;
 
 export const defaultPsiTune: PsiTune = {

@@ -17,8 +17,8 @@ import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
- * Contour lines of a field between the player and whom they target, a quad apiece — their own
- * rings alone should they target themself. See `service/psi-influence` for the fades.
+ * Contour lines of a field between the player and whom they target, on a sheet strung between
+ * their heads — their own rings alone should they target themself. See `service/psi-influence` for the fades.
  */
 export default function Psi() {
   const w = useContext(WorldContext);
@@ -82,11 +82,13 @@ export default function Psi() {
         /** Never the player, should they have become one of them */
         const others = [leaving, current].filter((x): x is NpcFade => x !== null && x.npcKey !== player?.key);
         const off = player === undefined || (self.presence === 0 && others.length === 0);
+        const wasOff = state.mesh.visible === false;
         state.mesh.visible = off === false; // else no draw call
         if (player === undefined || state.mesh.visible === false) return; // nor any upload
 
         // towards whom they influence, since they no longer turn to them — else as `player-light` has it, ahead
-        const at = others.length > 0 ? w.n[others[others.length - 1].npcKey].position : null;
+        const target = others.length > 0 ? w.n[others[others.length - 1].npcKey] : null;
+        const at = target?.position ?? null;
         const lookAngle = -player.rotation.y - Math.PI / 2;
         tmpWay.set(Math.cos(lookAngle), Math.sin(lookAngle));
         if (at !== null && at.distanceToSquared(player.position) > 1e-6) {
@@ -102,17 +104,24 @@ export default function Psi() {
           state.npcData[i * 4] = npc.position.x;
           state.npcData[i * 4 + 1] = npc.position.z;
           state.npcData[i * 4 + 2] = eased(presence);
-          state.npcData[i * 4 + 3] = npc.position.y + npc.anim.headY + psiConfig.headAbove; // their peak
+          state.npcData[i * 4 + 3] = peakOf(npc);
         });
         if (slots.length === 1) {
           // a far stand-in, weightless there: alone, the field's loop over the others draws only the first ring
           state.npcData.set([player.position.x + psiConfig.loneFar, player.position.z, 0, 0], 4);
         }
-        // held level over anyone lain down, eased so it neither drops into them nor jumps
-        const flat = slots.some(({ npc }) => npc.anim.pose === "lie") ? psiConfig.lieFlat : 0;
-        state.flat.value += (flat - state.flat.value) * psiConfig.flatEase;
-        state.slotCount.value = Math.max(2, slots.length); // drawn by `instanceCount`, which omits the stand-in
-        state.geo.instanceCount = slots.length;
+        state.slotCount.value = Math.max(2, slots.length); // the stand-in too
+
+        // the sheet eases to a new target as the cone swings, and is simply there as the field first shows
+        const ease = wasOff ? 1 : psiConfig.swing;
+        const { x, z } = player.position;
+        state.rampPeak.value += (peakOf(target ?? player) - state.rampPeak.value) * ease;
+        if (at !== null) {
+          const end = Math.max(0, (at.x - x) * state.facing.value.x + (at.z - z) * state.facing.value.y);
+          state.rampEnd.value += (end - state.rampEnd.value) * ease;
+        }
+        const furthest = Math.max(0, ...slots.map(({ npc }) => Math.hypot(npc.position.x - x, npc.position.z - z)));
+        state.span.value = Math.max(state.rampEnd.value, furthest) + state.reach.value;
         state.npcTex.needsUpdate = true;
       },
       syncHands(player) {
@@ -187,7 +196,7 @@ export default function Psi() {
         w.r3f?.invalidate();
       },
     }),
-    // a new `psiMaxReach` or `cell` needs a new geometry, and the mesh and material go with it
+    // over hmr a new geometry needs a new mesh, and the material goes with it
     { reset: { geo: true, mat: true, mesh: true } },
   );
 
@@ -242,11 +251,8 @@ export type State = PsiResources & {
 const psiConfig = {
   /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */
   headAbove: 0.24,
-  /** The share of the way the contours' cone swings to a new bearing per tick */
+  /** The share of the way the contours' cone swings to a new bearing per tick, and their sheet to a new target */
   swing: 0.2,
-  /** Metres the relief stays at its peak about someone lain down: their length — and the share of the way there per tick */
-  lieFlat: 1.3,
-  flatEase: 0.1,
   /** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
   nearDist: 0.65,
   /** Seconds the player's elbows take to come forward */
@@ -269,7 +275,9 @@ const psiConfig = {
 
 const white = new THREE.Color("#fff");
 
-/** Ours to clear: never another's upper pose e.g. `point` */
 const tmpWay = new THREE.Vector2();
+/** The height an npc's contours sit at */
+const peakOf = (npc: Npc) => npc.position.y + npc.anim.headY + psiConfig.headAbove;
+/** Ours to clear: never another's upper pose e.g. `point` */
 const isPsiPose = (key: null | string) => key === "psi" || key === "psi_avoid";
 const left = { side: "left" } as const;

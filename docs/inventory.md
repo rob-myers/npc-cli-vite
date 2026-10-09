@@ -91,8 +91,8 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
 - The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`) — whilst the gun stays in hand.
 - Psi's contours fan out TOWARDS its target, the player no longer turning to them — ahead, with none
-  — swung round as it changes (`psiConfig.swing`). Over anyone lain down the relief holds its peak
-  for `lieFlat` metres before it falls, so it does not drop into them.
+  — swung round as it changes (`psiConfig.swing`). They lie on a sheet strung between the two heads
+  (`rampEnd`, `rampPeak`): a ramp from the player's to the target's, level beyond.
 
 ### What a hit does
 
