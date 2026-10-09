@@ -265,6 +265,7 @@ export default function Obstacles(_props: Props) {
             // biome-ignore format: succinct
             for (let i = 0; i < corners.length; i++) {
               const j = (i + 1) % corners.length;
+              if (sId >= MAX_OBSTACLE_SKIRT_INSTANCES) { sId++; continue; } // counted, for the warning
               const [p1, p2] = determinant > 0 ? [corners[j], corners[i]] : [corners[i], corners[j]];
               const dx = p2.x - p1.x, dy = p2.y - p1.y;
               const len = Math.sqrt(dx * dx + dy * dy);
@@ -284,6 +285,9 @@ export default function Obstacles(_props: Props) {
           }
         }
 
+        if (sId > MAX_OBSTACLE_SKIRT_INSTANCES) {
+          warn(`Obstacles: ${sId} exceeds MAX_OBSTACLE_SKIRT_INSTANCES (${MAX_OBSTACLE_SKIRT_INSTANCES})`);
+        }
         // state.skirtInst.instanceMatrix.needsUpdate = true;
         slots.needsUpdate = true;
         state.skirtInst.computeBoundingSphere();

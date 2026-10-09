@@ -1,0 +1,34 @@
+{
+  "filename": "shop--033.json",
+  "width": 101.2,
+  "height": 38.8,
+  "nodes": [
+    {
+      "id": "484c37fe-b438-4b3e-b41e-1073a4d90df2",
+      "name": "shop--033",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "shop--033",
+      "baseRect": {"width": 101.2, "height": 38.8},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "59f27a81-b26e-4a7e-8a82-7492b286af52",
+      "name": "obstacle machine tint=#555 skirtTint=#555",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M 19.2 0 L 101 0 L 101.2 8.4 L 96.2 8.8 L 96.2 30 L 101.2 30.2 L 101.2 38.4 L 19.4 38.8 L 19 35.8 L 0.4 35.8 L 0.2 30 L 19 30 L 19 22.4 L 0 22 L 0.2 16.6 L 19 16.6 L 19 8.8 L 0.4 8.8 L 0.2 3 L 19 3 Z",
+      "baseRect": {"width": 101.2, "height": 38.8},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 101.2, "height": 38.8},
+  "type": "symbol",
+  "key": "shop--033"
+}

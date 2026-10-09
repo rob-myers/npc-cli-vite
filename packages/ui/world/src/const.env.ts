@@ -196,7 +196,7 @@ export const zoomSpeedDesktop = 0.3;
 export const zoomSpeedMobile = 0.8;
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
-  post: { lightBg: "#ffffff", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
+  post: { lightBg: "#000000", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
   ceiling: {
     hull: { fill: "#000", stroke: "#666" },
     nonHull: { fill: "#444", stroke: "#000" },
@@ -239,11 +239,12 @@ export const unfoldDelayMs = 500;
 /** How long the risen world is left alone before the camera pans onto the player */
 export const introPanDelayMs = 350;
 
-export const MAX_GEOMORPH_INSTANCES = 8;
+export const MAX_GEOMORPH_INSTANCES = 9;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 
-export const MAX_OBSTACLE_SKIRT_INSTANCES = 2048;
+/** One per obstacle edge. A five-geomorph map needs over 2000. */
+export const MAX_OBSTACLE_SKIRT_INSTANCES = 4096;
 
 /**
  * A decor quad is represented as a cuboid with single textured face.

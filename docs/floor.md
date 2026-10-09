@@ -6,11 +6,25 @@ Everything about how the floor is drawn. Nothing about it lives in another doc.
 |---|---|
 | `service/texture.ts` | `deckConfig`, `drawRoomFloors`, `drawDoorTicks`, the wiring router, the plate pattern, `softEdges` / `toEdgeOpts` |
 | `components/Floor.tsx` | `drawGm` — the draw order, the nav mesh, the hull, the soft edges |
+| `service/floor-grid.ts` | `createFloorGrid` — the debug grid and its coordinates, drawn by `Debug` |
 | `util/service/canvas.ts` | `drawPolygons`, `getPolysPath`, `drawBlurredEdge` |
 
-The floor is one `DataArrayTexture` layer per `gmId`, **3030² at 100 px/m**, drawn with canvas 2D in
-world metres (`ct.setTransform(worldToCanvas, …)` in `startGm`, so the canvas y-axis runs opposite
-the world's — text and anything else with a handedness has to be flipped back).
+The floor is one `DataArrayTexture` layer per geomorph KEY, **3030² at 100 px/m**, drawn with canvas
+2D in world metres (`ct.setTransform(worldToCanvas, …)` in `startGm`, so the canvas y-axis runs
+opposite the world's — text and anything else with a handedness has to be flipped back).
+
+Every instance of a geomorph shares its layer, as the ceiling's do: `uvTextureIds` gives each instance
+its key's layer, and the array is resized to the map's distinct keys. So nothing drawn into it may
+depend on the instance:
+
+- **The mesh on the deck is decoration.** It is the layout's own triangulation, `layout.navDecomp`,
+  not the world's nav mesh, which is tiled across the map and differs per instance and at hull doors.
+  The real one is the debug `navmesh`.
+- **Room labels are read off the FIRST instance's decor.** A room label is never added at runtime.
+- **The debug grid is not on the floor at all.** It is a quad of its own in `Debug`, shaded by
+  `service/floor-grid.ts` and shown whilst `gridShown`. Its lines and each cell's `(x, y)` are the
+  WORLD's, worked out from the fragment's world position, the digits from a small glyph atlas. The
+  quad covers the map's bounds and one cell beyond, so the far edges get their coordinates too.
 
 ## `deckConfig` — the one place to tune
 
@@ -122,8 +136,7 @@ paints. The deck laid on top of it is `deckConfig`, so there is one place to tun
 ## Draw order (`Floor.drawGm`)
 
 Hull fill and its 45° hatch → wall bases (`#000`) → `drawRoomFloors` → broad-wall aliasing fix →
-nav mesh → door shadows → door ticks → the blurred edges → obstacle drop shadows
-→ the debug grid, if `gridShown`.
+the layout's triangulation → door shadows → door ticks → the blurred edges → obstacle drop shadows.
 
 The ticks go **after** the nav mesh on purpose: its translucent fill would otherwise wash them out.
 

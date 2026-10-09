@@ -1,0 +1,157 @@
+{
+  "filename": "ships-locker--011.json",
+  "width": 120,
+  "height": 60,
+  "nodes": [
+    {
+      "id": "22b48fdd-f56e-44d6-8346-dac73c078b6c",
+      "name": "ships-locker--011",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -4.6},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "ships-locker--011",
+      "baseRect": {"width": 124, "height": 66.8},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -4.6)"
+    },
+    {
+      "id": "f35977a0-8eea-45d4-91c1-2d9fec1a6144",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "75f08d0b-0e9d-41c7-bdf1-808e8ae1f605",
+          "name": "door n slide=[-1,0] label=locker",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.5, "f": -4},
+          "type": "rect",
+          "baseRect": {"width": 49, "height": 8.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.5, -4)"
+        },
+        {
+          "id": "a7949eb7-d1c0-45b6-ae50-707aa67d52d3",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 7, "f": -2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 7, -2)"
+        },
+        {
+          "id": "fd407264-b74d-4d2d-ab28-b5ce3eabf6db",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1, "f": 2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 1, 2)"
+        },
+        {
+          "id": "ec2ec3ef-8e3e-4830-9a39-732e912d5e4b",
+          "name": "door n slide=[1,0] label=locker",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 63.5, "f": -4},
+          "type": "rect",
+          "baseRect": {"width": 49, "height": 8.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 63.5, -4)"
+        },
+        {
+          "id": "4a96d1fb-8c2c-45a5-a41a-565db68c3e22",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 119, "f": -2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 119, -2)"
+        },
+        {
+          "id": "f552821e-bd6f-4275-a00e-8bcf1c4cadd7",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 113, "f": 2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 113, 2)"
+        }
+      ]
+    },
+    {
+      "id": "cf73db5d-864f-43a8-81b1-fce6570c31fc",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "e1d26236-9f1d-4a63-8f46-b154138e9db1",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "e9de84c5-3358-45a8-a752-532a6766b305",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 58},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 58)"
+        },
+        {
+          "id": "8096be6c-ba76-4624-aca3-0b9bf426da78",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 60},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "d488f668-a7d2-4c08-86b8-009ecdad9d3a",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 60},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -4.6, "width": 124, "height": 66.8},
+  "type": "symbol",
+  "key": "ships-locker--011"
+}

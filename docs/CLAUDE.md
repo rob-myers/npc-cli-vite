@@ -53,6 +53,12 @@ v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
 See `docs/floor.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
 object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
 
+## Crisp fills
+
+See `docs/crisp-fills.md` — the ONLY doc for it. In short: a canvas read back as ids (the room-hit canvas,
+room slots) must be filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids
+into a third.
+
 ## Obstacle spritesheets
 
 See `docs/starship-sheets.md` — the ONLY doc for them. In short: `gen-starship-sheets` packs one rect
@@ -165,6 +171,19 @@ thing editable in production; everything else saves to the filesystem in DEV via
 `POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand,
 and its node NAMES are its tags.
 
+## Symbol generation
+
+See `docs/symbol-generation.md` — the ONLY doc for it. In short: a symbol's JSON can be written from
+its png and saved through `POST /api/map-edit/file/symbol/{key}.json`, then checked by its thumbnail. An
+obstacle polygon takes in its drawn border, with no more points than its curves need. The same doc covers
+placing symbols in a hull symbol, the walls and doors it needs of its own, and how `assets.json` breaks.
+
+## Memory
+
+See `docs/memory.md` — the ONLY doc for it. In short: a `TexArray` can hold its pixels three times
+over (GPU, CPU mirror, 2D canvas), so memory is mostly a matter of how many layers each has. The floor
+and ceiling are a layer per geomorph KEY, and a `gpu` array has no mirror.
+
 ## Deploys and stale tabs
 
 See `docs/deploys.md` — the ONLY doc for it. In short: a tab can outlive its deploy, so production
@@ -180,6 +199,10 @@ See `docs/mcp.md` — the ONLY doc for it. In short: `scripts/src/mcp/server.ts`
 the `pnpm dev` page over CDP through `window.__devMcp` (`packages/app/src/dev-mcp-hooks.ts`): jsh lines
 in `tty-1` and beyond, their output, pointer presses on the World, the console, screenshots. Prototype in
 a tty; keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
+
+Before EVERY call to it, write the call's input as a code fence: the `jsh` line as `sh`, the `query`
+function as `js`, else its arguments. That message is `IN` and the fence ALONE, with no other text.
+The VS Code extension shows a call's result but not its input, and it drops a fence that follows prose.
 
 ## Checking a change in the browser
 

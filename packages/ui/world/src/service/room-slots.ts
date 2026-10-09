@@ -1,6 +1,6 @@
 import { geomService } from "@npc-cli/util/geom-service";
 import { warn } from "@npc-cli/util/legacy/generic";
-import { drawPolygons } from "@npc-cli/util/service/canvas";
+import { drawPolygonsCrisp } from "@npc-cli/util/service/canvas";
 import { float, mix, step, texture, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
@@ -80,7 +80,7 @@ export function createRoomSlots(): RoomSlots {
           warn(`room-slots: ${gm.key} has too many broad walls: ${broadWalls.length}`);
         }
 
-        // ONE POLYGON AT A TIME, each thresholded on its own coverage — see `rasterise`
+        // hard-edged, so no two codes blend — see `rasterise`
         const roomCodes: [Geom.Poly, number][] = [];
         // a doorway lies between two rooms and is covered by neither
         for (const connector of [...gm.doors, ...gm.windows]) {
@@ -181,44 +181,21 @@ export function ensureRoomSlots(geo: THREE.BufferGeometry, count: number) {
 }
 
 /**
- * Paints each polygon's `code` into a byte map, ONE AT A TIME.
+ * Paints each polygon's `code` into a byte map, hard-edged: see `drawPolygonsCrisp`.
  *
- * Drawn together they would be antialiased against each OTHER: where two rooms meet, both fills are
- * opaque, so the canvas blends their two codes and the shared edge comes out as a third room
- * altogether — a one-texel line at every boundary, drawn whenever that third room happens to be in
- * view, and jagged besides, this map being far coarser than the textures it cuts. No margin can
- * reach it, because it lies ON the boundary rather than beside it.
- *
- * So each is rasterised alone against nothing and taken by its COVERAGE: a pixel is that polygon's
- * or it is not, and the only thing an edge can blend with is transparency. Only its own bounding
- * box is read back, so the whole set costs about one pass over the canvas rather than one each
+ * Soft edges would blend where two rooms meet, both fills being opaque. The shared edge would come out
+ * as a third room altogether: a one-texel line at every boundary, drawn whenever that third room
+ * happens to be in view. No margin can reach it, because it lies ON the boundary rather than beside it
  */
 function rasterise(ct: CanvasRenderingContext2D, gm: Geomorph.LayoutInstance, items: [Geom.Poly, number][]) {
+  ct.resetTransform();
+  ct.clearRect(0, 0, slotTextureDimension, slotTextureDimension);
+  ct.setTransform(slotScale, 0, 0, slotScale, -gm.bounds.x * slotScale, -gm.bounds.y * slotScale);
+  for (const [poly, code] of items) drawPolygonsCrisp(ct, poly, { fillStyle: `rgb(${code}, 0, 0)` });
+
+  const { data } = ct.getImageData(0, 0, slotTextureDimension, slotTextureDimension, { colorSpace: "srgb" });
   const out = new Uint8Array(slotTextureDimension * slotTextureDimension);
-
-  for (const [poly, code] of items) {
-    const { x, y, width, height } = poly.rect;
-    const x0 = Math.max(0, Math.floor((x - gm.bounds.x) * slotScale) - 1);
-    const y0 = Math.max(0, Math.floor((y - gm.bounds.y) * slotScale) - 1);
-    const x1 = Math.min(slotTextureDimension, Math.ceil((x + width - gm.bounds.x) * slotScale) + 1);
-    const y1 = Math.min(slotTextureDimension, Math.ceil((y + height - gm.bounds.y) * slotScale) + 1);
-    if (x1 <= x0 || y1 <= y0) continue;
-
-    ct.resetTransform();
-    ct.clearRect(x0, y0, x1 - x0, y1 - y0);
-    ct.setTransform(slotScale, 0, 0, slotScale, -gm.bounds.x * slotScale, -gm.bounds.y * slotScale);
-    // white, the colour being beside the point — it is the alpha that is read
-    drawPolygons(ct, [poly], { fillStyle: "rgba(255, 255, 255, 1)", strokeStyle: null });
-
-    const { data } = ct.getImageData(x0, y0, x1 - x0, y1 - y0, { colorSpace: "srgb" });
-    for (let row = y0; row < y1; row++) {
-      for (let col = x0; col < x1; col++) {
-        const covered = data[((row - y0) * (x1 - x0) + (col - x0)) * 4 + 3] >= 128;
-        if (covered === true) out[row * slotTextureDimension + col] = code;
-      }
-    }
-  }
-
+  for (let i = 0; i < out.length; i++) out[i] = data[i * 4];
   return out;
 }
 

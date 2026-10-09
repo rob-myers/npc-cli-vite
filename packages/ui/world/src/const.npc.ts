@@ -399,7 +399,7 @@ export const stanceConfig = {
   maxShift: 0.08,
   maxLean: 0.04,
   level: 0.02,
-  fadeSecs: 0.3,
+  fadeSecs: 0.45,
 };
 
 /** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */

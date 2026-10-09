@@ -311,6 +311,18 @@ channels were dropped, and run's root rotation `-2` moved onto `hips` x.
   down with the body; arms raised +10.5 / +7 over their original swing so they still hang.
 - Run: left lands at t=0, duty 0.27; bob −0.87…−0.29; swing knee to −115°.
 - Hand-tweaking one leg key breaks the plant — re-measure a foot's lowest vertex per sample.
+- Arms, hand-keyed, not flat: the forearm stays bent and turns IN as it comes forward (`rightforearm` z
+  negative, `leftforearm` positive), so the hand nears the body's middle whilst the elbow barely moves out.
+  Per swing, forward / coming back / back / going forward — walk: arm z 8 / 8 / 9 / 8, forearm x 16 / 9 / 5 / 10,
+  forearm z 16 / 10 / 6 / 10 in. Run: arm z 12 / 9 / 16.2 / 8, forearm x 32 / 12 / 10 / 20, forearm z 6 / 10 / 6 / 12 in.
+  Walk's forward hand is 1.1 nearer the middle and its elbow 0.3 further out. Arm x and y are as they were.
+- Walk's torso turns with the arms, above the hips: `hips` are left be, as the legs hang off them and a turn
+  there slides the feet. At each heel strike `stomach` [-1.5, ±3, 0] and `chest` y ±4, the shoulder of the
+  forward arm leading by 1.4; passing, `stomach` z ±1.5 and `chest` z ±1, leant over the stance leg. The head
+  undoes both (y ∓9, z ∓2.5), so it faces ahead to within 2 degrees.
+- Run's likewise: `stomach` [-9.5, ±3, 0] and `chest` y ±3 landing, on the hips' ±6.94; `stomach` z ±2 and
+  `chest` z ±1.5 passing. Head y ∓12.94, z ∓3.14 landing and ∓3.5 passing. The turn carries the forward hand
+  across the middle, so that arm's y is -4 (was 4.6) and its forearm z 6 in: the hand is 2 off the middle.
 
 ## Sit animation — legs
 

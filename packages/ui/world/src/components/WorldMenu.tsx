@@ -306,7 +306,7 @@ export function WorldMenu() {
         break;
       case "grid":
         w.debug?.set({ gridShown: !w.debug.gridShown });
-        void w.floor?.draw().then(() => w.update());
+        w.r3f?.invalidate();
         break;
       case "navmesh":
         w.debug?.set({ navMeshShown: !w.debug.navMeshShown });

@@ -72,23 +72,21 @@ const assets: AssetsType = jsonParser.pipe(AssetsSchema).safeParse(prevAssetsRaw
 assets.theme ??= {};
 assets.theme["dark-theme"] ??= defaultWorldTheme;
 
-// 🔔 avoid needless updates
 const changedSymbolKeys = changedFiles.map((f) => path.basename(f, ".json"));
-const someSymbolCreated = changedSymbolKeys.some((symbolKey) => !(symbolKey in assets.symbol));
-const stratifiedStartIndex = someSymbolCreated
-  ? 0
-  : assets.stratifiedSymbolNodes.findIndex((level) => level.some(({ id }) => changedSymbolKeys.includes(id)));
 
 perf("symbols/maps");
 updateChangedSymbolsAndMaps(changedFiles, assets);
 perf("symbols/maps");
 
 perf("stratify symbols");
-if (someSymbolCreated || opts.values.force) {
-  const symbolGraph = SymbolGraph.from(assets.symbol);
-  assets.stratifiedSymbolNodes = symbolGraph.stratify();
-}
+// always: a symbol given a new sub-symbol moves up a level, though none was created
+assets.stratifiedSymbolNodes = SymbolGraph.from(assets.symbol).stratify();
 perf("stratify symbols");
+
+// 🔔 avoid needless updates
+const stratifiedStartIndex = opts.values.force
+  ? 0
+  : assets.stratifiedSymbolNodes.findIndex((level) => level.some(({ id }) => changedSymbolKeys.includes(id)));
 
 perf("flatten symbols");
 flattenSymbols(stratifiedStartIndex === -1 ? [] : assets.stratifiedSymbolNodes.slice(stratifiedStartIndex), assets);

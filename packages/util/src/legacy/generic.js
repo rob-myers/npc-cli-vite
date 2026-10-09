@@ -592,7 +592,8 @@ export function removeFromLookup(itemKey, lookup) {
  */
 export function safeJsonCompact(input) {
   // return prettyCompact(JSON.parse(safeStableStringify(input) ?? ''));
-  const jsString = javascriptStringify(input);
+  // the default cap of 100000 values silently drops the tail of assets.json
+  const jsString = javascriptStringify(input, null, undefined, { maxValues: Infinity });
   if (jsString === undefined) {
     return prettyCompact(input);
   } else {

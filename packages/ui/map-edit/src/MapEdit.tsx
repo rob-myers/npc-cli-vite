@@ -16,7 +16,7 @@ import type { ThemeName } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
-import { Mat, Rect, Vect } from "@npc-cli/util/geom";
+import { Rect, Vect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
@@ -244,7 +244,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             x: mid.x - rect.left - rect.width / 2,
             y: mid.y - rect.top - rect.height / 2,
           };
-          const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), 0.1), 10);
+          const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), minZoomScale), maxZoomScale);
           const s = newZoom / state.zoom;
           state.set({
             zoom: newZoom,
@@ -655,7 +655,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
           if ("offset" in node) {
-            new Mat().setRotation(-(180 / Math.PI) * degrees).transformPoint(node.offset);
+            // the offset turns as the transform's linear part did, which also suits a mirrored node
+            const turned = new DOMMatrix([m.a, m.b, m.c, m.d, 0, 0])
+              .multiply(new DOMMatrix([a, b, c, d, 0, 0]).inverse())
+              .transformPoint(new DOMPoint(node.offset.x, node.offset.y));
+            node.offset.x = turned.x;
+            node.offset.y = turned.y;
           }
           node.cssTransform = computeNodeCssTransform(node);
         }
@@ -2100,7 +2105,8 @@ const emptyNodes = [] as MapNode[];
 const minAsideWidth = 100;
 const defaultAsideWidth = 200;
 const zoomDelta = 0.04;
-const minZoomScale = 0.25;
+/** Far enough out for a map ten geomorphs across */
+const minZoomScale = 0.05;
 const maxZoomScale = 40;
 const zoomToFitFraction = 1;
 

@@ -112,13 +112,20 @@ async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
         break;
       }
       case "rect": {
-        ct.fillStyle = node.name.startsWith("wall") ? "rgba(255,0,0,0.2)" : "rgba(0,255,0,0.2)";
+        const isWall = node.name.startsWith("wall");
+        ct.fillStyle = isHullSymbol
+          ? isWall
+            ? hullInk.wall
+            : hullInk.door
+          : isWall
+            ? "rgba(255,0,0,0.2)"
+            : "rgba(0,255,0,0.2)";
         ct.fillRect(0, 0, node.baseRect.width, node.baseRect.height);
         break;
       }
       case "path": {
         ct.strokeStyle = isHullSymbol ? "rgba(0,0,0,0)" : "rgba(0,0,0,1)";
-        ct.fillStyle = "rgba(255,255,0,0.25)";
+        ct.fillStyle = isHullSymbol ? hullInk.hull : "rgba(255,255,0,0.25)";
         const parsedPoly = geomService.svgPathToPolygon(node.d);
         if (!parsedPoly) {
           warn(`${filename}: failed to parse path.d data for node ${node.name}`);
@@ -137,12 +144,20 @@ async function createSavedFileThumbnail(savedFile: MapEditSavedFile) {
   if (isHullSymbol) {
     ct.resetTransform();
     ct.font = "100px sans-serif";
+    ct.fillStyle = hullInk.hull;
     const rect = ct.measureText(savedFile.key);
     ct.fillText(savedFile.key, (canvas.width - rect.width) / 2, (canvas.height + 32) / 2);
   }
 
   await canvas.toFile(outputThumbnailFilepath);
 }
+
+/** A hull symbol's thumbnail is all MapEdit shows of it in a map, on a dark page or a light one */
+const hullInk = {
+  hull: "rgba(120, 132, 152, 0.9)",
+  wall: "rgba(205, 80, 80, 0.75)",
+  door: "rgba(40, 165, 80, 0.85)",
+};
 
 type ProcessFileOpts = {
   changedFiles?: MapEditSavedFile[];

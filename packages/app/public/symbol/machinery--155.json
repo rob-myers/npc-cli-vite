@@ -1,0 +1,34 @@
+{
+  "filename": "machinery--155.json",
+  "width": 104,
+  "height": 220,
+  "nodes": [
+    {
+      "id": "a380ad4a-bd2d-4165-9fab-657cbe04811c",
+      "name": "machinery--155",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "machinery--155",
+      "baseRect": {"width": 104, "height": 220},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "fec79bf4-a06e-4494-8842-61ada56f7e33",
+      "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M 28 0 L 28 7.6 L 64.6 7.8 L 64.6 41.2 L 79 41.2 L 79.2 0 L 104 0 L 104 64 L 92 64 L 92 72 L 104 72 L 104 88 L 92 88 L 92 96 L 104 96 L 104 152.6 L 93.4 152.6 L 93.4 177.8 L 104 177.8 L 104 201 L 84.8 220 L 63.6 220 L 63.4 177 L 55.2 177 L 55.2 219.8 L 40 220 L 39.8 198.4 L 31.6 198.4 L 31.6 219.8 L 4.2 220 L 4 149.4 L 1.6 145.4 L 0 138 L 0.8 130.2 L 4 123.8 L 4 96 L 32.2 96 L 32.2 76.6 L 14.4 76.4 L 14.4 54.6 L 4 54.6 L 4 0 Z",
+      "baseRect": {"width": 104, "height": 220},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 104, "height": 220},
+  "type": "symbol",
+  "key": "machinery--155"
+}

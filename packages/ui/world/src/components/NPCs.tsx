@@ -29,6 +29,7 @@ import {
   mix,
   modelWorldMatrix,
   mrt,
+  normalGeometry,
   normalWorld,
   output,
   positionLocal,
@@ -203,7 +204,9 @@ export default function NPCs() {
         // than outlining them — `toEye.y` is how much of the view is straight down
         const overhead = smoothstep(float(rimConfig.overheadFrom), float(rimConfig.overheadTo), toEye.y);
         const rimBright = mix(float(rimConfig.amount), float(rimConfig.overheadAmount), overhead);
-        const rim = facing.oneMinus().pow(rimConfig.power).mul(rimBright).mul(fold);
+        /** `0` on a cuboid's end caps, which a bent joint bares edge-on */
+        const notCap = normalGeometry.y.abs().oneMinus();
+        const rim = facing.oneMinus().pow(rimConfig.power).mul(rimBright).mul(notCap).mul(fold);
         // `alphaTestNode` below gives way with this, or the body would be discarded whole the
         // moment its alpha started dropping
         const mainColor = vec4(

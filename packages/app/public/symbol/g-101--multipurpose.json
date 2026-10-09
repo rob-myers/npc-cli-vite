@@ -545,6 +545,135 @@
           "baseRect": {"width": 180, "height": 120},
           "offset": {"x": 4.415396659402344, "y": -0.7101213559234938},
           "cssTransform": "matrix(0, 1, -1, 0, 364, 658.5)"
+        },
+        {
+          "id": "ff2dd5d5-a093-4269-b490-dd1630edc2c8",
+          "name": "office--061",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1020.5, "f": 480},
+          "type": "symbol",
+          "srcKey": "office--061",
+          "baseRect": {"width": 180, "height": 240},
+          "offset": {"x": -4.8, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 1015.7, 478)"
+        },
+        {
+          "id": "7705c772-dd95-4b87-9cb9-61862b2549f8",
+          "name": "office--020",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 360.5, "f": 780.5},
+          "type": "symbol",
+          "srcKey": "office--020",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": -2, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 358.5, 778.5)"
+        },
+        {
+          "id": "3759fd41-82a3-42eb-b667-5d2bd32716ac",
+          "name": "office--020",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 840, "f": 781.5},
+          "type": "symbol",
+          "srcKey": "office--020",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 2, "y": -2},
+          "cssTransform": "matrix(-1, 0, 0, 1, 842, 779.5)"
+        },
+        {
+          "id": "88ba2caf-fa7f-49f1-9358-089eba022bbc",
+          "name": "office--023",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 1200.5,
+            "f": 480
+          },
+          "type": "symbol",
+          "srcKey": "office--023",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 1.309152145434565, "y": 2.5072137244567076},
+          "cssTransform": "matrix(0, -1, -1, 0, 1201.8092, 482.5072)"
+        },
+        {
+          "id": "4373b6e0-4be4-400e-a250-6e755443715a",
+          "name": "office--023",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 1200.6908,
+            "f": 718.5072
+          },
+          "type": "symbol",
+          "srcKey": "office--023",
+          "baseRect": {"width": 120, "height": 180},
+          "offset": {"x": 1.3092, "y": -2.5072},
+          "cssTransform": "matrix(0, 1, -1, 0, 1202, 716)"
+        },
+        {
+          "id": "daf5296f-ac5a-4d16-a9f9-d83eea5b3e3d",
+          "name": "medical--008",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 360.2102,
+            "f": 541.714
+          },
+          "type": "symbol",
+          "srcKey": "medical--008",
+          "baseRect": {"width": 180, "height": 120},
+          "offset": {"x": 3.789789960863892, "y": 3.2859537508211},
+          "cssTransform": "matrix(0, -1, -1, 0, 364, 545)"
+        },
+        {
+          "id": "fcc63280-57cf-4a35-86b3-9cf1624b3fc2",
+          "name": "machinery--156",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 10, "f": 1070},
+          "type": "symbol",
+          "srcKey": "machinery--156",
+          "baseRect": {"width": 112, "height": 220},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, 1, 0, 10, 1070)"
+        },
+        {
+          "id": "681ef552-e0a2-4312-a666-b12a324d7a27",
+          "name": "machinery--357",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 962.5, "f": 960.1},
+          "type": "symbol",
+          "srcKey": "machinery--357",
+          "baseRect": {"width": 240, "height": 120},
+          "offset": {"x": -2, "y": -14.6},
+          "cssTransform": "matrix(1, 0, 0, 1, 960.5, 945.5)"
+        },
+        {
+          "id": "1b178714-d37e-4cc1-abd4-8a5dda6f6dc5",
+          "name": "machinery--155",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 971.5, "f": 234},
+          "type": "symbol",
+          "srcKey": "machinery--155",
+          "baseRect": {"width": 104, "height": 220},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, 1, 0, 971.5, 234)"
         }
       ]
     },

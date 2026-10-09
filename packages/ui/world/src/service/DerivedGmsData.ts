@@ -3,7 +3,7 @@ import { isPlaygroundSymbolKey } from "@npc-cli/ui__map-edit/editor.schema";
 import { Poly } from "@npc-cli/util/geom/poly";
 import { geomService } from "@npc-cli/util/geom-service";
 import { entries } from "@npc-cli/util/legacy/generic";
-import { drawPolygons } from "@npc-cli/util/service/canvas";
+import { drawPolygonsCrisp } from "@npc-cli/util/service/canvas";
 import {
   floorTextureDimension,
   gmFloorExtraScale,
@@ -125,7 +125,7 @@ export default class DerivedGmsData {
       window: gm.windows.map((window) => geomService.createInset(window.poly, 0.005)[0]),
     };
 
-    // draw room/door pick canvas
+    // draw room/door pick canvas, hard-edged: a blend of two of its colours decodes as neither, or as a third
     // 🔔 lower resolution than floor texture
     const roomCt = gmData.roomHitCt;
     roomCt.canvas.width = floorTextureDimension * roomHitTextureScaleDown;
@@ -137,13 +137,13 @@ export default class DerivedGmsData {
     roomCt.setTransform(scale, 0, 0, scale, -gm.bounds.x * scale, -gm.bounds.y * scale);
 
     for (const [doorId, door] of gm.doors.entries()) {
-      drawPolygons(roomCt, [door.poly], { fillStyle: gmHitUtil.encodeDoor(doorId), strokeStyle: null });
+      drawPolygonsCrisp(roomCt, door.poly, { fillStyle: gmHitUtil.encodeDoor(doorId) });
     }
     for (const [windowId, window] of gm.windows.entries()) {
-      drawPolygons(roomCt, [window.poly], { fillStyle: gmHitUtil.encodeWindow(windowId), strokeStyle: null });
+      drawPolygonsCrisp(roomCt, window.poly, { fillStyle: gmHitUtil.encodeWindow(windowId) });
     }
     for (const [roomId, room] of gm.rooms.entries()) {
-      drawPolygons(roomCt, [room], { fillStyle: gmHitUtil.encodeRoom(roomId), strokeStyle: null });
+      drawPolygonsCrisp(roomCt, room, { fillStyle: gmHitUtil.encodeRoom(roomId) });
     }
 
     // populate connectors with adjacent roomIds

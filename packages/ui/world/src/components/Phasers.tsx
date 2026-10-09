@@ -19,7 +19,7 @@ import { WorldContext } from "./world-context";
 
 /**
  * Npcs' phasers: whilst armed they stand and aim (`phaser_aim`, over the right arm on the move), drawn in to
- * `phaser_aim_avoid` whenever the arm would touch a crowd neighbour, a wall or a closed door. The gun is in their
+ * `phaser_aim_avoid` whenever the arm would touch a crowd neighbour, a wall, a closed door or a live shield. The gun is in their
  * right hand whenever they carry one and stand, and a beam runs from it to the middle of a body part of their target whilst nothing is between
  * them. Theirs, not a process's: see `w.phasers`, jsh `phaser`, and `service/phaser-beam` for the fades
  */
@@ -35,13 +35,6 @@ export default function Phasers() {
       arm(npcKey, opts = {}) {
         if (w.npc.npcToDoable[npcKey] != null) return; // not whilst sat or lain
         if (w.e.hasItem(npcKey, "phaser") === false) return; // nor without one
-        if (w.shields?.isIn(npcKey) === true) {
-          if (npcKey === w.player.key) {
-            w.hud?.say("phaser suppressed");
-            w.n[npcKey]?.anim.shakeHead();
-          }
-          return; // nor stood in a shield
-        }
         if (w.shields?.isDead(npcKey) === true) {
           if (npcKey === w.player.key) w.hud?.say("phaser deactivated");
           return;
@@ -83,6 +76,7 @@ export default function Phasers() {
             casting: false,
             castSecs: -Infinity,
             armHit: false,
+            shielded: false,
             inSight: false,
             shields: [],
             firedSecs: null,
@@ -246,7 +240,12 @@ export default function Phasers() {
         /** Locked on someone the last cast looked for and could not see: drawn in until it can */
         const blind =
           target !== undefined && arm.casting === false && arm.inSight === false && arm.cast?.target === target.key;
-        if (armed === true && (arm.armHit === true || blind || npcAhead(w, npc))) {
+        /** Their arm at full reach would meet a shield: drawn in, as from a wall */
+        const shielded =
+          armed === true && w.shields?.reaches(npc.point, handAhead(npc), w.shields.freqsOf(npc.key)) === true;
+        if (shielded && arm.shielded === false && npc.key === w.player.key) w.hud?.say("phaser suppressed");
+        arm.shielded = shielded;
+        if (armed === true && (arm.armHit === true || shielded || blind || npcAhead(w, npc))) {
           arm.holdUntil = secs + phaserConfig.holdSecs;
         }
         const avoid = armed === true && arm.holdUntil > secs;
@@ -311,7 +310,6 @@ export default function Phasers() {
         }
       },
       recast(npc, arm, target, secs) {
-        const { reach } = phaserConfig;
         if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
         const { x, z } = npc.position;
         const ry = npc.rotation.y;
@@ -332,7 +330,7 @@ export default function Phasers() {
         arm.cast = { x, z, ry, tx, tz, target: target?.key ?? null };
         arm.castSecs = secs;
         arm.casting = true;
-        const hand = { x: x - Math.sin(ry) * reach, y: z - Math.cos(ry) * reach };
+        const hand = handAhead(npc);
         // off the map throws: read as blocked
         const none = { inSight: false, shields: [] as string[] };
         void Promise.all([
@@ -463,6 +461,8 @@ type ArmEntry = {
   castSecs: number;
   /** A wall or closed door within reach ahead */
   armHit: boolean;
+  /** A shield within reach ahead, that their phaser is not let through */
+  shielded: boolean;
   /** Nothing between them and their target */
   inSight: boolean;
   /** World seconds at which their beam reached out, whilst it does */
@@ -481,6 +481,11 @@ function npcAhead(w: import("./World").State, npc: Npc) {
     const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
     return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx);
   });
+}
+
+/** Where their hand is at arm's length, on the ground */
+function handAhead({ position: { x, z }, rotation: { y: ry } }: Npc) {
+  return { x: x - Math.sin(ry) * phaserConfig.reach, y: z - Math.cos(ry) * phaserConfig.reach };
 }
 
 /** The facing that lines `target` up, not on `npc`, but on a line `right` metres to their side */

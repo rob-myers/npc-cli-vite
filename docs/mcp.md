@@ -108,8 +108,15 @@ from `ct.w` and returning plain data.
 
 ## Seeing Claude's calls
 
-The VS Code extension shows an MCP call's result (OUT) but not its input (IN). The session transcript
-has both — follow it with:
+The VS Code extension shows an MCP call's result (OUT) but not its input (IN). So Claude writes the
+input in its own message, as a code fence, just BEFORE each call: the `jsh` line in a `sh` fence, the
+`query` function in a `js` one, anything else as its arguments. Putting it in the result instead does
+not work: the extension collapses a result, so the input ends up hidden inside OUT.
+
+That message must be `IN` and the fence ALONE. With a sentence in front of it the extension condenses
+the message and the fence is lost.
+
+The session transcript has both too — follow it with:
 
 ```sh
 tail -f ~/.claude/projects/-Users-robmyers-coding-npc-cli-vite/<session-id>.jsonl | jq -c --unbuffered \
