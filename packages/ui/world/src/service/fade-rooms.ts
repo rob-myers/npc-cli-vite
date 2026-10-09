@@ -269,7 +269,7 @@ function nowSecs() {
  * arriving is wanted at once, whilst one leaving may go at its leisure
  */
 const ROOM_FADE_IN_SECS = 0.15;
-const ROOM_FADE_OUT_SECS = 0.7;
+const ROOM_FADE_OUT_SECS = 0.3;
 
 /** The pace of the fade a morph is on — heading up is a fade in. The shader's `fadeAt` agrees */
 function fadeSecsOf(morph: Morph): number {
