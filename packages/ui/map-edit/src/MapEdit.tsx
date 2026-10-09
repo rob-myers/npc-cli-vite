@@ -244,7 +244,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             x: mid.x - rect.left - rect.width / 2,
             y: mid.y - rect.top - rect.height / 2,
           };
-          const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), 0.1), 10);
+          const newZoom = Math.min(Math.max(state.zoom * (dist / state.lastTouchDist), minZoomScale), maxZoomScale);
           const s = newZoom / state.zoom;
           state.set({
             zoom: newZoom,
@@ -2105,7 +2105,8 @@ const emptyNodes = [] as MapNode[];
 const minAsideWidth = 100;
 const defaultAsideWidth = 200;
 const zoomDelta = 0.04;
-const minZoomScale = 0.25;
+/** Far enough out for a map ten geomorphs across */
+const minZoomScale = 0.05;
 const maxZoomScale = 40;
 const zoomToFitFraction = 1;
 

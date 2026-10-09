@@ -119,7 +119,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             y={0}
             width={baseRect.width}
             height={baseRect.height}
-            style={{ transform: cssTransform }}
+            style={{ transform: cssTransform, outlineWidth: outlinePx(root, root.selectedIds.has(node.id)) }}
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0",
@@ -149,7 +149,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             href={`/symbol/${node.srcKey}.thumbnail.png?v=${root.localVersion ?? 0}`}
             width={symbol.bounds.width}
             height={symbol.bounds.height}
-            style={{ transform: node.cssTransform }}
+            style={{ transform: node.cssTransform, outlineWidth: outlinePx(root, root.selectedIds.has(node.id)) }}
             preserveAspectRatio="none"
             className={cn(
               "outline-1 outline-white/0 cursor-move",
@@ -170,10 +170,10 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
             key={node.id}
             data-node-id={node.id}
             d={node.d}
-            style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom }}
+            style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom, outlineWidth: outlinePx(root, true) }}
             className={cn(
               "fill-amber-500/25 stroke-amber-700 stroke-0! cursor-move",
-              root.selectedIds.has(node.id) && "outline-blue-500 outline-1!",
+              root.selectedIds.has(node.id) && "outline-blue-500 outline-solid",
               node.locked ? "pointer-events-none opacity-25" : "pointer-events-auto",
             )}
           >
@@ -213,6 +213,12 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
     }
   });
 };
+
+/**
+ * A node's outline width in svg units, so it keeps its width ON SCREEN at any zoom. A css outline
+ * is scaled with the svg, and at `1px` was lost once zoomed out.
+ */
+const outlinePx = (root: UseStateRef<State>, selected: boolean) => (selected ? 3 : 1.5) / root.zoom;
 
 /** On screen, in px — and never more than this fraction of the node's smaller side, so they cannot dwarf it */
 const handlePx = 16;
@@ -369,10 +375,10 @@ const DefsAndGrid = memo(({ uiId }: { uiId: string }) => (
     </defs>
     <g>
       <rect
-        x="-10000"
-        y="-10000"
-        width="20000"
-        height="20000"
+        x="-50000"
+        y="-50000"
+        width="100000"
+        height="100000"
         fill={`url(#grid-${uiId})`}
         className="pointer-events-none"
       />
