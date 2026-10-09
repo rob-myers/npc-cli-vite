@@ -113,6 +113,9 @@ input in its own message, as a code fence, just BEFORE each call: the `jsh` line
 `query` function in a `js` one, anything else as its arguments. Putting it in the result instead does
 not work: the extension collapses a result, so the input ends up hidden inside OUT.
 
+That message must be `IN` and the fence ALONE. With a sentence in front of it the extension condenses
+the message and the fence is lost.
+
 The session transcript has both too — follow it with:
 
 ```sh
