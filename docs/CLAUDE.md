@@ -178,6 +178,12 @@ its png and saved through `POST /api/map-edit/file/symbol/{key}.json`, then chec
 obstacle polygon takes in its drawn border, with no more points than its curves need. The same doc covers
 placing symbols in a hull symbol, the walls and doors it needs of its own, and how `assets.json` breaks.
 
+## Memory
+
+See `docs/memory.md` — the ONLY doc for it. In short: a `TexArray` can hold its pixels three times
+over (GPU, CPU mirror, 2D canvas), so memory is mostly a matter of how many layers each has. The floor
+and ceiling are a layer per geomorph KEY, and a `gpu` array has no mirror.
+
 ## Deploys and stale tabs
 
 See `docs/deploys.md` — the ONLY doc for it. In short: a tab can outlive its deploy, so production

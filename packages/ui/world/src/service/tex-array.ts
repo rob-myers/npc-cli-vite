@@ -30,7 +30,7 @@ interface TexArrayOpts {
    * keeping a CPU mirror. For the big arrays: at the floor's size `getImageData` and the copy
    * into the mirror were hundreds of ms of the boot. Needs `renderer` before the first
    * `updateIndex`. The layers then live only on the GPU: `update` cannot re-upload them, and
-   * `tex.image.data` stays zero
+   * `tex.image.data` is `null`, so the mirror's memory is never taken
    */
   gpu?: boolean;
 }
@@ -68,14 +68,18 @@ export class TexArray {
     this.ct.canvas.width = opts.width === 1 ? this.ct.canvas.width || 1 : opts.width;
     this.ct.canvas.height = opts.height === 1 ? this.ct.canvas.height || 1 : opts.height;
 
-    const data =
-      opts.type === THREE.FloatType
-        ? new Float32Array(opts.numTextures * 4 * opts.width * opts.height)
-        : new Uint8Array(opts.numTextures * 4 * opts.width * opts.height);
-    this.tex = new THREE.DataArrayTexture(data, opts.width, opts.height, opts.numTextures);
+    this.tex = new THREE.DataArrayTexture(this.createMirror(), opts.width, opts.height, opts.numTextures);
     this.applyOpts();
 
     this.hash = hashJson(opts);
+  }
+
+  /** The CPU copy of every layer. A `gpu` array has none: its layers are copied in on the GPU */
+  createMirror(force = false) {
+    const { numTextures, width, height, type, gpu } = this.opts;
+    if (gpu === true && force === false) return null;
+    const length = numTextures * 4 * width * height;
+    return type === THREE.FloatType ? new Float32Array(length) : new Uint8Array(length);
   }
 
   /** Shared by the constructor and `recreate`, since a source is bound to the canvas's size */
@@ -109,7 +113,7 @@ export class TexArray {
     this.src = opts.gpu === true ? this.createSrc() : null;
     if (this.src !== null) {
       // until an upload is asked for three stands in a 1x1, so ask now: it is then created at
-      // full size on first use — though the zero mirror need never go up: the copies fill it
+      // full size on first use, from its dimensions alone — there is no mirror to send up
       tex.source.dataReady = false;
       tex.needsUpdate = true;
     }
@@ -137,11 +141,12 @@ export class TexArray {
     this.ct.canvas.height = this.opts.height;
 
     this.tex.dispose();
-    const data =
-      this.opts.type === THREE.FloatType
-        ? new Float32Array(this.opts.numTextures * 4 * this.opts.width * this.opts.height)
-        : new Uint8Array(this.opts.numTextures * 4 * this.opts.width * this.opts.height);
-    this.tex = new THREE.DataArrayTexture(data, this.opts.width, this.opts.height, this.opts.numTextures);
+    this.tex = new THREE.DataArrayTexture(
+      this.createMirror(),
+      this.opts.width,
+      this.opts.height,
+      this.opts.numTextures,
+    );
     this.applyOpts();
     this.hash = hashJson(this.opts);
   }
@@ -191,6 +196,12 @@ export class TexArray {
         this.renderer.copyTextureToTexture(this.src, this.tex, null, dstLayer.set(0, 0, index));
         return;
       }
+    }
+
+    if (this.tex.image.data === null) {
+      // a `gpu` array read back after all, so it needs the mirror it went without
+      this.tex.image.data = this.createMirror(true);
+      this.tex.source.dataReady = true;
     }
 
     const offset = index * (4 * this.opts.width * this.opts.height) + rowOffset * 4 * this.opts.width;

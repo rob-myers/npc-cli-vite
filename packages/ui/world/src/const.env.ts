@@ -239,7 +239,7 @@ export const unfoldDelayMs = 500;
 /** How long the risen world is left alone before the camera pans onto the player */
 export const introPanDelayMs = 350;
 
-export const MAX_GEOMORPH_INSTANCES = 8;
+export const MAX_GEOMORPH_INSTANCES = 9;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 
