@@ -194,6 +194,10 @@ the `pnpm dev` page over CDP through `window.__devMcp` (`packages/app/src/dev-mc
 in `tty-1` and beyond, their output, pointer presses on the World, the console, screenshots. Prototype in
 a tty; keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
 
+Before EVERY call to it, write the call's input in your message as a code fence: the `jsh` line as
+`sh`, the `query` function as `js`, else its arguments. The VS Code extension shows a call's result
+but not its input.
+
 ## Checking a change in the browser
 
 See `docs/browser-scenarios.md` — the ONLY doc for it, and the log of scenarios run. In short: a
