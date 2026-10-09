@@ -1,0 +1,208 @@
+{
+  "filename": "office--006.json",
+  "width": 120,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "c389cca5-e36b-4b87-8c96-634ff679be0d",
+      "name": "office--006",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "office--006",
+      "baseRect": {"width": 126.6, "height": 124},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "af30cdb5-cff1-4e63-bc81-216f511e1b8a",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "3b2155fe-0b2f-4c0d-99ba-62d0d55a26ec",
+          "name": "console--051 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 44.8, "f": 44.1},
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0.5, "y": 1.3},
+          "cssTransform": "matrix(0, 1, -1, 0, 45.3, 45.4)"
+        },
+        {
+          "id": "59bb0dcc-283d-4766-a6cc-c03616a8391d",
+          "name": "console--051 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 104.8, "f": 44.1},
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0.5, "y": 1.3},
+          "cssTransform": "matrix(0, 1, -1, 0, 105.3, 45.4)"
+        }
+      ]
+    },
+    {
+      "id": "15e4e661-c2d1-4760-943c-8d4a278f23b7",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "6bf145f6-c304-4e63-abbb-552aefcd0e25",
+          "name": "obstacle shelf y=1.2",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 2},
+          "type": "rect",
+          "baseRect": {"width": 116, "height": 10},
+          "cssTransform": "matrix(1, 0, 0, 1, 2, 2)"
+        },
+        {
+          "id": "3186555a-c0be-4e23-b934-e110af6226de",
+          "name": "obstacle table surface y=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 2 12 L 118 12 L 118 42.8 L 105.6 42.8 L 100 38.4 L 91.8 35.8 L 82.6 37.2 L 77.2 40 L 74.2 42.8 L 45.6 42.8 L 40 38.4 L 31.8 35.8 L 22.6 37.2 L 17.8 39.6 L 14.2 42.8 L 2 42.8 Z",
+          "baseRect": {"width": 120, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "5390de97-957c-4a52-9b74-a2974fa5f86e",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "a079b0e2-2f9a-4e1b-bb32-287ed57d4a89",
+          "name": "decor point label=office",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 46.9,
+            "f": 90.45
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 46.9, 90.45)"
+        },
+        {
+          "id": "5a759ca2-37f9-43a5-9082-0a96238991bd",
+          "name": "door e slide=[0,-1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 67.5},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, 116, 67.5)"
+        },
+        {
+          "id": "ef1048a0-17ae-47aa-9b11-98c34c9ec05d",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 56},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 118, 56)"
+        },
+        {
+          "id": "91287db6-a617-4dc4-b02d-7f6a86aac7af",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 56},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 122, 56)"
+        }
+      ]
+    },
+    {
+      "id": "6e58f729-2dab-4940-b708-a5c805860a78",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "66be7535-8efa-419e-84a7-f2444cfe8a92",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "791a7b29-a168-451e-a050-17d76df3ae7a",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
+        },
+        {
+          "id": "3522e8ef-714d-4754-92fb-667db4b3b940",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "78e62a64-25b5-4139-b14b-2cdb5783c44f",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+  "type": "symbol",
+  "key": "office--006"
+}

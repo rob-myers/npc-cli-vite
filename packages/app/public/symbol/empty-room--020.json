@@ -1,0 +1,121 @@
+{
+  "filename": "empty-room--020.json",
+  "width": 120,
+  "height": 240,
+  "nodes": [
+    {
+      "id": "a5b0aab8-93b3-4197-b3d0-a372c5a70bf8",
+      "name": "empty-room--020",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -4.6},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "empty-room--020",
+      "baseRect": {"width": 124, "height": 246.6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -4.6)"
+    },
+    {
+      "id": "6b6dc0db-4967-4950-9b66-d3e8d849d550",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "3ecdf8cf-3de1-4cab-a6f5-3b4617cdb7d0",
+          "name": "door n slide=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 67.5, "f": -4},
+          "type": "rect",
+          "baseRect": {"width": 45, "height": 8.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 67.5, -4)"
+        },
+        {
+          "id": "5e0814d8-a4a2-4c89-97f2-817051bae392",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 66, "f": -2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 66, -2)"
+        },
+        {
+          "id": "8f4e30c3-86d4-4aaa-8a8d-c0aa7fba054b",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 60, 2)"
+        }
+      ]
+    },
+    {
+      "id": "6f37284d-6488-4a9c-bf3a-38ee938a3164",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "f5835f1d-d231-461b-8300-9cf1edcf7c64",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "dba7563c-8f5e-453e-85ae-228fbdad7ea6",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 238},
+          "type": "rect",
+          "baseRect": {"width": 124, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 238)"
+        },
+        {
+          "id": "ea9932a5-1887-4da9-8050-1e474f516d83",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 240},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "a4509265-22eb-4480-bb6c-6b03086a8bd9",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 118, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 240},
+          "cssTransform": "matrix(1, 0, 0, 1, 118, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -4.6, "width": 124, "height": 246.6},
+  "type": "symbol",
+  "key": "empty-room--020"
+}

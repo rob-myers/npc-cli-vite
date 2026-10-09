@@ -196,7 +196,7 @@ export const zoomSpeedDesktop = 0.3;
 export const zoomSpeedMobile = 0.8;
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
-  post: { lightBg: "#ffffff", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
+  post: { lightBg: "#000000", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },
   ceiling: {
     hull: { fill: "#000", stroke: "#666" },
     nonHull: { fill: "#444", stroke: "#000" },

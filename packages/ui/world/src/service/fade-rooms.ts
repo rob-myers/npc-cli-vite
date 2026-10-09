@@ -156,7 +156,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
    * everything is paused must still be seen to open
    */
   function keepFramesComing(w: WorldType) {
-    framesUntilMs = performance.now() + ROOM_FADE_OUT_SECS * 1000 + 100;
+    // the mode switch is the longest fade a sync can start
+    framesUntilMs = performance.now() + Math.max(ROOM_FADE_OUT_SECS, MODE_FADE_SECS) * 1000 + 100;
     if (framesRaf !== 0) return;
     const frame = () => {
       tick(); // moved on before the frame that reads it

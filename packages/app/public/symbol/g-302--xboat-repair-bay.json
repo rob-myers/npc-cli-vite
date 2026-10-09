@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "2b50b5c6-168d-4516-8363-b0b25422aab1",
-      "name": "g-302--xboat-repair-bay 1",
+      "name": "g-302--xboat-repair-bay",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -1, "f": -60},
