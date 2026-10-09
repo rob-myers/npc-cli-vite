@@ -243,7 +243,8 @@ export const MAX_GEOMORPH_INSTANCES = 8;
 
 export const MAX_OBSTACLE_QUAD_INSTANCES = 1024;
 
-export const MAX_OBSTACLE_SKIRT_INSTANCES = 2048;
+/** One per obstacle edge. A five-geomorph map needs over 2000. */
+export const MAX_OBSTACLE_SKIRT_INSTANCES = 4096;
 
 /**
  * A decor quad is represented as a cuboid with single textured face.
