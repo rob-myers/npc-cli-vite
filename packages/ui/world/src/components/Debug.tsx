@@ -1,4 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
+import { Rect } from "@npc-cli/util/geom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
@@ -6,6 +7,7 @@ import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, select, smoothstep, texture, uv, vec2 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { sguToWorldScale } from "../const.env";
+import { createFloorGrid } from "../service/floor-grid";
 import { createArrowGeo, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { getWorldStore } from "../service/storage";
@@ -259,6 +261,8 @@ export function Debug() {
     return navMeshHelper.dispose();
   }, [w.nav?.navMesh]);
 
+  const floorGrid = useMemo(() => createFloorGrid(), []);
+
   const materials = useMemo(() => {
     // none of these are pickable, so they all vanish during object-picking. `alphaTest` discards
     // the fragment outright, rather than trusting a zero alpha to blend away
@@ -281,8 +285,12 @@ export function Debug() {
       boundary: create(boundaryColor, float(1), false),
       polylines,
       doorNormals: create("green", float(1)),
+      grid: Object.assign(create("white", floorGrid.opacityNode), { colorNode: floorGrid.colorNode }),
     };
   }, []);
+
+  /** The grid's quad: the map's bounds, and a cell beyond for the far edges' coordinates */
+  const gridRect = useMemo(() => floorGrid.setBounds(Rect.fromRects(...w.gms.map((gm) => gm.gridRect))), [w.gmsHash]);
 
   const decorPointsMaterial = useMemo(() => {
     // const mat = new THREE.MeshBasicNodeMaterial({ color: "red", side: THREE.DoubleSide });
@@ -308,6 +316,16 @@ export function Debug() {
       <mesh name="origin" position={[0, 5, 0]} visible={state.originShown} material={materials.origin}>
         <boxGeometry args={[0.05, 10, 0.05]} />
       </mesh>
+
+      <mesh
+        name="floor-grid"
+        geometry={quad}
+        material={materials.grid}
+        position={[gridRect.x, gridLift, gridRect.y]}
+        scale={[gridRect.width, 1, gridRect.height]}
+        visible={state.gridShown}
+        renderOrder={-2}
+      />
 
       {/* an npc's local navmesh boundary, as `park` sees it — see `drawBoundary` */}
       <instancedMesh
@@ -375,6 +393,8 @@ const onPointHeight = 0.005;
 const arrowLen = 0.5;
 const arrowWidth = 0.25;
 const doorNormalHeight = 0.05;
+/** How far the grid lies off the floor, clear of its z-fighting */
+const gridLift = 0.003;
 const boundaryColor = new THREE.Color("red");
 const tmpMat4 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();

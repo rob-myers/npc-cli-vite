@@ -1,3 +1,4 @@
+import type { StarShipGeomorphKey } from "@npc-cli/media/starship-symbol";
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Poly } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
@@ -28,7 +29,6 @@ import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import {
   deckConfig,
   drawDoorTicks,
-  drawFloorGrid,
   drawRoomFloors,
   setDeckInks,
   softEdges,
@@ -48,6 +48,7 @@ export default function Floor() {
       quad: createTwoSidedXzQuad(),
       uvOffsets: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
       uvDimensions: new Float32Array(MAX_GEOMORPH_INSTANCES * 2),
+      uvTextureIds: new Uint32Array(MAX_GEOMORPH_INSTANCES),
       drawnGmsHash: 0,
       drawnMapKey: null,
 
@@ -59,6 +60,8 @@ export default function Floor() {
         (uvOffsets.array as Float32Array).fill(0); // repeated (0, 0)
         const uvDimensions = state.quad.getAttribute("uvDimensions");
         (uvDimensions.array as Float32Array).fill(0);
+        const uvTextureIds = state.quad.getAttribute("uvTextureIds");
+        (uvTextureIds.array as Uint32Array).fill(0);
 
         for (const [gmId, gm] of gms.entries()) {
           // geomorph 301 pngRect height/width ~ 0.5 but not equal
@@ -66,10 +69,12 @@ export default function Floor() {
           (uvDimensions.array as Float32Array)[gmId * 2 + 1] = isEdgeGm(gm.key)
             ? gm.bounds.height / gm.bounds.width
             : 1;
+          (uvTextureIds.array as Uint32Array)[gmId] = w.getGmKeyTexId(gm.key);
         }
 
         uvOffsets.needsUpdate = true;
         uvDimensions.needsUpdate = true;
+        uvTextureIds.needsUpdate = true;
       },
       drawAll() {
         void state.draw().then(() => w.update());
@@ -78,23 +83,20 @@ export default function Floor() {
         w.setNextPending({ floor: true });
         setDeckInks(w.getTheme().floor.deck);
 
-        // one texture per gmId = texId (nav tris can change near hull doors)
-        w.texFloor.resize({ ...w.texFloor.opts, numTextures: Math.max(1, w.gms.length) });
-        for (const [gmId] of w.gms.entries()) {
-          state.drawGm(gmId);
-          w.texFloor.updateIndex(gmId);
+        // one texture per gmKey, shared by every instance of it — as the ceiling's
+        w.texFloor.resize({ ...w.texFloor.opts, numTextures: Math.max(1, w.seenGmKeys.length) });
+        for (const [texId, gmKey] of w.seenGmKeys.entries()) {
+          state.drawGm(gmKey);
+          w.texFloor.updateIndex(texId);
           await pause();
         }
 
         w.setNextPending({ floor: false });
       },
-      drawGm(gmId) {
+      drawGm(gmKey) {
         const { ct } = w.texFloor;
 
-        // - most aspects only depend on uninstantiated geomorph `layout`
-        // - however lights depend on instantiated decor (with gmRoomId)
-        const gm = w.gms[gmId];
-        const layout = state.startGm(gmId);
+        const layout = state.startGm(gmKey);
         if (layout === null) return;
 
         const hullFloor = state.getHullFloor(layout);
@@ -104,7 +106,9 @@ export default function Floor() {
         drawPolygons(ct, layout.walls, { fillStyle: "#000", strokeStyle: null, lineWidth: 0.05 });
 
         // room labels, read exactly as `RoomLabels` reads them — off the instantiated decor, so
-        // `meta.roomId` is already resolved. `deckConfig`'s `wiring` and `doorTicks` use them
+        // `meta.roomId` is already resolved. `deckConfig`'s `wiring` and `doorTicks` use them.
+        // The FIRST instance's will do: a label is never added at runtime, so all agree
+        const gmId = w.gms.findIndex((gm) => gm.key === gmKey);
         const labelOfRoom: (undefined | string)[] = [];
         for (const decor of Object.values(w.decor.byKey)) {
           if (helper.isRoomLabel(decor) === false || decor.meta.gmId !== gmId) continue;
@@ -114,10 +118,10 @@ export default function Floor() {
         // the deck itself — plated, with a line inside each room's walls. See `deckConfig`
         drawRoomFloors(ct, layout, labelOfRoom);
 
-        // draw nav mesh: gmId specific. Two paths rather than one call per triangle — adjacent
-        // triangles share an edge, and stroking each in turn draws every interior edge TWICE, which
-        // over a textured deck reads as patchy rather than as a mesh
-        state.drawNavMesh(ct, gmId);
+        // the nav mesh of the FIRST instance, as decoration: it differs per instance. Two paths
+        // rather than one call per triangle — adjacent triangles share an edge, and stroking each
+        // in turn draws every interior edge TWICE, which over a textured deck reads as patchy
+        state.drawNavMesh(ct, layout, gmId);
 
         // door shadow
         // 🔔 gaps in doorways should be fixed by adjusting door relative to wall
@@ -152,16 +156,9 @@ export default function Floor() {
           ),
           { fillStyle: "#0006", strokeStyle: null },
         );
-
-        if (w.debug?.gridShown) {
-          ct.save();
-          drawPolygons(ct, hullFloor, { clip: true, fillStyle: "#fff0", strokeStyle: null });
-          drawFloorGrid(ct, gm.bounds, gm.gridRect);
-          ct.restore();
-        }
       },
-      drawHull(gmId, gms = w.gms) {
-        const layout = state.startGm(gmId, gms);
+      drawHull(gmKey) {
+        const layout = state.startGm(gmKey);
         if (layout === null) return;
         state.drawHullFloor(w.texFloor.ct, state.getHullFloor(layout), layout);
       },
@@ -189,16 +186,20 @@ export default function Floor() {
       drawHulls(gms) {
         state.transformInstances(gms);
         state.addUvs(gms);
-        w.texFloor.resize({ ...w.texFloor.opts, numTextures: Math.max(1, gms.length) });
-        for (const [gmId] of gms.entries()) {
-          state.drawHull(gmId, gms);
-          w.texFloor.updateIndex(gmId);
+        w.texFloor.resize({ ...w.texFloor.opts, numTextures: Math.max(1, w.seenGmKeys.length) });
+        for (const [texId, gmKey] of w.seenGmKeys.entries()) {
+          state.drawHull(gmKey);
+          w.texFloor.updateIndex(texId);
         }
         w.update();
       },
-      drawNavMesh(ct, gmId) {
+      drawNavMesh(ct, layout, gmId) {
         const tris = w.nav?.toNavTris[gmId] ?? [];
         if (tris.length === 0) return;
+
+        // not round a hull door: there the mesh depends on what lies beyond it
+        const hullDoors = layout.doors.flatMap((d) => (d.meta.hull ? d.poly.rect.outset(hullDoorNavClear) : []));
+        const atHullDoor = (x: number, y: number) => hullDoors.some((rect) => rect.contains({ x, y }));
 
         const faces = new Path2D();
         const edges = new Path2D();
@@ -209,6 +210,7 @@ export default function Floor() {
             const [ax, ay] = [positions[i], positions[i + 2]];
             const [bx, by] = [positions[i + 3], positions[i + 5]];
             const [cx, cy] = [positions[i + 6], positions[i + 8]];
+            if (atHullDoor((ax + bx + cx) / 3, (ay + by + cy) / 3)) continue; // by its centre
             faces.moveTo(ax, ay);
             faces.lineTo(bx, by);
             faces.lineTo(cx, cy);
@@ -298,8 +300,7 @@ export default function Floor() {
         state.fadedTint.value = next;
       },
       /** Clear the shared canvas and put it in this geomorph's local coords */
-      startGm(gmId, gms = w.gms) {
-        const gmKey = gms[gmId]?.key;
+      startGm(gmKey) {
         const layout = w.assets.layout[gmKey] ?? null;
         if (layout === null) return null;
 
@@ -340,9 +341,10 @@ export default function Floor() {
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
     const transformedUv = uv().mul(uvDims).add(uvOffs);
+    const uvTexIds = attribute<"float">("uvTextureIds", "float");
     const texNode = texture(texArray.tex, transformedUv);
     texNode.depthNode = instanceIndex.mod(int(texArray.opts.numTextures));
-    const texel = texNode.depth(instanceIndex);
+    const texel = texNode.depth(uvTexIds);
 
     // Shown in room or doorway — and under a broad wall, but only its BASE, drawn pure black. Its
     // footprint is wider, e.g. a hull window it spans, and shown whole whilst any room it abuts is:
@@ -408,6 +410,7 @@ export default function Floor() {
       <bufferGeometry attributes={state.quad.attributes} index={state.quad.index}>
         <instancedBufferAttribute attach="attributes-uvOffsets" args={[state.uvOffsets, 2]} />
         <instancedBufferAttribute attach="attributes-uvDimensions" args={[state.uvDimensions, 2]} />
+        <instancedBufferAttribute attach="attributes-uvTextureIds" args={[state.uvTextureIds, 1]} />
       </bufferGeometry>
 
       <meshStandardNodeMaterial
@@ -432,6 +435,8 @@ export type State = {
   quad: THREE.BufferGeometry;
   uvOffsets: Float32Array;
   uvDimensions: Float32Array;
+  /** Per instance, the layer of its geomorph key */
+  uvTextureIds: Uint32Array;
   /** `w.gmsHash` the hulls were last put up for */
   drawnGmsHash: number;
   /** The map those hulls belonged to — only a change of map is a transition */
@@ -449,11 +454,11 @@ export type State = {
   draw(): Promise<void>;
   /** `draw`, then show it — what anything outside this file wants */
   drawAll(): void;
-  drawGm(gmId: number): void;
-  /** Every nav triangle filled once, then every DISTINCT edge stroked once */
-  drawNavMesh(ct: CanvasRenderingContext2D, gmId: number): void;
+  drawGm(gmKey: StarShipGeomorphKey): void;
+  /** The nav triangles of instance `gmId`, each filled once, then every DISTINCT edge stroked once */
+  drawNavMesh(ct: CanvasRenderingContext2D, layout: Geomorph.Layout, gmId: number): void;
   /** Just the hull, as a stand-in until `drawGm` lands */
-  drawHull(gmId: number, gms?: Geomorph.LayoutInstance[]): void;
+  drawHull(gmKey: StarShipGeomorphKey): void;
   /** Place, uv and hull-fill every geomorph of `gms` */
   drawHulls(gms: Geomorph.LayoutInstance[]): void;
   fadeTo(to: number, ms?: number): Promise<void>;
@@ -465,7 +470,7 @@ export type State = {
   /** Draw map hulls, ahead of `draw` */
   onNewMap(): void;
   setFadedTint(next: number): void;
-  startGm(gmId: number, gms?: Geomorph.LayoutInstance[]): null | Geomorph.Layout;
+  startGm(gmKey: StarShipGeomorphKey): null | Geomorph.Layout;
   transformInstances(gms?: Geomorph.LayoutInstance[]): void;
 };
 
@@ -477,6 +482,9 @@ const floorFadeMs = 300;
 const hullStripeGap = 0.16;
 const hullStripeWidth = 0.025;
 const hullStripeColor = "rgba(190, 205, 225, 0.05)";
+
+/** How far round a hull door, in METRES, the nav mesh is left undrawn */
+const hullDoorNavClear = 0.1;
 
 /** One line per edge: an interior edge belongs to two triangles, and stroking it twice shows */
 function addNavEdge(path: Path2D, seen: Set<string>, ax: number, ay: number, bx: number, by: number) {

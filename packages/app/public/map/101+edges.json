@@ -49,9 +49,28 @@
           "cssTransform": "matrix(1, 0, 0, -1, 592, 2424)"
         },
         {
+          "id": "5793a067-a134-455e-aca8-f46c438e0d40",
+          "name": "g-302--xboat-repair-bay",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": 1,
+            "d": 0,
+            "e": -2.1483,
+            "f": 601.2464
+          },
+          "type": "symbol",
+          "srcKey": "g-302--xboat-repair-bay",
+          "baseRect": {"width": 1200, "height": 600},
+          "offset": {"x": -60.3517, "y": 14.7536},
+          "cssTransform": "matrix(0, 1, 1, 0, -62.5, 616)"
+        },
+        {
           "id": "821f282f-f768-4c2f-a4a7-6c4374c71fdc",
           "name": "g-302--xboat-repair-bay",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 2398, "f": 583.5},
           "type": "symbol",
@@ -59,30 +78,11 @@
           "baseRect": {"width": 1200, "height": 600},
           "offset": {"x": 60.35173256233687, "y": 14.753588604951934},
           "cssTransform": "matrix(0, 1, -1, 0, 2458.3517, 598.2536)"
-        },
-        {
-          "id": "5793a067-a134-455e-aca8-f46c438e0d40",
-          "name": "g-302--xboat-repair-bay",
-          "locked": true,
-          "visible": true,
-          "transform": {
-            "a": 0,
-            "b": 1,
-            "c": 1,
-            "d": 0,
-            "e": -3.6483,
-            "f": 583.2464
-          },
-          "type": "symbol",
-          "srcKey": "g-302--xboat-repair-bay",
-          "baseRect": {"width": 1200, "height": 600},
-          "offset": {"x": -60.3517, "y": 14.7536},
-          "cssTransform": "matrix(0, 1, 1, 0, -64, 598)"
         }
       ]
     }
   ],
-  "bounds": {"x": -64, "y": -20, "width": 2522.3517, "height": 2444},
+  "bounds": {"x": -62.5, "y": -20, "width": 2520.8517, "height": 2444},
   "type": "map",
   "key": "101+edges"
 }
