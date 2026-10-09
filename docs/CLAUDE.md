@@ -171,6 +171,12 @@ thing editable in production; everything else saves to the filesystem in DEV via
 `POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand,
 and its node NAMES are its tags.
 
+## Symbol generation
+
+See `docs/symbol-generation.md` — the ONLY doc for it. In short: a symbol's JSON can be written from
+its png and saved through `POST /api/map-edit/file/symbol/{key}.json`, then checked by its thumbnail. An
+obstacle polygon takes in its drawn border, with no more points than its curves need.
+
 ## Deploys and stale tabs
 
 See `docs/deploys.md` — the ONLY doc for it. In short: a tab can outlive its deploy, so production

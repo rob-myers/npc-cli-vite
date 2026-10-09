@@ -1,0 +1,33 @@
+{
+  "filename": "machinery--357.json",
+  "width": 240,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "ff524499-6859-4ada-8f79-c16f624aa0a3",
+      "name": "machinery--357",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -14.6},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "machinery--357",
+      "baseRect": {"width": 244, "height": 136.6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -14.6)"
+    },
+    {
+      "id": "5b0cbde1-2fb0-42ab-9007-85971479d9fc",
+      "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "rect",
+      "baseRect": {"width": 244, "height": 124},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    }
+  ],
+  "bounds": {"x": -2, "y": -14.6, "width": 244, "height": 136.6},
+  "type": "symbol",
+  "key": "machinery--357"
+}

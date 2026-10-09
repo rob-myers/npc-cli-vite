@@ -476,6 +476,69 @@
       "bounds": {"x": -2, "y": -4, "width": 184, "height": 126.6},
       "type": "symbol",
       "key": "medical--007"
+    },
+    "machinery--155": {
+      "filename": "machinery--155.json",
+      "thumbnailFilename": "machinery--155.thumbnail.png",
+      "width": 104,
+      "height": 220,
+      "bounds": {"x": 0, "y": 0, "width": 104, "height": 220},
+      "type": "symbol",
+      "key": "machinery--155"
+    },
+    "machinery--156": {
+      "filename": "machinery--156.json",
+      "thumbnailFilename": "machinery--156.thumbnail.png",
+      "width": 112,
+      "height": 220,
+      "bounds": {"x": 0, "y": 0, "width": 112, "height": 220},
+      "type": "symbol",
+      "key": "machinery--156"
+    },
+    "machinery--357": {
+      "filename": "machinery--357.json",
+      "thumbnailFilename": "machinery--357.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -14.6, "width": 244, "height": 136.6},
+      "type": "symbol",
+      "key": "machinery--357"
+    },
+    "office--020": {
+      "filename": "office--020.json",
+      "thumbnailFilename": "office--020.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 184},
+      "type": "symbol",
+      "key": "office--020"
+    },
+    "office--061": {
+      "filename": "office--061.json",
+      "thumbnailFilename": "office--061.thumbnail.png",
+      "width": 180,
+      "height": 240,
+      "bounds": {"x": -4.8, "y": -2, "width": 186.8, "height": 244},
+      "type": "symbol",
+      "key": "office--061"
+    },
+    "medical--008": {
+      "filename": "medical--008.json",
+      "thumbnailFilename": "medical--008.thumbnail.png",
+      "width": 180,
+      "height": 120,
+      "bounds": {"x": -2, "y": -4.6, "width": 184, "height": 126.6},
+      "type": "symbol",
+      "key": "medical--008"
+    },
+    "office--023": {
+      "filename": "office--023.json",
+      "thumbnailFilename": "office--023.thumbnail.png",
+      "width": 120,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 124, "height": 186.8},
+      "type": "symbol",
+      "key": "office--023"
     }
   }
 }

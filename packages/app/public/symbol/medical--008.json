@@ -1,0 +1,231 @@
+{
+  "filename": "medical--008.json",
+  "width": 180,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "02231b4e-bd5b-4fa6-ab8c-53024ac80122",
+      "name": "medical--008",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -4.6},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "medical--008",
+      "baseRect": {"width": 184, "height": 126.6},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -4.6)"
+    },
+    {
+      "id": "3f9ee307-fb77-4133-a4a0-41cdeca6e378",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "c81ac5f4-cabe-493a-bcbe-3e6c93447b39",
+          "name": "console--051 y=0.4",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.7071,
+            "b": -0.7071,
+            "c": 0.7071,
+            "d": 0.7071,
+            "e": 20.6868,
+            "f": 78.6
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0.5657, "y": -1.2728},
+          "cssTransform": "matrix(0.7071, -0.7071, 0.7071, 0.7071, 21.2525, 77.3272)"
+        }
+      ]
+    },
+    {
+      "id": "476de881-b5fb-4eae-b4d1-9e6703efb48e",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "a5f1fcb3-df63-4e3a-b383-e8479418ac29",
+          "name": "obstacle table surface y=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 2 59 L 13.6 59 L 15.8 59.8 L 17.2 62.6 L 20.2 75.8 L 26.8 87 L 32.8 93.2 L 41.2 98.8 L 48.4 101.6 L 57.4 103 L 60 104.4 L 61 106.8 L 61 118 L 2 118 Z",
+          "baseRect": {"width": 180, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "27d43224-51b5-4bf7-88f0-86402d75ed4b",
+          "name": "obstacle machine y=1 tint=#666",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 119.2 2 L 178 2 L 178 60.1 L 119.2 60.1 L 119.2 44.7 L 113.9 40.7 L 110.6 35.6 L 109.4 30 L 110.6 24.4 L 113.9 19.3 L 119.2 15.3 Z",
+          "baseRect": {"width": 180, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "9856c52c-48ed-44cd-9d18-6cb63f483569",
+          "name": "obstacle machine y=1 tint=#666",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 119.2 60.1 L 178 60.1 L 178 118 L 119.2 118 L 119.2 104.7 L 113.9 100.7 L 110.6 95.6 L 109.4 90 L 110.6 84.4 L 113.9 79.3 L 119.2 75.3 Z",
+          "baseRect": {"width": 180, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "ca706322-7172-44e3-9e70-3d8e05aaa4aa",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "c774938b-6b16-493d-a5ce-1a1a335661f0",
+          "name": "door n optional slide=[-1,0] label=medical",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.5, "f": -4},
+          "type": "rect",
+          "baseRect": {"width": 45, "height": 8.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.5, -4)"
+        },
+        {
+          "id": "22bf82dc-dbd7-465a-b5bf-2686fd99730e",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 62, "f": 8},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 62, 8)"
+        },
+        {
+          "id": "d01201ea-3ba6-4f7a-88e7-3eeea8d4248d",
+          "name": "decor quad key=switch inner",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 62, "f": -8},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, 1, 62, -8)"
+        },
+        {
+          "id": "e9db3813-acde-4e8c-b9f3-abf124a8c4e5",
+          "name": "door slide=[0,1] label=medical",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 7.5},
+          "type": "rect",
+          "baseRect": {"width": 8.5, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, -4, 7.5)"
+        },
+        {
+          "id": "776a27b8-5eec-493f-85b0-0cf3b0468366",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 1.5, "f": 54},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 1.5, 54)"
+        },
+        {
+          "id": "9b68a3cd-55d7-4643-a300-2308ab96e345",
+          "name": "decor quad key=switch inner",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": -1.5, "f": 54},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, -1.5, 54)"
+        }
+      ]
+    },
+    {
+      "id": "a07dc66a-7d77-403e-9246-7cd17e041780",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "d32d9912-d89e-45c2-89e1-392df1421338",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 184, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "91a034c4-c392-40f9-9434-30e739b83a5d",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 184, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
+        },
+        {
+          "id": "1407cd06-a0fe-44dd-bda3-9be5c3a10cdb",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "bc439104-aacb-4063-8930-f1a5fe881098",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 178, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -4.6, "width": 184, "height": 126.6},
+  "type": "symbol",
+  "key": "medical--008"
+}
