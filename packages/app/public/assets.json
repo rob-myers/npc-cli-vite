@@ -11355,7 +11355,60 @@
         }
       ]
     },
-    "empty-map": {"key": "empty-map", "gms": []}
+    "empty-map": {"key": "empty-map", "gms": []},
+    "101+edges": {
+      "key": "101+edges",
+      "gms": [
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 14.9375, "f": 0.05}
+        },
+        {
+          "gmKey": "g-101--multipurpose",
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 14.9375,
+            "f": 15.05
+          }
+        },
+        {
+          "gmKey": "g-301--bridge",
+          "transform": {
+            "a": 1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 14.9375,
+            "f": 60.05
+          }
+        },
+        {
+          "gmKey": "g-302--xboat-repair-bay",
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 59.95,
+            "f": 14.5875
+          }
+        },
+        {
+          "gmKey": "g-302--xboat-repair-bay",
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": 1,
+            "d": 0,
+            "e": -0.091207,
+            "f": 14.58116
+          }
+        }
+      ]
+    }
   },
   "flattened": {
     "bed--005": {
