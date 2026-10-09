@@ -561,11 +561,18 @@ function numberRelatedNames(polys: Poly[], only: "bare" | "numbered", scope: str
 export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["flattened"]): Geomorph.FlatSymbol {
   const { key, isHull, walls, obstacles, symbols, unsorted, windows, removableDoors, addableWalls } = symbol;
 
+  /** Sub-symbols tagged `optional`. They are kept apart for the parent to choose from. */
+  const optionalParts: NonNullable<Geomorph.FlatSymbol["optionalParts"]> = [];
+
   const flats = symbols.flatMap(({ symbolKey, meta, transform }, i) => {
     const flat = flattened[symbolKey];
     if (flat) {
       // scoped per copy, so two copies of one child cannot see each other's names
-      return instantiateFlatSymbol(flat, meta, transform, `${key}/${symbolKey}#${i}`);
+      const instance = instantiateFlatSymbol(flat, meta, transform, `${key}/${symbolKey}#${i}`);
+      // a hull symbol has no parent, so its optional sub-symbols always stay
+      if (meta.optional !== true || isHull === true) return instance;
+      optionalParts.push({ tags: Object.keys(meta).filter((tag) => meta[tag] === true), flat: instance });
+      return [];
     } else {
       warn(`Missing flattened symbol for key ${symbolKey}`);
       return [];
@@ -597,6 +604,7 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
     unsorted: unsorted.concat(flats.flatMap((x) => x.unsorted)),
     walls: walls.concat(flats.flatMap((x) => x.walls)),
     windows: flatWindows,
+    ...(optionalParts.length > 0 && { optionalParts }),
   });
 }
 
@@ -695,7 +703,7 @@ function instantiateDecor<T extends Geomorph.Decor>(d: T, matrix: Mat, gmId: num
  */
 export function instantiateFlatSymbol(
   sym: Geomorph.FlatSymbol,
-  meta: Meta<{ doors?: string[]; walls?: string[] }>,
+  meta: Meta<{ doors?: string[]; walls?: string[]; symbols?: string[] }>,
   transform: Geom.AffineTransform,
   /** Identifies this copy — see `numberRelatedNames` */
   scope: string,
@@ -703,13 +711,41 @@ export function instantiateFlatSymbol(
   const mat = tmpMat1.setMatrixValue(transform);
   const det = Math.round(mat.determinant); // -1 or +1
 
+  /** The polys to instantiate: `sym`'s own, then those of each optional sub-symbol kept. */
+  const src = {
+    decor: sym.decor.slice(),
+    doors: sym.doors.slice(),
+    obstacles: sym.obstacles.slice(),
+    unsorted: sym.unsorted.slice(),
+    walls: sym.walls.slice(),
+    windows: sym.windows.slice(),
+  };
+  /** e.g. `['seats']` means only keep 'optional'-tagged sub-symbols with tag 'seats' */
+  const symbolTags = meta.symbols as string[] | undefined;
+  for (const { tags, flat } of sym.optionalParts ?? []) {
+    if (symbolTags !== undefined && !symbolTags.some((tag) => tags.includes(tag))) continue;
+    /** How far this part's ids move. Its polys are appended after those already in `src`. */
+    const ids = { obstacleId: src.obstacles.length, doorId: src.doors.length, windowId: src.windows.length };
+    /** `poly`'s id `k` moved along, if it has one. Returned as meta, so the cached part is left alone. */
+    const moved = (poly: Poly, k: keyof typeof ids) =>
+      typeof poly.meta[k] === "number" ? { [k]: poly.meta[k] + ids[k] } : {};
+    src.decor.push(
+      ...flat.decor.map((d) => d.cleanClone(undefined, { ...moved(d, "obstacleId"), ...moved(d, "doorId") })),
+    );
+    src.obstacles.push(...flat.obstacles.map((o) => o.cleanClone(undefined, moved(o, "windowId"))));
+    src.doors.push(...flat.doors);
+    src.unsorted.push(...flat.unsorted);
+    src.walls.push(...flat.walls);
+    src.windows.push(...flat.windows);
+  }
+
   /** e.g. `['s']` means only permit 'optional'-tagged doors with tag 's' */
   const doorTags = meta.doors as string[] | undefined;
   const doorsToRemove =
     doorTags === undefined
       ? []
       : sym.removableDoors.filter(({ doorId }) => {
-          const { meta } = sym.doors[doorId];
+          const { meta } = src.doors[doorId];
           return !doorTags.some((tag) => meta[tag] === true);
         });
 
@@ -723,7 +759,7 @@ export function instantiateFlatSymbol(
   const doorIdsToRemove = new Set(doorsToRemove.map((x) => x.doorId));
   const doorIdRemap = new Map<number, number>();
   let newDoorId = 0;
-  for (let i = 0; i < sym.doors.length; i++) {
+  for (let i = 0; i < src.doors.length; i++) {
     if (!doorIdsToRemove.has(i)) doorIdRemap.set(i, newDoorId++);
   }
 
@@ -737,7 +773,7 @@ export function instantiateFlatSymbol(
     ...(typeof meta.rel === "string" && poly.meta.rel === undefined && { rel: meta.rel }),
   });
 
-  const decor = sym.decor.flatMap((d) => {
+  const decor = src.decor.flatMap((d) => {
     if (typeof d.meta.doorId === "number") {
       if (doorIdsToRemove.has(d.meta.doorId)) return [];
       return d.cleanClone(mat, {
@@ -748,7 +784,7 @@ export function instantiateFlatSymbol(
     return d.cleanClone(mat, transformDecorMeta(d.meta, mat, meta.y));
   });
 
-  const doors = sym.doors
+  const doors = src.doors
     .filter((_, doorId) => !doorIdsToRemove.has(doorId))
     .map((poly) => {
       const sd = poly.meta.slide;
@@ -758,7 +794,7 @@ export function instantiateFlatSymbol(
       return poly.cleanClone(mat, { ...relatedOf(poly), slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
     });
 
-  const windows = sym.windows.map((poly) => poly.cleanClone(tmpMat1, relatedOf(poly)));
+  const windows = src.windows.map((poly) => poly.cleanClone(tmpMat1, relatedOf(poly)));
 
   // a name `relatedOf` has only just stamped stays bare, for the parent's `flattenSymbol` to tag
   numberRelatedNames(doors.concat(windows), "numbered", scope);
@@ -771,7 +807,7 @@ export function instantiateFlatSymbol(
     bounds: sym.bounds,
     decor,
     doors,
-    obstacles: sym.obstacles.map((poly) =>
+    obstacles: src.obstacles.map((poly) =>
       poly.cleanClone(mat, {
         // aggregate height-off-floor from MapEdit symbols
         ...(typeof meta.y === "number" && {
@@ -790,8 +826,8 @@ export function instantiateFlatSymbol(
         },
       }),
     ),
-    unsorted: sym.unsorted.map((poly) => poly.cleanClone(mat)),
-    walls: sym.walls.concat(wallsToAdd).map((poly) => poly.cleanClone(tmpMat1)),
+    unsorted: src.unsorted.map((poly) => poly.cleanClone(mat)),
+    walls: src.walls.concat(wallsToAdd).map((poly) => poly.cleanClone(tmpMat1)),
     windows,
 
     // not aggregated

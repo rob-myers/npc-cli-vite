@@ -55,6 +55,10 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
 - **Optional doors**: a room is reused where its doors differ, so give it one per side it could have,
   each `door {n|e|s|w} optional`. A parent's `doors=['e','w']` keeps those sides and walls up the rest;
   `doors=[]` keeps none. With no `doors` tag every door stays.
+- **Optional sub-symbols**: the same for furniture a parent may not want. Tag the `symbol` node
+  `optional` and with a group, e.g. `console--051 y=0.4 optional seats`. A parent's `symbols=['seats']`
+  keeps that group, `symbols=[]` keeps none, and no `symbols` tag keeps all. The symbol's own key works as
+  a tag too. A hull symbol's own optional sub-symbols always stay, having no parent to choose.
 - **Windows**: a tiled strip along a wall is a window, not a shelf. Leave that wall out of the room and
   let the parent place `window--005` (120 long) or `window--007` (180 long) over it.
 - **Label**: `decor point label=office`, a `label` decor at half scale, or `label=medical` on the door.

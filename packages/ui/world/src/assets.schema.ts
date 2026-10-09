@@ -71,9 +71,16 @@ export const AssetsFlatSymbolSchema = z.object({
   removableDoors: z.array(z.object({ doorId: z.number(), wall: polyCodec })),
   /** Walls tagged `optional` are addable */
   addableWalls: z.array(polyCodec),
+  /** Sub-symbols tagged `optional`, each already placed in this symbol. A parent keeps some by `symbols=[…]`. */
+  get optionalParts() {
+    return z.array(z.object({ tags: z.array(z.string()), flat: AssetsFlatSymbolSchema })).optional();
+  },
 });
 export type AssetsFlatSymbol = z.infer<typeof AssetsFlatSymbolSchema>;
-export type SymbolPolysKey = keyof Omit<AssetsSymbol, "key" | "isHull" | "width" | "height" | "bounds" | "symbols">;
+export type SymbolPolysKey = keyof Omit<
+  AssetsSymbol,
+  "key" | "isHull" | "width" | "height" | "bounds" | "symbols" | "optionalParts"
+>;
 
 export const AssetsSubSymbolSchema = z.object({
   symbolKey: StarShipSymbolImageKeySchema,
