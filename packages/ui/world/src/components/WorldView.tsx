@@ -2036,7 +2036,7 @@ function PostProcessing() {
     ],
   );
   // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`
-  useFrame(() => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1), -2);
+  useFrame(({ gl }) => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1, gl.getPixelRatio()), -2);
   return null;
 }
 
