@@ -16,7 +16,7 @@ import type { ThemeName } from "@npc-cli/ui-sdk";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, ExhaustiveError, type UseStateRef, useBeforeUnloadOrVisibilityChange, useStateRef } from "@npc-cli/util";
 import { fetchParsed } from "@npc-cli/util/fetch-parsed";
-import { Mat, Rect, Vect } from "@npc-cli/util/geom";
+import { Rect, Vect } from "@npc-cli/util/geom";
 import { jsonParser } from "@npc-cli/util/json-parser";
 import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import {
@@ -655,7 +655,12 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           Object.assign(node.transform, { a: m.a, b: m.b, c: m.c, d: m.d, e: m.e, f: m.f });
 
           if ("offset" in node) {
-            new Mat().setRotation(-(180 / Math.PI) * degrees).transformPoint(node.offset);
+            // the offset turns as the transform's linear part did, which also suits a mirrored node
+            const turned = new DOMMatrix([m.a, m.b, m.c, m.d, 0, 0])
+              .multiply(new DOMMatrix([a, b, c, d, 0, 0]).inverse())
+              .transformPoint(new DOMPoint(node.offset.x, node.offset.y));
+            node.offset.x = turned.x;
+            node.offset.y = turned.y;
           }
           node.cssTransform = computeNodeCssTransform(node);
         }
