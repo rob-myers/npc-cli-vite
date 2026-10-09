@@ -79,6 +79,7 @@ export default function Floor() {
         setDeckInks(w.getTheme().floor.deck);
 
         // one texture per gmId = texId (nav tris can change near hull doors)
+        w.texFloor.resize({ ...w.texFloor.opts, numTextures: Math.max(1, w.gms.length) });
         for (const [gmId] of w.gms.entries()) {
           state.drawGm(gmId);
           w.texFloor.updateIndex(gmId);
@@ -188,6 +189,7 @@ export default function Floor() {
       drawHulls(gms) {
         state.transformInstances(gms);
         state.addUvs(gms);
+        w.texFloor.resize({ ...w.texFloor.opts, numTextures: Math.max(1, gms.length) });
         for (const [gmId] of gms.entries()) {
           state.drawHull(gmId, gms);
           w.texFloor.updateIndex(gmId);

@@ -67,6 +67,7 @@ export default function Ceiling() {
       async draw() {
         w.setNextPending({ ceiling: true });
         // texture per gmKey (unlike floor)
+        w.texCeil.resize({ ...w.texCeil.opts, numTextures: Math.max(1, w.seenGmKeys.length) });
         for (const gmKey of w.seenGmKeys) {
           state.drawGm(gmKey);
           w.texCeil.updateIndex(w.getGmKeyTexId(gmKey));
