@@ -175,7 +175,8 @@ and its node NAMES are its tags.
 
 See `docs/symbol-generation.md` — the ONLY doc for it. In short: a symbol's JSON can be written from
 its png and saved through `POST /api/map-edit/file/symbol/{key}.json`, then checked by its thumbnail. An
-obstacle polygon takes in its drawn border, with no more points than its curves need.
+obstacle polygon takes in its drawn border, with no more points than its curves need. The same doc covers
+placing symbols in a hull symbol, the walls and doors it needs of its own, and how `assets.json` breaks.
 
 ## Deploys and stale tabs
 

@@ -4,7 +4,7 @@
   "height": 38.8,
   "nodes": [
     {
-      "id": "cab21917-84f5-4a91-8609-05468c6c5975",
+      "id": "484c37fe-b438-4b3e-b41e-1073a4d90df2",
       "name": "shop--033",
       "locked": true,
       "visible": true,
@@ -17,8 +17,8 @@
       "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
     },
     {
-      "id": "de98b2fc-b707-45e2-a6b7-e36bb55f6ae9",
-      "name": "obstacle machine y=1 tint=#555 skirtTint=#555",
+      "id": "59f27a81-b26e-4a7e-8a82-7492b286af52",
+      "name": "obstacle machine tint=#555 skirtTint=#555",
       "locked": false,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},

@@ -62,20 +62,8 @@
           "cssTransform": "matrix(0, -1, 1, 0, -0.8, 112)"
         },
         {
-          "id": "7378ca87-eb9c-414a-859d-7ab43c7349d7",
-          "name": "counter--010 y=0.705",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 64.1, "f": 100},
-          "type": "symbol",
-          "srcKey": "counter--010",
-          "baseRect": {"width": 20, "height": 18},
-          "offset": {"x": -0.3, "y": 0},
-          "cssTransform": "matrix(0, -1, 1, 0, 63.8, 100)"
-        },
-        {
           "id": "a2a04451-88c6-49c0-b641-ec26d6f9f843",
-          "name": "console--051 y=0.5",
+          "name": "console--051 y=0.4",
           "locked": true,
           "visible": true,
           "transform": {
@@ -94,7 +82,7 @@
         },
         {
           "id": "ee106185-62d0-4fa9-b55e-0ee9202fd49e",
-          "name": "console--051 y=0.5",
+          "name": "console--051 y=0.4",
           "locked": true,
           "visible": true,
           "transform": {
@@ -113,7 +101,7 @@
         },
         {
           "id": "ff9a4350-18cd-436d-bf08-bbea6354d0fa",
-          "name": "extra--018--table y=0.4",
+          "name": "extra--018--table y=0.3",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 170.6, "f": 4.5},
@@ -125,7 +113,7 @@
         },
         {
           "id": "93eeda94-2a22-4d8e-9b46-bcea95b532b8",
-          "name": "extra--018--table y=0.4",
+          "name": "extra--018--table y=0.3",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 217.4, "f": 21.7},
@@ -137,7 +125,7 @@
         },
         {
           "id": "8a35c6ac-291a-4559-9b1e-1140e1b8a55e",
-          "name": "couch-and-chairs--006 y=0.4",
+          "name": "couch-and-chairs--006 y=0.3 h=0.3",
           "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 239.9, "f": 81.3},
@@ -160,7 +148,7 @@
       "children": [
         {
           "id": "d9f4dff8-0c97-431e-8cd5-0d3ef956c9c2",
-          "name": "obstacle table surface y=0.7",
+          "name": "obstacle table surface y=0.7 h=0.7 tint=#444",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 62, "f": 59.2},
