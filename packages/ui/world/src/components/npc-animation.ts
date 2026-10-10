@@ -85,6 +85,8 @@ export class NpcAnimation {
   stance = newStance();
   /** The head, shared by both */
   upperHead = { entry: null as null | UpperBone };
+  /** World seconds at which they last rolled over in bed — see `rollTo` */
+  rolledAt = -Infinity;
   /** A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head */
   turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false };
   /** In pain, or pacified: the clip shown instead of idle, seconds into it, and what follows it — see `setHurt` */
@@ -332,6 +334,9 @@ export class NpcAnimation {
   rollTo(at: Geom.VectJson) {
     const from = keyOf(this.idleClip);
     if (from !== "lie" && from !== "lie_left" && from !== "lie_right") return;
+    // one roll at a time: a fade cut short by the next jerks them
+    const secs = this.w.timer.getElapsedTime();
+    if (secs - this.rolledAt < lieRoll.secs) return;
     const { position, rotation } = this.npc;
     /** Metres `at` is to their left */
     const left = (at.y - position.z) * Math.sin(rotation.y) - (at.x - position.x) * Math.cos(rotation.y);
@@ -341,6 +346,7 @@ export class NpcAnimation {
     const kept = from === towards ? from : "lie";
     const to = Math.abs(left) < back ? "lie" : Math.abs(left) < side ? kept : towards;
     if (to === from) return;
+    this.rolledAt = secs;
     this.idleClip = this.npc.clips[to];
     if (this.pose === from) this.setPose(to);
   }

@@ -211,8 +211,11 @@ export const defaultFadeSecs = 0.3;
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
 
-/** One lain rolls onto a side for a point further than `side` metres to it, and onto their back for one within `back` of their own line */
-export const lieRoll = { side: 0.45, back: 0.25 } as const;
+/**
+ * One lain rolls onto a side for a point further than `side` metres to it, and onto their back for one within `back`
+ * of their own line. A roll is seen through: `secs` before the next, as long as the longest fade between them
+ */
+export const lieRoll = { side: 0.45, back: 0.25, secs: 0.6 } as const;
 
 /** One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest */
 export const sitTurn = { maxRad: Math.PI / 4, body: 0.25, rate: 6 } as const;
