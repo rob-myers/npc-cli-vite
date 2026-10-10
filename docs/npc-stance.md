@@ -25,7 +25,8 @@ With it, the feet are held where they were:
 4. **Hips.** They sink until the longer leg reaches. They also shift over the feet, so the legs do
    not slant.
 5. **Let go.** Any pose that is not standing eases the hold out. When it ends, the pose's own legs
-   and hips are written back.
+   and hips are written back. A sit or a lie ends it at once: they are elsewhere by then, and the
+   hips easing back would slide them on the seat.
 
 It is one mechanism. There is no code per gait or per direction: a strafe's sideways spread is held
 the same way as a walk's stride.

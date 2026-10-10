@@ -21,7 +21,7 @@ import {
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
-import { newStance, takeStance, tickStance } from "./npc-stance";
+import { letGo, newStance, takeStance, tickStance } from "./npc-stance";
 
 const emptyMixer = new THREE.AnimationMixer({} as THREE.Object3D);
 /** Stands in until the gltf loads, and for a clip it lacks */
@@ -145,6 +145,8 @@ export class NpcAnimation {
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
+    // sat or lain they are elsewhere, and a hold easing out would slide them on the seat
+    if (this.stance.held === true && postureOf(next) !== "stand") letGo(this.stance);
     this.pose = next;
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
