@@ -319,7 +319,7 @@ export const fadeSecs: Record<
 
 export const defaultPsiTune: PsiTune = {
   speed: 0.45,
-  width: 0.5,
+  width: 2.25,
   packet: 1,
   amp: 0.12,
   line: 0.35,
