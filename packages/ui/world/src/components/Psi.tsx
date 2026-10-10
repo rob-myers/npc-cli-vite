@@ -160,7 +160,12 @@ export default function Psi() {
           if (isPsiPose(shown)) player.anim.setUpper(null, left);
         } else if (pose !== shown && (shown === null || isPsiPose(shown))) {
           // their left hand alone, and not over another's e.g. reaching to put something down
-          player.anim.setUpper(pose, { side: "left", swapSecs: near ? avoidSecs : undefined });
+          player.anim.setUpper(pose, {
+            side: "left",
+            swapSecs: near ? avoidSecs : undefined,
+            past: true,
+            onHead: true,
+          });
         }
       },
       setTune(partial) {

@@ -209,6 +209,15 @@ export const defaultFadeSecs = 0.3;
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
 
+/** One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest */
+export const sitTurn = { maxRad: Math.PI / 4, body: 0.25, rate: 6 } as const;
+
+/**
+ * One sat raises an arm past a table's edge: by way of this pose of the LEFT arm, elbow back and out, as Blockbench
+ * keys it. They near it by `there` of the way, and leave for the clip's from `onFrom`. It takes `slow` times as long
+ */
+export const sitArmVia = { arm: [-70, 0, -30], forearm: [155, 0, 0], there: 0.5, onFrom: 0.4, slow: 1.6 } as const;
+
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
 

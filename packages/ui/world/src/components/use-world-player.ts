@@ -47,25 +47,24 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = w.n?.[state.key];
         if (npc === undefined) return;
         const { face } = npc.anim;
-        // not whilst locked on: the phaser's target is whom they face. Nor sat or lain, when they cannot turn
-        if (
-          w.view.keysDown.has("r") === false ||
-          w.phasers?.isLocked(state.key) === true ||
-          npc.isNotStanding() === true
-        ) {
-          if (face.aim === pointerAim) face.aim = null;
-          return;
-        }
+        // not whilst locked on: the phaser's target is whom they face
+        const held = w.view.keysDown.has("r") === true && w.phasers?.isLocked(state.key) !== true;
+        const { posture } = npc;
+        if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
+        if (held === false || posture !== "sit") npc.anim.turnTo(null);
+        if (held === false || posture === "lie") return; // lain they cannot turn at all
         const { raycaster, lastPointer, canvas } = w.view;
         const { width, height } = canvas.getBoundingClientRect();
         tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
         raycaster.setFromCamera(tmpNdc, w.r3f.camera);
         if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
+        w.r3f.invalidate(); // a held key draws nothing of itself
+        // sat they do not turn round: their head, and a little of their torso
+        if (posture === "sit") return void npc.anim.turnTo(pointerAim.at);
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
-        w.r3f.invalidate(); // a held key draws nothing of itself
       },
       onTouch(e) {
         if (e.type === "touchstart") {
