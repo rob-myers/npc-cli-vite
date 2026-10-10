@@ -62,6 +62,21 @@ export const ambienceRanges: Record<AmbienceKey, [number, number, number]> = {
   reverb: [0, 1, 0.01],
 };
 
+export const ambienceUnits: Partial<Record<AmbienceKey, string>> = {
+  droneHz: "Hz",
+  droneCutoff: "Hz",
+  airHz: "Hz",
+  choirCutoff: "Hz",
+  choirTranspose: "st",
+  choirDetune: "ct",
+  chordSecs: "s",
+  stagger: "s",
+  attack: "s",
+  release: "s",
+  grain: "s",
+  crossfade: "s",
+};
+
 /** Minor chords and their neighbours, in semitones above the drone */
 const chords = [
   [24, 31, 36, 39],

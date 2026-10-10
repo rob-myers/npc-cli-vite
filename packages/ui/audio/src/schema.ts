@@ -6,6 +6,8 @@ export const AudioUiMetaSchema = z.object({
   uiKey: z.literal("Audio"),
   /** The sliders' values, over `ambienceDefaults` */
   config: z.record(z.string(), z.number()).optional(),
+  /** The desk of controls, else the diagram of the engine's nodes */
+  view: z.enum(["desk", "graph"]).optional(),
 });
 
 export type AudioUiMeta = z.infer<typeof AudioUiMetaSchema>;

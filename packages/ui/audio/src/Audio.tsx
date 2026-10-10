@@ -5,8 +5,10 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
   CopyIcon,
+  FlowArrowIcon,
   PlayIcon,
   QuestionIcon,
+  SlidersHorizontalIcon,
   StopIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -18,9 +20,12 @@ import {
   type AmbienceMeterKey,
   ambienceDefaults,
   ambienceRanges,
+  ambienceUnits,
   createAmbience,
 } from "./ambience";
+import { graphColours } from "./graph-data";
 import { type HelpStep, help, helpIntro } from "./help";
+import { Graph } from "./NodeGraph";
 import type { AudioUiMeta } from "./schema";
 
 /** Plays the ambience and tunes it by ear, laid out as a mixing desk: a strip per channel */
@@ -127,6 +132,11 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
   }, [createAmbience]);
 
   const playing = state.engine !== null;
+  const view = meta.view ?? "desk";
+  const setView = (next: AudioUiMeta["view"]) => {
+    state.setHelp(null);
+    uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as AudioUiMeta).view = next));
+  };
   /** Touring, the control explained stands out and pressing another moves the tour to it */
   const helped = (key: AmbienceKey) => ({
     "data-help": key,
@@ -141,8 +151,8 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       <Knob k={key} value={state.config[key]} colour={colour} onChange={(v) => state.setConfig({ [key]: v })} />
     </div>
   );
-  const fader = (key: AmbienceKey & AmbienceMeterKey, colour: string) => (
-    <div className="mt-auto flex h-52 shrink-0 justify-center gap-3 px-2 pt-3">
+  const fader = (key: AmbienceKey & AmbienceMeterKey, colour: string, heightClass = "h-52 @max-lg:h-40") => (
+    <div className={cn("mt-auto flex shrink-0 justify-center gap-3 px-2 pt-3", heightClass)}>
       <div
         className="relative h-full w-2.5 overflow-hidden rounded-sm bg-black ring-1 ring-black"
         style={{ backgroundImage: meterGradient }}
@@ -166,14 +176,56 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       className="relative size-full bg-[#0c0d0f] text-zinc-300 select-none"
       onKeyDown={state.onKeyDown}
     >
-      <div className={cn("@container flex size-full overflow-auto p-3", state.help !== null && "pb-48")}>
+      <div className="absolute top-2 left-2 z-10 flex gap-1">
+        <button
+          type="button"
+          title="the mixing desk"
+          className={cn(viewButtonClass, view === "desk" && "bg-zinc-600 text-white")}
+          onClick={() => setView("desk")}
+        >
+          <SlidersHorizontalIcon className="size-4" />
+        </button>
+        <button
+          type="button"
+          title="how the nodes are connected"
+          className={cn(viewButtonClass, view === "graph" && "bg-zinc-600 text-white")}
+          onClick={() => setView("graph")}
+        >
+          <FlowArrowIcon className="size-4" />
+        </button>
+        {view === "graph" && (
+          <button
+            type="button"
+            title={playing ? "stop" : "play"}
+            className={cn(viewButtonClass, playing && "text-emerald-300")}
+            onClick={() => (playing ? state.stop() : state.play())}
+          >
+            {playing ? <StopIcon className="size-4" weight="fill" /> : <PlayIcon className="size-4" weight="fill" />}
+          </button>
+        )}
+      </div>
+
+      {view === "graph" && (
+        <div className="flex size-full overflow-auto p-3 pt-11">
+          <Graph config={state.config} playing={playing} />
+        </div>
+      )}
+
+      {/* hidden, not unmounted, so its meters and screen keep their elements */}
+      <div
+        className={cn(
+          "@container flex size-full overflow-auto p-3 pt-11",
+          state.help !== null && "pb-48",
+          view === "graph" && "hidden",
+        )}
+      >
         <div
-          className="m-auto flex max-w-full flex-wrap justify-center gap-1.5 rounded-lg border border-black bg-[#1b1d21] p-2 shadow-[inset_0_1px_0_#ffffff14,0_8px_24px_#000a]"
+          className="m-auto flex max-w-full flex-wrap justify-center gap-1.5 @max-lg:w-full rounded-lg border border-black bg-[#1b1d21] p-2 shadow-[inset_0_1px_0_#ffffff14,0_8px_24px_#000a]"
           style={{ backgroundImage: deskTexture }}
         >
           {strips.map(({ key, title, colour, knobs, knobsClass }) => (
-            <Strip key={key} title={title} colour={colour}>
-              <div className={cn("grid gap-x-1 gap-y-2.5 px-2 pt-2", knobsClass)}>
+            <Strip key={key} title={title} colour={colour} className="@max-lg:grow">
+              <div className={cn("grid justify-center gap-x-1 gap-y-2.5 px-2 pt-2", knobsClass)}>
                 {knobs.map((k) => knob(k, colour))}
               </div>
               {fader(key, colour)}
@@ -181,56 +233,61 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
             </Strip>
           ))}
 
-          <Strip title="master" colour={masterColour}>
-            <div className="flex flex-col items-center gap-2.5 px-2 pt-2">
-              <canvas
-                ref={state.ref("canvas")}
-                width={132}
-                height={56}
-                className="h-14 w-33 @max-xl:w-17 rounded-sm border border-black bg-[#07140c] shadow-[inset_0_0_8px_#000]"
-              />
-              <div className="grid grid-cols-4 gap-1 @max-xl:grid-cols-2">
-                <button
-                  type="button"
-                  title={playing ? "stop" : "play"}
-                  className={cn(buttonClass, playing && "text-emerald-300 shadow-[0_0_8px_#34d39966]")}
-                  onClick={() => (playing ? state.stop() : state.play())}
-                >
-                  {playing ? (
-                    <StopIcon className="size-4" weight="fill" />
-                  ) : (
-                    <PlayIcon className="size-4" weight="fill" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  title="reset to defaults"
-                  className={buttonClass}
-                  onClick={() => state.setConfig(ambienceDefaults)}
-                >
-                  <ArrowCounterClockwiseIcon className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  title="copy config"
-                  className={buttonClass}
-                  onClick={() => void navigator.clipboard.writeText(JSON.stringify(state.config, null, 2))}
-                >
-                  <CopyIcon className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  title="what each control does"
-                  className={cn(buttonClass, state.help !== null && "text-white shadow-[0_0_8px_#ffffff55]")}
-                  onClick={() => state.setHelp(state.help === null ? "intro" : null)}
-                >
-                  <QuestionIcon className="size-4" weight="bold" />
-                </button>
+          {/* too narrow for a fourth strip, it lies along the foot of the desk */}
+          <Strip title="master" colour={masterColour} className="@max-lg:basis-full">
+            <div className="flex flex-1 flex-col @max-lg:flex-row @max-lg:items-center @max-lg:justify-center @max-lg:gap-2">
+              <div className="flex flex-col items-center gap-2.5 px-2 pt-2">
+                <canvas
+                  ref={state.ref("canvas")}
+                  width={132}
+                  height={56}
+                  className="h-14 w-33 @min-lg:@max-xl:w-17 rounded-sm border border-black bg-[#07140c] shadow-[inset_0_0_8px_#000]"
+                />
+                <div className="grid grid-cols-4 gap-1 @min-lg:@max-xl:grid-cols-2">
+                  <button
+                    type="button"
+                    title={playing ? "stop" : "play"}
+                    className={cn(buttonClass, playing && "text-emerald-300 shadow-[0_0_8px_#34d39966]")}
+                    onClick={() => (playing ? state.stop() : state.play())}
+                  >
+                    {playing ? (
+                      <StopIcon className="size-4" weight="fill" />
+                    ) : (
+                      <PlayIcon className="size-4" weight="fill" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    title="reset to defaults"
+                    className={buttonClass}
+                    onClick={() => state.setConfig(ambienceDefaults)}
+                  >
+                    <ArrowCounterClockwiseIcon className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    title="copy config"
+                    className={buttonClass}
+                    onClick={() => void navigator.clipboard.writeText(JSON.stringify(state.config, null, 2))}
+                  >
+                    <CopyIcon className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    title="what each control does"
+                    className={cn(buttonClass, state.help !== null && "text-white shadow-[0_0_8px_#ffffff55]")}
+                    onClick={() => state.setHelp(state.help === null ? "intro" : null)}
+                  >
+                    <QuestionIcon className="size-4" weight="bold" />
+                  </button>
+                </div>
               </div>
-              {knob("reverb", masterColour)}
+              <div className="flex justify-center px-2 pt-2.5">{knob("reverb", masterColour)}</div>
+              <div className="mt-auto flex flex-col @max-lg:mt-0">
+                {fader("master", masterColour, "h-52 @max-lg:h-28")}
+                <Readout value={state.config.master} colour={masterColour} />
+              </div>
             </div>
-            {fader("master", masterColour)}
-            <Readout value={state.config.master} colour={masterColour} />
           </Strip>
         </div>
       </div>
@@ -277,9 +334,9 @@ function HelpCard(props: { step: HelpStep; value: null | number; onStep(by: numb
       {step !== "intro" && (
         <div className="mt-2 font-mono text-[10px] tabular-nums text-zinc-500">
           now {props.value}
-          {units[step]} · range {ambienceRanges[step][0]} to {ambienceRanges[step][1]}
-          {units[step]} · default {ambienceDefaults[step]}
-          {units[step]}
+          {ambienceUnits[step]} · range {ambienceRanges[step][0]} to {ambienceRanges[step][1]}
+          {ambienceUnits[step]} · default {ambienceDefaults[step]}
+          {ambienceUnits[step]}
         </div>
       )}
       {/* the card grows upwards, so only its foot stays put under the pointer */}
@@ -304,9 +361,15 @@ function HelpCard(props: { step: HelpStep; value: null | number; onStep(by: numb
   );
 }
 
-function Strip({ title, colour, children }: { title: string; colour: string; children: React.ReactNode }) {
+function Strip(props: { title: string; colour: string; className?: string; children: React.ReactNode }) {
+  const { title, colour, children } = props;
   return (
-    <section className="flex flex-col rounded border border-black/80 bg-linear-to-b from-zinc-800/80 to-zinc-900/80 pb-2 shadow-[inset_0_1px_0_#ffffff12]">
+    <section
+      className={cn(
+        "flex flex-col rounded border border-black/80 bg-linear-to-b from-zinc-800/80 to-zinc-900/80 pb-2 shadow-[inset_0_1px_0_#ffffff12]",
+        props.className,
+      )}
+    >
       <header className="flex items-center gap-1.5 border-b border-black/60 px-2 py-1.5">
         <span className="size-1.5 rounded-full" style={{ background: colour, boxShadow: `0 0 6px ${colour}` }} />
         <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-200 uppercase">{title}</span>
@@ -373,7 +436,7 @@ function Knob({ k, value, colour, onChange }: ControlProps) {
       <span className="text-[9px] leading-none tracking-wider text-zinc-400 uppercase">{labels[k] ?? k}</span>
       <span className="font-mono text-[9px] leading-none tabular-nums text-zinc-500">
         {value}
-        {units[k]}
+        {ambienceUnits[k]}
       </span>
     </div>
   );
@@ -494,15 +557,15 @@ const strips: StripDef[] = [
   {
     key: "drone",
     title: "engine",
-    colour: "#f59e0b",
+    colour: graphColours.drone,
     knobs: ["droneHz", "droneCutoff"],
     knobsClass: "grid-cols-[3rem]",
   },
-  { key: "air", title: "air", colour: "#38bdf8", knobs: ["airHz"], knobsClass: "grid-cols-[3rem]" },
+  { key: "air", title: "air", colour: graphColours.air, knobs: ["airHz"], knobsClass: "grid-cols-[3rem]" },
   {
     key: "choir",
     title: "choir",
-    colour: "#a78bfa",
+    colour: graphColours.choir,
     knobs: [
       "choirDry",
       "choirCutoff",
@@ -522,7 +585,7 @@ const strips: StripDef[] = [
   },
 ];
 
-const masterColour = "#f87171";
+const masterColour = graphColours.master;
 
 /** The tour's order: across the desk, each strip's fader then its knobs */
 const tour: HelpStep[] = ["intro", ...strips.flatMap(({ key, knobs }) => [key, ...knobs]), "reverb", "master"];
@@ -538,21 +601,6 @@ const labels: Partial<Record<AmbienceKey, string>> = {
   choirDetune: "detune",
   chordSecs: "chord",
   crossfade: "x-fade",
-};
-
-const units: Partial<Record<AmbienceKey, string>> = {
-  droneHz: "Hz",
-  droneCutoff: "Hz",
-  airHz: "Hz",
-  choirCutoff: "Hz",
-  choirTranspose: "st",
-  choirDetune: "ct",
-  chordSecs: "s",
-  stagger: "s",
-  attack: "s",
-  release: "s",
-  grain: "s",
-  crossfade: "s",
 };
 
 const keySigns: Record<string, number> = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 };
@@ -587,6 +635,9 @@ const deskTexture = "repeating-linear-gradient(90deg, #ffffff05 0 1px, transpare
 
 const helpButtonClass =
   "grid size-6 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-300 hover:bg-zinc-700";
+
+const viewButtonClass =
+  "grid size-7 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-400 hover:bg-zinc-700";
 
 const buttonClass = cn(
   "grid size-8 cursor-pointer place-items-center rounded-sm border border-black text-zinc-300",
