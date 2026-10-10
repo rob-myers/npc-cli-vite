@@ -403,13 +403,25 @@ export function WorldView(props: React.PropsWithChildren) {
         store.patch({ cameraInitial });
       },
       onZoomWheel(e) {
-        if (state.cameraMode !== "canonical") return;
         const { controls } = state;
         if (controls === null || state.canvas === null) return;
         if (e.target !== state.canvas) return; // e.g. scrolling a card, or an overlay's before `forwardWheel`
+        if (state.cameraMode !== "canonical") {
+          // The controls zoom to the cursor themselves, so we only mark its ground point.
+          // Not whilst following, when the zoom is the player's.
+          if (e.deltaY >= 0 || state.getFollowGoal(tmpGoal) === true) return;
+          const rect = state.canvas.getBoundingClientRect();
+          tmpNdc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+          state.raycaster.setFromCamera(tmpNdc, controls.object as THREE.PerspectiveCamera);
+          if (state.raycaster.ray.intersectPlane(groundPlane, tmpGroundHit) === null) return;
+          state.setCrosshair(tmpGroundHit);
+          state.zoomCrossFadeMs = performance.now() + freeCrossHoldMs; // it begins to go then
+          w.r3f?.invalidate();
+          return;
+        }
 
-        // a zoom-in aims at the cursor's ground point and pans onto it, ending up CENTRED rather
-        // than merely held still as `zoomToCursor` does. Aimed once the zoom has COMMITTED:
+        // a zoom-in aims at the cursor's ground point and pans towards it, so that it ends up still
+        // under the pointer — or CENTRED, following. Aimed once the zoom has COMMITTED:
         // re-aiming then would raycast from the already-panned camera. Before that the camera has
         // barely moved, and the cursor may well have — so a wheel elsewhere re-aims at once, rather
         // than waiting on the settle back out and the crosshair's fade. Only the destination
@@ -418,7 +430,8 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.zoomPan !== null && controls.zoomProgress > zoomCommitIn) return;
         if (1 - controls.zoomProgress < zoomPanMinSpan) return;
 
-        if (state.getFollowGoal(tmpGoal) === true) {
+        const following = state.getFollowGoal(tmpGoal) === true;
+        if (following) {
           // following, the zoom is theirs: it heads for them wherever the cursor is
           tmpGroundHit.set(tmpGoal.x, 0, tmpGoal.z);
         } else {
@@ -434,6 +447,13 @@ export function WorldView(props: React.PropsWithChildren) {
           }
         }
 
+        // the crosshair marks that point. The view shrinks ABOUT it, which is what holds it under the
+        // pointer: so the target ends as far short of it as the view will have shrunk
+        tmpAim.copy(tmpGroundHit);
+        if (following === false) {
+          tmpGroundHit.lerp(controls.target, Math.min(1, controls.minDistance / controls.spherical.radius));
+        }
+
         if (state.zoomPan !== null) {
           state.zoomPan.to.copy(tmpGroundHit); // re-aimed, see above
         } else {
@@ -447,7 +467,7 @@ export function WorldView(props: React.PropsWithChildren) {
           };
         }
         state.zoomInSlow = true; // until the ZOOM finishes, not just the pan
-        state.setCrosshair(tmpGroundHit);
+        if (following === false) state.setCrosshair(tmpAim);
         w.r3f?.invalidate();
       },
       getPlayer() {
@@ -621,7 +641,7 @@ export function WorldView(props: React.PropsWithChildren) {
           state.zoomCrossEl.visible = false;
           return;
         }
-        (state.zoomCrossEl.material as THREE.MeshBasicMaterial).opacity = 1 - ratio;
+        (state.zoomCrossEl.material as THREE.MeshBasicMaterial).opacity = 1 - Math.max(0, ratio);
         w.r3f?.invalidate();
       },
       /**
@@ -640,7 +660,6 @@ export function WorldView(props: React.PropsWithChildren) {
           // following, the aim IS the player, so it goes where they go — and the follow's own move
           // of the target this tick is neither a turn nor a pan, and is simply overwritten below
           zoomPan.to.set(tmpGoal.x, 0, tmpGoal.z);
-          state.setCrosshair(zoomPan.to);
         } else {
           // a TURN slides the rig about its pivot and a PAN translates it, often in the same frame —
           // a turn's damping runs on long after it — so `theta` changing cannot tell them apart.
@@ -649,19 +668,25 @@ export function WorldView(props: React.PropsWithChildren) {
           const dTheta = spherical.theta - zoomPan.lastTheta;
           if (controls._rotateAimed === true && dTheta !== 0) {
             const pivot = controls.u.rotatePivot;
-            const vx = tmpTurned.x - pivot.x;
-            const vz = tmpTurned.z - pivot.z;
-            tmpTurned.x = pivot.x + vx * Math.cos(dTheta) + vz * Math.sin(dTheta); // see `slideAboutPivot`
-            tmpTurned.z = pivot.z + vz * Math.cos(dTheta) - vx * Math.sin(dTheta);
+            // where the target is making for is no longer the pivot itself, so it goes round with the target
+            for (const turned of [tmpTurned, zoomPan.to]) {
+              const vx = turned.x - pivot.x;
+              const vz = turned.z - pivot.z;
+              turned.x = pivot.x + vx * Math.cos(dTheta) + vz * Math.sin(dTheta); // see `slideAboutPivot`
+              turned.z = pivot.z + vz * Math.cos(dTheta) - vx * Math.sin(dTheta);
+            }
           }
           // the pan steers where the zoom is going rather than being overwritten
           tmpDrift.copy(controls.target).sub(tmpTurned);
           if (tmpDrift.lengthSq() > 0) {
             zoomPan.to.add(tmpDrift);
-            state.setCrosshair(zoomPan.to);
+            // the crosshair stays where the zoom was aimed, and begins to go. Not for a turn's rounding
+            if (state.zoomCrossFadeMs === 0 && tmpDrift.lengthSq() > panFadesCrossSq) {
+              state.zoomCrossFadeMs = performance.now();
+            }
           }
-          // `to` is on the ground, which a turn leaves put, so the rest of the path is redrawn from
-          // wherever the target now is, as of the progress it had made. Arrived, `from` no longer matters
+          // the rest of the path is redrawn from wherever the target now is, as of the progress it had
+          // made. Arrived, `from` no longer matters
           if (rest > 1e-3) {
             zoomPan.from.copy(controls.target).addScaledVector(zoomPan.to, -zoomPan.lastBeta).divideScalar(rest);
           }
@@ -681,7 +706,8 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         // arrived — the zoom's tail is not worth holding the view unsteerable for — or back out
         state.zoomPan = null;
-        state.zoomCrossFadeMs = performance.now();
+        // unless a pan had it fading already
+        if (state.zoomCrossFadeMs === 0) state.zoomCrossFadeMs = performance.now();
       },
       /**
        * The outer zoom stop is the nearest radius that still shows both the player and their
@@ -1398,6 +1424,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.syncPickRT();
         w.npc?.syncOutlineMask();
         w.roomLabels?.syncOutlineMask();
+        w.psi?.syncOutlineMask();
 
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
@@ -1431,6 +1458,7 @@ export function WorldView(props: React.PropsWithChildren) {
           state.syncPickRT();
           w.npc?.syncOutlineMask();
           w.roomLabels?.syncOutlineMask();
+          w.psi?.syncOutlineMask();
           state.forceUpdate();
         };
       },
@@ -2063,7 +2091,14 @@ const tmpTracked = new THREE.Vector3();
 /** The player on screen, were the target at the goal — see `getFollowGoal` */
 const tmpProjected = new THREE.Vector3();
 const tmpGroundHit = new THREE.Vector3();
+const tmpAim = new THREE.Vector3();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+/** Metres squared the target must be panned in a frame, mid zoom, for the crosshair to fade */
+const panFadesCrossSq = 1e-6;
+
+/** In `free`, how long the crosshair stays whole after a wheel in, before it fades */
+const freeCrossHoldMs = 500;
 
 /** How long the crosshair takes to fade once the zoom-in has arrived */
 const crosshairFadeMs = 450;

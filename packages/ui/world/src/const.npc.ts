@@ -317,51 +317,53 @@ export const fadeSecs: Record<
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
-/** Metres the psi geometry allows `PsiTune.reach` to go to — see `Psi` */
-export const psiMaxReach = 8;
-
 export const defaultPsiTune: PsiTune = {
-  reach: 5,
-  speed: 0.4,
-  gap: 1.5,
-  width: 2.5,
-  opacity: 0.5,
-  fadeInSecs: 1.8,
-  fadeOutSecs: 0.2,
-  color: "#9fe8ff",
-  tint: 1,
+  speed: 0.45,
+  width: 2.25,
+  packet: 1,
+  amp: 0.12,
+  line: 0.35,
+  opacity: 0.3,
+  color: "#9eb6ff",
 };
+
+/** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
+export const psiKhandhas = {
+  form: { color: "#e8a15a" },
+  sensation: { color: "#ff6b81" },
+  perception: { color: "#7be08a" },
+  formations: { color: "#b48cff" },
+  consciousness: { color: "#9fe8ff" },
+} as const;
+
+export type KhandhaKey = keyof typeof psiKhandhas;
 
 /** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
 export const psiTuneRanges = {
-  reach: [1.5, psiMaxReach, 0.1],
-  speed: [-2, 2, 0.05],
-  gap: [0.15, 1.5, 0.05],
+  speed: [0.05, 2, 0.05],
   width: [0.5, 8, 0.25],
+  packet: [0.2, 3, 0.1],
+  amp: [0, 0.5, 0.01],
+  line: [0, 1, 0.05],
   opacity: [0.05, 1, 0.05],
-  fadeInSecs: [0.1, 3, 0.1],
-  fadeOutSecs: [0.1, 3, 0.1],
-  tint: [0, 1, 0.05],
 } as const;
 
 /** What the player's bubble adjusts of `Psi`, persisted */
 export type PsiTune = {
-  /** Metres the field reaches, at most `psiMaxReach` */
-  reach: number;
-  /** Contours per second the rings drift by: outwards when positive */
+  /** How fast a wave goes: see `thoughtConfig.speedOver` */
   speed: number;
-  /** Metres between contours */
-  gap: number;
-  /** Pixels wide each contour is drawn */
+  /** Pixels wide a wave's line is drawn */
   width: number;
-  /** Of each contour, which glows additively: lower is fainter */
+  /** Metres long a wave's sinusoid is */
+  packet: number;
+  /** Metres the sinusoid rises and falls */
+  amp: number;
+  /** How much of full strength the line has away from the sinusoid */
+  line: number;
+  /** Of each wave, which glows additively: lower is fainter */
   opacity: number;
-  /** Seconds an influence takes to come, and to go */
-  fadeInSecs: number;
-  fadeOutSecs: number;
+  /** The player's waves: their intention */
   color: string;
-  /** How much of `color`'s hue a contour carries: none is white */
-  tint: number;
 };
 
 /** What an npc may be posed as — see jsh `pose` */

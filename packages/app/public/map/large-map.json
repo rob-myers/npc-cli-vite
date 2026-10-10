@@ -1,12 +1,12 @@
 {
   "filename": "large-map.json",
   "width": 2400,
-  "height": 2400,
+  "height": 4800,
   "nodes": [
     {
       "id": "93468945-fb93-4c4d-b0bf-f80d6db1e06c",
       "name": "101 + 4 edge gms",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -15,7 +15,7 @@
         {
           "id": "b31f7ea5-21e1-4b10-b824-047ee7064ec4",
           "name": "g-301--bridge",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 597.5, "f": 2},
           "type": "symbol",
@@ -27,7 +27,7 @@
         {
           "id": "00c572e0-d9d3-42e6-b6bd-dba30e2f33aa",
           "name": "g-101--multipurpose",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 597.5, "f": 602},
           "type": "symbol",
@@ -39,7 +39,7 @@
         {
           "id": "8f6446b4-2a56-45d3-8c4e-ef5b0a9296ad",
           "name": "g-302--xboat-repair-bay",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": -2.5, "f": 602},
           "type": "symbol",
@@ -51,7 +51,7 @@
         {
           "id": "24b28f94-af9b-4377-8efb-5dc9f7b690c2",
           "name": "g-302--xboat-repair-bay",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 2397.5, "f": 602},
           "type": "symbol",
@@ -65,7 +65,7 @@
     {
       "id": "94d1c28b-fe48-48b0-81cd-d42dee60e5f2",
       "name": "g-101--multipurpose",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 597, "f": 1802.5},
       "type": "symbol",
@@ -77,7 +77,7 @@
     {
       "id": "d1c7f684-1f90-4e2f-820e-3f94801818a3",
       "name": "101 + 4 edge gms",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
@@ -86,7 +86,7 @@
         {
           "id": "2b10d5ea-e979-4d2a-a719-2647869d045e",
           "name": "g-101--multipurpose",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 596, "f": 3003.5},
           "type": "symbol",
@@ -98,7 +98,7 @@
         {
           "id": "f5255883-7ff3-4591-b318-451435bb5cd5",
           "name": "g-301--bridge",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 596, "f": 4803.5},
           "type": "symbol",
@@ -110,7 +110,7 @@
         {
           "id": "569c620e-ef6a-4cf6-b0f9-e30f8d54d93a",
           "name": "g-302--xboat-repair-bay",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": -4, "f": 3003.5},
           "type": "symbol",
@@ -122,7 +122,7 @@
         {
           "id": "79683603-5b5e-48e9-9fb1-6daff9a806eb",
           "name": "g-302--xboat-repair-bay",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {
             "a": 0,

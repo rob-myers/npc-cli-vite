@@ -1,7 +1,8 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
+import { mrt, output, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultPsiTune, type PsiTune, psiMaxReach } from "../const.npc";
+import { defaultPsiTune, type PsiTune, psiKhandhas } from "../const.npc";
 import { eased } from "../service/fade";
 import {
   advanceInfluence,
@@ -9,16 +10,17 @@ import {
   createInfluence,
   type Influence,
   influenceTarget,
-  type NpcFade,
 } from "../service/psi-influence";
-import { createPsiResources, type PsiResources, psiNodes } from "../service/psi-shader";
+import { createPsiResources, glowBlend, type PsiResources, psiNodes } from "../service/psi-shader";
 import { getWorldStore } from "../service/storage";
+import { demoThoughts, type Thought, thoughtConfig } from "../service/thoughts";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
- * Contour lines of a field between the player and whom they target, a quad apiece — their own
- * rings alone should they target themself. See `service/psi-influence` for the fades.
+ * The player's psi: whom it is on, their hand at their temple, and the waves between the two. The
+ * player's intention goes out to the target, and the target's thought comes back. See
+ * `service/psi-influence` for the fades, and `docs/psi.md`.
  */
 export default function Psi() {
   const w = useContext(WorldContext);
@@ -30,11 +32,19 @@ export default function Psi() {
       influence: createInfluence(),
       handsOn: null,
       targetRoom: { at: null, also: null },
-      flowAt: 0,
       tickedMs: performance.now(),
+      wave: { stage: "rest", asked: false, sent: 0, out: 0, thought: null },
+      readAt: 0,
 
-      choose(target) {
+      choose(target, { quiet = false } = {}) {
+        if (target !== state.getTarget()) {
+          // onto another: what was on its way is cut off, and the next is laid afresh
+          state.wave.stage = "rest";
+          state.come.value = -1;
+        }
         chooseInfluence(state.influence, target, w.player?.key);
+        // each time another is chosen, the same again or not, the player's intention goes to them
+        if (quiet === false && target !== null && target !== w.player?.key) state.wave.asked = true;
         state.syncTargetRoom();
         state.upload();
         w.r3f?.invalidate();
@@ -44,30 +54,72 @@ export default function Psi() {
       toggle() {
         if (state.getTarget() !== null) return state.choose(null);
         const { lastChosen } = state.influence;
-        return state.choose(lastChosen !== null && lastChosen in w.n ? lastChosen : (w.player?.key ?? null));
+        // back on whom it was on, but nothing is sent them until they are pressed
+        const target = lastChosen !== null && lastChosen in w.n ? lastChosen : (w.player?.key ?? null);
+        return state.choose(target, { quiet: true });
       },
       getTarget() {
         return influenceTarget(state.influence, w.player?.key);
       },
       onTick() {
         if (w.n === null) return; // <NPCs> mounts after us
-        // world time, so a pause holds the rings still — and a phase, so a new speed does not jump them
-        const worldSecs = w.timer.getElapsedTime();
-        state.flowPhase.value += Math.max(0, worldSecs - state.flowAt) * state.tune.speed;
-        state.flowAt = worldSecs;
         const now = performance.now();
         const secs = Math.min((now - state.tickedMs) / 1000, 0.1);
         state.tickedMs = now;
 
         // held whilst paused: a choice made then shows once they play on
         const played = w.disabled === true ? 0 : secs;
-        const steps = { in: played / state.tune.fadeInSecs, out: played / state.tune.fadeOutSecs };
+        const steps = { in: played / psiConfig.fadeInSecs, out: played / psiConfig.fadeOutSecs };
         advanceInfluence(state.influence, steps, w.player?.key, (npcKey) => npcKey in w.n);
+        state.exchange(played);
         state.syncTargetRoom();
         state.upload();
       },
+      exchange(secs) {
+        const { wave } = state;
+        const { current } = state.influence;
+        const player = w.player === undefined ? undefined : w.n[w.player.key];
+        const target = current === null ? undefined : w.n[current.npcKey];
+        if (player === undefined || target === undefined) {
+          // nobody to send to, yet or any longer: what was on its way is gone
+          wave.stage = "rest";
+          if (state.getTarget() === null) wave.asked = false; // psi is off
+          state.come.value = -1;
+          return;
+        }
+        const apart = Math.hypot(target.position.x - player.position.x, target.position.z - player.position.z);
+        const speed = state.tune.speed * thoughtConfig.speedOver;
+
+        if (wave.stage === "rest") {
+          if (wave.asked === false) return;
+          // the player's intention sets out: one asked for meanwhile waits for this to be answered
+          wave.asked = false;
+          wave.stage = "intent";
+          wave.sent = 0;
+        }
+        if (wave.stage === "intent") {
+          wave.sent += speed * secs;
+          state.come.value = wave.sent;
+          state.back.value = 0;
+          if (wave.sent < apart) return;
+          // there: they answer with a thought, which sets out for the player
+          wave.stage = "thought";
+          wave.out = 0;
+          wave.thought = demoThoughts[state.readAt++ % demoThoughts.length];
+          state.back.value = 1;
+          state.syncTune(); // its colour
+        }
+        wave.out += speed * secs;
+        state.come.value = wave.out;
+        if (wave.out < apart) return;
+        // it reaches the player. At rest BEFORE it is read: showing a bubble ticks the world again, and so us
+        wave.stage = "rest";
+        state.come.value = -1;
+        const { khandha, text } = wave.thought as Thought;
+        w.speech?.think(target.key, text, { khandha, color: psiKhandhas[khandha].color });
+      },
       syncTargetRoom() {
-        if (w.disabled === true) return; // as the rings: nothing changes whilst paused
+        if (w.disabled === true) return; // nothing changes whilst paused
         const target = state.getTarget();
         const at = (target === null ? undefined : w.npc?.npcToRoom.get(target)) ?? null;
         if (at?.grKey === state.targetRoom.at?.grKey) return;
@@ -78,42 +130,16 @@ export default function Psi() {
         if (w.n === null) return;
         const player = w.player === undefined ? undefined : w.n[w.player.key];
         state.syncHands(player);
-        const { self, current, leaving } = state.influence;
-        /** Never the player, should they have become one of them */
-        const others = [leaving, current].filter((x): x is NpcFade => x !== null && x.npcKey !== player?.key);
-        const off = player === undefined || (self.presence === 0 && others.length === 0);
-        state.mesh.visible = off === false; // else no draw call
-        if (player === undefined || state.mesh.visible === false) return; // nor any upload
-
-        // towards whom they influence, since they no longer turn to them — else as `player-light` has it, ahead
-        const at = others.length > 0 ? w.n[others[others.length - 1].npcKey].position : null;
-        const lookAngle = -player.rotation.y - Math.PI / 2;
-        tmpWay.set(Math.cos(lookAngle), Math.sin(lookAngle));
-        if (at !== null && at.distanceToSquared(player.position) > 1e-6) {
-          tmpWay.set(at.x - player.position.x, at.z - player.position.z).normalize();
-        }
-        // swung round, not snapped, as the target changes
-        state.facing.value.lerp(tmpWay, psiConfig.swing).normalize();
-
-        const slots = [{ npc: player, presence: self.presence }].concat(
-          others.map((x) => ({ npc: w.n[x.npcKey], presence: x.presence })),
-        );
-        slots.forEach(({ npc, presence }, i) => {
-          state.npcData[i * 4] = npc.position.x;
-          state.npcData[i * 4 + 1] = npc.position.z;
-          state.npcData[i * 4 + 2] = eased(presence);
-          state.npcData[i * 4 + 3] = npc.position.y + npc.anim.headY + psiConfig.headAbove; // their peak
-        });
-        if (slots.length === 1) {
-          // a far stand-in, weightless there: alone, the field's loop over the others draws only the first ring
-          state.npcData.set([player.position.x + psiConfig.loneFar, player.position.z, 0, 0], 4);
-        }
-        // held level over anyone lain down, eased so it neither drops into them nor jumps
-        const flat = slots.some(({ npc }) => npc.anim.pose === "lie") ? psiConfig.lieFlat : 0;
-        state.flat.value += (flat - state.flat.value) * psiConfig.flatEase;
-        state.slotCount.value = Math.max(2, slots.length); // drawn by `instanceCount`, which omits the stand-in
-        state.geo.instanceCount = slots.length;
-        state.npcTex.needsUpdate = true;
+        const { self, current } = state.influence;
+        const target = current === null ? undefined : w.n[current.npcKey];
+        // nothing to draw with nobody to send to
+        state.mesh.visible = false;
+        if (player === undefined || target === undefined || current === null) return;
+        // nor anything on its way, nor room between them for it to be seen in
+        const apart = Math.hypot(target.position.x - player.position.x, target.position.z - player.position.z);
+        state.mesh.visible = state.wave.stage !== "rest" && apart >= psiConfig.minApart;
+        state.playerAt.value.set(player.position.x, player.position.z, eased(self.presence), headBaseOf(player));
+        state.otherAt.value.set(target.position.x, target.position.z, eased(current.presence), headBaseOf(target));
       },
       syncHands(player) {
         if (state.handsOn !== (player?.key ?? null)) {
@@ -137,30 +163,29 @@ export default function Psi() {
           player.anim.setUpper(pose, { side: "left", swapSecs: near ? avoidSecs : undefined });
         }
       },
-      syncGms() {
-        w.gms.forEach((gm, gmId) => {
-          const { a, b, c, d, e, f } = gm.inverseMatrix;
-          const { x, y, width, height } = gm.bounds;
-          state.gmValues[gmId * 3].set(a, b, c, d);
-          state.gmValues[gmId * 3 + 1].set(e, f, x, y);
-          state.gmValues[gmId * 3 + 2].set(width, height, 0, 0);
-        });
-        state.gmCount.value = w.gms.length;
-      },
       setTune(partial) {
         Object.assign(state.tune, partial);
         getWorldStore(w.key).patch({ psiTune: { ...state.tune } });
         state.syncTune();
         w.r3f?.invalidate();
       },
+      syncOutlineMask() {
+        const { material } = state.mesh;
+        material.mrtNode = w.view.npcMaskMrt === null ? null : captionMrt;
+        material.needsUpdate = true;
+      },
       syncTune() {
         state.tune = { ...defaultPsiTune, ...state.tune }; // a field added since, e.g. over hmr
-        const { reach, gap, width, opacity, color, tint } = state.tune;
-        state.reach.value = Math.min(reach, psiMaxReach);
-        state.gap.value = gap;
+        const { width, packet, amp, line, opacity, color } = state.tune;
         state.width.value = width;
+        state.packet.value = packet;
+        state.amp.value = amp;
+        state.line.value = line;
         state.opacity.value = opacity;
         state.color.value.set(color);
+        state.thoughtColor.value.set(
+          state.wave.thought === null ? color : psiKhandhas[state.wave.thought.khandha].color,
+        );
         const theme = w.getTheme();
         // light cannot be added to a pale deck, so there the lines are laid over it, in a deeper ink
         const pale = theme.floor.deck === "light";
@@ -168,10 +193,9 @@ export default function Psi() {
           // as seen, not as worked in: linear lightness would come out far paler
           const { h } = state.color.value.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
           state.color.value.setHSL(h, 1, psiConfig.paleLightness, THREE.SRGBColorSpace);
-          const coreLightness = 1 - tint * (1 - psiConfig.paleCoreLightness);
-          state.coreColor.value.setHSL(h, 1, coreLightness, THREE.SRGBColorSpace);
-        } else {
-          state.color.value.lerp(white, 1 - tint);
+          const read = state.thoughtColor.value.getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
+          state.thoughtColor.value.setHSL(read.h, 1, psiConfig.paleLightness, THREE.SRGBColorSpace);
+          state.coreColor.value.setHSL(h, 1, psiConfig.paleCoreLightness, THREE.SRGBColorSpace);
         }
         // there the strength is fixed, to firm the line up, and `opacity` fades it once drawn
         state.gain.value = pale ? psiConfig.paleFirm / opacity : theme.npcs.fxStrength;
@@ -179,29 +203,33 @@ export default function Psi() {
         state.whiten.value = pale ? 0 : 1;
         state.casing.value = pale ? psiConfig.paleCasing : 0;
         state.width.value = width * (pale ? psiConfig.paleWidth : 1);
-        const blending = pale ? THREE.NormalBlending : THREE.AdditiveBlending;
-        if (state.mat.blending !== blending) {
-          state.mat.blending = blending;
-          state.mat.needsUpdate = true;
+        const blending = pale ? THREE.NormalBlending : glowBlend.blending;
+        const { material } = state.mesh;
+        if (material.blending !== blending) {
+          material.blending = blending;
+          material.needsUpdate = true;
         }
         w.r3f?.invalidate();
       },
     }),
-    // a new `psiMaxReach` or `cell` needs a new geometry, and the mesh and material go with it
-    { reset: { geo: true, mat: true, mesh: true } },
+    // over hmr the meshes and their materials are made afresh, and so is the exchange
+    {
+      reset: {
+        geo: true,
+        mesh: true,
+        wave: true,
+      },
+    },
   );
 
   w.psi = state;
 
-  useEffect(() => state.syncGms(), [w.hash]);
   useEffect(() => state.syncTune(), []);
 
   useEffect(() => {
-    const { vertexNode, colorNode } = psiNodes(state, w.view);
-    state.mat.vertexNode = vertexNode;
-    state.mat.colorNode = colorNode;
-    state.mat.needsUpdate = true;
-    state.upload(); // a fresh geometry has no instances yet
+    Object.assign(state.mesh.material, psiNodes(state, w.view), { needsUpdate: true });
+    state.syncOutlineMask();
+    state.upload();
   }, [w.view.fadeRoomsFx.uid]);
 
   return <primitive object={state.mesh} />;
@@ -215,47 +243,59 @@ export type State = PsiResources & {
   handsOn: null | string;
   /** The target's room, shown by the fade, and `also` the far side of a doorway they stand in */
   targetRoom: { at: null | Geomorph.GmRoomId; also: null | Geomorph.GmRoomId };
-  /** World seconds `flowPhase` was last advanced at */
-  flowAt: number;
   tickedMs: number;
+  /**
+   * The exchange: `asked` for and not yet begun, then the player's intention `sent` so many metres,
+   * then the target's `thought` so far `out` towards the player
+   */
+  wave: {
+    stage: "rest" | "intent" | "thought";
+    asked: boolean;
+    sent: number;
+    out: number;
+    thought: null | Thought;
+  };
+  /** Which of `demoThoughts` is next */
+  readAt: number;
 
-  /** Target `npcKey` — the player themself for their rings alone, `null` for off. Shown once playing, if paused */
-  choose(target: null | string): null | string;
-  /** Off, else back on to the last target, or the player */
+  /** Target `npcKey` — the player themself for psi on nobody else, `null` for off. Takes hold once playing, if paused. Another is sent the player's intention, unless `quiet` */
+  choose(target: null | string, opts?: { quiet?: boolean }): null | string;
+  /** Off, else back on to the last target, or the player: sending nothing */
   toggle(): null | string;
   /** The target, or the one taken up once a fade-out ends */
   getTarget(): null | string;
   onTick(): void;
+  /** The player's intention goes to whom psi is on each time they are chosen: their thought comes back, and is read. `secs` of world time on */
+  exchange(secs: number): void;
   /** Re-syncs the rooms shown once the target's room changes — theirs is shown too */
   syncTargetRoom(): void;
-  /** The slots onto the gpu, and whether to draw them at all */
+  /** Where the two of them are, onto the gpu: and whether to draw at all */
   upload(): void;
   /** The player's left hand to their temple whilst psi is on, elbow tucked (`psi_avoid`) near a neighbour or in a doorway */
   syncHands(player: undefined | Npc): void;
-  /** Each geomorph's inverse transform and local bounds, for the shader to find a pixel's room */
-  syncGms(): void;
   setTune(partial: Partial<PsiTune>): void;
   /** `tune` into the uniforms */
   syncTune(): void;
+  /** Keeps the waves' `mrtNode` in step with `w.view.npcMaskMrt` — see `NPCs.syncOutlineMask` */
+  syncOutlineMask(): void;
 };
 
+/** A wave marks itself a caption in `npcMask.g`, so an npc's border is not drawn over it — see `npc-outline` */
+const captionMrt = mrt({ npcMask: vec4(0, 1, 0, output.a) });
+
 const psiConfig = {
-  /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */
-  headAbove: 0.24,
-  /** The share of the way the contours' cone swings to a new bearing per tick */
-  swing: 0.2,
-  /** Metres the relief stays at its peak about someone lain down: their length — and the share of the way there per tick */
-  lieFlat: 1.3,
-  flatEase: 0.1,
+  /** Metres apart below which no wave is drawn: the exchange still happens */
+  minApart: 1,
+  /** Seconds psi takes to come onto someone, and to leave them */
+  fadeInSecs: 0.8,
+  fadeOutSecs: 0.3,
   /** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
   nearDist: 0.65,
   /** Seconds the player's elbows take to come forward */
   avoidSecs: 0.3,
-  /** Metres off the player the stand-in for no one sits, far past any `reach` */
-  loneFar: 1e4,
   /** Over a pale deck: the lightness the tuned hue is drawn at, fully saturated — its casing's ink */
   paleLightness: 0.36,
-  /** Over a pale deck: the lightness of a line's core at full `tint`, white at none */
+  /** Over a pale deck: the lightness of a line's core */
   paleCoreLightness: 0.8,
   /** Over a pale deck: the strength every line is drawn at, past full so its edges are firm */
   paleFirm: 4,
@@ -267,9 +307,8 @@ const psiConfig = {
   paleCasing: 1.5,
 } as const;
 
-const white = new THREE.Color("#fff");
-
+/** The height of the foot of an npc's head, which a wave of theirs stands on */
+const headBaseOf = (npc: Npc) => npc.position.y + npc.anim.headY;
 /** Ours to clear: never another's upper pose e.g. `point` */
-const tmpWay = new THREE.Vector2();
 const isPsiPose = (key: null | string) => key === "psi" || key === "psi_avoid";
 const left = { side: "left" } as const;

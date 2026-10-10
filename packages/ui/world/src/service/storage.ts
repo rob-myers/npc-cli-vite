@@ -95,7 +95,7 @@ const defaultWorldSettings: WorldSettings = {
   pickOpenDoors: true,
   pickDoors: false,
   decorShown: false,
-  npcContextMenu: false,
+  npcContextMenu: true,
   psiTune: {},
   gmGraphsFilter: "room",
   menuY: 40,

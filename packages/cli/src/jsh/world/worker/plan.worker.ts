@@ -512,7 +512,7 @@ function* padRoom(cands: PadCand[], others: Geom.VectJson[], by: number, first: 
 // typed copies of the world's constants, which the worker cannot import — see `physics.ts` there
 type WorldBoth = typeof import("@npc-cli/ui__world/const.both");
 type WorldNpc = typeof import("@npc-cli/ui__world/const.npc");
-const agentRadius: WorldBoth["npcDims"]["agentRadius"] = 0.18;
+const agentRadius: WorldBoth["npcDims"]["agentRadius"] = 0.2;
 const doorwayClearance: WorldNpc["standConfig"]["doorwayClearance"] = 0.6;
 const parkQueryRange: WorldNpc["standConfig"]["parkQueryRange"] = 2;
 const padQueryRange: WorldNpc["standConfig"]["padQueryRange"] = 3;

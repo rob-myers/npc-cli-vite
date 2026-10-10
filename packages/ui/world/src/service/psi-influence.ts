@@ -3,12 +3,12 @@ import { type Fade, stepFade } from "./fade";
 export type NpcFade = Fade & { npcKey: string };
 
 /**
- * Whom the player targets: nobody (`null`, off), themself (their rings alone), or another npc. One
+ * Whom the player targets: nobody (`null`, off), themself (psi on, on nobody else), or another npc. One
  * other fades in or shows whilst at most one fades out, so a new target waits for `leaving` to go —
  * bar `leaving` itself, which turns straight back.
  */
 export type Influence = {
-  /** The player's own rings, shown for any target */
+  /** The player's own presence, there for any target */
   self: Fade;
   /** Another npc fading in, or shown */
   current: NpcFade | null;
@@ -55,7 +55,7 @@ export function advanceInfluence(
   for (const fade of [x.self, x.current, x.leaving]) {
     if (fade !== null) stepFade(fade, fade.target === 1 ? steps.in : steps.out);
   }
-  if (x.current !== null && exists(x.current.npcKey) === false) x.current = null; // the player's rings stay
+  if (x.current !== null && exists(x.current.npcKey) === false) x.current = null; // the player's own stays
   if (x.leaving !== null && (x.leaving.presence === 0 || exists(x.leaving.npcKey) === false)) x.leaving = null;
   if (x.queued !== undefined && x.leaving === null) chooseInfluence(x, x.queued, playerKey);
 }

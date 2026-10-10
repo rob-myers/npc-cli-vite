@@ -1,66 +1,51 @@
 import {
+  cameraPosition,
   cameraProjectionMatrix,
   cameraViewMatrix,
+  cos,
   Discard,
   exp,
   Fn,
   float,
-  floor,
-  fract,
   fwidth,
-  If,
-  instanceIndex,
-  int,
-  ivec2,
-  Loop,
-  log,
-  max,
   mix,
   positionLocal,
+  sin,
   smoothstep,
-  textureLoad,
   uniform,
-  uniformArray,
   varying,
   vec2,
   vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_GEOMORPH_INSTANCES } from "../const.env";
-import { defaultPsiTune, psiMaxReach } from "../const.npc";
-import type { FadeRooms } from "./fade-rooms";
-import { type RoomSlots, slotUvPerMetre } from "./room-slots";
-import { selectAs } from "./tsl";
+import { defaultPsiTune } from "../const.npc";
+import { coverageFull } from "./post-processing";
 
 export type PsiResources = ReturnType<typeof createPsiResources>;
 
 export function createPsiResources() {
-  // subdivided, since the vertex shader raises it by the field. Even, with a cell to spare each side,
-  // so a quad snapped to the world grid still covers its npc's reach
-  const { cell } = shaderConfig;
-  const segments = 2 * Math.ceil(psiMaxReach / cell) + 2;
-  const side = segments * cell;
-  const base = new THREE.PlaneGeometry(side, side, segments, segments).rotateX(-Math.PI / 2);
-  const geo = new THREE.InstancedBufferGeometry();
-  geo.setAttribute("position", base.getAttribute("position"));
-  geo.setIndex(base.getIndex());
-  geo.instanceCount = 0;
+  // a strip from one of them to the other: `z` from `-1` to `1` along it, `x` across it
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute([-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1], 3));
+  geo.setIndex([0, 2, 1, 1, 2, 3]);
 
-  // a texel per slot, the player's first: world `xz`, eased presence
-  const npcData = new Float32Array(MAX_PSI * 4);
-  const npcTex = new THREE.DataTexture(npcData, MAX_PSI, 1, THREE.RGBAFormat, THREE.FloatType);
-  npcTex.minFilter = npcTex.magFilter = THREE.NearestFilter;
-  npcTex.needsUpdate = true;
-  const slotCount = uniform(0);
-  /** Unit, the way the player faces in world `xz` — see `Psi.upload` */
-  const facing = uniform(new THREE.Vector2(1, 0));
-  const flowPhase = uniform(0);
-  /** Metres out the relief holds its peak before it falls, so it clears someone lain along it */
-  const flat = uniform(0);
-  const reach = uniform(defaultPsiTune.reach);
-  const gap = uniform(defaultPsiTune.gap);
+  /** The player, and whom psi is on: world `xz`, eased presence, the height of the foot of their head — see `Psi.upload` */
+  const playerAt = uniform(new THREE.Vector4());
+  const otherAt = uniform(new THREE.Vector4());
+  /** Metres the wave's sinusoid has come, less than nought for none — see `Psi.exchange` */
+  const come = uniform(-1);
+  /** Which wave it is: `0` the player's intention out from them, `1` the other's thought back */
+  const back = uniform(0);
+  /** The colour of the thought on its way: its khandha's — see `Psi.syncTune` */
+  const thoughtColor = uniform(new THREE.Color(defaultPsiTune.color));
   const width = uniform(defaultPsiTune.width);
+  /** Metres long a wave's sinusoid is, and how far it rises and falls — see `PsiTune` */
+  const packet = uniform(defaultPsiTune.packet);
+  /** Amplitude */
+  const amp = uniform(defaultPsiTune.amp);
+  /** How much of full strength the line has away from the sinusoid */
+  const line = uniform(defaultPsiTune.line);
   const opacity = uniform(defaultPsiTune.opacity);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
   /** From `theme.npcs.fxStrength` */
@@ -73,36 +58,32 @@ export function createPsiResources() {
   const coreColor = uniform(new THREE.Color("#fff"));
   /** Scales the finished line's alpha: over a pale deck, where its strength only firms it up */
   const fade = uniform(1);
-  // per geomorph, three `vec4`s — see `syncGms`
-  const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
-  const gmArray = uniformArray<"vec4">(gmValues, "vec4");
-  const gmCount = uniform(0);
 
-  // additive, so the lines glow over a dark floor — `Psi.syncTune` lays them over a pale one instead
+  // added light, so a line glows over a dark floor — `Psi.syncTune` lays it over a pale one instead
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
-    side: THREE.DoubleSide, // a hill's far slope faces away, and its rings show through the near one
-    forceSinglePass: true, // additive, so back and front need no ordering: one draw, not two
-    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    ...glowBlend,
   });
+  // one mesh serves both waves, only one being on its way at a time
   const mesh = new THREE.Mesh(geo, mat);
   mesh.frustumCulled = false;
   mesh.renderOrder = +5;
+  mesh.visible = false;
 
   return {
     geo,
-    mat,
     mesh,
-    npcData,
-    npcTex,
-    slotCount,
-    facing,
-    flowPhase,
-    flat,
-    reach,
-    gap,
+    playerAt,
+    otherAt,
+    come,
+    back,
+    thoughtColor,
     width,
+    packet,
+    amp,
+    line,
     opacity,
     color,
     gain,
@@ -110,22 +91,21 @@ export function createPsiResources() {
     casing,
     coreColor,
     fade,
-    gmValues,
-    gmArray,
-    gmCount,
   };
 }
 
+/** The nodes of whichever wave is on its way: the player's intention, or the other's thought */
 export function psiNodes(
   {
-    npcTex,
-    slotCount,
-    facing,
-    flowPhase,
-    flat,
-    reach,
-    gap,
+    playerAt,
+    otherAt,
+    come,
+    back,
+    thoughtColor,
     width,
+    packet,
+    amp,
+    line,
     opacity,
     color,
     gain,
@@ -133,192 +113,112 @@ export function psiNodes(
     casing,
     coreColor,
     fade,
-    gmArray,
-    gmCount,
   }: PsiResources,
   {
-    fadeRoomsFx,
     objectPick,
     foldNode,
-    roomSlots,
   }: {
-    fadeRoomsFx: FadeRooms;
-    roomSlots: RoomSlots;
     objectPick: THREE.UniformNode<"float", number>;
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { reachFade, blend, lift, cell, coneHalfDeg, coneSoftDeg } = shaderConfig;
-  const slotAt = (i: THREE.Node<"int">) => textureLoad(npcTex, ivec2(i, 0));
-  const slotCountInt = slotCount.toInt() as THREE.Node<"int">;
-  const player = slotAt(int(0));
-  /** The furthest a slot is pushed: not past `reachFade`, where `log` races the rings */
-  const maxPush = reach.sub(reachFade);
-  /** Distance to a slot, out by up to `push` as its presence falls */
-  const distTo = (q: THREE.Node<"vec2">, slot: THREE.Node<"vec4">, push: THREE.Node<"float">) =>
-    q.sub(slot.xy).length().add(slot.z.oneMinus().mul(push));
-  /**
-   * Each `eased` to nought at `reach`, since a hard cut steps the contours — not for the relief, whose
-   * height that would plunge within a few vertices of the rim, faceting the outermost contour
-   */
-  const weigh = (r: THREE.Node<"float">, eased: boolean) =>
-    eased ? exp(r.div(-blend)).mul(smoothstep(maxPush, reach, r).oneMinus()) : exp(r.div(-blend));
+  const { wavelength, crestSpeedOver, lineSpeedOver, lineTip, sideRoom, startOver, landFrom } = shaderConfig;
+  const between = otherAt.xy.sub(playerAt.xy).length();
+  const half = width.mul(0.5);
+  const strength = opacity.mul(gain);
 
-  /**
-   * `(g, slot of nearest, peak)` at world `q`: a smooth min of the distances to the player and to
-   * the nearest other, so each keeps rings of their own — the player's `pushed` or not
-   */
-  const fieldOf = (pushed: boolean, eased: boolean) =>
-    Fn(([q]: [THREE.Node<"vec2">]) => {
-      const rPlayer = distTo(q, player, pushed ? maxPush : float(0));
-      const rOther = float(1e9).toVar();
-      const hOther = float(1).toVar();
-      const nearest = float(0).toVar();
-      Loop({ type: "int", start: 1, end: slotCountInt }, ({ i }: { i: THREE.Node<"int"> }) => {
-        const slot = slotAt(i);
-        // to just under the player's field, so it rises out of theirs for the whole of its fade
-        const r = distTo(q, slot, distTo(slot.xy, player, float(blend * 2)).min(maxPush));
-        If(r.lessThan(rOther), () => {
-          rOther.assign(r);
-          hOther.assign(slot.w);
-          nearest.assign(i.toFloat());
-        });
-      });
-
-      const wPlayer = weigh(rPlayer, eased);
-      const wOther = weigh(rOther, eased);
-      const total = max(wPlayer.add(wOther), 1e-20);
-      const g = log(total).mul(-blend); // huge beyond reach
-      // their peaks blended as their fields are, so the relief has no step between them
-      const h = wPlayer.mul(player.w).add(wOther.mul(hOther)).div(total);
-      return vec3(g, rPlayer.lessThanEqual(rOther).select(float(0), nearest), h);
-    });
-
-  const fieldAt = fieldOf(true, true);
-  /** The player's unpushed, so their rings fade in from the peak rather than the floor */
-  const reliefAt = fieldOf(false, false);
-
-  /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
-  const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
-    const gmId = float(-1).toVar();
-    const uvAt = vec2(0).toVar();
-    Loop({ type: "int", start: 0, end: gmCount.toInt() as THREE.Node<"int"> }, ({ i }: { i: THREE.Node<"int"> }) => {
-      // `(a, b, c, d)`, `(e, f, x, y)`, `(width, height)`: inverse transform and local bounds
-      const m = gmArray.element(i.mul(3));
-      const t = gmArray.element(i.mul(3).add(1));
-      const size = gmArray.element(i.mul(3).add(2));
-      const local = vec2(m.x.mul(q.x).add(m.z.mul(q.y)).add(t.x), m.y.mul(q.x).add(m.w.mul(q.y)).add(t.y));
-      const rel = local.sub(t.zw);
-      const inside = rel.x.greaterThanEqual(0).and(rel.y.greaterThanEqual(0));
-      If(gmId.lessThan(0).and(inside).and(rel.x.lessThanEqual(size.x)).and(rel.y.lessThanEqual(size.y)), () => {
-        gmId.assign(i.toFloat());
-        uvAt.assign(rel.mul(slotUvPerMetre));
-      });
-    });
-    return vec3(uvAt, gmId);
-  });
-
-  const ownSlot = slotAt(instanceIndex.toInt() as THREE.Node<"int">);
-  // on one world grid, so overlapping quads share vertices and their reliefs agree
-  const worldXZ = positionLocal.xz.add(floor(ownSlot.xy.div(cell).add(0.5)).mul(cell));
-  // each contour at a fixed height, as on a relief map
-  const field = reliefAt(worldXZ);
-  const y = max(max(field.x.sub(flat), 0).div(flat.sub(reach)).add(1), 0)
-    .mul(field.z)
-    .add(lift); // `z` is the peak
-  // a vertex well outside the cone the fragments keep is drawn onto the player, so a triangle of
-  // them has no area and is never rasterised. "Well": by more than a triangle is wide, so none that
-  // reaches into the cone is bent. Metres outside the wedge's nearer edge, as a half-plane
-  const fromPlayer = worldXZ.sub(player.xy);
-  const coneRad = ((coneHalfDeg + coneSoftDeg) * Math.PI) / 180;
-  const outside = fromPlayer
-    .dot(vec2(facing.y.negate(), facing.x))
-    .abs()
-    .mul(Math.cos(coneRad))
-    .sub(fromPlayer.dot(facing).mul(Math.sin(coneRad)));
-  const culled = outside.greaterThan(cell * 3);
-  const vertexNode = cameraProjectionMatrix.mul(
-    cameraViewMatrix.mul(selectAs<"vec4">(culled, vec4(player.x, lift, player.y, 1), vec4(worldXZ.x, y, worldXZ.y, 1))),
-  );
-
-  const p = varying(worldXZ, "vPsiXZ");
-  const own = varying<"float">(instanceIndex.toFloat() as THREE.Node<"float">, "vPsiOwn");
-  // found per vertex, the uv being affine in position: the texture is read per pixel
-  const gmUv = varying<"vec3">(gmUvAt(worldXZ) as THREE.Node<"vec3">, "vPsiGmUv");
+  // a line `from` one of them `to` the other in `ink`, and a sinusoid `come` metres along it
+  const from = mix(playerAt, otherAt, back);
+  const to = mix(otherAt, playerAt, back);
+  const ink = mix(color, thoughtColor, back);
+  // the player's is theirs alone to send: the other's needs psi to be on them
+  const present = playerAt.z.mul(mix(float(1), otherAt.z, back));
+  // The strip runs head to head, wide enough for the sinusoid.
+  // It turns about that line to face the camera, so the wave reads from any side, above included
+  const share: THREE.Node<"float"> = positionLocal.z.mul(0.5).add(0.5);
+  const side: THREE.Node<"float"> = positionLocal.x.mul(amp.add(sideRoom));
+  const tail = vec3(from.x, from.w, from.y);
+  const span = vec3(to.x, to.w, to.y).sub(tail);
+  const on3 = tail.add(span.mul(share));
+  const across = span.cross(cameraPosition.sub(on3));
+  const at = on3.add(across.div(across.length().max(1e-4)).mul(side));
+  const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(at, 1)));
+  /** Metres along the line, and off it */
+  const onLine: THREE.Node<"vec2"> = vec2(share.mul(between), side);
+  const on = varying(onLine);
 
   const colorNode = Fn(() => {
-    // per fragment rather than a varying, so a line keeps its shape between vertices
-    const found = fieldAt(p).toVar();
-    const g = found.x;
-    const owned = found.y.sub(own).abs().lessThan(0.5).select(float(1), float(0)); // drawn once, by the nearest
-
-    const v = g.div(gap).sub(flowPhase);
-    const toLine = float(0.5).sub(fract(v).sub(0.5).abs()); // 0 on a contour
-    const px = toLine.div(max(fwidth(v), 1e-6));
-    const half = width.mul(0.5);
+    // the sinusoid is a few waves about where it has come to, dying away either side
+    const within = on.x.sub(come).div(packet.mul(0.5).max(1e-3));
+    // it grows out of nothing over `startOver`, and is gone by the time it is there
+    const shown = smoothstep(0, startOver, come).mul(smoothstep(between.sub(landFrom), between, come).oneMinus());
+    const swell = exp(within.mul(within).negate()).mul(shown);
+    // its crests outrun it, so it plays as it goes: each rises at its back and dies at its front
+    const phase = on.x.sub(come.mul(crestSpeedOver)).mul((2 * Math.PI) / wavelength);
+    const off = amp.mul(swell).mul(sin(phase));
+    const slope = amp
+      .mul(swell)
+      .mul(cos(phase))
+      .mul((2 * Math.PI) / wavelength);
+    // pixels from the curve: metres over what a pixel covers, less for its slant
+    const metresPerPx = fwidth(on).length().mul(Math.SQRT1_2).max(1e-6);
+    const px = on.y
+      .sub(off)
+      .abs()
+      .div(metresPerPx.mul(slope.mul(slope).add(1).sqrt()));
     const core = smoothstep(half.sub(0.5), half.add(0.5), px).oneMinus(); // solid, 1px edge
     // the core and its casing, should it have one
-    const line = smoothstep(half.add(casing).sub(0.5), half.add(casing).add(0.5), px).oneMinus();
-    // the outermost dies away rather than ringing the reach
-    const edge = smoothstep(maxPush, maxPush.add(gap), g).oneMinus();
-
-    // only ahead of the player, within the cone they face down
-    const away = p.sub(player.xy);
-    const ahead = away.dot(facing).div(away.length().max(1e-4));
-    const cone = smoothstep(cosDeg(coneHalfDeg + coneSoftDeg), cosDeg(coneHalfDeg - coneSoftDeg), ahead);
-
-    const strength = opacity.mul(gain);
-    // the player's presence: another fades by its push alone, else its part of the field would dim as it rose
+    const drawn = smoothstep(half.add(casing).sub(0.5), half.add(casing).add(0.5), px).oneMinus();
+    // the line runs out ahead of the sinusoid, and joins them first
+    const reach = come.mul(lineSpeedOver);
+    // …and stays for the reply, which would otherwise have to lay it again
+    const laid = smoothstep(reach.sub(lineTip), reach, on.x).oneMinus().max(back);
+    const bright = mix(line, float(1), swell);
     // clamped after the strength, so one past full firms up the line's soft edges too
-    const shape = line.mul(edge).mul(cone).mul(owned).mul(player.z).mul(foldNode).mul(strength).min(1);
+    const shape = drawn.mul(laid).mul(bright).mul(present).mul(foldNode).mul(strength).min(1);
 
-    // most of a quad is off every line, and a discard alone would still look its room up
-    const a = float(0).toVar();
-    If(objectPick.equal(0).and(shape.greaterThanEqual(1 / 512)), () => {
-      // a room out of view takes from them, but only in `sight`…
-      const gmId = gmUv.z.round();
-      // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
-      const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">, {
-        branched: true,
-      });
-      // …where it dims them rather than hides them: sensed past what is seen. Off the map they go
-      const unseen = fadeRoomsFx.sightNode.oneMinus();
-      const roomShown = gmId
-        .greaterThanEqual(0)
-        .select(fadeRoomsFx.getVisiblity(slot).max(unseen.max(unseenShown)), unseen);
-      a.assign(shape.mul(roomShown));
-    });
+    // nothing to pick, and most of the strip is off the wave
+    const a = objectPick.equal(0).select(shape, float(0));
     Discard(a.lessThan(1 / 512)); // which would otherwise still blend
     // alpha stops at one, so strength past it whitens an additive line
-    const ink = color.mul(mix(float(1), strength.max(1), whiten));
+    const lit = ink.mul(mix(float(1), strength.max(1), whiten));
     // over a pale deck, near white cased in its own ink, darkened: read over white and grey alike
-    return vec4(mix(ink.mul(casingShade), mix(coreColor, ink, whiten), core.max(whiten)), a.mul(fade));
+    const rgb = mix(lit.mul(casingShade), mix(coreColor, lit, whiten), core.max(whiten));
+    // Added light is scaled here, not by the blend. Its alpha is then free to count as coverage.
+    // The post pass would otherwise weigh a wave over empty canvas by its faint alpha
+    const covered = smoothstep(0, 1 / 64, a).mul(coverageFull);
+    return vec4(rgb.mul(mix(float(1), a, whiten)), mix(a.mul(fade), covered, whiten));
   })();
 
   return { vertexNode, colorNode };
 }
 
-/** How much of a contour is left in a room out of view, in `sight` */
-const unseenShown = 0.3;
-
 const shaderConfig = {
-  /** Metres before `reach` over which it fades out */
-  reachFade: 0.75,
-  /** Metres over which the player's and another's rings merge: smaller gives a sharper waist */
-  blend: 0.3,
-  /** Metres the relief's rim sits above the floor */
-  lift: 0,
-  /** Metres between relief vertices, on a grid shared by every npc */
-  cell: 0.2,
-  /** Degrees either side of the player's facing the contours are drawn within, and the softening of that edge */
-  coneHalfDeg: 30,
-  coneSoftDeg: 3,
+  /** Metres from one crest of the sinusoid to the next */
+  wavelength: 0.35,
+  /** How many times faster than the sinusoid its crests go */
+  crestSpeedOver: 0.5,
+  /** How many times faster than the sinusoid the line runs out */
+  lineSpeedOver: 6,
+  /** Metres over which the line's leading end fades */
+  lineTip: 0.3,
+  /** Metres of strip either side of the sinusoid's swing, for its line's own width */
+  sideRoom: 0.1,
+  /** Metres a sinusoid has come by the time it is fully there */
+  startOver: 0.4,
+  /** Metres short of whom it makes for a sinusoid begins to go */
+  landFrom: 0.7,
 } as const;
 
-const cosDeg = (degrees: number) => Math.cos((degrees * Math.PI) / 180);
-
-/** The player, whom they influence, and whom they did */
-const MAX_PSI = 3;
+/** Light added as the shader scaled it. Alpha takes the greater, so a wave over empty canvas counts as drawn */
+export const glowBlend = {
+  blending: THREE.CustomBlending,
+  blendSrc: THREE.OneFactor,
+  blendDst: THREE.OneFactor,
+  blendEquationAlpha: THREE.MaxEquation,
+  blendSrcAlpha: THREE.OneFactor,
+  blendDstAlpha: THREE.OneFactor,
+} as const;
 
 /** How dark a line's casing is, of its ink */
 const casingShade = 0.18;

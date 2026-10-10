@@ -275,7 +275,7 @@ export function tickStance(stance: Stance, group: THREE.Object3D, on: boolean, d
 }
 
 /** Ends the hold, and puts back the pose's own legs and hips: a still pose would not write over ours */
-function letGo(stance: Stance) {
+export function letGo(stance: Stance) {
   stance.held = false;
   for (const { thigh, shin, foot } of stance.legs) {
     for (const part of [thigh, shin, foot]) part.written.copy(part.bone.quaternion.copy(part.base));

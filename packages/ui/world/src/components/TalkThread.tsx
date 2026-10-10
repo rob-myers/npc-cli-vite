@@ -183,16 +183,24 @@ function Bubble(props: { line: TalkLine; faded: boolean; typing?: boolean; activ
       data-side={line.side}
       className={cn(
         "talk-bubble max-w-[85%] px-2.5 py-1 select-text",
+        line.thought !== undefined && "talk-thought italic",
         line.side === "left" ? "mr-auto mt-3 bg-zinc-900" : "bg-zinc-300 text-zinc-950",
         props.faded ? "brightness-75 hover:brightness-100" : line.side === "left" && "text-zinc-100",
         onClick !== undefined && "cursor-pointer",
       )}
       style={
-        tint === undefined ? undefined : { background: `linear-gradient(${tint}, ${tint}), var(--color-zinc-900)` }
+        line.thought !== undefined
+          ? { borderColor: line.thought.color, color: line.thought.color }
+          : tint === undefined
+            ? undefined
+            : { background: `linear-gradient(${tint}, ${tint}), var(--color-zinc-900)` }
       }
       onClick={onClick}
     >
       {line.who !== undefined && <div className="text-[10px] opacity-60">{line.who}</div>}
+      {line.thought !== undefined && (
+        <div className="text-[10px] uppercase not-italic opacity-70">{line.thought.khandha}</div>
+      )}
       {props.typing === true ? (
         <span className="talk-dots">
           <span />
@@ -244,6 +252,8 @@ export type TalkLine = {
   text: string;
   /** Tints it, and a rule names it where it changes */
   topic?: string;
+  /** Thought, not said: outlined in its khandha's colour, which it names */
+  thought?: { khandha: string; color: string };
   /** Who says it, where more than two talk */
   who?: string;
   title?: string;

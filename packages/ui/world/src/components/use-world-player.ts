@@ -47,8 +47,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = w.n?.[state.key];
         if (npc === undefined) return;
         const { face } = npc.anim;
-        // not whilst locked on: the phaser's target is whom they face
-        if (w.view.keysDown.has("r") === false || w.phasers?.isLocked(state.key) === true) {
+        // not whilst locked on: the phaser's target is whom they face. Nor sat or lain, when they cannot turn
+        if (
+          w.view.keysDown.has("r") === false ||
+          w.phasers?.isLocked(state.key) === true ||
+          npc.isNotStanding() === true
+        ) {
           if (face.aim === pointerAim) face.aim = null;
           return;
         }

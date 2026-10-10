@@ -85,4 +85,4 @@ export function createPostProcessing(): PostProcessing {
 }
 
 /** The coverage a fragment must carry to count as fully drawn — see `drawn` */
-const coverageFull = 0.85;
+export const coverageFull = 0.85;

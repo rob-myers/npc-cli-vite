@@ -740,7 +740,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               w.client === false
             ) {
               w.speech.say(e.meta.npcKey, "...");
-              w.speech.set({ panelOpen: true, panelTab: "speech" });
+              w.speech.set({ panelOpen: true, panelTab: "comms" });
             }
             // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
             if (

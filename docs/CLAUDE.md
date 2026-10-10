@@ -149,6 +149,13 @@ See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the pla
 keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
 World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `kamma` for what a press does.
 
+## Psi
+
+See `docs/psi.md` — the ONLY doc for it. In short: a target's mind is modelled on the five khandhas.
+Each time the player chooses them with psi, `Psi.exchange` sends their INTENTION as a wave, and the
+target's THOUGHT comes back as another, read as it arrives: over their head (`w.bubble.think`) and in their thread of
+the speech history (`w.speech.think`), marked with its khandha.
+
 ## Shields
 
 See `docs/shields.md` — the ONLY doc for them. In short: a decor rect with `meta.shield` stands as a
@@ -241,4 +248,5 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 - Never scale a decor quad non-uniformly: to reshape one e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`
 - To darken or recolour ONE placed decor, tint it — `tint=#777` in its symbol name (`meta.tint`, multiplied in) — rather than redrawing its svg, which changes every use
 - Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
+- The dev page hot-reloads every save, so a name used before it is imported or declared breaks the render at once. Make an edit whole in one write, then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched: it takes milliseconds, where `pnpm typecheck` takes minutes
 - Never stage (`git add`) — leave the index alone, even after editing a file that was already staged. Staging and committing are the user's

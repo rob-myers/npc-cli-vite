@@ -2,6 +2,7 @@ import { Select } from "@base-ui/react/select";
 import { cn, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useReducer, useState } from "react";
+import { type ThoughtTag, thoughtConfig } from "../service/thoughts";
 import type { AnimationClipKey } from "./NPCs";
 import PsiControls from "./PsiControls";
 import { Glyphed } from "./TalkThread";
@@ -19,6 +20,7 @@ export default function NpcBubbles() {
     (): State => ({
       debugs: new Set(),
       lines: new Map(),
+      thoughts: new Map(),
 
       openDebug(npcKey, { focus = false } = {}) {
         state.debugs.add(npcKey);
@@ -38,6 +40,11 @@ export default function NpcBubbles() {
         state.lines.set(npcKey, { words, secs, held: hold });
         state.sync(npcKey);
       },
+      think(npcKey, words, tag) {
+        if (!(npcKey in w.n)) return;
+        state.thoughts.set(npcKey, { words, tag, secs: thoughtConfig.shownSecs });
+        state.sync(npcKey);
+      },
       release(...npcKeys) {
         for (const npcKey of npcKeys) {
           const line = state.lines.get(npcKey);
@@ -52,16 +59,31 @@ export default function NpcBubbles() {
           state.lines.delete(npcKey);
           state.sync(npcKey);
         }
+        for (const [npcKey, thought] of state.thoughts) {
+          if ((thought.secs -= delta) > 0) continue;
+          state.thoughts.delete(npcKey);
+          state.sync(npcKey);
+        }
       },
       sync(npcKey) {
         const npc = w.n[npcKey];
         const debug = state.debugs.has(npcKey);
         const line = state.lines.get(npcKey);
-        if (npc === undefined || (debug === false && line === undefined)) return w.html.hide(bubbleKey(npcKey));
+        const thought = state.thoughts.get(npcKey);
+        if (npc === undefined || (debug === false && line === undefined && thought === undefined)) {
+          return w.html.hide(bubbleKey(npcKey));
+        }
         w.html.show(
           bubbleKey(npcKey),
           { object: npc.skinnedMesh, offset: npc.bubbleOffset },
-          debug ? <NpcBubble w={w} npcKey={npcKey} words={line?.words} /> : <SaidBubble words={line?.words ?? ""} />,
+          debug ? (
+            <NpcBubble w={w} npcKey={npcKey} words={line?.words} />
+          ) : (
+            <div className="flex flex-col items-center">
+              {thought !== undefined && <ThoughtBubble words={thought.words} tag={thought.tag} />}
+              {line !== undefined && <SaidBubble words={line.words} />}
+            </div>
+          ),
           // its close button closes the debug section alone: a line said stays up
           debug
             ? { onHide: () => state.debugs.delete(npcKey) && state.lines.has(npcKey) && state.sync(npcKey) }
@@ -72,6 +94,7 @@ export default function NpcBubbles() {
         for (const npcKey of npcKeys) {
           state.debugs.delete(npcKey);
           state.lines.delete(npcKey);
+          state.thoughts.delete(npcKey);
         }
         w.html.hide(...npcKeys.map(bubbleKey));
       },
@@ -90,6 +113,19 @@ export default function NpcBubbles() {
 function SaidBubble({ words }: { words: string }) {
   return (
     <div className="mb-3 w-max max-w-[28rem] rounded-2xl border-2 border-white/30 bg-black/75 px-5 py-2 text-xl text-white/95">
+      <Glyphed text={words} />
+    </div>
+  );
+}
+
+/** A thought read off them, click-through: outlined in its khandha's colour, which it names */
+function ThoughtBubble({ words, tag }: { words: string; tag: ThoughtTag }) {
+  return (
+    <div
+      className="mb-3 w-max max-w-[28rem] rounded-2xl border-2 border-dashed bg-black/60 px-5 py-2 text-xl italic"
+      style={{ borderColor: tag.color, color: tag.color }}
+    >
+      <div className="text-sm uppercase not-italic opacity-70">{tag.khandha}</div>
       <Glyphed text={words} />
     </div>
   );
@@ -199,12 +235,16 @@ export type State = {
   debugs: Set<string>;
   /** The line each said last, and the seconds it has left — none whilst `held` */
   lines: Map<string, { words: string; secs: number; held: boolean }>;
+  /** The thought last read off each, and the seconds it has left */
+  thoughts: Map<string, { words: string; tag: ThoughtTag; secs: number }>;
   /** Opens their debug section — `focus` its close button, open already or not */
   openDebug(npcKey: string, opts?: { focus?: boolean }): void;
   toggleDebug(npcKey: string): void;
   closeDebug(npcKey: string): void;
   /** Over them for `secs`, replacing what they said before — or until released, when `hold` */
   say(npcKey: string, words: string, opts?: { secs?: number; hold?: boolean }): void;
+  /** Over them as a thought, above anything they are saying, for `thoughtConfig.shownSecs` */
+  think(npcKey: string, words: string, tag: ThoughtTag): void;
   /** A held line starts its `lineSecs`, e.g. once answered */
   release(...npcKeys: string[]): void;
   /** Lines run down whilst unpaused — see `World`'s `onTick` */

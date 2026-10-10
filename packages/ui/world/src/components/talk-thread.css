@@ -155,3 +155,12 @@
   border-color: transparent;
   background: #4ade80;
 }
+
+/* a thought, not said: an outline with no tail */
+.talk-thought {
+  background: transparent;
+  border: 1px dashed;
+}
+.talk-thought::after {
+  display: none;
+}
