@@ -12,7 +12,10 @@ import {
   gaitStride,
   headShakeConfig,
   hitConfig,
+  lieRoll,
   npcScale,
+  sitArmVia,
+  sitTurn,
   stanceConfig,
   strafeEaseSecs,
   strafeSpeed,
@@ -39,6 +42,8 @@ export class NpcAnimation {
 
   /** The clip on show — a KEY, so it survives a hot-reload's new clip objects */
   pose: AnimationClipKey = defaultIdleAnimationClipKey;
+  /** Whether `pose` has them stood, sat or lain: kept, as it is read every tick */
+  posture = postureOf(defaultIdleAnimationClipKey);
   /** Metres of the head's pivot above their feet in `pose` — see `w.npc.headYByPose` */
   headY = 0;
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
@@ -80,6 +85,10 @@ export class NpcAnimation {
   stance = newStance();
   /** The head, shared by both */
   upperHead = { entry: null as null | UpperBone };
+  /** World seconds at which they last rolled over in bed — see `rollTo` */
+  rolledAt = -Infinity;
+  /** A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head */
+  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false };
   /** In pain, or pacified: the clip shown instead of idle, seconds into it, and what follows it — see `setHurt` */
   hurt = null as null | { key: AnimationClipKey; secs: number; next: null | AnimationClipKey };
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
@@ -145,9 +154,10 @@ export class NpcAnimation {
     const { group } = this.npc;
     if (stanceConfig.on && group !== null && isStride(this.pose) && isStill(next))
       takeStance(this.stance, group, this.npc);
-    // sat or lain they are elsewhere, and a hold easing out would slide them on the seat
-    if (this.stance.held === true && postureOf(next) !== "stand") letGo(this.stance);
     this.pose = next;
+    this.posture = postureOf(next);
+    // sat or lain they are elsewhere, and a hold easing out would slide them on the seat
+    if (this.stance.held === true && this.posture !== "stand") letGo(this.stance);
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
     this.npc.setLabelYShift(labelYShiftForClip(next));
@@ -155,10 +165,16 @@ export class NpcAnimation {
 
   /**
    * Ease `key` in over an arm (and the head), or out with `null` — from another shown, in `swapSecs`.
-   * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`
+   * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`.
+   * `past`: sat, the arm goes up and comes down by way of `sitArmVia`, past a table's edge.
+   * `onHead`: its hand is at their head, and stays there as the head turns — see `tickTurn`
    */
-  setUpper(key: null | AnimationClipKey, { swapSecs = upperFadeSecs, side = "right" as Side, played = false } = {}) {
+  setUpper(
+    key: null | AnimationClipKey,
+    { swapSecs = upperFadeSecs, side = "right" as Side, played = false, past = false, onHead = false } = {},
+  ) {
     const u = this.upperOf(side);
+    if (key !== null) Object.assign(u, { past, onHead });
     if (played === true) Object.assign(u, { time: 0, blend: 1 });
     if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
       // shown: ease over from where they are, in `swapSecs`
@@ -207,6 +223,7 @@ export class NpcAnimation {
       Object.assign(this.upperOf(side), { torso: bonesOf("stomach", "chest"), bones });
     }
     this.upperHead.entry = bonesOf("head")[0] ?? null;
+    this.turn.bones = bonesOf("stomach", "chest", "head");
   }
 
   upperOf(side: Side) {
@@ -216,8 +233,15 @@ export class NpcAnimation {
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
   tick(delta: number) {
     this.mixer.update(delta);
+    // as the pose and its arms' clips left them, before either reads them again
+    if (this.turn.written === true) {
+      for (const { bone, base, written } of this.turn.bones)
+        if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
+      this.turn.written = false;
+    }
     this.tickUpper(delta);
     this.tickHeadShake(delta);
+    this.tickTurn(delta);
     this.tickHurt(delta);
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
@@ -306,6 +330,97 @@ export class NpcAnimation {
     }
   }
 
+  /** Roll one lain to look towards `at`: onto the side it is to, or onto their back for one along their own line */
+  rollTo(at: Geom.VectJson) {
+    const from = keyOf(this.idleClip);
+    if (from !== "lie" && from !== "lie_left" && from !== "lie_right") return;
+    // one roll at a time: a fade cut short by the next jerks them
+    const secs = this.w.timer.getElapsedTime();
+    if (secs - this.rolledAt < lieRoll.secs) return;
+    const { position, rotation } = this.npc;
+    /** Metres `at` is to their left */
+    const left = (at.y - position.z) * Math.sin(rotation.y) - (at.x - position.x) * Math.cos(rotation.y);
+    const towards = left > 0 ? "lie_left" : "lie_right";
+    const { side, back } = lieRoll;
+    // between the two they stay as they are, unless turned the other way
+    const kept = from === towards ? from : "lie";
+    const to = Math.abs(left) < back ? "lie" : Math.abs(left) < side ? kept : towards;
+    if (to === from) return;
+    this.rolledAt = secs;
+    this.idleClip = this.npc.clips[to];
+    if (this.pose === from) this.setPose(to);
+  }
+
+  /** Turn towards `at` whilst sat, as far as they can without turning round — `null` to face ahead again */
+  turnTo(at: null | Geom.VectJson) {
+    const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
+    this.turn.target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
+  }
+
+  /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
+  tickTurn(delta: number) {
+    const { turn } = this;
+    if (this.posture !== "sit") turn.target = 0;
+    if (turn.target === 0 && turn.value === 0) return; // nearly everyone, nearly always
+    turn.value += (turn.target - turn.value) * (1 - Math.exp(-sitTurn.rate * delta));
+    if (Math.abs(turn.value - turn.target) < 1e-3) turn.value = turn.target;
+    else this.w.r3f?.invalidate(); // still on its way
+    if (turn.value === 0) return;
+    const head = this.upperHead.entry?.bone;
+    /** Each hand at their head, where the head has it now: it goes there again once that has turned */
+    for (const side of sides) {
+      const u = this.upperOf(side);
+      const forearm = u.bones[1]?.bone;
+      held[side] = head != null && forearm !== undefined && u.key !== null && u.onHead === true;
+      if (head == null || forearm === undefined || held[side] === false) continue;
+      forearm.updateWorldMatrix(true, false);
+      head.updateWorldMatrix(true, false);
+      head.worldToLocal(forearm.localToWorld(tmpHeld[side].copy(forearm.position)));
+    }
+    for (const { bone, base, written } of turn.bones) {
+      if (bone.parent === null) continue;
+      base.copy(bone.quaternion);
+      const share = bone.name === "head" ? 1 - sitTurn.body : sitTurn.body / 2;
+      const axis = tmpAxis.set(0, 1, 0).applyQuaternion(bone.parent.getWorldQuaternion(tmpQuat).invert());
+      written.copy(bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(axis, turn.value * share)));
+    }
+    turn.written = true;
+    for (const side of sides) {
+      if (head == null || held[side] === false) continue;
+      head.updateWorldMatrix(true, false);
+      this.reachTo(side, head.localToWorld(tmpHeld[side]), this.upperOf(side).eased);
+    }
+  }
+
+  /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow stays to the side it is on */
+  reachTo(side: Side, to: THREE.Vector3, weight: number) {
+    const [upper, fore] = this.upperOf(side).bones;
+    if (fore === undefined || upper.bone.parent === null) return;
+    upper.bone.updateWorldMatrix(true, true);
+    const shoulder = tmpShoulder.setFromMatrixPosition(upper.bone.matrixWorld);
+    const reach = tmpWant.copy(to).sub(shoulder);
+    const arm = tmpFrom.setFromMatrixPosition(fore.bone.matrixWorld).sub(shoulder);
+    /** The forearm is as long as the upper arm */
+    const tip = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(shoulder);
+    const [l1, l2] = [arm.length(), tip.distanceTo(arm)];
+    const d = THREE.MathUtils.clamp(reach.length(), 1e-4, (l1 + l2) * 0.999);
+    reach.normalize();
+    // two bones to a point: the elbow lies `along` the reach and `out` from it, towards where it is now
+    const along = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
+    const out = Math.sqrt(Math.max(0, l1 * l1 - along * along));
+    const pole = tmpPole.copy(arm).addScaledVector(reach, -arm.dot(reach)).normalize();
+    const elbow = tmpAlong.copy(reach).multiplyScalar(along).addScaledVector(pole, out).normalize();
+    const swing = turnWithin(upper.bone.parent, arm.normalize(), elbow, Math.PI, weight);
+    if (swing !== null) upper.written.copy(upper.bone.quaternion.premultiply(swing));
+
+    fore.bone.updateWorldMatrix(true, false);
+    const from = tmpFrom.setFromMatrixPosition(fore.bone.matrixWorld);
+    const tipNow = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(from).normalize();
+    const want = reach.multiplyScalar(d).add(shoulder).sub(from).normalize();
+    const bend = turnWithin(upper.bone, tipNow, want, Math.PI, weight);
+    if (bend !== null) fore.written.copy(fore.bone.quaternion.premultiply(bend));
+  }
+
   /** A "no": they shake their head, over whatever pose or upper clip has it */
   shakeHead() {
     this.headShake = 0;
@@ -332,8 +447,11 @@ export class NpcAnimation {
 
   tickUpperSide(side: Side, delta: number) {
     const u = this.upperOf(side);
-    u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / upperFadeSecs, 0, 1);
-    if (u.key === null || this.npc.group === null) return;
+    if (u.key === null) return; // let go of: its blend is nought already
+    const via = u.past === true && this.posture === "sit" ? sitArmVias[side] : null;
+    const fadeSecs = upperFadeSecs * (via === null ? 1 : sitArmVia.slow);
+    u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / fadeSecs, 0, 1);
+    if (this.npc.group === null) return;
 
     // sampled, not mixed: a mixer only writes a bone whose value changed, so a still clip would leave ours
     const clip = this.npc.clips[u.key];
@@ -343,14 +461,22 @@ export class NpcAnimation {
     const lean = adds === true ? this.turnUpperTorso(u, torso, t) : this.leanOfUpper(u, torso);
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
-    for (const { bone, base, written, from } of u.bones) {
+    for (let i = 0; i < u.bones.length; i++) {
+      const { bone, base, written, from } = u.bones[i];
       // the pose's, unless its mixer left ours there — as a still pose e.g. `lie` does
       if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
       const track = tracks.get(bone.name);
       let q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
       if (track !== undefined && bone.parent?.name === "chest") q.premultiply(lean);
       if (s < 1) q = tmpSwap.slerpQuaternions(from, q, s);
-      written.copy(bone.quaternion.slerpQuaternions(base, q, t));
+      if (via === null) {
+        written.copy(bone.quaternion.slerpQuaternions(base, q, t));
+        continue;
+      }
+      // towards the pose aside, and on to the clip's before it gets there: one move, with no stop
+      const { there, onFrom } = sitArmVia;
+      bone.quaternion.copy(base).slerp(via[i], smooth(u.blend / there));
+      written.copy(bone.quaternion.slerp(q, smooth((u.blend - onFrom) / (1 - onFrom))));
     }
     const head = tracks.get("head");
     u.hasHead = head !== undefined;
@@ -700,6 +826,23 @@ const upperAddsTorso = new Set<string>(["sit_reach"]);
 const upperBodyBones = ["head", "rightarm", "rightforearm", "leftarm", "leftforearm"];
 
 type Side = "left" | "right";
+const sides = ["left", "right"] as const;
+/** Which hands are at their head, this tick — see `tickTurn` */
+const held = { left: false, right: false };
+
+/** Smoothstep, held outside `0` to `1` */
+const smooth = (x: number) => THREE.MathUtils.smoothstep(x, 0, 1);
+/** `sitArmVia` as an arm's two bones have it: mirrored for the right */
+const sitArmVias = Object.fromEntries(
+  sides.map((side) => [
+    side,
+    [sitArmVia.arm, sitArmVia.forearm].map(([x, y, z]) => {
+      const sign = side === "left" ? 1 : -1;
+      const [rx, ry, rz] = [x, y * sign, z * sign].map(THREE.MathUtils.degToRad);
+      return new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, "ZYX"));
+    }),
+  ]),
+) as Record<Side, THREE.Quaternion[]>;
 /** A bone, the pose's rotation of it, ours as last written, and where a swap set out from — see `tickUpper` */
 type UpperBone = { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion };
 
@@ -716,6 +859,10 @@ const newUpper = () => ({
   target: 0,
   /** Seconds into its clip */
   time: 0,
+  /** Sat, it goes up and down by way of `sitArmVia` */
+  past: false,
+  /** Its hand is at their head */
+  onHead: false,
   /** Eased `0` to `1` from the last clip's pose to this one's — see `setUpper` */
   swap: 1,
   swapSecs: upperFadeSecs,
@@ -745,6 +892,9 @@ const tmpAlong = new THREE.Vector3();
 const tmpWant = new THREE.Vector3();
 const tmpFrom = new THREE.Vector3();
 const tmpAxis = new THREE.Vector3();
+const tmpTip = new THREE.Vector3();
+const tmpPole = new THREE.Vector3();
+const tmpHeld = { left: new THREE.Vector3(), right: new THREE.Vector3() };
 
 /** `weight` of the turn from `from` onto `want`, world and unit, `maxRad` at most: about `parent`'s child, so in its frame */
 function turnWithin(parent: THREE.Object3D, from: THREE.Vector3, want: THREE.Vector3, maxRad: number, weight: number) {

@@ -20,7 +20,7 @@ import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
 import type { AnimationClipKey } from "./NPCs";
-import { NpcAnimation, postureOf } from "./npc-animation";
+import { NpcAnimation } from "./npc-animation";
 
 export class Npc {
   key: string;
@@ -411,9 +411,14 @@ export class Npc {
     return this.anim.moving;
   }
 
+  /** Whether their current clip has them stood, sat or lain */
+  get posture() {
+    return this.anim.posture;
+  }
+
   /** Whether their current clip has them off their feet, i.e. `sit` or `lie` */
   isNotStanding() {
-    return postureOf(this.anim.pose) !== "stand";
+    return this.anim.posture !== "stand";
   }
 
   /**
@@ -561,6 +566,8 @@ const legalPositionMargin = 0.05;
 const npcCannotLookForClip: Record<string, string | undefined> = {
   sit: "not while sitting",
   lie: "not while lying",
+  lie_left: "not while lying",
+  lie_right: "not while lying",
 };
 
 export function rejectNoop(_e: Error): void {}
