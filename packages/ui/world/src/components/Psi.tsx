@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext, useEffect } from "react";
+import { mrt, output, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { defaultPsiTune, type PsiTune, psiKhandhas } from "../const.npc";
 import { eased } from "../service/fade";
@@ -169,6 +170,12 @@ export default function Psi() {
         state.syncTune();
         w.r3f?.invalidate();
       },
+      syncOutlineMask() {
+        for (const { material } of [state.mesh, state.thoughtMesh]) {
+          material.mrtNode = w.view.npcMaskMrt === null ? null : captionMrt;
+          material.needsUpdate = true;
+        }
+      },
       syncTune() {
         state.tune = { ...defaultPsiTune, ...state.tune }; // a field added since, e.g. over hmr
         const { width, opacity, color, tint } = state.tune;
@@ -223,6 +230,7 @@ export default function Psi() {
     ] as const) {
       Object.assign(mesh.material, { vertexNode, colorNode, needsUpdate: true });
     }
+    state.syncOutlineMask();
     state.upload();
   }, [w.view.fadeRoomsFx.uid]);
 
@@ -277,7 +285,12 @@ export type State = PsiResources & {
   setTune(partial: Partial<PsiTune>): void;
   /** `tune` into the uniforms */
   syncTune(): void;
+  /** Keeps the waves' `mrtNode` in step with `w.view.npcMaskMrt` — see `NPCs.syncOutlineMask` */
+  syncOutlineMask(): void;
 };
+
+/** A wave marks itself a caption in `npcMask.g`, so an npc's border is not drawn over it — see `npc-outline` */
+const captionMrt = mrt({ npcMask: vec4(0, 1, 0, output.a) });
 
 const psiConfig = {
   /** Metres an npc's peak sits above their head bone's pivot: standing, that is the tuned `1.3` */

@@ -70,3 +70,5 @@ less than nought for none.
 - **The intention** is in the player's colour (`PsiTune.color`). **The thought** is in its khandha's.
 - The shader is told only where the two of them are (`playerAt`, `otherAt`).
 - Over a pale deck a line is laid over it in a deeper ink with a dark casing, not added as light.
+- An npc's border is not drawn over a wave. A wave marks itself a caption in `npcMask.g`, as a
+  label does (`syncOutlineMask`, see `service/npc-outline`).
