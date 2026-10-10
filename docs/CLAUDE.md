@@ -248,4 +248,5 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 - Never scale a decor quad non-uniformly: to reshape one e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`
 - To darken or recolour ONE placed decor, tint it — `tint=#777` in its symbol name (`meta.tint`, multiplied in) — rather than redrawing its svg, which changes every use
 - Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
+- The dev page hot-reloads every save, so a name used before it is imported or declared breaks the render at once. Make an edit whole in one write, then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched: it takes milliseconds, where `pnpm typecheck` takes minutes
 - Never stage (`git add`) — leave the index alone, even after editing a file that was already staged. Staging and committing are the user's

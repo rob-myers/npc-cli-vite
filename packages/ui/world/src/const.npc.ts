@@ -320,11 +320,11 @@ export const fadeSecs: Record<
 export const defaultPsiTune: PsiTune = {
   speed: 0.45,
   width: 0.5,
+  packet: 1,
+  amp: 0.12,
+  line: 0.35,
   opacity: 0.3,
-  fadeInSecs: 0.8,
-  fadeOutSecs: 0.3,
   color: "#9eb6ff",
-  tint: 1,
 };
 
 /** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
@@ -342,10 +342,10 @@ export type KhandhaKey = keyof typeof psiKhandhas;
 export const psiTuneRanges = {
   speed: [0.05, 2, 0.05],
   width: [0.5, 8, 0.25],
+  packet: [0.2, 3, 0.1],
+  amp: [0, 0.5, 0.01],
+  line: [0, 1, 0.05],
   opacity: [0.05, 1, 0.05],
-  fadeInSecs: [0.1, 3, 0.1],
-  fadeOutSecs: [0.1, 3, 0.1],
-  tint: [0, 1, 0.05],
 } as const;
 
 /** What the player's bubble adjusts of `Psi`, persisted */
@@ -354,15 +354,16 @@ export type PsiTune = {
   speed: number;
   /** Pixels wide a wave's line is drawn */
   width: number;
+  /** Metres long a wave's sinusoid is */
+  packet: number;
+  /** Metres the sinusoid rises and falls */
+  amp: number;
+  /** How much of full strength the line has away from the sinusoid */
+  line: number;
   /** Of each wave, which glows additively: lower is fainter */
   opacity: number;
-  /** Seconds psi takes to come onto someone, and to leave them */
-  fadeInSecs: number;
-  fadeOutSecs: number;
   /** The player's waves: their intention */
   color: string;
-  /** How much of its hue a wave carries: none is white */
-  tint: number;
 };
 
 /** What an npc may be posed as — see jsh `pose` */

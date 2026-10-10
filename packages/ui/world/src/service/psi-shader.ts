@@ -1,48 +1,51 @@
 import {
+  cameraPosition,
   cameraProjectionMatrix,
   cameraViewMatrix,
+  cos,
   Discard,
+  exp,
   Fn,
   float,
   fwidth,
-  If,
-  Loop,
   mix,
   positionLocal,
+  sin,
   smoothstep,
   uniform,
-  uniformArray,
   varying,
   vec2,
   vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { MAX_GEOMORPH_INSTANCES } from "../const.env";
 import { defaultPsiTune } from "../const.npc";
-import type { FadeRooms } from "./fade-rooms";
-import { type RoomSlots, slotUvPerMetre } from "./room-slots";
+import { coverageFull } from "./post-processing";
 
 export type PsiResources = ReturnType<typeof createPsiResources>;
 
 export function createPsiResources() {
-  // a square about whoever sends a wave, level with their head: `x` and `z` from `-1` to `1`
+  // a strip from one of them to the other: `z` from `-1` to `1` along it, `x` across it
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute([-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1], 3));
   geo.setIndex([0, 2, 1, 1, 2, 3]);
 
-  /** The player, and whom psi is on: world `xz`, eased presence, the height of their crown — see `Psi.upload` */
+  /** The player, and whom psi is on: world `xz`, eased presence, the height of the foot of their head — see `Psi.upload` */
   const playerAt = uniform(new THREE.Vector4());
   const otherAt = uniform(new THREE.Vector4());
-  /**
-   * The two waves, each as metres its front has come, less than nought for none — see `Psi.exchange`.
-   * The player's intention out from them, and the other's thought out from them
-   */
-  const intent = uniform(-1);
-  const thought = uniform(-1);
+  /** Metres the wave's sinusoid has come, less than nought for none — see `Psi.exchange` */
+  const come = uniform(-1);
+  /** Which wave it is: `0` the player's intention out from them, `1` the other's thought back */
+  const back = uniform(0);
   /** The colour of the thought on its way: its khandha's — see `Psi.syncTune` */
   const thoughtColor = uniform(new THREE.Color(defaultPsiTune.color));
   const width = uniform(defaultPsiTune.width);
+  /** Metres long a wave's sinusoid is, and how far it rises and falls — see `PsiTune` */
+  const packet = uniform(defaultPsiTune.packet);
+  /** Amplitude */
+  const amp = uniform(defaultPsiTune.amp);
+  /** How much of full strength the line has away from the sinusoid */
+  const line = uniform(defaultPsiTune.line);
   const opacity = uniform(defaultPsiTune.opacity);
   const color = uniform(new THREE.Color(defaultPsiTune.color));
   /** From `theme.npcs.fxStrength` */
@@ -55,37 +58,32 @@ export function createPsiResources() {
   const coreColor = uniform(new THREE.Color("#fff"));
   /** Scales the finished line's alpha: over a pale deck, where its strength only firms it up */
   const fade = uniform(1);
-  // per geomorph, three `vec4`s — see `syncGms`
-  const gmValues = Array.from({ length: MAX_GEOMORPH_INSTANCES * 3 }, () => new THREE.Vector4());
-  const gmArray = uniformArray<"vec4">(gmValues, "vec4");
-  const gmCount = uniform(0);
 
-  // additive, so a line glows over a dark floor — `Psi.syncTune` lays it over a pale one instead
+  // added light, so a line glows over a dark floor — `Psi.syncTune` lays it over a pale one instead
   const mat = new THREE.MeshBasicNodeMaterial({
     transparent: true,
     depthWrite: false,
     side: THREE.DoubleSide,
-    blending: THREE.AdditiveBlending,
+    ...glowBlend,
   });
-  // a mesh to each wave
-  const [mesh, thoughtMesh] = [mat, mat.clone()].map((material) => {
-    const made = new THREE.Mesh(geo, material);
-    made.frustumCulled = false;
-    made.renderOrder = +5;
-    made.visible = false;
-    return made;
-  });
+  // one mesh serves both waves, only one being on its way at a time
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = +5;
+  mesh.visible = false;
 
   return {
     geo,
     mesh,
-    thoughtMesh,
     playerAt,
     otherAt,
-    intent,
-    thought,
+    come,
+    back,
     thoughtColor,
     width,
+    packet,
+    amp,
+    line,
     opacity,
     color,
     gain,
@@ -93,21 +91,21 @@ export function createPsiResources() {
     casing,
     coreColor,
     fade,
-    gmValues,
-    gmArray,
-    gmCount,
   };
 }
 
-/** The nodes of the player's intention, and of the other's thought: for `mesh` and `thoughtMesh` */
+/** The nodes of whichever wave is on its way: the player's intention, or the other's thought */
 export function psiNodes(
   {
     playerAt,
     otherAt,
-    intent,
-    thought,
+    come,
+    back,
     thoughtColor,
     width,
+    packet,
+    amp,
+    line,
     opacity,
     color,
     gain,
@@ -115,125 +113,112 @@ export function psiNodes(
     casing,
     coreColor,
     fade,
-    gmArray,
-    gmCount,
   }: PsiResources,
   {
-    fadeRoomsFx,
     objectPick,
     foldNode,
-    roomSlots,
   }: {
-    fadeRoomsFx: FadeRooms;
-    roomSlots: RoomSlots;
     objectPick: THREE.UniformNode<"float", number>;
     foldNode: THREE.UniformNode<"float", number>;
   },
 ) {
-  const { coneHalfDeg, coneSoftDeg, startOver, landFrom } = shaderConfig;
+  const { wavelength, crestSpeedOver, lineSpeedOver, lineTip, sideRoom, startOver, landFrom } = shaderConfig;
   const between = otherAt.xy.sub(playerAt.xy).length();
   const half = width.mul(0.5);
   const strength = opacity.mul(gain);
 
-  /** `(uv, gmId)` of world `q` in the room-slot texture, `gmId` `-1` off the map */
-  const gmUvAt = Fn(([q]: [THREE.Node<"vec2">]) => {
-    const gmId = float(-1).toVar();
-    const uvAt = vec2(0).toVar();
-    Loop({ type: "int", start: 0, end: gmCount.toInt() as THREE.Node<"int"> }, ({ i }: { i: THREE.Node<"int"> }) => {
-      // `(a, b, c, d)`, `(e, f, x, y)`, `(width, height)`: inverse transform and local bounds
-      const m = gmArray.element(i.mul(3));
-      const t = gmArray.element(i.mul(3).add(1));
-      const size = gmArray.element(i.mul(3).add(2));
-      const local = vec2(m.x.mul(q.x).add(m.z.mul(q.y)).add(t.x), m.y.mul(q.x).add(m.w.mul(q.y)).add(t.y));
-      const rel = local.sub(t.zw);
-      const inside = rel.x.greaterThanEqual(0).and(rel.y.greaterThanEqual(0));
-      If(gmId.lessThan(0).and(inside).and(rel.x.lessThanEqual(size.x)).and(rel.y.lessThanEqual(size.y)), () => {
-        gmId.assign(i.toFloat());
-        uvAt.assign(rel.mul(slotUvPerMetre));
-      });
-    });
-    return vec3(uvAt, gmId);
-  });
+  // a line `from` one of them `to` the other in `ink`, and a sinusoid `come` metres along it
+  const from = mix(playerAt, otherAt, back);
+  const to = mix(otherAt, playerAt, back);
+  const ink = mix(color, thoughtColor, back);
+  // the player's is theirs alone to send: the other's needs psi to be on them
+  const present = playerAt.z.mul(mix(float(1), otherAt.z, back));
+  // The strip runs head to head, wide enough for the sinusoid.
+  // It turns about that line to face the camera, so the wave reads from any side, above included
+  const share: THREE.Node<"float"> = positionLocal.z.mul(0.5).add(0.5);
+  const side: THREE.Node<"float"> = positionLocal.x.mul(amp.add(sideRoom));
+  const tail = vec3(from.x, from.w, from.y);
+  const span = vec3(to.x, to.w, to.y).sub(tail);
+  const on3 = tail.add(span.mul(share));
+  const across = span.cross(cameraPosition.sub(on3));
+  const at = on3.add(across.div(across.length().max(1e-4)).mul(side));
+  const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(at, 1)));
+  /** Metres along the line, and off it */
+  const onLine: THREE.Node<"vec2"> = vec2(share.mul(between), side);
+  const on = varying(onLine);
 
-  /** A wave `come` metres out `from` one of them, on its way `to` the other, in `ink`: one line, at its front */
-  const waveNodes = (
-    from: THREE.Node<"vec4">,
-    to: THREE.Node<"vec4">,
-    come: THREE.Node<"float">,
-    ink: THREE.Node<"vec3">,
-    /** How much of it there is to see, by whose presence */
-    present: THREE.Node<"float">,
-    name: string,
-  ) => {
-    // the square reaches as far as whom it makes for
-    const at = from.xy.add(positionLocal.xz.mul(between));
-    const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(at.x, from.w, at.y, 1)));
-    const q = varying(at, name);
+  const colorNode = Fn(() => {
+    // the sinusoid is a few waves about where it has come to, dying away either side
+    const within = on.x.sub(come).div(packet.mul(0.5).max(1e-3));
+    // it grows out of nothing over `startOver`, and is gone by the time it is there
+    const shown = smoothstep(0, startOver, come).mul(smoothstep(between.sub(landFrom), between, come).oneMinus());
+    const swell = exp(within.mul(within).negate()).mul(shown);
+    // its crests outrun it, so it plays as it goes: each rises at its back and dies at its front
+    const phase = on.x.sub(come.mul(crestSpeedOver)).mul((2 * Math.PI) / wavelength);
+    const off = amp.mul(swell).mul(sin(phase));
+    const slope = amp
+      .mul(swell)
+      .mul(cos(phase))
+      .mul((2 * Math.PI) / wavelength);
+    // pixels from the curve: metres over what a pixel covers, less for its slant
+    const metresPerPx = fwidth(on).length().mul(Math.SQRT1_2).max(1e-6);
+    const px = on.y
+      .sub(off)
+      .abs()
+      .div(metresPerPx.mul(slope.mul(slope).add(1).sqrt()));
+    const core = smoothstep(half.sub(0.5), half.add(0.5), px).oneMinus(); // solid, 1px edge
+    // the core and its casing, should it have one
+    const drawn = smoothstep(half.add(casing).sub(0.5), half.add(casing).add(0.5), px).oneMinus();
+    // the line runs out ahead of the sinusoid, and joins them first
+    const reach = come.mul(lineSpeedOver);
+    // …and stays for the reply, which would otherwise have to lay it again
+    const laid = smoothstep(reach.sub(lineTip), reach, on.x).oneMinus().max(back);
+    const bright = mix(line, float(1), swell);
+    // clamped after the strength, so one past full firms up the line's soft edges too
+    const shape = drawn.mul(laid).mul(bright).mul(present).mul(foldNode).mul(strength).min(1);
 
-    const colorNode = Fn(() => {
-      const away = q.sub(from.xy);
-      const gone = away.length();
-      // pixels from its front: metres, over what a pixel covers
-      const px = come.sub(gone).abs().div(fwidth(q).length().mul(Math.SQRT1_2).max(1e-6));
-      const core = smoothstep(half.sub(0.5), half.add(0.5), px).oneMinus(); // solid, 1px edge
-      // the core and its casing, should it have one
-      const line = smoothstep(half.add(casing).sub(0.5), half.add(casing).add(0.5), px).oneMinus();
-      // it grows out of nothing, and is gone by the time it is there
-      const shown = smoothstep(0, startOver, come).mul(smoothstep(between.sub(landFrom), between, come).oneMinus());
-      // only towards whom it makes for
-      const ahead = away.dot(to.xy.sub(from.xy)).div(gone.mul(between).max(1e-4));
-      const cone = smoothstep(cosDeg(coneHalfDeg + coneSoftDeg), cosDeg(coneHalfDeg - coneSoftDeg), ahead);
-      // clamped after the strength, so one past full firms up the line's soft edges too
-      const shape = line.mul(shown).mul(cone).mul(present).mul(foldNode).mul(strength).min(1);
+    // nothing to pick, and most of the strip is off the wave
+    const a = objectPick.equal(0).select(shape, float(0));
+    Discard(a.lessThan(1 / 512)); // which would otherwise still blend
+    // alpha stops at one, so strength past it whitens an additive line
+    const lit = ink.mul(mix(float(1), strength.max(1), whiten));
+    // over a pale deck, near white cased in its own ink, darkened: read over white and grey alike
+    const rgb = mix(lit.mul(casingShade), mix(coreColor, lit, whiten), core.max(whiten));
+    // Added light is scaled here, not by the blend. Its alpha is then free to count as coverage.
+    // The post pass would otherwise weigh a wave over empty canvas by its faint alpha
+    const covered = smoothstep(0, 1 / 64, a).mul(coverageFull);
+    return vec4(rgb.mul(mix(float(1), a, whiten)), mix(a.mul(fade), covered, whiten));
+  })();
 
-      // most of the square is off the line, and a discard alone would still look its room up
-      const a = float(0).toVar();
-      If(objectPick.equal(0).and(shape.greaterThanEqual(1 / 512)), () => {
-        // a room out of view takes from them, but only in `sight`…
-        const gmUv = gmUvAt(q).toVar();
-        const gmId = gmUv.z;
-        // not heeding broad walls, whose slot shows with any room they abut: within one reads as no room
-        const slot = roomSlots.decodeUvVisibility(gmUv.xy, gmId.max(0).toUint() as THREE.Node<"uint">, {
-          branched: true,
-        });
-        // …where it dims them rather than hides them: sensed past what is seen. Off the map they go
-        const unseen = fadeRoomsFx.sightNode.oneMinus();
-        const roomShown = gmId
-          .greaterThanEqual(0)
-          .select(fadeRoomsFx.getVisiblity(slot).max(unseen.max(unseenShown)), unseen);
-        a.assign(shape.mul(roomShown));
-      });
-      Discard(a.lessThan(1 / 512)); // which would otherwise still blend
-      // alpha stops at one, so strength past it whitens an additive line
-      const inked = ink.mul(mix(float(1), strength.max(1), whiten));
-      // over a pale deck, near white cased in its own ink, darkened: read over white and grey alike
-      return vec4(mix(inked.mul(casingShade), mix(coreColor, inked, whiten), core.max(whiten)), a.mul(fade));
-    })();
-
-    return { vertexNode, colorNode };
-  };
-
-  return {
-    // the player's is theirs alone to send: the other's needs psi to be on them
-    intent: waveNodes(playerAt, otherAt, intent, color, playerAt.z, "vPsiIntent"),
-    thought: waveNodes(otherAt, playerAt, thought, thoughtColor, playerAt.z.mul(otherAt.z), "vPsiThought"),
-  };
+  return { vertexNode, colorNode };
 }
 
-/** How much of a wave is left in a room out of view, in `sight` */
-const unseenShown = 0.3;
-
 const shaderConfig = {
-  /** Degrees either side of the way to whom it makes for a wave is drawn within, and the softening of that edge */
-  coneHalfDeg: 30,
-  coneSoftDeg: 3,
-  /** Metres a front has come by the time it is fully there */
+  /** Metres from one crest of the sinusoid to the next */
+  wavelength: 0.35,
+  /** How many times faster than the sinusoid its crests go */
+  crestSpeedOver: 0.5,
+  /** How many times faster than the sinusoid the line runs out */
+  lineSpeedOver: 6,
+  /** Metres over which the line's leading end fades */
+  lineTip: 0.3,
+  /** Metres of strip either side of the sinusoid's swing, for its line's own width */
+  sideRoom: 0.1,
+  /** Metres a sinusoid has come by the time it is fully there */
   startOver: 0.4,
-  /** Metres short of whom it makes for a front begins to go */
+  /** Metres short of whom it makes for a sinusoid begins to go */
   landFrom: 0.7,
 } as const;
 
-const cosDeg = (degrees: number) => Math.cos((degrees * Math.PI) / 180);
+/** Light added as the shader scaled it. Alpha takes the greater, so a wave over empty canvas counts as drawn */
+export const glowBlend = {
+  blending: THREE.CustomBlending,
+  blendSrc: THREE.OneFactor,
+  blendDst: THREE.OneFactor,
+  blendEquationAlpha: THREE.MaxEquation,
+  blendSrcAlpha: THREE.OneFactor,
+  blendDstAlpha: THREE.OneFactor,
+} as const;
 
 /** How dark a line's casing is, of its ink */
 const casingShade = 0.18;

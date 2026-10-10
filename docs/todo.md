@@ -1,7 +1,7 @@
 # TODO
 
 - improve walk/run arms e.g. bent out a bit
-- improve psi animation e.g. no height steps
+- ✅ improve psi animation e.g. no height steps
 - can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
 - try web synth for background music
 
@@ -114,6 +114,8 @@
 
 ### Sword and Psi
 
+- psi: doppler effect?
+
 - ✅ sword/psi: cancel when do e.g. sit
 - ✅ sword: no bodyPart defaults to head
 - ✅ sword/psi: command for setting player's target
@@ -125,7 +127,7 @@
     - angle: (polar, azimuthal)
   - ✅ player psi/phaser targetting: `kamma`
 
-- phaser action
+- ✅ phaser action
   - arms, legs -> pain
   - head -> pacified, controlled
   - hips, stomach, chest -> stunned

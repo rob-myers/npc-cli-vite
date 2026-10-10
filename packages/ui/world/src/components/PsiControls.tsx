@@ -44,7 +44,7 @@ export default function PsiControls({ w }: { w: WorldState }) {
           {sliderKeys.map((key) => (
             <Slider
               key={key}
-              label={labels[key] ?? key}
+              label={key}
               range={psiTuneRanges[key]}
               value={tune[key]}
               onChange={(value) => apply({ [key]: value })}
@@ -105,8 +105,6 @@ function Slider(props: {
 const openStorageKey = "psi-controls-open";
 
 const sliderKeys = Object.keys(psiTuneRanges) as (keyof typeof psiTuneRanges)[];
-/** Where a key does not say it */
-const labels: Partial<Record<keyof typeof psiTuneRanges, string>> = { fadeInSecs: "fade in", fadeOutSecs: "fade out" };
 
 /** Saturation and lightness of the default, so every hue is as pale a glow */
 const { s, l } = new THREE.Color(defaultPsiTune.color).getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);

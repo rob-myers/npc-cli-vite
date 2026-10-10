@@ -42,7 +42,7 @@ is on, the same one again or another, `Psi.exchange` runs once:
 
 So no thought comes without an intention sent, and none is read before it has come. One asked for
 whilst another is under way waits for it to be answered. Psi coming off, or going to another, drops
-what was on its way. Raised again (`q`) psi is back on whom it was on, but sends nothing until they
+what was on its way: to another, the line is then laid afresh. Raised again (`q`) psi is back on whom it was on, but sends nothing until they
 are pressed.
 
 ## Thoughts
@@ -60,15 +60,26 @@ The colours are `psiKhandhas` in `const.npc`.
 ## How it is drawn
 
 `components/Psi.tsx` owns the state and `service/psi-shader.ts` the look. The two waves are the same
-thing drawn twice (`waveNodes`), each a uniform of metres its front has come (`intent`, `thought`),
-less than nought for none.
+thing drawn the other way round, by a uniform of metres it has come (`come`), less than nought for none.
 
-- **A wave** is ONE line, at its front, `PsiTune.width` pixels wide. It grows out of nothing over
-  `startOver`, and is gone by the time it reaches whom it makes for (`landFrom`).
-- **Where:** on a square about whoever sends it, level with their crown, and only within
-  `coneHalfDeg` either side of the way to whom it makes for.
+- **A wave** is a line and a sinusoid. The line runs out from the sender's head to the other's,
+  `lineSpeedOver` times faster than the sinusoid, so it joins them first. It stays for the reply. It has `PsiTune.line` of
+  full strength.
+- **The sinusoid** then travels along that line: `packet` metres long, rising and falling `amp`,
+  at full strength. Its crests go `crestSpeedOver` times faster than it does, so it plays as it
+  travels. It grows out of nothing over `startOver`, and is gone by the time it reaches
+  whom it makes for (`landFrom`).
+- **Where:** on one strip from the foot of one head to the foot of the other. It turns about that
+  line to face the camera, so the wave reads the same from the side and from above.
+- **What hides it:** it is depth tested, as a stream of particles would be. A head hides it, and
+  so does a door.
+- **One draw call.** Only one wave is on its way at a time, so one mesh serves both: `back` says
+  which, and swaps its ends and its colour. It is hidden whilst nothing is on its way, and whilst
+  the two are within `minApart` of each other.
 - **The intention** is in the player's colour (`PsiTune.color`). **The thought** is in its khandha's.
 - The shader is told only where the two of them are (`playerAt`, `otherAt`).
 - Over a pale deck a line is laid over it in a deeper ink with a dark casing, not added as light.
+- Added light is scaled in the shader, and its alpha is written as coverage (`glowBlend`). The post
+  pass weighs a pixel by its alpha, so a faint wave over empty canvas would otherwise vanish.
 - An npc's border is not drawn over a wave. A wave marks itself a caption in `npcMask.g`, as a
   label does (`syncOutlineMask`, see `service/npc-outline`).
