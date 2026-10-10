@@ -1,3 +1,4 @@
+import Audio from "@npc-cli/ui__audio";
 import Blog from "@npc-cli/ui__blog";
 import Decorator from "@npc-cli/ui__decorator";
 import Jobs from "@npc-cli/ui__jobs";
@@ -15,6 +16,7 @@ import type { UiPackageDef } from "@npc-cli/ui-sdk";
  * 3. Extend lookup `mirrored` in packages/ui-sdk/src/schema.ts
  */
 export type UiRegistry = {
+  Audio: typeof Audio;
   Blog: typeof Blog;
   Decorator: typeof Decorator;
   Jobs: typeof Jobs;
@@ -28,6 +30,7 @@ export type UiRegistry = {
 
 export const uiRegistryFactory = (): UiRegistry =>
   ({
+    Audio,
     Blog,
     Decorator,
     Jobs,
