@@ -566,6 +566,8 @@ const legalPositionMargin = 0.05;
 const npcCannotLookForClip: Record<string, string | undefined> = {
   sit: "not while sitting",
   lie: "not while lying",
+  lie_left: "not while lying",
+  lie_right: "not while lying",
 };
 
 export function rejectNoop(_e: Error): void {}

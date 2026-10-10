@@ -169,10 +169,12 @@ export const fromAnimationClipKey = {
   drop_left: true,
   idle: true,
   lie: true,
+  lie_left: true,
   lie_pacified: true,
   lie_pacify_in: true,
   lie_pain_high: true,
   lie_pain_low: true,
+  lie_right: true,
   pacified: true,
   pacify_in: true,
   pain_arm_left: true,
@@ -208,6 +210,9 @@ export const defaultFadeSecs = 0.3;
 
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
+
+/** One lain rolls onto a side for a point further than `side` metres to it, and onto their back for one within `back` of their own line */
+export const lieRoll = { side: 0.45, back: 0.25 } as const;
 
 /** One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest */
 export const sitTurn = { maxRad: Math.PI / 4, body: 0.25, rate: 6 } as const;
@@ -292,11 +297,13 @@ export const fadeSecs: Record<
   drop: {},
   drop_left: {},
   idle: { shuffle: 0.15 },
-  lie: {},
+  lie: { lie_left: 0.5, lie_right: 0.5 },
+  lie_left: { lie: 0.5, lie_right: 0.6 },
   lie_pacified: {},
   lie_pacify_in: {},
   lie_pain_high: {},
   lie_pain_low: {},
+  lie_right: { lie: 0.5, lie_left: 0.6 },
   pacified: {},
   pacify_in: {},
   pain_arm_left: {},

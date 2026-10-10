@@ -12,6 +12,7 @@ import {
   gaitStride,
   headShakeConfig,
   hitConfig,
+  lieRoll,
   npcScale,
   sitArmVia,
   sitTurn,
@@ -325,6 +326,23 @@ export class NpcAnimation {
       u.key = null; // the pose's own again
       u.aim = null;
     }
+  }
+
+  /** Roll one lain to look towards `at`: onto the side it is to, or onto their back for one along their own line */
+  rollTo(at: Geom.VectJson) {
+    const from = keyOf(this.idleClip);
+    if (from !== "lie" && from !== "lie_left" && from !== "lie_right") return;
+    const { position, rotation } = this.npc;
+    /** Metres `at` is to their left */
+    const left = (at.y - position.z) * Math.sin(rotation.y) - (at.x - position.x) * Math.cos(rotation.y);
+    const towards = left > 0 ? "lie_left" : "lie_right";
+    const { side, back } = lieRoll;
+    // between the two they stay as they are, unless turned the other way
+    const kept = from === towards ? from : "lie";
+    const to = Math.abs(left) < back ? "lie" : Math.abs(left) < side ? kept : towards;
+    if (to === from) return;
+    this.idleClip = this.npc.clips[to];
+    if (this.pose === from) this.setPose(to);
   }
 
   /** Turn towards `at` whilst sat, as far as they can without turning round — `null` to face ahead again */

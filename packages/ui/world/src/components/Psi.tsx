@@ -153,7 +153,9 @@ export default function Psi() {
         const near =
           player.agent?.neis.some(({ dist }) => dist < nearDist ** 2) === true || // `dist` squared
           w.e.npcToDoors[player.key]?.inside != null; // in a doorway
-        const pose = state.influence.self.target === 0 ? null : near ? "psi_avoid" : "psi";
+        /** Lain on that arm: its elbow comes in front of them, as for a neighbour */
+        const onArm = player.anim.pose === "lie_left";
+        const pose = state.influence.self.target === 0 ? null : near || onArm ? "psi_avoid" : "psi";
         const { upperLeft } = player.anim;
         const shown = upperLeft.target === 1 ? upperLeft.key : null;
         if (pose === null) {

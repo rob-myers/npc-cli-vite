@@ -52,7 +52,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
         if (held === false || posture !== "sit") npc.anim.turnTo(null);
-        if (held === false || posture === "lie") return; // lain they cannot turn at all
+        if (held === false) return;
         const { raycaster, lastPointer, canvas } = w.view;
         const { width, height } = canvas.getBoundingClientRect();
         tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
@@ -60,6 +60,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
         w.r3f.invalidate(); // a held key draws nothing of itself
+        // lain, they roll over to look
+        if (posture === "lie") return void npc.anim.rollTo(pointerAim.at);
         // sat they do not turn round: their head, and a little of their torso
         if (posture === "sit") return void npc.anim.turnTo(pointerAim.at);
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
