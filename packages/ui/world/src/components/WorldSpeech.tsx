@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { cn, useStateRef } from "@npc-cli/util";
-import { ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretRightIcon, ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
@@ -35,6 +35,7 @@ export function WorldSpeech() {
       historyWidth: saved.speechWidth ?? (big ? 320 : 288),
       resizing: false,
       talks: {},
+      folded: new Set(),
       needsSig: "",
       needsSecs: 0,
 
@@ -49,10 +50,15 @@ export function WorldSpeech() {
         state.menuItems = state.menuItems.filter((x) => x.key !== key);
         state.update();
       },
+      toggleFold(threadKey) {
+        if (state.folded.delete(threadKey) === false) state.folded.add(threadKey);
+        state.update();
+      },
       clear() {
         for (const talk of Object.values(state.talks)) w.bubble.release(talk.npcKey, talk.playerKey);
         state.history = [];
         state.talks = {};
+        state.folded.clear();
         state.update();
       },
       clearThread(threadKey) {
@@ -64,6 +70,7 @@ export function WorldSpeech() {
           return false;
         });
         delete state.talks[threadKey];
+        state.folded.delete(threadKey);
         w.bubble.release(...parties); // a line held for an answer has none coming
         state.update();
       },
@@ -434,6 +441,8 @@ function SpeechThread({ thread }: { thread: Thread }) {
   const node = talk?.conv.nodes[talk.at];
   const lastId = thread.entries.at(-1)?.id;
   const gone = talk !== undefined && !(talk.npcKey in w.n);
+  const folded = w.speech.folded.has(thread.key);
+  const Caret = folded ? CaretRightIcon : CaretDownIcon;
 
   /** An ending keeps the topic it follows: "the end" below says the rest */
   let topic: string | undefined;
@@ -473,12 +482,20 @@ function SpeechThread({ thread }: { thread: Thread }) {
   return (
     <div className="flex flex-col gap-1 border-t border-slate-700 pt-1 first:border-t-0">
       <div className="flex flex-wrap items-center text-slate-500">
+        <Caret
+          weight="bold"
+          className="size-3 shrink-0 cursor-pointer hover:text-slate-300"
+          onClick={() => w.speech.toggleFold(thread.key)}
+        >
+          <title>{folded ? "unfold this conversation" : "fold this conversation"}</title>
+        </Caret>
         {thread.parties.map((npcKey, i) => (
           <span key={npcKey} className="flex items-center">
             {i > 0 && "·"}
             <NpcKeyMenu npcKey={npcKey} className="px-1 text-xs" />
           </span>
         ))}
+        {folded && <span className="pl-1 text-[10px]">{thread.entries.length}</span>}
         <XIcon
           className="ml-auto size-3.5 shrink-0 cursor-pointer text-slate-600 hover:text-red-300"
           onClick={() => w.speech.clearThread(thread.key)}
@@ -486,22 +503,24 @@ function SpeechThread({ thread }: { thread: Thread }) {
           <title>clear this conversation</title>
         </XIcon>
       </div>
-      <TalkThread
-        lines={lines}
-        replies={replies}
-        repliesKey={`${talk?.at}:${lastId}`}
-        typing={talk !== undefined && talk.answer !== null}
-        onClear={(ids) => w.speech.clearEntries(ids.filter((id) => typeof id === "number"))}
-        footer={
-          talk !== undefined &&
-          (gone ? (
-            <div className="self-center text-slate-500 italic">{talk.npcKey} is gone</div>
-          ) : (
-            talk.answer === null &&
-            replies.length === 0 && <div className="self-center text-slate-500 italic">the end</div>
-          ))
-        }
-      />
+      {folded === false && (
+        <TalkThread
+          lines={lines}
+          replies={replies}
+          repliesKey={`${talk?.at}:${lastId}`}
+          typing={talk !== undefined && talk.answer !== null}
+          onClear={(ids) => w.speech.clearEntries(ids.filter((id) => typeof id === "number"))}
+          footer={
+            talk !== undefined &&
+            (gone ? (
+              <div className="self-center text-slate-500 italic">{talk.npcKey} is gone</div>
+            ) : (
+              talk.answer === null &&
+              replies.length === 0 && <div className="self-center text-slate-500 italic">the end</div>
+            ))
+          }
+        />
+      )}
     </div>
   );
 }
@@ -653,6 +672,8 @@ export type State = {
   resizing: boolean;
   /** By `threadKeyOf` the player and npc */
   talks: Record<string, Talk>;
+  /** Threads shown as their heading alone, by key */
+  folded: Set<string>;
   /** The pips last drawn, so a poll re-renders only on a change */
   needsSig: string;
   needsSecs: number;
@@ -663,6 +684,7 @@ export type State = {
   clearEntries(ids: number[]): void;
   /** One thread's history, and its talk — two parties, one, or a group's */
   clearThread(threadKey: string): void;
+  toggleFold(threadKey: string): void;
   getMaxY(): number;
   getClampedY(y: number): number;
   getMaxHistoryHeight(): number;
