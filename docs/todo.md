@@ -1,9 +1,9 @@
 # TODO
 
-- improve walk/run arms e.g. bent out a bit
+- ✅ improve walk/run arms e.g. bent out a bit
 - ✅ improve psi animation e.g. no height steps
-- can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
-- try web synth for background music
+- ✅ can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
+- ✅ try web synth for background music
 
 ## World
 
