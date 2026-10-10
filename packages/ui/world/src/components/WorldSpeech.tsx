@@ -24,7 +24,7 @@ export function WorldSpeech() {
     (): State => ({
       dragged: false,
       panelOpen: false,
-      panelTab: "speech",
+      panelTab: "comms",
       history: [],
       menuItems: [],
       minY: 40,
@@ -91,7 +91,7 @@ export function WorldSpeech() {
           answer: null,
           seen: new Set([at]),
         };
-        state.set({ panelOpen: true, panelTab: "speech" });
+        state.set({ panelOpen: true, panelTab: "comms" });
         const hold = (conv.nodes[at]?.choices?.length ?? 0) > 0;
         state.say(npcKey, conv.nodes[at]?.text ?? "…", undefined, { to: [playerKey], nodeId: at, hold });
         return true;
@@ -163,55 +163,43 @@ export function WorldSpeech() {
         state.historyWidth = state.getClampedHistoryWidth(state.historyWidth);
         state.update();
       },
-      onResizeMouseDown(e, heightOnly = false) {
+      onResizeDown(e, edge) {
         e.stopPropagation();
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startWidth = state.historyWidth;
-        const startHeight = state.historyHeight;
+        const el = e.currentTarget;
+        el.setPointerCapture(e.pointerId); // so the drag is ours wherever it goes
+        const from = {
+          x: e.clientX,
+          y: e.clientY,
+          width: state.historyWidth,
+          height: state.historyHeight,
+          top: y.get(),
+        };
         state.resizing = true;
-        const onMove = (ev: MouseEvent) => {
-          // panel is right-anchored, so dragging the corner left (negative dx) widens it
-          if (heightOnly === false)
-            state.historyWidth = state.getClampedHistoryWidth(startWidth - (ev.clientX - startX));
-          state.historyHeight = state.getClampedHistoryHeight(startHeight + (ev.clientY - startY));
+
+        const onMove = (ev: PointerEvent) => {
+          const dx = ev.clientX - from.x;
+          const dy = ev.clientY - from.y;
+          // the panel is right-anchored, so a drag left widens it
+          if (edge !== "top" && edge !== "bottom") state.historyWidth = state.getClampedHistoryWidth(from.width - dx);
+          if (edge !== "top" && edge !== "left") state.historyHeight = state.getClampedHistoryHeight(from.height + dy);
+          if (edge === "top") {
+            // its foot stays put: it moves by as much as it shortens
+            state.historyHeight = state.getClampedHistoryHeight(
+              from.height - (state.getClampedY(from.top + dy) - from.top),
+            );
+            y.set(from.top + from.height - state.historyHeight);
+          }
           state.update();
         };
         const onUp = () => {
           state.resizing = false;
           state.persistHistorySize();
-          window.removeEventListener("mousemove", onMove);
-          window.removeEventListener("mouseup", onUp);
+          state.persistY();
+          el.removeEventListener("pointermove", onMove);
         };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-      },
-      onResizeTouchStart(e, heightOnly = false) {
-        e.stopPropagation();
-        const t = e.touches[0];
-        if (!t) return;
-        const startX = t.clientX;
-        const startY = t.clientY;
-        const startWidth = state.historyWidth;
-        const startHeight = state.historyHeight;
-        state.resizing = true;
-        const onMove = (ev: TouchEvent) => {
-          const t2 = ev.touches[0];
-          if (t2) {
-            if (heightOnly === false)
-              state.historyWidth = state.getClampedHistoryWidth(startWidth - (t2.clientX - startX));
-            state.historyHeight = state.getClampedHistoryHeight(startHeight + (t2.clientY - startY));
-            state.update();
-          }
-        };
-        const onEnd = () => {
-          state.resizing = false;
-          state.persistHistorySize();
-          document.removeEventListener("touchmove", onMove, { capture: true });
-          document.removeEventListener("touchend", onEnd, { capture: true });
-        };
-        document.addEventListener("touchmove", onMove, { capture: true });
-        document.addEventListener("touchend", onEnd, { capture: true });
+        el.addEventListener("pointermove", onMove);
+        el.addEventListener("pointerup", onUp, { once: true });
+        el.addEventListener("pointercancel", onUp, { once: true });
       },
       persistY() {
         store.patch({ speechY: state.getClampedY(y.get()) });
@@ -246,7 +234,7 @@ export function WorldSpeech() {
         if (state.history.length > maxHistory) state.history.shift();
 
         // unseen, with the history shut: the button says so
-        if (state.panelOpen === false || state.panelTab !== "speech") state.unread = true;
+        if (state.panelOpen === false || state.panelTab !== "comms") state.unread = true;
         state.update();
 
         // over their head
@@ -260,7 +248,7 @@ export function WorldSpeech() {
         const parties = playerKey === undefined ? [npcKey] : [npcKey, playerKey];
         state.history.push({ id: state.nextId++, npcKey, words, epochMs: Date.now(), parties, thought: tag });
         if (state.history.length > maxHistory) state.history.shift();
-        if (state.panelOpen === false || state.panelTab !== "speech") state.unread = true;
+        if (state.panelOpen === false || state.panelTab !== "comms") state.unread = true;
         state.update();
         w.bubble?.think(npcKey, words, tag);
       },
@@ -282,7 +270,7 @@ export function WorldSpeech() {
   }, []);
 
   // seen, once the history is open on what was said
-  const unread = state.unread && (state.panelOpen === false || state.panelTab !== "speech");
+  const unread = state.unread && (state.panelOpen === false || state.panelTab !== "comms");
   if (unread === false) state.unread = false;
 
   const y = useMotionValue(state.getClampedY(state.y));
@@ -359,7 +347,7 @@ export function WorldSpeech() {
                   </button>
                 ))}
                 <div className="ml-auto flex items-center gap-2">
-                  {state.panelTab === "speech" && (
+                  {state.panelTab === "comms" && (
                     <TrashIcon
                       className={cn("size-4 cursor-pointer text-slate-500 hover:text-red-300", big && "size-5")}
                       onClick={() => state.clear()}
@@ -374,7 +362,7 @@ export function WorldSpeech() {
 
               {state.panelTab === "worlds" && <NetMenu />}
 
-              {state.panelTab === "speech" && (
+              {state.panelTab === "comms" && (
                 <div
                   // its own ink: the panel is dark in either theme
                   className={cn(
@@ -392,18 +380,19 @@ export function WorldSpeech() {
                 </div>
               )}
 
-              {/* drag its foot to set the height alone: clear of the corner, which sets both */}
-              <div
-                className="absolute bottom-0 left-5 right-0 h-1.5 touch-none cursor-ns-resize"
-                onMouseDown={(e) => state.onResizeMouseDown(e, true)}
-                onTouchStart={(e) => state.onResizeTouchStart(e, true)}
-              />
+              {/* drag a side to move it alone: each clear of the corner, which sets two */}
+              {resizeEdges.map(([edge, className]) => (
+                <div
+                  key={edge}
+                  className={cn("absolute touch-none", className)}
+                  onPointerDown={(e) => state.onResizeDown(e, edge)}
+                />
+              ))}
 
               {/* drag to resize the panel — bottom-left corner, since the panel is right-anchored */}
               <div
                 className="absolute bottom-0 left-0 size-5 touch-none cursor-nesw-resize"
-                onMouseDown={(e) => state.onResizeMouseDown(e)}
-                onTouchStart={(e) => state.onResizeTouchStart(e)}
+                onPointerDown={(e) => state.onResizeDown(e, "corner")}
               >
                 <div
                   className={cn(
@@ -432,6 +421,15 @@ function toThreads(history: SpeechEntry[]) {
   }
   return [...byKey.values()].sort((a, b) => (b.entries.at(-1)?.id ?? 0) - (a.entries.at(-1)?.id ?? 0));
 }
+
+/** What of the panel a drag moves: the right side is anchored */
+type ResizeEdge = "top" | "left" | "bottom" | "corner";
+
+const resizeEdges: [ResizeEdge, string][] = [
+  ["top", "top-0 inset-x-0 h-1.5 cursor-ns-resize"],
+  ["left", "left-0 top-0 bottom-5 w-1.5 cursor-ew-resize"],
+  ["bottom", "bottom-0 left-5 right-0 h-1.5 cursor-ns-resize"],
+];
 
 /** One thread of the history, and should it be a talk with the player, their replies */
 function SpeechThread({ thread }: { thread: Thread }) {
@@ -694,9 +692,8 @@ export type State = {
   /** Answers fall due and pips are looked at again — called from `World`'s `onTick` while unpaused */
   onTick(delta: number): void;
   onResize(): void;
-  /** From the corner, both ways; from the foot, `heightOnly` */
-  onResizeMouseDown(e: React.MouseEvent, heightOnly?: boolean): void;
-  onResizeTouchStart(e: React.TouchEvent, heightOnly?: boolean): void;
+  /** A drag of `edge` resizes the panel until it is let go */
+  onResizeDown(e: React.PointerEvent<HTMLElement>, edge: ResizeEdge): void;
   persistY(): void;
   persistHistorySize(): void;
   /** Into the history, and over their head for `secs` — or, on `hold`, until someone it addresses answers */
@@ -715,7 +712,7 @@ export type State = {
   getPips(talk: Talk, choice: ConversationChoice): TalkPip[];
 };
 
-const speechPanelTabs = ["worlds", "speech"] as const;
+const speechPanelTabs = ["worlds", "comms"] as const;
 
 const minHistoryHeight = 120;
 const minHistoryWidth = 200;
