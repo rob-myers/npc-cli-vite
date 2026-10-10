@@ -326,7 +326,9 @@ export function WorldSpeech() {
               transition={{ duration: 0.15 }}
               className={cn(
                 // see-through, the World behind it softened: what is said keeps its own ground
-                "relative pointer-events-auto mt-1 flex flex-col bg-slate-800/45 backdrop-blur-xs border border-slate-700/70 rounded-md shadow-lg py-1",
+                "relative pointer-events-auto mt-1 flex flex-col backdrop-blur-xs border border-slate-700/70 rounded-md shadow-lg py-1",
+                // a pale World would wash its pale ink out
+                w.themeKey === "light-theme" ? "bg-slate-800/90" : "bg-slate-800/45",
                 big && "py-2",
               )}
               style={{ width: state.historyWidth }}
