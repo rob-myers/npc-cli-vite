@@ -79,6 +79,8 @@ reply cannot be said. `onTick` looks again every `needsPollSecs` whilst the pane
 re-renders only on a change. A reply said, the npc answers after `answerSecs` of world time, so
 never whilst paused.
 
+A thread may also hold THOUGHTS, read off an npc by psi and not said: see `docs/psi.md`.
+
 Nothing is lost going back: a click on an earlier line of the npc's has them say it again, at the
 foot of the thread, to be answered there. A talk whose npc is gone keeps its history, and
 offers nothing. Talks are the panel's own state, unsaved; no variables as yet.

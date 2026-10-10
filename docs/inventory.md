@@ -90,9 +90,8 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
   bone, so it never turns about its barrel as the arm comes up or down.
 - The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`) — whilst the gun stays in hand.
-- Psi's contours fan out TOWARDS its target, the player no longer turning to them — ahead, with none
-  — swung round as it changes (`psiConfig.swing`). They lie on a sheet strung between the two heads
-  (`rampEnd`, `rampPeak`): a ramp from the player's to the target's, level beyond.
+- Psi's waves go TOWARDS its target, the player no longer turning to them: the cone they are drawn in
+  is swung round as the target changes (`psiConfig.swing`). What they are is in `docs/psi.md`.
 
 ### What a hit does
 
@@ -152,6 +151,7 @@ Debug's door toggle reads that off any pick.
   player's own right arm lowers it instead, its target kept for when it is next raised, and one
   elsewhere on them does nothing. With the phaser
   lowered and psi on, another npc pressed becomes psi's target. A press on the player's own LEFT
-  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised. `preds`' pick ring stands down meanwhile.
+  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised: but nothing
+  is sent them then, until they are pressed. `preds`' pick ring stands down meanwhile.
 
 It is a keyed listener (`w.e.addKeyedListener`), as `preds` is, so there is no process to kill.

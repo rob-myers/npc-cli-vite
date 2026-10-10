@@ -1,11 +1,11 @@
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import * as THREE from "three/webgpu";
 import { defaultPsiTune, type PsiTune, psiTuneRanges } from "../const.npc";
 import type { State as WorldState } from "./World";
 
-/** The player's psi, as `Psi` draws it */
+/** The player's psi, as `Psi` draws it: folded away until asked for */
 export default function PsiControls({ w }: { w: WorldState }) {
   const [tune, setTune] = useState(() => ({ ...w.psi.tune }));
   const [open, setOpen] = useState(() => tryLocalStorageGetParsed<boolean>(openStorageKey) === true);
@@ -27,7 +27,7 @@ export default function PsiControls({ w }: { w: WorldState }) {
           }}
         >
           <Caret className="size-5 shrink-0" />
-          psi contours
+          psi waves
         </button>
         {open === true && (
           <button
@@ -39,53 +39,74 @@ export default function PsiControls({ w }: { w: WorldState }) {
           </button>
         )}
       </div>
-      {open === true && <PsiSliders tune={tune} apply={apply} />}
+      {open === true && (
+        <>
+          {sliderKeys.map((key) => (
+            <Slider
+              key={key}
+              label={labels[key] ?? key}
+              range={psiTuneRanges[key]}
+              value={tune[key]}
+              onChange={(value) => apply({ [key]: value })}
+            >
+              {tune[key].toFixed(2)}
+            </Slider>
+          ))}
+          {/* not `<input type="color">`, whose native picker the card's zoom blows up */}
+          <Slider
+            label="hue"
+            range={[0, 359, 1]}
+            value={hueOf(tune.color)}
+            onChange={(hue) => apply({ color: colorOfHue(hue) })}
+            track={hueTrack}
+          >
+            <span className="h-4 w-8 rounded" style={{ background: tune.color }} />
+          </Slider>
+        </>
+      )}
     </div>
   );
 }
 
-function PsiSliders({ tune, apply }: { tune: PsiTune; apply: (partial: Partial<PsiTune>) => void }) {
+/** A labelled range, and beside it whatever shows its value */
+function Slider(props: {
+  label: string;
+  /** `[min, max, step]` */
+  range: readonly [number, number, number];
+  value: number;
+  onChange(value: number): void;
+  /** A css background for the track, in place of the plain one */
+  track?: string;
+  children: ReactNode;
+}) {
+  const [min, max, step] = props.range;
   return (
-    <>
-      {psiSliders.map(([key, label]) => {
-        const [min, max, step] = psiTuneRanges[key];
-        return (
-          <label key={key} className="flex items-center gap-3">
-            <span className="w-24 shrink-0 whitespace-nowrap text-white/50">{label}</span>
-            <input
-              type="range"
-              min={min}
-              max={max}
-              step={step}
-              value={tune[key]}
-              onChange={(e) => apply({ [key]: Number(e.target.value) })}
-              className="min-w-0 flex-1 cursor-pointer accent-white"
-            />
-            <span className="w-16 shrink-0 text-right tabular-nums text-white/60">{tune[key].toFixed(2)}</span>
-          </label>
-        );
-      })}
-      {/* not `<input type="color">`, whose native picker the card's zoom blows up */}
-      <label className="flex items-center gap-3">
-        <span className="w-24 shrink-0 whitespace-nowrap text-white/50">hue</span>
-        <input
-          type="range"
-          min={0}
-          max={359}
-          value={hueOf(tune.color)}
-          onChange={(e) => apply({ color: colorOfHue(Number(e.target.value)) })}
-          className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full accent-white"
-          style={{ background: hueTrack }}
-        />
-        <span className="flex w-16 shrink-0 justify-end">
-          <span className="h-4 w-8 rounded" style={{ background: tune.color }} />
-        </span>
-      </label>
-    </>
+    <label className="flex items-center gap-3">
+      <span className="w-24 shrink-0 whitespace-nowrap text-white/50">{props.label}</span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+        className={
+          props.track === undefined
+            ? "min-w-0 flex-1 cursor-pointer accent-white"
+            : "h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full accent-white"
+        }
+        style={props.track === undefined ? undefined : { background: props.track }}
+      />
+      <span className="flex w-16 shrink-0 justify-end tabular-nums text-white/60">{props.children}</span>
+    </label>
   );
 }
 
 const openStorageKey = "psi-controls-open";
+
+const sliderKeys = Object.keys(psiTuneRanges) as (keyof typeof psiTuneRanges)[];
+/** Where a key does not say it */
+const labels: Partial<Record<keyof typeof psiTuneRanges, string>> = { fadeInSecs: "fade in", fadeOutSecs: "fade out" };
 
 /** Saturation and lightness of the default, so every hue is as pale a glow */
 const { s, l } = new THREE.Color(defaultPsiTune.color).getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
@@ -94,14 +115,3 @@ const hueOf = (color: string) =>
 const colorOfHue = (hue: number) =>
   `#${new THREE.Color().setHSL(hue / 360, s, l, THREE.SRGBColorSpace).getHexString()}`;
 const hueTrack = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360].map((hue) => colorOfHue(hue % 360)).join(", ")})`;
-
-const psiSliders = [
-  ["reach", "reach"],
-  ["speed", "speed"],
-  ["gap", "gap"],
-  ["width", "width"],
-  ["opacity", "opacity"],
-  ["fadeInSecs", "fade in"],
-  ["fadeOutSecs", "fade out"],
-  ["tint", "tint"],
-] as const satisfies [keyof typeof psiTuneRanges, string][];

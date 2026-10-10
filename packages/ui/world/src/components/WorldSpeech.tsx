@@ -7,6 +7,7 @@ import { npcDims } from "../const.both";
 
 import { getWorldStore } from "../service/storage";
 import { type Conversation, type ConversationChoice, talkNeeds, threadKeyOf } from "../service/talk";
+import type { ThoughtTag } from "../service/thoughts";
 import { NetBadge, NetMenu } from "./NetMenu";
 import { type TalkLine, type TalkPip, TalkThread } from "./TalkThread";
 import { WorldContext } from "./world-context";
@@ -246,6 +247,16 @@ export function WorldSpeech() {
 
         w.events.next({ key: "speech", npcKey, words, epochMs, to });
       },
+      think(npcKey, words, tag) {
+        const playerKey = w.player?.key;
+        // in their thread with the player, who alone reads it: no event, so no client hears of it
+        const parties = playerKey === undefined ? [npcKey] : [npcKey, playerKey];
+        state.history.push({ id: state.nextId++, npcKey, words, epochMs: Date.now(), parties, thought: tag });
+        if (state.history.length > maxHistory) state.history.shift();
+        if (state.panelOpen === false || state.panelTab !== "speech") state.unread = true;
+        state.update();
+        w.bubble?.think(npcKey, words, tag);
+      },
     }),
   );
 
@@ -435,6 +446,7 @@ function SpeechThread({ thread }: { thread: Thread }) {
           ? "right"
           : "left",
       text: entry.words,
+      thought: entry.thought,
       topic: said === undefined ? undefined : topic,
       who: thread.parties.length > 2 ? entry.npcKey : undefined,
       ...(talk !== undefined &&
@@ -595,6 +607,8 @@ export type SpeechEntry = {
   parties?: string[];
   /** The line of a talk it is */
   nodeId?: string;
+  /** Thought, not said: read by psi */
+  thought?: ThoughtTag;
 };
 
 /** A conversation tree the player is having with `npcKey`, in the thread of the two */
@@ -663,6 +677,8 @@ export type State = {
   persistHistorySize(): void;
   /** Into the history, and over their head for `secs` — or, on `hold`, until someone it addresses answers */
   say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; nodeId?: string; hold?: boolean }): void;
+  /** Into the history as a thought of theirs, and over their head — see `Psi.readThoughts` */
+  think(npcKey: string, words: string, tag: ThoughtTag): void;
   /** The npc opens `conv` with the player, in the thread of the two. False without either */
   startTalk(conv: Conversation, npcKey: string): boolean;
   /** The player says a reply of the line replied to, once its tests pass, and the npc answers */

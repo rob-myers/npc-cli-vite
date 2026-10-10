@@ -317,26 +317,30 @@ export const fadeSecs: Record<
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
-/** The most `PsiTune.reach` may be, in metres */
-export const psiMaxReach = 8;
-
 export const defaultPsiTune: PsiTune = {
-  reach: 5,
-  speed: 0.4,
-  gap: 1.5,
-  width: 2.5,
-  opacity: 0.5,
-  fadeInSecs: 1.8,
-  fadeOutSecs: 0.2,
-  color: "#9fe8ff",
+  speed: 0.45,
+  width: 0.5,
+  opacity: 0.3,
+  fadeInSecs: 0.8,
+  fadeOutSecs: 0.3,
+  color: "#9eb6ff",
   tint: 1,
 };
 
+/** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
+export const psiKhandhas = {
+  form: { color: "#e8a15a" },
+  sensation: { color: "#ff6b81" },
+  perception: { color: "#7be08a" },
+  formations: { color: "#b48cff" },
+  consciousness: { color: "#9fe8ff" },
+} as const;
+
+export type KhandhaKey = keyof typeof psiKhandhas;
+
 /** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
 export const psiTuneRanges = {
-  reach: [1.5, psiMaxReach, 0.1],
-  speed: [-2, 2, 0.05],
-  gap: [0.15, 1.5, 0.05],
+  speed: [0.05, 2, 0.05],
   width: [0.5, 8, 0.25],
   opacity: [0.05, 1, 0.05],
   fadeInSecs: [0.1, 3, 0.1],
@@ -346,21 +350,18 @@ export const psiTuneRanges = {
 
 /** What the player's bubble adjusts of `Psi`, persisted */
 export type PsiTune = {
-  /** Metres the field reaches, at most `psiMaxReach` */
-  reach: number;
-  /** Contours per second the rings drift by: outwards when positive */
+  /** How fast a wave goes: see `thoughtConfig.speedOver` */
   speed: number;
-  /** Metres between contours */
-  gap: number;
-  /** Pixels wide each contour is drawn */
+  /** Pixels wide a wave's line is drawn */
   width: number;
-  /** Of each contour, which glows additively: lower is fainter */
+  /** Of each wave, which glows additively: lower is fainter */
   opacity: number;
-  /** Seconds an influence takes to come, and to go */
+  /** Seconds psi takes to come onto someone, and to leave them */
   fadeInSecs: number;
   fadeOutSecs: number;
+  /** The player's waves: their intention */
   color: string;
-  /** How much of `color`'s hue a contour carries: none is white */
+  /** How much of its hue a wave carries: none is white */
   tint: number;
 };
 
