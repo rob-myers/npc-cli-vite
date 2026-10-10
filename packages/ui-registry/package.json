@@ -13,6 +13,7 @@
   "scripts": {},
   "dependencies": {
     "@npc-cli/cli": "workspace:^",
+    "@npc-cli/ui__audio": "workspace:^",
     "@npc-cli/ui__blog": "workspace:^",
     "@npc-cli/ui__decorator": "workspace:^",
     "@npc-cli/ui__jobs": "workspace:^",

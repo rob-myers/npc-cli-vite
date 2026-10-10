@@ -5,6 +5,7 @@ import type { UiPackageDef } from ".";
 
 /** Needed because `uiRegistryKeys` yields circular import dependency  */
 const mirrored: Record<UiRegistryKey, true> = {
+  Audio: true,
   Blog: true,
   Decorator: true,
   Jobs: true,

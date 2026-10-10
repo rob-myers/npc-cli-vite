@@ -57,6 +57,9 @@
     },
     {
       "path": "./packages/ui/manifest"
+    },
+    {
+      "path": "./packages/ui/audio"
     }
   ]
 }

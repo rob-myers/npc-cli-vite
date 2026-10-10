@@ -1,3 +1,4 @@
+import { AudioUiMetaSchema } from "@npc-cli/ui__audio/schema";
 import { BlogUiMetaSchema } from "@npc-cli/ui__blog/schema";
 import { DecoratorUiMetaSchema } from "@npc-cli/ui__decorator/schema";
 import { TemplateUiMetaSchema as JobsUiMetaSchema } from "@npc-cli/ui__jobs/schema";
@@ -14,6 +15,7 @@ import type { UiRegistry, UiRegistryKey } from "./ui-registry";
  * renaming whatever imports it (e.g. `ui.store`, so every ui) whenever any ui changes.
  */
 export const uiSchemas = {
+  Audio: AudioUiMetaSchema,
   Blog: BlogUiMetaSchema,
   Decorator: DecoratorUiMetaSchema,
   Jobs: JobsUiMetaSchema,
