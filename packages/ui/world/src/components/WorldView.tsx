@@ -966,9 +966,7 @@ export function WorldView(props: React.PropsWithChildren) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
-        // a right click has the player look there, as a tap of fingers does on touch. Still a pick
-        if (last.rightPress === true) w.player?.lookTowards(e.clientX, e.clientY);
-        state.pickObject(e);
+        state.pickObject(e); // a right click's look is the pick's — see `use-world-events`
       },
       focus() {
         // the `Canvas` wrapper, which has the `tabIndex`

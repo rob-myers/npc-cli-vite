@@ -744,6 +744,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ) {
               w.bubble.openDebug(e.meta.npcKey, { focus: true });
             }
+            // a right click has the player look there, as a tap of fingers does on touch. Not at themself
+            const self = e.meta.type === "npc" && e.meta.npcKey === w.player?.key;
+            if (e.rightDown === true && self === false && e.srcWorld === w.key) w.player?.lookAtPoint(e.x, e.z);
             break;
           }
           case "spawned-many": {
