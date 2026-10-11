@@ -760,7 +760,8 @@ export function WorldView(props: React.PropsWithChildren) {
       getFrontierStops() {
         const { controls } = state;
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
-        const player = state.follow === true ? state.getPlayer() : undefined; // a look press only pans
+        // a look press only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
+        const player = state.follow === true && w.touchDevice === false ? state.getPlayer() : undefined;
         let wanted = outer;
         let wantedMin = min;
         if (player !== undefined && state.playerFrontier.ahead(tmpAhead) === true) {
