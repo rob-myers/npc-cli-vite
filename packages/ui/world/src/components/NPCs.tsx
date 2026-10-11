@@ -716,8 +716,8 @@ export default function NPCs() {
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
       async spawn({ npcKey, at, as: skinPrefix, angle, facing }) {
-        // none given leaves a respawn in the skin they have: a first spawn takes the default in `rawSpawn`
-        const as = state.findSkinKey(skinPrefix);
+        // NOT resolved when none is given: `findSkinKey` would give the default, and a respawn re-dress them in it
+        const as = skinPrefix === undefined ? undefined : state.findSkinKey(skinPrefix);
         if (typeof npcKey !== "string" || !npcSpawnConfig.keyPattern.test(npcKey)) {
           throw Error(`opts.npcKey must match: ${npcSpawnConfig.keyPattern}`);
         }
