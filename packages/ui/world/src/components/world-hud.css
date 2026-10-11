@@ -1,0 +1,51 @@
+/* `BrainIcon`: opacity alone is animated, which the compositor runs without a repaint */
+.hud-neuron {
+  position: absolute;
+  width: 10%;
+  height: 10%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(#fff 0, #9fe3ff 40%, transparent 70%);
+  opacity: 0.15;
+}
+.hud-neuron-firing {
+  animation: hud-neuron 2.4s linear infinite;
+}
+/* one step of a pulse along an axon: several lit in turn read as it running down */
+.hud-pulse {
+  position: absolute;
+  width: 5%;
+  height: 5%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(#fff 0, #9fe3ff 50%, transparent 70%);
+  opacity: 0;
+  animation: hud-pulse 2.4s linear infinite;
+}
+
+@keyframes hud-neuron {
+  0%,
+  40%,
+  100% {
+    opacity: 0.15;
+  }
+  12% {
+    opacity: 1;
+  }
+}
+@keyframes hud-pulse {
+  0%,
+  22%,
+  100% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-neuron-firing,
+  .hud-pulse {
+    animation: none;
+  }
+}

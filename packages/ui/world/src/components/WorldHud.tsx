@@ -9,6 +9,7 @@ import {
   PersonSimpleWalkIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import "./world-hud.css";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { memo, useContext, useEffect, useRef, useState } from "react";
 import type { ItemKind } from "../const.env";
@@ -413,15 +414,6 @@ function useChangeCount(value: unknown): number {
   return count;
 }
 
-/** Holds an svg's animations where they are whilst `paused`, as the World is */
-function useSvgPause(paused: boolean) {
-  const ref = useRef<SVGSVGElement>(null);
-  useEffect(() => {
-    paused ? ref.current?.pauseAnimations() : ref.current?.unpauseAnimations();
-  });
-  return ref;
-}
-
 const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
 /** Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring */
 const rowClass = "pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
@@ -437,7 +429,7 @@ const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
 };
 const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });
 
-/** The shadow is each icon's own: on a slot it would be redrawn with every frame of the brain */
+/** The shadow is each icon's own */
 const iconShadow = "drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]";
 const iconClass = cn("aspect-square", iconShadow);
 
@@ -536,104 +528,97 @@ const phaserFaces: [keyof typeof phaserOff, string][] = [
 
 /**
  * A brain seen from its left: a see-through solid, its neurons `firing` whilst psi is on.
- * Still otherwise: an animation keeps the page painting, paused World or not
+ * The firing is html over a still svg: animating the svg itself repaints it every frame
  */
 const BrainIcon = memo(function BrainIcon({ firing, paused }: { firing: boolean; paused: boolean }) {
+  const animationPlayState = paused ? "paused" : "running";
   return (
-    <svg
-      ref={useSvgPause(paused)}
-      className={firing && paused === false ? "aspect-square" : iconClass}
-      style={iconStyle("psi")}
-      viewBox="0 0 64 64"
-      aria-label="psi"
-    >
-      <defs>
-        <radialGradient id="hud-brain" cx="0.36" cy="0.26" r="0.85">
-          <stop offset="0" stopColor="#f2f3f5" />
-          <stop offset="0.45" stopColor="#a9adb5" />
-          <stop offset="1" stopColor="#4d515a" />
-        </radialGradient>
-        <radialGradient id="hud-brain-far" cx="0.4" cy="0.2" r="0.9">
-          <stop offset="0" stopColor="#8d9199" />
-          <stop offset="1" stopColor="#3c4048" />
-        </radialGradient>
-        <radialGradient id="hud-neuron">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="0.4" stopColor="#9fe3ff" />
-          <stop offset="1" stopColor="#9fe3ff" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* stem, cerebellum, then the far hemisphere showing over the near one */}
-      <g opacity={0.45}>
-        <path d="M33 42c1 6 2 11 5 16h7c-3-5-4-10-4-16z" fill="url(#hud-brain-far)" />
-        <ellipse cx="47" cy="45" rx="10" ry="6.5" fill="url(#hud-brain-far)" />
-        <path d="M11 30C10 16 22 6 35 6c14 0 25 9 24 23-1 9-7 13-13 13" fill="url(#hud-brain-far)" />
+    <div className="relative aspect-square" style={iconStyle("psi")} role="img" aria-label="psi">
+      <svg className={cn("size-full", iconShadow)} viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <radialGradient id="hud-brain" cx="0.36" cy="0.26" r="0.85">
+            <stop offset="0" stopColor="#f2f3f5" />
+            <stop offset="0.45" stopColor="#a9adb5" />
+            <stop offset="1" stopColor="#4d515a" />
+          </radialGradient>
+          <radialGradient id="hud-brain-far" cx="0.4" cy="0.2" r="0.9">
+            <stop offset="0" stopColor="#8d9199" />
+            <stop offset="1" stopColor="#3c4048" />
+          </radialGradient>
+        </defs>
+        {/* stem, cerebellum, then the far hemisphere showing over the near one */}
+        <g opacity={0.45}>
+          <path d="M33 42c1 6 2 11 5 16h7c-3-5-4-10-4-16z" fill="url(#hud-brain-far)" />
+          <ellipse cx="47" cy="45" rx="10" ry="6.5" fill="url(#hud-brain-far)" />
+          <path d="M11 30C10 16 22 6 35 6c14 0 25 9 24 23-1 9-7 13-13 13" fill="url(#hud-brain-far)" />
+          <path
+            d="M7 34C5 21 16 10 31 10c15-1 27 9 26 23-1 8-7 12-14 12-4 2-9 1-13 0-7 2-20 1-23-11z"
+            fill="url(#hud-brain)"
+            stroke="#d9dde3"
+            strokeOpacity="0.9"
+            strokeWidth="0.9"
+          />
+        </g>
         <path
-          d="M7 34C5 21 16 10 31 10c15-1 27 9 26 23-1 8-7 12-14 12-4 2-9 1-13 0-7 2-20 1-23-11z"
-          fill="url(#hud-brain)"
-          stroke="#d9dde3"
-          strokeOpacity="0.9"
-          strokeWidth="0.9"
+          d="M41 43c4-2 9-2 14 0M40 46.5c5-2 11-2 16 0M12 32c5-3 9-1 12-5s8-3 10-8M20 41c3-4 8-3 11-7s9-3 13-7M17 20c4 1 6-3 10-2s5-4 9-4M33 44c2-4 7-4 10-8s7-3 10-7M41 14c2 3 6 3 8 7s5 4 6 8M24 13c2 3 6 2 8 5M9 26c3 0 4-3 7-3"
+          fill="none"
+          stroke="#e6e9ee"
+          strokeOpacity="0.35"
+          strokeWidth="1.1"
+          strokeLinecap="round"
         />
-      </g>
-      <path
-        d="M41 43c4-2 9-2 14 0M40 46.5c5-2 11-2 16 0M12 32c5-3 9-1 12-5s8-3 10-8M20 41c3-4 8-3 11-7s9-3 13-7M17 20c4 1 6-3 10-2s5-4 9-4M33 44c2-4 7-4 10-8s7-3 10-7M41 14c2 3 6 3 8 7s5 4 6 8M24 13c2 3 6 2 8 5M9 26c3 0 4-3 7-3"
-        fill="none"
-        stroke="#e6e9ee"
-        strokeOpacity="0.35"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-      />
-      {/* axons, a pulse running down each in turn */}
+      </svg>
+      {/* axons, a pulse running down each in turn: fixed dots, as a moving one is repainted */}
       {firing === true &&
-        brainAxons.map(([d, begin], i) => (
-          <path key={i} d={d} pathLength={1} {...brainAxon}>
-            <animate
-              attributeName="stroke-dashoffset"
-              values="0.3;-1"
-              dur="2.4s"
-              begin={`${begin}s`}
-              repeatCount="indefinite"
-            />
-          </path>
+        brainPulses.map(([x, y, begin], i) => (
+          <div
+            key={i}
+            className="hud-pulse"
+            style={{ left: brainPct(x), top: brainPct(y), animationDelay: `${begin}s`, animationPlayState }}
+          />
         ))}
       {brainNeurons.map(([cx, cy, begin], i) => (
-        <circle key={i} cx={cx} cy={cy} r="3.2" fill="url(#hud-neuron)" opacity="0.15">
-          {firing === true && (
-            <animate
-              attributeName="opacity"
-              values="0.15;1;0.15;0.15"
-              keyTimes="0;0.12;0.4;1"
-              dur="2.4s"
-              begin={`${begin}s`}
-              repeatCount="indefinite"
-            />
-          )}
-        </circle>
+        <div
+          key={i}
+          className={cn("hud-neuron", firing && "hud-neuron-firing")}
+          style={{ left: brainPct(cx), top: brainPct(cy), animationDelay: `${begin}s`, animationPlayState }}
+        />
       ))}
-    </svg>
+    </div>
   );
 });
 
-const brainAxon = {
-  fill: "none",
-  stroke: "#9fe3ff",
-  strokeWidth: 1.1,
-  strokeLinecap: "round",
-  strokeDasharray: "0.3 1",
-  strokeDashoffset: 0.3,
-} as const;
+/** Of the icon's 64 unit square */
+const brainPct = (units: number) => `${(units / 64) * 100}%`;
 
-/** `[path, seconds in]`, each from one of `brainNeurons` to the next */
-const brainAxons: [string, number][] = [
-  ["M14 30Q20 22 27 21", 0],
-  ["M27 21Q35 15 44 19", 0.5],
-  ["M44 19Q52 24 50 33", 1],
-  ["M27 21Q30 30 37 34", 0.6],
-  ["M37 34Q44 38 50 33", 1.2],
-  ["M14 30Q20 38 28 39", 1.5],
-  ["M28 39Q33 38 37 34", 2],
+/** Seconds a pulse takes to run down its axon */
+const brainPulseSecs = 1.6;
+
+/** A quadratic curve: from, control, to */
+type BrainCurve = [x0: number, y0: number, cx: number, cy: number, x1: number, y1: number];
+
+/** `[curve, seconds in]`, each from one of `brainNeurons` to the next */
+const brainAxons: [BrainCurve, number][] = [
+  [[14, 30, 20, 22, 27, 21], 0],
+  [[27, 21, 35, 15, 44, 19], 0.5],
+  [[44, 19, 52, 24, 50, 33], 1],
+  [[27, 21, 30, 30, 37, 34], 0.6],
+  [[37, 34, 44, 38, 50, 33], 1.2],
+  [[14, 30, 20, 38, 28, 39], 1.5],
+  [[28, 39, 33, 38, 37, 34], 2],
 ];
+
+/** `[x, y, seconds in]` of each step of a pulse, five to an axon */
+const brainPulses = brainAxons.flatMap(([[x0, y0, cx, cy, x1, y1], begin]) =>
+  [1, 2, 3, 4, 5].map((step): [number, number, number] => {
+    const t = step / 6;
+    return [
+      (1 - t) ** 2 * x0 + 2 * (1 - t) * t * cx + t ** 2 * x1,
+      (1 - t) ** 2 * y0 + 2 * (1 - t) * t * cy + t ** 2 * y1,
+      begin + t * brainPulseSecs,
+    ];
+  }),
+);
 
 /** `[x, y, seconds in]`, lit as a pulse sets out or lands */
 const brainNeurons: [number, number, number][] = [
