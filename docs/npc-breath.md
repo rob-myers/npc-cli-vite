@@ -55,6 +55,10 @@ How it is built:
   is skinned, and the geometry is built once in that bone's own frame from `breathConfig`.
 - **`normal` is the way a vertex moves**, not its facing: outwards on a lung, straight down on the
   diaphragm. `breathShare` is how far. `breathNow` is the per-instance breath.
+- **Looked down on, the lungs go faint** (`above`), as there they lie over their own head. Straight
+  on they are at full strength. `breathUp` is the way each chest stands, and the test is in the
+  shader, so it follows a camera turned whilst the world is paused. One lain is seen straight on from
+  above. The diaphragm is always at full strength.
 - **It is additive and writes no depth.** Its depth is drawn `depthBias` nearer the eye, so it shows
   through their own body yet is still hidden by a wall. An alpha of nought adds nothing, which is how
   it stays out of a pick.
@@ -68,3 +72,4 @@ It is not dimmed by the player light or a room's fade, so another npc's shows in
 - A shell of their whole body, pushed off it and lit by the breath.
 - A skinned mesh per npc breathing, sharing their skeleton. It was a draw call and a material each.
 - Nerves, a thin prism along each bone with pulses running out from the head.
+- Hiding the lungs seen from in front, and drawing them as an outline alone where they cover the head.

@@ -397,6 +397,11 @@ export const breathConfig = {
     /** How bright it is at rest, as a share of contracting */
     rest: 0.3,
   },
+  /**
+   * Looked down on, the lungs lie over their head, so they go faint. `fade` is from and to, as the cosine
+   * between the way they are looked at and the way their chest stands: `0` is straight on, and full
+   */
+  above: { fade: [0.2, 0.6], left: 0.15 },
   /** Metres nearer the eye its depth is drawn, so it shows through their own body yet not a wall */
   depthBias: 0.4,
 };

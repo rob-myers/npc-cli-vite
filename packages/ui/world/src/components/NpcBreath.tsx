@@ -1,5 +1,6 @@
 import { useStateRef } from "@npc-cli/util";
 import { useContext } from "react";
+import * as THREE from "three/webgpu";
 import { createBreathGhost } from "../service/breath-ghost";
 import { WorldContext } from "./world-context";
 
@@ -11,7 +12,7 @@ export default function NpcBreath() {
     (): State => ({
       ghost: createBreathGhost(w.view.objectPick),
       onTick() {
-        const { mesh, nowData, nowAttr } = state.ghost;
+        const { mesh, nowData, nowAttr, upData, upAttr } = state.ghost;
         let i = 0;
         for (const npcKey in w.n) {
           const npc = w.n[npcKey];
@@ -22,6 +23,11 @@ export default function NpcBreath() {
           // this frame's, which the render has yet to work out
           breath.chest.updateWorldMatrix(true, false);
           mesh.setMatrixAt(i, breath.chest.matrixWorld);
+          // the bone's own `y` in the world
+          tmpUp
+            .setFromMatrixColumn(breath.chest.matrixWorld, 1)
+            .normalize()
+            .toArray(upData, i * 3);
           const shown = breath.amount * breath.amount * (3 - 2 * breath.amount);
           nowData[i * 4] = breath.full;
           nowData[i * 4 + 1] = breath.drive;
@@ -36,6 +42,7 @@ export default function NpcBreath() {
         for (const [attr, size] of [
           [mesh.instanceMatrix, 16],
           [nowAttr, 4],
+          [upAttr, 3],
         ] as const) {
           attr.clearUpdateRanges();
           attr.addUpdateRange(0, i * size);
@@ -50,6 +57,8 @@ export default function NpcBreath() {
 
   return <primitive object={state.ghost.mesh} />;
 }
+
+const tmpUp = new THREE.Vector3();
 
 export type State = {
   ghost: ReturnType<typeof createBreathGhost>;
