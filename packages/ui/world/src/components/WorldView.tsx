@@ -18,15 +18,15 @@ import { npcDims } from "../const.both";
 import {
   cameraFov,
   cameraRefAspect,
-  embodiedAxisLockFrom,
-  embodiedSnapArm,
-  embodiedSnapCancel,
-  embodiedZoomInRate,
   compilingShadersText,
   crosshairY,
   defaultCameraMaxDistance,
   defaultCameraMinDistance,
   defaultCameraMode,
+  embodiedAxisLockFrom,
+  embodiedSnapArm,
+  embodiedSnapCancel,
+  embodiedZoomInRate,
   frontierMargin,
   frontierNearest,
   frontierNearFrac,
@@ -75,6 +75,7 @@ import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import CrossHair from "./CrossHair";
 import LightSweep from "./LightSweep";
+import LookMark from "./LookMark";
 import NpcBubbles from "./NpcBubbles";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -133,6 +134,7 @@ export function WorldView(props: React.PropsWithChildren) {
         move: new Vect(),
         down: new Vect(),
         rightPress: false,
+        multi: false,
       },
       foldNode: uniform(1),
       labelReveal: uniform(1),
@@ -919,7 +921,8 @@ export function WorldView(props: React.PropsWithChildren) {
         const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
         state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
-        if (state.otherPointerDown(e) === true) {
+        last.multi = state.otherPointerDown(e);
+        if (last.multi === true) {
           return; // a second finger is the camera being pinched or rotated, never a pick
         }
 
@@ -949,7 +952,8 @@ export function WorldView(props: React.PropsWithChildren) {
         // another finger still down, or this one was never the gesture's first — the camera's, not
         // a pick. A pinch usually lifts one finger before the other, and the first of those ups
         // would otherwise pick wherever the second still rests
-        if (state.otherPointerDown(e) === true || e.isPrimary === false) {
+        // nor the last finger of several: where it lifts is no pick, e.g. after a look tap
+        if (state.otherPointerDown(e) === true || e.isPrimary === false || last.multi === true) {
           return;
         }
         if (last.longPress === true) {
@@ -962,6 +966,8 @@ export function WorldView(props: React.PropsWithChildren) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
+        // a right click has the player look there, as a tap of fingers does on touch. Still a pick
+        if (last.rightPress === true) w.player?.lookTowards(e.clientX, e.clientY);
         state.pickObject(e);
       },
       focus() {
@@ -1585,6 +1591,8 @@ export function WorldView(props: React.PropsWithChildren) {
 
         <CrossHair />
 
+        <LookMark />
+
         <NpcBubbles />
 
         {state.postProcessing && <PostProcessing />}
@@ -1725,6 +1733,8 @@ export type State = {
     move: Geom.Vect;
     down: Geom.Vect;
     rightPress: boolean;
+    /** Whether another finger has joined the press: then it is no pick */
+    multi: boolean;
   };
   pickRT: THREE.RenderTarget;
   /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */

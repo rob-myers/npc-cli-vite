@@ -12,6 +12,9 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 | `media/src/decor/{phaser,book,box,keycard}.svg` | an item's one textured face, as decor |
 | `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
 
+The player sets out with psi and a phaser: `defaultWorldSettings.carried`, for `defaultPlayerKey`. A World
+saved before has what it was left with.
+
 ## The bar
 
 Bottom centre of a World; a slot is pressed. None on a net client, where neither psi
