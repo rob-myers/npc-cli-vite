@@ -62,7 +62,6 @@ export default function Psi() {
         return influenceTarget(state.influence, w.player?.key);
       },
       onTick() {
-        if (w.n === null) return; // <NPCs> mounts after us
         const now = performance.now();
         const secs = Math.min((now - state.tickedMs) / 1000, 0.1);
         state.tickedMs = now;

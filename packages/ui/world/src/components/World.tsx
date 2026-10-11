@@ -47,6 +47,7 @@ import Floor from "./Floor";
 import Labels from "./Labels";
 import NavWorker from "./NavWorker";
 import NPCs from "./NPCs";
+import NpcBreath from "./NpcBreath";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
@@ -175,6 +176,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       hud: null as any,
       labels: null as any,
       rings: null as any,
+      breaths: null as any,
       psi: null as any,
       phasers: null as any,
       shields: null as any,
@@ -519,6 +521,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <>
                 <NpcRings key="npc-rings" />
                 <NpcShadows key="npc-shadows" />
+                <NpcBreath key="npc-breath" />
                 <Psi key="psi" />
                 <Phasers key="phasers" />
               </>
@@ -619,6 +622,7 @@ export type State = {
   npc: UseStateRef<import("./NPCs").State>;
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
+  breaths: UseStateRef<import("./NpcBreath").State>;
   psi: UseStateRef<import("./Psi").State>;
   phasers: UseStateRef<import("./Phasers").State>;
   shields: UseStateRef<import("./Shields").State>;

@@ -69,7 +69,7 @@ export default function PsiControls({ w }: { w: WorldState }) {
 }
 
 /** A labelled range, and beside it whatever shows its value */
-function Slider(props: {
+export function Slider(props: {
   label: string;
   /** `[min, max, step]` */
   range: readonly [number, number, number];

@@ -110,8 +110,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
         const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
         tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
-        if (Math.hypot(tmpHit.x - npc.position.x, tmpHit.z - npc.position.z) < lookDeadMetres) return;
-        state.lookAt = { x: tmpHit.x, y: tmpHit.z };
+        state.lookAtPoint(tmpHit.x, tmpHit.z);
+      },
+      lookAtPoint(x, z) {
+        const npc = w.n?.[state.key];
+        if (npc === undefined || w.client === true || w.disabled === true) return;
+        if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
+        state.lookAt = { x, y: z };
         // held as `r` would be, long enough to come round
         window.clearTimeout(state.lookTimer);
         state.lookTimer = window.setTimeout(() => {
@@ -290,6 +295,8 @@ export type State = {
   onTouch(e: TouchEvent): void;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
+  /** The same, to a world point */
+  lookAtPoint(x: number, z: number): void;
 
   /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;

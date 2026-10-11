@@ -60,6 +60,8 @@ export type WorldSettings = {
   npcContextMenu: boolean;
   /** What the player's bubble set of `Psi`, over its defaults */
   psiTune: Partial<import("../const.npc").PsiTune>;
+  /** What the player's bubble set of their breathing, over its defaults */
+  breathTune: Partial<import("../const.npc").BreathTune>;
   gmGraphsFilter: "gm" | "room";
   menuY: number;
   menuWidth: number;
@@ -97,6 +99,7 @@ const defaultWorldSettings: WorldSettings = {
   decorShown: false,
   npcContextMenu: true,
   psiTune: {},
+  breathTune: {},
   gmGraphsFilter: "room",
   menuY: 40,
   menuWidth: 288,

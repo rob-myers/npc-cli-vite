@@ -49,8 +49,10 @@ import { npcDims } from "../const.both";
 
 import {
   agentConfig,
+  type BreathTune,
   closestPolyByAccuracy,
   crowdConfig,
+  defaultBreathTune,
   defaultIdleAnimationClipKey,
   fromAnimationClipKey,
   npcConfig,
@@ -69,6 +71,7 @@ import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
 import { loadSkinSheets } from "../service/skin-sheets";
+import { getWorldStore } from "../service/storage";
 import { selectAs } from "../service/tsl";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
@@ -85,6 +88,7 @@ export default function NPCs() {
       headYByPose: mapValues(fromAnimationClipKey, () => 0),
       crowd: crowdApi.create(npcDims.maxAgentRadius),
       defaultSkinKey: "medic-0",
+      breathTune: { ...defaultBreathTune, ...getWorldStore(w.key).read().breathTune },
       // ONE uniform every npc material reads, so the slider is a value write rather than a rebuild
       dimNode: uniform(w.npcBrightness),
       ambientNode: uniform(w.getTheme().npcs.ambient),
@@ -352,6 +356,8 @@ export default function NPCs() {
         const hash = state.gltf === null ? 0 : hashJson(state.gltf.parser.json, false);
         const newGltf = hash !== state.gltfHash;
         state.gltfHash = hash;
+        // a field added since: `tickBreath` reads it as it is, with no defaults under it
+        state.breathTune = { ...defaultBreathTune, ...state.breathTune };
 
         /**
          * Don't create but instead mutate existing npcs, thereby avoiding stale references in ongoing code.
@@ -466,7 +472,12 @@ export default function NPCs() {
       },
       findSkinKey(prefix = state.defaultSkinKey) {
         const keys = state.skin.entries.map((entry) => entry.key);
-        return keys.find((key) => key === prefix || key.startsWith(prefix)) ?? state.defaultSkinKey;
+        // an exact key first, else `medic-1` could give `medic-10`
+        return keys.find((key) => key === prefix) ?? keys.find((key) => key.startsWith(prefix)) ?? state.defaultSkinKey;
+      },
+      setBreathTune(partial) {
+        Object.assign(state.breathTune, partial);
+        getWorldStore(w.key).patch({ breathTune: { ...state.breathTune } });
       },
       getSkinIndexBySkinKey(skinKey) {
         return state.skin.entries.findIndex((entry) => entry.key === skinKey);
@@ -705,6 +716,7 @@ export default function NPCs() {
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
       async spawn({ npcKey, at, as: skinPrefix, angle, facing }) {
+        // none given leaves a respawn in the skin they have: a first spawn takes the default in `rawSpawn`
         const as = state.findSkinKey(skinPrefix);
         if (typeof npcKey !== "string" || !npcSpawnConfig.keyPattern.test(npcKey)) {
           throw Error(`opts.npcKey must match: ${npcSpawnConfig.keyPattern}`);
@@ -922,6 +934,8 @@ export type State = {
   crowd: crowdApi.Crowd;
   /** The skin an npc wears unless given another */
   readonly defaultSkinKey: string;
+  /** How the player breathes, persisted — see `BreathControls` */
+  breathTune: BreathTune;
   /** How much of their skin every npc keeps — see `setBrightness`, and `w.npcBrightness` behind it */
   dimNode: THREE.UniformNode<"float", number>;
   /** The least exposure an npc has, from `theme.npcs.ambient` — a light theme has no dark to stand in */
@@ -1060,6 +1074,7 @@ export type State = {
      */
     facing?: JshCli.PointAnyFormat;
   }): Npc;
+  setBreathTune(partial: Partial<BreathTune>): void;
   spawn(opts: JshCli.SpawnOpts): Promise<void>;
   /**
    * Shuffle round before walking off, when the first leg is well behind them AND someone stands

@@ -6,6 +6,8 @@ import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
 import {
   agentConfig,
+  breathConfig,
+  defaultBreathTune,
   defaultFadeSecs,
   defaultIdleAnimationClipKey,
   fadeSecs,
@@ -89,6 +91,21 @@ export class NpcAnimation {
   rolledAt = -Infinity;
   /** A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head */
   turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false };
+  /** Their breathing: `amount` eases to `on`, and `phase` is in breaths — see `tickBreath` */
+  breath = {
+    on: false,
+    amount: 0,
+    phase: Math.random(),
+    /** The air in their lungs and the effort of breathing in, `0` to `1`, then their tune's — read by `NpcBreath` */
+    full: 0,
+    drive: 0,
+    glow: 0,
+    reach: 0,
+    /** The bone their ghost is carried by, once found */
+    chest: null as null | THREE.Object3D,
+    /** The resting pose's clip whose clock their breath has taken — see `breathClock` */
+    held: null as null | THREE.AnimationAction,
+  };
   /** In pain, or pacified: the clip shown instead of idle, seconds into it, and what follows it — see `setHurt` */
   hurt = null as null | { key: AnimationClipKey; secs: number; next: null | AnimationClipKey };
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
@@ -224,6 +241,7 @@ export class NpcAnimation {
     }
     this.upperHead.entry = bonesOf("head")[0] ?? null;
     this.turn.bones = bonesOf("stomach", "chest", "head");
+    this.breath.chest = null;
   }
 
   upperOf(side: Side) {
@@ -243,6 +261,7 @@ export class NpcAnimation {
     this.tickHeadShake(delta);
     this.tickTurn(delta);
     this.tickHurt(delta);
+    this.tickBreath(delta);
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
       tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
@@ -303,6 +322,55 @@ export class NpcAnimation {
     } else if (face.rate > 0) {
       rotation.y += deltaAngle(rotation.y, face.target) * (1 - Math.exp(-5 * delta * face.rate));
     }
+  }
+
+  /** Breathe, or stop: eased either way, and nobody does until asked — see `docs/npc-breath.md` */
+  setBreathing(on: boolean) {
+    const { breath } = this;
+    breath.on = on;
+    // from where the pose's own breath has them, so nothing jumps
+    const clock = on === true ? this.breathClock() : null;
+    if (clock !== null) breath.phase = phaseOfClip(clock, this.breathTune.inhale);
+    this.w.r3f?.invalidate();
+  }
+
+  /** The player's is the World's, set in their bubble: anyone else's the default. Read each tick, so not a copy */
+  get breathTune() {
+    return (this.npc.key === this.w.player?.key ? this.w.npc.breathTune : undefined) ?? defaultBreathTune;
+  }
+
+  /** The clip a resting pose breathes by, which a breath runs by its own clock instead */
+  breathClock() {
+    return breathClips.has(this.pose) ? this.mixer.existingAction(this.npc.clips[this.pose]) : null;
+  }
+
+  /** Works out the air in their lungs, for `NpcBreath` to draw, and has their body breathe with them */
+  tickBreath(delta: number) {
+    const { breath } = this;
+    if (breath.on === false && breath.amount === 0) return; // nearly everyone, nearly always
+    const tune = this.breathTune;
+    breath.phase = (breath.phase + (delta * tune.rate) / 60) % 1;
+    const step = delta / breathConfig.easeSecs;
+    breath.amount = THREE.MathUtils.clamp(breath.amount + (breath.on ? step : -step), 0, 1);
+    const full = lungVolume(breath.phase, tune.inhale);
+
+    // their body moves by the pose's own clip, held at the moment it has them this full
+    const clock = breath.on === true ? this.breathClock() : null;
+    if (breath.held !== clock) {
+      if (breath.held !== null) breath.held.timeScale = 1; // it carries on from where it was left
+      breath.held = clock;
+    }
+    if (clock !== null) {
+      clock.timeScale = 0;
+      clock.time = clipTimeOf(full, breath.phase >= tune.inhale, clock.getClip().duration);
+    }
+
+    breath.full = full;
+    // the effort of breathing in: none breathing out, which is recoil
+    breath.drive = breath.phase < tune.inhale ? Math.sin((Math.PI * breath.phase) / tune.inhale) : 0;
+    breath.glow = tune.glow;
+    breath.reach = tune.reach;
+    this.w.r3f?.invalidate();
   }
 
   /** Slerp each arm from the pose towards its clip, by `blend` — and the head towards the left's, then the right's over it */
@@ -914,6 +982,47 @@ const tmpAxis = new THREE.Vector3();
 const tmpTip = new THREE.Vector3();
 const tmpPole = new THREE.Vector3();
 const tmpHeld = { left: new THREE.Vector3(), right: new THREE.Vector3() };
+
+/**
+ * The air in their lungs, `0` to `1`, at `phase` of a breath. In by muscle, a smooth rise.
+ * Out by recoil, critically damped: quick at first, then all but still until the next
+ */
+function lungVolume(phase: number, inhale: number) {
+  if (phase < inhale) return 0.5 - 0.5 * Math.cos((Math.PI * phase) / inhale);
+  const atEnd = airLeft(1);
+  return (airLeft((phase - inhale) / (1 - inhale)) - atEnd) / (1 - atEnd);
+}
+
+/** The share of a breath still in them `x` of the way through breathing out, before it is fitted to end on nought */
+function airLeft(x: number) {
+  const k = breathConfig.recoil;
+  return (1 + k * x) * Math.exp(-k * x);
+}
+
+/** Poses at rest whose clip is one breath: empty at `0` and full halfway, whatever its length */
+const breathClips = new Set<AnimationClipKey>(["idle", "breathe", "sit", "lie", "lie_left", "lie_right"]);
+
+/** Seconds into such a clip at which it has them `volume` full */
+function clipTimeOf(volume: number, exhaling: boolean, duration: number) {
+  const up = ((duration / 2) * Math.acos(1 - 2 * THREE.MathUtils.clamp(volume, 0, 1))) / Math.PI;
+  return exhaling === true ? duration - up : up;
+}
+
+/** The phase of a breath at which their lungs are as full as such a clip has them now */
+function phaseOfClip(action: THREE.AnimationAction, inhale: number) {
+  const { duration } = action.getClip();
+  const time = ((action.time % duration) + duration) % duration;
+  const volume = 0.5 - 0.5 * Math.cos((2 * Math.PI * time) / duration);
+  if (time < duration / 2) return (inhale * Math.acos(1 - 2 * volume)) / Math.PI;
+  // breathing out only ever falls, so it is halved onto
+  let [from, to] = [inhale, 1];
+  for (let i = 0; i < 20; i++) {
+    const mid = (from + to) / 2;
+    if (lungVolume(mid, inhale) > volume) from = mid;
+    else to = mid;
+  }
+  return from;
+}
 
 /** `weight` of the turn from `from` onto `want`, world and unit, `maxRad` at most: about `parent`'s child, so in its frame */
 function turnWithin(parent: THREE.Object3D, from: THREE.Vector3, want: THREE.Vector3, maxRad: number, weight: number) {
