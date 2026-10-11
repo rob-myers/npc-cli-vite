@@ -44,7 +44,7 @@ export default function WorldHtml() {
           wantsFocus: prev === undefined && opts?.focus === true && w.touchDevice === false,
         });
         state.update();
-        w.view.forceUpdate();
+        w.r3f?.invalidate(); // not `forceUpdate`, which re-renders the whole World
       },
       hide(...keys) {
         let removed = false;
@@ -61,7 +61,7 @@ export default function WorldHtml() {
         if (removed === false) return;
         if (hadFocus === true) w.view.focus(); // else it falls to the body, and keys miss the World
         state.update();
-        w.view.forceUpdate();
+        w.r3f?.invalidate();
       },
       focus(key) {
         const entry = state.byKey.get(key);
@@ -91,7 +91,7 @@ export default function WorldHtml() {
         const offsetY = entry.offset.y;
         track((x, y) => {
           entry.offset.y = offsetY + worldAt(x, y) - startY; // up and down only
-          w.view.forceUpdate();
+          w.r3f?.invalidate();
         });
       },
       onResizeStart(key, clientX, clientY) {
