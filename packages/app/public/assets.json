@@ -62902,7 +62902,7 @@
     "light-theme": {
       "post": {
         "lightBg": "#000",
-        "darkBg": "#fff",
+        "darkBg": "#000",
         "fadedFloorTint": 0.6,
         "fadedObstacleTint": 0.6
       },
