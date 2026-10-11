@@ -154,7 +154,7 @@ export default function WorldHud() {
         className={cn(
           "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
           opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
-          big ? "h-12 w-10" : "h-18 w-15",
+          big ? "h-15 w-12.5" : "h-18 w-15",
           opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
           opts.had === false && "*:opacity-25",
         )}
@@ -193,7 +193,7 @@ export default function WorldHud() {
             title={`drop ${opts.title}`}
             className={cn(
               "absolute top-0.5 right-0.5 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 opacity-100! hover:border-red-400/70 hover:text-red-300",
-              big ? "size-6" : "size-5",
+              big ? "size-7" : "size-5",
               opts.active === true && opts.plain !== true ? "grid" : "hidden group-hover:grid",
             )}
             onClick={(e) => {

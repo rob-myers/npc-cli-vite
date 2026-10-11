@@ -18,7 +18,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       key: defaultPlayerKey,
-      twoTap: null,
 
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -67,26 +66,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
-      },
-      onTouch(e) {
-        if (e.type === "touchstart") {
-          const [a, b, c] = e.touches; // a second finger begins one, a third ends it
-          const onCanvas = a?.target === w.view.canvas && b?.target === w.view.canvas;
-          state.twoTap = onCanvas && c === undefined ? { startMs: e.timeStamp, downs: [a, b] } : null;
-          return;
-        }
-        const tap = state.twoTap;
-        if (tap === null) return;
-        const strayed = [...e.changedTouches].some((t) => {
-          const down = tap.downs.find((d) => d.identifier === t.identifier);
-          return down === undefined || Math.hypot(t.clientX - down.clientX, t.clientY - down.clientY) > twoTapSlopPx;
-        });
-        if (e.type === "touchcancel" || strayed || e.timeStamp - tap.startMs > twoTapMs) state.twoTap = null;
-        else if (e.touches.length === 0) {
-          state.twoTap = null;
-          const { left, width } = w.view.canvas.getBoundingClientRect();
-          (tap.downs[0].clientX + tap.downs[1].clientX) / 2 < left + width / 2 ? state.togglePsi() : state.toggleArm();
-        }
       },
       toggleArm() {
         if (w.n?.[state.key] === undefined || w.phasers === null) return;
@@ -171,14 +150,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       setupDom() {
         const el = w.rootEl;
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
-        const onTouch = (e: TouchEvent) => state.onTouch(e);
-        const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);
-        for (const type of touchTypes) el.addEventListener(type, onTouch);
-        return () => {
-          el.removeEventListener("keydown", onKeyDown);
-          for (const type of touchTypes) el.removeEventListener(type, onTouch);
-        };
+        return () => el.removeEventListener("keydown", onKeyDown);
       },
       setKey(npcKey) {
         if (npcKey === state.key || w.n[npcKey] === undefined) {
@@ -224,14 +197,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 }
 
-/** A two-finger tap's longest, second finger down to last up, and how far either may stray — as `isPointDiffDrag` */
 /** The aim `aimAtPointer` gives the player: ours alone to clear */
 const pointerAim = { at: { x: 0, y: 0 }, rate: 1, untilRest: false };
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
-const twoTapMs = 300;
-const twoTapSlopPx = 20;
 
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
@@ -241,13 +211,9 @@ export type State = {
   ensure(): Promise<boolean>;
   /** Whilst `r` is held they face where the pointer meets the floor, eased round by `face.aim` */
   aimAtPointer(): void;
-  /** Two fingers down on the canvas that may yet be a tap: since when, and where */
-  twoTap: null | { startMs: number; downs: [Touch, Touch] };
 
   /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
-  /** A two-finger tap on the canvas: its left half psi, its right half their phaser — as their hands, and the bar */
-  onTouch(e: TouchEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
   /** Run or walk — their `anim.hurry` */

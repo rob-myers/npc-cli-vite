@@ -148,6 +148,6 @@ export const CameraControls = forwardRef(function CameraControls(props, ref) {
  */
 
 /**
- * @typedef {"free" | "canonical"} CameraModeType
- * `canonical` is `free` whose zoom-out eases into birdseye — see `WorldView`'s `onCameraFrame`
+ * @typedef {"free" | "embodied"} CameraModeType
+ * `embodied` is `free` whose zoom-out eases into birdseye — see `WorldView`'s `onCameraFrame`
  */

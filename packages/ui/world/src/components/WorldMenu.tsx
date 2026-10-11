@@ -1177,7 +1177,7 @@ const toastLingerMs = 2000;
 /** Minimum time the trigger's spinner stays up */
 const spinnerMinMs = 300;
 
-const cameraModes: CameraModeType[] = ["free", "canonical"];
+const cameraModes: CameraModeType[] = ["free", "embodied"];
 const debugItems = [
   "view pick",
   "post fx",

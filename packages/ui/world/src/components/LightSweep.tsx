@@ -29,7 +29,7 @@ export default function LightSweep() {
       w.view.fadeRoomsFx.mode === "sight",
     );
     // and how far ahead they can see, off the sweep just dispatched — only whilst it is wanted
-    if (player !== undefined && w.view.cameraMode === "canonical") {
+    if (player !== undefined && w.view.cameraMode === "embodied") {
       // eased more gently whilst they are off the mesh or mid fade-spawn — see `frontierCalmRate`
       const calm = player.agentId === null || player.isFading() === true;
       // the way their head faces, which is not always their body's

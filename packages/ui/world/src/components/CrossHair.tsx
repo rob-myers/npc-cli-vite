@@ -5,7 +5,7 @@ import { createGroundCrosshairGeometry } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 /**
- * Where a `canonical` zoom-in is heading — see `WorldView`'s `onZoomWheel`, and its
+ * Where a `embodied` zoom-in is heading — see `WorldView`'s `onZoomWheel`, and its
  * `setCrosshair` which moves it and `fadeCrosshair` which fades it
  */
 export default function CrossHair() {

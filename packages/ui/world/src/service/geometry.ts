@@ -470,7 +470,7 @@ export function createUnitBox(opts?: { singleFaceGroup?: boolean }) {
 }
 
 /**
- * A crosshair lying FLAT on the ground, marking where a `canonical` zoom-in is heading:
+ * A crosshair lying FLAT on the ground, marking where a `embodied` zoom-in is heading:
  * four arms about a gap, as one geometry so a single material fades the lot
  */
 export function createGroundCrosshairGeometry(gap = 0.04, len = 0.12, thickness = 0.015) {

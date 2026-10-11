@@ -31,7 +31,7 @@ look/follow (a press looks, a long press toggles the follow, as `c`) and, not on
 Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
 A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
 The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
-are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`. On touch a two-finger tap on the World does the same: its left half psi, its right half the phaser.
+are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`.
 An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
 a slot's menu opens on a long press.
