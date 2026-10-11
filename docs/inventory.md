@@ -39,7 +39,7 @@ An item, and a carried phaser, show an "x" which puts it down on hover — an it
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
 a slot's menu opens on a long press.
 
-The bar re-renders when nudged (`w.hud?.update()`, from `Psi.choose`, `Phasers.sync` and every change
+The bar re-renders when nudged (`w.hud?.update()`, from `Psi.setOn`, `Phasers.sync` and every change
 to `carried` or to access) and on the player's own door and spawn events.
 
 ## Having
@@ -93,8 +93,6 @@ phaser and stands has it in their right hand, raised or not — `w.phasers.holds
   bone, so it never turns about its barrel as the arm comes up or down.
 - The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`) — whilst the gun stays in hand.
-- Psi's waves go TOWARDS its target, the player no longer turning to them: the cone they are drawn in
-  is swung round as the target changes (`psiConfig.swing`). What they are is in `docs/psi.md`.
 
 ### What a hit does
 
@@ -152,9 +150,8 @@ Debug's door toggle reads that off any pick.
   newer press abandons it;
 - on an npc whilst the phaser is drawn, the beam locks onto the part pressed. A press on the
   player's own right arm lowers it instead, its target kept for when it is next raised, and one
-  elsewhere on them does nothing. With the phaser
-  lowered and psi on, another npc pressed becomes psi's target. A press on the player's own LEFT
-  arm lowers psi, phaser drawn or not, keeping its target for when it is next raised: but nothing
-  is sent them then, until they are pressed. `preds`' pick ring stands down meanwhile.
+  elsewhere on them does nothing. With the phaser lowered and psi on, another npc pressed has
+  their thought read (`docs/psi.md`). A press on the player's own LEFT
+  arm lowers psi, phaser drawn or not. `preds`' pick ring stands down meanwhile.
 
 It is a keyed listener (`w.e.addKeyedListener`), as `preds` is, so there is no process to kill.

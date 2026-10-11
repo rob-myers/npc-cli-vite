@@ -336,16 +336,6 @@ export const fadeSecs: Record<
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
-export const defaultPsiTune: PsiTune = {
-  speed: 0.45,
-  width: 2.25,
-  packet: 1,
-  amp: 0.12,
-  line: 0.35,
-  opacity: 0.3,
-  color: "#9eb6ff",
-};
-
 /** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
 export const psiKhandhas = {
   form: { color: "#e8a15a" },
@@ -409,34 +399,6 @@ export const breathConfig = {
   },
   /** Metres nearer the eye its depth is drawn, so it shows through their own body yet not a wall */
   depthBias: 0.4,
-};
-
-/** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
-export const psiTuneRanges = {
-  speed: [0.05, 2, 0.05],
-  width: [0.5, 8, 0.25],
-  packet: [0.2, 3, 0.1],
-  amp: [0, 0.5, 0.01],
-  line: [0, 1, 0.05],
-  opacity: [0.05, 1, 0.05],
-} as const;
-
-/** What the player's bubble adjusts of `Psi`, persisted */
-export type PsiTune = {
-  /** How fast a wave goes: see `thoughtConfig.speedOver` */
-  speed: number;
-  /** Pixels wide a wave's line is drawn */
-  width: number;
-  /** Metres long a wave's sinusoid is */
-  packet: number;
-  /** Metres the sinusoid rises and falls */
-  amp: number;
-  /** How much of full strength the line has away from the sinusoid */
-  line: number;
-  /** Of each wave, which glows additively: lower is fainter */
-  opacity: number;
-  /** The player's waves: their intention */
-  color: string;
 };
 
 /** What an npc may be posed as — see jsh `pose` */

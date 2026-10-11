@@ -1428,7 +1428,6 @@ export function WorldView(props: React.PropsWithChildren) {
         state.syncPickRT();
         w.npc?.syncOutlineMask();
         w.roomLabels?.syncOutlineMask();
-        w.psi?.syncOutlineMask();
 
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
@@ -1462,7 +1461,6 @@ export function WorldView(props: React.PropsWithChildren) {
           state.syncPickRT();
           w.npc?.syncOutlineMask();
           w.roomLabels?.syncOutlineMask();
-          w.psi?.syncOutlineMask();
           state.forceUpdate();
         };
       },

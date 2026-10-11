@@ -140,7 +140,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       togglePsi() {
         if (w.n?.[state.key] === undefined || w.psi === null) return;
-        if (w.psi.getTarget() === null && w.e.hasItem(state.key, "psi") === false) return;
+        if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
         w.psi.toggle();
       },
       async panTo({ animate = true } = {}) {
@@ -156,9 +156,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           track: () => w.n[state.key]?.point,
         });
       },
-      psi(npcKey) {
-        if (npcKey !== null) w.npc.get(npcKey); // throws for an unknown npc
-        w.psi.choose(npcKey);
+      psi(on) {
+        w.psi.setOn(on);
       },
       persist() {
         w.e.persistNpcs();
@@ -304,14 +303,14 @@ export type State = {
   toggleArm(): void;
   /** Run or walk — their `anim.hurry` */
   toggleRun(): void;
-  /** Psi off, else back on to the last target — on needs psi */
+  /** Psi off, else on — on needs psi */
   togglePsi(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
-  /** Target `npcKey` — the player themself for their rings alone, `null` for off. See `Psi` */
-  psi(npcKey: null | string): void;
+  /** Psi on or off, granted or not. See `Psi` */
+  psi(on: boolean): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;
   /** Spawns the player at one of the map's `meta.spawn` decor points, at random — `false` if it has none */

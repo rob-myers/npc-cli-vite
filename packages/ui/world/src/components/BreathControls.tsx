@@ -1,8 +1,7 @@
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { type BreathTune, breathTuneRanges, defaultBreathTune } from "../const.npc";
-import { Slider } from "./PsiControls";
 import type { State as WorldState } from "./World";
 
 /** The player's breathing, as `tickBreath` moves them: folded away until asked for */
@@ -54,6 +53,40 @@ export default function BreathControls({ w }: { w: WorldState }) {
           </Slider>
         ))}
     </div>
+  );
+}
+
+/** A labelled range, and beside it whatever shows its value */
+function Slider(props: {
+  label: string;
+  /** `[min, max, step]` */
+  range: readonly [number, number, number];
+  value: number;
+  onChange(value: number): void;
+  /** A css background for the track, in place of the plain one */
+  track?: string;
+  children: ReactNode;
+}) {
+  const [min, max, step] = props.range;
+  return (
+    <label className="flex items-center gap-3">
+      <span className="w-24 shrink-0 whitespace-nowrap text-white/50">{props.label}</span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+        className={
+          props.track === undefined
+            ? "min-w-0 flex-1 cursor-pointer accent-white"
+            : "h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full accent-white"
+        }
+        style={props.track === undefined ? undefined : { background: props.track }}
+      />
+      <span className="flex w-16 shrink-0 justify-end tabular-nums text-white/60">{props.children}</span>
+    </label>
   );
 }
 

@@ -97,7 +97,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (name === "psi") {
           if (had.psi !== true) return false;
           delete had.psi;
-          if (npcKey === w.player.key) w.psi?.choose(null);
+          if (npcKey === w.player.key) w.psi?.setOn(false);
           state.onCarriedChange(npcKey);
           return true;
         }
@@ -585,7 +585,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.npc?.setAmbient(npcs.ambient);
         w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
-        w.psi?.syncTune();
         w.phasers?.syncTheme();
         w.shields?.syncTheme();
         w.floor.setFadedTint(post.fadedFloorTint);
@@ -704,7 +703,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "set-player":
             state.syncFadeRooms(); // the rooms in view are the player's
-            if (e.playerKey !== null && state.hasItem(e.playerKey, "psi") === false) w.psi?.choose(null);
+            if (e.playerKey !== null && state.hasItem(e.playerKey, "psi") === false) w.psi?.setOn(false);
             break;
           case "nav-updated":
             // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
@@ -1340,12 +1339,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.key === w.player.key) {
           return true; // player must sync
         }
-        // a psi target's rooms are shown too — see `fadeRoomsFx.sync`
-        const psiTarget = npc.key === w.psi?.getTarget();
-        if (psiTarget === true) w.psi.targetRoom = { at: w.npc.npcToRoom.get(npc.key) ?? null, also: alsoAt ?? null };
         const at = npc.lit === true ? w.npc.npcToRoom.get(npc.key) : undefined;
         if (at === undefined) {
-          return state.litRooms.delete(npc.key) || psiTarget;
+          return state.litRooms.delete(npc.key);
         }
         state.litRooms.set(npc.key, alsoAt === undefined ? [at] : [at, alsoAt]);
         return true;
@@ -1645,7 +1641,7 @@ export type State = {
   /**
    * Puts `npc` into `litRooms`, or takes them out of it — see `setNpcLit`.
    *
-   * Returns `true` iff the rooms shown may have changed: the player, a psi target, or a lit npc set or deleted.
+   * Returns `true` iff the rooms shown may have changed: the player, or a lit npc set or deleted.
    * @param alsoAt the far side of the doorway they stand in, if they stand in one
    */
   syncLitRoom(npc: Npc, alsoAt?: Geomorph.GmRoomId): boolean;

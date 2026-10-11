@@ -1,6 +1,6 @@
 import type { KhandhaKey } from "../const.npc";
 
-/** Something an npc thinks, unsaid: psi reads it — see `docs/psi.md` */
+/** Something an npc thinks, unsaid — see `docs/psi.md` */
 export type Thought = { khandha: KhandhaKey; text: string };
 
 /** How a thought is marked wherever it is shown: its khandha, and that one's colour */
@@ -18,8 +18,6 @@ export const demoThoughts: Thought[] = [
 ];
 
 export const thoughtConfig = {
-  /** Metres per second a wave goes, per unit of `PsiTune.speed` */
-  speedOver: 12,
   /** Seconds a thought stays over them */
   shownSecs: 5,
 } as const;

@@ -5,7 +5,6 @@ import { useContext, useEffect, useReducer, useState } from "react";
 import { type ThoughtTag, thoughtConfig } from "../service/thoughts";
 import BreathControls from "./BreathControls";
 import type { AnimationClipKey } from "./NPCs";
-import PsiControls from "./PsiControls";
 import { Glyphed } from "./TalkThread";
 import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
@@ -237,7 +236,6 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
         )}
       </div>
       {npcKey === w.player?.key && <BreathControls w={w} />}
-      {npcKey === w.player?.key && <PsiControls w={w} />}
     </div>
   );
 }

@@ -156,10 +156,9 @@ World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `ka
 
 ## Psi
 
-See `docs/psi.md` — the ONLY doc for it. In short: a target's mind is modelled on the five khandhas.
-Each time the player chooses them with psi, `Psi.exchange` sends their INTENTION as a wave, and the
-target's THOUGHT comes back as another, read as it arrives: over their head (`w.bubble.think`) and in their thread of
-the speech history (`w.speech.think`), marked with its khandha.
+See `docs/psi.md` — the ONLY doc for it. In short: psi is on or off (`w.psi.on`), and on, the player's
+left hand is at their temple. It has no target and draws nothing. Raised, a press on another npc reads
+their thought (`w.psi.read`): over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha.
 
 ## Shields
 
@@ -239,10 +238,10 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — `Picker`, from `@npc-cli/util/picker`.
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
-- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`' `onTick` via `useMemo`) must guard it.
+- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`'s `onTick`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 
-- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone — those drawing npcs or what surrounds them too, e.g. `NpcRings`, `Psi` and its tuning — never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
+- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone — those drawing npcs or what surrounds them too, e.g. `NpcRings`, `NpcBreath` — never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
 - Comments must be TERSE and sparing: one short line, never a paragraph, and only what the code
   doesn't already say. Prefer none to a restatement. Where one does clarify, attach it to the syntax
   it explains — a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.

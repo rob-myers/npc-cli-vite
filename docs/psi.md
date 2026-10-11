@@ -1,18 +1,32 @@
-# Psionic powers
+# Psi
 
-The player's psi: what it is for, how thoughts are read, what is drawn, and what is still only
-planned. The bar slot, the `q` key and the hand at the temple are in `docs/inventory.md`.
+The ONLY doc for the player's psi. The bar slot and the `q` key are in `docs/inventory.md`.
 
-## The idea
+## What it is now
 
-A target's mind is modelled on the five khandhas (aggregates). They belong to the TARGET, and each
-depends on the one before:
+Psi is ON or OFF, and that is all `components/Psi.tsx` (`w.psi`) holds.
 
-```
-form -> sensation -> perception -> formations -> consciousness
-                                    ^      |
-                                    `------'  (formations feed themselves)
-```
+- **On, the player's left hand goes to their temple** (`syncHands`, the `psi` upper clip). Near a
+  crowd neighbour, in a doorway, or lain on that arm, it is `psi_avoid`, elbow tucked.
+- **It is switched** by `q`, its bar slot, a press on the player's own left arm (`kamma`), or jsh
+  `psi` / `psi off`. Turning it on from the bar or `q` needs psi granted (`w.e.hasItem`).
+- **It has no target.** Nothing is drawn between the player and anyone else.
+- **Raised, a press on another npc reads their thought** (`w.psi.read`, from `kamma`), at once.
+- **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.
+
+## Thoughts
+
+A THOUGHT is something an npc thinks and does not say, marked with the khandha it belongs to
+(`service/thoughts.ts`, colours in `psiKhandhas`). `w.psi.read` shows one two ways, through `w.speech.think`:
+
+- **Over their head.** `w.bubble.think` shows it above anything they are saying, outlined in its
+  khandha's colour and naming it, for `shownSecs`. One thought per npc, the latest.
+- **In the history.** `w.speech.think` puts it in their thread with the player in `WorldSpeech`,
+  outlined likewise. It raises no `speech` event, so a net client never hears of it.
+
+What is thought is a PLACEHOLDER: everyone thinks the same `demoThoughts`, in turn.
+
+The khandhas a mind is modelled on, each depending on the one before:
 
 | Khandha | What it is | In the world |
 |---|---|---|
@@ -22,64 +36,11 @@ form -> sensation -> perception -> formations -> consciousness
 | formations | units combined: histories, plans | where they mean to go, the replies they hold back |
 | consciousness | awareness of all of it | what they attend to, outside and in |
 
-## Status
+## Dropped
 
-- BUILT, UNSEEN: the exchange below. Written without being run.
-- PLACEHOLDER: what is thought. Everyone thinks the same `demoThoughts`, in turn.
-- PLANNED: thoughts of a character's own, and from what is happening to them.
-- PLANNED: an intention which says something, and a thought which answers it.
-- PLANNED: a thought on a line of a conversation, and replies which wait on one being read.
-
-## The exchange
-
-Nothing is sent of itself. Each time the player CHOOSES someone with psi, a press on them whilst it
-is on, the same one again or another, `Psi.exchange` runs once:
-
-1. **The player's INTENTION** goes out from them towards the target, at `PsiTune.speed` by `speedOver`
-   metres a second.
-2. **The target's THOUGHT** goes out from them in answer, as it gets there, in its khandha's colour.
-3. **It is read** as it reaches the player: over the target's head, and in the history.
-
-So no thought comes without an intention sent, and none is read before it has come. One asked for
-whilst another is under way waits for it to be answered. Psi coming off, or going to another, drops
-what was on its way: to another, the line is then laid afresh. Raised again (`q`) psi is back on whom it was on, but sends nothing until they
-are pressed.
-
-## Thoughts
-
-A THOUGHT is something an npc thinks and does not say, marked with the khandha it belongs to
-(`service/thoughts.ts`).
-
-- **Over their head.** `w.bubble.think` shows it above anything they are saying, outlined in its
-  khandha's colour and naming it, for `shownSecs`. One thought per npc, the latest.
-- **In the history.** `w.speech.think` puts it in their thread with the player in `WorldSpeech`,
-  outlined likewise. It raises no `speech` event, so a net client never hears of it.
-
-The colours are `psiKhandhas` in `const.npc`.
-
-## How it is drawn
-
-`components/Psi.tsx` owns the state and `service/psi-shader.ts` the look. The two waves are the same
-thing drawn the other way round, by a uniform of metres it has come (`come`), less than nought for none.
-
-- **A wave** is a line and a sinusoid. The line runs out from the sender's head to the other's,
-  `lineSpeedOver` times faster than the sinusoid, so it joins them first. It stays for the reply. It has `PsiTune.line` of
-  full strength.
-- **The sinusoid** then travels along that line: `packet` metres long, rising and falling `amp`,
-  at full strength. Its crests go `crestSpeedOver` times faster than it does, so it plays as it
-  travels. It grows out of nothing over `startOver`, and is gone by the time it reaches
-  whom it makes for (`landFrom`).
-- **Where:** on one strip from the foot of one head to the foot of the other. It turns about that
-  line to face the camera, so the wave reads the same from the side and from above.
-- **What hides it:** it is depth tested, as a stream of particles would be. A head hides it, and
-  so does a door.
-- **One draw call.** Only one wave is on its way at a time, so one mesh serves both: `back` says
-  which, and swaps its ends and its colour. It is hidden whilst nothing is on its way, and whilst
-  the two are within `minApart` of each other.
-- **The intention** is in the player's colour (`PsiTune.color`). **The thought** is in its khandha's.
-- The shader is told only where the two of them are (`playerAt`, `otherAt`).
-- Over a pale deck a line is laid over it in a deeper ink with a dark casing, not added as light.
-- Added light is scaled in the shader, and its alpha is written as coverage (`glowBlend`). The post
-  pass weighs a pixel by its alpha, so a faint wave over empty canvas would otherwise vanish.
-- An npc's border is not drawn over a wave. A wave marks itself a caption in `npcMask.g`, as a
-  label does (`syncOutlineMask`, see `service/npc-outline`).
+- **Targeting.** Psi was on someone: the npc last pressed, whose room was then shown, and jsh
+  `psi npcKey`. A press now reads a thought and is forgotten.
+- **The exchange and its waves.** Each choice sent the player's INTENTION to the target as a line
+  and a sinusoid, and their THOUGHT came back the same way, read only once it arrived
+  (`service/psi-shader`, `service/psi-influence`).
+- **`PsiControls`**, the bubble's sliders for those waves, and `psiTune` in the World's settings.

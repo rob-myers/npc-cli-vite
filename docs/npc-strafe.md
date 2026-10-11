@@ -38,7 +38,7 @@ turning to it is the usual exponential ease.
   replaces or clears only an aim it set, so a look still turns them. Armed at nobody, it holds their
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.
-- Psi sets no aim: its contours show where the target is, and the phaser's aim is the only one.
+- Psi sets no aim: the phaser's is the only one.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 

@@ -118,15 +118,14 @@ export const talkNeeds: Record<TalkNeed, { label: string; met(w: WorldState, pla
   facing: {
     label: "facing them",
     met(_w, player, npc) {
-      // as `Psi.upload` has it
       const look = -player.rotation.y - Math.PI / 2;
       const bearing = Math.atan2(npc.point.y - player.point.y, npc.point.x - player.point.x);
       return Math.abs(Math.atan2(Math.sin(bearing - look), Math.cos(bearing - look))) <= talkConfig.facingArc;
     },
   },
   psi: {
-    label: "psi on them",
-    met: (w, _player, npc) => w.psi?.getTarget() === npc.key,
+    label: "psi raised",
+    met: (w) => w.psi?.on === true,
   },
 };
 
