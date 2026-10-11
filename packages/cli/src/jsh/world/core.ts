@@ -1404,6 +1404,7 @@ export function shield(
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
  * skin rob human-1
+ * skin rob as:r
  * ```
  */
 export function skin(
@@ -1412,9 +1413,11 @@ export function skin(
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
-  const skinKey = (opts.as ??= getLastUnknownNaked(opts) ?? "robot-0");
-  if (w.npc.getSkinIndexBySkinKey(skinKey) === -1) {
-    throw Error(`skin "${skinKey}" not found`);
+  const prefix = `${(opts.as ??= getLastUnknownNaked(opts) ?? "robot-0")}`;
+  const skinKey = w.npc.findSkinKey(prefix);
+  // no match gives the default, which is not what was asked for
+  if (skinKey.startsWith(prefix) === false) {
+    throw Error(`skin "${prefix}" not found`);
   }
   npc.setSkin(skinKey);
   w.view.forceUpdate();
