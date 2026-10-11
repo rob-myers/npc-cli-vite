@@ -330,6 +330,20 @@ export class NpcAnimation {
     }
   }
 
+  /** The way their head faces, as a rotation about the vertical. Their own facing whilst it looks nearly straight up or down */
+  getLookY() {
+    const head = this.upperHead.entry?.bone;
+    if (head == null) return this.npc.rotation.y;
+    /** As last drawn, so a frame behind: whoever asks eases it anyway, and it saves walking the skeleton */
+    const e = head.matrixWorld.elements;
+    // the head's forward, its `-z`, in the world
+    const x = -e[8];
+    const y = -e[9];
+    const z = -e[10];
+    const flat = x * x + z * z;
+    return flat < lookFlatMin * (flat + y * y) ? this.npc.rotation.y : Math.atan2(-x, -z);
+  }
+
   /** Roll one lain to look towards `at`: onto the side it is to, or onto their back for one along their own line */
   rollTo(at: Geom.VectJson) {
     const from = keyOf(this.idleClip);
@@ -349,12 +363,15 @@ export class NpcAnimation {
     this.rolledAt = secs;
     this.idleClip = this.npc.clips[to];
     if (this.pose === from) this.setPose(to);
+    this.w.r3f?.invalidate();
   }
 
   /** Turn towards `at` whilst sat, as far as they can without turning round — `null` to face ahead again */
   turnTo(at: null | Geom.VectJson) {
     const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
-    this.turn.target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
+    const target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
+    if (target !== this.turn.target) this.w.r3f?.invalidate(); // else, at rest, no tick comes to ease it
+    this.turn.target = target;
   }
 
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
@@ -880,6 +897,8 @@ const newUpper = () => ({
   head: new THREE.Quaternion(),
   hasHead: false,
 });
+/** The least of a head's forward that must be level, squared, for it to say which way they look: under it they look up or down */
+const lookFlatMin = 0.25;
 /** The most an `UpperAim` swings the arms off their pose */
 const upperAimMaxRad = Math.PI / 5;
 /** …and the most it turns the head off their facing */

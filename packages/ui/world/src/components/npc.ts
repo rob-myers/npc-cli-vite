@@ -411,6 +411,11 @@ export class Npc {
     return this.anim.moving;
   }
 
+  /** The way their head faces, as a rotation about the vertical: not always their body's, e.g. sat and turned, or lain on a side */
+  get lookY() {
+    return this.anim.getLookY();
+  }
+
   /** Whether their current clip has them stood, sat or lain */
   get posture() {
     return this.anim.posture;

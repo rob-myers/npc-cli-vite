@@ -21,7 +21,7 @@ pnpm approve-builds  # allow skia-canvas' native build
 pnpm dev             # http://localhost:5173
 ```
 
-On a phone, `pnpm dev-hotspot` serves on your network: find your address with `ipconfig getifaddr en0` and open `http://<address>:5173`.
+On a phone, `pnpm dev-hotspot` serves on your network: find your address with `ipconfig getifaddr en0` and open `https://<address>:5173`, accepting its self-signed certificate. It is https because a phone only offers WebGPU on a secure origin.
 
 Some scripts need extra tools (pngquant, ImageMagick, Go/TinyGo) — see [docs/tooling.md](docs/tooling.md).
 

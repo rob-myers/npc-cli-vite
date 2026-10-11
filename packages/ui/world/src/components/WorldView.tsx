@@ -18,15 +18,15 @@ import { npcDims } from "../const.both";
 import {
   cameraFov,
   cameraRefAspect,
-  canonicalAxisLockFrom,
-  canonicalSnapArm,
-  canonicalSnapCancel,
-  canonicalZoomInRate,
   compilingShadersText,
   crosshairY,
   defaultCameraMaxDistance,
   defaultCameraMinDistance,
   defaultCameraMode,
+  embodiedAxisLockFrom,
+  embodiedSnapArm,
+  embodiedSnapCancel,
+  embodiedZoomInRate,
   frontierMargin,
   frontierNearest,
   frontierNearFrac,
@@ -75,6 +75,7 @@ import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
 import CrossHair from "./CrossHair";
 import LightSweep from "./LightSweep";
+import LookMark from "./LookMark";
 import NpcBubbles from "./NpcBubbles";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -93,14 +94,15 @@ export function WorldView(props: React.PropsWithChildren) {
       canvas: null as any,
       pausedEl: null,
       warmingPick: false,
+      // "canonical" is what a save before the rename calls it
+      cameraMode: ["embodied", "canonical"].includes(saved.cameraMode as string) ? "embodied" : defaultCameraMode,
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
-      cameraMode: (saved.cameraMode as string) === "canonical" ? "canonical" : defaultCameraMode,
       follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
-      canonicalPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
-      canonicalFrom: 0,
-      canonicalDragging: false,
-      canonicalPeak: 0,
+      embodiedPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
+      embodiedFrom: 0,
+      embodiedDragging: false,
+      embodiedPeak: 0,
       zoomPan: null,
       zoomCrossEl: null,
       zoomCrossFadeMs: 0,
@@ -132,6 +134,7 @@ export function WorldView(props: React.PropsWithChildren) {
         move: new Vect(),
         down: new Vect(),
         rightPress: false,
+        multi: false,
       },
       foldNode: uniform(1),
       labelReveal: uniform(1),
@@ -386,7 +389,7 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       onCameraEnd() {
         // a drag released without momentum dispatches no further change: the compass dial needs a
-        // frame to see the release at all — see `detentCanonicalAzimuth`
+        // frame to see the release at all — see `detentEmbodiedAzimuth`
         w.r3f?.invalidate();
       },
       persistCamera() {
@@ -406,7 +409,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const { controls } = state;
         if (controls === null || state.canvas === null) return;
         if (e.target !== state.canvas) return; // e.g. scrolling a card, or an overlay's before `forwardWheel`
-        if (state.cameraMode !== "canonical") {
+        if (state.cameraMode !== "embodied") {
           // The controls zoom to the cursor themselves, so we only mark its ground point.
           // Not whilst following, when the zoom is the player's.
           if (e.deltaY >= 0 || state.getFollowGoal(tmpGoal) === true) return;
@@ -491,7 +494,7 @@ export function WorldView(props: React.PropsWithChildren) {
         out.x = player.position.x;
         out.z = player.position.z;
         // held towards the frontier — see `easeFrontier`
-        if (state.cameraMode === "canonical") {
+        if (state.cameraMode === "embodied") {
           out.x += state.frontierOffset.x;
           out.z += state.frontierOffset.z;
         }
@@ -500,7 +503,7 @@ export function WorldView(props: React.PropsWithChildren) {
       getFrontierOffset(out) {
         // part way towards the frontier, so what is ahead is in view too — at every zoom, the inner
         // stop being drawn in to suit as the outer is
-        if (state.cameraMode !== "canonical" || state.playerFrontier.ahead(tmpAhead) === false) return false;
+        if (state.cameraMode !== "embodied" || state.playerFrontier.ahead(tmpAhead) === false) return false;
         let offsetX = tmpAhead.x * frontierPanFrac;
         let offsetZ = tmpAhead.z * frontierPanFrac;
         // but never so far that the PLAYER leaves the frame: the fit is clamped by the persisted
@@ -588,14 +591,14 @@ export function WorldView(props: React.PropsWithChildren) {
         // the channels part less the further out the view is, on the same easing: every mode
         state.rgbShiftFx.setAmount(rgbShiftAmount * (1 - (1 - rgbShiftZoomedOutScale) * eased));
 
-        if (state.cameraMode !== "canonical") return;
+        if (state.cameraMode !== "embodied") return;
 
         // the aimed zoom-in eases slower, a pan and a tilt riding on it — held until the ZOOM
         // ends rather than the pan, since speeding up for its last few percent is felt as a jolt
         if (state.zoomInSlow === true && controls.zoomProgress >= 1 - zoomOutStopEpsilon) {
           state.zoomInSlow = false;
         }
-        controls.zoomSettleRate = state.zoomInSlow === true ? canonicalZoomInRate : defaultZoomSettleRate;
+        controls.zoomSettleRate = state.zoomInSlow === true ? embodiedZoomInRate : defaultZoomSettleRate;
         state.easeFrontier();
 
         // both angles are the user's own at every zoom, but a turn let go with ctrl or cmd held snaps
@@ -603,11 +606,11 @@ export function WorldView(props: React.PropsWithChildren) {
         // a drag locks to the axis it set off along only whilst ZOOMED OUT. Once a zoom-in is under
         // way a turn begun a little up or down would lock vertical, and close in a diagonal drag
         // may simply do both
-        controls.lockRotateAxis = t > canonicalAxisLockFrom && state.zoomPan === null;
+        controls.lockRotateAxis = t > embodiedAxisLockFrom && state.zoomPan === null;
 
-        state.shapeCanonicalPolar(spherical); // the tilt is theirs, whatever the zoom
+        state.shapeEmbodiedPolar(spherical); // the tilt is theirs, whatever the zoom
         state.advanceZoomPan(spherical);
-        state.detentCanonicalAzimuth(spherical);
+        state.detentEmbodiedAzimuth(spherical);
       },
       /**
        * Room labels in or out, over `ms`. Only the first boot uses it: the world is REVEALED there
@@ -645,7 +648,7 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       /**
-       * A `canonical` zoom-in's pan, tilt and height are FUNCTIONS of the zoom's progress, so they
+       * A `embodied` zoom-in's pan, tilt and height are FUNCTIONS of the zoom's progress, so they
        * arrive exactly when it does and a reversal walks them back. Measured against
        * `zoomPanDoneAlpha`, where we let go, so none of them is left a few percent short
        */
@@ -784,49 +787,48 @@ export function WorldView(props: React.PropsWithChildren) {
        * ONE tilt, kept across the zoom: zooming neither flattens the view nor tips it back. It is
        * never clamped, so a drag owns the polar at every zoom
        */
-      shapeCanonicalPolar(spherical) {
+      shapeEmbodiedPolar(spherical) {
         if (state.controls.isRotating() === true) {
-          state.canonicalPolar = spherical.phi; // theirs whilst they drag
+          state.embodiedPolar = spherical.phi; // theirs whilst they drag
           return;
         }
-        if (Math.abs(spherical.phi - state.canonicalPolar) > phiSettledEpsilon) {
-          spherical.phi = state.canonicalPolar;
+        if (Math.abs(spherical.phi - state.embodiedPolar) > phiSettledEpsilon) {
+          spherical.phi = state.embodiedPolar;
           state.placeCamera(spherical);
           w.r3f?.invalidate();
         }
       },
       /**
        * A turn let go with ctrl or cmd held is a detented compass dial: it advances a point per
-       * `canonicalSnapArm` turned, or springs back to the point nearest where it set out
+       * `embodiedSnapArm` turned, or springs back to the point nearest where it set out
        */
-      detentCanonicalAzimuth(spherical) {
+      detentEmbodiedAzimuth(spherical) {
         const { controls } = state;
 
         if (controls.pointers.length > 0) {
           if (controls.isRotating() === false) return;
-          if (state.canonicalDragging === false) {
-            state.canonicalFrom = spherical.theta; // a fresh turn
-            state.canonicalPeak = 0;
+          if (state.embodiedDragging === false) {
+            state.embodiedFrom = spherical.theta; // a fresh turn
+            state.embodiedPeak = 0;
           }
-          state.canonicalDragging = true;
-          const turning = state.getCanonicalHeading();
-          if (Math.abs(turning) > Math.abs(state.canonicalPeak)) state.canonicalPeak = turning;
+          state.embodiedDragging = true;
+          const turning = state.getEmbodiedHeading();
+          if (Math.abs(turning) > Math.abs(state.embodiedPeak)) state.embodiedPeak = turning;
           return;
         }
-        if (state.canonicalDragging === false) return;
+        if (state.embodiedDragging === false) return;
         if (state.lookAtAnimId !== 0) return; // `lookAt` owns the camera whilst it runs
-        state.canonicalDragging = false;
+        state.embodiedDragging = false;
         if (controls.ctrlHeld === false) return;
 
         // decided ON RELEASE ONLY, else measured against a point still being turned to
-        const from = state.canonicalFrom / halfPi;
-        const turned = state.getCanonicalHeading();
+        const from = state.embodiedFrom / halfPi;
+        const turned = state.getEmbodiedHeading();
         // turning back within the same drag is a PEEK, but only within the first point
         const cameBack =
-          Math.abs(state.canonicalPeak) < halfPi &&
-          Math.abs(state.canonicalPeak) - Math.abs(turned) > canonicalSnapCancel;
+          Math.abs(state.embodiedPeak) < halfPi && Math.abs(state.embodiedPeak) - Math.abs(turned) > embodiedSnapCancel;
         let point = Math.round(from);
-        if (cameBack === false && Math.abs(turned) > canonicalSnapArm) {
+        if (cameBack === false && Math.abs(turned) > embodiedSnapArm) {
           // at least one point past where it set out, else however many quarters were turned
           const points = Math.max(1, Math.round(Math.abs(turned) / halfPi));
           point =
@@ -840,9 +842,9 @@ export function WorldView(props: React.PropsWithChildren) {
        * How far this turn is from where it set out, measured against where it is HEADING: `update`
        * adds `sphericalDelta.theta` in total, and the damped angle lags a drag badly
        */
-      getCanonicalHeading() {
+      getEmbodiedHeading() {
         const { spherical, sphericalDelta } = state.controls;
-        return deltaAngle(state.canonicalFrom, spherical.theta + sphericalDelta.theta);
+        return deltaAngle(state.embodiedFrom, spherical.theta + sphericalDelta.theta);
       },
       onCreated(rootState) {
         w.threeReady = true;
@@ -919,7 +921,8 @@ export function WorldView(props: React.PropsWithChildren) {
         const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
         state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
-        if (state.otherPointerDown(e) === true) {
+        last.multi = state.otherPointerDown(e);
+        if (last.multi === true) {
           return; // a second finger is the camera being pinched or rotated, never a pick
         }
 
@@ -949,7 +952,8 @@ export function WorldView(props: React.PropsWithChildren) {
         // another finger still down, or this one was never the gesture's first — the camera's, not
         // a pick. A pinch usually lifts one finger before the other, and the first of those ups
         // would otherwise pick wherever the second still rests
-        if (state.otherPointerDown(e) === true || e.isPrimary === false) {
+        // nor the last finger of several: where it lifts is no pick, e.g. after a look tap
+        if (state.otherPointerDown(e) === true || e.isPrimary === false || last.multi === true) {
           return;
         }
         if (last.longPress === true) {
@@ -962,6 +966,8 @@ export function WorldView(props: React.PropsWithChildren) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
+        // a right click has the player look there, as a tap of fingers does on touch. Still a pick
+        if (last.rightPress === true) w.player?.lookTowards(e.clientX, e.clientY);
         state.pickObject(e);
       },
       focus() {
@@ -1179,13 +1185,13 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       setCameraMode(cameraMode) {
-        if (cameraMode === "canonical") {
-          state.canonicalPolar = state.controls?.spherical.phi ?? state.initial.polar;
-        } else if (state.cameraMode === "canonical" && state.controls !== null) {
+        if (cameraMode === "embodied") {
+          state.embodiedPolar = state.controls?.spherical.phi ?? state.initial.polar;
+        } else if (state.cameraMode === "embodied" && state.controls !== null) {
           // leaving: give the zoom its own pace back — r3f leaves our direct writes alone, so
           // nothing else would
           state.controls.zoomSettleRate = defaultZoomSettleRate;
-          state.controls.lockRotateAxis = true; // only `canonical` ever takes it away
+          state.controls.lockRotateAxis = true; // only `embodied` ever takes it away
           // see `easeFrontier`, which has been easing both stops
           state.controls.maxDistance = state.ctrlOpts.maxDistance;
           state.controls.minDistance = state.ctrlOpts.minDistance;
@@ -1284,8 +1290,8 @@ export function WorldView(props: React.PropsWithChildren) {
           );
           let elapsedMs = 0;
           let lastEpochMs = performance.now();
-          /** `canonical`'s stops ride the pan — see `easeFrontier` */
-          const fromStops = state.cameraMode === "canonical" ? [controls.maxDistance, controls.minDistance] : null;
+          /** `embodied`'s stops ride the pan — see `easeFrontier` */
+          const fromStops = state.cameraMode === "embodied" ? [controls.maxDistance, controls.minDistance] : null;
 
           await new Promise<void>((resolve) => {
             const step = () => {
@@ -1338,7 +1344,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.frontierHold = false;
         const initial = defaultInitialCamera;
         state.initial = initial;
-        state.canonicalPolar = initial.polar; // else a reset zoomed out keeps the old tilt
+        state.embodiedPolar = initial.polar; // else a reset zoomed out keeps the old tilt
         store.patch({ cameraInitial: initial });
         // a reset view shows nothing in `sight` mode unless the player happens to be in it: the
         // ship comes back, darkened, so there is something to find them by
@@ -1561,7 +1567,7 @@ export function WorldView(props: React.PropsWithChildren) {
           // whilst following, the target IS the player, so a zoom about it keeps them centred.
           // Aiming at the pointer instead moves the target, which the follow would only undo —
           // and a pan would do the same, so it is simply off for the duration
-          // `canonical` pans onto the cursor point instead, which owns `target` — see `zoomPan`
+          // `embodied` pans onto the cursor point instead, which owns `target` — see `zoomPan`
           zoomToCursor={state.cameraMode === "free" && state.follow === false}
           // a turn goes about the zoom crosshair whilst it shows: what the zoom is heading for
           // stays put. Otherwise, and whilst following, about `target`
@@ -1584,6 +1590,8 @@ export function WorldView(props: React.PropsWithChildren) {
         <LightSweep />
 
         <CrossHair />
+
+        <LookMark />
 
         <NpcBubbles />
 
@@ -1672,15 +1680,15 @@ export type State = {
   cameraMode: CameraModeType;
   /** Whether the view follows the player — an option of EITHER mode */
   follow: boolean;
-  /** `canonical`'s tilt, the same at every zoom */
-  canonicalPolar: number;
+  /** `embodied`'s tilt, the same at every zoom */
+  embodiedPolar: number;
   /** The azimuth the current turn set out from */
-  canonicalFrom: number;
+  embodiedFrom: number;
   /** Whether a turn is underway — the compass dial is decided on its release, once */
-  canonicalDragging: boolean;
-  /** The furthest this turn has gone from `canonicalFrom`, signed — see `canonicalSnapCancel` */
-  canonicalPeak: number;
-  /** The pan a `canonical` zoom-in is carrying out, keyed to the zoom's progress */
+  embodiedDragging: boolean;
+  /** The furthest this turn has gone from `embodiedFrom`, signed — see `embodiedSnapCancel` */
+  embodiedPeak: number;
+  /** The pan a `embodied` zoom-in is carrying out, keyed to the zoom's progress */
   zoomPan: null | {
     from: THREE.Vector3;
     to: THREE.Vector3;
@@ -1692,7 +1700,7 @@ export type State = {
     lastBeta: number;
     fromProgress: number;
   };
-  /** Marks where a `canonical` zoom-in is heading */
+  /** Marks where a `embodied` zoom-in is heading */
   zoomCrossEl: null | THREE.Mesh;
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
@@ -1725,6 +1733,8 @@ export type State = {
     move: Geom.Vect;
     down: Geom.Vect;
     rightPress: boolean;
+    /** Whether another finger has joined the press: then it is no pick */
+    multi: boolean;
   };
   pickRT: THREE.RenderTarget;
   /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */
@@ -1749,7 +1759,7 @@ export type State = {
   keysDown: Set<string>;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
   holdFrontier(): void;
-  /** Draws `canonical`'s zoom stops in by how little the player sees ahead — see within */
+  /** Draws `embodied`'s zoom stops in by how little the player sees ahead — see within */
   easeFrontier(): void;
   /** The outer and inner stops `easeFrontier` heads for, in a shared tuple */
   getFrontierStops(): [max: number, min: number];
@@ -1834,24 +1844,24 @@ export type State = {
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */
   persistCamera(): void;
-  /** Per rendered frame — in `canonical` mode drives the polar, the detent and any aimed zoom */
+  /** Per rendered frame — in `embodied` mode drives the polar, the detent and any aimed zoom */
   onCameraFrame(spherical: THREE.Spherical): void;
   /** The crosshair's fade-out, once whatever raised it has arrived */
   fadeCrosshair(): void;
-  /** Carries a `canonical` zoom-in's pan, tilt, turn and height along with the zoom's progress */
+  /** Carries a `embodied` zoom-in's pan, tilt, turn and height along with the zoom's progress */
   advanceZoomPan(spherical: THREE.Spherical): void;
-  /** `canonical`'s polar: the user's own close in, a function of the zoom further out */
-  shapeCanonicalPolar(spherical: THREE.Spherical): void;
+  /** `embodied`'s polar: the user's own close in, a function of the zoom further out */
+  shapeEmbodiedPolar(spherical: THREE.Spherical): void;
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
-  /** `canonical`'s azimuth: a turn let go with ctrl or cmd held snaps to a compass point (multiple of π/2) */
-  detentCanonicalAzimuth(spherical: THREE.Spherical): void;
-  /** How far the current turn is from `canonicalFrom`, as it will come to rest */
-  getCanonicalHeading(): number;
+  /** `embodied`'s azimuth: a turn let go with ctrl or cmd held snaps to a compass point (multiple of π/2) */
+  detentEmbodiedAzimuth(spherical: THREE.Spherical): void;
+  /** How far the current turn is from `embodiedFrom`, as it will come to rest */
+  getEmbodiedHeading(): number;
   /** Puts the crosshair on a ground point and shows it at full strength */
   setCrosshair(at: THREE.Vector3): void;
   /** Rebuilds the camera about `target` at `phi` and re-aims it */
   placeCamera(spherical: THREE.Spherical): void;
-  /** Aims a `canonical` zoom-in at the cursor's ground point */
+  /** Aims a `embodied` zoom-in at the cursor's ground point */
   onZoomWheel(e: WheelEvent): void;
   /** Debounced resize + key events */
   setupDom(): () => void;
@@ -2103,7 +2113,7 @@ const freeCrossHoldMs = 500;
 /** How long the crosshair takes to fade once the zoom-in has arrived */
 const crosshairFadeMs = 450;
 
-/** The zoom headroom a `canonical` zoom-in pan needs, as a fraction of the whole travel */
+/** The zoom headroom a `embodied` zoom-in pan needs, as a fraction of the whole travel */
 const zoomPanMinSpan = 0.1;
 /** How much of the pan counts as arrived — the zoom's tail is not worth holding the view for */
 const zoomPanDoneAlpha = 0.97;

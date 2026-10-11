@@ -1105,6 +1105,42 @@
           "cssTransform": "matrix(1, 0, 0, 1, 186, 356.5)"
         },
         {
+          "id": "f920995c-5f91-42f1-97c8-a06f8f0d557a",
+          "name": "door slide=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 187, "f": 838},
+          "type": "rect",
+          "baseRect": {"width": 47.5, "height": 7},
+          "cssTransform": "matrix(1, 0, 0, 1, 187, 838)"
+        },
+        {
+          "id": "19338083-4885-4b74-ada1-f88a73064d94",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 232.5, "f": 844},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 232.5, 844)"
+        },
+        {
+          "id": "7787dae5-64a6-402a-9db4-71d86a698d5b",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 232.5, "f": 840},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, -1, 232.5, 840)"
+        },
+        {
           "id": "77661daa-d766-418a-ba33-827be8cd28f6",
           "name": "decor quad key=switch",
           "locked": true,
@@ -1309,6 +1345,42 @@
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(1, 0, 0, -1, 652.5, 658)"
+        },
+        {
+          "id": "15ef1a12-eeaa-4720-ba55-a36c167a5124",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 1012.5, "f": 840},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, -1, 1012.5, 840)"
+        },
+        {
+          "id": "0355af36-b040-4fee-aa84-cceadc0c07f3",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1012.5, "f": 844},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 1012.5, 844)"
+        },
+        {
+          "id": "ffb2bb45-b364-4e30-8d39-d953269add3a",
+          "name": "door slide=[-1,0]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 967, "f": 838},
+          "type": "rect",
+          "baseRect": {"width": 47.5, "height": 7},
+          "cssTransform": "matrix(1, 0, 0, 1, 967, 838)"
         }
       ]
     },
@@ -1390,6 +1462,26 @@
           "type": "rect",
           "baseRect": {"width": 359, "height": 4},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 358)"
+        },
+        {
+          "id": "e6f9e717-2c1a-4b2b-bc94-d3f34a16c5f7",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 839},
+          "type": "rect",
+          "baseRect": {"width": 359, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 839)"
+        },
+        {
+          "id": "b3024261-119a-46d8-904d-9f1cd12ebfca",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 844, "f": 840},
+          "type": "rect",
+          "baseRect": {"width": 359, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 844, 840)"
         },
         {
           "id": "91e2dc97-e1ea-4903-a877-eee9770bd474",

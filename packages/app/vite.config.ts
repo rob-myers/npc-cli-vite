@@ -10,6 +10,7 @@ import { worldRtcPlugin } from "@npc-cli/scripts/vite-plugin-world-rtc";
 import rehypeShiki from "@shikijs/rehype";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
@@ -43,6 +44,8 @@ export default defineConfig({
     stableEntryPlugin(),
 
     process.env.BUILD_AND_ANALYZE ? analyzer() : undefined,
+    // `dev-hotspot`: a phone only has WebGPU on a secure origin, which a LAN address over http is not
+    process.env.USE_HTTPS ? basicSsl() : undefined,
 
     {
       // zod's `export * as locales` is a namespace re-export, so all 47 locales survive

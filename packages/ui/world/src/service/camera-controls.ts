@@ -120,7 +120,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   rotateAxis: "none" | "horizontal" | "vertical" = "none";
   /**
    * Whether a mouse rotate LOCKS to the axis its first pixels favoured, for the rest of the drag.
-   * `canonical` takes it away whilst its polar is pinned, when a turn begun a little up or down
+   * `embodied` takes it away whilst its polar is pinned, when a turn begun a little up or down
    * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
    */
   lockRotateAxis = true;
@@ -146,7 +146,7 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
   freeZoom = false;
   /**
    * How fast the zoom settles, per SECOND — per instance, so a mode can slow its own zoom down
-   * e.g. `canonical`, whose aimed zoom-in carries a pan and a tilt with it
+   * e.g. `embodied`, whose aimed zoom-in carries a pan and a tilt with it
    */
   zoomSettleRate = defaultZoomSettleRate;
   /** When `syncZoom` last ran, so its ease can be measured in time rather than frames */

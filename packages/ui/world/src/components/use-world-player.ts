@@ -18,7 +18,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   const state = useStateRef(
     (): State => ({
       key: defaultPlayerKey,
-      twoTap: null,
+      tap: null,
+      lookAt: null,
+      lookTimer: 0,
 
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -48,16 +50,22 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (npc === undefined) return;
         const { face } = npc.anim;
         // not whilst locked on: the phaser's target is whom they face
-        const held = w.view.keysDown.has("r") === true && w.phasers?.isLocked(state.key) !== true;
+        const free = w.phasers?.isLocked(state.key) !== true;
+        const lookAt = free ? state.lookAt : null;
+        const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
         if (held === false || posture !== "sit") npc.anim.turnTo(null);
         if (held === false) return;
-        const { raycaster, lastPointer, canvas } = w.view;
-        const { width, height } = canvas.getBoundingClientRect();
-        tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
-        raycaster.setFromCamera(tmpNdc, w.r3f.camera);
-        if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
+        if (lookAt !== null) {
+          tmpHit.set(lookAt.x, 0, lookAt.y);
+        } else {
+          const { raycaster, lastPointer, canvas } = w.view;
+          const { width, height } = canvas.getBoundingClientRect();
+          tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
+          raycaster.setFromCamera(tmpNdc, w.r3f.camera);
+          if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
+        }
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
         w.r3f.invalidate(); // a held key draws nothing of itself
         // lain, they roll over to look
@@ -72,21 +80,45 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.type === "touchstart") {
           const [a, b, c] = e.touches; // a second finger begins one, a third ends it
           const onCanvas = a?.target === w.view.canvas && b?.target === w.view.canvas;
-          state.twoTap = onCanvas && c === undefined ? { startMs: e.timeStamp, downs: [a, b] } : null;
+          state.tap = onCanvas && c === undefined ? { startMs: e.timeStamp, downs: [a, b] } : null;
           return;
         }
-        const tap = state.twoTap;
+        const { tap } = state;
         if (tap === null) return;
-        const strayed = [...e.changedTouches].some((t) => {
-          const down = tap.downs.find((d) => d.identifier === t.identifier);
-          return down === undefined || Math.hypot(t.clientX - down.clientX, t.clientY - down.clientY) > twoTapSlopPx;
+        const strayed = [...e.changedTouches].some((touch) => {
+          const down = tap.downs.find((d) => d.identifier === touch.identifier);
+          return (
+            down === undefined || Math.hypot(touch.clientX - down.clientX, touch.clientY - down.clientY) > lookTapSlopPx
+          );
         });
-        if (e.type === "touchcancel" || strayed || e.timeStamp - tap.startMs > twoTapMs) state.twoTap = null;
-        else if (e.touches.length === 0) {
-          state.twoTap = null;
-          const { left, width } = w.view.canvas.getBoundingClientRect();
-          (tap.downs[0].clientX + tap.downs[1].clientX) / 2 < left + width / 2 ? state.togglePsi() : state.toggleArm();
+        if (e.type === "touchcancel" || strayed || e.timeStamp - tap.startMs > lookTapMs) {
+          state.tap = null;
+        } else if (e.touches.length === 0) {
+          state.tap = null;
+          const [a, b] = tap.downs;
+          state.lookTowards((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
         }
+      },
+      lookTowards(clientX, clientY) {
+        const npc = w.n?.[state.key];
+        // paused, the look would run out before they could turn
+        if (npc === undefined || w.client === true || w.disabled === true) return;
+        const rect = w.view.canvas.getBoundingClientRect();
+        tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
+        w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
+        const { origin, direction } = w.view.raycaster.ray;
+        // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
+        const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
+        tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
+        if (Math.hypot(tmpHit.x - npc.position.x, tmpHit.z - npc.position.z) < lookDeadMetres) return;
+        state.lookAt = { x: tmpHit.x, y: tmpHit.z };
+        // held as `r` would be, long enough to come round
+        window.clearTimeout(state.lookTimer);
+        state.lookTimer = window.setTimeout(() => {
+          state.lookAt = null;
+          w.r3f?.invalidate();
+        }, lookHoldMs);
+        w.r3f?.invalidate();
       },
       toggleArm() {
         if (w.n?.[state.key] === undefined || w.phasers === null) return;
@@ -174,10 +206,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const onTouch = (e: TouchEvent) => state.onTouch(e);
         const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);
-        for (const type of touchTypes) el.addEventListener(type, onTouch);
+        // passive: we only watch, so scrolling and the camera never wait on us
+        for (const type of touchTypes) el.addEventListener(type, onTouch, { passive: true });
         return () => {
           el.removeEventListener("keydown", onKeyDown);
           for (const type of touchTypes) el.removeEventListener(type, onTouch);
+          window.clearTimeout(state.lookTimer);
         };
       },
       setKey(npcKey) {
@@ -224,14 +258,20 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
   useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
 }
 
-/** A two-finger tap's longest, second finger down to last up, and how far either may stray — as `isPointDiffDrag` */
 /** The aim `aimAtPointer` gives the player: ours alone to clear */
 const pointerAim = { at: { x: 0, y: 0 }, rate: 1, untilRest: false };
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
-const twoTapMs = 300;
-const twoTapSlopPx = 20;
+/** A look tap's longest, second finger down to last up, and how far any finger may stray — as `isPointDiffDrag` */
+const lookTapMs = 300;
+const lookTapSlopPx = 20;
+/** How long a tap's look is held, as `r` would be */
+const lookHoldMs = 1200;
+/** Metres from them within which a tap gives no direction to look */
+const lookDeadMetres = 0.3;
+/** Metres off that a tap past the horizon is taken to be */
+const lookFarMetres = 500;
 
 export type State = {
   /** Key of the npc we consider the player — spawned on arrival if absent */
@@ -239,15 +279,20 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held they face where the pointer meets the floor, eased round by `face.aim` */
+  /** Whilst `r` is held they face where the pointer meets the floor, eased round by `face.aim`: or `lookAt`, whilst it is set */
   aimAtPointer(): void;
-  /** Two fingers down on the canvas that may yet be a tap: since when, and where */
-  twoTap: null | { startMs: number; downs: [Touch, Touch] };
+  /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
+  tap: null | { startMs: number; downs: [Touch, Touch] };
+  /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
+  lookAt: null | Geom.VectJson;
+  lookTimer: number;
+  /** A two-finger tap on the canvas has them look where it lands */
+  onTouch(e: TouchEvent): void;
+  /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
+  lookTowards(clientX: number, clientY: number): void;
 
   /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
-  /** A two-finger tap on the canvas: its left half psi, its right half their phaser — as their hands, and the bar */
-  onTouch(e: TouchEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
   /** Run or walk — their `anim.hurry` */

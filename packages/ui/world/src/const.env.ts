@@ -133,37 +133,35 @@ export const spawnPlayerAttempts = 10;
 /** Room labels the player may be spawned in, when there is nowhere better */
 export const spawnRoomLabels = ["corridor", "common"];
 
-export const defaultCameraMode: import("./components/CameraControls").CameraModeType = isTouchDevice()
-  ? "free"
-  : "canonical";
+export const defaultCameraMode: import("./components/CameraControls").CameraModeType = "embodied";
 /**
- * `canonical` camera mode: how far out — as a fraction of the travel between the zoom's stops —
+ * `embodied` camera mode: how far out — as a fraction of the travel between the zoom's stops —
  * the polar starts easing towards birdseye. See `WorldView`'s `onCameraFrame`
  */
-export const canonicalFlattenFrom = 0.4;
+export const embodiedFlattenFrom = 0.4;
 /**
  * ...and how far out a drag locks to one axis. On a phone the zoom is free and comes to rest
  * anywhere, so "zoomed in" reaches much further out than the mouse's inner stop
  */
-export const canonicalAxisLockFrom = isTouchDevice() ? 0.85 : canonicalFlattenFrom;
+export const embodiedAxisLockFrom = isTouchDevice() ? 0.85 : embodiedFlattenFrom;
 /**
  * What the rgb shift is scaled to at the outer zoom stop: zoomed out the whole ship is in frame and
  * the parted channels read as a blur over everything rather than an edge on what is near
  */
 export const rgbShiftZoomedOutScale = 1;
-/** `canonical` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
-export const canonicalSnapArm = (10 * Math.PI) / 180;
+/** `embodied` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
+export const embodiedSnapArm = (10 * Math.PI) / 180;
 /**
  * …but turning BACK by this much, within the same held drag, reads as a peek rather than a turn:
  * the dial returns to the point it set out from, however far round it got on the way
  */
-export const canonicalSnapCancel = (4 * Math.PI) / 180;
-/** How fast a `canonical` aimed zoom-in settles, per second — see `CameraControls.zoomSettleRate` */
-export const canonicalZoomInRate = 2.8;
+export const embodiedSnapCancel = (4 * Math.PI) / 180;
+/** How fast a `embodied` aimed zoom-in settles, per second — see `CameraControls.zoomSettleRate` */
+export const embodiedZoomInRate = 2.8;
 /** The zoom crosshair sits this far off the floor, so it is not in the floor's own plane */
 export const crosshairY = 0.01;
 /**
- * `canonical` zoomed out: the view FRAMES the player and their frontier — the point ahead their
+ * `embodied` zoomed out: the view FRAMES the player and their frontier — the point ahead their
  * light reaches — panning between them and drawing the outer zoom stop in until both are in view.
  * See `service/player-frontier`, and `WorldView`'s `easeFrontier` and `followPlayer`.
  * Half the fan of directions that is read, in degrees; how fast the stop eases, per second; the

@@ -352,13 +352,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (state.hasRoomFor(npcKey, name) === false) return false;
           let key = `${name}-0`;
           for (let i = 1; had.items.some((def) => def.key === key); i++) key = `${name}-${i}`;
-          const h = inventoryConfig.height[name];
-          const meta = { item: name, h, shown: true, ...extra };
-          had.items.push(
-            h === undefined
-              ? { type: "point", key, img: name, x: 0, y: 0, scale: inventoryConfig.pointScale, meta }
-              : { type: "quad", key, img: name, transform: [1, 0, 0, 1, 0, 0], meta },
-          );
+          had.items.push(persisted.createItemDef(name, key, extra));
         }
         state.onCarriedChange(npcKey);
         return true;
@@ -730,8 +724,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
-            // a long press is how you get at an npc: they say "...", and the history opens on it, its
-            // npcKey the handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
+            // a long press is how you get at an npc: they say "...", its npcKey in the history the
+            // handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
             // forwarded, and the server's mirrored speech comes back instead
             if (
               e.longDown === true &&
@@ -740,7 +734,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               w.client === false
             ) {
               w.speech.say(e.meta.npcKey, "...");
-              w.speech.set({ panelOpen: true, panelTab: "comms" });
             }
             // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
             if (

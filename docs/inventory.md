@@ -12,6 +12,9 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 | `media/src/decor/{phaser,book,box,keycard}.svg` | an item's one textured face, as decor |
 | `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
 
+The player sets out with psi and a phaser: `defaultWorldSettings.carried`, for `defaultPlayerKey`. A World
+saved before has what it was left with.
+
 ## The bar
 
 Bottom centre of a World; a slot is pressed. None on a net client, where neither psi
@@ -31,7 +34,7 @@ look/follow (a press looks, a long press toggles the follow, as `c`) and, not on
 Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
 A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
 The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
-are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`. On touch a two-finger tap on the World does the same: its left half psi, its right half the phaser.
+are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`.
 An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
 a slot's menu opens on a long press.
