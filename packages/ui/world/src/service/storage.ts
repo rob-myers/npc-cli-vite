@@ -2,7 +2,7 @@ import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
-import { defaultBrightness } from "../const.env";
+import { defaultBrightness, defaultPlayerKey, type ItemKind, inventoryConfig } from "../const.env";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
@@ -105,12 +105,22 @@ const defaultWorldSettings: WorldSettings = {
   hudY: 0,
   speechWidth: null,
   speechHeight: null,
-  carried: {},
+  // the player sets out with psi and a phaser
+  carried: { [defaultPlayerKey]: { items: [createItemDef("phaser", "phaser-0")], psi: true } },
   netParent: null,
 };
 
 /** What an npc has: the defs of the decor they took, and psi if granted */
 export type Carried = { items: Geomorph.DecorDef[]; psi?: true };
+
+/** An item as carried: a quad stood its height off the floor, or a point flat on it */
+export function createItemDef(name: ItemKind, key: string, extra?: Meta): Geomorph.DecorDef {
+  const h = inventoryConfig.height[name];
+  const meta = { item: name, h, shown: true, ...extra };
+  return h === undefined
+    ? { type: "point", key, img: name, x: 0, y: 0, scale: inventoryConfig.pointScale, meta }
+    : { type: "quad", key, img: name, transform: [1, 0, 0, 1, 0, 0], meta };
+}
 
 /** What we left behind on some map, restored on returning to it */
 export type WorldMapState = {
