@@ -226,6 +226,9 @@ export function kamma({ args, w }: JshCli.RunArg) {
 /** Metres past an item's reach it is still taken from: a walk up to it stops a little short */
 const kammaSlack = 0.2;
 
+/** Ways round an item a spot is looked for, off the line to the player: that line first, then either side */
+const kammaTurns = [0, 1, -1, 2, -2, 3, -3, 4].map((n) => (n * Math.PI) / 4);
+
 /** The latest press, which a walk to an item must still be to take it */
 let kammaPress = 0;
 
@@ -260,27 +263,51 @@ async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: strin
   const at = decor.type === "quad" ? decor.center : { x: decor.x, y: decor.y };
   // no room for it: said now, by `takeItem`, not after a walk over
   if (w.e.hasRoomFor(npcKey, decor.meta.item) === false) return void w.e.takeItem(npcKey, decorKey);
-  const { reach: reaches } = inventoryConfig;
-  const raised = w.n[npcKey]?.anim.pose === "sit" ? reaches.seated : reaches.raised;
-  const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? raised : reaches.floor;
+  const reach = kammaReach(w, npcKey, decor.meta.y ?? 0);
   const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + kammaSlack;
   const from = w.n[npcKey]?.point;
   if (from !== undefined) {
-    const away = Math.hypot(from.x - at.x, from.y - at.y) || 1;
-    const short = (d: number) => ({ x: at.x + ((from.x - at.x) / away) * d, y: at.y + ((from.y - at.y) / away) * d });
-    /** As near as the mesh allows: a table is not on it */
-    let d = inventoryConfig.standOff;
-    while (d < reach && w.npc.getClosestPoly(short(d), 0.1).success === false) d += 0.1;
+    const spot = findKammaSpot(w, at, from, reach);
+    const away = Math.hypot(from.x - at.x, from.y - at.y);
     // close enough already — or sat in reach, and not to be got up for it
-    if (away <= d + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
+    if (away <= (spot?.d ?? reach) + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
       return void w.e.takeItem(npcKey, decorKey);
     }
-    // no floor in reach along their own line, e.g. across a deep desk: the floor nearest the item instead
-    await w.e.move({ npcKey, to: d < reach ? short(d) : at, near: true }).catch(() => {});
-    // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
-    while (press === kammaPress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
+    // no floor of its room in reach e.g. far up a bed: a "no"
+    if (spot === undefined) return void w.n[npcKey]?.anim.shakeHead();
+    await walkToKammaSpot(w, npcKey, spot.p, press);
   }
   if (press === kammaPress && inReach() === true) w.e.takeItem(npcKey, decorKey);
+}
+
+/** Metres within which they can take an item `y` up: further for one raised e.g. on a desk, and again sat at it */
+function kammaReach(w: JshCli.WorldState, npcKey: string, y: number) {
+  const { floor, raised, seated, raisedFrom } = inventoryConfig.reach;
+  if (y <= raisedFrom) return floor;
+  return w.n[npcKey]?.anim.pose === "sit" ? seated : raised;
+}
+
+/**
+ * Where to stand to take an item `at`, and how far `d` from it: as near as the mesh allows, their own side first.
+ * Only floor of the item's own room will do, as the nearest floor of all may be through a wall
+ */
+function findKammaSpot(w: JshCli.WorldState, at: Geom.VectJson, from: Geom.VectJson, reach: number) {
+  const towards = Math.atan2(from.y - at.y, from.x - at.x);
+  const room = w.findRoomContaining(at, true)?.grKey;
+  for (let d: number = inventoryConfig.standOff; d < reach; d += 0.1) {
+    for (const turn of kammaTurns) {
+      const p = { x: at.x + Math.cos(towards + turn) * d, y: at.y + Math.sin(towards + turn) * d };
+      if (w.npc.getClosestPoly(p, 0.1).success === false) continue; // a table is not on the mesh
+      if (w.findRoomContaining(p, true)?.grKey === room) return { d, p };
+    }
+  }
+}
+
+/** Resolves once they have stopped, or a newer press has taken over */
+async function walkToKammaSpot(w: JshCli.WorldState, npcKey: string, to: Geom.VectJson, press: number) {
+  await w.e.move({ npcKey, to }).catch(() => {});
+  // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
+  while (press === kammaPress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
 }
 
 /**
