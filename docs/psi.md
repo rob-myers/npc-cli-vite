@@ -8,10 +8,10 @@ Psi is ON or OFF, and that is all `components/Psi.tsx` (`w.psi`) holds.
 
 - **On, the player's left hand goes to their temple** (`syncHands`, the `psi` upper clip). Near a
   crowd neighbour, in a doorway, or lain on that arm, it is `psi_avoid`, elbow tucked.
-- **It is switched** by `q`, its bar slot, a press on the player's own left arm (`kamma`), or jsh
+- **It is switched** by `q`, its bar slot, a press on the player's own left arm (jsh `inventory`), or jsh
   `psi` / `psi off`. Turning it on from the bar or `q` needs psi granted (`w.e.hasItem`).
 - **It has no target.** Nothing is drawn between the player and anyone else.
-- **Raised, a press on another npc reads their thought** (`w.psi.read`, from `kamma`), at once.
+- **Raised, a press on another npc reads their thought** (`w.psi.read`, from jsh `inventory`), at once.
 - **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.
 
 ## Thoughts

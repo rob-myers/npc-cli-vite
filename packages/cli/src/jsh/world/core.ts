@@ -212,34 +212,34 @@ export function grant(
 
 /**
  * What the player's presses do: an item is walked to and taken, whilst their phaser is out an npc
- * is its target, and whilst psi is raised an npc's thought is read. Idempotent, as `preds` — see `docs/inventory.md`
+ * is its target, and whilst psi is raised an npc's thought is read. Idempotent, as `predicates` — see `docs/inventory.md`
  * ```sh
- * kamma
- * kamma off
+ * inventory
+ * inventory off
  * ```
  */
-export function kamma({ args, w }: JshCli.RunArg) {
-  if (args[0] === "off") w.e.keyedListener.delete("kamma");
-  else w.e.addKeyedListener("kamma", onKammaEvent);
+export function inventory({ args, w }: JshCli.RunArg) {
+  if (args[0] === "off") w.e.keyedListener.delete("inventory");
+  else w.e.addKeyedListener("inventory", onInventoryEvent);
 }
 
 /** Metres past an item's reach it is still taken from: a walk up to it stops a little short */
-const kammaSlack = 0.2;
+const takeSlack = 0.2;
 
 /** Ways round an item a spot is looked for, off the line to the player: that line first, then either side */
-const kammaTurns = [0, 1, -1, 2, -2, 3, -3, 4].map((n) => (n * Math.PI) / 4);
+const takeTurns = [0, 1, -1, 2, -2, 3, -3, 4].map((n) => (n * Math.PI) / 4);
 
 /** The latest press, which a walk to an item must still be to take it */
-let kammaPress = 0;
+let takePress = 0;
 
-function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
+function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
   if (e.key !== "picked" || e.longDown === true || e.rightDown === true || e.clickId !== undefined) return;
-  const press = ++kammaPress;
+  const press = ++takePress;
   const { key: playerKey } = w.player;
   if (w.client === true || w.n[playerKey] === undefined) return;
   const { meta } = e;
   if (meta.type === "decor" && typeof meta.item === "string") {
-    void commitKamma(w, playerKey, meta.decorKey, press);
+    void takeOnPress(w, playerKey, meta.decorKey, press);
   } else if (meta.type === "npc") {
     const own = meta.npcKey === playerKey;
     const psiOn = w.psi?.on === true;
@@ -256,18 +256,18 @@ function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
   }
 }
 
-async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: string, press: number) {
+async function takeOnPress(w: JshCli.WorldState, npcKey: string, decorKey: string, press: number) {
   await null; // out of the dispatch: a move pushes events
   const decor = w.decor.byKey[decorKey];
   if (decor === undefined || (decor.type !== "quad" && decor.type !== "point")) return;
   const at = decor.type === "quad" ? decor.center : { x: decor.x, y: decor.y };
   // no room for it: said now, by `takeItem`, not after a walk over
   if (w.e.hasRoomFor(npcKey, decor.meta.item) === false) return void w.e.takeItem(npcKey, decorKey);
-  const reach = kammaReach(w, npcKey, decor.meta.y ?? 0);
-  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + kammaSlack;
+  const reach = takeReach(w, npcKey, decor.meta.y ?? 0);
+  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + takeSlack;
   const from = w.n[npcKey]?.point;
   if (from !== undefined) {
-    const spot = findKammaSpot(w, at, from, reach);
+    const spot = findTakeSpot(w, at, from, reach);
     const away = Math.hypot(from.x - at.x, from.y - at.y);
     // close enough already — or sat in reach, and not to be got up for it
     if (away <= (spot?.d ?? reach) + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
@@ -275,13 +275,13 @@ async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: strin
     }
     // no floor of its room in reach e.g. far up a bed: a "no"
     if (spot === undefined) return void w.n[npcKey]?.anim.shakeHead();
-    await walkToKammaSpot(w, npcKey, spot.p, press);
+    await walkToTakeSpot(w, npcKey, spot.p, press);
   }
-  if (press === kammaPress && inReach() === true) w.e.takeItem(npcKey, decorKey);
+  if (press === takePress && inReach() === true) w.e.takeItem(npcKey, decorKey);
 }
 
 /** Metres within which they can take an item `y` up: further for one raised e.g. on a desk, and again sat at it */
-function kammaReach(w: JshCli.WorldState, npcKey: string, y: number) {
+function takeReach(w: JshCli.WorldState, npcKey: string, y: number) {
   const { floor, raised, seated, raisedFrom } = inventoryConfig.reach;
   if (y <= raisedFrom) return floor;
   return w.n[npcKey]?.anim.pose === "sit" ? seated : raised;
@@ -291,11 +291,11 @@ function kammaReach(w: JshCli.WorldState, npcKey: string, y: number) {
  * Where to stand to take an item `at`, and how far `d` from it: as near as the mesh allows, their own side first.
  * Only floor of the item's own room will do, as the nearest floor of all may be through a wall
  */
-function findKammaSpot(w: JshCli.WorldState, at: Geom.VectJson, from: Geom.VectJson, reach: number) {
+function findTakeSpot(w: JshCli.WorldState, at: Geom.VectJson, from: Geom.VectJson, reach: number) {
   const towards = Math.atan2(from.y - at.y, from.x - at.x);
   const room = w.findRoomContaining(at, true)?.grKey;
   for (let d: number = inventoryConfig.standOff; d < reach; d += 0.1) {
-    for (const turn of kammaTurns) {
+    for (const turn of takeTurns) {
       const p = { x: at.x + Math.cos(towards + turn) * d, y: at.y + Math.sin(towards + turn) * d };
       if (w.npc.getClosestPoly(p, 0.1).success === false) continue; // a table is not on the mesh
       if (w.findRoomContaining(p, true)?.grKey === room) return { d, p };
@@ -304,10 +304,10 @@ function findKammaSpot(w: JshCli.WorldState, at: Geom.VectJson, from: Geom.VectJ
 }
 
 /** Resolves once they have stopped, or a newer press has taken over */
-async function walkToKammaSpot(w: JshCli.WorldState, npcKey: string, to: Geom.VectJson, press: number) {
+async function walkToTakeSpot(w: JshCli.WorldState, npcKey: string, to: Geom.VectJson, press: number) {
   await w.e.move({ npcKey, to }).catch(() => {});
   // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
-  while (press === kammaPress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
+  while (press === takePress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
 }
 
 /**

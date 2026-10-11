@@ -8,7 +8,7 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 | `ui/world/src/components/use-world-events.ts` | what is carried, `w.e.carried`, and held keys |
 | `ui/world/src/service/storage.ts` | `carried` (per World), `PersistedNpc.access` (per map) |
 | `ui/world/src/const.env.ts` | `inventoryConfig`: kinds, heights, reach, the most carried |
-| `cli/src/jsh/world/core.ts` | `give`, `drop`, `kamma` |
+| `cli/src/jsh/world/core.ts` | `give`, `drop`, `inventory` |
 | `media/src/decor/{phaser,book,box,keycard}.svg` | an item's one textured face, as decor |
 | `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
 
@@ -140,9 +140,9 @@ again (`w.e.unchainKey`, which stamps `meta.map` — a gdKey means nothing on an
 card only goes back on there). Held doors are saved with the npc, per map. Not `meta.gdKey` —
 Debug's door toggle reads that off any pick.
 
-## kamma
+## The `inventory` command
 
-`kamma` (in the default profile, `kamma off` to stop) decides what a short press does:
+`inventory` (in the default profile, `inventory off` to stop) decides what a short press does:
 
 - on an item, the player walks up to it — stopping `standOff` short, or as near as the navmesh allows
   e.g. beside its table — and takes it if then within `inventoryConfig.reach`: tight for one on the
@@ -152,6 +152,6 @@ Debug's door toggle reads that off any pick.
   player's own right arm lowers it instead, its target kept for when it is next raised, and one
   elsewhere on them does nothing. With the phaser lowered and psi on, another npc pressed has
   their thought read (`docs/psi.md`). A press on the player's own LEFT
-  arm lowers psi, phaser drawn or not. `preds`' pick ring stands down meanwhile.
+  arm lowers psi, phaser drawn or not. `predicates`' pick ring stands down meanwhile.
 
-It is a keyed listener (`w.e.addKeyedListener`), as `preds` is, so there is no process to kill.
+It is a keyed listener (`w.e.addKeyedListener`), as `predicates` is, so there is no process to kill.

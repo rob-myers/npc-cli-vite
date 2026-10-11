@@ -152,7 +152,7 @@ toggle labels it and opens a card per pick.
 
 See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
 keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
-World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `kamma` for what a press does.
+World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `inventory` for what a press does.
 
 ## Psi
 
