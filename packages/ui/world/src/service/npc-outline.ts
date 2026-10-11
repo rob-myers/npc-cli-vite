@@ -95,22 +95,16 @@ export function applyNpcOutline(
   })();
 }
 
-/**
- * Thinner as the view pulls back: the border is a fixed count of PIXELS, so an npc half the size on
- * screen wears twice as much of one. `zoomProgress` is `0` at the far stop and `1` at the near.
- * Scaled by `pixelRatio`, else a 1x screen wears twice the border of a 2x one
- */
-export function syncNpcOutlineWidth(zoomProgress: number, pixelRatio: number): void {
-  outlineWidth.value = (outlineWidthFarPx + (outlineWidthPx - outlineWidthFarPx) * zoomProgress) * pixelRatio;
+/** The border's width in device px. Scaled by `pixelRatio`, else a 1x screen wears twice the border of a 2x one */
+export function syncNpcOutlineWidth(pixelRatio: number): void {
+  outlineWidth.value = outlineWidthPx * pixelRatio;
 }
 
 const outlineColor = /* @__PURE__ */ color("#000");
 /** How opaque the border is — part-transparent, so what it sits on still reads through it */
 const outlineAlpha = 0.8;
-/** Half-width (CSS px) of the border at the near zoom stop, i.e. how far out we look for npc pixels */
-const outlineWidthPx = 3;
-/** ...and at the far one */
-const outlineWidthFarPx = 1;
+/** Half-width (CSS px) of the border, i.e. how far out we look for npc pixels. Not by zoom: following, the stops move */
+const outlineWidthPx = 2;
 /** In device px */
 const outlineWidth = /* @__PURE__ */ uniform(outlineWidthPx);
 /** How much fainter the mask must be here than nearby to count as outside an npc */

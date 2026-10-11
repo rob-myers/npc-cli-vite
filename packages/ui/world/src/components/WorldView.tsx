@@ -2073,8 +2073,8 @@ function PostProcessing() {
       w.view.roomOutlineFx.uid,
     ],
   );
-  // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`
-  useFrame(({ gl }) => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1, gl.getPixelRatio()), -2);
+  // the border is measured in device pixels, and a window can change screens — see `syncNpcOutlineWidth`
+  useFrame(({ gl }) => syncNpcOutlineWidth(gl.getPixelRatio()), -2);
   return null;
 }
 
