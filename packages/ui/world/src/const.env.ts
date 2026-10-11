@@ -320,5 +320,3 @@ export const defaultDoorOpacity = 0.8;
 export const lockedDoorTint = "#f44";
 
 export const unlockedDoorTint = "#4b4";
-
-export const defaultSkinKey = "medic-0";

@@ -966,9 +966,7 @@ export function WorldView(props: React.PropsWithChildren) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
-        // a right click has the player look there, as a tap of fingers does on touch. Still a pick
-        if (last.rightPress === true) w.player?.lookTowards(e.clientX, e.clientY);
-        state.pickObject(e);
+        state.pickObject(e); // a right click's look is the pick's — see `use-world-events`
       },
       focus() {
         // the `Canvas` wrapper, which has the `tabIndex`
@@ -1430,7 +1428,6 @@ export function WorldView(props: React.PropsWithChildren) {
         state.syncPickRT();
         w.npc?.syncOutlineMask();
         w.roomLabels?.syncOutlineMask();
-        w.psi?.syncOutlineMask();
 
         const pipeline = new THREE.RenderPipeline(gl);
         // the pass paints what lies beyond the world, which the MODE decides — see its `beyond`
@@ -1464,7 +1461,6 @@ export function WorldView(props: React.PropsWithChildren) {
           state.syncPickRT();
           w.npc?.syncOutlineMask();
           w.roomLabels?.syncOutlineMask();
-          w.psi?.syncOutlineMask();
           state.forceUpdate();
         };
       },
@@ -2073,8 +2069,8 @@ function PostProcessing() {
       w.view.roomOutlineFx.uid,
     ],
   );
-  // the border is measured in pixels, so it owes the zoom a scale — see `syncNpcOutlineWidth`
-  useFrame(({ gl }) => syncNpcOutlineWidth(w.view.controls?.zoomProgress ?? 1, gl.getPixelRatio()), -2);
+  // the border is measured in device pixels, and a window can change screens — see `syncNpcOutlineWidth`
+  useFrame(({ gl }) => syncNpcOutlineWidth(gl.getPixelRatio()), -2);
   return null;
 }
 

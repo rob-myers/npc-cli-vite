@@ -131,6 +131,10 @@ declare namespace JshCli {
     //  * - object permits brace-expansion of keys.
     //  */
     // as?: string | Record<string, SkinReMapValue>;
+    /**
+     * A skin's key or prefix e.g. `robot-0` or `r`,
+     * we'll use the first match, else defaultSkinKey.
+     */
     as?: string;
   };
 

@@ -13,6 +13,9 @@ The ONLY doc for how npc skins get from source files to the GPU.
 
 `manifest.json` there lists them (`byKey`, with `svgPath` and `meta`), rebuilt by `rebuildSkinManifest`.
 
+`spawn` takes a skin by key or prefix, e.g. `spawn rob at:[2,0,3] as:r`: the first skin whose
+key begins with it (`w.npc.findSkinKey`), an exact key first, else `w.npc.defaultSkinKey`.
+
 ## Sheets
 
 `pnpm exec gen-skin-sheets` only lays them out: one **256px** cell per skin, written to `sheets.json`

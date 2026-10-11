@@ -152,10 +152,10 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   return changed;
 }
 
-/** Whether `kamma` takes a press on an npc as psi's or the phaser's target */
+/** Whether `kamma` takes a press on an npc: as the phaser's target, or for psi to read */
 function isTargeting(w: JshCli.WorldState) {
   if (w.e.keyedListener.has("kamma") === false) return false;
-  return w.phasers?.isArmed(w.player.key) === true || (w.psi?.getTarget() ?? null) !== null;
+  return w.phasers?.isArmed(w.player.key) === true || w.psi?.on === true;
 }
 
 /** In or out again, as a shift-click does */

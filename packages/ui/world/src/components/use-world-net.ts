@@ -4,7 +4,7 @@ import { pause, warn } from "@npc-cli/util/legacy/generic";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { defaultSkinKey, floorFadeDelayMs, introPanDelayMs, mapVeilMs } from "../const.env";
+import { floorFadeDelayMs, introPanDelayMs, mapVeilMs } from "../const.env";
 import {
   decodeTransforms,
   encodeTransforms,
@@ -213,7 +213,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           key: npc.key,
           at: { x: npc.point.x, y: npc.point.y },
           angle: npc.rotation.y,
-          skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? defaultSkinKey,
+          skinKey: w.npc.getSkinKeyBySkinIndex(npc.skinIndex) ?? w.npc.defaultSkinKey,
           decorKey: w.npc.npcToDoable[npc.key] ?? undefined,
           lit: npc.lit === true ? true : undefined,
           netId,

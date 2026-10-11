@@ -3,8 +3,8 @@ import { cn, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useReducer, useState } from "react";
 import { type ThoughtTag, thoughtConfig } from "../service/thoughts";
+import BreathControls from "./BreathControls";
 import type { AnimationClipKey } from "./NPCs";
-import PsiControls from "./PsiControls";
 import { Glyphed } from "./TalkThread";
 import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
@@ -218,8 +218,24 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
             </button>
           );
         })}
+        {npc !== undefined && (
+          <button
+            type="button"
+            title={`${npc.anim.breath.on ? "stop" : "start"} breathing`}
+            className={cn(
+              "cursor-pointer rounded-lg border-2 px-3 py-0.5",
+              npc.anim.breath.on ? "border-amber-300/60 text-amber-200" : "border-white/20 text-white/40",
+            )}
+            onClick={() => {
+              npc.anim.setBreathing(!npc.anim.breath.on);
+              rerender();
+            }}
+          >
+            breath
+          </button>
+        )}
       </div>
-      {npcKey === w.player?.key && <PsiControls w={w} />}
+      {npcKey === w.player?.key && <BreathControls w={w} />}
     </div>
   );
 }

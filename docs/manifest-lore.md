@@ -67,19 +67,19 @@ answer share a row; only the latest row and the one before, dimmed, show, the re
 ellipsis until clicked — and a click on the latest folds them again.
 
 Every line said also shows over the speaker's head: ONE bubble per npc (`NpcBubbles`, through `w.html`, bare: click-through, no handles). Its
-debug section (room, pose, and for the player `PsiControls`) opens on right-click with the debug
+debug section (room, pose, and for the player `BreathControls`) opens on right-click with the debug
 `npcContextMenu` on, or from the speech menu's **debug** (`w.bubble.openDebug`); its close button
 closes that section alone. A talk's line awaiting an answer is `hold`: it stays until someone it
 addresses speaks (`release`), then runs `lineSecs` of world time, as any other line does.
 
 A talk (`talks`, by thread) offers the replies of the line replied to, under it. Each waits on its
 `needs`, drawn as pips, green once met — `talkNeeds`: `near` (within `talkConfig.nearDist`),
-`facing` (within `facingArc` of straight ahead), `psi` (psi targeting them). Not all green, the
+`facing` (within `facingArc` of straight ahead), `psi` (the player's psi raised). Not all green, the
 reply cannot be said. `onTick` looks again every `needsPollSecs` whilst the panel is open, and
 re-renders only on a change. A reply said, the npc answers after `answerSecs` of world time, so
 never whilst paused.
 
-A thread may also hold THOUGHTS, read off an npc by psi and not said: see `docs/psi.md`.
+A thread may also hold THOUGHTS, an npc's and not said: see `docs/psi.md`.
 
 Nothing is lost going back: a click on an earlier line of the npc's has them say it again, at the
 foot of the thread, to be answered there. A talk whose npc is gone keeps its history, and

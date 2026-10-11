@@ -211,8 +211,8 @@ export function grant(
 }
 
 /**
- * What the player's presses do: an item is walked to and taken, and whilst psi or their phaser is out
- * an npc is its target. Idempotent, as `preds` — see `docs/inventory.md`
+ * What the player's presses do: an item is walked to and taken, whilst their phaser is out an npc
+ * is its target, and whilst psi is raised an npc's thought is read. Idempotent, as `preds` — see `docs/inventory.md`
  * ```sh
  * kamma
  * kamma off
@@ -239,9 +239,9 @@ function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
     void commitKamma(w, playerKey, meta.decorKey, press);
   } else if (meta.type === "npc") {
     const own = meta.npcKey === playerKey;
-    const psiOn = (w.psi?.getTarget() ?? null) !== null;
+    const psiOn = w.psi?.on === true;
     if (own === true && psiOn === true && (meta.bodyPart === "leftarm" || meta.bodyPart === "leftforearm")) {
-      w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not: its target is kept for next time
+      w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not
     } else if (w.phasers?.isArmed(playerKey) === true) {
       // the arm that holds it lowers it, its target kept for next time — elsewhere on themselves, nothing
       if (own === true) {
@@ -249,7 +249,7 @@ function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
       } else {
         w.phasers.arm(playerKey, { at: meta.npcKey, part: meta.bodyPart });
       }
-    } else if (psiOn === true && own === false) w.player.psi(meta.npcKey);
+    } else if (psiOn === true && own === false) w.psi.read(meta.npcKey);
   }
 }
 
@@ -1207,17 +1207,16 @@ export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string;
 const posing = new Map<string, (why: "replaced") => void>();
 
 /**
- * The player targets an npc — themself for their rings alone, a bare `psi` for off. See `w.player.psi`.
+ * The player's psi on, or `off`: their hand goes to their temple. See `w.player.psi`.
  * It is the player's, not a process's, so like `phaser` it returns at once
  * ```sh
- * psi abe
- * psi $( w player.key )
  * psi
+ * psi off
  * ```
  */
-export function psi({ api, args: [npcKey], w }: JshCli.RunArg) {
+export function psi({ api, args: [arg], w }: JshCli.RunArg) {
   api.setPausable("world", false); // switches it whilst paused
-  w.player.psi(npcKey ?? null);
+  w.player.psi(arg !== "off");
 }
 
 /**
@@ -1404,6 +1403,7 @@ export function shield(
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
  * skin rob human-1
+ * skin rob as:r
  * ```
  */
 export function skin(
@@ -1412,9 +1412,11 @@ export function skin(
 ) {
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const npc = w.npc.get(opts.npcKey);
-  const skinKey = (opts.as ??= getLastUnknownNaked(opts) ?? "robot-0");
-  if (w.npc.getSkinIndexBySkinKey(skinKey) === -1) {
-    throw Error(`skin "${skinKey}" not found`);
+  const prefix = `${(opts.as ??= getLastUnknownNaked(opts) ?? "robot-0")}`;
+  const skinKey = w.npc.findSkinKey(prefix);
+  // no match gives the default, which is not what was asked for
+  if (skinKey.startsWith(prefix) === false) {
+    throw Error(`skin "${prefix}" not found`);
   }
   npc.setSkin(skinKey);
   w.view.forceUpdate();

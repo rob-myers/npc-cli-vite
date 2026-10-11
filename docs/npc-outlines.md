@@ -156,7 +156,7 @@ and no ordering hazard. Editing the dials below is therefore a live edit.
 |---|---|
 | `outlineColor` | `color("#555")`, one colour for everyone |
 | `outlineAlpha` | how opaque the border is |
-| `outlineWidthPx`, `outlineWidthFarPx` | half-width at the near and far zoom stops. A border is a count of PIXELS, so an npc half the size on screen would otherwise wear twice as much of one — `PostProcessing` feeds `zoomProgress` to `syncNpcOutlineWidth` each frame |
+| `outlineWidthPx` | half-width in CSS px. `PostProcessing` gives `syncNpcOutlineWidth` the pixel ratio each frame, so a 1x screen wears the same border as a 2x one. Not by zoom: whilst following the stops move, so `zoomProgress` says little of how big an npc is on screen |
 | `relativeCut` | how much fainter the mask must be here than nearby to count as outside an npc |
 | `depthBias`, `maskFloor` | guards, not tuning |
 

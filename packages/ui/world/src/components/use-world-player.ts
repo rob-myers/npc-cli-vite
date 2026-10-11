@@ -110,8 +110,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
         const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
         tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
-        if (Math.hypot(tmpHit.x - npc.position.x, tmpHit.z - npc.position.z) < lookDeadMetres) return;
-        state.lookAt = { x: tmpHit.x, y: tmpHit.z };
+        state.lookAtPoint(tmpHit.x, tmpHit.z);
+      },
+      lookAtPoint(x, z) {
+        const npc = w.n?.[state.key];
+        if (npc === undefined || w.client === true || w.disabled === true) return;
+        if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
+        state.lookAt = { x, y: z };
         // held as `r` would be, long enough to come round
         window.clearTimeout(state.lookTimer);
         state.lookTimer = window.setTimeout(() => {
@@ -135,7 +140,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       togglePsi() {
         if (w.n?.[state.key] === undefined || w.psi === null) return;
-        if (w.psi.getTarget() === null && w.e.hasItem(state.key, "psi") === false) return;
+        if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
         w.psi.toggle();
       },
       async panTo({ animate = true } = {}) {
@@ -151,9 +156,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           track: () => w.n[state.key]?.point,
         });
       },
-      psi(npcKey) {
-        if (npcKey !== null) w.npc.get(npcKey); // throws for an unknown npc
-        w.psi.choose(npcKey);
+      psi(on) {
+        w.psi.setOn(on);
       },
       persist() {
         w.e.persistNpcs();
@@ -290,6 +294,8 @@ export type State = {
   onTouch(e: TouchEvent): void;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
+  /** The same, to a world point */
+  lookAtPoint(x: number, z: number): void;
 
   /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
@@ -297,14 +303,14 @@ export type State = {
   toggleArm(): void;
   /** Run or walk — their `anim.hurry` */
   toggleRun(): void;
-  /** Psi off, else back on to the last target — on needs psi */
+  /** Psi off, else on — on needs psi */
   togglePsi(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */
   persist(): void;
-  /** Target `npcKey` — the player themself for their rings alone, `null` for off. See `Psi` */
-  psi(npcKey: null | string): void;
+  /** Psi on or off, granted or not. See `Psi` */
+  psi(on: boolean): void;
   /** Respawns the player where they were on this map — `false` if we couldn't */
   restore(): Promise<boolean>;
   /** Spawns the player at one of the map's `meta.spawn` decor points, at random — `false` if it has none */

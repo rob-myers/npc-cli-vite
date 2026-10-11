@@ -336,16 +336,6 @@ export const fadeSecs: Record<
   walk: { shuffle: 0.15, run: 0.25 },
 };
 
-export const defaultPsiTune: PsiTune = {
-  speed: 0.45,
-  width: 2.25,
-  packet: 1,
-  amp: 0.12,
-  line: 0.35,
-  opacity: 0.3,
-  color: "#9eb6ff",
-};
-
 /** The aggregates a mind is modelled on, and the colour a thought of each is marked with — see `docs/psi.md` */
 export const psiKhandhas = {
   form: { color: "#e8a15a" },
@@ -357,32 +347,58 @@ export const psiKhandhas = {
 
 export type KhandhaKey = keyof typeof psiKhandhas;
 
-/** `[min, max, step]` of each number in `PsiTune` — see `PsiControls` */
-export const psiTuneRanges = {
-  speed: [0.05, 2, 0.05],
-  width: [0.5, 8, 0.25],
-  packet: [0.2, 3, 0.1],
-  amp: [0, 0.5, 0.01],
-  line: [0, 1, 0.05],
-  opacity: [0.05, 1, 0.05],
+/** How an npc breathes: the player's is adjusted in their bubble, persisted — see `docs/npc-breath.md` */
+export type BreathTune = {
+  /** Breaths a minute */
+  rate: number;
+  /** The share of a breath spent breathing in */
+  inhale: number;
+  /** Metres their lungs swell at the top of a breath */
+  reach: number;
+  /** How bright their lungs and diaphragm are */
+  glow: number;
+};
+
+export const defaultBreathTune: BreathTune = { rate: 14, inhale: 0.4, reach: 0.035, glow: 0.6 };
+
+/** `[min, max, step]` of each — see `BreathControls` */
+export const breathTuneRanges = {
+  rate: [2, 40, 1],
+  inhale: [0.2, 0.8, 0.05],
+  reach: [0, 0.1, 0.005],
+  glow: [0, 1, 0.05],
 } as const;
 
-/** What the player's bubble adjusts of `Psi`, persisted */
-export type PsiTune = {
-  /** How fast a wave goes: see `thoughtConfig.speedOver` */
-  speed: number;
-  /** Pixels wide a wave's line is drawn */
-  width: number;
-  /** Metres long a wave's sinusoid is */
-  packet: number;
-  /** Metres the sinusoid rises and falls */
-  amp: number;
-  /** How much of full strength the line has away from the sinusoid */
-  line: number;
-  /** Of each wave, which glows additively: lower is fainter */
-  opacity: number;
-  /** The player's waves: their intention */
-  color: string;
+/** Lengths are the model's own units, in the chest bone's frame: forward is `-z` */
+export const breathConfig = {
+  /** How hard the lungs recoil breathing out: higher empties them sooner, leaving a longer pause */
+  recoil: 6,
+  /** Seconds breathing takes to come on, or to settle once off */
+  easeSecs: 1,
+  lung: {
+    color: "#bfe6ff",
+    /** Each lung's centre, the left's mirrored, and its radii with their lungs empty */
+    centre: [0.1, 0.08, 0],
+    radii: [0.07, 0.105, 0.08],
+    /** How much of a lung shows face-on: the rest gathers at its silhouette, by `rimPower` */
+    faceOn: 0.25,
+    rimPower: 1.5,
+    /** How bright they are empty, as a share of full */
+    empty: 0.45,
+  },
+  diaphragm: {
+    color: "#ff9aa8",
+    /** The height of its rim, how far its dome rises above that, and its radii */
+    y: -0.055,
+    dome: 0.07,
+    radii: [0.19, 0.115],
+    /** How far its crown drops at the top of a breath, per `reach` */
+    travel: 1.5,
+    /** How bright it is at rest, as a share of contracting */
+    rest: 0.3,
+  },
+  /** Metres nearer the eye its depth is drawn, so it shows through their own body yet not a wall */
+  depthBias: 0.4,
 };
 
 /** What an npc may be posed as — see jsh `pose` */

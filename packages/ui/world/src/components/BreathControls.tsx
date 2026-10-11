@@ -1,18 +1,19 @@
 import { tryLocalStorageGetParsed, tryLocalStorageSet } from "@npc-cli/util/legacy/generic";
 import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { type ReactNode, useState } from "react";
-import * as THREE from "three/webgpu";
-import { defaultPsiTune, type PsiTune, psiTuneRanges } from "../const.npc";
+import { type BreathTune, breathTuneRanges, defaultBreathTune } from "../const.npc";
 import type { State as WorldState } from "./World";
 
-/** The player's psi, as `Psi` draws it: folded away until asked for */
-export default function PsiControls({ w }: { w: WorldState }) {
-  const [tune, setTune] = useState(() => ({ ...w.psi.tune }));
+/** The player's breathing, as `tickBreath` moves them: folded away until asked for */
+export default function BreathControls({ w }: { w: WorldState }) {
+  const [kept, setTune] = useState(() => ({ ...w.npc.breathTune }));
+  /** Over the defaults: a field added since is absent from a tune kept over hmr, here or in the World */
+  const tune = { ...defaultBreathTune, ...kept };
   const [open, setOpen] = useState(() => tryLocalStorageGetParsed<boolean>(openStorageKey) === true);
   const Caret = open === true ? CaretDownIcon : CaretRightIcon;
-  const apply = (partial: Partial<PsiTune>) => {
-    w.psi.setTune(partial);
-    setTune({ ...w.psi.tune });
+  const apply = (partial: Partial<BreathTune>) => {
+    w.npc.setBreathTune(partial);
+    setTune({ ...w.npc.breathTune });
   };
 
   return (
@@ -27,43 +28,30 @@ export default function PsiControls({ w }: { w: WorldState }) {
           }}
         >
           <Caret className="size-5 shrink-0" />
-          psi waves
+          breathing
         </button>
         {open === true && (
           <button
             type="button"
             className="cursor-pointer rounded-lg border-2 border-white/20 px-3 text-white/60 hover:text-white"
-            onClick={() => apply(defaultPsiTune)}
+            onClick={() => apply(defaultBreathTune)}
           >
             reset
           </button>
         )}
       </div>
-      {open === true && (
-        <>
-          {sliderKeys.map((key) => (
-            <Slider
-              key={key}
-              label={key}
-              range={psiTuneRanges[key]}
-              value={tune[key]}
-              onChange={(value) => apply({ [key]: value })}
-            >
-              {tune[key].toFixed(2)}
-            </Slider>
-          ))}
-          {/* not `<input type="color">`, whose native picker the card's zoom blows up */}
+      {open === true &&
+        sliderKeys.map((key) => (
           <Slider
-            label="hue"
-            range={[0, 359, 1]}
-            value={hueOf(tune.color)}
-            onChange={(hue) => apply({ color: colorOfHue(hue) })}
-            track={hueTrack}
+            key={key}
+            label={key}
+            range={breathTuneRanges[key]}
+            value={tune[key]}
+            onChange={(value) => apply({ [key]: value })}
           >
-            <span className="h-4 w-8 rounded" style={{ background: tune.color }} />
+            {tune[key].toFixed(decimals[key])}
           </Slider>
-        </>
-      )}
+        ))}
     </div>
   );
 }
@@ -102,14 +90,8 @@ function Slider(props: {
   );
 }
 
-const openStorageKey = "psi-controls-open";
+const openStorageKey = "breath-controls-open";
 
-const sliderKeys = Object.keys(psiTuneRanges) as (keyof typeof psiTuneRanges)[];
+const sliderKeys = Object.keys(breathTuneRanges) as (keyof typeof breathTuneRanges)[];
 
-/** Saturation and lightness of the default, so every hue is as pale a glow */
-const { s, l } = new THREE.Color(defaultPsiTune.color).getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace);
-const hueOf = (color: string) =>
-  Math.round(new THREE.Color(color).getHSL({ h: 0, s: 0, l: 0 }, THREE.SRGBColorSpace).h * 360) % 360;
-const colorOfHue = (hue: number) =>
-  `#${new THREE.Color().setHSL(hue / 360, s, l, THREE.SRGBColorSpace).getHexString()}`;
-const hueTrack = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360].map((hue) => colorOfHue(hue % 360)).join(", ")})`;
+const decimals = { rate: 0, inhale: 2, reach: 3, glow: 2 } satisfies Record<keyof BreathTune, number>;

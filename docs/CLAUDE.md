@@ -86,7 +86,7 @@ The radius is **not** persistent state — `update()` re-derives it from `positi
 
 **Zoomed out, the view frames the player and their frontier.** `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`, into one kept `ReadbackBuffer`, one read in flight at a time and at most one per `frontierReadMinMs`) and keeps the furthest as `reach`, with `ahead` giving the vector to the frontier point. `followPlayer` holds the target `frontierPanFrac` of the way along it at every zoom (`getFollowGoal`, which the aimed zoom-in heads for too). Not following, a short look press (`c`, or the button) calls `holdFrontier` — following, it stops the follow: a `lookAt` tracking the goal, then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`). `follow` is on or off (`setFollow`) — a long press on the button, or holding `c`, toggles it. An npc runs whilst `anim.hurry`, which a move's `fast` sets either way (`--fast`, `fast:false`) and a plain move leaves be; `f` toggles the player's, as does its button on `WorldHud`, beside look/follow. A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan. A player respawn (`spawned`, e.g. `fadeSpawn`) calls `onPlayerRespawn`: the frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`. `easeFrontier` in `onCameraFrame` eases `controls.maxDistance` to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare, clamped between `frontierNearFrac` of the travel and the persisted stop, and `controls.minDistance` to the same fit clamped between `frontierNearest` and the persisted inner stop — both back to persisted when not following (a look press only pans) or there is nothing to read. `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
 
-**On touch a two-finger tap turns the player** (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under their midpoint as `lookAt`, which `aimAtPointer` faces them to for `lookHoldMs` just as `r` does the pointer, and `LookMark` marks with a cross. On a desktop a right click does the same (`onPointerUp`), which is what a trackpad's two-finger tap is, besides `r`.
+**On touch a two-finger tap turns the player** (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under their midpoint as `lookAt`, which `aimAtPointer` faces them to for `lookHoldMs` just as `r` does the pointer, and `LookMark` marks with a cross. On a desktop a right click that picks something does the same (`picked`, in `use-world-events`), unless it is the player themself, which is what a trackpad's two-finger tap is, besides `r`.
 
 **Turns can pivot on a point too**: `rotateAbout` names one — `WorldView` gives the zoom crosshair whilst it shows, and nothing whilst following — and `setRotateAbout` takes it as a turn begins, mouse or touch alike. `update` then slides the whole rig by `slideAboutPivot`. Turning about the pivot and turning about `target` leave `position - target` identical, so they differ by a pure translation — which is all that helper applies. With no point named the turn is about `target`.
 
@@ -103,6 +103,9 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 **Strafing** — see `docs/npc-strafe.md`, the ONLY doc for it. In short: whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing, and `syncStrafe` blends four directional gaits by heading, paced to the ground each covers.
 
 **Stance** — see `docs/npc-stance.md`, the ONLY doc for it. In short: after any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it.
+
+**Breath** — see `docs/npc-breath.md`, the ONLY doc for it. In short: an npc asked to (`anim.setBreathing`) shows lungs
+and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their bubble.
 
 `navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. See `docs/navcat-patch.md`, including how to edit the patch.
 
@@ -153,10 +156,9 @@ World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `ka
 
 ## Psi
 
-See `docs/psi.md` — the ONLY doc for it. In short: a target's mind is modelled on the five khandhas.
-Each time the player chooses them with psi, `Psi.exchange` sends their INTENTION as a wave, and the
-target's THOUGHT comes back as another, read as it arrives: over their head (`w.bubble.think`) and in their thread of
-the speech history (`w.speech.think`), marked with its khandha.
+See `docs/psi.md` — the ONLY doc for it. In short: psi is on or off (`w.psi.on`), and on, the player's
+left hand is at their temple. It has no target and draws nothing. Raised, a press on another npc reads
+their thought (`w.psi.read`): over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha.
 
 ## Shields
 
@@ -236,10 +238,10 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — `Picker`, from `@npc-cli/util/picker`.
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
-- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`' `onTick` via `useMemo`) must guard it.
+- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `Psi`'s `onTick`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 
-- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone — those drawing npcs or what surrounds them too, e.g. `NpcRings`, `Psi` and its tuning — never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
+- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone — those drawing npcs or what surrounds them too, e.g. `NpcRings`, `NpcBreath` — never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
 - Comments must be TERSE and sparing: one short line, never a paragraph, and only what the code
   doesn't already say. Prefer none to a restatement. Where one does clarify, attach it to the syntax
   it explains — a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.
