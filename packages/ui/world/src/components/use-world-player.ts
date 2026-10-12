@@ -220,8 +220,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         return true;
       },
       assign(npcKey) {
+        const changed = state.key !== npcKey;
         state.key = npcKey;
         w.events.next({ key: "set-player", playerKey: npcKey });
+        if (changed === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
       },
       setupDom() {
         const el = w.rootEl;
@@ -246,7 +248,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.update();
         // retargets the dynamic light, snapping it so it shows whilst paused
         state.persist();
-        void state.panTo(); // as on load
+        // a follow has its own pan, begun by `assign`
+        if (w.view.getFollowedPlayer() === undefined) void state.panTo(); // as on load
       },
       async spawnSomewhere() {
         // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point

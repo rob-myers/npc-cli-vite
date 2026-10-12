@@ -500,29 +500,27 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         return true;
       },
-      getFrontierOffset(out) {
-        // part way towards the frontier, so what is ahead is in view too — at every zoom, the inner
-        // stop being drawn in to suit as the outer is
-        if (state.cameraMode !== "embodied" || state.playerFrontier.ahead(tmpAhead) === false) return false;
+      getFrontierOffset(out, max, min) {
+        if (state.cameraMode !== "embodied" || state.playerFrontier.ahead(tmpAhead) === false) {
+          return false;
+        }
         let offsetX = tmpAhead.x * frontierPanFrac;
         let offsetZ = tmpAhead.z * frontierPanFrac;
-        // but never so far that the PLAYER leaves the frame: the fit is clamped by the persisted
-        // stops, and where the zoom cannot open up to suit, the offset gives way instead. They
-        // are PROJECTED as they would sit once the target is at the goal — the rig moves with
-        // the target, so only their offset from it matters, and the camera's current matrices
-        // answer for any tilt: the near side of a tilted view is foreshortened, which no planar
-        // estimate gets right. Perspective makes it a few refinements rather than one scale
         const { controls } = state;
-        const camera = controls.object as THREE.PerspectiveCamera;
-        const limit = 1 / frontierMargin; // of the half-screen, the same margin the fit is given
+        const camera = controls.object;
+        const view = camera.matrixWorldInverse;
+        /** How much further back the camera will rest, once the zoom lands */
+        const back =
+          max + (min - max) * controls.zoomProgress + tmpProjected.copy(controls.target).applyMatrix4(view).z;
+        /** The target will rest at head height, see `lookAtPlayer` */
+        const floorY = controls.target.y - npcDims.height;
+        // shortened until their feet and head are in frame. Perspective takes a few passes
         for (let i = 0; i < 4; i++) {
-          // their feet AND their head: on a tilted view the head projects further, and a player
-          // standing at the bottom edge with only their feet in shot is what this is for
-          tmpProjected.set(controls.target.x - offsetX, 0, controls.target.z - offsetZ).project(camera);
-          const feet = Math.max(Math.abs(tmpProjected.x), Math.abs(tmpProjected.y));
-          tmpProjected.set(controls.target.x - offsetX, npcDims.height, controls.target.z - offsetZ).project(camera);
-          const head = Math.max(Math.abs(tmpProjected.x), Math.abs(tmpProjected.y));
-          const over = Math.max(feet, head) / limit;
+          const x = controls.target.x - offsetX;
+          const z = controls.target.z - offsetZ;
+          const feet = getOffCentre(tmpProjected.set(x, floorY, z), camera, back);
+          const head = getOffCentre(tmpProjected.set(x, controls.target.y, z), camera, back);
+          const over = Math.max(feet, head) * frontierMargin;
           if (over <= 1) break;
           offsetX /= over;
           offsetZ /= over;
@@ -724,7 +722,8 @@ export function WorldView(props: React.PropsWithChildren) {
       easeFrontier() {
         const { controls } = state;
         const offset = state.frontierOffset;
-        if (state.getFrontierOffset(tmpOffset) === false) tmpOffset.x = tmpOffset.z = 0;
+        const [wanted, wantedMin] = state.getFrontierStops();
+        if (state.getFrontierOffset(tmpOffset, wanted, wantedMin) === false) tmpOffset.x = tmpOffset.z = 0;
         if (state.lookAtAnimId !== 0) {
           // a `lookAt` eases these on its own alpha
           state.frontierMs = performance.now();
@@ -732,8 +731,6 @@ export function WorldView(props: React.PropsWithChildren) {
           offset.z = tmpOffset.z;
           return;
         }
-        const [wanted, wantedMin] = state.getFrontierStops();
-
         // measured in time: a demand frameloop's frame gaps vary
         const now = performance.now();
         const deltaSecs = Math.min((now - state.frontierMs) / 1000, 0.1);
@@ -1709,7 +1706,7 @@ export type State = {
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;
   /** Where `easeFrontier` eases `frontierOffset` towards, `false` with no frontier read */
-  getFrontierOffset(out: { x: number; z: number }): boolean;
+  getFrontierOffset(out: { x: number; z: number }, max: number, min: number): boolean;
   /** When the crosshair began fading out, or `0` whilst it is not */
   zoomCrossFadeMs: number;
   /** Whether an aimed zoom-in is still running, so its slower settle is kept to the end */
@@ -2091,6 +2088,14 @@ const tmpAhead = { x: 0, z: 0 };
 const tmpGoal = { x: 0, z: 0 };
 /** See `getFrontierStops` */
 const tmpStops: [max: number, min: number] = [0, 0];
+/** How far off centre a world point sits with the camera `back` further off, `1` being the screen's edge. Overwrites it */
+function getOffCentre(point: THREE.Vector3, camera: THREE.Camera, back: number) {
+  point.applyMatrix4(camera.matrixWorldInverse);
+  point.z -= back;
+  point.applyMatrix4(camera.projectionMatrix);
+  return Math.max(Math.abs(point.x), Math.abs(point.y));
+}
+
 /** See `getFrontierOffset` */
 const tmpOffset = { x: 0, z: 0 };
 /** Where a `lookAt`'s `track` is now, before it is eased onto */
