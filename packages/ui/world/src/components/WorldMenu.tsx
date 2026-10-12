@@ -6,6 +6,7 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   BrainIcon,
+  CaretLeftIcon,
   CaretRightIcon,
   CrosshairSimpleIcon,
   EyeIcon,
@@ -497,6 +498,22 @@ export function WorldMenu() {
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>
                 player:
               </div>
+              <button
+                type="button"
+                title="previous player"
+                className={cn(
+                  "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
+                  touch && "px-3",
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (npcKeys.length === 0) return;
+                  const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                  w.player.setKey(npcKeys[(currentIdx - 1 + npcKeys.length) % npcKeys.length]);
+                }}
+              >
+                <CaretLeftIcon className="size-3" />
+              </button>
               <MenuSelect
                 label={truncateLabel(w.player?.key ?? "no npc", 10)}
                 value={w.player?.key ?? ""}
@@ -506,7 +523,7 @@ export function WorldMenu() {
               />
               <button
                 type="button"
-                title="cycle player"
+                title="next player"
                 className={cn(
                   "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
                   touch && "px-3",
