@@ -1654,7 +1654,7 @@ export function WorldView(props: React.PropsWithChildren) {
       <AnimatePresence>
         {state.busy !== null && (
           <motion.div
-            className={cn(indicatorClassName, "pointer-events-none top-6 z-70")}
+            className={cn(indicatorClassName, "pointer-events-none top-6 z-70 whitespace-nowrap")}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
