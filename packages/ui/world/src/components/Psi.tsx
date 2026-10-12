@@ -5,7 +5,7 @@ import { demoThoughts } from "../service/thoughts";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
-/** The player's psi: whether it is on, their hand at their temple whilst it is, and the thoughts it reads — see `docs/psi.md` */
+/** The player's psi: whether it is on, their hand at their temple and their breath shown whilst it is, and the thoughts it reads — see `docs/psi.md` */
 export default function Psi() {
   const w = useContext(WorldContext);
 
@@ -17,6 +17,8 @@ export default function Psi() {
 
       setOn(on) {
         state.on = on;
+        // their breath shows whilst it is raised
+        w.n?.[w.player?.key ?? ""]?.anim.setBreathing(on);
         state.onTick();
         w.r3f?.invalidate();
         w.hud?.update();
@@ -37,6 +39,11 @@ export default function Psi() {
         if (state.handsOn !== (player?.key ?? null)) {
           const prev = state.handsOn === null ? undefined : w.n[state.handsOn];
           if (prev !== undefined && isPsiPose(prev.anim.upperLeft.key)) prev.anim.setUpper(null, left); // the player changed
+          // and their breath goes with psi, to whoever has it now
+          if (state.on === true) {
+            prev?.anim.setBreathing(false);
+            player?.anim.setBreathing(true);
+          }
           state.handsOn = player?.key ?? null;
         }
         if (player === undefined) return;
