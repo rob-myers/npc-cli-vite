@@ -1,13 +1,12 @@
 # TODO
 
-- ✅ improve walk/run arms e.g. bent out a bit
-- ✅ improve psi animation e.g. no height steps
-- ✅ can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
-- ✅ try web synth for background music
-
 ## World
 
 ### Animation and Npc
+
+- ✅ improve walk/run arms e.g. bent out a bit
+- ✅ improve psi animation e.g. no height steps
+- ❌ can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
 
 - ✅ apply phaser-action animations on hit
 - ✅ walk animation legs needn't reset on stop
@@ -145,6 +144,10 @@
 
 - ✅ can select text in WorldSpeech toast and modal
 
+## Audio
+
+- ✅ try web synth for background music
+
 ## Blockbench
 
 ## Blog
@@ -217,7 +220,7 @@
 
 ## Media
 
-- ask Claude to create some sub-symbols of 101
+- ✅ ask Claude to create some sub-symbols of 101
 
 ## Shell
 
