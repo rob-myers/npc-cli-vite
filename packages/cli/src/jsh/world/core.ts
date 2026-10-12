@@ -731,12 +731,17 @@ async function move_next(
 
   try {
     let pendingRead = api.read();
-    let next: undefined | JshCli.PointAnyFormat;
+    let next: undefined | MaybeMeta<JshCli.PointAnyFormat>;
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { ...moveFlags(opts), npcKey: npc.key, to: next },
+        {
+          ...moveFlags(opts),
+          npcKey: npc.key,
+          to: next,
+          arrive: next.meta?.preventArrive !== true, // for wasd_delta --nav
+        },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -1592,6 +1597,7 @@ export async function* w(ct: JshCli.RunArg) {
 
 /**
  * ```sh
+ * warp npc:rob to:$( pick 1 )
  * warp rob to:$( pick 1 )
  * ```
  */
@@ -1605,39 +1611,55 @@ export async function warp(
 }
 
 /**
- * - Whilst w/a/s/d are held over the World, emits a target just ahead of the npc: up, left, down or right as
- * seen.
- * - --nav ensures target is navigable e.g. not emitted where the mesh ends — see `npc.getSlideResult`.
+ * - On hold w/a/s/d over World, emits a target just ahead of the npc: up, left, down or right (XZ camera)
+ * - --nav ensures target is navigable, so is not emitted where the mesh ends.
+ *   Outputs have `meta.preventArrive` honoured by `move` via move_next.
  * ```sh
  * wasd_delta --nav rob | move rob
- * wasd_delta --nav rob --fast | move rob --fast
  * wasd_delta rob | look rob
  * ```
  */
 export async function* wasd_delta(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; fast?: boolean; nav?: boolean } = ct.api.jsArg(ct.args, {
-    "--fast": "fast",
+  opts: { npcKey: string; nav?: boolean; force?: boolean } = ct.api.jsArg(ct.args, {
     "--nav": "nav",
+    "--force": "force",
     npc: "npcKey",
   }),
 ) {
   const { api, w } = ct;
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
 
+  /** Sent again on release without `meta.preventArrive` so we arrive */
+  let lastTarget: null | Geom.VectJson = null;
+
   while (true) {
     await api.sleep(wasdConfig.intervalSecs); // a kill rejects it
+
     const direction = w.view.getWasdDirection();
-    if (direction.length === 0) continue; // none held or opposites
-    const npc = w.npc.get(opts.npcKey);
-    const fast = opts.fast === true || npc.anim.hurry === true; // e.g. the player's run key
-    const length = agentConfig.maxSpeed[fast ? "run" : "walk"] * wasdConfig.stepSecs;
+    if (direction.length === 0 && lastTarget === null) {
+      continue;
+    }
+
+    const npc = w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey)];
+    if (npc === undefined) {
+      if (opts.force === true) continue; // e.g. during player change
+      throw Error(`npc not found: ${opts.npcKey}`);
+    }
+
+    const length = agentConfig.maxSpeed[npc.anim.hurry === true ? "run" : "walk"] * wasdConfig.stepSecs;
 
     if (opts.nav === true) {
-      const slide = npc.getSlideResult(direction.normalize(length));
-      if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < wasdConfig.minMove) continue; // the mesh's edge
-      yield { ...slide.groundPoint, meta: { floor: true, nav: true } };
-    } else {
+      // none held, or opposites, or the mesh's edge
+      const slide = direction.length === 0 ? null : npc.getSlideResult(direction.normalize(length));
+      if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= wasdConfig.minMove) {
+        // passed through, not arrived at: a move slows as it arrives, and this near they would never run
+        yield { ...(lastTarget = slide.groundPoint), meta: { floor: true, nav: true, preventArrive: true } };
+      } else if (lastTarget !== null) {
+        yield { ...lastTarget, meta: { floor: true, nav: true } }; // let go, or blocked: there they stop
+        lastTarget = null;
+      }
+    } else if (direction.length > 0) {
       const { x, y } = direction.normalize(wasdConfig.lookDist);
       yield { x: npc.position.x + x, y: npc.position.z + y };
     }
