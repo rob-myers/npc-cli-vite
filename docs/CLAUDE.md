@@ -107,6 +107,10 @@ Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, 
 **Breath** — see `docs/npc-breath.md`, the ONLY doc for it. In short: an npc asked to (`anim.setBreathing`) shows lungs
 and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their bubble.
 
+**Slices and eyes** — see `docs/skin-slices.md`, the ONLY doc for them. In short: a slice is a face-sized piece of texture drawn over a skin's
+face, and each holds that skin's eyes one way: `shut`, `up`, `scared`... An npc's eyes are one uniform, the slice shown (`pose rob eyes:shut`, `blink:2`).
+None is drawn by hand: the dev server finds each skin's eyes in its png (`meta.eyes`), and a DEV World draws the slices and saves `sheet/skin-slices.N.png`.
+
 `navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. See `docs/navcat-patch.md`, including how to edit the patch.
 
 ## Which room an npc is in

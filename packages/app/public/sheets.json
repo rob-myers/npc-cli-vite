@@ -469,7 +469,7 @@
   },
   "skinSheetDims": [{"width": 518, "height": 518}],
   "maxSkinSheetDim": {"width": 518, "height": 518},
-  "npcSlices": {
+  "skinSlices": {
     "human-0": {
       "key": "human-0",
       "rect": {"x": 2, "y": 2, "width": 128, "height": 128},
@@ -491,5 +491,5 @@
       "sheetId": 0
     }
   },
-  "npcSlicesSheetDims": [{"width": 262, "height": 262}]
+  "skinSlicesSheetDims": [{"width": 262, "height": 262}]
 }

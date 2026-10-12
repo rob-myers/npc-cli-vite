@@ -316,6 +316,10 @@ export const SkinSheetEntrySchema = z.object({
 });
 export type SkinSheetEntry = z.infer<typeof SkinSheetEntrySchema>;
 
+/** A skin's cell of slices — see `docs/skin-slices.md` */
+export const SkinSlicesSheetEntrySchema = z.object({ key: z.string(), rect: rectCodec, sheetId: z.number() });
+export type SkinSlicesSheetEntry = z.infer<typeof SkinSlicesSheetEntrySchema>;
+
 const SheetDimSchema = z.object({ width: z.number(), height: z.number() });
 
 /**
@@ -344,6 +348,11 @@ export const SheetsSchema = z.object({
   skinSheetDims: z.array(SheetDimSchema).default([]),
   /** Maximum over all sheets */
   maxSkinSheetDim: SheetDimSchema.default({ width: 1, height: 1 }),
+
+  /** By skin key */
+  skinSlices: z.record(z.string(), SkinSlicesSheetEntrySchema).default({}),
+  /** Aligned to sheets; its length is the number of the sheets. */
+  skinSlicesSheetDims: z.array(SheetDimSchema).default([]),
 });
 export type SheetsType = z.infer<typeof SheetsSchema>;
 
@@ -361,6 +370,8 @@ export const emptySheets: SheetsType = {
   skin: {},
   skinSheetDims: [],
   maxSkinSheetDim: { width: 1, height: 1 },
+  skinSlices: {},
+  skinSlicesSheetDims: [],
 };
 
 export const AssetsSkinEntrySchema = z.object({
@@ -374,6 +385,12 @@ export const AssetsSkinEntrySchema = z.object({
 });
 
 export type AssetsSkinEntryType = z.infer<typeof AssetsSkinEntrySchema>;
+
+/**
+ * A skin's `meta.eyes`: the LEFT eye as seen, the right being its mirror. Where it opens and the pupil
+ * within, each `[x, y, width, height]` in the face front's 8 skin pixels — see `docs/skin-slices.md`
+ */
+export type SkinEyes = { open: [number, number, number, number]; pupil: [number, number, number, number] };
 
 /**
  * For public/skin/manifest.json

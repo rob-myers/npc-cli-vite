@@ -13,6 +13,7 @@ import type { ViteDevServer } from "vite";
 import z from "zod";
 
 import { PROJECT_ROOT } from "../const.ts";
+import { detectSkinEyes } from "./skin-eyes.ts";
 
 const PUBLIC_DIR = path.join(PROJECT_ROOT, "packages/app/public");
 /** symlink to packages/media/src/skin */
@@ -69,6 +70,8 @@ export async function rebuildSkinManifest() {
       continue;
     }
 
+    const eyes = await detectSkinEyes(filePath);
+
     byKey[key] = AssetsSkinEntrySchema.decode({
       key,
       id: namemcDotComUid,
@@ -77,6 +80,8 @@ export async function rebuildSkinManifest() {
         skinKey: key,
         // via SVG top-level objects with title "meta foo=bar ..."
         ...(svgExists ? parseSvgMetadata(svgPath) : null),
+        // found in the png — see `docs/skin-slices.md`
+        ...(eyes !== null && { eyes }),
       },
       url: `https://namemc.com/skin/${namemcDotComUid}`,
       svgPath: svgExists ? svgLocalPath : null,

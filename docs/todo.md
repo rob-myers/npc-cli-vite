@@ -1,8 +1,9 @@
 # TODO
 
+- ✅ psi raised shows breathing
 - psi entrainment when target sleeps
+  - Next I want to implement "turning" or "entrainment" in the case where the target npc is sleeping i.e.
 - psi entrainment when target pacified
-- 🚧 psi raised shows breathing
 - refine psi breathing
   - do lungs/diaphragm actually move like that?
 
@@ -12,12 +13,14 @@
 
 ### Animation and Npc
 
+- 🚧 skin face composite
+
 - fix phaser going through a closed door
   - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
 
 - skin remapping
   - currently only have skinIndex
-  - need example skin with a bunch of stuff in its overlays
+  - could support mix-and-match body parts
 
 ### Camera
 

@@ -423,6 +423,14 @@ export const poseConfig = {
   aimFrom: [0, -0.37, 0],
 } as const;
 
+/** The frames a blink and a shifty look step through, by name in `eyeFrames` — see `docs/skin-slices.md` */
+export const eyesConfig = {
+  blink: { frames: ["half", "shut", "half"], frameSecs: 0.05, gapSecs: 0.2 },
+  shifty: { frames: ["left", "right"], frameSecs: 0.6 },
+  /** The face front, as fractions of a skin */
+  face: { x: 32 / 256, y: 32 / 256, size: 32 / 256 },
+} as const;
+
 /**
  * Stood still after a gait, their feet stay roughly where they stopped — see `npc-stance`. `on: false`
  * for none of it. Lengths are in the model's own metres.

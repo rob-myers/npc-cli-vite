@@ -10,6 +10,7 @@ import {
   defaultBreathTune,
   defaultFadeSecs,
   defaultIdleAnimationClipKey,
+  eyesConfig,
   fadeSecs,
   gaitStride,
   headShakeConfig,
@@ -23,6 +24,7 @@ import {
   strafeSpeed,
   upperFadeSecs,
 } from "../const.npc";
+import { type EyeFrame, type EyesKey, eyeFrames } from "../const.both";
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
@@ -110,6 +112,16 @@ export class NpcAnimation {
   hurt = null as null | { key: AnimationClipKey; secs: number; next: null | AnimationClipKey };
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
+  /** Their eyes, ticked only whilst `busy`: blinking, or shifty — see `docs/skin-slices.md` */
+  eyes = {
+    busy: false,
+    look: "open" as EyesKey,
+    /** Seconds under this look */
+    secs: 0,
+    /** Blinks left, and seconds into this one */
+    blinks: 0,
+    blinkSecs: 0,
+  };
   /** Facing: eased to `target` at `rate` (`0` holds) — unless a `turn` is under way, else `aim` sets both */
   face = {
     target: 0,
@@ -262,6 +274,7 @@ export class NpcAnimation {
     this.tickTurn(delta);
     this.tickHurt(delta);
     this.tickBreath(delta);
+    if (this.eyes.busy === true) this.tickEyes(delta);
     const { stance } = this;
     if (stance.held === true && this.npc.group !== null)
       tickStance(stance, this.npc.group, isStill(this.pose), delta, this.npc);
@@ -504,6 +517,43 @@ export class NpcAnimation {
     const want = reach.multiplyScalar(d).add(shoulder).sub(from).normalize();
     const bend = turnWithin(upper.bone, tipNow, want, Math.PI, weight);
     if (bend !== null) fore.written.copy(fore.bone.quaternion.premultiply(bend));
+  }
+
+  /** Their eyes take a look, whatever their pose */
+  setEyes(look: EyesKey) {
+    this.eyes.look = look;
+    this.eyes.secs = 0;
+    this.tickEyes(0);
+  }
+
+  /** They blink, over whatever look they have */
+  blink(count = 1) {
+    this.eyes.blinks = count;
+    this.eyes.blinkSecs = 0;
+    this.tickEyes(0);
+  }
+
+  /** Shows the frame their look, or a blink, is at */
+  tickEyes(delta: number) {
+    const { eyes } = this;
+    const { blink, shifty } = eyesConfig;
+    let frame: EyeFrame =
+      eyes.look === "shifty"
+        ? shifty.frames[Math.floor((eyes.secs += delta) / shifty.frameSecs) % shifty.frames.length]
+        : eyes.look;
+
+    if (eyes.blinks > 0) {
+      const step = Math.floor((eyes.blinkSecs += delta) / blink.frameSecs);
+      if (step < blink.frames.length) frame = blink.frames[step];
+      else if (eyes.blinks === 1 || eyes.blinkSecs >= blink.frames.length * blink.frameSecs + blink.gapSecs) {
+        eyes.blinks--;
+        eyes.blinkSecs = 0;
+      }
+    }
+
+    this.npc.eyesUniform.value = eyeFrames.indexOf(frame);
+    eyes.busy = eyes.blinks > 0 || eyes.look === "shifty";
+    this.w.r3f?.invalidate();
   }
 
   /** A "no": they shake their head, over whatever pose or upper clip has it */

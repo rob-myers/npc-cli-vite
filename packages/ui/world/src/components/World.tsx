@@ -37,6 +37,7 @@ import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
+import { skinSliceDims } from "../const.both";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import Ceiling from "./Ceiling";
@@ -137,6 +138,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         anisotropy: touchDevice ? undefined : 4,
       }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
+      texSkinSlices: new TexArray({
+        ctKey: "skin-slices",
+        width: skinSliceDims.cell,
+        height: skinSliceDims.cell,
+        numTextures: skinSliceDims.maxSkins,
+      }),
       texRoomLabel: new TexArray(roomLabelTexOpts),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 256, height: 256, numTextures: MAX_NPCS }),
 
@@ -602,6 +609,8 @@ export type State = {
   texDoorLabel: TexArray;
   texRoomLabel: TexArray;
   texNpcLabel: TexArray;
+  /** A layer per skin, as `texSkin` has them: a grid of slices drawn over the face — see `docs/skin-slices.md` */
+  texSkinSlices: TexArray;
   texSkin: TexArray;
 
   bubble: UseStateRef<import("./NpcBubbles").State>;

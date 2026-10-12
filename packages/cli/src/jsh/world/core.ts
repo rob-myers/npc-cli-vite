@@ -1,4 +1,4 @@
-import { npcDims } from "@npc-cli/ui__world/const.both";
+import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
@@ -1154,11 +1154,21 @@ export function play({ api, w }: JshCli.RunArg) {
  * pose npc-0 as:breathe
  * ```
  */
-export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string; at?: string } = api.jsArg(args)) {
+export async function pose(
+  { api, args, w }: JshCli.RunArg,
+  opts: { as?: string; at?: string; eyes?: EyesKey; blink?: number } = api.jsArg(args),
+) {
   const [npcKey] = api.getJsOperands(args, opts);
-  if (npcKey === undefined || opts.as === undefined) throw Error("usage: pose npcKey as:pose [at:npcKey]");
-  if (opts.as === "shake") return w.npc.get(npcKey).anim.shakeHead(); // over any pose
+  if (npcKey === undefined || (opts.as ?? opts.eyes ?? opts.blink) === undefined)
+    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count]");
   const npc = w.npc.get(npcKey);
+  // their eyes are apart from any pose — see `docs/skin-slices.md`
+  const looks: EyesKey[] = [...eyeFrames, "shifty"];
+  if (opts.eyes !== undefined && looks.includes(opts.eyes) === false) throw Error(`eyes: expected one of: ${looks}`);
+  if (opts.eyes !== undefined) npc.anim.setEyes(opts.eyes);
+  if (opts.blink !== undefined) npc.anim.blink(opts.blink);
+  if (opts.as === undefined) return;
+  if (opts.as === "shake") return npc.anim.shakeHead(); // over any pose
   if (!(opts.as in poseConfig.poses) && opts.as in w.npc.clips) {
     npc.anim.setHurt(null);
     return npc.anim.setPose(opts.as as keyof typeof w.npc.clips);

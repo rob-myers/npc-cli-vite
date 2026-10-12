@@ -2,7 +2,7 @@
 
 /**
  * creates/mutates
- * - public/sheets.json (skin fields)
+ * - public/sheets.json (skin and skinSlices fields)
  *
  * Usage
  * ```sh
@@ -12,7 +12,8 @@
  * dependencies
  * - `public/skin/manifest.json` (rebuilt by this script)
  *
- * Only the layout: a DEV World draws `public/sheet/skin.{sheetId}.png` and saves it — see `docs/skins.md`
+ * Only the layout: a DEV World draws `public/sheet/skin.{sheetId}.png` and saves it — see `docs/skins.md`.
+ * Likewise `public/sheet/skin-slices.{sheetId}.png` — see `docs/skin-slices.md`
  */
 
 import fs, { writeFileSync } from "node:fs";
@@ -20,6 +21,7 @@ import path from "node:path";
 import {
   AssetsSkinManifestSchema,
   emptySheets,
+  type SkinSlicesSheetEntry,
   SheetsSchema,
   type SkinSheetEntry,
 } from "@npc-cli/ui__world/assets.schema";
@@ -33,6 +35,9 @@ import { rebuildSkinManifest } from "../service/watch-skin-pngs.ts";
 
 /** A 64px Minecraft skin, drawn at the 256px of its svg overlay — see `drawSkinSheets` */
 const skinSheetCellSize = 256;
+
+/** A skin's slices: a 4x4 grid of 32px ones, as `skinSliceDims` has it */
+const skinSlicesCellSize = 128;
 
 // 1. rebuild manifest
 await rebuildSkinManifest();
@@ -69,7 +74,13 @@ const {
   },
 );
 
-// 4. update sheets.json
+// 4. pack a cell of slices per skin, drawn or not
+const sliceBins = packRectangles<{ key: string }>(
+  entries.map(({ key }) => ({ width: skinSlicesCellSize, height: skinSlicesCellSize, data: { key } })),
+  { logPrefix: "gen-skin-sheets", packedPadding: 2, maxWidth: 4096, maxHeight: 4096 },
+).bins;
+
+// 5. update sheets.json
 const sheetsJsonPath = path.resolve(PROJECT_ROOT, "packages/app/public", "sheets.json");
 const prevSheetsRaw = await fs.promises.readFile(sheetsJsonPath, "utf-8").catch(warn);
 const prevSheets = jsonParser.pipe(SheetsSchema).safeParse(prevSheetsRaw).data ?? emptySheets;
@@ -95,5 +106,16 @@ const sheet = SheetsSchema.encode({
   ),
   skinSheetDims: bins.map((bin) => ({ width: bin.width, height: bin.height })),
   maxSkinSheetDim: { width: maxWidth, height: maxHeight },
+  skinSlices: Object.fromEntries(
+    sliceBins.flatMap((bin, sheetId) =>
+      bin.rects.map<[string, SkinSlicesSheetEntry]>(
+        ({ x, y, width, height, data }: Omit<Rectangle, "data"> & { data: { key: string } }) => [
+          data.key,
+          { key: data.key, rect: Rect.fromJson({ x, y, width, height }), sheetId },
+        ],
+      ),
+    ),
+  ),
+  skinSlicesSheetDims: sliceBins.map((bin) => ({ width: bin.width, height: bin.height })),
 });
 writeFileSync(sheetsJsonPath, safeJsonCompact(sheet));

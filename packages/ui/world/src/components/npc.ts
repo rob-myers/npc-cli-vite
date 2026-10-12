@@ -60,6 +60,8 @@ export class Npc {
   roomSlot: THREE.UniformNode<"float", number>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
+  /** The slice their eyes show — see `NpcAnimation.tickEyes` */
+  eyesUniform: THREE.UniformNode<"float", number>;
 
   doorKeys = {} as { [key: `g${number}d${number}`]: boolean };
   labelStyle: JshCli.NpcLabelStyle = { color: defaultNpcLabelColor, speaking: false };
@@ -158,6 +160,7 @@ export class Npc {
     this.rotation = init.rotation;
     this.skinnedMesh = init.skinnedMesh;
     this.skinIndexUniform = init.skinIndexUniform;
+    this.eyesUniform = init.eyesUniform;
 
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
@@ -556,6 +559,7 @@ export type NpcInit = {
   rotation: THREE.Euler;
   skinnedMesh: THREE.SkinnedMesh;
   skinIndexUniform: THREE.UniformNode<"float", number>;
+  eyesUniform: THREE.UniformNode<"float", number>;
 };
 
 /** Pixels the label's pick box reaches beyond its text */

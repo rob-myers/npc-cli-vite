@@ -12,6 +12,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
   - a `<g>` titled `ignore` is dropped when rasterised
 
 `manifest.json` there lists them (`byKey`, with `svgPath` and `meta`), rebuilt by `rebuildSkinManifest`.
+Its `meta.eyes` is where the skin's eyes are, found in the png: see `docs/skin-slices.md`.
 
 `spawn` takes a skin by key or prefix, e.g. `spawn rob at:[2,0,3] as:r`: the first skin whose
 key begins with it (`w.npc.findSkinKey`), an exact key first, else `w.npc.defaultSkinKey`.
