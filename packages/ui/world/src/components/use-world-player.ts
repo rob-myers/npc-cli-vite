@@ -19,6 +19,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
     (): State => ({
       key: defaultPlayerKey,
       tap: null,
+      runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       lookTimer: 0,
 
@@ -37,10 +38,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         // a hand each: by `code`, so wherever a layout puts the letters
+        if (moveCodes.has(e.code) === true) {
+          // the same one twice, quickly, runs
+          const tap = state.runTap;
+          if (e.code === tap.code && e.timeStamp - tap.ms < doubleTapMs) state.setTapRun(true);
+          return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
+        }
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") state.toggleArm();
-        else if (e.code === "KeyF") state.toggleRun();
         else return;
         w.hud?.update();
         w.view.forceUpdate();
@@ -133,9 +139,22 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
       },
+      setTapRun(on) {
+        const npc = w.n?.[state.key];
+        // never over a run the bar's button began, which is its to end
+        if (npc === undefined || on === state.runTap.on || (on === true && npc.anim.hurry === true)) return;
+        state.runTap.on = on;
+        npc.anim.setHurry(on);
+        w.hud?.update();
+      },
+      syncRun() {
+        // none held, or opposites: either way they are no longer going anywhere
+        if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
+      },
       toggleRun() {
         const npc = w.n?.[state.key];
         npc?.anim.setHurry(!npc.anim.hurry);
+        state.runTap.on = false; // theirs now, to end as they began it
         w.hud?.update();
       },
       togglePsi() {
@@ -269,6 +288,9 @@ const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
 /** A look tap's longest, second finger down to last up, and how far any finger may stray — as `isPointDiffDrag` */
 const lookTapMs = 300;
+/** A second press of the same move key within this is a double tap, which runs */
+const doubleTapMs = 300;
+const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const lookTapSlopPx = 20;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
@@ -287,6 +309,12 @@ export type State = {
   aimAtPointer(): void;
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
+  /** The move key last pressed and when, and whether a double tap of one has them running */
+  runTap: { code: string; ms: number; on: boolean };
+  /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
+  setTapRun(on: boolean): void;
+  /** Ends that run once its keys are let go, or cancel out. Each tick */
+  syncRun(): void;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
   lookTimer: number;
@@ -297,7 +325,7 @@ export type State = {
   /** The same, to a world point */
   lookAtPoint(x: number, z: number): void;
 
-  /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
+  /** The player's controls: `q` psi, `e` their phaser, a move key twice to run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;

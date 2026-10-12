@@ -425,11 +425,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         try {
           // decor first: a restored npc's may be sitting on a chair (decorKey)
           state.restoreDecor();
+          w.decor.restored = true;
 
           // - player first, else next restored npc becomes player
           // - the player should always be ensured but it might not have been saved before
           playerWasSaved = await player.ensure();
           await state.restoreNpcs(saved);
+          w.npc.restored = true;
           await state.openDoorwaysWithNpcs();
 
           // ensure npcs drawn
@@ -474,6 +476,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
+        // the next map's are not back yet
+        w.npc.restored = false;
+        w.decor.restored = false;
 
         state.removeNpcs(...Object.keys(w.n));
         // runtime decor is per-map, like the npcs — the incoming map restores its own
@@ -914,12 +919,15 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
+        // nor a World yet to restore, or one remounted empty after an error: it would save over what it lost
+        if (w.decor?.restored !== true) return;
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
           decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
         });
       },
       persistNpcs() {
         if (w.client === true) return; // mirrors must never clobber our own save
+        if (w.npc?.restored !== true) return; // as `persistDecor`
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
           npcs: {
             playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
@@ -1365,6 +1373,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.phasers?.onTick();
         w.shields?.onTick();
         w.player?.aimAtPointer();
+        w.player?.syncRun();
       },
       syncDoorways() {
         for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {

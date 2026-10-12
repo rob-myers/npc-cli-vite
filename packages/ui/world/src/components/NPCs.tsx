@@ -94,6 +94,7 @@ export default function NPCs() {
       ambientNode: uniform(w.getTheme().npcs.ambient),
       gltf: null,
       gltfHash: 0,
+      restored: false,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
         entries: [] as SkinSheetEntry[],
@@ -943,6 +944,8 @@ export type State = {
   gltf: GLTF | null;
   /** DEV: hash of the gltf the npc meshes were built from — see `devHotReload` */
   gltfHash: number;
+  /** Whether this map's saved npcs are back. Until then a save would overwrite them with fewer — see `persistNpcs` */
+  restored: boolean;
   skin: {
     manifest: AssetsSkinManifestType;
     entries: SkinSheetEntry[];

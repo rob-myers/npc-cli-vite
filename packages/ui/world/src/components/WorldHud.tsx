@@ -350,7 +350,7 @@ function PlayerButtons() {
       {w.client !== true && (
         <div
           className={buttonClass}
-          title={`${hurry ? "run" : "walk"}: f`}
+          title={hurry ? "run" : "walk"}
           onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
         >
           <GaitIcon className={cn(buttonIcon(hurry), "size-5")} weight="bold" />

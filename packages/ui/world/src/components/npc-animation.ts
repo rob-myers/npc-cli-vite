@@ -51,7 +51,7 @@ export class NpcAnimation {
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
   idleClip = emptyAnimationClip;
   moveClip = emptyAnimationClip;
-  /** They run where they can, until told otherwise — by a move's `fast`, or the player's `f` */
+  /** They run where they can, until told otherwise — by a move's `fast`, or the player's run button */
   hurry = false;
   /** They may run. Not which gait shows — that is `moveClip` */
   get fast() {

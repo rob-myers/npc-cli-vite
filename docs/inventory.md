@@ -22,7 +22,7 @@ nor phasers are mirrored.
 
 At its right end, after the slots, are two buttons for the player themself — all a client gets:
 look/follow (a press looks, a long press toggles the follow, as `c`) and, not on a client, walk/run
-(`f`, `w.player.toggleRun()`: their `anim.hurry`).
+(`w.player.toggleRun()`: their `anim.hurry`).
 
 | slot | shows | a press |
 | --- | --- | --- |

@@ -60,6 +60,7 @@ export default function Decor() {
       grid: {},
       lastHmr: 0,
       ready: false,
+      restored: false,
 
       // assigned rather than spread: a batch's `ref` writes to the batch itself
       static: Object.assign(createTexBatch(MAX_DECOR_QUAD_INSTANCES), { gdKeyToDecorKeys: {} }),
@@ -903,6 +904,8 @@ export type State = {
   lastHmr: number;
   /** Also false briefly after HMR */
   ready: boolean;
+  /** Whether this map's saved decor is back. Until then a save would overwrite it with less — see `persistDecor` */
+  restored: boolean;
 
   /** Static quads and points */
   static: TexBatch & {
