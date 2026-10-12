@@ -140,8 +140,15 @@ export function WorldMenu() {
         state.menuHeight = state.getClampedMenuHeight(state.menuHeight);
         state.update();
       },
-      onResizeMouseDown(e) {
+      setMenuHeight(startHeight, dy, startMenuY) {
+        // from the top the column moves, and the height takes up what it moved
+        if (startMenuY !== undefined) dy = startMenuY - state.getClampedY(startMenuY + dy);
+        state.menuHeight = state.getClampedMenuHeight(startHeight + dy);
+        if (startMenuY !== undefined) y.set(startMenuY + startHeight - state.menuHeight);
+      },
+      onResizeMouseDown(e, top) {
         e.stopPropagation();
+        const startMenuY = top === true ? y.get() : undefined;
         const startX = e.clientX;
         const startY = e.clientY;
         const startWidth = state.menuWidth;
@@ -150,7 +157,7 @@ export function WorldMenu() {
         const onMove = (ev: MouseEvent) => {
           // popup opens rightward/downward from the trigger, so dragging the corner out grows it
           state.menuWidth = state.getClampedMenuWidth(startWidth + (ev.clientX - startX));
-          state.menuHeight = state.getClampedMenuHeight(startHeight + (ev.clientY - startY));
+          state.setMenuHeight(startHeight, ev.clientY - startY, startMenuY);
           state.update();
         };
         const onUp = () => {
@@ -162,8 +169,9 @@ export function WorldMenu() {
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
       },
-      onResizeTouchStart(e) {
+      onResizeTouchStart(e, top) {
         e.stopPropagation();
+        const startMenuY = top === true ? y.get() : undefined;
         const t = e.touches[0];
         if (!t) return;
         const startX = t.clientX;
@@ -175,7 +183,7 @@ export function WorldMenu() {
           const t2 = ev.touches[0];
           if (t2) {
             state.menuWidth = state.getClampedMenuWidth(startWidth + (t2.clientX - startX));
-            state.menuHeight = state.getClampedMenuHeight(startHeight + (t2.clientY - startY));
+            state.setMenuHeight(startHeight, t2.clientY - startY, startMenuY);
             state.update();
           }
         };
@@ -192,7 +200,7 @@ export function WorldMenu() {
         store.patch({ menuY: state.getClampedY(y.get()) });
       },
       persistMenuSize() {
-        store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight });
+        store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight, menuY: state.getClampedY(y.get()) });
       },
       async saveThemeDev() {
         const theme = w.assets?.theme?.[w.themeKey];
@@ -925,6 +933,19 @@ function MenuShell({
                 )}
               />
             </div>
+            {/* and from the top-right, which moves the column with it */}
+            <div
+              className="absolute top-0 right-0 size-5 touch-none cursor-nesw-resize"
+              onMouseDown={(e) => state.onResizeMouseDown(e, true)}
+              onTouchStart={(e) => state.onResizeTouchStart(e, true)}
+            >
+              <div
+                className={cn(
+                  "absolute top-1 right-1 size-2.5 border-t-2 border-r-2 border-neutral-600 rounded-tr",
+                  state.resizing && "border-neutral-400",
+                )}
+              />
+            </div>
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
@@ -1156,8 +1177,10 @@ export type State = {
   getMaxMenuHeight(): number;
   getClampedMenuHeight(height: number): number;
   onResize(): void;
-  onResizeMouseDown(e: React.MouseEvent): void;
-  onResizeTouchStart(e: React.TouchEvent): void;
+  /** `startMenuY` is the column's `y` as a resize from the TOP began */
+  setMenuHeight(startHeight: number, dy: number, startMenuY?: number): void;
+  onResizeMouseDown(e: React.MouseEvent, top?: boolean): void;
+  onResizeTouchStart(e: React.TouchEvent, top?: boolean): void;
   persistY(): void;
   persistMenuSize(): void;
   saveThemeDev(): Promise<void>;
