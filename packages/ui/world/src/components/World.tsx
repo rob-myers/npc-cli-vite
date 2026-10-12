@@ -122,7 +122,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 1, // from sheets.symbolSheetDims.length
         width: 1,
         height: 1,
-        anisotropy: touchDevice ? undefined : 4,
+        anisotropy: touchDevice ? 2 : 4,
         gpu: true,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 4 }),

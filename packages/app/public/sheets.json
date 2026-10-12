@@ -468,5 +468,28 @@
     }
   },
   "skinSheetDims": [{"width": 518, "height": 518}],
-  "maxSkinSheetDim": {"width": 518, "height": 518}
+  "maxSkinSheetDim": {"width": 518, "height": 518},
+  "npcSlices": {
+    "human-0": {
+      "key": "human-0",
+      "rect": {"x": 2, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "human-1": {
+      "key": "human-1",
+      "rect": {"x": 132, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "medic-0": {
+      "key": "medic-0",
+      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "robot-0": {
+      "key": "robot-0",
+      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    }
+  },
+  "npcSlicesSheetDims": [{"width": 262, "height": 262}]
 }
