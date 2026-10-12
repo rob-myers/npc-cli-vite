@@ -171,10 +171,10 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       <Knob k={key} value={state.config[key]} colour={colour} onChange={(v) => state.setConfig({ [key]: v })} />
     </div>
   );
-  const fader = (key: AmbienceKey & AmbienceMeterKey, colour: string, heightClass = "h-52 @max-lg:h-40") => (
-    <div className={cn("mt-auto flex shrink-0 justify-center gap-3 px-2 pt-3", heightClass)}>
+  const fader = (key: AmbienceKey & AmbienceMeterKey, colour: string, heightClass = faderClass) => (
+    <div className={cn("mt-auto flex justify-center gap-3 px-2 pt-3 [@container_(height<40rem)]:pt-1.5", heightClass)}>
       <div
-        className="relative h-full w-2.5 overflow-hidden rounded-sm bg-black ring-1 ring-black"
+        className="relative w-2.5 overflow-hidden rounded-sm bg-black ring-1 ring-black"
         style={{ backgroundImage: meterGradient }}
       >
         <div
@@ -184,7 +184,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         />
         <div className="absolute inset-0" style={{ backgroundImage: meterSegments }} />
       </div>
-      <div {...helped(key)} style={{ height: "100%" }}>
+      <div {...helped(key)} className={cn(helped(key).className, "flex")}>
         <Fader k={key} value={state.config[key]} colour={colour} onChange={(v) => state.setConfig({ [key]: v })} />
       </div>
     </div>
@@ -235,18 +235,23 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       {/* hidden, not unmounted, so its meters and screen keep their elements */}
       <div
         className={cn(
-          "@container flex size-full overflow-auto p-3 pt-11",
+          "[container-type:size] flex size-full overflow-auto p-3 pt-11 [@container_(height<40rem)]:pb-1",
           state.help !== null && "pb-48",
           view === "graph" && "hidden",
         )}
       >
         <div
-          className="m-auto flex max-w-full flex-wrap justify-center gap-1.5 @max-lg:w-full rounded-lg border border-black bg-[#1b1d21] p-2 shadow-[inset_0_1px_0_#ffffff14,0_8px_24px_#000a]"
+          className="m-auto flex @min-lg:h-full @min-lg:max-h-[42rem] min-h-fit max-w-full flex-wrap justify-center gap-1.5 @max-lg:w-full rounded-lg border border-black bg-[#1b1d21] p-2 [@container_(height<40rem)]:p-1 shadow-[inset_0_1px_0_#ffffff14,0_8px_24px_#000a]"
           style={{ backgroundImage: deskTexture }}
         >
           {strips.map(({ key, title, colour, knobs, knobsClass }) => (
             <Strip key={key} title={title} colour={colour} className="@max-lg:grow">
-              <div className={cn("grid justify-center gap-x-1 gap-y-2.5 px-2 pt-2", knobsClass)}>
+              <div
+                className={cn(
+                  "grid justify-center gap-x-1 gap-y-2.5 px-2 pt-2 [@container_(height<40rem)]:gap-y-1",
+                  knobsClass,
+                )}
+              >
                 {knobs.map((k) => knob(k, colour))}
               </div>
               {fader(key, colour)}
@@ -305,8 +310,8 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                 </div>
               </div>
               <div className="flex justify-center px-2 pt-2.5">{knob("reverb", masterColour)}</div>
-              <div className="mt-auto flex flex-col @max-lg:mt-0">
-                {fader("master", masterColour, "h-52 @max-lg:h-28")}
+              <div className="flex flex-1 flex-col @max-lg:flex-none">
+                {fader("master", masterColour, cn(faderClass, "@max-lg:basis-28 @max-lg:flex-none"))}
                 <Readout value={state.config.master} colour={masterColour} />
               </div>
             </div>
@@ -405,7 +410,7 @@ function Strip(props: { title: string; colour: string; className?: string; child
 function Readout({ value, colour }: { value: number; colour: string }) {
   return (
     <div
-      className="mx-2 mt-2 rounded-sm border border-black bg-black/70 py-0.5 text-center font-mono text-[10px] tabular-nums"
+      className="mx-2 mt-2 [@container_(height<40rem)]:mt-1 rounded-sm border border-black bg-black/70 py-0.5 text-center font-mono text-[10px] tabular-nums"
       style={{ color: colour }}
     >
       {value === 0 ? "-inf" : (20 * Math.log10(value)).toFixed(1)} dB
@@ -421,7 +426,7 @@ function Knob({ k, value, colour, onChange }: ControlProps) {
   const drag = useRef<null | { y: number; value: number }>(null);
 
   return (
-    <div className="flex flex-col items-center gap-1" title={k}>
+    <div className="flex flex-col items-center gap-1 [@container_(height<40rem)]:gap-0.5" title={k}>
       <div
         {...sliderProps(k, value, onChange)}
         className="cursor-ns-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
@@ -438,7 +443,7 @@ function Knob({ k, value, colour, onChange }: ControlProps) {
         onPointerCancel={() => void (drag.current = null)}
         onDoubleClick={() => onChange(ambienceDefaults[k])}
       >
-        <svg viewBox="0 0 40 40" className="size-10" aria-hidden="true">
+        <svg viewBox="0 0 40 40" className="size-10 [@container_(height<40rem)]:size-8" aria-hidden="true">
           <circle {...knobArc} stroke="#09090b" strokeDasharray={`${knobSweep} ${knobRound}`} />
           <circle {...knobArc} stroke={colour} strokeDasharray={`${knobSweep * frac} ${knobRound}`} />
           <circle cx={20} cy={20} r={11.5} fill="#3f3f46" stroke="#18181b" strokeWidth={1.5} />
@@ -481,7 +486,7 @@ function Fader({ k, value, colour, onChange }: ControlProps) {
     <div
       {...sliderProps(k, value, onChange)}
       title={k}
-      className="relative h-full w-9 cursor-ns-resize touch-none outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+      className="relative w-9 cursor-ns-resize touch-none outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
       style={{ backgroundImage: faderTicks }}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -669,6 +674,9 @@ const meterGradient = "linear-gradient(to top, #22c55e 0 62%, #eab308 62% 84%, #
 const meterSegments = "repeating-linear-gradient(to top, transparent 0 3px, #000 3px 4px)";
 const faderTicks = "repeating-linear-gradient(to bottom, #ffffff2e 0 1px, transparent 1px 10%)";
 const deskTexture = "repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 3px)";
+
+/** A fader takes what height its strip has left, between a stub and a full throw */
+const faderClass = "min-h-20 max-h-60 flex-1 basis-40 [@container_(height<40rem)]:min-h-16";
 
 const helpButtonClass =
   "grid size-6 cursor-pointer place-items-center rounded-sm bg-zinc-800 text-zinc-300 hover:bg-zinc-700";
