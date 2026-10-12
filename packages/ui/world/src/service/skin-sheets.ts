@@ -85,6 +85,15 @@ function drawEyes(frame: EyeFrame, face: ImageData, eyes: SkinEyes) {
   const whiteX = Math.floor(px > ox ? (ox + px) / 2 : px + pw < ox + ow ? (px + pw + ox + ow) / 2 : skinX);
   const { lash, gaze, wideGrow, wideMax, wideWhite, widePupil } = eyeDraw;
 
+  /** An eye that is dark around a bright iris, which keeps its dark */
+  const centreRow = Math.floor(oy + oh / 2);
+  const lumAt = (x: number, y: number) =>
+    face.data
+      .subarray((y * size + x) * 4)
+      .slice(0, 3)
+      .reduce((a, b) => a + b);
+  const inverted = lumAt(whiteX, centreRow) < lumAt(Math.floor(px + pw / 2), Math.floor(py + ph / 2));
+
   // the left eye as seen, then its mirror
   for (const mirror of [false, true]) {
     const at = (x: number, y: number) => (y * size + (mirror ? size - 1 - x : x)) * 4;
@@ -102,7 +111,12 @@ function drawEyes(frame: EyeFrame, face: ImageData, eyes: SkinEyes) {
     };
     /** The lid down over `rows` of the opening, its lower edge dark */
     const lid = (rows: number) =>
-      each(ox, oy, ow, rows, (x, y) => paint(x, y, [skinX, y], y === oy + rows - 1 ? lash : 1));
+      each(ox, oy, ow, rows, (x, y) => {
+        const bottom = y === oy + rows - 1;
+        // a dark eye's lid would be lost in the face, so the eye's dark stays as its outline
+        const edge = inverted && (bottom || y === oy || x === ox || x === ox + ow - 1);
+        paint(x, y, edge ? [whiteX, y] : [skinX, y], bottom && edge === false ? lash : 1);
+      });
     /** The opening all white, then the pupil moved within it. The mirror's `dx` is the other way */
     const look = (dx: number, dy: number) => {
       each(ox, oy, ow, oh, (x, y) => paint(x, y, [whiteX, y]));
@@ -119,7 +133,9 @@ function drawEyes(frame: EyeFrame, face: ImageData, eyes: SkinEyes) {
     if (frame === "scared") {
       const growX = Math.max(0, Math.min(wideGrow, (wideMax[0] - ow) / 2));
       const growY = Math.max(0, Math.min(wideGrow, (wideMax[1] - oh) / 2));
-      each(ox - growX, oy - growY, ow + 2 * growX, oh + 2 * growY, (x, y) => paint(x, y, wideWhite));
+      each(ox - growX, oy - growY, ow + 2 * growX, oh + 2 * growY, (x, y) =>
+        paint(x, y, inverted ? [whiteX, centreRow] : wideWhite),
+      );
       const [w, h] = [pw * widePupil, ph * widePupil];
       const centre: [number, number] = [Math.floor(px + pw / 2), Math.floor(py + ph / 2)];
       each(px + (pw - w) / 2, py + (ph - h) / 2, w, h, (x, y) => paint(x, y, centre));

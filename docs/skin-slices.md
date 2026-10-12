@@ -19,10 +19,11 @@ Eyes are apart from poses and clips. Nothing sets them but `setEyes` and `blink`
 `detectSkinEyes` (`scripts/src/service/skin-eyes.ts`) reads a skin's 64px png and looks in the 8x8
 face front for:
 
-- **whites**: grey pixels, each matched by its mirror across the face;
-- **pupils**: dark pixels beside a white, on its row;
-- failing those, **dot eyes**: dark pixels, matched by their mirror, that hair reaching in from the
-  face's edge does not account for.
+- **whites**: grey pixels, with **pupils** the dark pixels beside them on their rows;
+- failing those, **inverted eyes**: a coloured iris with dark on every side, the eye being both (robot-0);
+- failing those, **dot eyes**: whatever else is dark (medic-0).
+
+It only looks in the left half, below the hairline and off the face's edge, at pixels their mirror matches.
 
 It gives the LEFT eye as seen, the right being its mirror, as `meta.eyes` in `skin/manifest.json`:
 
@@ -31,8 +32,8 @@ It gives the LEFT eye as seen, the right being its mirror, as `meta.eyes` in `sk
 ```
 
 Each is `[x, y, width, height]` in the face's 8 pixels: where the eye opens, and the pupil within it.
-A dot eye has the same rect for both. A skin whose eyes it does not find (robot-0) has no `meta.eyes`,
-and its eyes never change.
+A dot eye has the same rect for both. A skin whose eyes it does not find has no `meta.eyes`, and its
+eyes never change.
 
 `rebuildSkinManifest` calls it, so it runs when the dev server starts, on a skin png or svg change,
 and in `gen-skin-sheets`. Its thresholds are `tune` in that file, set on the skins there are.
@@ -44,10 +45,10 @@ and in `gen-skin-sheets`. Its thresholds are `tune` in that file, set on the ski
 | Frame | How it is drawn |
 |---|---|
 | `open` | nothing: the face as it is |
-| `half` | skin over the top half of the opening, its lower edge dark |
-| `shut` | skin over all of the opening, its lower edge dark |
+| `half` | skin over the top half of the opening, its lower edge dark. An inverted eye's lid is outlined in the eye's dark instead |
+| `shut` | the same, over all of the opening |
 | `up`, `left`, `right` | the opening all white, then the pupil moved 2 texels, cut off at the opening |
-| `scared` | the opening grown up to 2 texels each way, to 8 by 10 at most, and pale grey, with a smaller pupil |
+| `scared` | the opening grown up to 2 texels each way, to 8 by 10 at most, and pale grey, with a smaller pupil. An inverted eye keeps its dark |
 | `none` | skin over the opening |
 
 `drawEyes` in `service/skin-sheets` draws them, both eyes at once, with numbers from `eyeDraw` beside it.

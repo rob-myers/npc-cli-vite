@@ -44,7 +44,11 @@
       "key": "robot-0",
       "id": "e91cc700154075b2",
       "filename": "robot-0--e91cc700154075b2.png",
-      "meta": {"skinKey": "robot-0", "prefix": "robot"},
+      "meta": {
+        "skinKey": "robot-0",
+        "prefix": "robot",
+        "eyes": {"open": [0, 4, 3, 3], "pupil": [1, 5, 1, 1]}
+      },
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
     }
