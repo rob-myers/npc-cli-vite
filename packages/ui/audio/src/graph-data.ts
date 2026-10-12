@@ -1,12 +1,13 @@
 import type { AmbienceKey } from "./ambience";
 
-export type GraphGroup = "drone" | "air" | "choir" | "master";
+export type GraphGroup = "drone" | "air" | "choir" | "breath" | "master";
 
 /** A channel's colour, on the desk and on the diagram */
 export const graphColours: Record<GraphGroup, string> = {
   drone: "#f59e0b",
   air: "#38bdf8",
   choir: "#a78bfa",
+  breath: "#5eead4",
   master: "#f87171",
 };
 
@@ -54,6 +55,13 @@ export const graphNodes: GraphNode[] = [
   { id: "choirOut", label: "choir level", at: [5, 8], group: "choir", keys: ["choir"] },
   { id: "choirDry", label: "dry", at: [6, 8], group: "choir", keys: ["choirDry"] },
 
+  { id: "breathIn", label: "breath in", at: [0, 10.5], group: "breath", keys: ["breathRate", "breathInhale"] },
+  { id: "breathEx", label: "breath out", at: [0, 11.5], group: "breath", keys: ["breathEffort"] },
+  { id: "breathFit", label: "fit", at: [2, 11], group: "breath", note: "x0.6 to x1.5" },
+  { id: "breathLow", label: "lowpass", at: [4, 11], group: "breath", keys: ["breathCutoff"] },
+  { id: "breathOut", label: "breath level", at: [5, 11], group: "breath", keys: ["breath"] },
+  { id: "breathSend", label: "send", at: [5, 12], group: "breath", note: "x0.15" },
+
   { id: "reverb", label: "convolver", at: [6, 9.5], group: "master", note: "6 s hall" },
   { id: "wet", label: "reverb level", at: [7, 9.5], group: "master", keys: ["reverb"] },
   { id: "master", label: "master level", at: [8, 4], group: "master", keys: ["master"] },
@@ -93,6 +101,14 @@ export const graphEdges: GraphEdge[] = [
   { from: "choirOut", to: "choirDry" },
   { from: "choirDry", to: "master" },
   { from: "choirOut", to: "reverb" },
+
+  { from: "breathIn", to: "breathFit" },
+  { from: "breathEx", to: "breathFit" },
+  { from: "breathFit", to: "breathLow" },
+  { from: "breathLow", to: "breathOut" },
+  { from: "breathOut", to: "master" },
+  { from: "breathOut", to: "breathSend" },
+  { from: "breathSend", to: "reverb" },
 
   { from: "reverb", to: "wet" },
   { from: "wet", to: "master" },

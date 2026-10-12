@@ -1,4 +1,4 @@
-/** A generative ship ambience: a synthesised engine drone and air handling, under a sampled choir */
+/** A generative ship ambience: a synthesised engine drone and air handling, under a sampled choir and breath */
 
 export const ambienceDefaults = {
   master: 0.6,
@@ -31,6 +31,14 @@ export const ambienceDefaults = {
   grain: 5,
   /** How long neighbouring stretches overlap */
   crossfade: 1.8,
+  breath: 0.4,
+  breathCutoff: 6000,
+  /** How hard they breathe, `0` calm to `1` spent: which breaths out are picked, and how loud */
+  breathEffort: 0.3,
+  /** Breaths a minute */
+  breathRate: 14,
+  /** The share of a breath spent breathing in */
+  breathInhale: 0.4,
   reverb: 0.7,
 };
 
@@ -59,6 +67,11 @@ export const ambienceRanges: Record<AmbienceKey, [number, number, number]> = {
   release: [0.5, 15, 0.1],
   grain: [1, 6, 0.1],
   crossfade: [0.1, 3, 0.1],
+  breath: [0, 1, 0.01],
+  breathCutoff: [800, 9000, 10],
+  breathEffort: [0, 1, 0.01],
+  breathRate: [2, 40, 1],
+  breathInhale: [0.2, 0.8, 0.05],
   reverb: [0, 1, 0.01],
 };
 
@@ -75,6 +88,8 @@ export const ambienceUnits: Partial<Record<AmbienceKey, string>> = {
   release: "s",
   grain: "s",
   crossfade: "s",
+  breathCutoff: "Hz",
+  breathRate: "/min",
 };
 
 /** Minor chords and their neighbours, in semitones above the drone */
@@ -96,6 +111,14 @@ const choirSustain = [0.2, 6.7];
 
 /** Where each voice stands at full `spread` */
 const voicePans = [-1, 0.4, -0.35, 1];
+/** Where the breaths are served from — see its README for their source */
+const breathUrl = "/audio/breath/";
+/** How many breaths in and out are sampled, the ones out from calmest to hardest */
+const breathCounts = { in: 4, out: 5 };
+/** How far a breath may be slowed or hurried to fit its time */
+const breathRates = [0.6, 1.5];
+/** The share of the time breathing out that its sound fills, the rest being the pause */
+const breathOutFill = 0.7;
 const fadeInSecs = 4;
 const fadeOutSecs = 1.5;
 
@@ -180,6 +203,48 @@ export function createAmbience(initial: Partial<AmbienceConfig> = {}) {
   choirOut.connect(choirDry).connect(master);
   choirOut.connect(reverb);
 
+  // breath
+  const breathOut = gain(config.breath);
+  const breathLow = filter("lowpass", config.breathCutoff);
+  breathLow.connect(breathOut).connect(master);
+  breathOut.connect(gain(0.15)).connect(reverb);
+
+  const breaths: Record<"in" | "out", AudioBuffer[]> = { in: [], out: [] };
+  const loadBreaths = (kind: "in" | "out") =>
+    Promise.all(
+      Array.from({ length: breathCounts[kind] }, async (_, i) => {
+        const response = await fetch(`${breathUrl}${kind}-${i}.mp3`);
+        return ctx.decodeAudioData(await response.arrayBuffer());
+      }),
+    ).then((loaded) => void (breaths[kind] = loaded));
+  Promise.all([loadBreaths("in"), loadBreaths("out")]).catch(
+    (e) => ctx.state !== "closed" && console.error("ambience: breath samples failed to load", e),
+  );
+
+  /** Plays `buffer` over `secs` as near as its rate allows, ending at `until` if given, else starting at `from` */
+  function playBreath(buffer: AudioBuffer, secs: number, level: number, at: { from: number } | { until: number }) {
+    const rate = Math.min(breathRates[1], Math.max(breathRates[0], buffer.duration / secs));
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = rate;
+    source.connect(gain(level)).connect(breathLow);
+    source.start("from" in at ? at.from : Math.max(now(), at.until - buffer.duration / rate));
+  }
+
+  /** One breath from `at`: in over `inhale` of its `secs`, then out */
+  function breathe(at: number, secs: number, inhale: number) {
+    if (breaths.in.length === 0 || breaths.out.length === 0) return;
+    const turn = at + secs * inhale;
+    const { breathEffort: effort } = config;
+    const anyIn = breaths.in[Math.floor(Math.random() * breaths.in.length)];
+    // the harder they breathe, the harder a breath out is picked, give or take one
+    const hardest = breaths.out.length - 1;
+    const picked = Math.round(effort * hardest + Math.random() * 2 - 1);
+    const out = breaths.out[Math.min(hardest, Math.max(0, picked))];
+    playBreath(anyIn, turn - at, 0.4 + 0.6 * effort, { until: turn });
+    playBreath(out, (at + secs - turn) * breathOutFill, 0.5 + 0.5 * effort, { from: turn });
+  }
+
   /** A tap per channel, for the desk's level meters */
   const meter = (source: AudioNode) => {
     const node = ctx.createAnalyser();
@@ -187,7 +252,13 @@ export function createAmbience(initial: Partial<AmbienceConfig> = {}) {
     source.connect(node);
     return node;
   };
-  const meters = { drone: meter(droneOut), air: meter(airOut), choir: meter(choirOut), master: meter(analyser) };
+  const meters = {
+    drone: meter(droneOut),
+    air: meter(airOut),
+    choir: meter(choirOut),
+    breath: meter(breathOut),
+    master: meter(analyser),
+  };
 
   let samples: { midi: number; buffer: AudioBuffer }[] = [];
   Promise.all(
@@ -255,8 +326,16 @@ export function createAmbience(initial: Partial<AmbienceConfig> = {}) {
   }
 
   let nextChordAt = now() + 0.2;
+  let nextBreathAt = now() + 0.2;
   const timer = window.setInterval(() => {
     // the clock stands still whilst suspended, so nothing is scheduled then
+    if (now() >= nextBreathAt - 1) {
+      // a throttled tab may have fallen behind
+      nextBreathAt = Math.max(nextBreathAt, now() + 0.05);
+      const secs = 60 / config.breathRate;
+      breathe(nextBreathAt, secs, config.breathInhale);
+      nextBreathAt += secs;
+    }
     if (now() < nextChordAt - 2) return;
     const secs = config.chordSecs * (0.8 + Math.random() * 0.4);
     scheduleChord(nextChordAt, secs);
@@ -270,7 +349,7 @@ export function createAmbience(initial: Partial<AmbienceConfig> = {}) {
     analyser,
     meters,
     config,
-    /** The mix and the filters change at once. The rest is read as the next chord is chosen */
+    /** The mix and the filters change at once. The rest is read as the next chord or breath is scheduled */
     set(partial: Partial<AmbienceConfig>) {
       Object.assign(config, partial);
       const ease = (param: AudioParam, value: number) => param.setTargetAtTime(value, now(), 0.05);
@@ -283,6 +362,8 @@ export function createAmbience(initial: Partial<AmbienceConfig> = {}) {
       ease(choirOut.gain, config.choir);
       ease(choirDry.gain, config.choirDry);
       ease(choirLow.frequency, config.choirCutoff);
+      ease(breathOut.gain, config.breath);
+      ease(breathLow.frequency, config.breathCutoff);
       ease(wet.gain, config.reverb);
     },
     /** Fades out, then closes the context */

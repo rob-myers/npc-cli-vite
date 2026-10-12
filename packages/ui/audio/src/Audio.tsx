@@ -6,6 +6,7 @@ import {
   CaretRightIcon,
   CopyIcon,
   FlowArrowIcon,
+  PauseIcon,
   PlayIcon,
   QuestionIcon,
   SlidersHorizontalIcon,
@@ -40,14 +41,18 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       frameId: 0,
       help: null,
       rootEl: null,
-      levels: { drone: 0, air: 0, choir: 0, master: 0 },
-      meterEls: { drone: null, air: null, choir: null, master: null },
+      levels: { drone: 0, air: 0, choir: 0, breath: 0, master: 0 },
+      meterEls: { drone: null, air: null, choir: null, breath: null, master: null },
       wave: new Float32Array(1024),
 
       play() {
         state.engine = createAmbience(state.config);
         state.draw();
         state.update();
+      },
+      start() {
+        state.play();
+        state.setDisabled(false);
       },
       stop() {
         state.engine?.stop();
@@ -57,6 +62,9 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         const { canvas } = state;
         canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
         state.update();
+      },
+      setDisabled(disabled) {
+        uiStoreApi.setUiMeta(meta.id, (draft) => void (draft.disabled = disabled));
       },
       setConfig(partial) {
         state.config = { ...state.config, ...partial };
@@ -122,7 +130,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
 
   useEffect(() => {
     void state.engine?.ctx[meta.disabled ? "suspend" : "resume"]();
-  }, [meta.disabled]);
+  }, [meta.disabled, state.engine]);
 
   // an edit of the engine is heard without pressing play again
   useEffect(() => {
@@ -132,11 +140,23 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
   }, [createAmbience]);
 
   const playing = state.engine !== null;
+  const paused = playing && meta.disabled === true;
   const view = meta.view ?? "desk";
   const setView = (next: AudioUiMeta["view"]) => {
     state.setHelp(null);
     uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as AudioUiMeta).view = next));
   };
+  const pauseButton = (baseClass: string, pausedClass: string) => (
+    <button
+      type="button"
+      title={paused ? "resume" : "pause"}
+      disabled={!playing}
+      className={cn(baseClass, "disabled:cursor-default disabled:opacity-40", paused && pausedClass)}
+      onClick={() => state.setDisabled(!meta.disabled)}
+    >
+      <PauseIcon className="size-4" weight="fill" />
+    </button>
+  );
   /** Touring, the control explained stands out and pressing another moves the tour to it */
   const helped = (key: AmbienceKey) => ({
     "data-help": key,
@@ -198,11 +218,12 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
             type="button"
             title={playing ? "stop" : "play"}
             className={cn(viewButtonClass, playing && "text-emerald-300")}
-            onClick={() => (playing ? state.stop() : state.play())}
+            onClick={() => (playing ? state.stop() : state.start())}
           >
             {playing ? <StopIcon className="size-4" weight="fill" /> : <PlayIcon className="size-4" weight="fill" />}
           </button>
         )}
+        {view === "graph" && pauseButton(viewButtonClass, "text-amber-300")}
       </div>
 
       {view === "graph" && (
@@ -233,7 +254,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
             </Strip>
           ))}
 
-          {/* too narrow for a fourth strip, it lies along the foot of the desk */}
+          {/* too narrow for another strip, it lies along the foot of the desk */}
           <Strip title="master" colour={masterColour} className="@max-lg:basis-full">
             <div className="flex flex-1 flex-col @max-lg:flex-row @max-lg:items-center @max-lg:justify-center @max-lg:gap-2">
               <div className="flex flex-col items-center gap-2.5 px-2 pt-2">
@@ -243,12 +264,12 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                   height={56}
                   className="h-14 w-33 @min-lg:@max-xl:w-17 rounded-sm border border-black bg-[#07140c] shadow-[inset_0_0_8px_#000]"
                 />
-                <div className="grid grid-cols-4 gap-1 @min-lg:@max-xl:grid-cols-2">
+                <div className="grid grid-cols-3 gap-1 @min-lg:@max-xl:grid-cols-2">
                   <button
                     type="button"
                     title={playing ? "stop" : "play"}
                     className={cn(buttonClass, playing && "text-emerald-300 shadow-[0_0_8px_#34d39966]")}
-                    onClick={() => (playing ? state.stop() : state.play())}
+                    onClick={() => (playing ? state.stop() : state.start())}
                   >
                     {playing ? (
                       <StopIcon className="size-4" weight="fill" />
@@ -256,6 +277,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                       <PlayIcon className="size-4" weight="fill" />
                     )}
                   </button>
+                  {pauseButton(buttonClass, "text-amber-300 shadow-[0_0_8px_#fbbf2466]")}
                   <button
                     type="button"
                     title="reset to defaults"
@@ -322,7 +344,7 @@ function HelpCard(props: { step: HelpStep; value: null | number; onStep(by: numb
               entry.live ? "bg-emerald-400/15 text-emerald-300" : "bg-amber-400/15 text-amber-300",
             )}
           >
-            {entry.live ? "heard at once" : "from the next chord"}
+            {entry.live ? "heard at once" : `from the next ${step.startsWith("breath") ? "breath" : "chord"}`}
           </span>
         )}
       </div>
@@ -529,7 +551,11 @@ type State = {
   meterEls: Record<AmbienceMeterKey, null | HTMLDivElement>;
   wave: Float32Array<ArrayBuffer>;
   play(): void;
+  /** Plays, and enables a pane left paused */
+  start(): void;
   stop(): void;
+  /** Pauses it, the engine kept. Its tab's button does the same */
+  setDisabled(disabled: boolean): void;
   setConfig(partial: Partial<AmbienceConfig>): void;
   setHelp(step: null | HelpStep): void;
   /** On a control, enter opens the tour there, or moves it on. Escape closes it */
@@ -541,7 +567,7 @@ type State = {
   draw(): void;
 };
 
-const meterKeys: AmbienceMeterKey[] = ["drone", "air", "choir", "master"];
+const meterKeys: AmbienceMeterKey[] = ["drone", "air", "choir", "breath", "master"];
 
 type StripDef = {
   /** Its fader's setting, which is its meter's name too */
@@ -583,6 +609,13 @@ const strips: StripDef[] = [
     ],
     knobsClass: "grid-cols-[repeat(4,3rem)] @max-xl:grid-cols-[repeat(3,3rem)]",
   },
+  {
+    key: "breath",
+    title: "breath",
+    colour: graphColours.breath,
+    knobs: ["breathCutoff", "breathEffort", "breathRate", "breathInhale"],
+    knobsClass: "grid-cols-[3rem]",
+  },
 ];
 
 const masterColour = graphColours.master;
@@ -601,6 +634,10 @@ const labels: Partial<Record<AmbienceKey, string>> = {
   choirDetune: "detune",
   chordSecs: "chord",
   crossfade: "x-fade",
+  breathCutoff: "tone",
+  breathEffort: "effort",
+  breathRate: "rate",
+  breathInhale: "inhale",
 };
 
 const keySigns: Record<string, number> = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 };
