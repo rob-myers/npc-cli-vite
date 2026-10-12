@@ -51,7 +51,7 @@ export function createBreathGhost(objectPick: THREE.Node<"float">) {
   const lungShown = mix(float(lung.faceOn), float(1), rim)
     .mul(mix(float(lung.empty), float(1), full))
     .mul(fromAbove);
-  const diaphragmShown = mix(float(diaphragm.rest), float(1), drive);
+  const diaphragmShown = mix(float(diaphragm.rest), float(1), drive).mul(fromAbove);
   const shown = selectAs<"float">(isLung, lungShown, diaphragmShown);
 
   const material = new THREE.MeshBasicNodeMaterial({

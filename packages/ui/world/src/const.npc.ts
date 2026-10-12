@@ -398,7 +398,7 @@ export const breathConfig = {
     rest: 0.3,
   },
   /**
-   * Looked down on, the lungs lie over their head, so they go faint. `fade` is from and to, as the cosine
+   * Looked down on, the ghost lies over their head, so it goes faint. `fade` is from and to, as the cosine
    * between the way they are looked at and the way their chest stands: `0` is straight on, and full
    */
   above: { fade: [0.2, 0.6], left: 0.15 },
