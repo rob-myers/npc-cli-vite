@@ -219,7 +219,7 @@
     "lounge--015 0": {
       "symbolKey": "lounge--015",
       "obstacleId": 0,
-      "rect": {"x": 3479, "y": 1954, "width": 114, "height": 294},
+      "rect": {"x": 3479, "y": 1954, "width": 122.5, "height": 294},
       "sheetId": 0
     },
     "extra--021--shower 0": {
