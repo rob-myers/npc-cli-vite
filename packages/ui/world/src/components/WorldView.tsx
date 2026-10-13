@@ -1201,6 +1201,14 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       setCompassDial(on) {
         state.compassDial = on;
+        const { controls } = state;
+        if (on === true && state.cameraMode === "embodied" && controls !== null) {
+          // squared up at once, as a turn let go would be
+          const { spherical, sphericalDelta } = controls;
+          const point = Math.round((spherical.theta + sphericalDelta.theta) / halfPi);
+          sphericalDelta.theta = deltaAngle(spherical.theta, point * halfPi);
+          w.r3f?.invalidate();
+        }
         w.hud?.update();
       },
       setCameraMode(cameraMode) {
@@ -1879,6 +1887,7 @@ export type State = {
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
   /** `embodied`'s azimuth: a turn let go whilst `compassDial` snaps to a compass point (multiple of π/2) */
   detentEmbodiedAzimuth(spherical: THREE.Spherical): void;
+  /** Turns the compass dial on or off. On, the view goes to the nearest compass point at once */
   setCompassDial(on: boolean): void;
   /** How far the current turn is from `embodiedFrom`, as it will come to rest */
   getEmbodiedHeading(): number;
