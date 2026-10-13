@@ -664,9 +664,10 @@ export default function Decor() {
         // - obstacle.center in geomorph coords (not world yet)
         // - obstacle.origPoly in geomorph symbol coords (not geomorph yet)
         for (const [obstacleId, obs] of gm.obstacles.entries()) {
-          metaPoint.x = obs.center.x;
-          metaPoint.y = obs.center.y;
+          // the room is looked up in WORLD coords
           gm.matrix.transformPoint(tmpVect.copy(obs.center));
+          metaPoint.x = tmpVect.x;
+          metaPoint.y = tmpVect.y;
           metaPoint.meta = emptyMeta;
           const gmRoomId = w.findRoomContaining(metaPoint, true);
 

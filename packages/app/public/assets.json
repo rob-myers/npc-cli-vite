@@ -63004,7 +63004,7 @@
       },
       "floor": {"hullFill": "#0b0d10", "deck": "dark"},
       "lights": {"unlit": 1, "unlitTint": "#000", "cone": 0.7},
-      "obstacles": {"brightness": 1},
+      "obstacles": {"brightness": 1, "skirtBrightness": 1},
       "npcs": {"ambient": 0, "brightness": 0.4, "fxStrength": 2},
       "doors": {
         "brightness": 2,
@@ -63012,7 +63012,7 @@
         "panel": "dark",
         "dissolve": false
       },
-      "walls": {"color": "#000", "opacity": 0.25}
+      "walls": {"color": "#000", "opacity": 0.25, "bandBrightness": 1}
     },
     "light-theme": {
       "post": {
