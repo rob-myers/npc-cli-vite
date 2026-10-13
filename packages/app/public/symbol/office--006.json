@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "9422bcc5-bd9a-487b-8e65-4ac0f9a5d113",
@@ -63,7 +63,7 @@
         {
           "id": "7972aee5-cd70-437c-9608-35ca871e4a9a",
           "name": "obstacle table surface y=0.7",
-          "locked": true,
+          "locked": false,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
@@ -117,26 +117,26 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 56},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 62},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, -1, 0, 118, 56)"
+          "cssTransform": "matrix(0, 1, -1, 0, 118, 62)"
         },
         {
           "id": "82c2ad61-bd88-4b36-9c3c-3933aecda863",
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 56},
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 62},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, 1, 0, 122, 56)"
+          "cssTransform": "matrix(0, 1, 1, 0, 122, 62)"
         },
         {
           "id": "ce478c4c-b35c-408b-ac27-f28ed1c4fadd",
@@ -189,26 +189,26 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 2, "f": 56},
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 2, "f": 62},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, 1, 0, 2, 56)"
+          "cssTransform": "matrix(0, 1, 1, 0, 2, 62)"
         },
         {
           "id": "288623d7-d764-40a6-999e-91fa471f4d57",
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": -2, "f": 56},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": -2, "f": 62},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, -1, 0, -2, 56)"
+          "cssTransform": "matrix(0, 1, -1, 0, -2, 62)"
         }
       ]
     },
