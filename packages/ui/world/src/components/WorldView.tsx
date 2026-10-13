@@ -10,7 +10,7 @@ import type { DefaultGLProps } from "@react-three/fiber/dist/declarations/src/co
 import debounce from "debounce";
 import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
-import { useContext, useEffect } from "react";
+import { Fragment, useContext, useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { float, instanceIndex, output, pass, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
@@ -153,6 +153,9 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierOffset: { x: 0, z: 0 },
       frontierHold: false,
       keysDown: new Set(),
+      lastKeyMs: 0,
+      compassDial: false,
+      compassPoint: 0,
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
       roomOutlineFx: createRoomOutline(),
@@ -561,6 +564,12 @@ export function WorldView(props: React.PropsWithChildren) {
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
 
+        const compassPoint = Math.round(spherical.theta / halfPi) & 3;
+        if (compassPoint !== state.compassPoint) {
+          state.compassPoint = compassPoint;
+          w.hud?.update(); // its compass button names it
+        }
+
         const { controls } = state;
         // the LIVE stops rather than the persisted ones: `easeFrontier` draws both in, and the
         // view is no less zoomed out, or in, for standing at a wall
@@ -599,7 +608,7 @@ export function WorldView(props: React.PropsWithChildren) {
         controls.zoomSettleRate = state.zoomInSlow === true ? embodiedZoomInRate : defaultZoomSettleRate;
         state.easeFrontier();
 
-        // both angles are the user's own at every zoom, but a turn let go with ctrl or cmd held snaps
+        // both angles are the user's own at every zoom, but a turn let go whilst `compassDial` snaps
         controls.enableRotate = true;
         // a drag locks to the axis it set off along only whilst ZOOMED OUT. Once a zoom-in is under
         // way a turn begun a little up or down would lock vertical, and close in a diagonal drag
@@ -797,7 +806,7 @@ export function WorldView(props: React.PropsWithChildren) {
         }
       },
       /**
-       * A turn let go with ctrl or cmd held is a detented compass dial: it advances a point per
+       * A turn let go whilst `compassDial` is a detented compass dial: it advances a point per
        * `embodiedSnapArm` turned, or springs back to the point nearest where it set out
        */
       detentEmbodiedAzimuth(spherical) {
@@ -817,7 +826,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.embodiedDragging === false) return;
         if (state.lookAtAnimId !== 0) return; // `lookAt` owns the camera whilst it runs
         state.embodiedDragging = false;
-        if (controls.ctrlHeld === false) return;
+        if (state.compassDial === false) return;
 
         // decided ON RELEASE ONLY, else measured against a point still being turned to
         const from = state.embodiedFrom / halfPi;
@@ -879,6 +888,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (isTypingTarget(e)) return;
         const key = e.key.toLowerCase();
         state.keysDown.add(key);
+        state.lastKeyMs = Date.now();
         if (e.key === "Escape") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
@@ -889,7 +899,9 @@ export function WorldView(props: React.PropsWithChildren) {
             state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
             w.menu?.update();
           }
-        } else if (e.key === "c" || e.key === "C") {
+        } else if (key === "c") {
+          if (e.repeat === false) state.setCompassDial(!state.compassDial);
+        } else if (key === "f") {
           // the look button's gesture on a key: a held key REPEATS, which is the long press — no
           // timer of our own, and a tap never gets there. The short press waits for the release,
           // since only by then is it known not to have been a hold
@@ -902,9 +914,10 @@ export function WorldView(props: React.PropsWithChildren) {
         }
       },
       onKeyUp(e) {
-        state.keysDown.delete(e.key.toLowerCase());
+        const key = e.key.toLowerCase();
+        state.keysDown.delete(key);
         if (isTypingTarget(e)) return;
-        if ((e.key === "c" || e.key === "C") && state.cHeld === false) {
+        if (key === "f" && state.cHeld === false) {
           state.onLookGesture(false);
         }
       },
@@ -1123,6 +1136,11 @@ export function WorldView(props: React.PropsWithChildren) {
         w.rootEl.addEventListener("keyup", onKeyUp);
         w.rootEl.addEventListener("focusout", onBlur);
         window.addEventListener("blur", onBlur);
+        /** Asks before the page closes just after a key over the World, e.g. ctrl or cmd `w`. A reload is let through */
+        const onBeforeUnload = (e: BeforeUnloadEvent) => {
+          if (Date.now() - state.lastKeyMs < closeConfirmMs && state.keysDown.has("r") === false) e.preventDefault();
+        };
+        window.addEventListener("beforeunload", onBeforeUnload);
         // CAPTURE, so the aim is taken from the zoom progress BEFORE the controls advance it
         w.rootEl.addEventListener("wheel", onZoomWheel, { capture: true, passive: false });
 
@@ -1132,6 +1150,7 @@ export function WorldView(props: React.PropsWithChildren) {
           w.rootEl?.removeEventListener("keyup", onKeyUp);
           w.rootEl?.removeEventListener("focusout", onBlur);
           window.removeEventListener("blur", onBlur);
+          window.removeEventListener("beforeunload", onBeforeUnload);
           w.rootEl?.removeEventListener("wheel", onZoomWheel, { capture: true });
         };
       },
@@ -1179,6 +1198,10 @@ export function WorldView(props: React.PropsWithChildren) {
         w.update(); // the look button shows it
         w.hud?.update();
         w.r3f?.invalidate();
+      },
+      setCompassDial(on) {
+        state.compassDial = on;
+        w.hud?.update();
       },
       setCameraMode(cameraMode) {
         if (cameraMode === "embodied") {
@@ -1591,7 +1614,8 @@ export function WorldView(props: React.PropsWithChildren) {
 
         {state.postProcessing && <PostProcessing />}
 
-        {props.children}
+        {/* keyed, so a sibling added or removed above never remounts the World's children */}
+        <Fragment key="world">{props.children}</Fragment>
       </Canvas>
 
       {/* initial pan-to-player option */}
@@ -1751,6 +1775,12 @@ export type State = {
   frontierHold: boolean;
   /** The keys held down over the world, lowercased — `wasd_delta` reads them */
   keysDown: Set<string>;
+  /** When a key last went down over the world, epoch ms */
+  lastKeyMs: number;
+  /** Whether `embodied`'s turns snap to compass points, so `wasd` lines up with doors. `c` toggles it */
+  compassDial: boolean;
+  /** The compass point nearest up the screen, where `w` heads: `0` north (-z), then west, south, east */
+  compassPoint: number;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
   holdFrontier(): void;
   /** Draws `embodied`'s zoom stops in by how little the player sees ahead — see within */
@@ -1798,10 +1828,10 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onKeyUp(e: KeyboardEvent): void;
-  /** Whether the `c` key has been held long enough to have done its long press */
+  /** Whether the `f` key has been held long enough to have done its long press */
   cHeld: boolean;
   /**
-   * The look BUTTON's gesture and `c`'s alike, so the two cannot drift apart: a press looks, a hold
+   * The look BUTTON's gesture and `f`'s alike, so the two cannot drift apart: a press looks, a hold
    * takes up the follow, and whilst following either one leaves it. See `WorldMenu`'s look button
    */
   onLookGesture(held: boolean): void;
@@ -1847,8 +1877,9 @@ export type State = {
   /** `embodied`'s polar: the user's own close in, a function of the zoom further out */
   shapeEmbodiedPolar(spherical: THREE.Spherical): void;
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
-  /** `embodied`'s azimuth: a turn let go with ctrl or cmd held snaps to a compass point (multiple of π/2) */
+  /** `embodied`'s azimuth: a turn let go whilst `compassDial` snaps to a compass point (multiple of π/2) */
   detentEmbodiedAzimuth(spherical: THREE.Spherical): void;
+  setCompassDial(on: boolean): void;
   /** How far the current turn is from `embodiedFrom`, as it will come to rest */
   getEmbodiedHeading(): number;
   /** Puts the crosshair on a ground point and shows it at full strength */
@@ -2126,6 +2157,8 @@ const phiSettledEpsilon = 0.0001;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
+/** A page closed within this of a key over the world asks first */
+const closeConfirmMs = 2000;
 /** In quarter turns: a turn from this near a compass point advances past the next one */
 const onCompassEpsilon = 0.01;
 /** The normal of an obstacle's top, for a pick that landed on it without hitting a face */

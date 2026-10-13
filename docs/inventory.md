@@ -20,9 +20,10 @@ saved before has what it was left with.
 Bottom centre of a World; a slot is pressed. None on a net client, where neither psi
 nor phasers are mirrored.
 
-At its right end, after the slots, are two buttons for the player themself — all a client gets:
-look/follow (a press looks, a long press toggles the follow, as `c`) and, not on a client, walk/run
-(`w.player.toggleRun()`: their `anim.hurry`).
+At its right end, after the slots, are the buttons for the player themself — all a client gets:
+not on a client, walk/run (`w.player.toggleRun()`: their `anim.hurry`); look/follow (a press looks, a
+long press toggles the follow, as `f`); and the compass dial (`c`, `w.view.setCompassDial`), a letter
+naming the compass point up the screen. One that is on is white, else grey.
 
 | slot | shows | a press |
 | --- | --- | --- |
