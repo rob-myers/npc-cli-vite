@@ -23,34 +23,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       lookAt: null,
       lookTimer: 0,
 
-      async ensure() {
-        let restored = true; // already present: they are where we left them
-        if (w.n[state.key] === undefined) {
-          // a map keeps its own player position, so returning to it puts them back where they
-          // were. A map we have never stood on starts them at one of its spawn points
-          restored = await state.restore();
-          const placed = restored || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
-          if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
-        }
-        return restored;
-      },
-      onKeyDown(e) {
-        if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
-        // a hand each: by `code`, so wherever a layout puts the letters
-        if (moveCodes.has(e.code) === true) {
-          // the same one twice, quickly, runs
-          const tap = state.runTap;
-          if (e.code === tap.code && e.timeStamp - tap.ms < doubleTapMs) state.setTapRun(true);
-          return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
-        }
-        if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
-        if (e.code === "KeyQ") state.togglePsi();
-        else if (e.code === "KeyE") state.toggleArm();
-        else return;
-        w.hud?.update();
-        w.view.forceUpdate();
-      },
       aimAtPointer() {
         const npc = w.n?.[state.key];
         if (npc === undefined) return;
@@ -82,28 +54,22 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
       },
-      onTouch(e) {
-        if (e.type === "touchstart") {
-          const [a, b, c] = e.touches; // a second finger begins one, a third ends it
-          const onCanvas = a?.target === w.view.canvas && b?.target === w.view.canvas;
-          state.tap = onCanvas && c === undefined ? { startMs: e.timeStamp, downs: [a, b] } : null;
-          return;
+      assign(npcKey) {
+        const changed = state.key !== npcKey;
+        state.key = npcKey;
+        w.events.next({ key: "set-player", playerKey: npcKey });
+        if (changed === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
+      },
+      async ensure() {
+        let restored = true; // already present: they are where we left them
+        if (w.n[state.key] === undefined) {
+          // a map keeps its own player position, so returning to it puts them back where they
+          // were. A map we have never stood on starts them at one of its spawn points
+          restored = await state.restore();
+          const placed = restored || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
+          if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
         }
-        const { tap } = state;
-        if (tap === null) return;
-        const strayed = [...e.changedTouches].some((touch) => {
-          const down = tap.downs.find((d) => d.identifier === touch.identifier);
-          return (
-            down === undefined || Math.hypot(touch.clientX - down.clientX, touch.clientY - down.clientY) > lookTapSlopPx
-          );
-        });
-        if (e.type === "touchcancel" || strayed || e.timeStamp - tap.startMs > lookTapMs) {
-          state.tap = null;
-        } else if (e.touches.length === 0) {
-          state.tap = null;
-          const [a, b] = tap.downs;
-          state.lookTowards((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
-        }
+        return restored;
       },
       lookTowards(clientX, clientY) {
         const npc = w.n?.[state.key];
@@ -131,36 +97,45 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }, lookHoldMs);
         w.r3f?.invalidate();
       },
-      toggleArm() {
-        if (w.n?.[state.key] === undefined || w.phasers === null) return;
-        // holstering needs no phaser
-        if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
-        if (w.phasers.isLocked(state.key))
-          w.phasers.arm(state.key); // lets go of them first, still drawn
-        else w.phasers.toggle(state.key);
-      },
-      setTapRun(on) {
-        const npc = w.n?.[state.key];
-        // never over a run the bar's button began, which is its to end
-        if (npc === undefined || on === state.runTap.on || (on === true && npc.anim.hurry === true)) return;
-        state.runTap.on = on;
-        npc.anim.setHurry(on);
+      onKeyDown(e) {
+        if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        // a hand each: by `code`, so wherever a layout puts the letters
+        if (moveCodes.has(e.code) === true) {
+          // the same one twice, quickly, runs
+          const tap = state.runTap;
+          if (e.code === tap.code && e.timeStamp - tap.ms < doubleTapMs) state.setTapRun(true);
+          return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
+        }
+        if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
+        if (e.code === "KeyQ") state.togglePsi();
+        else if (e.code === "KeyE") state.toggleArm();
+        else return;
         w.hud?.update();
+        w.view.forceUpdate();
       },
-      syncRun() {
-        // none held, or opposites: either way they are no longer going anywhere
-        if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
-      },
-      toggleRun() {
-        const npc = w.n?.[state.key];
-        npc?.anim.setHurry(!npc.anim.hurry);
-        state.runTap.on = false; // theirs now, to end as they began it
-        w.hud?.update();
-      },
-      togglePsi() {
-        if (w.n?.[state.key] === undefined || w.psi === null) return;
-        if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
-        w.psi.toggle();
+      onTouch(e) {
+        if (e.type === "touchstart") {
+          const [a, b, c] = e.touches; // a second finger begins one, a third ends it
+          const onCanvas = a?.target === w.view.canvas && b?.target === w.view.canvas;
+          state.tap = onCanvas && c === undefined ? { startMs: e.timeStamp, downs: [a, b] } : null;
+          return;
+        }
+        const { tap } = state;
+        if (tap === null) return;
+        const strayed = [...e.changedTouches].some((touch) => {
+          const down = tap.downs.find((d) => d.identifier === touch.identifier);
+          return (
+            down === undefined || Math.hypot(touch.clientX - down.clientX, touch.clientY - down.clientY) > lookTapSlopPx
+          );
+        });
+        if (e.type === "touchcancel" || strayed || e.timeStamp - tap.startMs > lookTapMs) {
+          state.tap = null;
+        } else if (e.touches.length === 0) {
+          state.tap = null;
+          const [a, b] = tap.downs;
+          state.lookTowards((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+        }
       },
       async panTo({ animate = true } = {}) {
         const npc = w.n[state.key];
@@ -175,12 +150,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           track: () => w.n[state.key]?.point,
         });
       },
-      psi(on) {
-        w.psi.setOn(on);
-      },
       persist() {
         w.e.persistNpcs();
         w.e.persistDecor();
+      },
+      psi(on) {
+        w.psi.setOn(on);
       },
       async restore() {
         const saved = getWorldMapStore(w.key, w.mapKey)
@@ -219,11 +194,36 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y }, angle });
         return true;
       },
-      assign(npcKey) {
-        const changed = state.key !== npcKey;
-        state.key = npcKey;
-        w.events.next({ key: "set-player", playerKey: npcKey });
-        if (changed === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
+      setTapRun(on) {
+        const npc = w.n?.[state.key];
+        // never over a run the bar's button began, which is its to end
+        if (npc === undefined || on === state.runTap.on || (on === true && npc.anim.hurry === true)) return;
+        state.runTap.on = on;
+        npc.anim.setHurry(on);
+        w.hud?.update();
+      },
+      syncRun() {
+        // none held, or opposites: either way they are no longer going anywhere
+        if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
+      },
+      toggleArm() {
+        if (w.n?.[state.key] === undefined || w.phasers === null) return;
+        // holstering needs no phaser
+        if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
+        if (w.phasers.isLocked(state.key))
+          w.phasers.arm(state.key); // lets go of them first, still drawn
+        else w.phasers.toggle(state.key);
+      },
+      togglePsi() {
+        if (w.n?.[state.key] === undefined || w.psi === null) return;
+        if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
+        w.psi.toggle();
+      },
+      toggleRun() {
+        const npc = w.n?.[state.key];
+        npc?.anim.setHurry(!npc.anim.hurry);
+        state.runTap.on = false; // theirs now, to end as they began it
+        w.hud?.update();
       },
       setupDom() {
         const el = w.rootEl;
