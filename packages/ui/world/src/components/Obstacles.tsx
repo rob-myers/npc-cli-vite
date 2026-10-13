@@ -11,16 +11,19 @@ import {
   attribute,
   cameraPosition,
   color,
+  float,
   instanceIndex,
   int,
   mix,
   normalWorld,
+  positionGeometry,
   positionWorld,
   step,
   texture,
   transformNormalToView,
   uniform,
   uv,
+  vec2,
   vec3,
   vec4,
 } from "three/tsl";
@@ -28,9 +31,10 @@ import * as THREE from "three/webgpu";
 import { getObstacleSheetKey } from "../assets.schema";
 import { MAX_OBSTACLE_QUAD_INSTANCES, MAX_OBSTACLE_SKIRT_INSTANCES } from "../const.env";
 import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../service/geometry";
+import { alongFace, panelSeams } from "../service/panel-seams";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
-import { bootstrapInstanceColor } from "../service/texture";
+import { bootstrapInstanceColor, deckConfig } from "../service/texture";
 import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
@@ -51,6 +55,7 @@ export default function Obstacles(_props: Props) {
       uvTextureIds: new Uint32Array(MAX_OBSTACLE_QUAD_INSTANCES),
       skirtObstacleIds: new Float32Array(MAX_OBSTACLE_SKIRT_INSTANCES),
       skirtNormals: new Float32Array(MAX_OBSTACLE_SKIRT_INSTANCES * 2),
+      skirtInfo: new Float32Array(MAX_OBSTACLE_SKIRT_INSTANCES * 2),
       images: [] as HTMLImageElement[],
       instanceCount: 0,
       toInstanceId: [],
@@ -179,6 +184,7 @@ export default function Obstacles(_props: Props) {
         if (state.inst?.instanceColor) state.inst.instanceColor.needsUpdate = true;
         state.skirtQuad.getAttribute("obstacleIds").needsUpdate = true;
         state.skirtQuad.getAttribute("skirtNormals").needsUpdate = true;
+        state.skirtQuad.getAttribute("skirtInfo").needsUpdate = true;
 
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
         if (state.skirtInst?.instanceColor) state.skirtInst.instanceColor.needsUpdate = true;
@@ -277,6 +283,8 @@ export default function Obstacles(_props: Props) {
               // off the UNSWAPPED edge: `p1`/`p2` flip with the geomorph, the outline does not
               state.skirtNormals[sId * 2] = (outward * (corners[j].y - corners[i].y)) / len;
               state.skirtNormals[sId * 2 + 1] = (outward * (corners[i].x - corners[j].x)) / len;
+              state.skirtInfo[sId * 2] = height;
+              state.skirtInfo[sId * 2 + 1] = skirtKindOf(meta);
               state.skirtInst.setColorAt(sId, tmpColor.set(meta.skirtTint ?? "#999"));
               state.skirtInst.setMatrixAt(sId++,
                 embedXZMat4(tmpMat2, { yScale: skirtDimY, yHeight: height - skirtDimY, mat4: tmpMatFour2 }),
@@ -343,6 +351,7 @@ export default function Obstacles(_props: Props) {
     // which obstacle each skirt edge belongs to, so a pick on one lands on that obstacle
     state.skirtQuad.setAttribute("obstacleIds", new THREE.InstancedBufferAttribute(state.skirtObstacleIds, 1));
     state.skirtQuad.setAttribute("skirtNormals", new THREE.InstancedBufferAttribute(state.skirtNormals, 2));
+    state.skirtQuad.setAttribute("skirtInfo", new THREE.InstancedBufferAttribute(state.skirtInfo, 2));
   }, []);
 
   const skirtMaterial = useMemo(() => {
@@ -352,14 +361,45 @@ export default function Obstacles(_props: Props) {
     });
     const viewDir = cameraPosition.sub(positionWorld).normalize();
     const ndotv = normalWorld.dot(viewDir).mul(-1).clamp(0, 1).mul(0.8);
-    const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv);
+    const skirtNormal = attribute<"vec2">("skirtNormals", "vec2");
+    const skirtInfo = attribute<"vec2">("skirtInfo", "vec2");
+    const along = alongFace(skirtNormal);
+    /** Darker towards the deck, as a contact shadow */
+    const grounded = mix(
+      float(skirtPanel.floorShade),
+      float(1),
+      positionWorld.y.div(skirtPanel.shadeHeight).clamp(0, 1),
+    );
+    // its rivets hang off the skirt's top
+    const hardPanel = grounded.mul(panelSeams(along, skirtInfo.x.sub(positionWorld.y).sub(deckConfig.rivet.inset)));
+    /**
+     * Upholstery: no seams, and a face that swells from its borders to its middle.
+     * Off the unit quad's own position, not `uv`: one more vertex buffer is one past WebGPU's eight.
+     * `positionGeometry`, as `positionLocal` has the instance's matrix in it
+     */
+    const dome = positionGeometry.x
+      .oneMinus()
+      .mul(positionGeometry.x)
+      .mul(positionGeometry.y.oneMinus())
+      .mul(positionGeometry.y)
+      .mul(16);
+    /** `dome` plumped, by a polynomial where a sine and a root would do the same */
+    const swell = dome.mul(dome.oneMinus().add(1));
+    const softPanel = grounded.mul(mix(float(skirtPanel.softEdgeShade), float(skirtPanel.softMidLight), swell));
+    const isSoft = step(0.5, skirtInfo.y).mul(step(skirtInfo.y, 1.5));
+    const isGlass = step(1.5, skirtInfo.y);
+    /** Frosted glass: opaque and pale, lighter towards its top, mottled at two sizes */
+    const speck = (perMetre: number) => hashCell(vec2(along, positionWorld.y).mul(perMetre).floor());
+    const frost = speck(skirtPanel.glassFinePerMetre).add(speck(skirtPanel.glassCoarsePerMetre)).mul(0.5);
+    const glassPanel = color(skirtPanel.glassTint)
+      .mul(mix(float(skirtPanel.glassLowLight), float(skirtPanel.glassTopLight), positionGeometry.y))
+      .mul(mix(float(1 - skirtPanel.glassGrain), float(1), frost));
+    const panel = mix(vec3(mix(hardPanel, softPanel, isSoft)), glassPanel, isGlass);
+    const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv).mul(panel);
     const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
       // the light sweep ignores obstacles, so a far side would otherwise be as lit as a near one.
-      w.view.fadeRoomsFx.applyFadeRgba(
-        w.view.playerLight.applyLightRgba(vec4(baseColor, 1), attribute<"vec2">("skirtNormals", "vec2")),
-        skirtFade,
-      ),
+      w.view.fadeRoomsFx.applyFadeRgba(w.view.playerLight.applyLightRgba(vec4(baseColor, 1), skirtNormal), skirtFade),
       skirtFade,
       w.view.objectPick,
     );
@@ -461,6 +501,8 @@ export type State = {
   skirtObstacleIds: Float32Array;
   /** Each skirt edge's outward normal in world XZ — what the player's light dims it by */
   skirtNormals: Float32Array;
+  /** Per skirt: its top in metres off the deck, then its kind — see `skirtKindOf` */
+  skirtInfo: Float32Array;
   images: HTMLImageElement[];
   /** How many obstacle instances this map draws, `MAX_OBSTACLE_QUAD_INSTANCES` at most */
   instanceCount: number;
@@ -499,6 +541,36 @@ const tmpMatFour2 = new THREE.Matrix4();
 const tmpColor = new THREE.Color();
 
 const obstaclesSkirtBaseColor = "#555";
+
+/** A cell's `0`-`1` hash, with no trig in it (Hoskins' `hash12`) */
+function hashCell(cell: THREE.Node<"vec2">) {
+  const p = cell.xyx.mul(0.1031).fract();
+  const q = p.add(p.dot(p.yzx.add(33.33)));
+  return q.x.add(q.y).mul(q.z).fract() as THREE.Node<"float">;
+}
+
+/** How a skirt is drawn: `0` panelled, `1` upholstered, `2` frosted glass */
+function skirtKindOf(meta: Meta) {
+  if (meta.window === true) return 2;
+  return meta.chair === true || meta.bed === true || meta.sofa === true ? 1 : 0;
+}
+/** A skirt's look by kind, over `panelSeams`, and its shadow towards the deck */
+const skirtPanel = {
+  /** The multiple at the deck, easing to none `shadeHeight` metres up */
+  floorShade: 0.55,
+  shadeHeight: 0.6,
+  /** An upholstered face's multiple at its borders, and at its middle */
+  softEdgeShade: 0.7,
+  softMidLight: 1.3,
+  /** Frosted glass: its colour as a multiple of the base, from its foot to its top */
+  glassTint: "#cfe0f2",
+  glassLowLight: 1.6,
+  glassTopLight: 2.4,
+  /** How far the frosting darkens, and its two sizes of speck to the metre */
+  glassGrain: 0.45,
+  glassFinePerMetre: 140,
+  glassCoarsePerMetre: 35,
+};
 const defaultObstacleTint = "#666";
 
 function loadObstacleImages(numSheets: number, cacheBust: string): Promise<HTMLImageElement[]> {
