@@ -12,7 +12,7 @@ export default function LookMark() {
 
   useFrame(() => {
     if (cross.current === null) return;
-    const npc = w.n?.[w.player.key];
+    const npc = w.player.get();
     const at = w.player.lookAt;
     cross.current.visible = npc !== undefined && at !== null;
     if (npc !== undefined && at !== null) cross.current.position.set(at.x, npc.position.y + crosshairY, at.y);

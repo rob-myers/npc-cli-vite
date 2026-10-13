@@ -18,7 +18,7 @@ export default function Psi() {
       setOn(on) {
         state.on = on;
         // their breath shows whilst it is raised
-        w.n?.[w.player?.key ?? ""]?.anim.setBreathing(on);
+        w.player?.get()?.anim.setBreathing(on);
         state.onTick();
         w.r3f?.invalidate();
         w.hud?.update();
@@ -33,7 +33,7 @@ export default function Psi() {
       },
       onTick() {
         if (w.n === null) return;
-        state.syncHands(w.player === undefined ? undefined : w.n[w.player.key]);
+        state.syncHands(w.player?.get());
       },
       syncHands(player) {
         if (state.handsOn !== (player?.key ?? null)) {

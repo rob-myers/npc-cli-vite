@@ -479,9 +479,6 @@ export function WorldView(props: React.PropsWithChildren) {
         if (following === false) state.setCrosshair(tmpAim);
         w.r3f?.invalidate();
       },
-      getPlayer() {
-        return w.n[w.player?.key ?? ""];
-      },
       getWasdDirection() {
         const right = (state.keysDown.has("d") ? 1 : 0) - (state.keysDown.has("a") ? 1 : 0);
         const up = (state.keysDown.has("w") ? 1 : 0) - (state.keysDown.has("s") ? 1 : 0);
@@ -511,7 +508,7 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       getFollowedPlayer() {
-        const player = state.getPlayer();
+        const player = w.player?.get();
         return state.follow === true || state.frontierHold === true ? player : undefined;
       },
       getFollowGoal(out) {
@@ -796,7 +793,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const { controls } = state;
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
         // a look press only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
-        const player = state.follow === true && w.touchDevice === false ? state.getPlayer() : undefined;
+        const player = state.follow === true && w.touchDevice === false ? w.player?.get() : undefined;
         let wanted = outer;
         let wantedMin = min;
         if (player !== undefined && state.playerFrontier.ahead(tmpAhead) === true) {
@@ -901,7 +898,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.setFollow(!state.follow);
       },
       holdFrontier() {
-        if (state.getPlayer() === undefined) return;
+        if (w.player?.get() === undefined) return;
         // the follow's framing — the player and their frontier — without the follow: held until
         // the camera is next touched, see `onCameraStart`. A `lookAt` takes it there rather than
         // leaving it to the follow, which runs on the world tick — a paused world runs none. It
@@ -1753,10 +1750,9 @@ export type State = {
   zoomCrossEl: null | THREE.Mesh;
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
-  /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
-  getPlayer(): Npc | undefined;
   /** Ground direction of the held `wasd` keys: as seen, or along the world's axes whilst `compassDial` — zero when none or opposites are held */
   getWasdDirection(): Vect;
+  /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;

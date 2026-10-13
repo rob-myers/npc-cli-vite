@@ -236,7 +236,7 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
   if (e.key !== "picked" || e.longDown === true || e.rightDown === true || e.clickId !== undefined) return;
   const press = ++takePress;
   const { key: playerKey } = w.player;
-  if (w.client === true || w.n[playerKey] === undefined) return;
+  if (w.client === true || w.player.exists() === false) return;
   const { meta } = e;
   if (meta.type === "decor" && typeof meta.item === "string") {
     void takeOnPress(w, playerKey, meta.decorKey, press);

@@ -24,7 +24,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       lookTimer: 0,
 
       aimAtPointer() {
-        const npc = w.n?.[state.key];
+        const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
         // not whilst locked on: the phaser's target is whom they face
@@ -62,7 +62,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       async ensure() {
         let restored = true; // already present: they are where we left them
-        if (w.n[state.key] === undefined) {
+        if (state.exists() === false) {
           // a map keeps its own player position, so returning to it puts them back where they
           // were. A map we have never stood on starts them at one of its spawn points
           restored = await state.restore();
@@ -71,8 +71,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         return restored;
       },
+      get() {
+        return w.n?.[state.key];
+      },
+      exists() {
+        return w.n?.[state.key] !== undefined;
+      },
       lookTowards(clientX, clientY) {
-        const npc = w.n?.[state.key];
+        const npc = state.get();
         // paused, the look would run out before they could turn
         if (npc === undefined || w.client === true || w.disabled === true) return;
         const rect = w.view.canvas.getBoundingClientRect();
@@ -85,7 +91,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.lookAtPoint(tmpHit.x, tmpHit.z);
       },
       lookAtPoint(x, z) {
-        const npc = w.n?.[state.key];
+        const npc = state.get();
         if (npc === undefined || w.client === true || w.disabled === true) return;
         if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
         state.lookAt = { x, y: z };
@@ -138,7 +144,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
       },
       async panTo({ animate = true } = {}) {
-        const npc = w.n[state.key];
+        const npc = state.get();
         if (npc === undefined) return;
 
         // no `radius`, so this pans and turns without zooming — `lookAt` keeps the distance it
@@ -147,7 +153,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           animate,
           // they walk whilst we pan, and the point of it is to be ON them — a destination fixed at
           // the moment of the press lands behind
-          track: () => w.n[state.key]?.point,
+          track: () => state.get()?.point,
         });
       },
       persist() {
@@ -195,7 +201,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         return true;
       },
       setTapRun(on) {
-        const npc = w.n?.[state.key];
+        const npc = state.get();
         // never over a run the bar's button began, which is its to end
         if (npc === undefined || on === state.runTap.on || (on === true && npc.anim.hurry === true)) return;
         state.runTap.on = on;
@@ -207,7 +213,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
       },
       toggleArm() {
-        if (w.n?.[state.key] === undefined || w.phasers === null) return;
+        if (state.exists() === false || w.phasers === null) return;
         // holstering needs no phaser
         if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
         if (w.phasers.isLocked(state.key))
@@ -215,12 +221,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         else w.phasers.toggle(state.key);
       },
       togglePsi() {
-        if (w.n?.[state.key] === undefined || w.psi === null) return;
+        if (state.exists() === false || w.psi === null) return;
         if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
         w.psi.toggle();
       },
       toggleRun() {
-        const npc = w.n?.[state.key];
+        const npc = state.get();
         npc?.anim.setHurry(!npc.anim.hurry);
         state.runTap.on = false; // theirs now, to end as they began it
         w.hud?.update();
@@ -323,6 +329,9 @@ export type State = {
   lookTimer: number;
   /** A two-finger tap on the canvas has them look where it lands */
   onTouch(e: TouchEvent): void;
+  /** The player's npc, once they are spawned */
+  get(): undefined | JshCli.Npc;
+  exists(): boolean;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
   /** The same, to a world point */

@@ -333,7 +333,7 @@ function PlayerButtons() {
   /** The same off the axis NEAREST up the screen, where `w` heads once the move keys are let go */
   const nextSkew = compassSkew - Math.round(compassSkew / (Math.PI / 2)) * (Math.PI / 2);
   const big = w.touchDevice;
-  const hurry = w.n?.[w.player.key]?.anim.hurry === true;
+  const hurry = w.player.get()?.anim.hurry === true;
   const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
   const buttonClass = cn(
     "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden rounded-md hover:ring-1 hover:ring-yellow-200/25",

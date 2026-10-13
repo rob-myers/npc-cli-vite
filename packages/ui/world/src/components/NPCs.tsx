@@ -767,7 +767,7 @@ export default function NPCs() {
         }
 
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
-        const playerExisted = w.player.key in w.n;
+        const playerExisted = w.player.exists();
 
         const npc = state.rawSpawn({ npcKey, doResult, groundPoint: groundAt, angle, as, closePolyResult, facing });
 

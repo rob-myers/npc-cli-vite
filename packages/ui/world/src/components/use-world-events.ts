@@ -932,7 +932,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (w.npc?.restored !== true) return; // as `persistDecor`
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
           npcs: {
-            playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
+            playerKey: w.player.exists() ? w.player.key : null,
             npcs: Object.values(w.n).map((npc) => ({
               key: npc.key,
               at: { x: npc.point.x, y: npc.point.y },
