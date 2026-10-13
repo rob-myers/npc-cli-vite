@@ -446,7 +446,7 @@ const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
   psi: 0.7,
   phaser: 0.7,
   keychain: 0.7,
-  book: 0.7,
+  book: 0.6,
   box: 0.7,
   keycard: 0.58,
 };
