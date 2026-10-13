@@ -1,9 +1,9 @@
 # TODO
 
 - ✅ psi raised shows breathing
-- psi entrainment when target sleeps
+- ❌ psi entrainment when target sleeps
   - Next I want to implement "turning" or "entrainment" in the case where the target npc is sleeping i.e.
-- psi entrainment when target pacified
+- ❌ psi entrainment when target pacified
 - refine psi breathing
   - do lungs/diaphragm actually move like that?
 

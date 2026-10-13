@@ -161,7 +161,7 @@ World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `in
 ## Psi
 
 See `docs/psi.md` — the ONLY doc for it. In short: psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`), and raised, their
-left hand is at their temple. It has no target and draws nothing. Raised, a press on another npc reads
+left hand is at their temple. Raised, the player becomes a nearby npc by pressing `q` again (`w.player.psiLink`): the nearest in reach is ringed and breathes. Raised, a press on another npc reads
 their thought (`w.speech.readThought`): over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha.
 
 ## Shields
@@ -242,6 +242,7 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — `Picker`, from `@npc-cli/util/picker`.
 - `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
+- To find npcs near one, go through those in their room or the rooms they can reach (`w.e.getNpcsInReach(npcKey)`, over `w.npc.roomToNpcs`), not every npc in `w.n`, unless there is good reason: a wall is then never between the two.
 - `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `w.e.setPsi`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
 

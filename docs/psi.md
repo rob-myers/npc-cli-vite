@@ -16,9 +16,27 @@ kept and nothing ticks: raised IS their left arm showing `psi`, which `w.e.isPsi
 - **The player's is switched** by `q`, its bar slot, a press on their own left arm (jsh `inventory`), or jsh
   `psi` / `psi off`. Turning it on from the bar or `q` needs psi granted (`w.e.hasItem`).
 - **Anyone else's** by jsh `psi npc-0` / `psi off npc-0`, granted or not.
-- **It has no target.** Nothing is drawn between the player and anyone else.
 - **Raised, a press on another npc reads their thought** (`w.speech.readThought`, from jsh `inventory`), at once.
 - **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.
+
+## The link
+
+Psi raised, the player becomes a nearby npc by pressing `q` again (`w.player.psiLink`, `syncPsiLink` each tick).
+It is not meant to show to an onlooker: the target does nothing.
+
+- **The nearest is linked** (`findPsiTarget`): of those in their room or one an open door joins it to
+  (`w.e.getNpcsInReach`), the nearest within `psiLinkMetres`. One linked is kept until out of range, or
+  another is `psiKeepMetres` nearer. It is looked for every `psiPollSecs`, not each tick.
+- **Linked, their breath shows and a ring is under them** (`w.rings.psiRingByNpc`, a ring of its own outside
+  the select ring, which the predicates reset). Their arm stays down.
+- **`q`, or the bar's psi slot, then takes them** rather than lowering psi (`togglePsi`, `takePsi`), so long as
+  they are still the nearest in range. They are granted psi and made the player, with it raised. The one left
+  behind lowers theirs and stands there.
+- **It breaks** (`unlinkPsi`) when psi is lowered, they are out of range, or either is gone. Their breath
+  and ring go.
+
+Tried and dropped: linking only to one walked at, which made the range feel short, a nearer range within which alone they could be taken, the ring brightening there, a right click on them to link, a press on them or their label to take, their label
+flashing, the world darkening round the two, and the player's hand going out to their head.
 
 ## Thoughts
 

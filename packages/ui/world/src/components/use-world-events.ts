@@ -376,6 +376,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const arm = w.n?.[npcKey]?.anim.upperLeft;
         return arm?.key === "psi" && arm.target === 1;
       },
+      getNpcsInReach(npcKey, doors = 1) {
+        const at = w.npc.npcToRoom.get(npcKey);
+        if (at === undefined || w.gmRoomGraph.getNode(at.grKey) === null) return [];
+        // their room is depth 0, its connectors 1, the rooms beyond those 2
+        return w.gmRoomGraph
+          .getReachableUpTo(at.grKey, (node, depth) =>
+            node.type === "room"
+              ? depth >= doors * 2
+              : node.type !== "door" || w.door.isSeenThrough(node.gdKey) === false,
+          )
+          .flatMap((node) => (node.type === "room" ? [...(w.npc.roomToNpcs[node.gmId]?.[node.roomId] ?? [])] : []))
+          .flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
+      },
       hasItem(npcKey, name) {
         const had = state.carried[npcKey];
         return name === "psi" ? had?.psi === true : had?.items.some((def) => def.meta?.item === name) === true;
@@ -1386,6 +1399,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shields?.onTick();
         w.player?.aimAtPointer();
         w.player?.syncRun();
+        w.player?.syncPsiLink();
       },
       syncDoorways() {
         for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
@@ -1618,6 +1632,8 @@ export type State = {
   /** Revokes `psi`, or takes an item of theirs away outright, never put down — `false` if they have none */
   revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
+  /** The others in their room, and in the rooms up to `doors` open doors away: whom they could walk to */
+  getNpcsInReach(npcKey: string, doors?: number): Npc[];
   /** Raises psi for each, or lowers it: a hand at their temple, their breath shown — see `docs/psi.md` */
   setPsi(active: boolean, ...npcKeys: string[]): void;
   /** Whether their hand is at their temple. The player's, by default */

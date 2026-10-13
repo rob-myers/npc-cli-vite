@@ -18,6 +18,7 @@ export default function NpcRings() {
       ...createRingResources(w.view.objectPick, w.view.foldNode),
       pickRings: [],
       selectRingByNpc: new Map(),
+      psiRingByNpc: new Map(),
       spawnRingByNpc: new Map(),
 
       clearSelectRings() {
@@ -36,8 +37,8 @@ export default function NpcRings() {
           ring.fade.at = now;
         }
       },
-      hideSelectRing(npcKey) {
-        state.fadeRing(state.selectRingByNpc.get(npcKey), 0);
+      hideSelectRing(npcKey, kind = "select") {
+        state.fadeRing(state[`${kind}RingByNpc`].get(npcKey), 0);
       },
       onTick() {
         const now = time.value;
@@ -54,20 +55,23 @@ export default function NpcRings() {
         for (const ring of state.pickRings) j = state.writeRing(j, ring);
 
         // select rings follow their npc until taken down
-        for (const [npcKey, ring] of state.selectRingByNpc) {
-          const npc = w.n[npcKey];
-          if (npc === undefined || faded(ring, now) === true) {
-            state.selectRingByNpc.delete(npcKey);
-            continue;
+        for (const kind of ringKinds) {
+          const rings = state[`${kind}RingByNpc`];
+          for (const [npcKey, ring] of rings) {
+            const npc = w.n[npcKey];
+            if (npc === undefined || faded(ring, now) === true) {
+              rings.delete(npcKey);
+              continue;
+            }
+            const wanted = npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
+            retarget(ring.radius, wanted * ringScale[kind], selectRingMorphSecs, now);
+            // read every tick, unlike the others': an npc walks from one room to the next
+            ring.x = npc.position.x;
+            ring.y = npc.position.y + selectRingLift;
+            ring.z = npc.position.z;
+            ring.roomSlot = npc.roomSlot.value;
+            j = state.writeRing(j, ring);
           }
-          const wanted = npc.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
-          retarget(ring.radius, wanted, selectRingMorphSecs, now);
-          // read every tick, unlike the others': an npc walks from one room to the next
-          ring.x = npc.position.x;
-          ring.y = npc.position.y + selectRingLift;
-          ring.z = npc.position.z;
-          ring.roomSlot = npc.roomSlot.value;
-          j = state.writeRing(j, ring);
         }
 
         // Only the instances actually written go to the gpu. Without a range three uploads the
@@ -121,9 +125,10 @@ export default function NpcRings() {
         state.onTick();
         w.r3f?.invalidate();
       },
-      showSelectRing(npcKey, color) {
+      showSelectRing(npcKey, color, kind = "select") {
         const now = time.value;
-        const ring = state.selectRingByNpc.get(npcKey);
+        const rings = state[`${kind}RingByNpc`];
+        const ring = rings.get(npcKey);
         // recolouring one already up leaves it where it is rather than closing on them again
         if (ring !== undefined) {
           ring.color.set(color);
@@ -134,7 +139,8 @@ export default function NpcRings() {
         // fading one in draws it inwards — which reads as picking them out rather than appearing.
         // Its radius starts at whatever they are already doing, else it would slide into place too.
         // Where it is, and whose room, are read every tick
-        const radius = w.n[npcKey]?.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius;
+        const radius =
+          (w.n[npcKey]?.isNotStanding() === true ? selectRingSeatedRadius : selectRingStandingRadius) * ringScale[kind];
         const next: RingInstance = {
           ...selectRingLook,
           x: 0,
@@ -145,7 +151,7 @@ export default function NpcRings() {
           radius: arrivedAt(radius, now),
           color: new THREE.Color(color),
         };
-        state.selectRingByNpc.set(npcKey, next);
+        rings.set(npcKey, next);
         state.fadeRing(next, 1);
       },
       showSpawnRing(npcKey, at, y = spawnRingDefaultHeight) {
@@ -249,6 +255,8 @@ export type State = {
   spawnRingByNpc: Map<string, RingInstance>;
   /** Per-npc selection ring, which follows them until taken down — keyed by npcKey */
   selectRingByNpc: Map<string, RingInstance>;
+  /** A second ring each may have, outside that one: the player's psi is on them — see `docs/psi.md` */
+  psiRingByNpc: Map<string, RingInstance>;
   /** Where picks have landed, oldest first — the latest stays up, the rest fade once superseded */
   pickRings: RingInstance[];
 
@@ -272,9 +280,9 @@ export type State = {
    * Pick this npc out with a ring of their own, in any colour `THREE.Color.set` takes — it follows
    * them until `hideSelectRing`. Naming one already selected recolours it in place
    */
-  showSelectRing(npcKey: string, color: THREE.ColorRepresentation): void;
+  showSelectRing(npcKey: string, color: THREE.ColorRepresentation, kind?: RingKind): void;
   /** Start fading this npc's select ring out; it is auto-removed once fully faded */
-  hideSelectRing(npcKey: string): void;
+  hideSelectRing(npcKey: string, kind?: RingKind): void;
   /** The same for every select ring that is up */
   clearSelectRings(): void;
   /** Sends a ring's opacity towards `to`, or straight there whilst the world is paused */
@@ -363,6 +371,10 @@ const selectRingLook: RingLook = {
 const selectRingSeatedRadius = npcShadowRadius * 0.7 * perMetre;
 const selectRingStandingRadius = npcShadowRadius * 1.15 * perMetre;
 const selectRingMorphSecs = 0.35;
+/** How much wider each kind of ring that follows an npc is */
+const ringScale = { select: 1, psi: 1.6 } as const;
+type RingKind = keyof typeof ringScale;
+const ringKinds = Object.keys(ringScale) as RingKind[];
 
 function createRingResources(
   objectPick: THREE.UniformNode<"float", number>,
