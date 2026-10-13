@@ -63,6 +63,7 @@ export function WorldMenu() {
       resizing: false,
       skinDebugOpen: false,
       stateSelectOpen: false,
+      themeEditorOpen: false,
       themeEditorRef: null as any,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
@@ -590,28 +591,40 @@ export function WorldMenu() {
 
             {import.meta.env.DEV && (
               <>
-                <div className={sectionHeaderClass(touch)}>edit theme</div>
-                <div className="p-2 pt-0 flex flex-col gap-1">
-                  <textarea
-                    key={w.themeKey}
-                    ref={state.ref("themeEditorRef")}
-                    className="w-full h-32 select-text bg-neutral-900 text-neutral-200 text-[10px] font-mono p-1 rounded border border-neutral-600 resize-y"
-                    defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => {
-                      const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                      if (parsed.success && w.assets) {
-                        (w.assets.theme ??= {})[w.themeKey] = parsed.data;
-                        w.e.onChangeTheme();
-                        state.saveThemeDevDebounced();
-                      }
-                    }}
-                    onBlur={() => {
-                      state.saveThemeDev();
-                    }}
-                  />
-                </div>
+                <button
+                  type="button"
+                  className={cn(sectionHeaderClass(touch), "flex w-full cursor-pointer items-center gap-1 text-left")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    state.set({ themeEditorOpen: !state.themeEditorOpen });
+                  }}
+                >
+                  <CaretRightIcon className={cn("size-3", state.themeEditorOpen && "rotate-90")} />
+                  edit theme
+                </button>
+                {state.themeEditorOpen && (
+                  <div className="p-2 pt-0 flex flex-col gap-1">
+                    <textarea
+                      key={w.themeKey}
+                      ref={state.ref("themeEditorRef")}
+                      className="w-full h-32 select-text bg-neutral-900 text-neutral-200 text-[10px] font-mono p-1 rounded border border-neutral-600 resize-y"
+                      defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => {
+                        const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
+                        if (parsed.success && w.assets) {
+                          (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                          w.e.onChangeTheme();
+                          state.saveThemeDevDebounced();
+                        }
+                      }}
+                      onBlur={() => {
+                        state.saveThemeDev();
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div className={sectionHeaderClass(touch)}>dev scripts</div>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] px-2">
@@ -1146,6 +1159,7 @@ export type State = {
   /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
   menuOpen: boolean;
+  themeEditorOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
