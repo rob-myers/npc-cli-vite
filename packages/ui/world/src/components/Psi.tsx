@@ -38,7 +38,7 @@ export default function Psi() {
       syncHands(player) {
         if (state.handsOn !== (player?.key ?? null)) {
           const prev = state.handsOn === null ? undefined : w.n[state.handsOn];
-          if (prev !== undefined && isPsiPose(prev.anim.upperLeft.key)) prev.anim.setUpper(null, left); // the player changed
+          if (prev?.anim.upperLeft.key === "psi") prev.anim.setUpper(null, left); // the player changed
           // and their breath goes with psi, to whoever has it now
           if (state.on === true) {
             prev?.anim.setBreathing(false);
@@ -48,25 +48,13 @@ export default function Psi() {
         }
         if (player === undefined) return;
 
-        const { nearDist, avoidSecs } = psiConfig;
-        const near =
-          player.agent?.neis.some(({ dist }) => dist < nearDist ** 2) === true || // `dist` squared
-          w.e.npcToDoors[player.key]?.inside != null; // in a doorway
-        /** Lain on that arm: its elbow comes in front of them, as for a neighbour */
-        const onArm = player.anim.pose === "lie_left";
-        const pose = state.on === false ? null : near || onArm ? "psi_avoid" : "psi";
         const { upperLeft } = player.anim;
         const shown = upperLeft.target === 1 ? upperLeft.key : null;
-        if (pose === null) {
-          if (isPsiPose(shown)) player.anim.setUpper(null, left);
-        } else if (pose !== shown && (shown === null || isPsiPose(shown))) {
+        if (state.on === false) {
+          if (shown === "psi") player.anim.setUpper(null, left);
+        } else if (shown === null) {
           // their left hand alone, and not over another's e.g. reaching to put something down
-          player.anim.setUpper(pose, {
-            side: "left",
-            swapSecs: near ? avoidSecs : undefined,
-            past: true,
-            onHead: true,
-          });
+          player.anim.setUpper("psi", { side: "left", past: true, onHead: true });
         }
       },
     }),
@@ -88,17 +76,8 @@ export type State = {
   /** Whilst psi is on, reads another npc's next thought: over their head, and into the history */
   read(npcKey: string): void;
   onTick(): void;
-  /** The player's left hand to their temple whilst psi is on, elbow tucked (`psi_avoid`) near a neighbour or in a doorway */
+  /** The player's left hand to their temple whilst psi is on */
   syncHands(player: undefined | Npc): void;
 };
 
-const psiConfig = {
-  /** Metres within which a crowd neighbour brings the player's elbows forward — inside `collisionQueryRange` */
-  nearDist: 0.65,
-  /** Seconds the player's elbows take to come forward */
-  avoidSecs: 0.3,
-} as const;
-
-/** Ours to clear: never another's upper pose e.g. `point` */
-const isPsiPose = (key: null | string) => key === "psi" || key === "psi_avoid";
 const left = { side: "left" } as const;

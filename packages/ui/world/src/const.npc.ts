@@ -187,7 +187,6 @@ export const fromAnimationClipKey = {
   point: true,
   point_avoid: true,
   psi: true,
-  psi_avoid: true,
   run: true,
   shuffle: true,
   sit: true,
@@ -319,7 +318,6 @@ export const fadeSecs: Record<
   point: {},
   point_avoid: {},
   psi: {},
-  psi_avoid: {},
   run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },

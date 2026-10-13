@@ -6,8 +6,8 @@ The ONLY doc for the player's psi. The bar slot and the `q` key are in `docs/inv
 
 Psi is ON or OFF, and that is all `components/Psi.tsx` (`w.psi`) holds.
 
-- **On, the player's left hand goes to their temple** (`syncHands`, the `psi` upper clip). Near a
-  crowd neighbour, in a doorway, or lain on that arm, it is `psi_avoid`, elbow tucked.
+- **On, the player's left hand goes to their temple** (`syncHands`, the `psi` upper clip), elbow tucked
+  in front of them, so it clears a neighbour, a doorway and a bunk alike.
 - **On, their breath shows too**: their lungs and diaphragm, as `docs/npc-breath.md` has them. It goes
   with psi to whoever is made the player. The bubble's **breath** button still switches it by hand.
 - **It is switched** by `q`, its bar slot, a press on the player's own left arm (jsh `inventory`), or jsh
