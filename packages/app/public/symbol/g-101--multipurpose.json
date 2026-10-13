@@ -622,7 +622,7 @@
         },
         {
           "id": "daf5296f-ac5a-4d16-a9f9-d83eea5b3e3d",
-          "name": "medical--008",
+          "name": "medical--008 doors=[]",
           "locked": true,
           "visible": true,
           "transform": {
