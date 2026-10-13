@@ -1,4 +1,4 @@
-import { attribute, float, lights, mix, positionGeometry, smoothstep, step, vec3 } from "three/tsl";
+import { attribute, float, lights, mix, positionGeometry, smoothstep, step, uniform, vec3 } from "three/tsl";
 import * as THREE from "three/webgpu";
 
 type World = import("@npc-cli/util").UseStateRef<import("../components/World").State>;
@@ -25,7 +25,7 @@ export function createWallBandMaterial(w: World) {
   const fade = w.view.fadeRoomsFx.fadeAtPair(attribute<"vec2">("roomSlots", "vec2"));
   const sight = w.view.fadeRoomsFx.sightNode;
   const [alphaFade, colorFade] = fadeSplit(sight, fade);
-  const bright = mix(float(1), float(wallBandSightBright), sight);
+  const bright = mix(float(1), float(wallBandSightBright), sight).mul(wallBandBrightness);
   const opacity = mix(float(wallBandOpacity), float(wallBandSightOpacity), sight);
   m.opacityNode = w.view.objectPick.equal(0).select(opacity.mul(alphaFade), float(0));
   // ribbed along its length, with no upright seam: an obstacle's skirt runs the other way
@@ -50,6 +50,9 @@ export function createWallBandMaterial(w: World) {
   m.lightsNode = lights([new THREE.AmbientLight("#fff", 0.5)]);
   return m;
 }
+
+/** `theme.walls.bandBrightness`, set on a theme change. One for every World: bands share a look */
+export const wallBandBrightness = uniform(1);
 
 /** What every band instance is coloured, and how tall one stands */
 export const wallBandColor = "#444";

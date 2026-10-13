@@ -48,6 +48,7 @@ export default function Obstacles(_props: Props) {
       quad: createTwoSidedXzQuad(), // 2-sided handles flipped obstacles
       skirtQuad: createTwoSidedXyQuad(),
       brightnessNode: uniform(1),
+      skirtBrightnessNode: uniform(1),
       fadedTint: uniform(0.25),
 
       uvOffsets: new Float32Array(MAX_OBSTACLE_QUAD_INSTANCES * 2),
@@ -169,8 +170,9 @@ export default function Obstacles(_props: Props) {
       encodeInstanceId(gmId, obstacleId) {
         return state.toInstanceId[gmId]?.[obstacleId] ?? null;
       },
-      setBrightness(next) {
+      setBrightness(next, skirtNext) {
         state.brightnessNode.value = next;
+        state.skirtBrightnessNode.value = skirtNext;
       },
       setFadedTint(next) {
         state.fadedTint.value = next;
@@ -395,7 +397,7 @@ export default function Obstacles(_props: Props) {
       .mul(mix(float(skirtPanel.glassLowLight), float(skirtPanel.glassTopLight), positionGeometry.y))
       .mul(mix(float(1 - skirtPanel.glassGrain), float(1), frost));
     const panel = mix(vec3(mix(hardPanel, softPanel, isSoft)), glassPanel, isGlass);
-    const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv).mul(panel);
+    const baseColor = color(obstaclesSkirtBaseColor).mul(ndotv).mul(panel).mul(state.skirtBrightnessNode);
     const skirtFade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
     mat.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
       // the light sweep ignores obstacles, so a far side would otherwise be as lit as a near one.
@@ -492,6 +494,7 @@ export type State = {
   quad: THREE.BufferGeometry;
   skirtQuad: THREE.BufferGeometry;
   brightnessNode: THREE.UniformNode<"float", number>;
+  skirtBrightnessNode: THREE.UniformNode<"float", number>;
   /** How much of a top is left once its room is out of view — from `theme.post.fadedObstacleTint` */
   fadedTint: THREE.UniformNode<"float", number>;
   uvOffsets: Float32Array;
@@ -525,7 +528,8 @@ export type State = {
   roomIdOf(gmId: number, obstacle: Geomorph.LayoutObstacle): null | number;
   /** The broad wall whose footprint it mostly stands within, if any */
   broadWallIdOf(gmId: number, obstacle: Geomorph.LayoutObstacle): null | number;
-  setBrightness(next: number): void;
+  /** The tops', then the skirts' — `theme.obstacles` */
+  setBrightness(next: number, skirtNext: number): void;
   setFadedTint(next: number): void;
   transformAndColorObstacles(): void;
   transformAndColorSkirts(): void;
