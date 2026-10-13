@@ -374,9 +374,9 @@ export const breathConfig = {
   /** Seconds breathing takes to come on, or to settle once off */
   easeSecs: 1,
   lung: {
-    color: "#bfe6ff",
+    color: "#ff4d4d",
     /** Each lung's centre, the left's mirrored, and its radii with their lungs empty */
-    centre: [0.1, 0.08, 0],
+    centre: [0.1, 0.02, 0],
     radii: [0.07, 0.105, 0.08],
     /** How much of a lung shows face-on: the rest gathers at its silhouette, by `rimPower` */
     faceOn: 0.25,
@@ -387,7 +387,7 @@ export const breathConfig = {
   diaphragm: {
     color: "#ff9aa8",
     /** The height of its rim, how far its dome rises above that, and its radii */
-    y: -0.055,
+    y: -0.115,
     dome: 0.07,
     radii: [0.19, 0.115],
     /** How far its crown drops at the top of a breath, per `reach` */
