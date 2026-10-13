@@ -82,7 +82,9 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 
 - **Include the drawn border.** Trace the OUTSIDE of the outline, not the fill within it. A grey fill
   traced as is loses its line: grow the mask by the line's width (7 px for a thin line) before tracing.
-- **Stop at a wall's inner face.** Grow the mask inside the room only, so a table does not take wall art.
+- **Cover the thick lines under it.** Where an obstacle runs into a thick line, e.g. the wall at a table's
+  end, take the polygon to that line's FAR edge: `office--006`'s table spans `-2` to `122`. Art outside
+  the polygon is not in the spritesheet, so the obstacle would otherwise end short of its own edge.
 - **Just enough points.** Simplify the traced contour (about 3 px of tolerance), which leaves a curve
   as a few straight runs: a quarter circle wants four or five, not twenty.
 - **Square the corners.** A rounded stroke leaves a short chamfer at each corner. Replace it with the

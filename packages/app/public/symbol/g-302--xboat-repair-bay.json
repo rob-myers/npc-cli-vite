@@ -517,80 +517,80 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 598, "f": 537},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 598, "f": 538},
           "type": "rect",
           "baseRect": {"width": 486, "height": 4},
-          "cssTransform": "matrix(1, 0, 0, 1, 598, 537)"
+          "cssTransform": "matrix(1, 0, 0, 1, 598, 538)"
         },
         {
           "id": "6b4bf8c9-c24b-4f1b-8406-bdb9cd2ad328",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 900, "f": 340},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 900, "f": 341},
           "type": "rect",
           "baseRect": {"width": 4, "height": 199},
-          "cssTransform": "matrix(1, 0, 0, 1, 900, 340)"
+          "cssTransform": "matrix(1, 0, 0, 1, 900, 341)"
         },
         {
           "id": "080ab8f6-069e-427a-9e35-5bd93613f8ea",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1078, "f": 300},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1078, "f": 301},
           "type": "rect",
           "baseRect": {"width": 8, "height": 62},
-          "cssTransform": "matrix(1, 0, 0, 1, 1078, 300)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1078, 301)"
         },
         {
           "id": "5d635178-e26f-4b49-8667-c7897d0399ec",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1080, "f": 360},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1080, "f": 361},
           "type": "rect",
           "baseRect": {"width": 4, "height": 181},
-          "cssTransform": "matrix(1, 0, 0, 1, 1080, 360)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1080, 361)"
         },
         {
           "id": "c1282d1a-3655-4173-9761-1d0596da899b",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 1},
           "type": "rect",
           "baseRect": {"width": 4, "height": 238},
-          "cssTransform": "matrix(1, 0, 0, 1, 1170, 0)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1170, 1)"
         },
         {
           "id": "08e23706-c386-486b-8320-1811da215645",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 57},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 58},
           "type": "rect",
           "baseRect": {"width": 28, "height": 4},
-          "cssTransform": "matrix(1, 0, 0, 1, 1170, 57)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1170, 58)"
         },
         {
           "id": "889b98af-f875-4dd9-ab5a-7b0cd933beca",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 117},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 118},
           "type": "rect",
           "baseRect": {"width": 28, "height": 4},
-          "cssTransform": "matrix(1, 0, 0, 1, 1170, 117)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1170, 118)"
         },
         {
           "id": "3aa6d7b9-be59-4851-a507-9d641ec15ea1",
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 177},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1170, "f": 178},
           "type": "rect",
           "baseRect": {"width": 28, "height": 4},
-          "cssTransform": "matrix(1, 0, 0, 1, 1170, 177)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1170, 178)"
         }
       ]
     },
@@ -871,12 +871,12 @@
           "name": "ships-locker--011",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 540, "f": 540},
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 540, "f": 539},
           "type": "symbol",
           "srcKey": "ships-locker--011",
           "baseRect": {"width": 120, "height": 60},
           "offset": {"x": -4.6, "y": 2},
-          "cssTransform": "matrix(0, -1, 1, 0, 535.4, 542)"
+          "cssTransform": "matrix(0, -1, 1, 0, 535.4, 541)"
         },
         {
           "id": "6646c9d6-a288-4e67-9722-88e049c27c71",
