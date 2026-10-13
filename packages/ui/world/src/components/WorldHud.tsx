@@ -138,7 +138,7 @@ export default function WorldHud() {
   const keyCount = heldDoors.length;
   const keyDoor = state.getKeyDoor();
   const KeyLock = keyDoor?.locked === true ? LockIcon : LockOpenIcon;
-  const psiOn = w.psi?.on === true;
+  const psiOn = w.e.isPsiRaised();
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
   const dead = w.shields?.isDead(playerKey) === true;

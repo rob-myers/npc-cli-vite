@@ -98,7 +98,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (name === "psi") {
           if (had.psi !== true) return false;
           delete had.psi;
-          if (npcKey === w.player.key) w.psi?.setOn(false);
+          state.setPsi(false, npcKey);
           state.onCarriedChange(npcKey);
           return true;
         }
@@ -361,6 +361,20 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (state.handling.has(npcKey)) return; // one thing at a time
         state.handling.add(npcKey);
         void run().finally(() => state.handling.delete(npcKey));
+      },
+      setPsi(active, ...npcKeys) {
+        for (const npcKey of npcKeys) {
+          const anim = w.n?.[npcKey]?.anim;
+          if (anim === undefined || active === state.isPsiRaised(npcKey)) continue;
+          anim.setBreathing(active);
+          anim.setUpper(active ? "psi" : null, { side: "left", past: true, onHead: true });
+        }
+        w.r3f?.invalidate();
+        w.hud?.update();
+      },
+      isPsiRaised(npcKey = w.player.key) {
+        const arm = w.n?.[npcKey]?.anim.upperLeft;
+        return arm?.key === "psi" && arm.target === 1;
       },
       hasItem(npcKey, name) {
         const had = state.carried[npcKey];
@@ -710,7 +724,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "set-player":
             state.syncFadeRooms(); // the rooms in view are the player's
-            if (e.playerKey !== null && state.hasItem(e.playerKey, "psi") === false) w.psi?.setOn(false);
             break;
           case "nav-updated":
             // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
@@ -1232,7 +1245,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick();
         w.rings?.onTick();
-        w.psi?.onTick();
         w.npc.update();
         // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
         // draws on demand — so nothing would draw the world without them, and it goes on showing
@@ -1326,7 +1338,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
-        w.psi?.onTick();
         w.view.forceUpdate();
 
         await Promise.all(
@@ -1371,7 +1382,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.breaths?.onTick();
-        w.psi?.onTick();
         w.phasers?.onTick();
         w.shields?.onTick();
         w.player?.aimAtPointer();
@@ -1608,6 +1618,10 @@ export type State = {
   /** Revokes `psi`, or takes an item of theirs away outright, never put down — `false` if they have none */
   revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
+  /** Raises psi for each, or lowers it: a hand at their temple, their breath shown — see `docs/psi.md` */
+  setPsi(active: boolean, ...npcKeys: string[]): void;
+  /** Whether their hand is at their temple. The player's, by default */
+  isPsiRaised(npcKey?: string): boolean;
   /** One phaser, and `inventoryConfig.maxCarried` of the rest */
   hasRoomFor(npcKey: string, kind: ItemKind): boolean;
   onCarriedChange(npcKey: string): void;

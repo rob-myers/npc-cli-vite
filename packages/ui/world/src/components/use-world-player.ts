@@ -55,8 +55,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
       },
       assign(npcKey) {
-        const changed = state.key !== npcKey;
+        const prev = state.key;
+        const changed = prev !== npcKey;
         state.key = npcKey;
+        // psi goes with the player, if the new one is granted it
+        if (changed === true && w.e.isPsiRaised(prev) === true) {
+          w.e.setPsi(false, prev);
+          if (w.e.hasItem(npcKey, "psi") === true) w.e.setPsi(true, npcKey);
+        }
         w.events.next({ key: "set-player", playerKey: npcKey });
         if (changed === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
       },
@@ -161,7 +167,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.e.persistDecor();
       },
       psi(on) {
-        w.psi.setOn(on);
+        w.e.setPsi(on, state.key);
       },
       async restore() {
         const saved = getWorldMapStore(w.key, w.mapKey)
@@ -221,9 +227,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         else w.phasers.toggle(state.key);
       },
       togglePsi() {
-        if (state.exists() === false || w.psi === null) return;
-        if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
-        w.psi.toggle();
+        if (state.exists() === false) return;
+        const on = w.e.isPsiRaised(state.key);
+        if (on === false && w.e.hasItem(state.key, "psi") === false) return;
+        w.e.setPsi(!on, state.key);
       },
       toggleRun() {
         const npc = state.get();

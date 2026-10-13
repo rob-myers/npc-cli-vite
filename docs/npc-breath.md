@@ -8,7 +8,7 @@ The ONLY doc for how an npc breathes: `tickBreath` in `components/npc-animation.
 Nobody, until asked: `npc.anim.setBreathing(true)`. `breath.amount` eases to `breath.on` over
 `breathConfig.easeSecs`, and one at rest with it off costs a single test per tick. The bubble's
 **breath** button, beside psi and phaser, switches it for that npc. The player's also comes on
-whilst their psi is raised, and goes as it is lowered (`Psi.setOn`).
+whilst their psi is raised, and goes as it is lowered (`w.e.setPsi`).
 
 The player breathes by `w.npc.breathTune`, set by the bubble's sliders (`BreathControls`) and
 persisted per World. Anyone else breathes by `defaultBreathTune`.

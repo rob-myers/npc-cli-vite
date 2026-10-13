@@ -155,7 +155,7 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
 /** Whether `inventory` takes a press on an npc: as the phaser's target, or for psi to read */
 function isTargeting(w: JshCli.WorldState) {
   if (w.e.keyedListener.has("inventory") === false) return false;
-  return w.phasers?.isArmed(w.player.key) === true || w.psi?.on === true;
+  return w.phasers?.isArmed(w.player.key) === true || w.e.isPsiRaised();
 }
 
 /** In or out again, as a shift-click does */

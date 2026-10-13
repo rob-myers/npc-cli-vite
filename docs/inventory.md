@@ -40,7 +40,7 @@ An item, and a carried phaser, show an "x" which puts it down on hover — an it
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
 a slot's menu opens on a long press.
 
-The bar re-renders when nudged (`w.hud?.update()`, from `Psi.setOn`, `Phasers.sync` and every change
+The bar re-renders when nudged (`w.hud?.update()`, from `w.e.setPsi`, `Phasers.sync` and every change
 to `carried` or to access) and on the player's own door and spawn events.
 
 ## Having

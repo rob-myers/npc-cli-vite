@@ -242,7 +242,7 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
     void takeOnPress(w, playerKey, meta.decorKey, press);
   } else if (meta.type === "npc") {
     const own = meta.npcKey === playerKey;
-    const psiOn = w.psi?.on === true;
+    const psiOn = w.e.isPsiRaised();
     if (own === true && psiOn === true && (meta.bodyPart === "leftarm" || meta.bodyPart === "leftforearm")) {
       w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not
     } else if (w.phasers?.isArmed(playerKey) === true) {
@@ -252,7 +252,7 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
       } else {
         w.phasers.arm(playerKey, { at: meta.npcKey, part: meta.bodyPart });
       }
-    } else if (psiOn === true && own === false) w.psi.read(meta.npcKey);
+    } else if (psiOn === true && own === false) w.speech.readThought(meta.npcKey);
   }
 }
 
@@ -1249,16 +1249,21 @@ export async function pose(
 const posing = new Map<string, (why: "replaced") => void>();
 
 /**
- * The player's psi on, or `off`: their hand goes to their temple. See `w.player.psi`.
- * It is the player's, not a process's, so like `phaser` it returns at once
+ * Psi on, or `off`: their hand goes to their temple. The player's, unless npcs are named. See `w.e.setPsi`.
+ * It is theirs, not a process's, so like `phaser` it returns at once
  * ```sh
  * psi
  * psi off
+ * psi npc-0 npc-1
+ * psi off npc-0
  * ```
  */
-export function psi({ api, args: [arg], w }: JshCli.RunArg) {
+export function psi({ api, args, w }: JshCli.RunArg) {
   api.setPausable("world", false); // switches it whilst paused
-  w.player.psi(arg !== "off");
+  const on = args[0] !== "off";
+  const npcKeys = on === true ? args : args.slice(1);
+  if (npcKeys.length === 0) return w.player.psi(on);
+  w.e.setPsi(on, ...npcKeys.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**

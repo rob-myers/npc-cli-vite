@@ -773,7 +773,6 @@ export default function NPCs() {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
-        w.psi?.onTick();
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
