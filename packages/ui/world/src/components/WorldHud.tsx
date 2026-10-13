@@ -328,6 +328,10 @@ function PlayerButtons() {
   const followFlash = useChangeCount(follow);
   const compassDial = w.view?.compassDial === true;
   const compassLetter = compassLetters[w.view?.compassPoint ?? 0];
+  /** Radians the view is turned off `w`'s axis, which the needle leans back by */
+  const compassSkew = compassDial ? (w.view?.compassSkew ?? 0) : 0;
+  /** The same off the axis NEAREST up the screen, where `w` heads once the move keys are let go */
+  const nextSkew = compassSkew - Math.round(compassSkew / (Math.PI / 2)) * (Math.PI / 2);
   const big = w.touchDevice;
   const hurry = w.n?.[w.player.key]?.anim.hurry === true;
   const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
@@ -401,11 +405,11 @@ function PlayerButtons() {
         )}
         <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
       </div>
-      {/* turns snap to compass points whilst on (white), so `wasd` lines up with doors — as `c` */}
+      {/* whilst on (white) `wasd` heads along the world's axes, `w` to the point named — as `c` */}
       <div className="relative flex shrink-0">
         <div
           className={buttonClass}
-          title={`compass turns ${compassDial ? "on" : "off"}: c — w heads ${compassLetter}`}
+          title={compassDial ? `compass on: c — w heads ${compassLetter}` : "compass off: c"}
           onClick={() => w.hud?.dragged !== true && w.view.setCompassDial(!compassDial)}
         >
           {/* where `w` heads */}
@@ -413,11 +417,19 @@ function PlayerButtons() {
             {compassLetter}
           </span>
         </div>
-        {/* a compass needle's tip, standing out of the button's top */}
-        <TriangleIcon
-          className={cn("pointer-events-none absolute -top-1 left-1/2 size-2 -translate-x-1/2", iconColor(compassDial))}
-          weight="fill"
-        />
+        {/* a compass needle's tip out of the button's top, leaning to where `w` heads on screen */}
+        <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${compassSkew}rad)` }}>
+          <TriangleIcon
+            className={cn("absolute -top-1 left-1/2 size-2 -translate-x-1/2", iconColor(compassDial))}
+            weight="fill"
+          />
+        </div>
+        {/* a second, hollow, once the view has turned past a diagonal with a move key held */}
+        {nextSkew !== compassSkew && (
+          <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${nextSkew}rad)` }}>
+            <TriangleIcon className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 text-neutral-400" weight="bold" />
+          </div>
+        )}
       </div>
     </div>
   );

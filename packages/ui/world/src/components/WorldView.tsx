@@ -156,6 +156,9 @@ export function WorldView(props: React.PropsWithChildren) {
       lastKeyMs: 0,
       compassDial: false,
       compassPoint: 0,
+      compassSkew: 0,
+      wasdPoint: null,
+      compassSnap: false,
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
       roomOutlineFx: createRoomOutline(),
@@ -483,9 +486,29 @@ export function WorldView(props: React.PropsWithChildren) {
         const right = (state.keysDown.has("d") ? 1 : 0) - (state.keysDown.has("a") ? 1 : 0);
         const up = (state.keysDown.has("w") ? 1 : 0) - (state.keysDown.has("s") ? 1 : 0);
         const m = state.controls.object.matrixWorld.elements; // its x and y axes: its forward points down at birdseye
-        const x = right * m[0] + up * m[4];
-        const z = right * m[2] + up * m[6];
-        return new Vect(x, z);
+        if (state.compassDial === false) return new Vect(right * m[0] + up * m[4], right * m[2] + up * m[6]);
+        // the dial has `w` head along the world axis nearest up the screen, which its button names
+        const [ux, uz] = compassVectors[state.syncWasdPoint() ?? 0];
+        return new Vect(up * ux - right * uz, up * uz + right * ux);
+      },
+      syncWasdPoint() {
+        const held = state.compassDial === true && wasdKeys.some((key) => state.keysDown.has(key));
+        if (held === false) state.wasdPoint = null;
+        else state.wasdPoint ??= Math.round(state.controls.spherical.theta / halfPi) & 3;
+        return state.wasdPoint;
+      },
+      keepNearSquare() {
+        if (state.compassDial === false || state.cameraMode !== "embodied" || state.controls === null) return;
+        const { spherical, sphericalDelta, pointers } = state.controls;
+        if (pointers.length > 0 || state.lookAtAnimId !== 0) return; // theirs whilst they drag
+        const heading = spherical.theta + sphericalDelta.theta;
+        const quarter = Math.round(heading / halfPi) * halfPi;
+        const skew = deltaAngle(quarter, heading);
+        if (Math.abs(skew) <= maxAzimuthSkew + squareUpEpsilon) return;
+        // a part of the way each frame: `update` would spend the whole of it at once, which is a snap
+        const toGo = deltaAngle(spherical.theta, quarter + Math.sign(skew) * maxAzimuthSkew);
+        sphericalDelta.theta = toGo * squareUpRate;
+        w.r3f?.invalidate();
       },
       getFollowedPlayer() {
         const player = state.getPlayer();
@@ -564,10 +587,15 @@ export function WorldView(props: React.PropsWithChildren) {
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
 
-        const compassPoint = Math.round(spherical.theta / halfPi) & 3;
-        if (compassPoint !== state.compassPoint) {
+        // `w`'s own axis whilst a move key holds it, else the one nearest up the screen
+        const compassPoint = state.syncWasdPoint() ?? Math.round(spherical.theta / halfPi) & 3;
+        // in coarse steps, so a turn redraws the bar a few times rather than every frame
+        const skew = deltaAngle(compassPoint * halfPi, spherical.theta);
+        const compassSkew = Math.round(skew / compassSkewStep) * compassSkewStep;
+        if (compassPoint !== state.compassPoint || compassSkew !== state.compassSkew) {
           state.compassPoint = compassPoint;
-          w.hud?.update(); // its compass button names it
+          state.compassSkew = compassSkew;
+          w.hud?.update(); // its compass button names the point, and leans by the skew
         }
 
         const { controls } = state;
@@ -608,7 +636,7 @@ export function WorldView(props: React.PropsWithChildren) {
         controls.zoomSettleRate = state.zoomInSlow === true ? embodiedZoomInRate : defaultZoomSettleRate;
         state.easeFrontier();
 
-        // both angles are the user's own at every zoom, but a turn let go whilst `compassDial` snaps
+        // both angles are the user's own at every zoom, but a turn let go whilst `compassSnap` snaps
         controls.enableRotate = true;
         // a drag locks to the axis it set off along only whilst ZOOMED OUT. Once a zoom-in is under
         // way a turn begun a little up or down would lock vertical, and close in a diagonal drag
@@ -618,6 +646,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.shapeEmbodiedPolar(spherical); // the tilt is theirs, whatever the zoom
         state.advanceZoomPan(spherical);
         state.detentEmbodiedAzimuth(spherical);
+        state.keepNearSquare();
       },
       /**
        * Room labels in or out, over `ms`. Only the first boot uses it: the world is REVEALED there
@@ -806,7 +835,7 @@ export function WorldView(props: React.PropsWithChildren) {
         }
       },
       /**
-       * A turn let go whilst `compassDial` is a detented compass dial: it advances a point per
+       * A turn let go whilst `compassSnap` is a detented compass dial: it advances a point per
        * `embodiedSnapArm` turned, or springs back to the point nearest where it set out
        */
       detentEmbodiedAzimuth(spherical) {
@@ -826,7 +855,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.embodiedDragging === false) return;
         if (state.lookAtAnimId !== 0) return; // `lookAt` owns the camera whilst it runs
         state.embodiedDragging = false;
-        if (state.compassDial === false) return;
+        if (state.compassSnap === false) return;
 
         // decided ON RELEASE ONLY, else measured against a point still being turned to
         const from = state.embodiedFrom / halfPi;
@@ -916,6 +945,7 @@ export function WorldView(props: React.PropsWithChildren) {
       onKeyUp(e) {
         const key = e.key.toLowerCase();
         state.keysDown.delete(key);
+        if (state.wasdPoint !== null) w.r3f?.invalidate(); // a frame, for the button to drop a held point
         if (isTypingTarget(e)) return;
         if (key === "f" && state.cHeld === false) {
           state.onLookGesture(false);
@@ -1201,14 +1231,7 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       setCompassDial(on) {
         state.compassDial = on;
-        const { controls } = state;
-        if (on === true && state.cameraMode === "embodied" && controls !== null) {
-          // squared up at once, as a turn let go would be
-          const { spherical, sphericalDelta } = controls;
-          const point = Math.round((spherical.theta + sphericalDelta.theta) / halfPi);
-          sphericalDelta.theta = deltaAngle(spherical.theta, point * halfPi);
-          w.r3f?.invalidate();
-        }
+        state.keepNearSquare(); // clear of the diagonals at once, as a turn let go would be
         w.hud?.update();
       },
       setCameraMode(cameraMode) {
@@ -1732,7 +1755,7 @@ export type State = {
   getCrosshairPivot(): THREE.Vector3 | null;
   /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
   getPlayer(): Npc | undefined;
-  /** Ground direction of the held `wasd` keys as seen, unnormalised — zero when none or opposites are held */
+  /** Ground direction of the held `wasd` keys: as seen, or along the world's axes whilst `compassDial` — zero when none or opposites are held */
   getWasdDirection(): Vect;
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
@@ -1785,10 +1808,20 @@ export type State = {
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
   lastKeyMs: number;
-  /** Whether `embodied`'s turns snap to compass points, so `wasd` lines up with doors. `c` toggles it */
+  /** Whether `wasd` heads along the world's axes, the view kept clear of the diagonals. `c` toggles it */
   compassDial: boolean;
   /** The compass point nearest up the screen, where `w` heads: `0` north (-z), then west, south, east */
   compassPoint: number;
+  /** `w`'s compass point whilst a move key is down under the dial, so a turn mid-walk does not swerve them */
+  wasdPoint: null | number;
+  /** Takes `wasdPoint` as the first move key goes down, and drops it once none is held. Returns it */
+  syncWasdPoint(): null | number;
+  /** How far the view is turned off `compassPoint`, in radians, in steps of `compassSkewStep` */
+  compassSkew: number;
+  /** Whether a turn let go also snaps to a compass point — see `detentEmbodiedAzimuth`. Off: nothing sets it */
+  compassSnap: boolean;
+  /** Whilst the dial is on, turns a view let go to within `maxAzimuthSkew` of square, clear of where `w`'s axis flips */
+  keepNearSquare(): void;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
   holdFrontier(): void;
   /** Draws `embodied`'s zoom stops in by how little the player sees ahead — see within */
@@ -1885,9 +1918,9 @@ export type State = {
   /** `embodied`'s polar: the user's own close in, a function of the zoom further out */
   shapeEmbodiedPolar(spherical: THREE.Spherical): void;
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
-  /** `embodied`'s azimuth: a turn let go whilst `compassDial` snaps to a compass point (multiple of π/2) */
+  /** `embodied`'s azimuth: a turn let go whilst `compassSnap` snaps to a compass point (multiple of π/2) */
   detentEmbodiedAzimuth(spherical: THREE.Spherical): void;
-  /** Turns the compass dial on or off. On, the view goes to the nearest compass point at once */
+  /** Turns the compass dial on or off. On, the view is brought clear of the diagonals at once */
   setCompassDial(on: boolean): void;
   /** How far the current turn is from `embodiedFrom`, as it will come to rest */
   getEmbodiedHeading(): number;
@@ -2166,6 +2199,21 @@ const phiSettledEpsilon = 0.0001;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
+/** The furthest the view may rest off square whilst the compass dial is on. Half way to the flip at π/4 */
+const maxAzimuthSkew = Math.PI / 8;
+/** How much of the way back to `maxAzimuthSkew` is asked for each frame. Lower is slower */
+const squareUpRate = 0.5;
+/** Radians from `maxAzimuthSkew` at which the easing back stops */
+const squareUpEpsilon = 0.002;
+const compassSkewStep = Math.PI / 36;
+const wasdKeys = ["w", "a", "s", "d"];
+/** A compass point's ground direction, by `compassPoint`: north is -z */
+const compassVectors = [
+  [0, -1],
+  [-1, 0],
+  [0, 1],
+  [1, 0],
+];
 /** A page closed within this of a key over the world asks first */
 const closeConfirmMs = 2000;
 /** In quarter turns: a turn from this near a compass point advances past the next one */
