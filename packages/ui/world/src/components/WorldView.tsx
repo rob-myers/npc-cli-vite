@@ -100,6 +100,7 @@ export function WorldView(props: React.PropsWithChildren) {
       // follow option ON, which is what it meant
       follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
       embodiedPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
+      zoomHeld: false,
       embodiedFrom: 0,
       embodiedDragging: false,
       embodiedPeak: 0,
@@ -791,6 +792,7 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       getFrontierStops() {
         const { controls } = state;
+        if (state.zoomHeld === true) return [controls.maxDistance, controls.minDistance];
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
         // a look press only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
         const player = state.follow === true && w.touchDevice === false ? w.player?.get() : undefined;
@@ -1219,7 +1221,8 @@ export function WorldView(props: React.PropsWithChildren) {
       setFollow(follow) {
         state.frontierHold = false; // superseded either way
         state.follow = follow; // before the look, whose goal is the follow's
-        if (follow === true) state.lookAtPlayer(); // to the player at once rather than waiting for them to move
+        // to the player at once rather than waiting for them to move, though never in a rush
+        if (follow === true) state.lookAtPlayer({ minMs: followTakeoverMs, softLanding: true });
         store.patch({ follow });
         state.set({ follow });
         w.update(); // the look button shows it
@@ -1284,6 +1287,23 @@ export function WorldView(props: React.PropsWithChildren) {
 
         // `update` would clamp it anyway, but then `fromRadius` and the tween would disagree
         const fromRadius = controls.spherical.radius;
+        /** How far round it turns, to as near `opts.theta` as the compass dial allows */
+        const fromTheta = controls.spherical.theta;
+        let turn = 0;
+        if (opts.theta !== undefined) {
+          let theta = opts.theta;
+          if (state.compassDial === true && state.cameraMode === "embodied") {
+            const quarter = Math.round(theta / halfPi) * halfPi;
+            theta = quarter + THREE.MathUtils.clamp(deltaAngle(quarter, theta), -maxAzimuthSkew, maxAzimuthSkew);
+          }
+          turn = deltaAngle(fromTheta, theta);
+        }
+        /** The tilt it eases to, if any, within the controls' own bounds */
+        const fromPhi = controls.spherical.phi;
+        const toPhi =
+          opts.phi === undefined
+            ? undefined
+            : THREE.MathUtils.clamp(opts.phi, controls.minPolarAngle, controls.maxPolarAngle);
         const toRadius =
           opts.radius === undefined
             ? fromRadius
@@ -1304,10 +1324,20 @@ export function WorldView(props: React.PropsWithChildren) {
           at !== undefined &&
             to.lerp(tmpTracked.set(at.x, opts.height ?? 0, at.y), 1 - Math.exp((-lookAtTrackRate * stepMs) / 1000));
 
-          controls.target.copy(from).lerp(to, alpha);
+          const on = opts.along?.();
+          if (on !== undefined) {
+            // eased over from where the view was, else its first frame jumps onto it
+            const onto = Math.min(1, alpha / lookAtAlongCatch);
+            tmpTracked.set(on.x, opts.height ?? 0, on.y);
+            controls.target.copy(from).lerp(tmpTracked, onto * onto * (3 - 2 * onto));
+          } else controls.target.copy(from).lerp(to, alpha);
           // live `phi` and `theta`, so a tilt or turn underway still applies mid-pan
           const radius = fromRadius + (toRadius - fromRadius) * alpha;
-          tmpLookAtOffset.setFromSphericalCoords(radius, controls.spherical.phi, controls.spherical.theta);
+          const theta = turn === 0 ? controls.spherical.theta : fromTheta + turn * alpha;
+          const phi = toPhi === undefined ? controls.spherical.phi : fromPhi + (toPhi - fromPhi) * alpha;
+          // `embodied` holds its one tilt every frame, so it must move with the pan's
+          if (toPhi !== undefined && state.cameraMode === "embodied") state.embodiedPolar = phi;
+          tmpLookAtOffset.setFromSphericalCoords(radius, phi, theta);
           controls.object.position.copy(controls.target).add(tmpLookAtOffset);
           w.r3f?.invalidate();
         };
@@ -1316,7 +1346,7 @@ export function WorldView(props: React.PropsWithChildren) {
           // Nothing to travel — pressing the look button whilst already on them, say. Taken as an
           // instant move rather than animated: the taper below would give it a zero duration, and
           // the first frame's `0 / 0` would lerp the target to NaN and take the camera with it
-          if (opts.animate !== true || from.distanceTo(to) < lookAtUntil) {
+          if (opts.animate !== true || (opts.ms === undefined && from.distanceTo(to) < lookAtUntil)) {
             applyTarget(1);
             controls.update(); // no frame to wait for
             return;
@@ -1332,10 +1362,12 @@ export function WorldView(props: React.PropsWithChildren) {
           // over the last `lookAtShortUnits`, else a pan onto a player already under the crosshair
           // takes the same beat as one across the map, and reads as the view hesitating
           const distance = from.distanceTo(to);
-          const durationMs = Math.max(
-            opts.minMs ?? 0,
-            Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits),
-          );
+          const durationMs =
+            opts.ms ??
+            Math.max(
+              opts.minMs ?? 0,
+              Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits),
+            );
           let elapsedMs = 0;
           let lastEpochMs = performance.now();
           /** `embodied`'s stops ride the pan — see `easeFrontier` */
@@ -1729,6 +1761,8 @@ export type State = {
   follow: boolean;
   /** `embodied`'s tilt, the same at every zoom */
   embodiedPolar: number;
+  /** Whilst set, the zoom stops stay where they are, e.g. through the spirit effect */
+  zoomHeld: boolean;
   /** The azimuth the current turn set out from */
   embodiedFrom: number;
   /** Whether a turn is underway — the compass dial is decided on its release, once */
@@ -1952,6 +1986,14 @@ export type State = {
       track?: () => undefined | Geom.VectJson;
       /** The least an animated pan takes, however short */
       minMs?: number;
+      /** How long an animated pan takes, whatever its length. Given, a pan of no distance still zooms and turns */
+      ms?: number;
+      /** The azimuth to turn to as it pans: as near as the compass dial allows */
+      theta?: number;
+      /** The tilt to ease to as it pans, off straight down */
+      phi?: number;
+      /** Where the view is NOW, re-read each frame: eased onto early in the pan, then held there */
+      along?: () => undefined | Geom.VectJson;
       /** Brakes over more of the pan than it sets off in — see `softLandingWarp` */
       softLanding?: boolean;
     },
@@ -2045,9 +2087,13 @@ const lookAtMsPerUnit = 60;
 const lookAtMaxStepMs = 50;
 /** How fast a tracked destination is eased onto, per second */
 const lookAtTrackRate = 10;
+/** How far through a pan `along` takes to be eased onto */
+const lookAtAlongCatch = 0.3;
 const lookAtMaxMs = 2500;
 /** The least a respawn's pan takes, so a short hop glides */
 const respawnPanMinMs = 900;
+/** The least a follow switched on takes to settle onto them, and the zoom with it */
+const followTakeoverMs = 1500;
 /** Warps time before the smootherstep, so it brakes over the last ~63% */
 const softLandingWarp = 0.7;
 /** How long the veil over the canvas takes to fade, either way */

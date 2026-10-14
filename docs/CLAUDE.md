@@ -155,7 +155,7 @@ toggle labels it and opens a card per pick.
 ## Inventory
 
 See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
-keys, then carried items; `q` psi, `e` held the phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
+keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
 World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `inventory` for what a press does.
 
 ## Psi
@@ -163,6 +163,11 @@ World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `in
 See `docs/psi.md` — the ONLY doc for it. In short: psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`), and raised, their
 left hand is at their temple. Raised, a press on another npc reads
 their thought (`w.speech.readThought`): over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha.
+
+## Spirit
+
+See `docs/spirit.md` — the ONLY doc for it. In short: psi raised, `q` held leaves the player's body (`w.spirit`):
+the light draws in, a spark crosses to someone sitting or lying (else spawned in a bed or seat), and they wake as the player on a deep first breath.
 
 ## Shields
 
@@ -257,5 +262,5 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 - Never scale a decor quad non-uniformly: to reshape one e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`
 - To darken or recolour ONE placed decor, tint it — `tint=#777` in its symbol name (`meta.tint`, multiplied in) — rather than redrawing its svg, which changes every use
 - Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
-- The dev page hot-reloads every save, so a name used before it is imported or declared breaks the render at once. Make an edit whole in one write, then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched: it takes milliseconds, where `pnpm typecheck` takes minutes
+- The dev page hot-reloads every save, so a name used before it is imported or declared breaks the render at once. Never save a use of a module before the module exists: write a new file FIRST, then add its import and its use (e.g. a JSX mount) to the importer in ONE write. Make an edit whole in one write, then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched: it takes milliseconds, where `pnpm typecheck` takes minutes
 - Never stage (`git add`) — leave the index alone, even after editing a file that was already staged. Staging and committing are the user's

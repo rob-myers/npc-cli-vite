@@ -50,6 +50,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
       },
+      forgetNpcAtDoors(npcKey) {
+        const doors = state.npcToDoors[npcKey];
+        if (doors === undefined) return;
+        delete state.npcToDoors[npcKey];
+        const gdKeys = new Set(doors.nearby);
+        if (doors.inside !== null) gdKeys.add(doors.inside);
+        for (const gdKey of gdKeys) {
+          state.doorToNpcs[gdKey]?.nearby.delete(npcKey);
+          state.doorToNpcs[gdKey]?.inside.delete(npcKey);
+          if (w.door.byKey[gdKey]?.open === true) state.tryCloseDoor(gdKey);
+        }
+      },
       addKeyedListener(key, listener) {
         state.keyedListener.set(key, listener);
       },
@@ -1253,6 +1265,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           w.npc.setNpcDo(npc.key, null);
           state.litRooms.delete(npc.key);
           state.insideDoorways.delete(npc.key); // their exit colliders come too late
+          state.forgetNpcAtDoors(npc.key); // ...else a door they were near stays open
           npc.rejectAll(new Error("removed npc"));
         }
 
@@ -1269,7 +1282,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           requestAnimationFrame(() => w.view.forceUpdate());
         });
         w.events.next({ key: "removed-npcs", npcKeys });
-        if (npcKeys.includes(w.player.key)) w.events.next({ key: "set-player", playerKey: null });
+        if (npcKeys.includes(w.player.key) === true) {
+          // the first left takes over, if any are
+          const next = Object.keys(w.n)[0];
+          if (next === undefined) w.events.next({ key: "set-player", playerKey: null });
+          else w.player.setKey(next);
+        }
       },
       async restoreNpcs(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().npcs) {
         for (const { key, at, angle, skinKey, decorKey, lit, access } of saved?.npcs ?? []) {
@@ -1655,6 +1673,8 @@ export type State = {
   externalNpcs: Set<string>;
   npcToAccess: { [npcKey: string]: { [gdKey: string]: boolean } };
   npcToDoors: { [npcKey: string]: { inside: null | Geomorph.GmDoorKey; nearby: Set<Geomorph.GmDoorKey> } };
+  /** Takes them off every door's lists, as their exit colliders would, and lets those doors close */
+  forgetNpcAtDoors(npcKey: string): void;
   /**
    * Rooms lit BY HAND, shown whatever the player can see — see `setRoomLit`. Distinct from
    * `litRooms`, which is what lit NPCS light, and not gated on `litNpcsEnabled`. Emptied on a map

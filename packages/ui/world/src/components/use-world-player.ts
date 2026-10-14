@@ -28,18 +28,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
-        const { keysDown } = w.view;
         // raised only whilst `e` is held
-        if (state.armHeld === true && keysDown.has("e") === false) {
+        if (state.armHeld === true && w.view.keysDown.has("e") === false) {
           state.armHeld = false;
           w.phasers?.disarm(state.key);
         }
         // not whilst locked on: the phaser's target is whom they face
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
-        // `e` aims the phaser it raises, and `r` looks without one
-        const key = w.phasers?.isArmed(state.key) === true ? state.armHeld : keysDown.has("r");
-        const held = lookAt !== null || (key === true && free);
+        const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
         if (held === false || posture !== "sit") npc.anim.turnTo(null);
@@ -63,7 +60,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
       },
-      assign(npcKey) {
+      assign(npcKey, { pan = true } = {}) {
         const prev = state.key;
         const changed = prev !== npcKey;
         state.key = npcKey;
@@ -73,7 +70,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           if (w.e.hasItem(npcKey, "psi") === true) w.e.setPsi(true, npcKey);
         }
         w.events.next({ key: "set-player", playerKey: npcKey });
-        if (changed === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
+        if (changed === true && pan === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
       },
       async ensure() {
         let restored = true; // already present: they are where we left them
@@ -129,9 +126,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
         }
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
-        if (e.code === "KeyQ") state.togglePsi();
-        else if (e.code === "KeyE") {
-          // held, it is raised and aimed: let go, lowered — see `aimAtPointer`
+        if (e.code === "KeyQ") {
+          // held with psi raised, they leave their body — see `Spirit`. A press that raises it does too
+          const raised = w.e.isPsiRaised(state.key);
+          if (raised === false) state.togglePsi();
+          if (w.spirit?.press(raised) !== true && raised === true) state.togglePsi();
+        } else if (e.code === "KeyE") {
+          // held, it is raised: let go, lowered. Held already, as the view's own listener may run after
+          // ours, and `forceUpdate` would otherwise lower it
+          w.view.keysDown.add("e");
           if (w.phasers?.isArmed(state.key) === false) state.toggleArm();
           state.armHeld = w.phasers?.isArmed(state.key) === true;
         } else return;
@@ -333,18 +336,18 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held, or `e` with their phaser, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
+  /** Whilst `r` is held they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
+  /** Their phaser is raised by `e` being held, so letting go lowers it: not one the bar's slot raised */
+  armHeld: boolean;
   /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
   setTapRun(on: boolean): void;
   /** Ends that run once its keys are let go, or cancel out. Each tick */
   syncRun(): void;
-  /** Their phaser is raised by `e` being held, so letting go lowers it: not one the bar's slot raised */
-  armHeld: boolean;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
   lookTimer: number;
@@ -378,7 +381,7 @@ export type State = {
   restoreFromSpawnPoint(): Promise<boolean>;
   /** Make `npcKey` the player, retargeting the dynamic light and panning. No-op if absent */
   /** Make them the player, telling everyone — the bare act, without `setKey`'s lit, persist and pan */
-  assign(npcKey: string): void;
+  assign(npcKey: string, opts?: { pan?: boolean }): void;
   setKey(npcKey: string): void;
   /** Listens on the World's root for the player's keys and taps, returning the cleanup */
   setupDom(): () => void;

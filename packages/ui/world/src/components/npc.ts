@@ -55,6 +55,9 @@ export class Npc {
   colorScale: THREE.UniformNode<"float", number>;
   labelRectUniform: THREE.UniformNode<"vec4", THREE.Vector4>;
   labelYShiftUniform: THREE.UniformNode<"float", number>;
+  /** The shift their pose asks of their label, and the least world height it hangs at — see `setLabelYShift` */
+  labelShift: undefined | number;
+  labelFloor: null | number = null;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
@@ -532,7 +535,15 @@ export class Npc {
   }
 
   setLabelYShift(shift: number) {
-    this.labelYShiftUniform.value = shift;
+    // no lower than its floor, e.g. above a top bunk over them
+    this.labelYShiftUniform.value = Math.max(shift, ((this.labelFloor ?? -Infinity) - this.position.y) / npcScale);
+    this.labelShift = shift;
+  }
+
+  /** The least world height their label hangs at, else `null` — see `w.npc.liftBunkLabels` */
+  setLabelFloor(y: null | number) {
+    this.labelFloor = y;
+    this.setLabelYShift(this.labelShift ?? this.labelYShiftUniform.value);
   }
 
   setSkin(skinKey?: string) {

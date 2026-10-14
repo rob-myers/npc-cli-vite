@@ -716,6 +716,31 @@ export default function NPCs() {
 
         return npc;
       },
+      liftBunkLabels() {
+        const lies = Object.values(w.decor.byKey).filter(
+          (d): d is Geomorph.DecorPoint => d.type === "point" && d.meta.do === "lie",
+        );
+        const { labelHalfHeight } = npcMaterialConfig;
+        const floors = new Map<string, number>();
+        for (const npc of Object.values(state.npc)) {
+          const decorKey = state.npcToDoable[npc.key];
+          const at = typeof decorKey === "string" ? w.decor.byKey[decorKey] : undefined;
+          // the lie point straight above theirs, i.e. a top bunk
+          const above =
+            at?.type === "point" && at.meta.do === "lie"
+              ? lies
+                  .filter((d) => d.meta.y > at.meta.y && Math.hypot(d.x - at.x, d.y - at.y) < sameBunkMetres)
+                  .sort((a, b) => a.meta.y - b.meta.y)[0]
+              : undefined;
+          if (above === undefined) continue;
+          // theirs just above the bunk, and its occupant's above that: the labels in the order of the bunks
+          const floor = above.meta.y + bunkLabelClearMetres;
+          floors.set(npc.key, floor);
+          const occupant = state.doableToNpc[above.key] ?? null;
+          if (occupant !== null) floors.set(occupant, floor + 2 * labelHalfHeight + labelGapMetres);
+        }
+        for (const npc of Object.values(state.npc)) npc.setLabelFloor?.(floors.get(npc.key) ?? null);
+      },
       setNpcDo(npcKey, decorKey) {
         const currentDecorKey = state.npcToDoable[npcKey];
         if (typeof currentDecorKey === "string") {
@@ -726,6 +751,9 @@ export default function NPCs() {
         }
         state.npcToDoable[npcKey] = decorKey;
         w.events.next({ key: "npc-do", npcKey, decorKey });
+        // only a bed, left or taken, can change whose label clears a bunk
+        const isBed = (key: unknown) => typeof key === "string" && w.decor.byKey[key]?.meta.do === "lie";
+        if (isBed(currentDecorKey) || isBed(decorKey)) state.liftBunkLabels();
       },
       resetMaterials(npc) {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
@@ -1041,6 +1069,8 @@ export type State = {
   compactPickIds(): void;
   /** Fresh materials for `npc`, carrying over the uniforms that hold live state. Bumps `epochMs` */
   setNpcDo(npcKey: string, decorKey: string | null): void;
+  /** Lifts the label of each npc lain beneath a top bunk clear of it, and that of whoever lies on it above theirs */
+  liftBunkLabels(): void;
   resetMaterials(npc: Npc): void;
   determineSpawnedAngle(opts: {
     /** Spawn destination */
@@ -1251,6 +1281,12 @@ function metaToIdleAnimationClipKey(meta: Meta): AnimationClipKey {
 }
 
 const emptyMeta = {};
+/** Lie points nearer than this, one over the other, are bunks */
+const sameBunkMetres = 0.05;
+/** How far above an empty top bunk the label of whoever lies beneath hangs */
+const bunkLabelClearMetres = 0.55;
+/** The gap between their label and that of whoever lies on the bunk above, which hangs over theirs */
+const labelGapMetres = 0.05;
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("NPCs.tsx"));

@@ -28,13 +28,13 @@ naming the compass point up the screen, persisted per World and on by default. O
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` HELD | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | the key raises it whilst held, aimed at the pointer, and lowers it let go (`w.player.armHeld`, `aimAtPointer`). The slot is `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
+| phaser, `e` HELD | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | the key raises it whilst held and lowers it let go (`w.player.armHeld`). The slot is `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
 A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
-The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, and `e` held). `r` held looks at the pointer, without a phaser raised; the rest
+The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, and `e` held). `r` held turns them to the pointer, phaser raised or not; the rest
 are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`.
 An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
