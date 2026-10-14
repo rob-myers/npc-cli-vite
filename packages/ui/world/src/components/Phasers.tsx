@@ -504,7 +504,7 @@ const phaserConfig = {
   pose: "phaser_aim",
   avoid: "phaser_aim_avoid",
   /** Metres ahead a wall or closed door blocks — just past the gun at arm's length, so it is drawn in in time */
-  reach: 0.75,
+  reach: 0.95,
   /** The gun's muzzle, where the beam leaves, off the right forearm — its `+x` is up whilst aiming — in model units */
   beamFrom: [0.12, -0.54, 0] as [number, number, number],
   /** How far down the forearm the hand holds it, which it fades into and out of — model units */
