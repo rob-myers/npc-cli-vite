@@ -118,7 +118,7 @@ export default function Spirit() {
           if (from.posture !== "lie") state.shut(from.key, false);
         }
         Object.assign(state, { phase: "arrive", secs: 0 });
-        if (to.posture === "lie") state.viewAcross(to);
+        state.handBack(); // the view is theirs as they wake, a follow on again
       },
       async findRoute(from, to) {
         // forehead to forehead
@@ -231,18 +231,6 @@ export default function Spirit() {
           },
         );
       },
-      viewAcross(npc) {
-        void w.view.lookAt(
-          { x: npc.position.x, y: npc.position.z },
-          {
-            animate: true,
-            ms: state.arriveSecs * 1000,
-            height: state.viewHeight,
-            theta: state.sideOf(npc),
-            phi: spiritConfig.lainPolar,
-          },
-        );
-      },
       sideOf(npc) {
         const { x, z } = foreheadOf(npc);
         const [ux, uz] = [x - npc.position.x, z - npc.position.z];
@@ -331,8 +319,6 @@ export default function Spirit() {
       tickArrive(dt) {
         const to = state.toKey === null ? undefined : w.n[state.toKey];
         if (to === undefined) return state.finish();
-        // moved before they have settled: the view is needed now, not once they have
-        if (to.isMoving() === true) state.handBack();
         state.secs += dt;
         const t = Math.min(1, state.secs / state.arriveSecs);
         const lit = smootherstep(t);
@@ -768,8 +754,6 @@ export type State = {
   begin(fromKey: string, toKey?: null | string, auto?: boolean, lowerOnTap?: boolean): void;
   /** Pans onto their forehead, from the side their face is on, or across them and low if lain */
   frame(npc: JshCli.Npc): void;
-  /** Turns the view to look across them from their side, tilted low: a bottom bunk is seen beneath the top */
-  viewAcross(npc: JshCli.Npc): void;
   /** The azimuth looking across them lain, from the side of their bed with open floor, else the lesser turn */
   sideOf(npc: JshCli.Npc): undefined | number;
   /** `playerLight.setVeil`, without the darkening in `ship` mode */
