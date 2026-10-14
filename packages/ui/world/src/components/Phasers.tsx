@@ -44,6 +44,7 @@ export default function Phasers() {
         const at = opts.at ?? null;
         arm.target = at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null };
         arm.cast = null; // look again, at once
+        arm.hitAt = null;
         const drawn = arm.armed === false;
         arm.armed = true;
         state.sync();
@@ -82,6 +83,7 @@ export default function Phasers() {
             shields: [],
             firedSecs: null,
             struck: null,
+            hitAt: null,
           };
           state.arms.set(npcKey, arm);
         }
@@ -146,7 +148,7 @@ export default function Phasers() {
           state.wield(npc, arm);
           const { beam } = arm;
           advanceBeam(beam, step, w.n, instant);
-          if (beam.locked.presence === 0) arm.struck = null;
+          if (beam.locked.presence === 0) Object.assign(arm, { struck: null, hitAt: null });
           else if (beam.locked.presence === 1 && beam.to !== arm.struck) state.strike(npc, arm);
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden && state.holds(srcKey) === false) {
@@ -177,7 +179,7 @@ export default function Phasers() {
         const along = tmpAlong.set(0, -1, 0).transformDirection(hand.matrixWorld); // the forearm, towards the hand
         /** Their phaser's own, looked up once: the frequencies it knows, and those it is dead to */
         const item = w.shields?.phaserOf(npc.key)?.meta;
-        const part = dst === undefined ? null : bodyPartPoint(dst, beam.to?.part ?? null, tmpPart);
+        const part = dst === undefined ? null : (arm.hitAt ?? bodyPartPoint(dst, beam.to?.part ?? null, tmpPart));
         /** Where a shield between them stops it: of those their last cast passed */
         const stopped =
           part === null
@@ -219,6 +221,9 @@ export default function Phasers() {
         const freqs = w.shields?.phaserOf(npc.key)?.meta?.freqs;
         if (w.shields?.stop(arm.shields, from, from, part, freqs) != null) return;
         w.npc.hit(dst.key, to.part);
+        // the burst ends on the hit, where it landed, rather than following them as they writhe
+        arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(part);
+        arm.target = arm.firedSecs = null;
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
         if (dst.anim.hurt !== null && theirs !== undefined) Object.assign(theirs, { armed: false, target: null });
@@ -468,6 +473,8 @@ type ArmEntry = {
   shields: string[];
   /** The lock already struck with, so one shot hits once */
   struck: null | BeamTarget;
+  /** Where the lock hit, whilst its beam fades: held there */
+  hitAt: null | THREE.Vector3;
 };
 
 /** Is a crowd neighbour in front of `npc`, within 45° of their facing? */
