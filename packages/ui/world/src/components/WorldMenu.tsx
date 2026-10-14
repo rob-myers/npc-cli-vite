@@ -6,6 +6,7 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   BrainIcon,
+  CaretLeftIcon,
   CaretRightIcon,
   CrosshairSimpleIcon,
   EyeIcon,
@@ -62,6 +63,7 @@ export function WorldMenu() {
       resizing: false,
       skinDebugOpen: false,
       stateSelectOpen: false,
+      themeEditorOpen: false,
       themeEditorRef: null as any,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
@@ -139,8 +141,15 @@ export function WorldMenu() {
         state.menuHeight = state.getClampedMenuHeight(state.menuHeight);
         state.update();
       },
-      onResizeMouseDown(e) {
+      setMenuHeight(startHeight, dy, startMenuY) {
+        // from the top the column moves, and the height takes up what it moved
+        if (startMenuY !== undefined) dy = startMenuY - state.getClampedY(startMenuY + dy);
+        state.menuHeight = state.getClampedMenuHeight(startHeight + dy);
+        if (startMenuY !== undefined) y.set(startMenuY + startHeight - state.menuHeight);
+      },
+      onResizeMouseDown(e, top) {
         e.stopPropagation();
+        const startMenuY = top === true ? y.get() : undefined;
         const startX = e.clientX;
         const startY = e.clientY;
         const startWidth = state.menuWidth;
@@ -149,7 +158,7 @@ export function WorldMenu() {
         const onMove = (ev: MouseEvent) => {
           // popup opens rightward/downward from the trigger, so dragging the corner out grows it
           state.menuWidth = state.getClampedMenuWidth(startWidth + (ev.clientX - startX));
-          state.menuHeight = state.getClampedMenuHeight(startHeight + (ev.clientY - startY));
+          state.setMenuHeight(startHeight, ev.clientY - startY, startMenuY);
           state.update();
         };
         const onUp = () => {
@@ -161,8 +170,9 @@ export function WorldMenu() {
         window.addEventListener("mousemove", onMove);
         window.addEventListener("mouseup", onUp);
       },
-      onResizeTouchStart(e) {
+      onResizeTouchStart(e, top) {
         e.stopPropagation();
+        const startMenuY = top === true ? y.get() : undefined;
         const t = e.touches[0];
         if (!t) return;
         const startX = t.clientX;
@@ -174,7 +184,7 @@ export function WorldMenu() {
           const t2 = ev.touches[0];
           if (t2) {
             state.menuWidth = state.getClampedMenuWidth(startWidth + (t2.clientX - startX));
-            state.menuHeight = state.getClampedMenuHeight(startHeight + (t2.clientY - startY));
+            state.setMenuHeight(startHeight, t2.clientY - startY, startMenuY);
             state.update();
           }
         };
@@ -191,7 +201,7 @@ export function WorldMenu() {
         store.patch({ menuY: state.getClampedY(y.get()) });
       },
       persistMenuSize() {
-        store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight });
+        store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight, menuY: state.getClampedY(y.get()) });
       },
       async saveThemeDev() {
         const theme = w.assets?.theme?.[w.themeKey];
@@ -497,6 +507,22 @@ export function WorldMenu() {
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>
                 player:
               </div>
+              <button
+                type="button"
+                title="previous player"
+                className={cn(
+                  "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
+                  touch && "px-3",
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (npcKeys.length === 0) return;
+                  const currentIdx = npcKeys.indexOf(w.player?.key ?? "");
+                  w.player.setKey(npcKeys[(currentIdx - 1 + npcKeys.length) % npcKeys.length]);
+                }}
+              >
+                <CaretLeftIcon className="size-3" />
+              </button>
               <MenuSelect
                 label={truncateLabel(w.player?.key ?? "no npc", 10)}
                 value={w.player?.key ?? ""}
@@ -506,7 +532,7 @@ export function WorldMenu() {
               />
               <button
                 type="button"
-                title="cycle player"
+                title="next player"
                 className={cn(
                   "grid place-items-center px-1.5 text-neutral-300 cursor-pointer hover:text-white",
                   touch && "px-3",
@@ -565,28 +591,40 @@ export function WorldMenu() {
 
             {import.meta.env.DEV && (
               <>
-                <div className={sectionHeaderClass(touch)}>edit theme</div>
-                <div className="p-2 pt-0 flex flex-col gap-1">
-                  <textarea
-                    key={w.themeKey}
-                    ref={state.ref("themeEditorRef")}
-                    className="w-full h-32 select-text bg-neutral-900 text-neutral-200 text-[10px] font-mono p-1 rounded border border-neutral-600 resize-y"
-                    defaultValue={JSON.stringify(w.getTheme(), null, 2)}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => {
-                      const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
-                      if (parsed.success && w.assets) {
-                        (w.assets.theme ??= {})[w.themeKey] = parsed.data;
-                        w.e.onChangeTheme();
-                        state.saveThemeDevDebounced();
-                      }
-                    }}
-                    onBlur={() => {
-                      state.saveThemeDev();
-                    }}
-                  />
-                </div>
+                <button
+                  type="button"
+                  className={cn(sectionHeaderClass(touch), "flex w-full cursor-pointer items-center gap-1 text-left")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    state.set({ themeEditorOpen: !state.themeEditorOpen });
+                  }}
+                >
+                  <CaretRightIcon className={cn("size-3", state.themeEditorOpen && "rotate-90")} />
+                  edit theme
+                </button>
+                {state.themeEditorOpen && (
+                  <div className="p-2 pt-0 flex flex-col gap-1">
+                    <textarea
+                      key={w.themeKey}
+                      ref={state.ref("themeEditorRef")}
+                      className="w-full h-32 select-text bg-neutral-900 text-neutral-200 text-[10px] font-mono p-1 rounded border border-neutral-600 resize-y"
+                      defaultValue={JSON.stringify(w.getTheme(), null, 2)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => {
+                        const parsed = WorldThemeSchema.safeParse(JSON.parse(state.themeEditorRef?.value ?? ""));
+                        if (parsed.success && w.assets) {
+                          (w.assets.theme ??= {})[w.themeKey] = parsed.data;
+                          w.e.onChangeTheme();
+                          state.saveThemeDevDebounced();
+                        }
+                      }}
+                      onBlur={() => {
+                        state.saveThemeDev();
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div className={sectionHeaderClass(touch)}>dev scripts</div>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] px-2">
@@ -908,6 +946,19 @@ function MenuShell({
                 )}
               />
             </div>
+            {/* and from the top-right, which moves the column with it */}
+            <div
+              className="absolute top-0 right-0 size-5 touch-none cursor-nesw-resize"
+              onMouseDown={(e) => state.onResizeMouseDown(e, true)}
+              onTouchStart={(e) => state.onResizeTouchStart(e, true)}
+            >
+              <div
+                className={cn(
+                  "absolute top-1 right-1 size-2.5 border-t-2 border-r-2 border-neutral-600 rounded-tr",
+                  state.resizing && "border-neutral-400",
+                )}
+              />
+            </div>
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
@@ -1108,6 +1159,7 @@ export type State = {
   /** The column was just dragged, so the button released on swallows its click */
   dragged: boolean;
   menuOpen: boolean;
+  themeEditorOpen: boolean;
   themeEditorRef: HTMLTextAreaElement;
   toastTs: Record<string, number>;
   y: number;
@@ -1139,8 +1191,10 @@ export type State = {
   getMaxMenuHeight(): number;
   getClampedMenuHeight(height: number): number;
   onResize(): void;
-  onResizeMouseDown(e: React.MouseEvent): void;
-  onResizeTouchStart(e: React.TouchEvent): void;
+  /** `startMenuY` is the column's `y` as a resize from the TOP began */
+  setMenuHeight(startHeight: number, dy: number, startMenuY?: number): void;
+  onResizeMouseDown(e: React.MouseEvent, top?: boolean): void;
+  onResizeTouchStart(e: React.TouchEvent, top?: boolean): void;
   persistY(): void;
   persistMenuSize(): void;
   saveThemeDev(): Promise<void>;

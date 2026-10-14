@@ -4,9 +4,10 @@ import { cn, useStateRef } from "@npc-cli/util";
 import {
   LockIcon,
   LockOpenIcon,
-  PersonSimpleCircleIcon,
   PersonSimpleRunIcon,
   PersonSimpleWalkIcon,
+  TriangleIcon,
+  UserFocusIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import "./world-hud.css";
@@ -137,7 +138,7 @@ export default function WorldHud() {
   const keyCount = heldDoors.length;
   const keyDoor = state.getKeyDoor();
   const KeyLock = keyDoor?.locked === true ? LockIcon : LockOpenIcon;
-  const psiOn = w.psi?.on === true;
+  const psiOn = w.e.isPsiRaised();
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
   const dead = w.shields?.isDead(playerKey) === true;
@@ -325,15 +326,22 @@ function PlayerButtons() {
   const press = useRef({ timer: 0, long: false });
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
+  const compassDial = w.view?.compassDial === true;
+  const compassLetter = compassLetters[w.view?.compassPoint ?? 0];
+  /** Radians the view is turned off `w`'s axis, which the needle leans back by */
+  const compassSkew = compassDial ? (w.view?.compassSkew ?? 0) : 0;
+  /** The same off the axis NEAREST up the screen, where `w` heads once the move keys are let go */
+  const nextSkew = compassSkew - Math.round(compassSkew / (Math.PI / 2)) * (Math.PI / 2);
   const big = w.touchDevice;
-  const hurry = w.n?.[w.player.key]?.anim.hurry === true;
+  const hurry = w.player.get()?.anim.hurry === true;
   const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
   const buttonClass = cn(
     "relative grid shrink-0 cursor-pointer touch-none place-items-center overflow-hidden rounded-md hover:ring-1 hover:ring-yellow-200/25",
     big ? "size-12" : "size-9",
   );
-  const buttonIcon = (lit: boolean) =>
-    cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", lit ? "text-amber-300" : "text-neutral-200");
+  /** White whilst what an icon stands for is on, else grey */
+  const iconColor = (on: boolean) => (on ? "text-white" : "text-neutral-500");
+  const buttonIcon = (on: boolean) => cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", iconColor(on));
 
   const endPress = (cancelled: boolean) => {
     window.clearTimeout(press.current.timer);
@@ -350,16 +358,17 @@ function PlayerButtons() {
       {w.client !== true && (
         <div
           className={buttonClass}
-          title={`${hurry ? "run" : "walk"}: f`}
+          title={hurry ? "run" : "walk"}
           onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
         >
-          <GaitIcon className={cn(buttonIcon(hurry), "size-5")} weight="bold" />
+          {/* always white: the icon itself changes with the gait */}
+          <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
         </div>
       )}
-      {/* a press looks at the player, or stops a follow (amber); a long press toggles it — as `c` */}
+      {/* a press looks at the player, or stops a follow (white); a long press toggles it — as `f` */}
       <div
         className={buttonClass}
-        title={`follow ${follow ? "on" : "off"}: c`}
+        title={`follow ${follow ? "on" : "off"}: f`}
         onPointerDown={() => {
           press.current.long = false;
           press.current.timer = window.setTimeout(() => {
@@ -388,13 +397,39 @@ function PlayerButtons() {
           // keyed by the count, so each toggle replays the fade
           <motion.div
             key={followFlash}
-            className={cn("pointer-events-none absolute inset-0", follow ? "bg-amber-300" : "bg-neutral-400")}
+            className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
             initial={{ opacity: 0.55 }}
             animate={{ opacity: 0 }}
             transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
           />
         )}
-        <PersonSimpleCircleIcon className={cn(buttonIcon(follow), "size-6")} />
+        <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
+      </div>
+      {/* whilst on (white) `wasd` heads along the world's axes, `w` to the point named — as `c` */}
+      <div className="relative flex shrink-0">
+        <div
+          className={buttonClass}
+          title={compassDial ? `compass on: c — w heads ${compassLetter}` : "compass off: c"}
+          onClick={() => w.hud?.dragged !== true && w.view.setCompassDial(!compassDial)}
+        >
+          {/* where `w` heads */}
+          <span className={cn(buttonIcon(compassDial), "font-extralight font-sans text-lg leading-none")}>
+            {compassLetter}
+          </span>
+        </div>
+        {/* a compass needle's tip out of the button's top, leaning to where `w` heads on screen */}
+        <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${compassSkew}rad)` }}>
+          <TriangleIcon
+            className={cn("absolute -top-1 left-1/2 size-2 -translate-x-1/2", iconColor(compassDial))}
+            weight="fill"
+          />
+        </div>
+        {/* a second, hollow, once the view has turned past a diagonal with a move key held */}
+        {nextSkew !== compassSkew && (
+          <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${nextSkew}rad)` }}>
+            <TriangleIcon className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 text-neutral-400" weight="bold" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -423,7 +458,7 @@ const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
   psi: 0.7,
   phaser: 0.7,
   keychain: 0.7,
-  book: 0.7,
+  book: 0.6,
   box: 0.7,
   keycard: 0.58,
 };
@@ -648,6 +683,8 @@ const rerenderOn = new Set<JshCli.Event["key"]>([
 /** The bar's height, and how near the World's top it may be dragged */
 const hudBarHeight = 110;
 const hudDragTop = 8;
+/** Compass points by `w.view.compassPoint` */
+const compassLetters = ["N", "W", "S", "E"];
 /** How long a touch is held before a slot's menu opens, or the look button before it toggles the follow */
 const longPressMs = 500;
 /** How long the look button's flash takes to fade, when follow is turned on or off */

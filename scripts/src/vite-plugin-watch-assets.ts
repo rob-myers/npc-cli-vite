@@ -126,9 +126,9 @@ export function watchAssetsPlugin(): Plugin {
         if (req.url === "/api/gen-assets-json" && req.method === "POST") {
           return handleGenAssetsJson(res);
         }
-        const skinSheetMatch = req.url?.match(/^\/api\/skin-sheet\/(\d+)$/);
+        const skinSheetMatch = req.url?.match(/^\/api\/(skin|skin-slices)-sheet\/(\d+)$/);
         if (skinSheetMatch && req.method === "POST") {
-          return handleSkinSheet(req, res, Number(skinSheetMatch[1]));
+          return handleSkinSheet(req, res, skinSheetMatch[1], Number(skinSheetMatch[2]));
         }
         const themeMatch = req.url?.match(/^\/api\/assets\/theme\/(.+)$/);
         if (themeMatch && req.method === "POST") {
@@ -142,17 +142,17 @@ export function watchAssetsPlugin(): Plugin {
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-/** A skin sheet drawn by a DEV World — see `docs/skins.md` */
-async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, sheetId: number) {
+/** A `skin` or `skin-slices` sheet drawn by a DEV World — see `docs/skins.md` */
+async function handleSkinSheet(req: IncomingMessage, res: ServerResponse, name: string, sheetId: number) {
   try {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
     const png = await squeezePng(Buffer.concat(chunks));
-    const filePath = path.join(PUBLIC_DIR, "sheet", `skin.${sheetId}.png`);
+    const filePath = path.join(PUBLIC_DIR, "sheet", `${name}.${sheetId}.png`);
     // every World sends it on every load: written only if its pixels changed
     if (!fs.existsSync(filePath) || !(await samePixels(png, fs.readFileSync(filePath)))) {
       fs.writeFileSync(filePath, png);
-      console.log(`[skin-sheet] redrew skin.${sheetId}.png`);
+      console.log(`[skin-sheet] redrew ${name}.${sheetId}.png`);
     }
     res.writeHead(200).end();
   } catch (err) {

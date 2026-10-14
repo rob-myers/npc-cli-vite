@@ -52,7 +52,8 @@ export default function Phasers() {
       disarm(...npcKeys) {
         for (const npcKey of npcKeys) {
           const arm = state.arms.get(npcKey);
-          if (arm !== undefined) arm.armed = false;
+          // whom they were on is forgotten: raised again, it is on nobody
+          if (arm !== undefined) Object.assign(arm, { armed: false, target: null });
         }
         state.sync();
       },
@@ -126,11 +127,7 @@ export default function Phasers() {
       },
       toggle(npcKey) {
         if (state.isArmed(npcKey)) state.disarm(npcKey);
-        else {
-          // back onto whom they were locked on when lowered, if still in hand since
-          const { npcKey: at, part } = state.arms.get(npcKey)?.target ?? {};
-          state.arm(npcKey, { at, part });
-        }
+        else state.arm(npcKey);
         return state.isArmed(npcKey);
       },
       onTick(instant = false) {
@@ -224,7 +221,7 @@ export default function Phasers() {
         w.npc.hit(dst.key, to.part);
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
-        if (dst.anim.hurt !== null && theirs !== undefined) theirs.armed = false;
+        if (dst.anim.hurt !== null && theirs !== undefined) Object.assign(theirs, { armed: false, target: null });
         w.hud?.update();
       },
       sync() {

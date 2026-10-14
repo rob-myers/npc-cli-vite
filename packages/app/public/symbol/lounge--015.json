@@ -151,10 +151,10 @@
           "name": "obstacle table surface y=0.7 h=0.7",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 62, "f": 59.2},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 59.2},
           "type": "rect",
-          "baseRect": {"width": 22.8, "height": 58.8},
-          "cssTransform": "matrix(1, 0, 0, 1, 62, 59.2)"
+          "baseRect": {"width": 27, "height": 62.8},
+          "cssTransform": "matrix(1, 0, 0, 1, 58, 59.2)"
         }
       ]
     },
@@ -252,7 +252,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "a0962b62-a9fe-4d53-afa1-9c6c5061335f",
@@ -299,10 +299,10 @@
           "name": "wall",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 57.5, "f": -1.5},
           "type": "rect",
-          "baseRect": {"width": 4, "height": 120},
-          "cssTransform": "matrix(1, 0, 0, 1, 58, 0)"
+          "baseRect": {"width": 4.5, "height": 123},
+          "cssTransform": "matrix(1, 0, 0, 1, 57.5, -1.5)"
         },
         {
           "id": "1cac8e05-27d5-456f-b79b-1ce4a975e5e9",

@@ -6,14 +6,14 @@ export type HelpStep = "intro" | AmbienceKey;
 export const helpIntro = {
   title: "The desk",
   text: [
-    "Three channels feed the master: a synthesised engine, air handling made of filtered noise, and a sampled choir.",
+    "Four channels feed the master: a synthesised engine, air handling made of filtered noise, a sampled choir, and sampled breathing.",
     "Each strip has a fader for its level, with a meter beside it, and knobs for its character.",
     "Drag a knob up or down to turn it, or focus it and use the arrow keys, with shift for bigger steps. A double click restores its default.",
     "Every control still works during this tour, so press play and listen as you go.",
   ],
 };
 
-/** What each control does. `live` ones are heard at once, the rest from the choir's next chord */
+/** What each control does. `live` ones are heard at once, the rest from the next chord or breath */
 export const help: Record<AmbienceKey, { title: string; live: boolean; text: string[] }> = {
   drone: {
     title: "Engine level",
@@ -151,12 +151,46 @@ export const help: Record<AmbienceKey, { title: string; live: boolean; text: str
       "Short, and the joins pulse. Long, and they are smooth. It is capped at just under half the grain.",
     ],
   },
+  breath: {
+    title: "Breath level",
+    live: true,
+    text: ["How loud the breathing is: one recorded breath in and one out, each hurried or slowed to fit its time."],
+  },
+  breathCutoff: {
+    title: "Breath tone",
+    live: true,
+    text: ["A low-pass filter on the breathing.", "Turned down it is muffled, as if heard from inside the chest."],
+  },
+  breathEffort: {
+    title: "Effort",
+    live: false,
+    text: [
+      "How hard they breathe. It picks which recorded breath out is used, and how loud both halves are.",
+      "Low is long and soft. High is a short hard puff, as after a run.",
+    ],
+  },
+  breathRate: {
+    title: "Breath rate",
+    live: false,
+    text: [
+      "Breaths a minute.",
+      "Fourteen is someone at rest. Six is deep sleep, thirty is someone who has been running.",
+    ],
+  },
+  breathInhale: {
+    title: "Inhale",
+    live: false,
+    text: [
+      "The share of each breath spent breathing in.",
+      "The breath out fills most of what is left, and the rest is the pause before the next.",
+    ],
+  },
   reverb: {
     title: "Reverb",
     live: true,
     text: [
       "How much of the hall comes back: a dark one, six seconds long.",
-      "The choir is sent to it whole, the engine and the air only a little. At zero everything is close and dry.",
+      "The choir is sent to it whole, the engine, the air and the breath only a little. At zero everything is close and dry.",
     ],
   },
   master: {

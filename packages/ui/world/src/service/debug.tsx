@@ -5,6 +5,7 @@ import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
 import { XIcon } from "@phosphor-icons/react";
 import { useContext, useMemo, useState } from "react";
 import { WorldContext } from "../components/world-context";
+import { eyeFrames, skinSliceDims } from "../const.both";
 import { gmFloorExtraScale, roomHitTextureScaleDown, worldToSguScale } from "../const.env";
 import { getWorldStore } from "./storage";
 
@@ -404,6 +405,27 @@ export function GeomorphGraphsModal({ open, onOpenChange, container }: DebugModa
   );
 }
 
+/** A skin's face front with one of its slices over it — see `docs/skin-slices.md` */
+function readFaceWithSlice(w: import("../components/World").State, skinIndex: number, sliceId: number) {
+  const { cell, slice } = skinSliceDims;
+  const perRow = cell / slice;
+  const out = new ImageData(slice, slice);
+  const copy = (tex: import("./tex-array").TexArray, x: number, y: number, over: boolean) => {
+    const data = tex.tex.image.data as Uint8Array;
+    const { width, height } = tex.opts;
+    for (let row = 0; row < slice; row++) {
+      const from = (skinIndex * height + y + row) * width * 4 + x * 4;
+      for (let i = 0; i < slice * 4; i += 4) {
+        if (over === true && data[from + i + 3] === 0) continue;
+        out.data.set(data.subarray(from + i, from + i + 4), row * slice * 4 + i);
+      }
+    }
+  };
+  copy(w.texSkin, slice, slice, false); // the face front is a slice in from the skin's corner
+  copy(w.texSkinSlices, (sliceId % perRow) * slice, Math.floor(sliceId / perRow) * slice, true);
+  return out;
+}
+
 export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
   const { entries, manifest } = w.npc.skin;
@@ -445,6 +467,22 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
                     ct.putImageData(imageData, 0, 0);
                   }}
                 />
+                {manifest.byKey[entry.key]?.meta.eyes !== undefined && (
+                  <div className="flex gap-1">
+                    {eyeFrames.map((frame, frameId) => (
+                      <div key={frame} className="flex flex-col items-center text-[10px] text-slate-400 font-mono">
+                        <canvas
+                          width={skinSliceDims.slice}
+                          height={skinSliceDims.slice}
+                          className="size-9 border border-slate-700"
+                          style={{ imageRendering: "pixelated" }}
+                          ref={(el) => el?.getContext("2d")?.putImageData(readFaceWithSlice(w, i, frameId), 0, 0)}
+                        />
+                        {frame}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {(() => {
                   const skinEntry = manifest.byKey[entry.key];
                   return skinEntry ? (
@@ -460,7 +498,7 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
                       <div className="max-w-64 flex flex-wrap justify-center gap-2 mt-1">
                         {Object.entries(skinEntry.meta).map(([key, value]) => (
                           <span key={key} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
-                            {key}={value === true ? "true" : value}
+                            {key}={typeof value === "object" ? JSON.stringify(value) : String(value)}
                           </span>
                         ))}
                       </div>

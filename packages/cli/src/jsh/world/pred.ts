@@ -152,10 +152,10 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   return changed;
 }
 
-/** Whether `kamma` takes a press on an npc: as the phaser's target, or for psi to read */
+/** Whether `inventory` takes a press on an npc: as the phaser's target, or for psi to read */
 function isTargeting(w: JshCli.WorldState) {
-  if (w.e.keyedListener.has("kamma") === false) return false;
-  return w.phasers?.isArmed(w.player.key) === true || w.psi?.on === true;
+  if (w.e.keyedListener.has("inventory") === false) return false;
+  return w.phasers?.isArmed(w.player.key) === true || w.e.isPsiRaised();
 }
 
 /** In or out again, as a shift-click does */
@@ -168,9 +168,9 @@ function togglePicked(w: JshCli.WorldState, npcKey: string) {
 }
 
 /**
- * `preds` is idempotent and must be invoked to commence tracking.
+ * `predicates` is idempotent and must be invoked to commence tracking.
  */
-export function preds(ct: JshCli.RunArg) {
+export function predicates(ct: JshCli.RunArg) {
   const p = restorePred(ct.w.mapKey);
   p.player = ct.w.player.key;
   visualisePredicates(ct.w);

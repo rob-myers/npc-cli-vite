@@ -125,7 +125,7 @@ export const talkNeeds: Record<TalkNeed, { label: string; met(w: WorldState, pla
   },
   psi: {
     label: "psi raised",
-    met: (w) => w.psi?.on === true,
+    met: (w) => w.e.isPsiRaised(),
   },
 };
 

@@ -124,8 +124,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
    * would lock vertical and do nothing at all — see `WorldView`'s `onCameraFrame`
    */
   lockRotateAxis = true;
-  /** Whether ctrl or cmd was held at the latest mouse pointer event — see `WorldView`'s compass dial */
-  ctrlHeld = false;
   /** `(clientX, clientY)` of first pointerdown */
   pointerFirstDown = { x: 0, y: 0 };
   /** `(clientX, clientY)` of last pointerup */
@@ -696,7 +694,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   onPointerDown = (event: PointerEvent) => {
     if (this.enabled === false) return;
-    this.ctrlHeld = event.ctrlKey || event.metaKey;
 
     if (this.pointers.length === 0) {
       this.domElement?.ownerDocument.addEventListener("pointermove", this.onPointerMove);
@@ -720,7 +717,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
 
   onPointerMove = (event: PointerEvent) => {
     if (this.enabled === false) return;
-    this.ctrlHeld = event.ctrlKey || event.metaKey;
 
     if (event.pointerType === "touch") {
       this.onTouchMove(event);
@@ -733,7 +729,6 @@ export class CameraControls extends EventDispatcher<ControlsEventMap> {
     if (this.enabled === false || this.pointerIndex(event) === -1) {
       return; // never went down on us — see `pointerIndex`
     }
-    this.ctrlHeld = event.ctrlKey || event.metaKey;
 
     this.removePointer(event);
 

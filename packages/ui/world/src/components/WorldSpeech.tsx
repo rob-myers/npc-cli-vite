@@ -4,10 +4,11 @@ import { CaretDownIcon, CaretRightIcon, ChatCircleTextIcon, TrashIcon, XIcon } f
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
 import { useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
+import { psiKhandhas } from "../const.npc";
 
 import { getWorldStore } from "../service/storage";
 import { type Conversation, type ConversationChoice, talkNeeds, threadKeyOf } from "../service/talk";
-import type { ThoughtTag } from "../service/thoughts";
+import { demoThoughts, type ThoughtTag } from "../service/thoughts";
 import { NetBadge, NetMenu } from "./NetMenu";
 import { type TalkLine, type TalkPip, TalkThread } from "./TalkThread";
 import { WorldContext } from "./world-context";
@@ -29,6 +30,7 @@ export function WorldSpeech() {
       menuItems: [],
       minY: 40,
       nextId: 0,
+      thoughtAt: 0,
       unread: false,
       y: saved.speechY,
       historyHeight: saved.speechHeight ?? (big ? 384 : 288),
@@ -241,6 +243,11 @@ export function WorldSpeech() {
         w.bubble?.say(npcKey, words, { secs, hold: opts?.hold });
 
         w.events.next({ key: "speech", npcKey, words, epochMs, to });
+      },
+      readThought(npcKey) {
+        if (w.n?.[npcKey] === undefined) return;
+        const { khandha, text } = demoThoughts[state.thoughtAt++ % demoThoughts.length];
+        state.think(npcKey, text, { khandha, color: psiKhandhas[khandha].color });
       },
       think(npcKey, words, tag) {
         const playerKey = w.player?.key;
@@ -698,7 +705,11 @@ export type State = {
   persistHistorySize(): void;
   /** Into the history, and over their head for `secs` — or, on `hold`, until someone it addresses answers */
   say(npcKey: string, words: string, secs?: number, opts?: { to?: string[]; nodeId?: string; hold?: boolean }): void;
-  /** Into the history as a thought of theirs, and over their head — see `Psi.readThoughts` */
+  /** Which of `demoThoughts` is next */
+  thoughtAt: number;
+  /** Reads their next thought, as psi does — see `docs/psi.md` */
+  readThought(npcKey: string): void;
+  /** Into the history as a thought of theirs, and over their head */
   think(npcKey: string, words: string, tag: ThoughtTag): void;
   /** The npc opens `conv` with the player, in the thread of the two. False without either */
   startTalk(conv: Conversation, npcKey: string): boolean;

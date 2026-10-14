@@ -40,12 +40,13 @@ import {
   texture as tslTexture,
   uniform,
   uv,
+  vec2,
   vec3,
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
-import { npcDims } from "../const.both";
+import { npcDims, skinSliceDims } from "../const.both";
 
 import {
   agentConfig,
@@ -54,6 +55,7 @@ import {
   crowdConfig,
   defaultBreathTune,
   defaultIdleAnimationClipKey,
+  eyesConfig,
   fromAnimationClipKey,
   npcConfig,
   npcMaterialConfig,
@@ -70,7 +72,7 @@ import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
-import { loadSkinSheets } from "../service/skin-sheets";
+import { loadSkinSliceSheets, loadSkinSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
 import { selectAs } from "../service/tsl";
 import type { PhysicsBijection } from "../worker/physics.store";
@@ -94,6 +96,7 @@ export default function NPCs() {
       ambientNode: uniform(w.getTheme().npcs.ambient),
       gltf: null,
       gltfHash: 0,
+      restored: false,
       skin: {
         manifest: { byKey: {} } as AssetsSkinManifestType,
         entries: [] as SkinSheetEntry[],
@@ -148,6 +151,7 @@ export default function NPCs() {
           faceShade,
         } = npcMaterialConfig;
         const skinIndexUniform = uniform(skinIndex);
+        const eyesUniform = uniform(0);
         // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
         const pickIdUniform = uniform(pickId);
         const colorScale = uniform(1);
@@ -182,6 +186,22 @@ export default function NPCs() {
 
         // Color node
         const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
+
+        // Their eyes: one slice of their skin's, over the face — see `docs/skin-slices.md`
+        const { face } = eyesConfig;
+        const faceUv = uv().sub(vec2(face.x, face.y)).div(face.size);
+        const inFace = step(0, faceUv.x)
+          .mul(step(faceUv.x, float(1)))
+          .mul(step(0, faceUv.y))
+          .mul(step(faceUv.y, float(1)));
+        const slicesPerRow = skinSliceDims.cell / skinSliceDims.slice;
+        const eyes = tslTexture(
+          w.texSkinSlices.tex,
+          vec2(eyesUniform.mod(slicesPerRow), eyesUniform.div(slicesPerRow).floor())
+            .add(faceUv.clamp(0, 0.999))
+            .div(slicesPerRow),
+        ).depth(skinIndexUniform);
+        const skinRgb = mix(skinTex.rgb, eyes.rgb, eyes.a.mul(inFace));
 
         // An npc keeps its height whilst a map changes over, darkening and fading out together
         // as the world folds around it — see `setWorldFold`
@@ -219,7 +239,7 @@ export default function NPCs() {
             vec3(0).mul(positionLocal.y),
             // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
             // skin happened to be — a dark uniform takes a rim as readily as a pale one
-            skinTex.rgb.mul(exposure).add(vec3(...rimConfig.color).mul(rim)),
+            skinRgb.mul(exposure).add(vec3(...rimConfig.color).mul(rim)),
             colorScale,
           ),
           skinTex.a.mul(fold),
@@ -298,6 +318,7 @@ export default function NPCs() {
           pickIdUniform,
           roomSlot,
           skinIndexUniform,
+          eyesUniform,
           material,
         };
       },
@@ -712,12 +733,13 @@ export default function NPCs() {
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
         mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
         mat.labelRectUniform.value.copy(npc.labelRectUniform.value);
+        mat.eyesUniform.value = npc.eyesUniform.value;
         Object.assign(npc, mat);
         npc.epochMs = Date.now(); // invalidate React.Memo
       },
       async spawn({ npcKey, at, as: skinPrefix, angle, facing }) {
-        // none given leaves a respawn in the skin they have: a first spawn takes the default in `rawSpawn`
-        const as = state.findSkinKey(skinPrefix);
+        // NOT resolved when none is given: `findSkinKey` would give the default, and a respawn re-dress them in it
+        const as = skinPrefix === undefined ? undefined : state.findSkinKey(skinPrefix);
         if (typeof npcKey !== "string" || !npcSpawnConfig.keyPattern.test(npcKey)) {
           throw Error(`opts.npcKey must match: ${npcSpawnConfig.keyPattern}`);
         }
@@ -745,13 +767,12 @@ export default function NPCs() {
         }
 
         const prevIdleClip = w.n[npcKey]?.anim.idleClip;
-        const playerExisted = w.player.key in w.n;
+        const playerExisted = w.player.exists();
 
         const npc = state.rawSpawn({ npcKey, doResult, groundPoint: groundAt, angle, as, closePolyResult, facing });
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
-        w.psi?.onTick();
 
         if (npc.spawns++ === 0) {
           await new Promise<string>((resolve) => {
@@ -847,7 +868,7 @@ export default function NPCs() {
   const queryData =
     useQuery({
       // the shareable half — gltf, sheet images, manifest — one query for every world. The
-      // per-world half (drawing skins into `w.texSkin`) lives in the memo below.
+      // per-world half (drawing skins into `w.texSkin`, slices into `w.texSkinSlices`) lives in the memo below.
       // The epoch changes the key on the post-HMR re-render, so the refetch runs the NEW queryFn
       queryKey: ["skins-and-gltf", import.meta.hot?.data.__NPCS_HMR_EPOCH__ ?? 0],
       queryFn: async () => {
@@ -858,7 +879,8 @@ export default function NPCs() {
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
         const sheetImages = await loadSkinSheets(w.sheets, skinManifest, cacheBust);
-        return { gltf, sheetImages, skinManifest };
+        const sliceImages = await loadSkinSliceSheets(w.sheets, skinManifest, cacheBust, sheetImages);
+        return { gltf, sheetImages, sliceImages, skinManifest };
       },
       enabled: !!w.sheets,
       gcTime: 0,
@@ -874,6 +896,21 @@ export default function NPCs() {
       ct.clearRect(0, 0, tw, th);
       ct.drawImage(queryData.sheetImages[sheetId], rect.x, rect.y, rect.width, rect.height, 0, 0, tw, th);
       w.texSkin.updateIndex(i);
+    });
+
+    // ...and each skin's slices into its layer of the slices' — see `docs/skin-slices.md`
+    const { cell, maxSkins } = skinSliceDims;
+    const sliceCt = w.texSkinSlices.ct;
+    sliceCt.imageSmoothingEnabled = false;
+    Object.values(w.sheets.skin).forEach(({ key }, i) => {
+      if (i >= maxSkins) return console.warn(`${key}: no slices, beyond ${maxSkins} skins`);
+      const entry = w.sheets.skinSlices[key];
+      sliceCt.clearRect(0, 0, cell, cell);
+      if (entry !== undefined) {
+        const { x, y, width, height } = entry.rect;
+        sliceCt.drawImage(queryData.sliceImages[entry.sheetId], x, y, width, height, 0, 0, cell, cell);
+      }
+      w.texSkinSlices.updateIndex(i);
     });
   }, [queryData]);
 
@@ -943,6 +980,8 @@ export type State = {
   gltf: GLTF | null;
   /** DEV: hash of the gltf the npc meshes were built from — see `devHotReload` */
   gltfHash: number;
+  /** Whether this map's saved npcs are back. Until then a save would overwrite them with fewer — see `persistNpcs` */
+  restored: boolean;
   skin: {
     manifest: AssetsSkinManifestType;
     entries: SkinSheetEntry[];
@@ -992,6 +1031,7 @@ export type State = {
     | "pickIdUniform"
     | "roomSlot"
     | "skinIndexUniform"
+    | "eyesUniform"
     | "material"
   >;
   /**

@@ -1,7 +1,3 @@
-karma () {
-  kamma
-}
-
 lastPicked () {
   /shared/pred/lastPicked
 }

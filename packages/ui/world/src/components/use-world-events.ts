@@ -23,6 +23,7 @@ import { MODE_FADE_SECS } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
+import { wallBandBrightness } from "../service/wall-band";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -97,7 +98,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (name === "psi") {
           if (had.psi !== true) return false;
           delete had.psi;
-          if (npcKey === w.player.key) w.psi?.setOn(false);
+          state.setPsi(false, npcKey);
           state.onCarriedChange(npcKey);
           return true;
         }
@@ -361,6 +362,33 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         state.handling.add(npcKey);
         void run().finally(() => state.handling.delete(npcKey));
       },
+      setPsi(active, ...npcKeys) {
+        for (const npcKey of npcKeys) {
+          const anim = w.n?.[npcKey]?.anim;
+          if (anim === undefined || active === state.isPsiRaised(npcKey)) continue;
+          anim.setBreathing(active);
+          anim.setUpper(active ? "psi" : null, { side: "left", past: true, onHead: true });
+        }
+        w.r3f?.invalidate();
+        w.hud?.update();
+      },
+      isPsiRaised(npcKey = w.player.key) {
+        const arm = w.n?.[npcKey]?.anim.upperLeft;
+        return arm?.key === "psi" && arm.target === 1;
+      },
+      getNpcsInReach(npcKey, doors = 1) {
+        const at = w.npc.npcToRoom.get(npcKey);
+        if (at === undefined || w.gmRoomGraph.getNode(at.grKey) === null) return [];
+        // their room is depth 0, its connectors 1, the rooms beyond those 2
+        return w.gmRoomGraph
+          .getReachableUpTo(at.grKey, (node, depth) =>
+            node.type === "room"
+              ? depth >= doors * 2
+              : node.type !== "door" || w.door.isSeenThrough(node.gdKey) === false,
+          )
+          .flatMap((node) => (node.type === "room" ? [...(w.npc.roomToNpcs[node.gmId]?.[node.roomId] ?? [])] : []))
+          .flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
+      },
       hasItem(npcKey, name) {
         const had = state.carried[npcKey];
         return name === "psi" ? had?.psi === true : had?.items.some((def) => def.meta?.item === name) === true;
@@ -425,11 +453,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         try {
           // decor first: a restored npc's may be sitting on a chair (decorKey)
           state.restoreDecor();
+          w.decor.restored = true;
 
           // - player first, else next restored npc becomes player
           // - the player should always be ensured but it might not have been saved before
           playerWasSaved = await player.ensure();
           await state.restoreNpcs(saved);
+          w.npc.restored = true;
           await state.openDoorwaysWithNpcs();
 
           // ensure npcs drawn
@@ -474,6 +504,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
+        // the next map's are not back yet
+        w.npc.restored = false;
+        w.decor.restored = false;
 
         state.removeNpcs(...Object.keys(w.n));
         // runtime decor is per-map, like the npcs — the incoming map restores its own
@@ -577,8 +610,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onChangeTheme() {
-        const { obstacles, doors, npcs, lights, post } = w.getTheme();
-        w.obs.setBrightness(obstacles.brightness);
+        const { obstacles, doors, npcs, lights, post, walls } = w.getTheme();
+        w.obs.setBrightness(obstacles.brightness, obstacles.skirtBrightness);
+        wallBandBrightness.value = walls.bandBrightness;
         w.door.setBrightness(doors.brightness);
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
@@ -703,7 +737,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "set-player":
             state.syncFadeRooms(); // the rooms in view are the player's
-            if (e.playerKey !== null && state.hasItem(e.playerKey, "psi") === false) w.psi?.setOn(false);
             break;
           case "nav-updated":
             // npcs outlived the swap, so any agent holds refs into the mesh that went. NOT keyed on
@@ -914,15 +947,18 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       persistDecor() {
         if (w.client === true) return; // mirrors must never clobber our own save
+        // nor a World yet to restore, or one remounted empty after an error: it would save over what it lost
+        if (w.decor?.restored !== true) return;
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
           decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
         });
       },
       persistNpcs() {
         if (w.client === true) return; // mirrors must never clobber our own save
+        if (w.npc?.restored !== true) return; // as `persistDecor`
         persisted.getWorldMapStore(w.key, w.mapKey).patch({
           npcs: {
-            playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
+            playerKey: w.player.exists() ? w.player.key : null,
             npcs: Object.values(w.n).map((npc) => ({
               key: npc.key,
               at: { x: npc.point.x, y: npc.point.y },
@@ -1222,7 +1258,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick();
         w.rings?.onTick();
-        w.psi?.onTick();
         w.npc.update();
         // `update` only SCHEDULES the React commit that unmounts the mesh, and a PAUSED world
         // draws on demand — so nothing would draw the world without them, and it goes on showing
@@ -1316,7 +1351,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         w.shadows?.onTick(); // ensure shadow visible even when paused
         w.rings?.onTick();
-        w.psi?.onTick();
         w.view.forceUpdate();
 
         await Promise.all(
@@ -1361,10 +1395,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.breaths?.onTick();
-        w.psi?.onTick();
         w.phasers?.onTick();
         w.shields?.onTick();
         w.player?.aimAtPointer();
+        w.player?.syncRun();
       },
       syncDoorways() {
         for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
@@ -1597,6 +1631,12 @@ export type State = {
   /** Revokes `psi`, or takes an item of theirs away outright, never put down — `false` if they have none */
   revokeItem(npcKey: string, name: "psi" | ItemKind): boolean;
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
+  /** The others in their room, and in the rooms up to `doors` open doors away: whom they could walk to */
+  getNpcsInReach(npcKey: string, doors?: number): Npc[];
+  /** Raises psi for each, or lowers it: a hand at their temple, their breath shown — see `docs/psi.md` */
+  setPsi(active: boolean, ...npcKeys: string[]): void;
+  /** Whether their hand is at their temple. The player's, by default */
+  isPsiRaised(npcKey?: string): boolean;
   /** One phaser, and `inventoryConfig.maxCarried` of the rest */
   hasRoomFor(npcKey: string, kind: ItemKind): boolean;
   onCarriedChange(npcKey: string): void;

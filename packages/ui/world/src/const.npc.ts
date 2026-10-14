@@ -187,7 +187,6 @@ export const fromAnimationClipKey = {
   point: true,
   point_avoid: true,
   psi: true,
-  psi_avoid: true,
   run: true,
   shuffle: true,
   sit: true,
@@ -319,7 +318,6 @@ export const fadeSecs: Record<
   point: {},
   point_avoid: {},
   psi: {},
-  psi_avoid: {},
   run: { shuffle: 0.15, walk: 0.25 },
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
@@ -376,9 +374,9 @@ export const breathConfig = {
   /** Seconds breathing takes to come on, or to settle once off */
   easeSecs: 1,
   lung: {
-    color: "#bfe6ff",
+    color: "#ff4d4d",
     /** Each lung's centre, the left's mirrored, and its radii with their lungs empty */
-    centre: [0.1, 0.08, 0],
+    centre: [0.1, 0.02, 0],
     radii: [0.07, 0.105, 0.08],
     /** How much of a lung shows face-on: the rest gathers at its silhouette, by `rimPower` */
     faceOn: 0.25,
@@ -389,7 +387,7 @@ export const breathConfig = {
   diaphragm: {
     color: "#ff9aa8",
     /** The height of its rim, how far its dome rises above that, and its radii */
-    y: -0.055,
+    y: -0.115,
     dome: 0.07,
     radii: [0.19, 0.115],
     /** How far its crown drops at the top of a breath, per `reach` */
@@ -397,6 +395,11 @@ export const breathConfig = {
     /** How bright it is at rest, as a share of contracting */
     rest: 0.3,
   },
+  /**
+   * Looked down on, the ghost lies over their head, so it goes faint. `fade` is from and to, as the cosine
+   * between the way they are looked at and the way their chest stands: `0` is straight on, and full
+   */
+  above: { fade: [0.2, 0.6], left: 0.15 },
   /** Metres nearer the eye its depth is drawn, so it shows through their own body yet not a wall */
   depthBias: 0.4,
 };
@@ -416,6 +419,14 @@ export const poseConfig = {
   /** Seconds the arm takes to come onto whom they pose `at`, from the fist's end in the right forearm's frame */
   aimSecs: 0.3,
   aimFrom: [0, -0.37, 0],
+} as const;
+
+/** The frames a blink and a shifty look step through, by name in `eyeFrames` — see `docs/skin-slices.md` */
+export const eyesConfig = {
+  blink: { frames: ["half", "shut", "half"], frameSecs: 0.05, gapSecs: 0.2 },
+  shifty: { frames: ["left", "right"], frameSecs: 0.6 },
+  /** The face front, as fractions of a skin */
+  face: { x: 32 / 256, y: 32 / 256, size: 32 / 256 },
 } as const;
 
 /**

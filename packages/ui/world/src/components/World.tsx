@@ -37,6 +37,7 @@ import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
+import { skinSliceDims } from "../const.both";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import Ceiling from "./Ceiling";
@@ -53,7 +54,6 @@ import NpcShadows from "./NpcShadows";
 import Obstacles from "./Obstacles";
 import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
-import Psi from "./Psi";
 import RoomLabels from "./RoomLabels";
 import Shields from "./Shields";
 import useWorldEvents from "./use-world-events";
@@ -122,7 +122,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         numTextures: 1, // from sheets.symbolSheetDims.length
         width: 1,
         height: 1,
-        anisotropy: touchDevice ? undefined : 4,
+        anisotropy: touchDevice ? 2 : 4,
         gpu: true,
       }),
       texDecor: new TexArray({ ctKey: "decor-tex", numTextures: 1, width: 64, height: 64, anisotropy: 4 }),
@@ -137,6 +137,12 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         anisotropy: touchDevice ? undefined : 4,
       }),
       texNpcLabel: new TexArray({ ctKey: "npc-labels", width: 256, height: 64, numTextures: MAX_NPCS }),
+      texSkinSlices: new TexArray({
+        ctKey: "skin-slices",
+        width: skinSliceDims.cell,
+        height: skinSliceDims.cell,
+        numTextures: skinSliceDims.maxSkins,
+      }),
       texRoomLabel: new TexArray(roomLabelTexOpts),
       texSkin: new TexArray({ ctKey: "npc-skins", width: 256, height: 256, numTextures: MAX_NPCS }),
 
@@ -177,7 +183,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       labels: null as any,
       rings: null as any,
       breaths: null as any,
-      psi: null as any,
       phasers: null as any,
       shields: null as any,
       roomLabels: null as any,
@@ -522,7 +527,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
                 <NpcRings key="npc-rings" />
                 <NpcShadows key="npc-shadows" />
                 <NpcBreath key="npc-breath" />
-                <Psi key="psi" />
                 <Phasers key="phasers" />
               </>
             )}
@@ -602,6 +606,8 @@ export type State = {
   texDoorLabel: TexArray;
   texRoomLabel: TexArray;
   texNpcLabel: TexArray;
+  /** A layer per skin, as `texSkin` has them: a grid of slices drawn over the face — see `docs/skin-slices.md` */
+  texSkinSlices: TexArray;
   texSkin: TexArray;
 
   bubble: UseStateRef<import("./NpcBubbles").State>;
@@ -623,7 +629,6 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   breaths: UseStateRef<import("./NpcBreath").State>;
-  psi: UseStateRef<import("./Psi").State>;
   phasers: UseStateRef<import("./Phasers").State>;
   shields: UseStateRef<import("./Shields").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;

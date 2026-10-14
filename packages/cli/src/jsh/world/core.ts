@@ -1,4 +1,4 @@
-import { npcDims } from "@npc-cli/ui__world/const.both";
+import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
@@ -212,75 +212,102 @@ export function grant(
 
 /**
  * What the player's presses do: an item is walked to and taken, whilst their phaser is out an npc
- * is its target, and whilst psi is raised an npc's thought is read. Idempotent, as `preds` — see `docs/inventory.md`
+ * is its target, and whilst psi is raised an npc's thought is read. Idempotent, as `predicates` — see `docs/inventory.md`
  * ```sh
- * kamma
- * kamma off
+ * inventory
+ * inventory off
  * ```
  */
-export function kamma({ args, w }: JshCli.RunArg) {
-  if (args[0] === "off") w.e.keyedListener.delete("kamma");
-  else w.e.addKeyedListener("kamma", onKammaEvent);
+export function inventory({ args, w }: JshCli.RunArg) {
+  if (args[0] === "off") w.e.keyedListener.delete("inventory");
+  else w.e.addKeyedListener("inventory", onInventoryEvent);
 }
 
 /** Metres past an item's reach it is still taken from: a walk up to it stops a little short */
-const kammaSlack = 0.2;
+const takeSlack = 0.2;
+
+/** Ways round an item a spot is looked for, off the line to the player: that line first, then either side */
+const takeTurns = [0, 1, -1, 2, -2, 3, -3, 4].map((n) => (n * Math.PI) / 4);
 
 /** The latest press, which a walk to an item must still be to take it */
-let kammaPress = 0;
+let takePress = 0;
 
-function onKammaEvent(e: JshCli.Event, w: JshCli.WorldState) {
+function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
   if (e.key !== "picked" || e.longDown === true || e.rightDown === true || e.clickId !== undefined) return;
-  const press = ++kammaPress;
+  const press = ++takePress;
   const { key: playerKey } = w.player;
-  if (w.client === true || w.n[playerKey] === undefined) return;
+  if (w.client === true || w.player.exists() === false) return;
   const { meta } = e;
   if (meta.type === "decor" && typeof meta.item === "string") {
-    void commitKamma(w, playerKey, meta.decorKey, press);
+    void takeOnPress(w, playerKey, meta.decorKey, press);
   } else if (meta.type === "npc") {
     const own = meta.npcKey === playerKey;
-    const psiOn = w.psi?.on === true;
+    const psiOn = w.e.isPsiRaised();
     if (own === true && psiOn === true && (meta.bodyPart === "leftarm" || meta.bodyPart === "leftforearm")) {
       w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not
     } else if (w.phasers?.isArmed(playerKey) === true) {
-      // the arm that holds it lowers it, its target kept for next time — elsewhere on themselves, nothing
+      // the arm that holds it lowers it, its target forgotten — elsewhere on themselves, nothing
       if (own === true) {
         if (meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm") w.phasers.disarm(playerKey);
       } else {
         w.phasers.arm(playerKey, { at: meta.npcKey, part: meta.bodyPart });
       }
-    } else if (psiOn === true && own === false) w.psi.read(meta.npcKey);
+    } else if (psiOn === true && own === false) w.speech.readThought(meta.npcKey);
   }
 }
 
-async function commitKamma(w: JshCli.WorldState, npcKey: string, decorKey: string, press: number) {
+async function takeOnPress(w: JshCli.WorldState, npcKey: string, decorKey: string, press: number) {
   await null; // out of the dispatch: a move pushes events
   const decor = w.decor.byKey[decorKey];
   if (decor === undefined || (decor.type !== "quad" && decor.type !== "point")) return;
   const at = decor.type === "quad" ? decor.center : { x: decor.x, y: decor.y };
   // no room for it: said now, by `takeItem`, not after a walk over
   if (w.e.hasRoomFor(npcKey, decor.meta.item) === false) return void w.e.takeItem(npcKey, decorKey);
-  const { reach: reaches } = inventoryConfig;
-  const raised = w.n[npcKey]?.anim.pose === "sit" ? reaches.seated : reaches.raised;
-  const reach = (decor.meta.y ?? 0) > reaches.raisedFrom ? raised : reaches.floor;
-  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + kammaSlack;
+  const reach = takeReach(w, npcKey, decor.meta.y ?? 0);
+  const inReach = () => (w.n[npcKey]?.distanceTo(at) ?? Infinity) <= reach + takeSlack;
   const from = w.n[npcKey]?.point;
   if (from !== undefined) {
-    const away = Math.hypot(from.x - at.x, from.y - at.y) || 1;
-    const short = (d: number) => ({ x: at.x + ((from.x - at.x) / away) * d, y: at.y + ((from.y - at.y) / away) * d });
-    /** As near as the mesh allows: a table is not on it */
-    let d = inventoryConfig.standOff;
-    while (d < reach && w.npc.getClosestPoly(short(d), 0.1).success === false) d += 0.1;
+    const spot = findTakeSpot(w, at, from, reach);
+    const away = Math.hypot(from.x - at.x, from.y - at.y);
     // close enough already — or sat in reach, and not to be got up for it
-    if (away <= d + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
+    if (away <= (spot?.d ?? reach) + 0.1 || (inReach() === true && w.npc.npcToDoable[npcKey] != null)) {
       return void w.e.takeItem(npcKey, decorKey);
     }
-    // no floor in reach along their own line, e.g. across a deep desk: the floor nearest the item instead
-    await w.e.move({ npcKey, to: d < reach ? short(d) : at, near: true }).catch(() => {});
-    // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
-    while (press === kammaPress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
+    // no floor of its room in reach e.g. far up a bed: a "no"
+    if (spot === undefined) return void w.n[npcKey]?.anim.shakeHead();
+    await walkToTakeSpot(w, npcKey, spot.p, press);
   }
-  if (press === kammaPress && inReach() === true) w.e.takeItem(npcKey, decorKey);
+  if (press === takePress && inReach() === true) w.e.takeItem(npcKey, decorKey);
+}
+
+/** Metres within which they can take an item `y` up: further for one raised e.g. on a desk, and again sat at it */
+function takeReach(w: JshCli.WorldState, npcKey: string, y: number) {
+  const { floor, raised, seated, raisedFrom } = inventoryConfig.reach;
+  if (y <= raisedFrom) return floor;
+  return w.n[npcKey]?.anim.pose === "sit" ? seated : raised;
+}
+
+/**
+ * Where to stand to take an item `at`, and how far `d` from it: as near as the mesh allows, their own side first.
+ * Only floor of the item's own room will do, as the nearest floor of all may be through a wall
+ */
+function findTakeSpot(w: JshCli.WorldState, at: Geom.VectJson, from: Geom.VectJson, reach: number) {
+  const towards = Math.atan2(from.y - at.y, from.x - at.x);
+  const room = w.findRoomContaining(at, true)?.grKey;
+  for (let d: number = inventoryConfig.standOff; d < reach; d += 0.1) {
+    for (const turn of takeTurns) {
+      const p = { x: at.x + Math.cos(towards + turn) * d, y: at.y + Math.sin(towards + turn) * d };
+      if (w.npc.getClosestPoly(p, 0.1).success === false) continue; // a table is not on the mesh
+      if (w.findRoomContaining(p, true)?.grKey === room) return { d, p };
+    }
+  }
+}
+
+/** Resolves once they have stopped, or a newer press has taken over */
+async function walkToTakeSpot(w: JshCli.WorldState, npcKey: string, to: Geom.VectJson, press: number) {
+  await w.e.move({ npcKey, to }).catch(() => {});
+  // another's move may have taken ours over e.g. `pick | move`: wherever that leaves them
+  while (press === takePress && w.n[npcKey]?.isMoving() === true) await w.npc.nextTick();
 }
 
 /**
@@ -704,12 +731,17 @@ async function move_next(
 
   try {
     let pendingRead = api.read();
-    let next: undefined | JshCli.PointAnyFormat;
+    let next: undefined | MaybeMeta<JshCli.PointAnyFormat>;
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise = movePausable(
-        { ...moveFlags(opts), npcKey: npc.key, to: next },
+        {
+          ...moveFlags(opts),
+          npcKey: npc.key,
+          to: next,
+          arrive: next.meta?.preventArrive !== true, // for wasd_delta --nav
+        },
         { "not navigable": false, occupied: false, stuck: false },
       );
       await Promise.race([movePromise, (pendingRead = api.read())]);
@@ -1122,11 +1154,21 @@ export function play({ api, w }: JshCli.RunArg) {
  * pose npc-0 as:breathe
  * ```
  */
-export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string; at?: string } = api.jsArg(args)) {
+export async function pose(
+  { api, args, w }: JshCli.RunArg,
+  opts: { as?: string; at?: string; eyes?: EyesKey; blink?: number } = api.jsArg(args),
+) {
   const [npcKey] = api.getJsOperands(args, opts);
-  if (npcKey === undefined || opts.as === undefined) throw Error("usage: pose npcKey as:pose [at:npcKey]");
-  if (opts.as === "shake") return w.npc.get(npcKey).anim.shakeHead(); // over any pose
+  if (npcKey === undefined || (opts.as ?? opts.eyes ?? opts.blink) === undefined)
+    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count]");
   const npc = w.npc.get(npcKey);
+  // their eyes are apart from any pose — see `docs/skin-slices.md`
+  const looks: EyesKey[] = [...eyeFrames, "shifty"];
+  if (opts.eyes !== undefined && looks.includes(opts.eyes) === false) throw Error(`eyes: expected one of: ${looks}`);
+  if (opts.eyes !== undefined) npc.anim.setEyes(opts.eyes);
+  if (opts.blink !== undefined) npc.anim.blink(opts.blink);
+  if (opts.as === undefined) return;
+  if (opts.as === "shake") return npc.anim.shakeHead(); // over any pose
   if (!(opts.as in poseConfig.poses) && opts.as in w.npc.clips) {
     npc.anim.setHurt(null);
     return npc.anim.setPose(opts.as as keyof typeof w.npc.clips);
@@ -1207,16 +1249,21 @@ export async function pose({ api, args, w }: JshCli.RunArg, opts: { as?: string;
 const posing = new Map<string, (why: "replaced") => void>();
 
 /**
- * The player's psi on, or `off`: their hand goes to their temple. See `w.player.psi`.
- * It is the player's, not a process's, so like `phaser` it returns at once
+ * Psi on, or `off`: their hand goes to their temple. The player's, unless npcs are named. See `w.e.setPsi`.
+ * It is theirs, not a process's, so like `phaser` it returns at once
  * ```sh
  * psi
  * psi off
+ * psi npc-0 npc-1
+ * psi off npc-0
  * ```
  */
-export function psi({ api, args: [arg], w }: JshCli.RunArg) {
+export function psi({ api, args, w }: JshCli.RunArg) {
   api.setPausable("world", false); // switches it whilst paused
-  w.player.psi(arg !== "off");
+  const on = args[0] !== "off";
+  const npcKeys = on === true ? args : args.slice(1);
+  if (npcKeys.length === 0) return w.player.psi(on);
+  w.e.setPsi(on, ...npcKeys.map((npcKey) => w.npc.get(npcKey).key));
 }
 
 /**
@@ -1565,6 +1612,7 @@ export async function* w(ct: JshCli.RunArg) {
 
 /**
  * ```sh
+ * warp npc:rob to:$( pick 1 )
  * warp rob to:$( pick 1 )
  * ```
  */
@@ -1578,39 +1626,55 @@ export async function warp(
 }
 
 /**
- * - Whilst w/a/s/d are held over the World, emits a target just ahead of the npc: up, left, down or right as
- * seen.
- * - --nav ensures target is navigable e.g. not emitted where the mesh ends — see `npc.getSlideResult`.
+ * - On hold w/a/s/d over World, emits a target just ahead of the npc: up, left, down or right (XZ camera)
+ * - --nav ensures target is navigable, so is not emitted where the mesh ends.
+ *   Outputs have `meta.preventArrive` honoured by `move` via move_next.
  * ```sh
  * wasd_delta --nav rob | move rob
- * wasd_delta --nav rob --fast | move rob --fast
  * wasd_delta rob | look rob
  * ```
  */
 export async function* wasd_delta(
   ct: JshCli.RunArg,
-  opts: { npcKey: string; fast?: boolean; nav?: boolean } = ct.api.jsArg(ct.args, {
-    "--fast": "fast",
+  opts: { npcKey: string; nav?: boolean; force?: boolean } = ct.api.jsArg(ct.args, {
     "--nav": "nav",
+    "--force": "force",
     npc: "npcKey",
   }),
 ) {
   const { api, w } = ct;
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
 
+  /** Sent again on release without `meta.preventArrive` so we arrive */
+  let lastTarget: null | Geom.VectJson = null;
+
   while (true) {
     await api.sleep(wasdConfig.intervalSecs); // a kill rejects it
+
     const direction = w.view.getWasdDirection();
-    if (direction.length === 0) continue; // none held or opposites
-    const npc = w.npc.get(opts.npcKey);
-    const fast = opts.fast === true || npc.anim.hurry === true; // e.g. the player's run key
-    const length = agentConfig.maxSpeed[fast ? "run" : "walk"] * wasdConfig.stepSecs;
+    if (direction.length === 0 && lastTarget === null) {
+      continue;
+    }
+
+    const npc = w.n[opts.npcKey in w.n ? opts.npcKey : api.get(opts.npcKey)];
+    if (npc === undefined) {
+      if (opts.force === true) continue; // e.g. during player change
+      throw Error(`npc not found: ${opts.npcKey}`);
+    }
+
+    const length = agentConfig.maxSpeed[npc.anim.hurry === true ? "run" : "walk"] * wasdConfig.stepSecs;
 
     if (opts.nav === true) {
-      const slide = npc.getSlideResult(direction.normalize(length));
-      if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < wasdConfig.minMove) continue; // the mesh's edge
-      yield { ...slide.groundPoint, meta: { floor: true, nav: true } };
-    } else {
+      // none held, or opposites, or the mesh's edge
+      const slide = direction.length === 0 ? null : npc.getSlideResult(direction.normalize(length));
+      if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= wasdConfig.minMove) {
+        // passed through, not arrived at: a move slows as it arrives, and this near they would never run
+        yield { ...(lastTarget = slide.groundPoint), meta: { floor: true, nav: true, preventArrive: true } };
+      } else if (lastTarget !== null) {
+        yield { ...lastTarget, meta: { floor: true, nav: true } }; // let go, or blocked: there they stop
+        lastTarget = null;
+      }
+    } else if (direction.length > 0) {
       const { x, y } = direction.normalize(wasdConfig.lookDist);
       yield { x: npc.position.x + x, y: npc.position.z + y };
     }

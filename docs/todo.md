@@ -1,48 +1,32 @@
 # TODO
 
-- ✅ improve walk/run arms e.g. bent out a bit
-- ✅ improve psi animation e.g. no height steps
-- ✅ can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
-- ✅ try web synth for background music
+- ✅ psi raised shows breathing
+- ❌ psi entrainment when target sleeps
+  - Next I want to implement "turning" or "entrainment" in the case where the target npc is sleeping i.e.
+- ❌ psi entrainment when target pacified
+- refine psi breathing
+  - do lungs/diaphragm actually move like that?
+
+- socialNorms
 
 ## World
 
 ### Animation and Npc
 
-- ✅ apply phaser-action animations on hit
-- ✅ walk animation legs needn't reset on stop
-
-- ✅ implement phaser action animations
-  - minor pain
-  - major pain
-  - pacify (can control)
-
-- improve `walk` animation: elbows should stick out more
+- 🚧 skin face composite
 
 - fix phaser going through a closed door
   - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
 
-- ✅ improve `phaser_aim` animation idle legs
-
-- ✅ simplify psi animation
-  - ✅ single hand animation (left arm)
-  - ✅ do not turn towards target
-  - ✅ can psi whilst sit or lie
-
 - skin remapping
   - currently only have skinIndex
-  - need example skin with a bunch of stuff in its overlays
-
-- ✅ npc-outline offset, particularly noticeable in light-theme
+  - could support mix-and-match body parts
 
 ### Camera
 
 - improve fov based on dimension
-- ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
 ### Cleanliness
-
-- ✅ predicates -> preds
 
 - w.npc.npcToRoom -> w.npc.toRoom etc
 
@@ -61,13 +45,9 @@
 
 ### Decor
 
-- ✅ improve gun box
-- ❌ add shelves
-
 - labels as decor point
   - ✅ already support room labels i.e. induced by decor point with label in room
   - provide example of label via dynamic decor
-- ✅ separate dynamic/static decor into colliders and quads/points (2 more draw calls)
   - add docs/decor
 
 ### DevX
@@ -82,23 +62,13 @@
 
 ### Inventory
 
-- ❌ restyle inventory icons e.g. darker
-
-- ✅ refine drop inventory
-  - can drop decor points on floor e.g. keycard
-  - can only drop decor quads on meta.surface
-
 ### Navigation
 
 ### Performance
 
 - consider pruning navcat of unused stuff
-- ✅ try eliminate some draw calls
 
 ### Player
-
-- ✅ long held r aims with pointer
-- ✅ bug: sight mode: all hull doors showing
 
 ### Playground
 
@@ -108,26 +78,9 @@
 
 ### Shield
 
-- ✅ improve shield phaser suppression
-  - can raise weapon when not pointing towards shield
-  - cannot turn into shield
-
-### Sword and Psi
+### Phaser and Psi
 
 - psi: doppler effect?
-
-- ✅ sword/psi: cancel when do e.g. sit
-- ✅ sword: no bodyPart defaults to head
-- ✅ sword/psi: command for setting player's target
-- ✅ psi: improve no-target animation
-
-- ✅ sword -> phaser (only arms)
-  - ✅ non-locked-on looks better: phaser
-  - ✅ locked-on should look better
-    - angle: (polar, azimuthal)
-  - ✅ player psi/phaser targetting: `kamma`
-
-- ✅ phaser action
   - arms, legs -> pain
   - head -> pacified, controlled
   - hips, stomach, chest -> stunned
@@ -143,7 +96,7 @@
 
 ### WorldSpeech
 
-- ✅ can select text in WorldSpeech toast and modal
+## Audio
 
 ## Blockbench
 
@@ -173,7 +126,6 @@
 
 ## Inventory
 
-- ✅ inventory bar: psi, phaser, keys, carried items
 - item textures and icons need an artist's eye
 
 ## HMR
@@ -187,19 +139,9 @@
 
 ## Jsh and Jobs
 
-- ✅ Jobs: can be confusing whether process is paused due to World or explicitly
-  - ✅ indicate process tags
-  - ✅ put back process tag `always` and can set from ui
-
-- ✅ support look at:angle
-- ✅ Jobs uses allotment for 2 panes
-
 - Jobs: indicate stale processes after hmr
 
 ## Manifest
-
-- ✅ reskin Lore
-  - room/door keys added as text directly and validated
 
 - World applies a lore character's door keys on their npc's first spawn, whoever spawned them
   - today only the Decorator's spawn does: jsh `spawn` and the player's restore give none
@@ -210,14 +152,9 @@
 ## MapEdit
 
 - 🚧 extend existing symbols
-- 🚧 finish geomorph 101
-- 🚧 finish geomorph 302
 - BUG MapEdit drafts fighting: with 2 instances open for same file
-- ✅ MapEdit uses allotment for 2 panes
 
 ## Media
-
-- ask Claude to create some sub-symbols of 101
 
 ## Shell
 
@@ -229,5 +166,5 @@
 
 ## Testing
 
-- ask Fable for playwright test suite
+- ask Claude for playwright test suite
 

@@ -60,6 +60,7 @@ export default function Decor() {
       grid: {},
       lastHmr: 0,
       ready: false,
+      restored: false,
 
       // assigned rather than spread: a batch's `ref` writes to the batch itself
       static: Object.assign(createTexBatch(MAX_DECOR_QUAD_INSTANCES), { gdKeyToDecorKeys: {} }),
@@ -663,9 +664,10 @@ export default function Decor() {
         // - obstacle.center in geomorph coords (not world yet)
         // - obstacle.origPoly in geomorph symbol coords (not geomorph yet)
         for (const [obstacleId, obs] of gm.obstacles.entries()) {
-          metaPoint.x = obs.center.x;
-          metaPoint.y = obs.center.y;
+          // the room is looked up in WORLD coords
           gm.matrix.transformPoint(tmpVect.copy(obs.center));
+          metaPoint.x = tmpVect.x;
+          metaPoint.y = tmpVect.y;
           metaPoint.meta = emptyMeta;
           const gmRoomId = w.findRoomContaining(metaPoint, true);
 
@@ -903,6 +905,8 @@ export type State = {
   lastHmr: number;
   /** Also false briefly after HMR */
   ready: boolean;
+  /** Whether this map's saved decor is back. Until then a save would overwrite it with less — see `persistDecor` */
+  restored: boolean;
 
   /** Static quads and points */
   static: TexBatch & {

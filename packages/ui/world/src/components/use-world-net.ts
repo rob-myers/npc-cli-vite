@@ -199,7 +199,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
             locked: Object.values(w.door.byKey).flatMap((d) => (d.locked === true ? d.gdKey : [])),
           },
           decor: Object.values(w.decor.runtime.defByKey),
-          playerKey: w.n[w.player.key] === undefined ? null : w.player.key,
+          playerKey: w.player.exists() ? w.player.key : null,
         };
       },
       toNetNpc(npc) {

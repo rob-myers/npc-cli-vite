@@ -2,7 +2,30 @@
 
 ## World
 
-### Animation
+### Animation and Npc
+
+- ✅ improve walk/run arms e.g. bent out a bit
+- ✅ improve psi animation e.g. no height steps
+- ❌ can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
+
+- ✅ apply phaser-action animations on hit
+- ✅ walk animation legs needn't reset on stop
+
+- ✅ implement phaser action animations
+  - minor pain
+  - major pain
+  - pacify (can control)
+
+- ✅ improve `walk` animation: elbows should stick out more
+
+- ✅ improve `phaser_aim` animation idle legs
+
+- ✅ simplify psi animation
+  - ✅ single hand animation (left arm)
+  - ✅ do not turn towards target
+  - ✅ can psi whilst sit or lie
+
+- ✅ npc-outline offset, particularly noticeable in light-theme
 
 - ✅ remove strafe left/right animations
 - ✅ rename psychic-attack -> influence
@@ -10,6 +33,38 @@
 - ✅ `backwards` animation
 - ✅ `move rob --back to:$( pick 1 )`
 - ✅ `demo_back_off kate`
+
+### Camera
+
+- ✅ in follow mode zoomed-out seems closer so labels should be smaller
+
+### Cleanliness
+
+- ✅ predicates -> preds
+- ✅ preds -> predicates, kamma -> inventory
+
+### Decor
+
+- ✅ improve gun box
+- ❌ add shelves
+- ✅ separate dynamic/static decor into colliders and quads/points (2 more draw calls)
+
+### Inventory
+
+- ❌ restyle inventory icons e.g. darker
+
+- ✅ refine drop inventory
+  - can drop decor points on floor e.g. keycard
+  - can only drop decor quads on meta.surface
+
+### Performance
+
+- ✅ try eliminate some draw calls
+
+### Player
+
+- ✅ long held r aims with pointer
+- ✅ bug: sight mode: all hull doors showing
 
 ### Playground
 
@@ -22,7 +77,65 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
 
-### Psi
+### Shield
+
+- ✅ improve shield phaser suppression
+  - can raise weapon when not pointing towards shield
+  - cannot turn into shield
+
+### Phaser and Psi
+
+- ✅ sword/psi: cancel when do e.g. sit
+- ✅ sword: no bodyPart defaults to head
+- ✅ sword/psi: command for setting player's target
+- ✅ psi: improve no-target animation
+
+- ✅ sword -> phaser (only arms)
+  - ✅ non-locked-on looks better: phaser
+  - ✅ locked-on should look better
+    - angle: (polar, azimuthal)
+  - ✅ player psi/phaser targetting: `kamma`
+
+- ✅ phaser action
+
+- ✅ remove animation `idle-avoid`
+- ✅ animation `gauntlet`
+- ✅ add animation `primed` `attack`
+- ✅ remove `primed` `attack`
+- ✅ `gauntlet` -> `point`
+- ✅ `demo_sword` (was `demo_attack`) plays `point` with `defensive` fallback near others
+- ✅ `point` played into upper body was pointing upwards a bit
+- ✅ strafe walking
+  - Blockbench animations strafe_left strafe_right
+  - `w.npc.move` supports `opts.strafe`
+  - npc supports `npc.anim.face.aim` (point or angle); a look whilst strafing aims rather than stopping
+    - forces `opts.strafe` i.e. need these animations
+  - `move rob --strafe to:$( pick 1 )`
+  - `pick | move rob --strafe`
+  - `wasd_delta rob | move rob --strafe`
+
+- ✅ investigate shooting effects
+  - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
+  - ✅ `demo_sword` forces strafe whilst wielding sword
+    - expect look controls available for player e.g. `pick --long | look npc:rob --force`
+
+- ✅ player can activate on desktop: `q` key
+- ✅ demo command to lock sword on click
+    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(w.player.key, dstNpcKey)'`
+- ✅ player can activate on mobile
+
+- ✅ refactor demo_sword into `<Swords>`
+  - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
+  - ✅ `sword` mutates sword wield/sheathe/lock
+    - `sword rob lock:npc-1`
+- ✅ handle psi vs sword blend fighting
+- ✅ on unsheathe weapon whilst moving strafe immediately
+
+- ✅ beam is straight and mainly transparent except at target
+- ✅ can lock on to body part
+
+- ✅ can toggle sword for other npc
+  - `w swords.toggle npc-3`
 
 - ✅ new component `<Comms>` can draw reactive contour-like smooth lines around npcs
 - ✅ restrict to player vs one other with transition for previous
@@ -64,53 +177,18 @@
 - ✅ player can activate on mobile
 
 
-### Sword and Strafe
-
-
-- ✅ remove animation `idle-avoid`
-- ✅ animation `gauntlet`
-- ✅ add animation `primed` `attack`
-- ✅ remove `primed` `attack`
-- ✅ `gauntlet` -> `point`
-- ✅ `demo_sword` (was `demo_attack`) plays `point` with `defensive` fallback near others
-- ✅ `point` played into upper body was pointing upwards a bit
-- ✅ strafe walking
-  - Blockbench animations strafe_left strafe_right
-  - `w.npc.move` supports `opts.strafe`
-  - npc supports `npc.anim.face.aim` (point or angle); a look whilst strafing aims rather than stopping
-    - forces `opts.strafe` i.e. need these animations
-  - `move rob --strafe to:$( pick 1 )`
-  - `pick | move rob --strafe`
-  - `wasd_delta rob | move rob --strafe`
-
-- ✅ investigate shooting effects
-  - ✅ `demo_sword` has beam effect via `<Sword>` (from src hand to dst head, curving)
-  - ✅ `demo_sword` forces strafe whilst wielding sword
-    - expect look controls available for player e.g. `pick --long | look npc:rob --force`
-
-- ✅ player can activate on desktop: `q` key
-- ✅ demo command to lock sword on click
-    - `pick as:meta.npcKey | map '(dstNpcKey, { w }) => w.swords.lock(w.player.key, dstNpcKey)'`
-- ✅ player can activate on mobile
-
-- ✅ refactor demo_sword into `<Swords>`
-  - ✅ avoids pause handling e.g. lower/raise arm on pause/resume
-  - ✅ `sword` mutates sword wield/sheathe/lock
-    - `sword rob lock:npc-1`
-- ✅ handle psi vs sword blend fighting
-- ✅ on unsheathe weapon whilst moving strafe immediately
-
-- ✅ beam is straight and mainly transparent except at target
-- ✅ can lock on to body part
-
-- ✅ can toggle sword for other npc
-  - `w swords.toggle npc-3`
-
 ### Unorganised Bugs
 
 - ✅ pause World while `move` then resume is jerky
 - ✅ BUG only some room labels shown when change to map 301-101-301
 
+### WorldSpeech
+
+- ✅ can select text in WorldSpeech toast and modal
+
+## Audio
+
+- ✅ try web synth for background music
 
 ## Blockbench
 
@@ -152,6 +230,35 @@
 
 - ✅ w.label should fade with rooms
 - ✅ decor rect/circle should have meta.floor
+
+## Inventory
+
+- ✅ inventory bar: psi, phaser, keys, carried items
+
+## Jsh and Jobs
+
+- ✅ Jobs: can be confusing whether process is paused due to World or explicitly
+  - ✅ indicate process tags
+  - ✅ put back process tag `always` and can set from ui
+
+- ✅ support look at:angle
+- ✅ Jobs uses allotment for 2 panes
+
+## Manifest
+
+- ✅ reskin Lore
+  - room/door keys added as text directly and validated
+
+## MapEdit
+
+- ✅ MapEdit uses allotment for 2 panes
+- ✅ finish geomorph 101
+- ✅ finish geomorph 302
+
+## Media
+
+- ✅ ask Claude to create some sub-symbols of 101
+
 
 ## Site
 

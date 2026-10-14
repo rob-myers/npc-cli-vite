@@ -215,6 +215,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   },
   obstacles: {
     brightness: 1,
+    skirtBrightness: 1,
   },
   npcs: { ambient: 0, brightness: 0.25, fxStrength: 1 },
   doors: {
@@ -223,7 +224,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     panel: "dark",
     dissolve: false,
   },
-  walls: { color: "#000000", opacity: 0.5 },
+  walls: { color: "#000000", opacity: 0.5, bandBrightness: 1 },
 };
 
 export const wallHeight = 1.8;

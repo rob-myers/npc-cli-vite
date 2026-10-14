@@ -19,7 +19,7 @@ export default function LightSweep() {
 
   useFrame((root, delta) => {
     const renderer = root.gl as unknown as THREE.WebGPURenderer;
-    const player = w.n[w.player?.key ?? ""];
+    const player = w.player?.get();
     w.view.playerLight.update(
       renderer,
       player?.position ?? null,

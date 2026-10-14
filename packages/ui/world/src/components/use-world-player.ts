@@ -19,40 +19,27 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
     (): State => ({
       key: defaultPlayerKey,
       tap: null,
+      runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       lookTimer: 0,
+      armHeld: false,
 
-      async ensure() {
-        let restored = true; // already present: they are where we left them
-        if (w.n[state.key] === undefined) {
-          // a map keeps its own player position, so returning to it puts them back where they
-          // were. A map we have never stood on starts them at one of its spawn points
-          restored = await state.restore();
-          const placed = restored || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
-          if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
-        }
-        return restored;
-      },
-      onKeyDown(e) {
-        if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
-        // a hand each: by `code`, so wherever a layout puts the letters
-        if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
-        if (e.code === "KeyQ") state.togglePsi();
-        else if (e.code === "KeyE") state.toggleArm();
-        else if (e.code === "KeyF") state.toggleRun();
-        else return;
-        w.hud?.update();
-        w.view.forceUpdate();
-      },
       aimAtPointer() {
-        const npc = w.n?.[state.key];
+        const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
+        const { keysDown } = w.view;
+        // raised only whilst `e` is held
+        if (state.armHeld === true && keysDown.has("e") === false) {
+          state.armHeld = false;
+          w.phasers?.disarm(state.key);
+        }
         // not whilst locked on: the phaser's target is whom they face
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
-        const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
+        // `e` aims the phaser it raises, and `r` looks without one
+        const key = w.phasers?.isArmed(state.key) === true ? state.armHeld : keysDown.has("r");
+        const held = lookAt !== null || (key === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
         if (held === false || posture !== "sit") npc.anim.turnTo(null);
@@ -75,6 +62,81 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
+      },
+      assign(npcKey) {
+        const prev = state.key;
+        const changed = prev !== npcKey;
+        state.key = npcKey;
+        // psi goes with the player, if the new one is granted it
+        if (changed === true && w.e.isPsiRaised(prev) === true) {
+          w.e.setPsi(false, prev);
+          if (w.e.hasItem(npcKey, "psi") === true) w.e.setPsi(true, npcKey);
+        }
+        w.events.next({ key: "set-player", playerKey: npcKey });
+        if (changed === true) w.view.onPlayerRespawn(); // one pan onto them, as a respawn is
+      },
+      async ensure() {
+        let restored = true; // already present: they are where we left them
+        if (state.exists() === false) {
+          // a map keeps its own player position, so returning to it puts them back where they
+          // were. A map we have never stood on starts them at one of its spawn points
+          restored = await state.restore();
+          const placed = restored || (await state.restoreFromSpawnPoint()) || (await state.spawnSomewhere());
+          if (placed === false) warn(`player ${state.key}: nowhere to spawn on map ${w.mapKey}`);
+        }
+        return restored;
+      },
+      get() {
+        return w.n?.[state.key];
+      },
+      exists() {
+        return w.n?.[state.key] !== undefined;
+      },
+      lookTowards(clientX, clientY) {
+        const npc = state.get();
+        // paused, the look would run out before they could turn
+        if (npc === undefined || w.client === true || w.disabled === true) return;
+        const rect = w.view.canvas.getBoundingClientRect();
+        tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
+        w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
+        const { origin, direction } = w.view.raycaster.ray;
+        // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
+        const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
+        tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
+        state.lookAtPoint(tmpHit.x, tmpHit.z);
+      },
+      lookAtPoint(x, z) {
+        const npc = state.get();
+        if (npc === undefined || w.client === true || w.disabled === true) return;
+        if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
+        state.lookAt = { x, y: z };
+        // held as `r` would be, long enough to come round
+        window.clearTimeout(state.lookTimer);
+        state.lookTimer = window.setTimeout(() => {
+          state.lookAt = null;
+          w.r3f?.invalidate();
+        }, lookHoldMs);
+        w.r3f?.invalidate();
+      },
+      onKeyDown(e) {
+        if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        // a hand each: by `code`, so wherever a layout puts the letters
+        if (moveCodes.has(e.code) === true) {
+          // the same one twice, quickly, runs
+          const tap = state.runTap;
+          if (e.code === tap.code && e.timeStamp - tap.ms < doubleTapMs) state.setTapRun(true);
+          return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
+        }
+        if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
+        if (e.code === "KeyQ") state.togglePsi();
+        else if (e.code === "KeyE") {
+          // held, it is raised and aimed: let go, lowered — see `aimAtPointer`
+          if (w.phasers?.isArmed(state.key) === false) state.toggleArm();
+          state.armHeld = w.phasers?.isArmed(state.key) === true;
+        } else return;
+        w.hud?.update();
+        w.view.forceUpdate();
       },
       onTouch(e) {
         if (e.type === "touchstart") {
@@ -99,52 +161,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           state.lookTowards((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
         }
       },
-      lookTowards(clientX, clientY) {
-        const npc = w.n?.[state.key];
-        // paused, the look would run out before they could turn
-        if (npc === undefined || w.client === true || w.disabled === true) return;
-        const rect = w.view.canvas.getBoundingClientRect();
-        tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
-        w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
-        const { origin, direction } = w.view.raycaster.ray;
-        // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
-        const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
-        tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
-        state.lookAtPoint(tmpHit.x, tmpHit.z);
-      },
-      lookAtPoint(x, z) {
-        const npc = w.n?.[state.key];
-        if (npc === undefined || w.client === true || w.disabled === true) return;
-        if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
-        state.lookAt = { x, y: z };
-        // held as `r` would be, long enough to come round
-        window.clearTimeout(state.lookTimer);
-        state.lookTimer = window.setTimeout(() => {
-          state.lookAt = null;
-          w.r3f?.invalidate();
-        }, lookHoldMs);
-        w.r3f?.invalidate();
-      },
-      toggleArm() {
-        if (w.n?.[state.key] === undefined || w.phasers === null) return;
-        // holstering needs no phaser
-        if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
-        if (w.phasers.isLocked(state.key))
-          w.phasers.arm(state.key); // lets go of them first, still drawn
-        else w.phasers.toggle(state.key);
-      },
-      toggleRun() {
-        const npc = w.n?.[state.key];
-        npc?.anim.setHurry(!npc.anim.hurry);
-        w.hud?.update();
-      },
-      togglePsi() {
-        if (w.n?.[state.key] === undefined || w.psi === null) return;
-        if (w.psi.on === false && w.e.hasItem(state.key, "psi") === false) return;
-        w.psi.toggle();
-      },
       async panTo({ animate = true } = {}) {
-        const npc = w.n[state.key];
+        const npc = state.get();
         if (npc === undefined) return;
 
         // no `radius`, so this pans and turns without zooming — `lookAt` keeps the distance it
@@ -153,15 +171,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           animate,
           // they walk whilst we pan, and the point of it is to be ON them — a destination fixed at
           // the moment of the press lands behind
-          track: () => w.n[state.key]?.point,
+          track: () => state.get()?.point,
         });
-      },
-      psi(on) {
-        w.psi.setOn(on);
       },
       persist() {
         w.e.persistNpcs();
         w.e.persistDecor();
+      },
+      psi(on) {
+        w.e.setPsi(on, state.key);
       },
       async restore() {
         const saved = getWorldMapStore(w.key, w.mapKey)
@@ -200,9 +218,37 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y }, angle });
         return true;
       },
-      assign(npcKey) {
-        state.key = npcKey;
-        w.events.next({ key: "set-player", playerKey: npcKey });
+      setTapRun(on) {
+        const npc = state.get();
+        // never over a run the bar's button began, which is its to end
+        if (npc === undefined || on === state.runTap.on || (on === true && npc.anim.hurry === true)) return;
+        state.runTap.on = on;
+        npc.anim.setHurry(on);
+        w.hud?.update();
+      },
+      syncRun() {
+        // none held, or opposites: either way they are no longer going anywhere
+        if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
+      },
+      toggleArm() {
+        if (state.exists() === false || w.phasers === null) return;
+        // holstering needs no phaser
+        if (w.phasers.isArmed(state.key) === false && w.e.hasItem(state.key, "phaser") === false) return;
+        if (w.phasers.isLocked(state.key))
+          w.phasers.arm(state.key); // lets go of them first, still drawn
+        else w.phasers.toggle(state.key);
+      },
+      togglePsi() {
+        if (state.exists() === false) return;
+        const on = w.e.isPsiRaised(state.key);
+        if (on === false && w.e.hasItem(state.key, "psi") === false) return;
+        w.e.setPsi(!on, state.key);
+      },
+      toggleRun() {
+        const npc = state.get();
+        npc?.anim.setHurry(!npc.anim.hurry);
+        state.runTap.on = false; // theirs now, to end as they began it
+        w.hud?.update();
       },
       setupDom() {
         const el = w.rootEl;
@@ -227,7 +273,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         state.update();
         // retargets the dynamic light, snapping it so it shows whilst paused
         state.persist();
-        void state.panTo(); // as on load
+        // a follow has its own pan, begun by `assign`
+        if (w.view.getFollowedPlayer() === undefined) void state.panTo(); // as on load
       },
       async spawnSomewhere() {
         // the rooms labelled by `spawnRoomLabels`, judged by their labelling decor point
@@ -269,6 +316,9 @@ const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
 /** A look tap's longest, second finger down to last up, and how far any finger may stray — as `isPointDiffDrag` */
 const lookTapMs = 300;
+/** A second press of the same move key within this is a double tap, which runs */
+const doubleTapMs = 300;
+const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const lookTapSlopPx = 20;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
@@ -283,21 +333,32 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held they face where the pointer meets the floor, eased round by `face.aim`: or `lookAt`, whilst it is set */
+  /** Whilst `r` is held, or `e` with their phaser, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
+  /** The move key last pressed and when, and whether a double tap of one has them running */
+  runTap: { code: string; ms: number; on: boolean };
+  /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
+  setTapRun(on: boolean): void;
+  /** Ends that run once its keys are let go, or cancel out. Each tick */
+  syncRun(): void;
+  /** Their phaser is raised by `e` being held, so letting go lowers it: not one the bar's slot raised */
+  armHeld: boolean;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
   lookTimer: number;
   /** A two-finger tap on the canvas has them look where it lands */
   onTouch(e: TouchEvent): void;
+  /** The player's npc, once they are spawned */
+  get(): undefined | JshCli.Npc;
+  exists(): boolean;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
   /** The same, to a world point */
   lookAtPoint(x: number, z: number): void;
 
-  /** The player's controls: `q` psi, `e` their phaser, `f` run — the view's own keys are WorldView's */
+  /** The player's controls: `q` psi, `e` held their phaser, a move key twice to run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;

@@ -29,6 +29,8 @@ pick 1 | decor type:rect w:3 h:0.15 meta:'{ shield: true, freq: null }'
 - A rect under `shieldConfig.minSize` (1m) on either side is ignored, with a console warning. The
   depth is what lowers a raised phaser before its muzzle is through. A shield of no frequency is
   exempt, and may be a thin strip.
+- `meta.frame` is how thick its frame is, as a share of the usual: `0.2` is a fifth, a thin outline.
+  `false` leaves it off, a bare field to its edges.
 - At most `MAX_SHIELDS` (256).
 
 ## Frequency
