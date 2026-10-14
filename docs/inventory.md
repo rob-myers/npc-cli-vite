@@ -28,7 +28,7 @@ naming the compass point up the screen, persisted per World and on by default. O
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` HELD | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | the key raises it whilst held and lowers it let go (`w.player.armHeld`). The slot is `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 

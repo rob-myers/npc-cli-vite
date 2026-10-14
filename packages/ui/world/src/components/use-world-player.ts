@@ -22,17 +22,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       lookTimer: 0,
-      armHeld: false,
 
       aimAtPointer() {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
-        // raised only whilst `e` is held
-        if (state.armHeld === true && w.view.keysDown.has("e") === false) {
-          state.armHeld = false;
-          w.phasers?.disarm(state.key);
-        }
         // not whilst locked on: the phaser's target is whom they face
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
@@ -131,13 +125,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           const raised = w.e.isPsiRaised(state.key);
           if (raised === false) state.togglePsi();
           if (w.spirit?.press(raised) !== true && raised === true) state.togglePsi();
-        } else if (e.code === "KeyE") {
-          // held, it is raised: let go, lowered. Held already, as the view's own listener may run after
-          // ours, and `forceUpdate` would otherwise lower it
-          w.view.keysDown.add("e");
-          if (w.phasers?.isArmed(state.key) === false) state.toggleArm();
-          state.armHeld = w.phasers?.isArmed(state.key) === true;
-        } else return;
+        } else if (e.code === "KeyE") state.toggleArm();
+        else return;
         w.hud?.update();
         w.view.forceUpdate();
       },
@@ -342,8 +331,6 @@ export type State = {
   tap: null | { startMs: number; downs: [Touch, Touch] };
   /** The move key last pressed and when, and whether a double tap of one has them running */
   runTap: { code: string; ms: number; on: boolean };
-  /** Their phaser is raised by `e` being held, so letting go lowers it: not one the bar's slot raised */
-  armHeld: boolean;
   /** Starts or ends the run a double tap of `w`, `a`, `s` or `d` gives */
   setTapRun(on: boolean): void;
   /** Ends that run once its keys are let go, or cancel out. Each tick */
