@@ -295,10 +295,13 @@ export default function Spirit() {
         if (state.toKey !== null) state.shut(state.toKey, false); // as they were, before we chose them
         state.finish();
       },
-      finish() {
+      handBack() {
         w.view.zoomHeld = false;
         if (state.wasFollowing === true) w.view.setFollow(true);
         state.wasFollowing = false;
+      },
+      finish() {
+        state.handBack();
         const to = state.toKey === null ? undefined : w.n[state.toKey];
         if (to !== undefined) Object.assign(to.anim.breath, { pace: 1, swell: 1 });
         Object.assign(state, { phase: "idle", fromKey: null, toKey: null, light: null, leave: 0 });
@@ -328,6 +331,8 @@ export default function Spirit() {
       tickArrive(dt) {
         const to = state.toKey === null ? undefined : w.n[state.toKey];
         if (to === undefined) return state.finish();
+        // moved before they have settled: the view is needed now, not once they have
+        if (to.isMoving() === true) state.handBack();
         state.secs += dt;
         const t = Math.min(1, state.secs / state.arriveSecs);
         const lit = smootherstep(t);
@@ -782,6 +787,8 @@ export type State = {
   findRoomsAlong(): State["roomsAhead"];
   /** Any npc sitting or lying, else one spawned in a free bed, else a free seat. `null` if none */
   findTarget(): Promise<null | string>;
+  /** The view as it was before: the zoom let go, and a follow turned back on. Once only */
+  handBack(): void;
   /** Back to idle, and the light as it was */
   finish(): void;
   onFrame(delta: number): void;
