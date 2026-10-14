@@ -4,9 +4,24 @@
 - ❌ psi entrainment when target sleeps
   - Next I want to implement "turning" or "entrainment" in the case where the target npc is sleeping i.e.
 - ❌ psi entrainment when target pacified
+- ❌ player can place personal shield
+- ❌ psi use cases
+  - place shield, hide in room, distract onenter room, pacify
+  - break stalemates e.g. believe player has moved elsewhere
+- ❌ crouch needs justification
+- ❌ instead of free-switch-player an endless supply of ancillaries?
+  - maybe "isolated takedown" converts to ancillary
+- ✅ hold e to raise and aim i.e. remove `r` key
+
+- successful shots always pacify
+- shots can be unsuccessful
+  - target barely protruding
+  - target is running
+
+- support shoot while sit or lie
+
 - refine psi breathing
   - do lungs/diaphragm actually move like that?
-
 - socialNorms
 
 ## World
