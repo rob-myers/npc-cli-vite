@@ -23,7 +23,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "95336403-c92f-40f4-b6b9-5f6d88e446f0",
@@ -96,7 +96,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "cede2a80-f253-4fce-838d-d775c3d0b05b",
@@ -142,7 +142,7 @@
         },
         {
           "id": "43101d2b-4a94-4d1b-a1ed-dca67004b610",
-          "name": "door w slide=[0,-1]",
+          "name": "door w slide=[0,1]",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 67.5},

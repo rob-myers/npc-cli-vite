@@ -15,6 +15,7 @@ kept and nothing ticks: raised IS their left arm showing `psi`, which `w.e.isPsi
   they are granted it (`w.player.assign`).
 - **The player's is switched** by `q`, its bar slot, a press on their own left arm (jsh `inventory`), or jsh
   `psi` / `psi off`. Turning it on from the bar or `q` needs psi granted (`w.e.hasItem`).
+- **Held, `q` leaves their body** for someone lying elsewhere: see `docs/spirit.md`. A tap still lowers it.
 - **Anyone else's** by jsh `psi npc-0` / `psi off npc-0`, granted or not.
 - **Raised, a press on another npc reads their thought** (`w.speech.readThought`, from jsh `inventory`), at once.
 - **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.

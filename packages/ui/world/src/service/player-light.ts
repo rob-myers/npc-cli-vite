@@ -54,6 +54,12 @@ export function createPlayerLight(): PlayerLight {
   const shade = uniform(new THREE.Color("#000"));
   const unlitScale = uniform(1);
   const coneAmount = uniform(defaultConeAmount);
+  /** Metres the light reaches, at most `lightRadius` — see `setVeil` */
+  const reach = uniform(lightRadius);
+  /** `1` lights all within reach alike: no occluders, cone or facing — see `setVeil` */
+  const plain = uniform(0);
+  /** How far the unseen goes towards full black, over the mode's tint — see `setVeil` */
+  let veilDark = 0;
   /** Whether the light is on — `unlitAmount` folds it in, a caller taking an AMOUNT cannot */
   const strength = uniform(0);
   /**
@@ -191,7 +197,7 @@ export function createPlayerLight(): PlayerLight {
 
   /**
    * How lit a world XZ is: `1` where the light reaches it, `0` where it does not, with the penumbra
-   * in between. Full strength until `edgeFalloff` short of `lightRadius`, then dying away to
+   * in between. Full strength until `edgeFalloffShare` of `reach` short of it, then dying away to
    * nothing there — where the sweep's own cap ends the polygon, which would otherwise be a hard
    * circle. Taken as an argument rather than read off `positionWorld`, so that anything holding a
    * world position can ask
@@ -242,7 +248,8 @@ export function createPlayerLight(): PlayerLight {
       along,
     );
     // and the falloff at the edge — see above
-    return shadowed.mul(smoothstep(float(lightRadius - edgeFalloff), float(lightRadius), dist).oneMinus());
+    const edge = reach.max(minReach);
+    return mix(shadowed, float(1), plain).mul(smoothstep(edge.mul(1 - edgeFalloffShare), edge, dist).oneMinus());
   }
 
   /**
@@ -278,7 +285,7 @@ export function createPlayerLight(): PlayerLight {
     const toLight = vec3(lampXZ.x, originY.add(bodyLightY), lampXZ.y).sub(positionWorld);
     // half Lambert: a figure is curved, and `backSoft`'s terminator seams down their flank
     const towards = normalWorld.normalize().dot(toLight.normalize());
-    return towards.mul(0.5).add(0.5);
+    return mix(towards.mul(0.5).add(0.5), float(1), plain);
   }
 
   /** How much of the light reaches a fragment `away` from the origin, before any normal */
@@ -287,7 +294,7 @@ export function createPlayerLight(): PlayerLight {
     // bearing swings about wildly, and dimming there reads as a shadow they are standing in
     const cone = coneAt(away, fromPlayer);
     const held = smoothstep(float(0), float(coneFrom), fromPlayer);
-    return litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount)));
+    return litFrom(away, fromPlayer).mul(float(1).sub(cone.oneMinus().mul(held).mul(coneAmount).mul(plain.oneMinus())));
   }
 
   function applyLight(color: THREE.Node<"vec3">, outwardXZ: null | THREE.Node<"vec2"> = null) {
@@ -296,7 +303,7 @@ export function createPlayerLight(): PlayerLight {
     const lit = shadeAt(away, fromPlayer);
     // and none at all on a face turned away — branched in js, so a caller with no normal to give
     // emits nothing of this
-    const shaded = outwardXZ === null ? lit : lit.mul(facingAt(outwardXZ, away, fromPlayer));
+    const shaded = outwardXZ === null ? lit : lit.mul(mix(facingAt(outwardXZ, away, fromPlayer), float(1), plain));
     return mix(color, shade, unlitAmount.mul(unlitScale).min(1).mul(shaded.oneMinus()));
   }
 
@@ -371,6 +378,12 @@ export function createPlayerLight(): PlayerLight {
         });
     },
 
+    setVeil(reachShare, dark, plainShare = 0) {
+      reach.value = lightRadius * reachShare;
+      plain.value = plainShare;
+      veilDark = dark;
+    },
+
     applyUnlitRgba(color) {
       // the same tint the unseen parts of the world take, so a dark ceiling matches a dark room
       // rather than being its own shade of black — and identity whilst the light is off
@@ -431,7 +444,9 @@ export function createPlayerLight(): PlayerLight {
       // eased rather than switched, or the mode change lands as a flash
       const now = nowSecs();
       retarget(tintMorph, sight === true ? unlitTintSight : unlitTintOther, MODE_FADE_SECS, now);
-      unlitAmount.value = morphAt(tintMorph, MODE_FADE_SECS, now);
+      const tint = morphAt(tintMorph, MODE_FADE_SECS, now);
+      // as far as `min(1)` lets it go, whatever the theme scales it by
+      unlitAmount.value = tint + (1 / Math.max(unlitScale.value, 1e-6) - tint) * veilDark;
 
       const moved = Math.hypot(at.x - origin.value.x, at.z - origin.value.y);
       origin.value.set(at.x, at.z);
@@ -537,6 +552,11 @@ export type PlayerLight = {
   readTable(into: Float32Array): null | Promise<void>;
   /** How many sweeps the table has had, `0` whilst the light is off — a reader need only read after a new one */
   getSweeps(): number;
+  /**
+   * Draws the light in to `reachShare` of `lightRadius`, and takes the unseen `dark` of the way to black.
+   * `plain` of `1` lights all within reach alike. `(1, 0, 0)` is the usual light. Applied by the next `update`
+   */
+  setVeil(reachShare: number, dark: number, plain?: number): void;
   /** Re-reads the walls, which never move. Call on map change */
   syncWalls(gms: Geomorph.LayoutInstance[], gmsData: DerivedGmsData): void;
   /**
@@ -615,8 +635,10 @@ const cullMargin = 3;
 
 /** How far the light reaches (metres) — the sweep stops there, and so does the polygon */
 export const lightRadius = 8;
-/** Over how much of that, at the edge, the light dies away to nothing — see `litAt` */
-const edgeFalloff = lightRadius * 0.35;
+/** Over what share of its reach, at the edge, the light dies away to nothing — see `litAt` */
+const edgeFalloffShare = 0.35;
+/** The least reach the falloff is worked out over, as a `smoothstep` of no width is undefined */
+const minReach = 1e-3;
 
 /** How black an unseen fragment goes: `sight` hides it, the other two keep it legible */
 const unlitTintSight = isTouchDevice() ? 0.8 : 0.6;

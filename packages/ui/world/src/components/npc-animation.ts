@@ -98,6 +98,9 @@ export class NpcAnimation {
     on: false,
     amount: 0,
     phase: Math.random(),
+    /** Multiplies their tune's rate, and its reach and glow — see `Spirit` */
+    pace: 1,
+    swell: 1,
     /** The air in their lungs and the effort of breathing in, `0` to `1`, then their tune's — read by `NpcBreath` */
     full: 0,
     drive: 0,
@@ -362,7 +365,7 @@ export class NpcAnimation {
     const { breath } = this;
     if (breath.on === false && breath.amount === 0) return; // nearly everyone, nearly always
     const tune = this.breathTune;
-    breath.phase = (breath.phase + (delta * tune.rate) / 60) % 1;
+    breath.phase = (breath.phase + (delta * tune.rate * breath.pace) / 60) % 1;
     const step = delta / breathConfig.easeSecs;
     breath.amount = THREE.MathUtils.clamp(breath.amount + (breath.on ? step : -step), 0, 1);
     const full = lungVolume(breath.phase, tune.inhale);
@@ -381,8 +384,8 @@ export class NpcAnimation {
     breath.full = full;
     // the effort of breathing in: none breathing out, which is recoil
     breath.drive = breath.phase < tune.inhale ? Math.sin((Math.PI * breath.phase) / tune.inhale) : 0;
-    breath.glow = tune.glow;
-    breath.reach = tune.reach;
+    breath.glow = tune.glow * breath.swell;
+    breath.reach = tune.reach * breath.swell;
     this.w.r3f?.invalidate();
   }
 

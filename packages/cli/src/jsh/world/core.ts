@@ -1267,6 +1267,19 @@ export function psi({ api, args, w }: JshCli.RunArg) {
 }
 
 /**
+ * The player leaves their body and wakes in another: `npcKey`, else anyone sitting or lying, else someone spawned
+ * in a bed or seat.
+ * As `q` held with psi raised does. Returns at once. See `w.spirit`
+ * ```sh
+ * spirit
+ * spirit npc-0
+ * ```
+ */
+export function spirit({ args, w }: JshCli.RunArg) {
+  w.spirit.start(args[0] === undefined ? undefined : w.npc.get(args[0]).key);
+}
+
+/**
  * Test if ray hits walls or closed doors.
  * - Point via `ray point`
  * - Detail via `ray detail`

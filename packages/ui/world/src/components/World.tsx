@@ -56,6 +56,7 @@ import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
 import RoomLabels from "./RoomLabels";
 import Shields from "./Shields";
+import Spirit from "./Spirit";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
@@ -183,6 +184,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       labels: null as any,
       rings: null as any,
       breaths: null as any,
+      spirit: null as any,
       phasers: null as any,
       shields: null as any,
       roomLabels: null as any,
@@ -528,6 +530,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
                 <NpcShadows key="npc-shadows" />
                 <NpcBreath key="npc-breath" />
                 <Phasers key="phasers" />
+                <Spirit key="spirit" />
               </>
             )}
           </WorldView>
@@ -629,6 +632,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   breaths: UseStateRef<import("./NpcBreath").State>;
+  spirit: UseStateRef<import("./Spirit").State>;
   phasers: UseStateRef<import("./Phasers").State>;
   shields: UseStateRef<import("./Shields").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;

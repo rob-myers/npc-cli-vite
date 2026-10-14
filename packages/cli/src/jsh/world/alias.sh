@@ -13,3 +13,7 @@ pickGdKeys () {
 playerKey () {
   w player.key
 }
+
+playerPath () {
+  echo /shared/pred/player
+}

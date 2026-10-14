@@ -20,10 +20,11 @@ export default function LightSweep() {
   useFrame((root, delta) => {
     const renderer = root.gl as unknown as THREE.WebGPURenderer;
     const player = w.player?.get();
+    const spirit = w.spirit?.light;
     w.view.playerLight.update(
       renderer,
-      player?.position ?? null,
-      player?.rotation.y ?? 0,
+      spirit ?? player?.position ?? null,
+      spirit?.rotationY ?? player?.rotation.y ?? 0,
       w.d ?? emptyDoors,
       w.door?.openRatioArray ?? emptyOpenRatios,
       w.view.fadeRoomsFx.mode === "sight",

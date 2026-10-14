@@ -1,6 +1,12 @@
 # controls
 
 ```sh
+# pointer moves player
+pick meta.{floor,do} | move $( playerPath ) --force
+
+# keys move player
+wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
+
 # pointer moves npc
 pick meta.{floor,do} | move npc:rob --backstep --force
 
@@ -13,12 +19,6 @@ pick meta.{floor,do} | move rob --strafe --force
 # keys strafe npc
 wasd_delta npc:rob | move npc:rob --strafe --force
 
-# pointer moves player
-pick meta.{floor,do} | move /shared/pred/player --force
-
-# keys move player
-wasd_delta --nav /shared/pred/player --force |
-  move /shared/pred/player --force
 
 # last picked moves
 pick meta.{floor,do} | move /shared/pred/lastPicked --force

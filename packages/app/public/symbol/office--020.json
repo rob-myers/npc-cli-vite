@@ -67,7 +67,7 @@
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
-          "d": "M 2 2 L 118 2 L 118 30.8 L 30.6 31.2 L 30.8 149.2 L 118 149.4 L 118 178 L 2 178 Z",
+          "d": "M -2 -2 L 122 -2 L 122 30.8 L 30.6 31.2 L 30.8 149.2 L 122 149.4 L 122 182 L -2 182 Z",
           "baseRect": {"width": 120, "height": 180},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }
