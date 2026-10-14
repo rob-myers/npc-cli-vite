@@ -22,17 +22,24 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       lookTimer: 0,
-      psiLink: null,
-      psiPolledAt: Number.NEGATIVE_INFINITY,
+      armHeld: false,
 
       aimAtPointer() {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
+        const { keysDown } = w.view;
+        // raised only whilst `e` is held
+        if (state.armHeld === true && keysDown.has("e") === false) {
+          state.armHeld = false;
+          w.phasers?.disarm(state.key);
+        }
         // not whilst locked on: the phaser's target is whom they face
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
-        const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
+        // `e` aims the phaser it raises, and `r` looks without one
+        const key = w.phasers?.isArmed(state.key) === true ? state.armHeld : keysDown.has("r");
+        const held = lookAt !== null || (key === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
         if (held === false || posture !== "sit") npc.anim.turnTo(null);
@@ -59,7 +66,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       assign(npcKey) {
         const prev = state.key;
         const changed = prev !== npcKey;
-        if (changed === true) state.unlinkPsi();
         state.key = npcKey;
         // psi goes with the player, if the new one is granted it
         if (changed === true && w.e.isPsiRaised(prev) === true) {
@@ -99,41 +105,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
         state.lookAtPoint(tmpHit.x, tmpHit.z);
       },
-      linkPsi(npcKey) {
-        if (npcKey === state.key || w.n?.[npcKey] === undefined || state.psiLink === npcKey) return;
-        state.unlinkPsi();
-        // their breath alone: nothing an onlooker would see them do
-        w.n[npcKey].anim.setBreathing(true);
-        w.rings?.showSelectRing(npcKey, psiRingColor, "psi");
-        state.psiLink = npcKey;
-      },
-      unlinkPsi() {
-        const npcKey = state.psiLink;
-        if (npcKey === null) return;
-        state.psiLink = null;
-        w.n?.[npcKey]?.anim.setBreathing(false);
-        w.rings?.hideSelectRing(npcKey, "psi");
-      },
-      syncPsiLink() {
-        const npc = state.get();
-        if (npc === undefined || w.client === true || w.e.isPsiRaised() === false) return state.unlinkPsi();
-        const now = w.timer.getElapsedTime();
-        // looked for now and then, a new timer aside
-        if (now - state.psiPolledAt < psiPollSecs && now >= state.psiPolledAt) return;
-        state.psiPolledAt = now;
-        const found = findPsiTarget(w, npc);
-        if (found === undefined) state.unlinkPsi();
-        else state.linkPsi(found.key);
-      },
-      takePsi() {
-        const [npc, npcKey] = [state.get(), state.psiLink];
-        // found afresh, as the link may be a second old
-        if (npc === undefined || npcKey === null || findPsiTarget(w, npc)?.key !== npcKey) return false;
-        state.unlinkPsi();
-        w.e.giveItem(npcKey, "psi");
-        state.setKey(npcKey);
-        return true;
-      },
       lookAtPoint(x, z) {
         const npc = state.get();
         if (npc === undefined || w.client === true || w.disabled === true) return;
@@ -159,8 +130,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
         if (e.code === "KeyQ") state.togglePsi();
-        else if (e.code === "KeyE") state.toggleArm();
-        else return;
+        else if (e.code === "KeyE") {
+          // held, it is raised and aimed: let go, lowered — see `aimAtPointer`
+          if (w.phasers?.isArmed(state.key) === false) state.toggleArm();
+          state.armHeld = w.phasers?.isArmed(state.key) === true;
+        } else return;
         w.hud?.update();
         w.view.forceUpdate();
       },
@@ -268,8 +242,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (state.exists() === false) return;
         const on = w.e.isPsiRaised(state.key);
         if (on === false && w.e.hasItem(state.key, "psi") === false) return;
-        // beside the one linked it takes them, rather than lowering it
-        if (state.takePsi() === false) w.e.setPsi(!on, state.key);
+        w.e.setPsi(!on, state.key);
       },
       toggleRun() {
         const npc = state.get();
@@ -341,26 +314,6 @@ const pointerAim = { at: { x: 0, y: 0 }, rate: 1, untilRest: false };
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
-/** Metres within which the player's psi links to another, who can then be taken */
-const psiLinkMetres = 3;
-/** Seconds between looks for whom that is */
-const psiPollSecs = 1;
-/** Metres nearer the one already linked counts as, so two alike do not swap back and forth */
-const psiKeepMetres = 0.4;
-/** The ring under the one linked */
-const psiRingColor = "#ffffff";
-
-/** Whom psi links to: the nearest of those they could walk to, in range. One already linked is kept over another much the same */
-function findPsiTarget(w: UseStateRef<WorldState>, npc: JshCli.Npc) {
-  let [best, bestDist] = [undefined as undefined | JshCli.Npc, Number.POSITIVE_INFINITY];
-  for (const other of w.e.getNpcsInReach(npc.key)) {
-    const dist = Math.hypot(other.position.x - npc.position.x, other.position.z - npc.position.z);
-    if (dist > psiLinkMetres) continue;
-    const counted = dist - (other.key === w.player.psiLink ? psiKeepMetres : 0);
-    if (counted < bestDist) [best, bestDist] = [other, counted];
-  }
-  return best;
-}
 /** A look tap's longest, second finger down to last up, and how far any finger may stray — as `isPointDiffDrag` */
 const lookTapMs = 300;
 /** A second press of the same move key within this is a double tap, which runs */
@@ -380,7 +333,7 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held they face where the pointer meets the floor, eased round by `face.aim`: or `lookAt`, whilst it is set */
+  /** Whilst `r` is held, or `e` with their phaser, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
@@ -390,6 +343,8 @@ export type State = {
   setTapRun(on: boolean): void;
   /** Ends that run once its keys are let go, or cancel out. Each tick */
   syncRun(): void;
+  /** Their phaser is raised by `e` being held, so letting go lowers it: not one the bar's slot raised */
+  armHeld: boolean;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
   lookTimer: number;
@@ -402,20 +357,8 @@ export type State = {
   lookTowards(clientX: number, clientY: number): void;
   /** The same, to a world point */
   lookAtPoint(x: number, z: number): void;
-  /** The npc the player's psi is linked to, whom `q` would take — see `docs/psi.md` */
-  psiLink: null | string;
-  /** When whom to link to was last looked for, in world seconds */
-  psiPolledAt: number;
-  /** Links the player's psi to them: their breath shows, and a ring under them */
-  linkPsi(npcKey: string): void;
-  /** Lets go of whom they are linked to: their breath and ring go */
-  unlinkPsi(): void;
-  /** Psi raised, links to the nearest in reach, looked for every `psiPollSecs`. Each tick */
-  syncPsiLink(): void;
-  /** Makes whom they are linked to the player, if still the nearest in range — `false` otherwise */
-  takePsi(): boolean;
 
-  /** The player's controls: `q` psi, `e` their phaser, a move key twice to run — the view's own keys are WorldView's */
+  /** The player's controls: `q` psi, `e` held their phaser, a move key twice to run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;

@@ -149,10 +149,16 @@ function shieldBase(view: ShieldView, frame = false) {
   const length: THREE.Node<"float"> = dx.mul(dx).add(dz.mul(dz)).sqrt();
   /** A bar's corner is pinned to a side and a level, then set in from there */
   const bar = attribute<"vec2">("shieldBar", "vec2");
-  const along: THREE.Node<"float"> = frame ? positionLocal.x.mul(length).add(bar.x) : positionLocal.x.mul(length);
-  const up: THREE.Node<"float"> = frame ? positionLocal.y.mul(wallHeight).add(bar.y) : positionLocal.y.mul(wallHeight);
+  /** How thick its frame is, as a share of the usual: none at all, at `0` */
+  const thick = fx.w;
+  const along: THREE.Node<"float"> = frame
+    ? positionLocal.x.mul(length).add(bar.x.mul(thick))
+    : positionLocal.x.mul(length);
+  const up: THREE.Node<"float"> = frame
+    ? positionLocal.y.mul(wallHeight).add(bar.y.mul(thick))
+    : positionLocal.y.mul(wallHeight);
   /** Metres out of its plane, along `(-dz, dx)`: only a bar has any */
-  const out: THREE.Node<"float"> = frame ? positionLocal.z.div(length) : float(0);
+  const out: THREE.Node<"float"> = frame ? positionLocal.z.mul(thick).div(length) : float(0);
   const t = along.div(length);
   const p = vec3(ends.x.add(dx.mul(t)).sub(dz.mul(out)), up, ends.y.add(dz.mul(t)).add(dx.mul(out)));
   const vertexNode = cameraProjectionMatrix.mul(cameraViewMatrix.mul(vec4(p, 1)));
@@ -161,12 +167,14 @@ function shieldBase(view: ShieldView, frame = false) {
   const vAlong = varying(along, frame ? "vFrameAlong" : "vShieldAlong");
   const vUp = varying(up, frame ? "vFrameUp" : "vShieldUp");
   const vSeen = varying(view.fadeRoomsFx.getVisiblity(fx.x), frame ? "vFrameSeen" : "vShieldSeen");
+  /** Metres its frame takes of each edge */
+  const vRim = varying(thick.mul(c.rim), frame ? "vFrameRim" : "vShieldRim");
   /** How much of itself it is, on or off */
   const vStrength = varying(fx.y.mul(c.on - c.off).add(c.off), frame ? "vFrameStrength" : "vShieldStrength");
   const vLength = varying(length, frame ? "vFrameLength" : "vShieldLength");
   /** Metres in from its nearest edge */
   const inset = vAlong.min(vLength.sub(vAlong)).min(vUp).min(float(wallHeight).sub(vUp));
-  return { vertexNode, vAlong, vUp, vSeen, vStrength, inset };
+  return { vertexNode, vAlong, vUp, vSeen, vStrength, inset, vRim };
 }
 
 /** Its frame: plain dark bars, the same over any deck */
@@ -190,12 +198,12 @@ export function shieldFrameNodes(view: ShieldView) {
 export function shieldNodes(res: ShieldResources, view: ShieldView) {
   const { color, gain, glowGain, lineWidth, added, fill, fade } = res;
   const c = shaderConfig;
-  const { vertexNode, vAlong, vUp, vSeen, vStrength, inset } = shieldBase(view);
+  const { vertexNode, vAlong, vUp, vSeen, vStrength, inset, vRim } = shieldBase(view);
   const hit = attribute<"vec4">("shieldHit", "vec4");
   const [vHitAlong, vHitUp, vHit, vStruck] = [hit.x, hit.y, hit.z, hit.w].map((n, i) => varying(n, `vShieldHit${i}`));
 
   const colorNode = Fn(() => {
-    const rim = smoothstep(float(c.rim), float(c.rim - 0.004), inset);
+    const rim = smoothstep(vRim, vRim.sub(0.004), inset);
 
     // the field it holds: slanted lines, which stand out from a ship that is all uprights and levels
     const slant = fract(vAlong.add(vUp).div(c.hatchGap));

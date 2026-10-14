@@ -38,6 +38,8 @@ export type WorldSettings = {
   cameraInitial: null | PersistedCamera;
   /** Whether the camera follows the player — an option of either `cameraMode` */
   follow: boolean;
+  /** Whether `w`, `a`, `s` and `d` head along the world's axes — see `WorldView.setCompassDial` */
+  compassDial: boolean;
   postProcessing: boolean;
   /** Whether the channels are parted over the finished frame — see `service/rgb-shift` */
   rgbShift: boolean;
@@ -86,6 +88,7 @@ const defaultWorldSettings: WorldSettings = {
   cameraMode: "embodied",
   cameraInitial: null,
   follow: isTouchDevice(),
+  compassDial: true,
   postProcessing: true,
   rgbShift: true,
   fadeRoomsMode: "sight",

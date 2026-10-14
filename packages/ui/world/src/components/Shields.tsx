@@ -196,6 +196,7 @@ export default function Shields() {
             on: state.overrides.get(d.key)?.on ?? d.meta.shield !== "off",
             freq: d.meta.freq === null ? null : Number(d.meta.freq) || shieldConfig.freq,
             hit: before.get(d.key)?.hit ?? { along: 0, up: 0, shown: 0, wanted: 0, struck: 0 },
+            frame: d.meta.frame === false ? 0 : typeof d.meta.frame === "number" ? d.meta.frame : 1,
             slot: gmId >= 0 && roomId >= 0 ? slotOf(gmId, roomId) : alwaysShownSlot,
           });
         }
@@ -203,11 +204,11 @@ export default function Shields() {
 
         for (const key of state.overrides.keys()) if (state.segs.has(key) === false) state.overrides.delete(key);
 
-        for (const { index, a, b, on, slot, hit } of state.segs.values()) {
+        for (const { index, a, b, on, slot, hit, frame } of state.segs.values()) {
           // biome-ignore format: a row an attribute
           state.data.set([
             a.x, a.y, b.x, b.y,
-            slot, on ? 1 : 0, 0, 0,
+            slot, on ? 1 : 0, 0, frame ?? 1,
             hit.along, hit.up, hit.shown, hit.struck,
           ], index * shieldStride);
         }
@@ -331,6 +332,8 @@ type Seg = {
   };
   /** Its room's, which it fades with */
   slot: number;
+  /** How thick its frame is, as a share of the usual: `meta.frame`, where `false` is none, a bare field */
+  frame: number;
 };
 
 export type State = ShieldResources & {

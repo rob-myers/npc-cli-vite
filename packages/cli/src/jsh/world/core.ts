@@ -246,7 +246,7 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
     if (own === true && psiOn === true && (meta.bodyPart === "leftarm" || meta.bodyPart === "leftforearm")) {
       w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not
     } else if (w.phasers?.isArmed(playerKey) === true) {
-      // the arm that holds it lowers it, its target kept for next time — elsewhere on themselves, nothing
+      // the arm that holds it lowers it, its target forgotten — elsewhere on themselves, nothing
       if (own === true) {
         if (meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm") w.phasers.disarm(playerKey);
       } else {

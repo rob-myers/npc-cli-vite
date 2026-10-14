@@ -154,7 +154,7 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierHold: false,
       keysDown: new Set(),
       lastKeyMs: 0,
-      compassDial: false,
+      compassDial: saved.compassDial ?? true,
       compassPoint: 0,
       compassSkew: 0,
       wasdPoint: null,
@@ -1228,6 +1228,7 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       setCompassDial(on) {
         state.compassDial = on;
+        store.patch({ compassDial: on });
         state.keepNearSquare(); // clear of the diagonals at once, as a turn let go would be
         w.hud?.update();
       },

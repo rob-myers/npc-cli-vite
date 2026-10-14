@@ -155,13 +155,13 @@ toggle labels it and opens a card per pick.
 ## Inventory
 
 See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
-keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
+keys, then carried items; `q` psi, `e` held the phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
 World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `inventory` for what a press does.
 
 ## Psi
 
 See `docs/psi.md` — the ONLY doc for it. In short: psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`), and raised, their
-left hand is at their temple. Raised, the player becomes a nearby npc by pressing `q` again (`w.player.psiLink`): the nearest in reach is ringed and breathes. Raised, a press on another npc reads
+left hand is at their temple. Raised, a press on another npc reads
 their thought (`w.speech.readThought`): over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha.
 
 ## Shields

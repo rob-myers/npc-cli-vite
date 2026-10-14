@@ -23,18 +23,18 @@ nor phasers are mirrored.
 At its right end, after the slots, are the buttons for the player themself — all a client gets:
 not on a client, walk/run (`w.player.toggleRun()`: their `anim.hurry`); look/follow (a press looks, a
 long press toggles the follow, as `f`); and the compass dial (`c`, `w.view.setCompassDial`), a letter
-naming the compass point up the screen. One that is on is white, else grey.
+naming the compass point up the screen, persisted per World and on by default. One that is on is white, else grey.
 
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
+| phaser, `e` HELD | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | the key raises it whilst held, aimed at the pointer, and lowers it let go (`w.player.armHeld`, `aimAtPointer`). The slot is `w.player.toggleArm()`: draws it, else unlocks it, else puts it away |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
 A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
-The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`); the rest
+The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, and `e` held). `r` held looks at the pointer, without a phaser raised; the rest
 are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`.
 An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
@@ -150,7 +150,7 @@ Debug's door toggle reads that off any pick.
   floor, looser for one whose top (`y3d`) is higher. Sat or lain in reach they take it from there. A
   newer press abandons it;
 - on an npc whilst the phaser is drawn, the beam locks onto the part pressed. A press on the
-  player's own right arm lowers it instead, its target kept for when it is next raised, and one
+  player's own right arm lowers it instead, its target forgotten: raised again it is on nobody, and one
   elsewhere on them does nothing. With the phaser lowered and psi on, another npc pressed has
   their thought read (`docs/psi.md`). A press on the player's own LEFT
   arm lowers psi, phaser drawn or not. `predicates`' pick ring stands down meanwhile.
