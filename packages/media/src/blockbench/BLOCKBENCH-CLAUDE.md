@@ -189,7 +189,7 @@ The legs are SOLVED so both ankles stay put and both soles flat, keyed every fif
 Export from the rest pose: after any `Animator.preview()` run `Animator.showDefaultPose(true); Canvas.updateAllBones()`
 first, else the glTF's nodes keep the pose.
 
-## Psi's effect on its target: pain_* / pacify_in / pacified
+## A hit's effect on its target: pain_* / pacified
 
 Drafts, posed by search in Blockbench (`risky_eval`): legs solved so feet stay planted, hands solved
 onto a bone, by the forearm's tip `(0, -5.6, 0)`.
@@ -200,7 +200,7 @@ onto a bone, by the forearm's tip `(0, -5.6, 0)`.
   toe, torso tipped over it, the same-side hand on the thigh. `_right` is the mirror.
 - `pain_arm_left` / `_right` (1.2s loop, torso, head and BOTH arms, no legs or root): the arm folded
   across the body, the other hand on its forearm. `_right` is the mirror.
-- `pacify_in` (1.5s, once): a jolt back at 0.25, knees buckling at 0.6, a half recovery at 1.0, ending
+- `pain_head` (1.5s, once, was `pacify_in`): a jolt back at 0.25, knees buckling at 0.6, a half recovery at 1.0, ending
   on `pacified`'s first key. `pacified` (3s loop): slack, head lolled, arms dead, a slow sway of `hips` z.
 
 ### Sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
@@ -214,8 +214,8 @@ Lengths are the standing set's.
   up (arm position y 0.3 / 0.45), hands forward onto the knees (arms x 18).
 - `sit_pacified` (3s): `sit`'s arms, in the lap. Slumped (stomach -8, chest -7), head lolled as `pacified`
   ([-14,5,12]), `stomach` z swaying 2.5 / -2.5.
-- `sit_pacify_in` / `lie_pacify_in` (1.5s, once): from the base's first key to the pacified one's, keyed at
-  `pacify_in`'s times. Sat: thrown back at 0.25 (stomach 5, chest 6, head 18, arms flung out, shins kicked
+- `sit_pain_head` / `lie_pain_head` (1.5s, once, were `{sit,lie}_pacify_in`): from the base's first key to the pacified one's, keyed at
+  `pain_head`'s times. Sat: thrown back at 0.25 (stomach 5, chest 6, head 18, arms flung out, shins kicked
   to -70), slumped past it at 0.6 (stomach -14, head -22). Lain: a start at 0.25 (stomach -7, chest -5, arms
   and knees lifted), then the head rolls over, past its rest at 0.6 (y 30).
 - `lie_pain_high` (1.6s): a curl, not an arch. Stomach -10 / -14, chest -8 / -11, knees up (thighs 35 / 40,

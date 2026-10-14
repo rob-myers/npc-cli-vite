@@ -102,15 +102,16 @@ and whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-h
 
 | part | stood | sat / lain |
 | --- | --- | --- |
-| head | `pacify_in`, then `pacified` looped | `{sit,lie}_pacify_in`, then `{sit,lie}_pacified` looped |
+| head | `pain_head` | `{sit,lie}_pain_head` |
 | chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
 | an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
 
-- A pain clip plays once, then they are back as they were. Pacified lasts until released: `pose npc-0 as:breathe`,
-  or `as:sit` / `as:lie`.
+- Every hit pacifies. Its pain clip plays once, then `pacified` (or `{sit,lie}_pacified`) loops. A head shot's clip ends
+  slumped, so goes straight on. Any other ends stood, so fades into it over `pacifyFadeSecs`.
+- Pacified lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
 - Whilst either (`anim.hurt`) they can do nothing: a move under way is stopped (it rejects with `hit`), their
   phaser is lowered, and `move`, `look` and arming are refused.
-- Pain on someone pacified leaves them pacified after. The label, or no part, has no effect.
+- Pain on someone pacified leaves them pacified after. A head shot on them has no effect, nor does the label, or no part.
 - One lock hits once. Not mirrored over the network.
 
 
