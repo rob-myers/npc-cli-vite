@@ -2,11 +2,10 @@
 
 ```sh
 # pointer moves player
-pick meta.{floor,do} | move /shared/pred/player --force
+pick meta.{floor,do} | move $( playerPath ) --force
 
 # keys move player
-wasd_delta --nav /shared/pred/player --force |
-  move /shared/pred/player --force
+wasd_delta --nav $( playerPath ) --force | move $( playerPath ) --force
 
 # pointer moves npc
 pick meta.{floor,do} | move npc:rob --backstep --force
