@@ -17,6 +17,7 @@ export default function NpcFocus() {
       npcKey: null,
       busy: false,
       offAim: false,
+      resumed: false,
       before: null,
       el: null,
       markEls: {},
@@ -94,6 +95,9 @@ export default function NpcFocus() {
         state.abandon();
         state.update();
       },
+      isFixated() {
+        return state.busy === true && state.resumed === false;
+      },
       isLost() {
         return (
           w.n?.[state.npcKey ?? ""] === undefined ||
@@ -115,7 +119,7 @@ export default function NpcFocus() {
         const { controls } = w.view;
         if (state.npcKey !== null || npc === undefined || controls == null) return;
         if (state.busy === false && state.begin(npcKey) === null) return;
-        Object.assign(state, { npcKey, offAim: false });
+        Object.assign(state, { npcKey, offAim: false, resumed: false });
         if (state.before !== null) state.before.paused = w.disabled; // as it was before this pause
         // a follow runs on whilst they aim, else the view stops short. The view is ours from here
         if (w.view.follow === true) w.view.setFollow(false);
@@ -163,6 +167,7 @@ export default function NpcFocus() {
     /** Before the World's own keys: a digit there is a slot of the bar */
     const onKeyDown = (e: KeyboardEvent) => {
       if (state.offAim === true) return;
+      if (e.key === "Escape" && state.resumed === true) return; // the World's pause key again, once resumed
       const part = npcFocusParts[Number(e.key) - 1]?.part;
       if (e.key !== "Escape" && part === undefined) return;
       e.preventDefault();
@@ -183,9 +188,16 @@ export default function NpcFocus() {
       if (offAim === false) state.place();
     });
     w.r3f?.invalidate(); // a first frame to place them in
+    const sub = w.events.subscribe({
+      next(e) {
+        if (e.key !== "enabled" || state.resumed === true) return;
+        state.set({ resumed: true }); // its note goes: Escape no longer ends this
+      },
+    });
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
       unsubscribe();
+      sub.unsubscribe();
     };
   }, [state.npcKey]);
 
@@ -218,15 +230,17 @@ export default function NpcFocus() {
                 </span>
               </button>
             ))}
-            <div className="absolute inset-x-0 top-3 flex justify-center">
-              <button
-                type="button"
-                className="pointer-events-auto rounded bg-black/60 px-2 py-0.5 font-mono text-[11px] text-white/80 hover:text-white"
-                onPointerDown={() => state.close(null)}
-              >
-                Esc to cancel
-              </button>
-            </div>
+            {state.resumed === false && (
+              <div className="absolute inset-x-0 top-3 flex justify-center">
+                <button
+                  type="button"
+                  className="pointer-events-auto cursor-pointer rounded bg-black/60 px-2 py-0.5 font-mono text-[11px] text-white/80 hover:text-white"
+                  onPointerDown={() => state.close(null)}
+                >
+                  Cancel (Esc) or continue (Enter)
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       )}
@@ -288,6 +302,8 @@ export type State = {
   busy: boolean;
   /** They face more than `maxOffAimRad` away from them: the marks are hidden until they face back */
   offAim: boolean;
+  /** The World has been resumed since it opened: then Escape only pauses it, and no longer ends this */
+  resumed: boolean;
   /** The pause, follow and phaser to go back to */
   before: null | {
     paused: boolean;
@@ -312,6 +328,8 @@ export type State = {
   close(part: null | FocusPart): void;
   /** Takes the choice away and nothing else: no shot, the pause and phaser as they are */
   dismiss(): void;
+  /** Whilst it aims, and in the pause it opens in: the player is held to it, as a move would undo its turn */
+  isFixated(): boolean;
   /** Either of them gone, or the phaser lowered */
   isLost(): boolean;
   /** They face more than `maxOffAimRad` away from whom it is open on */

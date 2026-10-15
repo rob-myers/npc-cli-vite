@@ -83,6 +83,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       exists() {
         return w.n?.[state.key] !== undefined;
       },
+      is(npcKey) {
+        return npcKey === state.key;
+      },
       lookTowards(clientX, clientY) {
         const npc = state.get();
         // paused, the look would run out before they could turn
@@ -343,6 +346,8 @@ export type State = {
   /** The player's npc, once they are spawned */
   get(): undefined | JshCli.Npc;
   exists(): boolean;
+  /** Whether `npcKey` is the player */
+  is(npcKey: string): boolean;
   /** Has them look where a point of the viewport meets the floor, as `r` does the pointer */
   lookTowards(clientX: number, clientY: number): void;
   /** The same, to a world point */
