@@ -222,6 +222,7 @@ in `tty-1` and beyond, their output, pointer presses on the World, the console, 
 a tty; keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
 
 Whilst Claude drives it, the World's busy overlay says "mcp testing". Unpause the World before a test moves or turns anyone.
+A result ending `[user input since last call: …]` means the user took over: stop and ask. If state seems off mid-test, ask whether they interacted before calling it a bug.
 
 Before EVERY call to it, write the call's input as a code fence: the `jsh` line as `sh`, the `query`
 function as `js`, else its arguments. That message is `IN` and the fence ALONE, with no other text.

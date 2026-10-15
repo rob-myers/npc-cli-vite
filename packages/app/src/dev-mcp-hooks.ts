@@ -61,6 +61,14 @@ const devMcp = createStore<DevMcpState>()((_set, get) => ({
     sessionApi.getSession(key).ttyShell.xterm.sendSigKill();
   },
 
+  ignoreInputFor(ms) {
+    ownInputUntil = performance.now() + ms;
+  },
+
+  takeUserInput() {
+    return userInput.splice(0);
+  },
+
   async query(fn, worldKey = "world-0", depth = 4) {
     const w = queryClientApi.get([worldKey]);
     if (w === undefined) throw Error(`${worldKey} not ready`);
@@ -98,34 +106,40 @@ devMcp.setState({
   },
 });
 
-/** Calls under way */
-let calls = 0;
 /** Ends the World's busy overlay, whilst it is up */
 let endBusy: null | (() => void) = null;
-let idleTimer = 0;
 
-/** Runs a call with "mcp testing" in the World's busy overlay, kept up `mcpBusyHoldMs` after the last */
+/** Runs a call with "mcp testing" in the World's busy overlay, up until Claude's turn ends */
 async function driving<T>(call: () => Promise<T>): Promise<T> {
-  calls++;
-  window.clearTimeout(idleTimer);
   if (endBusy === null) {
+    userInput.length = 0;
     const ended = new Promise<void>((resolve) => (endBusy = () => resolve()));
     const w = queryClientApi.get(["world-0"]) as
       | undefined
       | { view?: { runBusy(text: string, task: () => Promise<void>): Promise<void> } };
     void w?.view?.runBusy(mcpBusyText, () => ended);
   }
-  try {
-    return await call();
-  } finally {
-    if (--calls === 0) idleTimer = window.setTimeout(stopBusy, mcpBusyHoldMs);
-  }
+  return call();
 }
 
 function stopBusy() {
   endBusy?.();
   endBusy = null;
 }
+
+/** The user's input whilst "mcp testing" is up, told to Claude with its next result */
+const userInput: string[] = [];
+/** Input until then is Claude's own: a CDP click is trusted too */
+let ownInputUntil = 0;
+
+function noteInput(e: Event) {
+  if (endBusy === null || performance.now() < ownInputUntil) return;
+  const what = e instanceof KeyboardEvent ? `keydown ${e.key}` : e.type;
+  if (userInput.at(-1) !== what && userInput.length < 20) userInput.push(what);
+}
+
+const inputTypes = ["pointerdown", "keydown", "wheel"];
+for (const type of inputTypes) window.addEventListener(type, noteInput, { capture: true, passive: true });
 
 /** Per tty, the io tapped and how to stop — a tab closed and reopened has a new io */
 const taps = new Map<string, { io: unknown; off(): void }>();
@@ -245,15 +259,17 @@ const ignoredKeys = new Set([
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 const maxEntries = 2000;
 const mcpBusyText = "mcp testing";
-/** Milliseconds the overlay stays after the last call, so a run of them shows as one */
-const mcpBusyHoldMs = 15_000;
 
 (window as unknown as { __devMcp: typeof devMcp }).__devMcp = devMcp;
+
+// sent on by `vite-plugin-dev-mcp` from Claude Code's `Stop` hook
+import.meta.hot?.on("dev-mcp:turn-end", stopBusy);
 
 // re-run in place on an edit, rather than reloading the page
 import.meta.hot?.accept();
 import.meta.hot?.dispose(() => {
   for (const { off } of taps.values()) off();
+  for (const type of inputTypes) window.removeEventListener(type, noteInput, { capture: true });
   stopBusy();
 });
 
@@ -280,6 +296,10 @@ export type DevMcpState = {
   read(key: string, since: number): DevMcpRead;
   /** ctrl-c */
   interrupt(key: string): void;
+  /** Input in the next `ms` is Claude's own, e.g. a `click` */
+  ignoreInputFor(ms: number): void;
+  /** The user's input since last asked, e.g. `keydown Escape` */
+  takeUserInput(): string[];
   /** `fn` of the World as plain data, bypassing every tty */
   query(fn: (w: any) => unknown, worldKey?: string, depth?: number): Promise<unknown>;
   /** Where a world point shows in the viewport, or `null` if off-screen */
