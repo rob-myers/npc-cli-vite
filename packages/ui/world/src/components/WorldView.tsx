@@ -170,6 +170,7 @@ export function WorldView(props: React.PropsWithChildren) {
       pickRT: createPickRT(1),
       npcMaskMrt: null,
       busy: null,
+      pausedHidden: false,
       postProcessing: saved.postProcessing,
       npcOutline: saved.npcOutline,
       roomOutline: saved.fadeRoomOutlines,
@@ -1002,7 +1003,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.isPointDiffDrag(last.down, getRelativePointer(e)) === true) {
           return; // drag is not a pick
         }
-        if (w.disabled === true && state.isOverPaused(e.nativeEvent) === true) {
+        if (state.showsPaused() === true && state.isOverPaused(e.nativeEvent) === true) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
@@ -1011,6 +1012,9 @@ export function WorldView(props: React.PropsWithChildren) {
       focus() {
         // the `Canvas` wrapper, which has the `tabIndex`
         state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
+      },
+      showsPaused() {
+        return w.disabled === true && state.pausedHidden === false;
       },
       isOverPaused(e) {
         const rect = state.pausedEl?.getBoundingClientRect();
@@ -1366,7 +1370,8 @@ export function WorldView(props: React.PropsWithChildren) {
             opts.ms ??
             Math.max(
               opts.minMs ?? 0,
-              Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits),
+              Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) *
+                Math.min(1, distance / lookAtShortUnits),
             );
           let elapsedMs = 0;
           let lastEpochMs = performance.now();
@@ -1727,7 +1732,9 @@ export function WorldView(props: React.PropsWithChildren) {
           "top-[40%] transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
           // paused — else an invisible button sits over the middle of a running world
-          w.disabled !== true ? "pointer-events-none opacity-0" : "cursor-pointer opacity-100 hover:text-yellow-100",
+          state.showsPaused() === false
+            ? "pointer-events-none opacity-0"
+            : "cursor-pointer opacity-100 hover:text-yellow-100",
         )}
       >
         <PlayIcon className="size-4 shrink-0" weight="fill" />
@@ -1739,7 +1746,11 @@ export function WorldView(props: React.PropsWithChildren) {
       <AnimatePresence>
         {state.busy !== null && (
           <motion.div
-            className={cn(indicatorClassName, "pointer-events-none top-6 z-70 whitespace-nowrap")}
+            className={cn(
+              indicatorClassName,
+              "pointer-events-none top-6 z-70 whitespace-nowrap",
+              import.meta.env.DEV && "left-3 translate-x-0", // clear of npc focus's note at top centre
+            )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1821,6 +1832,8 @@ export type State = {
   npcMaskMrt: null | NpcMaskMrt;
   /** What the busy overlay says, or `null` whilst nothing heavy is running — see `runBusy` */
   busy: null | string;
+  /** Paused, but not to be shown so, e.g. whilst npc focus has paused the World */
+  pausedHidden: boolean;
   /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
   syncPickRT(): void;
   raycaster: THREE.Raycaster;
@@ -1936,6 +1949,8 @@ export type State = {
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
   /** Whether a pointer is over the paused pill — the resume tap, since the pill forwards its presses */
+  /** Whether the paused indicator shows: paused, and not `pausedHidden` */
+  showsPaused(): boolean;
   isOverPaused(e: PointerEvent): boolean;
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */

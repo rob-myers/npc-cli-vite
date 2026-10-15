@@ -64,7 +64,8 @@ from `ct.w` and returning plain data.
 - **To show the player, use `w view.holdFrontier`**: the look button's short press, framing them and
   their frontier. `w view.onLookGesture false` is the press itself, but stops a follow instead of looking.
 - **The World is often paused**, e.g. after a reload: a `move` then waits, and just after load `npcs`
-  may print `[]`. Unpause it with `query` `w => w.setDisabled(false)`.
+  may print `[]`. Unpause it with `query` `w => w.setDisabled(false)` BEFORE a test moves, turns or arms
+  anyone: a `look` never finishes whilst paused. Unpause again after anything that pauses, e.g. `w.npcFocus.open`.
 - **Subscribe to `w.events` with `{ next }`**, never a bare function: that makes EVERY event throw
   "listener is not a function" until unsubscribed, breaking the user's commands meanwhile.
 - **To switch tabs, type a line there**: a typed line brings its tty to the front.
@@ -125,9 +126,13 @@ tail -f ~/.claude/projects/-Users-robmyers-coding-npc-cli-vite/<session-id>.json
 
 The Claude Code CLI shows the input inline, and `claude --resume` opens the same session there.
 
+On the page itself, the World's busy overlay says "mcp testing" whilst a call is under way and for
+`mcpBusyHoldMs` after (`driving` in `dev-mcp-hooks.ts`). Every call shows it except `console`, `shot`
+and a `click` at client coordinates.
+
 ## Editing the MCP
 
 - `server.ts` or `cdp.ts`: reconnect the server (`/mcp`, then `npc-cli`).
-- `dev-mcp-hooks.ts`: saving it reloads the page, so the World restarts and each tty's output counter
-  (`since`) starts again.
+- `dev-mcp-hooks.ts`: it accepts its own hot update, so a save re-runs it in place. The new store starts
+  each tty's output counter (`since`) again.
 

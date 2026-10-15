@@ -81,6 +81,52 @@ const devMcp = createStore<DevMcpState>()((_set, get) => ({
   },
 }));
 
+// each call is shown on the World as it is made — see `driving`
+const { ensureTty, run, await: awaitDone, query, worldToClient, interrupt } = devMcp.getState();
+devMcp.setState({
+  ensureTty: (...args) => driving(() => ensureTty(...args)),
+  run: (...args) => driving(() => run(...args)),
+  await: (...args) => driving(() => awaitDone(...args)),
+  query: (...args) => driving(() => query(...args)),
+  worldToClient(...args) {
+    void driving(async () => {});
+    return worldToClient(...args);
+  },
+  interrupt(key) {
+    void driving(async () => {});
+    interrupt(key);
+  },
+});
+
+/** Calls under way */
+let calls = 0;
+/** Ends the World's busy overlay, whilst it is up */
+let endBusy: null | (() => void) = null;
+let idleTimer = 0;
+
+/** Runs a call with "mcp testing" in the World's busy overlay, kept up `mcpBusyHoldMs` after the last */
+async function driving<T>(call: () => Promise<T>): Promise<T> {
+  calls++;
+  window.clearTimeout(idleTimer);
+  if (endBusy === null) {
+    const ended = new Promise<void>((resolve) => (endBusy = () => resolve()));
+    const w = queryClientApi.get(["world-0"]) as
+      | undefined
+      | { view?: { runBusy(text: string, task: () => Promise<void>): Promise<void> } };
+    void w?.view?.runBusy(mcpBusyText, () => ended);
+  }
+  try {
+    return await call();
+  } finally {
+    if (--calls === 0) idleTimer = window.setTimeout(stopBusy, mcpBusyHoldMs);
+  }
+}
+
+function stopBusy() {
+  endBusy?.();
+  endBusy = null;
+}
+
 /** Per tty, the io tapped and how to stop — a tab closed and reopened has a new io */
 const taps = new Map<string, { io: unknown; off(): void }>();
 
@@ -198,8 +244,18 @@ const ignoredKeys = new Set([
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ansi escapes
 const ansiRegex = /\x1b\[[0-9;]*m/g;
 const maxEntries = 2000;
+const mcpBusyText = "mcp testing";
+/** Milliseconds the overlay stays after the last call, so a run of them shows as one */
+const mcpBusyHoldMs = 15_000;
 
 (window as unknown as { __devMcp: typeof devMcp }).__devMcp = devMcp;
+
+// re-run in place on an edit, rather than reloading the page
+import.meta.hot?.accept();
+import.meta.hot?.dispose(() => {
+  for (const { off } of taps.values()) off();
+  stopBusy();
+});
 
 type EntryBody = { out: unknown } | { level: "info" | "error"; msg: string } | { done: number };
 

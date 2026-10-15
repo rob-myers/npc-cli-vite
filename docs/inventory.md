@@ -28,13 +28,13 @@ naming the compass point up the screen, persisted per World and on by default. O
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. A shot needs no raising first: see "Npc focus" |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
 Turning psi or the phaser ON needs it — jsh `phaser` too, which throws without one; turning it off never does.
 A phaser can also be DEAD, and then cannot be raised: see `docs/shields.md`.
-The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, and `e` held). `r` held turns them to the pointer, phaser raised or not; the rest
+The first three are grouped apart from the items. Only psi and the phaser have keys (`q`, `e`). `r` held turns them to the pointer, phaser raised or not; the rest
 are clicked. A slot's tooltip is its name, and its key if it has one e.g. `psi (Q)`.
 An item, and a carried phaser, show an "x" which puts it down on hover — an item whilst selected
 too, which is how touch gets it — as does "drop" in the right-click menu of either. On touch
@@ -114,6 +114,23 @@ and whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-h
 - Pain on someone pacified leaves them pacified after. A head shot on them has no effect, nor does the label, or no part.
 - One lock hits once. Not mirrored over the network.
 
+### Npc focus
+
+Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`), as does jsh `focus target-0`:
+
+1. `aimAt` turns the player to them, raising the phaser on the way (at most `turnMaxMs`). It then waits for the phaser to
+   come up clear as they now stand, by a cast made there (`w.phasers.isClear`, at most `raiseMaxMs`).
+2. Drawn in there (`phaser_aim_avoid`), or out of sight (a raycast is blocked), it ends with the phaser left raised.
+3. Otherwise the World pauses and the view zooms in. A mark is pinned over their head, body, arms and legs, placed from their bones each frame.
+4. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or the note at the top, shoots nothing.
+5. The World resumes, unless it was paused before. The view stays where it is.
+
+- `cancel` ends it as Escape does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
+- Only the marks take the pointer, so the camera still moves. The paused indicator is hidden (`showsPaused`).
+- A follow runs on whilst they aim, is set aside for the zoom, and resumes after.
+- The phaser is lowered after (`arm`'s `once`, at most `onceSecs`), unless it was raised before the click, e.g. by `e`.
+- The World may be resumed whilst the marks are up (Enter, or play). They fade out whilst the player faces more than
+  `maxOffAimRad` (15°) away (`offAim`), and back in as they face them again. Lowering the phaser, e.g. by `e`, ends it as Escape does (`isLost`).
 
 - `giveItem(npcKey, "psi" | kind)`, `dropItem(npcKey, "psi" | itemKey | kind)`, `hasItem`.
 - `revokeItem(npcKey, "psi" | kind)` takes it away outright, never put down — the `psi` and `phaser`
@@ -150,10 +167,9 @@ Debug's door toggle reads that off any pick.
   e.g. beside its table — and takes it if then within `inventoryConfig.reach`: tight for one on the
   floor, looser for one whose top (`y3d`) is higher. Sat or lain in reach they take it from there. A
   newer press abandons it;
-- on an npc whilst the phaser is drawn, the beam locks onto the part pressed. A press on the
-  player's own right arm lowers it instead, its target forgotten: raised again it is on nobody, and one
-  elsewhere on them does nothing. With the phaser lowered and psi on, another npc pressed has
-  their thought read (`docs/psi.md`). A press on the player's own LEFT
+- on another npc with psi on, their thought is read (`docs/psi.md`). Else, carrying a phaser, it
+  focuses on them (see "Npc focus"). A press on the player's own right arm lowers a raised phaser,
+  its target forgotten: one elsewhere on them does nothing. A press on the player's own LEFT
   arm lowers psi, phaser drawn or not. `predicates`' pick ring stands down meanwhile.
 
 It is a keyed listener (`w.e.addKeyedListener`), as `predicates` is, so there is no process to kill.

@@ -139,6 +139,7 @@ Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred}.ts`
 - register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
 - never `await` something a kill cannot interrupt: `w.npc.nextTick()` never resolves whilst the world is paused, so race it — `Promise.race([w.npc.nextTick(), killed])`;
 - on the way out `handlers.dispose()`, then `throw api.getKillError()`.
+- World code a command awaits, which a kill must end, runs as a `Task` (`@npc-cli/util`) — see `docs/tasks.md`, the ONLY doc for it.
 
 See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
@@ -220,6 +221,8 @@ the `pnpm dev` page over CDP through `window.__devMcp` (`packages/app/src/dev-mc
 in `tty-1` and beyond, their output, pointer presses on the World, the console, screenshots. Prototype in
 a tty; keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
 
+Whilst Claude drives it, the World's busy overlay says "mcp testing". Unpause the World before a test moves or turns anyone.
+
 Before EVERY call to it, write the call's input as a code fence: the `jsh` line as `sh`, the `query`
 function as `js`, else its arguments. That message is `IN` and the fence ALONE, with no other text.
 The VS Code extension shows a call's result but not its input, and it drops a fence that follows prose.
@@ -246,7 +249,8 @@ time, pausing for "next" — never headless. Players are moved, not spawned.
 
 - TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — `Picker`, from `@npc-cli/util/picker`.
-- `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state.
+- `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state. Its methods go in alphabetical order.
+- A frame loop (`useFrame`, `w.e.addFrameCallback`) never drives a React render: no `state.update()` from one, even on a change. Write to the DOM instead, e.g. `el.style`, as `NpcFocus` places and fades its marks.
 - To find npcs near one, go through those in their room or the rooms they can reach (`w.e.getNpcsInReach(npcKey)`, over `w.npc.roomToNpcs`), not every npc in `w.n`, unless there is good reason: a wall is then never between the two.
 - `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `w.e.setPsi`) must guard it.
 - Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
