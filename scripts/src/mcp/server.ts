@@ -125,6 +125,7 @@ server.registerTool(
             : null;
       if (at === null) throw Error("give x and z (on-screen), or clientX and clientY");
 
+      await cdp.evaluate(`__devMcp.getState().ignoreInputFor?.(${opts.long ? 2000 : 1500})`); // ours, not the user's
       const base = { x: at.clientX, y: at.clientY, button: opts.button };
       const buttons = opts.button === "left" ? 1 : 2;
       await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", ...base, button: "none" });
@@ -189,10 +190,17 @@ function formatRead({ entries, done, exitCode, last }: DevMcpRead) {
 
 async function tryText(run: () => Promise<string>) {
   try {
-    return { content: [{ type: "text" as const, text: await run() }] };
+    const text = await run();
+    return { content: [{ type: "text" as const, text: text + (await userInputNote()) }] };
   } catch (e) {
     return { content: [{ type: "text" as const, text: `${e instanceof Error ? e.message : e}` }], isError: true };
   }
+}
+
+/** The user's input on the page since the last call, if any: Claude then stops to ask — see `docs/mcp.md` */
+async function userInputNote() {
+  const input = await cdp.evaluate<string[]>("__devMcp.getState().takeUserInput?.() ?? []").catch(() => []);
+  return input.length === 0 ? "" : `\n[user input since last call: ${input.join(", ")}]`;
 }
 
 function q(s: string) {

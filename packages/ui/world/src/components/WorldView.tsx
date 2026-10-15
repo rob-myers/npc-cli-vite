@@ -136,7 +136,10 @@ export function WorldView(props: React.PropsWithChildren) {
         down: new Vect(),
         rightPress: false,
         multi: false,
+        pick: null,
       },
+      pickedAt: null,
+      lookMark: null,
       foldNode: uniform(1),
       labelReveal: uniform(1),
       labelRevealAnimId: 0,
@@ -170,6 +173,7 @@ export function WorldView(props: React.PropsWithChildren) {
       pickRT: createPickRT(1),
       npcMaskMrt: null,
       busy: null,
+      pausedHidden: false,
       postProcessing: saved.postProcessing,
       npcOutline: saved.npcOutline,
       roomOutline: saved.fadeRoomOutlines,
@@ -927,6 +931,8 @@ export function WorldView(props: React.PropsWithChildren) {
             state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
             w.menu?.update();
           }
+        } else if (e.key === "0") {
+          if (e.repeat === false) state.toggleViewPick();
         } else if (key === "c") {
           if (e.repeat === false) state.setCompassDial(!state.compassDial);
         } else if (key === "f") {
@@ -962,9 +968,11 @@ export function WorldView(props: React.PropsWithChildren) {
         state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
         last.multi = state.otherPointerDown(e);
+        last.pick = null;
         if (last.multi === true) {
           return; // a second finger is the camera being pinched or rotated, never a pick
         }
+        last.pick = state.pickAt(e.nativeEvent);
 
         last.longPressTimer = window.setTimeout(() => {
           last.longPress = true;
@@ -1002,7 +1010,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.isPointDiffDrag(last.down, getRelativePointer(e)) === true) {
           return; // drag is not a pick
         }
-        if (w.disabled === true && state.isOverPaused(e.nativeEvent) === true) {
+        if (state.showsPaused() === true && state.isOverPaused(e.nativeEvent) === true) {
           w.setDisabled(false); // the pill passes its presses to the camera — see `forwardPointer`
           return;
         }
@@ -1011,6 +1019,9 @@ export function WorldView(props: React.PropsWithChildren) {
       focus() {
         // the `Canvas` wrapper, which has the `tabIndex`
         state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
+      },
+      showsPaused() {
+        return w.disabled === true && state.pausedHidden === false;
       },
       isOverPaused(e) {
         const rect = state.pausedEl?.getBoundingClientRect();
@@ -1037,7 +1048,10 @@ export function WorldView(props: React.PropsWithChildren) {
         const y = Math.min(Math.floor(uv.v * size.y), size.y - 1);
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
+        /** `1` whilst the debug menu's "view pick" shows the pick colours */
+        const shown = state.objectPick.value;
         state.objectPick.value = 1 * state.objectPickScale;
+        if (state.lookMark !== null) state.lookMark.visible = false; // not itself picked: shown again next frame
         try {
           // the npc material declares an extra output whilst bordering, so this pass needs the same
           // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
@@ -1046,7 +1060,7 @@ export function WorldView(props: React.PropsWithChildren) {
           renderer.render(scene, rtCamera);
         } finally {
           // whatever the render did: left in pick state, every frame after would be a pick
-          state.objectPick.value = 0;
+          state.objectPick.value = shown;
           renderer.setMRT(null);
           renderer.setRenderTarget(null);
           rtCamera.clearViewOffset();
@@ -1088,19 +1102,21 @@ export function WorldView(props: React.PropsWithChildren) {
           }
         });
       },
-      async pickObject(e) {
-        if (w.isMapChanging() === true || state.warmingPick === true) {
-          return;
-        }
-        const rgba = await state.renderPick(state.computePixelUv(e.nativeEvent));
+      async pickAt(e) {
+        if (w.isMapChanging() === true || state.warmingPick === true) return null;
+        const rgba = await state.renderPick(state.computePixelUv(e));
         const picked = state.getPickedFromPixel(rgba);
-        if (picked === null) return;
-
-        const intersection = state.getRaycastIntersection(e.nativeEvent, picked);
-        // console.log("picked", picked, intersection);
-        if (intersection === null) return;
-
+        if (picked === null) return null;
+        const intersection = state.getRaycastIntersection(e, picked);
+        return intersection === null ? null : { picked, intersection };
+      },
+      async pickObject(e) {
+        const found = await (state.lastPointer.pick ?? state.pickAt(e.nativeEvent));
+        if (found === null) return;
+        const { picked, intersection } = found;
         const { distance, point } = intersection;
+        state.pickedAt = point;
+        w.r3f?.invalidate(); // a frame to show it in, see `LookMark`
         // always take 1st -- see `pick` for execution order
         const clickId = state.clickIds.shift();
 
@@ -1227,6 +1243,12 @@ export function WorldView(props: React.PropsWithChildren) {
         state.set({ follow });
         w.update(); // the look button shows it
         w.hud?.update();
+        w.r3f?.invalidate();
+      },
+      toggleViewPick() {
+        state.objectPick.value = state.objectPick.value === 1 ? 0 : 1;
+        state.forceUpdate();
+        w.menu?.update(); // its toggle shows it
         w.r3f?.invalidate();
       },
       setCompassDial(on) {
@@ -1366,7 +1388,8 @@ export function WorldView(props: React.PropsWithChildren) {
             opts.ms ??
             Math.max(
               opts.minMs ?? 0,
-              Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) * Math.min(1, distance / lookAtShortUnits),
+              Math.min(lookAtMaxMs, lookAtMinMs + distance * lookAtMsPerUnit) *
+                Math.min(1, distance / lookAtShortUnits),
             );
           let elapsedMs = 0;
           let lastEpochMs = performance.now();
@@ -1727,7 +1750,9 @@ export function WorldView(props: React.PropsWithChildren) {
           "top-[40%] transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
           // paused — else an invisible button sits over the middle of a running world
-          w.disabled !== true ? "pointer-events-none opacity-0" : "cursor-pointer opacity-100 hover:text-yellow-100",
+          state.showsPaused() === false
+            ? "pointer-events-none opacity-0"
+            : "cursor-pointer opacity-100 hover:text-yellow-100",
         )}
       >
         <PlayIcon className="size-4 shrink-0" weight="fill" />
@@ -1739,7 +1764,11 @@ export function WorldView(props: React.PropsWithChildren) {
       <AnimatePresence>
         {state.busy !== null && (
           <motion.div
-            className={cn(indicatorClassName, "pointer-events-none top-6 z-70 whitespace-nowrap")}
+            className={cn(
+              indicatorClassName,
+              "pointer-events-none top-6 z-70 whitespace-nowrap",
+              import.meta.env.DEV && "left-3 translate-x-0", // clear of npc focus's note at top centre
+            )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1787,6 +1816,8 @@ export type State = {
   getCrosshairPivot(): THREE.Vector3 | null;
   /** Ground direction of the held `wasd` keys: as seen, or along the world's axes whilst `compassDial` — zero when none or opposites are held */
   getWasdDirection(): Vect;
+  /** Shows the pick colours on screen, or stops: the debug menu's "view pick", and `0` */
+  toggleViewPick(): void;
   /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
@@ -1815,12 +1846,19 @@ export type State = {
     rightPress: boolean;
     /** Whether another finger has joined the press: then it is no pick */
     multi: boolean;
+    /** What was under the press as it went down: a moving npc has gone on by its release */
+    pick: null | Promise<null | PickFound>;
   };
+  /** Where the last pick landed — see `LookMark` */
+  pickedAt: null | THREE.Vector3;
+  lookMark: null | THREE.Mesh;
   pickRT: THREE.RenderTarget;
   /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */
   npcMaskMrt: null | NpcMaskMrt;
   /** What the busy overlay says, or `null` whilst nothing heavy is running — see `runBusy` */
   busy: null | string;
+  /** Paused, but not to be shown so, e.g. whilst npc focus has paused the World */
+  pausedHidden: boolean;
   /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
   syncPickRT(): void;
   raycaster: THREE.Raycaster;
@@ -1897,6 +1935,8 @@ export type State = {
   /** Whether a pointer OTHER than `e`'s is down, i.e. the gesture belongs to the camera */
   otherPointerDown(e: React.PointerEvent<HTMLDivElement>): boolean;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
+  /** What is under `e`: picked by colour, then raycast for the point */
+  pickAt(e: PointerEvent): Promise<null | PickFound>;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onKeyUp(e: KeyboardEvent): void;
@@ -1936,6 +1976,8 @@ export type State = {
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
   /** Whether a pointer is over the paused pill — the resume tap, since the pill forwards its presses */
+  /** Whether the paused indicator shows: paused, and not `pausedHidden` */
+  showsPaused(): boolean;
   isOverPaused(e: PointerEvent): boolean;
   pausedEl: null | HTMLButtonElement;
   /** Saves where the camera is, as the view to restore on load */
@@ -2263,6 +2305,8 @@ const closeConfirmMs = 2000;
 const onCompassEpsilon = 0.01;
 /** The normal of an obstacle's top, for a pick that landed on it without hitting a face */
 const up = new THREE.Vector3(0, 1, 0);
+
+type PickFound = { picked: Picked; intersection: THREE.Intersection };
 
 export type Picked = {
   instanceId: number;

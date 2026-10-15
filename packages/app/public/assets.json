@@ -63078,8 +63078,8 @@
       },
       "floor": {"hullFill": "#bfc6cf", "deck": "light"},
       "lights": {"unlit": 1, "unlitTint": "#111", "cone": 0.5},
-      "obstacles": {"brightness": 1.6, "skirtBrightness": 2.6},
-      "npcs": {"ambient": 0.2, "brightness": 0.75, "fxStrength": 5},
+      "obstacles": {"brightness": 1.6},
+      "npcs": {"ambient": 0.2, "brightness": 0.85, "fxStrength": 5},
       "doors": {
         "brightness": 10,
         "opacity": 0.75,
@@ -63087,7 +63087,7 @@
         "panel": "light",
         "dissolve": true
       },
-      "walls": {"color": "#000", "opacity": 0.5, "bandBrightness": 2.3}
+      "walls": {"color": "#000", "opacity": 0.5}
     }
   },
   "hash": {"obstacles": -901302086}

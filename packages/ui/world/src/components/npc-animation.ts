@@ -4,6 +4,7 @@ import { deltaAngle } from "maath/misc";
 import type { FindNearestPolyResult } from "navcat";
 import { crowd as crowdApi } from "navcat/blocks";
 import * as THREE from "three/webgpu";
+import { type EyeFrame, type EyesKey, eyeFrames } from "../const.both";
 import {
   agentConfig,
   breathConfig,
@@ -24,7 +25,6 @@ import {
   strafeSpeed,
   upperFadeSecs,
 } from "../const.npc";
-import { type EyeFrame, type EyesKey, eyeFrames } from "../const.both";
 import { helper } from "../service/helper";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
@@ -152,15 +152,30 @@ export class NpcAnimation {
 
   /** The ONLY way the clip on show changes: everything else fades out as `next` fades in */
   setPose(next: AnimationClipKey, { fade = fadeSecs[this.pose]?.[next] ?? defaultFadeSecs, force = false } = {}) {
-    if (next === this.pose && force === false) return;
-    const { clips } = this.npc;
+    if (next === this.pose && force === false) {
+      return;
+    }
+
     const shown = next === "walk" && this.strafe === true ? strafeClipKeys : [next];
+    const { clips } = this.npc;
+
     for (const clip of Object.values(clips)) {
-      if (shown.some((key) => clips[key] === clip)) continue;
+      if (shown.some((key) => clips[key] === clip)) {
+        continue;
+      }
       const hidden = this.mixer.existingAction(clip);
-      // a fade of no length weighs nothing until time moves on, which whilst paused it does not
-      if (fade > 0) hidden?.fadeOut(fade);
-      else hidden?.stop();
+      if (hidden === null) {
+        continue;
+      }
+
+      if (fade <= 0) {
+        // a fade of no length weighs nothing until time moves on, which whilst paused it does not
+        hidden.stop();
+      } else {
+        // fade out from current weight -- `fadeOut` starts from full weight
+        hidden.weight = hidden.getEffectiveWeight();
+        hidden.fadeOut(fade);
+      }
     }
     const action = this.mixer.clipAction(clips[next]);
     // held on its last frame, so it does not wrap as it fades out
@@ -231,7 +246,7 @@ export class NpcAnimation {
   /** Show `key` in place of idle: a pain clip once, a pacified one until `null` releases them */
   setHurt(key: null | AnimationClipKey) {
     const pacified = this.hurt !== null && isPacified(this.hurt.key) ? this.hurt.key : null;
-    if (key !== null && pacified !== null && (isPacified(key) || hitConfig.next[key] !== undefined)) return;
+    if (key !== null && pacified !== null && (isPacified(key) || headClips.has(key))) return;
     this.hurt = key === null ? null : { key, secs: 0, next: hitConfig.next[key] ?? pacified };
     this.setPose(this.restKey, { force: key !== null });
     this.w.r3f?.invalidate();
@@ -919,6 +934,8 @@ export function postureOf(key: AnimationClipKey) {
 }
 
 const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
+/** A head shot's clips: one on someone already pacified is not felt */
+const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((byRegion) => byRegion.head));
 
 /** Hit clips played once, then left */
 const onceClips = new Set<AnimationClipKey>(

@@ -5,6 +5,7 @@
   "exports": {
     "./vite-plugin-asset-history": "./src/vite-plugin-asset-history.ts",
     "./vite-plugin-build-id": "./src/vite-plugin-build-id.ts",
+    "./vite-plugin-dev-mcp": "./src/vite-plugin-dev-mcp.ts",
     "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-lore": "./src/vite-plugin-lore.ts",
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",

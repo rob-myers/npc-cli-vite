@@ -13,3 +13,4 @@ export * from "./service/json-parser";
 export * from "./service/observable-to-async-it";
 export * from "./service/QueryClientApi";
 export * from "./service/tailwind-cn";
+export * from "./service/task";

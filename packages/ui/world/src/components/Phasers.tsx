@@ -44,6 +44,9 @@ export default function Phasers() {
         const at = opts.at ?? null;
         arm.target = at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null };
         arm.cast = null; // look again, at once
+        arm.hitAt = null;
+        const secs = w.timer.getElapsedTime();
+        arm.lowerAt = opts.once === true ? secs + phaserConfig.onceSecs : null;
         const drawn = arm.armed === false;
         arm.armed = true;
         state.sync();
@@ -82,6 +85,8 @@ export default function Phasers() {
             shields: [],
             firedSecs: null,
             struck: null,
+            hitAt: null,
+            lowerAt: null,
           };
           state.arms.set(npcKey, arm);
         }
@@ -97,6 +102,22 @@ export default function Phasers() {
       },
       isArmed(npcKey) {
         return state.arms.get(npcKey)?.armed === true;
+      },
+      isClear(npcKey) {
+        const arm = state.arms.get(npcKey);
+        const npc = w.n?.[npcKey];
+        if (arm === undefined || npc === undefined || arm.casting === true) return false;
+        const target = arm.target === null ? undefined : w.n[arm.target.npcKey];
+        // a hit found by the last cast draws it in only at the next tick
+        if (isCastCurrent(arm, npc, target) === false || arm.armHit === true) return false;
+        return state.isRaised(npcKey) === true && state.isDrawnIn(npcKey) === false;
+      },
+      isDrawnIn(npcKey) {
+        return state.isArmed(npcKey) && w.n?.[npcKey]?.anim.upper.key === phaserConfig.avoid;
+      },
+      isRaised(npcKey) {
+        const upper = w.n?.[npcKey]?.anim.upper;
+        return state.isArmed(npcKey) && upper !== undefined && isPhaserPose(upper.key) && upper.blend === 1;
       },
       isLocked(npcKey) {
         const arm = state.arms.get(npcKey);
@@ -146,7 +167,7 @@ export default function Phasers() {
           state.wield(npc, arm);
           const { beam } = arm;
           advanceBeam(beam, step, w.n, instant);
-          if (beam.locked.presence === 0) arm.struck = null;
+          if (beam.locked.presence === 0) Object.assign(arm, { struck: null, hitAt: null });
           else if (beam.locked.presence === 1 && beam.to !== arm.struck) state.strike(npc, arm);
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden && state.holds(srcKey) === false) {
@@ -177,7 +198,7 @@ export default function Phasers() {
         const along = tmpAlong.set(0, -1, 0).transformDirection(hand.matrixWorld); // the forearm, towards the hand
         /** Their phaser's own, looked up once: the frequencies it knows, and those it is dead to */
         const item = w.shields?.phaserOf(npc.key)?.meta;
-        const part = dst === undefined ? null : bodyPartPoint(dst, beam.to?.part ?? null, tmpPart);
+        const part = dst === undefined ? null : (arm.hitAt ?? bodyPartPoint(dst, beam.to?.part ?? null, tmpPart));
         /** Where a shield between them stops it: of those their last cast passed */
         const stopped =
           part === null
@@ -219,6 +240,9 @@ export default function Phasers() {
         const freqs = w.shields?.phaserOf(npc.key)?.meta?.freqs;
         if (w.shields?.stop(arm.shields, from, from, part, freqs) != null) return;
         w.npc.hit(dst.key, to.part);
+        // the burst ends on the hit, where it landed, rather than following them as they writhe
+        arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(part);
+        arm.target = arm.firedSecs = null;
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
         if (dst.anim.hurt !== null && theirs !== undefined) Object.assign(theirs, { armed: false, target: null });
@@ -231,6 +255,12 @@ export default function Phasers() {
       },
       wield(npc, arm) {
         const secs = w.timer.getElapsedTime();
+        // one shot only: lowered once it is over, or given up on
+        const over = arm.target === null && arm.beam.locked.presence === 0; // its beam faded first
+        if (arm.lowerAt !== null && arm.armed === true && (over || secs >= arm.lowerAt)) {
+          Object.assign(arm, { armed: false, target: null, lowerAt: null });
+          w.hud?.update();
+        }
         const { armed } = arm;
         const target = armed === true && arm.target !== null ? w.n[arm.target.npcKey] : undefined;
         state.recast(npc, arm, target, secs);
@@ -308,21 +338,10 @@ export default function Phasers() {
       },
       recast(npc, arm, target, secs) {
         if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
+        if (isCastCurrent(arm, npc, target) === true) return; // nothing has changed: neither they, their target, nor a door
         const { x, z } = npc.position;
         const ry = npc.rotation.y;
         const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
-        const { cast } = arm;
-        const moved = (ax: number, az: number, bx: number, bz: number) =>
-          Math.hypot(ax - bx, az - bz) > phaserConfig.recastMoved;
-        if (
-          cast !== null &&
-          cast.target === (target?.key ?? null) &&
-          moved(cast.x, cast.z, x, z) === false &&
-          Math.abs(deltaAngle(cast.ry, ry)) <= phaserConfig.recastTurned &&
-          moved(cast.tx, cast.tz, tx, tz) === false
-        ) {
-          return; // nothing has changed: neither they, their target, nor a door
-        }
 
         arm.cast = { x, z, ry, tx, tz, target: target?.key ?? null };
         arm.castSecs = secs;
@@ -398,7 +417,8 @@ export type State = PhaserResources & {
   tickedMs: number;
 
   /** Arm them, locked on `at` an npc's `part` — no `at` unlocks */
-  arm(npcKey: string, opts?: { at?: null | string; part?: null | string }): void;
+  /** `once`: lowered again once the shot is over */
+  arm(npcKey: string, opts?: { at?: null | string; part?: null | string; once?: boolean }): void;
   /** Their pose, stance and aim are let go of, and the gun and beam fade */
   disarm(...npcKeys: string[]): void;
   /** Writes their gun and beam as instance `i`, the beam to `dst` if any — `false` with no forearm to hold it */
@@ -410,6 +430,12 @@ export type State = PhaserResources & {
   /** Carries one and stands, so has it in hand — raised or not */
   holds(npcKey: string): boolean;
   isArmed(npcKey: string): boolean;
+  /** Raised, and nothing in its way as they stand now: not drawn in, nor about to be */
+  isClear(npcKey: string): boolean;
+  /** Armed, and drawn in: `phaser_aim_avoid` */
+  isDrawnIn(npcKey: string): boolean;
+  /** Armed, and the arm all the way up */
+  isRaised(npcKey: string): boolean;
   /** Armed, and locked on someone */
   isLocked(npcKey: string): boolean;
   /** Look again at every arm and line of sight, e.g. a door changed */
@@ -468,6 +494,10 @@ type ArmEntry = {
   shields: string[];
   /** The lock already struck with, so one shot hits once */
   struck: null | BeamTarget;
+  /** Where the lock hit, whilst its beam fades: held there */
+  hitAt: null | THREE.Vector3;
+  /** World seconds a one-off shot is lowered by at the latest, whilst there is one */
+  lowerAt: null | number;
 };
 
 /** Is a crowd neighbour in front of `npc`, within 45° of their facing? */
@@ -478,6 +508,20 @@ function npcAhead(w: import("./World").State, npc: Npc) {
     const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
     return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx);
   });
+}
+
+/** Whether their last cast was made as things stand: they, and their target, where they were then */
+function isCastCurrent(arm: ArmEntry, npc: Npc, target: undefined | Npc) {
+  const { cast } = arm;
+  if (cast === null || cast.target !== (target?.key ?? null)) return false;
+  const near = (ax: number, az: number, bx: number, bz: number) =>
+    Math.hypot(ax - bx, az - bz) <= phaserConfig.recastMoved;
+  const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
+  return (
+    near(cast.x, cast.z, npc.position.x, npc.position.z) &&
+    Math.abs(deltaAngle(cast.ry, npc.rotation.y)) <= phaserConfig.recastTurned &&
+    near(cast.tx, cast.tz, tx, tz)
+  );
 }
 
 /** Where their hand is at arm's length, on the ground */
@@ -497,7 +541,7 @@ const phaserConfig = {
   pose: "phaser_aim",
   avoid: "phaser_aim_avoid",
   /** Metres ahead a wall or closed door blocks — just past the gun at arm's length, so it is drawn in in time */
-  reach: 0.75,
+  reach: 0.95,
   /** The gun's muzzle, where the beam leaves, off the right forearm — its `+x` is up whilst aiming — in model units */
   beamFrom: [0.12, -0.54, 0] as [number, number, number],
   /** How far down the forearm the hand holds it, which it fades into and out of — model units */
@@ -505,6 +549,8 @@ const phaserConfig = {
   fadeSecs: 0.3,
   /** Seconds a shot lasts, before they let go of their target */
   fireSecs: 1.5,
+  /** Seconds a one-off shot may take before it is lowered regardless, e.g. never in sight */
+  onceSecs: 4,
   /** Radians about the right forearm between an arm at rest and the pose's — see `onTick` */
   restRoll: Math.PI / 2,
   /** Seconds they stay drawn in at least — longer whilst something stays in reach */

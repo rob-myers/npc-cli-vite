@@ -1,6 +1,7 @@
 import mdx from "@mdx-js/rollup";
 import { assetHistoryPlugin } from "@npc-cli/scripts/vite-plugin-asset-history";
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
+import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
 import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { lorePlugin } from "@npc-cli/scripts/vite-plugin-lore";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
@@ -40,6 +41,7 @@ export default defineConfig({
     lorePlugin(),
     worldRtcPlugin(),
     buildIdPlugin(),
+    devMcpPlugin(),
     assetHistoryPlugin(),
     stableEntryPlugin(),
 

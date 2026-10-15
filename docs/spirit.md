@@ -9,7 +9,7 @@ lowers psi. Psi lowered, `q` raises it, and held on, leaves too. Let go before t
 
 ## Phases
 
-- **leave**: follow is turned off and the zoom held (`zoomHeld`) until it is over. The camera pans onto their forehead, turned to the side their face is on as far as the compass
+- **leave**: follow is turned off and the zoom held (`zoomHeld`) until they arrive (`handBack`). The camera pans onto their forehead, turned to the side their face is on as far as the compass
   dial allows (`frame`, `lookAt`'s `theta`). The light draws in to nothing at their forehead (`foreheadOf`, through the head bone), and the unseen goes black
   (`playerLight.setVeil`), but not in `ship` mode (`veil`). A breath under way
   is let finish, and the pause after it drawn out (`breath.pace`). Their eyes shut halfway.
@@ -24,8 +24,7 @@ lowers psi. Psi lowered, `q` raises it, and held on, leaves too. Let go before t
   `sight` shows only the player's rooms, so each on the route is lit by hand until they wake, `roomLeadMetres`
   before the spark enters it (`findRoomsAlong`): it has faded in by the time the spark arrives.
 - **arrive**: they are made the player with psi raised, without the switch's own pan (`assign`'s `pan: false`).
-  Woken lain, the view turns to look across them from the open side of their bed, tilted low (`viewAcross`,
-  `lookAt`'s `phi`), so a bottom bunk is seen beneath the top.
+  The view is handed back at once: a follow that was on before resumes.
   The camera kept its height throughout, so nothing moves but a follow easing towards the frontier. Their first breath is from empty, slow and swollen
   (`breath.swell`), and the light opens out with it, settling back from
   their forehead to their feet. Their eyes open, blinking, once it is drawn.

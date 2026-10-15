@@ -17,3 +17,7 @@ playerKey () {
 playerPath () {
   echo /shared/pred/player
 }
+
+setPlayer () {
+  w player.setKey $1
+}

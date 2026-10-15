@@ -15,6 +15,7 @@ import * as THREE from "three/webgpu";
 import { Timer } from "three-stdlib";
 import type { OverrideProperties } from "type-fest";
 import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
+import { skinSliceDims } from "../const.both";
 import {
   assetsJsonChangedEvent,
   assetsJsonChangingEvent,
@@ -37,9 +38,9 @@ import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
-import { skinSliceDims } from "../const.both";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
+import NpcFocus from "./NpcFocus";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
@@ -186,6 +187,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       breaths: null as any,
       spirit: null as any,
       phasers: null as any,
+      npcFocus: null as any,
       shields: null as any,
       roomLabels: null as any,
       shadows: null as any,
@@ -542,6 +544,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         {state.view && <WorldMenu />}
         <WorldSpeech />
         <WorldHud />
+        <NpcFocus />
       </div>
     </WorldContext.Provider>
   );
@@ -634,6 +637,7 @@ export type State = {
   breaths: UseStateRef<import("./NpcBreath").State>;
   spirit: UseStateRef<import("./Spirit").State>;
   phasers: UseStateRef<import("./Phasers").State>;
+  npcFocus: UseStateRef<import("./NpcFocus").State>;
   shields: UseStateRef<import("./Shields").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
   roomLabels: UseStateRef<import("./RoomLabels").State>;

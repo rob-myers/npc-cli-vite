@@ -118,7 +118,7 @@ export default function Spirit() {
           if (from.posture !== "lie") state.shut(from.key, false);
         }
         Object.assign(state, { phase: "arrive", secs: 0 });
-        if (to.posture === "lie") state.viewAcross(to);
+        state.handBack(); // the view is theirs as they wake, a follow on again
       },
       async findRoute(from, to) {
         // forehead to forehead
@@ -231,18 +231,6 @@ export default function Spirit() {
           },
         );
       },
-      viewAcross(npc) {
-        void w.view.lookAt(
-          { x: npc.position.x, y: npc.position.z },
-          {
-            animate: true,
-            ms: state.arriveSecs * 1000,
-            height: state.viewHeight,
-            theta: state.sideOf(npc),
-            phi: spiritConfig.lainPolar,
-          },
-        );
-      },
       sideOf(npc) {
         const { x, z } = foreheadOf(npc);
         const [ux, uz] = [x - npc.position.x, z - npc.position.z];
@@ -295,10 +283,13 @@ export default function Spirit() {
         if (state.toKey !== null) state.shut(state.toKey, false); // as they were, before we chose them
         state.finish();
       },
-      finish() {
+      handBack() {
         w.view.zoomHeld = false;
         if (state.wasFollowing === true) w.view.setFollow(true);
         state.wasFollowing = false;
+      },
+      finish() {
+        state.handBack();
         const to = state.toKey === null ? undefined : w.n[state.toKey];
         if (to !== undefined) Object.assign(to.anim.breath, { pace: 1, swell: 1 });
         Object.assign(state, { phase: "idle", fromKey: null, toKey: null, light: null, leave: 0 });
@@ -763,8 +754,6 @@ export type State = {
   begin(fromKey: string, toKey?: null | string, auto?: boolean, lowerOnTap?: boolean): void;
   /** Pans onto their forehead, from the side their face is on, or across them and low if lain */
   frame(npc: JshCli.Npc): void;
-  /** Turns the view to look across them from their side, tilted low: a bottom bunk is seen beneath the top */
-  viewAcross(npc: JshCli.Npc): void;
   /** The azimuth looking across them lain, from the side of their bed with open floor, else the lesser turn */
   sideOf(npc: JshCli.Npc): undefined | number;
   /** `playerLight.setVeil`, without the darkening in `ship` mode */
@@ -782,6 +771,8 @@ export type State = {
   findRoomsAlong(): State["roomsAhead"];
   /** Any npc sitting or lying, else one spawned in a free bed, else a free seat. `null` if none */
   findTarget(): Promise<null | string>;
+  /** The view as it was before: the zoom let go, and a follow turned back on. Once only */
+  handBack(): void;
   /** Back to idle, and the light as it was */
   finish(): void;
   onFrame(delta: number): void;

@@ -171,14 +171,14 @@ export const fromAnimationClipKey = {
   lie: true,
   lie_left: true,
   lie_pacified: true,
-  lie_pacify_in: true,
+  lie_pain_head: true,
   lie_pain_high: true,
   lie_pain_low: true,
   lie_right: true,
   pacified: true,
-  pacify_in: true,
   pain_arm_left: true,
   pain_arm_right: true,
+  pain_head: true,
   pain_high: true,
   pain_leg_left: true,
   pain_leg_right: true,
@@ -191,7 +191,7 @@ export const fromAnimationClipKey = {
   shuffle: true,
   sit: true,
   sit_pacified: true,
-  sit_pacify_in: true,
+  sit_pain_head: true,
   sit_pain_high: true,
   sit_pain_low: true,
   sit_reach: true,
@@ -252,7 +252,7 @@ export const hitConfig = {
   } as Record<string, undefined | HitRegion>,
   clips: {
     stand: {
-      head: "pacify_in",
+      head: "pain_head",
       torso: "pain_high",
       arm_left: "pain_arm_left",
       arm_right: "pain_arm_right",
@@ -260,7 +260,7 @@ export const hitConfig = {
       leg_right: "pain_leg_right",
     },
     sit: {
-      head: "sit_pacify_in",
+      head: "sit_pain_head",
       torso: "sit_pain_high",
       arm_left: "sit_pain_low",
       arm_right: "sit_pain_low",
@@ -268,7 +268,7 @@ export const hitConfig = {
       leg_right: "sit_pain_low",
     },
     lie: {
-      head: "lie_pacify_in",
+      head: "lie_pain_head",
       torso: "lie_pain_high",
       arm_left: "lie_pain_low",
       arm_right: "lie_pain_low",
@@ -278,11 +278,25 @@ export const hitConfig = {
   } satisfies Record<string, Record<HitRegion, ClipKey>>,
   /** Looped until released: every other clip above plays once */
   pacified: ["pacified", "sit_pacified", "lie_pacified"] as ClipKey[],
-  /** What a clip played once goes on to, where that is not back to idle */
-  next: { pacify_in: "pacified", sit_pacify_in: "sit_pacified", lie_pacify_in: "lie_pacified" } as Partial<
-    Record<ClipKey, ClipKey>
-  >,
+  /** What a clip played once goes on to: every hit pacifies, after its pain */
+  next: {
+    pain_head: "pacified",
+    pain_high: "pacified",
+    pain_arm_left: "pacified",
+    pain_arm_right: "pacified",
+    pain_leg_left: "pacified",
+    pain_leg_right: "pacified",
+    sit_pain_head: "sit_pacified",
+    sit_pain_high: "sit_pacified",
+    sit_pain_low: "sit_pacified",
+    lie_pain_head: "lie_pacified",
+    lie_pain_high: "lie_pacified",
+    lie_pain_low: "lie_pacified",
+  } as Partial<Record<ClipKey, ClipKey>>,
 };
+
+/** Seconds a pain clip takes to go limp into pacified: it ends stood, not slumped */
+export const pacifyFadeSecs = 0.8;
 
 /**
  * Cross-fade seconds `fadeSecs[src][dst]`, from one animation clip into another.
@@ -302,17 +316,17 @@ export const fadeSecs: Record<
   lie: { lie_left: 0.5, lie_right: 0.5 },
   lie_left: { lie: 0.5, lie_right: 0.6 },
   lie_pacified: {},
-  lie_pacify_in: {},
-  lie_pain_high: {},
-  lie_pain_low: {},
+  lie_pain_head: {},
+  lie_pain_high: { lie_pacified: pacifyFadeSecs },
+  lie_pain_low: { lie_pacified: pacifyFadeSecs },
   lie_right: { lie: 0.5, lie_left: 0.6 },
   pacified: {},
-  pacify_in: {},
-  pain_arm_left: {},
-  pain_arm_right: {},
-  pain_high: {},
-  pain_leg_left: {},
-  pain_leg_right: {},
+  pain_arm_left: { pacified: pacifyFadeSecs },
+  pain_arm_right: { pacified: pacifyFadeSecs },
+  pain_head: {},
+  pain_high: { pacified: pacifyFadeSecs },
+  pain_leg_left: { pacified: pacifyFadeSecs },
+  pain_leg_right: { pacified: pacifyFadeSecs },
   pick_up: {},
   pick_up_left: {},
   point: {},
@@ -323,9 +337,9 @@ export const fadeSecs: Record<
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
   sit_pacified: {},
-  sit_pacify_in: {},
-  sit_pain_high: {},
-  sit_pain_low: {},
+  sit_pain_head: {},
+  sit_pain_high: { sit_pacified: pacifyFadeSecs },
+  sit_pain_low: { sit_pacified: pacifyFadeSecs },
   sit_reach: {},
   strafe_left: {},
   strafe_right: {},

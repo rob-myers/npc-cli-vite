@@ -170,6 +170,23 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  * give npc:rob items:'["phaser","book","box"]'
  * ```
  */
+/** The player focuses on `npc` as a press does: turned to them, phaser raised, then a choice of part. A kill cancels it */
+export async function focus(
+  { api, args, w }: JshCli.RunArg,
+  opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
+) {
+  api.setPausable("world", false); // it pauses the World itself
+  const { key } = w.npc.get(opts.npcKey ?? (getFirstUnknownNaked(opts) as string));
+  let onKill = () => {};
+  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError())));
+  const handlers = api.handleStatus({ cleanup: () => (w.npcFocus.cancel(), onKill()) });
+  try {
+    await Promise.race([w.npcFocus.aimAt(key), killed]); // over, or cancelled by a kill
+  } finally {
+    handlers.dispose();
+  }
+}
+
 export function give(
   { api, args, w }: JshCli.RunArg,
   opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
@@ -245,14 +262,15 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
     const psiOn = w.e.isPsiRaised();
     if (own === true && psiOn === true && (meta.bodyPart === "leftarm" || meta.bodyPart === "leftforearm")) {
       w.player.togglePsi(); // psi's own arm lowers it, phaser raised or not
-    } else if (w.phasers?.isArmed(playerKey) === true) {
+    } else if (own === true) {
       // the arm that holds it lowers it, its target forgotten — elsewhere on themselves, nothing
-      if (own === true) {
-        if (meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm") w.phasers.disarm(playerKey);
-      } else {
-        w.phasers.arm(playerKey, { at: meta.npcKey, part: meta.bodyPart });
-      }
-    } else if (psiOn === true && own === false) w.speech.readThought(meta.npcKey);
+      const rightArm = meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm";
+      if (rightArm === true && w.phasers?.isArmed(playerKey) === true) w.phasers.disarm(playerKey);
+    } else if (psiOn === true) {
+      w.speech.readThought(meta.npcKey);
+    } else if (w.e.hasItem(playerKey, "phaser") === true) {
+      void w.npcFocus.aimAt(meta.npcKey); // npc focus: raised and aimed, they choose the part, then it fires once
+    }
   }
 }
 
