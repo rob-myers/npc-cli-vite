@@ -27,13 +27,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
-        // not whilst locked on: the phaser's target is whom they face
-        const free = w.phasers?.isLocked(state.key) !== true;
+        // not whilst locked on, nor focused: the phaser's target is whom they face
+        const free = w.phasers?.isLocked(state.key) !== true && w.npcFocus?.isFixated() !== true;
         const lookAt = free ? state.lookAt : null;
         const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
-        if (held === false || posture !== "sit") npc.anim.turnTo(null);
+        // a sat turn to an npc focus's target is kept until it is over
+        const kept = free === false || w.npcFocus?.busy === true;
+        if ((held === false || posture !== "sit") && kept === false) npc.anim.turnTo(null);
         if (held === false) return;
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);

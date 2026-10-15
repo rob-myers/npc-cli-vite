@@ -1,8 +1,11 @@
 import { Task, useStateRef } from "@npc-cli/util";
+import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
+import { sitTurn } from "../const.npc";
 import { bodyPartPoint } from "../service/phaser-beam";
+import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
@@ -44,8 +47,20 @@ export default function NpcFocus() {
           await task.until(() => w.disabled === false); // e.g. begun by jsh whilst paused
           // raised as they turn to them. Each is waited on for so long at most
           w.phasers.arm(key);
-          const looked = player.look({ at: npc.point }).catch(() => {}); // sat or lain they cannot turn
-          await task.wait(looked, npcFocusConfig.turnMaxMs);
+          if (w.phasers.isArmed(key) === false) return state.abandon(); // e.g. lain
+          const { anim } = player;
+          if (anim.posture === "sit") {
+            // sat they turn their head and torso, not round
+            anim.turnTo(npc.point, sitTurn.aimMaxRad);
+            await task.until(() => anim.turn.value === anim.turn.target, npcFocusConfig.turnMaxMs);
+          } else {
+            await task.wait(
+              player.look({ at: npc.point }).catch(() => {}),
+              npcFocusConfig.turnMaxMs,
+            );
+          }
+          // too far round to face, sat
+          if (isOffAim(player, npc) === true) return state.abandon();
           // clear as they now stand: the turn may have swept past a wall, or ended facing one
           await task.until(() => isClear(key) === true, npcFocusConfig.raiseMaxMs);
           // still drawn in, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
@@ -108,11 +123,7 @@ export default function NpcFocus() {
       isOffAim() {
         const player = w.player.get();
         const npc = w.n?.[state.npcKey ?? ""];
-        if (player === undefined || npc === undefined) return true;
-        // their facing against the bearing to them: three's rotation-Y, as `bearingOf`
-        const bearing = Math.atan2(player.position.x - npc.position.x, player.position.z - npc.position.z);
-        const off = bearing - player.rotation.y;
-        return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > npcFocusConfig.maxOffAimRad;
+        return player === undefined || npc === undefined || isOffAim(player, npc);
       },
       open(npcKey) {
         const npc = w.n?.[npcKey];
@@ -255,6 +266,13 @@ function toScreen(point: THREE.Vector3, camera: THREE.Camera, canvas: DOMRect, b
     x: canvas.left - box.left + ((point.x + 1) / 2) * canvas.width,
     y: canvas.top - box.top + ((1 - point.y) / 2) * canvas.height,
   };
+}
+
+/** `player` faces more than `maxOffAimRad` away from `npc`, a sat turn included */
+function isOffAim(player: Npc, npc: Npc) {
+  const { anim } = player;
+  const off = deltaAngle(player.rotation.y + anim.turn.value, anim.bearingOf(npc.point));
+  return Math.abs(off) > npcFocusConfig.maxOffAimRad;
 }
 
 const tmpPoint = new THREE.Vector3();

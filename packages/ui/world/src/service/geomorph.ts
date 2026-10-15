@@ -773,15 +773,18 @@ export function instantiateFlatSymbol(
     ...(typeof meta.rel === "string" && poly.meta.rel === undefined && { rel: meta.rel }),
   });
 
+  /** e.g. tag `do:foo=42` sets `foo: 42` on every do point within */
+  const doMeta = Object.fromEntries(
+    Object.entries(meta).flatMap(([k, v]) => (k.startsWith("do:") ? [[k.slice(3), v]] : [])),
+  );
   const decor = src.decor.flatMap((d) => {
-    if (typeof d.meta.doorId === "number") {
-      if (doorIdsToRemove.has(d.meta.doorId)) return [];
-      return d.cleanClone(mat, {
-        ...transformDecorMeta(d.meta, mat, meta.y),
-        doorId: doorIdRemap.get(d.meta.doorId),
-      });
-    }
-    return d.cleanClone(mat, transformDecorMeta(d.meta, mat, meta.y));
+    const { doorId } = d.meta;
+    if (typeof doorId === "number" && doorIdsToRemove.has(doorId)) return [];
+    return d.cleanClone(mat, {
+      ...transformDecorMeta(d.meta, mat, meta.y),
+      ...(typeof d.meta.do === "string" && doMeta),
+      ...(typeof doorId === "number" && { doorId: doorIdRemap.get(doorId) }),
+    });
   });
 
   const doors = src.doors

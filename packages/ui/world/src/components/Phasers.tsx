@@ -2,6 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
+import { sitTurn } from "../const.npc";
 import { eased } from "../service/fade";
 import { advanceBeam, type Beam, type BeamTarget, beamEnd, bodyPartPoint, createBeam } from "../service/phaser-beam";
 import {
@@ -33,7 +34,7 @@ export default function Phasers() {
       tickedMs: performance.now(),
 
       arm(npcKey, opts = {}) {
-        if (w.npc.npcToDoable[npcKey] != null) return; // not whilst sat or lain
+        if (w.npc.npcToDoable[npcKey] != null && w.n?.[npcKey]?.anim.posture !== "sit") return; // not whilst lain
         if (w.e.hasItem(npcKey, "phaser") === false) return; // nor without one
         if (w.shields?.isDead(npcKey) === true) {
           if (npcKey === w.player.key) w.hud?.say("phaser deactivated");
@@ -69,6 +70,7 @@ export default function Phasers() {
             target: null,
             holdUntil: 0,
             ownAim: null,
+            ownTurn: false,
             lockAim: { at: 0, rate: 1, untilRest: false },
             hand: null,
             armAim: null,
@@ -280,17 +282,18 @@ export default function Phasers() {
         // the pose, over their right arm — only ours, never another's e.g. a reach
         const pose = armed === false ? null : avoid ? phaserConfig.avoid : phaserConfig.pose;
         const { anim } = npc;
+        const sat = anim.posture === "sit";
         const shown = anim.upper.target === 1 ? anim.upper.key : null;
         if (pose === null) {
           if (isPhaserPose(shown)) anim.setUpper(null);
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
           // in before the hand goes through — and a raise from rest keeps the clip's own pace
           const swapSecs = avoid ? phaserConfig.drawInSecs : shown === null ? undefined : phaserConfig.drawOutSecs;
-          anim.setUpper(pose, { swapSecs });
+          anim.setUpper(pose, { swapSecs, past: sat });
         }
 
-        // the stance — theirs to stand in, and only ours to put back
-        const stance = armed === true ? phaserConfig.pose : null;
+        // the stance — theirs to stand in, and only ours to put back. Sat, the seat's
+        const stance = armed === true && sat === false ? phaserConfig.pose : null;
         if (stance !== arm.ownIdle) {
           const from = anim.idleClip.name as AnimationClipKey;
           if (arm.ownIdle === null) arm.idleBefore = from;
@@ -304,7 +307,13 @@ export default function Phasers() {
 
         // the aim — only ours, so a look still turns them: at the target, else held so a move strafes
         const { face } = anim;
-        if (face.aim === null || face.aim === arm.ownAim) {
+        if (sat === true) {
+          // sat they turn their head and torso, not round: and only ours to put back
+          if (face.aim !== null && face.aim === arm.ownAim) face.aim = arm.ownAim = null;
+          if (target !== undefined) anim.turnTo(bearingPast(npc, target, arm.muzzleRight), sitTurn.aimMaxRad);
+          else if (arm.ownTurn === true) anim.turnTo(null);
+          arm.ownTurn = target !== undefined;
+        } else if (face.aim === null || face.aim === arm.ownAim) {
           /** On a move told not to strafe, whose forward gait a held aim would slide */
           const forwardOnly = npc.isMoving() && anim.strafe !== true && anim.strafeFollowsAim !== true;
           if (target !== undefined) arm.lockAim.at = bearingPast(npc, target, arm.muzzleRight);
@@ -316,11 +325,13 @@ export default function Phasers() {
         const { beam } = arm;
         arm.armAim ??= { at: beam.at, from: muzzle, weight: 0 };
         arm.armAim.weight = eased(beam.shown.presence); // the arm follows the beam
+        arm.armAim.head = sat === true ? 0 : undefined; // sat, their turn has the head on them already
         if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = armed ? arm.armAim : null;
         // in hand whilst they carry it and stand, raised or lowered — or still armed, having just lost it
         beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
-        // gone at once between the two halves of a teleport, and as they sit or lie
-        if (leaving(npc) || w.npc.npcToDoable[npc.key] != null) beam.gun.target = beam.gun.presence = 0;
+        // gone at once between the two halves of a teleport, and as they sit or lie, unless raised sat
+        const seated = w.npc.npcToDoable[npc.key] != null && (armed === false || sat === false);
+        if (leaving(npc) || seated) beam.gun.target = beam.gun.presence = 0;
         else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
         const locking = target !== undefined && arm.inSight === true;
         /** The arm is all the way up: no beam on its way there, nor any left as it comes down */
@@ -340,7 +351,7 @@ export default function Phasers() {
         if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
         if (isCastCurrent(arm, npc, target) === true) return; // nothing has changed: neither they, their target, nor a door
         const { x, z } = npc.position;
-        const ry = npc.rotation.y;
+        const ry = facingOf(npc);
         const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
 
         arm.cast = { x, z, ry, tx, tz, target: target?.key ?? null };
@@ -465,6 +476,8 @@ type ArmEntry = {
   holdUntil: number;
   /** The aim we set, so we replace or clear only ours */
   ownAim: Npc["anim"]["face"]["aim"];
+  /** We turned them sat, so we turn them back */
+  ownTurn: boolean;
   /** The aim at their target, kept: its bearing is rewritten each tick */
   lockAim: { at: number; rate: number; untilRest: boolean };
   /** Their right forearm, and the model it was found in */
@@ -519,15 +532,20 @@ function isCastCurrent(arm: ArmEntry, npc: Npc, target: undefined | Npc) {
   const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
   return (
     near(cast.x, cast.z, npc.position.x, npc.position.z) &&
-    Math.abs(deltaAngle(cast.ry, npc.rotation.y)) <= phaserConfig.recastTurned &&
+    Math.abs(deltaAngle(cast.ry, facingOf(npc))) <= phaserConfig.recastTurned &&
     near(cast.tx, cast.tz, tx, tz)
   );
 }
 
 /** Where their hand is at arm's length, on the ground */
-function handAhead({ position: { x, z }, rotation: { y: ry } }: Npc) {
+function handAhead(npc: Npc) {
+  const { x, z } = npc.position;
+  const ry = facingOf(npc);
   return { x: x - Math.sin(ry) * phaserConfig.reach, y: z - Math.cos(ry) * phaserConfig.reach };
 }
+
+/** Their facing, with the turn of one sat */
+const facingOf = (npc: Npc) => npc.rotation.y + npc.anim.turn.value;
 
 /** The facing that lines `target` up, not on `npc`, but on a line `right` metres to their side */
 function bearingPast(npc: Npc, target: Npc, right: number) {

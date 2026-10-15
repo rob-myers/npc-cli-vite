@@ -213,7 +213,7 @@ export class NpcAnimation {
   /**
    * Ease `key` in over an arm (and the head), or out with `null` — from another shown, in `swapSecs`.
    * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`.
-   * `past`: sat, the arm goes up and comes down by way of `sitArmVia`, past a table's edge.
+   * `past`: sat at a table (`isUnderTable`), the arm goes up and comes down by way of `sitArmVia`, past its edge.
    * `onHead`: its hand is at their head, and stays there as the head turns — see `tickTurn`
    */
   setUpper(
@@ -290,6 +290,7 @@ export class NpcAnimation {
     this.tickUpper(delta);
     this.tickHeadShake(delta);
     this.tickTurn(delta);
+    this.tickAimArm();
     this.tickHurt(delta);
     this.tickBreath(delta);
     if (this.eyes.busy === true) this.tickEyes(delta);
@@ -418,8 +419,7 @@ export class NpcAnimation {
     for (const u of [l, r]) if (u.key !== null) bone.quaternion.premultiply(u.level);
     written.copy(bone.quaternion);
     if (r.key !== null && r.aim !== null) {
-      const [arm, head] = [r.aim.weight * r.eased, (r.aim.head ?? r.aim.weight) * r.eased];
-      if (arm > 0) this.aimArm(r.aim, arm);
+      const head = (r.aim.head ?? r.aim.weight) * r.eased;
       if (head > 0) this.aimHead(r.aim, head);
     }
     for (const u of [l, r]) {
@@ -465,10 +465,10 @@ export class NpcAnimation {
     this.w.r3f?.invalidate();
   }
 
-  /** Turn towards `at` whilst sat, as far as they can without turning round — `null` to face ahead again */
-  turnTo(at: null | Geom.VectJson) {
+  /** Turn towards `at`, a point or bearing, whilst sat: `maxRad` at most — `null` to face ahead again */
+  turnTo(at: null | number | Geom.VectJson, maxRad: number = sitTurn.maxRad) {
     const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
-    const target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
+    const target = THREE.MathUtils.clamp(off, -maxRad, maxRad);
     if (target !== this.turn.target) this.w.r3f?.invalidate(); // else, at rest, no tick comes to ease it
     this.turn.target = target;
   }
@@ -601,7 +601,7 @@ export class NpcAnimation {
   tickUpperSide(side: Side, delta: number) {
     const u = this.upperOf(side);
     if (u.key === null) return; // let go of: its blend is nought already
-    const via = u.past === true && this.posture === "sit" ? sitArmVias[side] : null;
+    const via = u.past === true && this.posture === "sit" && this.isUnderTable() ? sitArmVias[side] : null;
     const fadeSecs = upperFadeSecs * (via === null ? 1 : sitArmVia.slow);
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / fadeSecs, 0, 1);
     if (this.npc.group === null) return;
@@ -636,6 +636,12 @@ export class NpcAnimation {
     if (head !== undefined) u.head.fromArray(head.evaluate(u.time)).premultiply(lean);
   }
 
+  /** Their seat is under a table: marked `meta.underTable` */
+  isUnderTable() {
+    const decorKey = this.w.npc.npcToDoable[this.npc.key];
+    return decorKey != null && this.w.decor.byKey[decorKey]?.meta.underTable === true;
+  }
+
   /**
    * An upper clip was drawn with its own torso lean, yet only its arms and head are applied. Returns the
    * turn from the pose's torso, as it is this frame, to the clip's: those keys are corrected by it
@@ -664,6 +670,14 @@ export class NpcAnimation {
       else u.level.premultiply(tmpQuat.copy(base).invert()).multiply(base).premultiply(turn.invert());
     });
     return tmpLean.identity();
+  }
+
+  /** After `tickTurn`, so a sat turn of the torso is allowed for */
+  tickAimArm() {
+    const r = this.upper;
+    if (r.key === null || r.aim === null) return;
+    const weight = r.aim.weight * r.eased;
+    if (weight > 0) this.aimArm(r.aim, weight);
   }
 
   /** Swing the right arm at the shoulder, by `weight` of the turn that lines its forearm up on `aim.at` */
@@ -1014,7 +1028,7 @@ const newUpper = () => ({
   target: 0,
   /** Seconds into its clip */
   time: 0,
-  /** Sat, it goes up and down by way of `sitArmVia` */
+  /** Sat at a table, it goes up and down by way of `sitArmVia` */
   past: false,
   /** Its hand is at their head */
   onHead: false,

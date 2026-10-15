@@ -216,8 +216,11 @@ export const upperFadeSecs = 0.4;
  */
 export const lieRoll = { side: 0.45, back: 0.25, secs: 0.6 } as const;
 
-/** One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest */
-export const sitTurn = { maxRad: Math.PI / 4, body: 0.25, rate: 6 } as const;
+/**
+ * One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest.
+ * A phaser's aim turns them `aimMaxRad` at most
+ */
+export const sitTurn = { maxRad: Math.PI / 4, aimMaxRad: Math.PI / 6, body: 0.25, rate: 6 } as const;
 
 /**
  * One sat raises an arm past a table's edge: by way of this pose of the LEFT arm, elbow back and out, as Blockbench
