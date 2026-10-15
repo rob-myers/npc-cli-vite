@@ -138,6 +138,8 @@ export function WorldView(props: React.PropsWithChildren) {
         multi: false,
         pick: null,
       },
+      pickedAt: null,
+      lookMark: null,
       foldNode: uniform(1),
       labelReveal: uniform(1),
       labelRevealAnimId: 0,
@@ -929,6 +931,8 @@ export function WorldView(props: React.PropsWithChildren) {
             state.setFadeRoomsMode(fadeRoomsModeByKey[e.key]);
             w.menu?.update();
           }
+        } else if (e.key === "0") {
+          if (e.repeat === false) state.toggleViewPick();
         } else if (key === "c") {
           if (e.repeat === false) state.setCompassDial(!state.compassDial);
         } else if (key === "f") {
@@ -1047,6 +1051,7 @@ export function WorldView(props: React.PropsWithChildren) {
         /** `1` whilst the debug menu's "view pick" shows the pick colours */
         const shown = state.objectPick.value;
         state.objectPick.value = 1 * state.objectPickScale;
+        if (state.lookMark !== null) state.lookMark.visible = false; // not itself picked: shown again next frame
         try {
           // the npc material declares an extra output whilst bordering, so this pass needs the same
           // mrt (and `pickRT` the matching attachment count) or its pipeline won't validate
@@ -1110,6 +1115,8 @@ export function WorldView(props: React.PropsWithChildren) {
         if (found === null) return;
         const { picked, intersection } = found;
         const { distance, point } = intersection;
+        state.pickedAt = point;
+        w.r3f?.invalidate(); // a frame to show it in, see `LookMark`
         // always take 1st -- see `pick` for execution order
         const clickId = state.clickIds.shift();
 
@@ -1236,6 +1243,12 @@ export function WorldView(props: React.PropsWithChildren) {
         state.set({ follow });
         w.update(); // the look button shows it
         w.hud?.update();
+        w.r3f?.invalidate();
+      },
+      toggleViewPick() {
+        state.objectPick.value = state.objectPick.value === 1 ? 0 : 1;
+        state.forceUpdate();
+        w.menu?.update(); // its toggle shows it
         w.r3f?.invalidate();
       },
       setCompassDial(on) {
@@ -1803,6 +1816,8 @@ export type State = {
   getCrosshairPivot(): THREE.Vector3 | null;
   /** Ground direction of the held `wasd` keys: as seen, or along the world's axes whilst `compassDial` — zero when none or opposites are held */
   getWasdDirection(): Vect;
+  /** Shows the pick colours on screen, or stops: the debug menu's "view pick", and `0` */
+  toggleViewPick(): void;
   /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
@@ -1834,6 +1849,9 @@ export type State = {
     /** What was under the press as it went down: a moving npc has gone on by its release */
     pick: null | Promise<null | PickFound>;
   };
+  /** Where the last pick landed — see `LookMark` */
+  pickedAt: null | THREE.Vector3;
+  lookMark: null | THREE.Mesh;
   pickRT: THREE.RenderTarget;
   /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */
   npcMaskMrt: null | NpcMaskMrt;

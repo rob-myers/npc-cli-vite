@@ -264,8 +264,7 @@ export function WorldMenu() {
   const onDebugToggle = (item: string) => {
     switch (item) {
       case "view pick":
-        w.view.objectPick.value = w.view.objectPick.value === 1 ? 0 : 1;
-        w.view.forceUpdate();
+        w.view.toggleViewPick();
         break;
       case "post fx":
         // both rebuild the post pass, whose shader compile can stall a phone for a moment — and

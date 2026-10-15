@@ -13,10 +13,11 @@
   - maybe "isolated takedown" converts to ancillary
 - ✅ hold e to raise and aim i.e. remove `r` key
 
-- successful shots always pacify
-- shots can be unsuccessful
-  - target barely protruding
-  - target is running
+- ✅ successful shots always pacify
+- 🚧 shots can be unsuccessful
+  - 🚧 repro target barely protruding
+  - 🚧 repro target is running
+  - simplify
 
 - support shoot while sit or lie
 
@@ -24,11 +25,13 @@
   - do lungs/diaphragm actually move like that?
 - socialNorms
 
+- ✅ "mcp testing" up until Claude's turn ends — see `docs/mcp.md`
+
 ## World
 
 ### Animation and Npc
 
-- 🚧 skin face composite
+- ✅ skin face eyes
 
 - fix phaser going through a closed door
   - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
@@ -42,6 +45,8 @@
 - improve fov based on dimension
 
 ### Cleanliness
+
+- @packages/app/src/dev-mcp-hooks.ts#249 btw this seems like a rather coarse approach?
 
 - w.npc.npcToRoom -> w.npc.toRoom etc
 

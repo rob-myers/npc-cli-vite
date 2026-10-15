@@ -76,7 +76,7 @@ it, so a build fetches neither. Load a DEV World before committing.
 
 Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.
 
-`1`, `2` and `3` select the fade mode — `sight`, `sense`, `ship` (`fadeRoomsModeByKey`) — as the menu's button cycles them.
+`1`, `2` and `3` select the fade mode — `sight`, `sense`, `ship` (`fadeRoomsModeByKey`) — as the menu's button cycles them. `0` toggles the debug menu's "view pick" (`toggleViewPick`), the pick colours on screen.
 
 **Zoom has two stops**, `minDistance` and `maxDistance`; there is no continuous dolly. `zoomProgress` (0 at `maxDistance`, 1 at `minDistance`) is what gestures move — wheel by `deltaY`, pinch by the `ln` of its spread — and `getZoomRadius()` maps it to the radius. Once input pauses (`zoomSettleMs`), `syncZoom()` eases to whichever stop is nearer, so reversing partway cancels a zoom. It self-sustains via `dispatchEvent(changeEvent)` → `r3f.invalidate()`, which is what makes it work in a demand frameloop; the arriving frame dispatches nothing so the frames can stop.
 

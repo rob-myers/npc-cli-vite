@@ -166,11 +166,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         };
       },
       async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near }) {
-        /** Can be overridden if unreachable due to locked doors */
-        let groundPoint = helper.parseGroundPoint(to);
-
         const npc = w.npc.get(npcKey);
         if (npc.anim.hurt !== null) throw Error("hurt");
+        if (npcKey === w.player.key && w.npcFocus?.busy === true) throw Error("focused");
+
+        /** Can be overridden if unreachable due to locked doors */
+        let groundPoint = helper.parseGroundPoint(to);
         let result = w.npc.getClosestPoly(groundPoint, 0.5);
         const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
         if (doResult.type === "none") {
