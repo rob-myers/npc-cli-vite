@@ -136,6 +136,7 @@ export function WorldView(props: React.PropsWithChildren) {
         down: new Vect(),
         rightPress: false,
         multi: false,
+        pick: null,
       },
       foldNode: uniform(1),
       labelReveal: uniform(1),
@@ -963,9 +964,11 @@ export function WorldView(props: React.PropsWithChildren) {
         state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
         last.multi = state.otherPointerDown(e);
+        last.pick = null;
         if (last.multi === true) {
           return; // a second finger is the camera being pinched or rotated, never a pick
         }
+        last.pick = state.pickAt(e.nativeEvent);
 
         last.longPressTimer = window.setTimeout(() => {
           last.longPress = true;
@@ -1041,6 +1044,8 @@ export function WorldView(props: React.PropsWithChildren) {
         const y = Math.min(Math.floor(uv.v * size.y), size.y - 1);
         rtCamera.setViewOffset(size.x, size.y, x, y, 1, 1);
 
+        /** `1` whilst the debug menu's "view pick" shows the pick colours */
+        const shown = state.objectPick.value;
         state.objectPick.value = 1 * state.objectPickScale;
         try {
           // the npc material declares an extra output whilst bordering, so this pass needs the same
@@ -1050,7 +1055,7 @@ export function WorldView(props: React.PropsWithChildren) {
           renderer.render(scene, rtCamera);
         } finally {
           // whatever the render did: left in pick state, every frame after would be a pick
-          state.objectPick.value = 0;
+          state.objectPick.value = shown;
           renderer.setMRT(null);
           renderer.setRenderTarget(null);
           rtCamera.clearViewOffset();
@@ -1092,18 +1097,18 @@ export function WorldView(props: React.PropsWithChildren) {
           }
         });
       },
-      async pickObject(e) {
-        if (w.isMapChanging() === true || state.warmingPick === true) {
-          return;
-        }
-        const rgba = await state.renderPick(state.computePixelUv(e.nativeEvent));
+      async pickAt(e) {
+        if (w.isMapChanging() === true || state.warmingPick === true) return null;
+        const rgba = await state.renderPick(state.computePixelUv(e));
         const picked = state.getPickedFromPixel(rgba);
-        if (picked === null) return;
-
-        const intersection = state.getRaycastIntersection(e.nativeEvent, picked);
-        // console.log("picked", picked, intersection);
-        if (intersection === null) return;
-
+        if (picked === null) return null;
+        const intersection = state.getRaycastIntersection(e, picked);
+        return intersection === null ? null : { picked, intersection };
+      },
+      async pickObject(e) {
+        const found = await (state.lastPointer.pick ?? state.pickAt(e.nativeEvent));
+        if (found === null) return;
+        const { picked, intersection } = found;
         const { distance, point } = intersection;
         // always take 1st -- see `pick` for execution order
         const clickId = state.clickIds.shift();
@@ -1826,6 +1831,8 @@ export type State = {
     rightPress: boolean;
     /** Whether another finger has joined the press: then it is no pick */
     multi: boolean;
+    /** What was under the press as it went down: a moving npc has gone on by its release */
+    pick: null | Promise<null | PickFound>;
   };
   pickRT: THREE.RenderTarget;
   /** Non-null whilst the npc borders run, when npc materials write an extra `npcMask` output */
@@ -1910,6 +1917,8 @@ export type State = {
   /** Whether a pointer OTHER than `e`'s is down, i.e. the gesture belongs to the camera */
   otherPointerDown(e: React.PointerEvent<HTMLDivElement>): boolean;
   pickObject(e: React.PointerEvent<HTMLDivElement>): void;
+  /** What is under `e`: picked by colour, then raycast for the point */
+  pickAt(e: PointerEvent): Promise<null | PickFound>;
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onKeyUp(e: KeyboardEvent): void;
@@ -2278,6 +2287,8 @@ const closeConfirmMs = 2000;
 const onCompassEpsilon = 0.01;
 /** The normal of an obstacle's top, for a pick that landed on it without hitting a face */
 const up = new THREE.Vector3(0, 1, 0);
+
+type PickFound = { picked: Picked; intersection: THREE.Intersection };
 
 export type Picked = {
   instanceId: number;
