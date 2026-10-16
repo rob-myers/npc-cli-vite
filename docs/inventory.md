@@ -157,8 +157,10 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
 
 The arm swings from the pose, which was drawn stood, to point where they aim (`armAimAt`, eased by `glideArmAt`).
 
-- **Sat**, the head turns up to `sitTurn.maxRad` (90°) either way. The gun aims from `aimFrom` to `aimTo`, further
-  on its hand's side. The torso keeps still whilst an arm aims. A look's turn is kept once let go, until they stand.
+- **Sat**, the head turns up to `sitTurn.maxRad` (90°) either way. The gun aims from `aimFrom` to `aimTo` (120° either
+  way). Whilst an arm aims, the torso keeps still, so it never turns into the gun. Past `aimTorsoFrom` (45°) to their
+  left it turns with the gun instead, so the right arm never crosses their chest.
+- A look's turn is kept once let go, until they stand.
 - **Lain**, each pose aims within its arc (`lieAim`), and they roll to the pose that reaches (`lieAimPoseFor`). The
   head lifts towards it. `r` points the arm there (`w.phasers.pointAt`).
 - Lain with the phaser down, `r` looks the same way (`anim.lookLain`): they roll to the pose that reaches, and the

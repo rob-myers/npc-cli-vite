@@ -230,12 +230,14 @@ export const lieHeadMaxRad = Math.PI / 6;
 
 /**
  * One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest.
- * A phaser aims from `aimFrom` to `aimTo`, radians off their facing and positive to their left. It reaches further on its hand's side
+ * A phaser aims from `aimFrom` to `aimTo`, radians off their facing and positive to their left
  */
 export const sitTurn = {
   maxRad: Math.PI / 2,
   aimFrom: (-2 * Math.PI) / 3,
-  aimTo: Math.PI / 2,
+  aimTo: (2 * Math.PI) / 3,
+  /** Past this to their left, the torso turns with the gun: the arm aiming, their right, would cross their chest */
+  aimTorsoFrom: Math.PI / 4,
   body: 0.25,
   rate: 6,
 } as const;

@@ -564,11 +564,15 @@ export class NpcAnimation {
     const { turn } = this;
     if (this.posture !== "sit") turn.target = turn.want = 0;
     this.tickTurnAim(delta);
-    if (turn.target === 0 && turn.value === 0) return; // nearly everyone, nearly always
+    /** How far an arm aims them: the torso then turns with the gun, not with their look */
+    const aiming = this.posture === "sit" && this.upper.aim !== null ? this.upper.eased : 0;
+    /** Radians the torso turns with the gun past `aimTorsoFrom` to their left */
+    const torsoAim = aiming * Math.max(0, turn.aim - sitTurn.aimTorsoFrom);
+    if (turn.target === 0 && turn.value === 0 && torsoAim === 0) return; // nearly everyone, nearly always
     turn.value += (turn.target - turn.value) * (1 - Math.exp(-sitTurn.rate * delta));
     if (Math.abs(turn.value - turn.target) < 1e-3) turn.value = turn.target;
     else this.w.r3f?.invalidate(); // still on its way
-    if (turn.value === 0) return;
+    if (turn.value === 0 && torsoAim === 0) return;
     const head = this.upperHead.entry?.bone;
     /** Each hand at their head, where the head has it now: it goes there again once that has turned */
     for (const side of sides) {
@@ -580,14 +584,19 @@ export class NpcAnimation {
       head.updateWorldMatrix(true, false);
       head.worldToLocal(forearm.localToWorld(tmpHeld[side].copy(forearm.position)));
     }
-    /** The torso's share: none whilst an arm aims, so it never turns into it */
-    const body = sitTurn.body * (this.upper.aim === null ? 1 : 1 - this.upper.eased);
+    /** The torso's turn: a share of their look's, giving way whilst an arm aims to the gun's far to their left */
+    const torso = (1 - aiming) * sitTurn.body * turn.value + torsoAim;
+    /** The head's turn on the torso: where they look, as far as the neck lets it from a torso turned with the gun */
+    const neck = THREE.MathUtils.clamp(turn.value - torso, -sitTurn.maxRad, sitTurn.maxRad);
+    /** Each bone's parent's world turn, carried down the chain (stomach, chest, head): one walk up the skeleton, not three */
+    const chain = turn.bones[0]?.bone.parent?.getWorldQuaternion(tmpChain);
+    if (chain == null) return; // no skeleton yet
     for (const { bone, base, written } of turn.bones) {
-      if (bone.parent === null) continue;
       base.copy(bone.quaternion);
-      const share = bone.name === "head" ? 1 - body : body / 2;
-      const axis = tmpAxis.set(0, 1, 0).applyQuaternion(bone.parent.getWorldQuaternion(tmpQuat).invert());
-      written.copy(bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(axis, turn.value * share)));
+      const angle = bone.name === "head" ? neck : torso / 2;
+      const axis = tmpAxis.set(0, 1, 0).applyQuaternion(tmpQuat.copy(chain).invert());
+      written.copy(bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(axis, angle)));
+      chain.multiply(bone.quaternion);
     }
     turn.written = true;
     for (const side of sides) {
@@ -1178,6 +1187,7 @@ const headAimMaxRad = Math.PI / 4;
 /** How fast the head's turn eases to where it should look, per second */
 const headTurnRate = 10;
 const tmpHeadGoal = new THREE.Quaternion();
+const tmpChain = new THREE.Quaternion();
 const tmpQuat = new THREE.Quaternion();
 const tmpSwap = new THREE.Quaternion();
 const tmpLean = new THREE.Quaternion();
