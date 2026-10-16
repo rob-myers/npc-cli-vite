@@ -163,6 +163,7 @@ export const npcMaterialConfig = {
 export const fromAnimationClipKey = {
   backwards: true,
   breathe: true,
+  collapsed: true,
   crouch: true,
   crouch_left: true,
   drop: true,
@@ -301,20 +302,15 @@ export const hitConfig = {
   } satisfies Record<string, Record<HitRegion, ClipKey>>,
   /** Looped until released: every other clip above plays once */
   pacified: ["pacified", "sit_pacified", "lie_pacified"] as ClipKey[],
-  /** What a clip played once goes on to: every hit pacifies, after its pain */
+  /**
+   * What a clip played once goes on to, looped until released: a head shot pacifies, and a body shot collapses one
+   * stood. Any other goes back to rest, or to whatever they were in before
+   */
   next: {
     pain_head: "pacified",
-    pain_high: "pacified",
-    pain_arm_left: "pacified",
-    pain_arm_right: "pacified",
-    pain_leg_left: "pacified",
-    pain_leg_right: "pacified",
+    pain_high: "collapsed",
     sit_pain_head: "sit_pacified",
-    sit_pain_high: "sit_pacified",
-    sit_pain_low: "sit_pacified",
     lie_pain_head: "lie_pacified",
-    lie_pain_high: "lie_pacified",
-    lie_pain_low: "lie_pacified",
   } as Partial<Record<ClipKey, ClipKey>>,
 };
 
@@ -331,6 +327,7 @@ export const fadeSecs: Record<
 > = {
   backwards: {},
   breathe: { shuffle: 0.15 },
+  collapsed: {},
   crouch: {},
   crouch_left: {},
   drop: {},
@@ -347,7 +344,7 @@ export const fadeSecs: Record<
   pain_arm_left: { pacified: pacifyFadeSecs },
   pain_arm_right: { pacified: pacifyFadeSecs },
   pain_head: {},
-  pain_high: { pacified: pacifyFadeSecs },
+  pain_high: { collapsed: pacifyFadeSecs, pacified: pacifyFadeSecs },
   pain_leg_left: { pacified: pacifyFadeSecs },
   pain_leg_right: { pacified: pacifyFadeSecs },
   pick_up: {},

@@ -260,11 +260,14 @@ export class NpcAnimation {
     return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
   }
 
-  /** Show `key` in place of idle: a pain clip once, a pacified one until `null` releases them */
+  /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
   setHurt(key: null | AnimationClipKey) {
-    const pacified = this.hurt !== null && isPacified(this.hurt.key) ? this.hurt.key : null;
-    if (key !== null && pacified !== null && (isPacified(key) || headClips.has(key))) return;
-    this.hurt = key === null ? null : { key, secs: 0, next: hitConfig.next[key] ?? pacified };
+    /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
+    const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
+    const pacified = held !== null && isPacified(held);
+    if (key !== null && pacified && (isPacified(key) || headClips.has(key))) return;
+    // pacified, they stay so, whatever else hits them
+    this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held) };
     this.setPose(this.restKey, { force: key !== null });
     this.w.r3f?.invalidate();
   }
@@ -1265,7 +1268,7 @@ function keyOf(clip: THREE.AnimationClip) {
 
 function bubbleHeightForClip(clipName: AnimationClipKey): number {
   const posture = postureOf(clipName);
-  if (posture === "sit") return 1.4;
+  if (posture === "sit" || clipName === "collapsed") return 1.4; // collapsed, sat on the floor
   if (posture === "lie") return 0.9;
   return 2;
 }
@@ -1275,7 +1278,7 @@ export const labelYShiftMax = 2.2;
 
 function labelYShiftForClip(clipName: AnimationClipKey): number {
   const posture = postureOf(clipName);
-  if (posture === "sit") return 1.6;
+  if (posture === "sit" || clipName === "collapsed") return 1.6; // collapsed, sat on the floor
   if (posture === "lie") return 0.75;
   return labelYShiftMax;
 }

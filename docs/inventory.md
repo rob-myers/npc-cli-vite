@@ -153,18 +153,34 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
 - The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`), whilst the gun stays in hand.
 
-### Aiming sat or lain
+### Aiming and looking, sat or lain
 
-The arm swings from the pose, which was drawn stood, to point where they aim (`armAimAt`, eased by `glideArmAt`).
+The arm swings from the pose, which was drawn stood, to point where they aim (`armAimAt`). It eases onto each new
+point (`glideArmAt`), and keeps its aim whilst coming down, so a pose drawn stood never swings it up. The head's
+turn eases too (`headTurn`), so it glides.
 
-- **Sat**, the head turns up to `sitTurn.maxRad` (90°) either way. The gun aims from `aimFrom` to `aimTo` (120° either
-  way). Whilst an arm aims, the torso keeps still, so it never turns into the gun. Past `aimTorsoFrom` (45°) to their
-  left it turns with the gun instead, so the right arm never crosses their chest.
-- A look's turn is kept once let go, until they stand.
-- **Lain**, each pose aims within its arc (`lieAim`), and they roll to the pose that reaches (`lieAimPoseFor`). The
-  head lifts towards it. `r` points the arm there (`w.phasers.pointAt`).
-- Lain with the phaser down, `r` looks the same way (`anim.lookLain`): they roll to the pose that reaches, and the
-  head lifts towards the point. It stays there once let go, until they look elsewhere or get up.
+**Sat** (`sitTurn` in `const.npc`):
+
+- A look turns the head up to `maxRad` (90°) either way. It is kept once let go, until they stand.
+- The gun aims from `aimFrom` to `aimTo`, 120° either way. Pointed somewhere it cannot reach, it goes to the limit
+  nearer that point, always round the front (`turn.aim`, eased by `tickTurnAim`).
+- Whilst an arm aims, the torso keeps still, so it never turns into the gun. Past `aimTorsoFrom` (45°) to their left
+  it turns with the gun instead, so the right arm never crosses their chest. The head turns on top of it, but no more
+  than 90° on the neck.
+
+**Lain** (`lieAim` in `const.npc`, radians off their facing, which is towards their feet):
+
+| pose | aims | head |
+| --- | --- | --- |
+| `lie`, on their back | -45° to 0°: never to their left, where the arm would lie across them | lifts, never tips back |
+| `lie_left` | 20° to 120° | turns |
+| `lie_right` | -120° to -20° | turns |
+
+- They roll to the pose that reaches (`lieAimPoseFor`), at most once per `lieRoll.secs`.
+- The head lifts or turns towards the point, up to `lieHeadMaxRad` (30°). On their back, a look beyond the head
+  end looks straight up instead.
+- `r` points the arm there (`w.phasers.pointAt`). With the phaser down, `r` looks the same way (`anim.lookLain`),
+  and the look stays once let go, until they look elsewhere or get up.
 
 ### Drawn in
 
@@ -172,9 +188,10 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 
 | | someone in the way | drawn in is |
 | --- | --- | --- |
-| stood | a crowd neighbour ahead (`npcAhead`) | `phaser_aim_avoid` |
+| stood | a crowd neighbour ahead (`npcAhead`) | `phaser_aim_avoid`, over `drawInSecs` |
 | sat | found by `armMeetsNpc`, below | `phaser_aim_avoid`, the arm's aim giving way as it swaps in |
-| lain | found by `armMeetsNpc`, below | on their left side, the arm on top, `phaser_aim_avoid` as sat (`lieAim`'s `drawIn`). Else stowed: still raised, the arm comes down with the gun in hand, until clear |
+| lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
+| lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
 
 - Sat or lain they are off the crowd, so `armMeetsNpc` looks through their room instead (`getNpcsInReach(key, 0)`).
 - It polls every `sampleSecs` for the player and every `npcPollSecs` for anyone else, jittered.
@@ -193,27 +210,39 @@ locked on to, and on whether they stand, sit or lie (`hitConfig` in `const.npc`)
 | chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
 | an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
 
-- Every hit pacifies. Its pain clip plays once, then `pacified` (or `{sit,lie}_pacified`) loops.
-- A head shot's clip ends slumped, so goes straight on. Any other ends stood, so fades into it over `pacifyFadeSecs`.
-- Pacified lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
-- Whilst in pain or pacified (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`),
-  their phaser is lowered, and `move`, `look` and arming are refused.
-- Pain on someone pacified leaves them pacified after. A head shot on them has no effect, nor does the label, or no part.
+Its pain clip plays once, then (`hitConfig.next`):
+
+| part | after |
+| --- | --- |
+| head | `pacified` (or `{sit,lie}_pacified`) loops |
+| body, stood | `collapsed` loops: sat on the floor, slumped, breathing hard |
+| body sat or lain, or a limb | back to rest: `breathe`, `sit` or `lie` |
+
+- A head shot's clip ends slumped, so goes straight on. `pain_high` fades into `collapsed` over `pacifyFadeSecs`.
+- Pacified or collapsed lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
+- Whilst hurt (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`), their phaser is
+  lowered, and `move`, `look` and arming are refused.
+- Pain on someone already pacified or collapsed leaves them as they were after, though a head shot pacifies one collapsed.
+  A head shot on someone pacified has no effect, nor does the label, or no part.
 - One lock hits once. Hits are not mirrored over the network.
 
 ### Npc focus
 
 Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`), as does jsh `focus target-0`:
 
-1. `aimAt` turns the player to them, raising the phaser on the way (at most `turnMaxMs`).
+1. `aimAt` raises the phaser pointed at them (`arm`'s `toward`) and turns the player to them (at most `turnMaxMs`).
+   Stood, they turn round. Sat, their head turns. Lain, they roll to the pose that reaches them, if one does.
 2. It waits for the phaser to come up clear as they now stand, by a cast made there (`w.phasers.isClear`, at most
    `raiseMaxMs`).
-3. Drawn in there (`phaser_aim_avoid`), or out of sight (a raycast is blocked), it ends with the phaser left raised.
-4. Otherwise the World pauses and the view zooms in. A mark is pinned over their head, body, arms and legs, placed
-   from their bones each frame.
-5. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or
+3. Drawn in there, or stowed lain, or out of sight (a raycast is blocked), it ends with the phaser left raised.
+4. It waits for the aim to land (`w.phasers.isAimed`: the arm within 3°, and no roll still fading in), so the pause
+   does not hold it partway.
+5. The World pauses and the view zooms in. A mark is pinned over their head, body, arms and legs, placed from their
+   bones each frame.
+6. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or
    the note at the top, shoots nothing.
-6. The World resumes, unless it was paused before. The view stays where it is.
+7. The World resumes, unless it was paused before. The view stays where it is. A phaser left raised no longer
+   points at them.
 
 Whilst it runs:
 
@@ -228,7 +257,8 @@ Resumed with the marks up (Enter, or play):
 
 - Escape only pauses the World, as ever. It ends the focus only in the pause it opened in (`resumed`).
 - The marks fade out whilst the player faces more than `maxOffAimRad` (15°) away (`offAim`), and back in as they
-  face them again.
+  face them again. Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of reach.
+- A click on someone, them or another, replaces the focus with a fresh one.
 - Lowering the phaser, e.g. by `e`, ends it as Escape does (`isLost`).
 
 After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it was raised before the click, e.g. by `e`.

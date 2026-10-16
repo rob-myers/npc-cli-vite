@@ -182,6 +182,7 @@ view). So check with `query` what is actually stale before reaching for a reload
 | A new clip in that glTF | Yes, on that refetch: every clip of the glTF is registered, even before its key in `fromAnimationClipKey` reaches the npc modules | Nothing more |
 | `const.npc`, as the npcs' animation code reads it, e.g. `hitConfig` | Not always (see below) | Check with `query`, e.g. a hit's `anim.hurt.next`. If stale, swap the npcs onto a fresh class (below) |
 | `service/player-frontier.ts` | The old `w.view.playerFrontier` instance is kept, so the World goes black (a NaN camera) | Rebuild it (below) |
+| Anything, after the page's Vite client lost its connection, e.g. a dev-server restart (`[vite] connected.` in the console) | No hot updates or custom events arrive: "mcp testing" stays up, as `dev-mcp:turn-end` never comes, and a `dev-mcp-hooks.ts` edit never goes live | `w => { w.view.busy = null; w.view.update(); }` hides the overlay. Ask the user to reload |
 
 Touching a file does not help: Vite sends no update for a file whose content is unchanged. So touching
 `NPCs.tsx` does not bump its query key.

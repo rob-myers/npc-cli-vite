@@ -961,11 +961,15 @@ export default function NPCs() {
       fromAnimationClipKey,
       (_, clipName) => anims.find((c) => c.name === clipName) ?? emptyAnimationClip,
     );
+    // every clip of the glTF too: one new to it plays after a refetch, before its key reaches this module
+    for (const anim of anims) (clips as Record<string, THREE.AnimationClip>)[anim.name] ??= anim;
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
 
-    const staleClips = pairedClips.flatMap(([oldClip, clip]) => (oldClip === clip ? [] : [oldClip]));
+    const staleClips = pairedClips.flatMap(([oldClip, clip]) =>
+      oldClip === clip || oldClip === undefined ? [] : [oldClip],
+    );
     /** on new clips show the pose afresh: carrying each old action over revives one caught fading out */
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
