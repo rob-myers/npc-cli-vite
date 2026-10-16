@@ -427,7 +427,7 @@ export default function NPCs() {
 
         state.update();
       },
-      findFreeDoMeta(meta, npcKey) {
+      findFreeDoMeta(meta, npcKey, near) {
         const currentDecorKey = state.npcToDoable[npcKey] ?? null;
 
         if (typeof meta.do === "string") {
@@ -440,12 +440,7 @@ export default function NPCs() {
         if (meta.obstacle === true && Array.isArray(meta.decorIds) === true) {
           const gm = w.gms[meta.gmId];
           const ds = (meta.decorIds as number[]).map((decorId) => gm.decor[decorId] as Geomorph.DecorPoint);
-          // 🔔 clarify precedence
-          const found =
-            ds.find((d) => {
-              const otherNpcKey = state.doableToNpc[d.key] ?? null;
-              return otherNpcKey == null || otherNpcKey === npcKey;
-            }) ?? null;
+          const found = state.findFreeDoPoint(ds, npcKey, near);
           return found === null
             ? { type: "occupied", meta }
             : { type: found.meta.decorKey === currentDecorKey ? "use-current" : "next-free", meta: found.meta };
@@ -455,6 +450,18 @@ export default function NPCs() {
           ? // can respawn onto self whilst doing
             { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
           : { type: "none", meta };
+      },
+      findFreeDoPoint(points, npcKey, near) {
+        const free = points.filter((d) => {
+          const otherNpcKey = state.doableToNpc[d.key] ?? null;
+          return otherNpcKey === null || otherNpcKey === npcKey;
+        });
+        if (near === undefined) return free.find((d) => d.key === state.npcToDoable[npcKey]) ?? free[0] ?? null;
+        const distSq = (d: Geomorph.DecorPoint) => (d.x - near.x) ** 2 + (d.y - near.y) ** 2;
+        return free.reduce<null | Geomorph.DecorPoint>(
+          (best, d) => (best === null || distSq(d) < distSq(best) ? d : best),
+          null,
+        );
       },
       hit(npcKey, part) {
         const npc = state.npc[npcKey];
@@ -780,7 +787,7 @@ export default function NPCs() {
         // test early to avoid creating unspawnable npc
         // - throw if doable but occupied
         // - throw if not doable and not navigable
-        const doResult = state.findFreeDoMeta(at?.meta ?? {}, npcKey);
+        const doResult = state.findFreeDoMeta(at?.meta ?? {}, npcKey, groundAt);
         if (doResult.type === "occupied") {
           throw Error("occupied");
         }
@@ -1107,7 +1114,9 @@ export type State = {
    * - Returns `null` if `meta` is not doable.
    * - Throws if `meta` is doable but not free.
    */
-  findFreeDoMeta(meta: Meta, npcKey: string): JshCli.FindDoMetaResult;
+  findFreeDoMeta(meta: Meta, npcKey: string, near?: Geom.VectJson): JshCli.FindDoMetaResult;
+  /** Of `points`, the free one nearest `near`, e.g. the point picked, theirs included: without it, theirs, else the first free */
+  findFreeDoPoint(points: Geomorph.DecorPoint[], npcKey: string, near?: Geom.VectJson): null | Geomorph.DecorPoint;
   /** The navmesh poly under an agent, which the crowd keeps under their feet */
   getNodeRef(agent: crowd.Agent): NodeRef;
   getClosestPoly(

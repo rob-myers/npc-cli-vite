@@ -239,7 +239,7 @@ export class Npc {
     const groundTarget = helper.parseGroundPoint(at);
 
     // when doable, ring is centered/heighted at the doable's own position rather than the raw target
-    const doResult = this.w.npc.findFreeDoMeta(at.meta ?? {}, this.key);
+    const doResult = this.w.npc.findFreeDoMeta(at.meta ?? {}, this.key, groundTarget);
     const ringAt = doResult.meta.groundPoint ?? groundTarget;
     const ringHeight = doResult.meta.y;
 
