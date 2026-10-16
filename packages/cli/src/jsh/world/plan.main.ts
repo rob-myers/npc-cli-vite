@@ -61,9 +61,19 @@ export function request<O extends WW.JshOp>(
   op: O,
   signal: AbortSignal,
 ) {
+  return post(w, api.getUid(), op, signal);
+}
+
+/** `request` from no process, e.g. a keyed listener: nothing pauses or kills it */
+export function requestDetached<O extends WW.JshOp>(w: JshCli.WorldState, op: O) {
+  return post(w, `detached-${++detachedUid}`, op, new AbortController().signal);
+}
+
+let detachedUid = 0;
+
+function post<O extends WW.JshOp>(w: JshCli.WorldState, uid: string, op: O, signal: AbortSignal) {
   const worker = getWorker(w);
   ensureSetup(w, worker);
-  const uid = api.getUid();
   return new Promise<WW.JshOutput[O["key"]]>((resolve, reject) => {
     signal.throwIfAborted();
     const onMessage = (e: MessageEvent<WW.JshMsgFromNavWorker>) => {

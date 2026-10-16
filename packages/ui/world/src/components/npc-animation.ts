@@ -266,10 +266,12 @@ export class NpcAnimation {
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
     const pacified = held !== null && isPacified(held);
     if (key !== null && pacified && (isPacified(key) || headClips.has(key))) return;
+    const changed = key !== (this.hurt?.key ?? null);
     // pacified, they stay so, whatever else hits them
     this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held) };
     this.setPose(this.restKey, { force: key !== null });
     this.w.r3f?.invalidate();
+    if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key });
   }
 
   tickHurt(delta: number) {
@@ -280,6 +282,7 @@ export class NpcAnimation {
     if (hurt.next === null) return this.setHurt(null);
     this.hurt = { key: hurt.next, secs: 0, next: null };
     this.setPose(hurt.next);
+    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: hurt.next });
   }
 
   /** A fresh skeleton: the bones an upper clip, or a shake of the head, writes */

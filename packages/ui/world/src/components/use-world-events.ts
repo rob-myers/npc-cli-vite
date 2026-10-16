@@ -41,6 +41,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       externalNpcs: new Set(),
       handLitRooms: new Set(),
       keyedListener: new Map(),
+      keyedTick: new Map(),
       litRooms: new Map(),
       npcToAccess: {},
       npcToDoors: {},
@@ -64,6 +65,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       addKeyedListener(key, listener) {
         state.keyedListener.set(key, listener);
+      },
+      addKeyedTick(key, tick) {
+        state.keyedTick.set(key, tick);
       },
       canAutoCloseDoor(door) {
         const closeNpcs = state.doorToNpcs[door.gdKey];
@@ -951,6 +955,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "carried":
           case "npc-hit":
+          case "npc-hurt":
           case "speech":
           case "stopped-moving":
             break;
@@ -1422,6 +1427,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shields?.onTick();
         w.player?.aimAtPointer();
         w.player?.syncRun();
+        for (const tick of state.keyedTick.values()) tick(w);
       },
       syncDoorways() {
         for (const [npcKey, { normal, offset, rooms }] of state.insideDoorways) {
@@ -1687,6 +1693,8 @@ export type State = {
    */
   handLitRooms: Set<Geomorph.GmRoomKey>;
   keyedListener: Map<string, (event: JshCli.Event, world: JshCli.WorldState) => void>;
+  /** Run after every npc tick, so whilst the World is unpaused — see `addKeyedTick` */
+  keyedTick: Map<string, (world: JshCli.WorldState) => void>;
   /**
    * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
    * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or
@@ -1730,6 +1738,8 @@ export type State = {
    * Can use `key` to avoid duplication
    */
   addKeyedListener(key: string, listener: (event: JshCli.Event, w: JshCli.WorldState) => void): void;
+  /** Runs `tick` after every npc tick, e.g. from jsh. Can use `key` to avoid duplication */
+  addKeyedTick(key: string, tick: (w: JshCli.WorldState) => void): void;
   canAutoCloseDoor(door: Geomorph.DoorState): boolean;
   /** `findPath`, spread over as many turns of the event loop as it takes — see `AStar.searchAsync` */
   findPathAsync(

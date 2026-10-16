@@ -62,6 +62,12 @@ declare namespace JshCli {
         clip: import("./components/NPCs").AnimationClipKey;
       }
     | {
+        /** Their hurt clip changed, e.g. a pain clip went on to `collapsed`: `null` is released */
+        key: "npc-hurt";
+        npcKey: string;
+        clip: null | import("./components/NPCs").AnimationClipKey;
+      }
+    | {
         /** About to look at (if close enough), then fade onto, a free doable */
         key: "npc-pre-do";
         npcKey: string;
