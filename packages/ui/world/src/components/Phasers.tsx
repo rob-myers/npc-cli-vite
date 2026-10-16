@@ -33,6 +33,13 @@ export default function Phasers() {
       arms: new Map(),
       tickedMs: performance.now(),
 
+      aimOff(npcKey, at) {
+        const arm = state.arms.get(npcKey);
+        const npc = w.n?.[npcKey];
+        if (arm?.armed !== true || arm.armAim?.at !== arm.armAt || npc === undefined) return null;
+        const pointed = npc.anim.bearingOf({ x: arm.armAt.x, y: arm.armAt.z });
+        return Math.abs(deltaAngle(pointed, npc.anim.bearingOf(at)));
+      },
       arm(npcKey, opts = {}) {
         if (w.npc.npcToDoable[npcKey] != null && w.n?.[npcKey]?.anim.posture === "stand") return; // sat or lain alone
         if (w.e.hasItem(npcKey, "phaser") === false) return; // nor without one
@@ -485,6 +492,8 @@ export type State = PhaserResources & {
   arms: Map<string, ArmEntry>;
   tickedMs: number;
 
+  /** Radians their arm points off `at`, sat or lain — `null` unless it aims by `armAt` */
+  aimOff(npcKey: string, at: Geom.VectJson): null | number;
   /** Arm them, locked on `at` an npc's `part` — no `at` unlocks */
   /** `once`: lowered again once the shot is over. `toward`: sat or lain, whom they point at without locking on */
   arm(npcKey: string, opts?: { at?: null | string; part?: null | string; once?: boolean; toward?: string }): void;
