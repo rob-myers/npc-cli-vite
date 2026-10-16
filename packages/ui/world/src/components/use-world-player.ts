@@ -102,8 +102,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
         w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
         const { origin, direction } = w.view.raycaster.ray;
-        // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
-        const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
+        // on the floor, not at their own height: sat or lain they are off it. Past the horizon there is none: far off the way the tap looks, then
+        const reach = direction.y < -1e-3 ? -origin.y / direction.y : lookFarMetres;
         tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
         state.lookAtPoint(tmpHit.x, tmpHit.z);
       },
