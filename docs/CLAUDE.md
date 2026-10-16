@@ -238,7 +238,9 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ## jsh commands
 
 **Modules**
-- Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred}.ts` become shell commands, and hot-reload. `modules.js` lists them, and the default profile sources them.
+- Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred,sidestep}.ts` become shell commands, and hot-reload. `modules.js` lists them.
+- The default profile sources them all through `/etc/jsh-default.sh` (`world/jsh-default.sh`). A new module goes in both.
+- Shell files reach `/etc` as exports of `scripts.js`, named `fooBarSh` for `/etc/foo-bar.sh`: `sources.ts` drops the `Sh` and kebab-cases the rest.
 - An exported *function* becomes a command. Export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
 - The `*_mcp.ts` ones are Claude's, written through the [MCP server](#mcp-server).
 - A later-sourced module may shadow an earlier one's command, never a builtin. Builtins win.
@@ -256,7 +258,7 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - World code it awaits, which a kill must end, runs as a `Task`: see `docs/tasks.md`.
 - Examples: `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
-**Watching every tick needs no process.** `w.e.addKeyedTick(key, tick)` runs after each npc tick, so only whilst unpaused. `w.e.keyedTick.delete(key)` stops it. See `sidestep` in `core.ts`.
+**Watching every tick needs no process.** `w.e.addKeyedTick(key, tick)` runs after each npc tick, so only whilst unpaused. `w.e.keyedTick.delete(key)` stops it. See `sidestep.ts`.
 
 **Pausing**: see `docs/jsh-pause.md`.
 

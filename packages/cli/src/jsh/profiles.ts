@@ -1,7 +1,8 @@
 export const default_profile = `
 # default profile
-source /etc/{util,alias}.sh
-source /etc/{util,core,demo,demo_mcp,debug,decor,pred}.js.sh
+source /etc/util.sh
+source /etc/jsh-default.sh
+source /etc/alias.sh
 awaitWorld
 predicates
 inventory
@@ -11,9 +12,9 @@ sidestep
 
 export const empty_profile = `
 # empty profile: maybe source something?
-# source /etc/{util,alias}.sh
-# source /etc/{util,core,demo,demo_mcp,debug,decor,pred}.js.sh
-
+# source /etc/util.sh
+# source /etc/jsh-default.sh
+# source /etc/alias.sh
 `.trim();
 
 export type ProfileKey = keyof typeof import("./profiles");

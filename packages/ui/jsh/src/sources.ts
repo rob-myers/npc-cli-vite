@@ -12,11 +12,16 @@ type TtyJsModuleKey = Exclude<keyof TtyJsModules, "modulePtags">;
  */
 export type EtcBasename = FileKeyToEtcBasename<keyof typeof scripts | TtyJsModuleKey>;
 
-type FileKeyToEtcBasename<S extends string> = S extends `${infer T}Sh` ? `${T}.sh` : `${S}.js.sh`;
+type FileKeyToEtcBasename<S extends string> = S extends `${infer T}Sh` ? `${Kebab<T>}.sh` : `${S}.js.sh`;
+
+/** e.g. `jshDefault` is `jsh-default` */
+type Kebab<S extends string> = S extends `${infer H}${infer T}`
+  ? `${H extends Lowercase<H> ? H : `-${Lowercase<H>}`}${Kebab<T>}`
+  : S;
 
 export const shellFunctionFiles = {
   ...Object.entries(scripts).reduce(
-    (agg, [key, rawModule]) => ({ ...agg, [`${key.slice(0, -"Sh".length)}.sh`]: rawModule }),
+    (agg, [key, rawModule]) => ({ ...agg, [`${toKebab(key.slice(0, -"Sh".length))}.sh`]: rawModule }),
     {} as Record<EtcBasename, string>,
   ),
 
@@ -43,3 +48,7 @@ export const shellFunctionFiles = {
       {} as Record<EtcBasename, string>,
     ),
 };
+
+function toKebab(key: string) {
+  return key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+}
