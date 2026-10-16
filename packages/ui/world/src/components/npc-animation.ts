@@ -16,6 +16,8 @@ import {
   gaitStride,
   headShakeConfig,
   hitConfig,
+  lieAim,
+  lieHeadMaxRad,
   lieRoll,
   npcScale,
   sitArmVia,
@@ -91,8 +93,11 @@ export class NpcAnimation {
   upperHead = { entry: null as null | UpperBone };
   /** World seconds at which they last rolled over in bed — see `rollTo` */
   rolledAt = -Infinity;
-  /** A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head */
-  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false };
+  /**
+   * A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head.
+   * `want` is the turn asked for, unclamped, and `aim` the phaser's — see `tickTurnAim`
+   */
+  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0 };
   /** Their breathing: `amount` eases to `on`, and `phase` is in breaths — see `tickBreath` */
   breath = {
     on: false,
@@ -446,10 +451,9 @@ export class NpcAnimation {
   /** Roll one lain to look towards `at`: onto the side it is to, or onto their back for one along their own line */
   rollTo(at: Geom.VectJson) {
     const from = keyOf(this.idleClip);
-    if (from !== "lie" && from !== "lie_left" && from !== "lie_right") return;
+    if (isLieKey(from) === false) return;
     // one roll at a time: a fade cut short by the next jerks them
-    const secs = this.w.timer.getElapsedTime();
-    if (secs - this.rolledAt < lieRoll.secs) return;
+    if (this.w.timer.getElapsedTime() - this.rolledAt < lieRoll.secs) return;
     const { position, rotation } = this.npc;
     /** Metres `at` is to their left */
     const left = (at.y - position.z) * Math.sin(rotation.y) - (at.x - position.x) * Math.cos(rotation.y);
@@ -457,26 +461,91 @@ export class NpcAnimation {
     const { side, back } = lieRoll;
     // between the two they stay as they are, unless turned the other way
     const kept = from === towards ? from : "lie";
-    const to = Math.abs(left) < back ? "lie" : Math.abs(left) < side ? kept : towards;
-    if (to === from) return;
-    this.rolledAt = secs;
+    this.rollOnto(Math.abs(left) < back ? "lie" : Math.abs(left) < side ? kept : towards);
+  }
+
+  /** A roll in bed is still fading in */
+  isRolling() {
+    return this.w.timer.getElapsedTime() - this.rolledAt < lieRoll.secs;
+  }
+
+  /** Roll one lain onto `to`, a lie clip */
+  rollOnto(to: AnimationClipKey) {
+    const from = keyOf(this.idleClip);
+    if (isLieKey(from) === false || to === from) return;
+    this.rolledAt = this.w.timer.getElapsedTime();
     this.idleClip = this.npc.clips[to];
     if (this.pose === from) this.setPose(to);
     this.w.r3f?.invalidate();
   }
 
-  /** Turn towards `at`, a point or bearing, whilst sat: `maxRad` at most — `null` to face ahead again */
-  turnTo(at: null | number | Geom.VectJson, maxRad: number = sitTurn.maxRad) {
+  /**
+   * The bearing they aim along: their facing, sat, turned by `turn.aim`, or lain, `lieAim`'s `ahead` of it — `null` lain
+   * in a clip it lacks
+   */
+  aimBearing() {
+    const { rotation } = this.npc;
+    if (this.posture === "sit") return rotation.y + this.turn.aim;
+    if (this.posture !== "lie") return rotation.y;
+    const lain = lieAim[this.pose];
+    return lain === undefined ? null : rotation.y + lain.ahead;
+  }
+
+  /** They can aim at `at` as they are: sat, within `sitTurn`'s aim, lain, within their pose's `lieAim` */
+  canAimAt(at: Geom.VectJson) {
+    if (this.posture === "lie") return this.lieAimPoseFor(at) === this.pose;
+    if (this.posture === "stand") return true;
+    const off = deltaAngle(this.npc.rotation.y, this.bearingOf(at));
+    return off >= sitTurn.aimFrom && off <= sitTurn.aimTo;
+  }
+
+  /** Lain, the bearing nearest `at` that their pose aims along — `null` in a clip `lieAim` lacks */
+  lieAimBearing(at: Geom.VectJson) {
+    const lain = lieAim[this.pose];
+    if (lain === undefined) return null;
+    const { y } = this.npc.rotation;
+    return y + clampArc(deltaAngle(y, this.bearingOf(at)), lain.from, lain.to);
+  }
+
+  /** Lain, the pose they aim at `at` from: their own if it can, else one to roll onto — `null` if none can */
+  lieAimPoseFor(at: Geom.VectJson): null | AnimationClipKey {
+    const off = deltaAngle(this.npc.rotation.y, this.bearingOf(at));
+    const fits = (key: AnimationClipKey) => {
+      const lain = lieAim[key];
+      return lain !== undefined && off >= lain.from && off <= lain.to;
+    };
+    return fits(this.pose) ? this.pose : (lieKeys.find(fits) ?? null);
+  }
+
+  /** Turn towards `at`, a point or bearing, whilst sat, as far as they can without turning round — `null` to face ahead again */
+  turnTo(at: null | number | Geom.VectJson) {
     const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
-    const target = THREE.MathUtils.clamp(off, -maxRad, maxRad);
+    this.turn.want = off;
+    const target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
     if (target !== this.turn.target) this.w.r3f?.invalidate(); // else, at rest, no tick comes to ease it
     this.turn.target = target;
+  }
+
+  /**
+   * Eases `turn.aim` to `turn.want` within `sitTurn`'s aim, round the front: never across behind them, which the arm
+   * cannot do. Past either end it stays at the end nearer where it is
+   */
+  tickTurnAim(delta: number) {
+    const { turn } = this;
+    const { aimFrom, aimTo } = sitTurn;
+    const inside = turn.want >= aimFrom && turn.want <= aimTo;
+    const goal = inside ? turn.want : Math.abs(turn.aim - aimFrom) <= Math.abs(turn.aim - aimTo) ? aimFrom : aimTo;
+    if (turn.aim === goal) return;
+    turn.aim += (goal - turn.aim) * (1 - Math.exp(-sitTurn.rate * delta));
+    if (Math.abs(turn.aim - goal) < 1e-3) turn.aim = goal;
+    else this.w.r3f?.invalidate();
   }
 
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
   tickTurn(delta: number) {
     const { turn } = this;
-    if (this.posture !== "sit") turn.target = 0;
+    if (this.posture !== "sit") turn.target = turn.want = 0;
+    this.tickTurnAim(delta);
     if (turn.target === 0 && turn.value === 0) return; // nearly everyone, nearly always
     turn.value += (turn.target - turn.value) * (1 - Math.exp(-sitTurn.rate * delta));
     if (Math.abs(turn.value - turn.target) < 1e-3) turn.value = turn.target;
@@ -493,10 +562,12 @@ export class NpcAnimation {
       head.updateWorldMatrix(true, false);
       head.worldToLocal(forearm.localToWorld(tmpHeld[side].copy(forearm.position)));
     }
+    /** The torso's share: none whilst an arm aims, so it never turns into it */
+    const body = sitTurn.body * (this.upper.aim === null ? 1 : 1 - this.upper.eased);
     for (const { bone, base, written } of turn.bones) {
       if (bone.parent === null) continue;
       base.copy(bone.quaternion);
-      const share = bone.name === "head" ? 1 - sitTurn.body : sitTurn.body / 2;
+      const share = bone.name === "head" ? 1 - body : body / 2;
       const axis = tmpAxis.set(0, 1, 0).applyQuaternion(bone.parent.getWorldQuaternion(tmpQuat).invert());
       written.copy(bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(axis, turn.value * share)));
     }
@@ -700,16 +771,20 @@ export class NpcAnimation {
     entry.written.copy(arm.quaternion.premultiply(turn));
   }
 
-  /** Turn the head from their facing to look where the arms aim */
+  /** Turn the head from their facing to look where the arms aim. Lain, from where it faces, so it lifts a little */
   aimHead(aim: UpperAim, weight: number) {
     const { entry } = this.upperHead;
     const chest = entry?.bone.parent;
     if (entry === null || chest == null) return;
-    const ry = this.npc.rotation.y;
-    const from = tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
     chest.updateWorldMatrix(true, false);
+    const lain = this.posture === "lie";
+    const ry = this.npc.rotation.y;
+    const from = lain
+      ? tmpFrom.set(0, 0, -1).applyQuaternion(chest.getWorldQuaternion(tmpQuat).multiply(entry.bone.quaternion))
+      : tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
     const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
-    const turn = turnWithin(chest, from, tmpWant.copy(aim.at).sub(neck).normalize(), headAimMaxRad, weight);
+    const maxRad = lain ? lieHeadMaxRad : headAimMaxRad;
+    const turn = turnWithin(chest, from, tmpWant.copy(aim.at).sub(neck).normalize(), maxRad, weight);
     if (turn !== null) entry.written.copy(entry.bone.quaternion.premultiply(turn));
   }
 
@@ -945,6 +1020,16 @@ function isStride(key: AnimationClipKey) {
 /** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips of each */
 export function postureOf(key: AnimationClipKey) {
   return key === "sit" || key.startsWith("sit_pa") ? "sit" : key === "lie" || key.startsWith("lie_") ? "lie" : "stand";
+}
+
+/** The clips one lies at rest in, on their back then either side: not the hurt ones */
+const lieKeys = ["lie", "lie_left", "lie_right"] as const satisfies AnimationClipKey[];
+const isLieKey = (key: AnimationClipKey) => (lieKeys as readonly AnimationClipKey[]).includes(key);
+
+/** `off` held from `from` to `to`, radians: outside, at whichever end is nearer round the circle */
+function clampArc(off: number, from: number, to: number) {
+  if (off >= from && off <= to) return off;
+  return Math.abs(deltaAngle(off, from)) <= Math.abs(deltaAngle(off, to)) ? from : to;
 }
 
 const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);

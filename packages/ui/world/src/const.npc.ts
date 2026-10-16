@@ -217,10 +217,29 @@ export const upperFadeSecs = 0.4;
 export const lieRoll = { side: 0.45, back: 0.25, secs: 0.6 } as const;
 
 /**
- * One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest.
- * A phaser's aim turns them `aimMaxRad` at most
+ * One lain aims `ahead`, and anywhere from `from` to `to`: radians off their facing, which is towards their feet,
+ * and positive to their left. On a side, they reach further down the bed than up it
  */
-export const sitTurn = { maxRad: Math.PI / 4, aimMaxRad: Math.PI / 6, body: 0.25, rate: 6 } as const;
+export const lieAim: Partial<Record<string, { ahead: number; from: number; to: number }>> = {
+  lie: { ahead: 0, from: -Math.PI / 4, to: Math.PI / 4 },
+  lie_left: { ahead: Math.PI / 2, from: Math.PI / 9, to: (2 * Math.PI) / 3 },
+  lie_right: { ahead: -Math.PI / 2, from: (-2 * Math.PI) / 3, to: -Math.PI / 9 },
+};
+
+/** The most one lain lifts or turns their head to look where they aim */
+export const lieHeadMaxRad = Math.PI / 6;
+
+/**
+ * One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest.
+ * A phaser aims from `aimFrom` to `aimTo`, radians off their facing and positive to their left. It reaches further on its hand's side
+ */
+export const sitTurn = {
+  maxRad: Math.PI / 2,
+  aimFrom: (-2 * Math.PI) / 3,
+  aimTo: Math.PI / 2,
+  body: 0.25,
+  rate: 6,
+} as const;
 
 /**
  * One sat raises an arm past a table's edge: by way of this pose of the LEFT arm, elbow back and out, as Blockbench

@@ -48,10 +48,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
         w.r3f.invalidate(); // a held key draws nothing of itself
-        // lain, they roll over to look
-        if (posture === "lie") return void npc.anim.rollTo(pointerAim.at);
-        // sat they do not turn round: their head, and a little of their torso
-        if (posture === "sit") return void npc.anim.turnTo(pointerAim.at);
+        if (posture === "lie") {
+          // lain, they roll over to look: armed, they point there instead
+          if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, pointerAim.at);
+          return void npc.anim.rollTo(pointerAim.at);
+        }
+        if (posture === "sit") {
+          w.phasers?.pointAt(state.key, pointerAim.at); // armed, the arm goes with them
+          // sat they do not turn round: their head, and a little of their torso
+          return void npc.anim.turnTo(pointerAim.at);
+        }
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them

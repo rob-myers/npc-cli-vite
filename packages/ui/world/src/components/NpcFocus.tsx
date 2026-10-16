@@ -3,7 +3,6 @@ import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { sitTurn } from "../const.npc";
 import { bodyPartPoint } from "../service/phaser-beam";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
@@ -45,26 +44,28 @@ export default function NpcFocus() {
         const { key } = player;
         await task.run(async () => {
           await task.until(() => w.disabled === false); // e.g. begun by jsh whilst paused
-          // raised as they turn to them. Each is waited on for so long at most
-          w.phasers.arm(key);
-          if (w.phasers.isArmed(key) === false) return state.abandon(); // e.g. lain
           const { anim } = player;
+          // raised as they turn to them, lain rolling to them if they can. Each is waited on for so long at most
+          w.phasers.arm(key, { toward: npcKey });
+          if (w.phasers.isArmed(key) === false) return state.abandon(); // e.g. in pain
           if (anim.posture === "sit") {
-            // sat they turn their head and torso, not round
-            anim.turnTo(npc.point, sitTurn.aimMaxRad);
+            // sat they turn their head, not round
+            anim.turnTo(npc.point);
             await task.until(() => anim.turn.value === anim.turn.target, npcFocusConfig.turnMaxMs);
-          } else {
+          } else if (anim.posture === "stand") {
             await task.wait(
               player.look({ at: npc.point }).catch(() => {}),
               npcFocusConfig.turnMaxMs,
             );
           }
-          // too far round to face, sat
+          // too far round to face, sat or lain
           if (isOffAim(player, npc) === true) return state.abandon();
           // clear as they now stand: the turn may have swept past a wall, or ended facing one
           await task.until(() => isClear(key) === true, npcFocusConfig.raiseMaxMs);
-          // still drawn in, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
+          // still drawn in, or stowed lain, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
           if (isDrawnIn(key) === true) return state.abandon();
+          // aimed before the pause, which would hold the arm, or a roll, partway
+          await task.until(() => w.phasers.isAimed(key) === true, npcFocusConfig.raiseMaxMs);
           const seen = await task.wait(
             w.e.raycast(player.point, npc.point).then(
               ({ hit }) => hit === null,
@@ -268,11 +269,11 @@ function toScreen(point: THREE.Vector3, camera: THREE.Camera, canvas: DOMRect, b
   };
 }
 
-/** `player` faces more than `maxOffAimRad` away from `npc`, a sat turn included */
+/** `player` faces more than `maxOffAimRad` away from `npc`. Sat or lain, `npc` is out of their reach */
 function isOffAim(player: Npc, npc: Npc) {
   const { anim } = player;
-  const off = deltaAngle(player.rotation.y + anim.turn.value, anim.bearingOf(npc.point));
-  return Math.abs(off) > npcFocusConfig.maxOffAimRad;
+  if (anim.posture !== "stand") return anim.canAimAt(npc.point) === false;
+  return Math.abs(deltaAngle(player.rotation.y, anim.bearingOf(npc.point))) > npcFocusConfig.maxOffAimRad;
 }
 
 const tmpPoint = new THREE.Vector3();
