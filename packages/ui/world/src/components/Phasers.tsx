@@ -313,14 +313,14 @@ export default function Phasers() {
           target !== undefined && arm.casting === false && arm.inSight === false && arm.cast?.target === target.key;
         /** Their arm at full reach would meet a shield: drawn in, as from a wall */
         const shielded =
-          armed === true && w.shields?.reaches(npc.point, handAhead(npc), w.shields.freqsOf(npc.key)) === true;
+          armed === true && w.shields?.reaches(npc.point, handAhead(npc, arm), w.shields.freqsOf(npc.key)) === true;
         if (shielded && arm.shielded === false && npc.key === w.player.key) w.hud?.say("phaser suppressed");
         arm.shielded = shielded;
         const stood = anim.posture === "stand";
         // sat or lain they are off the crowd, so whoever shares their room is looked for: polled, as they move
         const pollSecs = npc.key === w.player.key ? phaserConfig.sampleSecs : phaserConfig.npcPollSecs;
         if (armed === true && stood === false && secs - arm.npcPolledSecs >= pollSecs) {
-          arm.npcHit = armMeetsNpc(w, npc);
+          arm.npcHit = armMeetsNpc(w, npc, arm);
           arm.npcPolledSecs = secs - Math.random() * pollSecs * 0.5; // jittered, so the armed do not all poll on one frame
         }
         const nearby = () => (stood === true ? npcAhead(w, npc) : arm.npcHit);
@@ -416,13 +416,13 @@ export default function Phasers() {
         if (arm.armed === false || arm.casting === true || secs - arm.castSecs < phaserConfig.sampleSecs) return;
         if (isCastCurrent(arm, npc, target) === true) return; // nothing has changed: neither they, their target, nor a door
         const { x, z } = npc.position;
-        const ry = facingOf(npc);
+        const ry = armBearingOf(npc, arm);
         const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
 
         arm.cast = { x, z, ry, tx, tz, target: target?.key ?? null };
         arm.castSecs = secs;
         arm.casting = true;
-        const hand = handAhead(npc);
+        const hand = handAhead(npc, arm);
         // off the map throws: read as blocked
         const none = { inSight: false, shields: [] as string[] };
         void Promise.all([
@@ -607,12 +607,12 @@ function npcAhead(w: import("./World").State, npc: Npc) {
 }
 
 /** Is someone in their room within reach of their arm, from its shoulder the way they aim? */
-function armMeetsNpc(w: import("./World").State, npc: Npc) {
-  const ry = facingOf(npc);
+function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry) {
+  const ry = armBearingOf(npc, arm);
   const [fx, fz] = [-Math.sin(ry), -Math.cos(ry)];
-  // not the muzzle, which drawing in moves: then they would draw in and out by turns
-  const x = npc.position.x + Math.cos(ry) * phaserConfig.shoulderRight;
-  const z = npc.position.z - Math.sin(ry) * phaserConfig.shoulderRight;
+  // from their right shoulder as last drawn: lain it is far from their middle. Not the muzzle, which drawing in moves
+  const shoulder = npc.anim.upper.bones[0]?.bone.getWorldPosition(tmpShoulder) ?? npc.position;
+  const { x, z } = shoulder;
   const clear = npcDims.agentRadius + phaserConfig.armWidth;
   /** Further off than this either way, they are out of reach: most of a crowded room, in two comparisons */
   const far = phaserConfig.reach + clear;
@@ -632,20 +632,24 @@ function isCastCurrent(arm: ArmEntry, npc: Npc, target: undefined | Npc) {
   const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
   return (
     near(cast.x, cast.z, npc.position.x, npc.position.z) &&
-    Math.abs(deltaAngle(cast.ry, facingOf(npc))) <= phaserConfig.recastTurned &&
+    Math.abs(deltaAngle(cast.ry, armBearingOf(npc, arm))) <= phaserConfig.recastTurned &&
     near(cast.tx, cast.tz, tx, tz)
   );
 }
 
 /** Where their hand is at arm's length, on the ground */
-function handAhead(npc: Npc) {
+function handAhead(npc: Npc, arm: ArmEntry) {
   const { x, z } = npc.position;
-  const ry = facingOf(npc);
+  const ry = armBearingOf(npc, arm);
   return { x: x - Math.sin(ry) * phaserConfig.reach, y: z - Math.cos(ry) * phaserConfig.reach };
 }
 
 /** The way they aim: turned sat, or ahead of how they lie */
 const facingOf = (npc: Npc) => npc.anim.aimBearing() ?? npc.rotation.y;
+
+/** The way their arm points: lain, anywhere in their pose's arc, so at `armAt` whilst it aims by it */
+const armBearingOf = (npc: Npc, arm: ArmEntry) =>
+  arm.armAim?.at === arm.armAt ? npc.anim.bearingOf({ x: arm.armAt.x, y: arm.armAt.z }) : facingOf(npc);
 
 /**
  * Where one sat or lain points their arm: at `on`'s part or chest whilst in reach. Else ahead the way they aim, at the
@@ -690,8 +694,6 @@ const phaserConfig = {
   avoid: "phaser_aim_avoid",
   /** Metres ahead a wall or closed door blocks — just past the gun at arm's length, so it is drawn in in time */
   reach: 0.95,
-  /** Metres their right shoulder sits to their side, whence the arm reaches */
-  shoulderRight: 0.18,
   /** Metres from the arm's line to its side, gun included, that someone within reach must keep clear of */
   armWidth: 0.1,
   /** Metres ahead one sat or lain points with nobody to aim at */
@@ -783,3 +785,4 @@ const tmpQuat = new THREE.Quaternion();
 const tmpScale = new THREE.Vector3();
 const tmpRoll = new THREE.Quaternion();
 const tmpArmWant = new THREE.Vector3();
+const tmpShoulder = new THREE.Vector3();
