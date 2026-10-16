@@ -396,8 +396,8 @@ hard. The root drops to seat the pelvis's underside on the floor (`skeleton-root
 | rightarm / leftarm | rotation | [38,0,±6] | [32,0,±7] |
 | rightarm / leftarm | position y | 0 | 0.45 |
 | rightforearm / leftforearm | rotation | [35,0,∓10] | same |
-| thighs | rotation | [120,0,±8] | same |
-| shins / feet | rotation x | -56 / -66 | same |
+| thighs | rotation | [140,0,±8], knees drawn in | same |
+| shins / feet | rotation x | -93 / -48 | same |
 
 ### Hits, sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
 
