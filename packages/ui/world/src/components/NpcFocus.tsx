@@ -209,6 +209,7 @@ export default function NpcFocus() {
       next(e) {
         if (e.key !== "enabled" || state.resumed === true) return;
         state.set({ resumed: true }); // its note goes: Escape no longer ends this
+        w.view.pausedHidden = false; // a pause from here on is the player's own, so shows
       },
     });
     return () => {
@@ -323,7 +324,7 @@ const npcFocusParts: { part: FocusPart; label: string }[] = [
 export type State = {
   /** Whom it is open on, else `null` */
   npcKey: null | string;
-  /** From the press until it is over, whilst `w.view.pausedHidden` */
+  /** From the press until it is over. `w.view.pausedHidden` too, until resumed */
   busy: boolean;
   /** They face more than `maxOffAimRad` away from them: the marks are hidden until they face back */
   offAim: boolean;

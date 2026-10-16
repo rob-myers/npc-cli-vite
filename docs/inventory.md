@@ -214,7 +214,8 @@ Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`)
 Whilst it runs:
 
 - `cancel` ends it as Escape does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
-- Only the marks take the pointer, so the camera still moves. The paused indicator is hidden (`showsPaused`).
+- Only the marks take the pointer, so the camera still moves.
+- The paused indicator is hidden whilst it aims and in the pause it opens in (`showsPaused`). Once resumed, a pause shows it.
 - A follow runs on whilst they aim, is set aside for the zoom, and resumes after.
 - The player's moves are refused whilst it aims and in the pause it opens in (`w.e.move` throws `focused`), held
   keys included, as a move would undo the turn. Once resumed they move again.
