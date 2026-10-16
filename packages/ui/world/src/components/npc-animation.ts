@@ -546,13 +546,11 @@ export class NpcAnimation {
 
   /**
    * Eases `turn.aim` to `turn.want` within `sitTurn`'s aim, round the front: never across behind them, which the arm
-   * cannot do. Past either end it stays at the end nearer where it is
+   * cannot do. Past either end it goes to the end nearer what they look at
    */
   tickTurnAim(delta: number) {
     const { turn } = this;
-    const { aimFrom, aimTo } = sitTurn;
-    const inside = turn.want >= aimFrom && turn.want <= aimTo;
-    const goal = inside ? turn.want : Math.abs(turn.aim - aimFrom) <= Math.abs(turn.aim - aimTo) ? aimFrom : aimTo;
+    const goal = clampArc(turn.want, sitTurn.aimFrom, sitTurn.aimTo);
     if (turn.aim === goal) return;
     turn.aim += (goal - turn.aim) * (1 - Math.exp(-sitTurn.rate * delta));
     if (Math.abs(turn.aim - goal) < 1e-3) turn.aim = goal;
