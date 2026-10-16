@@ -2,6 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
+import { npcDims } from "../const.both";
 import { eased } from "../service/fade";
 import { advanceBeam, type Beam, type BeamTarget, beamEnd, bodyPartPoint, createBeam } from "../service/phaser-beam";
 import {
@@ -85,6 +86,8 @@ export default function Phasers() {
             casting: false,
             castSecs: -Infinity,
             armHit: false,
+            npcHit: false,
+            npcPolledSecs: -Infinity,
             shielded: false,
             inSight: false,
             shields: [],
@@ -306,7 +309,15 @@ export default function Phasers() {
           armed === true && w.shields?.reaches(npc.point, handAhead(npc), w.shields.freqsOf(npc.key)) === true;
         if (shielded && arm.shielded === false && npc.key === w.player.key) w.hud?.say("phaser suppressed");
         arm.shielded = shielded;
-        const blocked = armed === true && (arm.armHit === true || shielded || blind || npcAhead(w, npc));
+        const stood = anim.posture === "stand";
+        // sat or lain they are off the crowd, so whoever shares their room is looked for: polled, as they move
+        const pollSecs = npc.key === w.player.key ? phaserConfig.sampleSecs : phaserConfig.npcPollSecs;
+        if (armed === true && stood === false && secs - arm.npcPolledSecs >= pollSecs) {
+          arm.npcHit = armMeetsNpc(w, npc);
+          arm.npcPolledSecs = secs - Math.random() * pollSecs * 0.5; // jittered, so the armed do not all poll on one frame
+        }
+        const nearby = () => (stood === true ? npcAhead(w, npc) : arm.npcHit);
+        const blocked = armed === true && (arm.armHit === true || shielded || blind || nearby());
         // lain, only by a cast as they lie now: a roll leaves the last one stale
         if (blocked === true && (lain === false || isCastCurrent(arm, npc, target) === true)) {
           arm.holdUntil = secs + phaserConfig.holdSecs;
@@ -344,8 +355,8 @@ export default function Phasers() {
           // sat they turn their head, not round: and only ours to put back
           if (face.aim !== null && face.aim === arm.ownAim) face.aim = arm.ownAim = null;
           if (target !== undefined) anim.turnTo(bearingPast(npc, target, arm.muzzleRight));
-          else if (arm.ownTurn === true) anim.turnTo(null);
-          arm.ownTurn = target !== undefined;
+          else if (arm.ownTurn === true && armed === false) anim.turnTo(null); // kept whilst raised
+          arm.ownTurn = target !== undefined || (arm.ownTurn === true && armed === true);
         } else if (lain === true) {
           // lain they do not turn: their arm and head do
           if (face.aim !== null && face.aim === arm.ownAim) face.aim = arm.ownAim = null;
@@ -364,7 +375,10 @@ export default function Phasers() {
         if (armed === true && (sat === true || lain === true)) {
           // sat or lain the arm points as it comes up, swung far from the pose, which was drawn stood
           const at = glideArmAt(npc, arm, armAimAt(npc, arm, on, inReach, tmpArmWant), delta);
-          Object.assign(arm.armAim, { at, weight: 1, maxRad: Math.PI });
+          // drawn in, it gives way to the pose as that swaps in, and takes over again as it swaps back
+          const { key, swap } = anim.upper;
+          const s = swap * swap * (3 - 2 * swap);
+          Object.assign(arm.armAim, { at, weight: key === phaserConfig.avoid ? 1 - s : s, maxRad: Math.PI });
         } else {
           // the arm follows the beam
           Object.assign(arm.armAim, { at: beam.at, weight: eased(beam.shown.presence), maxRad: undefined });
@@ -553,6 +567,10 @@ type ArmEntry = {
   castSecs: number;
   /** A wall or closed door within reach ahead */
   armHit: boolean;
+  /** Sat or lain, someone within reach of the arm, as last polled — see `armMeetsNpc` */
+  npcHit: boolean;
+  /** World seconds of that poll */
+  npcPolledSecs: number;
   /** A shield within reach ahead, that their phaser is not let through */
   shielded: boolean;
   /** Nothing between them and their target */
@@ -576,6 +594,23 @@ function npcAhead(w: import("./World").State, npc: Npc) {
   return (npc.agent?.neis ?? []).some(({ agentId }) => {
     const { x: ox, z: oz } = w.npc.byAgentId[agentId]?.position ?? { x, z };
     return (ox - x) * fx + (oz - z) * fz > Math.abs((ox - x) * fz - (oz - z) * fx);
+  });
+}
+
+/** Is someone in their room within reach of their arm, from its shoulder the way they aim? */
+function armMeetsNpc(w: import("./World").State, npc: Npc) {
+  const ry = facingOf(npc);
+  const [fx, fz] = [-Math.sin(ry), -Math.cos(ry)];
+  // not the muzzle, which drawing in moves: then they would draw in and out by turns
+  const x = npc.position.x + Math.cos(ry) * phaserConfig.shoulderRight;
+  const z = npc.position.z - Math.sin(ry) * phaserConfig.shoulderRight;
+  const clear = npcDims.agentRadius + phaserConfig.armWidth;
+  /** Further off than this either way, they are out of reach: most of a crowded room, in two comparisons */
+  const far = phaserConfig.reach + clear;
+  return w.e.getNpcsInReach(npc.key, 0).some(({ position: p }) => {
+    if (Math.abs(p.x - x) > far || Math.abs(p.z - z) > far) return false;
+    const along = THREE.MathUtils.clamp((p.x - x) * fx + (p.z - z) * fz, 0, phaserConfig.reach);
+    return Math.hypot(p.x - x - fx * along, p.z - z - fz * along) < clear;
   });
 }
 
@@ -646,6 +681,10 @@ const phaserConfig = {
   avoid: "phaser_aim_avoid",
   /** Metres ahead a wall or closed door blocks — just past the gun at arm's length, so it is drawn in in time */
   reach: 0.95,
+  /** Metres their right shoulder sits to their side, whence the arm reaches */
+  shoulderRight: 0.18,
+  /** Metres from the arm's line to its side, gun included, that someone within reach must keep clear of */
+  armWidth: 0.1,
   /** Metres ahead one sat or lain points with nobody to aim at */
   aimAhead: 5,
   /** The gun's muzzle, where the beam leaves, off the right forearm — its `+x` is up whilst aiming — in model units */
@@ -670,6 +709,8 @@ const phaserConfig = {
   drawOutSecs: 0.2,
   /** Seconds between raycasts at most, and only once they, their target or a door has changed */
   sampleSecs: 0.1,
+  /** Seconds between looks for someone in the way of an npc's arm, sat or lain: the player's are `sampleSecs` apart */
+  npcPollSecs: 0.3,
   /** Metres moved, or radians turned, that call for another raycast */
   recastMoved: 0.05,
   recastTurned: 0.05,

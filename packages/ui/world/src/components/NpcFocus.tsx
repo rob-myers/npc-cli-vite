@@ -30,6 +30,8 @@ export default function NpcFocus() {
         w.view.pausedHidden = false;
         state.task?.cancel();
         state.task = null;
+        // left raised, it no longer points at them
+        if (w.phasers.isArmed(w.player.key) === true) w.phasers.arm(w.player.key);
         // set aside only once it opens: given up on before, it was never turned off
         if (before?.follow === true && w.view.follow === false) w.view.setFollow(true);
         w.view.forceUpdate(); // the paused indicator, should the World still be paused

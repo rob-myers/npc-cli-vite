@@ -390,7 +390,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       getNpcsInReach(npcKey, doors = 1) {
         const at = w.npc.npcToRoom.get(npcKey);
-        if (at === undefined || w.gmRoomGraph.getNode(at.grKey) === null) return [];
+        if (at === undefined) return [];
+        if (doors === 0) {
+          const keys = w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [];
+          return [...keys].flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
+        }
+        if (w.gmRoomGraph.getNode(at.grKey) === null) return [];
         // their room is depth 0, its connectors 1, the rooms beyond those 2
         return w.gmRoomGraph
           .getReachableUpTo(at.grKey, (node, depth) =>
