@@ -75,6 +75,10 @@ const devMcp = createStore<DevMcpState>()((_set, get) => ({
     return toPlain(await fn(w), depth);
   },
 
+  async refetch(queryKey) {
+    await queryClientApi.queryClient.invalidateQueries({ queryKey });
+  },
+
   worldToClient(x, z, y = 0, worldKey = "world-0") {
     const w = queryClientApi.get([worldKey]) as undefined | { r3f?: R3fLike };
     if (w?.r3f === undefined) throw Error(`${worldKey} not ready`);
@@ -302,6 +306,8 @@ export type DevMcpState = {
   takeUserInput(): string[];
   /** `fn` of the World as plain data, bypassing every tty */
   query(fn: (w: any) => unknown, worldKey?: string, depth?: number): Promise<unknown>;
+  /** Refetches every query whose key starts with `queryKey`, e.g. `["skins-and-gltf"]` after a new glTF */
+  refetch(queryKey: unknown[]): Promise<void>;
   /** Where a world point shows in the viewport, or `null` if off-screen */
   worldToClient(x: number, z: number, y?: number, worldKey?: string): null | { clientX: number; clientY: number };
 };

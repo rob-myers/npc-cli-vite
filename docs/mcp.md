@@ -13,8 +13,15 @@ what works as TypeScript, run it, and see what happened.
 
 ## The page side
 
-`packages/app/src/dev-mcp-hooks.ts` is a zustand store, exposed as `window.__devMcp`. It opens ttys,
-taps what is written to them, and projects world points onto the screen.
+`packages/app/src/dev-mcp-hooks.ts` is a zustand store, exposed as `window.__devMcp`. Its methods are on
+`window.__devMcp.getState()`:
+
+- opening ttys, running lines in them, and reading what they print;
+- `query`, which runs a function on the World;
+- `worldToClient`, which projects a world point onto the screen;
+- `refetch(queryKey)`, which refetches the app's queries by key, e.g. `["skins-and-gltf"]`.
+
+Loading:
 
 - It is DEV only.
 - It loads on first use (`window.__devMcpLoad`), once the World has a canvas, not at boot. It imports the
@@ -29,9 +36,9 @@ taps what is written to them, and projects world points onto the screen.
 | `jsh({ cmd, tty?, waitMs?, typed? })` | Runs one line in a tty, `tty-1` by default, typed visibly unless `typed: false`. Returns once the prompt is back, else after `waitMs` (2000) with the command still running |
 | `output({ tty?, since? })` | What was written to the tty since a previous result's `since` |
 | `interrupt({ tty? })` | Ctrl-c: ends the foreground command, so the tty takes input again |
-| `query({ fn, world?, depth? })` | Runs `fn`, JS source such as `w => w.gms[0].rooms.length`, on the World and returns JSON. Writes to no tty |
+| `query({ fn, world?, depth? })` | Runs `fn`, JS source such as `w => w.gms[0].rooms.length`, on the World and returns JSON. Writes to no tty. It runs in the page, so `window` is in reach |
 | `click({ x, z, y? } \| { clientX, clientY }, long?, button? })` | A real pointer press, e.g. to answer `pick`. A world point is projected by the camera |
-| `console({ since?, level? })` | The page's console and exceptions, e.g. an HMR error |
+| `console({ since?, level? })` | The page's console and exceptions, e.g. an HMR error. `level: "debug"` shows Vite's `hot updated` lines |
 | `shot()` | A screenshot |
 
 Each result ends with a status line, e.g. `{"running":false,"exitCode":0,"since":42}`.
@@ -136,7 +143,8 @@ Whilst "mcp testing" is up, the page logs the user's `pointerdown`, `keydown` an
   - `w.decor.runtime.byKey` holds runtime decor only, not a map's own.
   - The shell drops a piped `undefined`, so a wrong key pipes nothing and still exits `0`. Check the key
     with `query` first.
-- **Picking a bed** gives its obstacle's meta (`decorIds`), and `move` takes its first free point.
+- **Picking a bed or sofa** gives its obstacle's meta (`decorIds`). `move` takes its free point nearest
+  the point picked.
 - **A free bed in a room**: `w.gms[gmId].obstacles` meta has its kind (`bed`, `chair`), `roomId` and
   `decorIds`. A point is taken iff `w.e.doableToNpc[w.gms[gmId].decor[id].key]`. `w.decor.byRoom` and
   `w.decor.grid` index decor too.
@@ -161,10 +169,45 @@ Whilst "mcp testing" is up, the page logs the user's `pointerdown`, `keydown` an
 - **Escape an apostrophe**: `say captain\'s orders bot1`. An open quote leaves the tty at a `>` prompt,
   though `jsh` reports `exitCode: 0`. `interrupt` it.
 
-### Recovering
+## Recovering
 
-**A black World after editing `service/player-frontier.ts`** is a NaN camera. HMR keeps the old
-`w.view.playerFrontier` instance, but its callers now use the new shape. Recover without a reload:
+Most edits hot-reload cleanly, and a reload resets the user's session (ttys, jobs, the paused World, the
+view). So check with `query` what is actually stale before reaching for a reload, and patch it live if you can.
+
+### What hot reload misses
+
+| Changed | Picked up? | What to do |
+|---|---|---|
+| `current.gltf`, e.g. exported from Blockbench | No: nothing watches it, unlike the skin sheets (`skinSheetsRebuilt`) | Refetch `skins-and-gltf`: `window.__devMcp.getState().refetch(["skins-and-gltf"])` from a `query`, else ask the user to refetch it in the React Query devtools |
+| A new clip in that glTF | Yes, on that refetch: every clip of the glTF is registered, even before its key in `fromAnimationClipKey` reaches the npc modules | Nothing more |
+| `const.npc`, as the npcs' animation code reads it, e.g. `hitConfig` | Not always (see below) | Check with `query`, e.g. a hit's `anim.hurt.next`. If stale, swap the npcs onto a fresh class (below) |
+| `service/player-frontier.ts` | The old `w.view.playerFrontier` instance is kept, so the World goes black (a NaN camera) | Rebuild it (below) |
+
+Touching a file does not help: Vite sends no update for a file whose content is unchanged. So touching
+`NPCs.tsx` does not bump its query key.
+
+### Npcs on a stale `const.npc`
+
+`NPCs.tsx`'s `devHotReload` is meant to cover this. On a hot update it swaps each npc and its `anim` onto the
+`Npc` and `NpcAnimation` it imports, and fills in new fields. But on 2026-10-16 `npc-animation.ts` never
+re-ran after `const.npc` changed. So that import was still the old class, and `hitConfig` stayed old even
+after `NPCs.tsx` hot-updated.
+
+Swap them onto a freshly imported class, which reads the latest `const.npc`. Their state is kept:
+
+```js
+async w => {
+  const m = await import(`/@fs/<repo>/packages/ui/world/src/components/npc-animation.ts?t=${Date.now()}`);
+  for (const n of Object.values(w.n)) Object.setPrototypeOf(n.anim, m.NpcAnimation.prototype);
+}
+```
+
+Npcs spawned afterwards still get the class `NPCs.tsx` holds, so a reload is the full fix.
+
+### A black World after editing `service/player-frontier.ts`
+
+The camera is NaN: HMR keeps the old `w.view.playerFrontier` instance, but its callers now use the new shape.
+A reload would not restore it, as `persistCamera` never saves a non-finite camera. Rebuild it live:
 
 ```js
 async w => {
@@ -176,12 +219,10 @@ async w => {
 }
 ```
 
-A reload would not have restored it: `persistCamera` never saves a non-finite camera.
-
 ## Editing the MCP
 
 | Edited | Then |
 |---|---|
 | `server.ts` or `cdp.ts` | Reconnect the server: `/mcp`, then `npc-cli`. |
-| `dev-mcp-hooks.ts` | Nothing: it accepts its own hot update, so a save re-runs it in place. The new store starts each tty's output counter (`since`) again. |
+| `dev-mcp-hooks.ts` | Usually nothing: it accepts its own hot update, so a save re-runs it in place, and the new store starts each tty's output counter (`since`) again. Check a new method is live with `typeof window.__devMcp.getState().<name>`: on 2026-10-16 `refetch` was not, and needed a reload. |
 | `vite-plugin-dev-mcp.ts`, or anything else `vite.config.ts` loads | Restart the dev server, as Node keeps the old module. Then reload the page: after a restart its patched Vite client stays disconnected, so no HMR reaches it. |

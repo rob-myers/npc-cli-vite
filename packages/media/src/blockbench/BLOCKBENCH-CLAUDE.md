@@ -1,165 +1,270 @@
-# Blockbench MCP Notes
+# Blockbench: Claude's notes
 
-## Critical: `manage_keyframes` does not work
+How Claude edits the npc model through the Blockbench MCP plugin, what the model is like, and how each
+clip was made. Setup and the user's own tips are in `docs/blockbench.md`.
 
-The `manage_keyframes` MCP tool returns `"Successfully performed edit"` but does **not** actually modify keyframe values. Always use `risky_eval` to read or write keyframe data directly.
+- The model is `current/current.bbmodel`. The game reads `current/current.gltf`, exported from it.
+- A clip the game plays needs its key in `const.npc`'s `fromAnimationClipKey`.
 
-### Reading keyframes
+## Working through the MCP
+
+### Rules
+
+- **`manage_keyframes` does not work.** It returns `"Successfully performed edit"` but changes nothing.
+  Read and write keyframes with `risky_eval` instead.
+- **Wrap every write in `Undo.initEdit` / `Undo.finishEdit`.** A plain `kf.set()` does not reliably update the viewport.
+- **Never call `Canvas.updateAll()`, nor `Timeline.setTime(0, true)`.** Both reset the character to a T-pose.
+- **Solve with ONE animation playing.** `Animator.preview()` adds every animation whose `playing` is set, so a
+  solve run with another still playing lands on the sum. Clear `playing` on the rest first.
+- **When the user adjusts t=0 by hand, copy it to the other keys**, e.g. t=1.25 and t=2.5, so the clip does
+  not snap to stale poses.
+- **Look through an offscreen view** (`create_offscreen_view`, then `set_camera_angle` with its `view`).
+  `set_camera_angle` on the active view moves the camera the user sees. If that happens, put it back.
+  `delete_offscreen_view` has failed with `onContextMenu is not defined`; an open view goes when the session ends.
+
+### Reading and writing keyframes
 
 ```js
+// read
 const sit = Animation.all.find(a => a.name === 'sit');
-const anim = Object.values(sit.animators).find(a => a.name === 'rightarm');
-anim.keyframes.filter(k => k.channel === 'rotation')
-  .map(k => ({ time: k.time, x: k.get('x'), y: k.get('y'), z: k.get('z') }))
-```
+const arm = Object.values(sit.animators).find(a => a.name === 'rightarm');
+arm.keyframes.filter(k => k.channel === 'rotation')
+  .map(k => ({ time: k.time, x: k.get('x'), y: k.get('y'), z: k.get('z') }));
 
-### Writing keyframes — always wrap in Undo
-
-Plain `kf.set()` alone does not reliably update the viewport. Wrap every write in `Undo.initEdit` / `Undo.finishEdit`:
-
-```js
-const sit = Animation.all.find(a => a.name === 'sit');
+// write
 sit.select();
-Undo.initEdit({animations: [sit]});
-
-const anim = Object.values(sit.animators).find(a => a.name === 'rightarm');
-const kf = anim.keyframes.find(k => k.channel === 'rotation' && k.time === 0);
+Undo.initEdit({ animations: [sit] });
+const kf = arm.keyframes.find(k => k.channel === 'rotation' && k.time === 0);
 kf.set('x', 5); kf.set('y', -0.17); kf.set('z', 2);
-
 Undo.finishEdit('description of change');
+
+// show it
 Animator.showDefaultPose(false);
 Animator.preview();
 Timeline.setTime(0);
 ```
-
-### Refreshing the viewport after edits
-
-```js
-Animator.showDefaultPose(false);
-Animator.preview();
-Timeline.setTime(0);
-```
-
-**Do NOT call `Canvas.updateAll()`** — it resets the character to T-pose.  
-**Do NOT call `Timeline.setTime(0, true)`** — the `true` flag also causes a T-pose reset.
-
-### Propagating a pose across all keyframe times
-
-When the user manually adjusts t=0, copy those values to t=1.25 and t=2.5 so the animation doesn't snap to stale old poses:
-
-```js
-const t0 = [kf_x, kf_y, kf_z];
-setKf('rightarm', 'rotation', 1.25, ...t0);
-setKf('rightarm', 'rotation', 2.5,  ...t0);
-```
-
-## Camera
-
-- Character faces **-Z**. Camera at `[0, 10, -60]` → front view. Camera at `[0, 10, 60]` → back view (face not visible).
-- Good isometric view showing face: `position: [-30, 30, -50]`, `target: [0, 8, 0]`.
-- `set_camera_angle` affects the **live Blockbench viewport** the user sees — always restore to the agreed angle after diagnostic use.
-- Calling `Animator.preview()` can cause the camera to drift — restore with `set_camera_angle` afterwards.
-
-## Arm coordinate system (`thinner.more-anims.wip.bbmodel`)
-
-Bones: `rightarm`, `leftarm`, `rightforearm`, `leftforearm`
-
-### Upper arm (`rightarm` / `leftarm`)
-
-- **x**: forward/backward swing. Positive = arm swings **forward**; negative = arm swings **backward**. Idle rest ≈ +5.
-- **y**: minor twist (idle uses ±0.17). Rarely needs changing.
-- **z**: lateral flare. Arms are **mirrored** so z behaves oppositely per side:
-  - `rightarm` z positive → arm flares **outward** (away from body). z=90 = arm horizontal to the right.
-  - `leftarm` z positive → arm swings **inward** (toward body center); z negative → outward.
-  - Idle rest: `rightarm` z≈+2, `leftarm` z≈-2 (both slight outward).
-
-### Forearm (`rightforearm` / `leftforearm`)
-
-- **x**: elbow bend. Positive = forearm bends **forward** from elbow. x=9 (idle rest) = slight bend; x=65+ = strong forward bend placing hand well in front of body.
-- **z**: lateral wrist rotation. For `leftforearm`, positive z rotates forearm **inward** toward body center.
-
-#### Rotation order and the other channels (verified on `current.bbmodel`)
-
-Mesh Euler order is `ZYX` and values are applied **unnegated** (`mesh.rotation.x` = keyframe x in radians).
-So a bone's z applies first, about its own hanging axis (no visible effect on a straight-down bone),
-then x, then y in the parent frame:
-
-- Arm at x=90 (straight forward): **+y swings it toward -X** — inward for `rightarm`, outward for `leftarm`.
-- `rightarm` z=90 → elbow at +X (outward); y alone on a hanging arm only twists it.
-- **Position** channel is world-axis, no flip: +y up, **+z backward**, so a push forward is negative z.
-- **Head**: +z tilts the top toward -X (character's left); **-x bows** forward, +x looks up.
-- **Torso** (`stomach`/`chest`): **negative x leans forward** — `sit`'s slump is -4/-5. Arms and head are
-  children of `chest`, so a lean pitches an outstretched arm at the floor unless its x is raised by as much.
-
-### Legs and the floor
-
-- Legs: +x swings forward; knees bend with negative x; feet +x = toes up.
-- `skeleton-root` pivots at **y=24** (head height), so idle's root x sway 0→2.5 swings the feet ~1 unit
-  along z — idle's leg rock is what cancels it. A pose with planted feet must zero the root rotation,
-  else the whole figure drifts.
-- Floor is the idle foot-cube bottom, **y ≈ 0.24**. Measure a foot with
-  `new THREE.Box3().expandByObject(cube.mesh)` after `Animator.preview()`.
-- The ankle sits ~2 units **ahead** of the hip, so swinging a leg forward *raises* the foot (14° → +0.8)
-  whilst swinging it back barely lowers it. The boot is too short to tip-toe, so a split stance cannot
-  ground both feet: use modest angles and split the residual via `skeleton-root` position y.
-
-### Posing by search
-
-Solving a contact pose (hand on temple) by hand is fiddly; grid-search it in Blockbench instead — set
-the keyframe values, `Animator.preview()`, then read a point off the bone with
-`group.mesh.localToWorld(new THREE.Vector3(...))` (offset from the bone origin; a forearm's tip is
-`(-0.25, -6.07, -0.62)`). ~3000 samples run in a second or two.
 
 ### Creating an animation
 
 ```js
-const anim = new Animation({name, loop: 'loop', length: 2.5, snapping: 24}).add(true);
+const anim = new Animation({ name, loop: 'loop', length: 2.5, snapping: 24 }).add(true);
 anim.getBoneAnimator(Group.all.find(g => g.name === 'rightarm'))
-  .addKeyframe({channel: 'rotation', time: 0, interpolation: 'catmullrom', data_points: [{x, y, z}]});
+  .addKeyframe({ channel: 'rotation', time: 0, interpolation: 'catmullrom', data_points: [{ x, y, z }] });
 ```
 
-## influence (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+### Posing by search
 
-Idle's root sway and breathing, leaning forward, right hand on the right temple, left arm outstretched,
-left foot forward. t=1.25 is the push: deeper lean, arm rises and shoves forward, hand stays on the temple.
+A contact pose, e.g. a hand on the temple, is fiddly by hand. Grid-search it instead:
 
-| Bone | channel | t=0 / t=2.5 | t=1.25 |
-|------|---------|-------------|--------|
-| stomach | rotation | [-8,0,0] | [-11,0,0] |
-| chest | rotation | [-5,0,0] | [-6,0,0] |
-| head | rotation | [-2,0,-6] | [-3,0,-8] |
-| rightarm | rotation | [0,15,110] | [0,18,112] |
-| rightforearm | rotation | [170,0,-50] | [172,0,-50] |
-| leftarm | rotation | [104,-8,0] | [112,-8,0] |
-| leftarm | position | [0,0,0] | [0,0.3,-0.4] |
-| leftforearm | rotation | [6,0,0] | [0,0,0] |
-| leftthigh / leftshin / leftfoot | rotation x | 14 / -5 / -9 | same |
-| rightthigh / rightshin / rightfoot | rotation x | -9 / 0 / 9 | same |
-| skeleton-root | position | [0,-0.19,1] | — |
-| skeleton-root | rotation | 0 | 0 |
+1. Set the keyframe values.
+2. `Animator.preview()`.
+3. Read a point off a bone with `group.mesh.localToWorld(new THREE.Vector3(...))`, an offset from the bone's
+   origin. A forearm's tip is `(-0.25, -6.07, -0.62)`, or `(0, -5.6, 0)` as the hit clips used.
+4. Or bound a bone's cubes: `new THREE.Box3().expandByObject(cube.mesh)`.
 
-Stomach/chest position and leg z are idle's; the root rotation is zeroed and the legs pinned, so the
-feet stay put (see *Legs and the floor*).
+About 3000 samples run in a second or two.
 
-## psi (2.5s loop)
+### Camera
 
-`Psi`'s hand, the LEFT arm alone so the right is free for a phaser — played over that arm only, so no
-legs or root. Hand at the temple, the elbow tucked in front (`leftarm` [112,0,20], `leftforearm`
-[128,0,-20]), with a small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi`
-had the elbow out to the side (`leftarm` [110,35,0], `leftforearm` [130,0,-8]).
+- The character faces **-Z**. A camera at `[0, 10, -60]` sees the front, at `[0, 10, 60]` the back.
+- A good isometric view showing the face: `position: [-30, 30, -50]`, `target: [0, 8, 0]`.
+- `Animator.preview()` can make the camera drift.
 
-## drop_left / pick_up_left / crouch_left
+## The model
 
-Mirrors of `drop`, `pick_up` and `crouch` for the other hand: left and right bones swapped, rotation
-`y` and `z` and position `x` negated. Re-mirror after changing the originals.
+### Bones
 
-## phaser_aim / phaser_aim_avoid (2.5s loop, catmullrom at 0 / 1.25 / 2.5)
+- `root` → `skeleton-root` → `hips` → `stomach` → `chest` → `head`, arms
+- Arms: `rightarm` / `leftarm` → `rightforearm` / `leftforearm`
+- Legs: `rightthigh` / `leftthigh` → `rightshin` / `leftshin` → `rightfoot` / `leftfoot`
 
-`Phasers`' phaser: a stance stood in at rest, and played over the upper body on the move. Root rotation
-zeroed and the feet pinned flat (0.27 / 0.21), left foot forward. The right forearm is level and dead
-ahead at t=0 (`along` `(0, 0, -1)`, its `+x` up), the arm's x rising with the lean as it breathes; the
-left arm is idle's, free for psi. `phaser_aim_avoid` shares the legs, torso and head, the right forearm
-raised beside the shoulder, muzzle up — solved from a target basis via `Euler.setFromQuaternion(q, 'ZYX')`.
+### Sizes, in model units (16 to a metre, before `npcScale`)
+
+| What | Where |
+|---|---|
+| `skeleton-root`'s pivot | y 24, head height |
+| hip joints, `hips`' origin | y 12.25 |
+| the pelvis's underside (`hips` cube) | y 11.5 |
+| knees (`shin` origin) | y 6.625: thighs 5.625 long |
+| ankles (`foot` origin) | y 1.5: shins 5.125 long |
+| the floor, the bottom of the foot cubes | y ≈ 0.24 |
+| `stomach` / `chest` / `head` origins | y 16 / 19.75 / 24.3 |
+| shoulders (`arm` origin) | y 23, x ±3.75 |
+
+The shin's cube reaches the sole too (y 0.25), as low as the foot's, so on a tilted shin it touches the floor first.
+
+### Rotations and channels
+
+The mesh's Euler order is `ZYX`, and values are applied **unnegated** (`mesh.rotation.x` = keyframe x in radians).
+So a bone's z applies first, about its own hanging axis, which shows nothing on a straight-down bone. Then x, then
+y, in the parent frame.
+
+- **Upper arm, x**: swings it forward (+) or back (-). Idle rests at about +5.
+- **Upper arm, y**: a minor twist (idle ±0.17). On a hanging arm it only twists. At x=90 (straight forward), +y
+  swings the arm toward -X: inward for `rightarm`, outward for `leftarm`.
+- **Upper arm, z**: a lateral flare, mirrored per side. `rightarm` +z flares it outward (z=90: horizontal to the
+  right, the elbow at +X). `leftarm` +z swings it inward, -z outward. Idle rests at `rightarm` z ≈ +2, `leftarm` ≈ -2.
+- **Forearm, x**: the elbow's bend, forward (+). Idle's 9 is a slight bend; 65+ puts the hand well in front.
+- **Forearm, z**: a lateral wrist turn. `leftforearm` +z turns it inward.
+- **Head**: +z tilts its top toward -X (the character's left). -x bows it forward, +x looks up.
+- **Torso** (`stomach` / `chest`): -x leans forward, e.g. `sit`'s slump of -4 / -5. Arms and head are children of
+  `chest`, so a lean pitches an outstretched arm at the floor unless its x is raised by as much.
+- **Legs**: +x swings forward, knees bend with -x, a foot's +x lifts the toes.
+- **Position** channels are world-axis, with no flip: +y up, **+z backward**, so a push forward is -z.
+
+### Legs and the floor
+
+- `skeleton-root` pivots at head height, so idle's root x sway (0 → 2.5) swings the feet about 1 unit along z.
+  Idle's leg rock cancels it. A pose with planted feet must zero the root's rotation, else the figure drifts.
+- The ankle sits about 2 units **ahead** of the hip. So swinging a leg forward *raises* the foot (14° → +0.8),
+  whilst swinging it back barely lowers it.
+- The boot is too short to tip-toe, so a split stance cannot ground both feet. Use modest angles, and take up
+  what is left with `skeleton-root`'s position y.
+
+### Breathing: the head is on the end of the torso's lever
+
+Head and arms are children of `chest`, so breathing by torso *rotation* (stomach / chest x → 0) shows mostly as
+the head pitching: `sit` inherits a 9° sway before its own nod. Two ways round it:
+
+- **Counter the head.** `sit`'s head is x=5 at 0 / 2.5 and 0 at 1.25, with no mid-cycle nod, so its world
+  pitch swings 4°, not 14°.
+- **Translate, mostly.** `lie` (catmullrom) lifts the belly first and most: stomach position z -0.3 at 1.9.
+  Under the 90° root, local -z is world up, and local +x on the chest LOWERS its top. Then the ribcage: chest
+  position z -0.15 and rotation x -2 at 2.2, arms z +0.25 and flared ±1.5. The head counters most of it
+  (position z +0.55, rotation +1.5), but not all, as a fully pinned head reads dead: it keeps a 0.1 lift and
+  half a degree of nod. Peak world rise: belly 0.29, sternum 0.53, head 0.1.
+
+## Exporting
+
+Export from the rest pose. After any `Animator.preview()`, first run
+`Animator.showDefaultPose(true); Canvas.updateAllBones()`, else the glTF's nodes keep the pose.
+
+From code, with the exporter's last-used options (ASCII, embedded textures, armature, animations):
+
+```js
+Animator.showDefaultPose(true); Canvas.updateAllBones();
+const content = await Codecs.gltf.compile(Codecs.gltf.getExportOptions());
+Blockbench.writeFile(Project.save_path.replace(/\.bbmodel$/, '.gltf'), { content, savetype: 'text' });
+```
+
+Save the project first (`BarItems.save_project.trigger()`). Check the result: every node's rest transform as before,
+and every other clip with the same number of channels. The running dev page does not pick the new glTF up by
+itself: see "Recovering" in `docs/mcp.md`.
+
+### Clips keyed from code
+
+`scripts/src/bins/gen-clip-keys.ts` re-keys clips whose motion is solved rather than posed. It writes the keyframes
+into `current.bbmodel` AND bakes them into `current.gltf` as the exporter would (a key a frame, `LINEAR`), so
+Blockbench need not be open.
+
+Each entry of its `clips` is a RECIPE: default `params`, and `tracks(params)` returning one `Track` per bone channel.
+
+- `turn`: a posed rotation.
+- `breathe(a, b)`: a value that swells with the cycle.
+- `plantedLegs`: a root and legs solved so both feet stay put. It throws if a leg cannot reach.
+
+```sh
+node scripts/src/bins/gen-clip-keys.ts                        # every recipe
+node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
+```
+
+| Recipe | Params |
+|---|---|
+| `sit` | `knee` |
+| `sit_reach` | `leg hold`, frames |
+| `crouch` | `down back lean reach` |
+| `phaser_aim` | `rock drop sink lean breathe`; also keys `phaser_aim_avoid` |
+
+- A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in
+  Blockbench, and save.
+- It appends to the glTF's buffer, so restore both files first: `git checkout`, or re-export from Blockbench.
+- Reload the project in Blockbench afterwards, else a save puts the old keys back.
+
+## Clips
+
+| Clip | Length | What | Made |
+|---|---|---|---|
+| `walk` / `run` | 1 / 0.75s | gaits, feet planted | solved |
+| `sit`, `lie` (`_left`, `_right`) | 2.5 / 4s | at rest, breathing | `sit`'s legs solved |
+| `phaser_aim` / `_avoid` | 2.5s | the phaser stance, rocking | solved |
+| `point` / `_avoid` | 2.5s | jsh `pose`, upper body | posed |
+| `influence` | 2.5s | hand on the temple, pushing | posed |
+| `psi` | 2.5s | left hand at the temple | posed |
+| `drop`, `pick_up`, `crouch` (`_left`) | 2.5s | putting down, taking up | posed; `crouch` solved |
+| `sit_reach` | 2.5s | reaching from a seat, past a table's edge | solved |
+| `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
+| `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
+| `collapsed` | 1.2s | after a body shot stood: on the floor, breathing hard | posed by search |
+
+### walk / run: planted feet
+
+Legs and root were solved, not hand-keyed.
+
+- **Speed.** The npc moves `1 / gait` metres a cycle (`gait` in `npc-animation.ts`: walk 1, run 0.5). At 1/16 ×
+  `npcScale` (0.7), a stance foot must slide back **22.86 u/s** walking and **45.72 u/s** running. Walk's stance
+  speed checks within 0.5%.
+- **Solving.** Legs, knees, feet (x only) and `skeleton-root`'s position y were solved by 2D IK from a foot path:
+  heel strike, flat, toe-off rocker, Hermite swing. The root came from a target stance-knee bend, low-passed under
+  the reach limit. 24 keys a cycle: 12 was too coarse, as the rockers sank the foot by up to 0.17. Leg and knee
+  position channels were dropped, and run's root rotation -2 moved onto `hips` x.
+- **Hand-tweaking one leg key breaks the plant.** Re-measure a foot's lowest vertex at each sample.
+- **Walk**: the left heel strikes at t=0, duty 0.5. Heel strike 22° toes-up, toe-off -34°. Bob -0.84 … +0.15.
+  Stance knee -16 … -35°: these short legs need the big heel and toe rockers for the long stride. It leans from
+  the hips: `hips` x -11 at contact / -9 passing, `chest` -2 / 0. The head +4 / +2, so it tips down with the body.
+  Arms raised +10.5 / +7 over their original swing, so they still hang.
+- **Run**: the left foot lands at t=0, duty 0.27. Bob -0.87 … -0.29. The swing knee reaches -115°.
+- **Arms**, hand-keyed, not flat: the forearm stays bent and turns IN as it comes forward (`rightforearm` z -,
+  `leftforearm` +), so the hand nears the body's middle whilst the elbow barely moves out. Arm x and y are as they were.
+
+  | Per swing: forward / coming back / back / going forward | walk | run |
+  |---|---|---|
+  | arm z | 8 / 8 / 9 / 8 | 12 / 9 / 16.2 / 8 |
+  | forearm x | 16 / 9 / 5 / 10 | 32 / 12 / 10 / 20 |
+  | forearm z, in | 16 / 10 / 6 / 10 | 6 / 10 / 6 / 12 |
+
+  Walk's forward hand is 1.1 nearer the middle, and its elbow 0.3 further out.
+- **Walk's torso turns with the arms**, above the hips. `hips` are left be, as the legs hang off them and a turn
+  there slides the feet. At each heel strike, `stomach` [-1.5, ±3, 0] and `chest` y ±4, the forward arm's shoulder
+  leading by 1.4. Passing, `stomach` z ±1.5 and `chest` z ±1, leant over the stance leg. The head undoes both
+  (y ∓9, z ∓2.5), so it faces ahead to within 2°.
+- **Run's likewise.** Landing, `stomach` [-9.5, ±3, 0] and `chest` y ±3, on the hips' ±6.94. Passing, `stomach`
+  z ±2 and `chest` z ±1.5. Head y ∓12.94, z ∓3.14 landing and ∓3.5 passing. The turn carries the forward hand
+  across the middle, so that arm's y is -4 (was 4.6) and its forearm z 6 in: the hand is 2 off the middle.
+
+### sit
+
+- **Legs**: thighs level (x 90), knees bent 80° (shin x -80), feet x -12 at 0 / 2.5 and -7 at 1.25, so the soles
+  sit near flat and breathe. That is the `sit` recipe. The shin and foot hang 0.28m, so on any higher seat the feet
+  dangle: one clip serves every seat height.
+- **Root**: `skeleton-root` position y -11.
+- **Arms** rest in the lap, still through the breath, with every arm position key [0,0,0] so they do not float.
+  Read from `current.bbmodel` on 2026-10-16, at t=0:
+
+  | Bone | x | y | z |
+  |------|---|---|---|
+  | rightarm | 5.7842 | 7.0689 | 5.1276 |
+  | rightforearm | 50 | 0 | 0 |
+  | leftarm | 4.8748 | -10.9991 | -6.0008 |
+  | leftforearm | 44.0142 | 1.4116 | -3.0691 |
+
+- **Breathing**, out at t=0 / 2.5 and in at 1.25. The head counters it (see *Breathing* above):
+
+  | Bone | channel | t=0 / t=2.5 | t=1.25 |
+  |------|---------|-------------|--------|
+  | chest | rotation x | -5 | 0 |
+  | chest | position y | -0.15 | +0.05 |
+  | stomach | rotation x | -4 | 0 |
+  | stomach | position y | -0.12 | 0 |
+
+### phaser_aim / phaser_aim_avoid (catmullrom at 0 / 1.25 / 2.5)
+
+`Phasers`' phaser: a stance stood in at rest, and played over the upper body on the move.
+
+- Root rotation zeroed, and the feet pinned flat (0.27 / 0.21), left foot forward.
+- The right forearm is level and dead ahead at t=0 (`along` `(0, 0, -1)`, its +x up). The arm's x rises with the
+  lean as it breathes. The left arm is idle's, free for psi.
+- `phaser_aim_avoid` shares the legs, torso and head. Its right forearm is raised beside the shoulder, muzzle up,
+  solved from a target basis via `Euler.setFromQuaternion(q, 'ZYX')`.
 
 | Bone | channel | t=0 / t=2.5 | t=1.25 |
 |------|---------|-------------|--------|
@@ -177,78 +282,76 @@ raised beside the shoulder, muzzle up — solved from a target basis via `Euler.
 | avoid: rightforearm | rotation | [84.97,-72.01,88.98] | same |
 | avoid: leftarm / leftforearm | rotation | [1,0,-6] / [118,0,12] | [2,0,-6] / [120,0,12] |
 
-**The stance is balanced, and rocks.** As first keyed it stood over its front foot, the other trailing,
-and leant 9°-14°. Now the feet keep that spacing but are planted either side of the hips (ankles `z`
--1.17 and 3.17 about the root's 1), the hips 0.5 lower to reach them; the torso leans 2° at the back of
-the rock and 5° at the front, the head countering it and each arm's `x` raised by as much, so the gun
-stays level. The root rocks 0.9 end to end about where it stood, sinking 0.25 as it goes forward.
+**The stance is balanced, and rocks.** As first keyed, it stood over its front foot with the other trailing, and
+leant 9°–14°. Now the feet keep that spacing but are planted either side of the hips (ankles z -1.17 and 3.17
+about the root's 1), with the hips 0.5 lower to reach them. The torso leans 2° at the back of the rock and 5° at
+the front. The head counters it, and each arm's x is raised by as much, so the gun stays level. The root rocks 0.9
+end to end about where it stood, sinking 0.25 as it goes forward.
 
-The legs are SOLVED so both ankles stay put and both soles flat, keyed every fifth frame;
-`phaser_aim_avoid` has the same root, legs, torso and head. Not hand-keyed: see *Clips keyed from code*.
+The legs are SOLVED so both ankles stay put and both soles flat, keyed every fifth frame. `phaser_aim_avoid` has
+the same root, legs, torso and head. Re-key with `gen-clip-keys` (see *Clips keyed from code*).
 
-Export from the rest pose: after any `Animator.preview()` run `Animator.showDefaultPose(true); Canvas.updateAllBones()`
-first, else the glTF's nodes keep the pose.
+### point / point_avoid
 
-## A hit's effect on its target: pain_* / pacified
+jsh `pose`'s pair, upper body only. Idle's legs, sway and left arm, so it reads as pointing, not a guard.
 
-Drafts, posed by search in Blockbench (`risky_eval`): legs solved so feet stay planted, hands solved
-onto a bone, by the forearm's tip `(0, -5.6, 0)`.
+- `point` leans a little (stomach -3, chest -2, head 5), the right arm level and dead ahead (`rightarm` x 95,
+  `rightforearm` [0,90,0]).
+- `point_avoid` stands as idle does, the right forearm raised before the shoulder (`rightarm` [12,0,5],
+  `rightforearm` [88.07,-57.53,86.74]: `along` `(0, 0.93, -0.37)`).
 
-- `pain_high` (1.6s loop, whole body): doubled over ~50 from hips, stomach and chest, forearms
-  crossed on the stomach; the fold deepens at 0.8, and `hips` z / `head` shake a key every 0.1s, linear.
-- `pain_leg_left` / `_right` (1.2s loop, whole body): the other foot planted, this one lifted onto its
-  toe, torso tipped over it, the same-side hand on the thigh. `_right` is the mirror.
-- `pain_arm_left` / `_right` (1.2s loop, torso, head and BOTH arms, no legs or root): the arm folded
-  across the body, the other hand on its forearm. `_right` is the mirror.
-- `pain_head` (1.5s, once, was `pacify_in`): a jolt back at 0.25, knees buckling at 0.6, a half recovery at 1.0, ending
-  on `pacified`'s first key. `pacified` (3s loop): slack, head lolled, arms dead, a slow sway of `hips` z.
+### influence (catmullrom at 0 / 1.25 / 2.5)
 
-### Sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
+Idle's root sway and breathing, leaning forward, the right hand on the right temple, the left arm outstretched,
+the left foot forward. t=1.25 is the push: a deeper lean, the arm rising and shoving forward, the hand staying on
+the temple.
 
-Drafts too. Each keeps its base's root and seat or bed: `sit`'s root and legs (feet -10, still), `lie`'s root.
-Lengths are the standing set's.
+| Bone | channel | t=0 / t=2.5 | t=1.25 |
+|------|---------|-------------|--------|
+| stomach | rotation | [-8,0,0] | [-11,0,0] |
+| chest | rotation | [-5,0,0] | [-6,0,0] |
+| head | rotation | [-2,0,-6] | [-3,0,-8] |
+| rightarm | rotation | [0,15,110] | [0,18,112] |
+| rightforearm | rotation | [170,0,-50] | [172,0,-50] |
+| leftarm | rotation | [104,-8,0] | [112,-8,0] |
+| leftarm | position | [0,0,0] | [0,0.3,-0.4] |
+| leftforearm | rotation | [6,0,0] | [0,0,0] |
+| leftthigh / leftshin / leftfoot | rotation x | 14 / -5 / -9 | same |
+| rightthigh / rightshin / rightfoot | rotation x | -9 / 0 / 9 | same |
+| skeleton-root | position | [0,-0.19,1] | — |
+| skeleton-root | rotation | 0 | 0 |
 
-- `sit_pain_high` (1.6s): folded ~26, ~33 at 0.8 (stomach -14 / -18, chest -12 / -15), `pain_high`'s crossed
-  forearms. The shake is `stomach` z and `head`, a key every 0.1s, linear: `hips` would swing the legs.
-- `sit_pain_low` (1.2s): stomach -9 / -11, chest -8 / -9, head bowed -6 / -10 with a small `y` shake, shoulders
-  up (arm position y 0.3 / 0.45), hands forward onto the knees (arms x 18).
-- `sit_pacified` (3s): `sit`'s arms, in the lap. Slumped (stomach -8, chest -7), head lolled as `pacified`
-  ([-14,5,12]), `stomach` z swaying 2.5 / -2.5.
-- `sit_pain_head` / `lie_pain_head` (1.5s, once, were `{sit,lie}_pacify_in`): from the base's first key to the pacified one's, keyed at
-  `pain_head`'s times. Sat: thrown back at 0.25 (stomach 5, chest 6, head 18, arms flung out, shins kicked
-  to -70), slumped past it at 0.6 (stomach -14, head -22). Lain: a start at 0.25 (stomach -7, chest -5, arms
-  and knees lifted), then the head rolls over, past its rest at 0.6 (y 30).
-- `lie_pain_high` (1.6s): a curl, not an arch. Stomach -10 / -14, chest -8 / -11, knees up (thighs 35 / 40,
-  shins -60 / -66, feet 10), the crossed forearms and the same shake.
-- `lie_pain_low` (1.2s): stomach -3 / -5, head turned aside (y 20) with a small shake, fists drawn up over the
-  chest (arms [8,0,±8], forearms [128,0,±22]), the right knee a little raised (thigh 14, shin -24).
-- `lie_pacified` (3s): head rolled aside ([0,24,5], position z -0.5 so it stays on the pillow), arms and legs
-  splayed a little, a shallow breath (stomach position z -0.15 at 1.5).
+Stomach and chest position, and the legs' z, are idle's. The root's rotation is zeroed and the legs pinned, so
+the feet stay put (see *Legs and the floor*).
 
-Measured, mid-clip: no sat hand rises above the lap bar `sit_pain_high`'s, at y 4.4 - 5.6 against the stomach.
-The table top was ASSUMED at y ~6, as no clip records it. Lain, the lowest point is the head, 0.4 under `lie`'s.
+### psi
 
-**Solve with ONE animation playing.** `Animator.preview()` adds every animation whose `playing` is
-set, so a solve run with another still playing lands on the sum: clear `playing` on the rest first.
+`Psi`'s hand. The LEFT arm alone, so the right is free for a phaser: it plays over that arm only, so no legs or
+root. The hand at the temple, the elbow tucked in front (`leftarm` [112,0,20], `leftforearm` [128,0,-20]), with a
+small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` had the elbow out to the side
+(`leftarm` [110,35,0], `leftforearm` [130,0,-8]).
 
-## drop
+### Putting down and taking up
 
-Putting an item down on a table (`w.e.dropItem`), upper body only and a still pose — the game eases it
-in and out. A lean (stomach -6, chest -4, head 4) with the right arm reaching forward and down to table
-height (`rightarm` x 56, `rightforearm` x 8); the left arm is idle's (`leftarm` [5,0,-2], `leftforearm` x 9).
+- **`drop`** (`w.e.dropItem`, onto a table): upper body only, a still pose that the game eases in and out. A lean
+  (stomach -6, chest -4, head 4), the right arm reaching forward and down to table height (`rightarm` x 56,
+  `rightforearm` x 8). The left arm is idle's (`leftarm` [5,0,-2], `leftforearm` x 9).
+- **`pick_up`** (`w.e.takeItem`): likewise still and upper body. A deeper lean (stomach -9, chest -7, head 3), the
+  right arm lower with the elbow bent to grasp (`rightarm` x 50, `rightforearm` x 28).
+- **`crouch`** (`w.e.reachFor`, on or off the FLOOR): a still whole-body squat. The feet where they rest, the root
+  8.5 down and 3 back, the legs solved to them. The torso leans 60 (stomach and chest -30 each, head 40). The right
+  arm hangs 22 forward of plumb, so the hand touches the floor ahead; the left rests on the knee. Recipe `crouch`.
+- **`drop_left` / `pick_up_left` / `crouch_left`**: mirrors for the other hand. Left and right bones swapped,
+  rotation y and z and position x negated. Re-mirror after changing the originals.
 
-## pick_up
+### sit_reach
 
-`drop`'s counterpart (`w.e.takeItem`), likewise a still upper-body pose: a deeper lean (stomach -9, chest
--7, head 3) and the right arm lower with the elbow bent to grasp (`rightarm` x 50, `rightforearm` x 28).
+`drop` and `pick_up` for the SAT (`w.e.reachFor`). `sit` rests the hand on the lap, under a table, and easing
+straight to a reach pose brought it up through the top. So this one MOVES: a pose every 4 frames, the reach held 3,
+then back. That is 35 frames, the rest of the 2.5s held on `sit`'s arm. Recipe `sit_reach`.
 
-## sit_reach
-
-`drop` and `pick_up` for the SAT (`w.e.reachFor`): `sit` rests the hand on the lap, under a table, and
-easing straight to a reach pose brought it up through the top. So this one MOVES: a pose every 4 frames, the reach held 3,
-then back — 35 frames, the rest of the 2.5s held on `sit`'s arm. Keyed from code, recipe `sit_reach`.
-Its `stomach` and `chest` keys are turns ON `sit`'s own torso, not poses of it (the game's
-`upperAddsTorso`), so alone in Blockbench it shows them off an upright one; the arm is keyed against that.
+Its `stomach` and `chest` keys are turns ON `sit`'s own torso, not poses of it (the game's `upperAddsTorso`). So
+alone in Blockbench it shows them off an upright torso; the arm is keyed against that.
 
 | pose | stomach | chest | rightarm | rightforearm | hand |
 |------|---------|-------|----------|--------------|------|
@@ -258,125 +361,72 @@ Its `stomach` and `chest` keys are turns ON `sit`'s own torso, not poses of it (
 | over | 0 | [-1,2,0] | [5,0,0] | [115,0,0] | before the chest, over the edge |
 | out | [-4,0,0] | [-4,6,0] | [84,0,0] | [15,0,0] | reaching: the game aims it from here |
 
-`chest` +y brings the right shoulder forward. A deeper lean at `out` dips the hand into the top.
+- `chest` +y brings the right shoulder forward. A deeper lean at `out` dips the hand into the top.
+- Solved against a table 0.6m high whose edge is 0.15m ahead of the hips (the end seat of `table--004`), the
+  forearm's tip staying a unit clear of it.
+- If `sit`'s arm changes, its first pose must follow.
 
-Solved against a table 0.6m high whose edge is 0.15m ahead of the hips — the end seat of `table--004` —
-the forearm's tip staying a unit clear of it. Change `sit`'s arm and its first pose must follow.
+### Hits, stood: pain_* / pacified
 
-## crouch
+Drafts, posed by search: legs solved so the feet stay planted, hands solved onto a bone by the forearm's tip
+`(0, -5.6, 0)`. What each leads to is `hitConfig` in `const.npc`: see `docs/inventory.md`.
 
-Putting down on, or taking off, the FLOOR (`w.e.reachFor`): a still whole-body squat. Feet where they
-rest, the root 8.5 down and 3 back, legs solved to them; the torso leans 60 (stomach and chest -30
-each, head 40), the right arm hangs 22 forward of plumb so the hand touches the floor ahead, the left
-rests on the knee. Keyed from code, recipe `crouch`.
+- **`pain_high`** (1.6s loop, whole body): doubled over ~50 from hips, stomach and chest, the forearms crossed on
+  the stomach. The fold deepens at 0.8, and `hips` z and `head` shake, a key every 0.1s, linear.
+- **`pain_leg_left` / `_right`** (1.2s loop, whole body): the other foot planted, this one lifted onto its toe, the
+  torso tipped over it, the same-side hand on the thigh. `_right` is the mirror.
+- **`pain_arm_left` / `_right`** (1.2s loop; torso, head and BOTH arms, no legs or root): the arm folded across the
+  body, the other hand on its forearm. `_right` is the mirror.
+- **`pain_head`** (1.5s, once, was `pacify_in`): a jolt back at 0.25, the knees buckling at 0.6, a half recovery at
+  1.0, ending on `pacified`'s first key.
+- **`pacified`** (3s loop): slack, the head lolled, the arms dead, a slow sway of `hips` z.
 
-## Clips keyed from code
+### collapsed (catmullrom at 0 / 0.6 / 1.2)
 
-`scripts/src/bins/gen-clip-keys.ts` re-keys clips whose motion is solved rather than posed. It writes the
-keyframes into `current.bbmodel` AND bakes them into `current.gltf` as the exporter would (a key a
-frame, `LINEAR`), so Blockbench need not be open. Each entry of its `clips` is a RECIPE: default
-`params`, and `tracks(params)` returning one `Track` per bone channel — `turn` for a posed rotation,
-`breathe(a, b)` for a value that swells with the cycle, `plantedLegs` for a root and legs solved so
-both feet stay put (it throws if a leg cannot reach).
+After a body shot stood (`pain_high`): sat on the floor, knees drawn up, forearms over the knees, slumped, breathing
+hard. The root drops to seat the pelvis's underside on the floor (`skeleton-root` position [0,-10.81,1], rotation
+0). The legs were searched so the lowest of shin and foot sits on the floor with the foot level.
 
-```sh
-node scripts/src/bins/gen-clip-keys.ts                        # every recipe
-node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
-```
+| Bone | channel | t=0 / t=1.2 (out) | t=0.6 (in) |
+|------|---------|-------------------|------------|
+| hips | rotation | [6,0,0] | same |
+| stomach | rotation / position y | [-14,0,2] / -0.15 | [-9,0,2] / 0.1 |
+| chest | rotation / position y | [-12,0,0] / -0.15 | [-5,0,0] / 0.25 |
+| head | rotation | [-24,6,10] | [-16,6,10] |
+| rightarm / leftarm | rotation | [38,0,±6] | [32,0,±7] |
+| rightarm / leftarm | position y | 0 | 0.45 |
+| rightforearm / leftforearm | rotation | [35,0,∓10] | same |
+| thighs | rotation | [120,0,±8] | same |
+| shins / feet | rotation x | -56 / -66 | same |
 
-Recipes now: `sit` (`knee`), `sit_reach` (`leg hold`, frames), `crouch` (`down back lean reach`) and `phaser_aim` (`rock drop sink lean
-breathe`, also keying `phaser_aim_avoid`). A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in Blockbench, and save. It appends to the glTF's buffer, so restore both files first — `git checkout`, or
-re-export from Blockbench. Reload the project in Blockbench afterwards, else a save puts the old keys back.
+### Hits, sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
 
-## point / point_avoid
+Drafts too. Each keeps its base's root and seat or bed: `sit`'s root and legs (feet -10, still), `lie`'s root.
+Lengths are the standing set's.
 
-jsh `pose`'s pair, upper body only. Idle's legs, sway and left arm, so it reads as pointing, not a guard:
-`point` leans a little (stomach -3, chest -2, head 5) with the right arm level and dead ahead
-(`rightarm` x 95, `rightforearm` [0,90,0]); `point_avoid` stands as idle does, the right forearm raised
-before the shoulder (`rightarm` [12,0,5], `rightforearm` [88.07,-57.53,86.74]: `along` `(0, 0.93, -0.37)`).
+- **`sit_pain_high`** (1.6s): folded ~26, ~33 at 0.8 (stomach -14 / -18, chest -12 / -15), with `pain_high`'s
+  crossed forearms. The shake is `stomach` z and `head`, a key every 0.1s, linear: `hips` would swing the legs.
+- **`sit_pain_low`** (1.2s): stomach -9 / -11, chest -8 / -9, head bowed -6 / -10 with a small y shake, shoulders up
+  (arm position y 0.3 / 0.45), hands forward onto the knees (arms x 18).
+- **`sit_pacified`** (3s): `sit`'s arms, in the lap. Slumped (stomach -8, chest -7), the head lolled as `pacified`'s
+  ([-14,5,12]), `stomach` z swaying 2.5 / -2.5.
+- **`sit_pain_head` / `lie_pain_head`** (1.5s, once, were `{sit,lie}_pacify_in`): from the base's first key to the
+  pacified one's, keyed at `pain_head`'s times.
+  - Sat: thrown back at 0.25 (stomach 5, chest 6, head 18, arms flung out, shins kicked to -70), slumped past it at
+    0.6 (stomach -14, head -22).
+  - Lain: a start at 0.25 (stomach -7, chest -5, arms and knees lifted), then the head rolls over, past its rest at
+    0.6 (y 30).
+- **`lie_pain_high`** (1.6s): a curl, not an arch. Stomach -10 / -14, chest -8 / -11, knees up (thighs 35 / 40,
+  shins -60 / -66, feet 10), with the crossed forearms and the same shake.
+- **`lie_pain_low`** (1.2s): stomach -3 / -5, the head turned aside (y 20) with a small shake, fists drawn up over
+  the chest (arms [8,0,±8], forearms [128,0,±22]), the right knee a little raised (thigh 14, shin -24).
+- **`lie_pacified`** (3s): the head rolled aside ([0,24,5], position z -0.5 so it stays on the pillow), arms and legs
+  splayed a little, a shallow breath (stomach position z -0.15 at 1.5).
 
-## walk / run — planted feet (legs and root solved, not hand-keyed)
+Measured mid-clip: no sat hand rises above the lap but `sit_pain_high`'s, at y 4.4–5.6 against the stomach. The
+table top was ASSUMED at y ~6, as no clip records it. Lain, the lowest point is the head, 0.4 under `lie`'s.
 
-The npc moves `1 / gait` metres per cycle (`gait` in `npc-animation.ts`: walk `1`, run `0.5`), i.e.
-at 1/16 × `npcScale` (0.7) a stance foot must slide back **22.86 u/s** (walk) / **45.72 u/s** (run).
-Legs, knees, feet (x only) and `skeleton-root` position y were solved by 2D IK from a foot path — heel
-strike, flat, toe-off rocker, Hermite swing — with the root taken from a target stance-knee bend and
-low-passed under the reach limit. Keys: 24 per cycle (12 was too coarse: the rockers sank the foot
-up to 0.17). Stance speed checks within 0.5% (walk). Leg/knee position
-channels were dropped, and run's root rotation `-2` moved onto `hips` x.
+## Legacy
 
-- Walk: left heel strikes at t=0, duty 0.5, heel strike toes-up 22°, toe-off −34°; bob −0.84…+0.15;
-  stance knee −16…−35° (the long stride for these short legs needs the big heel/toe rockers). Leans
-  from the hips: `hips` x −11 at contact / −9 passing, `chest` −2 / 0; head +4 / +2 so it tips
-  down with the body; arms raised +10.5 / +7 over their original swing so they still hang.
-- Run: left lands at t=0, duty 0.27; bob −0.87…−0.29; swing knee to −115°.
-- Hand-tweaking one leg key breaks the plant — re-measure a foot's lowest vertex per sample.
-- Arms, hand-keyed, not flat: the forearm stays bent and turns IN as it comes forward (`rightforearm` z
-  negative, `leftforearm` positive), so the hand nears the body's middle whilst the elbow barely moves out.
-  Per swing, forward / coming back / back / going forward — walk: arm z 8 / 8 / 9 / 8, forearm x 16 / 9 / 5 / 10,
-  forearm z 16 / 10 / 6 / 10 in. Run: arm z 12 / 9 / 16.2 / 8, forearm x 32 / 12 / 10 / 20, forearm z 6 / 10 / 6 / 12 in.
-  Walk's forward hand is 1.1 nearer the middle and its elbow 0.3 further out. Arm x and y are as they were.
-- Walk's torso turns with the arms, above the hips: `hips` are left be, as the legs hang off them and a turn
-  there slides the feet. At each heel strike `stomach` [-1.5, ±3, 0] and `chest` y ±4, the shoulder of the
-  forward arm leading by 1.4; passing, `stomach` z ±1.5 and `chest` z ±1, leant over the stance leg. The head
-  undoes both (y ∓9, z ∓2.5), so it faces ahead to within 2 degrees.
-- Run's likewise: `stomach` [-9.5, ±3, 0] and `chest` y ±3 landing, on the hips' ±6.94; `stomach` z ±2 and
-  `chest` z ±1.5 passing. Head y ∓12.94, z ∓3.14 landing and ∓3.5 passing. The turn carries the forward hand
-  across the middle, so that arm's y is -4 (was 4.6) and its forearm z 6 in: the hand is 2 off the middle.
-
-## Sit animation — legs
-
-Thighs level (`x` 90), knees bent 80° (`shin` x -80), feet `x` -12 at 0 / 2.5 and -7 at 1.25 so the
-soles sit near flat and breathe — the `sit` recipe of *Clips keyed from code*. The legs are short: the
-shin and foot hang 0.28m, so on any seat above that the feet dangle — one clip serves every seat height.
-
-## Sit animation — arm position keyframes
-
-Remove the arm y-lift (originally y=0.3 at t=1.25) — set all arm position keyframes to `[0, 0, 0]` so arms don't float during the breathing cycle.
-
-### Sit animation — confirmed lap-resting pose (user-adjusted t=0)
-
-As of latest edit, the user-set t=0 values are:
-
-| Bone | x | y | z |
-|------|---|---|---|
-| rightarm | 5.2364 | 17.2613 | 3.5726 |
-| leftarm | 4.8748 | -10.9991 | -6.0008 |
-| rightforearm | 65 | 0 | 0 |
-| leftforearm | 68.5313 | -13.1247 | 4.9988 |
-
-These should be copied to t=1.25 and t=2.5 (no arm movement during breathing).
-
-## Breathing: the head is on the end of the torso lever
-
-Head and arms are children of `chest`, so torso *rotation* breathing (stomach/chest x → 0) is seen
-mostly as the head pitching — `sit` inherits a 9° sway before its own nod. Options:
-- **Counter the head**: `sit`'s head is now `x=5` at 0 / 2.5 and `0` at 1.25, no mid-cycle nod,
-  so its world pitch swings 4°, not 14°.
-- **Translate, mostly**: `lie` (catmullrom) lifts the belly first and most — stomach position z
-  `-0.3` at 1.9 (local -z is world up under the 90° root; **local +x on the chest LOWERS its top**
-  there) — then the ribcage, chest position z `-0.15` and rotation x `-2` at 2.2, arms z `+0.25` and
-  flared `±1.5`. The head counters most of it (position z `+0.55`, rotation `+1.5`) but not all: a
-  fully pinned head reads dead, so it keeps a `0.1` lift and half a degree of nod. Peak world rise:
-  belly 0.29, sternum 0.53, head 0.1.
-
-## Chest breathing (sit animation)
-
-Target values (applied at t=0 and t=2.5; t=1.25 is the "inhale" peak):
-
-| Bone | channel | t=0 / t=2.5 | t=1.25 |
-|------|---------|-------------|--------|
-| chest | rotation x | -5 | 0 |
-| chest | position y | -0.15 | +0.05 |
-| stomach | rotation x | -4 | 0 |
-| stomach | position y | -0.12 | 0 |
-
-## Animation list (`thinner.more-anims.wip.bbmodel`)
-
-`idle`, `walk`, `run`, `sit`, `shuffle-back`, `lie`
-
-## Bone hierarchy
-
-`root` → `skeleton-root` → `hips` → `stomach` → `chest` → head, arms  
-Arms: `rightarm` / `leftarm` → `rightforearm` / `leftforearm`  
-Legs: `rightthigh` / `leftthigh` → `rightshin` / `leftshin` → `rightfoot` / `leftfoot`
+`thinner.more-anims.wip.bbmodel`, the arm notes' first source, had `idle`, `walk`, `run`, `sit`, `shuffle-back`
+and `lie`. Its arm conventions were confirmed on `current.bbmodel`.
