@@ -172,7 +172,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         /** Can be overridden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
         let result = w.npc.getClosestPoly(groundPoint, 0.5);
-        const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey);
+        const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey, groundPoint);
         if (doResult.type === "none") {
           // `near`: as near as they can get, e.g. beside the table picked
           if (near === true && result.success === false) result = w.npc.getClosestPoly(groundPoint, 4);
@@ -390,7 +390,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       getNpcsInReach(npcKey, doors = 1) {
         const at = w.npc.npcToRoom.get(npcKey);
-        if (at === undefined || w.gmRoomGraph.getNode(at.grKey) === null) return [];
+        if (at === undefined) return [];
+        if (doors === 0) {
+          const keys = w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [];
+          return [...keys].flatMap((key) => (key === npcKey ? [] : (w.n[key] ?? [])));
+        }
+        if (w.gmRoomGraph.getNode(at.grKey) === null) return [];
         // their room is depth 0, its connectors 1, the rooms beyond those 2
         return w.gmRoomGraph
           .getReachableUpTo(at.grKey, (node, depth) =>
@@ -1338,7 +1343,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const npcKeys = groundPoints.map((_, i) => opts.keys?.[i] ?? `${baseKey}-${i}`);
 
         /** Ground point should either be doable or navigable */
-        const doResults = groundPoints.map((p, i) => w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i]));
+        const doResults = groundPoints.map((p, i) => w.npc.findFreeDoMeta(p.meta ?? emptyMeta, npcKeys[i], p));
 
         const angles = doResults.map((doResult, i) => {
           const angleOrPoint = opts.looks?.[i];

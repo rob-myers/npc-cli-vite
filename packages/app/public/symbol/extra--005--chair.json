@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "6d303f06-4842-40e1-9366-db42c2d92da2",
-      "name": "extra--005--chair 1",
+      "name": "extra--005--chair",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0.5, "f": 0.5},
@@ -19,7 +19,7 @@
     {
       "id": "e744465c-539e-4b57-87f2-eee1396b41aa",
       "name": "obstacle chair h=0.15 inset=1",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",
@@ -30,7 +30,7 @@
     {
       "id": "ef26bce9-ef55-489f-ba0c-fd4c35d82ced",
       "name": "decor point do=sit on",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 5, "f": 7},
       "type": "image",

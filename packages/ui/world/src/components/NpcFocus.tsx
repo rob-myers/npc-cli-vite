@@ -1,8 +1,10 @@
 import { Task, useStateRef } from "@npc-cli/util";
+import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { bodyPartPoint } from "../service/phaser-beam";
+import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
@@ -28,6 +30,8 @@ export default function NpcFocus() {
         w.view.pausedHidden = false;
         state.task?.cancel();
         state.task = null;
+        // left raised, it no longer points at them
+        if (w.phasers.isArmed(w.player.key) === true) w.phasers.arm(w.player.key);
         // set aside only once it opens: given up on before, it was never turned off
         if (before?.follow === true && w.view.follow === false) w.view.setFollow(true);
         w.view.forceUpdate(); // the paused indicator, should the World still be paused
@@ -36,20 +40,37 @@ export default function NpcFocus() {
         const player = w.player.get();
         const npc = w.n?.[npcKey];
         if (player === undefined || npc === undefined) return;
-        const task = state.begin(npcKey);
+        // one still open once resumed gives way, and whether the phaser was up before it carries over
+        const replaced = state.npcKey !== null && state.resumed === true ? state.before : null;
+        if (replaced !== null) state.dismiss();
+        const task = state.begin(npcKey, replaced?.raised);
         if (task === null) return;
         const { isClear, isDrawnIn } = w.phasers;
         const { key } = player;
         await task.run(async () => {
           await task.until(() => w.disabled === false); // e.g. begun by jsh whilst paused
-          // raised as they turn to them. Each is waited on for so long at most
-          w.phasers.arm(key);
-          const looked = player.look({ at: npc.point }).catch(() => {}); // sat or lain they cannot turn
-          await task.wait(looked, npcFocusConfig.turnMaxMs);
+          const { anim } = player;
+          // raised as they turn to them, lain rolling to them if they can. Each is waited on for so long at most
+          w.phasers.arm(key, { toward: npcKey });
+          if (w.phasers.isArmed(key) === false) return state.abandon(); // e.g. in pain
+          if (anim.posture === "sit") {
+            // sat they turn their head, not round
+            anim.turnTo(npc.point);
+            await task.until(() => anim.turn.value === anim.turn.target, npcFocusConfig.turnMaxMs);
+          } else if (anim.posture === "stand") {
+            await task.wait(
+              player.look({ at: npc.point }).catch(() => {}),
+              npcFocusConfig.turnMaxMs,
+            );
+          }
+          // too far round to face, sat or lain
+          if (isOffAim(player, npc) === true) return state.abandon();
           // clear as they now stand: the turn may have swept past a wall, or ended facing one
           await task.until(() => isClear(key) === true, npcFocusConfig.raiseMaxMs);
-          // still drawn in, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
+          // still drawn in, or stowed lain, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
           if (isDrawnIn(key) === true) return state.abandon();
+          // aimed before the pause, which would hold the arm, or a roll, partway
+          await task.until(() => w.phasers.isAimed(key) === true, npcFocusConfig.raiseMaxMs);
           const seen = await task.wait(
             w.e.raycast(player.point, npc.point).then(
               ({ hit }) => hit === null,
@@ -61,13 +82,9 @@ export default function NpcFocus() {
           await task.wait(); // until it is over
         });
       },
-      begin(npcKey) {
+      begin(npcKey, raised = w.phasers.isArmed(w.player.key)) {
         if (state.busy === true || w.n?.[npcKey] === undefined) return null;
-        state.before = {
-          paused: w.disabled,
-          follow: w.view.follow,
-          raised: w.phasers.isArmed(w.player.key),
-        };
+        state.before = { paused: w.disabled, follow: w.view.follow, raised };
         state.busy = w.view.pausedHidden = true;
         state.task = new Task(() => w.disabled);
         return state.task;
@@ -108,18 +125,17 @@ export default function NpcFocus() {
       isOffAim() {
         const player = w.player.get();
         const npc = w.n?.[state.npcKey ?? ""];
-        if (player === undefined || npc === undefined) return true;
-        // their facing against the bearing to them: three's rotation-Y, as `bearingOf`
-        const bearing = Math.atan2(player.position.x - npc.position.x, player.position.z - npc.position.z);
-        const off = bearing - player.rotation.y;
-        return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) > npcFocusConfig.maxOffAimRad;
+        if (player === undefined || npc === undefined || isOffAim(player, npc) === true) return true;
+        // sat or lain, by where their arm points: `r` may re-aim it once resumed
+        return (w.phasers.aimOff(player.key, npc.point) ?? 0) > npcFocusConfig.maxOffAimRad;
       },
       open(npcKey) {
         const npc = w.n?.[npcKey];
         const { controls } = w.view;
         if (state.npcKey !== null || npc === undefined || controls == null) return;
         if (state.busy === false && state.begin(npcKey) === null) return;
-        Object.assign(state, { npcKey, offAim: false, resumed: false });
+        Object.assign(state, { npcKey, resumed: false });
+        state.setOffAim(false); // a node kept from one still fading out has its last fade
         if (state.before !== null) state.before.paused = w.disabled; // as it was before this pause
         // a follow runs on whilst they aim, else the view stops short. The view is ours from here
         if (w.view.follow === true) w.view.setFollow(false);
@@ -157,6 +173,12 @@ export default function NpcFocus() {
           el.style.visibility = "visible";
         }
       },
+      setOffAim(offAim) {
+        state.offAim = offAim;
+        if (state.el === null) return;
+        state.el.style.opacity = offAim ? "0" : "";
+        state.el.inert = offAim;
+      },
     }),
   );
 
@@ -179,12 +201,7 @@ export default function NpcFocus() {
     const unsubscribe = w.e.addFrameCallback(() => {
       if (state.isLost() === true) return state.close(null); // e.g. lowered by `e`
       const offAim = state.isOffAim();
-      if (offAim !== state.offAim && state.el !== null) {
-        // faded through the DOM, not rendered, as the frame loop finds it
-        state.offAim = offAim;
-        state.el.style.opacity = offAim ? "0" : "";
-        state.el.inert = offAim;
-      }
+      if (offAim !== state.offAim) state.setOffAim(offAim);
       if (offAim === false) state.place();
     });
     w.r3f?.invalidate(); // a first frame to place them in
@@ -192,6 +209,7 @@ export default function NpcFocus() {
       next(e) {
         if (e.key !== "enabled" || state.resumed === true) return;
         state.set({ resumed: true }); // its note goes: Escape no longer ends this
+        w.view.pausedHidden = false; // a pause from here on is the player's own, so shows
       },
     });
     return () => {
@@ -208,6 +226,7 @@ export default function NpcFocus() {
         <motion.div
           key="npc-focus"
           className="pointer-events-none absolute inset-0 z-20 select-none overflow-hidden"
+          animate={{ opacity: 1 }} // reopened mid fade out, it fades back in
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
@@ -257,6 +276,13 @@ function toScreen(point: THREE.Vector3, camera: THREE.Camera, canvas: DOMRect, b
   };
 }
 
+/** `player` faces more than `maxOffAimRad` away from `npc`. Sat or lain, `npc` is out of their reach */
+function isOffAim(player: Npc, npc: Npc) {
+  const { anim } = player;
+  if (anim.posture !== "stand") return anim.canAimAt(npc.point) === false;
+  return Math.abs(deltaAngle(player.rotation.y, anim.bearingOf(npc.point))) > npcFocusConfig.maxOffAimRad;
+}
+
 const tmpPoint = new THREE.Vector3();
 
 const npcFocusConfig = {
@@ -298,7 +324,7 @@ const npcFocusParts: { part: FocusPart; label: string }[] = [
 export type State = {
   /** Whom it is open on, else `null` */
   npcKey: null | string;
-  /** From the press until it is over, whilst `w.view.pausedHidden` */
+  /** From the press until it is over. `w.view.pausedHidden` too, until resumed */
   busy: boolean;
   /** They face more than `maxOffAimRad` away from them: the marks are hidden until they face back */
   offAim: boolean;
@@ -321,7 +347,8 @@ export type State = {
   /** Raises the phaser and turns them to `npcKey`, then `open`s: resolved once it is over */
   aimAt(npcKey: string): Promise<void>;
   /** Notes the pause, follow and phaser to go back to: `null` if under way already, else its `task` */
-  begin(npcKey: string): null | Task;
+  /** `raised` is whether the phaser was up before, unless carried over from a focus it replaces */
+  begin(npcKey: string, raised?: boolean): null | Task;
   /** As Escape, at any stage: from the press, until a part is chosen */
   cancel(): void;
   /** The World resumed, the view left where it is, then a shot at `part`, or none for `null` */
@@ -332,10 +359,12 @@ export type State = {
   isFixated(): boolean;
   /** Either of them gone, or the phaser lowered */
   isLost(): boolean;
-  /** They face more than `maxOffAimRad` away from whom it is open on */
+  /** They face, or sat or lain their arm points, more than `maxOffAimRad` away from whom it is open on */
   isOffAim(): boolean;
   /** Pauses, zooms in on them, and pins a choice over each part */
   open(npcKey: string): void;
   /** Each part's choice, pinned to where it is on screen now */
   place(): void;
+  /** Fades the marks out through the DOM, not rendered, as the frame loop finds them off aim, or back in */
+  setOffAim(offAim: boolean): void;
 };

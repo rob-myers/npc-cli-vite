@@ -27,13 +27,15 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
-        // not whilst locked on: the phaser's target is whom they face
-        const free = w.phasers?.isLocked(state.key) !== true;
+        // not whilst locked on, nor focused: the phaser's target is whom they face
+        const free = w.phasers?.isLocked(state.key) !== true && w.npcFocus?.isFixated() !== true;
         const lookAt = free ? state.lookAt : null;
         const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
-        if (held === false || posture !== "sit") npc.anim.turnTo(null);
+        // a sat turn is kept: to an npc focus's target until it is over, and as a raised phaser aims
+        const kept = free === false || w.npcFocus?.busy === true || w.phasers?.isArmed(state.key) === true;
+        if ((held === false || posture !== "sit") && kept === false) npc.anim.turnTo(null);
         if (held === false) return;
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
@@ -46,10 +48,16 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         }
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
         w.r3f.invalidate(); // a held key draws nothing of itself
-        // lain, they roll over to look
-        if (posture === "lie") return void npc.anim.rollTo(pointerAim.at);
-        // sat they do not turn round: their head, and a little of their torso
-        if (posture === "sit") return void npc.anim.turnTo(pointerAim.at);
+        if (posture === "lie") {
+          // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
+          if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, pointerAim.at);
+          return void npc.anim.lookLain(pointerAim.at);
+        }
+        if (posture === "sit") {
+          w.phasers?.pointAt(state.key, pointerAim.at); // armed, the arm goes with them
+          // sat they do not turn round: their head, and a little of their torso
+          return void npc.anim.turnTo(pointerAim.at);
+        }
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
@@ -94,8 +102,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         tmpNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, 1 - ((clientY - rect.top) / rect.height) * 2);
         w.view.raycaster.setFromCamera(tmpNdc, w.r3f.camera);
         const { origin, direction } = w.view.raycaster.ray;
-        // on the floor they stand on. Past the horizon there is none: far off the way the tap looks, then
-        const reach = direction.y < -1e-3 ? (npc.position.y - origin.y) / direction.y : lookFarMetres;
+        // on the floor, not at their own height: sat or lain they are off it. Past the horizon there is none: far off the way the tap looks, then
+        const reach = direction.y < -1e-3 ? -origin.y / direction.y : lookFarMetres;
         tmpHit.copy(origin).addScaledVector(direction, Math.min(reach, lookFarMetres));
         state.lookAtPoint(tmpHit.x, tmpHit.z);
       },

@@ -16,7 +16,8 @@ export default function LookMark() {
     const { pickedAt } = w.view;
     const at = w.view.objectPick.value === 1 ? pickedAt && { x: pickedAt.x, y: pickedAt.z } : w.player.lookAt;
     cross.current.visible = npc !== undefined && at !== null;
-    if (npc !== undefined && at !== null) cross.current.position.set(at.x, npc.position.y + crosshairY, at.y);
+    // on the floor, not at their own height: sat or lain they are off it
+    if (npc !== undefined && at !== null) cross.current.position.set(at.x, crosshairY, at.y);
   });
 
   return (

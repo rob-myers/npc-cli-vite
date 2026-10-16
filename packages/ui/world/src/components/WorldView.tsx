@@ -922,6 +922,8 @@ export function WorldView(props: React.PropsWithChildren) {
         state.keysDown.add(key);
         state.lastKeyMs = Date.now();
         if (e.key === "Escape") {
+          // npc focus still aiming: a pause now would stall it before the choice shows
+          if (w.npcFocus?.busy === true && w.npcFocus.npcKey === null) return;
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));

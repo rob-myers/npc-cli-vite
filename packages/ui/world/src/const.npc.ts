@@ -210,14 +210,35 @@ export const defaultFadeSecs = 0.3;
 /** Easing an upper-body clip in or out, over the pose — see `NpcAnimation.setUpper` */
 export const upperFadeSecs = 0.4;
 
-/**
- * One lain rolls onto a side for a point further than `side` metres to it, and onto their back for one within `back`
- * of their own line. A roll is seen through: `secs` before the next, as long as the longest fade between them
- */
-export const lieRoll = { side: 0.45, back: 0.25, secs: 0.6 } as const;
+/** One lain rolls over at most once per `secs`, as long as the longest fade between their poses */
+export const lieRoll = { secs: 0.6 } as const;
 
-/** One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest */
-export const sitTurn = { maxRad: Math.PI / 4, body: 0.25, rate: 6 } as const;
+/**
+ * One lain aims `ahead`, and anywhere from `from` to `to`: radians off their facing, which is towards their feet,
+ * and positive to their left. On a side, they reach further down the bed than up it
+ */
+export const lieAim: Partial<Record<string, { ahead: number; from: number; to: number; drawIn?: boolean }>> = {
+  /** On their back, not to their left at all: the arm aiming, their right, would lie across their body */
+  lie: { ahead: 0, from: -Math.PI / 4, to: 0 },
+  /** The arm aiming is on top, so a wall draws it in as one sat, not down by their side */
+  lie_left: { ahead: Math.PI / 2, from: Math.PI / 9, to: (2 * Math.PI) / 3, drawIn: true },
+  lie_right: { ahead: -Math.PI / 2, from: (-2 * Math.PI) / 3, to: -Math.PI / 9 },
+};
+
+/** The most one lain lifts or turns their head to look where they aim */
+export const lieHeadMaxRad = Math.PI / 6;
+
+/**
+ * One sat turns towards a point without turning round: `maxRad` either way, the torso taking `body` of it and the head the rest.
+ * A phaser aims from `aimFrom` to `aimTo`, radians off their facing and positive to their left. It reaches further on its hand's side
+ */
+export const sitTurn = {
+  maxRad: Math.PI / 2,
+  aimFrom: (-2 * Math.PI) / 3,
+  aimTo: Math.PI / 2,
+  body: 0.25,
+  rate: 6,
+} as const;
 
 /**
  * One sat raises an arm past a table's edge: by way of this pose of the LEFT arm, elbow back and out, as Blockbench
