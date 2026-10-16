@@ -3,6 +3,7 @@ import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
+import { lieAim } from "../const.npc";
 import { eased } from "../service/fade";
 import { advanceBeam, type Beam, type BeamTarget, beamEnd, bodyPartPoint, createBeam } from "../service/phaser-beam";
 import {
@@ -331,12 +332,15 @@ export default function Phasers() {
         }
         const avoid = armed === true && arm.holdUntil > secs;
 
-        // the pose, over their right arm — only ours, never another's e.g. a reach. Lain, stowed instead of drawn in
-        const pose = armed === false || (avoid && lain) ? null : avoid ? phaserConfig.avoid : phaserConfig.pose;
+        // the pose, over their right arm — only ours, never another's e.g. a reach
+        /** Lain, stowed instead of drawn in: unless the arm is on top, free to draw in */
+        const stowed = avoid && lain && lieAim[anim.pose]?.drawIn !== true;
+        const pose = armed === false || stowed ? null : avoid ? phaserConfig.avoid : phaserConfig.pose;
         const sat = anim.posture === "sit";
         const shown = anim.upper.target === 1 ? anim.upper.key : null;
         if (pose === null) {
-          if (isPhaserPose(shown)) anim.setUpper(null);
+          // raised still, lain, it is stowed: slowly, as from a wall
+          if (isPhaserPose(shown)) anim.setUpper(null, { fadeSecs: armed ? phaserConfig.stowSecs : undefined });
         } else if (pose !== shown && (shown === null || isPhaserPose(shown))) {
           // in before the hand goes through — and a raise from rest keeps the clip's own pace
           const swapSecs = avoid ? phaserConfig.drawInSecs : shown === null ? undefined : phaserConfig.drawOutSecs;
@@ -379,8 +383,10 @@ export default function Phasers() {
         const { beam } = arm;
         arm.armAim ??= { at: beam.at, from: muzzle, weight: 0 };
         arm.gliding = false;
-        if (armed === true && (sat === true || lain === true)) {
-          // sat or lain the arm points as it comes up, swung far from the pose, which was drawn stood
+        /** Raised, or still coming down: lowered at once, a pose drawn stood would swing the arm up */
+        const aiming = armed === true || isPhaserPose(anim.upper.key);
+        if (aiming === true && (sat === true || lain === true)) {
+          // sat or lain the arm points as it comes up or down, swung far from the pose, which was drawn stood
           const at = glideArmAt(npc, arm, armAimAt(npc, arm, on, inReach, tmpArmWant), delta);
           // drawn in, it gives way to the pose as that swaps in, and takes over again as it swaps back
           const { key, swap } = anim.upper;
@@ -391,11 +397,11 @@ export default function Phasers() {
           Object.assign(arm.armAim, { at: beam.at, weight: eased(beam.shown.presence), maxRad: undefined });
         }
         arm.armAim.head = sat === true ? 0 : undefined; // sat, their turn has the head on them already
-        if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = armed ? arm.armAim : null;
+        if (anim.upper.aim === null || anim.upper.aim === arm.armAim) anim.upper.aim = aiming ? arm.armAim : null;
         // in hand whilst they carry it and stand, raised or lowered — or still armed, having just lost it
         beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
-        // gone at once between the two halves of a teleport, and as they sit or lie, unless raised: stowed lain too
-        const seated = w.npc.npcToDoable[npc.key] != null && (armed === false || (avoid && lain));
+        // gone at once between the two halves of a teleport, and as they sit or lie, unless raised: stowed lain, it stays in hand
+        const seated = w.npc.npcToDoable[npc.key] != null && armed === false;
         if (leaving(npc) || seated) beam.gun.target = beam.gun.presence = 0;
         else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
         const locking = target !== undefined && arm.inSight === true && inReach;
@@ -715,7 +721,9 @@ const phaserConfig = {
   restRoll: Math.PI / 2,
   /** Seconds they stay drawn in at least — longer whilst something stays in reach */
   holdSecs: 0.5,
-  drawInSecs: 0.15,
+  drawInSecs: 0.3,
+  /** Seconds the arm takes to come down, stowed lain */
+  stowSecs: 0.8,
   /** Seconds back out to the aim, once clear */
   drawOutSecs: 0.2,
   /** Seconds between raycasts at most, and only once they, their target or a door has changed */

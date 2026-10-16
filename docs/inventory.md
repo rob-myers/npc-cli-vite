@@ -160,7 +160,9 @@ The arm swings from the pose, which was drawn stood, to point where they aim (`a
 - **Sat**, the head turns up to `sitTurn.maxRad` (90°) either way. The gun aims from `aimFrom` to `aimTo`, further
   on its hand's side. The torso keeps still whilst an arm aims, and the turn is kept whilst the phaser is raised.
 - **Lain**, each pose aims within its arc (`lieAim`), and they roll to the pose that reaches (`lieAimPoseFor`). The
-  head lifts towards it. `r` points the arm (`w.phasers.pointAt`) instead of rolling them.
+  head lifts towards it. `r` points the arm there (`w.phasers.pointAt`).
+- Lain with the phaser down, `r` looks the same way (`anim.lookLain`): they roll to the pose that reaches, and the
+  head lifts towards the point. It stays there once let go, until they look elsewhere or get up.
 
 ### Drawn in
 
@@ -170,12 +172,12 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 | --- | --- | --- |
 | stood | a crowd neighbour ahead (`npcAhead`) | `phaser_aim_avoid` |
 | sat | found by `armMeetsNpc`, below | `phaser_aim_avoid`, the arm's aim giving way as it swaps in |
-| lain | found by `armMeetsNpc`, below | stowed: still raised, but the arm comes down and the gun hides, until clear |
+| lain | found by `armMeetsNpc`, below | on their left side, the arm on top, `phaser_aim_avoid` as sat (`lieAim`'s `drawIn`). Else stowed: still raised, the arm comes down with the gun in hand, until clear |
 
 - Sat or lain they are off the crowd, so `armMeetsNpc` looks through their room instead (`getNpcsInReach(key, 0)`).
 - It polls every `sampleSecs` for the player and every `npcPollSecs` for anyone else, jittered.
-- Someone is in the way within `agentRadius + armWidth` of a line `reach` long, from their right shoulder
-  (`shoulderRight`) the way they aim.
+- Someone is in the way within `agentRadius + armWidth` of a line `reach` long, from their right shoulder bone
+  the way the arm points (`armBearingOf`). Lain, that shoulder is far from their middle.
 - Lain, only a current raycast counts, as a roll leaves the last one stale.
 
 ### What a hit does

@@ -49,9 +49,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
         w.r3f.invalidate(); // a held key draws nothing of itself
         if (posture === "lie") {
-          // lain, they roll over to look: armed, they point there instead
+          // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
           if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, pointerAim.at);
-          return void npc.anim.rollTo(pointerAim.at);
+          return void npc.anim.lookLain(pointerAim.at);
         }
         if (posture === "sit") {
           w.phasers?.pointAt(state.key, pointerAim.at); // armed, the arm goes with them

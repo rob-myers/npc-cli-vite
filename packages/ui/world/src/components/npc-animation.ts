@@ -91,13 +91,17 @@ export class NpcAnimation {
   stance = newStance();
   /** The head, shared by both */
   upperHead = { entry: null as null | UpperBone };
-  /** World seconds at which they last rolled over in bed — see `rollTo` */
+  /** The head's turn to where it looks, eased towards it so it glides — see `aimHead` */
+  headTurn = new THREE.Quaternion();
+  /** World seconds at which they last rolled over in bed — see `rollOnto` */
   rolledAt = -Infinity;
   /**
    * A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head.
    * `want` is the turn asked for, unclamped, and `aim` the phaser's — see `tickTurnAim`
    */
   turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0 };
+  /** Lain, a look whilst no arm aims: the head turns to `at` by `weight`, eased towards `on` — see `lookLain` */
+  lieLook = { on: false, weight: 0, at: new THREE.Vector3() };
   /** Their breathing: `amount` eases to `on`, and `phase` is in breaths — see `tickBreath` */
   breath = {
     on: false,
@@ -216,16 +220,24 @@ export class NpcAnimation {
   }
 
   /**
-   * Ease `key` in over an arm (and the head), or out with `null` — from another shown, in `swapSecs`.
+   * Ease `key` in over an arm (and the head), or out with `null`, over `fadeSecs` — from another shown, in `swapSecs`.
    * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`.
    * `past`: sat at a table (`isUnderTable`), the arm goes up and comes down by way of `sitArmVia`, past its edge.
    * `onHead`: its hand is at their head, and stays there as the head turns — see `tickTurn`
    */
   setUpper(
     key: null | AnimationClipKey,
-    { swapSecs = upperFadeSecs, side = "right" as Side, played = false, past = false, onHead = false } = {},
+    {
+      swapSecs = upperFadeSecs,
+      fadeSecs = upperFadeSecs,
+      side = "right" as Side,
+      played = false,
+      past = false,
+      onHead = false,
+    } = {},
   ) {
     const u = this.upperOf(side);
+    u.fadeSecs = fadeSecs;
     if (key !== null) Object.assign(u, { past, onHead });
     if (played === true) Object.assign(u, { time: 0, blend: 1 });
     if (key !== null && u.key !== null && key !== u.key && u.blend > 0) {
@@ -292,6 +304,7 @@ export class NpcAnimation {
         if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
       this.turn.written = false;
     }
+    this.tickLieLook(delta);
     this.tickUpper(delta);
     this.tickHeadShake(delta);
     this.tickTurn(delta);
@@ -416,17 +429,19 @@ export class NpcAnimation {
     this.tickUpperSide("left", delta);
     this.tickUpperSide("right", delta);
     const { entry } = this.upperHead;
-    if (entry === null || (l.key === null && r.key === null)) return;
+    /** Lain, their look turns the head whilst no arm aims it */
+    const look = r.aim === null && this.lieLook.weight > 0 ? this.lieLook : null;
+    const turned = this.headTurn.w !== 1; // still easing back from a look
+    if (entry === null || (l.key === null && r.key === null && look === null && turned === false)) return;
     const { bone, base, written } = entry;
     if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
     bone.quaternion.copy(base);
     for (const u of [l, r]) if (u.key !== null && u.hasHead === true) bone.quaternion.slerp(u.head, u.eased);
     for (const u of [l, r]) if (u.key !== null) bone.quaternion.premultiply(u.level);
     written.copy(bone.quaternion);
-    if (r.key !== null && r.aim !== null) {
-      const head = (r.aim.head ?? r.aim.weight) * r.eased;
-      if (head > 0) this.aimHead(r.aim, head);
-    }
+    if (r.key !== null && r.aim !== null) this.aimHead(r.aim, (r.aim.head ?? r.aim.weight) * r.eased, delta);
+    else if (look !== null) this.aimHead(look, look.weight * look.weight * (3 - 2 * look.weight), delta);
+    else this.aimHead(null, 0, delta); // back to none
     for (const u of [l, r]) {
       if (u.blend !== 0 || u.target !== 0) continue;
       u.key = null; // the pose's own again
@@ -448,20 +463,23 @@ export class NpcAnimation {
     return flat < lookFlatMin * (flat + y * y) ? this.npc.rotation.y : Math.atan2(-x, -z);
   }
 
-  /** Roll one lain to look towards `at`: onto the side it is to, or onto their back for one along their own line */
-  rollTo(at: Geom.VectJson) {
-    const from = keyOf(this.idleClip);
-    if (isLieKey(from) === false) return;
-    // one roll at a time: a fade cut short by the next jerks them
-    if (this.w.timer.getElapsedTime() - this.rolledAt < lieRoll.secs) return;
-    const { position, rotation } = this.npc;
-    /** Metres `at` is to their left */
-    const left = (at.y - position.z) * Math.sin(rotation.y) - (at.x - position.x) * Math.cos(rotation.y);
-    const towards = left > 0 ? "lie_left" : "lie_right";
-    const { side, back } = lieRoll;
-    // between the two they stay as they are, unless turned the other way
-    const kept = from === towards ? from : "lie";
-    this.rollOnto(Math.abs(left) < back ? "lie" : Math.abs(left) < side ? kept : towards);
+  /** Lain, look towards `at` as a phaser aims: rolled to the pose that reaches it, the head lifting to it, and held there */
+  lookLain(at: Geom.VectJson) {
+    if (this.posture !== "lie") return;
+    const pose = this.lieAimPoseFor(at);
+    if (pose !== null && this.isRolling() === false) this.rollOnto(pose); // a roll cut short by the next jerks them
+    this.lieLook.on = true;
+    this.lieLook.at.set(at.x, this.npc.position.y + this.headY, at.y);
+    this.w.r3f?.invalidate();
+  }
+
+  /** Eases `lieLook` in or out: out once they no longer lie */
+  tickLieLook(delta: number) {
+    const look = this.lieLook;
+    if (this.posture !== "lie") look.on = false;
+    if (look.on === false && look.weight === 0) return;
+    look.weight = THREE.MathUtils.clamp(look.weight + (look.on ? delta : -delta) / upperFadeSecs, 0, 1);
+    if (look.weight > 0 && look.weight < 1) this.w.r3f?.invalidate(); // still on its way
   }
 
   /** A roll in bed is still fading in */
@@ -673,7 +691,7 @@ export class NpcAnimation {
     const u = this.upperOf(side);
     if (u.key === null) return; // let go of: its blend is nought already
     const via = u.past === true && this.posture === "sit" && this.isUnderTable() ? sitArmVias[side] : null;
-    const fadeSecs = upperFadeSecs * (via === null ? 1 : sitArmVia.slow);
+    const fadeSecs = u.fadeSecs * (via === null ? 1 : sitArmVia.slow);
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / fadeSecs, 0, 1);
     if (this.npc.group === null) return;
 
@@ -771,11 +789,22 @@ export class NpcAnimation {
     entry.written.copy(arm.quaternion.premultiply(turn));
   }
 
-  /** Turn the head from their facing to look where the arms aim. Lain, from where it faces, so it lifts a little */
-  aimHead(aim: UpperAim, weight: number) {
+  /** Eases the head's turn towards `headGoal`'s, else back to none, and applies it */
+  aimHead(aim: null | { at: THREE.Vector3 }, weight: number, delta: number) {
     const { entry } = this.upperHead;
     const chest = entry?.bone.parent;
     if (entry === null || chest == null) return;
+    const goal = this.headGoal(aim, weight, entry, chest);
+    const { headTurn } = this;
+    headTurn.slerp(goal, 1 - Math.exp(-headTurnRate * delta));
+    if (headTurn.angleTo(goal) < 1e-3) headTurn.copy(goal);
+    else this.w.r3f?.invalidate(); // still on its way
+    entry.written.copy(entry.bone.quaternion.premultiply(headTurn));
+  }
+
+  /** The head's turn from their facing to look at `aim`, by `weight`. Lain, from where it faces, so it lifts a little */
+  headGoal(aim: null | { at: THREE.Vector3 }, weight: number, entry: UpperBone, chest: THREE.Object3D) {
+    if (aim === null || weight <= 0) return tmpHeadGoal.identity();
     chest.updateWorldMatrix(true, false);
     const lain = this.posture === "lie";
     const ry = this.npc.rotation.y;
@@ -783,9 +812,13 @@ export class NpcAnimation {
       ? tmpFrom.set(0, 0, -1).applyQuaternion(chest.getWorldQuaternion(tmpQuat).multiply(entry.bone.quaternion))
       : tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
     const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
+    const want = tmpWant.copy(aim.at).sub(neck);
+    /** On their back, how far the look heads towards their feet: what heads the other way looks straight up instead */
+    const along = this.pose === "lie" ? -want.x * Math.sin(ry) - want.z * Math.cos(ry) : 0;
+    if (along < 0) want.set(want.x + Math.sin(ry) * along, want.y - along, want.z + Math.cos(ry) * along); // never tips back
     const maxRad = lain ? lieHeadMaxRad : headAimMaxRad;
-    const turn = turnWithin(chest, from, tmpWant.copy(aim.at).sub(neck).normalize(), maxRad, weight);
-    if (turn !== null) entry.written.copy(entry.bone.quaternion.premultiply(turn));
+    const turn = turnWithin(chest, from, want.normalize(), maxRad, weight);
+    return turn === null ? tmpHeadGoal.identity() : tmpHeadGoal.copy(turn);
   }
 
   /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
@@ -1111,6 +1144,8 @@ const newUpper = () => ({
   key: null as null | AnimationClipKey,
   blend: 0,
   target: 0,
+  /** Seconds it eases in or out over, as `setUpper` last said */
+  fadeSecs: upperFadeSecs,
   /** Seconds into its clip */
   time: 0,
   /** Sat at a table, it goes up and down by way of `sitArmVia` */
@@ -1140,6 +1175,9 @@ const lookFlatMin = 0.25;
 const upperAimMaxRad = Math.PI / 5;
 /** …and the most it turns the head off their facing */
 const headAimMaxRad = Math.PI / 4;
+/** How fast the head's turn eases to where it should look, per second */
+const headTurnRate = 10;
+const tmpHeadGoal = new THREE.Quaternion();
 const tmpQuat = new THREE.Quaternion();
 const tmpSwap = new THREE.Quaternion();
 const tmpLean = new THREE.Quaternion();
