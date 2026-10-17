@@ -68,6 +68,7 @@ Its pain clip plays once, then (`hitConfig.next`):
 | body sat or lain, or a limb | back to rest: `breathe`, `sit` or `lie` |
 
 - A head shot's clip ends slumped, so goes straight on. `pain_high` fades into `collapsed` over `pacifyFadeSecs`.
+- Collapsed, the right forearm lies across the lap, so a gun in hand stays clear of others' feet.
 - Pacified or collapsed lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
 - Whilst hurt (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`), their phaser is
   lowered, and `move`, `look` and arming are refused.

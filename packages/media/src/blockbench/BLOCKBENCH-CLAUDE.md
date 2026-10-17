@@ -194,7 +194,7 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `sit_reach` | 2.5s | reaching from a seat, past a table's edge | solved |
 | `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
 | `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
-| `collapsed` | 1.2s | after a body shot stood: on the floor, breathing hard | posed by search |
+| `collapsed` | 1.8s | after a body shot stood: on the floor, breathing hard | posed by search |
 | `dodge_*`, `{sit,lie}_dodge` | 0.8s | a shot dodged, once | posed |
 
 ### walk / run: planted feet
@@ -382,13 +382,13 @@ Drafts, posed by search: legs solved so the feet stay planted, hands solved onto
   1.0, ending on `pacified`'s first key.
 - **`pacified`** (3s loop): slack, the head lolled, the arms dead, a slow sway of `hips` z.
 
-### collapsed (catmullrom at 0 / 0.6 / 1.2)
+### collapsed (catmullrom at 0 / 0.9 / 1.8)
 
 After a body shot stood (`pain_high`): sat on the floor, knees drawn up, forearms over the knees, slumped, breathing
-hard. The root drops to seat the pelvis's underside on the floor (`skeleton-root` position [0,-10.81,1], rotation
+hard but slowly: at 1.2s a breath it distracted. The root drops to seat the pelvis's underside on the floor (`skeleton-root` position [0,-10.81,1], rotation
 0). The legs were searched so the lowest of shin and foot sits on the floor with the foot level.
 
-| Bone | channel | t=0 / t=1.2 (out) | t=0.6 (in) |
+| Bone | channel | t=0 / t=1.8 (out) | t=0.9 (in) |
 |------|---------|-------------------|------------|
 | hips | rotation | [6,0,0] | same |
 | stomach | rotation / position y | [-14,0,2] / -0.15 | [-9,0,2] / 0.1 |
