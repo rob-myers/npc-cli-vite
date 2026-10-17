@@ -372,7 +372,7 @@ export default function Phasers() {
           armEnds(npc, arm).some((end) => w.shields?.reaches(npc.point, end, w.shields.freqsOf(npc.key)) === true);
         if (shielded && arm.shielded === false && npc.key === w.player.key) w.hud?.say("phaser suppressed");
         arm.shielded = shielded;
-        // polled through their room: the crowd's neighbours stop short of the gun
+        // polled through their room, and past a door they are near: the crowd's neighbours stop short of the gun
         const pollSecs = npc.key === w.player.key ? phaserConfig.sampleSecs : phaserConfig.npcPollSecs;
         if (armed === true && secs - arm.npcPolledSecs >= pollSecs) {
           arm.npcHit = armMeetsNpc(w, npc, arm, secs);
@@ -733,7 +733,15 @@ function armMeetsNpc(w: import("./World").State, npc: Npc, arm: ArmEntry, secs: 
   const far = 1.5 * reach + npcDims.agentRadius + 2 * armWidth;
   /** The player gives way to no npc's arm */
   const player = npc.key === w.player.key;
-  return w.e.getNpcsInReach(npc.key, 0).some((other) => {
+  /** Those near a door they are near, either side: the arm may reach through it */
+  const atDoors = [...(w.e.npcToDoors[npc.key]?.nearby ?? [])].flatMap((gdKey) => [
+    ...(w.e.doorToNpcs[gdKey]?.nearby ?? []),
+  ]);
+  const others = [
+    ...w.e.getNpcsInReach(npc.key, 0),
+    ...atDoors.flatMap((key) => (key === npc.key ? [] : (w.n[key] ?? []))),
+  ];
+  return others.some((other) => {
     const p = other.position;
     if (Math.abs(p.x - mx) > far || Math.abs(p.z - mz) > far) return false;
     const body = (other.anim.posture === "stand" ? bodyRadius : npcDims.agentRadius) + armWidth;
