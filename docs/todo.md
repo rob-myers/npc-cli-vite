@@ -14,16 +14,33 @@
 - ✅ hold e to raise and aim i.e. remove `r` key
 
 - ✅ successful shots always pacify
-- 🚧 shots can be unsuccessful
-  - 🚧 repro target barely protruding
-  - 🚧 repro target is running
+- ❌ shots can be unsuccessful
+  - ❌ repro target barely protruding
+  - ❌ repro target is running
   - simplify
 
-- support shoot while sit or lie
+- ✅  support shoot while sit or lie
+  - ✅ sit
+  - ✅  lie
+
+- ✅ three eventualities related to npc focus and firing on limbs
+  - missed (player)
+  - dodged (target)
+  - shielded (target) maybe needs effect
+
+- ✅ standing aiming npc should avoid sitting non-aiming npc
+
+- why does npc focus need `inventory`?
+
+- psi + click npc targets too
+  - can "become" and issue commands
+  - can target without line of sight
+  - play "crossing" animation: generalized from only sit/lie
 
 - refine psi breathing
   - do lungs/diaphragm actually move like that?
-- socialNorms
+
+- ✅ sidestep (command executed in PROFILE)
 
 - ✅ "mcp testing" up until Claude's turn ends — see `docs/mcp.md`
 
@@ -46,8 +63,6 @@
 
 ### Cleanliness
 
-- @packages/app/src/dev-mcp-hooks.ts#249 btw this seems like a rather coarse approach?
-
 - w.npc.npcToRoom -> w.npc.toRoom etc
 
 - fix precision in `assets.json`
@@ -61,7 +76,7 @@
 
 - NpcAnimation has too many properties
 
-- clean up unused parts of WorldMenu theme (textarea)
+- ❌ clean up unused parts of WorldMenu theme (textarea)
 
 ### Decor
 
@@ -119,6 +134,14 @@
 ## Audio
 
 ## Blockbench
+
+- dev scripts for `current.gltf`
+  - (a) watch it, and refetch the browser's `skins-and-gltf` query on change (as `__devMcp.refetch` does)
+  - (b) run gltf-transform on it to write a smaller `current.glb`: binary, `resample`, `prune`, `dedup`, maybe meshopt
+    - measured: 857KB raw, 175KB gzipped; half of that is base64 and per-accessor JSON, and resampling keeps ~1/3 of the keys
+    - after `gen-clip-keys`, which writes into the gltf
+  - prod loads the glb; dev can load either, to test the glb
+  - pre-commit hook runs (b) too, if quick enough
 
 ## Blog
 
