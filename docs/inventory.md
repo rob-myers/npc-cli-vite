@@ -164,8 +164,8 @@ Two crouches, behind cover such as a sofa: `crouch_half`, the head 1.32m up, and
 `anim.crouched`) until they stand or another clip is posed. On the move they stay crouched, in that crouch's gaits
 (`docs/npc-strafe.md`).
 
-- The player's `c`: a tap crouches half from standing, stands from half, and goes to half from full. A double tap
-  (`crouchDoubleTapMs`) is always a full crouch.
+- The player's `c`: held, a full crouch, once the key repeats (as `f`'s long press). A tap, on release, crouches half
+  from standing, stands from half, and comes up to half from full.
 - jsh: `pose rob as:crouch_half`, `pose rob as:crouch_cover`, `pose rob as:breathe`.
 
 - Raised, they stay crouched. `Phasers` skips its stance, and `phaser_aim` / `phaser_aim_avoid` play over the head and

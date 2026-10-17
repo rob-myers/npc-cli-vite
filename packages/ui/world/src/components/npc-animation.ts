@@ -369,6 +369,7 @@ export class NpcAnimation {
     this.tickHeadShake(delta);
     this.tickTurn(delta);
     this.tickAimArm();
+    this.npc.easeLabel(delta);
     this.tickHurt(delta);
     this.tickBreath(delta);
     if (this.eyes.busy === true) this.tickEyes(delta);
