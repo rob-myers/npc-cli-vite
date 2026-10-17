@@ -105,11 +105,11 @@
     {
       "id": "dee273c6-f24c-430d-928d-14ce6c21faaf",
       "name": "doors",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "1a7a89c8-b14d-45e5-b2f7-258da1809027",
@@ -137,28 +137,28 @@
         {
           "id": "121e5dd3-ef4c-4bc7-a606-841a8358152e",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 54},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 118, "f": 2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, -1, 0, 118, 54)"
+          "cssTransform": "matrix(0, 1, -1, 0, 118, 2)"
         },
         {
           "id": "b2745130-9392-4134-b03b-ee5c7b412b58",
           "name": "decor quad key=switch",
-          "locked": false,
+          "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 54},
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 122, "f": 2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0, 1, 1, 0, 122, 54)"
+          "cssTransform": "matrix(0, 1, 1, 0, 122, 2)"
         }
       ]
     }

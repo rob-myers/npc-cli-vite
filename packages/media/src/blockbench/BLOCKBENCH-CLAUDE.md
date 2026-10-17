@@ -179,10 +179,10 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `sit` | `knee` |
 | `sit_reach` | `leg hold`, frames |
 | `crouch` | `down back lean reach` |
-| `crouch_cover` | `down back lean` |
-| `crouch_walk` | `down back lean stride duty lift sway bob swing` |
-| `crouch_strafe_right` | `down back lean stride duty lift bob wide` |
-| `crouch_backwards`, `crouch_strafe_left` | none: `crouch_walk` reversed, `crouch_strafe_right` mirrored |
+| `crouch_cover`, `crouch_half` (`crouchStill`) | `down back lean splay toeOut breathe rise bob armX armZ foreX foreZ` |
+| `crouch_walk`, `crouch_half_walk` (`crouchWalk`) | `down back lean splay toeOut stride duty lift sway bob swing` |
+| `crouch_strafe_right`, `crouch_half_strafe_right` (`crouchStrafeRight`) | `down back lean splay toeOut stride duty lift bob` |
+| `crouch_backwards`, `crouch_strafe_left`, and the half crouch's | none: the walk reversed (`reversedOf`), the strafe mirrored (`mirroredOf`) |
 | `phaser_aim` | `rock drop sink lean breathe`; also keys `phaser_aim_avoid` |
 
 - A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in
@@ -203,6 +203,7 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `drop`, `pick_up`, `crouch` (`_left`) | 2.5s | putting down, taking up | posed; `crouch` solved |
 | `crouch_cover` | 2.5s | a still squat behind cover | `crouch`'s legs, arms searched |
 | `crouch_walk`, `crouch_strafe_right` (`_left`), `crouch_backwards` | 1s | crouched gaits | solved |
+| `crouch_half`, and its `_walk`, `_strafe_right` (`_left`), `_backwards` | 2.5s / 1s | the half crouch | solved |
 | `sit_reach` | 2.5s | reaching from a seat, past a table's edge | solved |
 | `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
 | `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
@@ -355,8 +356,8 @@ small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` 
   8.5 down and 3 back, the legs solved to them. The torso leans 60 (stomach and chest -30 each, head 40). The right
   arm hangs 22 forward of plumb, so the hand touches the floor ahead; the left rests on the knee. Recipe `crouch`.
 - **`crouch_cover`** (jsh `pose rob as:crouch_cover`): a still squat behind cover, e.g. a sofa, kept as the rest
-  clip. `crouch`'s legs (root 8.5 down and 3 back), a lean of 35 (stomach and chest -17.5 each), the head level (35).
-  The elbows rest on the knees, searched: arms [35,0,∓10], forearms [70,0,∓30], right then left. The head's top is
+  clip. `crouch`'s legs (root 8.5 down and 3 back), a lean of 40 (stomach and chest -20 each), the head level (40).
+  The elbows rest on the knees, searched: see *Splayed* below. The head's top is
   at y 21.1, 1.05m. Armed, `phaser_aim`'s arms play over it, raised 33 for the lean: the forearm is level at y 13.4.
   Recipe `crouch_cover`.
 - **`crouch_walk`** / **`crouch_strafe_right`**: `crouch_cover`'s hips and lean, stepping flat-footed. Each foot is
@@ -364,6 +365,21 @@ small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` 
   (0.4m), the left foot landing at 0, the hips swaying 0.4 over the planted foot, the arms hanging forward and
   swinging 8. Sideways, 5 a cycle (0.25m), the right foot leading, the feet set 0.75 wider so they never meet. The
   hips bob 0.3 twice a cycle. `crouch_backwards` is `crouch_walk` reversed, `crouch_strafe_left` the right one mirrored.
+- **Splayed**: every crouch clip sets its feet `splay` out either side (1.5 full, 1 half) and turns its toes out
+  `toeOut` (20, 15). The legs are solved in 3D (`splayedLegs`, `steppingLegs`), so the thighs turn the knees out to the
+  wider feet. Its gaits share the stance, so moving off does not shift the feet. Mid-swing the knees turn further out
+  (to 33 full, 43 half), the step of a duck walk.
+- **Breathing**: both still crouches breathe over their 2.5s. Breathing in, the torso straightens `breathe` (3), the
+  chest rises `rise` (0.15) and the hips `bob` (0.15), the legs re-solved so the feet stay put. The head stays level,
+  and each arm keeps its pitch in the world, so the elbows and hands stay where they rest.
+- **`crouch_cover`** leans 40: arms [40,0,±10], forearms [70,0,∓40], elbows on the knees.
+- **`crouch_half`** and its gaits: the same recipes, less low. Hips 4 down and 1.5 back, a lean of 32, the head's top
+  about 1.30m. Its arms were searched so the hands rest on the knees: arms [-5,0,±12], forearms [70,0,∓50]. The gaits
+  stride 8 ahead (0.4m: at 10, splayed, a trailing leg could not reach its foot) and 6 sideways (0.3m), lifting 2
+  (1.5 sideways). The walk sways only 0.1: the less folded leg turns far more to keep a swinging foot on its line, and
+  at 0.4 its knee wobbled 18°.
+- `steppingLegs` sets each frame out from the last frame's solution, and moves at most `maxStep` a Newton step. From a
+  fixed guess the half crouch's legs jumped to another branch, a thigh turned 2358°.
 - **`drop_left` / `pick_up_left` / `crouch_left`**: mirrors for the other hand. Left and right bones swapped,
   rotation y and z and position x negated. Re-mirror after changing the originals.
 

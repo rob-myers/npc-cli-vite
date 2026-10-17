@@ -58,6 +58,8 @@ export class Npc {
   /** The shift their pose asks of their label, and the least world height it hangs at — see `setLabelYShift` */
   labelShift: undefined | number;
   labelFloor: null | number = null;
+  /** Their label's move to a new shift, `t` from `0` to `1`, whilst under way — see `easeLabel` */
+  labelMove: null | { from: number; to: number; t: number } = null;
   /** `1` whilst they are lit up — see `setNpcLit` and the `lit` getter */
   npcLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
@@ -536,8 +538,27 @@ export class Npc {
 
   setLabelYShift(shift: number) {
     // no lower than its floor, e.g. above a top bunk over them
-    this.labelYShiftUniform.value = Math.max(shift, ((this.labelFloor ?? -Infinity) - this.position.y) / npcScale);
+    const target = Math.max(shift, ((this.labelFloor ?? -Infinity) - this.position.y) / npcScale);
+    const u = this.labelYShiftUniform;
+    const first = this.labelShift === undefined;
     this.labelShift = shift;
+    if (first || this.colorScale.value === 0) {
+      // at once their first time, or whilst faded out: nobody sees it move
+      u.value = target;
+      this.labelMove = null;
+    } else if (target !== (this.labelMove?.to ?? u.value)) {
+      this.labelMove = { from: u.value, to: target, t: 0 }; // most poses keep the height: no move
+    }
+  }
+
+  /** Moves their label on along `labelMove`, at a steady speed, e.g. as they crouch. Nothing once it is there */
+  easeLabel(delta: number) {
+    const move = this.labelMove;
+    if (move == null) return; // `undefined` on an npc made before a hot reload
+    move.t = Math.min(1, move.t + delta / labelMoveSecs);
+    this.labelYShiftUniform.value = move.from + (move.to - move.from) * move.t;
+    if (move.t === 1) this.labelMove = null;
+    this.w.r3f?.invalidate(); // still on its way: the frameloop is on demand
   }
 
   /** The least world height their label hangs at, else `null` — see `w.npc.liftBunkLabels` */
@@ -591,3 +612,6 @@ const npcCannotLookForClip: Record<string, string | undefined> = {
 };
 
 export function rejectNoop(_e: Error): void {}
+
+/** Seconds their label takes to move to a new height */
+const labelMoveSecs = 0.3;

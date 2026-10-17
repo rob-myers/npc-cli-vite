@@ -158,6 +158,7 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierHold: false,
       keysDown: new Set(),
       lastKeyMs: 0,
+      crouchHeld: false,
       compassDial: saved.compassDial ?? true,
       compassPoint: 0,
       compassSkew: 0,
@@ -936,8 +937,13 @@ export function WorldView(props: React.PropsWithChildren) {
         } else if (e.key === "0") {
           if (e.repeat === false) state.toggleViewPick();
         } else if (key === "c") {
-          const anim = w.player.key === null ? undefined : w.n?.[w.player.key]?.anim;
-          if (e.repeat === false) anim?.setCrouched(!anim.crouched);
+          // held, as `f`: its repeat is the hold, a full crouch. A tap waits for the release
+          if (e.repeat === false) {
+            state.crouchHeld = false;
+          } else if (state.crouchHeld === false) {
+            state.crouchHeld = true;
+            w.n?.[w.player.key ?? ""]?.anim.setCrouch(2);
+          }
         } else if (key === "f") {
           // the look button's gesture on a key: a held key REPEATS, which is the long press — no
           // timer of our own, and a tap never gets there. The short press waits for the release,
@@ -957,6 +963,10 @@ export function WorldView(props: React.PropsWithChildren) {
         if (isTypingTarget(e)) return;
         if (key === "f" && state.cHeld === false) {
           state.onLookGesture(false);
+        } else if (key === "c" && state.crouchHeld === false) {
+          // a tap crouches half from standing, stands from half, and comes up to half from full
+          const anim = w.n?.[w.player.key ?? ""]?.anim;
+          anim?.setCrouch(anim.crouchLevel === 1 ? 0 : 1);
         }
       },
       onPointerDown(e) {
@@ -1880,6 +1890,8 @@ export type State = {
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
   lastKeyMs: number;
+  /** Whether `c` has been held long enough for a full crouch */
+  crouchHeld: boolean;
   /** Whether `wasd` heads along the world's axes, the view kept clear of the diagonals. Its `WorldHud` button toggles it */
   compassDial: boolean;
   /** The compass point nearest up the screen, where `w` heads: `0` north (-z), then west, south, east */
