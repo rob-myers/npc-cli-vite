@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. A shot needs no raising first: see [Npc focus](#npc-focus) |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. A shot needs no raising first: see npc focus in `docs/engagements.md` |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
@@ -153,16 +153,34 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
 - The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`), whilst the gun stays in hand.
 
-### Aiming sat or lain
+### Aiming and looking, sat or lain
 
-The arm swings from the pose, which was drawn stood, to point where they aim (`armAimAt`, eased by `glideArmAt`).
+The arm swings from the pose, which was drawn stood, to point where they aim (`armAimAt`). It eases onto each new
+point (`glideArmAt`), and keeps its aim whilst coming down, so a pose drawn stood never swings it up. The head's
+turn eases too (`headTurn`), so it glides.
 
-- **Sat**, the head turns up to `sitTurn.maxRad` (90°) either way. The gun aims from `aimFrom` to `aimTo`, further
-  on its hand's side. The torso keeps still whilst an arm aims, and the turn is kept whilst the phaser is raised.
-- **Lain**, each pose aims within its arc (`lieAim`), and they roll to the pose that reaches (`lieAimPoseFor`). The
-  head lifts towards it. `r` points the arm there (`w.phasers.pointAt`).
-- Lain with the phaser down, `r` looks the same way (`anim.lookLain`): they roll to the pose that reaches, and the
-  head lifts towards the point. It stays there once let go, until they look elsewhere or get up.
+**Sat** (`sitTurn` in `const.npc`):
+
+- A look turns the head up to `maxRad` (90°) either way. It is kept once let go, until they stand.
+- The gun aims from `aimFrom` to `aimTo`, 120° either way. Pointed somewhere it cannot reach, it goes to the limit
+  nearer that point, always round the front (`turn.aim`, eased by `tickTurnAim`).
+- Whilst an arm aims, the torso keeps still, so it never turns into the gun. Past `aimTorsoFrom` (45°) to their left
+  it turns with the gun instead, so the right arm never crosses their chest. The head turns on top of it, but no more
+  than 90° on the neck.
+
+**Lain** (`lieAim` in `const.npc`, radians off their facing, which is towards their feet):
+
+| pose | aims | head |
+| --- | --- | --- |
+| `lie`, on their back | -45° to 0°: never to their left, where the arm would lie across them | lifts, never tips back |
+| `lie_left` | 20° to 120° | turns |
+| `lie_right` | -120° to -20° | turns |
+
+- They roll to the pose that reaches (`lieAimPoseFor`), at most once per `lieRoll.secs`.
+- The head lifts or turns towards the point, up to `lieHeadMaxRad` (30°). On their back, a look beyond the head
+  end looks straight up instead.
+- `r` points the arm there (`w.phasers.pointAt`). With the phaser down, `r` looks the same way (`anim.lookLain`),
+  and the look stays once let go, until they look elsewhere or get up.
 
 ### Drawn in
 
@@ -170,66 +188,26 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 
 | | someone in the way | drawn in is |
 | --- | --- | --- |
-| stood | a crowd neighbour ahead (`npcAhead`) | `phaser_aim_avoid` |
+| stood | found by `armMeetsNpc`, below | `phaser_aim_avoid`, over `drawInSecs` |
 | sat | found by `armMeetsNpc`, below | `phaser_aim_avoid`, the arm's aim giving way as it swaps in |
-| lain | found by `armMeetsNpc`, below | on their left side, the arm on top, `phaser_aim_avoid` as sat (`lieAim`'s `drawIn`). Else stowed: still raised, the arm comes down with the gun in hand, until clear |
+| lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
+| lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
 
-- Sat or lain they are off the crowd, so `armMeetsNpc` looks through their room instead (`getNpcsInReach(key, 0)`).
+- `armMeetsNpc` looks through their room (`getNpcsInReach(key, 0)`), not the crowd's neighbours: those reach only
+  `collisionQueryRange` (0.7m), short of the gun's tip.
 - It polls every `sampleSecs` for the player and every `npcPollSecs` for anyone else, jittered.
-- Someone is in the way within `agentRadius + armWidth` of a line `reach` long, from their right shoulder bone
-  the way the arm points (`armBearingOf`). Lain, that shoulder is far from their middle.
+- What can meet someone is their gun at full aim (`gunLine`). Stood, it is a fixed segment in their aim's frame
+  (`phaserConfig.gun`, measured off `phaser_aim`): from the elbow to the muzzle, beside their right shoulder. Sat or
+  lain, it is a line `reach` long from their right shoulder bone, the way the arm points (`armBearingOf`).
+- A body is in the way within `bodyRadius + armWidth` of it, or `agentRadius + armWidth` for one sat or lain.
+- An arm is in the way when the two guns come within `2 * armWidth` (`segsApart`), but only an arm up now, not
+  drawn in. So of two that would meet, whoever raised first keeps it and only the other draws in.
+- The player gives way to no npc's arm, only to bodies.
 - Lain, only a current raycast counts, as a roll leaves the last one stale.
 
-### What a hit does
+### Shots, hits and choosing a part
 
-As a beam locks on, and no shield stops it, `w.npc.hit` plays a clip on its target. The clip depends on the part
-locked on to, and on whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-hit`.
-
-| part | stood | sat / lain |
-| --- | --- | --- |
-| head | `pain_head` | `{sit,lie}_pain_head` |
-| chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
-| an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
-
-- Every hit pacifies. Its pain clip plays once, then `pacified` (or `{sit,lie}_pacified`) loops.
-- A head shot's clip ends slumped, so goes straight on. Any other ends stood, so fades into it over `pacifyFadeSecs`.
-- Pacified lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
-- Whilst in pain or pacified (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`),
-  their phaser is lowered, and `move`, `look` and arming are refused.
-- Pain on someone pacified leaves them pacified after. A head shot on them has no effect, nor does the label, or no part.
-- One lock hits once. Hits are not mirrored over the network.
-
-### Npc focus
-
-Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`), as does jsh `focus target-0`:
-
-1. `aimAt` turns the player to them, raising the phaser on the way (at most `turnMaxMs`).
-2. It waits for the phaser to come up clear as they now stand, by a cast made there (`w.phasers.isClear`, at most
-   `raiseMaxMs`).
-3. Drawn in there (`phaser_aim_avoid`), or out of sight (a raycast is blocked), it ends with the phaser left raised.
-4. Otherwise the World pauses and the view zooms in. A mark is pinned over their head, body, arms and legs, placed
-   from their bones each frame.
-5. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or
-   the note at the top, shoots nothing.
-6. The World resumes, unless it was paused before. The view stays where it is.
-
-Whilst it runs:
-
-- `cancel` ends it as Escape does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
-- Only the marks take the pointer, so the camera still moves.
-- The paused indicator is hidden whilst it aims and in the pause it opens in (`showsPaused`). Once resumed, a pause shows it.
-- A follow runs on whilst they aim, is set aside for the zoom, and resumes after.
-- The player's moves are refused whilst it aims and in the pause it opens in (`w.e.move` throws `focused`), held
-  keys included, as a move would undo the turn. Once resumed they move again.
-
-Resumed with the marks up (Enter, or play):
-
-- Escape only pauses the World, as ever. It ends the focus only in the pause it opened in (`resumed`).
-- The marks fade out whilst the player faces more than `maxOffAimRad` (15°) away (`offAim`), and back in as they
-  face them again.
-- Lowering the phaser, e.g. by `e`, ends it as Escape does (`isLost`).
-
-After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it was raised before the click, e.g. by `e`.
+How a shot ends, what a hit does, and the player's choice of part to shoot (npc focus) are in `docs/engagements.md`.
 
 ## The `inventory` command
 
@@ -239,7 +217,7 @@ After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it 
   beside its table. They take it if then within `inventoryConfig.reach`: tight for one on the floor, looser for one
   whose top (`y3d`) is higher. Sat or lain in reach, they take it from there. A newer press abandons it.
 - **On another npc**, with psi on, their thought is read (`docs/psi.md`). Else, carrying a phaser, it focuses on
-  them (see [Npc focus](#npc-focus)).
+  them (see npc focus in `docs/engagements.md`).
 - **On the player's own right arm**, a raised phaser is lowered, its target forgotten. A press elsewhere on them does
   nothing.
 - **On the player's own LEFT arm**, psi is lowered, phaser drawn or not.

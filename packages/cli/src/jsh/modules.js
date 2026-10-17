@@ -9,6 +9,8 @@ export * as decor from "./world/decor.ts";
 export * as demo from "./world/demo.ts";
 export * as demo_mcp from "./world/demo_mcp.ts";
 export * as pred from "./world/pred.ts";
+export * as shots from "./world/shots.ts";
+export * as sidestep from "./world/sidestep.ts";
 
 import { pausablePtag } from "../shell/pause-group";
 

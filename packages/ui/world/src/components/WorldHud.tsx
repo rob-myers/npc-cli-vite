@@ -241,7 +241,26 @@ export default function WorldHud() {
               // dropped without drawing it first
               menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
             },
-            <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />,
+            <>
+              <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
+              {w.debug?.hudDebug === true && (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  title="debug: how every shot ends"
+                  className="absolute bottom-0.5 left-0.5 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const at = shotCycle.indexOf(w.debug.forceShot);
+                    w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
+                    state.update();
+                    w.view.focus();
+                  }}
+                >
+                  {w.debug.forceShot ?? "auto"}
+                </button>
+              )}
+            </>,
           )}
           {slot(
             2,
@@ -698,6 +717,9 @@ const lookingAtFadeMs = 400;
 const noticeMs = 1500;
 
 type SlotMenuItem = { label: string; run(): void };
+
+/** What the debug badge cycles through: `null` leaves it to jsh */
+const shotCycle: (null | JshCli.ShotOutcome)[] = [null, "hit", "missed", "dodged", "shielded"];
 
 type SlotOpts = {
   title: string;

@@ -49,7 +49,8 @@ export const ops: {
       const doors = (map.roomDoors[npc.grKey ?? ""] ?? []).flatMap((gdKey) => map.doorFrames[gdKey] ?? []);
       const parked = [...standing.values()].filter((o) => o.grKey === npc.grKey);
       const segs = queryBoundary(npc, navMesh).map(({ s }) => s);
-      const walls = segs.flatMap((s) => prepareWall(s, segs, doors, parked) ?? []);
+      const corners = cornersOf(segs);
+      const walls = segs.flatMap((s) => prepareWall(s, corners, doors, parked) ?? []);
       if (walls.length === 0) {
         plans.set(npc.key, null);
         continue;
@@ -246,7 +247,7 @@ type RoomResult = { plans: Map<string, WW.ParkPlan>; failed: Cand[] };
 
 function prepareWall(
   s: number[],
-  segs: number[][],
+  corners: Geom.VectJson[],
   doors: WW.DoorFrame[],
   parked: { point: Geom.VectJson; seg: number[] }[],
 ) {
@@ -255,8 +256,10 @@ function prepareWall(
   if (len === 0) return null;
   const wall: Wall = { s, a, d: { x: (s[3] - a.x) / len, y: (s[5] - a.y) / len }, len, base: [], cut: [] };
   // a corner is stood clear of, either side: wedged into one is as bad as stuck out past one
-  if (isCorner(s, segs, 0)) wall.base.push([-parkSlack, parkCornerClearance]);
-  if (isCorner(s, segs, 3)) wall.base.push([len - parkCornerClearance, len + parkSlack]);
+  for (const c of corners) {
+    const span = cornerSpan(wall, c);
+    if (span !== null) wall.base.push(span);
+  }
   for (const door of doors) {
     const span = doorwayInterval(a, wall.d, door);
     if (span !== null) wall.base.push(span);
@@ -267,6 +270,23 @@ function prepareWall(
   }
   wall.cut = wall.base.slice();
   return wall;
+}
+
+/** Each point where the boundary bends `parkCornerDegrees` or more. It runs head to tail, so each starts one segment */
+function cornersOf(segs: number[][]) {
+  return segs.filter((s) => isCorner(s, segs, 0)).map((s) => ({ x: s[0], y: s[2] }));
+}
+
+/**
+ * Where along `wall` lies within `parkCornerClearance` of the corner `c`, else `null`.
+ * Measured straight from it, as a chamfer leaves the bend off the end of the wall beside it
+ */
+function cornerSpan(wall: Wall, c: Geom.VectJson): null | Span {
+  const t = along(wall, c);
+  const off = Math.abs((c.x - wall.a.x) * wall.d.y - (c.y - wall.a.y) * wall.d.x);
+  if (off >= parkCornerClearance) return null;
+  const half = Math.sqrt(parkCornerClearance ** 2 - off ** 2);
+  return t + half < 0 || t - half > wall.len ? null : [t - half, t + half];
 }
 
 /**
@@ -523,12 +543,12 @@ const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 const parkNpcClearance = 6.5 * agentRadius;
 /** …and from those parked along the same wall: a body's width, and a little */
 const parkNpcBesideClearance = 4 * agentRadius;
-/** A boundary bend of this or more is a corner, kept clear of — see `cornerSpans` */
+/** A boundary bend of this or more is a corner, kept clear of — see `isCorner` */
 const parkCornerDegrees = 30;
 /** That bend as a dot product of the two ways out of the corner: straight on is `-1` */
 const parkCornerDot = -Math.cos((parkCornerDegrees * Math.PI) / 180);
-/** How far a parked npc keeps from a corner, along the wall */
-const parkCornerClearance = 2 * agentRadius;
+/** How far a parked npc keeps from a corner: room for one rounding it to step out past them */
+const parkCornerClearance = 3 * agentRadius;
 /** Two boundary segments this close share their endpoint */
 const parkCornerEps = 1e-4;
 /** Npcs further apart than this cannot contend: each parks within range, and cuts no further */

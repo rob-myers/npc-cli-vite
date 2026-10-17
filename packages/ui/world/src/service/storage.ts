@@ -60,6 +60,8 @@ export type WorldSettings = {
   decorShown: boolean;
   /** Whether an npc's contextmenu opens their bubble — see `Debug`'s `npcContextMenu` */
   npcContextMenu: boolean;
+  /** Whether the player's bar shows debug controls, e.g. forcing a shot's outcome — see `Debug`'s `hudDebug` */
+  hudDebug: boolean;
   /** What the player's bubble set of their breathing, over its defaults */
   breathTune: Partial<import("../const.npc").BreathTune>;
   gmGraphsFilter: "gm" | "room";
@@ -99,6 +101,7 @@ const defaultWorldSettings: WorldSettings = {
   pickDoors: false,
   decorShown: false,
   npcContextMenu: true,
+  hudDebug: false,
   breathTune: {},
   gmGraphsFilter: "room",
   menuY: 40,

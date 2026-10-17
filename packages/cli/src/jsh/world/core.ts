@@ -3,7 +3,7 @@ import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
-import { awaitPausable, isPaused, npcQuery, plan, request } from "./plan.main";
+import { awaitPausable, isPaused, npcQuery, parkedNow, plan, request, roomOthers } from "./plan.main";
 import { padded, parked } from "./pred";
 
 /**
@@ -851,19 +851,6 @@ export async function pad(
   // ignore non-existent npcKey including e.g. npc:foo
   const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
 
-  // everyone stood in the rooms we are padding — a spot on top of any of them is no spot at all.
-  // Keyed, so a room shared by two of them is only sent once; the worker drops those being padded
-  const others = new Map(
-    npcs.flatMap((npc) => {
-      const at = w.npc.npcToRoom.get(npc.key);
-      if (at === undefined) return [];
-      return [...(w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
-        const point = w.n[key]?.point;
-        return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
-      });
-    }),
-  );
-
   await awaitPausable(api, async (signal) => {
     const plans = await request(
       w,
@@ -871,7 +858,7 @@ export async function pad(
       {
         key: "pad",
         npcs: npcs.map((npc) => npcQuery(w, npc)),
-        others: [...others.values()],
+        others: roomOthers(w, npcs),
         by: opts.by ?? standConfig.padClearance,
       },
       signal,
@@ -924,12 +911,7 @@ export async function park(
       {
         key: "park",
         npcs: npcs.map((npc) => npcQuery(w, npc)),
-        // everyone parked, wherever: a handful, and the worker keeps to the rooms involved
-        parked: [...parked.get()].flatMap(([key, seg]) => {
-          const grKey = w.npc.npcToRoom.get(key)?.grKey;
-          const point = w.n[key]?.point; // persisted: they may not be here this time
-          return grKey === undefined || point === undefined ? [] : [{ key, point, grKey, seg }];
-        }),
+        parked: parkedNow(w),
       },
       signal,
     );
@@ -945,7 +927,8 @@ export async function park(
           const plan = plans[i];
           if (plan === null) return;
           const { at, facing, seg } = plan;
-          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > standConfig.parkMinMove) {
+          // hurt, they cannot look: a respawn turns them, and keeps the hurt clip
+          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > standConfig.parkMinMove || npc.anim.hurt !== null) {
             await npc.fadeSpawn({ at, facing });
           } else {
             await npc.look({ at: facing });

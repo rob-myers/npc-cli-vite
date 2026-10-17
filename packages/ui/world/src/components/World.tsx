@@ -40,7 +40,6 @@ import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
-import NpcFocus from "./NpcFocus";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
@@ -50,8 +49,10 @@ import Labels from "./Labels";
 import NavWorker from "./NavWorker";
 import NPCs from "./NPCs";
 import NpcBreath from "./NpcBreath";
+import NpcFocus from "./NpcFocus";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
+import NpcShields from "./NpcShields";
 import Obstacles from "./Obstacles";
 import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
@@ -185,6 +186,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       labels: null as any,
       rings: null as any,
       breaths: null as any,
+      npcShields: null as any,
       spirit: null as any,
       phasers: null as any,
       npcFocus: null as any,
@@ -531,6 +533,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
                 <NpcRings key="npc-rings" />
                 <NpcShadows key="npc-shadows" />
                 <NpcBreath key="npc-breath" />
+                <NpcShields key="npc-shields" />
                 <Phasers key="phasers" />
                 <Spirit key="spirit" />
               </>
@@ -635,6 +638,7 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   breaths: UseStateRef<import("./NpcBreath").State>;
+  npcShields: UseStateRef<import("./NpcShields").State>;
   spirit: UseStateRef<import("./Spirit").State>;
   phasers: UseStateRef<import("./Phasers").State>;
   npcFocus: UseStateRef<import("./NpcFocus").State>;

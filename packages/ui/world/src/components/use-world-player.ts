@@ -33,9 +33,6 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
-        // a sat turn is kept: to an npc focus's target until it is over, and as a raised phaser aims
-        const kept = free === false || w.npcFocus?.busy === true || w.phasers?.isArmed(state.key) === true;
-        if ((held === false || posture !== "sit") && kept === false) npc.anim.turnTo(null);
         if (held === false) return;
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);

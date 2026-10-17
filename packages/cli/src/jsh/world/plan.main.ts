@@ -1,5 +1,7 @@
 /// <reference path="./worker/jsh-worker.d.ts" />
 
+import { parked } from "./pred";
+
 /**
  * One op on jsh's side of the worker, under the shell's pause/kill — see `worker/plan.worker.ts`
  * for the ops, and `awaitPausable` for what a pause or kill does
@@ -61,9 +63,19 @@ export function request<O extends WW.JshOp>(
   op: O,
   signal: AbortSignal,
 ) {
+  return post(w, api.getUid(), op, signal);
+}
+
+/** `request` from no process, e.g. a keyed listener: nothing pauses or kills it */
+export function requestDetached<O extends WW.JshOp>(w: JshCli.WorldState, op: O) {
+  return post(w, `detached-${++detachedUid}`, op, new AbortController().signal);
+}
+
+let detachedUid = 0;
+
+function post<O extends WW.JshOp>(w: JshCli.WorldState, uid: string, op: O, signal: AbortSignal) {
   const worker = getWorker(w);
   ensureSetup(w, worker);
-  const uid = api.getUid();
   return new Promise<WW.JshOutput[O["key"]]>((resolve, reject) => {
     signal.throwIfAborted();
     const onMessage = (e: MessageEvent<WW.JshMsgFromNavWorker>) => {
@@ -109,3 +121,30 @@ function getWorker(w: JshCli.WorldState) {
 
 /** The map each worker was last set up for */
 const setupMapKey = new WeakMap<Worker, string>();
+
+/**
+ * Everyone stood in the rooms of `npcs`: a spot on top of any of them is no spot at all. Keyed, so a room shared
+ * by two of them is only sent once. The worker drops those being padded
+ */
+export function roomOthers(w: JshCli.WorldState, npcs: JshCli.Npc[]) {
+  const others = new Map(
+    npcs.flatMap((npc) => {
+      const at = w.npc.npcToRoom.get(npc.key);
+      if (at === undefined) return [];
+      return [...(w.npc.roomToNpcs[at.gmId]?.[at.roomId] ?? [])].flatMap((key) => {
+        const point = w.n[key]?.point;
+        return point === undefined ? [] : [[key, { key, point, grKey: at.grKey }] as const];
+      });
+    }),
+  );
+  return [...others.values()];
+}
+
+/** Everyone parked, wherever: a handful, and the worker keeps to the rooms involved */
+export function parkedNow(w: JshCli.WorldState) {
+  return [...parked.get()].flatMap(([key, seg]) => {
+    const grKey = w.npc.npcToRoom.get(key)?.grKey;
+    const point = w.n[key]?.point; // persisted: they may not be here this time
+    return grKey === undefined || point === undefined ? [] : [{ key, point, grKey, seg }];
+  });
+}

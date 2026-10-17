@@ -61,6 +61,17 @@ declare namespace JshCli {
         part: string;
         clip: import("./components/NPCs").AnimationClipKey;
       }
+    | ({
+        /** A phaser shot at them landed, or not: a `hit` also sends `npc-hit` */
+        key: "npc-shot";
+        outcome: ShotOutcome;
+      } & Shot)
+    | {
+        /** Their hurt clip changed, e.g. a pain clip went on to `collapsed`: `null` is released */
+        key: "npc-hurt";
+        npcKey: string;
+        clip: null | import("./components/NPCs").AnimationClipKey;
+      }
     | {
         /** About to look at (if close enough), then fade onto, a free doable */
         key: "npc-pre-do";
@@ -83,6 +94,10 @@ declare namespace JshCli {
         /** The rooms in view have changed — the debug room outlines follow it */
         key: "update-faded-rooms";
       };
+
+  /** A phaser shot by `by` at `npcKey`'s `part` */
+  type Shot = { by: string; npcKey: string; part: null | string };
+  type ShotOutcome = "hit" | "missed" | "dodged" | "shielded";
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;

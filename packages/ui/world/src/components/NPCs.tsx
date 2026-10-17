@@ -72,7 +72,7 @@ import { helper } from "../service/helper";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot } from "../service/room-slots";
-import { loadSkinSliceSheets, loadSkinSheets } from "../service/skin-sheets";
+import { loadSkinSheets, loadSkinSliceSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
 import { selectAs } from "../service/tsl";
 import type { PhysicsBijection } from "../worker/physics.store";
@@ -450,6 +450,18 @@ export default function NPCs() {
           ? // can respawn onto self whilst doing
             { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
           : { type: "none", meta };
+      },
+      dodge(npcKey, part, from) {
+        const npc = state.npc[npcKey];
+        if (npc === undefined || npc.anim.hurt !== null) return null; // in pain, pacified or collapsed: no dodging
+        const clip = npc.anim.dodgeClipFor(part, from);
+        if (clip === null) return null;
+        npc.rejectAll(new Error("dodge")); // a move's own catch idles them, onto the clip
+        // stood, they turn to face it, unless held to an aim
+        const turns = from !== undefined && npc.anim.posture === "stand" && npc.anim.face.aim === null;
+        const faceTo = turns ? npc.anim.bearingOf(from) : undefined;
+        npc.anim.setHurt(clip, { faceTo });
+        return faceTo === undefined ? 0 : deltaAngle(npc.rotation.y, faceTo);
       },
       findFreeDoPoint(points, npcKey, near) {
         const free = points.filter((d) => {
@@ -961,11 +973,15 @@ export default function NPCs() {
       fromAnimationClipKey,
       (_, clipName) => anims.find((c) => c.name === clipName) ?? emptyAnimationClip,
     );
+    // every clip of the glTF too: one new to it plays after a refetch, before its key reaches this module
+    for (const anim of anims) (clips as Record<string, THREE.AnimationClip>)[anim.name] ??= anim;
     const pairedClips = keys(clips).map((clipName) => [state.clips[clipName], clips[clipName]] as const);
     Object.assign(state.clips, clips);
     state.headYByPose = headYByPoseOf(queryData.gltf.scene, clips);
 
-    const staleClips = pairedClips.flatMap(([oldClip, clip]) => (oldClip === clip ? [] : [oldClip]));
+    const staleClips = pairedClips.flatMap(([oldClip, clip]) =>
+      oldClip === clip || oldClip === undefined ? [] : [oldClip],
+    );
     /** on new clips show the pose afresh: carrying each old action over revives one caught fading out */
     for (const npc of Object.values(state.npc)) {
       npc.anim.moveClip = clips[npc.anim.moveClip.name as AnimationClipKey] ?? clips.walk;
@@ -1127,6 +1143,8 @@ export type State = {
   get(npcKey: string): Npc;
   /** A phaser's beam reached `part` of them: stops them, and plays its clip if it has one */
   hit(npcKey: string, part: null | string): void;
+  /** They dodge a shot from `from` at their `part`: returns the radians they turn to face it, else `null` for no dodge */
+  dodge(npcKey: string, part: null | string, from?: Geom.VectJson): null | number;
   /** The skin of that key, else the first whose key begins with it, else `defaultSkinKey` */
   findSkinKey(prefix?: string): string;
   getSkinIndexBySkinKey(skinKey: string): number;

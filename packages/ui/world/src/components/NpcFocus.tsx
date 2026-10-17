@@ -8,8 +8,8 @@ import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
- * Focus on an npc, as a called shot in Fallout: carrying a phaser, a press on someone raises it and turns to them, then pauses the World,
- * zooms in on them, and pins a choice over each part of them. Chosen or not, the World resumes with the view left where it is
+ * Focus on an npc, as a called shot in Fallout: carrying a phaser, a press on someone raises it and turns to them, then pauses the
+ * World and pins a choice over each part of them, the view held still. Chosen or not, the World resumes — see `docs/engagements.md`
  */
 export default function NpcFocus() {
   const w = useContext(WorldContext);
@@ -17,23 +17,24 @@ export default function NpcFocus() {
   const state = useStateRef(
     (): State => ({
       npcKey: null,
+      placedKey: null,
       busy: false,
       offAim: false,
       resumed: false,
       before: null,
       el: null,
       markEls: {},
+      dotEls: {},
+      lineEls: {},
+      clearEl: null,
       task: null,
       abandon() {
-        const { before } = state;
         Object.assign(state, { before: null, busy: false });
         w.view.pausedHidden = false;
         state.task?.cancel();
         state.task = null;
         // left raised, it no longer points at them
         if (w.phasers.isArmed(w.player.key) === true) w.phasers.arm(w.player.key);
-        // set aside only once it opens: given up on before, it was never turned off
-        if (before?.follow === true && w.view.follow === false) w.view.setFollow(true);
         w.view.forceUpdate(); // the paused indicator, should the World still be paused
       },
       async aimAt(npcKey) {
@@ -84,7 +85,7 @@ export default function NpcFocus() {
       },
       begin(npcKey, raised = w.phasers.isArmed(w.player.key)) {
         if (state.busy === true || w.n?.[npcKey] === undefined) return null;
-        state.before = { paused: w.disabled, follow: w.view.follow, raised };
+        state.before = { paused: w.disabled, raised };
         state.busy = w.view.pausedHidden = true;
         state.task = new Task(() => w.disabled);
         return state.task;
@@ -134,44 +135,41 @@ export default function NpcFocus() {
         const { controls } = w.view;
         if (state.npcKey !== null || npc === undefined || controls == null) return;
         if (state.busy === false && state.begin(npcKey) === null) return;
-        Object.assign(state, { npcKey, resumed: false });
+        Object.assign(state, { npcKey, placedKey: npcKey, resumed: false });
         state.setOffAim(false); // a node kept from one still fading out has its last fade
         if (state.before !== null) state.before.paused = w.disabled; // as it was before this pause
-        // a follow runs on whilst they aim, else the view stops short. The view is ours from here
-        if (w.view.follow === true) w.view.setFollow(false);
         w.setDisabled(true);
-        // in to the near stop, slowly: a nudge past its commit, then it eases there of itself
-        if (controls.zoomProgress < 1) {
-          w.view.zoomInSlow = true;
-          controls.addZoomProgress(npcFocusConfig.zoomNudge);
-        }
-        void w.view.lookAt(npc.point, {
-          animate: true,
-          ms: npcFocusConfig.zoomInMs,
-          height: npc.position.y + npc.anim.headY * npcFocusConfig.heightOfHead,
-        });
+        // the view stays as it is: `place` nudges it only if their overlay would go off screen
         w.view.forceUpdate(); // the paused indicator, hidden whilst open
         state.update();
       },
+      keepOnScreen(bounds, canvas, box) {
+        const { screenMargin: m, keepInRate } = npcFocusConfig;
+        const [cx, cy] = [canvas.left - box.left, canvas.top - box.top];
+        const ox = Math.min(0, bounds.minX - (cx + m)) + Math.max(0, bounds.maxX - (cx + canvas.width - m));
+        const oy = Math.min(0, bounds.minY - (cy + m)) + Math.max(0, bounds.maxY - (cy + canvas.height - m));
+        if (Math.abs(ox) + Math.abs(oy) <= 0.5) return;
+        w.view.controls?.pan(-ox * keepInRate, -oy * keepInRate);
+        w.r3f?.invalidate();
+      },
       place() {
-        const npc = w.n?.[state.npcKey ?? ""];
+        const npc = w.n?.[state.placedKey ?? ""];
         const camera = w.r3f?.camera;
         if (npc === undefined || camera === undefined || state.el === null) return;
         camera.updateMatrixWorld(); // as it is this frame, not the last
         const canvas = w.view.canvas.getBoundingClientRect();
         const box = state.el.getBoundingClientRect();
-        /** Their middle on screen: each label goes on the side of it its part is */
-        const middle = toScreen(bodyPartPoint(npc, "chest", tmpPoint), camera, canvas, box).x;
-        for (const { part } of npcFocusParts) {
-          const el = state.markEls[part];
-          if (el == null) continue;
-          const { x, y } = toScreen(bodyPartPoint(npc, npcFocusConfig.bones[part], tmpPoint), camera, canvas, box);
-          const left = x < middle - 1;
-          // written to the DOM, not rendered: once a frame, as the camera moves
-          el.style.transform = `translate(${x}px,${y}px) translate(${left ? -100 : 0}%,-50%)`;
-          el.style.flexDirection = left ? "row-reverse" : "row";
-          el.style.visibility = "visible";
+        const onScreen = (bone: string) => toScreen(bodyPartPoint(npc, bone, tmpPoint), camera, canvas, box);
+        const middle = onScreen("chest").x;
+        const parts = npcFocusParts.map(({ part }) => ({ part, ...onScreen(npcFocusConfig.bones[part]) }));
+        const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+        for (const mark of layoutMarks(parts, middle)) writeMark(state, mark, bounds);
+        if (state.clearEl !== null) {
+          const at = `translate(${middle}px,${bounds.minY - npcFocusConfig.rowPx / 2}px)`;
+          state.clearEl.style.transform = `${at} translate(-50%,-100%)`; // above the marks, centred on them
+          state.clearEl.style.visibility = "visible";
         }
+        if (w.disabled === true) state.keepOnScreen(bounds, canvas, box); // resumed, the view is follow's
       },
       setOffAim(offAim) {
         state.offAim = offAim;
@@ -219,9 +217,15 @@ export default function NpcFocus() {
     };
   }, [state.npcKey]);
 
+  useEffect(() => {
+    if (state.npcKey !== null || state.placedKey === null) return;
+    // closed, its marks fade out on their parts as the World runs on
+    return w.e.addFrameCallback(() => state.place());
+  }, [state.npcKey, state.placedKey]);
+
   return (
     // faded out on closing. Only the marks take the pointer: the view is still the camera's to move
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={() => state.set({ placedKey: null })}>
       {state.npcKey !== null && (
         <motion.div
           key="npc-focus"
@@ -231,32 +235,78 @@ export default function NpcFocus() {
           transition={{ duration: 0.4 }}
         >
           <div ref={(el) => void (state.el = el)} className="absolute inset-0 transition-opacity duration-400">
+            <svg className="absolute inset-0 size-full overflow-visible" aria-hidden="true">
+              {npcFocusParts.map(({ part }) => (
+                <line
+                  key={part}
+                  ref={(el) => void (state.lineEls[part] = el)}
+                  stroke="white"
+                  strokeOpacity={0.45}
+                  style={{ visibility: "hidden" }}
+                />
+              ))}
+            </svg>
             {npcFocusParts.map(({ part, label }, i) => (
+              // its dot on the part, its label in a column beside them
+              <div key={part} className="group contents">
+                <span
+                  ref={(el) => void (state.dotEls[part] = el)}
+                  className="pointer-events-auto absolute top-0 left-0 size-3 cursor-pointer rounded-full border border-white/80 bg-red-500/30 group-hover:bg-red-500"
+                  style={{ visibility: "hidden" }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    state.close(part);
+                  }}
+                />
+                <button
+                  ref={(el) => void (state.markEls[part] = el)}
+                  type="button"
+                  className="pointer-events-auto absolute top-0 left-0 cursor-pointer whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-white opacity-80 group-hover:opacity-100"
+                  style={{ visibility: "hidden" }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    state.close(part);
+                  }}
+                >
+                  {i + 1} {label}
+                </button>
+              </div>
+            ))}
+            {state.resumed === true ? (
+              // once resumed, a way to take the choice away without a shot
               <button
-                key={part}
-                ref={(el) => void (state.markEls[part] = el)}
+                ref={(el) => void (state.clearEl = el)}
                 type="button"
-                className="group pointer-events-auto absolute top-0 left-0 flex items-center gap-1.5 font-mono text-[11px] text-white"
+                className="pointer-events-auto absolute top-0 left-0 cursor-pointer whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-white opacity-80 hover:opacity-100"
                 style={{ visibility: "hidden" }}
                 onPointerDown={(e) => {
                   e.stopPropagation();
-                  state.close(part);
+                  state.close(null);
                 }}
               >
-                <span className="size-3 shrink-0 rounded-full border border-white/80 bg-red-500/30 group-hover:bg-red-500" />
-                <span className="rounded bg-black/60 px-1.5 py-0.5 opacity-80 group-hover:opacity-100">
-                  {i + 1} {label}
-                </span>
+                clear
               </button>
-            ))}
-            {state.resumed === false && (
-              <div className="absolute inset-x-0 top-3 flex justify-center">
+            ) : (
+              <div className="absolute inset-x-0 top-3 flex justify-center gap-1.5">
                 <button
                   type="button"
-                  className="pointer-events-auto cursor-pointer rounded bg-black/60 px-2 py-0.5 font-mono text-[11px] text-white/80 hover:text-white"
-                  onPointerDown={() => state.close(null)}
+                  className={noteClass}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    state.close(null);
+                  }}
                 >
-                  Cancel (Esc) or continue (Enter)
+                  Cancel (Esc)
+                </button>
+                <button
+                  type="button"
+                  className={noteClass}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    w.setDisabled(false);
+                  }}
+                >
+                  Continue (Enter)
                 </button>
               </div>
             )}
@@ -266,6 +316,54 @@ export default function NpcFocus() {
     </AnimatePresence>
   );
 }
+
+const noteClass =
+  "pointer-events-auto cursor-pointer rounded bg-black/60 px-2 py-0.5 font-mono text-[11px] text-white/80 hover:text-white";
+
+/** Each part's dot, and its label in a column on its side of `middle`, stacked a row apart */
+function layoutMarks(parts: { part: FocusPart; x: number; y: number }[], middle: number): Mark[] {
+  const { labelGap, labelMinOff, rowPx } = npcFocusConfig;
+  /** Pixels from their middle to each column: clear of every part, even seen from above where they bunch */
+  const off = Math.max(labelMinOff, ...parts.map(({ x }) => Math.abs(x - middle))) + labelGap;
+  return [true, false].flatMap((left) => {
+    const side = parts.filter(({ x }) => x < middle - 1 === left).sort((a, b) => a.y - b.y);
+    const rows = side.map(({ y }) => y);
+    for (let i = 1; i < rows.length; i++) rows[i] = Math.max(rows[i], rows[i - 1] + rowPx);
+    const shift = side.reduce((sum, { y }, i) => sum + y - rows[i], 0) / (side.length || 1);
+    return side.map(({ part, x, y }, i) => ({
+      part,
+      x,
+      y,
+      left,
+      lx: middle + (left ? -off : off),
+      ly: rows[i] + shift,
+    }));
+  });
+}
+
+/** Writes `mark` to the DOM, not rendered, and grows `bounds` round it */
+function writeMark(state: State, { part, x, y, left, lx, ly }: Mark, bounds: Bounds) {
+  const [dot, label, line] = [state.dotEls[part], state.markEls[part], state.lineEls[part]];
+  if (dot == null || label == null || line == null) return;
+  dot.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
+  label.style.transform = `translate(${lx}px,${ly}px) translate(${left ? -100 : 0}%,-50%)`;
+  line.setAttribute("x1", `${x}`);
+  line.setAttribute("y1", `${y}`);
+  line.setAttribute("x2", `${lx}`);
+  line.setAttribute("y2", `${ly}`);
+  for (const el of [dot, label, line]) el.style.visibility = "visible";
+  const [width, half] = [label.offsetWidth, label.offsetHeight / 2];
+  bounds.minX = Math.min(bounds.minX, x, left ? lx - width : lx);
+  bounds.maxX = Math.max(bounds.maxX, x, left ? lx : lx + width);
+  bounds.minY = Math.min(bounds.minY, y, ly - half);
+  bounds.maxY = Math.max(bounds.maxY, y, ly + half);
+}
+
+/** A part's dot on screen, and its label's place: in a column to the `left` or right */
+type Mark = { part: FocusPart; x: number; y: number; left: boolean; lx: number; ly: number };
+
+/** Round the overlay's marks, in its pixels */
+type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
 
 /** A world point's place in the overlay, in pixels */
 function toScreen(point: THREE.Vector3, camera: THREE.Camera, canvas: DOMRect, box: DOMRect) {
@@ -288,16 +386,17 @@ const tmpPoint = new THREE.Vector3();
 const npcFocusConfig = {
   /** Radians they may face away from whom it is open on, e.g. turned once the World runs on, before it is dismissed */
   maxOffAimRad: (15 * Math.PI) / 180,
-  /** Milliseconds the view takes to pan in onto them, as it slowly zooms */
-  zoomInMs: 1200,
   /** The most milliseconds the turn to them is waited on */
   turnMaxMs: 3000,
   /** The most milliseconds the phaser is then waited on to come up clear, before the choice is offered anyway */
   raiseMaxMs: 1500,
-  /** Zoom progress nudged by, past the camera's commit, so it settles at the other stop */
-  zoomNudge: 0.2,
-  /** How far up to their head the view looks, `0` their feet */
-  heightOfHead: 0.6,
+  /** Pixels: a label column's least offset from their middle, its gap past their furthest part, and the rows' spacing */
+  labelMinOff: 32,
+  labelGap: 28,
+  rowPx: 21,
+  /** Pixels the overlay keeps inside the canvas edge, and how much of what pokes past the view moves by each frame */
+  screenMargin: 16,
+  keepInRate: 0.3,
   /** The bone each part is shot at: each in the hit region of its name — see `hitConfig.region` */
   bones: {
     head: "head",
@@ -324,29 +423,36 @@ const npcFocusParts: { part: FocusPart; label: string }[] = [
 export type State = {
   /** Whom it is open on, else `null` */
   npcKey: null | string;
+  /** Whom the marks are placed on: kept as they fade out after it closes */
+  placedKey: null | string;
   /** From the press until it is over. `w.view.pausedHidden` too, until resumed */
   busy: boolean;
   /** They face more than `maxOffAimRad` away from them: the marks are hidden until they face back */
   offAim: boolean;
   /** The World has been resumed since it opened: then Escape only pauses it, and no longer ends this */
   resumed: boolean;
-  /** The pause, follow and phaser to go back to */
+  /** The pause and phaser to go back to */
   before: null | {
     paused: boolean;
-    follow: boolean;
     /** Their phaser was up already, e.g. by `e`: it is left up after */
     raised: boolean;
   };
   el: null | HTMLDivElement;
-  /** Each part's choice, placed by `place` */
+  /** Each part's label, in a column beside them, placed by `place` */
   markEls: Partial<Record<FocusPart, null | HTMLButtonElement>>;
+  /** Each part's dot, on it */
+  dotEls: Partial<Record<FocusPart, null | HTMLSpanElement>>;
+  /** Each part's line, from its dot to its label */
+  lineEls: Partial<Record<FocusPart, null | SVGLineElement>>;
+  /** Once resumed, the button above the marks that takes the choice away */
+  clearEl: null | HTMLButtonElement;
   /** Cancelled once it is over, which ends `aimAt` */
   task: null | Task;
   /** Gives up before it opens, the phaser left raised */
   abandon(): void;
   /** Raises the phaser and turns them to `npcKey`, then `open`s: resolved once it is over */
   aimAt(npcKey: string): Promise<void>;
-  /** Notes the pause, follow and phaser to go back to: `null` if under way already, else its `task` */
+  /** Notes the pause and phaser to go back to: `null` if under way already, else its `task` */
   /** `raised` is whether the phaser was up before, unless carried over from a focus it replaces */
   begin(npcKey: string, raised?: boolean): null | Task;
   /** As Escape, at any stage: from the press, until a part is chosen */
@@ -363,6 +469,8 @@ export type State = {
   isOffAim(): boolean;
   /** Pauses, zooms in on them, and pins a choice over each part */
   open(npcKey: string): void;
+  /** Paused, pans the view by part of how far `bounds` pokes past the canvas edge, so it stays in sight */
+  keepOnScreen(bounds: Bounds, canvas: DOMRect, box: DOMRect): void;
   /** Each part's choice, pinned to where it is on screen now */
   place(): void;
   /** Fades the marks out through the DOM, not rendered, as the frame loop finds them off aim, or back in */

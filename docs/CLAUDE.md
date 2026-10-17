@@ -1,271 +1,290 @@
 # npc-cli-vite — Claude notes
 
+## Working rules
+
+- **Never stage** (`git add`). Leave the index alone, even after editing a file that was already staged. Staging and committing are the user's.
+- **Make every edit whole.** The dev page hot-reloads every save, so a name used before it is imported or declared breaks the render at once.
+  - Write a new file FIRST, then add its import and its use (e.g. a JSX mount) to the importer in ONE write.
+  - Then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched. It takes milliseconds; `pnpm typecheck` takes minutes.
+- **Comments are TERSE and sparing.**
+  - One short line, never a paragraph, and only what the code doesn't already say. Prefer none to a restatement.
+  - Attach one to the syntax it explains: a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.
+  - A JSDoc is two lines at most. Give the "why" in a clause. Never recap a mechanism the reader can see.
+- **Comments are CLEAR.**
+  - A plain statement, subject first, one idea to a sentence. Say what the thing is or returns before why.
+  - No stream of consciousness: no clauses strung together on commas, dashes and colons, no "X, so Y — unless Z: W".
+  - A second idea is a second short sentence, or left out.
+- **Clipboard markdown is plain ASCII** (e.g. a PR body via `pbcopy`). No typographic dashes, arrows, `±`, `°`, `§`, no emoji such as 🤖. Check with `grep -P '[^\x00-\x7F]'` first.
+
 ## Project structure
 
 Pnpm monorepo. Key packages:
-- `packages/app` — Vite app entry, public assets (sheets, symbols, maps, decor, skins)
-- `packages/ui/world` — main 3D world: React Three Fiber components, camera, NPCs, lighting
-- `packages/cli` — terminal/shell (tty, jsh commands)
-- `packages/media` — static asset keys, symbol metadata, source images e.g. starship geomorphs
-- `packages/util` — shared geometry (`Mat`, `Vect`, `Rect`), services, TSL helpers
-- `scripts/src` — Vite plugins, map-edit API, asset processing (skia-canvas thumbnails)
+
+| Package | What |
+| --- | --- |
+| `packages/app` | Vite app entry, public assets (sheets, symbols, maps, decor, skins) |
+| `packages/ui/world` | main 3D world: React Three Fiber components, camera, NPCs, lighting |
+| `packages/cli` | terminal/shell (tty, jsh commands) |
+| `packages/media` | static asset keys, symbol metadata, source images e.g. starship geomorphs |
+| `packages/util` | shared geometry (`Mat`, `Vect`, `Rect`), services, TSL helpers |
+| `scripts/src` | Vite plugins, map-edit API, asset processing (skia-canvas thumbnails) |
+
+## Conventions
+
+**Code**
+- TSX/TS for almost everything. `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
+- A selector is a base-ui `Select`, never a native `<select>`. Its trigger is only as wide as what is chosen. Use `Picker`, from `@npc-cli/util/picker`.
+- `useStateRef` (from `@npc-cli/util`) makes a stable ref-backed state object. Treat it like a class instance, not React state. Its methods go in alphabetical order.
+- A frame loop (`useFrame`, `w.e.addFrameCallback`) never drives a React render: no `state.update()` from one, even on a change. Write to the DOM instead, e.g. `el.style`, as `NpcFocus` places and fades its marks.
+- Geometry in 2D uses `x/y` on the xz world plane: `y` in 2D is `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) convert.
+
+**World**
+- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child. Anything run from their own mount (e.g. `w.e.setPsi`) must guard it.
+- To find npcs near one, go through those in their room or the rooms they can reach (`w.e.getNpcsInReach(npcKey)`, over `w.npc.roomToNpcs`). Don't scan every npc in `w.n` without good reason. That way a wall is never between the two.
+- `const.env.ts` and `const.npc.ts` hold constants only, no methods.
+  - The npc tuning is split off so editing it doesn't rebuild the World. `World.tsx` refetches on its own HMR, and so does every importer of `const.env`, its hooks included.
+  - So only npc modules import `const.npc`, including those drawing npcs or what surrounds them, e.g. `NpcRings`, `NpcBreath`. Never `World`, `WorldView` or their hooks.
+  - What the World builds around an npc, `npcDims`, is in `const.env`.
+
+**Decor**
+- Never scale a decor quad non-uniformly. To reshape one, e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`.
+- To darken or recolour ONE placed decor, tint it: `tint=#777` in its symbol name (`meta.tint`, multiplied in). Redrawing its svg changes every use.
+
+## Topic docs
+
+Each doc below is the ONLY doc for its topic: update it rather than starting another.
+
+| Topic | Doc | In short |
+| --- | --- | --- |
+| Floor | `docs/floor.md` | The look comes from one mutable object, `deckConfig` in `service/texture.ts`. Mutate it and call `w.floor.drawAll()`. |
+| Crisp fills | `docs/crisp-fills.md` | A canvas read back as ids (the room-hit canvas, room slots) is filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids into a third. |
+| Obstacle spritesheets | `docs/starship-sheets.md` | `gen-starship-sheets` packs one rect per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in `sheets.json`. `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any MapEdit obstacle change. |
+| Npc skins | `docs/skins.md` | `gen-skin-sheets` lays out a 256px cell per skin in `sheets.json`. A DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves it, so a build fetches neither. Load a DEV World before committing. |
+| Slices and eyes | `docs/skin-slices.md` | A slice is a face-sized piece of texture drawn over a skin's face. Each holds that skin's eyes one way: `shut`, `up`, `scared`... An npc's eyes are one uniform, the slice shown (`pose rob eyes:shut`, `blink:2`). None is drawn by hand: the dev server finds each skin's eyes in its png (`meta.eyes`), and a DEV World draws the slices and saves `sheet/skin-slices.N.png`. |
+| Strafing | `docs/npc-strafe.md` | Whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing. `syncStrafe` blends four directional gaits by heading, paced to the ground each covers. |
+| Stance | `docs/npc-stance.md` | After any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it. |
+| Breath | `docs/npc-breath.md` | An npc asked to (`anim.setBreathing`) shows lungs and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their bubble. |
+| navcat patch | `docs/navcat-patch.md` | `navcat` is pnpm-patched: four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. The doc says how to edit the patch. |
+| Workers | `docs/workers.md` | See [Navigation](#navigation-and-crowd). |
+| Tasks | `docs/tasks.md` | World code a jsh command awaits, which a kill must end, runs as a `Task` (`@npc-cli/util`). |
+| jsh pausing | `docs/jsh-pause.md` | World commands (and their descendants) pause with the World via a pause group made in `awaitWorld`. One that must keep going calls `api.setPausable("world", false)` first, like `pick`. |
+| Decorator panel | `docs/decorator.md` | `packages/ui/decorator` places runtime decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache). The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live doors. Npcs are shown only when chosen. Decor is configured in the World itself: the debug **decorations** toggle labels it and opens a card per pick. |
+| Inventory | `docs/inventory.md` | `WorldHud` is the player's bar: psi, phaser, keys, then carried items (`q` psi, `e` phaser). It reads `w.e.carried`, the defs of decor taken, by npcKey, per World. An item is a runtime decor with `meta.item`. jsh `give` / `drop`, and `inventory` for what a press does. |
+| Engagements | `docs/engagements.md` | One npc shooting another. A shot's outcome (hit, missed, dodged, shielded) is decided as it locks on: jsh `shots` sets the odds, the bar's debug badge forces one. A dodge picks a clip that clears its part's line from the shooter's bearing (`hitConfig.dodgeClips`), else it misses; in bed it is a hit. Also what a hit does, shield pieces, and npc focus, the player's choice of part. |
+| Psi | `docs/psi.md` | Psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`). Raised, their left hand is at their temple, and a press on another npc reads their thought (`w.speech.readThought`). It shows over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha. |
+| Spirit | `docs/spirit.md` | Psi raised, `q` held leaves the player's body (`w.spirit`). The light draws in, a spark crosses to someone sitting or lying (else spawned in a bed or seat), and they wake as the player on a deep first breath. |
+| Shields | `docs/shields.md` | A decor rect with `meta.shield` stands as a see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav worker. One with a frequency (`meta.freq`, jsh `shield`) lets through a phaser granted it (jsh `phaser`), and deactivates any other carried through it. `freq: null` stops all fire and deactivates none. |
+| Lore | `docs/manifest-lore.md` | Characters (name, npc, skin, rooms and door keys), one JSON each in `packages/media/lore/character/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest`. DEV saves through `/api/lore`; a build bundles them as `virtual:lore`. Conversation trees (`ui/world/src/service/talk.ts`) are outlined there, and played in `WorldSpeech`'s history by thread, each reply waiting on tests shown as pips. |
+| MapEdit saving | `docs/map-edit.md` | Playground files (key ending `--playground` / `-playground`) save to a localStorage draft, and are the only thing editable in production. Everything else saves to the filesystem in DEV via `POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand, and its node NAMES are its tags. |
+| Symbol generation | `docs/symbol-generation.md` | A symbol's JSON can be written from its png, saved through `POST /api/map-edit/file/symbol/{key}.json`, then checked by its thumbnail. An obstacle polygon takes in its drawn border, with no more points than its curves need. Also covers placing symbols in a hull symbol, the walls and doors it needs of its own, and how `assets.json` breaks. |
+| Memory | `docs/memory.md` | A `TexArray` can hold its pixels three times over (GPU, CPU mirror, 2D canvas), so memory is mostly how many layers each has. The floor and ceiling are a layer per geomorph KEY. A `gpu` array has no mirror. |
+| Deploys and stale tabs | `docs/deploys.md` | A tab can outlive its deploy. Production keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json` also logs each deploy's ui chunk paths and sizes), and `NewVersionToast` offers a reload. Ui chunk names stay put unless their code changed. Keep them so: nothing a ui imports may value-import `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`). `stableEntryPlugin` keeps chunks from importing the entry. |
+| MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
+| Checking in the browser | `docs/browser-scenarios.md` | Also the log of scenarios run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
 ## Renderer
 
-Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Use TSL imports (`three/tsl`) for shader nodes — not GLSL strings.
+Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Use TSL imports (`three/tsl`) for shader nodes, not GLSL strings.
 
 ## Player light (visibility sweep)
 
 `service/player-light.ts` answers "can the player see this?" once per frame instead of per fragment.
-A **compute pass** (`Fn(...)().compute(lightAngles)`, dispatched by `<PlayerLight>` in `WorldView`
-from a `useFrame(..., -2)` so it lands before the render) sweeps `lightAngles` directions from the
-player and writes the distance to the nearest occluder into a polar table — an `attributeArray`
-storage buffer. Materials then read one entry of that table:
 
-```
-v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
-```
+- **A compute pass** (`Fn(...)().compute(lightAngles)`) sweeps `lightAngles` directions from the player. It writes the distance to the nearest occluder into a polar table, an `attributeArray` storage buffer.
+- `<PlayerLight>` in `WorldView` dispatches it from a `useFrame(..., -2)`, so it lands before the render.
+- **Materials read one entry** of that table:
+  ```
+  v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
+  ```
+- Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances instead would put a shadow edge where neither surface is.
 
-- **Occluders**: every wall segment (`gmsData.byKey[gmKey].wallSegs`, transformed to world on map
-  change by `syncWalls`) plus the **closed** part of each door, derived in-shader from its
-  `src`/`dst`, `gapAtHighLambda` and live `openRatio` — mirroring `Doors`' own `inGap` test.
-  Windows are excluded on purpose — light passes through glass — except HULL windows (`meta.hull`),
-  whose centre line `seg` joins the walls: nothing beyond the hull should be lit. A CURVED one
-  (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
-- **The table is created once** and never rebuilt, so materials reading it survive a map change.
-  Only the occluder buffers are refilled, and nothing but the sweep reads those.
-- **Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)` (or
-  `applyLightRgba` where the colour carries alpha). Unlit fragments are tinted towards black; a
-  `strength` of `0` — no player, or a WebGL fallback backend, which has no real compute — is exactly
-  identity, so wrapping is unconditional.
-- **A surface turned away takes less.** `applyLight` accepts a unit outward XZ normal, cut at
-  edge-on (obstacle skirts pass one per instance). A FIGURE asks `litBody(normalWorld)` for the
-  AMOUNT instead, `0`–`1`, wrapped round them half-Lambert off a lamp hung in front of the player
-  — whoever stands on the light has no bearing from it, and the player always does. The lamp is
-  hung off the player's own height (`originY`), so it stays above one lain on a top bunk. Npcs add up
-  their own exposure from it (`ambient` + that + `litAmbient` whilst lit, all in `const.npc`)
-  rather than taking a tint, which `unlitTint` would cap at a 0.4 swing.
-- Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances
-  instead would put a shadow edge where neither surface is.
+**Occluders**
+- Every wall segment: `gmsData.byKey[gmKey].wallSegs`, transformed to world on map change by `syncWalls`.
+- The **closed** part of each door. It is derived in-shader from the door's `src`/`dst`, `gapAtHighLambda` and live `openRatio`, mirroring `Doors`' own `inGap` test.
+- Windows are excluded on purpose: light passes through glass.
+- Except HULL windows (`meta.hull`). Their centre line `seg` joins the walls, so nothing beyond the hull is lit. A CURVED one (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
 
-## Floor
+**The table is created once** and never rebuilt, so materials reading it survive a map change. Only the occluder buffers are refilled, and nothing but the sweep reads those.
 
-See `docs/floor.md` — the ONLY doc for floor drawing. In short: the look comes from one mutable
-object, `deckConfig` in `service/texture.ts`; mutate it and call `w.floor.drawAll()`.
+**Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)`, or `applyLightRgba` where the colour carries alpha.
+- Unlit fragments are tinted towards black.
+- A `strength` of `0` is exactly identity, so wrapping is unconditional. It is `0` with no player, or on a WebGL fallback backend, which has no real compute.
 
-## Crisp fills
-
-See `docs/crisp-fills.md` — the ONLY doc for it. In short: a canvas read back as ids (the room-hit canvas,
-room slots) must be filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids
-into a third.
-
-## Obstacle spritesheets
-
-See `docs/starship-sheets.md` — the ONLY doc for them. In short: `gen-starship-sheets` packs one rect
-per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in
-`sheets.json`; `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any
-MapEdit obstacle change.
-
-## Npc skins
-
-See `docs/skins.md` — the ONLY doc for them. In short: `gen-skin-sheets` lays out a 256px cell per
-skin in `sheets.json`; a DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves
-it, so a build fetches neither. Load a DEV World before committing.
+**A surface turned away takes less.**
+- `applyLight` accepts a unit outward XZ normal, cut at edge-on. Obstacle skirts pass one per instance.
+- A FIGURE asks `litBody(normalWorld)` for the AMOUNT instead, `0`–`1`. It wraps round them half-Lambert, off a lamp hung in front of the player. Whoever stands on the light has no bearing from it, and the player always does.
+- The lamp hangs off the player's own height (`originY`), so it stays above one lain on a top bunk.
+- Npcs add up their own exposure: `ambient` + that + `litAmbient` whilst lit, all in `const.npc`. A tint would be capped at a 0.4 swing by `unlitTint`.
 
 ## Camera controls
 
-Custom `MapControls` subclass in `service/camera-controls.ts`. Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance. `CameraControls.jsx` exposes a JSDoc `@typedef Props`; `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`. Note r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default — which is how `zoomToCursor` stays on.
+**Setup**
+- A custom `MapControls` subclass in `service/camera-controls.ts`.
+- Props flow: `WorldView.tsx` `ctrlOpts` → `<CameraControls>` (JSX wrapper) → `<primitive>` on the controls instance.
+- `CameraControls.jsx` exposes a JSDoc `@typedef Props`. `WorldView.tsx` types `ctrlOpts` as `MapControlsProps`.
+- r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default. That is how `zoomToCursor` stays on.
 
-`1`, `2` and `3` select the fade mode — `sight`, `sense`, `ship` (`fadeRoomsModeByKey`) — as the menu's button cycles them. `0` toggles the debug menu's "view pick" (`toggleViewPick`), the pick colours on screen.
+**Keys**
+- `1`, `2` and `3` select the fade mode: `sight`, `sense`, `ship` (`fadeRoomsModeByKey`). The menu's button cycles them.
+- `0` toggles the debug menu's "view pick" (`toggleViewPick`), the pick colours on screen.
 
-**Zoom has two stops**, `minDistance` and `maxDistance`; there is no continuous dolly. `zoomProgress` (0 at `maxDistance`, 1 at `minDistance`) is what gestures move — wheel by `deltaY`, pinch by the `ln` of its spread — and `getZoomRadius()` maps it to the radius. Once input pauses (`zoomSettleMs`), `syncZoom()` eases to whichever stop is nearer, so reversing partway cancels a zoom. It self-sustains via `dispatchEvent(changeEvent)` → `r3f.invalidate()`, which is what makes it work in a demand frameloop; the arriving frame dispatches nothing so the frames can stop.
+### Zoom
 
-The radius is **not** persistent state — `update()` re-derives it from `position - target` each frame, so zoom must be written inside `update()`. Anything that moves the camera itself (e.g. `WorldView.lookAt`) must call `setZoomFromRadius` afterwards, else the next settle undoes it.
+**Zoom has two stops**, `minDistance` and `maxDistance`. There is no continuous dolly.
+- `zoomProgress` is what gestures move: 0 at `maxDistance`, 1 at `minDistance`. The wheel moves it by `deltaY`, a pinch by the `ln` of its spread.
+- `getZoomRadius()` maps it to the radius.
+- Once input pauses (`zoomSettleMs`), `syncZoom()` eases to whichever stop is nearer. So reversing partway cancels a zoom.
+- It sustains itself via `dispatchEvent(changeEvent)` → `r3f.invalidate()`, which makes it work in a demand frameloop. The arriving frame dispatches nothing, so the frames can stop.
 
-**`embodied` restricts what may be steered, by zoom.** Its azimuth is free at every zoom and untouched by zooming, and the compass dial (`compassDial`: `c`, or its button on `WorldHud` beside look/follow, `setCompassDial`) only keeps it clear of the diagonals: a view let go more than `maxAzimuthSkew` (π/8) off square eases back to that (`keepNearSquare`), on switching on too. Whilst on, `w`, `a`, `s` and `d` head along the world's axes, `w` along the one nearest up the screen (`getWasdDirection`), so a turned view still lines up with doors and that axis never flips under a resting view. That axis is held whilst any of them is down (`wasdPoint`), so a turn mid-walk does not swerve them. The button names `w`'s compass point (`compassPoint`: N is -z) and its needle leans by `compassSkew`, to where `w` heads on screen. The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets. Zoomed out (`t > embodiedAxisLockFrom`) a drag locks to one axis. The polar is never clamped by the zoom, and ONE tilt is tracked, `embodiedPolar`: a zoom neither flattens the view nor tips it back, so both angles survive it. A drag owns the polar at every zoom and `shapeEmbodiedPolar` takes whatever tilt it leaves. Entering the mode and a reset set it to the camera's own tilt. Zoom past the outer stop there is none — the radius is only ever a zoom stop.
+**The radius is not persistent state.** `update()` re-derives it from `position - target` each frame.
+- So zoom must be written inside `update()`.
+- Anything that moves the camera itself (e.g. `WorldView.lookAt`) must call `setZoomFromRadius` afterwards, else the next settle undoes it.
 
-**Zoomed out, the view frames the player and their frontier.** `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`, into one kept `ReadbackBuffer`, one read in flight at a time and at most one per `frontierReadMinMs`) and keeps the furthest as `reach`, with `ahead` giving the vector to the frontier point. `followPlayer` holds the target `frontierPanFrac` of the way along it at every zoom (`getFollowGoal`, which the aimed zoom-in heads for too). Not following, a short look press (`f`, or the button) calls `holdFrontier` — following, it stops the follow: a `lookAt` tracking the goal, then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`). `follow` is on or off (`setFollow`) — a long press on the button, or holding `f`, toggles it. An npc runs whilst `anim.hurry`, which a move's `fast` sets either way (`--fast`, `fast:false`) and a plain move leaves be; Its button on `WorldHud`, beside look/follow, toggles the player's. With the dial off `w`, `a`, `s` and `d` head as seen. Ctrl or cmd with `w` closes the page, so a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`) — a reload aside. A double tap of `w`, `a`, `s` or `d` runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`). A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan. A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`: the frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`. `easeFrontier` in `onCameraFrame` eases `controls.maxDistance` to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare, clamped between `frontierNearFrac` of the travel and the persisted stop, and `controls.minDistance` to the same fit clamped between `frontierNearest` and the persisted inner stop — both back to persisted when not following (a look press only pans) or there is nothing to read. `t` is measured off the live stop, so a drawn-in view is still fully zoomed out. On TOUCH the stops are never drawn in (`getFrontierStops`): a follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
+**Zooms aim at a point.**
+- `setDollyTowards(clientX, clientY)` takes the cursor (wheel) or the pinch centroid.
+- `applyZoomTowards(prev, next)` moves the camera along that aim and re-derives `target`.
+- Only a **pure** pinch zooms. Two fingers also rotate and pan, so `twoFingerRotateRatio` (the smoothed share of centroid motion) must be under `pinchPurity`.
 
-**On touch a two-finger tap turns the player** (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under their midpoint as `lookAt`, which `aimAtPointer` faces them to for `lookHoldMs` just as `r` does the pointer, and `LookMark` marks with a cross. On a desktop a right click that picks something does the same (`picked`, in `use-world-events`), unless it is the player themself, which is what a trackpad's two-finger tap is, besides `r`.
+### Turning
 
-**Turns can pivot on a point too**: `rotateAbout` names one — `WorldView` gives the zoom crosshair whilst it shows, and nothing whilst following — and `setRotateAbout` takes it as a turn begins, mouse or touch alike. `update` then slides the whole rig by `slideAboutPivot`. Turning about the pivot and turning about `target` leave `position - target` identical, so they differ by a pure translation — which is all that helper applies. With no point named the turn is about `target`.
+**Turns can pivot on a point.**
+- `rotateAbout` names one. `WorldView` gives the zoom crosshair whilst it shows, and nothing whilst following.
+- `setRotateAbout` takes it as a turn begins, mouse or touch alike. `update` then slides the whole rig by `slideAboutPivot`.
+- Turning about the pivot and about `target` leave `position - target` identical, so they differ by a pure translation. That is all the helper applies.
+- With no point named, the turn is about `target`.
 
-Zooms aim at a point: `setDollyTowards(clientX, clientY)` from the cursor (wheel) or the pinch centroid, then `applyZoomTowards(prev, next)` moves the camera along that aim and re-derives `target`. Only a **pure** pinch zooms — two fingers also rotate and pan, so `twoFingerRotateRatio` (smoothed centroid-motion share) must be under `pinchPurity`.
+### `embodied` mode
 
-## Navigation / crowd
+**`embodied` restricts what may be steered, by zoom.**
 
-Navmesh uses `navcat` (recast/detour JS port). Agents live in a `crowd`. To teleport an agent, set `agent.position` **before** calling `requestMoveTarget` — otherwise path-finding starts from the old poly and the agent walks through walls instead of snapping to the destination.
+Azimuth:
+- Free at every zoom, and untouched by zooming.
+- The compass dial (`compassDial`: `c`, or its button on `WorldHud` beside look/follow, `setCompassDial`) only keeps it clear of the diagonals. A view let go more than `maxAzimuthSkew` (π/8) off square eases back to that (`keepNearSquare`), on switching on too.
+- Whilst the dial is on, `w`, `a`, `s` and `d` head along the world's axes, `w` along the one nearest up the screen (`getWasdDirection`). A turned view still lines up with doors, and that axis never flips under a resting view.
+- That axis is held whilst any of them is down (`wasdPoint`), so a turn mid-walk doesn't swerve them.
+- The button names `w`'s compass point (`compassPoint`: N is -z). Its needle leans by `compassSkew`, to where `w` heads on screen.
+- The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets.
+- Zoomed out (`t > embodiedAxisLockFrom`), a drag locks to one axis.
 
-An npc with an agent has its poly at `agent.corridor.path[0]`, which the crowd keeps under their feet — read `npc.nodeRef` rather than `getClosestPoly(npc.position)`. The first corner's `nodeRef` is the poly *after* it, not the current one.
+Polar:
+- Never clamped by the zoom. ONE tilt is tracked, `embodiedPolar`. A zoom neither flattens the view nor tips it back, so both angles survive it.
+- A drag owns the polar at every zoom, and `shapeEmbodiedPolar` takes whatever tilt it leaves.
+- Entering the mode and a reset set it to the camera's own tilt.
 
-Two workers under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycast, `w.navWorker`). jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one — see `docs/workers.md`.
+There is no zooming past the outer stop: the radius is only ever a zoom stop.
 
-**Strafing** — see `docs/npc-strafe.md`, the ONLY doc for it. In short: whilst `npc.anim.strafe` (by default whilst `face.aim`) they keep their facing, and `syncStrafe` blends four directional gaits by heading, paced to the ground each covers.
+### Following the player
 
-**Stance** — see `docs/npc-stance.md`, the ONLY doc for it. In short: after any gait an npc's feet stay roughly where they stopped. `npc-stance.ts` holds each ankle on the ground and solves the legs to reach, sinking and shifting the hips. `stanceConfig.on` in `const.npc` switches it off. Remount the World after editing it.
+**Zoomed out, the view frames the player and their frontier.**
+- `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierReadMinMs`.
+- It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
+- `followPlayer` holds the target `frontierPanFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
-**Breath** — see `docs/npc-breath.md`, the ONLY doc for it. In short: an npc asked to (`anim.setBreathing`) shows lungs
-and a diaphragm through their body, moved and lit by the air in their lungs. Their bones are not touched. The player's is tuned in their bubble.
+**Look and follow**
+- `follow` is on or off (`setFollow`). A long press on the button, or holding `f`, toggles it.
+- Following, a short look press (`f`, or the button) stops the follow.
+- Not following, it calls `holdFrontier`: a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
+- A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
+- A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
 
-**Slices and eyes** — see `docs/skin-slices.md`, the ONLY doc for them. In short: a slice is a face-sized piece of texture drawn over a skin's
-face, and each holds that skin's eyes one way: `shut`, `up`, `scared`... An npc's eyes are one uniform, the slice shown (`pose rob eyes:shut`, `blink:2`).
-None is drawn by hand: the dev server finds each skin's eyes in its png (`meta.eyes`), and a DEV World draws the slices and saves `sheet/skin-slices.N.png`.
+**The stops draw in** (`easeFrontier`, in `onCameraFrame`):
+- `controls.maxDistance` eases to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare. It is clamped between `frontierNearFrac` of the travel and the persisted stop.
+- `controls.minDistance` eases to the same fit, clamped between `frontierNearest` and the persisted inner stop.
+- Both go back to persisted when not following (a look press only pans), or when there is nothing to read.
+- `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
+- On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
 
-`navcat` is pnpm-patched — four corners per agent, a `boundaryQueryRange` agent param, corners that stay given up, a desired velocity that folds round a touched npc, and an END kept on a path ending on a mesh vertex. See `docs/navcat-patch.md`, including how to edit the patch.
+## Player input
+
+- **Walking.** With the compass dial off, `w`, `a`, `s` and `d` head as seen. For the dial, see [`embodied` mode](#embodied-mode).
+- **Running.** An npc runs whilst `anim.hurry`.
+  - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
+  - Its button on `WorldHud`, beside look/follow, toggles the player's.
+  - A double tap of `w`, `a`, `s` or `d` runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
+- **Closing the page.** Ctrl or cmd with `w` closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
+- **Turning the player.**
+  - On touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
+  - `aimAtPointer` faces them to it for `lookHoldMs`, just as `r` does the pointer. `LookMark` marks it with a cross.
+  - On a desktop, a right click that picks something does the same (`picked`, in `use-world-events`). The exception is a pick of the player themself, which is what a trackpad's two-finger tap is, besides `r`.
+
+## Navigation and crowd
+
+- The navmesh uses `navcat` (a recast/detour JS port). Agents live in a `crowd`. `navcat` is patched: see `docs/navcat-patch.md`.
+- **To teleport an agent**, set `agent.position` **before** calling `requestMoveTarget`. Otherwise path-finding starts from the old poly, and the agent walks through walls instead of snapping to the destination.
+- **An npc's poly** is `agent.corridor.path[0]`, which the crowd keeps under their feet. Read `npc.nodeRef` rather than `getClosestPoly(npc.position)`.
+- The first corner's `nodeRef` is the poly *after* it, not the current one.
+
+**Workers** (see `docs/workers.md`):
+- Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycast, `w.navWorker`).
+- jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one.
 
 ## Which room an npc is in
 
-`w.npc.npcToRoom`, changed by `enter-room` (`use-world-events`). A walker's room changes as they cross a
-door's centre LINE, not as their body leaves its "inside" sensor: `trackDoorway` notes the door on the
-sensor's `enter-collider` — its line, and the room to each side, a hull door's far one being the next
-geomorph's — and `syncDoorways`, each tick, reads off the side they stand on (`w.e.insideDoorways`).
-The sensor's exit still fires its own `enter-room`, usually `reEntered`. A spawn sets the room itself.
+`w.npc.npcToRoom`, changed by `enter-room` (`use-world-events`).
 
-## Spawning NPCs
+- A walker's room changes as they cross a door's centre LINE, not as their body leaves its "inside" sensor.
+- `trackDoorway` notes the door on the sensor's `enter-collider`: its line, and the room to each side. A hull door's far room is the next geomorph's.
+- `syncDoorways`, each tick, reads off the side they stand on (`w.e.insideDoorways`).
+- The sensor's exit still fires its own `enter-room`, usually `reEntered`.
+- A spawn sets the room itself.
 
-`state.placeNpcAt(npc, at, type)` — places or teleports an NPC. The `"navigable"` type throws if the position is off the navmesh; `"doable"` silently removes the agent instead.
+## Spawning, parking and padding
 
-Which npcs are parked — and the wall segment each stands against — is jsh state, not the world's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. `park` records via `parked.mark`; a move, respawn or removal unparks. `padded` beside it is the same for `pad` — a Set of those stood with room to walk right round them — and an npc is one or the other.
+- `state.placeNpcAt(npc, at, type)` places or teleports an npc. The `"navigable"` type throws if the position is off the navmesh. `"doable"` silently removes the agent instead.
+- **Parked npcs are jsh state**, not the World's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. It holds the wall segment each stands against.
+  - `park` records via `parked.mark`. A move, respawn or removal unparks.
+- `padded` beside it is the same for `pad`: a Set of those stood with room to walk right round them.
+- An npc is parked or padded, never both.
 
 ## jsh commands
 
-Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred}.ts` become shell commands, and hot-reload — `modules.js` lists them, and the default profile sources them. The `*_mcp.ts` ones are Claude's, written through the MCP server (see below). An exported *function* becomes one; export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+**Modules**
+- Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred,shots,sidestep}.ts` become shell commands, and hot-reload. `modules.js` lists them.
+- The default profile sources them all through `/etc/jsh-default.sh` (`world/jsh-default.sh`). A new module goes in both.
+- Shell files reach `/etc` as exports of `scripts.js`, named `fooBarSh` for `/etc/foo-bar.sh`: `sources.ts` drops the `Sh` and kebab-cases the rest.
+- An exported *function* becomes a command. Export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
+- The `*_mcp.ts` ones are Claude's, written through the [MCP server](#mcp-server).
+- A later-sourced module may shadow an earlier one's command, never a builtin. Builtins win.
 
-**Only `packages/cli/src/jsh/world` knows of the World.** The shell (`packages/cli/src/shell`: builtins, `api`, sessions) and `packages/cli/src/jsh`'s own modules e.g. `util.js` must not import or mention it. A later-sourced module may shadow an earlier one's command, never a builtin — builtins win.
+**Only `packages/cli/src/jsh/world` knows of the World.** The shell (`packages/cli/src/shell`: builtins, `api`, sessions) and `packages/cli/src/jsh`'s own modules, e.g. `util.js`, must not import or mention it.
 
-**`api` methods are bound to `{ meta, node }` alone** (`provideProcessCtxt` in `shell/command.ts`), so inside `processApi` `this` is not the api: `this.setPtags(…)` from another method is undefined at runtime, though it typechecks. Share logic via a `CmdService` method taking `meta`, e.g. `cmdService.setPtags(this.meta, …)`.
+**`api` methods are bound to `{ meta, node }` alone** (`provideProcessCtxt` in `shell/command.ts`).
+- So inside `processApi`, `this` is not the api. `this.setPtags(…)` from another method is undefined at runtime, though it typechecks.
+- Share logic via a `CmdService` method taking `meta`, e.g. `cmdService.setPtags(this.meta, …)`.
 
-**A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it:
-- register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop — unsubscribe, or resolve a promise the loop is racing;
-- never `await` something a kill cannot interrupt: `w.npc.nextTick()` never resolves whilst the world is paused, so race it — `Promise.race([w.npc.nextTick(), killed])`;
-- on the way out `handlers.dispose()`, then `throw api.getKillError()`.
-- World code a command awaits, which a kill must end, runs as a `Task` (`@npc-cli/util`) — see `docs/tasks.md`, the ONLY doc for it.
+**A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it.
+- Register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop: unsubscribe, or resolve a promise the loop is racing.
+- Never `await` something a kill cannot interrupt. `w.npc.nextTick()` never resolves whilst the World is paused, so race it: `Promise.race([w.npc.nextTick(), killed])`.
+- On the way out, `handlers.dispose()`, then `throw api.getKillError()`.
+- World code it awaits, which a kill must end, runs as a `Task`: see `docs/tasks.md`.
+- Examples: `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
-See `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
+**Watching every tick needs no process.** `w.e.addKeyedTick(key, tick)` runs after each npc tick, so only whilst unpaused. `w.e.keyedTick.delete(key)` stops it. See `sidestep.ts`.
 
-**Pausing** — see `docs/jsh-pause.md`, the ONLY doc for it. In short: world commands (and their descendants) pause with the World via a pause group made in `awaitWorld`; one that must keep going calls `api.setPausable("world", false)` first, like `pick`.
-
-## Decorator panel
-
-See `docs/decorator.md` — the ONLY doc for it. In short: `packages/ui/decorator` places dynamic
-(runtime) decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache).
-The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live
-doors; npcs are shown only when chosen. Decor is configured in the World itself: the debug **decorations**
-toggle labels it and opens a card per pick.
-
-## Inventory
-
-See `docs/inventory.md` — the ONLY doc for it. In short: `WorldHud` is the player's bar (psi, phaser,
-keys, then carried items; `q` psi, `e` phaser), over `w.e.carried` — the defs of decor taken, by npcKey, per
-World. An item is a runtime decor with `meta.item`; jsh `give` / `drop`, and `inventory` for what a press does.
-
-## Psi
-
-See `docs/psi.md` — the ONLY doc for it. In short: psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`), and raised, their
-left hand is at their temple. Raised, a press on another npc reads
-their thought (`w.speech.readThought`): over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha.
-
-## Spirit
-
-See `docs/spirit.md` — the ONLY doc for it. In short: psi raised, `q` held leaves the player's body (`w.spirit`):
-the light draws in, a spark crosses to someone sitting or lying (else spawned in a bed or seat), and they wake as the player on a deep first breath.
-
-## Shields
-
-See `docs/shields.md` — the ONLY doc for them. In short: a decor rect with `meta.shield` stands as a
-see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav
-worker. One of a frequency (`meta.freq`, jsh `shield`) lets a phaser granted it through (jsh `phaser`) and
-deactivates any other carried through it; `freq: null` stops all fire and deactivates none.
-
-## Lore
-
-See `docs/manifest-lore.md` — the ONLY doc for it. In short: characters (name, npc, skin, rooms and door keys),
-one JSON each in `packages/media/lore/character/{slug}.json`, edited in the Manifest panel, `packages/ui/manifest`
-(DEV saves through `/api/lore`; a build bundles them as `virtual:lore`). Conversation trees (`ui/world/src/service/talk.ts`) are
-outlined there and played in `WorldSpeech`'s history, by thread, each reply waiting on tests shown as pips.
-
-## MapEdit saving
-
-See `docs/map-edit.md` — the ONLY doc for where a saved MapEdit file goes. In short: playground
-files (key ending `--playground` / `-playground`) save to a localStorage draft and are the only
-thing editable in production; everything else saves to the filesystem in DEV via
-`POST /api/map-edit/file/:type/:filename`. `g-301--playground`'s hull and doors were drawn by hand,
-and its node NAMES are its tags.
-
-## Symbol generation
-
-See `docs/symbol-generation.md` — the ONLY doc for it. In short: a symbol's JSON can be written from
-its png and saved through `POST /api/map-edit/file/symbol/{key}.json`, then checked by its thumbnail. An
-obstacle polygon takes in its drawn border, with no more points than its curves need. The same doc covers
-placing symbols in a hull symbol, the walls and doors it needs of its own, and how `assets.json` breaks.
-
-## Memory
-
-See `docs/memory.md` — the ONLY doc for it. In short: a `TexArray` can hold its pixels three times
-over (GPU, CPU mirror, 2D canvas), so memory is mostly a matter of how many layers each has. The floor
-and ceiling are a layer per geomorph KEY, and a `gpu` array has no mirror.
-
-## Deploys and stale tabs
-
-See `docs/deploys.md` — the ONLY doc for it. In short: a tab can outlive its deploy, so production
-keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json`
-also logs each deploy's ui chunk paths and sizes), `NewVersionToast` offers a reload, and ui chunk
-names stay put unless their code changed. Keep them so: nothing a ui imports may value-import
-`@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`), and
-`stableEntryPlugin` keeps chunks from importing the entry.
+**Pausing**: see `docs/jsh-pause.md`.
 
 ## MCP server
 
-See `docs/mcp.md` — the ONLY doc for it. In short: `scripts/src/mcp/server.ts` (in `.mcp.json`) drives
-the `pnpm dev` page over CDP through `window.__devMcp` (`packages/app/src/dev-mcp-hooks.ts`): jsh lines
-in `tty-1` and beyond, their output, pointer presses on the World, the console, screenshots. Prototype in
-a tty; keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
+`scripts/src/mcp/server.ts` (in `.mcp.json`) drives the `pnpm dev` page over CDP, through `window.__devMcp` (`packages/app/src/dev-mcp-hooks.ts`). It covers jsh lines in `tty-1` and beyond, their output, pointer presses on the World, the console and screenshots. See `docs/mcp.md`.
 
-Whilst Claude drives it, the World's busy overlay says "mcp testing". Unpause the World before a test moves or turns anyone.
-A result ending `[user input since last call: …]` means the user took over: stop and ask. If state seems off mid-test, ask whether they interacted before calling it a bug.
+- Prototype in a tty. Keep what is reusable as exports of `packages/cli/src/jsh/world/*_mcp.ts`.
+- Whilst Claude drives it, the World's busy overlay says "mcp testing".
+- Unpause the World before a test moves or turns anyone.
+- A result ending `[user input since last call: …]` means the user took over: stop and ask.
+- If state seems off mid-test, ask whether they interacted before calling it a bug.
 
-Before EVERY call to it, write the call's input as a code fence: the `jsh` line as `sh`, the `query`
-function as `js`, else its arguments. That message is `IN` and the fence ALONE, with no other text.
-The VS Code extension shows a call's result but not its input, and it drops a fence that follows prose.
+**Before EVERY call, write its input as a code fence**: the `jsh` line as `sh`, the `query` function as `js`, else its arguments. That message is the fence ALONE, with no other text. The VS Code extension shows a call's result but not its input, and it drops a fence that follows prose.
 
-## Checking a change in the browser
+## Gotchas
 
-See `docs/browser-scenarios.md` — the ONLY doc for it, and the log of scenarios run. In short: a
-production preview in a visible Chrome, driven by typing into the app's own jsh terminal one step at a
-time, pausing for "next" — never headless. Players are moved, not spawned.
+**TSL shaders**
+- **`positionLocal` is the raw geometry attribute.** For `BoxGeometry(1,1,1)` it is `[-0.5, 0.5]`, even after `geo.translate(0.5, 0.5, 0.5)`. Don't use it with `step()` assuming `[0,1]`. Use `uv()` for per-face detection on a box.
+- **Edge/seam detection on boxes**: `uv()` gives `[0,1]` per face reliably.
+  - Pre-compute physically-sized UV fractions as `seamPhysical / faceDimension`.
+  - Tile N sub-panels with `uvCoord.x.mul(cols).fract()`, then detect seams with `step(seamW, subU).add(step(subU, seamW).clamp(0,1))`.
+- **`DerivedGmsData.findRoomIdContaining`** throws `"Value is not of type 'long'"` on NaN or Infinity, e.g. from a divide-by-zero in a normal. Prefer a polygon ray-cast on `gm.rooms` (`gm.rooms.some(r => pointInPoly(px, py, r.outline))`), or rely on `meta.hull` filtering.
 
-## TSL shader notes
-
-- **`positionLocal` range**: returns the raw geometry attribute, which for `BoxGeometry(1,1,1)` is `[-0.5, 0.5]` even after `geo.translate(0.5, 0.5, 0.5)`. Don't use `positionLocal` with `step()` assuming `[0,1]` — use `uv()` instead for per-face detection on box geometry.
-- **UV-based edge/seam detection on boxes**: `uv()` gives `[0,1]` per face reliably. Pre-compute physically-sized UV fractions as `seamPhysical / faceDimension`. Sub-panel grids: `uvCoord.x.mul(cols).fract()` to tile N sub-panels, then `step(seamW, subU).add(step(subU, seamW).clamp(0,1))` for seam detection.
-- **`DerivedGmsData.findRoomIdContaining`**: throws `"Value is not of type 'long'"` when passed NaN or Infinity (e.g. from a divide-by-zero in a normal calculation). Prefer a polygon ray-cast on `gm.rooms` (`gm.rooms.some(r => pointInPoly(px, py, r.outline))`), or rely on `meta.hull` filtering instead.
-
-## `wallSegs` / panel placement notes
-
-- `wallSegs` are in **local geomorph space** (same as `gm.rooms`, `gm.bounds`). The instance `transform` converts them to world space — apply it before world-space comparisons.
-- Near-door endpoint check is too aggressive: wall segments share endpoints with door segments, so `u.distanceTo(da) < threshold` excludes every wall adjacent to a door. Use midpoint-to-segment distance (`distToSeg(mx, mz, da.x, da.y, db.x, db.y)`) instead.
-- Panel slot count formula: `Math.floor(availLen / slotWidth)` requires a trailing gap and gives 0 for short segments that fit 1 panel. Correct: `availLen >= panelWidth ? Math.floor((availLen - panelWidth) / slotWidth) + 1 : 0`.
-
-## Conventions
-
-- TSX/TS for almost everything; `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
-- A selector is a base-ui `Select`, never a native `<select>`, its trigger only as wide as what is chosen — `Picker`, from `@npc-cli/util/picker`.
-- `useStateRef` (from `@npc-cli/util`) produces a stable ref-backed state object — treat it like a class instance, not React state. Its methods go in alphabetical order.
-- A frame loop (`useFrame`, `w.e.addFrameCallback`) never drives a React render: no `state.update()` from one, even on a change. Write to the DOM instead, e.g. `el.style`, as `NpcFocus` places and fades its marks.
-- To find npcs near one, go through those in their room or the rooms they can reach (`w.e.getNpcsInReach(npcKey)`, over `w.npc.roomToNpcs`), not every npc in `w.n`, unless there is good reason: a wall is then never between the two.
-- `w.n` is `null` until `<NPCs>` mounts, after every other `<World>` child — so anything run from their own mount (e.g. `w.e.setPsi`) must guard it.
-- Geometry in 2D uses `x/y` (xz world plane); `y` in 2D = `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) handle the conversion.
-
-- `const.env.ts` / `const.npc.ts` only contain constants, no methods. The npc tuning is split off so editing it does not rebuild the world: `World.tsx` refetches on its own HMR, and every importer of `const.env` — its hooks included — makes it one. So `const.npc` is imported by npc modules alone — those drawing npcs or what surrounds them too, e.g. `NpcRings`, `NpcBreath` — never `World`, `WorldView` or their hooks; what the world builds around an npc, `npcDims`, is in `const.env`
-- Comments must be TERSE and sparing: one short line, never a paragraph, and only what the code
-  doesn't already say. Prefer none to a restatement. Where one does clarify, attach it to the syntax
-  it explains — a JSDoc on the `const` (or field, or function) beats a trailing or free-floating `//`.
-  A JSDoc is two lines at most: give the "why" in a clause, never recap a mechanism the reader can see
-- Comments must also be CLEAR: a plain statement, subject first, one idea to a sentence. No
-  stream of consciousness: no clauses strung together on commas, dashes and colons, no "X, so Y — unless
-  Z: W". A second idea is a second short sentence, or left out. Say what the thing is or returns before why
-- Never scale a decor quad non-uniformly: to reshape one e.g. a shallower shelf, change its svg in `media/src/decor` (`width`/`height` and `viewBox`) and re-run `gen-decor-sheets`
-- To darken or recolour ONE placed decor, tint it — `tint=#777` in its symbol name (`meta.tint`, multiplied in) — rather than redrawing its svg, which changes every use
-- Markdown for the clipboard (e.g. a PR body via `pbcopy`) must be plain ASCII, emoji included: no typographic dashes, arrows, `±`, `°`, `§`, no 🤖 — `grep -P '[^\x00-\x7F]'` it first
-- The dev page hot-reloads every save, so a name used before it is imported or declared breaks the render at once. Never save a use of a module before the module exists: write a new file FIRST, then add its import and its use (e.g. a JSX mount) to the importer in ONE write. Make an edit whole in one write, then run `npx biome lint --only=correctness/noUndeclaredVariables <files>` on what was touched: it takes milliseconds, where `pnpm typecheck` takes minutes
-- Never stage (`git add`) — leave the index alone, even after editing a file that was already staged. Staging and committing are the user's
+**`wallSegs` and panel placement**
+- `wallSegs` are in **local geomorph space**, like `gm.rooms` and `gm.bounds`. Apply the instance `transform` before any world-space comparison.
+- A near-door endpoint check is too aggressive. Wall segments share endpoints with door segments, so `u.distanceTo(da) < threshold` excludes every wall next to a door. Use midpoint-to-segment distance instead: `distToSeg(mx, mz, da.x, da.y, db.x, db.y)`.
+- Panel slot count: `Math.floor(availLen / slotWidth)` needs a trailing gap, so it gives 0 for a short segment that fits 1 panel. Use `availLen >= panelWidth ? Math.floor((availLen - panelWidth) / slotWidth) + 1 : 0`.
