@@ -72,6 +72,11 @@ Four clips, a quarter turn apart clockwise from ahead: `strafeClipKeys` =
 
 `startMoving` re-shows the gait (`setPose` forced) when a move starts strafing; one that stops eases
 out as above.
+
+**Crouched** (`anim.crouched`), the four are `crouch_walk`, `crouch_strafe_right`, `crouch_backwards` and
+`crouch_strafe_left` (`anim.gaitKeys`), with their own `gaitStride` and `strafeSpeed`. A plain move plays `crouch_walk`
+(or `crouch_backwards`), paced by its stride, and never runs. Crouching or standing mid-move swaps the gaits at once
+(`setCrouched` calls `showGait`).
 `moveClipFadedIn`, which holds up arrival until the gait has faded in, counts all four.
 
 The arm overlays (`setUpper`, e.g. `phaser_aim` on the right, `psi` on the left) are unaffected: they blend an arm and the head

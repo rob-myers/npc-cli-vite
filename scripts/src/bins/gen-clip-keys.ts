@@ -32,10 +32,12 @@ type Track = { clip: string; bone: string; channel: "rotation" | "position"; key
 /** What re-keys a clip, or a few that share a pose: `params` are its defaults, each settable as `name=value` */
 type Recipe<P extends Record<string, number>> = { params: P; tracks(params: P): Track[] };
 
-/** Every clip is this long, at this many frames a second */
+/** Every clip is this long, bar a gait, at this many frames a second */
 const length = 2.5;
 const fps = 24;
-const frames = Array.from({ length: length * fps + 1 }, (_, i) => i / fps);
+/** The frames of a clip `secs` long, ends included */
+const framesOf = (secs: number) => Array.from({ length: Math.round(secs * fps) + 1 }, (_, i) => i / fps);
+const frames = framesOf(length);
 /** The times a posed channel is keyed at: the ends of the cycle, and halfway */
 const thirds = [0, length / 2, length];
 /** Every fifth frame: enough for a spline through them to hold a solved foot still */
@@ -140,11 +142,240 @@ function plantedLegs(
   ]);
 }
 
+/** A still pose's one key */
+const still = [0];
+
+/** A gait's cycle, in seconds: every frame keyed, as `walk` is */
+const gaitLength = 1;
+const gaitFrames = framesOf(gaitLength);
+
+/**
+ * The legs of `clip` stepping: the root where `rootAt` says, and each ankle on its path `feet`. Each thigh's swing and
+ * turn out, and its knee, are solved to reach it, and its foot keeps the sole flat. Throws where a leg cannot reach
+ */
+function steppingLegs(
+  clip: string,
+  rootAt: (t: number) => Triple,
+  feet: Record<Side, (t: number) => THREE.Vector3>,
+  keys = gaitFrames,
+): Track[] {
+  const solved = new Map<string, [Triple, Triple, Triple]>();
+  /** `[thigh, shin, foot]` rotations of `side` at `t` */
+  const solve = (side: Side, t: number) => {
+    const key = `${side} ${t}`;
+    const cached = solved.get(key);
+    if (cached !== undefined) return cached;
+    const root = rootAt(t);
+    const want = feet[side](t);
+    const ankle = ([x, y, shin]: Triple) => {
+      const thigh = new THREE.Quaternion().setFromEuler(euler([x, y, 0]));
+      const knee = thigh.clone().multiply(new THREE.Quaternion().setFromEuler(euler([shin, 0, 0])));
+      return new THREE.Vector3(...root)
+        .add(rest(`${side}thigh`))
+        .add(rest(`${side}shin`).applyQuaternion(thigh))
+        .add(rest(`${side}foot`).applyQuaternion(knee));
+    };
+    // Newton on the ankle's three coordinates: thigh `x`, its `y` turning the knee out, and the knee
+    let v: Triple = [90, 0, -130];
+    for (let i = 0; i < 30; i++) {
+      const off = ankle(v).sub(want);
+      if (off.length() < 1e-6) break;
+      const columns = [0, 1, 2].map((c) => {
+        const nudged = [...v] as Triple;
+        nudged[c] += 0.01;
+        return ankle(nudged).sub(want).sub(off).divideScalar(0.01);
+      });
+      const jacobian = new THREE.Matrix3().set(
+        columns[0].x,
+        columns[1].x,
+        columns[2].x,
+        columns[0].y,
+        columns[1].y,
+        columns[2].y,
+        columns[0].z,
+        columns[1].z,
+        columns[2].z,
+      );
+      const step = off.applyMatrix3(jacobian.invert());
+      v = [v[0] - step.x, v[1] - step.y, v[2] - step.z];
+    }
+    if (!(ankle(v).distanceTo(want) < 1e-4) || v[2] > -2 || v[2] < -170) {
+      throw Error(`${clip}: the ${side} leg cannot reach its foot at ${t}s`);
+    }
+    // the foot undoes the leg's turn, so the sole is as at rest: flat, and ahead
+    const leg = new THREE.Quaternion()
+      .setFromEuler(euler([v[0], v[1], 0]))
+      .multiply(new THREE.Quaternion().setFromEuler(euler([v[2], 0, 0])));
+    const foot = new THREE.Euler().setFromQuaternion(leg.invert(), "ZYX");
+    const { radToDeg } = THREE.MathUtils;
+    const result: [Triple, Triple, Triple] = [
+      [v[0], v[1], 0],
+      [v[2], 0, 0],
+      [radToDeg(foot.x), radToDeg(foot.y), radToDeg(foot.z)],
+    ];
+    solved.set(key, result);
+    return result;
+  };
+  return [
+    { clip, bone: "skeleton-root", channel: "position", keys, at: rootAt },
+    ...sides.flatMap((side) =>
+      (["thigh", "shin", "foot"] as const).map((bone, i) =>
+        turn(clip, `${side}${bone}`, (t) => solve(side, t)[i], keys),
+      ),
+    ),
+  ];
+}
+
+/**
+ * An ankle's path over a gait's cycle, in model units off `home`. It lands ahead along `along`, the way they go,
+ * at `phase`. Planted for `duty` of the cycle, it slides back as the body goes on, then lifts `lift` and swings ahead
+ */
+function stepping(
+  home: THREE.Vector3,
+  along: THREE.Vector3,
+  p: { stride: number; duty: number; lift: number },
+  phase: number,
+) {
+  return (t: number) => {
+    const u = (((t / gaitLength - phase) % 1) + 1) % 1;
+    const half = (p.stride * p.duty) / 2;
+    if (u < p.duty) return home.clone().addScaledVector(along, half - (2 * half * u) / p.duty);
+    const s = (u - p.duty) / (1 - p.duty);
+    return home
+      .clone()
+      .addScaledVector(along, -half + 2 * half * THREE.MathUtils.smoothstep(s, 0, 1))
+      .setY(home.y + p.lift * Math.sin(Math.PI * s));
+  };
+}
+
+/** Where each ankle rests, stood */
+const restAnkles = () => {
+  const upright: Leg = { thigh: [0, 0, 0], shinX: 0 };
+  return Object.fromEntries(sides.map((side) => [side, ankleOf(side, upright, [0, 0, 0], 0, 0)])) as Record<
+    Side,
+    THREE.Vector3
+  >;
+};
+
+/** `tracks` mirrored as `clip`: left and right bones swapped, rotation `y` and `z` and position `x` negated */
+function mirrored(tracks: Track[], clip: string): Track[] {
+  const swap = (bone: string) =>
+    bone.startsWith("left") ? `right${bone.slice(4)}` : bone.startsWith("right") ? `left${bone.slice(5)}` : bone;
+  return tracks.map((track) => ({
+    ...track,
+    clip,
+    bone: swap(track.bone),
+    at: (t: number) => {
+      const [x, y, z] = track.at(t);
+      return track.channel === "rotation" ? [x, -y, -z] : [-x, y, z];
+    },
+  }));
+}
+
+/** A crouched gait's torso, head and forearms, all still: the torso leant `lean`, the head level */
+function crouchedUpper(clip: string, lean: number) {
+  return [
+    turn(clip, "stomach", () => [-lean / 2, 0, 0], still),
+    turn(clip, "chest", () => [-lean / 2, 0, 0], still),
+    turn(clip, "head", () => [lean, 0, 0], still),
+    turn(clip, "rightforearm", () => [40, 0, -10], still),
+    turn(clip, "leftforearm", () => [40, 0, 10], still),
+  ];
+}
+
+/** The legs of a squat, the feet where they stand at rest and the hips `down` and `back` */
+function squatLegs(clip: string, down: number, back: number) {
+  const upright: Record<Side, Leg> = {
+    left: { thigh: [0, 0, 0], shinX: 0 },
+    right: { thigh: [0, 0, 0], shinX: 0 },
+  };
+  const [left, right] = sides.map((side) => ankleOf(side, upright[side], [0, 0, 0], 0, 0));
+  /** Where the solve sets out from: knees well bent */
+  const bent: Record<Side, Leg> = {
+    left: { thigh: [90, 0, 0], shinX: -130 },
+    right: { thigh: [90, 0, 0], shinX: -130 },
+  };
+  return plantedLegs([clip], () => [0, -down, back], bent, { left, right }, still);
+}
+
 //#endregion
 
 //#region the recipes
 
 const recipe = <P extends Record<string, number>>(r: Recipe<P>) => r;
+
+/** `crouch_cover` walking ahead: short flat-footed steps, the hips low and swaying over the planted foot */
+const crouchWalk = recipe({
+  params: {
+    /** As `crouch_cover` */
+    down: 8.5,
+    back: 3,
+    lean: 35,
+    /** Model units a cycle covers, the share of it a foot is planted, and how high a foot lifts */
+    stride: 8,
+    duty: 0.6,
+    lift: 1.5,
+    /** Model units the hips sway sideways, and bob */
+    sway: 0.4,
+    bob: 0.3,
+    /** Degrees the arms swing */
+    swing: 8,
+  },
+  tracks(p) {
+    const clip = "crouch_walk";
+    const feet = restAnkles();
+    const ahead = new THREE.Vector3(0, 0, -1); // a foot plants ahead, and slides back
+    /** The left foot lands at the start, the right half a cycle on */
+    const swayAt = (t: number) => -p.sway * Math.cos(2 * Math.PI * (t / gaitLength - p.duty / 2));
+    const armSwing = (t: number) => p.swing * Math.cos(2 * Math.PI * (t / gaitLength));
+    return [
+      ...steppingLegs(clip, (t) => [swayAt(t), -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back], {
+        left: stepping(feet.left, ahead, p, 0),
+        right: stepping(feet.right, ahead, p, 0.5),
+      }),
+      ...crouchedUpper(clip, p.lean),
+      // the arm opposite the leading foot comes forward
+      turn(clip, "rightarm", (t) => [p.lean + 20 + armSwing(t), 0, 6], gaitFrames),
+      turn(clip, "leftarm", (t) => [p.lean + 20 - armSwing(t), 0, -6], gaitFrames),
+    ];
+  },
+});
+
+/** `crouch_cover` stepping to their right: the right foot leads, the left closes up behind it */
+const crouchStrafeRight = recipe({
+  params: {
+    down: 8.5,
+    back: 3,
+    lean: 35,
+    stride: 5,
+    duty: 0.6,
+    lift: 1.2,
+    bob: 0.3,
+    /** Model units each foot is set out from where it rests, so the two never meet */
+    wide: 0.75,
+  },
+  tracks(p) {
+    const clip = "crouch_strafe_right";
+    const feet = restAnkles();
+    feet.left.x -= p.wide;
+    feet.right.x += p.wide;
+    const toRight = new THREE.Vector3(1, 0, 0); // their right is `+x`
+    const left = stepping(feet.left, toRight, p, 0.5);
+    const rightFoot = stepping(feet.right, toRight, p, 0);
+    // a foot is about 2 wide
+    const gap = Math.min(...gaitFrames.map((t) => rightFoot(t).x - left(t).x));
+    if (gap < 2.2) throw Error(`${clip}: the ankles come within ${gap.toFixed(2)} of each other`);
+    return [
+      ...steppingLegs(clip, (t) => [0, -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back], {
+        left,
+        right: rightFoot,
+      }),
+      ...crouchedUpper(clip, p.lean),
+      turn(clip, "rightarm", () => [p.lean + 20, 0, 8], [0]),
+      turn(clip, "leftarm", () => [p.lean + 20, 0, -8], [0]),
+    ];
+  },
+});
 
 const clips = {
   /** Thighs level as they were, shins hung from the knee, soles near flat and breathing a little */
@@ -231,19 +462,8 @@ const clips = {
       reach: 22,
     },
     tracks(p) {
-      const still = [0];
-      const upright: Record<Side, Leg> = {
-        left: { thigh: [0, 0, 0], shinX: 0 },
-        right: { thigh: [0, 0, 0], shinX: 0 },
-      };
-      const [left, right] = sides.map((side) => ankleOf(side, upright[side], [0, 0, 0], 0, 0));
-      /** Where the solve sets out from: knees well bent */
-      const bent: Record<Side, Leg> = {
-        left: { thigh: [90, 0, 0], shinX: -130 },
-        right: { thigh: [90, 0, 0], shinX: -130 },
-      };
       return [
-        ...plantedLegs(["crouch"], () => [0, -p.down, p.back], bent, { left, right }, still),
+        ...squatLegs("crouch", p.down, p.back),
         turn("crouch", "stomach", () => [-p.lean / 2, 0, 0], still),
         turn("crouch", "chest", () => [-p.lean / 2, 0, 0], still),
         turn("crouch", "head", () => [p.lean - 20, 0, 0], still), // looking down at it
@@ -253,6 +473,51 @@ const clips = {
         turn("crouch", "leftforearm", () => [75, 0, 0], still),
       ];
     },
+  }),
+
+  /**
+   * A still squat behind cover, e.g. a sofa, to rise from: `crouch`'s legs, a lesser lean, the head level and the
+   * elbows on the knees. Armed, `phaser_aim` and `phaser_aim_avoid` play over its arms
+   */
+  crouch_cover: recipe({
+    params: {
+      /** Model units the hips come down, and go back */
+      down: 8.5,
+      back: 3,
+      /** Degrees the torso leans forward */
+      lean: 35,
+    },
+    tracks: (p) => [
+      ...squatLegs("crouch_cover", p.down, p.back),
+      turn("crouch_cover", "stomach", () => [-p.lean / 2, 0, 0], still),
+      turn("crouch_cover", "chest", () => [-p.lean / 2, 0, 0], still),
+      turn("crouch_cover", "head", () => [p.lean, 0, 0], still),
+      // searched so each elbow rests on its knee, the forearm hanging ahead of it
+      turn("crouch_cover", "rightarm", () => [35, 0, -10], still),
+      turn("crouch_cover", "rightforearm", () => [70, 0, -30], still),
+      turn("crouch_cover", "leftarm", () => [35, 0, 10], still),
+      turn("crouch_cover", "leftforearm", () => [70, 0, 30], still),
+    ],
+  }),
+
+  crouch_walk: crouchWalk,
+  crouch_strafe_right: crouchStrafeRight,
+
+  /** `crouch_walk` played backwards, as `backwards` is `walk`: the same feet, reversed */
+  crouch_backwards: recipe({
+    params: {},
+    tracks: () =>
+      crouchWalk.tracks({ ...crouchWalk.params }).map((track) => ({
+        ...track,
+        clip: "crouch_backwards",
+        at: (t: number) => track.at(gaitLength - t),
+      })),
+  }),
+
+  /** `crouch_strafe_right`'s mirror */
+  crouch_strafe_left: recipe({
+    params: {},
+    tracks: () => mirrored(crouchStrafeRight.tracks({ ...crouchStrafeRight.params }), "crouch_strafe_left"),
   }),
 
   /**
@@ -388,20 +653,29 @@ function addAccessor(rows: number[][], type: "SCALAR" | "VEC3" | "VEC4") {
     }) - 1
   );
 }
-const times = {
-  all: addAccessor(
-    frames.map((t) => [t]),
-    "SCALAR",
-  ),
-  one: addAccessor([[0]], "SCALAR"),
+/** Each clip's length, as the bbmodel has it */
+const lengthOf = (clip: string): number => bbmodel.animations.find((a: { name: string }) => a.name === clip).length;
+/** A key a frame, by clip length, or one alone */
+const times = new Map<number, number>();
+const timesOf = (secs: number) => {
+  if (!times.has(secs))
+    times.set(
+      secs,
+      addAccessor(
+        framesOf(secs).map((t) => [t]),
+        "SCALAR",
+      ),
+    );
+  return times.get(secs) as number;
 };
+const oneTime = addAccessor([[0]], "SCALAR");
 
 for (const { clip, bone, channel, at } of tracks) {
   let animation = gltf.animations.find((a: { name: string }) => a.name === clip);
   if (animation === undefined) gltf.animations.push((animation = { name: clip, channels: [], samplers: [] })); // new to it
   const node = gltf.nodes.findIndex((n: { name: string }) => n.name === bone);
   const path = channel === "rotation" ? "rotation" : "translation";
-  const rows = frames.map((t) =>
+  const rows = framesOf(lengthOf(clip)).map((t) =>
     channel === "rotation"
       ? new THREE.Quaternion().setFromEuler(euler(at(t))).toArray()
       : rest(bone)
@@ -411,7 +685,7 @@ for (const { clip, bone, channel, at } of tracks) {
   );
   const still = rows.every((row) => row.every((v, i) => Math.abs(v - rows[0][i]) < 1e-7));
   const sampler = {
-    input: still ? times.one : times.all,
+    input: still ? oneTime : timesOf(lengthOf(clip)),
     output: addAccessor(still ? [rows[0]] : rows, channel === "rotation" ? "VEC4" : "VEC3"),
     interpolation: "LINEAR",
   };

@@ -424,11 +424,11 @@ function PlayerButtons() {
         )}
         <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
       </div>
-      {/* whilst on (white) `wasd` heads along the world's axes, `w` to the point named — as `c` */}
+      {/* whilst on (white) `wasd` heads along the world's axes, `w` to the point named */}
       <div className="relative flex shrink-0">
         <div
           className={buttonClass}
-          title={compassDial ? `compass on: c — w heads ${compassLetter}` : "compass off: c"}
+          title={compassDial ? `compass on: w heads ${compassLetter}` : "compass off"}
           onClick={() => w.hud?.dragged !== true && w.view.setCompassDial(!compassDial)}
         >
           {/* where `w` heads */}

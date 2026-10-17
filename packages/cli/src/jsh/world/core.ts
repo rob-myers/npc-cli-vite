@@ -1147,11 +1147,13 @@ export function play({ api, w }: JshCli.RunArg) {
 /**
  * Pose an npc `as` something, facing and pointing `at` an npc — until they move, are armed, something else takes
  * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head.
- * A clip's own name shows it whole, releasing one in pain or pacified
+ * A clip's own name shows it whole, releasing one in pain or pacified. `crouch_cover` is kept, moving too, until
+ * another clip is shown
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
  * pose rob as:shake
+ * pose rob as:crouch_cover
  * pose npc-0 as:breathe
  * ```
  */
@@ -1172,6 +1174,7 @@ export async function pose(
   if (opts.as === "shake") return npc.anim.shakeHead(); // over any pose
   if (!(opts.as in poseConfig.poses) && opts.as in w.npc.clips) {
     npc.anim.setHurt(null);
+    npc.anim.setCrouched(opts.as === "crouch_cover");
     return npc.anim.setPose(opts.as as keyof typeof w.npc.clips);
   }
   if (!(opts.as in poseConfig.poses))
@@ -1180,7 +1183,10 @@ export async function pose(
   const { upper: clipKey, avoid } = poseConfig.poses[opts.as as PoseKey];
   const { upper, face } = npc.anim;
   const mine = () => upper.target === 1 && (upper.key === clipKey || upper.key === avoid);
-  if (upper.target === 1 && mine() === false) throw Error(`${npc.key}: their upper body is taken: ${upper.key}`);
+  /** A gun held up whilst crouched, not raised, gives way */
+  const tucked = upper.key === "phaser_aim_avoid" && w.phasers.isArmed(npc.key) === false;
+  if (upper.target === 1 && mine() === false && tucked === false)
+    throw Error(`${npc.key}: their upper body is taken: ${upper.key}`);
 
   posing.get(npc.key)?.("replaced");
   let ended: undefined | "killed" | "moved" | "replaced";

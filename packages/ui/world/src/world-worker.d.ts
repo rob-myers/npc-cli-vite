@@ -150,6 +150,8 @@ declare namespace WW {
         gmDoorIds: Geomorph.GmDoorId[];
         /** Decor keys of the shields it reached, nearest first */
         shields: string[];
+        /** The obstacles it reached, nearest first: not one it set out from inside */
+        obstacles: RaycastObstacle[];
       };
 
   type PhysicsMsgFromWorker =
@@ -248,6 +250,11 @@ declare namespace WW {
       key: Geomorph.StarShipGeomorphKey;
       doors: Geom.GeoJsonPolygon[];
       walls: Geom.GeoJsonPolygon[];
+      /** Those off the floor, in the geomorph's own space */
+      obstacles: (Omit<RaycastObstacle, "dist"> & { outline: Geom.GeoJsonPolygon })[];
     };
   };
+
+  /** An obstacle a ray passed: its `top` and `bottom` in metres off the floor, and metres along the ray */
+  type RaycastObstacle = { obstacleId: number; top: number; bottom: number; dist: number };
 }

@@ -1,6 +1,6 @@
 /**
  * The nav worker's raycasts. Two kinds, each against relatively few bodies:
- * 1. within a single geomorph, in its own space: its static walls and doors;
+ * 1. within a single geomorph, in its own space: its static walls, doors and obstacles;
  * 2. across the whole world: every shield.
  *
  * The main thread may ask for (1) more than once for a single ray, a leg a geomorph, but usually not
@@ -25,7 +25,7 @@ export function setRayCastShields({ shields }: Extract<WW.MsgToNavWorker, { type
 export function createGmRayCastSystems(gmKeyToData: WW.RaycastSetupData, nextGmGeoms: WW.GmGeomForNav[]) {
   gmGeoms = nextGmGeoms;
 
-  for (const { key: gmKey, walls, doors } of Object.values(gmKeyToData)) {
+  for (const { key: gmKey, walls, doors, obstacles } of Object.values(gmKeyToData)) {
     // construct system per geomorph
     const system = (gmRayCast[gmKey] ??= new System());
     system.clear();
@@ -43,11 +43,17 @@ export function createGmRayCastSystems(gmKeyToData: WW.RaycastSetupData, nextGmG
       .forEach((door, doorId) =>
         system.insert(new Polygon(zero, door.outline, { isStatic: true, userData: { type: "door", doorId } })),
       );
+    for (const { outline, ...obstacle } of obstacles) {
+      const poly = Poly.from(outline);
+      system.insert(
+        new Polygon(zero, poly.outline, { isStatic: true, userData: { type: "obstacle", poly, obstacle } }),
+      );
+    }
   }
 }
 
 /**
- * One leg of a ray, within geomorph `gmId`. Walls stop it. Doors and shields do not: each it reaches is
+ * One leg of a ray, within geomorph `gmId`. Walls stop it. Doors, obstacles and shields do not: each it reaches is
  * named, nearest first, and the main thread decides — it knows which doors stand open, and whose phaser is tuned
  */
 export function sendRaycastResult({ uid, src, dst, gmId }: WW.GetRaycast) {
@@ -56,26 +62,31 @@ export function sendRaycastResult({ uid, src, dst, gmId }: WW.GetRaycast) {
   const localSrc = toLocal.transformPoint({ ...src });
 
   // walls and doors are in their geomorph's own space, shields in the world's
-  const local = cast(gmRayCast[gm.key], localSrc, toLocal.transformPoint({ ...dst }), isDoor);
+  const local = cast(gmRayCast[gm.key], localSrc, toLocal.transformPoint({ ...dst }), isNotWall);
   const world = cast(shieldSystem, { ...src }, { ...dst }, () => true);
   /** Metres to the wall that stopped it, the same in either space: nothing beyond counts */
   const reach =
     local.hit === undefined ? Infinity : Math.hypot(local.hit.point.x - localSrc.x, local.hit.point.y - localSrc.y);
+  const gmDoorIds: Geomorph.GmDoorId[] = [];
+  const obstacles: WW.RaycastObstacle[] = [];
+  for (const { body, dist } of nearestFirst(local.passed, reach)) {
+    const { userData } = body;
+    if (userData.type === "door")
+      gmDoorIds.push({ gmId, doorId: userData.doorId, gdKey: `g${gmId}d${userData.doorId}` });
+    else if (userData.poly.contains(localSrc) === false) obstacles.push({ ...userData.obstacle, dist });
+  }
 
   self.postMessage({
     type: "raycast-result",
     uid,
     hit: local.hit === undefined ? null : toWorld.transformPoint(local.hit.point),
-    gmDoorIds: nearestFirst(local.passed, reach).map(({ userData: { doorId } }) => ({
-      gmId,
-      doorId,
-      gdKey: `g${gmId}d${doorId}` as const,
-    })),
-    shields: nearestFirst(world.passed, reach).map(({ userData: { key } }) => key),
+    gmDoorIds,
+    obstacles,
+    shields: nearestFirst(world.passed, reach).map(({ body }) => body.userData.key),
   } satisfies WW.RaycastResultResponse);
 }
 
-const isDoor = (body: Body) => body.userData.type === "door";
+const isNotWall = (body: Body) => body.userData.type !== "wall";
 
 /** A body the ray went on past, and how far along it met it */
 type Passed = { body: Body; dist: number };
@@ -100,8 +111,5 @@ function distanceAlong(ray: Line, body: Body) {
 
 /** Those within `reach`, nearest first: the library hands them over in no order, and from beyond a wall too */
 function nearestFirst(passed: Passed[], reach: number) {
-  return passed
-    .filter(({ dist }) => dist <= reach)
-    .sort((a, b) => a.dist - b.dist)
-    .map(({ body }) => body);
+  return passed.filter(({ dist }) => dist <= reach).sort((a, b) => a.dist - b.dist);
 }
