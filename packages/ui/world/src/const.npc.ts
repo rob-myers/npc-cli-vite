@@ -604,9 +604,9 @@ export const gaitStride = {
   crouch_strafe_right: 0.25,
   crouch_backwards: 0.4,
   crouch_strafe_left: 0.25,
-  crouch_half_walk: 0.5,
+  crouch_half_walk: 0.4,
   crouch_half_strafe_right: 0.3,
-  crouch_half_backwards: 0.5,
+  crouch_half_backwards: 0.4,
   crouch_half_strafe_left: 0.3,
 };
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */

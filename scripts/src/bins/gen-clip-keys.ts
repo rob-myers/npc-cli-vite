@@ -161,6 +161,7 @@ function steppingLegs(
   rootAt: (t: number) => Triple,
   feet: Record<Side, (t: number) => THREE.Vector3>,
   keys = gaitFrames,
+  toeOut = 0,
 ): Track[] {
   const solved = new Map<string, [Triple, Triple, Triple]>();
   /** Each leg's last solution, which the next sets out from: from a fixed guess a leg can jump to another branch */
@@ -207,13 +208,15 @@ function steppingLegs(
       v = [v[0] - step.x * scale, v[1] - step.y * scale, v[2] - step.z * scale];
     }
     if (!(ankle(v).distanceTo(want) < 1e-4) || v[2] > -2 || v[2] < -170 || Math.abs(v[1]) > 60) {
-      throw Error(`${clip}: the ${side} leg cannot reach its foot at ${t}s`);
+      const [x, y, shin] = v.map((d) => d.toFixed(1));
+      throw Error(`${clip}: the ${side} leg cannot reach its foot at ${t}s (thigh x ${x} y ${y}, shin ${shin})`);
     }
-    // the foot undoes the leg's turn, so the sole is as at rest: flat, and ahead
+    // the foot undoes the leg's turn, so the sole is flat, then turns its toes out by `toeOut`
     const leg = new THREE.Quaternion()
       .setFromEuler(euler([v[0], v[1], 0]))
       .multiply(new THREE.Quaternion().setFromEuler(euler([v[2], 0, 0])));
-    const foot = new THREE.Euler().setFromQuaternion(leg.invert(), "ZYX");
+    const out = new THREE.Quaternion().setFromEuler(euler([0, side === "left" ? toeOut : -toeOut, 0]));
+    const foot = new THREE.Euler().setFromQuaternion(leg.invert().multiply(out), "ZYX");
     const { radToDeg } = THREE.MathUtils;
     const result: [Triple, Triple, Triple] = [
       [v[0], v[1], 0],
@@ -291,6 +294,14 @@ function crouchedUpper(clip: string, lean: number) {
   ];
 }
 
+/** The legs of a crouch: the feet set out `splay` either side, toes out `toeOut`, the root where `rootAt` says, knees out */
+function splayedLegs(clip: string, rootAt: (t: number) => Triple, splay: number, toeOut: number) {
+  const feet = restAnkles();
+  feet.left.x -= splay;
+  feet.right.x += splay;
+  return steppingLegs(clip, rootAt, { left: () => feet.left, right: () => feet.right }, dense, toeOut);
+}
+
 /** The legs of a squat, the feet where they stand at rest and the hips `down` and `back` */
 function squatLegs(clip: string, down: number, back: number) {
   const upright: Record<Side, Leg> = {
@@ -313,45 +324,65 @@ function squatLegs(clip: string, down: number, back: number) {
 const recipe = <P extends Record<string, number>>(r: Recipe<P>) => r;
 
 /**
- * A still squat behind cover, to rise from: `crouch`'s legs, the torso leant `lean`, the head level, the arms posed.
- * Armed, `phaser_aim` and `phaser_aim_avoid` play over its arms
+ * A squat behind cover, to rise from, breathing: the feet planted, the torso leant `lean`, the head level, the arms
+ * posed. Breathing in, the torso straightens `breathe` degrees, the chest rises `rise` and the hips `bob`
  */
 const crouchStill = (
   clip: string,
-  params: Record<"down" | "back" | "lean" | "armX" | "armZ" | "foreX" | "foreZ", number>,
+  params: Record<
+    "down" | "back" | "lean" | "splay" | "toeOut" | "breathe" | "rise" | "bob" | "armX" | "armZ" | "foreX" | "foreZ",
+    number
+  >,
 ) =>
   recipe({
     params,
-    tracks: (p) => [
-      ...squatLegs(clip, p.down, p.back),
-      turn(clip, "stomach", () => [-p.lean / 2, 0, 0], still),
-      turn(clip, "chest", () => [-p.lean / 2, 0, 0], still),
-      turn(clip, "head", () => [p.lean, 0, 0], still),
-      turn(clip, "rightarm", () => [p.armX, 0, p.armZ], still),
-      turn(clip, "rightforearm", () => [p.foreX, 0, p.foreZ], still),
-      turn(clip, "leftarm", () => [p.armX, 0, -p.armZ], still),
-      turn(clip, "leftforearm", () => [p.foreX, 0, -p.foreZ], still),
-    ],
+    tracks(p) {
+      const lean = breathe(p.lean, p.lean - p.breathe);
+      // the arms are the chest's: each keeps its pitch in the world as the torso breathes
+      const armX = (t: number) => p.armX - p.lean + lean(t);
+      return [
+        ...splayedLegs(clip, (t) => [0, -p.down + breathe(0, p.bob)(t), p.back], p.splay, p.toeOut),
+        turn(clip, "stomach", (t) => [-lean(t) / 2, 0, 0]),
+        turn(clip, "chest", (t) => [-lean(t) / 2, 0, 0]),
+        { clip, bone: "chest", channel: "position", keys: thirds, at: (t) => [0, breathe(0, p.rise)(t), 0] },
+        turn(clip, "head", (t) => [lean(t), 0, 0]),
+        turn(clip, "rightarm", (t) => [armX(t), 0, p.armZ]),
+        turn(clip, "rightforearm", () => [p.foreX, 0, p.foreZ], still),
+        turn(clip, "leftarm", (t) => [armX(t), 0, -p.armZ]),
+        turn(clip, "leftforearm", () => [p.foreX, 0, -p.foreZ], still),
+      ];
+    },
   });
 
 /** A crouch walking ahead: flat-footed steps, the hips swaying over the planted foot, the arms hanging forward */
 const crouchWalk = (
   clip: string,
-  params: Record<"down" | "back" | "lean" | "stride" | "duty" | "lift" | "sway" | "bob" | "swing", number>,
+  params: Record<
+    "down" | "back" | "lean" | "splay" | "toeOut" | "stride" | "duty" | "lift" | "sway" | "bob" | "swing",
+    number
+  >,
 ) =>
   recipe({
     params,
     tracks(p) {
       const feet = restAnkles();
+      feet.left.x -= p.splay;
+      feet.right.x += p.splay;
       const ahead = new THREE.Vector3(0, 0, -1); // a foot plants ahead, and slides back
       /** The left foot lands at the start, the right half a cycle on */
       const swayAt = (t: number) => -p.sway * Math.cos(2 * Math.PI * (t / gaitLength - p.duty / 2));
       const armSwing = (t: number) => p.swing * Math.cos(2 * Math.PI * (t / gaitLength));
       return [
-        ...steppingLegs(clip, (t) => [swayAt(t), -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back], {
-          left: stepping(feet.left, ahead, p, 0),
-          right: stepping(feet.right, ahead, p, 0.5),
-        }),
+        ...steppingLegs(
+          clip,
+          (t) => [swayAt(t), -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back],
+          {
+            left: stepping(feet.left, ahead, p, 0),
+            right: stepping(feet.right, ahead, p, 0.5),
+          },
+          gaitFrames,
+          p.toeOut,
+        ),
         ...crouchedUpper(clip, p.lean),
         // the arm opposite the leading foot comes forward
         turn(clip, "rightarm", (t) => [p.lean + 20 + armSwing(t), 0, 6], gaitFrames),
@@ -363,14 +394,14 @@ const crouchWalk = (
 /** A crouch stepping to their right: the right foot leads, the left closes up behind it */
 const crouchStrafeRight = (
   clip: string,
-  params: Record<"down" | "back" | "lean" | "stride" | "duty" | "lift" | "bob" | "wide", number>,
+  params: Record<"down" | "back" | "lean" | "splay" | "toeOut" | "stride" | "duty" | "lift" | "bob", number>,
 ) =>
   recipe({
     params,
     tracks(p) {
       const feet = restAnkles();
-      feet.left.x -= p.wide; // so the two never meet
-      feet.right.x += p.wide;
+      feet.left.x -= p.splay;
+      feet.right.x += p.splay;
       const toRight = new THREE.Vector3(1, 0, 0); // their right is `+x`
       const left = stepping(feet.left, toRight, p, 0.5);
       const rightFoot = stepping(feet.right, toRight, p, 0);
@@ -378,10 +409,16 @@ const crouchStrafeRight = (
       const gap = Math.min(...gaitFrames.map((t) => rightFoot(t).x - left(t).x));
       if (gap < 2.2) throw Error(`${clip}: the ankles come within ${gap.toFixed(2)} of each other`);
       return [
-        ...steppingLegs(clip, (t) => [0, -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back], {
-          left,
-          right: rightFoot,
-        }),
+        ...steppingLegs(
+          clip,
+          (t) => [0, -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back],
+          {
+            left,
+            right: rightFoot,
+          },
+          gaitFrames,
+          p.toeOut,
+        ),
         ...crouchedUpper(clip, p.lean),
         turn(clip, "rightarm", () => [p.lean + 20, 0, 8], [0]),
         turn(clip, "leftarm", () => [p.lean + 20, 0, -8], [0]),
@@ -406,16 +443,23 @@ const crouchClips = {
   crouch_cover: crouchStill("crouch_cover", {
     down: 8.5,
     back: 3,
-    lean: 35,
-    armX: 35,
-    armZ: -10,
+    lean: 40,
+    splay: 1.5,
+    toeOut: 20,
+    breathe: 3,
+    rise: 0.15,
+    bob: 0.15,
+    armX: 40,
+    armZ: 10,
     foreX: 70,
-    foreZ: -30,
+    foreZ: -40,
   }),
   crouch_walk: crouchWalk("crouch_walk", {
     down: 8.5,
     back: 3,
-    lean: 35,
+    lean: 40,
+    splay: 1.5,
+    toeOut: 20,
     stride: 8,
     duty: 0.6,
     lift: 1.5,
@@ -426,19 +470,35 @@ const crouchClips = {
   crouch_strafe_right: crouchStrafeRight("crouch_strafe_right", {
     down: 8.5,
     back: 3,
-    lean: 35,
+    lean: 40,
+    splay: 1.5,
+    toeOut: 20,
     stride: 5,
     duty: 0.6,
     lift: 1.2,
     bob: 0.3,
-    wide: 0.75,
   }),
-  crouch_half: crouchStill("crouch_half", { down: 4, back: 1.5, lean: 28, armX: -5, armZ: -2, foreX: 70, foreZ: -30 }),
+  crouch_half: crouchStill("crouch_half", {
+    down: 4,
+    back: 1.5,
+    lean: 32,
+    splay: 1,
+    toeOut: 15,
+    breathe: 3,
+    rise: 0.15,
+    bob: 0.15,
+    armX: -5,
+    armZ: 12,
+    foreX: 70,
+    foreZ: -50,
+  }),
   crouch_half_walk: crouchWalk("crouch_half_walk", {
     down: 4,
     back: 1.5,
-    lean: 28,
-    stride: 10,
+    lean: 32,
+    splay: 1,
+    toeOut: 15,
+    stride: 8,
     duty: 0.6,
     lift: 2,
     sway: 0.1,
@@ -448,12 +508,13 @@ const crouchClips = {
   crouch_half_strafe_right: crouchStrafeRight("crouch_half_strafe_right", {
     down: 4,
     back: 1.5,
-    lean: 28,
+    lean: 32,
+    splay: 1,
+    toeOut: 15,
     stride: 6,
     duty: 0.6,
     lift: 1.5,
     bob: 0.3,
-    wide: 0.75,
   }),
 };
 
