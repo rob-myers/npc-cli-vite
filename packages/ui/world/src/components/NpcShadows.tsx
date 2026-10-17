@@ -102,6 +102,9 @@ function createShadowResources(
   return { geo, mat, mesh, xzoData, xzoAttr, xzo, objectPick, fold };
 }
 
+/** Metres off the floor: above a dropped point decor's top (0.01), which it darkens, and below the rings (0.02) */
+const shadowY = 0.015;
+
 /**
  * What the shadow draws, given how much of its npc's room is shown — it simply goes with them.
  *
@@ -110,7 +113,7 @@ function createShadowResources(
  */
 function shadowNodes(shadow: ReturnType<typeof createShadowResources>, fade: THREE.Node<"float">) {
   const { xzo, objectPick, fold } = shadow;
-  const worldPos = vec4(positionLocal.x.add(xzo.x), 0.01, positionLocal.z.add(xzo.y), 1.0);
+  const worldPos = vec4(positionLocal.x.add(xzo.x), shadowY, positionLocal.z.add(xzo.y), 1.0);
 
   // plain circle, solid out to (radius - edgeSoftness) then a thin fade
   const distToCenter = vec2(positionLocal.x, positionLocal.z).length();
