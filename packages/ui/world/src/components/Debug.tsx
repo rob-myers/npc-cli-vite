@@ -57,6 +57,8 @@ export function Debug() {
       pickGdkeyOpensDoors: getWorldStore(w.key).read().pickOpenDoors,
       pickDoors: getWorldStore(w.key).read().pickDoors,
       npcContextMenu: getWorldStore(w.key).read().npcContextMenu,
+      hudDebug: getWorldStore(w.key).read().hudDebug,
+      forceShot: null,
 
       physicsLines: new THREE.BufferGeometry(),
       physicsColliders: [] as (WW.PhysicDebugItem & { parsedKey: WW.PhysicsParsedBodyKey })[],
@@ -458,6 +460,10 @@ export type State = {
   pickDoors: boolean;
   /** Whether a right click or long press on an npc opens their bubble — see `pickObject` */
   npcContextMenu: boolean;
+  /** Whether the player's bar shows debug controls — see `WorldHud` */
+  hudDebug: boolean;
+  /** Every phaser shot ends so, over `w.e.shotResolver`: set by the hud's debug badge */
+  forceShot: null | JshCli.ShotOutcome;
   physicsLines: THREE.BufferGeometry<THREE.NormalBufferAttributes, THREE.BufferGeometryEventMap>;
   physicsColliders: (WW.PhysicDebugItem & {
     parsedKey: WW.PhysicsParsedBodyKey;

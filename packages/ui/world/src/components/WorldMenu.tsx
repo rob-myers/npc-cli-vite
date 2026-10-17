@@ -256,6 +256,8 @@ export function WorldMenu() {
         return w.debug?.decorShown ?? false;
       case "npc contextmenu":
         return w.debug?.npcContextMenu ?? false;
+      case "hud debug":
+        return w.debug?.hudDebug ?? false;
       default:
         return false;
     }
@@ -345,6 +347,14 @@ export function WorldMenu() {
       case "decor points": {
         w.debug?.set({ doPointsShown: !w.debug.doPointsShown });
         w.view.forceUpdate();
+        break;
+      }
+      case "hud debug": {
+        const next = !w.debug?.hudDebug;
+        w.debug?.set({ hudDebug: next, forceShot: null }); // hidden, nothing stays forced
+        store.patch({ hudDebug: next });
+        w.hud?.update();
+        state.update();
         break;
       }
       case "npc contextmenu": {
@@ -1250,6 +1260,7 @@ const debugItems = [
   "decorations",
   "npc contextmenu",
   "navmesh",
+  "hud debug",
 ] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */

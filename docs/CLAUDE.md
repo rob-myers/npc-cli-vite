@@ -70,6 +70,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | jsh pausing | `docs/jsh-pause.md` | World commands (and their descendants) pause with the World via a pause group made in `awaitWorld`. One that must keep going calls `api.setPausable("world", false)` first, like `pick`. |
 | Decorator panel | `docs/decorator.md` | `packages/ui/decorator` places runtime decor on a 2D top-down map of a live World (`meta.worldKey`, read from the query cache). The map is SVG in world metres, drawn from each geomorph's layout plus `w.nav.toNavTris` and the live doors. Npcs are shown only when chosen. Decor is configured in the World itself: the debug **decorations** toggle labels it and opens a card per pick. |
 | Inventory | `docs/inventory.md` | `WorldHud` is the player's bar: psi, phaser, keys, then carried items (`q` psi, `e` phaser). It reads `w.e.carried`, the defs of decor taken, by npcKey, per World. An item is a runtime decor with `meta.item`. jsh `give` / `drop`, and `inventory` for what a press does. |
+| Engagements | `docs/engagements.md` | One npc shooting another. A shot's outcome (hit, missed, dodged, shielded) is decided as it locks on: jsh `shots` sets the odds, the bar's debug badge forces one. A dodge picks a clip that clears its part's line from the shooter's bearing (`hitConfig.dodgeClips`), else it misses; in bed it is a hit. Also what a hit does, shield pieces, and npc focus, the player's choice of part. |
 | Psi | `docs/psi.md` | Psi is raised or not, per npc (`w.e.setPsi`, `w.e.isPsiRaised`). Raised, their left hand is at their temple, and a press on another npc reads their thought (`w.speech.readThought`). It shows over their head (`w.bubble.think`) and in the speech history (`w.speech.think`), marked with its khandha. |
 | Spirit | `docs/spirit.md` | Psi raised, `q` held leaves the player's body (`w.spirit`). The light draws in, a spark crosses to someone sitting or lying (else spawned in a bed or seat), and they wake as the player on a deep first breath. |
 | Shields | `docs/shields.md` | A decor rect with `meta.shield` stands as a see-through panel (`w.shields`) that stops phaser fire, found on the phaser's own raycast in the nav worker. One with a frequency (`meta.freq`, jsh `shield`) lets through a phaser granted it (jsh `phaser`), and deactivates any other carried through it. `freq: null` stops all fire and deactivates none. |
@@ -238,7 +239,7 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ## jsh commands
 
 **Modules**
-- Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred,sidestep}.ts` become shell commands, and hot-reload. `modules.js` lists them.
+- Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred,shots,sidestep}.ts` become shell commands, and hot-reload. `modules.js` lists them.
 - The default profile sources them all through `/etc/jsh-default.sh` (`world/jsh-default.sh`). A new module goes in both.
 - Shell files reach `/etc` as exports of `scripts.js`, named `fooBarSh` for `/etc/foo-bar.sh`: `sources.ts` drops the `Sh` and kebab-cases the rest.
 - An exported *function* becomes a command. Export an object to keep helpers out of the shell (see `parked` in `pred.ts`).

@@ -14,6 +14,7 @@ import {
   eyesConfig,
   fadeSecs,
   gaitStride,
+  type HitRegion,
   headShakeConfig,
   hitConfig,
   lieAim,
@@ -121,7 +122,13 @@ export class NpcAnimation {
     held: null as null | THREE.AnimationAction,
   };
   /** In pain, or pacified: the clip shown instead of idle, seconds into it, and what follows it — see `setHurt` */
-  hurt = null as null | { key: AnimationClipKey; secs: number; next: null | AnimationClipKey };
+  hurt = null as null | {
+    key: AnimationClipKey;
+    secs: number;
+    next: null | AnimationClipKey;
+    /** A dodge's heading, turned to as it plays */
+    faceTo?: number;
+  };
   /** Seconds into a shake of the head, else `null` — see `shakeHead` */
   headShake = null as null | number;
   /** Their eyes, ticked only whilst `busy`: blinking, or shifty — see `docs/skin-slices.md` */
@@ -260,16 +267,33 @@ export class NpcAnimation {
     return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
   }
 
+  /** A dodge that clears a shot from `from` at `part`, picked by weight. `null` for none */
+  dodgeClipFor(part: null | string, from?: Geom.VectJson): null | AnimationClipKey {
+    const region = hitConfig.region[part ?? ""];
+    const pool = region === undefined ? undefined : dodgePools[postureOf(keyOf(this.idleClip))][region];
+    if (pool === undefined) return null;
+    // stood, they turn to face it unless held to an aim: so it comes from ahead
+    const turns = this.posture === "stand" && this.face.aim === null;
+    const off = from === undefined || turns ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(from));
+    const at = ((Math.round(off / (Math.PI / 12)) % 24) + 24) % 24;
+    const clear = pool.filter(({ clears }) => clears[at] === "1");
+    let pick = Math.random() * clear.reduce((sum, { weight }) => sum + weight, 0);
+    return clear.find(({ weight }) => (pick -= weight) < 0)?.clip ?? null;
+  }
+
   /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
-  setHurt(key: null | AnimationClipKey) {
+  setHurt(key: null | AnimationClipKey, { faceTo }: { faceTo?: number } = {}) {
     /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
     const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
     const pacified = held !== null && isPacified(held);
     if (key !== null && pacified && (isPacified(key) || headClips.has(key))) return;
     const changed = key !== (this.hurt?.key ?? null);
     // pacified, they stay so, whatever else hits them
-    this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held) };
-    this.setPose(this.restKey, { force: key !== null });
+    this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held), faceTo };
+    this.setPose(this.restKey, {
+      force: key !== null,
+      fade: key !== null && dodgeClips.has(key) ? hitConfig.dodgeFadeSecs : undefined,
+    });
     this.w.r3f?.invalidate();
     if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key });
   }
@@ -278,6 +302,9 @@ export class NpcAnimation {
     const { hurt } = this;
     if (hurt === null || onceClips.has(hurt.key) === false) return;
     hurt.secs += delta;
+    const { rotation } = this.npc;
+    if (hurt.faceTo !== undefined)
+      rotation.y += deltaAngle(rotation.y, hurt.faceTo) * (1 - Math.exp(-delta * hitConfig.dodgeTurnRate));
     if (hurt.secs < this.npc.clips[hurt.key].duration) return;
     if (hurt.next === null) return this.setHurt(null);
     this.hurt = { key: hurt.next, secs: 0, next: null };
@@ -1065,7 +1092,11 @@ function isStride(key: AnimationClipKey) {
 
 /** Whether a clip has them sat, lain or stood: `sit` and `lie`, and the hurt clips of each */
 export function postureOf(key: AnimationClipKey) {
-  return key === "sit" || key.startsWith("sit_pa") ? "sit" : key === "lie" || key.startsWith("lie_") ? "lie" : "stand";
+  return key === "sit" || key.startsWith("sit_pa") || key.startsWith("sit_dodge")
+    ? "sit"
+    : key === "lie" || key.startsWith("lie_")
+      ? "lie"
+      : "stand";
 }
 
 /** The clips one lies at rest in, on their back then either side: not the hurt ones */
@@ -1082,10 +1113,26 @@ const isPacified = (key: AnimationClipKey) => hitConfig.pacified.includes(key);
 /** A head shot's clips: one on someone already pacified is not felt */
 const headClips = new Set<AnimationClipKey>(Object.values(hitConfig.clips).map((byRegion) => byRegion.head));
 
-/** Hit clips played once, then left */
-const onceClips = new Set<AnimationClipKey>(
-  Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
-);
+/** A dodge's clips, which come in quickly */
+const dodgeClips = new Set(Object.keys(hitConfig.dodgeClips) as AnimationClipKey[]);
+
+/** Each posture's dodges by part, with what each clears there: built once, so a dodged shot only looks them up */
+const dodgePools = { stand: {}, sit: {}, lie: {} } as Record<
+  "stand" | "sit" | "lie",
+  Partial<Record<HitRegion, { clip: AnimationClipKey; weight: number; clears: string }[]>>
+>;
+for (const clip of dodgeClips) {
+  const { weight, clears } = hitConfig.dodgeClips[clip] ?? { weight: 0, clears: {} };
+  for (const [region, mask] of Object.entries(clears) as [HitRegion, string][]) {
+    (dodgePools[postureOf(clip)][region] ??= []).push({ clip, weight, clears: mask });
+  }
+}
+
+/** Hit and dodge clips played once, then left */
+const onceClips = new Set<AnimationClipKey>([
+  ...Object.values(hitConfig.clips).flatMap((byRegion) => Object.values(byRegion).filter((key) => !isPacified(key))),
+  ...dodgeClips,
+]);
 
 /** A pose stood still in, whose feet a stance may hold apart */
 function isStill(key: AnimationClipKey) {

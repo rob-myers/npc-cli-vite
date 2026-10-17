@@ -91,21 +91,37 @@ export function beamEnd(
 const sameTarget = (a: null | BeamTarget, b: null | BeamTarget) =>
   a === b || (a !== null && b !== null && a.npcKey === b.npcKey && a.part === b.part);
 
-/** The middle of `part` on `npc`, in world space — over their head, where their label is, for none */
-export function bodyPartPoint(npc: Npc, part: null | string, out: THREE.Vector3) {
+/** `part`'s bone on `npc`, and the box round what it moves most, in its own frame. `null` for none such */
+export function bodyPart(npc: Npc, part: null | string) {
   const bone = part === null || part === "label" ? undefined : npc.skinnedMesh.skeleton.getBoneByName(part);
-  const centre = bone === undefined ? undefined : partCentres(npc.skinnedMesh).get(bone.name);
-  if (bone === undefined || centre === undefined) {
-    return out.set(npc.position.x, npc.position.y + npc.anim.headY + beamConfig.headAbove, npc.position.z);
-  }
-  bone.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
-  return out.copy(centre).applyMatrix4(bone.matrixWorld);
+  const box = bone === undefined ? undefined : partBoxes(npc.skinnedMesh).get(bone.name);
+  return bone === undefined || box === undefined ? null : { bone, box };
 }
 
-/** Each bone's part: the middle of what it moves most, in its own frame, off the bind pose — one rig for all */
-function partCentres(mesh: THREE.SkinnedMesh) {
-  let centres = partCentresByGeo.get(mesh.geometry);
-  if (centres !== undefined) return centres;
+/** The middle of `part` on `npc`, in world space — over their head, where their label is, for none */
+export function bodyPartPoint(npc: Npc, part: null | string, out: THREE.Vector3) {
+  const found = bodyPart(npc, part);
+  if (found === null) {
+    return out.set(npc.position.x, npc.position.y + npc.anim.headY + beamConfig.headAbove, npc.position.z);
+  }
+  found.bone.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
+  const end = limbEnds[found.bone.name];
+  const child = end === undefined ? undefined : npc.skinnedMesh.skeleton.getBoneByName(end);
+  if (child !== undefined) {
+    child.updateWorldMatrix(false, false);
+    return out.setFromMatrixPosition(found.bone.matrixWorld).lerp(tmpEnd.setFromMatrixPosition(child.matrixWorld), 0.5);
+  }
+  return found.box.getCenter(out).applyMatrix4(found.bone.matrixWorld);
+}
+
+/** A shin's box reaches the sole, so its middle is halfway from knee to ankle instead */
+const limbEnds: Partial<Record<string, string>> = { leftshin: "leftfoot", rightshin: "rightfoot" };
+const tmpEnd = new THREE.Vector3();
+
+/** Each bone's part: the box round what it moves most, in its own frame, off the bind pose — one rig for all */
+function partBoxes(mesh: THREE.SkinnedMesh) {
+  let found = partBoxesByGeo.get(mesh.geometry);
+  if (found !== undefined) return found;
   const { skeleton, geometry: geo } = mesh;
   const [position, joints, weights] = ["position", "skinIndex", "skinWeight"].map((key) => geo.getAttribute(key));
   const boxes = skeleton.bones.map(() => new THREE.Box3());
@@ -118,16 +134,12 @@ function partCentres(mesh: THREE.SkinnedMesh) {
       v.fromBufferAttribute(position, i).applyMatrix4(mesh.bindMatrix).applyMatrix4(skeleton.boneInverses[j]),
     );
   }
-  centres = new Map(
-    skeleton.bones.flatMap((bone, j) =>
-      boxes[j].isEmpty() ? [] : [[bone.name, boxes[j].getCenter(new THREE.Vector3())]],
-    ),
-  );
-  partCentresByGeo.set(geo, centres);
-  return centres;
+  found = new Map(skeleton.bones.flatMap((bone, j) => (boxes[j].isEmpty() ? [] : [[bone.name, boxes[j]]])));
+  partBoxesByGeo.set(geo, found);
+  return found;
 }
 
-const partCentresByGeo = new WeakMap<THREE.BufferGeometry, Map<string, THREE.Vector3>>();
+const partBoxesByGeo = new WeakMap<THREE.BufferGeometry, Map<string, THREE.Box3>>();
 const tmpGlide = new THREE.Vector3();
 
 const beamConfig = {

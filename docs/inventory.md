@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. A shot needs no raising first: see [Npc focus](#npc-focus) |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. A shot needs no raising first: see npc focus in `docs/engagements.md` |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
@@ -199,69 +199,9 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
   the way the arm points (`armBearingOf`). Lain, that shoulder is far from their middle.
 - Lain, only a current raycast counts, as a roll leaves the last one stale.
 
-### What a hit does
+### Shots, hits and choosing a part
 
-As a beam locks on, and no shield stops it, `w.npc.hit` plays a clip on its target. The clip depends on the part
-locked on to, and on whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-hit`.
-
-| part | stood | sat / lain |
-| --- | --- | --- |
-| head | `pain_head` | `{sit,lie}_pain_head` |
-| chest, stomach, hips | `pain_high` | `{sit,lie}_pain_high` |
-| an arm or leg | `pain_{arm,leg}_{left,right}` | `{sit,lie}_pain_low` |
-
-Its pain clip plays once, then (`hitConfig.next`):
-
-| part | after |
-| --- | --- |
-| head | `pacified` (or `{sit,lie}_pacified`) loops |
-| body, stood | `collapsed` loops: sat on the floor, slumped, breathing hard |
-| body sat or lain, or a limb | back to rest: `breathe`, `sit` or `lie` |
-
-- A head shot's clip ends slumped, so goes straight on. `pain_high` fades into `collapsed` over `pacifyFadeSecs`.
-- Pacified or collapsed lasts until released: `pose npc-0 as:breathe`, or `as:sit` / `as:lie`.
-- Whilst hurt (`anim.hurt`) they can do nothing. A move under way is stopped (it rejects with `hit`), their phaser is
-  lowered, and `move`, `look` and arming are refused.
-- Pain on someone already pacified or collapsed leaves them as they were after, though a head shot pacifies one collapsed.
-  A head shot on someone pacified has no effect, nor does the label, or no part.
-- One lock hits once. Hits are not mirrored over the network.
-
-### Npc focus
-
-Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`), as does jsh `focus target-0`:
-
-1. `aimAt` raises the phaser pointed at them (`arm`'s `toward`) and turns the player to them (at most `turnMaxMs`).
-   Stood, they turn round. Sat, their head turns. Lain, they roll to the pose that reaches them, if one does.
-2. It waits for the phaser to come up clear as they now stand, by a cast made there (`w.phasers.isClear`, at most
-   `raiseMaxMs`).
-3. Drawn in there, or stowed lain, or out of sight (a raycast is blocked), it ends with the phaser left raised.
-4. It waits for the aim to land (`w.phasers.isAimed`: the arm within 3°, and no roll still fading in), so the pause
-   does not hold it partway.
-5. The World pauses and the view zooms in. A mark is pinned over their head, body, arms and legs, placed from their
-   bones each frame.
-6. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or
-   the note at the top, shoots nothing.
-7. The World resumes, unless it was paused before. The view stays where it is. A phaser left raised no longer
-   points at them.
-
-Whilst it runs:
-
-- `cancel` ends it as Escape does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
-- Only the marks take the pointer, so the camera still moves.
-- The paused indicator is hidden whilst it aims and in the pause it opens in (`showsPaused`). Once resumed, a pause shows it.
-- A follow runs on whilst they aim, is set aside for the zoom, and resumes after.
-- The player's moves are refused whilst it aims and in the pause it opens in (`w.e.move` throws `focused`), held
-  keys included, as a move would undo the turn. Once resumed they move again.
-
-Resumed with the marks up (Enter, or play):
-
-- Escape only pauses the World, as ever. It ends the focus only in the pause it opened in (`resumed`).
-- The marks fade out whilst the player faces more than `maxOffAimRad` (15°) away (`offAim`), and back in as they
-  face them again. Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of reach.
-- A click on someone, them or another, replaces the focus with a fresh one.
-- Lowering the phaser, e.g. by `e`, ends it as Escape does (`isLost`).
-
-After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it was raised before the click, e.g. by `e`.
+How a shot ends, what a hit does, and the player's choice of part to shoot (npc focus) are in `docs/engagements.md`.
 
 ## The `inventory` command
 
@@ -271,7 +211,7 @@ After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it 
   beside its table. They take it if then within `inventoryConfig.reach`: tight for one on the floor, looser for one
   whose top (`y3d`) is higher. Sat or lain in reach, they take it from there. A newer press abandons it.
 - **On another npc**, with psi on, their thought is read (`docs/psi.md`). Else, carrying a phaser, it focuses on
-  them (see [Npc focus](#npc-focus)).
+  them (see npc focus in `docs/engagements.md`).
 - **On the player's own right arm**, a raised phaser is lowered, its target forgotten. A press elsewhere on them does
   nothing.
 - **On the player's own LEFT arm**, psi is lowered, phaser drawn or not.
