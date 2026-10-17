@@ -441,7 +441,7 @@ const crouchClips = {
     stride: 10,
     duty: 0.6,
     lift: 2,
-    sway: 0.4,
+    sway: 0.1,
     bob: 0.3,
     swing: 10,
   }),

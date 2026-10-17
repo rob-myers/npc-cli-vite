@@ -365,9 +365,10 @@ small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` 
   (0.4m), the left foot landing at 0, the hips swaying 0.4 over the planted foot, the arms hanging forward and
   swinging 8. Sideways, 5 a cycle (0.25m), the right foot leading, the feet set 0.75 wider so they never meet. The
   hips bob 0.3 twice a cycle. `crouch_backwards` is `crouch_walk` reversed, `crouch_strafe_left` the right one mirrored.
-- **`crouch_half`** and its gaits: the same recipes, less low. Hips 4 down and 1.5 back, a lean of 15, the head's top
-  at y 26.4, 1.32m. Its arms were searched so the hands rest on the thighs behind the knees: arms [-5,0,∓4], forearms
-  [60,0,∓10]. The gaits stride 10 ahead (0.5m) and 6 sideways (0.3m), lifting 2 (1.5 sideways).
+- **`crouch_half`** and its gaits: the same recipes, less low. Hips 4 down and 1.5 back, a lean of 28, the head's top
+  at y 25.9, 1.30m. Its arms were searched so the hands rest on the thighs behind the knees: arms [-5,0,∓2], forearms
+  [70,0,∓30]. The gaits stride 10 ahead (0.5m) and 6 sideways (0.3m), lifting 2 (1.5 sideways). The walk sways only
+  0.1: the less folded leg turns far more to keep a swinging foot on its line, and at 0.4 its knee wobbled 18°.
 - `steppingLegs` sets each frame out from the last frame's solution, and moves at most `maxStep` a Newton step. From a
   fixed guess the half crouch's legs jumped to another branch, a thigh turned 2358°.
 - **`drop_left` / `pick_up_left` / `crouch_left`**: mirrors for the other hand. Left and right bones swapped,
