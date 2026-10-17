@@ -15,6 +15,7 @@
     "typecheck": "tsgo -b",
     "types": "tsgo -b",
     "check": "biome check packages/*",
+    "compare-gzip-brotli": "node scripts/src/bins/compare-gzip-brotli.ts",
     "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
