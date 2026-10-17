@@ -384,19 +384,23 @@ Drafts, posed by search: legs solved so the feet stay planted, hands solved onto
 
 ### collapsed (catmullrom at 0 / 0.9 / 1.8)
 
-After a body shot stood (`pain_high`): sat on the floor, knees drawn up, forearms over the knees, slumped, breathing
+After a body shot stood (`pain_high`): sat on the floor, knees drawn up, the left forearm over the knees and the right across them, slumped, breathing
 hard but slowly: at 1.2s a breath it distracted. The root drops to seat the pelvis's underside on the floor (`skeleton-root` position [0,-10.81,1], rotation
-0). The legs were searched so the lowest of shin and foot sits on the floor with the foot level.
+0). The legs were searched so the lowest of shin and foot sits on the floor with the foot level. The right forearm
+lies across the knees so a gun in hand stays inside their footprint, and the spine is kept fairly straight with a
+small nod, as a deeper slump put the head into a neighbour's.
 
 | Bone | channel | t=0 / t=1.8 (out) | t=0.9 (in) |
 |------|---------|-------------------|------------|
 | hips | rotation | [6,0,0] | same |
-| stomach | rotation / position y | [-14,0,2] / -0.15 | [-9,0,2] / 0.1 |
-| chest | rotation / position y | [-12,0,0] / -0.15 | [-5,0,0] / 0.25 |
-| head | rotation | [-24,6,10] | [-16,6,10] |
-| rightarm / leftarm | rotation | [38,0,±6] | [32,0,±7] |
+| stomach | rotation / position y | [-6,0,2] / -0.15 | [-3,0,2] / 0.1 |
+| chest | rotation / position y | [-4,0,0] / -0.15 | [0,0,0] / 0.25 |
+| head | rotation | [-18,6,10] | [-16,6,10] |
+| rightarm | rotation | [45,-1,11] | [39,-1,12] |
+| leftarm | rotation | [38,0,-6] | [32,0,-7] |
 | rightarm / leftarm | position y | 0 | 0.45 |
-| rightforearm / leftforearm | rotation | [35,0,∓10] | same |
+| rightforearm | rotation | [36,80,-48], across the knees | same |
+| leftforearm | rotation | [35,0,10] | same |
 | thighs | rotation | [140,0,±8], knees drawn in | same |
 | shins / feet | rotation x | -93 / -48 | same |
 
