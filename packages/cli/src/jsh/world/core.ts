@@ -927,7 +927,8 @@ export async function park(
           const plan = plans[i];
           if (plan === null) return;
           const { at, facing, seg } = plan;
-          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > standConfig.parkMinMove) {
+          // hurt, they cannot look: a respawn turns them, and keeps the hurt clip
+          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > standConfig.parkMinMove || npc.anim.hurt !== null) {
             await npc.fadeSpawn({ at, facing });
           } else {
             await npc.look({ at: facing });
