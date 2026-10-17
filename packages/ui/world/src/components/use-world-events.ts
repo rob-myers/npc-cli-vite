@@ -197,6 +197,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (doResult.type !== "none") {
           // doable overrides navigable
+          /** An interrupted walk ends here. Left on, a strafe let go would show its gait over the pose */
+          npc.anim.moving = false;
           if (doResult.type === "use-current") {
             await w.npc.spawn({ npcKey, at: to }); // respawn
           } else {
@@ -211,8 +213,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
             await npc.fadeSpawn({ at: to });
           }
-          // fix contiguous move
-          npc.anim.moving = false;
           return;
         }
 
