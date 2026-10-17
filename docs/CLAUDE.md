@@ -159,7 +159,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 Azimuth:
 - Free at every zoom, and untouched by zooming.
-- The compass dial (`compassDial`: `c`, or its button on `WorldHud` beside look/follow, `setCompassDial`) only keeps it clear of the diagonals. A view let go more than `maxAzimuthSkew` (π/8) off square eases back to that (`keepNearSquare`), on switching on too.
+- The compass dial (`compassDial`: its button on `WorldHud` beside look/follow, `setCompassDial`) only keeps it clear of the diagonals. A view let go more than `maxAzimuthSkew` (π/8) off square eases back to that (`keepNearSquare`), on switching on too.
 - Whilst the dial is on, `w`, `a`, `s` and `d` head along the world's axes, `w` along the one nearest up the screen (`getWasdDirection`). A turned view still lines up with doors, and that axis never flips under a resting view.
 - That axis is held whilst any of them is down (`wasdPoint`), so a turn mid-walk doesn't swerve them.
 - The button names `w`'s compass point (`compassPoint`: N is -z). Its needle leans by `compassSkew`, to where `w` heads on screen.
@@ -197,6 +197,8 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ## Player input
 
 - **Walking.** With the compass dial off, `w`, `a`, `s` and `d` head as seen. For the dial, see [`embodied` mode](#embodied-mode).
+- **Crouching.** `c` toggles the player's crouch behind cover (`anim.setCrouched`, `crouch_cover`). Touch has no way yet.
+  - Crouched they move slowly in the crouched gaits, strafing too, and never run.
 - **Running.** An npc runs whilst `anim.hurry`.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
   - Its button on `WorldHud`, beside look/follow, toggles the player's.

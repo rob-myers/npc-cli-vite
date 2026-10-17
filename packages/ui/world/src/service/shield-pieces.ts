@@ -62,7 +62,7 @@ function createShieldMaterial(objectPick: THREE.Node<"float">) {
   const hit = attribute<"vec4">("shieldHit", "vec4");
   const age = hit.w;
   /** Per instance, so per vertex: the front's spread, the ring's strength, how dissolved, the impact's brightness */
-  const timing = varying(
+  const timing = varying<"vec4">(
     vec4(
       age.mul(spreadSpeed),
       smoothstep(float(0.1), float(holdSecs), age).oneMinus(),

@@ -165,7 +165,12 @@ export const fromAnimationClipKey = {
   breathe: true,
   collapsed: true,
   crouch: true,
+  crouch_backwards: true,
+  crouch_cover: true,
   crouch_left: true,
+  crouch_strafe_left: true,
+  crouch_strafe_right: true,
+  crouch_walk: true,
   dodge_arm_left: true,
   dodge_arm_right: true,
   dodge_duck: true,
@@ -408,7 +413,12 @@ export const fadeSecs: Record<
   breathe: { shuffle: 0.15 },
   collapsed: {},
   crouch: {},
+  crouch_backwards: {},
+  crouch_cover: {},
   crouch_left: {},
+  crouch_strafe_left: {},
+  crouch_strafe_right: {},
+  crouch_walk: {},
   dodge_arm_left: {},
   dodge_arm_right: {},
   dodge_duck: {},
@@ -574,9 +584,27 @@ export const stanceConfig = {
   fadeSecs: 0.45,
 };
 
-/** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included */
-export const gaitStride = { walk: 0.84, strafe_right: 0.41, backwards: 0.7, strafe_left: 0.41 };
-/** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe` */
-export const strafeSpeed = { walk: 1.2, strafe_right: 0.5, backwards: 1, strafe_left: 0.5 };
+/** Metres a cycle of each directional gait covers — measured off the planted foot, `npcScale` included. Crouched, as keyed */
+export const gaitStride = {
+  walk: 0.84,
+  strafe_right: 0.41,
+  backwards: 0.7,
+  strafe_left: 0.41,
+  crouch_walk: 0.4,
+  crouch_strafe_right: 0.25,
+  crouch_backwards: 0.4,
+  crouch_strafe_left: 0.25,
+};
+/** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */
+export const strafeSpeed = {
+  walk: 1.2,
+  strafe_right: 0.5,
+  backwards: 1,
+  strafe_left: 0.5,
+  crouch_walk: 0.5,
+  crouch_strafe_right: 0.3,
+  crouch_backwards: 0.4,
+  crouch_strafe_left: 0.3,
+};
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;

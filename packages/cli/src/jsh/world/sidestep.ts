@@ -110,8 +110,8 @@ async function parkIfInTheWay(w: JshCli.WorldState, npcKey: string) {
 }
 
 const sidestepConfig = {
-  /** Within this of a walker they step aside. No further than the crowd's `collisionQueryRange` */
-  dist: 0.6,
+  /** Within this of a walker they step aside: the crowd's `collisionQueryRange`, within which its avoidance holds one up */
+  dist: 0.7,
   /** A walker beside them this long, making less headway (metres), is held up. Sooner than `stuckDuration` */
   lingerSecs: 0.2,
   progress: 0.15,

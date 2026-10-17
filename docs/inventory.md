@@ -31,7 +31,7 @@ After the slots come buttons for the player themself. A client gets only these. 
 
 - **walk/run**, not on a client: `w.player.toggleRun()`, their `anim.hurry`.
 - **look/follow**: a press looks, and a long press toggles the follow, as `f` does.
-- **compass dial** (`c`, `w.view.setCompassDial`): a letter naming the compass point up the screen. It is
+- **compass dial** (`w.view.setCompassDial`): a letter naming the compass point up the screen. It is
   persisted per World and on by default.
 
 Rules:
@@ -150,8 +150,24 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
   gone only whilst they are faded right out, and back as they fade in.
 - Its roll about the forearm undoes whatever twist the forearm has NOT got (`restRoll`), read off the bone. So it
   never turns about its barrel as the arm comes up or down.
-- The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up.
+- The beam is cut the moment the aim is lowered, and waits for the arm to be all the way up, in `phaser_aim`.
+- Stood before an obstacle the swing would meet (`swingHit`: one within reach whose span overlaps the band from the
+  hand at rest, `restBelowGun` under the gun, to the gun), the arm goes up and comes down by way of `phaser_aim_avoid`,
+  kept in. Raising, the `phaser_aim` stance waits for the arm to be up, else its own arm swings the gun forward through
+  the obstacle. A raise from rest waits for the first cast, a frame or two, to know which way.
 - Lowered, their target is kept for the next raise (`Phasers.toggle`), whilst the gun stays in hand.
+
+### Crouched
+
+`crouch_cover` is a still squat behind cover, e.g. a sofa: `c` for the player, jsh `pose rob as:crouch_cover`. It is
+their rest clip (`anim.setCrouched`, `anim.crouched`) until they stand, `c` again or another clip posed, e.g.
+`pose rob as:breathe`. On the move they stay crouched, in the crouched gaits (`docs/npc-strafe.md`).
+
+- Raised, they stay crouched. `Phasers` skips its stance, and `phaser_aim` / `phaser_aim_avoid` play over the head and
+  arms as on the move. The arms are corrected for the crouch's lean (`leanOfUpper`), so the gun is level, 0.67m up.
+- Standing up whilst armed swaps to the `phaser_aim` stance: that is the pop-up.
+- Crouched and not raised, the gun is held up out of the way: `phaser_aim_avoid` over the right arm (`tucked` in
+  `wield`). Standing up lets it go. jsh `pose` may take the arm from it.
 
 ### Aiming and looking, sat or lain
 
@@ -186,6 +202,19 @@ turn eases too (`headTurn`), so it glides.
 
 The arm is drawn in for a wall or closed door within reach, a shield, a target out of sight, or someone in the way.
 
+- A wall, door or shield is looked for along two rays from their middle (`armEnds`): ahead, and to the gun's outer
+  side at `reach`. Stood, the gun is right of their middle, so a jamb meets it before it meets the first ray.
+- Both rays end `leadSecs` of their velocity on, so the arm is in before a strafe takes the gun into a wall.
+- Stood or crouched, an obstacle blocks too if the gun's height is within its span, with `gunClear` to spare. The gun
+  is `gunBelowHead` under their head's pivot (`anim.headY`): about 1.1m stood, 0.67m crouched. So most obstacles block
+  only a crouch. Sat or lain, obstacles are ignored, being what they sit or lie at.
+- A cast keeps every obstacle within reach, at any height (`arm.reached`), and each tick tests them against the gun's
+  height now. So crouching draws in at once, without waiting for the next cast. Crouched, it draws in over
+  `quickDrawInSecs`.
+- A ray passes obstacles, as it does doors (`w.e.raycast`'s `obstacles`: `top`, `bottom`, `dist`, nearest first). The
+  nav worker keeps them in each geomorph's own system, beside its walls, bar those flat on the floor. One the ray
+  starts inside, e.g. a seat, is not listed.
+
 | | someone in the way | drawn in is |
 | --- | --- | --- |
 | stood | found by `armMeetsNpc`, below | `phaser_aim_avoid`, over `drawInSecs` |
@@ -195,6 +224,8 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 
 - `armMeetsNpc` looks through their room (`getNpcsInReach(key, 0)`), not the crowd's neighbours: those reach only
   `collisionQueryRange` (0.7m), short of the gun's tip.
+- Near a door (its "nearby" sensor), it also looks at whoever else is near that door (`w.e.doorToNpcs`), either side.
+  An arm can reach through a doorway into the next room.
 - It polls every `sampleSecs` for the player and every `npcPollSecs` for anyone else, jittered.
 - What can meet someone is their gun at full aim (`gunLine`). Stood, it is a fixed segment in their aim's frame
   (`phaserConfig.gun`, measured off `phaser_aim`): from the elbow to the muzzle, beside their right shoulder. Sat or

@@ -60,7 +60,7 @@ export class NpcAnimation {
   hurry = false;
   /** They may run. Not which gait shows — that is `moveClip` */
   get fast() {
-    return this.hurry === true && this.backwards === false && this.strafe === false;
+    return this.hurry === true && this.backwards === false && this.strafe === false && this.crouched === false;
   }
   /** The move's INTENT: they back away, facing whence they go — see `w.e.move` */
   backwards = false;
@@ -172,7 +172,7 @@ export class NpcAnimation {
       return;
     }
 
-    const shown = next === "walk" && this.strafe === true ? strafeClipKeys : [next];
+    const shown = this.strafe === true ? (gaitSets.find((keys) => keys[0] === next) ?? [next]) : [next];
     const { clips } = this.npc;
 
     for (const clip of Object.values(clips)) {
@@ -254,6 +254,27 @@ export class NpcAnimation {
     }
     if (key !== null) u.key = key;
     u.target = key === null ? 0 : 1;
+  }
+
+  /** Crouched behind cover: `crouch_cover` at rest, the crouched gaits on the move, until they stand up */
+  get crouched() {
+    return keyOf(this.idleClip) === "crouch_cover";
+  }
+
+  /** The four directional gaits a strafe blends: crouched or not */
+  get gaitKeys() {
+    return this.crouched ? crouchStrafeClipKeys : strafeClipKeys;
+  }
+
+  /** Crouch behind cover, or stand back up into the default idle. Only from standing, never sat or lain */
+  setCrouched(on: boolean) {
+    if (on === this.crouched) return;
+    if (on === true && (this.posture !== "stand" || this.w.npc.npcToDoable[this.npc.key] != null)) return;
+    this.idleClip = this.npc.clips[on ? "crouch_cover" : defaultIdleAnimationClipKey];
+    if (this.moving === false) return this.setPose(this.restKey);
+    this.showGait(); // mid-move, the other gaits
+    const { agent } = this.npc;
+    if (agent !== null && this.strafe === false && agent.maxSpeed > 0) agent.maxSpeed = this.maxSpeedFor();
   }
 
   /** What they stand, sit or lie in at rest: the hurt clip whilst there is one */
@@ -375,8 +396,15 @@ export class NpcAnimation {
 
     if (this.moving === true) {
       this.syncGait(delta);
-      const gait = this.moveClip.name === "run" ? 0.5 : 1;
-      this.mixer.clipAction(this.moveClip).timeScale = gait * Math.max(0.25 / npcScale, this.speed, 0.5);
+      const key = keyOf(this.moveClip);
+      const action = this.mixer.clipAction(this.moveClip);
+      if (isCrouchGait(key)) {
+        // a cycle a stride, at their speed: a strafe divides by the blend's in `syncStrafe`
+        const pace = Math.max(this.speed, crouchPaceMin);
+        action.timeScale = this.strafing === true ? pace : pace / gaitStride[key];
+      } else {
+        action.timeScale = (key === "run" ? 0.5 : 1) * Math.max(0.25 / npcScale, this.speed, 0.5);
+      }
       if (this.strafing === true) this.syncStrafe(delta);
     }
 
@@ -894,7 +922,8 @@ export class NpcAnimation {
   /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
   syncStrafe(delta: number) {
     const { clips, agent, rotation } = this.npc;
-    const actions = strafeClipKeys.map((key) => this.mixer.clipAction(clips[key]));
+    const keys = this.gaitKeys;
+    const actions = keys.map((key) => this.mixer.clipAction(clips[key]));
     const [vx, , vz] = agent?.velocity ?? [0, 0, 0];
     const ease = 1 - Math.exp(-delta / strafeEaseSecs); // alike for all four, so they still sum to 1
     if (this.strafe === false) {
@@ -909,8 +938,8 @@ export class NpcAnimation {
         action.weight += (target - action.weight) * ease;
       });
     }
-    const blend = (byKey: Record<(typeof strafeClipKeys)[number], number>) =>
-      actions.reduce((sum, action, i) => sum + action.weight * byKey[strafeClipKeys[i]], 0);
+    const blend = (byKey: Record<keyof typeof gaitStride, number>) =>
+      actions.reduce((sum, action, i) => sum + action.weight * byKey[keys[i]], 0);
     if (agent !== null && this.strafe === true) agent.maxSpeed = blend(strafeSpeed); // as fast as that way allows
 
     const [walk] = actions;
@@ -919,11 +948,11 @@ export class NpcAnimation {
     actions.forEach((action, i) => {
       action.timeScale = timeScale;
       if (i === 0) return;
-      // `backwards` is `walk` reversed: a half cycle on, the same foot swings
-      const offset = strafeClipKeys[i] === "backwards" ? 0.5 : 0;
+      // the third, `backwards` or `crouch_backwards`, is the first reversed: a half cycle on, the same foot swings
+      const offset = i === 2 ? 0.5 : 0;
       action.time = ((phase + offset) % 1) * action.getClip().duration;
     });
-    if (this.strafe === false && walk.weight > 0.99) this.setPose("walk", { force: true });
+    if (this.strafe === false && walk.weight > 0.99) this.setPose(keys[0], { force: true });
   }
 
   /**
@@ -978,15 +1007,23 @@ export class NpcAnimation {
   /** The agent's top speed for the move's intent: a strafe's is then `syncStrafe`'s, by heading */
   maxSpeedFor() {
     const { maxSpeed } = agentConfig;
+    if (this.crouched === true) return strafeSpeed.crouch_walk;
     if (this.strafe === true) return strafeSpeed.walk;
     return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
   }
 
   /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
   showGait() {
-    const clipKey = this.backwards === true ? "backwards" : "walk";
+    const { crouched } = this;
+    const clipKey = crouched
+      ? this.backwards === true
+        ? "crouch_backwards"
+        : "crouch_walk"
+      : this.backwards === true
+        ? "backwards"
+        : "walk";
     // a look or a spawn in between puts idle on, and it must be shown again or they slide
-    const shown = this.backwards === true ? this.pose === clipKey : isGait(this.pose);
+    const shown = this.backwards === true || crouched ? this.pose === clipKey : isGait(this.pose);
     if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
     this.moving = true;
     this.moveClip = this.npc.clips[clipKey];
@@ -1162,6 +1199,19 @@ function upperTracksOf(clip: THREE.AnimationClip) {
 
 /** Clockwise from ahead, a quarter turn apart — see `syncStrafe` */
 const strafeClipKeys = ["walk", "strafe_right", "backwards", "strafe_left"] satisfies AnimationClipKey[];
+/** As `strafeClipKeys`, crouched */
+const crouchStrafeClipKeys = [
+  "crouch_walk",
+  "crouch_strafe_right",
+  "crouch_backwards",
+  "crouch_strafe_left",
+] satisfies AnimationClipKey[];
+/** Each blend, by the gait it starts from */
+const gaitSets = [strafeClipKeys, crouchStrafeClipKeys];
+const isCrouchGait = (key: AnimationClipKey): key is (typeof crouchStrafeClipKeys)[number] =>
+  (crouchStrafeClipKeys as AnimationClipKey[]).includes(key);
+/** Metres a second a crouched gait is paced at, however slowly they creep */
+const crouchPaceMin = 0.2;
 
 const upperTracks = new WeakMap<
   THREE.AnimationClip,
@@ -1318,17 +1368,20 @@ function keyOf(clip: THREE.AnimationClip) {
 
 function bubbleHeightForClip(clipName: AnimationClipKey): number {
   const posture = postureOf(clipName);
-  if (posture === "sit" || clipName === "collapsed") return 1.4; // collapsed, sat on the floor
+  if (posture === "sit" || isLowClip(clipName)) return 1.4;
   if (posture === "lie") return 0.9;
   return 2;
 }
+
+/** Stood, yet about as low as one sat: collapsed on the floor, or crouched */
+const isLowClip = (clipName: AnimationClipKey) => clipName === "collapsed" || clipName.startsWith("crouch");
 
 /** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;
 
 function labelYShiftForClip(clipName: AnimationClipKey): number {
   const posture = postureOf(clipName);
-  if (posture === "sit" || clipName === "collapsed") return 1.6; // collapsed, sat on the floor
+  if (posture === "sit" || isLowClip(clipName)) return 1.6;
   if (posture === "lie") return 0.75;
   return labelYShiftMax;
 }

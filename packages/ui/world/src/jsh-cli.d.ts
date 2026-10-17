@@ -198,6 +198,8 @@ declare namespace JshCli {
     doors: Geomorph.GmDoorKey[];
     /** Decor keys of the shields it passed, nearest first, which stop no ray */
     shields: string[];
+    /** The obstacles it passed, nearest first, which stop no ray: `dist` is metres from its start */
+    obstacles: (WW.RaycastObstacle & { gmId: number })[];
     /** Alternated with `gdKeys` i.e. `firstGrKey -> firstGdKey ->  ... -> lastGrKey` */
     rooms: Geomorph.GmRoomKey[];
   };

@@ -936,7 +936,8 @@ export function WorldView(props: React.PropsWithChildren) {
         } else if (e.key === "0") {
           if (e.repeat === false) state.toggleViewPick();
         } else if (key === "c") {
-          if (e.repeat === false) state.setCompassDial(!state.compassDial);
+          const anim = w.player.key === null ? undefined : w.n?.[w.player.key]?.anim;
+          if (e.repeat === false) anim?.setCrouched(!anim.crouched);
         } else if (key === "f") {
           // the look button's gesture on a key: a held key REPEATS, which is the long press — no
           // timer of our own, and a tap never gets there. The short press waits for the release,
@@ -1879,7 +1880,7 @@ export type State = {
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
   lastKeyMs: number;
-  /** Whether `wasd` heads along the world's axes, the view kept clear of the diagonals. `c` toggles it */
+  /** Whether `wasd` heads along the world's axes, the view kept clear of the diagonals. Its `WorldHud` button toggles it */
   compassDial: boolean;
   /** The compass point nearest up the screen, where `w` heads: `0` north (-z), then west, south, east */
   compassPoint: number;

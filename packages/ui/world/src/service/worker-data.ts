@@ -1,5 +1,5 @@
 import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
-import { Poly } from "@npc-cli/util/geom";
+import { Mat, Poly } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { helper } from "./helper";
 
@@ -62,13 +62,22 @@ export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSet
   );
 
   return Object.fromEntries(
-    gmPairs.map(([gmKey, { walls, doors }]) => [
+    gmPairs.map(([gmKey, { walls, doors, obstacles }]) => [
       gmKey,
       {
         key: gmKey,
         doors: doors.map(({ poly }) => poly.geoJson),
         walls: walls.map((poly) => poly.geoJson),
-        // 🚧 some obstacles?
+        obstacles: obstacles.flatMap(({ origPoly, transform, height, meta }, obstacleId) =>
+          height > 0
+            ? {
+                obstacleId,
+                top: height,
+                bottom: typeof meta.h === "number" ? height - meta.h : 0,
+                outline: origPoly.clone().applyMatrix(new Mat(transform)).geoJson,
+              }
+            : [],
+        ),
       },
     ]),
   );

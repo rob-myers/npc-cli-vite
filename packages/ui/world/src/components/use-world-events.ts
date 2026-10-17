@@ -1054,6 +1054,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       async raycast(origSrc, origDst) {
         let src = helper.parseGroundPoint(origSrc);
         const dst = helper.parseGroundPoint(origDst);
+        const start = src;
 
         // Both points must reside in a room or doorway
         const srcGrId = w.findRoomContaining(src, true);
@@ -1066,12 +1067,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         if (Math.abs(src.x - dst.x) < 0.01 && Math.abs(src.y - dst.y) < 0.01) {
           // avoid 'detect-collisions' throw on zero-length rays
-          return { success: true, hit: null, rooms: [srcGrId.grKey], doors: [], hitDoor: null, shields: [] };
+          return {
+            success: true,
+            hit: null,
+            rooms: [srcGrId.grKey],
+            doors: [],
+            hitDoor: null,
+            shields: [],
+            obstacles: [],
+          };
         }
 
         const [grIds, gdIds] = [[] as Geomorph.GmRoomId[], [] as Geomorph.GmDoorId[]];
         /** The first leg's: shields are in world space, so it has the whole ray's */
         let shields: undefined | string[];
+        const obstacles: JshCli.RaycastResult["obstacles"] = [];
         let gmId = srcGrId.gmId;
         let roomId = srcGrId.roomId;
         let hit: null | Geom.VectJson = null;
@@ -1097,6 +1107,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
           hit = result.hit;
           shields ??= result.shields;
+          /** Metres from the ray's start to this leg's */
+          const legFrom = Math.hypot(src.x - start.x, src.y - start.y);
+          for (const o of result.obstacles) obstacles.push({ ...o, gmId, dist: o.dist + legFrom });
           // check whether ray is blocked by a door panel (accounting for partial open)
           for (const gdId of result.gmDoorIds) {
             const door = w.d[gdId.gdKey];
@@ -1148,6 +1161,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           doors: gdIds.map(({ gdKey }) => gdKey),
           rooms: grIds.map(({ grKey }) => grKey),
           shields: shields ?? [],
+          // none past a closed door that stopped it
+          obstacles:
+            hit === null ? obstacles : obstacles.filter((o) => o.dist <= Math.hypot(hit.x - start.x, hit.y - start.y)),
         };
       },
       rejectPendingUnreachable(err) {

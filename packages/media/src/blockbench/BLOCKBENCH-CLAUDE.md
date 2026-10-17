@@ -162,6 +162,11 @@ Each entry of its `clips` is a RECIPE: default `params`, and `tracks(params)` re
 - `turn`: a posed rotation.
 - `breathe(a, b)`: a value that swells with the cycle.
 - `plantedLegs`: a root and legs solved so both feet stay put. It throws if a leg cannot reach.
+- `steppingLegs`: a root and legs solved so each ankle follows a path (`stepping`), the sole kept flat. It solves
+  thigh x, thigh y (the knee turned out) and the knee. Thigh z twists the thigh about its own length, so it is not used.
+- `mirrored`: a clip's tracks for its mirror.
+
+A clip's length is read from the bbmodel: a gait is 1s, keyed every frame.
 
 ```sh
 node scripts/src/bins/gen-clip-keys.ts                        # every recipe
@@ -173,6 +178,10 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `sit` | `knee` |
 | `sit_reach` | `leg hold`, frames |
 | `crouch` | `down back lean reach` |
+| `crouch_cover` | `down back lean` |
+| `crouch_walk` | `down back lean stride duty lift sway bob swing` |
+| `crouch_strafe_right` | `down back lean stride duty lift bob wide` |
+| `crouch_backwards`, `crouch_strafe_left` | none: `crouch_walk` reversed, `crouch_strafe_right` mirrored |
 | `phaser_aim` | `rock drop sink lean breathe`; also keys `phaser_aim_avoid` |
 
 - A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in
@@ -191,6 +200,8 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `influence` | 2.5s | hand on the temple, pushing | posed |
 | `psi` | 2.5s | left hand at the temple | posed |
 | `drop`, `pick_up`, `crouch` (`_left`) | 2.5s | putting down, taking up | posed; `crouch` solved |
+| `crouch_cover` | 2.5s | a still squat behind cover | `crouch`'s legs, arms searched |
+| `crouch_walk`, `crouch_strafe_right` (`_left`), `crouch_backwards` | 1s | crouched gaits | solved |
 | `sit_reach` | 2.5s | reaching from a seat, past a table's edge | solved |
 | `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
 | `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
@@ -342,6 +353,16 @@ small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` 
 - **`crouch`** (`w.e.reachFor`, on or off the FLOOR): a still whole-body squat. The feet where they rest, the root
   8.5 down and 3 back, the legs solved to them. The torso leans 60 (stomach and chest -30 each, head 40). The right
   arm hangs 22 forward of plumb, so the hand touches the floor ahead; the left rests on the knee. Recipe `crouch`.
+- **`crouch_cover`** (jsh `pose rob as:crouch_cover`): a still squat behind cover, e.g. a sofa, kept as the rest
+  clip. `crouch`'s legs (root 8.5 down and 3 back), a lean of 35 (stomach and chest -17.5 each), the head level (35).
+  The elbows rest on the knees, searched: arms [35,0,∓10], forearms [70,0,∓30], right then left. The head's top is
+  at y 21.1, 1.05m. Armed, `phaser_aim`'s arms play over it, raised 33 for the lean: the forearm is level at y 13.4.
+  Recipe `crouch_cover`.
+- **`crouch_walk`** / **`crouch_strafe_right`**: `crouch_cover`'s hips and lean, stepping flat-footed. Each foot is
+  planted for 0.6 of the cycle, sliding back, then lifted 1.5 (1.2 sideways) and swung ahead. Ahead, 8 a cycle
+  (0.4m), the left foot landing at 0, the hips swaying 0.4 over the planted foot, the arms hanging forward and
+  swinging 8. Sideways, 5 a cycle (0.25m), the right foot leading, the feet set 0.75 wider so they never meet. The
+  hips bob 0.3 twice a cycle. `crouch_backwards` is `crouch_walk` reversed, `crouch_strafe_left` the right one mirrored.
 - **`drop_left` / `pick_up_left` / `crouch_left`**: mirrors for the other hand. Left and right bones swapped,
   rotation y and z and position x negated. Re-mirror after changing the originals.
 
