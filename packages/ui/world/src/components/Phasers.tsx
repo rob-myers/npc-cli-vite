@@ -368,7 +368,8 @@ export default function Phasers() {
           target !== undefined && arm.casting === false && arm.inSight === false && arm.cast?.target === target.key;
         /** Their arm at full reach would meet a shield: drawn in, as from a wall */
         const shielded =
-          armed === true && w.shields?.reaches(npc.point, handAhead(npc, arm), w.shields.freqsOf(npc.key)) === true;
+          armed === true &&
+          armEnds(npc, arm).some((end) => w.shields?.reaches(npc.point, end, w.shields.freqsOf(npc.key)) === true);
         if (shielded && arm.shielded === false && npc.key === w.player.key) w.hud?.say("phaser suppressed");
         arm.shielded = shielded;
         // polled through their room: the crowd's neighbours stop short of the gun
@@ -480,14 +481,18 @@ export default function Phasers() {
         arm.cast = { x, z, ry, tx, tz, target: target?.key ?? null };
         arm.castSecs = secs;
         arm.casting = true;
-        const hand = handAhead(npc, arm);
         // off the map throws: read as blocked
         const none = { inSight: false, shields: [] as string[] };
-        void Promise.all([
-          w.e.raycast(npc.point, hand).then(
-            ({ hit }) => hit !== null,
-            () => true,
+        const armHit = Promise.all(
+          armEnds(npc, arm).map((end) =>
+            w.e.raycast(npc.point, end).then(
+              ({ hit }) => hit !== null,
+              () => true,
+            ),
           ),
+        ).then((hits) => hits.includes(true));
+        void Promise.all([
+          armHit,
           target === undefined
             ? { inSight: false, shields: arm.shields } // kept: a beam let go of still fades against them
             : w.e.raycast(npc.point, target.point).then(
@@ -788,11 +793,19 @@ function isCastCurrent(arm: ArmEntry, npc: Npc, target: undefined | Npc) {
   );
 }
 
-/** Where their hand is at arm's length, on the ground */
-function handAhead(npc: Npc, arm: ArmEntry) {
-  const { x, z } = npc.position;
+/** Where both sides of their arm end at arm's length, on the ground, led by their velocity. Stood, the gun is to their right */
+function armEnds(npc: Npc, arm: ArmEntry): Geom.VectJson[] {
   const ry = armBearingOf(npc, arm);
-  return { x: x - Math.sin(ry) * phaserConfig.reach, y: z - Math.cos(ry) * phaserConfig.reach };
+  const [fx, fz] = [-Math.sin(ry), -Math.cos(ry)];
+  const [vx, , vz] = npc.agent?.velocity ?? [0, 0, 0];
+  const { armWidth, leadSecs, reach } = phaserConfig;
+  const [x, z] = [npc.position.x + vx * leadSecs + fx * reach, npc.position.z + vz * leadSecs + fz * reach];
+  if (npc.anim.posture !== "stand") return [{ x, y: z }];
+  const right = phaserConfig.gun.right + armWidth;
+  return [
+    { x, y: z },
+    { x: x - fz * right, y: z + fx * right },
+  ];
 }
 
 /** The way they aim: turned sat, or ahead of how they lie */
@@ -845,6 +858,8 @@ const phaserConfig = {
   avoid: "phaser_aim_avoid",
   /** Metres ahead a wall or closed door blocks — just past the gun at arm's length, so it is drawn in in time */
   reach: 0.75,
+  /** Seconds of their velocity a wall is looked for ahead of, so the arm is drawn in before it gets there */
+  leadSecs: 0.3,
   /** Metres from the arm's line to its side, gun included, that someone within reach must keep clear of */
   armWidth: 0.1,
   /** Metres of a standing body's half-width, which the arm must miss: less than their crowd agent's radius */
