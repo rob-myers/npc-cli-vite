@@ -178,7 +178,7 @@ view). So check with `query` what is actually stale before reaching for a reload
 
 | Changed | Picked up? | What to do |
 |---|---|---|
-| `current.gltf`, e.g. exported from Blockbench | No: nothing watches it, unlike the skin sheets (`skinSheetsRebuilt`) | Refetch `skins-and-gltf`: `window.__devMcp.getState().refetch(["skins-and-gltf"])` from a `query`, else ask the user to refetch it in the React Query devtools |
+| `current.gltf`, e.g. exported from Blockbench | Yes: the dev server rewrites `current.glb`, then sends `currentGltfChanged`, which refetches `skins-and-gltf` | If not, e.g. the Vite client lost its connection, refetch: `window.__devMcp.getState().refetch(["skins-and-gltf"])` from a `query` |
 | A new clip in that glTF | Yes, on that refetch: every clip of the glTF is registered, even before its key in `fromAnimationClipKey` reaches the npc modules | Nothing more |
 | `const.npc`, as the npcs' animation code reads it, e.g. `hitConfig` | Not always (see below) | Check with `query`, e.g. a hit's `anim.hurt.next`. If stale, swap the npcs onto a fresh class (below) |
 | `service/player-frontier.ts` | The old `w.view.playerFrontier` instance is kept, so the World goes black (a NaN camera) | Rebuild it (below) |

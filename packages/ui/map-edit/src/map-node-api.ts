@@ -108,6 +108,7 @@ export const LOCAL_STORAGE_UI_ID_TO_FILE_SPECIFIER = "map-edit-to-current-file";
 export const defaultSymbolKey: StarshipSymbolImageKey = "stateroom--012";
 
 export const devMessageFromServer = {
+  currentGltfChanged: "current-gltf-changed",
   recomputedPathManifest: "map-edit:recompute-path-manifest",
   decorSheetsRebuilt: "decor-sheets-rebuilt",
   skinSheetsRebuilding: "skin-sheets-rebuilding",

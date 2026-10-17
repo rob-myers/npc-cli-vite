@@ -921,8 +921,8 @@ export default function NPCs() {
       queryFn: async () => {
         const cacheBust = getDevCacheBustQueryParam();
         const [gltf, skinManifest] = await Promise.all([
-          // busted too, so a devtools reset reloads the model — it is self-contained (data uris)
-          new GLTFLoader().loadAsync(devCacheBust(url.currentGltf)),
+          // busted too, so a devtools reset reloads the model — it is self-contained
+          new GLTFLoader().loadAsync(devCacheBust(getModelUrl())),
           fetch(`/skin/manifest.json${cacheBust}`).then(async (r) => AssetsSkinManifestSchema.parse(await r.json())),
         ]);
         const sheetImages = await loadSkinSheets(w.sheets, skinManifest, cacheBust);
@@ -1224,6 +1224,12 @@ function updateStuck(npc: Npc, delta: number, worldSeconds: number, targetDist: 
 }
 
 /** Pose a spare copy in each clip at its start, and read the head bone's height — once per model */
+/** The glb in production. DEV loads the gltf, or the glb given `?glb` in the page's url */
+function getModelUrl() {
+  const glb = !import.meta.env.DEV || new URLSearchParams(location.search).has("glb");
+  return glb ? url.currentGlb : url.currentGltf;
+}
+
 function headYByPoseOf(scene: THREE.Object3D, clips: Record<AnimationClipKey, THREE.AnimationClip>) {
   const model = SkeletonUtils.clone(scene);
   const head = model.getObjectByName("head");

@@ -353,6 +353,11 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
             await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });
             queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
           }],
+          [devMessageFromServer.currentGltfChanged, () => {
+            debug("[World] current.gltf changed: refetching");
+            state.setNextPending({ gltf: true });
+            queryClientApi.queryClient.invalidateQueries({ queryKey: ["skins-and-gltf"] });
+          }],
           [devMessageFromServer.skinSvgsChanged, async () => {
             debug("[World] skin svgs changed");
             await queryClientApi.queryClient.invalidateQueries({ queryKey: ["sheets"] });

@@ -10,6 +10,8 @@ catalog:
   "@dimforge/rapier3d-compat": ^0.19.3
   "@dragdroptouch/drag-drop-touch": ^2.0.3
   "@giscus/react": ^3.1.0
+  "@gltf-transform/core": 4.5.1
+  "@gltf-transform/functions": 4.5.1
   "@inquirer/prompts": ^8.1.0
   "@modelcontextprotocol/sdk": ^1.31.0
   "@phosphor-icons/react": ^2.1.10

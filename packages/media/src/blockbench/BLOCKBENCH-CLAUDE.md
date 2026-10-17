@@ -3,7 +3,8 @@
 How Claude edits the npc model through the Blockbench MCP plugin, what the model is like, and how each
 clip was made. Setup and the user's own tips are in `docs/blockbench.md`.
 
-- The model is `current/current.bbmodel`. The game reads `current/current.gltf`, exported from it.
+- The model is `current/current.bbmodel`. DEV reads `current/current.gltf`, exported from it.
+- Production reads `current/current.glb`, written from the gltf by `gen-current-glb`: on each save in DEV, and on commit. A DEV page given `?glb` reads it too.
 - A clip the game plays needs its key in `const.npc`'s `fromAnimationClipKey`.
 
 ## Working through the MCP
@@ -148,8 +149,8 @@ Blockbench.writeFile(Project.save_path.replace(/\.bbmodel$/, '.gltf'), { content
 ```
 
 Save the project first (`BarItems.save_project.trigger()`). Check the result: every node's rest transform as before,
-and every other clip with the same number of channels. The running dev page does not pick the new glTF up by
-itself: see "Recovering" in `docs/mcp.md`.
+and every other clip with the same number of channels. The running dev page picks the new glTF up by itself. If not,
+see "Recovering" in `docs/mcp.md`.
 
 ### Clips keyed from code
 
