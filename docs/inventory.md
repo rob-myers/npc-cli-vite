@@ -188,15 +188,21 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 
 | | someone in the way | drawn in is |
 | --- | --- | --- |
-| stood | a crowd neighbour ahead (`npcAhead`) | `phaser_aim_avoid`, over `drawInSecs` |
+| stood | found by `armMeetsNpc`, below | `phaser_aim_avoid`, over `drawInSecs` |
 | sat | found by `armMeetsNpc`, below | `phaser_aim_avoid`, the arm's aim giving way as it swaps in |
 | lain on their left side | found by `armMeetsNpc` | `phaser_aim_avoid` as sat: the arm is on top (`lieAim`'s `drawIn`) |
 | lain otherwise | found by `armMeetsNpc` | stowed: still raised, the arm comes down over `stowSecs` with the gun in hand, until clear |
 
-- Sat or lain they are off the crowd, so `armMeetsNpc` looks through their room instead (`getNpcsInReach(key, 0)`).
+- `armMeetsNpc` looks through their room (`getNpcsInReach(key, 0)`), not the crowd's neighbours: those reach only
+  `collisionQueryRange` (0.7m), short of the gun's tip.
 - It polls every `sampleSecs` for the player and every `npcPollSecs` for anyone else, jittered.
-- Someone is in the way within `agentRadius + armWidth` of a line `reach` long, from their right shoulder bone
-  the way the arm points (`armBearingOf`). Lain, that shoulder is far from their middle.
+- What can meet someone is their gun at full aim (`gunLine`). Stood, it is a fixed segment in their aim's frame
+  (`phaserConfig.gun`, measured off `phaser_aim`): from the elbow to the muzzle, beside their right shoulder. Sat or
+  lain, it is a line `reach` long from their right shoulder bone, the way the arm points (`armBearingOf`).
+- A body is in the way within `bodyRadius + armWidth` of it, or `agentRadius + armWidth` for one sat or lain.
+- An arm is in the way when the two guns come within `2 * armWidth` (`segsApart`), but only an arm up now, not
+  drawn in. So of two that would meet, whoever raised first keeps it and only the other draws in.
+- The player gives way to no npc's arm, only to bodies.
 - Lain, only a current raycast counts, as a roll leaves the last one stale.
 
 ### Shots, hits and choosing a part
