@@ -158,6 +158,7 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierHold: false,
       keysDown: new Set(),
       lastKeyMs: 0,
+      crouchTapMs: -Infinity,
       compassDial: saved.compassDial ?? true,
       compassPoint: 0,
       compassSkew: 0,
@@ -936,8 +937,13 @@ export function WorldView(props: React.PropsWithChildren) {
         } else if (e.key === "0") {
           if (e.repeat === false) state.toggleViewPick();
         } else if (key === "c") {
+          // a tap crouches half, or stands from half; a double tap is always a full crouch
           const anim = w.player.key === null ? undefined : w.n?.[w.player.key]?.anim;
-          if (e.repeat === false) anim?.setCrouched(!anim.crouched);
+          if (e.repeat === false && anim !== undefined) {
+            const double = e.timeStamp - state.crouchTapMs < crouchDoubleTapMs;
+            state.crouchTapMs = double ? -Infinity : e.timeStamp; // a third tap is a fresh one
+            anim.setCrouch(double ? 2 : anim.crouchLevel === 1 ? 0 : 1);
+          }
         } else if (key === "f") {
           // the look button's gesture on a key: a held key REPEATS, which is the long press — no
           // timer of our own, and a tap never gets there. The short press waits for the release,
@@ -1880,6 +1886,8 @@ export type State = {
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
   lastKeyMs: number;
+  /** When `c` last went down, for a double tap — see `crouchDoubleTapMs` */
+  crouchTapMs: number;
   /** Whether `wasd` heads along the world's axes, the view kept clear of the diagonals. Its `WorldHud` button toggles it */
   compassDial: boolean;
   /** The compass point nearest up the screen, where `w` heads: `0` north (-z), then west, south, east */
@@ -2325,3 +2333,6 @@ export type Picked = {
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)
 );
+
+/** Milliseconds within which a second `c` makes a double tap: a full crouch */
+const crouchDoubleTapMs = 300;

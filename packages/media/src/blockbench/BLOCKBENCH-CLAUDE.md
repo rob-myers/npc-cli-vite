@@ -179,10 +179,10 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `sit` | `knee` |
 | `sit_reach` | `leg hold`, frames |
 | `crouch` | `down back lean reach` |
-| `crouch_cover` | `down back lean` |
-| `crouch_walk` | `down back lean stride duty lift sway bob swing` |
-| `crouch_strafe_right` | `down back lean stride duty lift bob wide` |
-| `crouch_backwards`, `crouch_strafe_left` | none: `crouch_walk` reversed, `crouch_strafe_right` mirrored |
+| `crouch_cover`, `crouch_half` (`crouchStill`) | `down back lean armX armZ foreX foreZ` |
+| `crouch_walk`, `crouch_half_walk` (`crouchWalk`) | `down back lean stride duty lift sway bob swing` |
+| `crouch_strafe_right`, `crouch_half_strafe_right` (`crouchStrafeRight`) | `down back lean stride duty lift bob wide` |
+| `crouch_backwards`, `crouch_strafe_left`, and the half crouch's | none: the walk reversed (`reversedOf`), the strafe mirrored (`mirroredOf`) |
 | `phaser_aim` | `rock drop sink lean breathe`; also keys `phaser_aim_avoid` |
 
 - A clip new to the glTF is added to it, but must already be an animation of the bbmodel: make it in
@@ -203,6 +203,7 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `drop`, `pick_up`, `crouch` (`_left`) | 2.5s | putting down, taking up | posed; `crouch` solved |
 | `crouch_cover` | 2.5s | a still squat behind cover | `crouch`'s legs, arms searched |
 | `crouch_walk`, `crouch_strafe_right` (`_left`), `crouch_backwards` | 1s | crouched gaits | solved |
+| `crouch_half`, and its `_walk`, `_strafe_right` (`_left`), `_backwards` | 2.5s / 1s | the half crouch | solved |
 | `sit_reach` | 2.5s | reaching from a seat, past a table's edge | solved |
 | `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
 | `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
@@ -364,6 +365,11 @@ small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` 
   (0.4m), the left foot landing at 0, the hips swaying 0.4 over the planted foot, the arms hanging forward and
   swinging 8. Sideways, 5 a cycle (0.25m), the right foot leading, the feet set 0.75 wider so they never meet. The
   hips bob 0.3 twice a cycle. `crouch_backwards` is `crouch_walk` reversed, `crouch_strafe_left` the right one mirrored.
+- **`crouch_half`** and its gaits: the same recipes, less low. Hips 4 down and 1.5 back, a lean of 15, the head's top
+  at y 26.4, 1.32m. Its arms were searched so the hands rest on the thighs behind the knees: arms [-5,0,∓4], forearms
+  [60,0,∓10]. The gaits stride 10 ahead (0.5m) and 6 sideways (0.3m), lifting 2 (1.5 sideways).
+- `steppingLegs` sets each frame out from the last frame's solution, and moves at most `maxStep` a Newton step. From a
+  fixed guess the half crouch's legs jumped to another branch, a thigh turned 2358°.
 - **`drop_left` / `pick_up_left` / `crouch_left`**: mirrors for the other hand. Left and right bones swapped,
   rotation y and z and position x negated. Re-mirror after changing the originals.
 

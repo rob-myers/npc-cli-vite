@@ -159,9 +159,14 @@ has it in their right hand, raised or not (`w.phasers.holds`). Sat or lain it sh
 
 ### Crouched
 
-`crouch_cover` is a still squat behind cover, e.g. a sofa: `c` for the player, jsh `pose rob as:crouch_cover`. It is
-their rest clip (`anim.setCrouched`, `anim.crouched`) until they stand, `c` again or another clip posed, e.g.
-`pose rob as:breathe`. On the move they stay crouched, in the crouched gaits (`docs/npc-strafe.md`).
+Two crouches, behind cover such as a sofa: `crouch_half`, the head 1.32m up, and `crouch_cover`, a full squat at
+1.05m. Either is their rest clip (`anim.setCrouch(level)`: `0` stood, `1` half, `2` full; read as `anim.crouchLevel`,
+`anim.crouched`) until they stand or another clip is posed. On the move they stay crouched, in that crouch's gaits
+(`docs/npc-strafe.md`).
+
+- The player's `c`: a tap crouches half from standing, stands from half, and goes to half from full. A double tap
+  (`crouchDoubleTapMs`) is always a full crouch.
+- jsh: `pose rob as:crouch_half`, `pose rob as:crouch_cover`, `pose rob as:breathe`.
 
 - Raised, they stay crouched. `Phasers` skips its stance, and `phaser_aim` / `phaser_aim_avoid` play over the head and
   arms as on the move. The arms are corrected for the crouch's lean (`leanOfUpper`), so the gun is level, 0.67m up.

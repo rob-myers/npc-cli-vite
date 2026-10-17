@@ -197,8 +197,8 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ## Player input
 
 - **Walking.** With the compass dial off, `w`, `a`, `s` and `d` head as seen. For the dial, see [`embodied` mode](#embodied-mode).
-- **Crouching.** `c` toggles the player's crouch behind cover (`anim.setCrouched`, `crouch_cover`). Touch has no way yet.
-  - Crouched they move slowly in the crouched gaits, strafing too, and never run.
+- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a tap is contextual, half or back up, and a double tap is always a full crouch. Touch has no way yet.
+  - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Running.** An npc runs whilst `anim.hurry`.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
   - Its button on `WorldHud`, beside look/follow, toggles the player's.

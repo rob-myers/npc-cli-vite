@@ -167,6 +167,11 @@ export const fromAnimationClipKey = {
   crouch: true,
   crouch_backwards: true,
   crouch_cover: true,
+  crouch_half: true,
+  crouch_half_backwards: true,
+  crouch_half_strafe_left: true,
+  crouch_half_strafe_right: true,
+  crouch_half_walk: true,
   crouch_left: true,
   crouch_strafe_left: true,
   crouch_strafe_right: true,
@@ -415,6 +420,11 @@ export const fadeSecs: Record<
   crouch: {},
   crouch_backwards: {},
   crouch_cover: {},
+  crouch_half: {},
+  crouch_half_backwards: {},
+  crouch_half_strafe_left: {},
+  crouch_half_strafe_right: {},
+  crouch_half_walk: {},
   crouch_left: {},
   crouch_strafe_left: {},
   crouch_strafe_right: {},
@@ -594,6 +604,10 @@ export const gaitStride = {
   crouch_strafe_right: 0.25,
   crouch_backwards: 0.4,
   crouch_strafe_left: 0.25,
+  crouch_half_walk: 0.5,
+  crouch_half_strafe_right: 0.3,
+  crouch_half_backwards: 0.5,
+  crouch_half_strafe_left: 0.3,
 };
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */
 export const strafeSpeed = {
@@ -605,6 +619,10 @@ export const strafeSpeed = {
   crouch_strafe_right: 0.3,
   crouch_backwards: 0.4,
   crouch_strafe_left: 0.3,
+  crouch_half_walk: 0.8,
+  crouch_half_strafe_right: 0.4,
+  crouch_half_backwards: 0.6,
+  crouch_half_strafe_left: 0.4,
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;

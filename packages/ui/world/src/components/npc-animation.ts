@@ -256,21 +256,27 @@ export class NpcAnimation {
     u.target = key === null ? 0 : 1;
   }
 
-  /** Crouched behind cover: `crouch_cover` at rest, the crouched gaits on the move, until they stand up */
+  /** How low they crouch: `0` stood, `1` half (`crouch_half`), `2` full (`crouch_cover`). Their gaits follow */
+  get crouchLevel(): CrouchLevel {
+    const key = keyOf(this.idleClip);
+    return key === "crouch_cover" ? 2 : key === "crouch_half" ? 1 : 0;
+  }
+
+  /** Crouched at all, half or full */
   get crouched() {
-    return keyOf(this.idleClip) === "crouch_cover";
+    return this.crouchLevel > 0;
   }
 
-  /** The four directional gaits a strafe blends: crouched or not */
+  /** The four directional gaits a strafe blends, by how low they crouch */
   get gaitKeys() {
-    return this.crouched ? crouchStrafeClipKeys : strafeClipKeys;
+    return gaitSets[this.crouchLevel];
   }
 
-  /** Crouch behind cover, or stand back up into the default idle. Only from standing, never sat or lain */
-  setCrouched(on: boolean) {
-    if (on === this.crouched) return;
-    if (on === true && (this.posture !== "stand" || this.w.npc.npcToDoable[this.npc.key] != null)) return;
-    this.idleClip = this.npc.clips[on ? "crouch_cover" : defaultIdleAnimationClipKey];
+  /** Crouch to `level`, or stand back up into the default idle with `0`. Only from standing, never sat or lain */
+  setCrouch(level: CrouchLevel) {
+    if (level === this.crouchLevel) return;
+    if (level > 0 && (this.posture !== "stand" || this.w.npc.npcToDoable[this.npc.key] != null)) return;
+    this.idleClip = this.npc.clips[crouchIdleKeys[level]];
     if (this.moving === false) return this.setPose(this.restKey);
     this.showGait(); // mid-move, the other gaits
     const { agent } = this.npc;
@@ -1007,23 +1013,16 @@ export class NpcAnimation {
   /** The agent's top speed for the move's intent: a strafe's is then `syncStrafe`'s, by heading */
   maxSpeedFor() {
     const { maxSpeed } = agentConfig;
-    if (this.crouched === true) return strafeSpeed.crouch_walk;
+    if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
     if (this.strafe === true) return strafeSpeed.walk;
     return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
   }
 
   /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
   showGait() {
-    const { crouched } = this;
-    const clipKey = crouched
-      ? this.backwards === true
-        ? "crouch_backwards"
-        : "crouch_walk"
-      : this.backwards === true
-        ? "backwards"
-        : "walk";
+    const clipKey = this.gaitKeys[this.backwards === true ? 2 : 0]; // ahead, or a half turn round
     // a look or a spawn in between puts idle on, and it must be shown again or they slide
-    const shown = this.backwards === true || crouched ? this.pose === clipKey : isGait(this.pose);
+    const shown = this.backwards === true || this.crouched ? this.pose === clipKey : isGait(this.pose);
     if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
     this.moving = true;
     this.moveClip = this.npc.clips[clipKey];
@@ -1093,8 +1092,8 @@ export class NpcAnimation {
     const start = this.npc.rotation.y;
     const diff = deltaAngle(start, target);
     const arc = Math.abs(diff);
-    // a shuffle under way carries on, crossfading to idle as the turn lands
-    const longLook = arc > longLookAngle || (fromRate !== 0 && this.pose === "shuffle");
+    // a shuffle under way carries on, crossfading to idle as the turn lands. Crouched they turn on the spot: it is stood
+    const longLook = this.crouched === false && (arc > longLookAngle || (fromRate !== 0 && this.pose === "shuffle"));
     let duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
     // fresh, a quadratic ease-out: it sets off at `2 * arc / duration`
     let v0 = duration === 0 ? 0 : (2 * diff) / duration;
@@ -1199,17 +1198,27 @@ function upperTracksOf(clip: THREE.AnimationClip) {
 
 /** Clockwise from ahead, a quarter turn apart — see `syncStrafe` */
 const strafeClipKeys = ["walk", "strafe_right", "backwards", "strafe_left"] satisfies AnimationClipKey[];
-/** As `strafeClipKeys`, crouched */
+/** As `strafeClipKeys`, crouched half or full */
+const halfCrouchStrafeClipKeys = [
+  "crouch_half_walk",
+  "crouch_half_strafe_right",
+  "crouch_half_backwards",
+  "crouch_half_strafe_left",
+] satisfies AnimationClipKey[];
 const crouchStrafeClipKeys = [
   "crouch_walk",
   "crouch_strafe_right",
   "crouch_backwards",
   "crouch_strafe_left",
 ] satisfies AnimationClipKey[];
-/** Each blend, by the gait it starts from */
-const gaitSets = [strafeClipKeys, crouchStrafeClipKeys];
-const isCrouchGait = (key: AnimationClipKey): key is (typeof crouchStrafeClipKeys)[number] =>
-  (crouchStrafeClipKeys as AnimationClipKey[]).includes(key);
+/** Each blend, by crouch level */
+const gaitSets = [strafeClipKeys, halfCrouchStrafeClipKeys, crouchStrafeClipKeys] as const;
+/** What they rest in, by crouch level */
+const crouchIdleKeys = [defaultIdleAnimationClipKey, "crouch_half", "crouch_cover"] as const;
+type CrouchLevel = 0 | 1 | 2;
+type CrouchGaitKey = (typeof gaitSets)[1 | 2][number];
+const crouchGaitKeys = new Set<AnimationClipKey>([...halfCrouchStrafeClipKeys, ...crouchStrafeClipKeys]);
+const isCrouchGait = (key: AnimationClipKey): key is CrouchGaitKey => crouchGaitKeys.has(key);
 /** Metres a second a crouched gait is paced at, however slowly they creep */
 const crouchPaceMin = 0.2;
 
@@ -1368,6 +1377,7 @@ function keyOf(clip: THREE.AnimationClip) {
 
 function bubbleHeightForClip(clipName: AnimationClipKey): number {
   const posture = postureOf(clipName);
+  if (isHalfCrouch(clipName)) return 1.75;
   if (posture === "sit" || isLowClip(clipName)) return 1.4;
   if (posture === "lie") return 0.9;
   return 2;
@@ -1375,12 +1385,15 @@ function bubbleHeightForClip(clipName: AnimationClipKey): number {
 
 /** Stood, yet about as low as one sat: collapsed on the floor, or crouched */
 const isLowClip = (clipName: AnimationClipKey) => clipName === "collapsed" || clipName.startsWith("crouch");
+/** Crouched half: the head lower than stood, higher than sat */
+const isHalfCrouch = (clipName: AnimationClipKey) => clipName.startsWith("crouch_half");
 
 /** The highest a label is lifted, standing — see `boundAnyPose` */
 export const labelYShiftMax = 2.2;
 
 function labelYShiftForClip(clipName: AnimationClipKey): number {
   const posture = postureOf(clipName);
+  if (isHalfCrouch(clipName)) return 1.95;
   if (posture === "sit" || isLowClip(clipName)) return 1.6;
   if (posture === "lie") return 0.75;
   return labelYShiftMax;
