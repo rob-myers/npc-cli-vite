@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
 <defs>
-<style>.s0{pointer-events:none;}.s1{fill:#000000;stroke:#000000;stroke-opacity:0.35;stroke-width:2px;}.s2{fill-opacity:0.35;stroke:none;}.s3{fill-opacity:0.15;}.s4{fill-opacity:0;}.s5{fill-opacity:0.18;}.s6{fill-opacity:0.15;stroke:none;}.s7{fill-opacity:0.3;}.s8{filter:none;stroke-width:2px;fill-opacity:0.3;}</style>
+<style>.s0{pointer-events:none;}.s1{fill:#000000;stroke:#000000;stroke-opacity:0.35;stroke-width:2px;}.s2{fill-opacity:0.35;stroke:none;}.s3{fill-opacity:0.15;}.s4{fill-opacity:0;}.s5{fill-opacity:0.18;}.s6{fill-opacity:0.15;stroke:none;}.s7{fill-opacity:0.3;}.s8{fill:url(&quot;#helmet-side&quot;);}.s9{fill:none;stroke:#16181a;stroke-width:1.6px;stroke-linecap:round;}.s10{fill:url(&quot;#lens&quot;);}.s11{fill:#2e3134;}.s12{fill:url(&quot;#s2-plate&quot;);stroke:#121416;stroke-width:0.8px;}.s13{fill:#584c36;}.s14{fill:none;stroke:#969488;stroke-width:0.6px;stroke-opacity:0.6;}.s15{fill:none;stroke:#121416;stroke-width:0.8px;}.s16{filter:none;stroke-width:2px;fill-opacity:0.3;}</style>
 <filter id="spot-light-filter-0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
 <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
 <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
@@ -28,10 +28,27 @@
 </feMerge>
 <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
 </filter>
+<radialGradient id="helmet-top" cx="0.5" cy="0.55" r="0.65">
+<stop offset="0" style="stop-color: #3a3d40;"/>
+<stop offset="1" style="stop-color: #16181a;"/>
+</radialGradient>
+<linearGradient id="helmet-side" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #2e3134;"/>
+<stop offset="1" style="stop-color: #101214;"/>
+</linearGradient>
+<linearGradient id="lens" x1="0" y1="0" x2="0.4" y2="1">
+<stop offset="0" style="stop-color: #e2f0f4;"/>
+<stop offset="0.45" style="stop-color: #96b6c0;"/>
+<stop offset="1" style="stop-color: #344852;"/>
+</linearGradient>
+<linearGradient id="s2-plate" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #aa966c;"/>
+<stop offset="1" style="stop-color: #766646;"/>
+</linearGradient>
 </defs>
 <g class="s0">
 <title>meta prefix=soldier noEyes</title>
-<image id="base" href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<image id="base" href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
 <title>soldier-2--c447b8bcb6c785c0</title>
 </image>
 </g>
@@ -84,6 +101,116 @@
 </g>
 </g>
 <g class="s0">
+<title>head-detail</title>
+<g>
+<title>helmet</title>
+<rect x="160" y="0" width="32" height="32" style="fill: url(&quot;#helmet-top&quot;);">
+<title>top</title>
+</rect>
+<path d="M160 32H192V41Q176 36.5 160 41Z" class="s8">
+<title>front</title>
+</path>
+<path d="M160 41Q176 36.5 192 41" class="s9"/>
+<rect x="172" y="33" width="8" height="4.5" rx="1" style="fill: #1c1e20;">
+<title>mount</title>
+</rect>
+<circle cx="176" cy="35.2" r="0.9" style="fill: #787e82;"/>
+<path d="M128 32H160V41C148 41 140 50 128 50Z" class="s8">
+<title>right</title>
+</path>
+<path d="M160 41C148 41 140 50 128 50" class="s9"/>
+<path d="M192 32H224V50C212 50 204 41 192 41Z" class="s8">
+<title>left</title>
+</path>
+<path d="M224 50C212 50 204 41 192 41" class="s9"/>
+<rect x="224" y="32" width="32" height="18" class="s8">
+<title>back</title>
+</rect>
+<path d="M224 50H256" class="s9"/>
+</g>
+<g transform="translate(0, -7)">
+<title>goggles</title>
+<path d="M33 51.5H63V61H52L48 57.5L44 61H33Z" style="fill: #141618;"/>
+<rect x="34.6" y="52.6" width="12" height="7" rx="3" class="s10"/>
+<rect x="49.4" y="52.6" width="12" height="7" rx="3" class="s10"/>
+<path d="M36.4 54.4L39.6 53.6M51.2 54.4L54.4 53.6" style="fill: none; stroke: #ffffff; stroke-width: 0.9px; stroke-linecap: round; stroke-opacity: 0.85;"/>
+<rect x="0" y="53.5" width="32" height="5" class="s11">
+<title>strap right</title>
+</rect>
+<rect x="64" y="53.5" width="64" height="5" class="s11">
+<title>strap left and back</title>
+</rect>
+<rect x="108" y="53" width="8" height="6" rx="1" style="fill: #606468;">
+<title>buckle</title>
+</rect>
+</g>
+</g>
+<g class="s0">
+<title>armour</title>
+<g>
+<title>plate carrier</title>
+<path d="M81.5 146.5Q81.5 145 83 145H90Q96 154 102 145H109Q110.5 145 110.5 146.5V179H81.5Z" class="s12">
+<title>front plate</title>
+</path>
+<rect x="88" y="155" width="16" height="5" rx="0.8" class="s13"/>
+<path d="M89 157.5H96" class="s14"/>
+<path d="M82.5 162.5H109.5M82.5 166.5H109.5" class="s15"/>
+<g class="s12">
+<rect x="83" y="164" width="7.6" height="13" rx="1"/>
+<rect x="92.2" y="164" width="7.6" height="13" rx="1"/>
+<rect x="101.4" y="164" width="7.6" height="13" rx="1"/>
+</g>
+<path d="M83.4 168H90.2M92.6 168H99.4M101.8 168H108.6" class="s15"/>
+<path d="M131.5 146.5Q131.5 145 133 145H155Q156.5 145 156.5 146.5V179H131.5Z" class="s12">
+<title>back plate</title>
+</path>
+<rect x="139" y="146" width="10" height="3.5" rx="1" class="s13">
+<title>drag handle</title>
+</rect>
+<path d="M132.5 160.5H155.5M132.5 165H155.5M132.5 169.5H155.5" class="s15"/>
+<g class="s13">
+<title>cummerbund</title>
+<rect x="64" y="161" width="16" height="17"/>
+<rect x="112" y="161" width="16" height="17"/>
+<rect x="80" y="161" width="1.5" height="17"/>
+<rect x="110.5" y="161" width="1.5" height="17"/>
+<rect x="128" y="161" width="3.5" height="17"/>
+<rect x="156.5" y="161" width="3.5" height="17"/>
+</g>
+<path d="M64 166.5H80M112 166.5H128M64 172.5H80M112 172.5H128" class="s15"/>
+<g class="s12">
+<title>shoulder straps</title>
+<rect x="83" y="128" width="6" height="16"/>
+<rect x="103" y="128" width="6" height="16"/>
+</g>
+<rect x="64" y="181" width="96" height="6" class="s13">
+<title>belt</title>
+</rect>
+<rect x="92.5" y="180.5" width="7" height="7" rx="1" style="fill: #969488; stroke: #121416; stroke-width: 0.8px;">
+<title>buckle</title>
+</rect>
+</g>
+<g>
+<title>knee pads and thigh pouches</title>
+<path d="M17.5 172Q17.5 169 20.5 169H27.5Q30.5 169 30.5 172V179Q24 182 17.5 179Z" class="s12"/>
+<path d="M19 174.5Q24 173 29 174.5" class="s14"/>
+<rect x="0" y="172" width="16" height="2.5" class="s13"/>
+<rect x="32" y="172" width="32" height="2.5" class="s13"/>
+<rect x="0" y="177" width="16" height="2.5" class="s13"/>
+<rect x="32" y="177" width="32" height="2.5" class="s13"/>
+<path d="M2 146Q2 144.5 3.5 144.5H12.5Q14 144.5 14 146V159H2Z" class="s12"/>
+<path d="M2.5 149H13.5" class="s15"/>
+<path d="M17.5 236Q17.5 233 20.5 233H27.5Q30.5 233 30.5 236V243Q24 246 17.5 243Z" class="s12"/>
+<path d="M19 238.5Q24 237 29 238.5" class="s14"/>
+<rect x="0" y="236" width="16" height="2.5" class="s13"/>
+<rect x="32" y="236" width="32" height="2.5" class="s13"/>
+<rect x="0" y="241" width="16" height="2.5" class="s13"/>
+<rect x="32" y="241" width="32" height="2.5" class="s13"/>
+<path d="M34 210Q34 208.5 35.5 208.5H44.5Q46 208.5 46 210V223H34Z" class="s12"/>
+<path d="M34.5 213H45.5" class="s15"/>
+</g>
+</g>
+<g class="s0">
 <title>head</title>
 <rect width="32" height="32" style="stroke: #000000; stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
 <title>top</title>
@@ -97,10 +224,10 @@
 <rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
 <title>back</title>
 </rect>
-<rect x="64" width="32" height="32" class="s8" y="32">
+<rect x="64" width="32" height="32" class="s16" y="32">
 <title>left</title>
 </rect>
-<rect width="32" height="32" class="s8" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+<rect width="32" height="32" class="s16" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
 <title>right</title>
 </rect>
 </g>
