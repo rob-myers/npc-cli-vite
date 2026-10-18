@@ -28,17 +28,21 @@
       </feMerge>
       <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
     </filter>
-    <clipPath id="hair-top"><rect x="32" y="0" width="32" height="4"/><rect x="32" y="4" width="32" height="4"/><rect x="32" y="8" width="32" height="4"/><rect x="32" y="12" width="32" height="4"/><rect x="32" y="16" width="32" height="4"/><rect x="32" y="20" width="32" height="4"/><rect x="32" y="24" width="32" height="4"/><rect x="32" y="28" width="32" height="4"/></clipPath>
-    <clipPath id="hair-right"><rect x="0" y="32" width="32" height="4"/><rect x="0" y="36" width="32" height="4"/><rect x="0" y="40" width="32" height="4"/><rect x="0" y="44" width="32" height="4"/><rect x="0" y="48" width="20" height="4"/><rect x="28" y="48" width="4" height="4"/><rect x="0" y="52" width="20" height="4"/><rect x="0" y="56" width="12" height="4"/></clipPath>
-    <clipPath id="hair-front"><rect x="32" y="32" width="32" height="4"/><rect x="32" y="36" width="32" height="4"/><rect x="32" y="40" width="4" height="4"/><rect x="60" y="40" width="4" height="4"/></clipPath>
-    <clipPath id="hair-left"><rect x="64" y="32" width="32" height="4"/><rect x="64" y="36" width="32" height="4"/><rect x="64" y="40" width="32" height="4"/><rect x="64" y="44" width="32" height="4"/><rect x="64" y="48" width="4" height="4"/><rect x="76" y="48" width="20" height="4"/><rect x="76" y="52" width="20" height="4"/><rect x="84" y="56" width="12" height="4"/></clipPath>
-    <clipPath id="hair-back"><rect x="96" y="32" width="32" height="4"/><rect x="96" y="36" width="32" height="4"/><rect x="96" y="40" width="32" height="4"/><rect x="96" y="44" width="32" height="4"/><rect x="96" y="48" width="32" height="4"/><rect x="96" y="52" width="32" height="4"/><rect x="96" y="56" width="32" height="4"/><rect x="104" y="60" width="16" height="4"/></clipPath>
-    <clipPath id="stubble"><rect x="12" y="56" width="20" height="4"/><rect x="0" y="60" width="32" height="4"/><rect x="32" y="56" width="8" height="4"/><rect x="56" y="56" width="8" height="4"/><rect x="32" y="60" width="32" height="4"/><rect x="64" y="56" width="20" height="4"/><rect x="64" y="60" width="32" height="4"/></clipPath>
+    <clipPath id="hair-top"><path d="M32 0h32v32h-32z"/></clipPath>
+    <clipPath id="hair-right"><path d="M0 32h32v16h-32zM28 48h4v4h-4zM0 48h20v8h-20zM0 56h12v4h-12z"/></clipPath>
+    <clipPath id="hair-front"><path d="M32 32h32v8h-32zM32 40h4v4h-4zM60 40h4v4h-4z"/></clipPath>
+    <clipPath id="hair-left"><path d="M64 32h32v16h-32zM64 48h4v4h-4zM76 48h20v8h-20zM84 56h12v4h-12z"/></clipPath>
+    <clipPath id="hair-back"><path d="M96 32h32v28h-32zM104 60h16v4h-16z"/></clipPath>
+    <clipPath id="stubble"><path d="M12 56h20v4h-20zM0 60h32v4h-32z"/><path d="M32 56h8v4h-8zM56 56h8v4h-8zM32 60h32v4h-32z"/><path d="M64 56h20v4h-20zM64 60h32v4h-32z"/></clipPath>
     <pattern id="stubble-dots" width="2" height="2" patternUnits="userSpaceOnUse">
       <rect width="0.8" height="0.8" style="fill: rgb(40, 24, 16);"/>
       <rect x="1.1" y="1.2" width="0.6" height="0.6" style="fill: rgb(40, 24, 16);"/>
     </pattern>
     <path id="plaits" d="M0.5 -2.6L2.3 -1.3L4.1 -2.6M0.5 0L2.3 1.3L4.1 0M0.5 2.6L2.3 3.9L4.1 2.6M0.5 5.2L2.3 6.5L4.1 5.2M0.5 7.8L2.3 9.1L4.1 7.8M0.5 10.4L2.3 11.7L4.1 10.4M0.5 13L2.3 14.3L4.1 13M0.5 15.6L2.3 16.9L4.1 15.6M0.5 18.2L2.3 19.5L4.1 18.2M0.5 20.8L2.3 22.1L4.1 20.8M0.5 23.4L2.3 24.7L4.1 23.4M0.5 26L2.3 27.3L4.1 26M0.5 28.6L2.3 29.9L4.1 28.6M0.5 31.2L2.3 32.5L4.1 31.2M0.5 33.8L2.3 35.1L4.1 33.8" style="fill: none; stroke: rgb(176, 140, 72); stroke-opacity: 0.6; stroke-width: 0.6px; stroke-linecap: round;"/>
+    <clipPath id="suit"><path d="M0 80h88v4h-88zM104 80h120v4h-120zM0 84h92v4h-92zM100 84h124v4h-124zM0 88h224v4h-224zM0 92h100v4h-100zM108 92h116v4h-116zM0 96h224v16h-224zM0 112h160v4h-160zM8 116h32v4h-32zM64 116h96v12h-96z"/><path d="M64 208h128v32h-128zM64 240h64v4h-64zM72 244h32v4h-32z"/></clipPath>
+    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="1" height="8" style="fill: rgb(28, 8, 0);"/>
+    </pattern>
   </defs>
   <g style="pointer-events: none;">
     <title>meta prefix=d-class</title>
@@ -46,6 +50,9 @@
       <title>d-class-1--2a2804c8ff60ef75</title>
     </image>
   </g>
+  <rect width="256" height="256" style="pointer-events: none; fill: url(&quot;#hatch&quot;); fill-opacity: 0.35; clip-path: url(&quot;#suit&quot;);">
+    <title>hatching</title>
+  </rect>
   <g style="pointer-events: none;">
     <title>suit</title>
     <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
