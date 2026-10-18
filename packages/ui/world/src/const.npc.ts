@@ -6,6 +6,8 @@
 
 /** An npc's label, unless `label` or the predicates say otherwise */
 export const defaultNpcLabelColor = "#ff9";
+/** …and anyone else's but the player's */
+export const otherNpcLabelColor = "#bbb";
 
 export const npcScale = 0.8;
 
@@ -148,8 +150,8 @@ export const npcSpawnConfig = {
 
 /** See `NPCs.createMaterials` */
 export const npcMaterialConfig = {
-  labelHalfWidth: 0.5,
-  labelHalfHeight: 0.125,
+  labelHalfWidth: 0.425,
+  labelHalfHeight: 0.10625,
   /** Eased to `overheadAmount` as the view elevation goes `overheadFrom` → `overheadTo` */
   rim: { power: 5, amount: 0.2, color: [0.55, 0.72, 0.7], overheadAmount: 0.05, overheadFrom: 0.45, overheadTo: 0.85 },
   /** Exposure is ADDED: `ambient` out of the light, the light taking what that leaves, `litAmbient` on top */

@@ -63,6 +63,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const prev = state.key;
         const changed = prev !== npcKey;
         state.key = npcKey;
+        if (changed === true) {
+          // the player's label is drawn bolder than anyone else's — see `Npc.drawLabel`
+          w.n?.[prev]?.drawLabel();
+          w.n?.[npcKey]?.drawLabel();
+        }
         // psi goes with the player, if the new one is granted it
         if (changed === true && w.e.isPsiRaised(prev) === true) {
           w.e.setPsi(false, prev);
