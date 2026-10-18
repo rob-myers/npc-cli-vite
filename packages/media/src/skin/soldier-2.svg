@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<style>.s0{pointer-events:none;}.s1{fill:#000000;stroke:#000000;stroke-opacity:0.35;stroke-width:2px;}.s2{fill-opacity:0.35;stroke:none;}.s3{fill-opacity:0.15;}.s4{fill-opacity:0;}.s5{fill-opacity:0.18;}.s6{fill-opacity:0.15;stroke:none;}.s7{fill-opacity:0.3;}.s8{filter:none;stroke-width:2px;fill-opacity:0.3;}</style>
+<filter id="spot-light-filter-0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<filter id="spot-light-filter-1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+</defs>
+<g class="s0">
+<title>meta prefix=soldier noEyes</title>
+<image id="base" href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>soldier-2--c447b8bcb6c785c0</title>
+</image>
+</g>
+<g class="s0">
+<title>suit</title>
+<g class="s1">
+<title>body</title>
+<rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;"/>
+<rect x="113" y="65" width="30" height="14" class="s2"/>
+<rect x="65" y="81" width="14" height="46" class="s3"/>
+<rect x="81" y="81" width="30" height="46" class="s4"/>
+<rect x="113" y="81" width="14" height="46" class="s3"/>
+<rect x="129" y="81" width="30" height="46" class="s5"/>
+</g>
+<g class="s1">
+<title>right-arm</title>
+<rect x="177" y="65" width="14" height="14" class="s6"/>
+<rect x="193" y="65" width="14" height="14" class="s2"/>
+<rect x="161" y="81" width="14" height="46" class="s3"/>
+<rect x="177" y="81" width="14" height="46" class="s4"/>
+<rect x="193" y="81" width="14" height="46" class="s7"/>
+<rect x="209" y="81" width="14" height="46" class="s5"/>
+</g>
+<g class="s1">
+<title>left-arm</title>
+<rect x="145" y="193" width="14" height="14" class="s6"/>
+<rect x="161" y="193" width="14" height="14" class="s2"/>
+<rect x="129" y="209" width="14" height="46" class="s7"/>
+<rect x="145" y="209" width="14" height="46" class="s4"/>
+<rect x="161" y="209" width="14" height="46" class="s3"/>
+<rect x="177" y="209" width="14" height="46" class="s5"/>
+</g>
+<g class="s1">
+<title>right-leg</title>
+<rect x="17" y="65" width="14" height="14" class="s6"/>
+<rect x="33" y="65" width="14" height="14" class="s2"/>
+<rect x="1" y="81" width="14" height="46" class="s3"/>
+<rect x="17" y="81" width="14" height="46" class="s4"/>
+<rect x="33" y="81" width="14" height="46" class="s7"/>
+<rect x="49" y="81" width="14" height="46" class="s5"/>
+</g>
+<g class="s1">
+<title>left-leg</title>
+<rect x="81" y="193" width="14" height="14" class="s6"/>
+<rect x="97" y="193" width="14" height="14" class="s2"/>
+<rect x="65" y="209" width="14" height="46" class="s7"/>
+<rect x="81" y="209" width="14" height="46" class="s4"/>
+<rect x="97" y="209" width="14" height="46" class="s3"/>
+<rect x="113" y="209" width="14" height="46" class="s5"/>
+</g>
+</g>
+<g class="s0">
+<title>head</title>
+<rect width="32" height="32" style="stroke: #000000; stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+<title>top</title>
+</rect>
+<rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: #000000; stroke-opacity: 0.25; stroke-width: 4px;">
+<title>bottom-neck</title>
+</rect>
+<rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light; fill: #777777;" y="32">
+<title>front</title>
+</rect>
+<rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+<title>back</title>
+</rect>
+<rect x="64" width="32" height="32" class="s8" y="32">
+<title>left</title>
+</rect>
+<rect width="32" height="32" class="s8" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+<title>right</title>
+</rect>
+</g>
+</svg>

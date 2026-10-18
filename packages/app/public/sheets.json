@@ -481,10 +481,34 @@
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
+    },
+    "soldier-0": {
+      "key": "soldier-0",
+      "filename": "soldier-0--543f56fb2b80fc9a.png",
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "soldier-1": {
+      "key": "soldier-1",
+      "filename": "soldier-1--e4d405deeb9ce415.png",
+      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "soldier-2": {
+      "key": "soldier-2",
+      "filename": "soldier-2--c447b8bcb6c785c0.png",
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 776, "height": 518}],
-  "maxSkinSheetDim": {"width": 776, "height": 518},
+  "skinSheetDims": [{"width": 776, "height": 776}],
+  "maxSkinSheetDim": {"width": 776, "height": 776},
   "skinSlices": {
     "d-class-0": {
       "key": "d-class-0",
@@ -515,7 +539,22 @@
       "key": "robot-0",
       "rect": {"x": 262, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
+    },
+    "soldier-0": {
+      "key": "soldier-0",
+      "rect": {"x": 2, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "soldier-1": {
+      "key": "soldier-1",
+      "rect": {"x": 132, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "soldier-2": {
+      "key": "soldier-2",
+      "rect": {"x": 262, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
     }
   },
-  "skinSlicesSheetDims": [{"width": 392, "height": 262}]
+  "skinSlicesSheetDims": [{"width": 392, "height": 392}]
 }

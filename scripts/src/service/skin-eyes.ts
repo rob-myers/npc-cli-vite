@@ -42,10 +42,13 @@ export async function detectSkinEyes(pngPath: string): Promise<SkinEyes | null> 
     .flatMap((y) => [1, 2, 3].map((x) => ({ x, y, rgb: at(x, y) })))
     .filter(({ x, y, rgb }) => dist(rgb, at(FACE - 1 - x, y)) < tune.mirror);
 
-  // whites, with the pupils the dark beside them on their rows
+  // whites, with the pupils what is neither skin nor white beside them on their rows, e.g. a pale iris
   const whites = cells.filter(isWhite);
   const pupils = cells.filter(
-    (cell) => isPupil(cell) && whites.some((white) => white.y === cell.y && Math.abs(white.x - cell.x) === 1),
+    (cell) =>
+      isWhite(cell) === false &&
+      dist(cell.rgb, skin) > tune.notSkin &&
+      whites.some((white) => white.y === cell.y && Math.abs(white.x - cell.x) === 1),
   );
   if (pupils.length > 0) return { open: boundsOf([...whites, ...pupils]), pupil: boundsOf(pupils) };
 
