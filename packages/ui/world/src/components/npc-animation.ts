@@ -790,10 +790,17 @@ export class NpcAnimation {
         written.copy(bone.quaternion.slerpQuaternions(base, q, t));
         continue;
       }
-      // towards the pose aside, and on to the clip's before it gets there: one move, with no stop
+      // towards the pose aside, and on to the clip's before it gets there: one move, with no stop.
+      // The pose aside lends only its swing. Its twist would roll the arm about its length on the way
       const { there, onFrom } = sitArmVia;
-      bone.quaternion.copy(base).slerp(via[i], smooth(u.blend / there));
-      written.copy(bone.quaternion.slerp(q, smooth((u.blend - onFrom) / (1 - onFrom))));
+      splitTwist(base, tmpSwingFrom, tmpTwistFrom);
+      splitTwist(via[i], tmpSwingVia, tmpTwistVia);
+      splitTwist(q, tmpSwingTo, tmpTwistTo);
+      tmpSwingFrom
+        .slerp(tmpSwingVia, smooth(u.blend / there))
+        .slerp(tmpSwingTo, smooth((u.blend - onFrom) / (1 - onFrom)));
+      tmpTwistFrom.slerp(tmpTwistTo, smooth(u.blend));
+      written.copy(bone.quaternion.multiplyQuaternions(tmpSwingFrom, tmpTwistFrom));
     }
     const head = tracks.get("head");
     u.hasHead = head !== undefined;
@@ -1239,6 +1246,14 @@ const held = { left: false, right: false };
 
 /** Smoothstep, held outside `0` to `1` */
 const smooth = (x: number) => THREE.MathUtils.smoothstep(x, 0, 1);
+/** `q` as `swing * twist`, the twist being its turn about the bone's own length, local y for an arm */
+function splitTwist(q: THREE.Quaternion, swing: THREE.Quaternion, twist: THREE.Quaternion) {
+  twist.set(0, q.y, 0, q.w);
+  if (twist.lengthSq() < 1e-12) twist.identity();
+  else twist.normalize();
+  swing.copy(q).multiply(tmpUntwist.copy(twist).invert());
+}
+
 /** `sitArmVia` as an arm's two bones have it: mirrored for the right */
 const sitArmVias = Object.fromEntries(
   sides.map((side) => [
@@ -1300,6 +1315,14 @@ const headTurnRate = 10;
 const tmpHeadGoal = new THREE.Quaternion();
 const tmpChain = new THREE.Quaternion();
 const tmpQuat = new THREE.Quaternion();
+/** An arm bone's swing and twist, from and via and to — see `splitTwist` */
+const tmpSwingFrom = new THREE.Quaternion();
+const tmpTwistFrom = new THREE.Quaternion();
+const tmpSwingVia = new THREE.Quaternion();
+const tmpTwistVia = new THREE.Quaternion();
+const tmpSwingTo = new THREE.Quaternion();
+const tmpTwistTo = new THREE.Quaternion();
+const tmpUntwist = new THREE.Quaternion();
 const tmpSwap = new THREE.Quaternion();
 const tmpLean = new THREE.Quaternion();
 const tmpShoulder = new THREE.Vector3();

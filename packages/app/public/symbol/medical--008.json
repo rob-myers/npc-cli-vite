@@ -27,7 +27,7 @@
       "children": [
         {
           "id": "c81ac5f4-cabe-493a-bcbe-3e6c93447b39",
-          "name": "console--051 y=0.4",
+          "name": "console--051 y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -53,7 +53,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "a5f1fcb3-df63-4e3a-b383-e8479418ac29",
