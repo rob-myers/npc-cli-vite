@@ -272,9 +272,9 @@ function prepareWall(
   return wall;
 }
 
-/** Each point where the boundary bends `parkCornerDegrees` or more. It runs head to tail, so each starts one segment */
+/** Each inner corner of the boundary, as of an L-shaped room. The corners of a square room are parked in */
 function cornersOf(segs: number[][]) {
-  return segs.filter((s) => isCorner(s, segs, 0)).map((s) => ({ x: s[0], y: s[2] }));
+  return segs.filter((s) => isInnerCorner(s, segs)).map((s) => ({ x: s[0], y: s[2] }));
 }
 
 /**
@@ -290,20 +290,18 @@ function cornerSpan(wall: Wall, c: Geom.VectJson): null | Span {
 }
 
 /**
- * Does another segment meet `s` at its end `at` (0 or 3), bending `parkCornerDegrees` or more?
- * Compared by the way each runs AWAY from the point, so straight on is `u . v === -1` — which is
- * how a wall split across polys, meeting end to end, is left whole
+ * Does the segment arriving at `s`'s start bend into it `parkCornerDegrees` or more, away from the walkable side?
+ * The boundary runs head to tail and navcat winds it clockwise, the inside along `(dz, -dx)`: away is `in × out > 0`
  */
-function isCorner(s: number[], segs: number[][], at: 0 | 3) {
-  const [px, py] = [s[at], s[at + 2]];
-  const [ux, uy] = [s[3 - at] - px, s[5 - at] - py];
+function isInnerCorner(s: number[], segs: number[][]) {
+  const [px, py] = [s[0], s[2]];
+  const [ox, oy] = [s[3] - px, s[5] - py];
   return segs.some((o) => {
-    const meets = (i: 0 | 3) => Math.abs(o[i] - px) < parkCornerEps && Math.abs(o[i + 2] - py) < parkCornerEps;
-    const end = o === s ? -1 : meets(0) ? 0 : meets(3) ? 3 : -1;
-    if (end === -1) return false;
-    const [vx, vy] = [o[3 - end] - px, o[5 - end] - py];
-    const norm = Math.hypot(ux, uy) * Math.hypot(vx, vy);
-    return norm > 0 && (ux * vx + uy * vy) / norm >= parkCornerDot;
+    if (o === s || Math.abs(o[3] - px) >= parkCornerEps || Math.abs(o[5] - py) >= parkCornerEps) return false;
+    const [ix, iy] = [px - o[0], py - o[2]];
+    const norm = Math.hypot(ix, iy) * Math.hypot(ox, oy);
+    // straight on, as a wall split across polys, is `-(in . out) === -1`: left whole
+    return norm > 0 && ix * oy - iy * ox > 0 && -(ix * ox + iy * oy) / norm >= parkCornerDot;
   });
 }
 
@@ -543,9 +541,9 @@ const placementHalfExtents: [number, number, number] = [0.5, 0.5, 0.5];
 const parkNpcClearance = 6.5 * agentRadius;
 /** …and from those parked along the same wall: a body's width, and a little */
 const parkNpcBesideClearance = 4 * agentRadius;
-/** A boundary bend of this or more is a corner, kept clear of — see `isCorner` */
+/** A boundary bend of this or more, away from the walkable side, is an inner corner kept clear of — see `isInnerCorner` */
 const parkCornerDegrees = 30;
-/** That bend as a dot product of the two ways out of the corner: straight on is `-1` */
+/** That bend as a dot product of the ways out of the corner along each segment: straight on is `-1` */
 const parkCornerDot = -Math.cos((parkCornerDegrees * Math.PI) / 180);
 /** How far a parked npc keeps from a corner: room for one rounding it to step out past them */
 const parkCornerClearance = 3 * agentRadius;

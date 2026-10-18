@@ -180,8 +180,8 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `sit_reach` | `leg hold`, frames |
 | `crouch` | `down back lean reach` |
 | `crouch_cover`, `crouch_half` (`crouchStill`) | `down back lean splay toeOut breathe rise bob armX armZ foreX foreZ` |
-| `crouch_walk`, `crouch_half_walk` (`crouchWalk`) | `down back lean splay toeOut stride duty lift sway bob swing` |
-| `crouch_strafe_right`, `crouch_half_strafe_right` (`crouchStrafeRight`) | `down back lean splay toeOut stride duty lift bob` |
+| `crouch_walk`, `crouch_half_walk` (`crouchWalk`) | `down back lean splay toeOut stride duty lift sway bob swing heel toe armOut foreX abduct` |
+| `crouch_strafe_right`, `crouch_half_strafe_right` (`crouchStrafeRight`) | `down back lean splay toeOut stride duty lift bob abduct` |
 | `crouch_backwards`, `crouch_strafe_left`, and the half crouch's | none: the walk reversed (`reversedOf`), the strafe mirrored (`mirroredOf`) |
 | `phaser_aim` | `rock drop sink lean breathe`; also keys `phaser_aim_avoid` |
 
@@ -373,11 +373,14 @@ small lean (stomach -8, chest -5, head -2). It was `psi_avoid`: the first `psi` 
   chest rises `rise` (0.15) and the hips `bob` (0.15), the legs re-solved so the feet stay put. The head stays level,
   and each arm keeps its pitch in the world, so the elbows and hands stay where they rest.
 - **`crouch_cover`** leans 40: arms [40,0,±10], forearms [70,0,∓40], elbows on the knees.
-- **`crouch_half`** and its gaits: the same recipes, less low. Hips 4 down and 1.5 back, a lean of 32, the head's top
-  about 1.30m. Its arms were searched so the hands rest on the knees: arms [-5,0,±12], forearms [70,0,∓50]. The gaits
-  stride 8 ahead (0.4m: at 10, splayed, a trailing leg could not reach its foot) and 6 sideways (0.3m), lifting 2
-  (1.5 sideways). The walk sways only 0.1: the less folded leg turns far more to keep a swinging foot on its line, and
-  at 0.4 its knee wobbled 18°.
+- **`crouch_half`**: the same still recipe, less low. Hips 4 down and 1.5 back, a lean of 32, the head's top about
+  1.30m. Its arms were searched so the hands rest on the knees: arms [-5,0,±12], forearms [70,0,∓50].
+- **Its gaits are a sneak**, not a splayed squat carried along: hips 2.5 down, a lean of 18, the legs near parallel
+  (`splay` 0.3, `toeOut` 5), arms at their sides as `walk`'s (`armOut` 5, forearms 15, swinging 10). Each foot strikes on the heel (`heel` 10,
+  toes up), rolls flat, and comes off the toe (`toe` 15): `heelToe` pitches it, and `rockerLift` raises the ankle so
+  the heel or toe stays down (`footSole`, measured off `phaser_aim`'s feet). Strides 8 ahead (0.4m) and 5 sideways
+  (0.25m). Each leg moves sideways by swinging out at the hip (`abduct`, thigh `z`): turning the thigh instead flared
+  the knee 43° as the foot left the ground, the foot nearly under the hip.
 - `steppingLegs` sets each frame out from the last frame's solution, and moves at most `maxStep` a Newton step. From a
   fixed guess the half crouch's legs jumped to another branch, a thigh turned 2358°.
 - **`drop_left` / `pick_up_left` / `crouch_left`**: mirrors for the other hand. Left and right bones swapped,
