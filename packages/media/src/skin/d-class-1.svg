@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <filter id="spot-light-filter-0" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 30 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <bx:grid x="0" y="0" width="16" height="16"/>
+    <filter id="spot-light-filter-1" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 29 #ffffff 48 0.76 0.14 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <clipPath id="hair-top"><rect x="32" y="0" width="32" height="4"/><rect x="32" y="4" width="32" height="4"/><rect x="32" y="8" width="32" height="4"/><rect x="32" y="12" width="32" height="4"/><rect x="32" y="16" width="32" height="4"/><rect x="32" y="20" width="32" height="4"/><rect x="32" y="24" width="32" height="4"/><rect x="32" y="28" width="32" height="4"/></clipPath>
+    <clipPath id="hair-right"><rect x="0" y="32" width="32" height="4"/><rect x="0" y="36" width="32" height="4"/><rect x="0" y="40" width="32" height="4"/><rect x="0" y="44" width="32" height="4"/><rect x="0" y="48" width="20" height="4"/><rect x="28" y="48" width="4" height="4"/><rect x="0" y="52" width="20" height="4"/><rect x="0" y="56" width="12" height="4"/></clipPath>
+    <clipPath id="hair-front"><rect x="32" y="32" width="32" height="4"/><rect x="32" y="36" width="32" height="4"/><rect x="32" y="40" width="4" height="4"/><rect x="60" y="40" width="4" height="4"/></clipPath>
+    <clipPath id="hair-left"><rect x="64" y="32" width="32" height="4"/><rect x="64" y="36" width="32" height="4"/><rect x="64" y="40" width="32" height="4"/><rect x="64" y="44" width="32" height="4"/><rect x="64" y="48" width="4" height="4"/><rect x="76" y="48" width="20" height="4"/><rect x="76" y="52" width="20" height="4"/><rect x="84" y="56" width="12" height="4"/></clipPath>
+    <clipPath id="hair-back"><rect x="96" y="32" width="32" height="4"/><rect x="96" y="36" width="32" height="4"/><rect x="96" y="40" width="32" height="4"/><rect x="96" y="44" width="32" height="4"/><rect x="96" y="48" width="32" height="4"/><rect x="96" y="52" width="32" height="4"/><rect x="96" y="56" width="32" height="4"/><rect x="104" y="60" width="16" height="4"/></clipPath>
+    <clipPath id="stubble"><rect x="12" y="56" width="20" height="4"/><rect x="0" y="60" width="32" height="4"/><rect x="32" y="56" width="8" height="4"/><rect x="56" y="56" width="8" height="4"/><rect x="32" y="60" width="32" height="4"/><rect x="64" y="56" width="20" height="4"/><rect x="64" y="60" width="32" height="4"/></clipPath>
+    <pattern id="stubble-dots" width="2" height="2" patternUnits="userSpaceOnUse">
+      <rect width="0.8" height="0.8" style="fill: rgb(40, 24, 16);"/>
+      <rect x="1.1" y="1.2" width="0.6" height="0.6" style="fill: rgb(40, 24, 16);"/>
+    </pattern>
+    <path id="plaits" d="M0.5 -2.6L2.3 -1.3L4.1 -2.6M0.5 0L2.3 1.3L4.1 0M0.5 2.6L2.3 3.9L4.1 2.6M0.5 5.2L2.3 6.5L4.1 5.2M0.5 7.8L2.3 9.1L4.1 7.8M0.5 10.4L2.3 11.7L4.1 10.4M0.5 13L2.3 14.3L4.1 13M0.5 15.6L2.3 16.9L4.1 15.6M0.5 18.2L2.3 19.5L4.1 18.2M0.5 20.8L2.3 22.1L4.1 20.8M0.5 23.4L2.3 24.7L4.1 23.4M0.5 26L2.3 27.3L4.1 26M0.5 28.6L2.3 29.9L4.1 28.6M0.5 31.2L2.3 32.5L4.1 31.2M0.5 33.8L2.3 35.1L4.1 33.8" style="fill: none; stroke: rgb(176, 140, 72); stroke-opacity: 0.6; stroke-width: 0.6px; stroke-linecap: round;"/>
+  </defs>
+  <g style="pointer-events: none;">
+    <title>meta prefix=d-class</title>
+    <image id="base" href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+      <title>d-class-1--2a2804c8ff60ef75</title>
+    </image>
+  </g>
+  <g style="pointer-events: none;">
+    <title>suit</title>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>body</title>
+      <rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="113" y="65" width="30" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="65" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>right</title>
+      </rect>
+      <rect x="81" y="81" width="30" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="113" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>left</title>
+      </rect>
+      <rect x="129" y="81" width="30" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>right-arm</title>
+      <rect x="177" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="193" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="161" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>right</title>
+      </rect>
+      <rect x="177" y="81" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="193" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>left</title>
+      </rect>
+      <rect x="209" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>left-arm</title>
+      <rect x="145" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="161" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="129" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>right</title>
+      </rect>
+      <rect x="145" y="209" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="161" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>left</title>
+      </rect>
+      <rect x="177" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>right-leg</title>
+      <rect x="17" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="33" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="1" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>right</title>
+      </rect>
+      <rect x="17" y="81" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="33" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>left</title>
+      </rect>
+      <rect x="49" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>left-leg</title>
+      <rect x="81" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="97" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="65" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>right</title>
+      </rect>
+      <rect x="81" y="209" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="97" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>left</title>
+      </rect>
+      <rect x="113" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+  </g>
+  <g style="pointer-events: none;">
+    <title>head-detail</title>
+    <g>
+      <title>hair</title>
+      <g style="clip-path: url(&quot;#hair-top&quot;);">
+        <title>top</title>
+        <g transform="translate(32, 0)"><path d="M0 0V32M4.6 0V32M9.1 0V32M13.7 0V32M18.3 0V32M22.9 0V32M27.4 0V32M32 0V32" style="fill: none; stroke: rgb(120, 88, 40); stroke-opacity: 0.75; stroke-width: 0.9px;"/><use href="#plaits" x="0" y="0.2"/><use href="#plaits" x="4.6" y="0.2"/><use href="#plaits" x="9.1" y="1.5"/><use href="#plaits" x="13.7" y="2.6"/><use href="#plaits" x="18.3" y="2"/><use href="#plaits" x="22.9" y="2"/><use href="#plaits" x="27.4" y="1.6"/><path d="M1.8 0V32M6.4 0V32M10.9 0V32M15.5 0V32M20.1 0V32M24.6 0V32M29.2 0V32" style="fill: none; stroke: rgb(255, 250, 228); stroke-opacity: 0.45; stroke-width: 0.6px; stroke-linecap: round;"/></g>
+      </g>
+      <g style="clip-path: url(&quot;#hair-front&quot;);">
+        <title>front</title>
+        <g transform="translate(32, 32)"><path d="M0 0V32M4.6 0V32M9.1 0V32M13.7 0V32M18.3 0V32M22.9 0V32M27.4 0V32M32 0V32" style="fill: none; stroke: rgb(120, 88, 40); stroke-opacity: 0.75; stroke-width: 0.9px;"/><use href="#plaits" x="0" y="1.1"/><use href="#plaits" x="4.6" y="2"/><use href="#plaits" x="9.1" y="1.1"/><use href="#plaits" x="13.7" y="1"/><use href="#plaits" x="18.3" y="2.4"/><use href="#plaits" x="22.9" y="1.7"/><use href="#plaits" x="27.4" y="0.8"/><path d="M1.8 0V32M6.4 0V32M10.9 0V32M15.5 0V32M20.1 0V32M24.6 0V32M29.2 0V32" style="fill: none; stroke: rgb(255, 250, 228); stroke-opacity: 0.45; stroke-width: 0.6px; stroke-linecap: round;"/></g>
+      </g>
+      <g style="clip-path: url(&quot;#hair-back&quot;);">
+        <title>back</title>
+        <g transform="translate(128, 32) scale(-1, 1)"><path d="M0 0V32M4.6 0V32M9.1 0V32M13.7 0V32M18.3 0V32M22.9 0V32M27.4 0V32M32 0V32" style="fill: none; stroke: rgb(120, 88, 40); stroke-opacity: 0.75; stroke-width: 0.9px;"/><use href="#plaits" x="0" y="1.7"/><use href="#plaits" x="4.6" y="0.7"/><use href="#plaits" x="9.1" y="0.3"/><use href="#plaits" x="13.7" y="0.6"/><use href="#plaits" x="18.3" y="1.9"/><use href="#plaits" x="22.9" y="1.2"/><use href="#plaits" x="27.4" y="1.3"/><path d="M1.8 0V32M6.4 0V32M10.9 0V32M15.5 0V32M20.1 0V32M24.6 0V32M29.2 0V32" style="fill: none; stroke: rgb(255, 250, 228); stroke-opacity: 0.45; stroke-width: 0.6px; stroke-linecap: round;"/></g>
+      </g>
+      <g style="clip-path: url(&quot;#hair-right&quot;);">
+        <title>right</title>
+        <g transform="translate(32, 32) rotate(90)"><path d="M0 0V32M4.6 0V32M9.1 0V32M13.7 0V32M18.3 0V32M22.9 0V32M27.4 0V32M32 0V32" style="fill: none; stroke: rgb(120, 88, 40); stroke-opacity: 0.75; stroke-width: 0.9px;"/><use href="#plaits" x="0" y="0.6"/><use href="#plaits" x="4.6" y="0.4"/><use href="#plaits" x="9.1" y="2.5"/><use href="#plaits" x="13.7" y="0.9"/><use href="#plaits" x="18.3" y="2.4"/><use href="#plaits" x="22.9" y="1.8"/><use href="#plaits" x="27.4" y="1.4"/><path d="M1.8 0V32M6.4 0V32M10.9 0V32M15.5 0V32M20.1 0V32M24.6 0V32M29.2 0V32" style="fill: none; stroke: rgb(255, 250, 228); stroke-opacity: 0.45; stroke-width: 0.6px; stroke-linecap: round;"/></g>
+      </g>
+      <g style="clip-path: url(&quot;#hair-left&quot;);">
+        <title>left</title>
+        <g transform="translate(64, 32) rotate(90) scale(1, -1)"><path d="M0 0V32M4.6 0V32M9.1 0V32M13.7 0V32M18.3 0V32M22.9 0V32M27.4 0V32M32 0V32" style="fill: none; stroke: rgb(120, 88, 40); stroke-opacity: 0.75; stroke-width: 0.9px;"/><use href="#plaits" x="0" y="2.2"/><use href="#plaits" x="4.6" y="0.9"/><use href="#plaits" x="9.1" y="2.4"/><use href="#plaits" x="13.7" y="1.2"/><use href="#plaits" x="18.3" y="1.2"/><use href="#plaits" x="22.9" y="1.2"/><use href="#plaits" x="27.4" y="1.9"/><path d="M1.8 0V32M6.4 0V32M10.9 0V32M15.5 0V32M20.1 0V32M24.6 0V32M29.2 0V32" style="fill: none; stroke: rgb(255, 250, 228); stroke-opacity: 0.45; stroke-width: 0.6px; stroke-linecap: round;"/></g>
+      </g>
+    </g>
+    <g>
+      <title>hairline</title>
+        <path d="M20 48h8v1.6h-8zM28 52h4v1.6h-4zM12 56h8v1.6h-8zM0 60h12v1.6h-12zM36 40h24v1.6h-24zM32 44h4v1.6h-4zM60 44h4v1.6h-4zM68 48h8v1.6h-8zM64 52h4v1.6h-4zM76 56h8v1.6h-8zM84 60h12v1.6h-12zM96 60h8v1.6h-8zM120 60h8v1.6h-8z" style="fill: rgb(40, 22, 12); fill-opacity: 0.4;"/>
+    </g>
+    <g>
+      <title>brows</title>
+      <path d="M 36.8 47 Q 39.5 44.9 43.4 46" style="fill: none; stroke: rgb(92, 62, 36); stroke-width: 1.6px; stroke-linecap: round; stroke-opacity: 0.9;"/>
+      <path d="M 59.2 47 Q 56.5 44.9 52.6 46" style="fill: none; stroke: rgb(92, 62, 36); stroke-width: 1.6px; stroke-linecap: round; stroke-opacity: 0.9;"/>
+    </g>
+    <g>
+      <title>nose</title>
+      <rect x="45" y="52.3" width="6" height="0.9" style="fill: rgb(214, 160, 128); fill-opacity: 0.45;"/>
+    </g>
+    <g>
+      <title>lips</title>
+      <path d="M 41 58.2 Q 48 58.6 55 58.2" style="fill: none; stroke: rgb(46, 22, 16); stroke-width: 0.9px; stroke-opacity: 0.75;"/>
+      <path d="M 43.5 59.6 L 52.5 59.6" style="fill: none; stroke: rgb(176, 114, 92); stroke-width: 0.6px; stroke-opacity: 0.55;"/>
+    </g>
+    <g>
+      <title>scar</title>
+      <path d="M 55.4 53.2 L 58.6 57.6" style="fill: none; stroke: rgb(214, 168, 140); stroke-width: 0.8px; stroke-linecap: round;"/>
+      <path d="M 55.8 55.6 L 57.6 54.6 M 56.9 57.1 L 58.6 56.1" style="fill: none; stroke: rgb(214, 168, 140); stroke-width: 0.5px; stroke-opacity: 0.8;"/>
+    </g>
+    <rect x="0" y="32" width="96" height="32" style="fill: url(&quot;#stubble-dots&quot;); fill-opacity: 0.4; clip-path: url(&quot;#stubble&quot;);">
+      <title>stubble</title>
+    </rect>
+  </g>
+  <g style="pointer-events: none;">
+    <title>head</title>
+    <rect width="32" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+      <title>top</title>
+    </rect>
+    <rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: rgb(0, 0, 0); stroke-opacity: 0.25; stroke-width: 4px;">
+      <title>bottom-neck</title>
+    </rect>
+    <rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light; fill: rgb(119, 119, 119);" y="32">
+      <title>front</title>
+    </rect>
+    <rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+      <title>back</title>
+    </rect>
+    <rect x="64" width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32">
+      <title>left</title>
+    </rect>
+    <rect width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+      <title>right</title>
+    </rect>
+  </g>
+</svg>

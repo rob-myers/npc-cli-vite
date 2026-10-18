@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <filter id="spot-light-filter-0" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 30 #efefef 125 0.79 0.18 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+    <bx:grid x="0" y="0" width="16" height="16"/>
+    <filter id="spot-light-filter-1" bx:preset="spot-light 1 0.5 0.5 1 0.5 0.5 0 29 #ffffff 48 0.76 0.14 0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+      <feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feSpecularLighting>
+      <feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+        <feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+      </feDiffuseLighting>
+      <feMerge result="lighting">
+        <feMergeNode in="diffuse-lighting"/>
+        <feMergeNode in="specular-lighting"/>
+      </feMerge>
+      <feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+    </filter>
+  </defs>
+  <g style="pointer-events: none;">
+    <title>meta prefix=d-class</title>
+    <image id="base" href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+      <title>d-class-0--786e7e7dd850c2b8</title>
+    </image>
+  </g>
+  <g style="pointer-events: none;">
+    <title>slim-arms</title>
+    <g>
+      <title>right-arm</title>
+      <svg x="184" y="80" width="8" height="48" viewBox="180 80 8 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="192" y="80" width="16" height="48" viewBox="188 80 16 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="208" y="80" width="8" height="48" viewBox="204 80 8 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="216" y="80" width="8" height="48" viewBox="208 80 8 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="184" y="64" width="8" height="16" viewBox="180 64 8 16">
+        <use href="#base"/>
+      </svg>
+      <svg x="192" y="64" width="8" height="16" viewBox="188 64 8 16">
+        <use href="#base"/>
+      </svg>
+      <svg x="200" y="64" width="8" height="16" viewBox="192 64 8 16">
+        <use href="#base"/>
+      </svg>
+    </g>
+    <g>
+      <title>left-arm</title>
+      <svg x="152" y="208" width="8" height="48" viewBox="148 208 8 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="160" y="208" width="16" height="48" viewBox="156 208 16 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="176" y="208" width="8" height="48" viewBox="172 208 8 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="184" y="208" width="8" height="48" viewBox="176 208 8 48">
+        <use href="#base"/>
+      </svg>
+      <svg x="152" y="192" width="8" height="16" viewBox="148 192 8 16">
+        <use href="#base"/>
+      </svg>
+      <svg x="160" y="192" width="8" height="16" viewBox="156 192 8 16">
+        <use href="#base"/>
+      </svg>
+      <svg x="168" y="192" width="8" height="16" viewBox="160 192 8 16">
+        <use href="#base"/>
+      </svg>
+    </g>
+  </g>
+  <g style="pointer-events: none;">
+    <title>fixes</title>
+    <rect x="84" y="64" width="24" height="16" style="fill: rgb(159, 58, 0);">
+      <title>body-top</title>
+    </rect>
+  </g>
+  <g style="pointer-events: none;">
+    <title>suit</title>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>body</title>
+      <rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="113" y="65" width="30" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="65" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>right</title>
+      </rect>
+      <rect x="81" y="81" width="30" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="113" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>left</title>
+      </rect>
+      <rect x="129" y="81" width="30" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>right-arm</title>
+      <rect x="177" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="193" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="161" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>right</title>
+      </rect>
+      <rect x="177" y="81" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="193" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>left</title>
+      </rect>
+      <rect x="209" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>left-arm</title>
+      <rect x="145" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="161" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="129" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>right</title>
+      </rect>
+      <rect x="145" y="209" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="161" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>left</title>
+      </rect>
+      <rect x="177" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>right-leg</title>
+      <rect x="17" y="65" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="33" y="65" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="1" y="81" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>right</title>
+      </rect>
+      <rect x="17" y="81" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="33" y="81" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>left</title>
+      </rect>
+      <rect x="49" y="81" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+    <g style="fill: rgb(0, 0, 0); stroke: rgb(0, 0, 0); stroke-opacity: 0.35; stroke-width: 2px;">
+      <title>left-leg</title>
+      <rect x="81" y="193" width="14" height="14" style="fill-opacity: 0.15; stroke: none;">
+        <title>top</title>
+      </rect>
+      <rect x="97" y="193" width="14" height="14" style="fill-opacity: 0.35; stroke: none;">
+        <title>bottom</title>
+      </rect>
+      <rect x="65" y="209" width="14" height="46" style="fill-opacity: 0.3;">
+        <title>right</title>
+      </rect>
+      <rect x="81" y="209" width="14" height="46" style="fill-opacity: 0;">
+        <title>front</title>
+      </rect>
+      <rect x="97" y="209" width="14" height="46" style="fill-opacity: 0.15;">
+        <title>left</title>
+      </rect>
+      <rect x="113" y="209" width="14" height="46" style="fill-opacity: 0.18;">
+        <title>back</title>
+      </rect>
+    </g>
+  </g>
+  <g style="pointer-events: none;">
+    <title>head</title>
+    <rect width="32" height="32" style="stroke: rgb(0, 0, 0); stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+      <title>top</title>
+    </rect>
+    <rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: rgb(0, 0, 0); stroke-opacity: 0.25; stroke-width: 4px;">
+      <title>bottom-neck</title>
+    </rect>
+    <rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light; fill: rgb(119, 119, 119);" y="32">
+      <title>front</title>
+    </rect>
+    <rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+      <title>back</title>
+    </rect>
+    <rect x="64" width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32">
+      <title>left</title>
+    </rect>
+    <rect width="32" height="32" style="filter: none; stroke-width: 2px; fill-opacity: 0.3;" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+      <title>right</title>
+    </rect>
+  </g>
+</svg>
