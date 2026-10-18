@@ -541,14 +541,17 @@ export function WorldView(props: React.PropsWithChildren) {
         /** How much further back the camera will rest, once the zoom lands */
         const back =
           max + (min - max) * controls.zoomProgress + tmpProjected.copy(controls.target).applyMatrix4(view).z;
-        /** The target will rest at head height, see `lookAtPlayer` */
-        const floorY = controls.target.y - npcDims.height;
-        // shortened until their feet and head are in frame. Perspective takes a few passes
+        // measured off the player, not the target, which need not rest at any particular height
+        const player = state.getFollowedPlayer();
+        const floorY = player?.position.y ?? controls.target.y;
+        /** The top of them in frame: their head, or their label over it */
+        const topY = Math.max(floorY + npcDims.height, player?.getLabelPosition(tmpLabel).y ?? -Infinity);
+        // shortened until their feet, head and label are in frame. Perspective takes a few passes
         for (let i = 0; i < 4; i++) {
           const x = controls.target.x - offsetX;
           const z = controls.target.z - offsetZ;
           const feet = getOffCentre(tmpProjected.set(x, floorY, z), camera, back);
-          const head = getOffCentre(tmpProjected.set(x, controls.target.y, z), camera, back);
+          const head = getOffCentre(tmpProjected.set(x, topY, z), camera, back);
           const over = Math.max(feet, head) * frontierMargin;
           if (over <= 1) break;
           offsetX /= over;
@@ -2275,6 +2278,8 @@ const tmpOffset = { x: 0, z: 0 };
 const tmpTracked = new THREE.Vector3();
 /** The player on screen, were the target at the goal — see `getFollowGoal` */
 const tmpProjected = new THREE.Vector3();
+/** The player's label, whose height above them `getFrontierOffset` keeps in frame */
+const tmpLabel = new THREE.Vector3();
 const tmpGroundHit = new THREE.Vector3();
 const tmpAim = new THREE.Vector3();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
