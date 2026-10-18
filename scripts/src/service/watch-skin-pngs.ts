@@ -70,7 +70,10 @@ export async function rebuildSkinManifest() {
       continue;
     }
 
-    const eyes = await detectSkinEyes(filePath);
+    // via SVG top-level objects with title "meta foo=bar ..."
+    const svgMeta = svgExists ? parseSvgMetadata(svgPath) : null;
+    /** None for a face the svg says has none, e.g. masked, so it never blinks */
+    const eyes = svgMeta?.noEyes === true ? null : await detectSkinEyes(filePath);
 
     byKey[key] = AssetsSkinEntrySchema.decode({
       key,
@@ -78,8 +81,7 @@ export async function rebuildSkinManifest() {
       filename,
       meta: {
         skinKey: key,
-        // via SVG top-level objects with title "meta foo=bar ..."
-        ...(svgExists ? parseSvgMetadata(svgPath) : null),
+        ...svgMeta,
         // found in the png — see `docs/skin-slices.md`
         ...(eyes !== null && { eyes }),
       },

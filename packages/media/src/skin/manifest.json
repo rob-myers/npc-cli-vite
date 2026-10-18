@@ -1,5 +1,29 @@
 {
   "byKey": {
+    "d-class-0": {
+      "key": "d-class-0",
+      "id": "786e7e7dd850c2b8",
+      "filename": "d-class-0--786e7e7dd850c2b8.png",
+      "meta": {
+        "skinKey": "d-class-0",
+        "prefix": "d-class",
+        "eyes": {"open": [1, 5, 2, 2], "pupil": [2, 5, 1, 2]}
+      },
+      "url": "https://namemc.com/skin/786e7e7dd850c2b8",
+      "svgPath": "skin/d-class-0.svg"
+    },
+    "d-class-1": {
+      "key": "d-class-1",
+      "id": "2a2804c8ff60ef75",
+      "filename": "d-class-1--2a2804c8ff60ef75.png",
+      "meta": {
+        "skinKey": "d-class-1",
+        "prefix": "d-class",
+        "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/2a2804c8ff60ef75",
+      "svgPath": "skin/d-class-1.svg"
+    },
     "human-0": {
       "key": "human-0",
       "id": "23aa3d70ee53af87",
@@ -51,6 +75,34 @@
       },
       "url": "https://namemc.com/skin/e91cc700154075b2",
       "svgPath": "skin/robot-0.svg"
+    },
+    "soldier-0": {
+      "key": "soldier-0",
+      "id": "543f56fb2b80fc9a",
+      "filename": "soldier-0--543f56fb2b80fc9a.png",
+      "meta": {"skinKey": "soldier-0", "prefix": "soldier", "noEyes": true},
+      "url": "https://namemc.com/skin/543f56fb2b80fc9a",
+      "svgPath": "skin/soldier-0.svg"
+    },
+    "soldier-1": {
+      "key": "soldier-1",
+      "id": "e4d405deeb9ce415",
+      "filename": "soldier-1--e4d405deeb9ce415.png",
+      "meta": {
+        "skinKey": "soldier-1",
+        "prefix": "soldier",
+        "eyes": {"open": [1, 4, 2, 1], "pupil": [2, 4, 1, 1]}
+      },
+      "url": "https://namemc.com/skin/e4d405deeb9ce415",
+      "svgPath": "skin/soldier-1.svg"
+    },
+    "soldier-2": {
+      "key": "soldier-2",
+      "id": "c447b8bcb6c785c0",
+      "filename": "soldier-2--c447b8bcb6c785c0.png",
+      "meta": {"skinKey": "soldier-2", "prefix": "soldier", "noEyes": true},
+      "url": "https://namemc.com/skin/c447b8bcb6c785c0",
+      "svgPath": "skin/soldier-2.svg"
     }
   }
 }

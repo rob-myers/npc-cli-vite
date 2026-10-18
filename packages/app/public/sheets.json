@@ -434,10 +434,26 @@
   "decorSheetDims": [{"width": 382, "height": 427}],
   "maxDecorSheetDim": {"width": 382, "height": 427},
   "skin": {
+    "d-class-0": {
+      "key": "d-class-0",
+      "filename": "d-class-0--786e7e7dd850c2b8.png",
+      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "d-class-1": {
+      "key": "d-class-1",
+      "filename": "d-class-1--2a2804c8ff60ef75.png",
+      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
     "human-0": {
       "key": "human-0",
       "filename": "human-0--23aa3d70ee53af87.png",
-      "rect": {"x": 2, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -445,7 +461,7 @@
     "human-1": {
       "key": "human-1",
       "filename": "human-1--8c524ef1dc111a13.png",
-      "rect": {"x": 260, "y": 2, "width": 256, "height": 256},
+      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -453,7 +469,7 @@
     "medic-0": {
       "key": "medic-0",
       "filename": "medic-0--3573d1c9cad6c8fc.png",
-      "rect": {"x": 2, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 2, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
@@ -461,35 +477,84 @@
     "robot-0": {
       "key": "robot-0",
       "filename": "robot-0--e91cc700154075b2.png",
-      "rect": {"x": 260, "y": 260, "width": 256, "height": 256},
+      "rect": {"x": 518, "y": 260, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "soldier-0": {
+      "key": "soldier-0",
+      "filename": "soldier-0--543f56fb2b80fc9a.png",
+      "rect": {"x": 2, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "soldier-1": {
+      "key": "soldier-1",
+      "filename": "soldier-1--e4d405deeb9ce415.png",
+      "rect": {"x": 260, "y": 518, "width": 256, "height": 256},
+      "sheetId": 0,
+      "originalWidth": 64,
+      "originalHeight": 64
+    },
+    "soldier-2": {
+      "key": "soldier-2",
+      "filename": "soldier-2--c447b8bcb6c785c0.png",
+      "rect": {"x": 518, "y": 518, "width": 256, "height": 256},
       "sheetId": 0,
       "originalWidth": 64,
       "originalHeight": 64
     }
   },
-  "skinSheetDims": [{"width": 518, "height": 518}],
-  "maxSkinSheetDim": {"width": 518, "height": 518},
+  "skinSheetDims": [{"width": 776, "height": 776}],
+  "maxSkinSheetDim": {"width": 776, "height": 776},
   "skinSlices": {
+    "d-class-0": {
+      "key": "d-class-0",
+      "rect": {"x": 2, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "d-class-1": {
+      "key": "d-class-1",
+      "rect": {"x": 132, "y": 2, "width": 128, "height": 128},
+      "sheetId": 0
+    },
     "human-0": {
       "key": "human-0",
-      "rect": {"x": 2, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
     "human-1": {
       "key": "human-1",
-      "rect": {"x": 132, "y": 2, "width": 128, "height": 128},
+      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
       "sheetId": 0
     },
     "medic-0": {
       "key": "medic-0",
-      "rect": {"x": 2, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 262, "y": 2, "width": 128, "height": 128},
       "sheetId": 0
     },
     "robot-0": {
       "key": "robot-0",
-      "rect": {"x": 132, "y": 132, "width": 128, "height": 128},
+      "rect": {"x": 262, "y": 132, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "soldier-0": {
+      "key": "soldier-0",
+      "rect": {"x": 2, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "soldier-1": {
+      "key": "soldier-1",
+      "rect": {"x": 132, "y": 262, "width": 128, "height": 128},
+      "sheetId": 0
+    },
+    "soldier-2": {
+      "key": "soldier-2",
+      "rect": {"x": 262, "y": 262, "width": 128, "height": 128},
       "sheetId": 0
     }
   },
-  "skinSlicesSheetDims": [{"width": 262, "height": 262}]
+  "skinSlicesSheetDims": [{"width": 392, "height": 392}]
 }

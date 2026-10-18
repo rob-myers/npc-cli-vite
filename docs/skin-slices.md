@@ -19,7 +19,7 @@ Eyes are apart from poses and clips. Nothing sets them but `setEyes` and `blink`
 `detectSkinEyes` (`scripts/src/service/skin-eyes.ts`) reads a skin's 64px png and looks in the 8x8
 face front for:
 
-- **whites**: grey pixels, with **pupils** the dark pixels beside them on their rows;
+- **whites**: grey pixels, with **pupils** what is neither skin nor white beside them on their rows, e.g. a pale iris;
 - failing those, **inverted eyes**: a coloured iris with dark on every side, the eye being both (robot-0);
 - failing those, **dot eyes**: whatever else is dark (medic-0).
 
@@ -33,7 +33,7 @@ It gives the LEFT eye as seen, the right being its mirror, as `meta.eyes` in `sk
 
 Each is `[x, y, width, height]` in the face's 8 pixels: where the eye opens, and the pupil within it.
 A dot eye has the same rect for both. A skin whose eyes it does not find has no `meta.eyes`, and its
-eyes never change.
+eyes never change. Nor does one whose svg meta says `noEyes`, e.g. a masked face: it is not looked for.
 
 `rebuildSkinManifest` calls it, so it runs when the dev server starts, on a skin png or svg change,
 and in `gen-skin-sheets`. Its thresholds are `tune` in that file, set on the skins there are.

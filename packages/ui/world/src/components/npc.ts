@@ -15,7 +15,7 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultIdleAnimationClipKey, defaultNpcLabelColor, npcScale } from "../const.npc";
+import { defaultIdleAnimationClipKey, defaultNpcLabelColor, npcScale, otherNpcLabelColor } from "../const.npc";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -184,8 +184,13 @@ export class Npc {
     const { width, height } = ct.canvas;
     ct.clearRect(0, 0, width, height);
 
-    ct.fillStyle = this.labelStyle.color;
-    ct.font = "400 36px sans-serif";
+    // lighter unless they are the player: grey rather than the default yellow, thinner, and part see-through.
+    // `system-ui` has the lighter weights, which plain `sans-serif` may not
+    const isPlayer = this.w.player.is(this.key);
+    const { color } = this.labelStyle;
+    ct.fillStyle = isPlayer === false && color === defaultNpcLabelColor ? otherNpcLabelColor : color;
+    ct.font = `${isPlayer ? 400 : 100} 36px system-ui, sans-serif`;
+    ct.globalAlpha = isPlayer ? 1 : 0.35;
     ct.textAlign = "center";
     ct.textBaseline = "middle";
     ct.letterSpacing = "0.1em";
@@ -194,6 +199,7 @@ export class Npc {
 
     const labelText = this.labelStyle.speaking ? `[ ${this.key} ]` : this.key;
     ct.fillText(labelText, width / 2, height / 2);
+    ct.globalAlpha = 1;
     const m = ct.measureText(labelText);
     this.labelRectUniform.value.set(
       (width / 2 - m.actualBoundingBoxLeft - labelPickPadPx) / width,

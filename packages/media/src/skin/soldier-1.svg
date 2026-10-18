@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs>
+<style>.s0{stop-color:#1e2124;}.s1{pointer-events:none;}.s2{fill:#000000;stroke:#000000;stroke-opacity:0.35;stroke-width:2px;}.s3{fill-opacity:0.35;stroke:none;}.s4{fill-opacity:0.15;}.s5{fill-opacity:0;}.s6{fill-opacity:0.18;}.s7{fill-opacity:0.15;stroke:none;}.s8{fill-opacity:0.3;}.s9{fill:#1c1e20;}.s10{fill:url(&quot;#nvg-tube&quot;);}.s11{fill:url(&quot;#nvg-lens&quot;);stroke:#101214;stroke-width:1px;}.s12{fill:url(&quot;#s1-plate&quot;);stroke:#121416;stroke-width:0.8px;}.s13{fill:#20221f;}.s14{fill:none;stroke:#7e8480;stroke-width:0.6px;stroke-opacity:0.6;}.s15{fill:none;stroke:#121416;stroke-width:0.8px;}.s16{filter:none;stroke-width:2px;fill-opacity:0.3;}</style>
+<filter id="spot-light-filter-0" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#efefef" specularConstant="0.79" specularExponent="125">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#efefef" diffuseConstant="0.18">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="30" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<filter id="spot-light-filter-1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB" x="-50%" y="-50%" width="200%" height="200%">
+<feSpecularLighting result="specular-lighting" lighting-color="#ffffff" specularConstant="0.76" specularExponent="48">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feSpecularLighting>
+<feDiffuseLighting result="diffuse-lighting" lighting-color="#ffffff" diffuseConstant="0.14">
+<feSpotLight x="0.5" y="0.5" z="1" limitingConeAngle="29" pointsAtX="0.5" pointsAtY="0.5" pointsAtZ="0"/>
+</feDiffuseLighting>
+<feMerge result="lighting">
+<feMergeNode in="diffuse-lighting"/>
+<feMergeNode in="specular-lighting"/>
+</feMerge>
+<feComposite in="SourceGraphic" in2="lighting" operator="arithmetic" k1="1" k2="0" k3="0" k4="0"/>
+</filter>
+<linearGradient id="nvg-tube" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" class="s0"/>
+<stop offset="0.45" style="stop-color: #4e5458;"/>
+<stop offset="1" class="s0"/>
+</linearGradient>
+<radialGradient id="nvg-lens" cx="0.4" cy="0.35" r="0.7">
+<stop offset="0" style="stop-color: #96dcaa;"/>
+<stop offset="0.5" style="stop-color: #286042;"/>
+<stop offset="1" style="stop-color: #0c1e14;"/>
+</radialGradient>
+<linearGradient id="s1-plate" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" style="stop-color: #464a42;"/>
+<stop offset="1" style="stop-color: #282b26;"/>
+</linearGradient>
+</defs>
+<g class="s1">
+<title>meta prefix=soldier</title>
+<image id="base" href="data:image/png;base64,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" width="256" height="256" style="image-rendering: pixelated;">
+<title>soldier-1--e4d405deeb9ce415</title>
+</image>
+</g>
+<g class="s1">
+<title>suit</title>
+<g class="s2">
+<title>body</title>
+<rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="113" y="65" width="30" height="14" class="s3">
+<title>bottom</title>
+</rect>
+<rect x="65" y="81" width="14" height="46" class="s4">
+<title>right</title>
+</rect>
+<rect x="81" y="81" width="30" height="46" class="s5">
+<title>front</title>
+</rect>
+<rect x="113" y="81" width="14" height="46" class="s4">
+<title>left</title>
+</rect>
+<rect x="129" y="81" width="30" height="46" class="s6">
+<title>back</title>
+</rect>
+</g>
+<g class="s2">
+<title>right-arm</title>
+<rect x="177" y="65" width="14" height="14" class="s7">
+<title>top</title>
+</rect>
+<rect x="193" y="65" width="14" height="14" class="s3">
+<title>bottom</title>
+</rect>
+<rect x="161" y="81" width="14" height="46" class="s4">
+<title>right</title>
+</rect>
+<rect x="177" y="81" width="14" height="46" class="s5">
+<title>front</title>
+</rect>
+<rect x="193" y="81" width="14" height="46" class="s8">
+<title>left</title>
+</rect>
+<rect x="209" y="81" width="14" height="46" class="s6">
+<title>back</title>
+</rect>
+</g>
+<g class="s2">
+<title>left-arm</title>
+<rect x="145" y="193" width="14" height="14" class="s7">
+<title>top</title>
+</rect>
+<rect x="161" y="193" width="14" height="14" class="s3">
+<title>bottom</title>
+</rect>
+<rect x="129" y="209" width="14" height="46" class="s8">
+<title>right</title>
+</rect>
+<rect x="145" y="209" width="14" height="46" class="s5">
+<title>front</title>
+</rect>
+<rect x="161" y="209" width="14" height="46" class="s4">
+<title>left</title>
+</rect>
+<rect x="177" y="209" width="14" height="46" class="s6">
+<title>back</title>
+</rect>
+</g>
+<g class="s2">
+<title>right-leg</title>
+<rect x="17" y="65" width="14" height="14" class="s7">
+<title>top</title>
+</rect>
+<rect x="33" y="65" width="14" height="14" class="s3">
+<title>bottom</title>
+</rect>
+<rect x="1" y="81" width="14" height="46" class="s4">
+<title>right</title>
+</rect>
+<rect x="17" y="81" width="14" height="46" class="s5">
+<title>front</title>
+</rect>
+<rect x="33" y="81" width="14" height="46" class="s8">
+<title>left</title>
+</rect>
+<rect x="49" y="81" width="14" height="46" class="s6">
+<title>back</title>
+</rect>
+</g>
+<g class="s2">
+<title>left-leg</title>
+<rect x="81" y="193" width="14" height="14" class="s7">
+<title>top</title>
+</rect>
+<rect x="97" y="193" width="14" height="14" class="s3">
+<title>bottom</title>
+</rect>
+<rect x="65" y="209" width="14" height="46" class="s8">
+<title>right</title>
+</rect>
+<rect x="81" y="209" width="14" height="46" class="s5">
+<title>front</title>
+</rect>
+<rect x="97" y="209" width="14" height="46" class="s4">
+<title>left</title>
+</rect>
+<rect x="113" y="209" width="14" height="46" class="s6">
+<title>back</title>
+</rect>
+</g>
+</g>
+<g class="s1">
+<title>head-detail</title>
+<defs>
+<radialGradient id="s1-skin" cx="48" cy="44" r="14" gradientUnits="userSpaceOnUse">
+<stop offset="0" style="stop-color: #f8d2b4;"/>
+<stop offset="1" style="stop-color: #d6aa8a;"/>
+</radialGradient>
+</defs>
+<g>
+<title>face</title>
+<path d="M36 36H60V48H52V52H44V48H36Z" style="fill: url(&quot;#s1-skin&quot;);"/>
+<path d="M32 32H64V38.5Q61 37 58 39.5Q56 36.5 52 37.5Q48 35.5 44 37.5Q40 36.5 38 39.5Q35 37 32 38.5Z" style="fill: #2c2018;"/>
+<path d="M38 36.8Q40 35.2 42 36.4M47 35.6Q49 34.4 51 35.6M54 36.4Q56 35.2 58 36.8" style="fill: none; stroke: #463426; stroke-width: 0.8px; stroke-linecap: round;"/>
+<path d="M36.5 47.2Q39.5 45.2 43.6 46.2M59.5 47.2Q56.5 45.2 52.4 46.2" style="fill: none; stroke: #28180a; stroke-width: 1.8px; stroke-linecap: round;"/>
+<path d="M32 52.5Q36 52 39 53.8Q43.5 52.6 48 51.6Q52.5 52.6 57 53.8Q60 52 64 52.5V64H32Z" style="fill: #2e2f2e;"/>
+<path d="M48 51.8V64M33 57.5Q48 55.5 63 57.5" style="fill: none; stroke: #1e1f1e; stroke-width: 0.8px;"/>
+<path d="M40 54.2Q44 53 47 52.4" style="fill: none; stroke: #5a5c5a; stroke-width: 0.7px; stroke-linecap: round; stroke-opacity: 0.7;"/>
+</g>
+<g>
+<title>strap</title>
+<rect x="128" y="33" width="32" height="4.5" class="s9"/><rect x="160" y="33" width="32" height="4.5" class="s9"/><rect x="192" y="33" width="32" height="4.5" class="s9"/><rect x="224" y="33" width="32" height="4.5" class="s9"/>
+<rect x="174" y="0" width="4" height="32" class="s9"/>
+<rect x="236" y="32.5" width="8" height="5.5" rx="1" style="fill: #969a9e;">
+<title>buckle</title>
+</rect>
+<rect x="238" y="34.2" width="4" height="2" style="fill: #282a2c;"/>
+</g>
+<g>
+<title>night vision</title>
+<rect x="165" y="14" width="8" height="18" rx="2" class="s10"/>
+<rect x="179" y="14" width="8" height="18" rx="2" class="s10"/>
+<rect x="171" y="22" width="10" height="7" rx="1.5" style="fill: #24272a;"/>
+<circle cx="169" cy="17.5" r="3.2" class="s11"/>
+<circle cx="183" cy="17.5" r="3.2" class="s11"/>
+<rect x="169" y="32" width="14" height="7" rx="1.5" style="fill: #282b2e;">
+<title>mount</title>
+</rect>
+<circle cx="176" cy="35.5" r="1.1" style="fill: #82888c;"/>
+</g>
+</g>
+<g class="s1">
+<title>armour</title>
+<g>
+<title>plate carrier</title>
+<path d="M81.5 146.5Q81.5 145 83 145H90Q96 154 102 145H109Q110.5 145 110.5 146.5V179H81.5Z" class="s12">
+<title>front plate</title>
+</path>
+<rect x="88" y="155" width="16" height="5" rx="0.8" class="s13"/>
+<path d="M89 157.5H96" class="s14"/>
+<path d="M82.5 162.5H109.5M82.5 166.5H109.5" class="s15"/>
+<g class="s12">
+<rect x="83" y="164" width="7.6" height="13" rx="1"/>
+<rect x="92.2" y="164" width="7.6" height="13" rx="1"/>
+<rect x="101.4" y="164" width="7.6" height="13" rx="1"/>
+</g>
+<path d="M83.4 168H90.2M92.6 168H99.4M101.8 168H108.6" class="s15"/>
+<path d="M131.5 146.5Q131.5 145 133 145H155Q156.5 145 156.5 146.5V179H131.5Z" class="s12">
+<title>back plate</title>
+</path>
+<rect x="139" y="146" width="10" height="3.5" rx="1" class="s13">
+<title>drag handle</title>
+</rect>
+<path d="M132.5 160.5H155.5M132.5 165H155.5M132.5 169.5H155.5" class="s15"/>
+<g class="s13">
+<title>cummerbund</title>
+<rect x="64" y="161" width="16" height="17"/>
+<rect x="112" y="161" width="16" height="17"/>
+<rect x="80" y="161" width="1.5" height="17"/>
+<rect x="110.5" y="161" width="1.5" height="17"/>
+<rect x="128" y="161" width="3.5" height="17"/>
+<rect x="156.5" y="161" width="3.5" height="17"/>
+</g>
+<path d="M64 166.5H80M112 166.5H128M64 172.5H80M112 172.5H128" class="s15"/>
+<g class="s12">
+<title>shoulder straps</title>
+<rect x="83" y="128" width="6" height="16"/>
+<rect x="103" y="128" width="6" height="16"/>
+</g>
+<rect x="64" y="181" width="96" height="6" class="s13">
+<title>belt</title>
+</rect>
+<rect x="92.5" y="180.5" width="7" height="7" rx="1" style="fill: #7e8480; stroke: #121416; stroke-width: 0.8px;">
+<title>buckle</title>
+</rect>
+</g>
+<g>
+<title>knee pads and thigh pouches</title>
+<path d="M17.5 172Q17.5 169 20.5 169H27.5Q30.5 169 30.5 172V179Q24 182 17.5 179Z" class="s12"/>
+<path d="M19 174.5Q24 173 29 174.5" class="s14"/>
+<rect x="0" y="172" width="16" height="2.5" class="s13"/>
+<rect x="32" y="172" width="32" height="2.5" class="s13"/>
+<rect x="0" y="177" width="16" height="2.5" class="s13"/>
+<rect x="32" y="177" width="32" height="2.5" class="s13"/>
+<path d="M2 146Q2 144.5 3.5 144.5H12.5Q14 144.5 14 146V159H2Z" class="s12"/>
+<path d="M2.5 149H13.5" class="s15"/>
+<path d="M17.5 236Q17.5 233 20.5 233H27.5Q30.5 233 30.5 236V243Q24 246 17.5 243Z" class="s12"/>
+<path d="M19 238.5Q24 237 29 238.5" class="s14"/>
+<rect x="0" y="236" width="16" height="2.5" class="s13"/>
+<rect x="32" y="236" width="32" height="2.5" class="s13"/>
+<rect x="0" y="241" width="16" height="2.5" class="s13"/>
+<rect x="32" y="241" width="32" height="2.5" class="s13"/>
+<path d="M34 210Q34 208.5 35.5 208.5H44.5Q46 208.5 46 210V223H34Z" class="s12"/>
+<path d="M34.5 213H45.5" class="s15"/>
+</g>
+</g>
+<g class="s1">
+<title>head</title>
+<rect width="32" height="32" style="stroke: #000000; stroke-opacity: 0.5; mix-blend-mode: hard-light; filter: url(&quot;#spot-light-filter-1&quot;); opacity: 0.26;" x="32">
+<title>top</title>
+</rect>
+<rect x="72" y="8" width="16" height="16" style="fill-opacity: 0.5; stroke: #000000; stroke-opacity: 0.25; stroke-width: 4px;">
+<title>bottom-neck</title>
+</rect>
+<rect x="32" width="32" height="32" style="filter: url(&quot;#spot-light-filter-0&quot;); opacity: 0.5; mix-blend-mode: hard-light; fill: #777777;" y="32">
+<title>front</title>
+</rect>
+<rect width="32" height="32" style="filter: none; fill-opacity: 0.3;" y="32" x="96">
+<title>back</title>
+</rect>
+<rect x="64" width="32" height="32" class="s16" y="32">
+<title>left</title>
+</rect>
+<rect width="32" height="32" class="s16" y="32" transform="matrix(-1, 0, 0, 1, 0, 0)" x="-32">
+<title>right</title>
+</rect>
+</g>
+</svg>
