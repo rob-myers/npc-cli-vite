@@ -56,48 +56,108 @@
 <title>suit</title>
 <g class="s1">
 <title>body</title>
-<rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;"/>
-<rect x="113" y="65" width="30" height="14" class="s2"/>
-<rect x="65" y="81" width="14" height="46" class="s3"/>
-<rect x="81" y="81" width="30" height="46" class="s4"/>
-<rect x="113" y="81" width="14" height="46" class="s3"/>
-<rect x="129" y="81" width="30" height="46" class="s5"/>
+<rect x="81" y="65" width="30" height="14" style="fill-opacity: 0.1; stroke: none;">
+<title>top</title>
+</rect>
+<rect x="113" y="65" width="30" height="14" class="s2">
+<title>bottom</title>
+</rect>
+<rect x="65" y="81" width="14" height="46" class="s3">
+<title>right</title>
+</rect>
+<rect x="81" y="81" width="30" height="46" class="s4">
+<title>front</title>
+</rect>
+<rect x="113" y="81" width="14" height="46" class="s3">
+<title>left</title>
+</rect>
+<rect x="129" y="81" width="30" height="46" class="s5">
+<title>back</title>
+</rect>
 </g>
 <g class="s1">
 <title>right-arm</title>
-<rect x="177" y="65" width="14" height="14" class="s6"/>
-<rect x="193" y="65" width="14" height="14" class="s2"/>
-<rect x="161" y="81" width="14" height="46" class="s3"/>
-<rect x="177" y="81" width="14" height="46" class="s4"/>
-<rect x="193" y="81" width="14" height="46" class="s7"/>
-<rect x="209" y="81" width="14" height="46" class="s5"/>
+<rect x="177" y="65" width="14" height="14" class="s6">
+<title>top</title>
+</rect>
+<rect x="193" y="65" width="14" height="14" class="s2">
+<title>bottom</title>
+</rect>
+<rect x="161" y="81" width="14" height="46" class="s3">
+<title>right</title>
+</rect>
+<rect x="177" y="81" width="14" height="46" class="s4">
+<title>front</title>
+</rect>
+<rect x="193" y="81" width="14" height="46" class="s7">
+<title>left</title>
+</rect>
+<rect x="209" y="81" width="14" height="46" class="s5">
+<title>back</title>
+</rect>
 </g>
 <g class="s1">
 <title>left-arm</title>
-<rect x="145" y="193" width="14" height="14" class="s6"/>
-<rect x="161" y="193" width="14" height="14" class="s2"/>
-<rect x="129" y="209" width="14" height="46" class="s7"/>
-<rect x="145" y="209" width="14" height="46" class="s4"/>
-<rect x="161" y="209" width="14" height="46" class="s3"/>
-<rect x="177" y="209" width="14" height="46" class="s5"/>
+<rect x="145" y="193" width="14" height="14" class="s6">
+<title>top</title>
+</rect>
+<rect x="161" y="193" width="14" height="14" class="s2">
+<title>bottom</title>
+</rect>
+<rect x="129" y="209" width="14" height="46" class="s7">
+<title>right</title>
+</rect>
+<rect x="145" y="209" width="14" height="46" class="s4">
+<title>front</title>
+</rect>
+<rect x="161" y="209" width="14" height="46" class="s3">
+<title>left</title>
+</rect>
+<rect x="177" y="209" width="14" height="46" class="s5">
+<title>back</title>
+</rect>
 </g>
 <g class="s1">
 <title>right-leg</title>
-<rect x="17" y="65" width="14" height="14" class="s6"/>
-<rect x="33" y="65" width="14" height="14" class="s2"/>
-<rect x="1" y="81" width="14" height="46" class="s3"/>
-<rect x="17" y="81" width="14" height="46" class="s4"/>
-<rect x="33" y="81" width="14" height="46" class="s7"/>
-<rect x="49" y="81" width="14" height="46" class="s5"/>
+<rect x="17" y="65" width="14" height="14" class="s6">
+<title>top</title>
+</rect>
+<rect x="33" y="65" width="14" height="14" class="s2">
+<title>bottom</title>
+</rect>
+<rect x="1" y="81" width="14" height="46" class="s3">
+<title>right</title>
+</rect>
+<rect x="17" y="81" width="14" height="46" class="s4">
+<title>front</title>
+</rect>
+<rect x="33" y="81" width="14" height="46" class="s7">
+<title>left</title>
+</rect>
+<rect x="49" y="81" width="14" height="46" class="s5">
+<title>back</title>
+</rect>
 </g>
 <g class="s1">
 <title>left-leg</title>
-<rect x="81" y="193" width="14" height="14" class="s6"/>
-<rect x="97" y="193" width="14" height="14" class="s2"/>
-<rect x="65" y="209" width="14" height="46" class="s7"/>
-<rect x="81" y="209" width="14" height="46" class="s4"/>
-<rect x="97" y="209" width="14" height="46" class="s3"/>
-<rect x="113" y="209" width="14" height="46" class="s5"/>
+<rect x="81" y="193" width="14" height="14" class="s6">
+<title>top</title>
+</rect>
+<rect x="97" y="193" width="14" height="14" class="s2">
+<title>bottom</title>
+</rect>
+<rect x="65" y="209" width="14" height="46" class="s7">
+<title>right</title>
+</rect>
+<rect x="81" y="209" width="14" height="46" class="s4">
+<title>front</title>
+</rect>
+<rect x="97" y="209" width="14" height="46" class="s3">
+<title>left</title>
+</rect>
+<rect x="113" y="209" width="14" height="46" class="s5">
+<title>back</title>
+</rect>
 </g>
 </g>
 <g class="s0">
