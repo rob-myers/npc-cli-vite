@@ -153,16 +153,17 @@ const gaitLength = 1;
 const gaitFrames = framesOf(gaitLength);
 
 /**
- * The legs of `clip` stepping: the root where `rootAt` says, and each ankle on its path `feet`. Each thigh's swing and
- * turn out, and its knee, are solved to reach it, and its foot keeps the sole flat. Throws where a leg cannot reach
+ * The legs of `clip` stepping: the root where `rootAt` says, and each ankle on its path `feet`. Each thigh's swing, its
+ * sideways move, and its knee are solved to reach it. Throws where a leg cannot reach. See `StepOpts`
  */
 function steppingLegs(
   clip: string,
   rootAt: (t: number) => Triple,
   feet: Record<Side, (t: number) => THREE.Vector3>,
-  keys = gaitFrames,
-  toeOut = 0,
+  { keys = gaitFrames, toeOut = 0, pitchOf, abduct = false }: StepOpts = {},
 ): Track[] {
+  /** A thigh's rotation: swung `x`, then moved sideways by `side` degrees */
+  const thighOf = (x: number, side: number): Triple => (abduct ? [x, 0, side] : [x, side, 0]);
   const solved = new Map<string, [Triple, Triple, Triple]>();
   /** Each leg's last solution, which the next sets out from: from a fixed guess a leg can jump to another branch */
   const last: Record<Side, Triple> = { left: [90, 0, -130], right: [90, 0, -130] };
@@ -174,14 +175,14 @@ function steppingLegs(
     const root = rootAt(t);
     const want = feet[side](t);
     const ankle = ([x, y, shin]: Triple) => {
-      const thigh = new THREE.Quaternion().setFromEuler(euler([x, y, 0]));
+      const thigh = new THREE.Quaternion().setFromEuler(euler(thighOf(x, y)));
       const knee = thigh.clone().multiply(new THREE.Quaternion().setFromEuler(euler([shin, 0, 0])));
       return new THREE.Vector3(...root)
         .add(rest(`${side}thigh`))
         .add(rest(`${side}shin`).applyQuaternion(thigh))
         .add(rest(`${side}foot`).applyQuaternion(knee));
     };
-    // Newton on the ankle's three coordinates: thigh `x`, its `y` turning the knee out, and the knee
+    // Newton on the ankle's three coordinates: the thigh's swing, its sideways move, and the knee
     let v: Triple = [...last[side]];
     for (let i = 0; i < 50; i++) {
       const off = ankle(v).sub(want);
@@ -208,18 +209,19 @@ function steppingLegs(
       v = [v[0] - step.x * scale, v[1] - step.y * scale, v[2] - step.z * scale];
     }
     if (!(ankle(v).distanceTo(want) < 1e-4) || v[2] > -2 || v[2] < -170 || Math.abs(v[1]) > 60) {
-      const [x, y, shin] = v.map((d) => d.toFixed(1));
-      throw Error(`${clip}: the ${side} leg cannot reach its foot at ${t}s (thigh x ${x} y ${y}, shin ${shin})`);
+      const [x, out, shin] = v.map((d) => d.toFixed(1));
+      throw Error(`${clip}: the ${side} leg cannot reach its foot at ${t}s (thigh x ${x}, out ${out}, shin ${shin})`);
     }
     // the foot undoes the leg's turn, so the sole is flat, then turns its toes out by `toeOut`
     const leg = new THREE.Quaternion()
-      .setFromEuler(euler([v[0], v[1], 0]))
+      .setFromEuler(euler(thighOf(v[0], v[1])))
       .multiply(new THREE.Quaternion().setFromEuler(euler([v[2], 0, 0])));
-    const out = new THREE.Quaternion().setFromEuler(euler([0, side === "left" ? toeOut : -toeOut, 0]));
+    const pitch = pitchOf?.[side](t) ?? 0; // `+` lifts the toes
+    const out = new THREE.Quaternion().setFromEuler(euler([pitch, side === "left" ? toeOut : -toeOut, 0]));
     const foot = new THREE.Euler().setFromQuaternion(leg.invert().multiply(out), "ZYX");
     const { radToDeg } = THREE.MathUtils;
     const result: [Triple, Triple, Triple] = [
-      [v[0], v[1], 0],
+      thighOf(v[0], v[1]),
       [v[2], 0, 0],
       [radToDeg(foot.x), radToDeg(foot.y), radToDeg(foot.z)],
     ];
@@ -259,6 +261,39 @@ function stepping(
   };
 }
 
+type StepOpts = {
+  /** The times keyed */
+  keys?: number[];
+  /** Degrees each foot's toes turn out */
+  toeOut?: number;
+  /** Each foot's pitch over time, in degrees: `+` lifts the toes */
+  pitchOf?: Record<Side, (t: number) => number>;
+  /** Move each leg sideways by swinging it out at the hip (`z`), not by turning the thigh (`y`) */
+  abduct?: boolean;
+};
+
+/** A foot's pitch over a gait's cycle, landing at `phase`: struck on the heel, rolled flat, then off the toe */
+function heelToe(p: { duty: number; heel: number; toe: number }, phase: number) {
+  const { smoothstep } = THREE.MathUtils;
+  return (t: number) => {
+    const u = (((t / gaitLength - phase) % 1) + 1) % 1;
+    const roll = 0.25 * p.duty;
+    if (u < p.duty) return p.heel * (1 - smoothstep(u, 0, roll)) - p.toe * smoothstep(u, p.duty - roll, p.duty);
+    return -p.toe + (p.toe + p.heel) * smoothstep((u - p.duty) / (1 - p.duty), 0, 1);
+  };
+}
+
+/** Model units an ankle rises so its foot, pitched `degrees`, keeps its heel or toe on the floor */
+function rockerLift(degrees: number) {
+  const a = THREE.MathUtils.degToRad(degrees);
+  const { below, heel, toe } = footSole;
+  const lowest = Math.min(-below * Math.cos(a) - heel * Math.sin(a), -below * Math.cos(a) + toe * Math.sin(a));
+  return Math.max(0, -below - lowest);
+}
+
+/** The sole about the ankle, in model units: how far below it, and how far back to the heel and on to the toe */
+const footSole = { below: 1.25, heel: 1.6, toe: 0.9 };
+
 /** Where each ankle rests, stood */
 const restAnkles = () => {
   const upright: Leg = { thigh: [0, 0, 0], shinX: 0 };
@@ -284,13 +319,13 @@ function mirrored(tracks: Track[], clip: string): Track[] {
 }
 
 /** A crouched gait's torso, head and forearms, all still: the torso leant `lean`, the head level */
-function crouchedUpper(clip: string, lean: number) {
+function crouchedUpper(clip: string, lean: number, foreX = 40) {
   return [
     turn(clip, "stomach", () => [-lean / 2, 0, 0], still),
     turn(clip, "chest", () => [-lean / 2, 0, 0], still),
     turn(clip, "head", () => [lean, 0, 0], still),
-    turn(clip, "rightforearm", () => [40, 0, -10], still),
-    turn(clip, "leftforearm", () => [40, 0, 10], still),
+    turn(clip, "rightforearm", () => [foreX, 0, -10], still),
+    turn(clip, "leftforearm", () => [foreX, 0, 10], still),
   ];
 }
 
@@ -299,7 +334,7 @@ function splayedLegs(clip: string, rootAt: (t: number) => Triple, splay: number,
   const feet = restAnkles();
   feet.left.x -= splay;
   feet.right.x += splay;
-  return steppingLegs(clip, rootAt, { left: () => feet.left, right: () => feet.right }, dense, toeOut);
+  return steppingLegs(clip, rootAt, { left: () => feet.left, right: () => feet.right }, { keys: dense, toeOut });
 }
 
 /** The legs of a squat, the feet where they stand at rest and the hips `down` and `back` */
@@ -354,11 +389,29 @@ const crouchStill = (
     },
   });
 
-/** A crouch walking ahead: flat-footed steps, the hips swaying over the planted foot, the arms hanging forward */
+/**
+ * A crouch walking ahead: the hips swaying over the planted foot, the arms forward. Flat-footed, unless struck on the
+ * `heel` and rolled off the `toe` (degrees)
+ */
 const crouchWalk = (
   clip: string,
   params: Record<
-    "down" | "back" | "lean" | "splay" | "toeOut" | "stride" | "duty" | "lift" | "sway" | "bob" | "swing",
+    | "down"
+    | "back"
+    | "lean"
+    | "splay"
+    | "toeOut"
+    | "stride"
+    | "duty"
+    | "lift"
+    | "sway"
+    | "bob"
+    | "swing"
+    | "heel"
+    | "toe"
+    | "armOut"
+    | "foreX"
+    | "abduct",
     number
   >,
 ) =>
@@ -372,21 +425,23 @@ const crouchWalk = (
       /** The left foot lands at the start, the right half a cycle on */
       const swayAt = (t: number) => -p.sway * Math.cos(2 * Math.PI * (t / gaitLength - p.duty / 2));
       const armSwing = (t: number) => p.swing * Math.cos(2 * Math.PI * (t / gaitLength));
+      const pitchOf = { left: heelToe(p, 0), right: heelToe(p, 0.5) };
+      /** Each ankle on its path, raised as its foot rolls so the heel or toe stays down */
+      const footAt = (side: Side, phase: number) => {
+        const path = stepping(feet[side], ahead, p, phase);
+        return (t: number) => path(t).setY(path(t).y + rockerLift(pitchOf[side](t)));
+      };
       return [
         ...steppingLegs(
           clip,
           (t) => [swayAt(t), -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back],
-          {
-            left: stepping(feet.left, ahead, p, 0),
-            right: stepping(feet.right, ahead, p, 0.5),
-          },
-          gaitFrames,
-          p.toeOut,
+          { left: footAt("left", 0), right: footAt("right", 0.5) },
+          { toeOut: p.toeOut, pitchOf, abduct: p.abduct === 1 },
         ),
-        ...crouchedUpper(clip, p.lean),
+        ...crouchedUpper(clip, p.lean, p.foreX),
         // the arm opposite the leading foot comes forward
-        turn(clip, "rightarm", (t) => [p.lean + 20 + armSwing(t), 0, 6], gaitFrames),
-        turn(clip, "leftarm", (t) => [p.lean + 20 - armSwing(t), 0, -6], gaitFrames),
+        turn(clip, "rightarm", (t) => [p.lean + p.armOut + armSwing(t), 0, 6], gaitFrames),
+        turn(clip, "leftarm", (t) => [p.lean + p.armOut - armSwing(t), 0, -6], gaitFrames),
       ];
     },
   });
@@ -394,7 +449,10 @@ const crouchWalk = (
 /** A crouch stepping to their right: the right foot leads, the left closes up behind it */
 const crouchStrafeRight = (
   clip: string,
-  params: Record<"down" | "back" | "lean" | "splay" | "toeOut" | "stride" | "duty" | "lift" | "bob", number>,
+  params: Record<
+    "down" | "back" | "lean" | "splay" | "toeOut" | "stride" | "duty" | "lift" | "bob" | "abduct" | "armOut" | "foreX",
+    number
+  >,
 ) =>
   recipe({
     params,
@@ -412,16 +470,12 @@ const crouchStrafeRight = (
         ...steppingLegs(
           clip,
           (t) => [0, -p.down + p.bob * Math.cos(4 * Math.PI * (t / gaitLength)), p.back],
-          {
-            left,
-            right: rightFoot,
-          },
-          gaitFrames,
-          p.toeOut,
+          { left, right: rightFoot },
+          { toeOut: p.toeOut, abduct: p.abduct === 1 },
         ),
-        ...crouchedUpper(clip, p.lean),
-        turn(clip, "rightarm", () => [p.lean + 20, 0, 8], [0]),
-        turn(clip, "leftarm", () => [p.lean + 20, 0, -8], [0]),
+        ...crouchedUpper(clip, p.lean, p.foreX),
+        turn(clip, "rightarm", () => [p.lean + p.armOut, 0, 8], [0]),
+        turn(clip, "leftarm", () => [p.lean + p.armOut, 0, -8], [0]),
       ];
     },
   });
@@ -438,7 +492,7 @@ const reversedOf = (clip: string, src: Recipe<Record<string, number>>) =>
 const mirroredOf = (clip: string, src: Recipe<Record<string, number>>) =>
   recipe({ params: {}, tracks: () => mirrored(src.tracks({ ...src.params }), clip) });
 
-/** The full crouch's, and the half crouch's: less low, so a longer stride. Arms searched: elbows on knees, hands on thighs */
+/** The full crouch's, and the half crouch's: moving, a sneak. Arms searched: elbows on knees, hands on knees */
 const crouchClips = {
   crouch_cover: crouchStill("crouch_cover", {
     down: 8.5,
@@ -466,6 +520,11 @@ const crouchClips = {
     sway: 0.4,
     bob: 0.3,
     swing: 8,
+    heel: 0,
+    toe: 0,
+    armOut: 20,
+    foreX: 40,
+    abduct: 0,
   }),
   crouch_strafe_right: crouchStrafeRight("crouch_strafe_right", {
     down: 8.5,
@@ -477,6 +536,9 @@ const crouchClips = {
     duty: 0.6,
     lift: 1.2,
     bob: 0.3,
+    abduct: 0,
+    armOut: 20,
+    foreX: 40,
   }),
   crouch_half: crouchStill("crouch_half", {
     down: 4,
@@ -493,28 +555,36 @@ const crouchClips = {
     foreZ: -50,
   }),
   crouch_half_walk: crouchWalk("crouch_half_walk", {
-    down: 4,
-    back: 1.5,
-    lean: 32,
-    splay: 1,
-    toeOut: 15,
+    down: 2.5,
+    back: 1,
+    lean: 18,
+    splay: 0.3,
+    toeOut: 5,
     stride: 8,
-    duty: 0.6,
-    lift: 2,
-    sway: 0.1,
-    bob: 0.3,
+    duty: 0.65,
+    lift: 1.2,
+    sway: 0.15,
+    bob: 0.4,
     swing: 10,
+    heel: 10,
+    toe: 15,
+    armOut: 5,
+    foreX: 15,
+    abduct: 1,
   }),
   crouch_half_strafe_right: crouchStrafeRight("crouch_half_strafe_right", {
-    down: 4,
-    back: 1.5,
-    lean: 32,
-    splay: 1,
-    toeOut: 15,
-    stride: 6,
-    duty: 0.6,
-    lift: 1.5,
+    down: 2.5,
+    back: 1,
+    lean: 18,
+    splay: 0.3,
+    toeOut: 5,
+    stride: 5,
+    duty: 0.55,
+    lift: 1,
     bob: 0.3,
+    abduct: 1,
+    armOut: 5,
+    foreX: 15,
   }),
 };
 
