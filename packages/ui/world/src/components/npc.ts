@@ -15,7 +15,13 @@ import {
 import { crowd as crowdApi } from "navcat/blocks";
 import type { mrt, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultIdleAnimationClipKey, defaultNpcLabelColor, npcScale, otherNpcLabelColor } from "../const.npc";
+import {
+  defaultIdleAnimationClipKey,
+  defaultNpcLabelColor,
+  npcLabelWeight,
+  npcScale,
+  otherNpcLabelColor,
+} from "../const.npc";
 import { helper } from "../service/helper";
 import { addBodyKeyUidRelation, npcToBodyKey } from "../service/physics-bijection";
 import { decodeDoorAreaId, isDoorAreaId } from "../worker/nav-util";
@@ -189,7 +195,8 @@ export class Npc {
     const isPlayer = this.w.player.is(this.key);
     const { color } = this.labelStyle;
     ct.fillStyle = isPlayer === false && color === defaultNpcLabelColor ? otherNpcLabelColor : color;
-    ct.font = `${isPlayer ? 400 : 100} 36px system-ui, sans-serif`;
+    const weight = npcLabelWeight[this.w.touchDevice ? "touch" : "desktop"];
+    ct.font = `${isPlayer ? weight.player : weight.other} 36px system-ui, sans-serif`;
     ct.globalAlpha = isPlayer ? 1 : 0.35;
     ct.textAlign = "center";
     ct.textBaseline = "middle";

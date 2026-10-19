@@ -8,6 +8,8 @@
 export const defaultNpcLabelColor = "#ff9";
 /** …and anyone else's but the player's */
 export const otherNpcLabelColor = "#bbb";
+/** An npc label's font weight, the player's and anyone else's. Bolder on touch, whose screens are small */
+export const npcLabelWeight = { desktop: { player: 400, other: 100 }, touch: { player: 600, other: 300 } };
 
 export const npcScale = 0.8;
 
