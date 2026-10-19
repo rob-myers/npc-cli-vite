@@ -21,6 +21,7 @@ export default function NpcFocus() {
       placedKey: null,
       busy: false,
       offAim: false,
+      lit: false,
       before: null,
       withPhaser: false,
       withPsi: false,
@@ -175,6 +176,11 @@ export default function NpcFocus() {
         state.el.style.opacity = offAim ? "0" : "";
         state.el.inert = offAim;
       },
+      syncLit(grKey = w.npc.npcToRoom.get(state.npcKey ?? "")?.grKey) {
+        const lit = w.view.fadeRoomsFx.rooms.some((room) => room.grKey === grKey);
+        if (state.lit === true && lit === false) return state.close(null);
+        state.lit = lit;
+      },
     }),
   );
 
@@ -193,6 +199,14 @@ export default function NpcFocus() {
       state.close(part);
     };
     window.addEventListener("keydown", onKeyDown, true);
+    state.lit = false; // their room unlit already, e.g. focused by psi, does not drop it
+    state.syncLit();
+    const sub = w.events.subscribe({
+      next(e) {
+        if (e.key === "update-faded-rooms") state.syncLit();
+        else if (e.key === "enter-room" && e.npcKey === npcKey) state.syncLit(e.gmRoomId.grKey);
+      },
+    });
     // pinned to their parts in the World's own frame, after the camera has moved, so they keep up with it
     const unsubscribe = w.e.addFrameCallback(() => {
       const { key } = w.player;
@@ -210,6 +224,7 @@ export default function NpcFocus() {
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
       unsubscribe();
+      sub.unsubscribe();
     };
   }, [state.npcKey]);
 
@@ -449,6 +464,8 @@ export type State = {
   busy: boolean;
   /** Nothing is left to show, e.g. the phaser alone and off aim: the marks are hidden until there is */
   offAim: boolean;
+  /** Their room was lit at the last `syncLit` */
+  lit: boolean;
   /** The phaser to go back to */
   before: null | {
     /** Their phaser was up already, e.g. by `e`: it is left up after */
@@ -502,4 +519,6 @@ export type State = {
   shown(): null | FocusPart[];
   /** Fades the marks out through the DOM, not rendered, as the frame loop finds them off aim, or back in */
   setOffAim(offAim: boolean): void;
+  /** Notes whether room `grKey` is lit, by default theirs. Their room going unlit drops it, as Cancel */
+  syncLit(grKey?: string): void;
 };

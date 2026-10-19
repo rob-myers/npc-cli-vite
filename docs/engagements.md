@@ -114,6 +114,8 @@ With the marks up:
 - The phaser's marks hide whilst the player faces more than `maxOffAimRad` (15°) away, and come back as they face
   them again (`shown`). Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of
   reach. "Become" stays. With nothing left to show, the overlay fades (`offAim`).
+- Their room going unlit ends it as Cancel does, e.g. a door shut between them (`syncLit`). It is checked on
+  `update-faded-rooms`, and as they enter a room. Out of sight in a lit room, it stays open.
 - Lowering the phaser hides its marks, and lowering psi hides "Become". Once neither is raised it ends as Cancel
   does (`isLost`).
 - Raising psi or the phaser whilst it is open focuses afresh, so its choices are offered too (`raisedAtOpen`). A
