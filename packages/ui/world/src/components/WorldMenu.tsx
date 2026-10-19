@@ -1,5 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
+import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
@@ -12,6 +13,7 @@ import {
   EyeIcon,
   GlobeSimpleIcon,
   GlobeStandIcon,
+  HourglassMediumIcon,
   type Icon,
   PauseIcon,
   PersonSimpleIcon,
@@ -765,21 +767,29 @@ export function WorldMenu() {
           {/* game time per real second — see `GameTime.setScale` */}
           <div
             data-keep-menu-open
-            title="time scale (double-click for 1×)"
+            title="time scale"
             className="flex flex-col items-center gap-1 bg-neutral-800 py-1.5 w-9"
             onPointerDown={(e) => e.stopPropagation()}
             onDoubleClick={() => w.gameTime.setScale(1)}
           >
-            <input
-              type="range"
+            <Slider.Root
+              orientation="vertical"
               min={0}
               max={2}
               step={0.05}
               value={w.gameTime.scale}
               disabled={w.client}
-              onChange={(e) => w.gameTime.setScale(Number(e.target.value))}
-              className="h-20 w-4 cursor-pointer accent-white [direction:rtl] [writing-mode:vertical-lr]"
-            />
+              onValueChange={(scale) => w.gameTime.setScale(scale)}
+              className="h-20"
+            >
+              <Slider.Control className="flex h-full w-5 cursor-pointer justify-center">
+                <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
+                  <Slider.Thumb className="grid size-6 place-items-center rounded-full bg-white text-neutral-800 outline-none">
+                    <HourglassMediumIcon className="size-4.5" weight="bold" />
+                  </Slider.Thumb>
+                </Slider.Track>
+              </Slider.Control>
+            </Slider.Root>
             <span className="text-[10px] tabular-nums text-neutral-300">{w.gameTime.scale.toFixed(2)}</span>
           </div>
         </div>
