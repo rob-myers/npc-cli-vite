@@ -779,9 +779,10 @@ export function WorldMenu() {
               value={timeScaleToStop(w.gameTime.scale)}
               disabled={w.client}
               onValueChange={(stop) => w.gameTime.setScale(stopToTimeScale(stop))}
-              className="h-20"
+              className="h-25"
             >
-              <Slider.Control className="flex h-full w-5 cursor-pointer justify-center">
+              {/* padded by half the thumb, which is centred on its value, so it stays clear of the label */}
+              <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-2.5">
                 <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
                   <Slider.Thumb className="grid size-6 place-items-center rounded-full bg-white text-neutral-800 outline-none">
                     <HourglassMediumIcon className="size-4.5" weight="bold" />
