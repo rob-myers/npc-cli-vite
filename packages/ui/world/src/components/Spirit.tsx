@@ -75,6 +75,7 @@ export default function Spirit() {
           // the height it has, which a follow keeps: else the view drops once woken
           state.viewHeight = w.view.controls?.target.y ?? 0;
           state.tickCross(0);
+          w.r3f?.invalidate(); // no frame was asked for whilst it waited, so none may come
         } catch (e) {
           warn("spirit:", e);
           state.restore();
@@ -95,11 +96,14 @@ export default function Spirit() {
         // the route's rooms go now, as the player's own take over: else those out of sight linger
         state.unlightRooms();
         w.e.setPsi(true, to.key);
-        // the first breath is from empty, slow and deep
+        // their breath goes on from where their pose has it: a breath out finishes, then one in, slow and deep
         const { breath } = to.anim;
         const tune = to.anim.breathTune;
-        Object.assign(breath, { phase: 0, pace: spiritConfig.firstPace, swell: spiritConfig.firstSwell });
-        state.arriveSecs = (tune.inhale * 60) / (tune.rate * spiritConfig.firstPace);
+        const exhaling = breath.phase >= tune.inhale;
+        const outSecs = exhaling ? ((1 - breath.phase) * 60) / tune.rate : 0;
+        const inBreaths = exhaling ? tune.inhale : tune.inhale - breath.phase;
+        breath.swell = spiritConfig.firstSwell; // its pace is `tickArrive`'s
+        state.arriveSecs = outSecs + (inBreaths * 60) / (tune.rate * spiritConfig.firstPace);
         if (from !== undefined) {
           from.anim.breath.pace = 1;
           if (from.posture !== "lie") state.shut(from.key, false);
@@ -307,7 +311,7 @@ export default function Spirit() {
         state.trail.opacity.value = Math.max(0, 1 - state.secs / spiritConfig.trailFadeSecs);
         const settled = Math.min(1, (state.secs - state.arriveSecs) / spiritConfig.settleSecs);
         const { breath } = to.anim;
-        if (t === 1) breath.pace = 1;
+        breath.pace = t === 1 || breath.phase >= to.anim.breathTune.inhale ? 1 : spiritConfig.firstPace;
         breath.swell = 1 + (spiritConfig.firstSwell - 1) * (1 - smootherstep(Math.max(0, settled)));
         if (t === 1 && state.looks.has(to.key) === true) {
           state.looks.delete(to.key);
@@ -630,7 +634,7 @@ const routeHalfExtents: [number, number, number] = [2, 2, 2];
 
 const spiritConfig = {
   /** How long until they have left. With nobody to wake in, how long until they are back */
-  leaveSecs: 2.5,
+  leaveSecs: 1.25,
   recoverSecs: 0.8,
   /** How far through leaving their eyes shut */
   shutAt: 0.5,
