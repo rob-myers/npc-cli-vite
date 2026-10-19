@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { useFrame } from "@react-three/fiber";
 import { useContext, useMemo } from "react";
-import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, time, uv, vec4 } from "three/tsl";
+import { attribute, cameraProjectionMatrix, cameraViewMatrix, float, positionLocal, uv, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { MAX_NPCS } from "../const.env";
 import { npcScale, npcShadowRadius } from "../const.npc";
@@ -29,7 +29,7 @@ export default function NpcRings() {
       },
       fadeRing(ring, to, secs = ring?.fadeSecs ?? 0) {
         if (ring === undefined) return;
-        const now = time.value;
+        const now = w.realTime.node.value;
         retarget(ring.fade, to, secs, now);
         if (w.disabled === true) {
           ring.fade.from = ring.fade.to;
@@ -40,7 +40,7 @@ export default function NpcRings() {
         state.fadeRing(state.selectRingByNpc.get(npcKey), 0);
       },
       onTick() {
-        const now = time.value;
+        const now = w.realTime.node.value;
         let j = 0;
 
         // spawn rings mark a destination during a fade spawn, and go once faded out
@@ -98,7 +98,7 @@ export default function NpcRings() {
         state.spawnRingByNpc.delete(npcKey);
       },
       showPickRing(pick) {
-        const now = time.value;
+        const now = w.realTime.node.value;
         const at = state.pickRingPoint(pick);
         // the oldest gives way to a burst of picks, rather than the newest going unmarked
         if (state.pickRings.length >= MAX_PICK_RINGS) state.pickRings.shift();
@@ -122,7 +122,7 @@ export default function NpcRings() {
         w.r3f?.invalidate();
       },
       showSelectRing(npcKey, color) {
-        const now = time.value;
+        const now = w.realTime.node.value;
         const ring = state.selectRingByNpc.get(npcKey);
         // recolouring one already up leaves it where it is rather than closing on them again
         if (ring !== undefined) {
@@ -162,7 +162,7 @@ export default function NpcRings() {
           y,
           z: at.y,
           roomSlot,
-          fade: arrivedAt(0, time.value),
+          fade: arrivedAt(0, w.realTime.node.value),
         };
         state.spawnRingByNpc.set(npcKey, ring);
         state.fadeRing(ring, 1, spawnRingInSecs);

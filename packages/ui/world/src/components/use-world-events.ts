@@ -44,6 +44,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       keyedTick: new Map(),
       shotResolver: null,
       litRooms: new Map(),
+      timers: new Set(),
       npcToAccess: {},
       npcToDoors: {},
       pendingRaycast: {},
@@ -51,6 +52,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
       addFrameCallback(cb) {
         return w.r3f.internal.subscribe({ current: cb }, 0, w.r3fStore);
+      },
+      after(secs, fn) {
+        const timer = { at: w.gameTime.now() + secs, fn };
+        state.timers.add(timer);
+        return () => void state.timers.delete(timer);
       },
       forgetNpcAtDoors(npcKey) {
         const doors = state.npcToDoors[npcKey];
@@ -1033,10 +1039,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // an aim is let go only now, so the arm goes from it straight to the reach
         if (side === "right") w.phasers?.disarm(key);
         const { sitReach } = inventoryConfig;
-        const start = w.timer.getElapsedTime();
+        const start = w.gameTime.now();
         /** Held whilst paused */
         const wait = async (secs: number) => {
-          for (let t = w.timer.getElapsedTime() - start; t < secs; t = w.timer.getElapsedTime() - start) {
+          for (let t = w.gameTime.now() - start; t < secs; t = w.gameTime.now() - start) {
             if (sat && aim !== null) easeSitAim(aim, t);
             await w.npc.nextTick();
           }
@@ -1434,6 +1440,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       postNpcTick() {
+        if (state.timers.size > 0) {
+          const now = w.gameTime.now();
+          for (const timer of state.timers) {
+            if (timer.at > now) continue;
+            state.timers.delete(timer);
+            timer.fn();
+          }
+        }
         state.syncDoorways();
         // before the shadows, which read the slot it settles — and every tick, since an npc waiting
         // on a room to arrive takes it the moment it lands rather than at the next door event
@@ -1598,17 +1612,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (!door) return; // onchange map
 
         w.door.cancelClose(door);
-        door.closeTimeoutId = window.setTimeout(() => {
-          if (w.disabled === true) {
-            // don't close whilst paused (recheck in {ms})
-            state.tryCloseDoor(gdKey);
-          } else if (door.open === true) {
-            state.toggleDoor(gdKey, { clear: state.canAutoCloseDoor(door), close: true });
-          } else {
-            // closed
-            delete door.closeTimeoutId;
-          }
-        }, defaultDoorCloseMs);
+        door.cancelClose = state.after(defaultDoorCloseMs / 1000, () => {
+          delete door.cancelClose;
+          if (door.open === true) state.toggleDoor(gdKey, { clear: state.canAutoCloseDoor(door), close: true });
+        });
       },
       tryPutNpcIntoRoom(npc) {
         const grId = w.findRoomContaining(npc.position, true);
@@ -1622,6 +1629,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           state.externalNpcs.add(npc.key);
           warn(`${npc.key}: no longer inside any room`);
         }
+      },
+      wait(secs) {
+        return new Promise((resolve) => void state.after(secs, resolve));
       },
     }),
   );
@@ -1714,6 +1724,8 @@ export type State = {
   keyedListener: Map<string, (event: JshCli.Event, world: JshCli.WorldState) => void>;
   /** Run after every npc tick, so whilst the World is unpaused — see `addKeyedTick` */
   keyedTick: Map<string, (world: JshCli.WorldState) => void>;
+  /** Game-time timers, run after each npc tick — see `after` */
+  timers: Set<{ at: number; fn: () => void }>;
   /** Decides each phaser shot as it locks on, else it hits. Set by jsh `shots`, overridden by the hud's debug badge */
   shotResolver: null | ((shot: JshCli.Shot) => JshCli.ShotOutcome);
   /**
@@ -1755,6 +1767,8 @@ export type State = {
    * ```
    */
   addFrameCallback(cb: () => void): () => void;
+  /** Runs `fn` after `secs` of game time, so a pause holds it. Returns a cancel */
+  after(secs: number, fn: () => void): () => void;
   /**
    * Can use `key` to avoid duplication
    */
@@ -1876,6 +1890,8 @@ export type State = {
   syncDoorways(): void;
   /** What follows `w.npc.onTick`: room slots, then whatever draws on the npcs */
   postNpcTick(): void;
+  /** Resolves after `secs` of game time */
+  wait(secs: number): Promise<void>;
   /** Puts every npc in the room they stand in, unless it has yet to arrive — see within */
   syncNpcRoomSlots(): void;
   tryCloseDoor(gdKey: Geomorph.GmDoorKey): void;

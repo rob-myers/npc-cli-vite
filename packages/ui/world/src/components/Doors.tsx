@@ -122,7 +122,6 @@ export default function Doors() {
                 ],
               ],
 
-              closeTimeoutId: -1,
               gapAtHighLambda: false,
             };
           }
@@ -146,8 +145,8 @@ export default function Doors() {
         return (state.instanceCount = Math.min(nextId, MAX_DOORS));
       },
       cancelClose(door) {
-        window.clearTimeout(door.closeTimeoutId);
-        delete door.closeTimeoutId;
+        door.cancelClose?.();
+        delete door.cancelClose;
       },
       checkRayDoorBlock(src, dst, gdKey) {
         const door = w.d[gdKey];

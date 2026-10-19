@@ -64,7 +64,7 @@ function canSidestep(w: JshCli.WorldState, npc: JshCli.Npc) {
 
 /** Has `walker` been beside `npc` for `lingerSecs`, making little headway? */
 function heldUp(w: JshCli.WorldState, beside: Map<string, Beside>, npc: JshCli.Npc, walker: JshCli.Npc) {
-  const now = w.timer.getElapsedTime();
+  const now = w.gameTime.now();
   const prev = beside.get(npc.key);
   if (prev?.walker !== walker || walker.distanceTo(prev.at) > sidestepConfig.progress) {
     beside.set(npc.key, { walker, since: now, at: walker.point }); // time it afresh
@@ -98,8 +98,7 @@ function stepAside(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc) {
 /** Parks `npcKey` against a wall nearby, unless they have room to walk round them, or that wall is too far */
 async function parkIfInTheWay(w: JshCli.WorldState, npcKey: string) {
   const npc = w.n[npcKey];
-  const until = w.timer.getElapsedTime() + sidestepConfig.parkAfterSecs;
-  while (w.timer.getElapsedTime() < until) await w.npc.nextTick(); // world seconds, so a pause holds it
+  await w.e.wait(sidestepConfig.parkAfterSecs);
   if (w.n[npcKey] !== npc || npc === undefined || npc.agent === null || npc.anim.hurt?.key !== "collapsed") return;
   const query = npcQuery(w, npc);
   const by = standConfig.padClearance;

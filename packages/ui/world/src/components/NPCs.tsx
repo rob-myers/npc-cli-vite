@@ -537,7 +537,7 @@ export default function NPCs() {
       onTick(delta) {
         if (w.client === false) crowdApi.update(state.crowd, w.nav.navMesh, delta);
         const { positions } = state.physics;
-        const worldSeconds = w.timer.getElapsedTime();
+        const worldSeconds = w.gameTime.now();
 
         for (const npc of Object.values(state.npc)) {
           npc.anim.tick(delta);
@@ -608,10 +608,12 @@ export default function NPCs() {
           positions.push(npc.bodyUid, x, y, z);
         }
 
-        // Float32Array caused issues: decode failed
-        const positions64 = new Float64Array(positions);
-        w.physics.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
-        positions.length = 0;
+        if (positions.length > 0) {
+          // Float32Array caused issues: decode failed
+          const positions64 = new Float64Array(positions);
+          w.physics.worker.postMessage({ type: "send-npc-positions", positions: positions64 }, [positions64.buffer]);
+          positions.length = 0;
+        }
 
         for (const event of state.postCrowdTickEvents) w.events.next(event);
         state.postCrowdTickEvents.length = 0;

@@ -1,6 +1,7 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
+import { Task } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { awaitPausable, isPaused, npcQuery, parkedNow, plan, request, roomOthers } from "./plan.main";
@@ -170,12 +171,12 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  * give npc:rob items:'["phaser","book","box"]'
  * ```
  */
-/** The player focuses on `npc` as a press does: turned to them, phaser raised, then a choice of part. A kill cancels it */
+/** The player focuses on `npc` as a press does, raising the phaser if psi is not raised. A kill cancels it */
 export async function focus(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  api.setPausable("world", false); // it pauses the World itself
+  api.setPausable("world", false); // its choice may be made whilst paused
   const { key } = w.npc.get(opts.npcKey ?? (getFirstUnknownNaked(opts) as string));
   let onKill = () => {};
   const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError())));
@@ -266,10 +267,8 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
       // the arm that holds it lowers it, its target forgotten — elsewhere on themselves, nothing
       const rightArm = meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm";
       if (rightArm === true && w.phasers?.isArmed(playerKey) === true) w.phasers.disarm(playerKey);
-    } else if (psiOn === true) {
-      w.speech.readThought(meta.npcKey);
-    } else if (w.e.hasItem(playerKey, "phaser") === true) {
-      void w.npcFocus.aimAt(meta.npcKey); // npc focus: raised and aimed, they choose the part, then it fires once
+    } else if (psiOn === true || w.phasers?.isArmed(playerKey) === true) {
+      void w.npcFocus.aimAt(meta.npcKey); // npc focus: its choices are from psi and the phaser, whichever are raised
     }
   }
 }
@@ -1213,12 +1212,12 @@ export async function pose(
   const armAim = { at: npc.position.clone(), from: npc.position.clone().fromArray(poseConfig.aimFrom), weight: 0 };
   let ownAim: typeof face.aim = null;
   let holdUntil = 0;
-  let secs = w.timer.getElapsedTime();
+  let secs = w.gameTime.now();
   try {
     if (npc.isMoving()) end("moved");
     else npc.anim.setUpper(clipKey);
     while (ended === undefined && w.n[npc.key] === npc && mine()) {
-      const delta = w.timer.getElapsedTime() - secs;
+      const delta = w.gameTime.now() - secs;
       secs += delta;
       if (npc.agent?.neis.some(({ dist }) => dist < poseConfig.near ** 2) === true) {
         holdUntil = secs + poseConfig.holdSecs; // `dist` squared
@@ -1276,7 +1275,7 @@ export function psi({ api, args, w }: JshCli.RunArg) {
 /**
  * The player leaves their body and wakes in another: `npcKey`, else anyone sitting or lying, else someone spawned
  * in a bed or seat.
- * As `q` held with psi raised does. Returns at once. See `w.spirit`
+ * As "Become" in npc focus does. Returns at once. See `w.spirit`
  * ```sh
  * spirit
  * spirit npc-0
@@ -1558,6 +1557,21 @@ export async function spawn(
 }
 
 /**
+ * Game time per real second, `0` to `2`. Prints it, after setting it if given
+ * ```sh
+ * timescale
+ * timescale 0.25
+ * ```
+ */
+export function timescale({ api, args, w }: JshCli.RunArg) {
+  api.setPausable("world", false); // else it waits out a pause
+  const scale = Number(args[0] ?? w.gameTime.scale);
+  if (Number.isNaN(scale)) throw Error(`timescale: not a number: ${args[0]}`);
+  w.gameTime.setScale(scale);
+  return w.gameTime.scale;
+}
+
+/**
  * ```sh
  * unlock g0d29 g0d30
  * unlock door:g0d29
@@ -1699,6 +1713,31 @@ export async function* wasd_delta(
       yield { x: npc.position.x + x, y: npc.position.z + y };
     }
   }
+}
+
+/**
+ * Sleeps `secs` of game time, counted only whilst this process runs. A kill rejects it
+ * ```sh
+ * wSleep 2
+ * ```
+ */
+export async function wSleep({ api, args, w }: JshCli.RunArg, secs = Number(args[0])) {
+  let suspended = api.isRunning() === false;
+  const task = new Task(
+    () => suspended,
+    () => 1000 * w.gameTime.now(),
+  );
+  const handlers = api.handleStatus({
+    onSuspend: () => ((suspended = true), true),
+    onResume: () => ((suspended = false), true),
+    cleanup: () => task.cancel(),
+  });
+  try {
+    await task.wait(undefined, 1000 * secs);
+  } finally {
+    handlers.dispose();
+  }
+  if (task.isCancelled === true) throw api.getKillError();
 }
 
 const wasdConfig = {

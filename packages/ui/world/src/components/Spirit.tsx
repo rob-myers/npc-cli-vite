@@ -9,7 +9,7 @@ import type { EyesKey } from "../const.both";
 import { WorldContext } from "./world-context";
 
 /**
- * The player leaves their body and wakes in another sitting or lying elsewhere, whilst `q` is held with psi raised.
+ * The player leaves their body and wakes in another, e.g. chosen by "Become" in npc focus.
  * See `docs/spirit.md`
  */
 export default function Spirit() {
@@ -20,9 +20,7 @@ export default function Spirit() {
       phase: "idle",
       fromKey: null,
       toKey: null,
-      auto: false,
-      held: false,
-      downSecs: 0,
+      leaving: false,
       leave: 0,
       secs: 0,
       crossSecs: 0,
@@ -32,7 +30,6 @@ export default function Spirit() {
       ends: [],
       length: 0,
       litRooms: [],
-      lowerOnTap: true,
       framed: false,
       wasFollowing: false,
       viewHeight: 0,
@@ -43,18 +40,8 @@ export default function Spirit() {
       looks: new Map(),
       trail: createTrail(w.view.objectPick),
 
-      begin(fromKey, toKey = null, auto = false, lowerOnTap = true) {
-        Object.assign(state, {
-          phase: "leave",
-          fromKey,
-          toKey,
-          auto,
-          lowerOnTap,
-          held: !auto,
-          downSecs: 0,
-          leave: 0,
-          framed: false,
-        });
+      begin(fromKey, toKey = null) {
+        Object.assign(state, { phase: "leave", fromKey, toKey, leaving: true, leave: 0, framed: false });
         w.r3f?.invalidate();
       },
       async commit() {
@@ -66,7 +53,7 @@ export default function Spirit() {
           const to = toKey === null ? undefined : w.n[toKey];
           if (from === undefined || to === undefined) {
             warn("spirit: nobody sitting or lying to wake in");
-            return void Object.assign(state, { phase: "leave", auto: false, held: false });
+            return void Object.assign(state, { phase: "leave", leaving: false });
           }
           state.toKey = to.key;
           state.shut(to.key, true);
@@ -266,14 +253,6 @@ export default function Spirit() {
           along: () => (state.light === null ? undefined : { x: state.light.x, y: state.light.z }),
         });
       },
-      press(lowerOnTap = true) {
-        if (w.client === true || w.disabled === true) return false;
-        if (state.phase === "leave") return (state.held = true);
-        if (state.phase !== "idle") return true; // under way: `q` does nothing else
-        if (w.e.isPsiRaised(w.player.key) === false) return false;
-        state.begin(w.player.key, null, false, lowerOnTap);
-        return true;
-      },
       restore() {
         const from = state.fromKey === null ? undefined : w.n[state.fromKey];
         if (from !== undefined) {
@@ -314,7 +293,7 @@ export default function Spirit() {
         if (state.phase !== "idle") throw Error("already under way");
         if (toKey !== undefined && w.n[toKey] === undefined) throw Error(`no such npc: ${toKey}`);
         if (w.player.exists() === false) throw Error("no player");
-        state.begin(w.player.key, toKey ?? null, true);
+        state.begin(w.player.key, toKey ?? null);
       },
       tickArrive(dt) {
         const to = state.toKey === null ? undefined : w.n[state.toKey];
@@ -369,18 +348,10 @@ export default function Spirit() {
       tickLeave(dt) {
         const from = state.fromKey === null ? undefined : w.n[state.fromKey];
         if (from === undefined) return state.restore();
-        state.downSecs += dt;
-        if (state.held === true && w.view.keysDown.has("q") === false) state.held = false;
-        const held = state.auto || state.held;
-        if (held === false && state.leave === 0) {
-          // a tap lowers psi, as `q` always has
-          const tapped = state.downSecs < spiritConfig.tapSecs && state.auto === false;
-          if (tapped === true && state.lowerOnTap === true) w.e.setPsi(false, from.key);
-          return state.restore();
-        }
-        if (held === true && state.downSecs < spiritConfig.tapSecs) return;
-        if (held === true && state.framed === false) state.frame(from);
-        const rate = held === true ? 1 / spiritConfig.leaveSecs : -1 / spiritConfig.recoverSecs;
+        const { leaving } = state;
+        if (leaving === false && state.leave === 0) return state.restore();
+        if (leaving === true && state.framed === false) state.frame(from);
+        const rate = leaving === true ? 1 / spiritConfig.leaveSecs : -1 / spiritConfig.recoverSecs;
         state.leave = THREE.MathUtils.clamp(state.leave + rate * dt, 0, 1);
         const gone = smootherstep(state.leave);
         // drawn in to their forehead, where the spark will leave from
@@ -398,7 +369,7 @@ export default function Spirit() {
 
   w.spirit = state;
 
-  useFrame((_, delta) => state.onFrame(delta), -3);
+  useFrame((_, delta) => state.onFrame(delta * w.gameTime.scale), -3);
 
   // unmounted or hot-reloaded part way, else the view, light and rooms are left as the effect had them
   useEffect(
@@ -513,7 +484,10 @@ function createRibbonGeometry(route: Geom.VectJson[], lengths: number[], heights
   return geometry;
 }
 
-/** A centripetal Catmull-Rom through the route's points, sampled evenly: it neither loops nor overshoots */
+/**
+ * A centripetal Catmull-Rom through the route's points, sampled evenly: it neither loops nor overshoots.
+ * A straight route is sampled too, so the ribbon rises and falls with the spark
+ */
 function smoothRoute(route: Geom.VectJson[]) {
   const points = route.filter(
     (p, i) =>
@@ -521,12 +495,11 @@ function smoothRoute(route: Geom.VectJson[]) {
       i === route.length - 1 ||
       Math.hypot(p.x - route[i - 1].x, p.y - route[i - 1].y) > spiritConfig.mergeMetres,
   );
-  if (points.length < 3) return points;
-  const curve = new THREE.CatmullRomCurve3(
-    points.map((p) => new THREE.Vector3(p.x, 0, p.y)),
-    false,
-    "centripetal",
-  );
+  if (points.length < 2) return points;
+  const vs = points.map((p) => new THREE.Vector3(p.x, 0, p.y));
+  if (vs.length === 2 && vs[0].equals(vs[1])) return points;
+  const curve =
+    vs.length === 2 ? new THREE.LineCurve3(vs[0], vs[1]) : new THREE.CatmullRomCurve3(vs, false, "centripetal");
   const samples = Math.max(2, Math.ceil(curve.getLength() / spiritConfig.sampleMetres));
   return curve.getSpacedPoints(samples).map((v) => ({ x: v.x, y: v.z }));
 }
@@ -656,9 +629,7 @@ const restingPostures = new Set(["sit", "lie"]);
 const routeHalfExtents: [number, number, number] = [2, 2, 2];
 
 const spiritConfig = {
-  /** A press of `q` let go sooner than this is a tap, and lowers psi */
-  tapSecs: 0.25,
-  /** Held, how long until they have left. Let go, how long until they are back */
+  /** How long until they have left. With nobody to wake in, how long until they are back */
   leaveSecs: 2.5,
   recoverSecs: 0.8,
   /** How far through leaving their eyes shut */
@@ -709,23 +680,18 @@ const spiritConfig = {
 };
 
 export type State = {
-  /** `leave` whilst `q` is held, `commit` whilst finding who to wake in, then `cross` and `arrive` */
+  /** `leave` as they go, `commit` whilst finding who to wake in, then `cross` and `arrive` */
   phase: "idle" | "leave" | "commit" | "cross" | "arrive";
   fromKey: null | string;
   toKey: null | string;
-  /** Leaving without `q` held, as jsh `spirit` does */
-  auto: boolean;
+  /** Whilst leaving. Cleared when nobody is found to wake in, which draws them back */
+  leaving: boolean;
   /** Whether the camera has been sent onto their face, once leaving began */
   framed: boolean;
   /** Whether the camera followed the player before `frame` stopped it: back on once it is over */
   wasFollowing: boolean;
-  /** A tap lowers psi, unless the press that began it raised psi */
-  lowerOnTap: boolean;
   /** The camera's target height when the crossing began, kept throughout */
   viewHeight: number;
-  /** `q` still down since the press that began it */
-  held: boolean;
-  downSecs: number;
   /** How far they have left, `0` to `1` */
   leave: number;
   /** Seconds into `cross` or `arrive`, and how long each takes */
@@ -751,7 +717,7 @@ export type State = {
   roomsAhead: { grKey: Geomorph.GmRoomKey; at: number }[];
   trail: ReturnType<typeof createTrail>;
 
-  begin(fromKey: string, toKey?: null | string, auto?: boolean, lowerOnTap?: boolean): void;
+  begin(fromKey: string, toKey?: null | string): void;
   /** Pans onto their forehead, from the side their face is on, or across them and low if lain */
   frame(npc: JshCli.Npc): void;
   /** The azimuth looking across them lain, from the side of their bed with open floor, else the lesser turn */
@@ -778,12 +744,10 @@ export type State = {
   onFrame(delta: number): void;
   /** The point `dist` along the route, the way it heads, and the leg it is on */
   pointAt(dist: number): typeof tmpAt;
-  /** `q` pressed with psi raised: `true` if it was taken, else psi toggles as usual */
-  press(lowerOnTap?: boolean): boolean;
   /** Back in the body left, as though nothing happened. Also on unmount part way */
   restore(): void;
   shut(npcKey: string, shut: boolean): void;
-  /** Leaves the player's body without `q` held, to wake in `toKey` or someone found */
+  /** Leaves the player's body, to wake in `toKey` or someone found */
   start(toKey?: string): void;
   tickArrive(dt: number): void;
   tickCross(dt: number): void;

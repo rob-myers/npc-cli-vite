@@ -1,5 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
 import { Select } from "@base-ui/react/select";
+import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
@@ -12,6 +13,7 @@ import {
   EyeIcon,
   GlobeSimpleIcon,
   GlobeStandIcon,
+  HourglassMediumIcon,
   type Icon,
   PauseIcon,
   PersonSimpleIcon,
@@ -761,6 +763,35 @@ export function WorldMenu() {
               <RobotIcon className="size-5 text-neutral-200" alt="ship" weight="bold" />
             )}
           </div>
+
+          {/* game time per real second — see `GameTime.setScale` */}
+          <div
+            data-keep-menu-open
+            title="time scale"
+            className="flex flex-col items-center gap-1 bg-neutral-800 py-1.5 w-9"
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={() => w.gameTime.setScale(1)}
+          >
+            <Slider.Root
+              orientation="vertical"
+              min={0}
+              max={timeScaleStops}
+              value={timeScaleToStop(w.gameTime.scale)}
+              disabled={w.client}
+              onValueChange={(stop) => w.gameTime.setScale(stopToTimeScale(stop))}
+              className="h-25"
+            >
+              {/* padded by half the thumb, which is centred on its value, so it stays clear of the label */}
+              <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-2.5">
+                <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
+                  <Slider.Thumb className="grid size-6 place-items-center rounded-full bg-white text-neutral-800 outline-none">
+                    <HourglassMediumIcon className="size-4.5" weight="bold" />
+                  </Slider.Thumb>
+                </Slider.Track>
+              </Slider.Control>
+            </Slider.Root>
+            <span className="text-[10px] tabular-nums text-neutral-300">{w.gameTime.scale.toFixed(2)}</span>
+          </div>
         </div>
 
         <div className="absolute top-full left-0 mt-1 w-max max-w-64 flex flex-col gap-0.5">
@@ -1218,6 +1249,17 @@ const sectionHeaderClass = (touch: boolean) =>
   cn("px-2 py-1 text-xs text-neutral-400", touch && "px-3 py-2.5 text-sm border-t border-neutral-800");
 
 /** Every `<input type="range">` in the menu — touch gets a fatter thumb and more room to drag */
+/** The time scale slider's stops: its bottom half is logarithmic from `0` to `1`, its top half linear to `2` */
+const timeScaleStops = 200;
+const stopToTimeScale = (stop: number) =>
+  stop === 0 ? 0 : stop <= 100 ? 2 ** (stop / 20 - 5) : 1 + (stop - 100) / 100;
+const timeScaleToStop = (scale: number) =>
+  scale <= 0
+    ? 0
+    : scale <= 1
+      ? Math.max(1, Math.round(20 * (Math.log2(scale) + 5)))
+      : Math.min(timeScaleStops, Math.round(100 + 100 * (scale - 1)));
+
 const rangeInputClass = (touch: boolean, width: string) =>
   cn(
     "accent-white cursor-pointer appearance-none bg-transparent",

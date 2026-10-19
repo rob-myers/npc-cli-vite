@@ -21,7 +21,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       tap: null,
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
-      lookTimer: 0,
+      cancelLook: () => {},
 
       aimAtPointer() {
         const npc = state.get();
@@ -115,11 +115,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (Math.hypot(x - npc.position.x, z - npc.position.z) < lookDeadMetres) return;
         state.lookAt = { x, y: z };
         // held as `r` would be, long enough to come round
-        window.clearTimeout(state.lookTimer);
-        state.lookTimer = window.setTimeout(() => {
+        state.cancelLook();
+        state.cancelLook = w.e.after(lookHoldMs / 1000, () => {
           state.lookAt = null;
           w.r3f?.invalidate();
-        }, lookHoldMs);
+        });
         w.r3f?.invalidate();
       },
       onKeyDown(e) {
@@ -133,12 +133,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
         }
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
-        if (e.code === "KeyQ") {
-          // held with psi raised, they leave their body — see `Spirit`. A press that raises it does too
-          const raised = w.e.isPsiRaised(state.key);
-          if (raised === false) state.togglePsi();
-          if (w.spirit?.press(raised) !== true && raised === true) state.togglePsi();
-        } else if (e.code === "KeyE") state.toggleArm();
+        if (e.code === "KeyQ") state.togglePsi();
+        else if (e.code === "KeyE") state.toggleArm();
         else return;
         w.hud?.update();
         w.view.forceUpdate();
@@ -266,7 +262,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         return () => {
           el.removeEventListener("keydown", onKeyDown);
           for (const type of touchTypes) el.removeEventListener(type, onTouch);
-          window.clearTimeout(state.lookTimer);
+          state.cancelLook();
         };
       },
       setKey(npcKey) {
@@ -350,7 +346,8 @@ export type State = {
   syncRun(): void;
   /** The floor point a tap has them look at, for `lookHoldMs` — see `LookMark` */
   lookAt: null | Geom.VectJson;
-  lookTimer: number;
+  /** Ends the look hold early, a game-time timer */
+  cancelLook(): void;
   /** A two-finger tap on the canvas has them look where it lands */
   onTouch(e: TouchEvent): void;
   /** The player's npc, once they are spawned */

@@ -40,13 +40,13 @@ export default function NpcShields() {
         // one flash per piece: struck again, it starts over
         const again = state.flashes.findIndex((f) => f.npc === npc && f.bone === bone);
         if (again !== -1) state.flashes.splice(again, 1);
-        state.flashes.push({ npc, kind, bone, local, hit, startSecs: w.timer.getElapsedTime() });
+        state.flashes.push({ npc, kind, bone, local, hit, startSecs: w.gameTime.now() });
         state.onTick(); // shown at once, even paused
         return tmpSurface.copy(hit).applyMatrix4(world);
       },
       onTick() {
         if (state.flashes.length === 0 && state.shown === false) return; // nearly always
-        const now = w.timer.getElapsedTime();
+        const now = w.gameTime.now();
         const { flashes, pieces } = state;
         let kept = 0;
         let helmets = 0;

@@ -1,56 +1,15 @@
 # TODO
 
-- ✅ psi raised shows breathing
-- ❌ psi entrainment when target sleeps
-  - Next I want to implement "turning" or "entrainment" in the case where the target npc is sleeping i.e.
-- ❌ psi entrainment when target pacified
-- ❌ player can place personal shield
-- ❌ psi use cases
-  - place shield, hide in room, distract onenter room, pacify
-  - break stalemates e.g. believe player has moved elsewhere
-- ❌ crouch needs justification
-- ❌ instead of free-switch-player an endless supply of ancillaries?
-  - maybe "isolated takedown" converts to ancillary
-- ✅ hold e to raise and aim i.e. remove `r` key
-
-- ✅ successful shots always pacify
-- ❌ shots can be unsuccessful
-  - ❌ repro target barely protruding
-  - ❌ repro target is running
-  - simplify
-
-- ✅  support shoot while sit or lie
-  - ✅ sit
-  - ✅  lie
-
-- ✅ three eventualities related to npc focus and firing on limbs
-  - missed (player)
-  - dodged (target)
-  - shielded (target) maybe needs effect
-
-- ✅ standing aiming npc should avoid sitting non-aiming npc
-
-- why does npc focus need `inventory`?
-
-- psi + click npc targets too
-  - can "become" and issue commands
-  - can target without line of sight
-  - play "crossing" animation: generalized from only sit/lie
-
-- refine psi breathing
-  - do lungs/diaphragm actually move like that?
-
-- ✅ sidestep (command executed in PROFILE)
-
-- ✅ "mcp testing" up until Claude's turn ends — see `docs/mcp.md`
-
 ## World
 
 ### Animation and Npc
 
 - ✅ skin face eyes
 
-- fix phaser going through a closed door
+- refine psi breathing
+  - do lungs/diaphragm actually move like that?
+
+- fix lowered phaser going through a closed door
   - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
 
 - skin remapping

@@ -4,12 +4,12 @@ The ONLY doc for the player leaving their body and waking in another: `component
 
 ## Trigger
 
-Psi raised, `q` HELD leaves (`w.spirit.press`, from `w.player.onKeyDown`). A tap, let go within `tapSecs`, still
-lowers psi. Psi lowered, `q` raises it, and held on, leaves too. Let go before they have left, they come back. jsh `spirit [npcKey]` leaves without `q`.
+"Become", offered by npc focus whilst psi is raised, leaves for whom it is open on (`w.spirit.start`). jsh
+`spirit [npcKey]` does the same, else finds someone. `q` only raises and lowers psi.
 
 ## Phases
 
-- **leave**: follow is turned off and the zoom held (`zoomHeld`) until they arrive (`handBack`). The camera pans onto their forehead, turned to the side their face is on as far as the compass
+- **leave** (`leaving`): follow is turned off and the zoom held (`zoomHeld`) until they arrive (`handBack`). The camera pans onto their forehead, turned to the side their face is on as far as the compass
   dial allows (`frame`, `lookAt`'s `theta`). The light draws in to nothing at their forehead (`foreheadOf`, through the head bone), and the unseen goes black
   (`playerLight.setVeil`), but not in `ship` mode (`veil`). A breath under way
   is let finish, and the pause after it drawn out (`breath.pace`). Their eyes shut halfway.

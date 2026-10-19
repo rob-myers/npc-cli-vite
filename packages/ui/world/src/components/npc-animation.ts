@@ -552,14 +552,14 @@ export class NpcAnimation {
 
   /** A roll in bed is still fading in */
   isRolling() {
-    return this.w.timer.getElapsedTime() - this.rolledAt < lieRoll.secs;
+    return this.w.gameTime.now() - this.rolledAt < lieRoll.secs;
   }
 
   /** Roll one lain onto `to`, a lie clip */
   rollOnto(to: AnimationClipKey) {
     const from = keyOf(this.idleClip);
     if (isLieKey(from) === false || to === from) return;
-    this.rolledAt = this.w.timer.getElapsedTime();
+    this.rolledAt = this.w.gameTime.now();
     this.idleClip = this.npc.clips[to];
     if (this.pose === from) this.setPose(to);
     this.w.r3f?.invalidate();
@@ -1012,7 +1012,7 @@ export class NpcAnimation {
       agent.maxSpeed = this.maxSpeedFor();
     }
     // after the turn, so a long one does not eat the stuck grace
-    this.npc.last.moveTime = this.w.timer.getElapsedTime();
+    this.npc.last.moveTime = this.w.gameTime.now();
     this.arrive = arrive;
     this.showGait();
   }

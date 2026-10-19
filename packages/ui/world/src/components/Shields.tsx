@@ -35,8 +35,8 @@ export default function Shields() {
       onTick() {
         if (state.segs.size === 0) return;
         // once a tick here, not once a fragment there
-        state.fade.value = 0.5 + 0.5 * Math.sin((w.timer.getElapsedTime() / shaderConfig.hatchFadeSecs) * 2 * Math.PI);
-        const secs = Math.min(w.timer.getDelta(), 0.1);
+        state.fade.value = 0.5 + 0.5 * Math.sin((w.gameTime.now() / shaderConfig.hatchFadeSecs) * 2 * Math.PI);
+        const secs = Math.min(w.gameTime.delta(), 0.1);
         const step = secs / shieldConfig.fadeSecs;
 
         state.crossLines();

@@ -2,7 +2,7 @@ import { pause } from "../legacy/generic";
 
 /**
  * Async steps that `cancel` ends at once, e.g. on a jsh kill. Each wait rejects once it is cancelled,
- * and `run` then resolves quietly. Time waited on counts only whilst not `isPaused`
+ * and `run` then resolves quietly. Time waited on counts only whilst not `isPaused`, on the clock `nowMs`
  */
 export class Task {
   private readonly controller = new AbortController();
@@ -12,9 +12,11 @@ export class Task {
   );
 
   private readonly isPaused: () => boolean;
+  private readonly nowMs: () => number;
 
-  constructor(isPaused = () => false) {
+  constructor(isPaused = () => false, nowMs = () => performance.now()) {
     this.isPaused = isPaused;
+    this.nowMs = nowMs;
     this.cancelled.catch(() => {}); // cancelled with no wait under way
   }
 
@@ -38,9 +40,9 @@ export class Task {
   /** Resolves once `done`, else after `ms` not paused, polled every `stepMs` */
   async until(done: () => boolean, ms = Number.POSITIVE_INFINITY, stepMs = 50) {
     for (let left = ms; done() === false && left > 0; ) {
-      const at = performance.now();
+      const at = this.nowMs();
       await Promise.race([this.cancelled, pause(stepMs)]);
-      if (this.isPaused() === false) left -= performance.now() - at;
+      if (this.isPaused() === false) left -= this.nowMs() - at;
     }
   }
 

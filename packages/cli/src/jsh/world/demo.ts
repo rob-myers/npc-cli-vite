@@ -1,4 +1,4 @@
-import { events } from "./core";
+import { events, wSleep } from "./core";
 
 export function demo_add_decor(ct: JshCli.RunArg) {
   const _decorCircle = ct.w.decor.create({
@@ -58,7 +58,8 @@ export function demo_bad_resolve({ api }: JshCli.RunArg) {
  * demo_back_off rob kate
  * ```
  */
-export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
+export async function demo_back_off(ct: JshCli.RunArg) {
+  const { api, args, w } = ct;
   const npcs = args.map((npcKey) => w.npc.get(npcKey));
   /** Whom each has had beside them, since when in world seconds, and where it was then */
   const beside = new Map<string, { walker: JshCli.Npc; since: number; at: JshCli.GroundPoint }>();
@@ -66,7 +67,7 @@ export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
 
   /** Has `walker` been beside `npc` for `lingerSecs`, making little headway? */
   function heldUp(npc: JshCli.Npc, walker: JshCli.Npc | undefined): walker is JshCli.Npc {
-    const now = w.timer.getElapsedTime();
+    const now = w.gameTime.now();
     const prev = beside.get(npc.key);
     if (walker === undefined) {
       beside.delete(npc.key);
@@ -81,7 +82,7 @@ export async function demo_back_off({ api, args, w }: JshCli.RunArg) {
 
   try {
     while (true) {
-      await api.sleep(backOffConfig.sampleSecs);
+      await wSleep(ct, backOffConfig.sampleSecs);
       for (const npc of npcs) {
         if (w.n[npc.key] !== npc || npc.isMoving() || npc.isLooking()) continue;
         const walker = presser(w, npc);
@@ -135,6 +136,22 @@ export async function* demo_log_speech(ct: JshCli.RunArg) {
   })) {
     // console.log({ e });
     yield `${ct.api.ansi.Blue}${e.npcKey}${ct.api.ansi.Reset}: ${e.words}`;
+  }
+}
+
+/**
+ * Whilst running, a press on one of these npcs shows them thinking the next demo thought
+ * ```sh
+ * demo_thoughts rob kate &
+ * ```
+ */
+export async function* demo_thoughts(ct: JshCli.RunArg) {
+  if (ct.args.length === 0) throw Error("demo_thoughts: npc keys required");
+  const only = new Set(ct.args.map((npcKey) => ct.w.npc.get(npcKey).key));
+  const where = (e: JshCli.Event): e is Extract<JshCli.Event, { key: "picked" }> => e.key === "picked";
+  for await (const e of events(ct, { where })) {
+    if (e.meta.type !== "npc" || e.longDown === true || e.rightDown === true) continue;
+    if (only.has(e.meta.npcKey) === true) ct.w.speech.readThought(e.meta.npcKey);
   }
 }
 
