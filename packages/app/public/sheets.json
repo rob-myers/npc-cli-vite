@@ -171,13 +171,19 @@
     "medical--008 1": {
       "symbolKey": "medical--008",
       "obstacleId": 1,
-      "rect": {"x": 3250, "y": 2112, "width": 343, "height": 290.5},
+      "rect": {"x": 3250, "y": 2112, "width": 365, "height": 309.5},
       "sheetId": 0
     },
     "medical--008 2": {
       "symbolKey": "medical--008",
       "obstacleId": 2,
-      "rect": {"x": 3250, "y": 2411, "width": 343, "height": 289.5},
+      "rect": {"x": 3250, "y": 2430, "width": 365, "height": 308.5},
+      "sheetId": 0
+    },
+    "medical--008 0": {
+      "symbolKey": "medical--008",
+      "obstacleId": 0,
+      "rect": {"x": 2092, "y": 2591, "width": 315, "height": 315},
       "sheetId": 0
     },
     "lounge--015 0": {
@@ -195,55 +201,49 @@
     "console--031 0": {
       "symbolKey": "console--031",
       "obstacleId": 0,
-      "rect": {"x": 2092, "y": 2591, "width": 260, "height": 310},
+      "rect": {"x": 2905, "y": 2791, "width": 260, "height": 310},
       "sheetId": 0
     },
     "window--001 0": {
       "symbolKey": "window--001",
       "obstacleId": 0,
-      "rect": {"x": 2092, "y": 2909, "width": 310, "height": 67.5},
+      "rect": {"x": 2092, "y": 2914, "width": 310, "height": 67.5},
       "sheetId": 0
     },
     "extra--004--desk 0": {
       "symbolKey": "extra--004--desk",
       "obstacleId": 0,
-      "rect": {"x": 2905, "y": 2791, "width": 155, "height": 305},
+      "rect": {"x": 3173, "y": 2791, "width": 155, "height": 305},
       "sheetId": 0
     },
     "extra--006--desk 0": {
       "symbolKey": "extra--006--desk",
       "obstacleId": 0,
-      "rect": {"x": 2092, "y": 2985, "width": 305, "height": 127.5},
-      "sheetId": 0
-    },
-    "medical--008 0": {
-      "symbolKey": "medical--008",
-      "obstacleId": 0,
-      "rect": {"x": 3250, "y": 2709, "width": 295, "height": 295},
+      "rect": {"x": 2092, "y": 2990, "width": 305, "height": 127.5},
       "sheetId": 0
     },
     "extra--021--shower 0": {
       "symbolKey": "extra--021--shower",
       "obstacleId": 0,
-      "rect": {"x": 3188, "y": 171, "width": 180, "height": 292.5},
+      "rect": {"x": 3336, "y": 2747, "width": 180, "height": 292.5},
       "sheetId": 0
     },
     "shop--031 0": {
       "symbolKey": "shop--031",
       "obstacleId": 0,
-      "rect": {"x": 3068, "y": 3012, "width": 268, "height": 146},
+      "rect": {"x": 3336, "y": 3048, "width": 268, "height": 146},
       "sheetId": 0
     },
     "shop--035 0": {
       "symbolKey": "shop--035",
       "obstacleId": 0,
-      "rect": {"x": 3344, "y": 3012, "width": 268, "height": 146},
+      "rect": {"x": 3188, "y": 171, "width": 268, "height": 146},
       "sheetId": 0
     },
     "shop--037 0": {
       "symbolKey": "shop--037",
       "obstacleId": 0,
-      "rect": {"x": 3188, "y": 472, "width": 268, "height": 146},
+      "rect": {"x": 3188, "y": 325, "width": 268, "height": 146},
       "sheetId": 0
     },
     "iris-valves--005 0": {
@@ -255,7 +255,7 @@
     "iris-valves--006 0": {
       "symbolKey": "iris-valves--006",
       "obstacleId": 0,
-      "rect": {"x": 3376, "y": 171, "width": 220, "height": 220},
+      "rect": {"x": 3188, "y": 479, "width": 220, "height": 220},
       "sheetId": 0
     },
     "extra--007--desk 0": {
@@ -267,73 +267,73 @@
     "table--009 0": {
       "symbolKey": "table--009",
       "obstacleId": 0,
-      "rect": {"x": 8, "y": 3227, "width": 185, "height": 185},
+      "rect": {"x": 3416, "y": 479, "width": 185, "height": 185},
       "sheetId": 0
     },
     "extra--022--fresher 0": {
       "symbolKey": "extra--022--fresher",
       "obstacleId": 0,
-      "rect": {"x": 201, "y": 3227, "width": 105, "height": 180},
+      "rect": {"x": 3524, "y": 2747, "width": 105, "height": 180},
       "sheetId": 0
     },
     "extra--002--fresher 0": {
       "symbolKey": "extra--002--fresher",
       "obstacleId": 0,
-      "rect": {"x": 314, "y": 3227, "width": 110, "height": 157.5},
+      "rect": {"x": 3464, "y": 171, "width": 110, "height": 157.5},
       "sheetId": 0
     },
     "console--051 0": {
       "symbolKey": "console--051",
       "obstacleId": 0,
-      "rect": {"x": 2905, "y": 3104, "width": 137.5, "height": 155},
+      "rect": {"x": 8, "y": 3227, "width": 137.5, "height": 155},
       "sheetId": 0
     },
     "console--033 0": {
       "symbolKey": "console--033",
       "obstacleId": 0,
-      "rect": {"x": 432, "y": 3227, "width": 135, "height": 152.5},
+      "rect": {"x": 154, "y": 3227, "width": 135, "height": 152.5},
       "sheetId": 0
     },
     "console--019 1": {
       "symbolKey": "console--019",
       "obstacleId": 1,
-      "rect": {"x": 3464, "y": 399, "width": 150, "height": 150},
+      "rect": {"x": 3173, "y": 3104, "width": 150, "height": 150},
       "sheetId": 0
     },
     "extra--001--fresher 0": {
       "symbolKey": "extra--001--fresher",
       "obstacleId": 0,
-      "rect": {"x": 3475, "y": 1768, "width": 140, "height": 116},
+      "rect": {"x": 297, "y": 3262, "width": 140, "height": 116},
       "sheetId": 0
     },
     "couch-and-chairs--006 0": {
       "symbolKey": "couch-and-chairs--006",
       "obstacleId": 0,
-      "rect": {"x": 3464, "y": 557, "width": 117.5, "height": 70},
+      "rect": {"x": 3416, "y": 672, "width": 117.5, "height": 70},
       "sheetId": 0
     },
     "couch-and-chairs--006 1": {
       "symbolKey": "couch-and-chairs--006",
       "obstacleId": 1,
-      "rect": {"x": 3068, "y": 2791, "width": 115, "height": 70},
+      "rect": {"x": 3475, "y": 1768, "width": 115, "height": 70},
       "sheetId": 0
     },
     "counter--010 0": {
       "symbolKey": "counter--010",
       "obstacleId": 0,
-      "rect": {"x": 3188, "y": 635, "width": 105, "height": 95},
+      "rect": {"x": 3524, "y": 2935, "width": 105, "height": 95},
       "sheetId": 0
     },
     "extra--003--chair 0": {
       "symbolKey": "extra--003--chair",
       "obstacleId": 0,
-      "rect": {"x": 3301, "y": 635, "width": 100, "height": 102.5},
+      "rect": {"x": 445, "y": 3262, "width": 100, "height": 102.5},
       "sheetId": 0
     },
     "extra--005--chair 0": {
       "symbolKey": "extra--005--chair",
       "obstacleId": 0,
-      "rect": {"x": 3409, "y": 635, "width": 100, "height": 100},
+      "rect": {"x": 553, "y": 3262, "width": 100, "height": 100},
       "sheetId": 0
     },
     "extra--018--table 0": {
@@ -343,8 +343,8 @@
       "sheetId": 0
     }
   },
-  "symbolSheetDims": [{"width": 3644, "height": 3420}],
-  "maxSymbolSheetDim": {"width": 3644, "height": 3420},
+  "symbolSheetDims": [{"width": 3644, "height": 3390}],
+  "maxSymbolSheetDim": {"width": 3644, "height": 3390},
   "decor": {
     "phaser": {
       "key": "phaser",
