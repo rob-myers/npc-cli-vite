@@ -9,6 +9,7 @@
     "./vite-plugin-jobs-examples": "./src/vite-plugin-jobs-examples.ts",
     "./vite-plugin-lore": "./src/vite-plugin-lore.ts",
     "./vite-plugin-map-edit-api": "./src/vite-plugin-map-edit-api.ts",
+    "./vite-plugin-spots": "./src/vite-plugin-spots.ts",
     "./vite-plugin-stable-entry": "./src/vite-plugin-stable-entry.ts",
     "./vite-plugin-watch-assets": "./src/vite-plugin-watch-assets.ts",
     "./vite-plugin-world-rtc": "./src/vite-plugin-world-rtc.ts"
@@ -20,6 +21,7 @@
     "gen-pkg": "./src/bins/gen-pkg.ts",
     "gen-decor-sheets": "./src/bins/gen-decor-sheets.ts",
     "gen-skin-sheets": "./src/bins/gen-skin-sheets.ts",
+    "gen-spots": "./src/bins/gen-spots.ts",
     "gen-starship-sheets": "./src/bins/gen-starship-sheets.ts",
     "gen-clip-keys": "./src/bins/gen-clip-keys.ts",
     "gen-current-glb": "./src/bins/gen-current-glb.ts",

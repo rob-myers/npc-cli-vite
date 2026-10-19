@@ -30,7 +30,10 @@ import {
 import { DecorHistory, mergeKey } from "./history";
 import { ManifestLoreLayer } from "./ManifestLoreLayer";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { SpotCard } from "./SpotCard";
+import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
+import { type SpotPick, useSpots } from "./use-spots";
 
 /** The map pane, once there is a World */
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
@@ -42,6 +45,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   /** Each can be spawned, with their skin and their doors */
   const characters = useManifestLoreCharacters(manifestLore);
   const { uiStoreApi } = useContext(UiContext);
+  const spots = useSpots(w, meta.show.spots);
 
   const state = useStateRef(
     (): State => ({
@@ -58,6 +62,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       menuOpen: false,
       /** `performance.now()` before which no context menu opens: `Infinity` whilst a press is under way */
       menuBlockedUntil: 0,
+      spot: null,
+      sidebarTab: "decor",
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -201,6 +207,10 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         }
       },
 
+      chooseSpot(pick) {
+        state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
+        if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
+      },
       setNpcKeys(npcKeys) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as DecoratorUiMeta).npcKeys = npcKeys));
       },
@@ -339,20 +349,55 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
 
       <div className="flex-1 min-h-0 flex">
         {meta.sidebarOpen && (
-          <div className="relative shrink-0 flex" style={{ width: meta.sidebarWidth }}>
-            <DecorSidebar
-              key={w.mapKey} // remade per map: its arrangement is that map's
-              w={w}
-              selected={state.selected}
-              onSelect={state.select}
-              onRename={state.rename}
-              onLocate={(key) => {
-                const d = w.decor.runtime.byKey[key];
-                if (d === undefined) return;
-                const { x, y } = d.type === "point" ? d : d.center;
-                map.current?.centreOn(x, y, locateZoom);
-              }}
-            />
+          <div className="relative shrink-0 flex flex-col" style={{ width: meta.sidebarWidth }}>
+            <div className="shrink-0 flex border-r border-b border-zinc-800">
+              {sidebarTabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={cn(
+                    "px-2 py-0.5 -mb-px border-b-2",
+                    state.sidebarTab === tab
+                      ? "border-zinc-400 text-zinc-100"
+                      : "border-transparent text-zinc-500 hover:text-zinc-300",
+                  )}
+                  onClick={() => state.set({ sidebarTab: tab })}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            {state.sidebarTab === "decor" && (
+              <div className="flex-1 min-h-0 flex">
+                <DecorSidebar
+                  key={w.mapKey} // remade per map: its arrangement is that map's
+                  w={w}
+                  selected={state.selected}
+                  onSelect={state.select}
+                  onRename={state.rename}
+                  onLocate={(key) => {
+                    const d = w.decor.runtime.byKey[key];
+                    if (d === undefined) return;
+                    const { x, y } = d.type === "point" ? d : d.center;
+                    map.current?.centreOn(x, y, locateZoom);
+                  }}
+                />
+              </div>
+            )}
+            {state.sidebarTab === "spot" &&
+              (meta.show.spots === false ? (
+                <SidebarHint>turn on the spots layer</SidebarHint>
+              ) : state.spot === null || spots?.[w.gms[state.spot.gmId]?.key] === undefined ? (
+                <SidebarHint>press a spot on the map</SidebarHint>
+              ) : (
+                <SpotCard
+                  w={w}
+                  file={spots[w.gms[state.spot.gmId].key]}
+                  pick={state.spot}
+                  onChoose={state.chooseSpot}
+                  onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
+                />
+              ))}
           </div>
         )}
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
@@ -384,6 +429,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             }
           >
             {manifestLore !== null && <ManifestLoreLayer w={w} entry={manifestLore} />}
+            {meta.show.spots && spots !== undefined && (
+              <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={state.chooseSpot} />
+            )}
             <DecorLayer
               w={w}
               selected={state.selected}
@@ -525,11 +573,23 @@ type State = {
   heightShown(): boolean;
   heightValue(): number | undefined;
   onKeyDown(e: React.KeyboardEvent): void;
+  /** The spot shown in the sidebar, and on the map what it sees */
+  spot: null | SpotPick;
+  /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
+  sidebarTab: SidebarTab;
+  chooseSpot(pick: null | SpotPick): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
-const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static"];
+const sidebarTabs = ["decor", "spot"] as const;
+type SidebarTab = (typeof sidebarTabs)[number];
+
+function SidebarHint({ children }: { children: React.ReactNode }) {
+  return <div className="flex-1 border-r border-zinc-800 px-2 py-2 text-xs text-zinc-600">{children}</div>;
+}
+
+const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static", "spots"];
 const tools: ("select" | DecorType)[] = ["select", "point", "rect", "circle", "quad"];
 type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
 const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };

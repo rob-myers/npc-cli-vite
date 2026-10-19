@@ -5,6 +5,7 @@ import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
 import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
 import { lorePlugin } from "@npc-cli/scripts/vite-plugin-lore";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
+import { spotsPlugin } from "@npc-cli/scripts/vite-plugin-spots";
 import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
 import { worldRtcPlugin } from "@npc-cli/scripts/vite-plugin-world-rtc";
@@ -37,6 +38,7 @@ export default defineConfig({
     tailwindcss(),
     mapEditApiPlugin(),
     watchAssetsPlugin(),
+    spotsPlugin(),
     jobsExamplesPlugin(),
     lorePlugin(),
     worldRtcPlugin(),
