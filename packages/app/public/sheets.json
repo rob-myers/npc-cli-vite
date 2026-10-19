@@ -267,7 +267,7 @@
     "table--009 0": {
       "symbolKey": "table--009",
       "obstacleId": 0,
-      "rect": {"x": 3416, "y": 479, "width": 185, "height": 185},
+      "rect": {"x": 3416, "y": 479, "width": 181.43, "height": 181.43},
       "sheetId": 0
     },
     "extra--022--fresher 0": {
@@ -309,7 +309,7 @@
     "couch-and-chairs--006 0": {
       "symbolKey": "couch-and-chairs--006",
       "obstacleId": 0,
-      "rect": {"x": 3416, "y": 672, "width": 117.5, "height": 70},
+      "rect": {"x": 3416, "y": 669, "width": 117.5, "height": 70},
       "sheetId": 0
     },
     "couch-and-chairs--006 1": {
