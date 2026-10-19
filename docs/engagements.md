@@ -99,26 +99,25 @@ jsh `focus` with neither raised raises the phaser. With the phaser (`aimPhaser`)
    jsh `timescale`). Only whilst paused, and any of it pokes past the canvas edge (`screenMargin`), does the view
    pan, by part of the overflow each frame (`keepInRate`).
 6. A mark pressed, or its digit, shoots that part once, at one bone (`npcFocusConfig.bones`), or becomes them.
-   Escape, or Cancel at the top, does neither. A phaser left raised no longer points at them.
+   A press on them again, or Cancel at the top, does neither. A phaser left raised no longer points at them.
 
 Whilst it runs:
 
-- `cancel` ends it as Escape does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
+- `cancel` ends it as Cancel does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
 - Only the marks and Cancel take the pointer, so the camera still moves.
-- Cancel shows `(Esc)` only on a desktop. Closed, the marks keep to their parts as they fade (`placedKey`).
+- Escape pauses the World as ever, and leaves it open. Closed, the marks keep to their parts as they fade (`placedKey`).
 - The player's moves are refused whilst it aims (`w.e.move` throws `focused`), held keys included, as a move would
   undo the turn. Once the marks are up they move again.
 
 With the marks up:
 
-- Escape ends the focus, not pausing the World.
 - The phaser's marks hide whilst the player faces more than `maxOffAimRad` (15°) away, and come back as they face
   them again (`shown`). Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of
   reach. "Become" stays. With nothing left to show, the overlay fades (`offAim`).
-- Lowering the phaser hides its marks, and lowering psi hides "Become". Once neither is raised it ends as Escape
+- Lowering the phaser hides its marks, and lowering psi hides "Become". Once neither is raised it ends as Cancel
   does (`isLost`).
 - Raising psi or the phaser whilst it is open focuses afresh, so its choices are offered too (`raisedAtOpen`). A
   phaser raised by hand then stays up after.
-- A click on someone, them or another, replaces the focus with a fresh one.
+- A click on someone else replaces the focus with a fresh one. A click on them cancels it.
 
 After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it was raised before the click, e.g. by `e`.

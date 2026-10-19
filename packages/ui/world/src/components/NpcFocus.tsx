@@ -187,10 +187,10 @@ export default function NpcFocus() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (state.offAim === true) return;
       const part = state.offered[Number(e.key) - 1]?.part;
-      if (e.key !== "Escape" && (part === undefined || state.placed.includes(part) === false)) return;
+      if (part === undefined || state.placed.includes(part) === false) return;
       e.preventDefault();
       e.stopPropagation();
-      state.close(e.key === "Escape" ? null : part);
+      state.close(part);
     };
     window.addEventListener("keydown", onKeyDown, true);
     // pinned to their parts in the World's own frame, after the camera has moved, so they keep up with it
@@ -280,7 +280,7 @@ export default function NpcFocus() {
                   state.close(null);
                 }}
               >
-                {w.touchDevice ? "Cancel" : "Cancel (Esc)"}
+                Cancel
               </button>
             </div>
           </div>
@@ -480,7 +480,7 @@ export type State = {
   /** Notes the phaser to go back to, and what is offered: `null` if under way already, else its `task` */
   /** `raised` is whether the phaser was up before, unless carried over from a focus it replaces */
   begin(npcKey: string, raised?: boolean): null | Task;
-  /** As Escape, at any stage: from the press, until a part is chosen */
+  /** As Cancel, at any stage: from the press, until a part is chosen */
   cancel(): void;
   /** A shot at `part`, becoming them, or neither for `null` */
   close(part: null | FocusPart): void;
