@@ -38,6 +38,18 @@
           "cssTransform": "matrix(0, -1, 1, 0, 0.5, 31.8)"
         },
         {
+          "id": "f2ed22dc-8e54-45eb-9254-80d686a808b6",
+          "name": "extra--003--chair y=0.4 do:underTable",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 40.5, "f": 33.5},
+          "type": "symbol",
+          "srcKey": "extra--003--chair",
+          "baseRect": {"width": 20, "height": 20},
+          "offset": {"x": 0.3, "y": 0.3},
+          "cssTransform": "matrix(0, 1, -1, 0, 40.8, 33.8)"
+        },
+        {
           "id": "9d15feda-b751-46c9-aebe-6ff6531f5a72",
           "name": "console--051 y=0.6",
           "locked": true,
@@ -61,19 +73,19 @@
           "name": "bed--003 y=0.6",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 180},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 179.5},
           "type": "symbol",
           "srcKey": "bed--003",
           "baseRect": {"width": 100, "height": 60},
           "offset": {"x": -1, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, -1, -1, 180)"
+          "cssTransform": "matrix(1, 0, 0, -1, -1, 179.5)"
         }
       ]
     },
     {
       "id": "90400817-d995-46ee-8ddd-c2984e73f71d",
       "name": "doors",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",

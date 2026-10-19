@@ -12,7 +12,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+            [
+              [0.6125, -0.025],
+              [0.6125, 1.525],
+              [-0.0125, 1.525],
+              [-0.0125, -0.025]
+            ]
           ],
           "meta": {
             "obstacle": true,
@@ -10526,6 +10531,20 @@
           "meta": {"extra--004--desk": true, "y": 0.7}
         },
         {
+          "symbolKey": "extra--003--chair",
+          "width": 0.5,
+          "height": 0.5,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 1.0125,
+            "f": 0.8375
+          },
+          "meta": {"extra--003--chair": true, "y": 0.4, "do:underTable": true}
+        },
+        {
           "symbolKey": "console--051",
           "width": 0.75,
           "height": 0.75,
@@ -10543,7 +10562,7 @@
           "symbolKey": "bed--003",
           "width": 2.5,
           "height": 1.5,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 4.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 0, "f": 4.4875},
           "meta": {"bed--003": true, "y": 0.6}
         }
       ]
@@ -14337,7 +14356,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+            [
+              [0.6125, -0.025],
+              [0.6125, 1.525],
+              [-0.0125, 1.525],
+              [-0.0125, -0.025]
+            ]
           ],
           "meta": {
             "obstacle": true,
@@ -23350,7 +23374,9 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[0.6, -0.05], [0.6, 1.5], [0, 1.5], [0, -0.05]]],
+          "coordinates": [
+            [[0.6125, -0.05], [0.6125, 1.5], [-0.0125, 1.5], [-0.0125, -0.05]]
+          ],
           "meta": {
             "obstacle": true,
             "table": true,
@@ -23567,7 +23593,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[-0.025, 0], [1.525, 0], [1.525, 0.6], [-0.025, 0.6]]
+            [
+              [-0.025, -0.0125],
+              [1.525, -0.0125],
+              [1.525, 0.6125],
+              [-0.025, 0.6125]
+            ]
           ],
           "meta": {
             "obstacle": true,
@@ -23811,12 +23842,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [0.6175, -0.0075],
-              [0.6175, 1.5425],
-              [0.0175, 1.5425],
-              [0.0175, -0.0075]
-            ]
+            [[0.63, -0.0075], [0.63, 1.5425], [0.005, 1.5425], [0.005, -0.0075]]
           ],
           "meta": {
             "obstacle": true,
@@ -23846,12 +23872,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [0.0175, 4.5075],
-              [0.0175, 2.9575],
-              [0.6175, 2.9575],
-              [0.6175, 4.5075]
-            ]
+            [[0.005, 4.5075], [0.005, 2.9575], [0.63, 2.9575], [0.63, 4.5075]]
           ],
           "meta": {
             "obstacle": true,
@@ -24007,6 +24028,24 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [[0.8375, 1.15], [0.6875, 1.15], [0.6875, 1], [0.8375, 1]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [0, -1, -1, 0, 0.8374999999999999, 1.15],
+            "direction": {"x": 0, "y": -1},
+            "obstacleId": 1,
+            "y": 0.41000000000000003,
+            "underTable": true
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [
               [2.3668, 0.7339],
               [2.2607, 0.6279],
@@ -24029,19 +24068,14 @@
               0.627885
             ],
             "direction": {"x": -0.7071, "y": 0.7071},
-            "obstacleId": 1,
+            "obstacleId": 2,
             "y": 0.61
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [0.7875, 3.8125],
-              [0.7875, 3.6625],
-              [0.9375, 3.6625],
-              [0.9375, 3.8125]
-            ]
+            [[0.7875, 3.8], [0.7875, 3.65], [0.9375, 3.65], [0.9375, 3.8]]
           ],
           "meta": {
             "decor": true,
@@ -24049,9 +24083,9 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
-            "transform": [1, 0, 0, -1, 0.7875000000000001, 3.8125],
+            "transform": [1, 0, 0, -1, 0.7875000000000001, 3.8],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 3,
+            "obstacleId": 4,
             "y": 0.61
           }
         }
@@ -24091,6 +24125,27 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [1.025, 1.3375],
+              [0.5125, 1.3375],
+              [0.5125, 0.8375],
+              [1.025, 0.8375]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "y": 0.4,
+            "transform": [0, 1, -1, 0, 1.0125, 0.8375]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [2.4729, 1.0698],
               [1.9249, 0.5218],
               [2.411, 0.0357],
@@ -24110,7 +24165,14 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[0, 4.525], [0, 2.975], [0.6, 2.975], [0.6, 4.525]]],
+          "coordinates": [
+            [
+              [-0.0125, 4.5125],
+              [-0.0125, 2.9625],
+              [0.6125, 2.9625],
+              [0.6125, 4.5125]
+            ]
+          ],
           "meta": {
             "obstacle": true,
             "table": true,
@@ -24118,18 +24180,13 @@
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "transform": [1, 0, 0, -1, 0, 4.5]
+            "transform": [1, 0, 0, -1, 0, 4.4875]
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [0.5875, 4.2375],
-              [0.5875, 3.2375],
-              [2.4875, 3.2375],
-              [2.4875, 4.2375]
-            ]
+            [[0.5875, 4.225], [0.5875, 3.225], [2.4875, 3.225], [2.4875, 4.225]]
           ],
           "meta": {
             "obstacle": true,
@@ -24137,7 +24194,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "transform": [1, 0, 0, -1, 0.5875, 4.2375],
+            "transform": [1, 0, 0, -1, 0.5875, 4.225],
             "y": 0.6
           }
         }
@@ -24371,9 +24428,7 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [
-            [[0, 0.0125], [1.55, 0.0125], [1.55, 0.6125], [0, 0.6125]]
-          ],
+          "coordinates": [[[0, 0], [1.55, 0], [1.55, 0.625], [0, 0.625]]],
           "meta": {
             "obstacle": true,
             "table": true,
@@ -26502,6 +26557,24 @@
         {
           "type": "Polygon",
           "coordinates": [
+            [[20.15, 9.35], [20.3, 9.35], [20.3, 9.5], [20.15, 9.5]]
+          ],
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [0, 1, 1, 0, 20.150000000000002, 9.35],
+            "direction": {"x": 0, "y": 1},
+            "obstacleId": 46,
+            "y": 0.41000000000000003,
+            "underTable": true
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
             [
               [18.6207, 9.7661],
               [18.7268, 9.8721],
@@ -26517,14 +26590,14 @@
             "img": "arrow",
             "transform": [0.7071, -0.7071, 0.7071, 0.7071, 18.514645, 9.872115],
             "direction": {"x": 0.7071, "y": -0.7071},
-            "obstacleId": 46,
+            "obstacleId": 47,
             "y": 0.61
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [[20.2, 6.6875], [20.2, 6.8375], [20.05, 6.8375], [20.05, 6.6875]]
+            [[20.2, 6.7], [20.2, 6.85], [20.05, 6.85], [20.05, 6.7]]
           ],
           "meta": {
             "decor": true,
@@ -26532,9 +26605,9 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
-            "transform": [-1, 0, 0, 1, 20.2, 6.6875],
+            "transform": [-1, 0, 0, 1, 20.2, 6.7],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 48,
+            "obstacleId": 49,
             "y": 0.61
           }
         },
@@ -26621,7 +26694,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 14.29523, 3.41268],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 49,
+            "obstacleId": 50,
             "y": 0.01
           }
         },
@@ -26643,7 +26716,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.83273, 4.40018],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 50,
+            "obstacleId": 51,
             "y": 0.61
           }
         },
@@ -26665,7 +26738,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.337605, 7.5747279999999995],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.41000000000000003
           }
         },
@@ -26687,7 +26760,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.950105, 7.5747279999999995],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.41000000000000003
           }
         },
@@ -26709,7 +26782,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.562605000000001, 7.5747279999999995],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.41000000000000003
           }
         },
@@ -26738,7 +26811,7 @@
               3.2818300000000002
             ],
             "direction": {"x": -0.6428, "y": 0.766},
-            "obstacleId": 66,
+            "obstacleId": 67,
             "y": 0.31
           }
         },
@@ -26760,7 +26833,7 @@
             "img": "arrow",
             "transform": [-0.6428, -0.766, 0.766, -0.6428, 19.14289, 4.304798],
             "direction": {"x": -0.6428, "y": -0.766},
-            "obstacleId": 67,
+            "obstacleId": 68,
             "y": 0.31
           }
         },
@@ -26782,7 +26855,7 @@
             "img": "arrow",
             "transform": [0.6428, 0.766, -0.766, 0.6428, 18.361525, 3.29433],
             "direction": {"x": 0.6428, "y": 0.766},
-            "obstacleId": 68,
+            "obstacleId": 69,
             "y": 0.31
           }
         },
@@ -26804,7 +26877,7 @@
             "img": "arrow",
             "transform": [0.6428, -0.766, -0.766, -0.6428, 18.361525, 4.317298],
             "direction": {"x": 0.6428, "y": -0.766},
-            "obstacleId": 69,
+            "obstacleId": 70,
             "y": 0.31
           }
         },
@@ -27029,7 +27102,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 18.447885],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 70,
+            "obstacleId": 71,
             "y": 0.51
           }
         },
@@ -27051,7 +27124,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 19.447885],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 71,
+            "obstacleId": 72,
             "y": 0.51
           }
         },
@@ -27073,7 +27146,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 20.447885],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 72,
+            "obstacleId": 73,
             "y": 0.51
           }
         },
@@ -27140,7 +27213,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 11.602115],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 76,
+            "obstacleId": 77,
             "y": 0.51
           }
         },
@@ -27162,7 +27235,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 10.602115],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 77,
+            "obstacleId": 78,
             "y": 0.51
           }
         },
@@ -27184,7 +27257,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 9.602115],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 78,
+            "obstacleId": 79,
             "y": 0.51
           }
         },
@@ -27251,7 +27324,7 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 7.114615000000001, 17.167753],
             "direction": {"x": -1, "y": 0},
-            "obstacleId": 83,
+            "obstacleId": 84,
             "y": 0.41000000000000003
           }
         },
@@ -27381,7 +27454,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 26.787499999999998, 12.9975],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 85,
+            "obstacleId": 86,
             "y": 0.51
           }
         },
@@ -27403,7 +27476,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 26.6375, 17.0075],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 86,
+            "obstacleId": 87,
             "y": 0.51
           }
         },
@@ -27425,7 +27498,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 29.015, 13.9525],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 87,
+            "obstacleId": 88,
             "y": 0.51
           }
         },
@@ -27447,7 +27520,7 @@
             "img": "arrow",
             "transform": [1, 0, 0, -1, 29.015, 16.2025],
             "direction": {"x": 1, "y": 0},
-            "obstacleId": 88,
+            "obstacleId": 89,
             "y": 0.51
           }
         },
@@ -27533,7 +27606,7 @@
             "img": "arrow",
             "transform": [0, -1, -1, 0, 10.9575, 20.665],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 90,
+            "obstacleId": 91,
             "y": 0.51
           }
         },
@@ -27555,7 +27628,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 10.8075, 22.865],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 91,
+            "obstacleId": 92,
             "y": 0.51
           }
         },
@@ -27636,7 +27709,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 19.055, 20.69],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 93,
+            "obstacleId": 94,
             "y": 0.51
           }
         },
@@ -27653,7 +27726,7 @@
             "img": "arrow",
             "transform": [0, 1, -1, 0, 19.205, 22.89],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 94,
+            "obstacleId": 95,
             "y": 0.51
           }
         },
@@ -27734,7 +27807,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 27.68, 10.1425],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 97,
+            "obstacleId": 98,
             "y": 0.41000000000000003
           }
         },
@@ -27756,7 +27829,7 @@
             "img": "arrow",
             "transform": [0, -1, 1, 0, 26.18, 10.1425],
             "direction": {"x": 0, "y": -1},
-            "obstacleId": 98,
+            "obstacleId": 99,
             "y": 0.41000000000000003
           }
         },
@@ -27842,7 +27915,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 27.68477, 19.82018],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 101,
+            "obstacleId": 102,
             "y": 0.41000000000000003
           }
         },
@@ -27864,7 +27937,7 @@
             "img": "arrow",
             "transform": [0, 1, 1, 0, 26.18477, 19.82018],
             "direction": {"x": 0, "y": 1},
-            "obstacleId": 102,
+            "obstacleId": 103,
             "y": 0.41000000000000003
           }
         },
@@ -27938,7 +28011,7 @@
               12.566065
             ],
             "direction": {"x": -0.7071, "y": 0.7071},
-            "obstacleId": 106,
+            "obstacleId": 107,
             "y": 0.41000000000000003,
             "underTable": true
           }
@@ -28886,7 +28959,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[9.625, 2.975], [9.625, 4.525], [9.025, 4.525], [9.025, 2.975]]
+            [[9.6375, 2.975], [9.6375, 4.525], [9.0125, 4.525], [9.0125, 2.975]]
           ],
           "meta": {
             "obstacle": true,
@@ -29012,7 +29085,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[9.025, 13.525], [9.025, 11.975], [9.625, 11.975], [9.625, 13.525]]
+            [
+              [9.0125, 13.525],
+              [9.0125, 11.975],
+              [9.6375, 11.975],
+              [9.6375, 13.525]
+            ]
           ],
           "meta": {
             "obstacle": true,
@@ -29132,10 +29210,10 @@
           "type": "Polygon",
           "coordinates": [
             [
-              [20.375, 13.525],
-              [20.375, 11.975],
-              [20.975, 11.975],
-              [20.975, 13.525]
+              [20.3625, 13.525],
+              [20.3625, 11.975],
+              [20.9875, 11.975],
+              [20.9875, 13.525]
             ]
           ],
           "meta": {
@@ -29485,12 +29563,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [9.6175, 5.9925],
-              [9.6175, 7.5425],
-              [9.0175, 7.5425],
-              [9.0175, 5.9925]
-            ]
+            [[9.63, 5.9925], [9.63, 7.5425], [9.005, 7.5425], [9.005, 5.9925]]
           ],
           "meta": {
             "obstacle": true,
@@ -29520,12 +29593,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [9.0175, 10.5075],
-              [9.0175, 8.9575],
-              [9.6175, 8.9575],
-              [9.6175, 10.5075]
-            ]
+            [[9.005, 10.5075], [9.005, 8.9575], [9.63, 8.9575], [9.63, 10.5075]]
           ],
           "meta": {
             "obstacle": true,
@@ -29619,6 +29687,27 @@
           "type": "Polygon",
           "coordinates": [
             [
+              [19.9625, 9.1625],
+              [20.475, 9.1625],
+              [20.475, 9.6625],
+              [19.9625, 9.6625]
+            ]
+          ],
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "y": 0.4,
+            "transform": [0, -1, 1, 0, 19.975, 9.6625]
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
               [18.5146, 9.4302],
               [19.0626, 9.9782],
               [18.5765, 10.4643],
@@ -29639,12 +29728,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [
-              [20.9875, 5.975],
-              [20.9875, 7.525],
-              [20.3875, 7.525],
-              [20.3875, 5.975]
-            ]
+            [[21, 5.9875], [21, 7.5375], [20.375, 7.5375], [20.375, 5.9875]]
           ],
           "meta": {
             "obstacle": true,
@@ -29653,13 +29737,13 @@
             "y": 0.7,
             "symKey": "bed--003",
             "origObstacleId": 0,
-            "transform": [-1, 0, 0, 1, 20.9875, 6]
+            "transform": [-1, 0, 0, 1, 20.9875, 6.0125]
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [[20.4, 6.2625], [20.4, 7.2625], [18.5, 7.2625], [18.5, 6.2625]]
+            [[20.4, 6.275], [20.4, 7.275], [18.5, 7.275], [18.5, 6.275]]
           ],
           "meta": {
             "obstacle": true,
@@ -29667,7 +29751,7 @@
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "transform": [-1, 0, 0, 1, 20.400000000000002, 6.2625],
+            "transform": [-1, 0, 0, 1, 20.400000000000002, 6.275],
             "y": 0.6
           }
         },
@@ -35683,7 +35767,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[-0.025, 11.4], [1.525, 11.4], [1.525, 12], [-0.025, 12]]
+            [
+              [-0.025, 11.3875],
+              [1.525, 11.3875],
+              [1.525, 12.0125],
+              [-0.025, 12.0125]
+            ]
           ],
           "meta": {
             "obstacle": true,
@@ -35751,7 +35840,12 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[2.975, 11.4], [4.525, 11.4], [4.525, 12], [2.975, 12]]
+            [
+              [2.975, 11.3875],
+              [4.525, 11.3875],
+              [4.525, 12.0125],
+              [2.975, 12.0125]
+            ]
           ],
           "meta": {
             "obstacle": true,
@@ -44379,8 +44473,33 @@
             "do": "sit",
             "on": true,
             "img": "arrow",
-            "transform": [0.7071, -0.7071, 0.7071, 0.7071, 18.514645, 9.872115],
+            "transform": [0, 1, 1, 0, 20.150000000000002, 9.35],
             "obstacleId": 46,
+            "y": 0.41,
+            "underTable": true,
+            "gmId": -1,
+            "grKey": "g-1r-1",
+            "roomId": -1
+          },
+          "bounds": {"x": 20.05, "y": 9.25, "width": 0.35, "height": 0.35},
+          "type": "point",
+          "x": 20.225,
+          "y": 9.425,
+          "orient": 90,
+          "transform": [0, 1, 1, 0, 20.150000000000002, 9.35],
+          "scale": 1,
+          "det": -1
+        },
+        {
+          "key": "",
+          "meta": {
+            "decor": true,
+            "point": true,
+            "do": "sit",
+            "on": true,
+            "img": "arrow",
+            "transform": [0.7071, -0.7071, 0.7071, 0.7071, 18.514645, 9.872115],
+            "obstacleId": 47,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44403,19 +44522,19 @@
             "do": "lie",
             "on": true,
             "img": "arrow",
-            "transform": [-1, 0, 0, 1, 20.2, 6.6875],
-            "obstacleId": 48,
+            "transform": [-1, 0, 0, 1, 20.2, 6.7],
+            "obstacleId": 49,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 19.95, "y": 6.5875, "width": 0.35, "height": 0.35},
+          "bounds": {"x": 19.95, "y": 6.6, "width": 0.35, "height": 0.35},
           "type": "point",
           "x": 20.125,
-          "y": 6.7625,
+          "y": 6.775,
           "orient": 180,
-          "transform": [-1, 0, 0, 1, 20.2, 6.6875],
+          "transform": [-1, 0, 0, 1, 20.2, 6.7],
           "scale": 1,
           "det": -1
         },
@@ -44495,7 +44614,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 14.29523, 3.41268],
-            "obstacleId": 49,
+            "obstacleId": 50,
             "y": 0.01,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44519,7 +44638,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 13.83273, 4.40018],
-            "obstacleId": 50,
+            "obstacleId": 51,
             "y": 0.61,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44543,7 +44662,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.337605, 7.5747279999999995],
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44567,7 +44686,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 14.950105, 7.5747279999999995],
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44591,7 +44710,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 15.562605000000001, 7.5747279999999995],
-            "obstacleId": 64,
+            "obstacleId": 65,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44622,7 +44741,7 @@
               19.130390000000002,
               3.2818300000000002
             ],
-            "obstacleId": 66,
+            "obstacleId": 67,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44653,7 +44772,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-0.6428, -0.766, 0.766, -0.6428, 19.14289, 4.304798],
-            "obstacleId": 67,
+            "obstacleId": 68,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44677,7 +44796,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0.6428, 0.766, -0.766, 0.6428, 18.361525, 3.29433],
-            "obstacleId": 68,
+            "obstacleId": 69,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44701,7 +44820,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0.6428, -0.766, -0.766, -0.6428, 18.361525, 4.317298],
-            "obstacleId": 69,
+            "obstacleId": 70,
             "y": 0.31,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44948,7 +45067,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 18.447885],
-            "obstacleId": 70,
+            "obstacleId": 71,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44972,7 +45091,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 19.447885],
-            "obstacleId": 71,
+            "obstacleId": 72,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -44996,7 +45115,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, 1, 21.417753, 20.447885],
-            "obstacleId": 72,
+            "obstacleId": 73,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45065,7 +45184,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 11.602115],
-            "obstacleId": 76,
+            "obstacleId": 77,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45089,7 +45208,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 10.602115],
-            "obstacleId": 77,
+            "obstacleId": 78,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45113,7 +45232,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 21.367753, 9.602115],
-            "obstacleId": 78,
+            "obstacleId": 79,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45182,7 +45301,7 @@
             "on": true,
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 7.114615000000001, 17.167753],
-            "obstacleId": 83,
+            "obstacleId": 84,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45316,7 +45435,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 26.787499999999998, 12.9975],
-            "obstacleId": 85,
+            "obstacleId": 86,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45340,7 +45459,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 26.6375, 17.0075],
-            "obstacleId": 86,
+            "obstacleId": 87,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45364,7 +45483,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 29.015, 13.9525],
-            "obstacleId": 87,
+            "obstacleId": 88,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45388,7 +45507,7 @@
             "on": true,
             "img": "arrow",
             "transform": [1, 0, 0, -1, 29.015, 16.2025],
-            "obstacleId": 88,
+            "obstacleId": 89,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45478,7 +45597,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, -1, 0, 10.9575, 20.665],
-            "obstacleId": 90,
+            "obstacleId": 91,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45502,7 +45621,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 10.8075, 22.865],
-            "obstacleId": 91,
+            "obstacleId": 92,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45592,7 +45711,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 19.055, 20.69],
-            "obstacleId": 93,
+            "obstacleId": 94,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45616,7 +45735,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, -1, 0, 19.205, 22.89],
-            "obstacleId": 94,
+            "obstacleId": 95,
             "y": 0.51,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45706,7 +45825,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 27.68, 10.1425],
-            "obstacleId": 97,
+            "obstacleId": 98,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45730,7 +45849,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, -1, 1, 0, 26.18, 10.1425],
-            "obstacleId": 98,
+            "obstacleId": 99,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45820,7 +45939,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 27.68477, 19.82018],
-            "obstacleId": 101,
+            "obstacleId": 102,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45844,7 +45963,7 @@
             "on": true,
             "img": "arrow",
             "transform": [0, 1, 1, 0, 26.18477, 19.82018],
-            "obstacleId": 102,
+            "obstacleId": 103,
             "y": 0.41,
             "gmId": -1,
             "grKey": "g-1r-1",
@@ -45920,7 +46039,7 @@
               7.07561,
               12.566065
             ],
-            "obstacleId": 106,
+            "obstacleId": 107,
             "y": 0.41,
             "underTable": true,
             "gmId": -1,
@@ -47383,7 +47502,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -47615,7 +47739,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -47847,7 +47976,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -48479,7 +48613,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -48541,7 +48680,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -48724,6 +48868,44 @@
           }
         },
         {
+          "symbolKey": "extra--003--chair",
+          "obstacleId": 0,
+          "height": 0.4,
+          "origPoly": {
+            "type": "Polygon",
+            "coordinates": [
+              [[0.5, -0.0125], [0.5, 0.5], [0, 0.5], [0, -0.0125]]
+            ],
+            "meta": {
+              "obstacle": true,
+              "chair": true,
+              "inset": 0.1,
+              "max-h": true,
+              "symKey": "extra--003--chair",
+              "origObstacleId": 0
+            }
+          },
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 19.975,
+            "f": 9.6625
+          },
+          "center": {"x": 20.22, "y": 9.41},
+          "meta": {
+            "obstacle": true,
+            "chair": true,
+            "inset": 0.1,
+            "max-h": true,
+            "symKey": "extra--003--chair",
+            "origObstacleId": 0,
+            "h": 0.4,
+            "decorIds": [81]
+          }
+        },
+        {
           "symbolKey": "console--051",
           "obstacleId": 0,
           "height": 0.6,
@@ -48762,7 +48944,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [81]
+            "decorIds": [82]
           }
         },
         {
@@ -48772,7 +48954,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -48783,8 +48970,15 @@
               "origObstacleId": 0
             }
           },
-          "transform": {"a": -1, "b": 0, "c": 0, "d": 1, "e": 20.9875, "f": 6},
-          "center": {"x": 20.69, "y": 6.75},
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": 1,
+            "e": 20.9875,
+            "f": 6.0125
+          },
+          "center": {"x": 20.69, "y": 6.76},
           "meta": {
             "obstacle": true,
             "table": true,
@@ -48815,16 +49009,16 @@
             "c": 0,
             "d": 1,
             "e": 20.400000000000002,
-            "f": 6.2625
+            "f": 6.275
           },
-          "center": {"x": 19.45, "y": 6.76},
+          "center": {"x": 19.45, "y": 6.78},
           "meta": {
             "obstacle": true,
             "bed": true,
             "h": 0.3,
             "symKey": "bed--005",
             "origObstacleId": 0,
-            "decorIds": [82]
+            "decorIds": [83]
           }
         },
         {
@@ -48859,7 +49053,7 @@
             "h": 0,
             "symKey": "extra--021--shower",
             "origObstacleId": 0,
-            "decorIds": [86]
+            "decorIds": [87]
           }
         },
         {
@@ -48904,7 +49098,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [87]
+            "decorIds": [88]
           }
         },
         {
@@ -49437,7 +49631,7 @@
             "h": 0.3,
             "symKey": "couch-and-chairs--006",
             "origObstacleId": 2,
-            "decorIds": [88, 89, 90]
+            "decorIds": [89, 90, 91]
           }
         },
         {
@@ -49530,7 +49724,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.3,
-            "decorIds": [91]
+            "decorIds": [92]
           }
         },
         {
@@ -49568,7 +49762,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.3,
-            "decorIds": [92]
+            "decorIds": [93]
           }
         },
         {
@@ -49606,7 +49800,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.3,
-            "decorIds": [93]
+            "decorIds": [94]
           }
         },
         {
@@ -49644,7 +49838,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.3,
-            "decorIds": [94]
+            "decorIds": [95]
           }
         },
         {
@@ -49689,7 +49883,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [105]
+            "decorIds": [106]
           }
         },
         {
@@ -49734,7 +49928,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [106]
+            "decorIds": [107]
           }
         },
         {
@@ -49779,7 +49973,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [107]
+            "decorIds": [108]
           }
         },
         {
@@ -49937,7 +50131,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [110]
+            "decorIds": [111]
           }
         },
         {
@@ -49982,7 +50176,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [111]
+            "decorIds": [112]
           }
         },
         {
@@ -50027,7 +50221,7 @@
             "inset": 0.05,
             "symKey": "extra--002--fresher",
             "origObstacleId": 0,
-            "decorIds": [112]
+            "decorIds": [113]
           }
         },
         {
@@ -50219,7 +50413,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.4,
-            "decorIds": [115]
+            "decorIds": [116]
           }
         },
         {
@@ -50324,7 +50518,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [121]
+            "decorIds": [122]
           }
         },
         {
@@ -50366,7 +50560,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [122]
+            "decorIds": [123]
           }
         },
         {
@@ -50408,7 +50602,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [123]
+            "decorIds": [124]
           }
         },
         {
@@ -50450,7 +50644,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [124]
+            "decorIds": [125]
           }
         },
         {
@@ -50537,7 +50731,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [128]
+            "decorIds": [129]
           }
         },
         {
@@ -50579,7 +50773,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [129]
+            "decorIds": [130]
           }
         },
         {
@@ -50659,7 +50853,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [133]
+            "decorIds": [134]
           }
         },
         {
@@ -50701,7 +50895,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [134]
+            "decorIds": [135]
           }
         },
         {
@@ -50802,7 +50996,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.4,
-            "decorIds": [138]
+            "decorIds": [139]
           }
         },
         {
@@ -50833,7 +51027,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.4,
-            "decorIds": [139]
+            "decorIds": [140]
           }
         },
         {
@@ -50941,7 +51135,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.4,
-            "decorIds": [143]
+            "decorIds": [144]
           }
         },
         {
@@ -50979,7 +51173,7 @@
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
             "h": 0.4,
-            "decorIds": [144]
+            "decorIds": [145]
           }
         },
         {
@@ -51168,7 +51362,7 @@
             "inset": 0.05,
             "symKey": "console--051",
             "origObstacleId": 0,
-            "decorIds": [147]
+            "decorIds": [148]
           }
         },
         {
@@ -52703,8 +52897,8 @@
           {"x": 12.2625, "y": 12.5},
           {"x": 11.7625, "y": 12.5},
           {"x": 11.7625, "y": 11.9875},
-          {"x": 9.875, "y": 11.9875},
-          {"x": 9.875, "y": 11.725},
+          {"x": 9.8875, "y": 11.9875},
+          {"x": 9.8875, "y": 11.725},
           {"x": 9.3788, "y": 11.725},
           {"x": 10.2953, "y": 11.3914},
           {"x": 11.3037, "y": 11.7584},
@@ -52731,8 +52925,8 @@
           {"x": 11.3037, "y": 4.7416},
           {"x": 10.2953, "y": 5.1086},
           {"x": 9.3788, "y": 4.775},
-          {"x": 9.875, "y": 4.775},
-          {"x": 9.875, "y": 4.5125},
+          {"x": 9.8875, "y": 4.775},
+          {"x": 9.8875, "y": 4.5125},
           {"x": 11.7625, "y": 4.5125},
           {"x": 11.7625, "y": 4},
           {"x": 12.2625, "y": 4},
@@ -52776,11 +52970,13 @@
           {"x": 17.6875, "y": 5.675},
           {"x": 17.6875, "y": 7.9375},
           {"x": 18.2875, "y": 7.9375},
-          {"x": 18.2875, "y": 7.5125},
-          {"x": 20.1375, "y": 7.5125},
-          {"x": 20.1375, "y": 7.775},
-          {"x": 20.675, "y": 7.775},
-          {"x": 20.675, "y": 9.425},
+          {"x": 18.2875, "y": 7.525},
+          {"x": 20.125, "y": 7.525},
+          {"x": 20.125, "y": 7.7875},
+          {"x": 20.675, "y": 7.7875},
+          {"x": 20.675, "y": 8.9125},
+          {"x": 19.7125, "y": 8.9125},
+          {"x": 19.7125, "y": 9.425},
           {"x": 19.1625, "y": 9.425},
           {"x": 19.1625, "y": 9.7245},
           {"x": 18.5146, "y": 9.0766},
@@ -52797,8 +52993,8 @@
           {"x": 18.6963, "y": 11.7584},
           {"x": 19.7047, "y": 11.3914},
           {"x": 20.6212, "y": 11.725},
-          {"x": 20.125, "y": 11.725},
-          {"x": 20.125, "y": 11.9875},
+          {"x": 20.1125, "y": 11.725},
+          {"x": 20.1125, "y": 11.9875},
           {"x": 18.2375, "y": 11.9875},
           {"x": 18.2375, "y": 12.5},
           {"x": 17.7375, "y": 12.5},
@@ -53227,397 +53423,397 @@
           {"x": 25.8125, "y": 14.6625}
         ],
         "tris": [
-          [521, 522, 523],
-          [521, 523, 524],
-          [524, 519, 521],
-          [519, 524, 514],
-          [515, 519, 514],
-          [516, 519, 515],
-          [516, 517, 519],
-          [517, 518, 519],
-          [513, 514, 524],
-          [513, 524, 525],
-          [513, 525, 528],
-          [513, 528, 530],
-          [530, 512, 513],
-          [530, 511, 512],
-          [507, 511, 530],
-          [510, 511, 507],
-          [509, 510, 507],
-          [509, 507, 508],
-          [507, 530, 506],
-          [530, 489, 506],
-          [530, 488, 489],
-          [530, 531, 488],
-          [533, 488, 531],
-          [533, 487, 488],
-          [540, 487, 533],
-          [540, 486, 487],
-          [542, 486, 540],
-          [543, 486, 542],
-          [486, 543, 573],
-          [35, 486, 573],
-          [486, 35, 485],
-          [485, 35, 36],
-          [485, 36, 474],
-          [475, 485, 474],
-          [475, 484, 485],
-          [475, 482, 484],
-          [475, 476, 482],
-          [477, 482, 476],
-          [480, 482, 477],
-          [480, 481, 482],
-          [478, 480, 477],
-          [478, 479, 480],
+          [523, 524, 525],
+          [523, 525, 526],
+          [526, 521, 523],
+          [521, 526, 516],
+          [517, 521, 516],
+          [518, 521, 517],
+          [518, 519, 521],
+          [519, 520, 521],
+          [515, 516, 526],
+          [515, 526, 527],
+          [515, 527, 530],
+          [515, 530, 532],
+          [532, 514, 515],
+          [532, 513, 514],
+          [509, 513, 532],
+          [512, 513, 509],
+          [511, 512, 509],
+          [511, 509, 510],
+          [509, 532, 508],
+          [532, 491, 508],
+          [532, 490, 491],
+          [532, 533, 490],
+          [535, 490, 533],
+          [535, 489, 490],
+          [542, 489, 535],
+          [542, 488, 489],
+          [544, 488, 542],
+          [545, 488, 544],
+          [488, 545, 575],
+          [35, 488, 575],
+          [488, 35, 487],
+          [487, 35, 36],
+          [487, 36, 476],
+          [477, 487, 476],
+          [477, 486, 487],
+          [477, 484, 486],
+          [477, 478, 484],
+          [479, 484, 478],
+          [482, 484, 479],
           [482, 483, 484],
-          [474, 36, 62],
-          [474, 62, 64],
-          [473, 474, 64],
-          [470, 473, 64],
-          [471, 473, 470],
-          [471, 472, 473],
-          [470, 64, 65],
-          [469, 470, 65],
-          [467, 469, 65],
-          [467, 468, 469],
-          [591, 467, 65],
-          [466, 467, 591],
-          [466, 591, 592],
-          [464, 466, 592],
-          [465, 466, 464],
-          [369, 464, 592],
-          [464, 369, 414],
-          [414, 419, 464],
-          [419, 414, 417],
-          [418, 419, 417],
-          [417, 414, 415],
-          [415, 416, 417],
-          [464, 419, 420],
-          [464, 420, 431],
-          [433, 464, 431],
-          [464, 433, 463],
-          [463, 433, 448],
-          [450, 463, 448],
-          [463, 450, 451],
-          [463, 451, 462],
-          [451, 458, 462],
-          [458, 451, 453],
-          [453, 457, 458],
-          [454, 457, 453],
-          [454, 455, 457],
-          [455, 456, 457],
-          [451, 452, 453],
-          [461, 462, 458],
-          [461, 458, 460],
-          [458, 459, 460],
-          [449, 450, 448],
-          [434, 448, 433],
-          [434, 447, 448],
-          [444, 447, 434],
-          [444, 446, 447],
-          [444, 445, 446],
-          [434, 437, 444],
-          [435, 437, 434],
-          [435, 436, 437],
-          [437, 438, 444],
-          [438, 443, 444],
-          [443, 438, 441],
-          [441, 442, 443],
-          [441, 438, 440],
-          [440, 438, 439],
-          [431, 432, 433],
-          [421, 431, 420],
-          [421, 430, 431],
-          [425, 430, 421],
-          [426, 430, 425],
-          [426, 429, 430],
-          [428, 429, 426],
-          [428, 426, 427],
-          [425, 421, 422],
-          [422, 423, 425],
-          [423, 424, 425],
-          [369, 383, 414],
-          [370, 383, 369],
-          [383, 370, 381],
-          [382, 383, 381],
-          [381, 370, 371],
-          [381, 371, 380],
-          [371, 375, 380],
-          [371, 372, 375],
-          [372, 373, 375],
-          [373, 374, 375],
-          [380, 375, 376],
-          [380, 376, 379],
-          [376, 378, 379],
-          [376, 377, 378],
-          [383, 413, 414],
-          [398, 413, 383],
-          [400, 413, 398],
-          [412, 413, 400],
-          [412, 400, 401],
-          [408, 412, 401],
-          [408, 411, 412],
-          [408, 410, 411],
-          [410, 408, 409],
-          [408, 401, 403],
-          [407, 408, 403],
-          [407, 403, 404],
-          [405, 407, 404],
-          [405, 406, 407],
-          [401, 402, 403],
-          [398, 399, 400],
-          [398, 383, 384],
-          [398, 384, 397],
-          [397, 384, 387],
-          [397, 387, 394],
-          [396, 397, 394],
-          [395, 396, 394],
-          [394, 387, 388],
-          [394, 388, 393],
-          [390, 393, 388],
-          [390, 391, 393],
-          [392, 393, 391],
-          [388, 389, 390],
-          [387, 384, 385],
-          [385, 386, 387],
-          [369, 592, 593],
-          [367, 369, 593],
-          [369, 367, 368],
-          [593, 366, 367],
-          [593, 594, 366],
-          [184, 366, 594],
-          [364, 366, 184],
-          [366, 364, 365],
-          [363, 364, 184],
-          [185, 363, 184],
-          [361, 363, 185],
+          [480, 482, 479],
+          [480, 481, 482],
+          [484, 485, 486],
+          [476, 36, 62],
+          [476, 62, 64],
+          [475, 476, 64],
+          [472, 475, 64],
+          [473, 475, 472],
+          [473, 474, 475],
+          [472, 64, 65],
+          [471, 472, 65],
+          [469, 471, 65],
+          [469, 470, 471],
+          [593, 469, 65],
+          [468, 469, 593],
+          [468, 593, 594],
+          [466, 468, 594],
+          [467, 468, 466],
+          [371, 466, 594],
+          [466, 371, 416],
+          [416, 421, 466],
+          [421, 416, 419],
+          [420, 421, 419],
+          [419, 416, 417],
+          [417, 418, 419],
+          [466, 421, 422],
+          [466, 422, 433],
+          [435, 466, 433],
+          [466, 435, 465],
+          [465, 435, 450],
+          [452, 465, 450],
+          [465, 452, 453],
+          [465, 453, 464],
+          [453, 460, 464],
+          [460, 453, 455],
+          [455, 459, 460],
+          [456, 459, 455],
+          [456, 457, 459],
+          [457, 458, 459],
+          [453, 454, 455],
+          [463, 464, 460],
+          [463, 460, 462],
+          [460, 461, 462],
+          [451, 452, 450],
+          [436, 450, 435],
+          [436, 449, 450],
+          [446, 449, 436],
+          [446, 448, 449],
+          [446, 447, 448],
+          [436, 439, 446],
+          [437, 439, 436],
+          [437, 438, 439],
+          [439, 440, 446],
+          [440, 445, 446],
+          [445, 440, 443],
+          [443, 444, 445],
+          [443, 440, 442],
+          [442, 440, 441],
+          [433, 434, 435],
+          [423, 433, 422],
+          [423, 432, 433],
+          [427, 432, 423],
+          [428, 432, 427],
+          [428, 431, 432],
+          [430, 431, 428],
+          [430, 428, 429],
+          [427, 423, 424],
+          [424, 425, 427],
+          [425, 426, 427],
+          [371, 385, 416],
+          [372, 385, 371],
+          [385, 372, 383],
+          [384, 385, 383],
+          [383, 372, 373],
+          [383, 373, 382],
+          [373, 377, 382],
+          [373, 374, 377],
+          [374, 375, 377],
+          [375, 376, 377],
+          [382, 377, 378],
+          [382, 378, 381],
+          [378, 380, 381],
+          [378, 379, 380],
+          [385, 415, 416],
+          [400, 415, 385],
+          [402, 415, 400],
+          [414, 415, 402],
+          [414, 402, 403],
+          [410, 414, 403],
+          [410, 413, 414],
+          [410, 412, 413],
+          [412, 410, 411],
+          [410, 403, 405],
+          [409, 410, 405],
+          [409, 405, 406],
+          [407, 409, 406],
+          [407, 408, 409],
+          [403, 404, 405],
+          [400, 401, 402],
+          [400, 385, 386],
+          [400, 386, 399],
+          [399, 386, 389],
+          [399, 389, 396],
+          [398, 399, 396],
+          [397, 398, 396],
+          [396, 389, 390],
+          [396, 390, 395],
+          [392, 395, 390],
+          [392, 393, 395],
+          [394, 395, 393],
+          [390, 391, 392],
+          [389, 386, 387],
+          [387, 388, 389],
+          [371, 594, 595],
+          [369, 371, 595],
+          [371, 369, 370],
+          [595, 368, 369],
+          [595, 596, 368],
+          [186, 368, 596],
+          [366, 368, 186],
+          [368, 366, 367],
+          [365, 366, 186],
+          [187, 365, 186],
+          [363, 365, 187],
+          [363, 364, 365],
+          [363, 187, 189],
+          [361, 363, 189],
           [361, 362, 363],
-          [361, 185, 187],
-          [359, 361, 187],
-          [359, 360, 361],
-          [359, 187, 206],
-          [206, 340, 359],
-          [340, 206, 207],
-          [339, 340, 207],
-          [207, 596, 339],
-          [207, 595, 596],
-          [207, 269, 595],
-          [268, 269, 207],
-          [207, 208, 268],
-          [268, 208, 255],
-          [268, 255, 256],
-          [268, 256, 267],
-          [267, 256, 258],
-          [266, 267, 258],
-          [266, 258, 261],
-          [265, 266, 261],
-          [261, 262, 265],
-          [262, 264, 265],
-          [262, 263, 264],
-          [261, 258, 259],
-          [261, 259, 260],
-          [256, 257, 258],
-          [208, 209, 255],
-          [209, 253, 255],
-          [209, 252, 253],
-          [209, 210, 252],
-          [252, 210, 232],
-          [233, 252, 232],
-          [252, 233, 236],
-          [238, 252, 236],
-          [239, 252, 238],
-          [239, 250, 252],
-          [250, 239, 240],
-          [250, 240, 247],
-          [250, 247, 248],
-          [250, 248, 249],
-          [247, 240, 246],
-          [240, 241, 246],
-          [241, 243, 246],
-          [241, 242, 243],
-          [246, 243, 244],
-          [246, 244, 245],
+          [361, 189, 208],
+          [208, 342, 361],
+          [342, 208, 209],
+          [341, 342, 209],
+          [209, 598, 341],
+          [209, 597, 598],
+          [209, 271, 597],
+          [270, 271, 209],
+          [209, 210, 270],
+          [270, 210, 257],
+          [270, 257, 258],
+          [270, 258, 269],
+          [269, 258, 260],
+          [268, 269, 260],
+          [268, 260, 263],
+          [267, 268, 263],
+          [263, 264, 267],
+          [264, 266, 267],
+          [264, 265, 266],
+          [263, 260, 261],
+          [263, 261, 262],
+          [258, 259, 260],
+          [210, 211, 257],
+          [211, 255, 257],
+          [211, 254, 255],
+          [211, 212, 254],
+          [254, 212, 234],
+          [235, 254, 234],
+          [254, 235, 238],
+          [240, 254, 238],
+          [241, 254, 240],
+          [241, 252, 254],
+          [252, 241, 242],
+          [252, 242, 249],
+          [252, 249, 250],
           [252, 250, 251],
-          [236, 237, 238],
-          [233, 235, 236],
-          [233, 234, 235],
-          [211, 232, 210],
-          [211, 212, 232],
-          [212, 231, 232],
-          [231, 212, 215],
-          [231, 215, 226],
-          [226, 228, 231],
+          [249, 242, 248],
+          [242, 243, 248],
+          [243, 245, 248],
+          [243, 244, 245],
+          [248, 245, 246],
+          [248, 246, 247],
+          [254, 252, 253],
+          [238, 239, 240],
+          [235, 237, 238],
+          [235, 236, 237],
+          [213, 234, 212],
+          [213, 214, 234],
+          [214, 233, 234],
+          [233, 214, 217],
+          [233, 217, 228],
+          [228, 230, 233],
+          [228, 229, 230],
+          [232, 233, 230],
+          [231, 232, 230],
+          [223, 228, 217],
+          [223, 226, 228],
+          [223, 225, 226],
+          [223, 224, 225],
           [226, 227, 228],
-          [230, 231, 228],
-          [229, 230, 228],
-          [221, 226, 215],
-          [221, 224, 226],
-          [221, 223, 224],
-          [221, 222, 223],
-          [224, 225, 226],
-          [215, 220, 221],
-          [215, 217, 220],
-          [215, 216, 217],
-          [217, 219, 220],
+          [217, 222, 223],
+          [217, 219, 222],
           [217, 218, 219],
-          [214, 215, 212],
-          [212, 213, 214],
-          [254, 255, 253],
-          [595, 269, 270],
-          [595, 270, 598],
-          [598, 270, 273],
-          [598, 273, 274],
-          [274, 597, 598],
-          [274, 291, 597],
-          [274, 287, 291],
-          [274, 282, 287],
-          [274, 279, 282],
-          [274, 278, 279],
-          [274, 275, 278],
-          [278, 275, 276],
-          [278, 276, 277],
-          [282, 279, 280],
-          [282, 280, 281],
-          [287, 282, 283],
-          [286, 287, 283],
-          [286, 283, 285],
-          [285, 283, 284],
-          [291, 287, 288],
-          [290, 291, 288],
-          [290, 288, 289],
-          [292, 597, 291],
-          [292, 596, 597],
-          [292, 339, 596],
-          [292, 293, 339],
-          [293, 338, 339],
-          [338, 293, 295],
-          [295, 308, 338],
-          [307, 308, 295],
-          [307, 295, 296],
-          [305, 307, 296],
+          [219, 221, 222],
+          [219, 220, 221],
+          [216, 217, 214],
+          [214, 215, 216],
+          [256, 257, 255],
+          [597, 271, 272],
+          [597, 272, 600],
+          [600, 272, 275],
+          [600, 275, 276],
+          [276, 599, 600],
+          [276, 293, 599],
+          [276, 289, 293],
+          [276, 284, 289],
+          [276, 281, 284],
+          [276, 280, 281],
+          [276, 277, 280],
+          [280, 277, 278],
+          [280, 278, 279],
+          [284, 281, 282],
+          [284, 282, 283],
+          [289, 284, 285],
+          [288, 289, 285],
+          [288, 285, 287],
+          [287, 285, 286],
+          [293, 289, 290],
+          [292, 293, 290],
+          [292, 290, 291],
+          [294, 599, 293],
+          [294, 598, 599],
+          [294, 341, 598],
+          [294, 295, 341],
+          [295, 340, 341],
+          [340, 295, 297],
+          [297, 310, 340],
+          [309, 310, 297],
+          [309, 297, 298],
+          [307, 309, 298],
+          [307, 308, 309],
+          [307, 298, 299],
+          [304, 307, 299],
+          [305, 307, 304],
           [305, 306, 307],
-          [305, 296, 297],
-          [302, 305, 297],
-          [303, 305, 302],
-          [303, 304, 305],
-          [298, 302, 297],
-          [301, 302, 298],
-          [299, 301, 298],
-          [299, 300, 301],
-          [337, 338, 308],
-          [308, 310, 337],
-          [308, 309, 310],
-          [336, 337, 310],
-          [336, 310, 311],
-          [322, 336, 311],
-          [322, 335, 336],
-          [322, 324, 335],
-          [324, 322, 323],
-          [334, 335, 324],
-          [333, 334, 324],
-          [330, 333, 324],
-          [332, 333, 330],
-          [332, 330, 331],
-          [329, 330, 324],
-          [326, 329, 324],
-          [328, 329, 326],
-          [328, 326, 327],
+          [300, 304, 299],
+          [303, 304, 300],
+          [301, 303, 300],
+          [301, 302, 303],
+          [339, 340, 310],
+          [310, 312, 339],
+          [310, 311, 312],
+          [338, 339, 312],
+          [338, 312, 313],
+          [324, 338, 313],
+          [324, 337, 338],
+          [324, 326, 337],
           [326, 324, 325],
-          [321, 322, 311],
-          [311, 320, 321],
-          [311, 317, 320],
-          [311, 316, 317],
-          [311, 313, 316],
-          [311, 312, 313],
-          [316, 313, 314],
-          [316, 314, 315],
-          [320, 317, 318],
-          [320, 318, 319],
-          [293, 294, 295],
-          [273, 270, 271],
-          [271, 272, 273],
-          [358, 359, 340],
-          [358, 340, 341],
-          [358, 341, 355],
-          [358, 355, 357],
-          [355, 356, 357],
-          [341, 354, 355],
-          [341, 351, 354],
-          [341, 350, 351],
-          [341, 347, 350],
-          [341, 346, 347],
-          [342, 346, 341],
-          [342, 343, 346],
-          [344, 346, 343],
-          [344, 345, 346],
-          [348, 350, 347],
-          [348, 349, 350],
-          [352, 354, 351],
-          [352, 353, 354],
-          [187, 205, 206],
-          [187, 188, 205],
-          [205, 188, 191],
-          [191, 204, 205],
-          [192, 204, 191],
-          [195, 204, 192],
-          [195, 203, 204],
-          [196, 203, 195],
-          [196, 199, 203],
-          [196, 198, 199],
-          [196, 197, 198],
-          [199, 200, 203],
-          [203, 200, 202],
-          [200, 201, 202],
-          [192, 194, 195],
-          [192, 193, 194],
-          [189, 191, 188],
-          [189, 190, 191],
-          [185, 186, 187],
-          [594, 589, 184],
-          [594, 591, 589],
-          [588, 589, 591],
-          [588, 591, 65],
-          [588, 65, 66],
-          [588, 66, 587],
-          [68, 587, 66],
-          [587, 68, 181],
-          [587, 181, 590],
-          [181, 183, 590],
-          [181, 182, 183],
-          [184, 590, 183],
-          [184, 589, 590],
-          [181, 68, 578],
-          [579, 181, 578],
-          [181, 579, 180],
-          [579, 581, 180],
-          [579, 580, 581],
-          [160, 180, 581],
-          [162, 180, 160],
-          [165, 180, 162],
-          [166, 180, 165],
-          [166, 179, 180],
-          [177, 179, 166],
-          [177, 178, 179],
-          [176, 177, 166],
-          [176, 166, 167],
-          [173, 176, 167],
-          [175, 176, 173],
-          [175, 173, 174],
-          [168, 173, 167],
-          [173, 168, 172],
-          [168, 169, 172],
-          [169, 171, 172],
-          [170, 171, 169],
-          [165, 162, 163],
-          [165, 163, 164],
-          [161, 162, 160],
-          [581, 148, 160],
-          [148, 581, 582],
-          [147, 148, 582],
-          [582, 133, 147],
-          [133, 582, 584],
-          [584, 132, 133],
-          [117, 132, 584],
+          [336, 337, 326],
+          [335, 336, 326],
+          [332, 335, 326],
+          [334, 335, 332],
+          [334, 332, 333],
+          [331, 332, 326],
+          [328, 331, 326],
+          [330, 331, 328],
+          [330, 328, 329],
+          [328, 326, 327],
+          [323, 324, 313],
+          [313, 322, 323],
+          [313, 319, 322],
+          [313, 318, 319],
+          [313, 315, 318],
+          [313, 314, 315],
+          [318, 315, 316],
+          [318, 316, 317],
+          [322, 319, 320],
+          [322, 320, 321],
+          [295, 296, 297],
+          [275, 272, 273],
+          [273, 274, 275],
+          [360, 361, 342],
+          [360, 342, 343],
+          [360, 343, 357],
+          [360, 357, 359],
+          [357, 358, 359],
+          [343, 356, 357],
+          [343, 353, 356],
+          [343, 352, 353],
+          [343, 349, 352],
+          [343, 348, 349],
+          [344, 348, 343],
+          [344, 345, 348],
+          [346, 348, 345],
+          [346, 347, 348],
+          [350, 352, 349],
+          [350, 351, 352],
+          [354, 356, 353],
+          [354, 355, 356],
+          [189, 207, 208],
+          [189, 190, 207],
+          [207, 190, 193],
+          [193, 206, 207],
+          [194, 206, 193],
+          [197, 206, 194],
+          [197, 205, 206],
+          [198, 205, 197],
+          [198, 201, 205],
+          [198, 200, 201],
+          [198, 199, 200],
+          [201, 202, 205],
+          [205, 202, 204],
+          [202, 203, 204],
+          [194, 196, 197],
+          [194, 195, 196],
+          [191, 193, 190],
+          [191, 192, 193],
+          [187, 188, 189],
+          [596, 591, 186],
+          [596, 593, 591],
+          [590, 591, 593],
+          [590, 593, 65],
+          [590, 65, 66],
+          [590, 66, 589],
+          [68, 589, 66],
+          [589, 68, 183],
+          [589, 183, 592],
+          [183, 185, 592],
+          [183, 184, 185],
+          [186, 592, 185],
+          [186, 591, 592],
+          [183, 68, 580],
+          [581, 183, 580],
+          [183, 581, 182],
+          [581, 583, 182],
+          [581, 582, 583],
+          [162, 182, 583],
+          [164, 182, 162],
+          [167, 182, 164],
+          [168, 182, 167],
+          [168, 181, 182],
+          [179, 181, 168],
+          [179, 180, 181],
+          [178, 179, 168],
+          [178, 168, 169],
+          [175, 178, 169],
+          [177, 178, 175],
+          [177, 175, 176],
+          [170, 175, 169],
+          [175, 170, 174],
+          [170, 171, 174],
+          [171, 173, 174],
+          [172, 173, 171],
+          [167, 164, 165],
+          [167, 165, 166],
+          [163, 164, 162],
+          [583, 148, 162],
+          [148, 583, 584],
+          [147, 148, 584],
+          [584, 133, 147],
+          [133, 584, 586],
+          [586, 132, 133],
+          [117, 132, 586],
           [117, 131, 132],
           [117, 118, 131],
           [131, 118, 121],
@@ -53632,11 +53828,11 @@
           [126, 127, 128],
           [119, 121, 118],
           [119, 120, 121],
-          [585, 117, 584],
-          [585, 116, 117],
-          [575, 116, 585],
-          [575, 114, 116],
-          [99, 114, 575],
+          [587, 117, 586],
+          [587, 116, 117],
+          [577, 116, 587],
+          [577, 114, 116],
+          [99, 114, 577],
           [99, 113, 114],
           [99, 100, 113],
           [113, 100, 111],
@@ -53651,9 +53847,9 @@
           [104, 105, 103],
           [107, 109, 110],
           [107, 108, 109],
-          [575, 97, 99],
-          [576, 97, 575],
-          [86, 97, 576],
+          [577, 97, 99],
+          [578, 97, 577],
+          [86, 97, 578],
           [86, 96, 97],
           [86, 87, 96],
           [96, 87, 91],
@@ -53664,10 +53860,10 @@
           [91, 87, 88],
           [89, 91, 88],
           [89, 90, 91],
-          [576, 69, 86],
-          [69, 576, 578],
-          [69, 578, 68],
-          [576, 577, 578],
+          [578, 69, 86],
+          [69, 578, 580],
+          [69, 580, 68],
+          [578, 579, 580],
           [86, 69, 84],
           [84, 85, 86],
           [83, 84, 69],
@@ -53686,8 +53882,8 @@
           [70, 71, 72],
           [98, 99, 97],
           [114, 115, 116],
-          [575, 585, 586],
-          [582, 583, 584],
+          [577, 587, 588],
+          [584, 585, 586],
           [147, 133, 138],
           [147, 138, 139],
           [147, 139, 141],
@@ -53701,15 +53897,17 @@
           [138, 134, 135],
           [138, 135, 136],
           [138, 136, 137],
-          [160, 148, 149],
-          [160, 149, 159],
-          [159, 149, 152],
-          [152, 155, 159],
+          [162, 148, 149],
+          [162, 149, 161],
+          [155, 161, 149],
+          [159, 161, 155],
+          [160, 161, 159],
+          [157, 159, 155],
+          [157, 158, 159],
+          [157, 155, 156],
+          [152, 155, 149],
           [155, 152, 154],
           [152, 153, 154],
-          [155, 157, 159],
-          [155, 156, 157],
-          [158, 159, 157],
           [149, 150, 152],
           [150, 151, 152],
           [66, 67, 68],
@@ -53739,49 +53937,49 @@
           [40, 41, 42],
           [37, 39, 40],
           [37, 38, 39],
-          [573, 574, 35],
-          [574, 550, 35],
-          [571, 550, 574],
-          [571, 549, 550],
-          [547, 549, 571],
-          [547, 548, 549],
-          [547, 571, 572],
-          [546, 547, 572],
-          [544, 546, 572],
-          [546, 544, 545],
-          [543, 544, 572],
-          [543, 572, 573],
-          [550, 551, 35],
-          [551, 553, 35],
-          [551, 552, 553],
-          [33, 35, 553],
+          [575, 576, 35],
+          [576, 552, 35],
+          [573, 552, 576],
+          [573, 551, 552],
+          [549, 551, 573],
+          [549, 550, 551],
+          [549, 573, 574],
+          [548, 549, 574],
+          [546, 548, 574],
+          [548, 546, 547],
+          [545, 546, 574],
+          [545, 574, 575],
+          [552, 553, 35],
+          [553, 555, 35],
+          [553, 554, 555],
+          [33, 35, 555],
           [35, 33, 34],
-          [560, 33, 553],
-          [560, 562, 33],
-          [560, 561, 562],
-          [562, 32, 33],
-          [562, 563, 32],
-          [563, 13, 32],
-          [563, 12, 13],
-          [10, 12, 563],
+          [562, 33, 555],
+          [562, 564, 33],
+          [562, 563, 564],
+          [564, 32, 33],
+          [564, 565, 32],
+          [565, 13, 32],
+          [565, 12, 13],
+          [10, 12, 565],
           [10, 11, 12],
-          [9, 10, 563],
-          [564, 9, 563],
-          [9, 564, 6],
+          [9, 10, 565],
+          [566, 9, 565],
+          [9, 566, 6],
           [9, 6, 7],
           [7, 8, 9],
-          [564, 5, 6],
-          [5, 564, 565],
-          [5, 565, 568],
-          [5, 568, 569],
-          [5, 569, 3],
+          [566, 5, 6],
+          [5, 566, 567],
+          [5, 567, 570],
+          [5, 570, 571],
+          [5, 571, 3],
           [3, 4, 5],
-          [569, 1, 3],
-          [569, 0, 1],
-          [569, 570, 0],
+          [571, 1, 3],
+          [571, 0, 1],
+          [571, 572, 0],
           [1, 2, 3],
-          [566, 568, 565],
-          [566, 567, 568],
+          [568, 570, 567],
+          [568, 569, 570],
           [32, 13, 14],
           [32, 14, 31],
           [16, 31, 14],
@@ -53789,8 +53987,8 @@
           [17, 20, 16],
           [17, 18, 20],
           [18, 19, 20],
-          [31, 20, 30],
-          [30, 20, 29],
+          [20, 30, 31],
+          [20, 29, 30],
           [20, 26, 29],
           [20, 25, 26],
           [20, 22, 25],
@@ -53800,40 +53998,40 @@
           [26, 28, 29],
           [26, 27, 28],
           [14, 15, 16],
-          [553, 559, 560],
-          [553, 554, 559],
-          [554, 556, 559],
-          [556, 554, 555],
-          [556, 557, 559],
-          [557, 558, 559],
-          [540, 541, 542],
-          [534, 540, 533],
-          [534, 539, 540],
-          [537, 539, 534],
-          [537, 538, 539],
-          [536, 537, 534],
-          [536, 534, 535],
-          [533, 531, 532],
-          [506, 489, 490],
-          [491, 506, 490],
-          [491, 501, 506],
-          [501, 491, 492],
-          [501, 492, 495],
-          [501, 495, 496],
-          [501, 496, 499],
-          [499, 500, 501],
-          [498, 499, 496],
-          [498, 496, 497],
-          [493, 495, 492],
-          [493, 494, 495],
-          [506, 501, 505],
-          [501, 503, 505],
+          [555, 561, 562],
+          [555, 556, 561],
+          [556, 558, 561],
+          [558, 556, 557],
+          [558, 559, 561],
+          [559, 560, 561],
+          [542, 543, 544],
+          [536, 542, 535],
+          [536, 541, 542],
+          [539, 541, 536],
+          [539, 540, 541],
+          [538, 539, 536],
+          [538, 536, 537],
+          [535, 533, 534],
+          [508, 491, 492],
+          [493, 508, 492],
+          [493, 503, 508],
+          [503, 493, 494],
+          [503, 494, 497],
+          [503, 497, 498],
+          [503, 498, 501],
           [501, 502, 503],
-          [504, 505, 503],
-          [528, 529, 530],
-          [525, 527, 528],
-          [525, 526, 527],
-          [519, 520, 521]
+          [500, 501, 498],
+          [500, 498, 499],
+          [495, 497, 494],
+          [495, 496, 497],
+          [508, 503, 507],
+          [503, 505, 507],
+          [503, 504, 505],
+          [506, 507, 505],
+          [530, 531, 532],
+          [527, 529, 530],
+          [527, 528, 529],
+          [521, 522, 523]
         ]
       },
       "navRects": [
@@ -58364,7 +58562,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -58472,7 +58675,12 @@
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
-              [[0.6, -0.025], [0.6, 1.525], [0, 1.525], [0, -0.025]]
+              [
+                [0.6125, -0.025],
+                [0.6125, 1.525],
+                [-0.0125, 1.525],
+                [-0.0125, -0.025]
+              ]
             ],
             "meta": {
               "obstacle": true,
@@ -63131,5 +63339,5 @@
       "walls": {"color": "#000", "opacity": 0.5, "bandBrightness": 1}
     }
   },
-  "hash": {"obstacles": -1055826792}
+  "hash": {"obstacles": -1693145912}
 }

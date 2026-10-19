@@ -195,7 +195,7 @@
     "bed--003 0": {
       "symbolKey": "bed--003",
       "obstacleId": 0,
-      "rect": {"x": 1639, "y": 443, "width": 120, "height": 310},
+      "rect": {"x": 1639, "y": 443, "width": 125, "height": 310},
       "sheetId": 0
     },
     "console--031 0": {
