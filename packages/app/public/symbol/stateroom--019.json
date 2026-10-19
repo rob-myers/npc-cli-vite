@@ -27,7 +27,7 @@
       "children": [
         {
           "id": "54f768e2-5984-429d-881b-60ecf5a478cc",
-          "name": "extra--004--desk y=0.7",
+          "name": "extra--004--desk y=0.75",
           "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 2.5, "f": 32.5},
@@ -42,12 +42,12 @@
           "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
-          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 40.5, "f": 33.5},
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 40.5, "f": 35},
           "type": "symbol",
           "srcKey": "extra--003--chair",
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": 0.3, "y": 0.3},
-          "cssTransform": "matrix(0, 1, -1, 0, 40.8, 33.8)"
+          "cssTransform": "matrix(0, 1, -1, 0, 40.8, 35.3)"
         },
         {
           "id": "9d15feda-b751-46c9-aebe-6ff6531f5a72",
