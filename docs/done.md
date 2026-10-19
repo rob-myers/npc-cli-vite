@@ -4,6 +4,10 @@
 
 ### Animation and Npc
 
+- ✅ sidestep (command executed in PROFILE)
+
+- ✅ time slow-slider
+
 - ✅ improve walk/run arms e.g. bent out a bit
 - ✅ improve psi animation e.g. no height steps
 - ❌ can raise pistol while sit (±90deg) or lie (lie_sit_up ±90deg)
@@ -51,6 +55,9 @@
 
 ### Inventory
 
+- ✅ why does npc focus need `inventory`?
+  - needed to raise/lower/aim phaser
+
 - ❌ restyle inventory icons e.g. darker
 
 - ✅ refine drop inventory
@@ -84,6 +91,37 @@
   - cannot turn into shield
 
 ### Phaser and Psi
+
+- ✅ remove aim-freeze
+  - can use slow-slider instead
+
+- ✅ psi + click npc targets too
+  - can "become" and issue commands
+  - can target without line of sight
+  - play "crossing" animation: generalized from only sit/lie
+
+- ✅ standing aiming npc should avoid sitting non-aiming npc
+
+- ✅  support shoot while sit or lie
+  - ✅ sit
+  - ✅  lie
+
+- ✅ three eventualities related to npc focus and firing on limbs
+  - missed (player)
+  - dodged (target)
+  - shielded (target) maybe needs effect
+
+- ✅ psi raised shows breathing
+- ❌ psi entrainment when target sleeps
+  - Next I want to implement "turning" or "entrainment" in the case where the target npc is sleeping i.e.
+- ❌ psi entrainment when target pacified
+- ❌ player can place personal shield
+- ❌ psi use cases
+  - place shield, hide in room, distract onenter room, pacify
+  - break stalemates e.g. believe player has moved elsewhere
+- ❌ crouch needs justification
+- ❌ instead of free-switch-player an endless supply of ancillaries?
+  - maybe "isolated takedown" converts to ancillary
 
 - ✅ sword/psi: cancel when do e.g. sit
 - ✅ sword: no bodyPart defaults to head
@@ -254,6 +292,10 @@
 - ✅ MapEdit uses allotment for 2 panes
 - ✅ finish geomorph 101
 - ✅ finish geomorph 302
+
+## MCP
+
+- ✅ "mcp testing" up until Claude's turn ends — see `docs/mcp.md`
 
 ## Media
 
