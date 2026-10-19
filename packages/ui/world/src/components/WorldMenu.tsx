@@ -775,11 +775,10 @@ export function WorldMenu() {
             <Slider.Root
               orientation="vertical"
               min={0}
-              max={2}
-              step={0.05}
-              value={w.gameTime.scale}
+              max={timeScaleStops}
+              value={timeScaleToStop(w.gameTime.scale)}
               disabled={w.client}
-              onValueChange={(scale) => w.gameTime.setScale(scale)}
+              onValueChange={(stop) => w.gameTime.setScale(stopToTimeScale(stop))}
               className="h-20"
             >
               <Slider.Control className="flex h-full w-5 cursor-pointer justify-center">
@@ -1249,6 +1248,12 @@ const sectionHeaderClass = (touch: boolean) =>
   cn("px-2 py-1 text-xs text-neutral-400", touch && "px-3 py-2.5 text-sm border-t border-neutral-800");
 
 /** Every `<input type="range">` in the menu — touch gets a fatter thumb and more room to drag */
+/** The time scale slider is logarithmic: stop `n > 0` is `2 ** (n / 20 - 5)`, from 1/32 to 2, and stop `0` is `0` */
+const timeScaleStops = 120;
+const stopToTimeScale = (stop: number) => (stop === 0 ? 0 : 2 ** (stop / 20 - 5));
+const timeScaleToStop = (scale: number) =>
+  scale <= 0 ? 0 : Math.min(timeScaleStops, Math.max(1, Math.round(20 * (Math.log2(scale) + 5))));
+
 const rangeInputClass = (touch: boolean, width: string) =>
   cn(
     "accent-white cursor-pointer appearance-none bg-transparent",
