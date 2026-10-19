@@ -491,8 +491,13 @@ export default function Phasers() {
         beam.gun.target = armed === true || state.holds(npc.key) ? 1 : 0;
         // gone at once between the two halves of a teleport, and as they sit or lie, unless raised: stowed lain, it stays in hand
         const seated = w.npc.npcToDoable[npc.key] != null && armed === false;
-        if (leaving(npc) || seated) beam.gun.target = beam.gun.presence = 0;
-        else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
+        if (leaving(npc)) beam.gun.target = beam.gun.presence = 0;
+        else if (seated) {
+          // lowered sat, it shrinks into the hand only as the arm comes back down
+          const lowering = isPhaserPose(anim.upper.key) ? anim.upper.blend / phaserConfig.stowBlend : 0;
+          beam.gun.target = lowering > 0 ? 1 : 0;
+          beam.gun.presence = Math.min(beam.gun.presence, lowering);
+        } else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
         const locking = target !== undefined && arm.inSight === true && inReach;
         /** The arm is all the way up: no beam on its way there, nor any left as it comes down */
         const raised = armed === true && anim.upper.key === phaserConfig.pose && anim.upper.blend === 1;
@@ -935,6 +940,8 @@ const phaserConfig = {
   /** How far down the forearm the hand holds it, which it fades into and out of — model units */
   grip: 0.29,
   fadeSecs: 0.3,
+  /** Sat, the gun shrinks into the hand over the last of the arm's way down, as this much of its blend */
+  stowBlend: 0.25,
   /** Seconds the arm takes to swing most of the way onto a new point, sat or lain — see `glideArmAt` */
   armGlideSecs: 0.15,
   /** Radians off where it is headed the arm counts as aimed, though it eases on — see `isAimed` */
