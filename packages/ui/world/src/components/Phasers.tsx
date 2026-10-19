@@ -148,6 +148,19 @@ export default function Phasers() {
         const arm = state.arms.get(npcKey);
         return arm?.armed === true && arm.target !== null;
       },
+      lowerAwhile(npcKey) {
+        const arm = state.arms.get(npcKey);
+        if (arm?.armed !== true) return null;
+        const { target, toward, lowerAt } = arm;
+        const pointAt = arm.pointAt === null ? null : { ...arm.pointAt };
+        state.disarm(npcKey);
+        return () => {
+          if (state.isArmed(npcKey) === true) return; // raised since
+          const opts = { at: target?.npcKey, part: target?.part, toward: toward ?? undefined, once: lowerAt !== null };
+          state.arm(npcKey, opts);
+          if (pointAt !== null) state.pointAt(npcKey, pointAt);
+        };
+      },
       markDirty() {
         for (const arm of state.arms.values()) arm.cast = null;
       },
@@ -622,6 +635,8 @@ export type State = PhaserResources & {
   isRaised(npcKey: string): boolean;
   /** Armed, and locked on someone */
   isLocked(npcKey: string): boolean;
+  /** Lowers it, returning what raises it again as it was: `null` if it was not raised */
+  lowerAwhile(npcKey: string): null | (() => void);
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
   /** How a shot at `to` by `npcKey` ends: the hud's debug badge decides, else jsh, else it hits */

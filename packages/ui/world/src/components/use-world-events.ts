@@ -1036,8 +1036,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               }
             : null;
         if (aim !== null) anim.upper.aim = aim;
-        // an aim is let go only now, so the arm goes from it straight to the reach
-        if (side === "right") w.phasers?.disarm(key);
+        // an aim is let go only now, so the arm goes from it straight to the reach. Sat or lain, it is raised again after
+        const rearm = side === "right" ? (w.phasers?.lowerAwhile(key) ?? null) : null;
         const { sitReach } = inventoryConfig;
         const start = w.gameTime.now();
         /** Held whilst paused */
@@ -1050,12 +1050,14 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         await wait(sat ? sitReach.outSecs : inventoryConfig[crouch ? "crouchSecs" : "reachSecs"]);
         if (w.n[key] === npc) act();
         w.view.forceUpdate();
-        if (sat) await wait(sitReach.homeSecs); // their hand home, before the arm is let go
+        // their hand home, before the arm is let go. To raise the phaser again, only until the reach's aim is out
+        if (sat) await wait(rearm === null ? sitReach.homeSecs : sitReach.aimOut[1]);
         // back as they were, unless something else has moved them on
         if (anim.pose === shown) anim.setPose(anim.idleClip.name as AnimationClipKey);
         if (u.key === shown) anim.setUpper(before, { side });
         // let go with the arm, unless another pose takes it over at once
         if (before !== null && anim.upper.aim === aim) anim.upper.aim = null;
+        if (w.n[key] === npc) rearm?.();
       },
       async raycast(origSrc, origDst) {
         let src = helper.parseGroundPoint(origSrc);
