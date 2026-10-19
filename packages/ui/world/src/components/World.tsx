@@ -12,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 import debounce from "debounce";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
-import { Timer } from "three-stdlib";
 import type { OverrideProperties } from "type-fest";
 import { AssetsSchema, type AssetsType, SheetsSchema, type SheetsType } from "../assets.schema";
 import { skinSliceDims } from "../const.both";
@@ -29,6 +28,7 @@ import {
   roomLabelTexOpts,
 } from "../const.env";
 import type { WorldUiMeta } from "../schema";
+import { GameTime, type RealTime, realTime } from "../service/clock";
 import DerivedGmsData from "../service/DerivedGmsData";
 import { emptyTiledNavmeshResponse } from "../service/empty-nav-response";
 import { createLayoutInstance } from "../service/geomorph";
@@ -90,9 +90,14 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npcBrightness: defaultNpcBrightness, // the theme's, once there is one — see `onChangeTheme`
 
       events: new Broadcaster(),
+      gameTime: new GameTime(getWorldStore(meta.worldKey).read().timeScale, (timeScale) => {
+        getWorldStore(meta.worldKey).patch({ timeScale });
+        state.update();
+      }),
+      realTime,
+      realTickSecs: 0,
       reqAnimId: -1,
       threeReady: false,
-      timer: new Timer(),
       touchDevice,
 
       hash: 0,
@@ -231,9 +236,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
           fold.resolve = resolve;
 
           const from = fold.amount;
-          const startMs = performance.now();
+          const startSecs = state.realTime.now();
           const step = () => {
-            const t = ms > 0 ? Math.min(1, (performance.now() - startMs) / ms) : 1;
+            const t = ms > 0 ? Math.min(1, (1000 * (state.realTime.now() - startSecs)) / ms) : 1;
             state.setWorldFold(from + (amount - from) * t);
             if (t === 1) {
               fold.animId = 0;
@@ -281,15 +286,17 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       }, settledMs),
       onTick() {
         state.reqAnimId = requestAnimationFrame(state.onTick);
-        state.timer.update();
-        const delta = state.timer.getDelta();
+        state.gameTime.update();
+        const delta = state.gameTime.delta();
+        const realDelta = state.realTime.now() - state.realTickSecs;
+        state.realTickSecs += realDelta;
         state.door.onTick(delta);
         state.net?.onTick(delta); // mirrors move before the npc tick animates them
         state.npc.onTick(delta);
         state.e.postNpcTick();
         state.speech?.onTick(delta);
         state.bubble?.onTick(delta);
-        state.view.followPlayer(delta);
+        state.view.followPlayer(realDelta);
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -409,7 +416,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
 
   useEffect(() => {
     if (!state.npc) return;
-    state.timer.reset();
+    state.gameTime.reset();
+    state.realTickSecs = state.realTime.now();
     state.view?.syncRenderMode();
     if (state.disabled === false) state.onTick();
     state.events.next({ key: state.disabled ? "disabled" : "enabled" });
@@ -582,9 +590,13 @@ export type State = {
     }
   >;
   r3fStore: RootStore;
+  /** Game time, scaled. Behaviours, animations, timers and detection run on it */
+  gameTime: GameTime;
+  /** Real time, never scaled. The camera and UI marks run on it */
+  realTime: RealTime;
+  realTickSecs: number;
   reqAnimId: number;
   threeReady: boolean;
-  timer: Timer;
   touchDevice: boolean;
 
   assets: AssetsType;

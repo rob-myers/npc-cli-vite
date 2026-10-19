@@ -11,8 +11,9 @@ keeps going unless it can be told to stop. A `Task` is how it is told.
 
 ## The class
 
-- `new Task(isPaused?)`: time waited on counts only whilst not `isPaused()`, e.g. `() => w.disabled`, so a paused
-  World runs no timeout down.
+- `new Task(isPaused?, nowMs?)`: time waited on counts only whilst not `isPaused()`, e.g. `() => w.disabled`, so a paused
+  World runs no timeout down. `nowMs` is the clock, by default real time. Pass game time
+  (`() => 1000 * w.gameTime.now()`) for a timeout that slows with the game.
 - `cancel()` ends it. `isCancelled` says whether it has been.
 - `wait(promise?, ms?)` resolves with `promise`, or after `ms`, whichever is first. It rejects once the task is
   cancelled. With neither, it waits until then.

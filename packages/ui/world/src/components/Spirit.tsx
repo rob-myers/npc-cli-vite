@@ -398,7 +398,7 @@ export default function Spirit() {
 
   w.spirit = state;
 
-  useFrame((_, delta) => state.onFrame(delta), -3);
+  useFrame((_, delta) => state.onFrame(delta * w.gameTime.scale), -3);
 
   // unmounted or hot-reloaded part way, else the view, light and rooms are left as the effect had them
   useEffect(

@@ -761,6 +761,27 @@ export function WorldMenu() {
               <RobotIcon className="size-5 text-neutral-200" alt="ship" weight="bold" />
             )}
           </div>
+
+          {/* game time per real second — see `GameTime.setScale` */}
+          <div
+            data-keep-menu-open
+            title="time scale (double-click for 1×)"
+            className="flex flex-col items-center gap-1 bg-neutral-800 py-1.5 w-9"
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={() => w.gameTime.setScale(1)}
+          >
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.05}
+              value={w.gameTime.scale}
+              disabled={w.client}
+              onChange={(e) => w.gameTime.setScale(Number(e.target.value))}
+              className="h-20 w-4 cursor-pointer accent-white [direction:rtl] [writing-mode:vertical-lr]"
+            />
+            <span className="text-[10px] tabular-nums text-neutral-300">{w.gameTime.scale.toFixed(2)}</span>
+          </div>
         </div>
 
         <div className="absolute top-full left-0 mt-1 w-max max-w-64 flex flex-col gap-0.5">

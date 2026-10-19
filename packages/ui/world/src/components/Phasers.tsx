@@ -33,7 +33,7 @@ export default function Phasers() {
     (): State => ({
       ...createPhaserResources(),
       arms: new Map(),
-      tickedMs: performance.now(),
+      tickedSecs: w.gameTime.now(),
 
       aimOff(npcKey, at) {
         const arm = state.arms.get(npcKey);
@@ -56,7 +56,7 @@ export default function Phasers() {
         arm.toward = opts.toward ?? null;
         arm.cast = null; // look again, at once
         arm.hitAt = null;
-        const secs = w.timer.getElapsedTime();
+        const secs = w.gameTime.now();
         arm.lowerAt = opts.once === true ? secs + phaserConfig.onceSecs : null;
         const drawn = arm.armed === false;
         arm.armed = true;
@@ -138,7 +138,7 @@ export default function Phasers() {
       },
       isDrawnIn(npcKey) {
         const arm = state.arms.get(npcKey);
-        return arm?.armed === true && arm.holdUntil > w.timer.getElapsedTime();
+        return arm?.armed === true && arm.holdUntil > w.gameTime.now();
       },
       isRaised(npcKey) {
         const upper = w.n?.[npcKey]?.anim.upper;
@@ -194,11 +194,11 @@ export default function Phasers() {
         return state.isArmed(npcKey);
       },
       onTick(instant = false) {
-        const now = performance.now();
-        const delta = Math.min((now - state.tickedMs) / 1000, 0.1);
+        const now = w.gameTime.now();
+        const delta = Math.min(now - state.tickedSecs, 0.1);
         const step = delta / phaserConfig.fadeSecs;
-        state.tickedMs = now;
-        state.phase.value = w.timer.getElapsedTime();
+        state.tickedSecs = now;
+        state.phase.value = w.gameTime.now();
 
         let count = 0;
         for (const [srcKey, arm] of state.arms) {
@@ -339,7 +339,7 @@ export default function Phasers() {
         w.hud?.update();
       },
       wield(npc, arm, delta) {
-        const secs = w.timer.getElapsedTime();
+        const secs = w.gameTime.now();
         // one shot only: lowered once it is over, or given up on
         const over = arm.target === null && arm.beam.locked.presence === 0; // its beam faded first
         if (arm.lowerAt !== null && arm.armed === true && (over || secs >= arm.lowerAt)) {
@@ -594,7 +594,7 @@ export default function Phasers() {
 export type State = PhaserResources & {
   /** By npcKey: whoever is armed, or whose gun or beam still fades */
   arms: Map<string, ArmEntry>;
-  tickedMs: number;
+  tickedSecs: number;
 
   /** Radians their arm points off `at`, sat or lain — `null` unless it aims by `armAt` */
   aimOff(npcKey: string, at: Geom.VectJson): null | number;

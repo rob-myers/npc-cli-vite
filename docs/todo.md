@@ -30,6 +30,10 @@
 
 - ✅ standing aiming npc should avoid sitting non-aiming npc
 
+- ✅ time slow-slider
+- 🚧 remove aim-freeze
+  - can use slow-slider instead
+
 - why does npc focus need `inventory`?
 
 - psi + click npc targets too

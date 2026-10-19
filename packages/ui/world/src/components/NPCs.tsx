@@ -537,7 +537,7 @@ export default function NPCs() {
       onTick(delta) {
         if (w.client === false) crowdApi.update(state.crowd, w.nav.navMesh, delta);
         const { positions } = state.physics;
-        const worldSeconds = w.timer.getElapsedTime();
+        const worldSeconds = w.gameTime.now();
 
         for (const npc of Object.values(state.npc)) {
           npc.anim.tick(delta);

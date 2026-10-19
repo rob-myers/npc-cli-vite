@@ -143,7 +143,8 @@ declare namespace Geomorph {
     /** Gap (open region) is at the door.dst end when true, door.src end when false */
     gapAtHighLambda: boolean;
 
-    closeTimeoutId?: number;
+    /** Cancels its pending auto-close, a game-time timer */
+    cancelClose?: () => void;
   };
 
   type ToggleDoorOpts = {

@@ -87,7 +87,10 @@ export default function NpcFocus() {
         if (state.busy === true || w.n?.[npcKey] === undefined) return null;
         state.before = { paused: w.disabled, raised };
         state.busy = w.view.pausedHidden = true;
-        state.task = new Task(() => w.disabled);
+        state.task = new Task(
+          () => w.disabled,
+          () => 1000 * w.gameTime.now(),
+        );
         return state.task;
       },
       cancel() {

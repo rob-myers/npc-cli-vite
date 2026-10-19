@@ -1,6 +1,7 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
 import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
+import { Task } from "@npc-cli/util";
 import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 import { awaitPausable, isPaused, npcQuery, parkedNow, plan, request, roomOthers } from "./plan.main";
@@ -1213,12 +1214,12 @@ export async function pose(
   const armAim = { at: npc.position.clone(), from: npc.position.clone().fromArray(poseConfig.aimFrom), weight: 0 };
   let ownAim: typeof face.aim = null;
   let holdUntil = 0;
-  let secs = w.timer.getElapsedTime();
+  let secs = w.gameTime.now();
   try {
     if (npc.isMoving()) end("moved");
     else npc.anim.setUpper(clipKey);
     while (ended === undefined && w.n[npc.key] === npc && mine()) {
-      const delta = w.timer.getElapsedTime() - secs;
+      const delta = w.gameTime.now() - secs;
       secs += delta;
       if (npc.agent?.neis.some(({ dist }) => dist < poseConfig.near ** 2) === true) {
         holdUntil = secs + poseConfig.holdSecs; // `dist` squared
@@ -1558,6 +1559,21 @@ export async function spawn(
 }
 
 /**
+ * Game time per real second, `0` to `2`. Prints it, after setting it if given
+ * ```sh
+ * timescale
+ * timescale 0.25
+ * ```
+ */
+export function timescale({ api, args, w }: JshCli.RunArg) {
+  api.setPausable("world", false); // else it waits out a pause
+  const scale = Number(args[0] ?? w.gameTime.scale);
+  if (Number.isNaN(scale)) throw Error(`timescale: not a number: ${args[0]}`);
+  w.gameTime.setScale(scale);
+  return w.gameTime.scale;
+}
+
+/**
  * ```sh
  * unlock g0d29 g0d30
  * unlock door:g0d29
@@ -1699,6 +1715,31 @@ export async function* wasd_delta(
       yield { x: npc.position.x + x, y: npc.position.z + y };
     }
   }
+}
+
+/**
+ * Sleeps `secs` of game time, counted only whilst this process runs. A kill rejects it
+ * ```sh
+ * wSleep 2
+ * ```
+ */
+export async function wSleep({ api, args, w }: JshCli.RunArg, secs = Number(args[0])) {
+  let suspended = api.isRunning() === false;
+  const task = new Task(
+    () => suspended,
+    () => 1000 * w.gameTime.now(),
+  );
+  const handlers = api.handleStatus({
+    onSuspend: () => ((suspended = true), true),
+    onResume: () => ((suspended = false), true),
+    cleanup: () => task.cancel(),
+  });
+  try {
+    await task.wait(undefined, 1000 * secs);
+  } finally {
+    handlers.dispose();
+  }
+  if (task.isCancelled === true) throw api.getKillError();
 }
 
 const wasdConfig = {
