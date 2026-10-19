@@ -1440,11 +1440,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       postNpcTick() {
-        const now = w.gameTime.now();
-        for (const timer of state.timers) {
-          if (timer.at > now) continue;
-          state.timers.delete(timer);
-          timer.fn();
+        if (state.timers.size > 0) {
+          const now = w.gameTime.now();
+          for (const timer of state.timers) {
+            if (timer.at > now) continue;
+            state.timers.delete(timer);
+            timer.fn();
+          }
         }
         state.syncDoorways();
         // before the shadows, which read the slot it settles — and every tick, since an npc waiting

@@ -78,20 +78,28 @@ Its pain clip plays once, then (`hitConfig.next`):
 
 ## Npc focus
 
-Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`), as does jsh `focus target-0`:
+With the phaser or psi raised, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`), as does jsh
+`focus target-0`. What it offers is from what is raised, both if both (`withPhaser`, `withPsi`):
+
+- **The phaser**: their six parts, numbered first. These need the steps below: the turn and line of sight.
+- **Psi**: one mark on their head, "Become". It needs no turn, no line of sight and no facing. Chosen, the player
+  leaves their body for theirs (`w.spirit.start`, see `docs/spirit.md`).
+
+jsh `focus` with neither raised raises the phaser. With the phaser (`aimPhaser`):
 
 1. `aimAt` raises the phaser pointed at them (`arm`'s `toward`) and turns the player to them (at most `turnMaxMs`).
    Stood, they turn round. Sat, their head turns. Lain, they roll to the pose that reaches them, if one does.
 2. It waits for the phaser to come up clear as they now stand, by a cast made there (`w.phasers.isClear`, at most
    `raiseMaxMs`).
 3. Drawn in there, or stowed lain, or out of sight (a raycast is blocked), it ends with the phaser left raised.
+   With psi too, only "Become" is offered.
 4. It waits for the aim to land (`w.phasers.isAimed`: the arm within 3°, and no roll still fading in).
-5. A dot is pinned on their head, body, arms and legs from their bones each frame, its label in a column to one side,
+5. A dot is pinned on each part offered from its bone each frame, its label in a column to one side,
    joined by a line. The World does not pause: to take more time, slow it with the time scale (the menu's slider,
    jsh `timescale`). Only whilst paused, and any of it pokes past the canvas edge (`screenMargin`), does the view
    pan, by part of the overflow each frame (`keepInRate`).
-6. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or
-   Cancel at the top, shoots nothing. A phaser left raised no longer points at them.
+6. A mark pressed, or its digit, shoots that part once, at one bone (`npcFocusConfig.bones`), or becomes them.
+   Escape, or Cancel at the top, does neither. A phaser left raised no longer points at them.
 
 Whilst it runs:
 
@@ -104,9 +112,13 @@ Whilst it runs:
 With the marks up:
 
 - Escape ends the focus, not pausing the World.
-- The marks fade out whilst the player faces more than `maxOffAimRad` (15°) away (`offAim`), and back in as they
-  face them again. Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of reach.
+- The phaser's marks hide whilst the player faces more than `maxOffAimRad` (15°) away, and come back as they face
+  them again (`shown`). Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of
+  reach. "Become" stays. With nothing left to show, the overlay fades (`offAim`).
+- Lowering the phaser hides its marks, and lowering psi hides "Become". Once neither is raised it ends as Escape
+  does (`isLost`).
+- Raising psi or the phaser whilst it is open focuses afresh, so its choices are offered too (`raisedAtOpen`). A
+  phaser raised by hand then stays up after.
 - A click on someone, them or another, replaces the focus with a fresh one.
-- Lowering the phaser, e.g. by `e`, ends it as Escape does (`isLost`).
 
 After it, the phaser is lowered (`arm`'s `once`, at most `onceSecs`), unless it was raised before the click, e.g. by `e`.

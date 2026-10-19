@@ -1,15 +1,16 @@
-import { Task, useStateRef } from "@npc-cli/util";
+import { cn, Task, useStateRef } from "@npc-cli/util";
 import { deltaAngle } from "maath/misc";
 import { AnimatePresence, motion } from "motion/react";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { bodyPartPoint } from "../service/phaser-beam";
 import type { Npc } from "./npc";
+import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
 
 /**
- * Focus on an npc, as a called shot in Fallout: carrying a phaser, a press on someone raises it and turns to them, then pins a
- * choice over each part of them. The World runs on, slowed by its time scale if wanted — see `docs/engagements.md`
+ * Focus on an npc, as a called shot in Fallout: with the phaser raised, a press on someone turns to them and pins a choice
+ * over each part of them. With psi raised, a mark on their head offers to become them. See `docs/engagements.md`
  */
 export default function NpcFocus() {
   const w = useContext(WorldContext);
@@ -21,6 +22,11 @@ export default function NpcFocus() {
       busy: false,
       offAim: false,
       before: null,
+      withPhaser: false,
+      withPsi: false,
+      offered: [],
+      placed: [],
+      raised: { psi: false, phaser: false },
       el: null,
       markEls: {},
       dotEls: {},
@@ -31,7 +37,7 @@ export default function NpcFocus() {
         state.task?.cancel();
         state.task = null;
         // left raised, it no longer points at them
-        if (w.phasers.isArmed(w.player.key) === true) w.phasers.arm(w.player.key);
+        if (state.withPhaser === true && w.phasers.isArmed(w.player.key) === true) w.phasers.arm(w.player.key);
       },
       async aimAt(npcKey) {
         const player = w.player.get();
@@ -42,47 +48,25 @@ export default function NpcFocus() {
         if (replaced !== null) state.dismiss();
         const task = state.begin(npcKey, replaced?.raised);
         if (task === null) return;
-        const { isClear, isDrawnIn } = w.phasers;
-        const { key } = player;
         await task.run(async () => {
           await task.until(() => w.disabled === false); // e.g. begun by jsh whilst paused
-          const { anim } = player;
-          // raised as they turn to them, lain rolling to them if they can. Each is waited on for so long at most
-          w.phasers.arm(key, { toward: npcKey });
-          if (w.phasers.isArmed(key) === false) return state.abandon(); // e.g. in pain
-          if (anim.posture === "sit") {
-            // sat they turn their head, not round
-            anim.turnTo(npc.point);
-            await task.until(() => anim.turn.value === anim.turn.target, npcFocusConfig.turnMaxMs);
-          } else if (anim.posture === "stand") {
-            await task.wait(
-              player.look({ at: npc.point }).catch(() => {}),
-              npcFocusConfig.turnMaxMs,
-            );
+          if (state.withPhaser === true && (await aimPhaser(w, task, player, npc)) === false) {
+            if (state.withPsi === false) return state.abandon();
+            // psi's choice alone: the phaser no longer points at them
+            if (w.phasers.isArmed(player.key) === true) w.phasers.arm(player.key);
+            state.withPhaser = false;
           }
-          // too far round to face, sat or lain
-          if (isOffAim(player, npc) === true) return state.abandon();
-          // clear as they now stand: the turn may have swept past a wall, or ended facing one
-          await task.until(() => isClear(key) === true, npcFocusConfig.raiseMaxMs);
-          // still drawn in, or stowed lain, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
-          if (isDrawnIn(key) === true) return state.abandon();
-          // aimed, any roll done, before the marks show
-          await task.until(() => w.phasers.isAimed(key) === true, npcFocusConfig.raiseMaxMs);
-          const seen = await task.wait(
-            w.e.raycast(player.point, npc.point).then(
-              ({ hit }) => hit === null,
-              () => false,
-            ),
-          );
-          if (seen === true && w.n?.[npcKey] !== undefined) state.open(npcKey);
+          if (w.n?.[npcKey] !== undefined) state.open(npcKey);
           if (state.npcKey === null) return state.abandon();
           await task.wait(); // until it is over
         });
       },
       begin(npcKey, raised = w.phasers.isArmed(w.player.key)) {
         if (state.busy === true || w.n?.[npcKey] === undefined) return null;
-        state.before = { raised };
-        state.busy = true;
+        const withPsi = w.e.isPsiRaised(w.player.key);
+        // with neither raised, e.g. by jsh `focus`, the phaser is raised
+        const withPhaser = w.phasers.isArmed(w.player.key) === true || withPsi === false;
+        Object.assign(state, { before: { raised }, busy: true, withPsi, withPhaser });
         state.task = new Task(
           () => w.disabled,
           () => 1000 * w.gameTime.now(),
@@ -91,16 +75,18 @@ export default function NpcFocus() {
       },
       cancel() {
         if (state.npcKey !== null) return state.close(null);
-        if (state.before?.raised === false) w.phasers.disarm(w.player.key);
+        if (state.withPhaser === true && state.before?.raised === false) w.phasers.disarm(w.player.key);
         state.abandon();
       },
       close(part) {
-        const { npcKey, before } = state;
+        const { npcKey, before, withPhaser } = state;
         if (npcKey === null || before === null) return;
         state.dismiss();
+        const there = w.n?.[npcKey] !== undefined;
+        if (part === "become" && there === true && w.spirit.phase === "idle") w.spirit.start(npcKey);
         // raised for the shot alone, else lowered: unless raised before, when it stays so
-        const once = before.raised === false;
-        if (part !== null && w.n?.[npcKey] !== undefined) {
+        const once = withPhaser === true && before.raised === false;
+        if (part !== null && part !== "become" && there === true) {
           w.phasers.arm(w.player.key, { at: npcKey, part: npcFocusConfig.bones[part], once });
         } else if (once === true) w.phasers.disarm(w.player.key);
       },
@@ -112,13 +98,6 @@ export default function NpcFocus() {
       },
       isFixated() {
         return state.busy === true && state.npcKey === null;
-      },
-      isLost() {
-        return (
-          w.n?.[state.npcKey ?? ""] === undefined ||
-          w.player.exists() === false ||
-          w.phasers.isArmed(w.player.key) === false
-        );
       },
       isOffAim() {
         const player = w.player.get();
@@ -132,8 +111,30 @@ export default function NpcFocus() {
         const { controls } = w.view;
         if (state.npcKey !== null || npc === undefined || controls == null) return;
         if (state.busy === false && state.begin(npcKey) === null) return;
-        Object.assign(state, { npcKey, placedKey: npcKey });
+        const offered = offeredBy(state);
+        const { key } = w.player;
+        const raised = { psi: w.e.isPsiRaised(key), phaser: w.phasers.isArmed(key) };
+        Object.assign(state, { npcKey, placedKey: npcKey, offered, placed: offered.map(({ part }) => part), raised });
         state.setOffAim(false); // a node kept from one still fading out has its last fade
+        state.update();
+      },
+      async offerMore(npcKey, psi, phaser) {
+        const player = w.player.get();
+        const npc = w.n?.[npcKey];
+        const { task, raised } = state;
+        Object.assign(raised, { psi: raised.psi || psi, phaser: raised.phaser || phaser });
+        if (player === undefined || npc === undefined || task === null) return;
+        if (psi === true) state.withPsi = true;
+        if (phaser === true) {
+          if (state.before !== null) state.before.raised = true; // raised by hand, it stays up after
+          await task.run(async () => {
+            state.withPhaser = await aimPhaser(w, task, player, npc);
+            // out of sight: psi's choice alone, the phaser no longer pointed at them
+            if (state.withPhaser === false && w.phasers.isArmed(player.key) === true) w.phasers.arm(player.key);
+          });
+        }
+        if (state.npcKey !== npcKey) return;
+        state.offered = offeredBy(state);
         state.update();
       },
       keepOnScreen(bounds, canvas, box) {
@@ -154,10 +155,19 @@ export default function NpcFocus() {
         const box = state.el.getBoundingClientRect();
         const onScreen = (bone: string) => toScreen(bodyPartPoint(npc, bone, tmpPoint), camera, canvas, box);
         const middle = onScreen("chest").x;
-        const parts = npcFocusParts.map(({ part }) => ({ part, ...onScreen(npcFocusConfig.bones[part]) }));
+        const parts = state.placed.map((part) => ({ part, ...onScreen(npcFocusConfig.bones[part]) }));
         const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+        for (const { part } of state.offered) if (state.placed.includes(part) === false) hideMark(state, part);
         for (const mark of layoutMarks(parts, middle)) writeMark(state, mark, bounds);
         if (w.disabled === true) state.keepOnScreen(bounds, canvas, box); // running, the view is follow's
+      },
+      shown() {
+        const { key } = w.player;
+        const psi = state.withPsi === true && w.e.isPsiRaised(key) === true;
+        const phaser = state.withPhaser === true && w.phasers.isArmed(key) === true;
+        if (w.n?.[state.npcKey ?? ""] === undefined || w.player.exists() === false || (!psi && !phaser)) return null;
+        const onAim = phaser === true && state.isOffAim() === false;
+        return state.offered.flatMap(({ part }) => ((part === "become" ? psi : onAim) ? part : []));
       },
       setOffAim(offAim) {
         state.offAim = offAim;
@@ -171,12 +181,13 @@ export default function NpcFocus() {
   w.npcFocus = state;
 
   useEffect(() => {
-    if (state.npcKey === null) return;
+    const { npcKey } = state;
+    if (npcKey === null) return;
     /** Before the World's own keys: a digit there is a slot of the bar */
     const onKeyDown = (e: KeyboardEvent) => {
       if (state.offAim === true) return;
-      const part = npcFocusParts[Number(e.key) - 1]?.part;
-      if (e.key !== "Escape" && part === undefined) return;
+      const part = state.offered[Number(e.key) - 1]?.part;
+      if (e.key !== "Escape" && (part === undefined || state.placed.includes(part) === false)) return;
       e.preventDefault();
       e.stopPropagation();
       state.close(e.key === "Escape" ? null : part);
@@ -184,9 +195,15 @@ export default function NpcFocus() {
     window.addEventListener("keydown", onKeyDown, true);
     // pinned to their parts in the World's own frame, after the camera has moved, so they keep up with it
     const unsubscribe = w.e.addFrameCallback(() => {
-      if (state.isLost() === true) return state.close(null); // e.g. lowered by `e`
-      const offAim = state.isOffAim();
+      const { key } = w.player;
+      const morePsi = state.raised.psi === false && w.e.isPsiRaised(key) === true;
+      const morePhaser = state.raised.phaser === false && w.phasers.isArmed(key) === true;
+      if (morePsi === true || morePhaser === true) void state.offerMore(npcKey, morePsi, morePhaser);
+      const shown = state.shown();
+      if (shown === null) return state.close(null); // e.g. lowered by `e`
+      const offAim = shown.length === 0;
       if (offAim !== state.offAim) state.setOffAim(offAim);
+      state.placed = shown;
       if (offAim === false) state.place();
     });
     w.r3f?.invalidate(); // a first frame to place them in
@@ -215,7 +232,7 @@ export default function NpcFocus() {
         >
           <div ref={(el) => void (state.el = el)} className="absolute inset-0 transition-opacity duration-400">
             <svg className="absolute inset-0 size-full overflow-visible" aria-hidden="true">
-              {npcFocusParts.map(({ part }) => (
+              {state.offered.map(({ part }) => (
                 <line
                   key={part}
                   ref={(el) => void (state.lineEls[part] = el)}
@@ -225,12 +242,15 @@ export default function NpcFocus() {
                 />
               ))}
             </svg>
-            {npcFocusParts.map(({ part, label }, i) => (
+            {state.offered.map(({ part, label }, i) => (
               // its dot on the part, its label in a column beside them
               <div key={part} className="group contents">
                 <span
                   ref={(el) => void (state.dotEls[part] = el)}
-                  className="pointer-events-auto absolute top-0 left-0 size-3 cursor-pointer rounded-full border border-white/80 bg-red-500/30 group-hover:bg-red-500"
+                  className={cn(
+                    "pointer-events-auto absolute top-0 left-0 size-3 cursor-pointer rounded-full border border-white/80",
+                    part === "become" ? "bg-sky-400/30 group-hover:bg-sky-400" : "bg-red-500/30 group-hover:bg-red-500",
+                  )}
                   style={{ visibility: "hidden" }}
                   onPointerDown={(e) => {
                     e.stopPropagation();
@@ -294,6 +314,51 @@ function layoutMarks(parts: { part: FocusPart; x: number; y: number }[], middle:
   });
 }
 
+/** Raises the phaser and turns `player` to `npc`, each waited on for so long at most: `true` once aimed at them in sight */
+async function aimPhaser(w: WorldState, task: Task, player: Npc, npc: Npc) {
+  const { anim, key } = player;
+  // raised as they turn to them, lain rolling to them if they can
+  w.phasers.arm(key, { toward: npc.key });
+  if (w.phasers.isArmed(key) === false) return false; // e.g. in pain
+  if (anim.posture === "sit") {
+    // sat they turn their head, not round
+    anim.turnTo(npc.point);
+    await task.until(() => anim.turn.value === anim.turn.target, npcFocusConfig.turnMaxMs);
+  } else if (anim.posture === "stand") {
+    await task.wait(
+      player.look({ at: npc.point }).catch(() => {}),
+      npcFocusConfig.turnMaxMs,
+    );
+  }
+  // too far round to face, sat or lain
+  if (isOffAim(player, npc) === true) return false;
+  // clear as they now stand: the turn may have swept past a wall, or ended facing one
+  await task.until(() => w.phasers.isClear(key) === true, npcFocusConfig.raiseMaxMs);
+  // still drawn in, or stowed lain, e.g. by a wall alongside: left raised, with nothing to choose
+  if (w.phasers.isDrawnIn(key) === true) return false;
+  // aimed, any roll done, before the marks show
+  await task.until(() => w.phasers.isAimed(key) === true, npcFocusConfig.raiseMaxMs);
+  const seen = await task.wait(
+    w.e.raycast(player.point, npc.point).then(
+      ({ hit }) => hit === null,
+      () => false,
+    ),
+  );
+  return seen === true;
+}
+
+/** The parts offered, in digit order: psi's and the phaser's, by what is raised */
+function offeredBy(state: State) {
+  return npcFocusParts.filter(({ part }) => (part === "become" ? state.withPsi : state.withPhaser));
+}
+
+/** Hides a part's dot, label and line, e.g. the phaser's once off aim */
+function hideMark(state: State, part: FocusPart) {
+  for (const el of [state.dotEls[part], state.markEls[part], state.lineEls[part]]) {
+    if (el != null) el.style.visibility = "hidden";
+  }
+}
+
 /** Writes `mark` to the DOM, not rendered, and grows `bounds` round it */
 function writeMark(state: State, { part, x, y, left, lx, ly }: Mark, bounds: Bounds) {
   const [dot, label, line] = [state.dotEls[part], state.markEls[part], state.lineEls[part]];
@@ -350,8 +415,9 @@ const npcFocusConfig = {
   /** Pixels the overlay keeps inside the canvas edge, and how much of what pokes past the view moves by each frame */
   screenMargin: 16,
   keepInRate: 0.3,
-  /** The bone each part is shot at: each in the hit region of its name — see `hitConfig.region` */
+  /** The bone each part's mark is on, and a shot at it aimed at: each in the hit region of its name — see `hitConfig.region` */
   bones: {
+    become: "head",
     head: "head",
     body: "chest",
     leftArm: "leftforearm",
@@ -363,15 +429,16 @@ const npcFocusConfig = {
 
 export type FocusPart = keyof typeof npcFocusConfig.bones;
 
-/** In digit order */
-const npcFocusParts: { part: FocusPart; label: string }[] = [
+/** In digit order: the phaser's, then psi's */
+const npcFocusParts = [
   { part: "head", label: "Head" },
   { part: "body", label: "Body" },
   { part: "rightArm", label: "Right arm" },
   { part: "leftArm", label: "Left arm" },
   { part: "rightLeg", label: "Right leg" },
   { part: "leftLeg", label: "Left leg" },
-];
+  { part: "become", label: "Become" },
+] as const satisfies readonly { part: FocusPart; label: string }[];
 
 export type State = {
   /** Whom it is open on, else `null` */
@@ -380,13 +447,23 @@ export type State = {
   placedKey: null | string;
   /** From the press until it is over */
   busy: boolean;
-  /** They face more than `maxOffAimRad` away from them: the marks are hidden until they face back */
+  /** Nothing is left to show, e.g. the phaser alone and off aim: the marks are hidden until there is */
   offAim: boolean;
   /** The phaser to go back to */
   before: null | {
     /** Their phaser was up already, e.g. by `e`: it is left up after */
     raised: boolean;
   };
+  /** The phaser's parts are offered: it was raised, or jsh `focus` raised it */
+  withPhaser: boolean;
+  /** "Become" is offered: psi was raised */
+  withPsi: boolean;
+  /** The parts offered when it opened, in digit order */
+  offered: (typeof npcFocusParts)[number][];
+  /** Those of `offered` placed last frame */
+  placed: FocusPart[];
+  /** What was raised as it opened, or since: one raised later adds its choices (`offerMore`) */
+  raised: { psi: boolean; phaser: boolean };
   el: null | HTMLDivElement;
   /** Each part's label, in a column beside them, placed by `place` */
   markEls: Partial<Record<FocusPart, null | HTMLButtonElement>>;
@@ -398,29 +475,31 @@ export type State = {
   task: null | Task;
   /** Gives up before it opens, the phaser left raised */
   abandon(): void;
-  /** Raises the phaser and turns them to `npcKey`, then `open`s: resolved once it is over */
+  /** With the phaser, raises it and turns them to `npcKey`. Then `open`s: resolved once it is over */
   aimAt(npcKey: string): Promise<void>;
-  /** Notes the phaser to go back to: `null` if under way already, else its `task` */
+  /** Notes the phaser to go back to, and what is offered: `null` if under way already, else its `task` */
   /** `raised` is whether the phaser was up before, unless carried over from a focus it replaces */
   begin(npcKey: string, raised?: boolean): null | Task;
   /** As Escape, at any stage: from the press, until a part is chosen */
   cancel(): void;
-  /** A shot at `part`, or none for `null` */
+  /** A shot at `part`, becoming them, or neither for `null` */
   close(part: null | FocusPart): void;
   /** Takes the choice away and nothing else: no shot, the phaser as it is */
   dismiss(): void;
   /** Whilst it aims: the player is held to it, as a move would undo its turn */
   isFixated(): boolean;
-  /** Either of them gone, or the phaser lowered */
-  isLost(): boolean;
   /** They face, or sat or lain their arm points, more than `maxOffAimRad` away from whom it is open on */
   isOffAim(): boolean;
-  /** Pins a choice over each part */
+  /** Pins a choice over each part offered */
   open(npcKey: string): void;
+  /** Adds the choices of psi or the phaser, raised since it opened. The phaser's need its turn and line of sight */
+  offerMore(npcKey: string, psi: boolean, phaser: boolean): Promise<void>;
   /** Paused, pans the view by part of how far `bounds` pokes past the canvas edge, so it stays in sight */
   keepOnScreen(bounds: Bounds, canvas: DOMRect, box: DOMRect): void;
-  /** Each part's choice, pinned to where it is on screen now */
+  /** Each part's choice in `placed`, pinned to where it is on screen now */
   place(): void;
+  /** Those of `offered` to show now: the phaser's whilst raised and on aim, psi's whilst raised. `null` once lost */
+  shown(): null | FocusPart[];
   /** Fades the marks out through the DOM, not rendered, as the frame loop finds them off aim, or back in */
   setOffAim(offAim: boolean): void;
 };

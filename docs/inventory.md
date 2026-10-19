@@ -252,8 +252,8 @@ How a shot ends, what a hit does, and the player's choice of part to shoot (npc 
 - **On an item**, the player walks up to it, stopping `standOff` short, or as near as the navmesh allows, e.g.
   beside its table. They take it if then within `inventoryConfig.reach`: tight for one on the floor, looser for one
   whose top (`y3d`) is higher. Sat or lain in reach, they take it from there. A newer press abandons it.
-- **On another npc**, with psi on, their thought is read (`docs/psi.md`). Else, carrying a phaser, it focuses on
-  them (see npc focus in `docs/engagements.md`).
+- **On another npc**, with psi or the phaser raised, it focuses on them: the phaser offers their parts, psi offers
+  to become them (see npc focus in `docs/engagements.md`).
 - **On the player's own right arm**, a raised phaser is lowered, its target forgotten. A press elsewhere on them does
   nothing.
 - **On the player's own LEFT arm**, psi is lowered, phaser drawn or not.

@@ -92,7 +92,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       events: new Broadcaster(),
       gameTime: new GameTime(getWorldStore(meta.worldKey).read().timeScale, (timeScale) => {
         getWorldStore(meta.worldKey).patch({ timeScale });
-        state.update();
+        state.menu.update?.(); // only its slider shows it: not the whole World
       }),
       realTime,
       realTickSecs: 0,

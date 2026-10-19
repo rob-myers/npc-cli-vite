@@ -140,6 +140,22 @@ export async function* demo_log_speech(ct: JshCli.RunArg) {
 }
 
 /**
+ * Whilst running, a press on one of these npcs shows them thinking the next demo thought
+ * ```sh
+ * demo_thoughts rob kate &
+ * ```
+ */
+export async function* demo_thoughts(ct: JshCli.RunArg) {
+  if (ct.args.length === 0) throw Error("demo_thoughts: npc keys required");
+  const only = new Set(ct.args.map((npcKey) => ct.w.npc.get(npcKey).key));
+  const where = (e: JshCli.Event): e is Extract<JshCli.Event, { key: "picked" }> => e.key === "picked";
+  for await (const e of events(ct, { where })) {
+    if (e.meta.type !== "npc" || e.longDown === true || e.rightDown === true) continue;
+    if (only.has(e.meta.npcKey) === true) ct.w.speech.readThought(e.meta.npcKey);
+  }
+}
+
+/**
  * A card over an npc, following them — see `NpcBubbles`; its close button takes it down
  * ```sh
  * demo_npc_ui npc:rob

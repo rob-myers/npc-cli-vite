@@ -198,7 +198,7 @@ export default function Phasers() {
         const delta = Math.min(now - state.tickedSecs, 0.1);
         const step = delta / phaserConfig.fadeSecs;
         state.tickedSecs = now;
-        state.phase.value = w.gameTime.now();
+        state.phase.value = now;
 
         let count = 0;
         for (const [srcKey, arm] of state.arms) {

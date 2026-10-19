@@ -133,12 +133,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
         }
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
-        if (e.code === "KeyQ") {
-          // held with psi raised, they leave their body — see `Spirit`. A press that raises it does too
-          const raised = w.e.isPsiRaised(state.key);
-          if (raised === false) state.togglePsi();
-          if (w.spirit?.press(raised) !== true && raised === true) state.togglePsi();
-        } else if (e.code === "KeyE") state.toggleArm();
+        if (e.code === "KeyQ") state.togglePsi();
+        else if (e.code === "KeyE") state.toggleArm();
         else return;
         w.hud?.update();
         w.view.forceUpdate();

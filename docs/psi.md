@@ -15,15 +15,16 @@ kept and nothing ticks: raised IS their left arm showing `psi`, which `w.e.isPsi
   they are granted it (`w.player.assign`).
 - **The player's is switched** by `q`, its bar slot, a press on their own left arm (jsh `inventory`), or jsh
   `psi` / `psi off`. Turning it on from the bar or `q` needs psi granted (`w.e.hasItem`).
-- **Held, `q` leaves their body** for someone lying elsewhere: see `docs/spirit.md`. A tap still lowers it.
 - **Anyone else's** by jsh `psi npc-0` / `psi off npc-0`, granted or not.
-- **Raised, a press on another npc reads their thought** (`w.speech.readThought`, from jsh `inventory`), at once.
+- **Raised, a press on another npc focuses on them** (from jsh `inventory`), offering "Become": the player leaves their
+  body for theirs. No line of sight is needed. See npc focus in `docs/engagements.md`, and `docs/spirit.md`.
 - **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.
 
 ## Thoughts
 
 A THOUGHT is something an npc thinks and does not say, marked with the khandha it belongs to
-(`service/thoughts.ts`, colours in `psiKhandhas`). `w.speech.readThought` shows one two ways, through `w.speech.think`:
+(`service/thoughts.ts`, colours in `psiKhandhas`). `w.speech.readThought` shows one two ways, through `w.speech.think`.
+Whilst jsh `demo_thoughts rob kate &` runs, a press on one of them reads one:
 
 - **Over their head.** `w.bubble.think` shows it above anything they are saying, outlined in its
   khandha's colour and naming it, for `shownSecs`. One thought per npc, the latest.
@@ -44,9 +45,8 @@ The khandhas a mind is modelled on, each depending on the one before:
 
 ## Dropped
 
-- **Becoming another npc.** Psi raised, the nearest npc in reach was ringed and breathed, and `q` again
-  made them the player. Before that: a right click on them, a press on their label, the label flashing,
-  the world darkening round the two, and the player's hand going out to their head.
+- **Becoming another npc by `q`.** Psi raised, the nearest npc in reach was ringed and breathed, and `q` again
+  made them the player. Later, `q` held left the body. Both gave way to "Become" in npc focus.
 
 - **Targeting.** Psi was on someone: the npc last pressed, whose room was then shown, and jsh
   `psi npcKey`. A press now reads a thought and is forgotten.

@@ -171,12 +171,12 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  * give npc:rob items:'["phaser","book","box"]'
  * ```
  */
-/** The player focuses on `npc` as a press does: turned to them, phaser raised, then a choice of part. A kill cancels it */
+/** The player focuses on `npc` as a press does, raising the phaser if psi is not raised. A kill cancels it */
 export async function focus(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  api.setPausable("world", false); // it pauses the World itself
+  api.setPausable("world", false); // its choice may be made whilst paused
   const { key } = w.npc.get(opts.npcKey ?? (getFirstUnknownNaked(opts) as string));
   let onKill = () => {};
   const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError())));
@@ -267,10 +267,8 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
       // the arm that holds it lowers it, its target forgotten — elsewhere on themselves, nothing
       const rightArm = meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm";
       if (rightArm === true && w.phasers?.isArmed(playerKey) === true) w.phasers.disarm(playerKey);
-    } else if (psiOn === true) {
-      w.speech.readThought(meta.npcKey);
-    } else if (w.e.hasItem(playerKey, "phaser") === true) {
-      void w.npcFocus.aimAt(meta.npcKey); // npc focus: raised and aimed, they choose the part, then it fires once
+    } else if (psiOn === true || w.phasers?.isArmed(playerKey) === true) {
+      void w.npcFocus.aimAt(meta.npcKey); // npc focus: its choices are from psi and the phaser, whichever are raised
     }
   }
 }
@@ -1277,7 +1275,7 @@ export function psi({ api, args, w }: JshCli.RunArg) {
 /**
  * The player leaves their body and wakes in another: `npcKey`, else anyone sitting or lying, else someone spawned
  * in a bed or seat.
- * As `q` held with psi raised does. Returns at once. See `w.spirit`
+ * As "Become" in npc focus does. Returns at once. See `w.spirit`
  * ```sh
  * spirit
  * spirit npc-0
