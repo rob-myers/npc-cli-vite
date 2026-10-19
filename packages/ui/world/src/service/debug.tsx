@@ -2,7 +2,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { cn } from "@npc-cli/util";
 import { Rect } from "@npc-cli/util/geom/rect";
 import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
-import { XIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, XIcon } from "@phosphor-icons/react";
 import { useContext, useMemo, useState } from "react";
 import { WorldContext } from "../components/world-context";
 import { eyeFrames, skinSliceDims } from "../const.both";
@@ -429,9 +429,19 @@ function readFaceWithSlice(w: import("../components/World").State, skinIndex: nu
 export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
   const w = useContext(WorldContext);
   const { entries, manifest } = w.npc.skin;
+  /** Skins by family, each with its index in the skin texture */
+  const families = Object.entries(
+    Object.groupBy(
+      entries.map((entry, index) => ({ entry, index })),
+      ({ entry }) => manifest.byKey[entry.key]?.meta.prefix ?? entry.key.replace(/-\d+$/, ""),
+    ),
+  ).sort(([a], [b]) => a.localeCompare(b));
+  const [chosen, setChosen] = useState<null | string>(null);
+  const [prefix, skins = []] = families.find(([prefix]) => prefix === chosen) ?? families[0] ?? [];
+  const [zoom, setZoom] = useState<null | SkinZoom>(null);
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(next) => (next === false && zoom !== null ? setZoom(null) : onOpenChange(next))}>
       <Dialog.Portal container={container}>
         <Dialog.Backdrop className="absolute inset-0 z-50 bg-black/60" />
         <Dialog.Popup
@@ -441,81 +451,168 @@ export function SkinsModal({ open, onOpenChange, container }: DebugModalProps) {
             "max-w-4xl w-[90%] h-[90%] flex flex-col",
           )}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-            <Dialog.Title className="text-sm font-semibold text-slate-200">Skins ({entries.length})</Dialog.Title>
+          <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-slate-700">
+            <div className="flex items-baseline gap-2">
+              <Dialog.Title className="text-sm font-semibold text-slate-200">Skins</Dialog.Title>
+              <span className="text-xs text-slate-500">
+                {entries.length} in {families.length} families
+              </span>
+            </div>
             <Dialog.Close className="p-1 hover:bg-slate-700 rounded cursor-pointer">
               <XIcon className="size-5 text-slate-400" />
             </Dialog.Close>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 flex flex-wrap justify-center gap-4">
-            {entries.map((entry, i) => (
-              <div key={entry.key} className="flex flex-col items-center gap-1">
-                <canvas
-                  width={w.texSkin.opts.width}
-                  height={w.texSkin.opts.height}
-                  className="w-48 h-48 border border-slate-700"
-                  style={{ imageRendering: "pixelated" }}
-                  ref={(el) => {
-                    if (!el) return;
-                    const ct = el.getContext("2d");
-                    if (!ct) return;
-                    const data = w.texSkin.tex.image.data as Uint8Array;
-                    const { width: tw, height: th } = w.texSkin.opts;
-                    const layerSize = tw * th * 4;
-                    const slice = new Uint8ClampedArray(data.slice(i * layerSize, (i + 1) * layerSize).buffer);
-                    const imageData = new ImageData(slice, tw, th);
-                    ct.putImageData(imageData, 0, 0);
-                  }}
-                />
-                {manifest.byKey[entry.key]?.meta.eyes !== undefined && (
-                  <div className="flex gap-1">
-                    {eyeFrames.map((frame, frameId) => (
-                      <div key={frame} className="flex flex-col items-center text-[10px] text-slate-400 font-mono">
-                        <canvas
-                          width={skinSliceDims.slice}
-                          height={skinSliceDims.slice}
-                          className="size-9 border border-slate-700"
-                          style={{ imageRendering: "pixelated" }}
-                          ref={(el) => el?.getContext("2d")?.putImageData(readFaceWithSlice(w, i, frameId), 0, 0)}
-                        />
-                        {frame}
-                      </div>
-                    ))}
-                  </div>
+          <div className="flex flex-wrap justify-center gap-1.5 border-b border-slate-800 px-4 py-2.5">
+            {families.map(([key, { length } = []]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => (setChosen(key), setZoom(null))}
+                className={cn(
+                  "flex items-baseline gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium cursor-pointer",
+                  key === prefix ? "bg-slate-700 text-slate-100" : "text-slate-400 hover:bg-slate-800 hover:text-slate-200",
                 )}
-                {(() => {
-                  const skinEntry = manifest.byKey[entry.key];
-                  return skinEntry ? (
-                    <>
-                      <a
-                        href={skinEntry.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-slate-400 font-mono hover:text-blue-400 underline"
-                      >
-                        {entry.key}
-                      </a>
-                      <div className="max-w-64 flex flex-wrap justify-center gap-2 mt-1">
-                        {Object.entries(skinEntry.meta).map(([key, value]) => (
-                          <span key={key} className="px-3 py-1 text-sm rounded-md bg-slate-700 text-slate-200">
-                            {key}={typeof value === "object" ? JSON.stringify(value) : String(value)}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-xs text-slate-400 font-mono">{entry.key}</span>
-                  );
-                })()}
-              </div>
+              >
+                {key}
+                <span className={key === prefix ? "text-slate-400" : "text-slate-600"}>{length}</span>
+              </button>
             ))}
-            {entries.length === 0 && <span className="text-sm text-slate-500">No skins loaded</span>}
+          </div>
+          <div className="relative flex min-h-0 flex-1">
+            <div className="flex flex-1 overflow-y-auto p-4" style={{ containerType: "size" }}>
+              <div className="m-auto flex flex-wrap justify-center gap-3">
+                {skins.map(({ entry, index }) => (
+                  <SkinCard
+                    key={entry.key}
+                    skinKey={entry.key}
+                    index={index}
+                    width={fitCardWidth(skins.length)}
+                    onZoom={setZoom}
+                  />
+                ))}
+              </div>
+              {entries.length === 0 && <p className="text-center text-sm text-slate-500">No skins loaded</p>}
+            </div>
+            {zoom !== null && (
+              <button
+                type="button"
+                className="absolute inset-0 flex cursor-zoom-out flex-col items-center justify-center gap-2 bg-slate-950/95 p-4"
+                onClick={() => setZoom(null)}
+              >
+                <canvas
+                  width={zoom.frameId === undefined ? w.texSkin.opts.width : skinSliceDims.slice}
+                  height={zoom.frameId === undefined ? w.texSkin.opts.height : skinSliceDims.slice}
+                  className="aspect-square min-h-0 max-w-full flex-1 rounded border border-slate-700/70"
+                  style={{ imageRendering: "pixelated", background: checkerboard }}
+                  ref={(el) => void (el && drawZoom(el, w, zoom))}
+                />
+                <span className="font-mono text-xs text-slate-400">
+                  {zoom.skinKey}
+                  {zoom.frameId !== undefined && ` / ${eyeFrames[zoom.frameId]}`}
+                </span>
+              </button>
+            )}
           </div>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
   );
 }
+
+/** One skin: its texture, its eyes by frame, and its meta flags */
+function SkinCard({
+  skinKey,
+  index,
+  width,
+  onZoom,
+}: { skinKey: string; index: number; width: string; onZoom: (zoom: SkinZoom) => void }) {
+  const w = useContext(WorldContext);
+  const skinEntry = w.npc.skin.manifest.byKey[skinKey];
+  const { eyes, noEyes, ...rest } = skinEntry?.meta ?? {};
+  const flags = Object.entries(rest).filter(([key]) => key !== "skinKey" && key !== "prefix");
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-slate-700/70 bg-slate-800/50 p-2.5" style={{ width }}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate font-mono text-sm text-slate-100">{skinKey}</span>
+        {skinEntry?.url && (
+          <a
+            href={skinEntry.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="on namemc"
+            className="rounded p-0.5 text-slate-500 hover:bg-slate-700 hover:text-slate-200"
+          >
+            <ArrowSquareOutIcon className="size-4" />
+          </a>
+        )}
+      </div>
+      <canvas
+        width={w.texSkin.opts.width}
+        height={w.texSkin.opts.height}
+        className="aspect-square w-full cursor-zoom-in rounded border border-slate-700/70"
+        style={{ imageRendering: "pixelated", background: checkerboard }}
+        onClick={() => onZoom({ skinKey, index })}
+        ref={(el) => void (el && drawZoom(el, w, { skinKey, index }))}
+      />
+      {eyes !== undefined ? (
+        <div className="grid grid-cols-4 gap-1.5">
+          {eyeFrames.map((frame, frameId) => (
+            <div key={frame} className="flex min-w-0 flex-col items-center gap-0.5" title={frame}>
+              <canvas
+                width={skinSliceDims.slice}
+                height={skinSliceDims.slice}
+                className="aspect-square w-full cursor-zoom-in rounded-sm border border-slate-700/70"
+                style={{ imageRendering: "pixelated" }}
+                onClick={() => onZoom({ skinKey, index, frameId })}
+                ref={(el) => void (el && drawZoom(el, w, { skinKey, index, frameId }))}
+              />
+              <span className="max-w-full truncate text-[10px] text-slate-500">{frame}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <span className="text-[11px] text-slate-500">{noEyes === true ? "no eyes, by meta" : "no eyes found"}</span>
+      )}
+      {flags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {flags.map(([key, value]) => (
+            <span key={key} className="rounded bg-slate-700/60 px-1.5 py-0.5 font-mono text-[11px] text-slate-300">
+              {value === true ? key : `${key}=${typeof value === "object" ? JSON.stringify(value) : String(value)}`}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A skin's texture shown large, or one of its eye frames if `frameId` */
+type SkinZoom = { skinKey: string; index: number; frameId?: number };
+
+/** Draws a skin's texture, or its face with an eye frame's slice over it */
+function drawZoom(el: HTMLCanvasElement, w: import("../components/World").State, { index, frameId }: SkinZoom) {
+  const ct = el.getContext("2d");
+  if (ct === null) return;
+  if (frameId !== undefined) return ct.putImageData(readFaceWithSlice(w, index, frameId), 0, 0);
+  const { width: tw, height: th } = w.texSkin.opts;
+  const layerSize = tw * th * 4;
+  const data = w.texSkin.tex.image.data as Uint8Array;
+  const layer = new Uint8ClampedArray(data.slice(index * layerSize, (index + 1) * layerSize).buffer);
+  ct.putImageData(new ImageData(layer, tw, th), 0, 0);
+}
+
+/**
+ * The widest card that fits `count` to a row of the panel, and fits its height.
+ * A card stands about 1.5 times as tall as it is wide, plus its header.
+ */
+const fitCardWidth = (count: number) => {
+  const perRow = Math.min(count, 4);
+  return `max(12rem, min(calc((100cqw - ${(perRow - 1) * 0.75}rem) / ${perRow}), calc((100cqh - 6rem) / 1.5)))`;
+};
+
+/** Behind a skin, so its transparent texels show */
+const checkerboard = "repeating-conic-gradient(#1e293b 0% 25%, #273449 0% 50%) 0 0 / 16px 16px";
 
 function octantCandidates(cx: number, cy: number, tw: number, th: number, gap: number) {
   return [

@@ -29,14 +29,14 @@ spawn npc:rob at:$( pick 1 )
 # spawn at pick, facing 2nd pick
 spawn npc:rob at:$( pick 1 ) facing:$( pick 1 )
 
-# spawn with skin human-0
-spawn npc:rob at:$( pick 1 ) as:human-0
+# spawn with skin ra-0
+spawn npc:rob at:$( pick 1 ) as:ra-0
 
 # spawn npcs foo-0, foo-1 etc.
-pick | spawn npc:foo- as:human-1
+pick | spawn npc:foo- as:postdoc-0
 
 # two picks per spawn (at, facing)
-pick | spawn npc:test as:human-1 --facing
+pick | spawn npc:test as:postdoc-0 --facing
 ```
 
 # move
