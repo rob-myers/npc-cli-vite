@@ -6,7 +6,7 @@ The ONLY doc for how npc skins get from source files to the GPU.
 
 `packages/app/public/skin` is a symlink to `packages/media/src/skin`:
 
-- `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `human-0--23aa3d70ee53af87.png`
+- `{key}--{namemcUid}.png`: a 64px Minecraft skin, e.g. `ra-0--23aa3d70ee53af87.png`
 - `{key}.svg` (optional): an overlay drawn over it at 256px, i.e. the detail
   - a top-level `<g>` titled `meta foo=bar ...` becomes the skin's `meta` (e.g. brightness)
   - a `<g>` titled `ignore` is dropped when rasterised
@@ -47,14 +47,14 @@ Only a browser renders the svgs faithfully: skia-canvas and resvg did not.
 - A 64px Minecraft skin with CLASSIC arms, 4px wide. The model has no slim (3px) arms. A slim skin's arms
   must be widened in its svg's embedded image, repeating each 3px face's middle column.
 - Named `{key}--{namemcUid}.png`, with TWO hyphens. One hyphen and `rebuildSkinManifest` skips it with a warning.
-- The key's prefix is its family: `spawn x as:soldier` takes the first skin whose key begins `soldier`.
+- The key's prefix is its family: `spawn x as:mtf` takes the first skin whose key begins `mtf`.
 
 ### The svg
 
 - `{key}.svg`, `viewBox="0 0 256 256"`: 4 units to a skin pixel.
 - First a top-level `<g>` titled `meta prefix={family}`. In it is the png as an `<image>` 256 square, with
   `image-rendering: pixelated`, its `href` a data URI. Everything after it draws over the skin.
-- A flag in that title becomes `meta`, e.g. `meta prefix=soldier noEyes`.
+- A flag in that title becomes `meta`, e.g. `meta prefix=mtf noEyes`.
 - Avoid `<use>`. Boxy SVG re-saves each one as a full copy of what it names, the png included.
 - Keep the `<title>`s: they are how a part is found in Boxy.
 

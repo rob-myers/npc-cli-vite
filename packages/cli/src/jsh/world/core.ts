@@ -1469,7 +1469,7 @@ export function shield(
  * ```sh
  * skin npc:rob medic-0
  * skin npc:rob as:medic-0
- * skin rob human-1
+ * skin rob postdoc-0
  * skin rob as:r
  * ```
  */

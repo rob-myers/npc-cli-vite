@@ -25,8 +25,10 @@ export default function WorldHud() {
   const w = useContext(WorldContext);
   const store = getWorldStore(w.key);
 
+  const dragControls = useDragControls();
   const state = useStateRef(
     (): State => ({
+      barEl: null,
       dragged: false,
       menu: null,
       pressTimer: 0,
@@ -35,6 +37,7 @@ export default function WorldHud() {
       noticeTimer: 0,
 
       selected: null,
+      touches: new Map(),
 
       drop(name) {
         if (w.client === true) return;
@@ -71,6 +74,23 @@ export default function WorldHud() {
         }
         return nearest;
       },
+      onBarPointerDown(e) {
+        const { controls } = w.view;
+        if (e.pointerType !== "touch" || controls === null) return;
+        state.touches.set(e.pointerId, e);
+        if (state.touches.size + controls.pointers.length < 2) return;
+        // a second finger: no slot press nor drag of the bar
+        window.clearTimeout(state.pressTimer);
+        dragControls.cancel();
+        for (const t of state.touches.values()) if (controls.pointerIndex(t) === -1) controls.onPointerDown(t);
+      },
+      onBarWheel(e) {
+        // a sideways scroll is the row's own, unless it is a trackpad pinch
+        if (e.ctrlKey === true || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) w.view.controls?.onMouseWheel(e);
+      },
+      onTouchEnd(e) {
+        state.touches.delete(e.pointerId);
+      },
       press(index) {
         if (w.client === true) return;
         if (index === 0) w.player.togglePsi();
@@ -92,7 +112,6 @@ export default function WorldHud() {
   w.hud = state;
 
   const y = useMotionValue(Math.max(state.getMinY(), store.read().hudY ?? 0));
-  const dragControls = useDragControls();
   /** Dragged up and down by any part of it, as the menu is: a slot pressed is then no press */
   const dragProps = {
     style: { y },
@@ -121,10 +140,21 @@ export default function WorldHud() {
     return () => sub.unsubscribe();
   }, []);
 
+  /** The camera zooms by a wheel or pinch over the bar, as over the World */
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const { signal } = ctrl;
+    state.barEl?.addEventListener("wheel", state.onBarWheel, { passive: false, signal });
+    state.barEl?.addEventListener("pointerdown", state.onBarPointerDown, { signal });
+    document.addEventListener("pointerup", state.onTouchEnd, { signal });
+    document.addEventListener("pointercancel", state.onTouchEnd, { signal });
+    return () => ctrl.abort();
+  }, []);
+
   // neither psi nor phasers are mirrored
   if (w.client === true)
     return (
-      <div className={barClass}>
+      <div ref={(el) => void (state.barEl = el)} className={barClass}>
         <motion.div className={rowClass} {...dragProps}>
           <PlayerButtons />
         </motion.div>
@@ -153,7 +183,7 @@ export default function WorldHud() {
         key={index}
         title={opts.hotkey === undefined ? opts.title : `${opts.title}: ${opts.hotkey}`}
         className={cn(
-          "group relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
+          "group pointer-events-auto relative grid shrink-0 cursor-pointer touch-pan-x place-items-center rounded-md",
           opts.plain !== true && "hover:ring-1 hover:ring-yellow-200/25",
           big ? "h-15 w-12.5" : "h-18 w-15",
           opts.active === true && opts.plain !== true && "bg-yellow-200/10 ring-1 ring-yellow-200/25",
@@ -211,7 +241,7 @@ export default function WorldHud() {
   };
 
   return (
-    <div className={barClass}>
+    <div ref={(el) => void (state.barEl = el)} className={barClass}>
       {/* out here, not in the row: it scrolls, so would clip it */}
       {state.notice !== null && (
         <motion.div
@@ -369,7 +399,7 @@ function PlayerButtons() {
 
   return (
     <div
-      className="ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
+      className="pointer-events-auto ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
       // the canvas keeps the focus
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -469,8 +499,11 @@ function useChangeCount(value: unknown): number {
 }
 
 const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
-/** Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring */
-const rowClass = "pointer-events-auto mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
+/**
+ * Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring.
+ * Only its slots and buttons take the pointer, so a press between them reaches the World
+ */
+const rowClass = "pointer-events-none mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
 
 /** Each icon's size, as a fraction of its slot's height: alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
@@ -736,6 +769,7 @@ type SlotOpts = {
 };
 
 export type State = {
+  barEl: null | HTMLDivElement;
   /** The bar is being dragged, so what ends on it is no press */
   dragged: boolean;
   /** The furthest up it may be dragged, as a `y` offset */
@@ -747,6 +781,8 @@ export type State = {
   longPressed: boolean;
   /** The key of the carried item a press chose, a second press letting it go */
   selected: null | string;
+  /** Fingers down on the bar, handed to the camera once they pinch */
+  touches: Map<number, PointerEvent>;
   /** Puts an item of the player's at their feet: the slot's "x" */
   drop(name: string): void;
   /** What the bar says above itself, a moment: something of theirs was refused */
@@ -757,6 +793,9 @@ export type State = {
   getItems(): Geomorph.DecorDef[];
   /** The door at hand that the player holds the key to */
   getKeyDoor(): null | Geomorph.DoorState;
+  onBarPointerDown(e: PointerEvent): void;
+  onBarWheel(e: WheelEvent): void;
+  onTouchEnd(e: PointerEvent): void;
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
 };

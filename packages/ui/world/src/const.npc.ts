@@ -267,10 +267,10 @@ export const sitTurn = {
 } as const;
 
 /**
- * One sat raises an arm past a table's edge: by way of this pose of the LEFT arm, elbow back and out, as Blockbench
- * keys it. They near it by `there` of the way, and leave for the clip's from `onFrom`. It takes `slow` times as long
+ * One sat raises an arm past a table's edge: first its elbow is drawn `back` upper arms along the forearm's line.
+ * They near that by `there` of the way, and leave for the clip's from `onFrom`. It takes `slow` times as long
  */
-export const sitArmVia = { arm: [-70, 0, -30], forearm: [155, 0, 0], there: 0.5, onFrom: 0.4, slow: 1.6 } as const;
+export const sitArmVia = { back: 1, there: 0.5, onFrom: 0.4, slow: 1.6 } as const;
 
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;

@@ -58,7 +58,7 @@ export async function rebuildSkinManifest() {
   for (const filePath of pngFiles) {
     const filename = path.basename(filePath);
     const basename = path.basename(filename, ".png");
-    // e.g. human-0--23aa3d70ee53af87
+    // e.g. ra-0--23aa3d70ee53af87
     const [key, namemcDotComUid] = basename.split("--");
 
     const svgLocalPath = `skin/${key}.svg`;

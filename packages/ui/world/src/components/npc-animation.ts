@@ -765,7 +765,7 @@ export class NpcAnimation {
   tickUpperSide(side: Side, delta: number) {
     const u = this.upperOf(side);
     if (u.key === null) return; // let go of: its blend is nought already
-    const via = u.past === true && this.posture === "sit" && this.isUnderTable() ? sitArmVias[side] : null;
+    const via = u.past === true && this.posture === "sit" && this.isUnderTable() ? tmpVias : null;
     const fadeSecs = u.fadeSecs * (via === null ? 1 : sitArmVia.slow);
     u.blend = THREE.MathUtils.clamp(u.blend + (u.target === 1 ? delta : -delta) / fadeSecs, 0, 1);
     if (this.npc.group === null) return;
@@ -778,10 +778,11 @@ export class NpcAnimation {
     const lean = adds === true ? this.turnUpperTorso(u, torso, t) : this.leanOfUpper(u, torso);
     u.swap = Math.min(1, u.swap + delta / u.swapSecs);
     const s = u.swap * u.swap * (3 - 2 * u.swap);
+    // the pose's, unless its mixer left ours there — as a still pose e.g. `lie` does
+    for (const { bone, base, written } of u.bones) if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+    if (via !== null) setSitArmVia(u.bones, via);
     for (let i = 0; i < u.bones.length; i++) {
       const { bone, base, written, from } = u.bones[i];
-      // the pose's, unless its mixer left ours there — as a still pose e.g. `lie` does
-      if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
       const track = tracks.get(bone.name);
       let q = track === undefined ? base : tmpQuat.fromArray(track.evaluate(u.time));
       if (track !== undefined && bone.parent?.name === "chest") q.premultiply(lean);
@@ -790,10 +791,15 @@ export class NpcAnimation {
         written.copy(bone.quaternion.slerpQuaternions(base, q, t));
         continue;
       }
-      // towards the pose aside, and on to the clip's before it gets there: one move, with no stop
+      // drawn back, and on to the clip's before it gets there: one move, with no stop.
+      // That leg eases swing and twist apart, so the arm doesn't roll about its length
       const { there, onFrom } = sitArmVia;
-      bone.quaternion.copy(base).slerp(via[i], smooth(u.blend / there));
-      written.copy(bone.quaternion.slerp(q, smooth((u.blend - onFrom) / (1 - onFrom))));
+      const b = smooth((u.blend - onFrom) / (1 - onFrom));
+      splitTwist(tmpPast.slerpQuaternions(base, via[i], smooth(u.blend / there)), tmpSwingFrom, tmpTwistFrom);
+      splitTwist(q, tmpSwingTo, tmpTwistTo);
+      tmpSwingFrom.slerp(tmpSwingTo, b);
+      tmpTwistFrom.slerp(tmpTwistTo, b);
+      written.copy(bone.quaternion.multiplyQuaternions(tmpSwingFrom, tmpTwistFrom));
     }
     const head = tracks.get("head");
     u.hasHead = head !== undefined;
@@ -1239,17 +1245,22 @@ const held = { left: false, right: false };
 
 /** Smoothstep, held outside `0` to `1` */
 const smooth = (x: number) => THREE.MathUtils.smoothstep(x, 0, 1);
-/** `sitArmVia` as an arm's two bones have it: mirrored for the right */
-const sitArmVias = Object.fromEntries(
-  sides.map((side) => [
-    side,
-    [sitArmVia.arm, sitArmVia.forearm].map(([x, y, z]) => {
-      const sign = side === "left" ? 1 : -1;
-      const [rx, ry, rz] = [x, y * sign, z * sign].map(THREE.MathUtils.degToRad);
-      return new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, "ZYX"));
-    }),
-  ]),
-) as Record<Side, THREE.Quaternion[]>;
+/** `q` as `swing * twist`, the twist being its turn about the bone's own length, local y for an arm */
+function splitTwist(q: THREE.Quaternion, swing: THREE.Quaternion, twist: THREE.Quaternion) {
+  twist.set(0, q.y, 0, q.w);
+  if (twist.lengthSq() < 1e-12) twist.identity();
+  else twist.normalize();
+  swing.copy(q).multiply(tmpUntwist.copy(twist).invert());
+}
+
+/** Writes the pose drawn back from the arm's: its elbow back along the forearm's line, the forearm pointed as before */
+function setSitArmVia([arm, forearm]: UpperBone[], [toArm, toForearm]: THREE.Quaternion[]) {
+  const elbow = tmpElbow.copy(forearm.bone.position).applyQuaternion(arm.base);
+  const along = tmpForearmDir.set(0, -1, 0).applyQuaternion(forearm.base).applyQuaternion(arm.base);
+  const back = tmpDrawn.copy(elbow).addScaledVector(along, -sitArmVia.back * elbow.length()).normalize();
+  toArm.setFromUnitVectors(elbow.normalize(), back).multiply(arm.base);
+  toForearm.copy(toArm).invert().multiply(arm.base).multiply(forearm.base);
+}
 /** A bone, the pose's rotation of it, ours as last written, and where a swap set out from — see `tickUpper` */
 type UpperBone = { bone: THREE.Object3D; base: THREE.Quaternion; written: THREE.Quaternion; from: THREE.Quaternion };
 
@@ -1300,6 +1311,18 @@ const headTurnRate = 10;
 const tmpHeadGoal = new THREE.Quaternion();
 const tmpChain = new THREE.Quaternion();
 const tmpQuat = new THREE.Quaternion();
+/** An arm bone's swing and twist, from and via and to — see `splitTwist` */
+const tmpSwingFrom = new THREE.Quaternion();
+const tmpTwistFrom = new THREE.Quaternion();
+const tmpSwingTo = new THREE.Quaternion();
+const tmpTwistTo = new THREE.Quaternion();
+const tmpUntwist = new THREE.Quaternion();
+/** The arm and forearm drawn back, and a bone on its way there — see `setSitArmVia` */
+const tmpVias = [new THREE.Quaternion(), new THREE.Quaternion()];
+const tmpPast = new THREE.Quaternion();
+const tmpElbow = new THREE.Vector3();
+const tmpForearmDir = new THREE.Vector3();
+const tmpDrawn = new THREE.Vector3();
 const tmpSwap = new THREE.Quaternion();
 const tmpLean = new THREE.Quaternion();
 const tmpShoulder = new THREE.Vector3();

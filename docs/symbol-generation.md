@@ -93,6 +93,29 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 
 A machine with no walls is one polygon round its silhouette: every opaque pixel.
 
+### Cleaning up an existing symbol
+
+To fix one whose obstacles leave thick lines showing, check it by machine before reading any art:
+
+1. Fill the obstacle polygons into a mask at the png's scale: 5 px a unit, offset by the image node's
+   `transform`.
+2. Paint every dark png pixel within about 3 units OUTSIDE the mask. The painted runs are the lines to take
+   in. A sub-symbol's own outline (e.g. a chair) is that symbol's, so leave it.
+3. Read the far edge of each run along a row or column of the png, in units.
+4. Edit only the vertices that fall short, save through the api, check again, then run
+   `gen-starship-sheets`.
+
+What it usually finds:
+- **Wall lines.** An obstacle against a wall stops at the wall's near edge (`2`, `178`). Take it to the
+  far edge (`-2`, `182`), as the walls are drawn 4 thick about the room's edge.
+- **Curve tips.** A simplified curve cuts inside its outline either side of the extreme point. Move that
+  bulge's vertices out by about 0.3.
+- **Neighbours z-fight.** Two obstacles sharing an edge put their sides in one plane, back to back. Keep
+  them separate, so a wall stands between them seen through the top, and leave a gap of about 0.4 across
+  the line between them: `medical--008`'s machines end at `59.9` and start at `60.3`.
+
+Cleaned so far: `medical--008`.
+
 ## What a tracer needs
 
 - Classify each pixel: transparent, dark (line or wall), or light (grey fill).

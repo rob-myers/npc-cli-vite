@@ -142,7 +142,7 @@ declare namespace JshCli {
     facing?: PointAnyFormat;
     // /**
     //  * Skin to apply.
-    //  * - `string` for skin shortcuts e.g. `soldier-0` or `soldier-0/-///`
+    //  * - `string` for skin shortcuts e.g. `mtf-0` or `mtf-0/-///`
     //  * - object permits brace-expansion of keys.
     //  */
     // as?: string | Record<string, SkinReMapValue>;
