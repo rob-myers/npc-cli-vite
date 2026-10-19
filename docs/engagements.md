@@ -85,32 +85,25 @@ Carrying a phaser, a click on someone focuses on them (`NpcFocus`, `w.npcFocus`)
 2. It waits for the phaser to come up clear as they now stand, by a cast made there (`w.phasers.isClear`, at most
    `raiseMaxMs`).
 3. Drawn in there, or stowed lain, or out of sight (a raycast is blocked), it ends with the phaser left raised.
-4. It waits for the aim to land (`w.phasers.isAimed`: the arm within 3°, and no roll still fading in), so the pause
-   does not hold it partway.
-5. The World pauses, and the view stays as it is: no zoom, no centring. A dot is pinned on their head, body, arms and
-   legs from their bones each frame, its label in a column to one side, joined by a line. Only whilst any of it pokes
-   past the canvas edge (`screenMargin`) does the view pan, by part of the overflow each frame (`keepInRate`).
+4. It waits for the aim to land (`w.phasers.isAimed`: the arm within 3°, and no roll still fading in).
+5. A dot is pinned on their head, body, arms and legs from their bones each frame, its label in a column to one side,
+   joined by a line. The World does not pause: to take more time, slow it with the time scale (the menu's slider,
+   jsh `timescale`). Only whilst paused, and any of it pokes past the canvas edge (`screenMargin`), does the view
+   pan, by part of the overflow each frame (`keepInRate`).
 6. A mark pressed, or its digit `1`–`6`, shoots that part once, at one bone (`npcFocusConfig.bones`). Escape, or
-   Cancel at the top, shoots nothing.
-7. The World resumes, unless it was paused before. The view stays where it is. A phaser left raised no longer
-   points at them.
+   Cancel at the top, shoots nothing. A phaser left raised no longer points at them.
 
 Whilst it runs:
 
 - `cancel` ends it as Escape does, at any stage. `focus` runs until it is over, and a kill (ctrl-c) cancels it.
-- Only the marks take the pointer, so the camera still moves.
-- At the top, Cancel (Esc) and Continue (Enter). Once resumed they go, as Escape then pauses the World, and a `clear`
-  button above the marks takes the choice away instead. Closed,
-  the marks keep to their parts as they fade (`placedKey`).
-- The paused indicator is hidden whilst it aims and in the pause it opens in (`showsPaused`). Once resumed, a pause shows it.
-- A follow stays on throughout: the World is paused whilst it is open, so it does not pan, and its zoom stops do not
-  ease back out as they would if it were turned off.
-- The player's moves are refused whilst it aims and in the pause it opens in (`w.e.move` throws `focused`), held
-  keys included, as a move would undo the turn. Once resumed they move again.
+- Only the marks and Cancel take the pointer, so the camera still moves.
+- Cancel shows `(Esc)` only on a desktop. Closed, the marks keep to their parts as they fade (`placedKey`).
+- The player's moves are refused whilst it aims (`w.e.move` throws `focused`), held keys included, as a move would
+  undo the turn. Once the marks are up they move again.
 
-Resumed with the marks up (Enter, or play):
+With the marks up:
 
-- Escape only pauses the World, as ever. It ends the focus only in the pause it opened in (`resumed`).
+- Escape ends the focus, not pausing the World.
 - The marks fade out whilst the player faces more than `maxOffAimRad` (15°) away (`offAim`), and back in as they
   face them again. Sat or lain, it is the arm that must point at them (`w.phasers.aimOff`), or they are out of reach.
 - A click on someone, them or another, replaces the focus with a fresh one.

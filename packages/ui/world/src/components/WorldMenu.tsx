@@ -1248,11 +1248,16 @@ const sectionHeaderClass = (touch: boolean) =>
   cn("px-2 py-1 text-xs text-neutral-400", touch && "px-3 py-2.5 text-sm border-t border-neutral-800");
 
 /** Every `<input type="range">` in the menu — touch gets a fatter thumb and more room to drag */
-/** The time scale slider is logarithmic: stop `n > 0` is `2 ** (n / 20 - 5)`, from 1/32 to 2, and stop `0` is `0` */
-const timeScaleStops = 120;
-const stopToTimeScale = (stop: number) => (stop === 0 ? 0 : 2 ** (stop / 20 - 5));
+/** The time scale slider's stops: its bottom half is logarithmic from `0` to `1`, its top half linear to `2` */
+const timeScaleStops = 200;
+const stopToTimeScale = (stop: number) =>
+  stop === 0 ? 0 : stop <= 100 ? 2 ** (stop / 20 - 5) : 1 + (stop - 100) / 100;
 const timeScaleToStop = (scale: number) =>
-  scale <= 0 ? 0 : Math.min(timeScaleStops, Math.max(1, Math.round(20 * (Math.log2(scale) + 5))));
+  scale <= 0
+    ? 0
+    : scale <= 1
+      ? Math.max(1, Math.round(20 * (Math.log2(scale) + 5)))
+      : Math.min(timeScaleStops, Math.round(100 + 100 * (scale - 1)));
 
 const rangeInputClass = (touch: boolean, width: string) =>
   cn(

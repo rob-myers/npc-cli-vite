@@ -8,8 +8,8 @@ import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
 /**
- * Focus on an npc, as a called shot in Fallout: carrying a phaser, a press on someone raises it and turns to them, then pauses the
- * World and pins a choice over each part of them, the view held still. Chosen or not, the World resumes — see `docs/engagements.md`
+ * Focus on an npc, as a called shot in Fallout: carrying a phaser, a press on someone raises it and turns to them, then pins a
+ * choice over each part of them. The World runs on, slowed by its time scale if wanted — see `docs/engagements.md`
  */
 export default function NpcFocus() {
   const w = useContext(WorldContext);
@@ -20,29 +20,25 @@ export default function NpcFocus() {
       placedKey: null,
       busy: false,
       offAim: false,
-      resumed: false,
       before: null,
       el: null,
       markEls: {},
       dotEls: {},
       lineEls: {},
-      clearEl: null,
       task: null,
       abandon() {
         Object.assign(state, { before: null, busy: false });
-        w.view.pausedHidden = false;
         state.task?.cancel();
         state.task = null;
         // left raised, it no longer points at them
         if (w.phasers.isArmed(w.player.key) === true) w.phasers.arm(w.player.key);
-        w.view.forceUpdate(); // the paused indicator, should the World still be paused
       },
       async aimAt(npcKey) {
         const player = w.player.get();
         const npc = w.n?.[npcKey];
         if (player === undefined || npc === undefined) return;
-        // one still open once resumed gives way, and whether the phaser was up before it carries over
-        const replaced = state.npcKey !== null && state.resumed === true ? state.before : null;
+        // one still open gives way, and whether the phaser was up before it carries over
+        const replaced = state.npcKey !== null ? state.before : null;
         if (replaced !== null) state.dismiss();
         const task = state.begin(npcKey, replaced?.raised);
         if (task === null) return;
@@ -70,7 +66,7 @@ export default function NpcFocus() {
           await task.until(() => isClear(key) === true, npcFocusConfig.raiseMaxMs);
           // still drawn in, or stowed lain, e.g. by a wall alongside, or out of sight: left raised, with nothing to choose
           if (isDrawnIn(key) === true) return state.abandon();
-          // aimed before the pause, which would hold the arm, or a roll, partway
+          // aimed, any roll done, before the marks show
           await task.until(() => w.phasers.isAimed(key) === true, npcFocusConfig.raiseMaxMs);
           const seen = await task.wait(
             w.e.raycast(player.point, npc.point).then(
@@ -85,8 +81,8 @@ export default function NpcFocus() {
       },
       begin(npcKey, raised = w.phasers.isArmed(w.player.key)) {
         if (state.busy === true || w.n?.[npcKey] === undefined) return null;
-        state.before = { paused: w.disabled, raised };
-        state.busy = w.view.pausedHidden = true;
+        state.before = { raised };
+        state.busy = true;
         state.task = new Task(
           () => w.disabled,
           () => 1000 * w.gameTime.now(),
@@ -101,8 +97,6 @@ export default function NpcFocus() {
       close(part) {
         const { npcKey, before } = state;
         if (npcKey === null || before === null) return;
-        // the view stays where it came in to: a follow takes it on from there, once the World runs again
-        if (before.paused === false) w.setDisabled(false);
         state.dismiss();
         // raised for the shot alone, else lowered: unless raised before, when it stays so
         const once = before.raised === false;
@@ -117,7 +111,7 @@ export default function NpcFocus() {
         state.update();
       },
       isFixated() {
-        return state.busy === true && state.resumed === false;
+        return state.busy === true && state.npcKey === null;
       },
       isLost() {
         return (
@@ -130,7 +124,7 @@ export default function NpcFocus() {
         const player = w.player.get();
         const npc = w.n?.[state.npcKey ?? ""];
         if (player === undefined || npc === undefined || isOffAim(player, npc) === true) return true;
-        // sat or lain, by where their arm points: `r` may re-aim it once resumed
+        // sat or lain, by where their arm points: `r` may re-aim it
         return (w.phasers.aimOff(player.key, npc.point) ?? 0) > npcFocusConfig.maxOffAimRad;
       },
       open(npcKey) {
@@ -138,12 +132,8 @@ export default function NpcFocus() {
         const { controls } = w.view;
         if (state.npcKey !== null || npc === undefined || controls == null) return;
         if (state.busy === false && state.begin(npcKey) === null) return;
-        Object.assign(state, { npcKey, placedKey: npcKey, resumed: false });
+        Object.assign(state, { npcKey, placedKey: npcKey });
         state.setOffAim(false); // a node kept from one still fading out has its last fade
-        if (state.before !== null) state.before.paused = w.disabled; // as it was before this pause
-        w.setDisabled(true);
-        // the view stays as it is: `place` nudges it only if their overlay would go off screen
-        w.view.forceUpdate(); // the paused indicator, hidden whilst open
         state.update();
       },
       keepOnScreen(bounds, canvas, box) {
@@ -167,12 +157,7 @@ export default function NpcFocus() {
         const parts = npcFocusParts.map(({ part }) => ({ part, ...onScreen(npcFocusConfig.bones[part]) }));
         const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
         for (const mark of layoutMarks(parts, middle)) writeMark(state, mark, bounds);
-        if (state.clearEl !== null) {
-          const at = `translate(${middle}px,${bounds.minY - npcFocusConfig.rowPx / 2}px)`;
-          state.clearEl.style.transform = `${at} translate(-50%,-100%)`; // above the marks, centred on them
-          state.clearEl.style.visibility = "visible";
-        }
-        if (w.disabled === true) state.keepOnScreen(bounds, canvas, box); // resumed, the view is follow's
+        if (w.disabled === true) state.keepOnScreen(bounds, canvas, box); // running, the view is follow's
       },
       setOffAim(offAim) {
         state.offAim = offAim;
@@ -190,7 +175,6 @@ export default function NpcFocus() {
     /** Before the World's own keys: a digit there is a slot of the bar */
     const onKeyDown = (e: KeyboardEvent) => {
       if (state.offAim === true) return;
-      if (e.key === "Escape" && state.resumed === true) return; // the World's pause key again, once resumed
       const part = npcFocusParts[Number(e.key) - 1]?.part;
       if (e.key !== "Escape" && part === undefined) return;
       e.preventDefault();
@@ -206,17 +190,9 @@ export default function NpcFocus() {
       if (offAim === false) state.place();
     });
     w.r3f?.invalidate(); // a first frame to place them in
-    const sub = w.events.subscribe({
-      next(e) {
-        if (e.key !== "enabled" || state.resumed === true) return;
-        state.set({ resumed: true }); // its note goes: Escape no longer ends this
-        w.view.pausedHidden = false; // a pause from here on is the player's own, so shows
-      },
-    });
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
       unsubscribe();
-      sub.unsubscribe();
     };
   }, [state.npcKey]);
 
@@ -275,44 +251,18 @@ export default function NpcFocus() {
                 </button>
               </div>
             ))}
-            {state.resumed === true ? (
-              // once resumed, a way to take the choice away without a shot
+            <div className="absolute inset-x-0 top-3 flex justify-center">
               <button
-                ref={(el) => void (state.clearEl = el)}
                 type="button"
-                className="pointer-events-auto absolute top-0 left-0 cursor-pointer whitespace-nowrap rounded bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-white opacity-80 hover:opacity-100"
-                style={{ visibility: "hidden" }}
+                className={noteClass}
                 onPointerDown={(e) => {
                   e.stopPropagation();
                   state.close(null);
                 }}
               >
-                clear
+                {w.touchDevice ? "Cancel" : "Cancel (Esc)"}
               </button>
-            ) : (
-              <div className="absolute inset-x-0 top-3 flex justify-center gap-1.5">
-                <button
-                  type="button"
-                  className={noteClass}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    state.close(null);
-                  }}
-                >
-                  Cancel (Esc)
-                </button>
-                <button
-                  type="button"
-                  className={noteClass}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    w.setDisabled(false);
-                  }}
-                >
-                  Continue (Enter)
-                </button>
-              </div>
-            )}
+            </div>
           </div>
         </motion.div>
       )}
@@ -428,15 +378,12 @@ export type State = {
   npcKey: null | string;
   /** Whom the marks are placed on: kept as they fade out after it closes */
   placedKey: null | string;
-  /** From the press until it is over. `w.view.pausedHidden` too, until resumed */
+  /** From the press until it is over */
   busy: boolean;
   /** They face more than `maxOffAimRad` away from them: the marks are hidden until they face back */
   offAim: boolean;
-  /** The World has been resumed since it opened: then Escape only pauses it, and no longer ends this */
-  resumed: boolean;
-  /** The pause and phaser to go back to */
+  /** The phaser to go back to */
   before: null | {
-    paused: boolean;
     /** Their phaser was up already, e.g. by `e`: it is left up after */
     raised: boolean;
   };
@@ -447,30 +394,28 @@ export type State = {
   dotEls: Partial<Record<FocusPart, null | HTMLSpanElement>>;
   /** Each part's line, from its dot to its label */
   lineEls: Partial<Record<FocusPart, null | SVGLineElement>>;
-  /** Once resumed, the button above the marks that takes the choice away */
-  clearEl: null | HTMLButtonElement;
   /** Cancelled once it is over, which ends `aimAt` */
   task: null | Task;
   /** Gives up before it opens, the phaser left raised */
   abandon(): void;
   /** Raises the phaser and turns them to `npcKey`, then `open`s: resolved once it is over */
   aimAt(npcKey: string): Promise<void>;
-  /** Notes the pause and phaser to go back to: `null` if under way already, else its `task` */
+  /** Notes the phaser to go back to: `null` if under way already, else its `task` */
   /** `raised` is whether the phaser was up before, unless carried over from a focus it replaces */
   begin(npcKey: string, raised?: boolean): null | Task;
   /** As Escape, at any stage: from the press, until a part is chosen */
   cancel(): void;
-  /** The World resumed, the view left where it is, then a shot at `part`, or none for `null` */
+  /** A shot at `part`, or none for `null` */
   close(part: null | FocusPart): void;
-  /** Takes the choice away and nothing else: no shot, the pause and phaser as they are */
+  /** Takes the choice away and nothing else: no shot, the phaser as it is */
   dismiss(): void;
-  /** Whilst it aims, and in the pause it opens in: the player is held to it, as a move would undo its turn */
+  /** Whilst it aims: the player is held to it, as a move would undo its turn */
   isFixated(): boolean;
   /** Either of them gone, or the phaser lowered */
   isLost(): boolean;
   /** They face, or sat or lain their arm points, more than `maxOffAimRad` away from whom it is open on */
   isOffAim(): boolean;
-  /** Pauses, zooms in on them, and pins a choice over each part */
+  /** Pins a choice over each part */
   open(npcKey: string): void;
   /** Paused, pans the view by part of how far `bounds` pokes past the canvas edge, so it stays in sight */
   keepOnScreen(bounds: Bounds, canvas: DOMRect, box: DOMRect): void;

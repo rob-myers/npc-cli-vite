@@ -174,7 +174,6 @@ export function WorldView(props: React.PropsWithChildren) {
       pickRT: createPickRT(1),
       npcMaskMrt: null,
       busy: null,
-      pausedHidden: false,
       postProcessing: saved.postProcessing,
       npcOutline: saved.npcOutline,
       roomOutline: saved.fadeRoomOutlines,
@@ -1037,7 +1036,7 @@ export function WorldView(props: React.PropsWithChildren) {
         state.canvas?.closest<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
       },
       showsPaused() {
-        return w.disabled === true && state.pausedHidden === false;
+        return w.disabled === true;
       },
       isOverPaused(e) {
         const rect = state.pausedEl?.getBoundingClientRect();
@@ -1873,8 +1872,6 @@ export type State = {
   npcMaskMrt: null | NpcMaskMrt;
   /** What the busy overlay says, or `null` whilst nothing heavy is running — see `runBusy` */
   busy: null | string;
-  /** Paused, but not to be shown so, e.g. whilst npc focus has paused the World */
-  pausedHidden: boolean;
   /** Keeps `pickRT`'s attachment count in step with `npcMaskMrt` */
   syncPickRT(): void;
   raycaster: THREE.Raycaster;
@@ -1994,7 +1991,7 @@ export type State = {
   /** Keys to the World again e.g. Escape pauses */
   focus(): void;
   /** Whether a pointer is over the paused pill — the resume tap, since the pill forwards its presses */
-  /** Whether the paused indicator shows: paused, and not `pausedHidden` */
+  /** Whether the paused indicator shows */
   showsPaused(): boolean;
   isOverPaused(e: PointerEvent): boolean;
   pausedEl: null | HTMLButtonElement;
