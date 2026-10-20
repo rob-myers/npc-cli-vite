@@ -46,7 +46,7 @@
         },
         {
           "id": "a5de851d-3816-4a63-a115-5a8e58a49987",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.35 do:underTable",
           "locked": false,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 20.5, "f": 87.5},

@@ -114,7 +114,8 @@ What it usually finds:
   them separate, so a wall stands between them seen through the top, and leave a gap of about 0.4 across
   the line between them: `medical--008`'s machines end at `59.9` and start at `60.3`.
 - **Off-centre circles.** Fit a circle to the ring's outer edge, away from what touches it, e.g. chairs. Use
-  about 24 sides, its vertices just past that edge, and the middle of a side where a chair meets it.
+  about 24 sides, its vertices about 0.2 INSIDE that edge. Past it, each vertex takes a sliver of what lies
+  beyond, e.g. a chair's line.
 
 Cleaned so far: `medical--008`, `table--009`.
 

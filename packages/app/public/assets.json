@@ -8004,7 +8004,7 @@
             "e": 0.5125,
             "f": 2.1875
           },
-          "meta": {"extra--003--chair": true, "y": 0.4}
+          "meta": {"extra--003--chair": true, "y": 0.35, "do:underTable": true}
         }
       ]
     },
@@ -18223,7 +18223,8 @@
             "transform": [0, 1, 1, 0, 0.6875, 1.875],
             "direction": {"x": 0, "y": 1},
             "obstacleId": 1,
-            "y": 0.41000000000000003
+            "y": 0.36,
+            "underTable": true
           }
         }
       ],
@@ -18288,7 +18289,7 @@
             "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "y": 0.4,
+            "y": 0.35,
             "transform": [0, -1, 1, 0, 0.5125, 2.1875]
           }
         }
@@ -27348,7 +27349,8 @@
             "transform": [-1, 0, 0, 1, 7.114615000000001, 17.167753],
             "direction": {"x": -1, "y": 0},
             "obstacleId": 84,
-            "y": 0.41000000000000003
+            "y": 0.36,
+            "underTable": true
           }
         },
         {
@@ -30549,7 +30551,7 @@
             "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "y": 0.4,
+            "y": 0.35,
             "transform": [1, 0, 0, 1, 6.802115000000001, 16.992753]
           }
         },
@@ -45338,7 +45340,8 @@
             "img": "arrow",
             "transform": [-1, 0, 0, 1, 7.114615000000001, 17.167753],
             "obstacleId": 84,
-            "y": 0.41,
+            "y": 0.36,
+            "underTable": true,
             "gmId": -1,
             "grKey": "g-1r-1",
             "roomId": -1
@@ -50425,7 +50428,7 @@
         {
           "symbolKey": "extra--003--chair",
           "obstacleId": 0,
-          "height": 0.4,
+          "height": 0.35,
           "origPoly": {
             "type": "Polygon",
             "coordinates": [
@@ -50456,7 +50459,7 @@
             "max-h": true,
             "symKey": "extra--003--chair",
             "origObstacleId": 0,
-            "h": 0.4,
+            "h": 0.35,
             "decorIds": [116]
           }
         },
