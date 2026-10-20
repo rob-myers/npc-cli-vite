@@ -30,11 +30,16 @@
 </filter>
 <clipPath id="suit"><path d="M0 80h88v4h-88zM108 80h116v4h-116zM104 84h120v4h-120zM0 84h92v8h-92zM100 88h124v4h-124zM0 92h100v4h-100zM108 92h116v4h-116zM116 96h108v4h-108zM128 100h96v4h-96zM0 96h64v16h-64zM68 96h8v16h-8zM80 96h32v16h-32zM116 100h8v12h-8zM128 104h32v8h-32zM0 112h160v8h-160zM0 120h20v4h-20zM28 120h132v4h-132zM64 124h96v4h-96z"/><path d="M64 208h128v24h-128zM64 232h64v16h-64zM64 248h20v4h-20zM92 248h36v4h-36z"/></clipPath>
 <clipPath id="suit-pale"><path d="M16 64h16v4h-16zM80 64h64v4h-64zM176 64h16v4h-16zM16 68h16v4h-16zM80 68h64v4h-64zM176 68h16v4h-16zM16 72h16v4h-16zM80 72h12v4h-12zM104 72h40v4h-40zM176 72h16v4h-16zM16 76h16v4h-16zM80 76h4v4h-4zM108 76h36v4h-36zM176 76h16v4h-16zM0 80h88v4h-88zM108 80h116v4h-116zM0 84h92v4h-92zM104 84h120v4h-120zM0 88h92v4h-92zM100 88h124v4h-124zM0 92h100v4h-100zM108 92h116v4h-116zM0 96h224v4h-224zM0 100h224v4h-224zM0 104h160v4h-160zM0 108h160v4h-160zM0 112h160v4h-160zM0 116h160v4h-160zM0 120h20v4h-20zM28 120h132v4h-132zM64 124h96v4h-96zM80 192h16v4h-16zM144 192h16v4h-16zM80 196h16v4h-16zM144 196h16v4h-16zM80 200h16v4h-16zM144 200h16v4h-16zM80 204h16v4h-16zM144 204h16v4h-16zM64 208h128v4h-128zM64 212h128v4h-128zM64 216h128v4h-128zM64 220h128v4h-128zM64 224h128v4h-128zM64 228h128v4h-128zM64 232h64v4h-64zM64 236h64v4h-64zM64 240h64v4h-64zM64 244h64v4h-64zM64 248h20v4h-20zM92 248h36v4h-36z"/></clipPath>
+<filter id="worn" x="-20%" y="-50%" width="140%" height="200%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n"/>
+<feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feGaussianBlur in="d" stdDeviation="0.45"/>
+</filter>
 <filter id="blotches" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256" color-interpolation-filters="sRGB">
 <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="noise"/>
-<feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.88  0 0 0 0 0.36  0 0 0 0 0.09  7 0 0 0 -3" result="blots"/>
+<feColorMatrix in="noise" type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.12  7 0 0 0 -3" result="blots"/>
 <feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="1" seed="4" result="fine"/>
-<feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.15  0 0 0 0 0.05  0 0 0 0.9 -0.35" result="grain"/>
+<feColorMatrix in="fine" type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0.9 -0.35" result="grain"/>
 <feMerge><feMergeNode in="blots"/><feMergeNode in="grain"/></feMerge>
 </filter>
 </defs>
@@ -44,12 +49,24 @@
 <title>d-0--786e7e7dd850c2b8</title>
 </image>
 </g>
-<rect width="256" height="256" style="pointer-events: none; fill: #505050; mix-blend-mode: screen; clip-path: url(&quot;#suit-pale&quot;);">
-<title>paler suit</title>
+<rect width="256" height="256" style="pointer-events: none; fill: #808080; mix-blend-mode: saturation; clip-path: url(&quot;#suit-pale&quot;);">
+<title>grey suit</title>
 </rect>
-<g style="pointer-events: none; opacity: 0.85; clip-path: url(&quot;#suit-pale&quot;);">
+<rect width="256" height="256" style="pointer-events: none; fill: #b4b4b4; mix-blend-mode: multiply; clip-path: url(&quot;#suit-pale&quot;);">
+<title>darker suit</title>
+</rect>
+<g style="pointer-events: none; opacity: 0.6; clip-path: url(&quot;#suit-pale&quot;);">
 <title>blotches</title>
 <rect width="256" height="256" style="filter: url(&quot;#blotches&quot;);"/>
+</g>
+<g style="pointer-events: none; fill: #e6e1d6; font-family: 'Arial Black', Impact, sans-serif; font-weight: 900; text-anchor: middle;">
+<title>inmate marks</title>
+<rect x="98" y="93" width="12" height="7" style="fill-opacity: 0.9;">
+<title>chest patch</title>
+</rect>
+<text x="104" y="98.6" style="fill: #141414; font-size: 4.4px; filter: url(&quot;#worn&quot;); opacity: 0.7;">D-07</text>
+<text x="144" y="106" style="font-size: 20px; fill-opacity: 0.85;">D<title>back letter</title></text>
+<text x="144" y="118" style="font-size: 7px; fill-opacity: 0.85; filter: url(&quot;#worn&quot;); opacity: 0.7;">0742<title>back number</title></text>
 </g>
 <g class="s0">
 <title>suit</title>
