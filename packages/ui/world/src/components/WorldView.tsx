@@ -45,6 +45,7 @@ import {
   defaultZoomSettleRate,
   zoomCommitIn,
 } from "../service/camera-controls";
+import { createExtraFx, type ExtraFx, type ExtraFxKey, parseExtraFxKey, warpExtraFxUv } from "../service/extra-fx";
 import {
   createFadeRooms,
   type FadeRooms,
@@ -166,6 +167,7 @@ export function WorldView(props: React.PropsWithChildren) {
       compassSnap: false,
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
+      extraFx: createExtraFx(),
       roomOutlineFx: createRoomOutline(),
       fadeRoomsFx: createFadeRooms(parseFadeRoomsMode(saved.fadeRoomsMode)),
       roomSlots: createRoomSlots(),
@@ -178,6 +180,8 @@ export function WorldView(props: React.PropsWithChildren) {
       npcOutline: saved.npcOutline,
       roomOutline: saved.fadeRoomOutlines,
       rgbShift: saved.rgbShift,
+      extraFxEnabled: saved.extraFxEnabled === true,
+      extraFxKey: parseExtraFxKey(saved.extraFxKey),
       fadeRoomsMode: parseFadeRoomsMode(saved.fadeRoomsMode),
       litNpcsEnabled: uniform(saved.litNpcsEnabled === false ? 0 : 1),
       // each is 0..1, driving a `mix` so 0 is exactly identity
@@ -189,7 +193,9 @@ export function WorldView(props: React.PropsWithChildren) {
         const { left, top } = (e.target as HTMLElement).getBoundingClientRect();
         const u = ((e.clientX - left) * glPixelRatio) / state.canvas.width;
         const v = ((e.clientY - top) * glPixelRatio) / state.canvas.height;
-        return { u, v };
+        return state.postProcessing === true && state.extraFxEnabled === true
+          ? warpExtraFxUv(state.extraFxKey, u, v)
+          : { u, v };
       },
       async createRenderer(props) {
         const canvas = props.canvas as HTMLCanvasElement;
@@ -328,6 +334,7 @@ export function WorldView(props: React.PropsWithChildren) {
         let mesh: THREE.Mesh;
 
         const uv = state.computePixelUv(e);
+        if (uv === null) return null;
         const normalizedDeviceCoords = new THREE.Vector2(-1 + 2 * uv.u, +1 - 2 * uv.v);
         w.view.raycaster.setFromCamera(normalizedDeviceCoords, state.controls?.object ?? w.r3f.camera);
 
@@ -1117,7 +1124,9 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       async pickAt(e) {
         if (w.isMapChanging() === true || state.warmingPick === true) return null;
-        const rgba = await state.renderPick(state.computePixelUv(e));
+        const uv = state.computePixelUv(e);
+        if (uv === null) return null; // off the warped frame
+        const rgba = await state.renderPick(uv);
         const picked = state.getPickedFromPixel(rgba);
         if (picked === null) return null;
         const intersection = state.getRaycastIntersection(e, picked);
@@ -1529,6 +1538,14 @@ export function WorldView(props: React.PropsWithChildren) {
         state.update();
         w.menu?.update();
       },
+      setExtraFx(next = !state.extraFxEnabled, key = state.extraFxKey) {
+        state.extraFxEnabled = next;
+        state.extraFxKey = key;
+        store.patch({ extraFxEnabled: next, extraFxKey: key });
+        next === true && state.postProcessing === false ? state.setPostProcessingEnabled(true) : state.forceUpdate();
+        state.update();
+        w.menu?.update();
+      },
       setLitNpcsEnabled(next = state.litNpcsEnabled.value !== 1) {
         state.litNpcsEnabled.value = next === true ? 1 : 0;
         store.patch({ litNpcsEnabled: next });
@@ -1557,7 +1574,8 @@ export function WorldView(props: React.PropsWithChildren) {
             : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
         // and the debug room outlines over that, from a pass of their own — see `service/room-outline`
         const ringed = state.roomOutline === true ? state.roomOutlineFx.apply(bordered, camera) : bordered;
-        pipeline.outputNode = state.rgbShiftFx.apply(ringed, state.rgbShift);
+        const shifted = state.rgbShiftFx.apply(ringed, state.rgbShift);
+        pipeline.outputNode = state.extraFx.apply(shifted, state.extraFxEnabled, state.extraFxKey);
 
         const originalRender = gl.render.bind(gl);
         let inPipeline = false;
@@ -1624,6 +1642,7 @@ export function WorldView(props: React.PropsWithChildren) {
          */
         initial: false,
         rgbShiftFx: true,
+        extraFx: true,
         roomOutlineFx: true,
         fadeRoomsFx: false,
         playerFrontier: false,
@@ -1914,6 +1933,8 @@ export type State = {
   postFx: PostProcessingType;
   /** Hung off the end of it — see `service/rgb-shift` */
   rgbShiftFx: RgbShiftFx;
+  /** Last of all, see `service/extra-fx` */
+  extraFx: ExtraFx;
   /** Which rooms the world is shown in — see `service/fade-rooms` */
   fadeRoomsFx: FadeRooms;
   /** Which room every part of the world stands in — see `service/room-slots` */
@@ -1930,6 +1951,9 @@ export type State = {
   npcOutline: boolean;
   /** Whether `rgbShiftFx` runs */
   rgbShift: boolean;
+  /** Whether `extraFx` runs */
+  extraFxEnabled: boolean;
+  extraFxKey: ExtraFxKey;
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
   /** Whether the rooms in view are outlined over the finished frame */
@@ -1970,8 +1994,8 @@ export type State = {
   onPointerMove(e: React.PointerEvent<HTMLDivElement>): void;
   onPointerUp(e: React.PointerEvent<HTMLDivElement>): void;
   getPickedFromPixel(rgba: THREE.TypedArray | [number, number, number, number]): Picked | null;
-  /** Where on the frame a pointer landed */
-  computePixelUv: (e: PointerEvent) => { u: number; v: number };
+  /** Where on the frame a pointer landed, `null` if off it, see `warpExtraFxUv` */
+  computePixelUv: (e: PointerEvent) => null | { u: number; v: number };
   /** Renders the pick pass for the pixel at `uv`, resolving to its rgba */
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
   /** Builds the pick pass's pipelines ahead of the first pick — see within */
@@ -2094,6 +2118,8 @@ export type State = {
 
   /** Whether the rgb shift runs after the post pass — takes hold whenever that pass is on */
   setRgbShiftEnabled(next?: boolean): void;
+  /** Whether an extra fx ends the post pass, and which. Turns that pass on if it is off */
+  setExtraFx(next?: boolean, key?: ExtraFxKey): void;
   /** How much of the world is shown by room, cycling round when asked for no mode in particular */
   setFadeRoomsMode(next?: FadeRoomsMode): void;
   /** The beat the first map is held flat for, and the fade brought on: before it in `sight`, else after */
@@ -2232,6 +2258,9 @@ function PostProcessing() {
       w.view.fadeRoomsFx.uid,
       w.view.rgbShiftFx.uid,
       w.view.rgbShift,
+      w.view.extraFx.uid,
+      w.view.extraFxEnabled,
+      w.view.extraFxKey,
       w.view.npcOutline,
       npcOutlineUid,
       w.view.roomOutline,

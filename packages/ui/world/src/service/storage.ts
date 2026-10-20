@@ -3,6 +3,7 @@ import type { LocalStore } from "@npc-cli/util/local-store";
 import { createLocalStore, listLocalStorageKeys, removeLocalStorageKeys } from "@npc-cli/util/local-store";
 import type { CameraModeType } from "../components/CameraControls";
 import { defaultBrightness, defaultPlayerKey, type ItemKind, inventoryConfig } from "../const.env";
+import type { ExtraFxKey } from "./extra-fx";
 import type { FadeRoomsMode } from "./fade-rooms";
 
 /**
@@ -43,6 +44,9 @@ export type WorldSettings = {
   postProcessing: boolean;
   /** Whether the channels are parted over the finished frame — see `service/rgb-shift` */
   rgbShift: boolean;
+  /** Whether an extra fx ends the post pass, see `service/extra-fx` */
+  extraFxEnabled: boolean;
+  extraFxKey: ExtraFxKey;
   /** Whether the post pass fades the world beyond the player — see `service/post-processing` */
   /** How much of the world is shown by ROOM — see `service/fade-rooms` */
   fadeRoomsMode: FadeRoomsMode;
@@ -95,6 +99,8 @@ const defaultWorldSettings: WorldSettings = {
   compassDial: true,
   postProcessing: true,
   rgbShift: true,
+  extraFxEnabled: false,
+  extraFxKey: "dot-screen",
   fadeRoomsMode: "sight",
   fadeRoomOutlines: false,
   npcOutline: isTouchDevice() === false,

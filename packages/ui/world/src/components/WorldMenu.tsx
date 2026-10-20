@@ -30,6 +30,7 @@ import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
 import { compilingShadersText, defaultBrightness } from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { extraFxKeys } from "../service/extra-fx";
 import { queryClientApi } from "../service/query-client";
 import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
@@ -58,6 +59,7 @@ export function WorldMenu() {
       debugHitOpen: false,
       dragged: false,
       gmGraphsOpen: false,
+      extraFxSelectOpen: false,
       menuWidth: saved.menuWidth,
       minY: 40,
       menuOpen: false,
@@ -86,6 +88,10 @@ export function WorldMenu() {
         if (state.unconfirmed !== null) {
           state.set({ unconfirmed: null });
         }
+      },
+      onExtraFxSelectOpenChange(open, reason) {
+        if (open === false && reason === "item-press") return;
+        state.set({ extraFxSelectOpen: open });
       },
       onSelectState(value) {
         if (value === null || state.confirm(value) === false) {
@@ -236,6 +242,8 @@ export function WorldMenu() {
         return w.view.npcOutline ?? false;
       case "rgb shift":
         return w.view.rgbShift ?? false;
+      case "extra fx":
+        return w.view.extraFxEnabled ?? false;
       case "room outlines":
         return w.view.roomOutline ?? false;
       case "lit npcs":
@@ -292,6 +300,9 @@ export function WorldMenu() {
           w.view.setRgbShiftEnabled();
           state.update();
         });
+        break;
+      case "extra fx":
+        void w.view.runBusy(compilingShadersText, () => w.view.setExtraFx());
         break;
       case "room outlines":
         // drawn by the post pass, so it rebuilds that too
@@ -562,25 +573,47 @@ export function WorldMenu() {
             <div className={sectionHeaderClass(touch)}>debug</div>
 
             <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
-              {debugItems.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                    touch && "text-sm px-2 py-2 bg-neutral-800",
-                    isDebugActive(item)
-                      ? "text-amber-300 bg-neutral-700"
-                      : "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200",
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDebugToggle(item);
-                  }}
-                >
-                  {item}
-                </button>
-              ))}
+              {debugItems.map((item) => {
+                const button = (
+                  <button
+                    key={item}
+                    type="button"
+                    className={cn(
+                      "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+                      touch && "text-sm px-2 py-2 bg-neutral-800",
+                      item === "extra fx" && "shrink-0 whitespace-nowrap",
+                      isDebugActive(item)
+                        ? "text-amber-300 bg-neutral-700"
+                        : "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200",
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDebugToggle(item);
+                    }}
+                  >
+                    {item}
+                  </button>
+                );
+                return item !== "extra fx" ? (
+                  button
+                ) : (
+                  <div key={item} className="flex items-center min-w-0" onClick={(e) => e.stopPropagation()}>
+                    {button}
+                    <MenuSelect
+                      side="bottom"
+                      className={cn("py-0.5", touch && "py-2")}
+                      value={w.view.extraFxKey}
+                      items={extraFxKeys.map((key) => ({ key, value: key }))}
+                      onValueChange={(next) => {
+                        if (next === null || (next === w.view.extraFxKey && w.view.extraFxEnabled)) return;
+                        void w.view.runBusy(compilingShadersText, () => w.view.setExtraFx(true, next));
+                      }}
+                      open={state.extraFxSelectOpen}
+                      onOpenChange={state.onExtraFxSelectOpenChange}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
             <div className={cn("px-2 pb-1", touch && "px-3 pb-2")}>
@@ -1214,11 +1247,14 @@ export type State = {
   unconfirmedTimeoutId: number;
   /** Controlled, so an unconfirmed option can keep the popup open — see `onStateSelectOpenChange` */
   stateSelectOpen: boolean;
+  /** Controlled, so picking an extra fx keeps the popup open */
+  extraFxSelectOpen: boolean;
   /** `true` if this click confirms `value`; otherwise `value` becomes the unconfirmed one */
   confirm(value: Unconfirmed): boolean;
   clearUnconfirmed(): void;
   /** Either restore this map's state from another world, or reset it — each after confirming */
   onSelectState(value: null | string): void;
+  onExtraFxSelectOpenChange(open: boolean, reason: Select.Root.ChangeEventReason): void;
   /** Resets the camera, after confirming */
   onResetCamera(): void;
   /** Remounts the World via its ui meta's `mountKey`, after confirming */
@@ -1288,6 +1324,7 @@ const debugItems = [
   "post fx",
   "npc outline",
   "rgb shift",
+  "extra fx",
   "room outlines",
   "lit npcs",
   "room hit",
@@ -1308,10 +1345,11 @@ const debugItems = [
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
 
-const selectItemClassName = (touch: boolean) =>
+/** Marks `selected` from our `value`, since base-ui keeps the old index selected whilst open */
+const selectItemClassName = (touch: boolean, selected: boolean) =>
   cn(
-    "px-2 py-1 text-xs cursor-pointer text-neutral-300",
-    "data-highlighted:bg-neutral-700 data-selected:text-amber-300",
+    "px-2 py-1 text-xs cursor-pointer text-neutral-300 data-highlighted:bg-neutral-700",
+    selected && "text-amber-300",
     touch && "px-3 py-2.5 text-sm",
   );
 
@@ -1368,9 +1406,13 @@ export function MenuSelect<T extends string>({
         >
           <Select.Popup className="bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
             <Select.List>
-              {items.map(({ key, el, value }) => (
-                <Select.Item key={key} value={value} className={selectItemClassName(touch)}>
-                  <Select.ItemText>{el ?? key}</Select.ItemText>
+              {items.map((item) => (
+                <Select.Item
+                  key={item.key}
+                  value={item.value}
+                  className={selectItemClassName(touch, item.value === value)}
+                >
+                  <Select.ItemText>{item.el ?? item.key}</Select.ItemText>
                 </Select.Item>
               ))}
             </Select.List>
