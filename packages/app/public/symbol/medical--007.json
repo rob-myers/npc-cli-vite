@@ -47,7 +47,7 @@
         {
           "id": "a5de851d-3816-4a63-a115-5a8e58a49987",
           "name": "extra--003--chair y=0.35 do:underTable",
-          "locked": false,
+          "locked": true,
           "visible": true,
           "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 20.5, "f": 87.5},
           "type": "symbol",
@@ -55,6 +55,44 @@
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": -0.37608205866850614, "y": -0.19637282181518473},
           "cssTransform": "matrix(0, -1, 1, 0, 20.1239, 87.3036)"
+        },
+        {
+          "id": "f6934b24-dae2-4452-a6dd-9e79cfb62f95",
+          "name": "medical-bed--005 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 110.4,
+            "f": 114.4
+          },
+          "type": "symbol",
+          "srcKey": "medical-bed--005",
+          "baseRect": {"width": 76.4, "height": 40.4},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, -1, 0, 110.4, 114.4)"
+        },
+        {
+          "id": "0ed691d5-fd7b-4a82-9f46-fb4d9bf56db2",
+          "name": "medical-bed--005 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": -1,
+            "d": 0,
+            "e": 170.4,
+            "f": 114.4
+          },
+          "type": "symbol",
+          "srcKey": "medical-bed--005",
+          "baseRect": {"width": 76.4, "height": 40.4},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, -1, 0, 170.4, 114.4)"
         }
       ]
     },

@@ -638,6 +638,24 @@
       "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
       "type": "symbol",
       "key": "lounge--015"
+    },
+    "low-berth--003": {
+      "filename": "low-berth--003.json",
+      "thumbnailFilename": "low-berth--003.thumbnail.png",
+      "width": 61.4,
+      "height": 71.2,
+      "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 71.2},
+      "type": "symbol",
+      "key": "low-berth--003"
+    },
+    "medical-bed--005": {
+      "filename": "medical-bed--005.json",
+      "thumbnailFilename": "medical-bed--005.thumbnail.png",
+      "width": 76.4,
+      "height": 40.4,
+      "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
+      "type": "symbol",
+      "key": "medical-bed--005"
     }
   }
 }
