@@ -41,7 +41,14 @@ export const ScenarioDefSchema = z.object({
   /** Read by a line's `$name`, and by conditions as `s.params` */
   params: z.record(z.string(), z.unknown()).default({}),
   /** In order, each ending once `until`, a function of the state, holds */
-  phases: z.array(z.object({ key: z.string(), until: z.string() })),
+  phases: z.array(
+    z.object({
+      key: z.string(),
+      until: z.string(),
+      /** A few words for `until`, e.g. on a diagram */
+      label: z.string().optional(),
+    }),
+  ),
   /** By role, then phase: the lines each npc of that role runs, in order */
   cells: z.record(z.string(), z.record(z.string(), z.array(z.string()))),
   /** Checked for each npc of `for`: once `when` holds, it runs `do`, then `apply` changes the state */
@@ -54,6 +61,8 @@ export const ScenarioDefSchema = z.object({
         when: z.string(),
         do: z.array(z.string()).default([]),
         apply: z.string().optional(),
+        /** A few words for the rule, e.g. on a diagram */
+        label: z.string().optional(),
       }),
     )
     .default([]),

@@ -1,19 +1,24 @@
 import { instanceStatus, type ScInstance } from "@npc-cli/cli/sc";
 import type { WorldState } from "@npc-cli/ui__world";
 import type { ScenarioDef } from "@npc-cli/ui__world/scenario.schema";
+import { cn } from "@npc-cli/util";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { sectionClass } from "./classes";
 import { PhaseGrid } from "./PhaseGrid";
+import { PhaseMachine } from "./PhaseMachine";
 import { RoomPicker } from "./RoomPicker";
 import { chipsOf, runInTty, useRuns } from "./runs";
+import type { CardPrefs } from "./schema";
 
 /**
  * A scenario: run from its header, its phases by roles foremost, and its runs, area, roles and params folded away
  * — see `docs/scenarios.md`
  */
-export function ScenarioCard({ w, def, container, editable, sessionKey, onSave }: Props) {
+export function ScenarioCard(props: Props) {
+  const { w, def, container, editable, sessionKey, zoom, prefs, onPrefs, onSave } = props;
+  const view = prefs.phasesView ?? "grid"; // meta saved before it existed
   const [picking, setPicking] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const runs = useRuns(w, def.key, sessionKey);
@@ -44,7 +49,39 @@ export function ScenarioCard({ w, def, container, editable, sessionKey, onSave }
         {shown !== undefined && <RunRow run={shown} send={send} />}
       </div>
 
-      <PhaseGrid def={def} phase={shown?.phase} chips={shown === undefined ? undefined : chipsOf(shown)} />
+      <div className="flex flex-col gap-1">
+        {/* one choice of two: the chosen one filled */}
+        <div className="flex self-start rounded border border-zinc-700 overflow-hidden" role="radiogroup">
+          {(["grid", "machine"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={v === view}
+              className={cn(
+                "px-2 py-0.5",
+                v === view ? "bg-zinc-700 text-zinc-100" : "text-zinc-400 cursor-pointer hover:bg-zinc-800",
+              )}
+              onClick={() => onPrefs({ phasesView: v })}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        {view === "grid" ? (
+          <PhaseGrid def={def} phase={shown?.phase} chips={shown === undefined ? undefined : chipsOf(shown)} />
+        ) : (
+          <PhaseMachine
+            def={def}
+            phase={shown?.phase}
+            zoom={zoom}
+            height={prefs.machineHeight}
+            viewport={prefs.machineViewport}
+            onHeight={(machineHeight) => onPrefs({ machineHeight })}
+            onViewport={(machineViewport) => onPrefs({ machineViewport })}
+          />
+        )}
+      </div>
 
       <div className="flex flex-col gap-1">
         <Fold title="runs" hint={runs.length === 0 ? "none" : String(runs.length)}>
@@ -177,5 +214,10 @@ type Props = {
   editable: boolean;
   /** The tty its runs are started in */
   sessionKey: undefined | string;
+  /** The panel's text zoom */
+  zoom: number;
+  /** What it keeps in the panel's meta, e.g. grid or machine */
+  prefs: CardPrefs;
+  onPrefs(patch: Partial<CardPrefs>): void;
   onSave(def: ScenarioDef): void;
 };

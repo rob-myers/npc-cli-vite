@@ -14,6 +14,7 @@
     "@npc-cli/ui__world": "workspace:^",
     "@npc-cli/util": "workspace:^",
     "@phosphor-icons/react": "catalog:",
+    "@xyflow/react": "catalog:",
     "allotment": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

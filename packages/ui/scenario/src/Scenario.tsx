@@ -34,7 +34,7 @@ import { conversations } from "./demo/trees";
 import { IconButton, Picker } from "./parts";
 import { ScenarioCard } from "./ScenarioCard";
 import { type ScenarioStub, scenarios } from "./scenarios";
-import type { ScenarioUiMeta } from "./schema";
+import type { CardPrefs, ScenarioUiMeta } from "./schema";
 
 import "./scenario.css";
 
@@ -175,6 +175,9 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         if (w === undefined || npc === undefined || skin === undefined || !hasSkin(w, skin)) return;
         npc.setSkin(skin);
         w.view.forceUpdate();
+      },
+      setPrefs(patch) {
+        uiStoreApi.setUiMeta(meta.id, (draft) => void Object.assign(draft, patch));
       },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
@@ -333,6 +336,9 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         container={root.current}
         editable={editable}
         sessionKey={sessionKey}
+        zoom={zoom}
+        prefs={meta}
+        onPrefs={state.setPrefs}
         onSave={state.saveDef}
       />
     ) : stub !== undefined ? (
@@ -600,6 +606,7 @@ type State = {
   show(key: string | undefined): void;
   select(key: string): void;
   zoomBy(delta: number): void;
+  setPrefs(patch: Partial<CardPrefs>): void;
   /** Their npc in the World, if there, is respawned under the new key */
   setNpcKey(npcKey: string | undefined): Promise<void>;
   /** Their npc in the World, if there, takes it */
