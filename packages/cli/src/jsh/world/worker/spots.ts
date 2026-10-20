@@ -21,6 +21,11 @@ let current: null | { cacheKey: string; promise: Promise<MapSpots> } = null;
 /** Answers each query of a batch in order. One that fails answers `{ error }`, not the batch */
 export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.JshOp, { key: "spots" }>) {
   const npcByKey = new Map(npcs.map((npc) => [npc.key, npc]));
+  const resolveNpc = (key: string) => {
+    const npc = npcByKey.get(key);
+    if (npc === undefined) throw Error(`${key}: not sent`);
+    return npc;
+  };
   /** A spot key, else the spot an npc is at */
   const resolve = (ref: string) => {
     const npc = npcByKey.get(ref);
@@ -48,10 +53,47 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
         }
         case "sees": {
           const [a, b] = [resolve(query.a), resolve(query.b)];
-          return { sees: all.sees(a, b), via: all.seesVia(a, b), from: a.key, to: b.key };
+          return {
+            sees: all.sees(a, b),
+            via: all.seesVia(a, b),
+            crouchHides: all.crouchHidden(b, a),
+            from: a.key,
+            to: b.key,
+          };
         }
         case "seenBy":
           return all.seenBy(resolve(query.a)).map(toJson);
+        case "at": {
+          const spot = all.nearestTo(query.point, query.grKey);
+          return spot === undefined ? null : toJson(spot);
+        }
+        case "hide": {
+          const npc = resolveNpc(query.npc);
+          const watchers = query.from.map(resolve);
+          const exclude = new Set(query.exclude);
+          const prefer = query.prefer ?? [];
+          const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
+          const best = all
+            .inRooms(query.rooms)
+            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key) && !watchers.some((w) => all.sees(w, s)))
+            .sort((u, v) => rank(u) - rank(v) || dist(u, npc.point) - dist(v, npc.point))[0];
+          return best === undefined ? null : toJson(best);
+        }
+        case "search": {
+          const npc = resolveNpc(query.npc);
+          const area = all.inRooms(query.rooms);
+          const unseen = new Set(area.filter((s) => !query.seen.includes(s.key)).map((s) => s.key));
+          /** Spots it would see not yet seen, less a cost for the walk there */
+          const score = (s: MapSpot) =>
+            all.seenBy(s).filter((t) => unseen.has(t.key)).length +
+            (unseen.has(s.key) ? 1 : 0) -
+            searchWalkCost * dist(s, npc.point);
+          const best = area
+            .filter((s) => placeKinds.includes(s.kind))
+            .map((s) => ({ s, score: score(s) }))
+            .sort((u, v) => v.score - u.score)[0];
+          return best === undefined || best.score <= 0 ? null : toJson(best.s);
+        }
       }
     } catch (e) {
       return { error: e instanceof Error ? e.message : String(e) };
@@ -67,6 +109,9 @@ async function createMapSpots(gms: WW.GmForSpots[]) {
   const byGmKey = Object.fromEntries(files.map((file) => [file.gmKey, file]));
   const spots: MapSpot[] = gms.flatMap((gm, gmId) => {
     const { a, b, c, d, e, f } = gm.transform;
+    /** A local angle, as world radians */
+    const turn = (angle: number) =>
+      Math.atan2(b * Math.cos(angle) + d * Math.sin(angle), a * Math.cos(angle) + c * Math.sin(angle));
     return (byGmKey[gm.key]?.spots ?? []).map((spot) => ({
       key: `g${gmId}s${spot.id}`,
       gmId,
@@ -74,20 +119,15 @@ async function createMapSpots(gms: WW.GmForSpots[]) {
       x: a * spot.x + c * spot.y + e,
       y: b * spot.x + d * spot.y + f,
       grKey: spot.roomId === null ? null : `g${gmId}r${spot.roomId}`,
-      facing:
-        spot.facing === undefined
-          ? undefined
-          : Math.atan2(
-              b * Math.cos(spot.facing) + d * Math.sin(spot.facing),
-              a * Math.cos(spot.facing) + c * Math.sin(spot.facing),
-            ),
+      facing: spot.facing === undefined ? undefined : turn(spot.facing),
+      wall: turn((2 * Math.PI * spot.depth.indexOf(Math.min(...spot.depth))) / spot.depth.length),
       spot,
     }));
   });
   return new MapSpots(spots);
 }
 
-function toJson({ key, kind, x, y, grKey, facing, spot }: MapSpot): WW.SpotJson {
+function toJson({ key, kind, x, y, grKey, facing, wall, spot }: MapSpot): WW.SpotJson {
   return {
     key,
     kind,
@@ -95,11 +135,16 @@ function toJson({ key, kind, x, y, grKey, facing, spot }: MapSpot): WW.SpotJson 
     y: round(y),
     grKey,
     ...(facing === undefined ? {} : { facing: round(facing) }),
+    wall: round(wall),
     sees: spot.sees.length,
   };
 }
 
 const round = (x: number) => Math.round(x * 100) / 100;
+/** Spots an npc is sent to: not a doable, which needs its decor, nor in a doorway */
+const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
+/** Seen spots a metre more walk is worth, choosing where to search */
+const searchWalkCost = 0.5;
 const spotKeyRe = /^g\d+s\d+$/;
 
 export class MapSpots {
@@ -217,6 +262,8 @@ export type MapSpot = {
   grKey: null | string;
   /** Radians on the ground plane, as `x/y` */
   facing: undefined | number;
+  /** Radians towards its nearest occluder, its least `depth` */
+  wall: number;
   spot: Spot;
 };
 

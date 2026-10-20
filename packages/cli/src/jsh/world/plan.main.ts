@@ -144,6 +144,12 @@ function namedIn(q: WW.SpotQuery): string[] {
       return [q.a, q.b];
     case "seenBy":
       return [q.a];
+    case "at":
+      return [];
+    case "hide":
+      return [q.npc, ...q.from];
+    case "search":
+      return [q.npc];
   }
 }
 

@@ -49,6 +49,8 @@ export const ScenarioDefSchema = z.object({
     .array(
       z.object({
         for: z.string(),
+        /** Checked only in these phases, else in every one */
+        phases: z.array(z.string()).optional(),
         when: z.string(),
         do: z.array(z.string()).default([]),
         apply: z.string().optional(),

@@ -203,6 +203,13 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       wall: null as any,
       helper,
 
+      async changeMap(mapKey) {
+        if (mapKey === state.mapKey) return;
+        await state.net?.leave(); // as the menu's switch: any mirror session ends first
+        await state.floor?.fadeOut(mapKey);
+        state.e.onChangeMap(); // persist and remove whilst the old map still exists
+        uiStoreApi.setUiMeta(state.id, (draft) => void ((draft as WorldUiMeta).mapKey = mapKey));
+      },
       findGmIdContaining(input) {
         if (typeof input.meta?.gmId === "number" && input.meta.gmId >= 0) {
           return input.meta.gmId;
@@ -683,6 +690,8 @@ export type State = {
   /** The map we last announced via "map-settled" */
   settledMapKey: null | string;
 
+  /** Switches to `mapKey` as the World menu does. Settled once `map-settled` is emitted */
+  changeMap(mapKey: string): Promise<void>;
   findGmIdContaining(input: MaybeMeta<JshCli.PointAnyFormat>): number | null;
   findRoomContaining(point: MaybeMeta<JshCli.PointAnyFormat>, includeDoors?: boolean): null | Geomorph.GmRoomId;
   foldTo(amount: number, ms?: number): Promise<void>;

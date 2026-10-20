@@ -32,6 +32,7 @@
   "rules": [
     {
       "for": "hider",
+      "phases": ["search"],
       "when": "(s, n) => !n.found && s.seenBy('seeker', n)",
       "do": ["say Found."],
       "apply": "(s, n) => { n.found = true; n.role = 'seeker'; }"

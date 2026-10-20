@@ -21,7 +21,13 @@ declare namespace WW {
     | { q: "get"; key: string }
     | { q: "list"; rooms?: string[]; kinds?: string[]; near?: { npc: string; within: number } }
     | { q: "sees"; a: string; b: string }
-    | { q: "seenBy"; a: string };
+    | { q: "seenBy"; a: string }
+    /** The spot nearest a point, in room `grKey` if given */
+    | { q: "at"; point: Geom.VectJson; grKey?: null | string }
+    /** The best spot in `rooms` none of `from` sees: of `prefer` kinds first, then nearest `npc` */
+    | { q: "hide"; npc: string; from: string[]; rooms: string[]; prefer?: string[]; exclude?: string[] }
+    /** The spot in `rooms` whose sight adds most not yet `seen`, for its distance from `npc` */
+    | { q: "search"; npc: string; rooms: string[]; seen: string[] };
 
   /** A spot in world coords; `sees` counts the spots it sees */
   type SpotJson = {
@@ -31,6 +37,8 @@ declare namespace WW {
     y: number;
     grKey: null | string;
     facing?: number;
+    /** Radians towards its nearest occluder */
+    wall: number;
     sees: number;
   };
 
@@ -39,7 +47,8 @@ declare namespace WW {
     | null
     | SpotJson
     | SpotJson[]
-    | { sees: boolean; via: null | string; from: string; to: string }
+    /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover */
+    | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
     | { error: string };
 
   /** An npc, as an op sees them — see `npcQuery` in `plan.main.ts` */
