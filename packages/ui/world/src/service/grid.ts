@@ -170,8 +170,9 @@ export function createGmIdGrid(gms: Geomorph.LayoutInstance[]): Geomorph.GmIdGri
       warn(`${"createGmIdGrid"}: ${gmKey} gridRect should be aligned to ${gmIdGridDim}x${gmIdGridDim} grid`);
     }
 
-    for (let x = Math.floor(gx / gmIdGridDim); x < Math.floor(right / gmIdGridDim); x++)
-      for (let y = Math.floor(gy / gmIdGridDim); y < Math.floor(bottom / gmIdGridDim); y++)
+    // rounded, so a geomorph slightly off the grid still claims the cells it was meant to
+    for (let x = Math.round(gx / gmIdGridDim); x < Math.round(right / gmIdGridDim); x++)
+      for (let y = Math.round(gy / gmIdGridDim); y < Math.round(bottom / gmIdGridDim); y++)
         gmIdGrid[`${x},${y}`] = gmId;
   }
 
