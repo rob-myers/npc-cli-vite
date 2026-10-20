@@ -1350,7 +1350,7 @@ const toastLingerMs = 2000;
 const spinnerMinMs = 300;
 
 const cameraModes: CameraModeType[] = ["free", "embodied"];
-const debugItems = ["view pick", "post fx", "npcs", "rgb shift", "overlay", "modals", "door ui", "hud debug"] as const;
+const debugItems = ["door ui", "hud debug", "modals", "npcs", "overlay", "post fx", "rgb shift", "view pick"] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
