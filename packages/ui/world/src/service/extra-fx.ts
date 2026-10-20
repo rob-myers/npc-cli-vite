@@ -25,19 +25,19 @@ import * as THREE from "three/webgpu";
 
 /** In menu order */
 export const extraFxKeys = [
-  "dot-screen",
-  "mono",
-  "sepia",
   "bleach",
-  "film",
-  "night-vision",
-  "thermal",
-  "crt",
-  "noir",
-  "duotone",
-  "cyanotype",
   "cross-process",
+  "crt",
+  "cyanotype",
+  "dot-screen",
+  "duotone",
+  "film",
   "gameboy",
+  "mono",
+  "night-vision",
+  "noir",
+  "sepia",
+  "thermal",
 ] as const;
 
 export type ExtraFxKey = (typeof extraFxKeys)[number];

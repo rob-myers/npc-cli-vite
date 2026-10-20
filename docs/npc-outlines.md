@@ -4,8 +4,8 @@ A border just outside every npc's silhouette, so a person reads against a busy f
 post pass from a silhouette the scene pass writes — **not** by edge-detecting the colour buffer,
 which cannot tell an npc from a similarly coloured wall behind them.
 
-On by default: `npcOutline` in `WorldSettings`, toggled by the **"Npc Outline"** row in
-`WorldMenu`'s `debugItems`. It is drawn by the post pass, so asking for it turns "Post FX" on if
+On by default: `npcOutline` in `WorldSettings`, toggled by **outline** in the debug **npcs** select
+(`WorldMenu`'s `debugGroups`). It is drawn by the post pass, so asking for it turns "post fx" on if
 that is off.
 
 | file | what it holds |
@@ -117,15 +117,17 @@ keeps an even width, unrolled whilst building the node graph so no loop reaches 
 
 ## 4. Compositing, and the `Fn` it must be
 
-The border goes over the FINISHED frame, between the backdrop composite and the rgb shift hung
-off the end:
+The border goes over the FINISHED frame, between the backdrop composite and what is hung
+off the end: the debug room outlines, the rgb shift, then any extra fx (`service/extra-fx`).
 
 ```ts
 const composed = state.postFx.apply(scenePass.getTextureNode("output"), state.fadeRoomsFx.sightNode);
 const bordered = state.npcMaskMrt === null
   ? composed
   : applyNpcOutline(composed, scenePass.getTextureNode("npcMask"), scenePass.getTextureNode("depth"));
-pipeline.outputNode = state.rgbShiftFx.apply(bordered, state.rgbShift);
+const ringed = state.roomOutline === true ? state.roomOutlineFx.apply(bordered, camera) : bordered;
+const shifted = state.rgbShiftFx.apply(ringed, state.rgbShift);
+pipeline.outputNode = state.extraFx.apply(shifted, state.extraFxEnabled, state.extraFxKey);
 ```
 
 **`applyNpcOutline` wraps its body in a TSL `Fn`.** The rim is built in `var`s, and outside a

@@ -19,7 +19,7 @@ depend on the instance:
 
 - **The mesh on the deck is decoration.** It is the layout's own triangulation, `layout.navDecomp`,
   not the world's nav mesh, which is tiled across the map and differs per instance and at hull doors.
-  The real one is the debug `navmesh`.
+  The real one is `navmesh` in the debug **overlay** select.
 - **Room labels are read off the FIRST instance's decor.** A room label is never added at runtime.
 - **The debug grid is not on the floor at all.** It is a quad of its own in `Debug`, shaded by
   `service/floor-grid.ts` and shown whilst `gridShown`. Its lines and each cell's `(x, y)` are the

@@ -7,6 +7,7 @@ import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
   ArrowsClockwiseIcon,
   BrainIcon,
+  CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
   CrosshairSimpleIcon,
@@ -316,13 +317,13 @@ export function WorldMenu() {
         state.update();
         break;
       case "room hit":
-        state.set({ menuOpen: false, debugHitOpen: true });
+        state.set({ debugHitOpen: true });
         break;
       case "graphs":
-        state.set({ menuOpen: false, gmGraphsOpen: true });
+        state.set({ gmGraphsOpen: true });
         break;
       case "skins":
-        state.set({ menuOpen: false, skinDebugOpen: true });
+        state.set({ skinDebugOpen: true });
         break;
       case "colliders":
         w.debug?.showPhysicsColliders();
@@ -572,20 +573,67 @@ export function WorldMenu() {
 
             <div className={sectionHeaderClass(touch)}>debug</div>
 
+            <div
+              className={cn("px-2 pb-1 flex items-center", touch && "px-3 pb-2")}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className={cn(debugButtonClassName(touch, w.view.extraFxEnabled), "shrink-0 whitespace-nowrap")}
+                onClick={() => onDebugToggle("extra fx")}
+              >
+                extra fx
+              </button>
+              <MenuSelect
+                side="bottom"
+                className={cn("py-0.5", touch && "py-2")}
+                value={w.view.extraFxKey}
+                items={extraFxKeys.map((key) => ({ key, value: key }))}
+                onValueChange={(next) => {
+                  if (next === null || (next === w.view.extraFxKey && w.view.extraFxEnabled)) return;
+                  void w.view.runBusy(compilingShadersText, () => w.view.setExtraFx(true, next));
+                }}
+                open={state.extraFxSelectOpen}
+                onOpenChange={state.onExtraFxSelectOpenChange}
+              />
+            </div>
+
             <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
               {debugItems.map((item) => {
-                const button = (
+                if (item === "modals") {
+                  return (
+                    <MenuSelect
+                      key={item}
+                      caret
+                      side="bottom"
+                      label={item}
+                      className={debugButtonClassName(touch, false)}
+                      value={null}
+                      items={modalItems}
+                      onValueChange={(next) => next !== null && onDebugToggle(next)}
+                    />
+                  );
+                }
+                const group = item in debugGroups ? debugGroups[item as DebugGroup] : null;
+                const active = group?.map(({ value }) => value).filter(isDebugActive);
+                return group !== null && active !== undefined ? (
+                  <MenuMultiSelect
+                    key={item}
+                    label={item}
+                    className={debugButtonClassName(touch, active.length > 0)}
+                    items={group}
+                    value={active}
+                    onValueChange={(next) =>
+                      group.forEach(
+                        ({ value }) => next.includes(value) !== active.includes(value) && onDebugToggle(value),
+                      )
+                    }
+                  />
+                ) : (
                   <button
                     key={item}
                     type="button"
-                    className={cn(
-                      "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
-                      touch && "text-sm px-2 py-2 bg-neutral-800",
-                      item === "extra fx" && "shrink-0 whitespace-nowrap",
-                      isDebugActive(item)
-                        ? "text-amber-300 bg-neutral-700"
-                        : "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200",
-                    )}
+                    className={debugButtonClassName(touch, isDebugActive(item))}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDebugToggle(item);
@@ -593,25 +641,6 @@ export function WorldMenu() {
                   >
                     {item}
                   </button>
-                );
-                return item !== "extra fx" ? (
-                  button
-                ) : (
-                  <div key={item} className="flex items-center min-w-0" onClick={(e) => e.stopPropagation()}>
-                    {button}
-                    <MenuSelect
-                      side="bottom"
-                      className={cn("py-0.5", touch && "py-2")}
-                      value={w.view.extraFxKey}
-                      items={extraFxKeys.map((key) => ({ key, value: key }))}
-                      onValueChange={(next) => {
-                        if (next === null || (next === w.view.extraFxKey && w.view.extraFxEnabled)) return;
-                        void w.view.runBusy(compilingShadersText, () => w.view.setExtraFx(true, next));
-                      }}
-                      open={state.extraFxSelectOpen}
-                      onOpenChange={state.onExtraFxSelectOpenChange}
-                    />
-                  </div>
                 );
               })}
             </div>
@@ -962,6 +991,8 @@ function MenuShell({
       onOpenChange={(open, { reason, event }) => {
         if (open) {
           state.set({ menuOpen: true });
+        } else if (state.debugHitOpen || state.gmGraphsOpen || state.skinDebugOpen) {
+          // a press or escape in a debug modal is for the modal
         } else if (
           reason === "outside-press" &&
           (event.target as HTMLElement).closest?.("[data-keep-menu-open]") != null
@@ -1319,31 +1350,41 @@ const toastLingerMs = 2000;
 const spinnerMinMs = 300;
 
 const cameraModes: CameraModeType[] = ["free", "embodied"];
-const debugItems = [
-  "view pick",
-  "post fx",
-  "npc outline",
-  "rgb shift",
-  "extra fx",
-  "room outlines",
-  "lit npcs",
-  "room hit",
-  "graphs",
-  "skins",
-  "colliders",
-  "grid",
-  "toggle doors",
-  "pick doors",
-  "door normals",
-  "decor points",
-  "decorations",
-  "npc contextmenu",
-  "navmesh",
-  "hud debug",
-] as const;
+const debugItems = ["view pick", "post fx", "npcs", "rgb shift", "overlay", "modals", "door ui", "hud debug"] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
+
+/** Debug options merged into one multiselect, by its label */
+const debugGroups = {
+  npcs: [
+    { key: "contextmenu", value: "npc contextmenu" },
+    { key: "lit", value: "lit npcs" },
+    { key: "outline", value: "npc outline" },
+  ],
+  overlay: ["colliders", "decor points", "decorations", "door normals", "grid", "navmesh", "room outlines"].map(
+    (value) => ({
+      key: value,
+      value,
+    }),
+  ),
+  "door ui": [
+    { key: "pick", value: "pick doors" },
+    { key: "toggle", value: "toggle doors" },
+  ],
+};
+
+type DebugGroup = keyof typeof debugGroups;
+
+/** Debug options that each open a modal, picked from "modals" */
+const modalItems = ["graphs", "room hit", "skins"].map((value) => ({ key: value, value }));
+
+const debugButtonClassName = (touch: boolean, active: boolean) =>
+  cn(
+    "text-xs px-1.5 py-0.5 rounded cursor-pointer text-left",
+    touch && "text-sm px-2 py-2 bg-neutral-800",
+    active ? "text-amber-300 bg-neutral-700" : "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200",
+  );
 
 /** Marks `selected` from our `value`, since base-ui keeps the old index selected whilst open */
 const selectItemClassName = (touch: boolean, selected: boolean) =>
@@ -1354,6 +1395,7 @@ const selectItemClassName = (touch: boolean, selected: boolean) =>
   );
 
 export function MenuSelect<T extends string>({
+  caret,
   className,
   items,
   label,
@@ -1363,6 +1405,8 @@ export function MenuSelect<T extends string>({
   open,
   onOpenChange,
 }: {
+  /** Shows a down-caret, so it reads as a select rather than a button */
+  caret?: boolean;
   className?: string;
   items: { key: string; el?: React.JSX.Element; value: T }[];
   /** Defaults to value */
@@ -1389,11 +1433,13 @@ export function MenuSelect<T extends string>({
           "flex items-center gap-1 px-2 py-1 text-xs text-neutral-300 cursor-pointer hover:bg-neutral-700 w-full min-w-0",
           touch && "px-3 py-2 text-sm",
           className,
+          caret && "justify-between",
         )}
       >
         <Select.Value placeholder={label} className="truncate">
           {label ?? items.find((item) => item.value === value)?.key ?? label}
         </Select.Value>
+        {caret && <CaretDownIcon className="size-3 shrink-0 opacity-60" />}
       </Select.Trigger>
       <Select.Portal container={w.rootEl}>
         <Select.Positioner
@@ -1413,6 +1459,59 @@ export function MenuSelect<T extends string>({
                   className={selectItemClassName(touch, item.value === value)}
                 >
                   <Select.ItemText>{item.el ?? item.key}</Select.ItemText>
+                </Select.Item>
+              ))}
+            </Select.List>
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
+
+/** Like `MenuSelect`, but each item toggles, and the popup stays open */
+function MenuMultiSelect<T extends string>({
+  className,
+  items,
+  label,
+  side = "bottom",
+  value,
+  onValueChange,
+}: {
+  className?: string;
+  items: { key: string; value: T }[];
+  label: string;
+  side?: "left" | "right" | "bottom" | "top";
+  value: T[];
+  onValueChange: (value: T[]) => void;
+}) {
+  const w = useContext(WorldContext);
+  const touch = w.touchDevice;
+
+  return (
+    <Select.Root multiple value={value} onValueChange={onValueChange}>
+      <Select.Trigger className={cn(className, "flex items-center justify-between gap-1")}>
+        {label}
+        <CaretDownIcon className="size-3 shrink-0 opacity-60" />
+      </Select.Trigger>
+      <Select.Portal container={w.rootEl}>
+        <Select.Positioner
+          className="z-50"
+          sideOffset={4}
+          side={side}
+          align="start"
+          collisionPadding={0}
+          alignItemWithTrigger={false}
+        >
+          <Select.Popup className="bg-neutral-800 border border-neutral-700 rounded shadow-lg py-1 max-h-60 overflow-auto scrollbar-thin">
+            <Select.List>
+              {items.map((item) => (
+                <Select.Item
+                  key={item.key}
+                  value={item.value}
+                  className={selectItemClassName(touch, value.includes(item.value))}
+                >
+                  <Select.ItemText>{item.key}</Select.ItemText>
                 </Select.Item>
               ))}
             </Select.List>

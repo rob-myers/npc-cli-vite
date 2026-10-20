@@ -51,7 +51,7 @@ the cursor, drag, pinch). Where the map was left is kept per World and map,
 under one localStorage key `decorator:<world>:map:<map>` (`storage.ts`), and the map is remade per
 `mapKey` so it starts from there.
 
-It is drawn from each geomorph's own layout, not from the geomorph PNGs the debug "Graphs" modal
+It is drawn from each geomorph's own layout, not from the geomorph PNGs the debug **modals** select's "graphs"
 shows behind its graphs — so it is where things really are:
 
 - per `w.gms[gmId]`, inside `<g transform="matrix(gm.transform)">`, path data in the geomorph's own
@@ -95,7 +95,7 @@ room along, and fades with the room it is now in. A rect or circle gets `meta.fl
 every `decor-created` / `decor-removed`, so whoever edits is saved; not whilst a map changes, which
 removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor out of the save.
 
-**Decorating** is the debug **decorations** toggle (`w.debug.decorShown`, persisted, off by default):
+**Decorating** is **decorations** in the debug **overlay** select (`w.debug.decorShown`, persisted, off by default):
 
 - every runtime decor is drawn, whether or not `meta.shown` says so — `hasInstance` admits it, and
   the toggle rebuilds the runtime instances — so abstract decor can be seen and picked;
