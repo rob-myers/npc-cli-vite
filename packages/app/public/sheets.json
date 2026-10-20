@@ -90,15 +90,15 @@
       "rect": {"x": 3283, "y": 1116, "width": 260, "height": 800},
       "sheetId": 0
     },
-    "misc-stellar-cartography--020 2": {
+    "misc-stellar-cartography--020 1": {
       "symbolKey": "misc-stellar-cartography--020",
-      "obstacleId": 2,
+      "obstacleId": 1,
       "rect": {"x": 8, "y": 3267, "width": 696, "height": 300.5},
       "sheetId": 0
     },
-    "misc-stellar-cartography--020 4": {
+    "misc-stellar-cartography--020 2": {
       "symbolKey": "misc-stellar-cartography--020",
-      "obstacleId": 4,
+      "obstacleId": 2,
       "rect": {"x": 2975, "y": 2344, "width": 300.5, "height": 696},
       "sheetId": 0
     },
@@ -432,58 +432,46 @@
       "rect": {"x": 2747, "y": 3901, "width": 92, "height": 92},
       "sheetId": 0
     },
+    "extra--023--machine 0": {
+      "symbolKey": "extra--023--machine",
+      "obstacleId": 0,
+      "rect": {"x": 8, "y": 8, "width": 1102, "height": 1101},
+      "sheetId": 1
+    },
     "machinery--158 0": {
       "symbolKey": "machinery--158",
       "obstacleId": 0,
-      "rect": {"x": 8, "y": 8, "width": 560, "height": 1100},
-      "sheetId": 1
-    },
-    "misc-stellar-cartography--020 1": {
-      "symbolKey": "misc-stellar-cartography--020",
-      "obstacleId": 1,
-      "rect": {"x": 576, "y": 8, "width": 1100, "height": 1100},
-      "sheetId": 1
-    },
-    "misc-stellar-cartography--020 3": {
-      "symbolKey": "misc-stellar-cartography--020",
-      "obstacleId": 3,
-      "rect": {"x": 8, "y": 1116, "width": 1100, "height": 1099},
-      "sheetId": 1
-    },
-    "misc-stellar-cartography--020 5": {
-      "symbolKey": "misc-stellar-cartography--020",
-      "obstacleId": 5,
-      "rect": {"x": 1684, "y": 8, "width": 1100, "height": 1100},
+      "rect": {"x": 8, "y": 1117, "width": 560, "height": 1100},
       "sheetId": 1
     },
     "office--020 0": {
       "symbolKey": "office--020",
       "obstacleId": 0,
-      "rect": {"x": 1116, "y": 1116, "width": 620, "height": 920},
+      "rect": {"x": 1118, "y": 8, "width": 620, "height": 920},
       "sheetId": 1
     },
     "lab--012 0": {
       "symbolKey": "lab--012",
       "obstacleId": 0,
-      "rect": {"x": 1744, "y": 1116, "width": 783, "height": 920},
+      "rect": {"x": 576, "y": 1117, "width": 783, "height": 920},
       "sheetId": 1
     },
     "misc-stellar-cartography--020 0": {
       "symbolKey": "misc-stellar-cartography--020",
       "obstacleId": 0,
-      "rect": {"x": 8, "y": 2223, "width": 914.5, "height": 914.5},
+      "rect": {"x": 1746, "y": 8, "width": 914.5, "height": 914.5},
       "sheetId": 1
     },
     "machinery--091 0": {
       "symbolKey": "machinery--091",
       "obstacleId": 0,
-      "rect": {"x": 931, "y": 2223, "width": 500, "height": 558.15},
+      "rect": {"x": 1746, "y": 931, "width": 500, "height": 558.15},
       "sheetId": 1
     }
   },
   "symbolSheetDims": [
     {"width": 3721, "height": 4074},
-    {"width": 2792, "height": 3146}
+    {"width": 2669, "height": 2225}
   ],
   "maxSymbolSheetDim": {"width": 3721, "height": 4074},
   "decor": {
