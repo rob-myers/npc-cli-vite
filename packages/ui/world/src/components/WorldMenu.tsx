@@ -70,6 +70,7 @@ export function WorldMenu() {
       stateSelectOpen: false,
       themeEditorOpen: false,
       themeEditorRef: null as any,
+      timeSliderOpen: saved.timeSliderOpen !== false,
       toastTs: {} as Record<string, number>,
       y: saved.menuY,
 
@@ -208,6 +209,10 @@ export function WorldMenu() {
       },
       persistY() {
         store.patch({ menuY: state.getClampedY(y.get()) });
+      },
+      toggleTimeSlider() {
+        state.set({ timeSliderOpen: !state.timeSliderOpen });
+        store.patch({ timeSliderOpen: state.timeSliderOpen });
       },
       persistMenuSize() {
         store.patch({ menuWidth: state.menuWidth, menuHeight: state.menuHeight, menuY: state.getClampedY(y.get()) });
@@ -834,25 +839,34 @@ export function WorldMenu() {
             onPointerDown={(e) => e.stopPropagation()}
             onDoubleClick={() => w.gameTime.setScale(1)}
           >
-            <Slider.Root
-              orientation="vertical"
-              min={0}
-              max={timeScaleStops}
-              value={timeScaleToStop(w.gameTime.scale)}
-              disabled={w.client}
-              onValueChange={(stop) => w.gameTime.setScale(stopToTimeScale(stop))}
-              className="h-25"
+            {state.timeSliderOpen && (
+              <Slider.Root
+                orientation="vertical"
+                min={0}
+                max={timeScaleStops}
+                value={timeScaleToStop(w.gameTime.scale)}
+                disabled={w.client}
+                onValueChange={(stop) => w.gameTime.setScale(stopToTimeScale(stop))}
+                className="h-25"
+              >
+                {/* padded by half the thumb, which is centred on its value, so it stays clear of the label */}
+                <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-2.5">
+                  <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
+                    <Slider.Thumb className="grid size-6 place-items-center rounded-full bg-white text-neutral-800 outline-none">
+                      <HourglassMediumIcon className="size-4.5" weight="bold" />
+                    </Slider.Thumb>
+                  </Slider.Track>
+                </Slider.Control>
+              </Slider.Root>
+            )}
+            <button
+              type="button"
+              title={state.timeSliderOpen ? "hide time scale" : "show time scale"}
+              className="cursor-pointer text-[10px] tabular-nums text-neutral-300 hover:text-white"
+              onClick={state.toggleTimeSlider}
             >
-              {/* padded by half the thumb, which is centred on its value, so it stays clear of the label */}
-              <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-2.5">
-                <Slider.Track className="relative h-full w-1 rounded-full bg-white/50">
-                  <Slider.Thumb className="grid size-6 place-items-center rounded-full bg-white text-neutral-800 outline-none">
-                    <HourglassMediumIcon className="size-4.5" weight="bold" />
-                  </Slider.Thumb>
-                </Slider.Track>
-              </Slider.Control>
-            </Slider.Root>
-            <span className="text-[10px] tabular-nums text-neutral-300">{w.gameTime.scale.toFixed(2)}</span>
+              {w.gameTime.scale.toFixed(2)}
+            </button>
           </div>
         </div>
 
@@ -1278,6 +1292,9 @@ export type State = {
   unconfirmedTimeoutId: number;
   /** Controlled, so an unconfirmed option can keep the popup open — see `onStateSelectOpenChange` */
   stateSelectOpen: boolean;
+  timeSliderOpen: boolean;
+  /** Shows or hides the time scale slider, keeping its number */
+  toggleTimeSlider(): void;
   /** Controlled, so picking an extra fx keeps the popup open */
   extraFxSelectOpen: boolean;
   /** `true` if this click confirms `value`; otherwise `value` becomes the unconfirmed one */

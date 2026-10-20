@@ -68,6 +68,8 @@ export type WorldSettings = {
   hudDebug: boolean;
   /** Game time per real second, `0` to `2` — see `GameTime.setScale` */
   timeScale: number;
+  /** Whether the menu shows its time scale slider, else only its number */
+  timeSliderOpen: boolean;
   /** What the player's bubble set of their breathing, over its defaults */
   breathTune: Partial<import("../const.npc").BreathTune>;
   gmGraphsFilter: "gm" | "room";
@@ -111,6 +113,7 @@ const defaultWorldSettings: WorldSettings = {
   npcContextMenu: true,
   hudDebug: false,
   timeScale: 1,
+  timeSliderOpen: true,
   breathTune: {},
   gmGraphsFilter: "room",
   menuY: 40,
