@@ -150,6 +150,11 @@ is its pixel plus that, e.g. minus `(4, 62)` in g-302.
   png in a colour through its `cssTransform` at a scale of 0.2, and look at it.
 - **The art may not match the symbol.** The lounge of g-302 has `lounge--015`'s fresher but not its
   furniture. Place it and say so; do not delete what was placed by hand.
+- **Art with no symbol placed is usually a symbol not yet listed.** Look in `media/.../output` for a png
+  of its size times 5, e.g. g-101's round machine is `machinery--091`. An obstacle of the hull's own is
+  cut from its png at 1 px per unit, so it is blurred.
+- **Fitting is a search.** Draw the child's png through a candidate matrix over the hull png. Score dark
+  pixels on both, less those on the child alone. Try it mirrored too, as a turn alone may not fit.
 
 ## A hull symbol's own walls and doors
 

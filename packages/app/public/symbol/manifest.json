@@ -656,6 +656,24 @@
       "bounds": {"x": 0, "y": 0, "width": 76.4, "height": 40.4},
       "type": "symbol",
       "key": "medical-bed--005"
+    },
+    "console--010": {
+      "filename": "console--010.json",
+      "thumbnailFilename": "console--010.thumbnail.png",
+      "width": 73.4,
+      "height": 121.4,
+      "bounds": {"x": 0, "y": 0, "width": 73.4, "height": 121.4},
+      "type": "symbol",
+      "key": "console--010"
+    },
+    "machinery--091": {
+      "filename": "machinery--091.json",
+      "thumbnailFilename": "machinery--091.thumbnail.png",
+      "width": 100,
+      "height": 111.8,
+      "bounds": {"x": 0, "y": 0, "width": 100, "height": 111.8},
+      "type": "symbol",
+      "key": "machinery--091"
     }
   }
 }
