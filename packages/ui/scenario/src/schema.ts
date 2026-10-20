@@ -1,17 +1,17 @@
 import { BaseUiMetaSchema } from "@npc-cli/ui-sdk/schema";
 import z from "zod";
 
-export const ManifestUiMetaSchema = z.object({
+export const ScenarioUiMetaSchema = z.object({
   ...BaseUiMetaSchema.shape,
-  uiKey: z.literal("Manifest"),
+  uiKey: z.literal("Scenario"),
   /** The World whose rooms, doors and npcs its characters name, and where its talks are had */
   worldKey: z.templateLiteral(["world-", z.number()]).default("world-0"),
   /** The text size, as a multiple */
   zoom: z.number().default(1),
   /** The columns' sizes, when wide enough to have them */
   split: z.array(z.number()).optional(),
-  /** The character shown, or `talk/{key}` the conversation */
+  /** The entry shown: `scenario/{key}`, `character/{slug}` or `talk/{key}` */
   entryKey: z.string().optional(),
 });
 
-export type ManifestUiMeta = z.infer<typeof ManifestUiMetaSchema>;
+export type ScenarioUiMeta = z.infer<typeof ScenarioUiMetaSchema>;

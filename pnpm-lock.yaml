@@ -532,12 +532,12 @@ importers:
       '@npc-cli/ui__jsh':
         specifier: workspace:^
         version: link:../ui/jsh
-      '@npc-cli/ui__manifest':
-        specifier: workspace:^
-        version: link:../ui/manifest
       '@npc-cli/ui__map-edit':
         specifier: workspace:^
         version: link:../ui/map-edit
+      '@npc-cli/ui__scenario':
+        specifier: workspace:^
+        version: link:../ui/scenario
       '@npc-cli/ui__tabs':
         specifier: workspace:^
         version: link:../ui/tabs
@@ -659,9 +659,6 @@ importers:
       '@npc-cli/ui-sdk':
         specifier: workspace:^
         version: link:../../ui-sdk
-      '@npc-cli/ui__manifest':
-        specifier: workspace:^
-        version: link:../manifest
       '@npc-cli/ui__world':
         specifier: workspace:^
         version: link:../world
@@ -756,36 +753,6 @@ importers:
         specifier: 'catalog:'
         version: 5.0.9(@types/react@19.2.14)(immer@11.1.3)(react@19.2.1)(use-sync-external-store@1.6.0(react@19.2.1))
 
-  packages/ui/manifest:
-    dependencies:
-      '@base-ui/react':
-        specifier: 'catalog:'
-        version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      '@npc-cli/ui-sdk':
-        specifier: workspace:^
-        version: link:../../ui-sdk
-      '@npc-cli/ui__world':
-        specifier: workspace:^
-        version: link:../world
-      '@npc-cli/util':
-        specifier: workspace:^
-        version: link:../../util
-      '@phosphor-icons/react':
-        specifier: 'catalog:'
-        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      allotment:
-        specifier: 'catalog:'
-        version: 1.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.1
-      react-dom:
-        specifier: 'catalog:'
-        version: 19.2.1(react@19.2.1)
-      zod:
-        specifier: 'catalog:'
-        version: 4.1.13
-
   packages/ui/map-edit:
     dependencies:
       '@atlaskit/pragmatic-drag-and-drop':
@@ -846,6 +813,36 @@ importers:
       '@types/react-beforeunload':
         specifier: 'catalog:'
         version: 2.1.5
+
+  packages/ui/scenario:
+    dependencies:
+      '@base-ui/react':
+        specifier: 'catalog:'
+        version: 1.1.0(@types/react@19.2.14)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@npc-cli/ui-sdk':
+        specifier: workspace:^
+        version: link:../../ui-sdk
+      '@npc-cli/ui__world':
+        specifier: workspace:^
+        version: link:../world
+      '@npc-cli/util':
+        specifier: workspace:^
+        version: link:../../util
+      '@phosphor-icons/react':
+        specifier: 'catalog:'
+        version: 2.1.10(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      allotment:
+        specifier: 'catalog:'
+        version: 1.20.5(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.1
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.1(react@19.2.1)
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.13
 
   packages/ui/tabs:
     dependencies:
@@ -1082,9 +1079,6 @@ importers:
       '@npc-cli/ui__jobs':
         specifier: workspace:^
         version: link:../packages/ui/jobs
-      '@npc-cli/ui__manifest':
-        specifier: workspace:^
-        version: link:../packages/ui/manifest
       '@npc-cli/ui__map-edit':
         specifier: workspace:^
         version: link:../packages/ui/map-edit

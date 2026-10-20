@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
-import { manifestShared, useManifestLoreCharacters, useManifestShared } from "@npc-cli/ui__manifest/shared";
 import type { WorldState } from "@npc-cli/ui__world";
+import { scenarioShared, useScenarioCharacters, useScenarioShared } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
@@ -13,6 +13,7 @@ import {
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
+import { CharacterLayer } from "./CharacterLayer";
 import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
@@ -28,7 +29,6 @@ import {
   withHeight,
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
-import { ManifestLoreLayer } from "./ManifestLoreLayer";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import { SpotCard } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
@@ -39,11 +39,11 @@ import { type SpotPick, useSpots } from "./use-spots";
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const { w, meta } = props;
   const map = useRef<NavMap2dApi>(null);
-  /** What a Manifest on this World shows, should there be one: its entry is drawn on the map */
-  const shared = useManifestShared(meta.worldKey);
-  const manifestLore = shared.entry;
+  /** What a Scenario panel on this World shows, should there be one: its character is drawn on the map */
+  const shared = useScenarioShared(meta.worldKey);
+  const character = shared.entry;
   /** Each can be spawned, with their skin and their doors */
-  const characters = useManifestLoreCharacters(manifestLore);
+  const characters = useScenarioCharacters(character);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
 
@@ -135,7 +135,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return performance.now() < state.menuBlockedUntil;
       },
       async spawnNpc(npcKey, at) {
-        // theirs, should the lore have them: its skin and its doors
+        // theirs, should a character be theirs: its skin and its doors
         const { skin, maps } = characters.find((x) => x.npcKey === npcKey) ?? {};
         try {
           const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
@@ -224,13 +224,13 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters], reset: { history: false } },
   );
 
-  /** The lore's characters first, then whoever else is in the World */
+  /** The characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
 
-  // a Manifest shows the entry of whoever was last chosen here
+  // a Scenario panel shows the character of whoever was last chosen here
   const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1] ?? null;
   useEffect(() => {
-    manifestShared.set(meta.worldKey, { npcKey: mapNpcKey });
+    scenarioShared.set(meta.worldKey, { npcKey: mapNpcKey });
   }, [meta.worldKey, mapNpcKey]);
 
   // ...and asks for the map to be centred on its entry's npc, else its first room
@@ -428,7 +428,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
             }
           >
-            {manifestLore !== null && <ManifestLoreLayer w={w} entry={manifestLore} />}
+            {character !== null && <CharacterLayer w={w} entry={character} />}
             {meta.show.spots && spots !== undefined && (
               <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={state.chooseSpot} />
             )}
@@ -469,7 +469,7 @@ function ToolButton(props: {
 }
 
 /**
- * The lore's characters and whoever else is in the World. A name arms a spawn, where the map is
+ * The characters and whoever else is in the World. A name arms a spawn, where the map is
  * next clicked; the eye beside it says whether they are drawn on the map
  */
 function NpcsMenu(props: {
@@ -547,7 +547,7 @@ type State = {
   /** The npc who goes where the map is next clicked */
   spawning: null | string;
   spawnError: null | string;
-  /** Spawns them there, or respawns them — as the lore has them, if it does */
+  /** Spawns them there, or respawns them, as their character has them if they have one */
   spawnNpc(npcKey: string, at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;

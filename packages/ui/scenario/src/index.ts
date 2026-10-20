@@ -1,9 +1,9 @@
 import { defineUi } from "@npc-cli/ui-sdk/schema";
 import { lazy } from "react";
-import { ManifestUiMetaSchema } from "./schema";
+import { ScenarioUiMetaSchema } from "./schema";
 
 export default defineUi({
-  ui: lazy(() => import("./Manifest")),
+  ui: lazy(() => import("./Scenario")),
   bootstrap: null,
-  schema: ManifestUiMetaSchema,
+  schema: ScenarioUiMetaSchema,
 });

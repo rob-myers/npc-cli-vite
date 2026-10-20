@@ -215,7 +215,7 @@ function navPath(tris: NonNullable<WorldState["nav"]>["toNavTris"][number] = [])
   return d;
 }
 
-/** Room labels, and the keys the shell and the lore name things by: every room's and every door's */
+/** Room labels, and the keys the shell and the characters name things by: every room's and every door's */
 function Labels({ w, doors }: { w: WorldState; doors: Geomorph.DoorState[] }) {
   // `byKey` is remade whenever the decor are
   const labels = useMemo(() => Object.values(w.decor?.byKey ?? {}).filter(helper.isRoomLabel), [w.decor?.byKey]);

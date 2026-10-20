@@ -1,16 +1,16 @@
 /* fades in, so what settles on mount (the columns) is not seen doing so */
-.manifest {
-  animation: manifest-fade-in 300ms ease-out both;
+.scenario {
+  animation: scenario-fade-in 300ms ease-out both;
 }
 
-@keyframes manifest-fade-in {
+@keyframes scenario-fade-in {
   from {
     opacity: 0;
   }
 }
 
 /* The panel is written in dark zinc: a light theme turns the scale over, and darkens each accent */
-.theme-light .manifest {
+.theme-light .scenario {
   --color-zinc-950: #fafafa;
   --color-zinc-900: #f4f4f5;
   --color-zinc-800: #e4e4e7;
@@ -33,16 +33,16 @@
 }
 
 /* Light text on dark is fattened by subpixel smoothing: greyscale thins it back to how the light theme reads */
-.theme-dark .manifest {
+.theme-dark .scenario {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /*
- * The lore is read rather than drawn on: its dark is lifted off black, and each step of the scale
+ * The panel is read rather than drawn on: its dark is lifted off black, and each step of the scale
  * leans a different way for depth — indigo ground, violet surfaces, teal edges, warm text
  */
-.theme-dark .manifest {
+.theme-dark .scenario {
   --color-zinc-950: #232632;
   --color-zinc-900: #2e2e40;
   --color-zinc-800: #3a444e;

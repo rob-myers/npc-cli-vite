@@ -11,6 +11,8 @@
     "./decor.schema": "./src/decor.schema.ts",
     "./assets.schema": "./src/assets.schema.ts",
     "./spot.schema": "./src/spot.schema.ts",
+    "./scenario.schema": "./src/scenario.schema.ts",
+    "./scenario-shared": "./src/service/scenario-shared.ts",
     "./spots": "./src/service/spots.ts",
     "./connector": "./src/service/Connector.ts",
     "./query-client": "./src/service/query-client.ts",

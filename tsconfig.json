@@ -56,7 +56,7 @@
       "path": "./packages/ui/decorator"
     },
     {
-      "path": "./packages/ui/manifest"
+      "path": "./packages/ui/scenario"
     },
     {
       "path": "./packages/ui/audio"

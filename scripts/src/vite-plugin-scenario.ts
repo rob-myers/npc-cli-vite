@@ -2,35 +2,35 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
-  isLoreKey,
-  type LoreEntry,
-  LoreEntrySchema,
-  loreApiPath,
-  loreChangedEvent,
-  loreKinds,
-} from "@npc-cli/ui__manifest/lore-schema";
+  isScenarioKey,
+  type ScenarioEntry,
+  ScenarioEntrySchema,
+  scenarioApiPath,
+  scenarioChangedEvent,
+  scenarioKinds,
+} from "@npc-cli/ui__world/scenario.schema";
 import stringify from "json-stringify-pretty-compact";
 import type { Plugin } from "vite";
 
 import { PROJECT_ROOT } from "./const.ts";
 
-const LORE_DIR = path.join(PROJECT_ROOT, "packages/media/lore");
-const VIRTUAL_ID = "virtual:lore";
+const SCENARIO_DIR = path.join(PROJECT_ROOT, "packages/media/src/scenario");
+const VIRTUAL_ID = "virtual:scenario";
 const RESOLVED_ID = `\0${VIRTUAL_ID}`;
 const DEBOUNCE_MS = 100;
-const FILE_PREFIX = `${loreApiPath}/file/`;
-const SCHEMA_PATH = path.join(PROJECT_ROOT, "packages/ui/manifest/src/lore.schema.ts");
+const FILE_PREFIX = `${scenarioApiPath}/file/`;
+const SCHEMA_PATH = path.join(PROJECT_ROOT, "packages/ui/world/src/scenario.schema.ts");
 
 /**
- * Provides `packages/media/lore/{kind}/{slug}.json` to the Manifest — see `docs/manifest-lore.md`.
+ * Provides `packages/media/src/scenario/{kind}/{slug}.json` to the Scenario panel — see `docs/scenarios.md`.
  *
  * Bundled for production, but fetched (and saved) during development, as `jobsExamplesPlugin` does.
  */
-export function lorePlugin(): Plugin {
+export function scenarioPlugin(): Plugin {
   let isDev = false;
 
   return {
-    name: "lore",
+    name: "scenario",
 
     configResolved(config) {
       isDev = config.command === "serve";
@@ -50,28 +50,28 @@ export function lorePlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = decodeURIComponent(req.url?.split("?")[0] ?? "");
-        if (url !== loreApiPath && !url.startsWith(FILE_PREFIX)) {
+        if (url !== scenarioApiPath && !url.startsWith(FILE_PREFIX)) {
           return next();
         }
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Cache-Control", "no-store");
         try {
           // loaded afresh, so an edit to the schema needs no restart: the static import is cached
-          const { LoreEntrySchema } = (await server.ssrLoadModule(SCHEMA_PATH)) as LoreSchemaModule;
-          if (url === loreApiPath && req.method === "GET") {
-            return res.end(JSON.stringify(readEntries(LoreEntrySchema)));
+          const { ScenarioEntrySchema } = (await server.ssrLoadModule(SCHEMA_PATH)) as ScenarioSchemaModule;
+          if (url === scenarioApiPath && req.method === "GET") {
+            return res.end(JSON.stringify(readEntries(ScenarioEntrySchema)));
           }
           const key = url.slice(FILE_PREFIX.length);
-          const filePath = path.join(LORE_DIR, `${key}.json`);
+          const filePath = path.join(SCENARIO_DIR, `${key}.json`);
           // the key's shape already rules out traversal; the prefix check is belt and braces
-          if (!isLoreKey(key) || !filePath.startsWith(LORE_DIR + path.sep)) {
+          if (!isScenarioKey(key) || !filePath.startsWith(SCENARIO_DIR + path.sep)) {
             res.statusCode = 400;
-            return res.end(JSON.stringify({ error: `invalid lore key: ${key}` }));
+            return res.end(JSON.stringify({ error: `invalid scenario key: ${key}` }));
           }
           if (req.method === "POST") {
             let body = "";
             for await (const chunk of req) body += chunk;
-            const entry = LoreEntrySchema.parse(JSON.parse(body));
+            const entry = ScenarioEntrySchema.parse(JSON.parse(body));
             if (entry.key !== key || entry.kind !== key.split("/")[0]) {
               res.statusCode = 400;
               return res.end(JSON.stringify({ error: `entry is not ${key}` }));
@@ -95,19 +95,19 @@ export function lorePlugin(): Plugin {
       let debounceTimer: null | ReturnType<typeof setTimeout> = null;
 
       const onChange = (filePath: string) => {
-        if (!filePath.startsWith(LORE_DIR) || !filePath.endsWith(".json")) {
+        if (!filePath.startsWith(SCENARIO_DIR) || !filePath.endsWith(".json")) {
           return;
         }
         if (debounceTimer !== null) {
           clearTimeout(debounceTimer);
         }
         debounceTimer = setTimeout(() => {
-          server.hot.send({ type: "custom", event: loreChangedEvent });
+          server.hot.send({ type: "custom", event: scenarioChangedEvent });
         }, DEBOUNCE_MS);
       };
 
       // chokidar v4 has no glob support, so we watch the directory
-      server.watcher.add(LORE_DIR);
+      server.watcher.add(SCENARIO_DIR);
       server.watcher.on("add", onChange);
       server.watcher.on("change", onChange);
       server.watcher.on("unlink", onChange);
@@ -116,10 +116,12 @@ export function lorePlugin(): Plugin {
 }
 
 /** By key; a file that does not parse is skipped with a warning */
-function readEntries(schema: LoreSchemaModule["LoreEntrySchema"] = LoreEntrySchema): Record<string, LoreEntry> {
-  const entries: Record<string, LoreEntry> = {};
-  for (const kind of loreKinds) {
-    const dir = path.join(LORE_DIR, kind);
+function readEntries(
+  schema: ScenarioSchemaModule["ScenarioEntrySchema"] = ScenarioEntrySchema,
+): Record<string, ScenarioEntry> {
+  const entries: Record<string, ScenarioEntry> = {};
+  for (const kind of scenarioKinds) {
+    const dir = path.join(SCENARIO_DIR, kind);
     if (!fs.existsSync(dir)) continue;
     for (const filename of fs.readdirSync(dir).filter((x) => x.endsWith(".json"))) {
       const key = `${kind}/${filename.slice(0, -".json".length)}`;
@@ -127,11 +129,11 @@ function readEntries(schema: LoreSchemaModule["LoreEntrySchema"] = LoreEntrySche
         const entry = schema.parse(JSON.parse(fs.readFileSync(path.join(dir, filename), "utf8")));
         entries[key] = { ...entry, key, kind };
       } catch (e) {
-        console.warn(`[lore] skipped ${key}: ${e instanceof Error ? e.message : e}`);
+        console.warn(`[scenario] skipped ${key}: ${e instanceof Error ? e.message : e}`);
       }
     }
   }
   return entries;
 }
 
-type LoreSchemaModule = typeof import("@npc-cli/ui__manifest/lore-schema");
+type ScenarioSchemaModule = typeof import("@npc-cli/ui__world/scenario.schema");

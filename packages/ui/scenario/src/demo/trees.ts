@@ -28,7 +28,7 @@ const tree = (
 
 /**
  * Ten short hand-written trees, generic sci-fi, every line one to five words — to try the format and
- * the tests on, until trees are lore data
+ * the tests on, until trees are scenario data
  */
 export const conversations: Conversation[] = [
   tree("airlock", "Airlock", "Guard. Sealed door. Badge.", "airlock guard", {

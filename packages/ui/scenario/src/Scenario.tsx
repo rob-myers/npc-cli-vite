@@ -1,5 +1,13 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
+import { type ScenarioEntry, scenarioChangedEvent, scenarioSlugRe } from "@npc-cli/ui__world/scenario.schema";
+import {
+  deleteScenarioEntry,
+  loadScenarioEntries,
+  saveScenarioEntry,
+  scenarioShared,
+  useScenarioShared,
+} from "@npc-cli/ui__world/scenario-shared";
 import { useWorld } from "@npc-cli/ui__world/use-world";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
@@ -16,19 +24,17 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { ConversationCard } from "./ConversationCard";
 import { columnClass, inputClass } from "./classes";
 import { conversations } from "./demo/trees";
-import { deleteLoreEntry, loadLore, saveLoreEntry } from "./library";
-import { type LoreEntry, loreChangedEvent, loreSlugRe } from "./lore.schema";
 import { IconButton, Picker } from "./parts";
-import type { ManifestUiMeta } from "./schema";
-import { manifestShared, useManifestShared } from "./shared";
+import { type ScenarioStub, scenarios } from "./scenarios";
+import type { ScenarioUiMeta } from "./schema";
 
-import "./manifest.css";
+import "./scenario.css";
 
 /**
- * Characters, tied to a live World's rooms, doors and npcs should there be one, and conversation
- * trees, beside the one chosen — see `docs/manifest-lore.md`
+ * Scenarios, characters tied to a live World's rooms, doors and npcs should there be one, and
+ * conversation trees, listed beside the one chosen — see `docs/scenarios.md`
  */
-export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
+export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   const w = useWorld(meta.worldKey);
   const { uiStoreApi } = useContext(UiContext);
 
@@ -44,7 +50,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
 
       async load() {
         try {
-          const entries = await loadLore();
+          const entries = await loadScenarioEntries();
           state.set({ entries, error: null });
           // an edit under way is kept, and our own save left alone
           const key = state.draft?.key ?? meta.entryKey;
@@ -61,7 +67,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       select(key) {
         if (key === state.draft?.key) return;
         if (state.dirty === true) state.save(); // what is typed is kept
-        uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).entryKey = key));
+        uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ScenarioUiMeta).entryKey = key));
         state.show(key);
         const entry = state.entries[key];
         if (entry !== undefined) state.locate(entry);
@@ -79,9 +85,9 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         if (state.draft === null || editable === false) return;
         const { rev } = state;
         try {
-          await saveLoreEntry(state.draft);
+          await saveScenarioEntry(state.draft);
           // typed since? then still dirty, and the timer has it
-          // no reload: the watcher's `lore-changed` brings one
+          // no reload: the watcher's `scenario-changed` brings one
           state.set({ dirty: state.rev !== rev, error: null });
         } catch (e) {
           state.set({ error: String(e) });
@@ -91,7 +97,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         const key = state.draft?.key;
         if (key === undefined || window.confirm(`Delete ${key}?`) === false) return;
         try {
-          await deleteLoreEntry(key);
+          await deleteScenarioEntry(key);
           state.set({ draft: null, dirty: false, error: null });
           await state.load();
         } catch (e) {
@@ -100,9 +106,9 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       },
       async add() {
         const key = `character/${state.newSlug}`;
-        if (loreSlugRe.test(state.newSlug) === false || key in state.entries) return;
+        if (scenarioSlugRe.test(state.newSlug) === false || key in state.entries) return;
         try {
-          await saveLoreEntry({ key, kind: "character", name: state.newSlug, maps: {} });
+          await saveScenarioEntry({ key, kind: "character", name: state.newSlug, maps: {} });
           state.set({ newSlug: "", dirty: false });
           await state.load();
           state.select(key);
@@ -129,7 +135,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
             w.hud?.update();
           }
           w.view.forceUpdate();
-          manifestShared.set(meta.worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
+          scenarioShared.set(meta.worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
         } catch (e) {
           state.set({ error: String(e) });
         }
@@ -143,14 +149,14 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
-          const d = draft as ManifestUiMeta;
+          const d = draft as ScenarioUiMeta;
           d.zoom = Math.min(maxZoom, Math.max(minZoom, Math.round(((d.zoom ?? 1) + delta) * 10) / 10));
         });
       },
       locate(entry) {
         if (w === undefined) return;
         const npc = entry.npcKey === undefined ? undefined : w.n?.[entry.npcKey];
-        if (npc !== undefined) return manifestShared.set(meta.worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
+        if (npc !== undefined) return scenarioShared.set(meta.worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
         const grKey = entry.maps[w.mapKey]?.rooms[0];
         if (grKey === undefined) return;
         const { gmId, roomId } = helper.getGmRoomId(grKey as Geomorph.GmRoomKey);
@@ -159,7 +165,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         if (room === undefined) return;
         const { x, y } = room.center;
         const { a, b, c, d, e, f } = gm.transform;
-        manifestShared.set(meta.worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
+        scenarioShared.set(meta.worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
       },
     }),
     { deps: [w, meta.entryKey] },
@@ -168,21 +174,21 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   useEffect(() => {
     state.load();
     const onChange = () => state.load();
-    import.meta.hot?.on(loreChangedEvent, onChange);
+    import.meta.hot?.on(scenarioChangedEvent, onChange);
     return () => {
-      import.meta.hot?.off(loreChangedEvent, onChange);
+      import.meta.hot?.off(scenarioChangedEvent, onChange);
       if (state.dirty === true) state.save();
     };
   }, []);
 
   // a map of this World outlines the entry's rooms and doors, and spawns its npc as edited
   useEffect(() => {
-    manifestShared.set(meta.worldKey, { entry: state.draft === null ? null : { ...state.draft } });
-    return () => manifestShared.set(meta.worldKey, { entry: null });
+    scenarioShared.set(meta.worldKey, { entry: state.draft === null ? null : { ...state.draft } });
+    return () => scenarioShared.set(meta.worldKey, { entry: null });
   }, [meta.worldKey, state.draft, state.rev]);
 
   // choosing an npc on such a map shows their entry
-  const { npcKey: mapNpcKey } = useManifestShared(meta.worldKey);
+  const { npcKey: mapNpcKey } = useScenarioShared(meta.worldKey);
   useEffect(() => {
     const entry = Object.values(state.entries).find((e) => mapNpcKey !== null && e.npcKey === mapNpcKey);
     if (entry !== undefined) state.select(entry.key);
@@ -201,24 +207,30 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   /** Room for both columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
 
+  const listButton = (key: string, label: string, title?: string) => (
+    <button
+      key={key}
+      type="button"
+      title={title}
+      className={cn(
+        "block w-full text-left px-1 py-0.5 rounded cursor-pointer truncate",
+        key === meta.entryKey ? "bg-zinc-800 text-zinc-100" : "hover:bg-zinc-900",
+      )}
+      onClick={() => state.select(key)}
+    >
+      {label}
+    </button>
+  );
+
   const entriesCol = (
     <div className="p-3 flex flex-col gap-2">
       <div>
+        <div className={sectionClass}>scenarios</div>
+        {scenarios.map((x) => listButton(`${scenarioPrefix}${x.key}`, x.title, x.npcs))}
+      </div>
+      <div>
         <div className={sectionClass}>characters</div>
-        {Object.values(entries).map((e) => (
-          <button
-            key={e.key}
-            type="button"
-            title={e.npcKey}
-            className={cn(
-              "block w-full text-left px-1 py-0.5 rounded cursor-pointer truncate",
-              e.key === draft?.key ? "bg-zinc-800 text-zinc-100" : "hover:bg-zinc-900",
-            )}
-            onClick={() => state.select(e.key)}
-          >
-            {e.name || e.key}
-          </button>
-        ))}
+        {Object.values(entries).map((e) => listButton(e.key, e.name || e.key, e.npcKey))}
       </div>
       {editable && (
         <div className="flex gap-1">
@@ -234,27 +246,14 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       )}
       <div>
         <div className={sectionClass}>conversations</div>
-        {conversations.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            title={c.summary}
-            className={cn(
-              "block w-full text-left px-1 py-0.5 rounded cursor-pointer truncate",
-              `${talkPrefix}${c.key}` === meta.entryKey ? "bg-zinc-800 text-zinc-100" : "hover:bg-zinc-900",
-            )}
-            onClick={() => state.select(`${talkPrefix}${c.key}`)}
-          >
-            {c.title}
-          </button>
-        ))}
+        {conversations.map((c) => listButton(`${talkPrefix}${c.key}`, c.title, c.summary))}
       </div>
     </div>
   );
   const cardCol =
     draft === null ? (
       <div className="h-full grid place-items-center text-zinc-500 p-4">
-        {state.error ?? "choose a character or a conversation"}
+        {state.error ?? "choose a scenario, a character or a conversation"}
       </div>
     ) : (
       <div className="p-3 flex flex-col gap-2">
@@ -288,13 +287,21 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
       </div>
     );
   const conv = conversations.find((c) => `${talkPrefix}${c.key}` === meta.entryKey);
-  /** The conversation chosen, else the character */
-  const shownCol = conv === undefined ? cardCol : <ConversationCard key={conv.key} w={w} conv={conv} />;
+  const stub = scenarios.find((x) => `${scenarioPrefix}${x.key}` === meta.entryKey);
+  /** The scenario or conversation chosen, else the character */
+  const shownCol =
+    stub !== undefined ? (
+      <ScenarioCard stub={stub} />
+    ) : conv !== undefined ? (
+      <ConversationCard key={conv.key} w={w} conv={conv} />
+    ) : (
+      cardCol
+    );
 
   return (
     <div
       ref={root}
-      className="manifest relative size-full bg-gray-650 text-zinc-300 text-xs tracking-wide leading-relaxed"
+      className="scenario relative size-full bg-gray-650 text-zinc-300 text-xs tracking-wide leading-relaxed"
     >
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
@@ -307,7 +314,7 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
         <Allotment
           defaultSizes={meta.split}
           onDragEnd={(split) =>
-            uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ManifestUiMeta).split = split))
+            uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ScenarioUiMeta).split = split))
           }
         >
           <Allotment.Pane minSize={120} preferredSize={190}>
@@ -334,10 +341,29 @@ export default function Manifest({ meta }: { meta: ManifestUiMeta }) {
   );
 }
 
+/** A scenario's steps, until it can be run */
+function ScenarioCard({ stub }: { stub: ScenarioStub }) {
+  return (
+    <div className="p-3 flex flex-col gap-2">
+      <div className="text-zinc-100">{stub.title}</div>
+      <div className="text-zinc-500">
+        {stub.npcs} · {stub.status}
+      </div>
+      <ol className="flex flex-col gap-1 list-decimal pl-4">
+        {stub.steps.map((step) => (
+          <li key={step.title}>
+            <span className="text-zinc-100">{step.title}.</span> {step.text}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 /** Their npc and skin in the World */
 function NpcFields(props: {
   w: WorldState;
-  draft: LoreEntry;
+  draft: ScenarioEntry;
   onNpcKey(npcKey: string | undefined): void;
   onSkin(skin: string | undefined): void;
 }) {
@@ -388,7 +414,11 @@ function hasRoom(w: WorldState, key: string) {
  * The rooms that are theirs and the doors they hold keys to on this map, as badges, and ONE box to
  * add to them — each becomes a badge once it is found to exist, and what is not stays typed
  */
-function KeyBox(props: { w: WorldState | undefined; draft: LoreEntry; onPatch(partial: Partial<LoreEntry>): void }) {
+function KeyBox(props: {
+  w: WorldState | undefined;
+  draft: ScenarioEntry;
+  onPatch(partial: Partial<ScenarioEntry>): void;
+}) {
   const { w, draft } = props;
   const [text, setText] = useState("");
   const [invalid, setInvalid] = useState(false);
@@ -487,7 +517,8 @@ function KeyBox(props: { w: WorldState | undefined; draft: LoreEntry; onPatch(pa
   );
 }
 
-/** Prefixes a conversation's key in `meta.entryKey`, where a character's is `character/{slug}` */
+/** Prefix a scenario's or a conversation's key in `meta.entryKey`, where a character's is `character/{slug}` */
+const scenarioPrefix = "scenario/";
 const talkPrefix = "talk/";
 const sectionClass = "text-zinc-500 uppercase text-[10px]";
 /** Files are only writable through the DEV server */
@@ -502,10 +533,10 @@ const minZoom = 0.7;
 const maxZoom = 2;
 
 type State = {
-  entries: Record<string, LoreEntry>;
+  entries: Record<string, ScenarioEntry>;
   error: null | string;
   /** The entry shown, as edited */
-  draft: null | LoreEntry;
+  draft: null | ScenarioEntry;
   dirty: boolean;
   /** Counts edits, so a save knows whether more came whilst it was under way */
   rev: number;
@@ -520,10 +551,10 @@ type State = {
   setNpcKey(npcKey: string | undefined): Promise<void>;
   /** Their npc in the World, if there, takes it */
   setSkin(skin: string | undefined): void;
-  patch(partial: Partial<LoreEntry>): void;
+  patch(partial: Partial<ScenarioEntry>): void;
   save(): Promise<void>;
   remove(): Promise<void>;
   add(): Promise<void>;
   /** Centre the map on their npc, else their room */
-  locate(entry: LoreEntry): void;
+  locate(entry: ScenarioEntry): void;
 };

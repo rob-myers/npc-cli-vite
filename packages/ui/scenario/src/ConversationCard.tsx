@@ -16,7 +16,7 @@ import { IconButton, Picker } from "./parts";
 
 /**
  * A conversation tree as an outline to find a way about, and talked through in a World's speech
- * history — demo trees, hand-written: see `docs/manifest-lore.md`
+ * history — demo trees, hand-written: see `docs/scenarios.md`
  */
 export function ConversationCard({ w, conv }: { w: WorldState | undefined; conv: Conversation }) {
   const outline = useMemo(() => toOutline(conv), [conv]);

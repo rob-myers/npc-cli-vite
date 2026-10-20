@@ -21,5 +21,5 @@ export function IconButton(props: {
 
 /** Its popup is portalled out of the panel, so it is told whose theme to take */
 export function Picker<T extends string>(props: Omit<Parameters<typeof BasePicker<T>>[0], "popupClassName">) {
-  return <BasePicker {...props} popupClassName="manifest" />;
+  return <BasePicker {...props} popupClassName="scenario" />;
 }

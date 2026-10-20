@@ -3,8 +3,8 @@ import { assetHistoryPlugin } from "@npc-cli/scripts/vite-plugin-asset-history";
 import { buildIdPlugin } from "@npc-cli/scripts/vite-plugin-build-id";
 import { devMcpPlugin } from "@npc-cli/scripts/vite-plugin-dev-mcp";
 import { jobsExamplesPlugin } from "@npc-cli/scripts/vite-plugin-jobs-examples";
-import { lorePlugin } from "@npc-cli/scripts/vite-plugin-lore";
 import { mapEditApiPlugin } from "@npc-cli/scripts/vite-plugin-map-edit-api";
+import { scenarioPlugin } from "@npc-cli/scripts/vite-plugin-scenario";
 import { spotsPlugin } from "@npc-cli/scripts/vite-plugin-spots";
 import { stableEntryPlugin } from "@npc-cli/scripts/vite-plugin-stable-entry";
 import { watchAssetsPlugin } from "@npc-cli/scripts/vite-plugin-watch-assets";
@@ -40,7 +40,7 @@ export default defineConfig({
     watchAssetsPlugin(),
     spotsPlugin(),
     jobsExamplesPlugin(),
-    lorePlugin(),
+    scenarioPlugin(),
     worldRtcPlugin(),
     buildIdPlugin(),
     devMcpPlugin(),

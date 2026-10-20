@@ -143,11 +143,10 @@
 
 - Jobs: indicate stale processes after hmr
 
-## Manifest
+## Scenario panel
 
-- World applies a lore character's door keys on their npc's first spawn, whoever spawned them
+- World applies a character's door keys on their npc's first spawn, whoever spawned them
   - today only the Decorator's spawn does: jsh `spawn` and the player's restore give none
-  - move the lore schema and loader below both e.g. `packages/media` (`ui/manifest` depends on World)
   - first spawn per map only, so a `revoke` sticks
 
 
