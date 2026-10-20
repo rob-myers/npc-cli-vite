@@ -3,8 +3,8 @@ import Blog from "@npc-cli/ui__blog";
 import Decorator from "@npc-cli/ui__decorator";
 import Jobs from "@npc-cli/ui__jobs";
 import Jsh from "@npc-cli/ui__jsh";
-import Manifest from "@npc-cli/ui__manifest";
 import MapEdit from "@npc-cli/ui__map-edit";
+import Scenario from "@npc-cli/ui__scenario";
 import Tabs from "@npc-cli/ui__tabs";
 import Template from "@npc-cli/ui__template";
 import World from "@npc-cli/ui__world";
@@ -21,8 +21,8 @@ export type UiRegistry = {
   Decorator: typeof Decorator;
   Jobs: typeof Jobs;
   Jsh: typeof Jsh;
-  Manifest: typeof Manifest;
   MapEdit: typeof MapEdit;
+  Scenario: typeof Scenario;
   Tabs: typeof Tabs;
   Template: typeof Template;
   World: typeof World;
@@ -35,8 +35,8 @@ export const uiRegistryFactory = (): UiRegistry =>
     Decorator,
     Jobs,
     Jsh,
-    Manifest,
     MapEdit,
+    Scenario,
     Tabs,
     Template,
     World,

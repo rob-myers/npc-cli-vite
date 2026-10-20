@@ -7,7 +7,7 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import type { WorldState } from "@npc-cli/ui__world";
 import { cn } from "@npc-cli/util";
-import { CrosshairIcon } from "@phosphor-icons/react";
+import { BroadcastIcon, CrosshairIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { typeIcon } from "./decor-edit";
 import { getDecoratorMapStore } from "./storage";
@@ -17,7 +17,7 @@ import { getDecoratorMapStore } from "./storage";
  * takes the run from the last plain click; double-click renames; the crosshair centres the map on
  * it; drag to arrange, as `MapEdit`'s inspector does, the arrangement kept per World and map
  */
-export function DecorSidebar({ w, selected, onSelect, onRename, onLocate }: Props) {
+export function DecorSidebar({ w, selected, onSelect, onRename, onLocate, onToggleCollider }: Props) {
   const [filter, setFilter] = useState("");
   const anchor = useRef<string | null>(null);
   const store = getDecoratorMapStore(w.key, w.mapKey);
@@ -73,6 +73,7 @@ export function DecorSidebar({ w, selected, onSelect, onRename, onLocate }: Prop
             onClick={(e) => onClickRow(e, d.key)}
             onRename={(next) => onRename(d.key, next)}
             onLocate={() => onLocate(d.key)}
+            onToggleCollider={() => onToggleCollider(d.key)}
             onDrop={(keys, edge) => onReorder(keys, d.key, edge)}
           />
         ))}
@@ -82,12 +83,13 @@ export function DecorSidebar({ w, selected, onSelect, onRename, onLocate }: Prop
 }
 
 /** A row: draggable, and a drop target above or below */
-function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onLocate, onDrop }: RowProps) {
+function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onLocate, onToggleCollider, onDrop }: RowProps) {
   const el = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState<Edge | null>(null);
   const latest = useRef({ dragKeys, onDrop });
   latest.current = { dragKeys, onDrop };
   const TypeIcon = typeIcon[d.type];
+  const isCollider = d.meta.collider === true;
 
   useEffect(() => {
     if (el.current === null) return;
@@ -125,7 +127,23 @@ function Row({ decor: d, isSelected, dragKeys, onClick, onRename, onLocate, onDr
     >
       <TypeIcon className="size-3.5 shrink-0 text-zinc-500" />
       <Name value={d.key} onCommit={onRename} />
-      <span className="ml-auto text-[10px] text-zinc-600">{String(d.meta.grKey ?? "")}</span>
+      <span className="ml-auto text-[10px] text-zinc-400">{String(d.meta.grKey ?? "")}</span>
+      {(d.type === "rect" || d.type === "circle") && (
+        <button
+          type="button"
+          title={isCollider ? "a collider: senses whoever stands in it" : "make it a collider"}
+          className={cn(
+            "grid place-items-center size-5 rounded hover:bg-zinc-700 cursor-pointer",
+            isCollider ? "text-amber-300" : "text-zinc-500 opacity-0 group-hover:opacity-100",
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCollider();
+          }}
+        >
+          <BroadcastIcon className="size-3.5" />
+        </button>
+      )}
       <button
         type="button"
         title="centre the map on it"
@@ -176,6 +194,8 @@ type Props = {
   onSelect(keys: string[]): void;
   onRename(key: string, next: string): void;
   onLocate(key: string): void;
+  /** Sets or clears a rect or circle's `meta.collider` */
+  onToggleCollider(key: string): void;
 };
 
 type RowProps = {
@@ -185,6 +205,7 @@ type RowProps = {
   onClick(e: React.MouseEvent): void;
   onRename(next: string): void;
   onLocate(): void;
+  onToggleCollider(): void;
   onDrop(keys: string[], edge: Edge): void;
 };
 

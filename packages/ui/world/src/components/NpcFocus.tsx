@@ -21,6 +21,7 @@ export default function NpcFocus() {
       placedKey: null,
       busy: false,
       offAim: false,
+      lit: false,
       before: null,
       withPhaser: false,
       withPsi: false,
@@ -31,6 +32,8 @@ export default function NpcFocus() {
       markEls: {},
       dotEls: {},
       lineEls: {},
+      cancelEl: null,
+      sides: {},
       task: null,
       abandon() {
         Object.assign(state, { before: null, busy: false });
@@ -114,7 +117,8 @@ export default function NpcFocus() {
         const offered = offeredBy(state);
         const { key } = w.player;
         const raised = { psi: w.e.isPsiRaised(key), phaser: w.phasers.isArmed(key) };
-        Object.assign(state, { npcKey, placedKey: npcKey, offered, placed: offered.map(({ part }) => part), raised });
+        const placed = offered.map(({ part }) => part);
+        Object.assign(state, { npcKey, placedKey: npcKey, offered, placed, raised, sides: {} });
         state.setOffAim(false); // a node kept from one still fading out has its last fade
         state.update();
       },
@@ -158,7 +162,9 @@ export default function NpcFocus() {
         const parts = state.placed.map((part) => ({ part, ...onScreen(npcFocusConfig.bones[part]) }));
         const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
         for (const { part } of state.offered) if (state.placed.includes(part) === false) hideMark(state, part);
-        for (const mark of layoutMarks(parts, middle)) writeMark(state, mark, bounds);
+        const marks = layoutMarks(parts, middle, state.sides);
+        for (const mark of marks) writeMark(state, mark, bounds);
+        writeCancel(state, marks, middle, bounds);
         if (w.disabled === true) state.keepOnScreen(bounds, canvas, box); // running, the view is follow's
       },
       shown() {
@@ -174,6 +180,11 @@ export default function NpcFocus() {
         if (state.el === null) return;
         state.el.style.opacity = offAim ? "0" : "";
         state.el.inert = offAim;
+      },
+      syncLit(grKey = w.npc.npcToRoom.get(state.npcKey ?? "")?.grKey) {
+        const lit = w.view.fadeRoomsFx.rooms.some((room) => room.grKey === grKey);
+        if (state.lit === true && lit === false) return state.close(null);
+        state.lit = lit;
       },
     }),
   );
@@ -193,6 +204,14 @@ export default function NpcFocus() {
       state.close(part);
     };
     window.addEventListener("keydown", onKeyDown, true);
+    state.lit = false; // their room unlit already, e.g. focused by psi, does not drop it
+    state.syncLit();
+    const sub = w.events.subscribe({
+      next(e) {
+        if (e.key === "update-faded-rooms") state.syncLit();
+        else if (e.key === "enter-room" && e.npcKey === npcKey) state.syncLit(e.gmRoomId.grKey);
+      },
+    });
     // pinned to their parts in the World's own frame, after the camera has moved, so they keep up with it
     const unsubscribe = w.e.addFrameCallback(() => {
       const { key } = w.player;
@@ -210,6 +229,7 @@ export default function NpcFocus() {
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
       unsubscribe();
+      sub.unsubscribe();
     };
   }, [state.npcKey]);
 
@@ -271,18 +291,18 @@ export default function NpcFocus() {
                 </button>
               </div>
             ))}
-            <div className="absolute inset-x-0 top-3 flex justify-center">
-              <button
-                type="button"
-                className={noteClass}
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  state.close(null);
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+            <button
+              ref={(el) => void (state.cancelEl = el)}
+              type="button"
+              className="pointer-events-auto absolute top-0 left-0 cursor-pointer whitespace-nowrap rounded border border-red-500/50 bg-blue-950/40 px-2 py-0.5 font-mono text-[11px] text-white hover:bg-red-900/50"
+              style={{ visibility: "hidden" }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                state.close(null);
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </motion.div>
       )}
@@ -290,16 +310,21 @@ export default function NpcFocus() {
   );
 }
 
-const noteClass =
-  "pointer-events-auto cursor-pointer rounded bg-black/60 px-2 py-0.5 font-mono text-[11px] text-white/80 hover:text-white";
-
 /** Each part's dot, and its label in a column on its side of `middle`, stacked a row apart */
-function layoutMarks(parts: { part: FocusPart; x: number; y: number }[], middle: number): Mark[] {
-  const { labelGap, labelMinOff, rowPx } = npcFocusConfig;
+function layoutMarks(
+  parts: { part: FocusPart; x: number; y: number }[],
+  middle: number,
+  sides: State["sides"],
+): Mark[] {
+  const { labelGap, labelMinOff, rowPx, sideSwitchPx } = npcFocusConfig;
   /** Pixels from their middle to each column: clear of every part, even seen from above where they bunch */
   const off = Math.max(labelMinOff, ...parts.map(({ x }) => Math.abs(x - middle))) + labelGap;
+  for (const { part, x } of parts) {
+    const was = sides[part];
+    sides[part] = was === undefined ? x < middle - 1 : x < middle + (was ? sideSwitchPx : -sideSwitchPx);
+  }
   return [true, false].flatMap((left) => {
-    const side = parts.filter(({ x }) => x < middle - 1 === left).sort((a, b) => a.y - b.y);
+    const side = parts.filter(({ part }) => sides[part] === left).sort((a, b) => a.y - b.y);
     const rows = side.map(({ y }) => y);
     for (let i = 1; i < rows.length; i++) rows[i] = Math.max(rows[i], rows[i - 1] + rowPx);
     const shift = side.reduce((sum, { y }, i) => sum + y - rows[i], 0) / (side.length || 1);
@@ -377,6 +402,16 @@ function writeMark(state: State, { part, x, y, left, lx, ly }: Mark, bounds: Bou
   bounds.maxY = Math.max(bounds.maxY, y, ly + half);
 }
 
+/** Writes Cancel over `middle`, above every dot and label, and raises `bounds` to it */
+function writeCancel(state: State, marks: Mark[], middle: number, bounds: Bounds) {
+  const el = state.cancelEl;
+  if (el == null || marks.length === 0) return;
+  const y = Math.min(...marks.map((m) => Math.min(m.y, m.ly))) - npcFocusConfig.cancelRowPx;
+  el.style.transform = `translate(${middle}px,${y}px) translate(-50%,-50%)`;
+  el.style.visibility = "visible";
+  bounds.minY = Math.min(bounds.minY, y - el.offsetHeight / 2);
+}
+
 /** A part's dot on screen, and its label's place: in a column to the `left` or right */
 type Mark = { part: FocusPart; x: number; y: number; left: boolean; lx: number; ly: number };
 
@@ -412,6 +447,10 @@ const npcFocusConfig = {
   labelMinOff: 32,
   labelGap: 28,
   rowPx: 21,
+  /** Pixels from the highest dot or label up to Cancel */
+  cancelRowPx: 26,
+  /** Pixels a part must cross the middle by before its label changes side */
+  sideSwitchPx: 12,
   /** Pixels the overlay keeps inside the canvas edge, and how much of what pokes past the view moves by each frame */
   screenMargin: 16,
   keepInRate: 0.3,
@@ -449,6 +488,8 @@ export type State = {
   busy: boolean;
   /** Nothing is left to show, e.g. the phaser alone and off aim: the marks are hidden until there is */
   offAim: boolean;
+  /** Their room was lit at the last `syncLit` */
+  lit: boolean;
   /** The phaser to go back to */
   before: null | {
     /** Their phaser was up already, e.g. by `e`: it is left up after */
@@ -471,6 +512,10 @@ export type State = {
   dotEls: Partial<Record<FocusPart, null | HTMLSpanElement>>;
   /** Each part's line, from its dot to its label */
   lineEls: Partial<Record<FocusPart, null | SVGLineElement>>;
+  /** Cancel, above them */
+  cancelEl: null | HTMLButtonElement;
+  /** Each part's label is in the left column: kept until its part is well across their middle */
+  sides: Partial<Record<FocusPart, boolean>>;
   /** Cancelled once it is over, which ends `aimAt` */
   task: null | Task;
   /** Gives up before it opens, the phaser left raised */
@@ -502,4 +547,6 @@ export type State = {
   shown(): null | FocusPart[];
   /** Fades the marks out through the DOM, not rendered, as the frame loop finds them off aim, or back in */
   setOffAim(offAim: boolean): void;
+  /** Notes whether room `grKey` is lit, by default theirs. Their room going unlit drops it, as Cancel */
+  syncLit(grKey?: string): void;
 };

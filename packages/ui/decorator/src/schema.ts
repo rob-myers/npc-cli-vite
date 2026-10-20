@@ -20,6 +20,8 @@ export const DecoratorUiMetaSchema = z.object({
       grid: z.boolean().default(true),
       /** The map's own decor, faint, for context */
       static: z.boolean().default(false),
+      /** Generated places to stand, and what each sees — see `docs/spots.md` */
+      spots: z.boolean().default(false),
     })
     .prefault({}),
 });

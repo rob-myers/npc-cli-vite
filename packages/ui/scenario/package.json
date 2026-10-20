@@ -1,0 +1,21 @@
+{
+  "name": "@npc-cli/ui__scenario",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {},
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "@npc-cli/ui-sdk": "workspace:^",
+    "@npc-cli/ui__world": "workspace:^",
+    "@npc-cli/util": "workspace:^",
+    "@phosphor-icons/react": "catalog:",
+    "allotment": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  }
+}

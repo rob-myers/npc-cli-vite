@@ -1,0 +1,58 @@
+{
+  "filename": "console--010.json",
+  "width": 73.4,
+  "height": 121.4,
+  "nodes": [
+    {
+      "id": "67ae9341-d4df-45ec-a1b7-ff2f5051bdfb",
+      "name": "console--010",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "console--010",
+      "baseRect": {"width": 73.4, "height": 121.4},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "451987e6-58d5-4be5-bbd4-bbfbb8de9839",
+      "name": "obstacle table surface y=0.6",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M 0 0 L 43.4 0 L 43.4 13.8 L 37.8 21.8 L 36 30 L 37.8 39.4 L 43.4 47.4 L 43.4 73.8 L 37.8 81.8 L 36 90 L 37.8 99.4 L 43.4 107.4 L 43.4 121.4 L 0 121.4 Z",
+      "baseRect": {"width": 73.4, "height": 121.4},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "a5b0312a-014c-4aa0-b787-cf575ee22f4a",
+      "name": "console--051 y=0.4",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 44.7, "f": 15.7},
+      "type": "symbol",
+      "srcKey": "console--051",
+      "baseRect": {"width": 30, "height": 30},
+      "offset": {"x": 1.3, "y": -0.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 46.0, 15.2)"
+    },
+    {
+      "id": "91856f91-065f-4b59-a5f1-a4cd143ace1e",
+      "name": "console--051 y=0.4",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 44.7, "f": 75.7},
+      "type": "symbol",
+      "srcKey": "console--051",
+      "baseRect": {"width": 30, "height": 30},
+      "offset": {"x": 1.3, "y": -0.5},
+      "cssTransform": "matrix(1, 0, 0, 1, 46.0, 75.2)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 73.4, "height": 121.4},
+  "type": "symbol",
+  "key": "console--010"
+}

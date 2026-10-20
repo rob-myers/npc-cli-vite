@@ -278,7 +278,7 @@ export default function WorldHud() {
                   type="button"
                   tabIndex={-1}
                   title="debug: how every shot ends"
-                  className="absolute bottom-0.5 left-0.5 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
+                  className="absolute bottom-0.5 left-1/2 -translate-x-1/2 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
                   onClick={(e) => {
                     e.stopPropagation();
                     const at = shotCycle.indexOf(w.debug.forceShot);

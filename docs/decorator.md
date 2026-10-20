@@ -8,11 +8,11 @@ Decor is made two ways, both ending in `w.decor.create(def)`: placed on the pane
 in the 3D World from the shell, at picked points. It is configured in the 3D World, which needs
 neither the panel nor a terminal.
 
-The setting's lore is a panel of its own, the Manifest (`docs/manifest-lore.md`). The two neither import nor
-contain each other: on the same World they talk through `manifestShared` (`ui/manifest/src/shared.ts`).
-The map outlines the Manifest's entry (`ManifestLoreLayer.tsx`), centres where it asks, and tells it which
-npc was last chosen; the lore's characters, for the npcs menu, the map loads for itself
-(`useManifestLoreCharacters`), so no Manifest need be open.
+Characters are edited in a panel of their own, the Scenario panel (`docs/scenarios.md`). The two neither
+import nor contain each other: on the same World they talk through `scenarioShared`
+(`ui/world/src/service/scenario-shared.ts`). The map outlines the shown character (`CharacterLayer.tsx`),
+centres where it asks, and tells it which npc was last chosen. The map loads the characters for its npcs
+menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
 
 | file | what it holds |
 |---|---|
@@ -51,7 +51,7 @@ the cursor, drag, pinch). Where the map was left is kept per World and map,
 under one localStorage key `decorator:<world>:map:<map>` (`storage.ts`), and the map is remade per
 `mapKey` so it starts from there.
 
-It is drawn from each geomorph's own layout, not from the geomorph PNGs the debug "Graphs" modal
+It is drawn from each geomorph's own layout, not from the geomorph PNGs the debug **modals** select's "graphs"
 shows behind its graphs — so it is where things really are:
 
 - per `w.gms[gmId]`, inside `<g transform="matrix(gm.transform)">`, path data in the geomorph's own
@@ -95,7 +95,7 @@ room along, and fades with the room it is now in. A rect or circle gets `meta.fl
 every `decor-created` / `decor-removed`, so whoever edits is saved; not whilst a map changes, which
 removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor out of the save.
 
-**Decorating** is the debug **decorations** toggle (`w.debug.decorShown`, persisted, off by default):
+**Decorating** is **decorations** in the debug **overlay** select (`w.debug.decorShown`, persisted, off by default):
 
 - every runtime decor is drawn, whether or not `meta.shown` says so — `hasInstance` admits it, and
   the toggle rebuilds the runtime instances — so abstract decor can be seen and picked;
@@ -158,7 +158,10 @@ click; the point and quad tools take an image, the quad tool a **tilt**, which p
 `tiltedQuadHeight`. Keys pick a tool — V select, P point, R rect, C circle, Q quad — and Escape
 returns to *select*. The toolbar's **height** is `y3d` for an added point or quad, empty being its
 default; with the select tool it is the selection's instead, shown when they agree, and setting it
-sets theirs.
+sets theirs. The tool select's title is "click to create" whilst a type is chosen.
+
+In the sidebar's list, a rect or circle has a **collider** icon (lit whilst on) that toggles its
+`meta.collider`, undoably. That gives the decor a physics sensor (`isColliderDecor`).
 
 **The context menu** (`DecorMenu.tsx`, base-ui's `ContextMenu`; a long press on touch): on empty
 map it adds a point, rect, circle or quad where it was opened, taking the toolbar's image, tilt and

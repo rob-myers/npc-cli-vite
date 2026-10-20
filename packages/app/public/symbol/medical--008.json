@@ -43,6 +43,30 @@
           "baseRect": {"width": 30, "height": 30},
           "offset": {"x": 0.5657, "y": -1.2728},
           "cssTransform": "matrix(0.7071, -0.7071, 0.7071, 0.7071, 21.2525, 77.3272)"
+        },
+        {
+          "id": "02ee5cb7-7083-4260-aa3b-d4304df7ee48",
+          "name": "low-berth--003",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 180.6, "f": -0.6},
+          "type": "symbol",
+          "srcKey": "low-berth--003",
+          "baseRect": {"width": 61.4, "height": 71.2},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 180.6, -0.6)"
+        },
+        {
+          "id": "f129fee7-6e3f-47e0-87a7-5e6b89a09096",
+          "name": "low-berth--003",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 180.6, "f": 59.4},
+          "type": "symbol",
+          "srcKey": "low-berth--003",
+          "baseRect": {"width": 61.4, "height": 71.2},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 180.6, 59.4)"
         }
       ]
     },
@@ -63,28 +87,6 @@
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
           "type": "path",
           "d": "M -2 59 L 13.6 59 L 15.8 59.8 L 17.2 62.6 L 20.2 75.8 L 26.8 87 L 32.8 93.2 L 41.2 98.8 L 48.4 101.6 L 57.4 103 L 60 104.4 L 61 106.8 L 61 122 L -2 122 Z",
-          "baseRect": {"width": 180, "height": 120},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
-        },
-        {
-          "id": "27d43224-51b5-4bf7-88f0-86402d75ed4b",
-          "name": "obstacle machine y=1 tint=#666",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-          "type": "path",
-          "d": "M 119.2 -2 L 182 -2 L 182 59.9 L 119.2 59.9 L 119.2 44.7 L 113.6 40.9 L 110.2 35.7 L 109 30 L 110.2 24.3 L 113.6 19.1 L 119.2 15.3 Z",
-          "baseRect": {"width": 180, "height": 120},
-          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
-        },
-        {
-          "id": "27d43224-51b5-4bf7-88f0-86402d75ed4b",
-          "name": "obstacle machine y=1 tint=#666",
-          "locked": true,
-          "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
-          "type": "path",
-          "d": "M 119.2 60.3 L 182 60.3 L 182 122 L 119.2 122 L 119.2 104.7 L 113.6 100.9 L 110.2 95.7 L 109 90 L 110.2 84.3 L 113.6 79.1 L 119.2 75.3 Z",
           "baseRect": {"width": 180, "height": 120},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
         }

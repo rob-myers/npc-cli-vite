@@ -32,6 +32,8 @@ for it. Where a save goes is `docs/map-edit.md`; obstacle sheets are `docs/stars
 6. Run `pnpm gen-starship-sheets`, AFTER `assets.json` has caught up: run straight after the save, it
    misses the new obstacles.
 7. Check `assets.json` still has all seven top-level keys, `theme` and `hash` last. See Pitfalls.
+8. Look for lettering inside the obstacles' sprites in `sheet/symbols.*.png`, e.g. HOLO or COMP. Mask it
+   out with a `starship-symbol/mask/{key}.svg` (see `docs/starship-sheets.md`), then re-run step 6.
 
 ## Units
 
@@ -52,6 +54,13 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   already supply is `wall optional e`, added only by a parent's `walls=['e']`.
 - **Doors**: a `rect` over the drawn door, 8 by 45, named e.g. `door e slide=[0,-1]`. Each is followed
   by its two `decor quad key=switch` images, one each side of the wall, beside the door.
+- **A door's `slide` sets its normal, which must point INTO the room.** The normal is `slide` turned
+  90°, `(slide.y, -slide.x)` (`Connector`), and a door's label names the room it points into, e.g. a
+  `label=lab` door points into the lab. The debug **overlay** select's **door normals** shows them.
+  So a door on the room's north wall slides `[-1,0]`, south `[1,0]`, west `[0,1]` and east `[0,-1]`.
+  A diagonal door follows the same rule, e.g. `[-0.71,-0.71]` on the room's north-east side. Both halves
+  of a double door slide the SAME way, or one points out. A hull door is exempt:
+  its normal is turned to point outwards, whatever its slide.
 - **Optional doors**: a room is reused where its doors differ, so give it one per side it could have,
   each `door {n|e|s|w} optional`. A parent's `doors=['e','w']` keeps those sides and walls up the rest;
   `doors=[]` keeps none. With no `doors` tag every door stays.
@@ -93,6 +102,20 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 
 A machine with no walls is one polygon round its silhouette: every opaque pixel.
 
+## Wall paths
+
+A `path` named `wall` is for a wall that is not a rect: a diagonal, a curve, a corner run as one piece. Give it
+as few points as look the same. Every segment is an occluder in the player-light sweep and an edge of the
+navmesh.
+
+- **Curves by tolerance, not by a fixed step.** A chord across an arc of radius `r` and angle `θ` strays
+  `r (1 - cos(θ/2))` from it, its sagitta. Keep that within a quarter of the wall's thickness (1 for a
+  4-thick wall), so `θ = 2 acos(1 - 1/r)`. The 228-radius dome of `misc-stellar-cartography--020` takes
+  17 chords per half ring, not 36.
+- **Straddle the arc.** Push each vertex out by half the sagitta, or every chord lies inside the circle.
+- **No repeated points.** End on the last vertex and `Z`, without repeating the first. Drop any point on
+  a straight run between its neighbours.
+
 ### Cleaning up an existing symbol
 
 To fix one whose obstacles leave thick lines showing, check it by machine before reading any art:
@@ -113,8 +136,11 @@ What it usually finds:
 - **Neighbours z-fight.** Two obstacles sharing an edge put their sides in one plane, back to back. Keep
   them separate, so a wall stands between them seen through the top, and leave a gap of about 0.4 across
   the line between them: `medical--008`'s machines end at `59.9` and start at `60.3`.
+- **Off-centre circles.** Fit a circle to the ring's outer edge, away from what touches it, e.g. chairs. Use
+  about 24 sides, its vertices about 0.2 INSIDE that edge. Past it, each vertex takes a sliver of what lies
+  beyond, e.g. a chair's line.
 
-Cleaned so far: `medical--008`.
+Cleaned so far: `medical--008`, `table--009`.
 
 ## What a tracer needs
 
@@ -147,6 +173,11 @@ is its pixel plus that, e.g. minus `(4, 62)` in g-302.
   png in a colour through its `cssTransform` at a scale of 0.2, and look at it.
 - **The art may not match the symbol.** The lounge of g-302 has `lounge--015`'s fresher but not its
   furniture. Place it and say so; do not delete what was placed by hand.
+- **Art with no symbol placed is usually a symbol not yet listed.** Look in `media/.../output` for a png
+  of its size times 5, e.g. g-101's round machine is `machinery--091`. An obstacle of the hull's own is
+  cut from its png at 1 px per unit, so it is blurred.
+- **Fitting is a search.** Draw the child's png through a candidate matrix over the hull png. Score dark
+  pixels on both, less those on the child alone. Try it mirrored too, as a turn alone may not fit.
 
 ## A hull symbol's own walls and doors
 

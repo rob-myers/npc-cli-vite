@@ -83,6 +83,7 @@ export const symbolByGroup = {
   },
 
   "symbol-machinery": {
+    "machinery--091": true,
     "machinery--155": true,
     "machinery--156": true,
     "machinery--158": true,

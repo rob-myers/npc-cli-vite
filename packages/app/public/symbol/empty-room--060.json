@@ -1,0 +1,133 @@
+{
+  "filename": "empty-room--060.json",
+  "width": 240,
+  "height": 240,
+  "nodes": [
+    {
+      "id": "71952484-523c-a324-7c3e-935ae5cbc72a",
+      "name": "empty-room--060",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "empty-room--060",
+      "baseRect": {"width": 244, "height": 244},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "54cf8cea-a2dc-e131-7f87-52fa80cf43d7",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "70b5f317-1f8e-eb75-8177-15f6173da681",
+          "name": "door slide=[-0.71,-0.71]",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.71,
+            "b": 0.71,
+            "c": -0.71,
+            "d": 0.71,
+            "e": 166.92,
+            "f": 41.26
+          },
+          "type": "rect",
+          "baseRect": {"width": 45, "height": 8},
+          "cssTransform": "matrix(0.71, 0.71, -0.71, 0.71, 166.92, 41.26)"
+        },
+        {
+          "id": "7f439bf4-3e4a-8eec-e1e1-89e74cefa086",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.71,
+            "b": 0.71,
+            "c": -0.71,
+            "d": 0.71,
+            "e": 198.38,
+            "f": 81.21
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.71, 0.71, -0.71, 0.71, 198.38, 81.21)"
+        },
+        {
+          "id": "f9470f57-bc6f-95c8-72fa-334ebcb6fd1e",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.71,
+            "b": 0.71,
+            "c": 0.71,
+            "d": -0.71,
+            "e": 201.21,
+            "f": 78.38
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.71, 0.71, 0.71, -0.71, 201.21, 78.38)"
+        }
+      ]
+    },
+    {
+      "id": "f292941a-a484-3b8c-dee8-f2bc7cfe8613",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "2469199b-1a9d-cb46-f031-a580ecdf761c",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 244},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "7a3e431e-d3c2-d278-c1ef-2807f271149c",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 238},
+          "type": "rect",
+          "baseRect": {"width": 244, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 238)"
+        },
+        {
+          "id": "b5266daf-dc47-b225-438c-8cee8323e618",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M -2 -2 L 120.83 -2 L 242 119.17 L 242 242 L 238 242 L 238 120.83 L 119.17 2 L -2 2 Z",
+          "baseRect": {"width": 240, "height": 240},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 244, "height": 244},
+  "type": "symbol",
+  "key": "empty-room--060"
+}

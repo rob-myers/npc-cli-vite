@@ -3,7 +3,7 @@ import type { State as WorldState } from "../components/World";
 
 /**
  * A two-party conversation: the npc says a node's `text`, the player answers with one of its
- * `choices`. Played in `WorldSpeech`, outlined in the Manifest — see `docs/manifest-lore.md`
+ * `choices`. Played in `WorldSpeech`, outlined in the Scenario panel — see `docs/scenarios.md`
  */
 export type Conversation = {
   key: string;

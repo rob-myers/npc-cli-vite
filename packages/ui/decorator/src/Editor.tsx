@@ -1,6 +1,6 @@
 import { Menu } from "@base-ui/react/menu";
-import { manifestShared, useManifestLoreCharacters, useManifestShared } from "@npc-cli/ui__manifest/shared";
 import type { WorldState } from "@npc-cli/ui__world";
+import { scenarioShared, useScenarioCharacters, useScenarioShared } from "@npc-cli/ui__world/scenario-shared";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, useStateRef } from "@npc-cli/util";
 import { Picker as BasePicker } from "@npc-cli/util/picker";
@@ -13,10 +13,12 @@ import {
   SidebarSimpleIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
+import { CharacterLayer } from "./CharacterLayer";
 import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
 import {
+  canCollide,
   type DecorType,
   hasHeight,
   keysWithin,
@@ -25,23 +27,27 @@ import {
   newDef,
   nextKey,
   tiltedQuadHeight,
+  withCollider,
   withHeight,
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
-import { ManifestLoreLayer } from "./ManifestLoreLayer";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
+import { SpotCard } from "./SpotCard";
+import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
+import { type SpotPick, useSpots } from "./use-spots";
 
 /** The map pane, once there is a World */
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const { w, meta } = props;
   const map = useRef<NavMap2dApi>(null);
-  /** What a Manifest on this World shows, should there be one: its entry is drawn on the map */
-  const shared = useManifestShared(meta.worldKey);
-  const manifestLore = shared.entry;
+  /** What a Scenario panel on this World shows, should there be one: its character is drawn on the map */
+  const shared = useScenarioShared(meta.worldKey);
+  const character = shared.entry;
   /** Each can be spawned, with their skin and their doors */
-  const characters = useManifestLoreCharacters(manifestLore);
+  const characters = useScenarioCharacters(character);
   const { uiStoreApi } = useContext(UiContext);
+  const spots = useSpots(w, meta.show.spots);
 
   const state = useStateRef(
     (): State => ({
@@ -58,6 +64,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       menuOpen: false,
       /** `performance.now()` before which no context menu opens: `Infinity` whilst a press is under way */
       menuBlockedUntil: 0,
+      spot: null,
+      sidebarTab: "decor",
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -89,6 +97,11 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return state.selected
           .map((key) => w.decor.runtime.defByKey[key])
           .filter((d) => d !== undefined && hasHeight(d));
+      },
+      toggleCollider(key) {
+        const def = w.decor.runtime.defByKey[key];
+        if (def === undefined || canCollide(def) === false) return;
+        state.commit([withCollider(def, def.meta?.collider !== true)]);
       },
       heightShown() {
         return state.tool === "point" || state.tool === "quad" || state.selectedWithHeight().length > 0;
@@ -129,7 +142,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return performance.now() < state.menuBlockedUntil;
       },
       async spawnNpc(npcKey, at) {
-        // theirs, should the lore have them: its skin and its doors
+        // theirs, should a character be theirs: its skin and its doors
         const { skin, maps } = characters.find((x) => x.npcKey === npcKey) ?? {};
         try {
           const hasSkin = skin !== undefined && w.npc.getSkinIndexBySkinKey(skin) !== -1;
@@ -201,6 +214,10 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         }
       },
 
+      chooseSpot(pick) {
+        state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
+        if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
+      },
       setNpcKeys(npcKeys) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as DecoratorUiMeta).npcKeys = npcKeys));
       },
@@ -214,13 +231,13 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     { deps: [w, meta.npcKeys, meta.sidebarWidth, meta.sidebarOpen, characters], reset: { history: false } },
   );
 
-  /** The lore's characters first, then whoever else is in the World */
+  /** The characters first, then whoever else is in the World */
   const npcKeys = [...new Set([...characters.map((x) => x.npcKey), ...Object.keys(w.n ?? {})])];
 
-  // a Manifest shows the entry of whoever was last chosen here
+  // a Scenario panel shows the character of whoever was last chosen here
   const mapNpcKey = meta.npcKeys[meta.npcKeys.length - 1] ?? null;
   useEffect(() => {
-    manifestShared.set(meta.worldKey, { npcKey: mapNpcKey });
+    scenarioShared.set(meta.worldKey, { npcKey: mapNpcKey });
   }, [meta.worldKey, mapNpcKey]);
 
   // ...and asks for the map to be centred on its entry's npc, else its first room
@@ -268,7 +285,11 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         {/* the tool: select, or add one of a type where the map is clicked */}
         <Picker
-          title="tool: select (V, Esc), or add a point (P), rect (R), circle (C) or quad (Q)"
+          title={
+            state.tool === "select"
+              ? "tool: select (V, Esc), or add a point (P), rect (R), circle (C) or quad (Q)"
+              : "click to create"
+          }
           value={state.tool}
           options={tools}
           // fixed, as each select here is: the bar keeps still as what is chosen changes
@@ -339,20 +360,56 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
 
       <div className="flex-1 min-h-0 flex">
         {meta.sidebarOpen && (
-          <div className="relative shrink-0 flex" style={{ width: meta.sidebarWidth }}>
-            <DecorSidebar
-              key={w.mapKey} // remade per map: its arrangement is that map's
-              w={w}
-              selected={state.selected}
-              onSelect={state.select}
-              onRename={state.rename}
-              onLocate={(key) => {
-                const d = w.decor.runtime.byKey[key];
-                if (d === undefined) return;
-                const { x, y } = d.type === "point" ? d : d.center;
-                map.current?.centreOn(x, y, locateZoom);
-              }}
-            />
+          <div className="relative shrink-0 flex flex-col" style={{ width: meta.sidebarWidth }}>
+            <div className="shrink-0 flex border-r border-b border-zinc-800">
+              {sidebarTabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={cn(
+                    "px-2 py-0.5 -mb-px border-b-2",
+                    state.sidebarTab === tab
+                      ? "border-zinc-400 text-zinc-100"
+                      : "border-transparent text-zinc-500 hover:text-zinc-300",
+                  )}
+                  onClick={() => state.set({ sidebarTab: tab })}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            {state.sidebarTab === "decor" && (
+              <div className="flex-1 min-h-0 flex">
+                <DecorSidebar
+                  key={w.mapKey} // remade per map: its arrangement is that map's
+                  w={w}
+                  selected={state.selected}
+                  onSelect={state.select}
+                  onRename={state.rename}
+                  onToggleCollider={state.toggleCollider}
+                  onLocate={(key) => {
+                    const d = w.decor.runtime.byKey[key];
+                    if (d === undefined) return;
+                    const { x, y } = d.type === "point" ? d : d.center;
+                    map.current?.centreOn(x, y, locateZoom);
+                  }}
+                />
+              </div>
+            )}
+            {state.sidebarTab === "spot" &&
+              (meta.show.spots === false ? (
+                <SidebarHint>turn on the spots layer</SidebarHint>
+              ) : state.spot === null || spots?.[w.gms[state.spot.gmId]?.key] === undefined ? (
+                <SidebarHint>press a spot on the map</SidebarHint>
+              ) : (
+                <SpotCard
+                  w={w}
+                  file={spots[w.gms[state.spot.gmId].key]}
+                  pick={state.spot}
+                  onChoose={state.chooseSpot}
+                  onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
+                />
+              ))}
           </div>
         )}
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
@@ -383,7 +440,10 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
               state.select(e.shiftKey ? [...new Set([...state.selected, ...keysWithin(w, rect)])] : keysWithin(w, rect))
             }
           >
-            {manifestLore !== null && <ManifestLoreLayer w={w} entry={manifestLore} />}
+            {character !== null && <CharacterLayer w={w} entry={character} />}
+            {meta.show.spots && spots !== undefined && (
+              <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={state.chooseSpot} />
+            )}
             <DecorLayer
               w={w}
               selected={state.selected}
@@ -421,7 +481,7 @@ function ToolButton(props: {
 }
 
 /**
- * The lore's characters and whoever else is in the World. A name arms a spawn, where the map is
+ * The characters and whoever else is in the World. A name arms a spawn, where the map is
  * next clicked; the eye beside it says whether they are drawn on the map
  */
 function NpcsMenu(props: {
@@ -499,11 +559,13 @@ type State = {
   /** The npc who goes where the map is next clicked */
   spawning: null | string;
   spawnError: null | string;
-  /** Spawns them there, or respawns them — as the lore has them, if it does */
+  /** Spawns them there, or respawns them, as their character has them if they have one */
   spawnNpc(npcKey: string, at: Geom.VectJson): Promise<void>;
   img: string | undefined;
   tilt: boolean;
   y3d: number | undefined;
+  /** Sets or clears a rect or circle's `meta.collider`, undoably */
+  toggleCollider(key: string): void;
   menuOpen: boolean;
   menuBlockedUntil: number;
   onPressing(pressing: boolean): void;
@@ -525,11 +587,23 @@ type State = {
   heightShown(): boolean;
   heightValue(): number | undefined;
   onKeyDown(e: React.KeyboardEvent): void;
+  /** The spot shown in the sidebar, and on the map what it sees */
+  spot: null | SpotPick;
+  /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
+  sidebarTab: SidebarTab;
+  chooseSpot(pick: null | SpotPick): void;
   setNpcKeys(npcKeys: string[]): void;
   toggleLayer(layer: NavMapLayer): void;
 };
 
-const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static"];
+const sidebarTabs = ["decor", "spot"] as const;
+type SidebarTab = (typeof sidebarTabs)[number];
+
+function SidebarHint({ children }: { children: React.ReactNode }) {
+  return <div className="flex-1 border-r border-zinc-800 px-2 py-2 text-xs text-zinc-600">{children}</div>;
+}
+
+const layers: NavMapLayer[] = ["nav", "labels", "obstacles", "grid", "static", "spots"];
 const tools: ("select" | DecorType)[] = ["select", "point", "rect", "circle", "quad"];
 type HeightDef = Extract<Geomorph.DecorDef, { type: "point" | "quad" }>;
 const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point", r: "rect", c: "circle", q: "quad" };

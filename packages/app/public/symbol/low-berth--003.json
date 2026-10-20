@@ -1,0 +1,34 @@
+{
+  "filename": "low-berth--003.json",
+  "width": 61.4,
+  "height": 71.2,
+  "nodes": [
+    {
+      "id": "db36f9a4-c494-4e0a-9cb8-12e2ca9616a4",
+      "name": "low-berth--003",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "low-berth--003",
+      "baseRect": {"width": 61.4, "height": 71.2},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "b35068aa-3458-42a1-9a16-69ab93ba195e",
+      "name": "obstacle machine y=1 tint=#666",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "path",
+      "d": "M 0.9 0 L 60.5 0 L 60.5 61.4 L 45.3 61.4 L 41.5 67 L 36.3 70.4 L 30.6 71.2 L 24.9 70.4 L 19.7 67 L 15.9 61.4 L 0.9 61.4 Z",
+      "baseRect": {"width": 61.4, "height": 71.2},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 71.2},
+  "type": "symbol",
+  "key": "low-berth--003"
+}

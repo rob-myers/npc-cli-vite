@@ -110,6 +110,8 @@ export function createRigidBody({
     rigidBody.setRotation(getQuaternionFromAxisAngle(unitYAxis, angle), false);
   }
   rigidBody.setTranslation(position, false);
+  // else its first step carries it to a stale next position
+  if (type === RAPIER.RigidBodyType.KinematicPositionBased) rigidBody.setNextKinematicTranslation(position);
 
   return rigidBody as RAPIER.RigidBody & { userData: WW.PhysicsUserData };
 }
@@ -236,6 +238,8 @@ export async function setupOrRebuildWorld(msg: WW.SetupPhysicsWorld) {
 }
 
 export function stepWorld(state: WorkerStoreState) {
+  // step twice to get collisions in same step e.g. spawn without move
+  state.world.step(state.eventQueue);
   state.world.step(state.eventQueue);
 
   const collisionStart = [] as WW.NpcCollisionResponse["collisionStart"];
