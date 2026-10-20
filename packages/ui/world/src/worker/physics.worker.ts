@@ -24,9 +24,9 @@ const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
     case "add-physics-colliders": {
       for (const colliderDef of msg.colliders) {
         const bodyKey = getColliderDefBodyKey(colliderDef);
-        if (bodyKey in state.bodyKeyToBody) {
+        if (state.bodyKeyToBody.has(bodyKey)) {
           warn(`🤖 worker: ${msg.type}: cannot re-add body: ${bodyKey}`);
-          break;
+          continue;
         }
         const _body = createRuntimeCollider(colliderDef);
       }
@@ -36,7 +36,7 @@ const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
     case "add-physics-npcs": {
       for (const npc of msg.npcs) {
         const bodyKey = npcToBodyKey(npc.npcKey);
-        if (bodyKey in state.bodyKeyToBody) {
+        if (state.bodyKeyToBody.has(bodyKey)) {
           warn(`worker: ${msg.type}: cannot re-add body: ${bodyKey}`);
           continue;
         }
