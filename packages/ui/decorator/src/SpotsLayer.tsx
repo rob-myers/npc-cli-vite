@@ -16,13 +16,20 @@ export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
           <g
             key={s.id}
             data-no-pan
-            className="cursor-pointer"
+            className="group cursor-pointer"
             onPointerDown={(e) => {
               if (e.button !== 0) return;
               onChoose(chosen?.gmId === gmId && chosen.id === s.id ? null : { gmId, id: s.id });
             }}
           >
             <title>{describe(s)}</title>
+            <circle
+              cx={s.x}
+              cy={s.y}
+              r={hitRadius}
+              fill={inkOf[s.kind]}
+              className="opacity-15 group-hover:opacity-40"
+            />
             <circle cx={s.x} cy={s.y} r={dotRadius} fill={inkOf[s.kind]} opacity={spot === undefined ? 0.9 : 0.5} />
             {s.facing !== undefined && (
               <line
@@ -109,6 +116,8 @@ function describe(s: Spot) {
 
 /** Metres */
 const dotRadius = 0.06;
+/** Metres: the press target, drawn as a faint halo round the dot */
+const hitRadius = 0.12;
 const tickLength = 0.18;
 
 const ink = {
