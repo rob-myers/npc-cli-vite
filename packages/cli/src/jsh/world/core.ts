@@ -268,7 +268,7 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
       const rightArm = meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm";
       if (rightArm === true && w.phasers?.isArmed(playerKey) === true) w.phasers.disarm(playerKey);
     } else if (w.npcFocus.npcKey === meta.npcKey) {
-      w.npcFocus.cancel(); // pressed again
+      // pressed again: it stays open
     } else if (psiOn === true || w.phasers?.isArmed(playerKey) === true) {
       void w.npcFocus.aimAt(meta.npcKey); // npc focus: its choices are from psi and the phaser, whichever are raised
     }
