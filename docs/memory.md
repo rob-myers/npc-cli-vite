@@ -1,7 +1,7 @@
 # Memory
 
 Where the World's memory goes, what has been saved, and what could be. The ONLY doc for it.
-Figures are from the dev page on `large-map` (9 geomorphs, 3 keys) on 2026-10-09.
+Figures are from the dev page on `nine-gms` (9 geomorphs, 3 keys) on 2026-10-09.
 
 | file | what |
 | --- | --- |
@@ -42,18 +42,18 @@ three an array really needs, is most of the story.
 ## Done
 
 - **The floor is one layer per geomorph KEY**, not per instance, as the ceiling's always were. On
-  `large-map` that is 3 layers where it would have been 9. See `docs/floor.md` for what that rules out
+  `nine-gms` that is 3 layers where it would have been 9. See `docs/floor.md` for what that rules out
   drawing on it.
 - **A `gpu` array has no CPU mirror.** The floor, ceiling and obstacle sheet are filled by copying
   their canvas on the GPU, so the mirror was never sent anywhere, yet was allocated at full size:
-  267 MB on `large-map`. `createMirror` now gives `null` for them, and three.js sizes the texture from
+  267 MB on `nine-gms`. `createMirror` now gives `null` for them, and three.js sizes the texture from
   its dimensions. The mirror is only made if such an array has to read its canvas back after all.
 - **The floor and ceiling arrays are sized to the map** before each draw. They used to stay at 3 and 2
   layers, and a bigger map wrote past the end.
 
 ## Not done yet
 
-In order of what they would save on `large-map`:
+In order of what they would save on `nine-gms`:
 
 | what | saving | how |
 | --- | --- | --- |

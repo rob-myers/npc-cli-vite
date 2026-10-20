@@ -51,6 +51,7 @@ import {
   MapsManifestSchema,
   type PathManifest,
   PathManifestSchema,
+  type SymbolMapNode,
   type SymbolsManifest,
   SymbolsManifestSchema,
   type Transform,
@@ -1095,8 +1096,13 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           case "move-selection": {
             // always small: use shift+arrow to snap
             const increment = inc.small;
-            const dx = svgPos.x - startSvg.x;
-            const dy = svgPos.y - startSvg.y;
+            let [dx, dy] = [svgPos.x - startSvg.x, svgPos.y - startSvg.y];
+            const { gmCorner } = state.dragEl;
+            if (gmCorner !== null) {
+              // half a geomorph at a time, its own rect kept on the grid
+              dx = snap(gmCorner.x + dx, gmGridSize) - gmCorner.x;
+              dy = snap(gmCorner.y + dy, gmGridSize) - gmCorner.y;
+            }
             for (const [id, startPos] of state.dragEl.starts) {
               const [node] = findNodeById(state.nodes, id);
               if (!isNodeTransformable(node)) continue;
@@ -1245,7 +1251,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         if (starts.size === 0) return;
         state.pushHistory(); // after the guard: nothing draggable is selected, so nothing can change
 
-        state.dragEl = { type: "move-selection", startSvg: svgPos, starts };
+        const gm = [...starts.keys()].map((id) => findNodeById(state.nodes, id)[0]).find(isGmNode);
+        const gmCorner = gm ? getGmCorner(gm) : null;
+        state.dragEl = { type: "move-selection", startSvg: svgPos, starts, gmCorner };
         (e.target as SVGElement).setPointerCapture(e.pointerId);
         state.set({ selectionBox: null });
       },
@@ -1937,6 +1945,8 @@ export type State = {
         type: "move-selection";
         startSvg: { x: number; y: number };
         starts: Map<string, { x: number; y: number }>;
+        /** A geomorph's corner as it began, in a map: the drag snaps it to the grid */
+        gmCorner: null | { x: number; y: number };
       }
     | {
         type: "resize-rect";
@@ -2120,6 +2130,20 @@ const inc = {
 };
 
 const snap = (v: number, increment = inc.small) => Math.round(v / increment) * increment;
+
+/** Geomorphs sit on a grid of this many units: each is 1200 or 600 a side */
+const gmGridSize = 600;
+
+const isGmNode = (node: MapNode | null): node is SymbolMapNode =>
+  node?.type === "symbol" && node.srcKey !== null && isHullSymbolImageKey(node.srcKey);
+
+/** The corner of a geomorph's own rect, where the World places it: its art overhangs by `offset` */
+function getGmCorner({ transform: { a, b, c, d, e, f }, baseRect: { width, height } }: SymbolMapNode) {
+  return {
+    x: e + Math.min(0, a * width) + Math.min(0, c * height),
+    y: f + Math.min(0, b * width) + Math.min(0, d * height),
+  };
+}
 
 /**
 - d: Duplicate
