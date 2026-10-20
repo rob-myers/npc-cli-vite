@@ -84,7 +84,7 @@ const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
 
       for (const bodyKey of msg.bodyKeys) {
         const body = state.bodyKeyToBody.get(bodyKey);
-        (body as RAPIER.RigidBody)?.setTranslation({ x: 0, y: -1000, z: 0 }, true);
+        (body as RAPIER.RigidBody)?.setNextKinematicTranslation({ x: 0, y: -1000, z: 0 });
       }
 
       // trigger exit colliders
@@ -124,7 +124,8 @@ const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
             break; // overwrite y
           case 3:
             position.z = value;
-            (state.bodyKeyToBody.get(npcBodyKey) as RAPIER.RigidBody).setTranslation(position, true); // awaken on move
+            // a kinematic body's own move, not a teleport, so its sensors see it come and go
+            (state.bodyKeyToBody.get(npcBodyKey) as RAPIER.RigidBody).setNextKinematicTranslation(position);
             break;
         }
       }
