@@ -18,6 +18,7 @@ import { DecorLayer } from "./DecorLayer";
 import { DecorMenu, NumberInput } from "./DecorMenu";
 import { DecorSidebar } from "./DecorSidebar";
 import {
+  canCollide,
   type DecorType,
   hasHeight,
   keysWithin,
@@ -26,6 +27,7 @@ import {
   newDef,
   nextKey,
   tiltedQuadHeight,
+  withCollider,
   withHeight,
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
@@ -95,6 +97,11 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         return state.selected
           .map((key) => w.decor.runtime.defByKey[key])
           .filter((d) => d !== undefined && hasHeight(d));
+      },
+      toggleCollider(key) {
+        const def = w.decor.runtime.defByKey[key];
+        if (def === undefined || canCollide(def) === false) return;
+        state.commit([withCollider(def, def.meta?.collider !== true)]);
       },
       heightShown() {
         return state.tool === "point" || state.tool === "quad" || state.selectedWithHeight().length > 0;
@@ -278,7 +285,11 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         {/* the tool: select, or add one of a type where the map is clicked */}
         <Picker
-          title="tool: select (V, Esc), or add a point (P), rect (R), circle (C) or quad (Q)"
+          title={
+            state.tool === "select"
+              ? "tool: select (V, Esc), or add a point (P), rect (R), circle (C) or quad (Q)"
+              : "click to create"
+          }
           value={state.tool}
           options={tools}
           // fixed, as each select here is: the bar keeps still as what is chosen changes
@@ -375,6 +386,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   selected={state.selected}
                   onSelect={state.select}
                   onRename={state.rename}
+                  onToggleCollider={state.toggleCollider}
                   onLocate={(key) => {
                     const d = w.decor.runtime.byKey[key];
                     if (d === undefined) return;
@@ -552,6 +564,8 @@ type State = {
   img: string | undefined;
   tilt: boolean;
   y3d: number | undefined;
+  /** Sets or clears a rect or circle's `meta.collider`, undoably */
+  toggleCollider(key: string): void;
   menuOpen: boolean;
   menuBlockedUntil: number;
   onPressing(pressing: boolean): void;

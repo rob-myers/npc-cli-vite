@@ -158,7 +158,10 @@ click; the point and quad tools take an image, the quad tool a **tilt**, which p
 `tiltedQuadHeight`. Keys pick a tool — V select, P point, R rect, C circle, Q quad — and Escape
 returns to *select*. The toolbar's **height** is `y3d` for an added point or quad, empty being its
 default; with the select tool it is the selection's instead, shown when they agree, and setting it
-sets theirs.
+sets theirs. The tool select's title is "click to create" whilst a type is chosen.
+
+In the sidebar's list, a rect or circle has a **collider** icon (lit whilst on) that toggles its
+`meta.collider`, undoably. That gives the decor a physics sensor (`isColliderDecor`).
 
 **The context menu** (`DecorMenu.tsx`, base-ui's `ContextMenu`; a long press on touch): on empty
 map it adds a point, rect, circle or quad where it was opened, taking the toolbar's image, tilt and

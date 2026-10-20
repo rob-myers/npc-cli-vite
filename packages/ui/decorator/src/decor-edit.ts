@@ -292,6 +292,17 @@ export function newDef(
 
 export type NewDefOpts = { img?: string; tilt?: boolean; y3d?: number };
 
+/** Only rects and circles can sense who stands in them */
+export function canCollide(def: Geomorph.DecorDef): def is RectDef | CircleDef {
+  return def.type === "rect" || def.type === "circle";
+}
+
+/** `meta.collider` is set or left out, never `false` */
+export function withCollider(def: RectDef | CircleDef, collider: boolean): RectDef | CircleDef {
+  const { collider: _, ...meta } = def.meta ?? {};
+  return { ...def, meta: collider ? { ...meta, collider: true } : meta };
+}
+
 /** Only points and quads stand off the floor */
 export function hasHeight(def: Geomorph.DecorDef): def is PointDef | QuadDef {
   return def.type === "point" || def.type === "quad";
