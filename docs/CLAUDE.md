@@ -263,6 +263,8 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - World code it awaits, which a kill must end, runs as a `Task`: see `docs/tasks.md`.
 - Examples: `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
 
+**An error ends its process**, as bash's `set -e`, so the statements after it never run. `set +e` lets it run on, `$?` holding the code. Subprocesses inherit it (`process.errexit`).
+
 **Watching every tick needs no process.** `w.e.addKeyedTick(key, tick)` runs after each npc tick, so only whilst unpaused. `w.e.keyedTick.delete(key)` stops it. See `sidestep.ts`.
 
 **Pausing**: see `docs/jsh-pause.md`.

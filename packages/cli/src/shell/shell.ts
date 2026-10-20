@@ -333,6 +333,7 @@ export class TtyShell implements Device {
         origSrc: opts.origSrc,
         posPositionals: opts.posPositionals || parent.positionals.slice(1),
         ptags: applyPtagUpdates({ ...parent.ptags }, opts.ptags ?? {}),
+        errexit: parent.errexit,
       });
       meta.pid = process.key;
 

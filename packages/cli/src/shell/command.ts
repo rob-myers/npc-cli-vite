@@ -127,11 +127,6 @@ class CmdService {
     }
   }
 
-  private computeCwd(meta: JSh.BaseMeta, root: any) {
-    const pwd = sessionApi.getVar(meta, "PWD");
-    return resolveNormalized(pwd.split("/"), root);
-  }
-
   get(node: JSh.ParsedSh, args: string[]) {
     const meta = node.meta;
     const root = this.provideProcessCtxt(node);
@@ -1074,13 +1069,13 @@ class CmdService {
         break;
       }
       case "set": {
-        const root = this.provideProcessCtxt(node);
-        const value = parseJsArg(args[1]);
-        if (args[0][0] === "/") {
-          Function("__1", "__2", `return __1.${args[0].slice(1)} = __2`)(root, value);
+        const process = sessionApi.getProcess(meta);
+        if (args.length === 0) {
+          yield process.errexit === false ? "+e" : "-e";
+        } else if (args.every((arg) => arg === "-e" || arg === "+e")) {
+          process.errexit = args.at(-1) === "-e";
         } else {
-          const cwd = this.computeCwd(meta, root);
-          Function("__1", "__2", `return __1.${args[0]} = __2`)(cwd, value);
+          throw new ShError("usage: `set -e` or `set +e`", 1);
         }
         break;
       }
@@ -1286,7 +1281,7 @@ const commandKeys = {
   run: true,
   /** Echo session key */
   session: true,
-  /** Set something */
+  /** `set +e` lets a process run on after an error, `set -e` ends it (the default) */
   set: true,
   /** Left-shift positional parameters */
   shift: true,
