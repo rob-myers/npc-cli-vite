@@ -54,6 +54,13 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   already supply is `wall optional e`, added only by a parent's `walls=['e']`.
 - **Doors**: a `rect` over the drawn door, 8 by 45, named e.g. `door e slide=[0,-1]`. Each is followed
   by its two `decor quad key=switch` images, one each side of the wall, beside the door.
+- **A door's `slide` sets its normal, which must point INTO the room.** The normal is `slide` turned
+  90°, `(slide.y, -slide.x)` (`Connector`), and a door's label names the room it points into, e.g. a
+  `label=lab` door points into the lab. The debug **overlay** select's **door normals** shows them.
+  So a door on the room's north wall slides `[-1,0]`, south `[1,0]`, west `[0,1]` and east `[0,-1]`.
+  A diagonal door follows the same rule, e.g. `[-0.71,-0.71]` on the room's north-east side. Both halves
+  of a double door slide the SAME way, or one points out. A hull door is exempt:
+  its normal is turned to point outwards, whatever its slide.
 - **Optional doors**: a room is reused where its doors differ, so give it one per side it could have,
   each `door {n|e|s|w} optional`. A parent's `doors=['e','w']` keeps those sides and walls up the rest;
   `doors=[]` keeps none. With no `doors` tag every door stays.

@@ -26,8 +26,8 @@
       "expanded": false,
       "children": [
         {
-          "id": "61af1a53-b0a8-bd37-bed7-081430138e9d",
-          "name": "door slide=[0.71,0.71]",
+          "id": "70b5f317-1f8e-eb75-8177-15f6173da681",
+          "name": "door slide=[-0.71,-0.71]",
           "locked": true,
           "visible": true,
           "transform": {

@@ -13000,7 +13000,7 @@
               [1.6875, -0.10625]
             ]
           ],
-          "meta": {"door": true, "n": true, "slide": [1, 0], "label": "locker"}
+          "meta": {"door": true, "n": true, "slide": [-1, 0], "label": "locker"}
         }
       ],
       "obstacles": [],
@@ -13351,7 +13351,7 @@
             "door": true,
             "w": true,
             "optional": true,
-            "slide": [0, -1],
+            "slide": [0, 1],
             "label": "fresher"
           }
         }
@@ -13747,7 +13747,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 4.6], [3.1, 5.8], [2.9, 5.8], [2.9, 4.6]]],
-          "meta": {"door": true, "e": true, "slide": [0, 1]}
+          "meta": {"door": true, "e": true, "slide": [0, -1]}
         }
       ],
       "obstacles": [],
@@ -13847,7 +13847,7 @@
               [4.173, 1.0315]
             ]
           ],
-          "meta": {"door": true, "slide": [0.71, 0.71]}
+          "meta": {"door": true, "slide": [-0.71, -0.71]}
         }
       ],
       "obstacles": [],
@@ -14824,7 +14824,7 @@
               [3.1825, -0.10625]
             ]
           ],
-          "meta": {"door": true, "n": true, "slide": [1, 0], "label": "lab"}
+          "meta": {"door": true, "n": true, "slide": [-1, 0], "label": "lab"}
         }
       ],
       "obstacles": [
@@ -15109,7 +15109,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[6.1, 3.1], [6.1, 4.3], [5.9, 4.3], [5.9, 3.1]]],
-          "meta": {"door": true, "e": true, "slide": [0, 1], "label": "lab"}
+          "meta": {"door": true, "e": true, "slide": [0, -1], "label": "lab"}
         }
       ],
       "obstacles": [
@@ -15398,7 +15398,7 @@
               [1.6825, -0.10625]
             ]
           ],
-          "meta": {"door": true, "n": true, "slide": [1, 0], "label": "lab"}
+          "meta": {"door": true, "n": true, "slide": [-1, 0], "label": "lab"}
         }
       ],
       "obstacles": [
@@ -15571,7 +15571,7 @@
           "meta": {
             "door": true,
             "s": true,
-            "slide": [-1, 0],
+            "slide": [1, 0],
             "label": "engineering"
           }
         }
@@ -15645,11 +15645,6 @@
           "type": "Polygon",
           "coordinates": [[[0.05, 0], [0.05, 6], [-0.05, 6], [-0.05, 0]]],
           "meta": {"wall": true, "optional": true, "w": true}
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [[[3.05, 0], [3.05, 6], [2.95, 6], [2.95, 0]]],
-          "meta": {"wall": true}
         }
       ],
       "windows": [],
@@ -46609,7 +46604,7 @@
           "meta": {
             "door": true,
             "n": true,
-            "slide": [1, 0],
+            "slide": [-1, 0],
             "label": "locker",
             "det": 1
           }
@@ -46664,7 +46659,7 @@
             "door": true,
             "w": true,
             "optional": true,
-            "slide": [0, 1],
+            "slide": [0, -1],
             "label": "fresher",
             "det": -1
           }
@@ -46681,7 +46676,7 @@
           "coordinates": [
             [[26.8937, 1.45], [26.8937, 0.25], [27.0938, 0.25], [27.0938, 1.45]]
           ],
-          "meta": {"door": true, "e": true, "slide": [0, -1], "det": 1}
+          "meta": {"door": true, "e": true, "slide": [0, 1], "det": 1}
         },
         {
           "type": "Polygon",
@@ -46696,7 +46691,7 @@
           "meta": {
             "door": true,
             "n": true,
-            "slide": [-1, 0],
+            "slide": [1, 0],
             "label": "lab",
             "det": 1
           }
@@ -46714,7 +46709,7 @@
           "meta": {
             "door": true,
             "n": true,
-            "slide": [1, 0],
+            "slide": [-1, 0],
             "label": "lab",
             "det": -1
           }
@@ -46750,7 +46745,7 @@
           "meta": {
             "door": true,
             "e": true,
-            "slide": [1, 0],
+            "slide": [-1, 0],
             "label": "lab",
             "det": 1
           }
@@ -46768,7 +46763,7 @@
           "meta": {
             "door": true,
             "n": true,
-            "slide": [0, 1],
+            "slide": [0, -1],
             "label": "lab",
             "det": 1
           }
@@ -46786,7 +46781,7 @@
           "meta": {
             "door": true,
             "n": true,
-            "slide": [0, 1],
+            "slide": [0, -1],
             "label": "lab",
             "det": -1
           }
@@ -46801,7 +46796,7 @@
               [4.9968, 4.1698]
             ]
           ],
-          "meta": {"door": true, "slide": [0.71, -0.71], "det": -1}
+          "meta": {"door": true, "slide": [-0.71, 0.71], "det": -1}
         },
         {
           "type": "Polygon",
@@ -46824,7 +46819,7 @@
           "meta": {
             "door": true,
             "s": true,
-            "slide": [0, 1],
+            "slide": [0, -1],
             "label": "engineering",
             "det": 1
           }
@@ -50803,13 +50798,6 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[15, 26.9437], [21, 26.9437], [21, 27.0437], [15, 27.0437]]
-          ],
-          "meta": {"wall": true}
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
             [
               [30.0437, 23.9563],
               [30.0437, 24.0563],
@@ -51274,7 +51262,7 @@
               [1.6875, -0.10625]
             ]
           ],
-          "meta": {"door": true, "n": true, "slide": [1, 0], "label": "locker"}
+          "meta": {"door": true, "n": true, "slide": [-1, 0], "label": "locker"}
         }
       ],
       "obstacles": [],
@@ -51766,7 +51754,7 @@
             "door": true,
             "w": true,
             "optional": true,
-            "slide": [0, -1],
+            "slide": [0, 1],
             "label": "fresher"
           }
         }
@@ -52908,7 +52896,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 4.6], [3.1, 5.8], [2.9, 5.8], [2.9, 4.6]]],
-          "meta": {"door": true, "e": true, "slide": [0, 1]}
+          "meta": {"door": true, "e": true, "slide": [0, -1]}
         }
       ],
       "obstacles": [],
@@ -53006,7 +52994,7 @@
               [4.173, 1.0315]
             ]
           ],
-          "meta": {"door": true, "slide": [0.71, 0.71]}
+          "meta": {"door": true, "slide": [-0.71, -0.71]}
         }
       ],
       "obstacles": [],
@@ -54140,7 +54128,7 @@
               [3.1825, -0.10625]
             ]
           ],
-          "meta": {"door": true, "n": true, "slide": [1, 0], "label": "lab"}
+          "meta": {"door": true, "n": true, "slide": [-1, 0], "label": "lab"}
         }
       ],
       "obstacles": [
@@ -54522,7 +54510,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[6.1, 3.1], [6.1, 4.3], [5.9, 4.3], [5.9, 3.1]]],
-          "meta": {"door": true, "e": true, "slide": [0, 1], "label": "lab"}
+          "meta": {"door": true, "e": true, "slide": [0, -1], "label": "lab"}
         }
       ],
       "obstacles": [
@@ -54884,7 +54872,7 @@
               [1.6825, -0.10625]
             ]
           ],
-          "meta": {"door": true, "n": true, "slide": [1, 0], "label": "lab"}
+          "meta": {"door": true, "n": true, "slide": [-1, 0], "label": "lab"}
         }
       ],
       "obstacles": [
@@ -55130,7 +55118,7 @@
           "meta": {
             "door": true,
             "s": true,
-            "slide": [-1, 0],
+            "slide": [1, 0],
             "label": "engineering"
           }
         }
@@ -55294,11 +55282,6 @@
           "type": "Polygon",
           "coordinates": [[[0.05, 0], [0.05, 6], [-0.05, 6], [-0.05, 0]]],
           "meta": {"wall": true, "optional": true, "w": true}
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [[[3.05, 0], [3.05, 6], [2.95, 6], [2.95, 0]]],
-          "meta": {"wall": true}
         }
       ],
       "windows": [],
@@ -85564,7 +85547,7 @@
             "meta": {
               "door": true,
               "n": true,
-              "slide": [1, 0],
+              "slide": [-1, 0],
               "label": "locker",
               "det": 1
             }
@@ -85631,7 +85614,7 @@
               "door": true,
               "w": true,
               "optional": true,
-              "slide": [0, 1],
+              "slide": [0, -1],
               "label": "fresher",
               "det": -1
             }
@@ -85666,7 +85649,7 @@
                 [27.0938, 1.45]
               ]
             ],
-            "meta": {"door": true, "e": true, "slide": [0, -1], "det": 1}
+            "meta": {"door": true, "e": true, "slide": [0, 1], "det": 1}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -85685,7 +85668,7 @@
             "meta": {
               "door": true,
               "n": true,
-              "slide": [-1, 0],
+              "slide": [1, 0],
               "label": "lab",
               "det": 1
             }
@@ -85707,7 +85690,7 @@
             "meta": {
               "door": true,
               "n": true,
-              "slide": [1, 0],
+              "slide": [-1, 0],
               "label": "lab",
               "det": -1
             }
@@ -85751,7 +85734,7 @@
             "meta": {
               "door": true,
               "e": true,
-              "slide": [1, 0],
+              "slide": [-1, 0],
               "label": "lab",
               "det": 1
             }
@@ -85773,7 +85756,7 @@
             "meta": {
               "door": true,
               "n": true,
-              "slide": [0, 1],
+              "slide": [0, -1],
               "label": "lab",
               "det": 1
             }
@@ -85795,7 +85778,7 @@
             "meta": {
               "door": true,
               "n": true,
-              "slide": [0, 1],
+              "slide": [0, -1],
               "label": "lab",
               "det": -1
             }
@@ -85814,7 +85797,7 @@
                 [4.9968, 4.1698]
               ]
             ],
-            "meta": {"door": true, "slide": [0.71, -0.71], "det": -1}
+            "meta": {"door": true, "slide": [-0.71, 0.71], "det": -1}
           },
           "navRectId": 1,
           "roomIds": [null, null]
@@ -85850,7 +85833,7 @@
             "meta": {
               "door": true,
               "s": true,
-              "slide": [0, 1],
+              "slide": [0, -1],
               "label": "engineering",
               "det": 1
             }
@@ -91258,22 +91241,9 @@
             [
               [15.05, 21.0562],
               [20.95, 21.0562],
-              [20.95, 26.9437],
-              [15.05, 26.9437],
-              [15.05, 21.0562]
-            ]
-          ],
-          "meta": {}
-        },
-        {
-          "type": "Polygon",
-          "coordinates": [
-            [
-              [15.05, 27.0437],
-              [20.95, 27.0437],
               [20.95, 29.9075],
               [15.05, 29.9075],
-              [15.05, 27.0437]
+              [15.05, 21.0562]
             ]
           ],
           "meta": {}
@@ -91844,14 +91814,6 @@
               [20.95, 24.1812],
               [20.95, 21.0562],
               [15.05, 21.0562],
-              [15.05, 26.9437],
-              [20.95, 26.9437],
-              [20.95, 25.3062],
-              [21.05, 25.3062],
-              [21.05, 29.9075],
-              [20.95, 29.9075],
-              [20.95, 27.0437],
-              [15.05, 27.0437],
               [15.05, 29.9075],
               [14.9437, 29.9075],
               [14.9437, 15.05],
@@ -92107,6 +92069,19 @@
               [25.5, 6.05],
               [20.2732, 6.05],
               [20.2732, 5.95]
+            ]
+          ],
+          "meta": {"wall": true}
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [20.95, 25.3062],
+              [21.05, 25.3062],
+              [21.05, 29.9075],
+              [20.95, 29.9075],
+              [20.95, 25.3062]
             ]
           ],
           "meta": {"wall": true}
