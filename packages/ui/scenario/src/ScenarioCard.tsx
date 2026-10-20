@@ -1,66 +1,112 @@
+import { instanceStatus, type ScInstance } from "@npc-cli/cli/sc";
 import type { WorldState } from "@npc-cli/ui__world";
 import type { ScenarioDef } from "@npc-cli/ui__world/scenario.schema";
+import { CaretRightIcon } from "@phosphor-icons/react";
 import { useState } from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { sectionClass } from "./classes";
 import { PhaseGrid } from "./PhaseGrid";
 import { RoomPicker } from "./RoomPicker";
+import { chipsOf, runInTty, useRuns } from "./runs";
 
-/** A scenario's definition: its map and rooms, roles, params, and its phases by roles — see `docs/scenarios.md` */
-export function ScenarioCard({ w, def, container, editable, onSave }: Props) {
+/**
+ * A scenario: run from its header, its phases by roles foremost, and its runs, area, roles and params folded away
+ * — see `docs/scenarios.md`
+ */
+export function ScenarioCard({ w, def, container, editable, sessionKey, onSave }: Props) {
   const [picking, setPicking] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const runs = useRuns(w, def.key, sessionKey);
+  /** The latest still running, shown in the header, and whose phase and npcs the grid shows */
+  const shown = runs.filter((run) => instanceStatus(run) !== "ended").at(-1);
+  const send = (src: string) => sessionKey !== undefined && runInTty(sessionKey, src);
+  // on another map, it asks before switching
+  const start = () => (w !== undefined && w.mapKey !== def.map ? setConfirming(true) : send(`sc run ${def.short}`));
 
   return (
     <div className="p-3 flex flex-col gap-3">
-      <div>
-        <div className="text-zinc-100">
-          {def.title} <span className="text-zinc-500">({def.short})</span>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-100 text-sm" title={def.summary}>
+            {def.title}
+          </span>
+          <span className="text-zinc-500">{def.short}</span>
+          <button
+            type="button"
+            className={`${buttonClass} ml-auto`}
+            title={sessionKey === undefined ? "no tty" : `sc run ${def.short} in ${sessionKey}`}
+            disabled={sessionKey === undefined || w === undefined}
+            onClick={start}
+          >
+            run
+          </button>
         </div>
-        {def.summary !== "" && <div className="text-zinc-500">{def.summary}</div>}
+        {shown !== undefined && <RunRow run={shown} send={send} />}
       </div>
 
-      <Section title="area">
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="text-zinc-500">{def.map}</span>
-          {def.rooms.map((grKey) => (
-            <span key={grKey} className="px-1 rounded border border-zinc-700">
-              {grKey}
-            </span>
+      <PhaseGrid def={def} phase={shown?.phase} chips={shown === undefined ? undefined : chipsOf(shown)} />
+
+      <div className="flex flex-col gap-1">
+        <Fold title="runs" hint={runs.length === 0 ? "none" : String(runs.length)}>
+          {runs.map((run) => (
+            <RunRow key={run.id} run={run} send={send} />
           ))}
-          {editable && w !== undefined && (
-            <button
-              type="button"
-              className="px-1 rounded border border-zinc-700 cursor-pointer hover:bg-zinc-800"
-              onClick={() => setPicking(true)}
-            >
-              pick rooms
-            </button>
-          )}
-        </div>
-      </Section>
+        </Fold>
 
-      <Section title="roles">
-        {Object.entries(def.roles).map(([role, { count, skin }]) => (
-          <div key={role}>
-            <span className="text-zinc-100">{role}</span> ×{count}
-            {skin !== undefined && <span className="text-zinc-500"> as {skin}</span>}
-            {(def.cast[role]?.length ?? 0) > 0 && <span className="text-zinc-500"> · {def.cast[role].join(" ")}</span>}
+        <Fold title="area" hint={`${def.map} · ${def.rooms.length} rooms`}>
+          <div className="flex flex-wrap items-center gap-1">
+            {def.rooms.map((grKey) => (
+              <span key={grKey} className="px-1 rounded border border-zinc-700">
+                {grKey}
+              </span>
+            ))}
+            {editable && w !== undefined && (
+              <button type="button" className={buttonClass} onClick={() => setPicking(true)}>
+                pick rooms
+              </button>
+            )}
           </div>
-        ))}
-      </Section>
+        </Fold>
 
-      <Section title="params">
-        <div className="font-mono">
-          {Object.entries(def.params).map(([k, v]) => (
-            <div key={k}>
-              {k}: {JSON.stringify(v)}
+        <Fold
+          title="roles"
+          hint={Object.entries(def.roles)
+            .map(([role, r]) => `${role} ×${r.count}`)
+            .join(", ")}
+        >
+          {Object.entries(def.roles).map(([role, { count, skin }]) => (
+            <div key={role}>
+              <span className="text-zinc-100">{role}</span> ×{count}
+              {skin !== undefined && <span className="text-zinc-500"> as {skin}</span>}
+              {(def.cast[role]?.length ?? 0) > 0 && (
+                <span className="text-zinc-500"> · {def.cast[role].join(" ")}</span>
+              )}
             </div>
           ))}
-        </div>
-      </Section>
+        </Fold>
 
-      <Section title="phases">
-        <PhaseGrid def={def} />
-      </Section>
+        <Fold title="params" hint={String(Object.keys(def.params).length)}>
+          <div className="font-mono">
+            {Object.entries(def.params).map(([k, v]) => (
+              <div key={k}>
+                {k}: {JSON.stringify(v)}
+              </div>
+            ))}
+          </div>
+        </Fold>
+      </div>
+
+      <ConfirmDialog
+        container={container}
+        open={confirming}
+        text={`Switch the World from ${w?.mapKey} to ${def.map}?`}
+        yes="switch and run"
+        onOpenChange={setConfirming}
+        onYes={() => {
+          setConfirming(false);
+          send(`sc run ${def.short} --switch`);
+        }}
+      />
 
       {w !== undefined && (
         <RoomPicker
@@ -79,14 +125,48 @@ export function ScenarioCard({ w, def, container, editable, onSave }: Props) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** A run's id, phase and status, and what can be done to it, each a `sc` command in its tty */
+function RunRow({ run, send }: { run: ScInstance; send(src: string): void }) {
+  const status = instanceStatus(run);
   return (
-    <div>
-      <div className={sectionClass}>{title}</div>
-      {children}
+    <div className="flex flex-wrap items-center gap-1">
+      <span className="font-mono text-zinc-100">{run.id}</span>
+      <span className="text-zinc-500 mr-1">
+        {run.phase} · {status}
+      </span>
+      {status === "running" && (
+        <button type="button" className={buttonClass} onClick={() => send(`sc pause id:${run.id}`)}>
+          pause
+        </button>
+      )}
+      {status.endsWith("paused") && (
+        <button type="button" className={buttonClass} onClick={() => send(`sc resume id:${run.id}`)}>
+          resume
+        </button>
+      )}
+      <button type="button" className={buttonClass} onClick={() => send(`sc kill id:${run.id}`)}>
+        {status === "ended" ? "clear" : "kill"}
+      </button>
     </div>
   );
 }
+
+/** A section folded away until opened, its `hint` beside its title */
+function Fold({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+  return (
+    <details className="group">
+      <summary className="flex items-center gap-1 cursor-pointer list-none select-none">
+        <CaretRightIcon className="size-2.5 text-zinc-500 transition-transform group-open:rotate-90" />
+        <span className={sectionClass}>{title}</span>
+        <span className="text-zinc-600 truncate">{hint}</span>
+      </summary>
+      <div className="pl-3.5 pt-1">{children}</div>
+    </details>
+  );
+}
+
+const buttonClass =
+  "px-1 rounded border border-zinc-700 cursor-pointer hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-default";
 
 type Props = {
   w: WorldState | undefined;
@@ -95,5 +175,7 @@ type Props = {
   container: null | HTMLElement;
   /** Its file is writable, through the DEV server */
   editable: boolean;
+  /** The tty its runs are started in */
+  sessionKey: undefined | string;
   onSave(def: ScenarioDef): void;
 };

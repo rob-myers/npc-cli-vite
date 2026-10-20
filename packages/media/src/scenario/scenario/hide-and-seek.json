@@ -11,15 +11,15 @@
   "params": { "countSecs": 10, "limitSecs": 120, "prefer": "cover,doable", "perceiveSecs": 0.25, "reactSecs": 0.6 },
   "phases": [
     { "key": "setup", "until": "s => s.all(n => n.done)" },
-    { "key": "count", "until": "s => s.phaseSecs >= s.params.countSecs" },
+    { "key": "count", "until": "s => s.all('seeker', n => n.done)" },
     { "key": "search", "until": "s => s.all('hider', n => n.found) || s.phaseSecs >= s.params.limitSecs" },
     { "key": "end", "until": "s => s.all(n => n.done)" }
   ],
   "cells": {
     "seeker": {
       "setup": ["go to:start"],
-      "count": ["face wall", "pose eyes:shut"],
-      "search": ["pose eyes:open", "search"],
+      "count": ["face wall", "pose eyes:shut", "count to:$countSecs"],
+      "search": ["pose eyes:open", "say Ready or not!", "search"],
       "end": ["say Done."]
     },
     "hider": {

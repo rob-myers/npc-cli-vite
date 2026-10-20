@@ -1,5 +1,6 @@
 import type { ScenarioDef } from "@npc-cli/ui__world/scenario.schema";
 import { loadScenarioEntries } from "@npc-cli/ui__world/scenario-shared";
+import { toProcessStatus } from "../../../shell/const";
 import { sessionApi, sharedFolder } from "../../../shell/session";
 
 /** A running scenario, at `/shared/sc/{id}`: shared by its director and actors, and kept over HMR */
@@ -24,6 +25,8 @@ export type ScInstance = {
   reserved: Record<string, string>;
   /** Who sees whom, as `{watcher} {seen}`: eyes open, facing them, and in sight. Updated each check */
   sight: string[];
+  /** By npc key, their actor's pid, set by the actor itself */
+  actorPids: Record<string, number>;
 };
 
 /** A cast member. Rules may add marks, e.g. `found` */
@@ -34,6 +37,10 @@ export type ScNpc = {
   spawned: boolean;
   /** Bumped by a role change: their actor starts their new cell */
   rev: number;
+  /** Times their actor was lost: a second time, they are out */
+  lost?: number;
+  /** Out of the instance: their actor was lost twice */
+  out?: boolean;
   [mark: string]: unknown;
 };
 
@@ -120,11 +127,30 @@ export function compile<F extends (...args: never[]) => unknown>(src: string): F
 type AnyFn = (...args: never) => unknown;
 const compiled = new Map<string, AnyFn>();
 
-/** Ends every process of instance `id` but `exceptPid` */
-export function killInstanceProcesses(inst: ScInstance, exceptPid?: number) {
+/** The process groups of instance `id`: its director and actors */
+export function instanceLeaders(inst: ScInstance) {
   const session = sessionApi.getSession(inst.sessionKey);
-  const pids = Object.values(session?.process ?? {})
-    .filter((p) => p.ptags?.sc === inst.id && p.key !== exceptPid && p.key === p.pgid)
-    .map((p) => p.key);
-  if (pids.length > 0) sessionApi.kill(inst.sessionKey, pids, { GROUP: true, SIGINT: true });
+  return Object.values(session?.process ?? {}).filter((p) => p.ptags?.sc === inst.id && p.key === p.pgid);
+}
+
+/** `ended` once its director is gone, else `paused` if all its processes are, `partly paused` if some */
+export function instanceStatus(inst: ScInstance) {
+  if (isLive(inst) === false) return "ended";
+  const leaders = instanceLeaders(inst);
+  const paused = leaders.filter((p) => p.status === toProcessStatus.Suspended).length;
+  return paused === 0 ? "running" : paused === leaders.length ? "paused" : "partly paused";
+}
+
+/**
+ * Signals every process group of an instance but `exceptPid`, e.g. `{ SIGINT: true }`. A pause or resume is
+ * under the instance's own reason, which a World pause leaves alone
+ */
+export function signalInstance(
+  inst: ScInstance,
+  opts: { SIGINT?: true; STOP?: true; CONT?: true },
+  exceptPid?: number,
+) {
+  const pids = instanceLeaders(inst).flatMap((p) => (p.key === exceptPid ? [] : p.key));
+  const reason = opts.SIGINT === true ? undefined : `sc ${inst.id}`;
+  if (pids.length > 0) sessionApi.kill(inst.sessionKey, pids, { GROUP: true, reason, ...opts });
 }

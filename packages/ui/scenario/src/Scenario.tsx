@@ -1,3 +1,4 @@
+import { sessionApi } from "@npc-cli/cli";
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
 import {
@@ -42,8 +43,21 @@ import "./scenario.css";
  * conversation trees, listed beside the one chosen — see `docs/scenarios.md`
  */
 export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
-  const w = useWorld(meta.worldKey);
-  const { uiStoreApi } = useContext(UiContext);
+  const { uiStore, uiStoreApi } = useContext(UiContext);
+  /** The ttys there are, joined: a string, so the store's selector needs no shallow compare */
+  const ttys = uiStore(({ byId }) =>
+    Object.values(byId)
+      .flatMap(({ meta }) => (meta.uiKey === "Jsh" ? String(meta.sessionKey) : []))
+      .join(" "),
+  )
+    .split(" ")
+    .filter(Boolean);
+  const sessionKey = meta.sessionKey !== undefined && ttys.includes(meta.sessionKey) ? meta.sessionKey : ttys[0];
+  /** The tty's World, else the panel's own */
+  const worldKey =
+    (sessionKey === undefined ? undefined : (sessionApi.getSession(sessionKey)?.var.WORLD_KEY as undefined | string)) ??
+    meta.worldKey;
+  const w = useWorld(worldKey);
 
   const state = useStateRef(
     (): State => ({
@@ -150,7 +164,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
             w.hud?.update();
           }
           w.view.forceUpdate();
-          scenarioShared.set(meta.worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
+          scenarioShared.set(worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
         } catch (e) {
           state.set({ error: String(e) });
         }
@@ -171,7 +185,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
       locate(entry) {
         if (w === undefined) return;
         const npc = entry.npcKey === undefined ? undefined : w.n?.[entry.npcKey];
-        if (npc !== undefined) return scenarioShared.set(meta.worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
+        if (npc !== undefined) return scenarioShared.set(worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
         const grKey = entry.maps[w.mapKey]?.rooms[0];
         if (grKey === undefined) return;
         const { gmId, roomId } = helper.getGmRoomId(grKey as Geomorph.GmRoomKey);
@@ -180,7 +194,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         if (room === undefined) return;
         const { x, y } = room.center;
         const { a, b, c, d, e, f } = gm.transform;
-        scenarioShared.set(meta.worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
+        scenarioShared.set(worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
       },
     }),
     { deps: [w, meta.entryKey] },
@@ -198,9 +212,9 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
 
   // a map of this World outlines the entry's rooms and doors, and spawns its npc as edited
   useEffect(() => {
-    scenarioShared.set(meta.worldKey, { entry: state.draft === null ? null : { ...state.draft } });
-    return () => scenarioShared.set(meta.worldKey, { entry: null });
-  }, [meta.worldKey, state.draft, state.rev]);
+    scenarioShared.set(worldKey, { entry: state.draft === null ? null : { ...state.draft } });
+    return () => scenarioShared.set(worldKey, { entry: null });
+  }, [worldKey, state.draft, state.rev]);
 
   const { draft, entries } = state;
   const characters = Object.values(entries).filter((e) => e.kind === "character");
@@ -209,7 +223,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   const stubs = scenarios.filter((x) => defs.every((d) => d.key !== `${scenarioPrefix}${x.key}`));
 
   // choosing an npc on such a map shows their entry
-  const { npcKey: mapNpcKey } = useScenarioShared(meta.worldKey);
+  const { npcKey: mapNpcKey } = useScenarioShared(worldKey);
   useEffect(() => {
     const entry = characters.find((e) => mapNpcKey !== null && e.npcKey === mapNpcKey);
     if (entry !== undefined) state.select(entry.key);
@@ -313,7 +327,14 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   /** The scenario or conversation chosen, else the character */
   const shownCol =
     def !== undefined ? (
-      <ScenarioCard w={w} def={def} container={root.current} editable={editable} onSave={state.saveDef} />
+      <ScenarioCard
+        w={w}
+        def={def}
+        container={root.current}
+        editable={editable}
+        sessionKey={sessionKey}
+        onSave={state.saveDef}
+      />
     ) : stub !== undefined ? (
       <ScenarioStubCard stub={stub} />
     ) : conv !== undefined ? (
@@ -329,6 +350,15 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
     >
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
+        {ttys.length > 0 && (
+          <Picker
+            value={sessionKey ?? ""}
+            options={ttys}
+            onChange={(key) =>
+              uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ScenarioUiMeta).sessionKey = key))
+            }
+          />
+        )}
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
         <IconButton title="smaller text" icon={MagnifyingGlassMinusIcon} onClick={() => state.zoomBy(-zoomStep)} />
         <IconButton title="larger text" icon={MagnifyingGlassPlusIcon} onClick={() => state.zoomBy(zoomStep)} />

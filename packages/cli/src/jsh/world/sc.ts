@@ -3,6 +3,7 @@ import { loadScenarioEntries } from "@npc-cli/ui__world/scenario-shared";
 import { Task } from "@npc-cli/util";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { sessionApi } from "../../shell/session";
+import { SigKillError } from "../../shell/util";
 import { wSleep } from "./core";
 import { spotQuery } from "./plan.main";
 import {
@@ -10,11 +11,13 @@ import {
   findDef,
   getInstance,
   getInstances,
-  killInstanceProcesses,
+  instanceStatus,
+  isLive,
   nextInstanceId,
   type ScInstance,
   type ScNpc,
   type ScState,
+  signalInstance,
   stateOf,
 } from "./sc/instance";
 import { isStep, runLine } from "./sc/steps";
@@ -28,6 +31,8 @@ import { isStep, runLine } from "./sc/steps";
  * sc run hns seeker:rob --switch
  * sc do npc:rob go to:start
  * sc hide cal from:rob
+ * sc ps
+ * sc pause; sc resume; sc kill id:hns-2
  * ```
  */
 export async function* sc(ct: JshCli.RunArg) {
@@ -50,6 +55,37 @@ export async function* sc(ct: JshCli.RunArg) {
     case "actor":
       await actor(ct, args);
       return;
+    case "ps":
+      for (const inst of Object.values(getInstances())) {
+        if (inst.sessionKey !== ct.api.meta.sessionKey) continue;
+        const cast = Object.values(inst.npcs).map((n) => `${n.key}:${n.role}${n.out ? "(out)" : ""}`);
+        yield `${inst.id} ${instanceStatus(inst)} ${inst.phase} ${cast.join(" ")}`;
+      }
+      return;
+    case "default": {
+      const id = args[0] ?? defaultId(ct);
+      getInstance(id);
+      yield (ct.home.SC_DEFAULT = id);
+      return;
+    }
+    case "pause":
+    case "resume": {
+      const inst = getInstance(instanceArg(ct, args));
+      signalInstance(inst, sub === "pause" ? { STOP: true } : { CONT: true });
+      yield `${inst.id} ${instanceStatus(inst)}`;
+      return;
+    }
+    case "kill": {
+      const inst = getInstance(instanceArg(ct, args));
+      if (isLive(inst)) {
+        // its director's cleanup ends its actors and removes the npcs it spawned
+        sessionApi.kill(inst.sessionKey, [inst.directorPid], { GROUP: true, SIGINT: true });
+      } else {
+        ct.w.e.removeNpcs(...Object.values(inst.npcs).flatMap((n) => (n.spawned && ct.w.n[n.key] ? n.key : [])));
+        delete getInstances()[inst.id];
+      }
+      return;
+    }
     case "?": {
       const opts = ct.api.jsArg(args.filter((a) => a.startsWith("id:"))) as { id?: string };
       const inst = getInstance(opts.id ?? defaultId(ct));
@@ -66,7 +102,7 @@ export async function* sc(ct: JshCli.RunArg) {
         return;
       }
       throw Error(
-        "usage: sc list | info [hns] | run hns [role:npc,…] [--switch] | do [id:hns-1] npc:abe <line> | <step> <npc> … | ? 's => …'",
+        "usage: sc list | info [hns] | run hns [role:npc,…] [--switch] | ps | default hns-1 | pause | resume | kill | do npc:abe <line> | <step> <npc> … | ? 's => …'",
       );
     }
   }
@@ -119,6 +155,7 @@ async function* run(ct: JshCli.RunArg, args: string[]) {
     seen: [],
     reserved: {},
     sight: [],
+    actorPids: {},
   };
 
   getInstances()[id] = inst;
@@ -146,16 +183,12 @@ async function* run(ct: JshCli.RunArg, args: string[]) {
     });
 
     emit(ct, { id, kind: "started", phase: inst.phase });
-    const shell = sessionApi.getSession(inst.sessionKey).ttyShell;
-    for (const key of Object.keys(inst.npcs)) {
-      shell
-        .sourceExternal(`sc actor id:${id} npc:${key}`, { background: true, ptags: { sc: id } })
-        .catch((e) => warn(`${id} actor ${key}: ${e}`));
-    }
+    for (const key of Object.keys(inst.npcs)) startActor(inst, key);
 
     const tick = Number(def.params.perceiveSecs ?? defaultPerceiveSecs);
     for (let index = 0; index < def.phases.length; ) {
       await wSleep(ct, tick);
+      checkHealth(ct, inst);
       await updateSight(ct, inst);
       const s = stateOf(inst, def, ct.w.gameTime.now());
       await applyRules(ct, inst, def, s);
@@ -167,7 +200,7 @@ async function* run(ct: JshCli.RunArg, args: string[]) {
     throw e;
   } finally {
     inst.status = "ended";
-    killInstanceProcesses(inst, inst.directorPid);
+    signalInstance(inst, { SIGINT: true }, inst.directorPid);
     // killed or failed, the npcs it spawned go too: ended, they are left to be seen
     if (failed) ct.w.e.removeNpcs(...Object.values(inst.npcs).flatMap((n) => (n.spawned ? n.key : [])));
     emit(ct, { id, kind: "ended", phase: inst.phase });
@@ -184,15 +217,20 @@ async function actor(ct: JshCli.RunArg, args: string[]) {
   const def = await findDef(inst.defKey);
   if (npcKey === undefined || inst.npcs[npcKey] === undefined) throw Error(`${id}: no cast member ${npcKey}`);
 
+  inst.actorPids[npcKey] = ct.api.meta.pid;
   let rev = "";
   let current: null | Task = null;
   const stop = () => {
     current?.cancel();
     ct.w.n[npcKey]?.rejectAll(Error("cancelled"));
   };
-  const handlers = ct.api.handleStatus({ cleanup: stop });
+  const handlers = ct.api.handleStatus({
+    cleanup: stop,
+    // paused by `sc pause`, not only the World: their npc stops, and starts their cell afresh on resume
+    onSuspend: () => (ct.api.isHeldOnlyBy("world") === false && (stop(), (rev = "")), true),
+  });
   try {
-    while (inst.status === "running" && getInstances()[inst.id] === inst) {
+    while (inst.status === "running" && getInstances()[inst.id] === inst && inst.npcs[npcKey].out !== true) {
       const n = inst.npcs[npcKey];
       if (`${inst.rev}.${n.rev}` !== rev) {
         if (current !== null) stop();
@@ -232,6 +270,39 @@ async function doLine(ct: JshCli.RunArg, args: string[]) {
     handlers.dispose();
   }
 }
+
+/** Starts npc `key`'s actor, a job of its own tagged with the instance */
+function startActor(inst: ScInstance, key: string) {
+  sessionApi
+    .getSession(inst.sessionKey)
+    .ttyShell.sourceExternal(`sc actor id:${inst.id} npc:${key}`, { background: true, ptags: { sc: inst.id } })
+    .catch((e) => e instanceof SigKillError || warn(`${inst.id} actor ${key}: ${e}`)); // a kill is no failure
+}
+
+/**
+ * An actor lost, e.g. killed from the Jobs panel, is started again once: lost again, its npc is out.
+ * A change of status, e.g. one paused from elsewhere, is announced
+ */
+function checkHealth(ct: JshCli.RunArg, inst: ScInstance) {
+  for (const n of Object.values(inst.npcs)) {
+    const pid = inst.actorPids[n.key];
+    if (n.out === true || pid === undefined) continue;
+    if (sessionApi.getProcess({ sessionKey: inst.sessionKey, pid }) !== undefined) continue;
+    delete inst.actorPids[n.key];
+    n.lost = (n.lost ?? 0) + 1;
+    emit(ct, { id: inst.id, kind: "actor-lost", npc: n.key });
+    if (n.lost > 1) n.out = true;
+    else startActor(inst, n.key);
+  }
+  const status = instanceStatus(inst);
+  if (status !== lastStatus.get(inst.id)) {
+    lastStatus.set(inst.id, status);
+    emit(ct, { id: inst.id, kind: "status", status });
+  }
+}
+
+/** Each instance's status as last announced */
+const lastStatus = new Map<string, string>();
 
 /** Who sees whom, for the rules: each pair's spots in sight, their eyes open, and facing them */
 async function updateSight(ct: JshCli.RunArg, inst: ScInstance) {
@@ -314,6 +385,11 @@ function gameTask(ct: JshCli.RunArg) {
     () => false,
     () => 1000 * ct.w.gameTime.now(),
   );
+}
+
+/** `id:hns-2`, else the session's default */
+function instanceArg(ct: JshCli.RunArg, args: string[]) {
+  return (ct.api.jsArg(args) as { id?: string }).id ?? args.find(isNaked) ?? defaultId(ct);
 }
 
 /** The session's default instance, set by `sc run` */

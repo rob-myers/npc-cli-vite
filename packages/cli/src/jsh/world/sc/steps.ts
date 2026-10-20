@@ -54,6 +54,15 @@ const steps: Record<string, Step> = {
   async say(ctx, words) {
     ctx.ct.w.speech.say(ctx.npcKey, words.join(" "));
   },
+  /** `count to:<n> [every:<secs>]`: says each number in turn, a game second apart unless `every` says */
+  async count(ctx, args) {
+    const opts = ctx.ct.api.jsArg(args) as { to?: number; every?: number };
+    const every = Number(opts.every ?? 1);
+    for (let i = 1; i <= Number(opts.to ?? 10); i++) {
+      ctx.ct.w.speech.say(ctx.npcKey, `${i}`);
+      await waitSecs(ctx, every);
+    }
+  },
   /** `hide from:<role or npcs> [prefer:<kinds>]`: to a free spot of the area none of them sees, reserved for them */
   async hide(ctx, args) {
     const opts = ctx.ct.api.jsArg(args) as { from?: string; prefer?: string };

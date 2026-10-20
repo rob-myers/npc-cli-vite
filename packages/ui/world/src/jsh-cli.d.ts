@@ -100,7 +100,9 @@ declare namespace JshCli {
   type ScenarioEvent = {
     key: "scenario";
     id: string;
-    kind: "started" | "phase" | "role" | "done" | "ended";
+    kind: "started" | "phase" | "role" | "status" | "actor-lost" | "ended";
+    /** For `status`: `running`, `paused` or `partly paused` */
+    status?: string;
     phase?: string;
     /** Their name, not `npcKey`: an event with one is an npc's, and goes to its keyed listeners */
     npc?: string;

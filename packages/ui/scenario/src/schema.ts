@@ -6,6 +6,8 @@ export const ScenarioUiMetaSchema = z.object({
   uiKey: z.literal("Scenario"),
   /** The World whose rooms, doors and npcs its characters name, and where its talks are had */
   worldKey: z.templateLiteral(["world-", z.number()]).default("world-0"),
+  /** The tty scenarios are run in: its World is the one shown */
+  sessionKey: z.string().optional(),
   /** The text size, as a multiple */
   zoom: z.number().default(1),
   /** The columns' sizes, when wide enough to have them */
