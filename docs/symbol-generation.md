@@ -95,6 +95,20 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 
 A machine with no walls is one polygon round its silhouette: every opaque pixel.
 
+## Wall paths
+
+A `path` named `wall` is for a wall that is not a rect: a diagonal, a curve, a corner run as one piece. Give it
+as few points as look the same. Every segment is an occluder in the player-light sweep and an edge of the
+navmesh.
+
+- **Curves by tolerance, not by a fixed step.** A chord across an arc of radius `r` and angle `θ` strays
+  `r (1 - cos(θ/2))` from it, its sagitta. Keep that within a quarter of the wall's thickness (1 for a
+  4-thick wall), so `θ = 2 acos(1 - 1/r)`. The 228-radius dome of `misc-stellar-cartography--020` takes
+  17 chords per half ring, not 36.
+- **Straddle the arc.** Push each vertex out by half the sagitta, or every chord lies inside the circle.
+- **No repeated points.** End on the last vertex and `Z`, without repeating the first. Drop any point on
+  a straight run between its neighbours.
+
 ### Cleaning up an existing symbol
 
 To fix one whose obstacles leave thick lines showing, check it by machine before reading any art:
