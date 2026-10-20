@@ -41,13 +41,15 @@ const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
           continue;
         }
 
-        const _body = createRigidBody({
+        const at = { x: npc.position.x, y: state.agentHeight / 2, z: npc.position.z };
+        // made out of the way and moved in: a body made inside a sensor never enters it
+        const body = createRigidBody({
           type: RAPIER.RigidBodyType.KinematicPositionBased,
           geomDef: {
             type: "circle",
             radius: state.agentRadius,
           },
-          position: { x: npc.position.x, y: state.agentHeight / 2, z: npc.position.z },
+          position: { ...at, y: -1000 },
           userData: {
             bodyKey,
             bodyUid: addBodyKeyUidRelation(bodyKey, state),
@@ -55,8 +57,9 @@ const onMessage = async (e: MessageEvent<WW.MsgToWorker>) => {
             radius: state.agentRadius,
           },
         });
+        body.setNextKinematicTranslation(at);
       }
-      // stepWorld(state);
+      stepWorld(state);
       break;
     }
     case "get-physics-debug-data": {

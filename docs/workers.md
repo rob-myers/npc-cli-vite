@@ -35,6 +35,9 @@ They were once one worker. Splitting them means:
 - **`stepWorld` steps twice.** Rapier finds contacts before it moves its bodies, so one step reports
   where they were. With one step, an npc respawned into a collider got no `enter-collider` until
   they next moved.
+- **A new body is made 1000 below and moved in** (`add-physics-npcs`), then stepped. A body made
+  inside a sensor never enters it. Someone seated has no body, so a spawn off a chair into a doorway
+  left the door shut.
 
 ## The jsh plug-in
 
