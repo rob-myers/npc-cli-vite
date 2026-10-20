@@ -1,0 +1,75 @@
+{
+  "filename": "console--018.json",
+  "width": 60,
+  "height": 60,
+  "nodes": [
+    {
+      "id": "06857085-656b-1556-538f-e193a208f38c",
+      "name": "console--018",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "console--018",
+      "baseRect": {"width": 61.4, "height": 61.4},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+    },
+    {
+      "id": "a29caee8-5078-0bc8-d717-24d9f1e9248a",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "026cdc70-2cf8-5f3b-13dc-d79765638789",
+          "name": "console--051 y=0.4",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.7071,
+            "b": 0.7071,
+            "c": -0.7071,
+            "d": 0.7071,
+            "e": 42,
+            "f": 21.39
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 1.2728, "y": 0.5657},
+          "cssTransform": "matrix(0.7071, 0.7071, -0.7071, 0.7071, 43.2728, 21.9557)"
+        }
+      ]
+    },
+    {
+      "id": "b3d95a09-2886-a682-461a-d4e242bd0011",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "e46957f3-f9bd-3d46-5eb4-483996617efe",
+          "name": "obstacle table surface y=0.6",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 0 0 L 61.4 0 L 61.4 13.6 L 59.4 16.8 L 49 18.8 L 39 23 L 32.6 27.4 L 27.2 32.6 L 20.4 43.2 L 18 50.4 L 17 57.6 L 15.2 60.6 L 13 61.4 L 0 61.4 Z",
+          "baseRect": {"width": 60, "height": 60},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 61.4},
+  "type": "symbol",
+  "key": "console--018"
+}

@@ -1,0 +1,121 @@
+{
+  "filename": "ships-locker--003.json",
+  "width": 60,
+  "height": 60,
+  "nodes": [
+    {
+      "id": "0fc021b8-70ff-e197-2f30-016341f1fc45",
+      "name": "ships-locker--003",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -4.7},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "ships-locker--003",
+      "baseRect": {"width": 64, "height": 66.8},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -4.7)"
+    },
+    {
+      "id": "eddfc70e-a5c7-9b0c-4095-1a950f3aa633",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "abb22d09-d01b-fa6c-4b9e-e624c078fe2b",
+          "name": "door n slide=[-1,0] label=locker",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 7.5, "f": -4.25},
+          "type": "rect",
+          "baseRect": {"width": 45, "height": 8.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 7.5, -4.25)"
+        },
+        {
+          "id": "5fd3d952-341a-375a-dddc-e9877bd146af",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 7, "f": -2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-1, 0, 0, -1, 7, -2)"
+        },
+        {
+          "id": "e1b15977-4b1e-c855-3077-46e3b7862dae",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1, "f": 2},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 1, 2)"
+        }
+      ]
+    },
+    {
+      "id": "345ea73f-9ac4-795d-a8bd-87b6f0b86e73",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "f5a80246-cd5e-d58f-82d9-b1c370d6a238",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "3d15516c-28d8-a1f1-49e8-e68f46c28cf9",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 58},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 58)"
+        },
+        {
+          "id": "7eb16346-3609-8630-01a5-01dd744334c6",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 60},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "5bc1aab1-6f4d-25d2-4c9c-4623f1a9ab6d",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 58, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 60},
+          "cssTransform": "matrix(1, 0, 0, 1, 58, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -4.7, "width": 64, "height": 66.8},
+  "type": "symbol",
+  "key": "ships-locker--003"
+}

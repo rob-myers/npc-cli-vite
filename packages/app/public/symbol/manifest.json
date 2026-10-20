@@ -674,6 +674,159 @@
       "bounds": {"x": 0, "y": 0, "width": 100, "height": 111.8},
       "type": "symbol",
       "key": "machinery--091"
+    },
+    "g-102--research-deck": {
+      "filename": "g-102--research-deck.json",
+      "thumbnailFilename": "g-102--research-deck.thumbnail.png",
+      "width": 1200,
+      "height": 1200,
+      "bounds": {"x": -5.5, "y": -5.5, "width": 1212, "height": 1212},
+      "type": "symbol",
+      "key": "g-102--research-deck"
+    },
+    "ships-locker--003": {
+      "filename": "ships-locker--003.json",
+      "thumbnailFilename": "ships-locker--003.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": -2, "y": -4.7, "width": 64, "height": 66.8},
+      "type": "symbol",
+      "key": "ships-locker--003"
+    },
+    "ships-locker--007": {
+      "filename": "ships-locker--007.json",
+      "thumbnailFilename": "ships-locker--007.thumbnail.png",
+      "width": 120,
+      "height": 60,
+      "bounds": {"x": -2, "y": -4.7, "width": 124, "height": 66.8},
+      "type": "symbol",
+      "key": "ships-locker--007"
+    },
+    "ships-locker--020": {
+      "filename": "ships-locker--020.json",
+      "thumbnailFilename": "ships-locker--020.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -4.7, "width": 124, "height": 126.8},
+      "type": "symbol",
+      "key": "ships-locker--020"
+    },
+    "console--018": {
+      "filename": "console--018.json",
+      "thumbnailFilename": "console--018.thumbnail.png",
+      "width": 60,
+      "height": 60,
+      "bounds": {"x": 0, "y": 0, "width": 61.4, "height": 61.4},
+      "type": "symbol",
+      "key": "console--018"
+    },
+    "office--004": {
+      "filename": "office--004.json",
+      "thumbnailFilename": "office--004.thumbnail.png",
+      "width": 120,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 124},
+      "type": "symbol",
+      "key": "office--004"
+    },
+    "fresher--036": {
+      "filename": "fresher--036.json",
+      "thumbnailFilename": "fresher--036.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 126.6},
+      "type": "symbol",
+      "key": "fresher--036"
+    },
+    "lounge--017": {
+      "filename": "lounge--017.json",
+      "thumbnailFilename": "lounge--017.thumbnail.png",
+      "width": 240,
+      "height": 120,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
+      "type": "symbol",
+      "key": "lounge--017"
+    },
+    "empty-room--019": {
+      "filename": "empty-room--019.json",
+      "thumbnailFilename": "empty-room--019.thumbnail.png",
+      "width": 120,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 126.6, "height": 244},
+      "type": "symbol",
+      "key": "empty-room--019"
+    },
+    "empty-room--060": {
+      "filename": "empty-room--060.json",
+      "thumbnailFilename": "empty-room--060.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 244, "height": 244},
+      "type": "symbol",
+      "key": "empty-room--060"
+    },
+    "misc-stellar-cartography--020": {
+      "filename": "misc-stellar-cartography--020.json",
+      "thumbnailFilename": "misc-stellar-cartography--020.thumbnail.png",
+      "width": 600,
+      "height": 600,
+      "bounds": {"x": -2, "y": -2, "width": 604, "height": 604},
+      "type": "symbol",
+      "key": "misc-stellar-cartography--020"
+    },
+    "engineering--047": {
+      "filename": "engineering--047.json",
+      "thumbnailFilename": "engineering--047.thumbnail.png",
+      "width": 240,
+      "height": 420,
+      "bounds": {"x": -4.7, "y": -2, "width": 246.8, "height": 424},
+      "type": "symbol",
+      "key": "engineering--047"
+    },
+    "lab--018": {
+      "filename": "lab--018.json",
+      "thumbnailFilename": "lab--018.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -6.5, "width": 244, "height": 248.6},
+      "type": "symbol",
+      "key": "lab--018"
+    },
+    "lab--012": {
+      "filename": "lab--012.json",
+      "thumbnailFilename": "lab--012.thumbnail.png",
+      "width": 240,
+      "height": 180,
+      "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 184},
+      "type": "symbol",
+      "key": "lab--012"
+    },
+    "lab--023": {
+      "filename": "lab--023.json",
+      "thumbnailFilename": "lab--023.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -4.5, "width": 244, "height": 246.6},
+      "type": "symbol",
+      "key": "lab--023"
+    },
+    "engineering--045": {
+      "filename": "engineering--045.json",
+      "thumbnailFilename": "engineering--045.thumbnail.png",
+      "width": 360,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 364, "height": 246.6},
+      "type": "symbol",
+      "key": "engineering--045"
+    },
+    "office--074": {
+      "filename": "office--074.json",
+      "thumbnailFilename": "office--074.thumbnail.png",
+      "width": 240,
+      "height": 240,
+      "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 244},
+      "type": "symbol",
+      "key": "office--074"
     }
   }
 }

@@ -1,0 +1,22 @@
+{
+  "filename": "102-only.json",
+  "width": 1200,
+  "height": 1200,
+  "nodes": [
+    {
+      "id": "8e463fe1-2d62-41e3-93dd-efcdd7bef15a",
+      "name": "g-102--research-deck",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -0.5, "f": 0.5},
+      "type": "symbol",
+      "srcKey": "g-102--research-deck",
+      "baseRect": {"width": 1200, "height": 1200},
+      "offset": {"x": -5.5, "y": -5.5},
+      "cssTransform": "matrix(1, 0, 0, 1, -6, -5)"
+    }
+  ],
+  "bounds": {"x": -6, "y": -5, "width": 1206, "height": 1205},
+  "type": "map",
+  "key": "102-only"
+}

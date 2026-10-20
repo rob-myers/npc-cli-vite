@@ -1,0 +1,266 @@
+{
+  "filename": "engineering--047.json",
+  "width": 240,
+  "height": 420,
+  "nodes": [
+    {
+      "id": "0572bb54-e7ca-7bef-2415-07560c40007d",
+      "name": "engineering--047",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4.7, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "engineering--047",
+      "baseRect": {"width": 246.8, "height": 424},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -4.7, -2)"
+    },
+    {
+      "id": "a72e3ecd-a976-0edd-285b-ff978a2c4182",
+      "name": "symbols",
+      "locked": false,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "b3a3590b-1bbb-d5b3-a6cd-e07ce9d3c399",
+          "name": "extra--010--machine y=1",
+          "locked": false,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 130.13, "f": 10},
+          "type": "symbol",
+          "srcKey": "extra--010--machine",
+          "baseRect": {"width": 100, "height": 40},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1, 0, 0, 1, 130.13, 10)"
+        },
+        {
+          "id": "d4019b73-e7e3-4244-1f8d-b068b0a3adaf",
+          "name": "machinery--156",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": -1,
+            "c": 1,
+            "d": 0,
+            "e": 10.13,
+            "f": 409.75
+          },
+          "type": "symbol",
+          "srcKey": "machinery--156",
+          "baseRect": {"width": 112, "height": 220},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, 1, 0, 10.13, 409.75)"
+        },
+        {
+          "id": "c5e2eeb9-586a-c045-4d88-84ef4cc0c6b5",
+          "name": "console--051 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 195.75,
+            "f": 104.88
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": -1.3, "y": 0.5},
+          "cssTransform": "matrix(-1, 0, 0, -1, 194.45, 105.38)"
+        },
+        {
+          "id": "1f8e4474-7e73-be01-a0c0-398c59da3512",
+          "name": "console--051 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 195.75,
+            "f": 164.76
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": -1.3, "y": 0.5},
+          "cssTransform": "matrix(-1, 0, 0, -1, 194.45, 165.26)"
+        },
+        {
+          "id": "e885b4bf-687f-a0f2-e7f7-915a08f5b015",
+          "name": "console--051 y=0.5",
+          "locked": false,
+          "visible": true,
+          "transform": {
+            "a": -1,
+            "b": 0,
+            "c": 0,
+            "d": -1,
+            "e": 195.75,
+            "f": 224.76
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": -1.3, "y": 0.5},
+          "cssTransform": "matrix(-1, 0, 0, -1, 194.45, 225.26)"
+        }
+      ]
+    },
+    {
+      "id": "1eca0acf-6972-cbb0-4dbe-48110faa8f25",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "05e440d5-7fcc-42b5-e062-7323699b9595",
+          "name": "obstacle machine y=1 tint=#555 skirtTint=#555",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 10.1 70 L 50.1 70 L 50.1 94 L 56.1 94 L 56.1 118 L 62.1 118 L 62.1 149 L 56.3 149 L 56.3 151 L 62.1 151 L 62.1 182 L 56.1 182 L 56.1 206 L 50.1 206 L 50.1 230 L 10.1 230 L 10.1 151 L 15.7 151 L 15.7 149 L 10.1 149 Z",
+          "baseRect": {"width": 240, "height": 420},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "a30a9751-d9ec-e102-879f-d49f984fb1ef",
+          "name": "obstacle table surface y=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 197.3 59.4 L 242 59.4 L 242 240.6 L 197.3 240.6 L 197.3 225.8 L 201.9 220 L 204.5 211.6 L 202.9 202.2 L 199.5 196.2 L 197.3 194.2 L 197.3 165.8 L 201.9 160 L 204.5 151.6 L 202.9 142.2 L 199.5 136.2 L 197.3 134.2 L 197.3 105.8 L 201.9 100 L 204.5 91.6 L 202.9 82.2 L 199.5 76.2 L 197.3 74.2 Z",
+          "baseRect": {"width": 240, "height": 420},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "e7472307-05e0-a5f8-4dd1-aae2a4dee5cf",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "574aa71e-a0de-51e2-f9ce-d79a4f1b1bb5",
+          "name": "decor point label=engineering",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 95, "f": 166},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 95, 166)"
+        },
+        {
+          "id": "d74496cb-4135-4364-8885-de033217cf0d",
+          "name": "door w slide=[0,1]",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -4, "f": 7.5},
+          "type": "rect",
+          "baseRect": {"width": 8, "height": 45},
+          "cssTransform": "matrix(1, 0, 0, 1, -4, 7.5)"
+        },
+        {
+          "id": "16923e86-70bf-4574-2546-4e2423395b67",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 2, "f": 58},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, 1, 0, 2, 58)"
+        },
+        {
+          "id": "8ce3ad9b-74de-99df-6649-867584f779fd",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": -2, "f": 58},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, -2, 58)"
+        }
+      ]
+    },
+    {
+      "id": "ada29e5a-3296-cb89-3948-ce2f462cb072",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "75d782b7-cc10-2818-a1fb-2aa217148508",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 244, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "d3c4056f-7381-862e-d93e-1839862f1dea",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 418},
+          "type": "rect",
+          "baseRect": {"width": 244, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 418)"
+        },
+        {
+          "id": "843ae6dd-dff2-a72a-3c15-719b25fe8960",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 420},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "ec5704a1-d14c-7eab-6bc8-8d33cb9fcf2e",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 238, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 420},
+          "cssTransform": "matrix(1, 0, 0, 1, 238, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -4.7, "y": -2, "width": 246.8, "height": 424},
+  "type": "symbol",
+  "key": "engineering--047"
+}

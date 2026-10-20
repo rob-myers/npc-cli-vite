@@ -532,7 +532,8 @@ export default function Decor() {
       },
       writeTextured(batch, id, decor) {
         const entry = w.sheets?.decor[state.getDecorImgKey(decor)];
-        const dims = entry === undefined ? undefined : w.sheets?.decorSheetDims[entry.sheetId];
+        // each sheet is drawn at the origin of a layer as big as the largest
+        const dims = entry === undefined ? undefined : w.sheets?.maxDecorSheetDim;
         if (!entry || !dims) return false;
 
         // a flipped decor reads its image right to left; the sheet goes in `offY`'s integer part

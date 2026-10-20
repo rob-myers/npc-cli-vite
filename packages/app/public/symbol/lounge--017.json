@@ -1,0 +1,183 @@
+{
+  "filename": "lounge--017.json",
+  "width": 240,
+  "height": 120,
+  "nodes": [
+    {
+      "id": "95e77348-000e-4110-0683-9c28f8c8ffad",
+      "name": "lounge--017",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "lounge--017",
+      "baseRect": {"width": 244, "height": 124},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "8c81e4ef-4cd0-bed0-7c40-4c28b345718c",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "7e57f0fd-175d-7859-8b95-a1072b94d794",
+          "name": "couch-and-chairs--007 optional seats",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 9, "f": 20.38},
+          "type": "symbol",
+          "srcKey": "couch-and-chairs--007",
+          "baseRect": {"width": 30, "height": 80},
+          "offset": {"x": -2, "y": -2},
+          "cssTransform": "matrix(1, 0, 0, 1, 7, 18.38)"
+        },
+        {
+          "id": "eaacac37-3f93-0841-d1c1-ad139888a108",
+          "name": "table--009 optional seats",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 64.9, "f": 65.1},
+          "type": "symbol",
+          "srcKey": "table--009",
+          "baseRect": {"width": 50, "height": 50},
+          "offset": {"x": -0.5, "y": -0.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 64.4, 64.6)"
+        },
+        {
+          "id": "b1ebc566-da83-555b-5c4d-30398adc7154",
+          "name": "table--009 optional seats",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 124.9, "f": 65.1},
+          "type": "symbol",
+          "srcKey": "table--009",
+          "baseRect": {"width": 50, "height": 50},
+          "offset": {"x": -0.5, "y": -0.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 124.4, 64.6)"
+        }
+      ]
+    },
+    {
+      "id": "9d562a88-1844-06ef-718f-0589a7ceea47",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "cc2543da-9479-bec7-2546-b19e4b4a7fae",
+          "name": "obstacle table surface y=0.7 h=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 215.4, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 26.6, "height": 124},
+          "cssTransform": "matrix(1, 0, 0, 1, 215.4, -2)"
+        }
+      ]
+    },
+    {
+      "id": "19032bf4-ed4b-2acc-b158-39e1da510f28",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "465759ba-2e26-d11b-f791-4d52ef4d8118",
+          "name": "decor point label=lounge",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 110.4,
+            "f": 27.15
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 110.4, 27.15)"
+        }
+      ]
+    },
+    {
+      "id": "e7ffbdbb-b074-7c14-e59d-a2d63aaa1880",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "3d7e204f-fa25-ab62-6d8b-e7e77813ada9",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 34, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "55328107-64b8-3b8e-349b-48427df7c24c",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 178, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 64, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 178, -2)"
+        },
+        {
+          "id": "e085a7e4-6b68-92fd-a449-a27959215403",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 118},
+          "type": "rect",
+          "baseRect": {"width": 244, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 118)"
+        },
+        {
+          "id": "ea7fb7f7-feb2-faa5-83fc-e83c4a79e5c7",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 0)"
+        },
+        {
+          "id": "ef7a9fd6-dadb-7c19-92be-883e42dc61c8",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 238, "f": 0},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 120},
+          "cssTransform": "matrix(1, 0, 0, 1, 238, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 244, "height": 124},
+  "type": "symbol",
+  "key": "lounge--017"
+}

@@ -32,6 +32,8 @@ for it. Where a save goes is `docs/map-edit.md`; obstacle sheets are `docs/stars
 6. Run `pnpm gen-starship-sheets`, AFTER `assets.json` has caught up: run straight after the save, it
    misses the new obstacles.
 7. Check `assets.json` still has all seven top-level keys, `theme` and `hash` last. See Pitfalls.
+8. Look for lettering inside the obstacles' sprites in `sheet/symbols.*.png`, e.g. HOLO or COMP. Mask it
+   out with a `starship-symbol/mask/{key}.svg` (see `docs/starship-sheets.md`), then re-run step 6.
 
 ## Units
 

@@ -34,6 +34,13 @@ sheet is then inverted (alpha kept) and squeezed with `pngquant`.
 image size (no scaling down), with offsets matching the symbol in `assets.json` — e.g. `bridge--042` has a
 large one. Transformed rects/polys are not supported: convert to a shape if needed, then Transform > Reduce.
 
+- **Coordinates** are symbol units times 5. The `viewBox` is the symbol's `width`/`height` times 5, and
+  the png's `<image>` sits at its `bounds` origin times 5, e.g. `x="-10"` for `bounds.x = -2`.
+- **Lettering inside an obstacle shows on its top**, so mask it out. Examples are HOLO on `lab--018`'s table
+  and COMP on `engineering--047`'s machine. Give each letter a `mask color={fill}` path round its outline
+  grown by a few px, in the colour around it: `white` on a table, the machine's own grey (sample the png,
+  e.g. `rgb(205,205,205)`). Lettering on the floor needs nothing, as the floor is not drawn from pngs.
+
 ## `sheets.json` entries
 
 ```ts
@@ -42,7 +49,9 @@ sheets.symbol[getObstacleSheetKey(symbolKey, obstacleId)] // "{symbolKey} {obsta
 ```
 
 `rect.x/y` is the integer top-left in the sheet; `rect.width/height` is the obstacle's EXACT fractional pixel
-size. So `addUvs` is just `rect / symbolSheetDims[sheetId]` — no scale on the client. The quad itself is
+size. So `addUvs` is just `rect / maxSymbolSheetDim` — no scale on the client. It is the MAX, not
+`symbolSheetDims[sheetId]`: `draw` puts every sheet at the origin of a layer as big as the largest, so a
+smaller second sheet's UVs would otherwise land too far across. The quad itself is
 sized by `origPoly.rect` in `createObstacleMatrix4`, so the image fills it exactly.
 
 Several scripts write `sheets.json` (decor, skin, starship). Each keeps the others' sections by parsing

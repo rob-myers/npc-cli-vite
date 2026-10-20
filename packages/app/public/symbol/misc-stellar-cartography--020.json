@@ -1,0 +1,324 @@
+{
+  "filename": "misc-stellar-cartography--020.json",
+  "width": 600,
+  "height": 600,
+  "nodes": [
+    {
+      "id": "590c0496-7342-37a9-ddb6-35ce0bfd5082",
+      "name": "misc-stellar-cartography--020",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+      "type": "image",
+      "srcType": "symbol",
+      "srcKey": "misc-stellar-cartography--020",
+      "baseRect": {"width": 604, "height": 604},
+      "offset": {"x": 0, "y": 0},
+      "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+    },
+    {
+      "id": "f76e435d-968b-1b33-3155-8fee7971ab55",
+      "name": "symbols",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "419b90d3-5291-2842-9ee4-4007754bfaa6",
+          "name": "console--051 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0,
+            "b": 1,
+            "c": -1,
+            "d": 0,
+            "e": 375.25,
+            "f": 283.2
+          },
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 0.5, "y": 1.3},
+          "cssTransform": "matrix(0, 1, -1, 0, 375.75, 284.5)"
+        },
+        {
+          "id": "af1d154d-c07c-8261-eee5-a9a2ffd56fcb",
+          "name": "console--051 y=0.5",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": -1, "e": 282.5, "f": 376},
+          "type": "symbol",
+          "srcKey": "console--051",
+          "baseRect": {"width": 30, "height": 30},
+          "offset": {"x": 1.3, "y": 0.5},
+          "cssTransform": "matrix(1, 0, 0, -1, 283.8, 376.5)"
+        }
+      ]
+    },
+    {
+      "id": "e15635e6-fd68-d793-03b3-2e6349419f6b",
+      "name": "obstacles",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "78257a3a-e4f5-ec3b-c317-e8598735eaea",
+          "name": "obstacle table surface y=0.7",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 355 240.4 L 373.8 241 L 394.4 245 L 409.2 250.2 L 422.7 256.8 L 403.2 290.7 L 389.2 283.8 L 374 279.6 L 364.4 278.4 L 351.8 278.8 L 339.6 281.2 L 327 285.8 L 313.2 293.8 L 304.4 301 L 295.6 310.6 L 287.8 322.4 L 282.4 334.4 L 278.4 350.6 L 277.6 361.2 L 279.2 375.8 L 283.4 390.4 L 289.9 403.6 L 256.2 423.3 L 249.4 409.4 L 244.2 394.4 L 241.2 380.6 L 239.8 366.2 L 240 351 L 242.4 334.2 L 247.2 318 L 254.2 302.8 L 262 290.4 L 272.6 277.6 L 284.8 266.4 L 296.4 258.2 L 310.2 250.8 L 323.2 245.8 L 337.8 242.2 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "7d557db3-c3e5-b207-fbf6-d067c12a4360",
+          "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 74 10 L 74 22 L 85.6 22.6 L 86 34 L 88.4 34 L 90 27.4 L 95 20.8 L 100.2 17.6 L 105.8 16.2 L 113.4 16.8 L 120.2 20.2 L 125.2 26 L 127.6 34 L 130 34 L 130.2 22 L 142 22 L 142 10 L 170 10 L 170 22 L 178 22 L 178 10 L 230 10 L 229.6 72.6 L 206.4 81.2 L 184.5 92.1 L 178.2 81.6 L 171.8 85.4 L 177.8 96 L 163.2 105.4 L 152.6 113.8 L 149.4 114.4 L 142.6 106 L 136.6 110.8 L 143 118.8 L 143 121.6 L 133.4 130.2 L 120.3 144.3 L 111 136.4 L 106.2 142.6 L 115.6 150.3 L 105.4 163.2 L 96 177.8 L 85.4 171.6 L 81.4 178.5 L 92.2 184.4 L 81 206.8 L 72.7 230 L 10 230 L 10 178 L 22 178 L 22 170 L 10 170 L 10 142 L 22 142 L 22 130.2 L 34 130 L 34 127.6 L 28.4 126.4 L 21 121.2 L 17.6 115.8 L 16.4 111.6 L 16.6 103.2 L 20 96 L 25.6 91 L 30.6 88.8 L 34 88.4 L 34 86 L 22 85.8 L 22 74 L 10 74 L 10 10 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "5f0856f8-6018-d102-aed2-0c3c6c4f020b",
+          "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 296 10 L 296 22 L 304 22 L 304 10 L 362 10 L 362 22 L 369.6 22 L 369.6 50 L 362 50 L 362 70.1 L 328.2 63.8 L 304 62.1 L 304 50 L 296 50 L 296 62.1 L 271.8 63.8 L 238 70 L 238 50 L 230.4 50 L 230.4 22 L 238 22 L 238 10 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "a1c9e5ed-c58e-bc5d-940b-1cd22845fcba",
+          "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 422 10 L 422 22 L 430 22 L 430 10 L 458 10 L 458 22 L 469.6 22.6 L 470 34 L 472.4 34 L 474 27.4 L 479 20.8 L 484.2 17.6 L 488.4 16.4 L 496.6 16.6 L 504.2 20.2 L 509.2 26 L 511.6 34 L 514 34 L 514.2 22 L 526 22 L 526 10 L 589.6 10.6 L 590 74 L 578 74 L 577.4 85.6 L 566 86 L 566 88.4 L 571.6 89.6 L 578.8 94.6 L 582 99.4 L 583.8 106.2 L 583.2 113.2 L 580.2 119.6 L 574 125.2 L 566 127.6 L 566 130 L 577.4 130.4 L 578 142 L 590 142 L 590 170 L 578 170 L 578 178 L 590 178 L 589.4 229.6 L 527.6 229.8 L 519.2 207.4 L 508.6 186.2 L 509.6 183.4 L 518.6 178.2 L 514.6 171.6 L 504.1 177.9 L 495 163.8 L 484.4 150.3 L 494 142.6 L 489.2 136.4 L 479.6 144.3 L 469.2 132.8 L 455.7 120.2 L 463.8 111 L 457.4 106.2 L 449.9 115.6 L 436.8 105.4 L 422.1 96.1 L 428.4 85.4 L 421.7 81.4 L 415.5 92.2 L 394 81.4 L 370.2 72.4 L 370 10 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "88ecc7b2-5310-f044-18d5-9544506d5b4b",
+          "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 22 230.4 L 50 230.4 L 50 238 L 70.1 238 L 63.8 271.6 L 62.1 296 L 50 296 L 50 304 L 62.1 304 L 63.8 328.4 L 70.1 362 L 50 362 L 50 369.6 L 22 369.6 L 22 362 L 10 362 L 10 304 L 22 304 L 22 296 L 10 296 L 10 238 L 22 238 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "daf964b2-6d28-8baf-05ad-7c3e77eb7977",
+          "name": "obstacle y=1 h=0.7 tint=#444 skirtTint=#777",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 72.4 370.2 L 81 393.2 L 92.2 415.7 L 81.6 421.8 L 85.4 428.4 L 96 422.2 L 105.4 436.8 L 114.2 448 L 114.2 450.8 L 106.2 457.4 L 111.2 464 L 120.3 455.6 L 144.1 479.9 L 136.4 489 L 142.6 494 L 150.3 484.4 L 163.2 494.6 L 177.8 504 L 171.8 514.6 L 178.2 518.4 L 184.6 507.8 L 206.4 518.8 L 229.6 527.4 L 230 589.8 L 178 590 L 178 578 L 170 578 L 170 589.8 L 142 590 L 142 578 L 130.2 578 L 130 566 L 127.6 566 L 126.2 572 L 121.8 578.4 L 117.4 581.6 L 111.4 583.6 L 103.4 583.4 L 96 580 L 90.2 573 L 88.4 566 L 86 566 L 85.6 577.4 L 74 578 L 74 590 L 10.2 590 L 10 526 L 22 526 L 22 514.2 L 34 514 L 34 511.6 L 28.4 510.4 L 21 505.2 L 17.6 499.8 L 16.2 494.4 L 16.6 487.2 L 20 480 L 25.6 475 L 30.6 472.8 L 34 472.4 L 34 470 L 22 469.8 L 22 458 L 10 458 L 10 430 L 22 430 L 22 422 L 10 422 L 10 370 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "bb98f114-d52a-56e0-19f2-659621038930",
+      "name": "doors",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "720f7fef-ffdf-4f53-8452-852e2a2907da",
+          "name": "decor point label=cartography",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 290,
+            "f": 176.25
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 290, 176.25)"
+        },
+        {
+          "id": "c7ab3663-fda2-a63a-9638-daf705cb75fc",
+          "name": "door slide=[1,-1]",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.71,
+            "b": -0.7,
+            "c": 0.7,
+            "d": 0.71,
+            "e": 443.05,
+            "f": 475.18
+          },
+          "type": "path",
+          "d": "M0,0 L45,0 L45,8 L0,8 L0,0 Z",
+          "baseRect": {"width": 45, "height": 8},
+          "cssTransform": "matrix(0.71, -0.7, 0.7, 0.71, 443.05, 475.18)"
+        },
+        {
+          "id": "9b22b1d2-426b-2bcd-5c8c-df6b0001e88a",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": -0.63,
+            "b": 0.78,
+            "c": -0.78,
+            "d": -0.63,
+            "e": 479.21,
+            "f": 439.64
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-0.63, 0.78, -0.78, -0.63, 479.21, 439.64)"
+        },
+        {
+          "id": "d0cb2020-45f0-9c16-aead-b266569a5ff8",
+          "name": "decor quad key=switch",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": -0.63,
+            "b": 0.78,
+            "c": 0.78,
+            "d": 0.63,
+            "e": 482.32,
+            "f": 442.14
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "switch",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(-0.63, 0.78, 0.78, 0.63, 482.32, 442.14)"
+        }
+      ]
+    },
+    {
+      "id": "b1d1fdb5-1a52-be14-04f5-37206344c3d7",
+      "name": "walls",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "e5f0c73b-036c-4d2a-2d66-4b17050836ad",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": -2},
+          "type": "rect",
+          "baseRect": {"width": 604, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, -2)"
+        },
+        {
+          "id": "e150bd49-709e-6f1f-b648-ffc1c84b1067",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": -2, "f": 2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, -2, 2)"
+        },
+        {
+          "id": "f4b8ed29-2b2c-1b4d-4513-6ef72ba38d87",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 598, "f": 2},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 240},
+          "cssTransform": "matrix(1, 0, 0, 1, 598, 2)"
+        },
+        {
+          "id": "2cac6bf3-3b45-4bcb-8818-8b85bf1e1306",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 2, "f": 598},
+          "type": "rect",
+          "baseRect": {"width": 240, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 2, 598)"
+        },
+        {
+          "id": "555e341d-ba06-254b-9a7c-353ccc459a94",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 519, "f": 238},
+          "type": "rect",
+          "baseRect": {"width": 79, "height": 4},
+          "cssTransform": "matrix(1, 0, 0, 1, 519, 238)"
+        },
+        {
+          "id": "6c01d2b7-b67b-5784-9623-4bb6011701ea",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 238, "f": 518.5},
+          "type": "rect",
+          "baseRect": {"width": 4, "height": 79.5},
+          "cssTransform": "matrix(1, 0, 0, 1, 238, 518.5)"
+        },
+        {
+          "id": "43444b46-8fd9-7211-602f-44b27183824f",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 139.34 137.41 L 154.17 123.92 L 170.12 111.77 L 187.07 101.05 L 204.88 91.86 L 223.43 84.25 L 242.58 78.29 L 262.17 74.01 L 282.06 71.47 L 302.09 70.66 L 322.12 71.61 L 341.99 74.29 L 361.55 78.7 L 380.65 84.8 L 399.15 92.53 L 416.9 101.86 L 433.78 112.69 L 449.64 124.95 L 464.38 138.55 L 477.87 153.38 L 490.02 169.33 L 500.74 186.28 L 509.93 204.09 L 517.54 222.64 L 523.5 241.79 L 527.78 261.38 L 530.32 281.27 L 531.13 301.3 L 530.18 321.33 L 527.5 341.2 L 523.09 360.76 L 516.99 379.86 L 509.26 398.36 L 499.93 416.11 L 489.1 432.99 L 476.84 448.85 L 463.24 463.59 L 460.42 460.75 L 473.79 446.27 L 485.83 430.68 L 496.48 414.1 L 505.64 396.66 L 513.24 378.48 L 519.23 359.71 L 523.56 340.49 L 526.2 320.97 L 527.13 301.29 L 526.34 281.6 L 523.83 262.06 L 519.64 242.81 L 513.78 224 L 506.3 205.77 L 497.27 188.26 L 486.74 171.61 L 474.8 155.94 L 461.54 141.37 L 447.06 128 L 431.47 115.96 L 414.89 105.31 L 397.45 96.15 L 379.27 88.55 L 360.5 82.56 L 341.28 78.23 L 321.76 75.59 L 302.08 74.66 L 282.39 75.45 L 262.85 77.96 L 243.6 82.15 L 224.79 88.01 L 206.56 95.49 L 189.05 104.52 L 172.4 115.05 L 156.73 126.99 L 142.16 140.25 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        },
+        {
+          "id": "b144a4b4-a0f8-c9a8-e856-e6c41b67c695",
+          "name": "wall",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+          "type": "path",
+          "d": "M 463.24 463.59 L 448.41 477.08 L 432.46 489.23 L 415.51 499.95 L 397.7 509.14 L 379.15 516.75 L 360 522.71 L 340.41 526.99 L 320.52 529.53 L 300.49 530.34 L 280.46 529.39 L 260.59 526.71 L 241.03 522.3 L 221.93 516.2 L 203.43 508.47 L 185.68 499.14 L 168.8 488.31 L 152.94 476.05 L 138.2 462.45 L 124.71 447.62 L 112.56 431.67 L 101.84 414.72 L 92.65 396.91 L 85.04 378.36 L 79.08 359.21 L 74.8 339.62 L 72.26 319.73 L 71.45 299.7 L 72.4 279.67 L 75.08 259.8 L 79.49 240.24 L 85.59 221.14 L 93.32 202.64 L 102.65 184.89 L 113.48 168.01 L 125.74 152.15 L 139.34 137.41 L 142.16 140.25 L 128.79 154.73 L 116.75 170.32 L 106.1 186.9 L 96.94 204.34 L 89.34 222.52 L 83.35 241.29 L 79.02 260.51 L 76.38 280.03 L 75.45 299.71 L 76.24 319.4 L 78.75 338.94 L 82.94 358.19 L 88.8 377 L 96.28 395.23 L 105.31 412.74 L 115.84 429.39 L 127.78 445.06 L 141.04 459.63 L 155.52 473 L 171.11 485.04 L 187.69 495.69 L 205.13 504.85 L 223.31 512.45 L 242.08 518.44 L 261.3 522.77 L 280.82 525.41 L 300.5 526.34 L 320.19 525.55 L 339.73 523.04 L 358.98 518.85 L 377.79 512.99 L 396.02 505.51 L 413.53 496.48 L 430.18 485.95 L 445.85 474.01 L 460.42 460.75 Z",
+          "baseRect": {"width": 600, "height": 600},
+          "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    }
+  ],
+  "bounds": {"x": -2, "y": -2, "width": 604, "height": 604},
+  "type": "symbol",
+  "key": "misc-stellar-cartography--020"
+}

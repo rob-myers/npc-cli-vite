@@ -128,7 +128,7 @@ export function Debug() {
             if (decor.type !== "point" || decor.meta.on !== true) continue;
             const imgKey = w.decor.getDecorImgKey(decor);
             const entry = w.sheets.decor[imgKey];
-            const dims = entry && w.sheets.decorSheetDims[entry.sheetId];
+            const dims = entry && w.sheets.maxDecorSheetDim;
             if (!entry || !dims) {
               count++;
               continue;

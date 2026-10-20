@@ -127,7 +127,8 @@ export default function Obstacles(_props: Props) {
               continue;
             }
             const { sheetId, rect } = entry;
-            const { width: sheetWidth, height: sheetHeight } = w.sheets.symbolSheetDims[sheetId];
+            // each sheet is drawn at the origin of a layer as big as the largest
+            const { width: sheetWidth, height: sheetHeight } = w.sheets.maxSymbolSheetDim;
             const uvOffsetX = rect.x / sheetWidth;
             const uvOffsetY = rect.y / sheetHeight;
             const uvDimW = rect.width / sheetWidth;
