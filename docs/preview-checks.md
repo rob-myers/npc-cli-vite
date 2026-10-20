@@ -1,7 +1,7 @@
-# Browser scenarios
+# Preview checks
 
 The ONLY doc for checking a change by driving the app in a browser you can watch, and the log of
-scenarios run that way: each step's shell commands, as typed, and what came of them.
+checks run that way: each step's shell commands, as typed, and what came of them.
 
 ## The approach
 
@@ -15,12 +15,12 @@ scenarios run that way: each step's shell commands, as typed, and what came of t
 - **One step at a time.** Before each step, say what will be typed; after it, report what came of
   it, then wait for "next". Whoever is watching may move the camera in between.
 - **Players are moved, not spawned**: `move rob to:[…]` walks them, through doors and all, as play
-  would. `spawn` is for setting a scenario up.
+  would. `spawn` is for setting a check up.
 
 ### Setup
 
 ```sh
-S=/tmp/npc-scenario   # any scratch directory
+S=/tmp/npc-preview   # any scratch directory
 pnpm build && rm -rf $S/site && mkdir -p $S && cp -r packages/app/dist $S/site
 (cd packages/app && pnpm exec vite preview --outDir $S/site --port 4726 --strictPort &)
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9381 \
@@ -82,7 +82,7 @@ node $S/ev.mjs '__w.swords.swords.get("npc-3")?.rope.to'
 node $S/shot.mjs $S/step-2.png
 ```
 
-## Scenarios
+## Checks run
 
 ### A sword rope seen from another room
 

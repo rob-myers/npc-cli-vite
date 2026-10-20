@@ -82,7 +82,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Deploys and stale tabs | `docs/deploys.md` | A tab can outlive its deploy. Production keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json` also logs each deploy's ui chunk paths and sizes), and `NewVersionToast` offers a reload. Ui chunk names stay put unless their code changed. Keep them so: nothing a ui imports may value-import `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`). `stableEntryPlugin` keeps chunks from importing the entry. |
 | Spots | `docs/spots.md` | Places an npc might stand, per geomorph key (`public/spot/{gmKey}.json`, committed): along walls, at corners, by doors, doables and low cover. Each has its depth at 16 angles, the spots it sees, and what is near. `gen-spots` makes them in Node from a navcat navmesh, run by the dev server whenever `assets.json` changes. The Decorator's **spots** layer shows them, and a press on one shows what it sees. |
 | MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
-| Checking in the browser | `docs/browser-scenarios.md` | Also the log of scenarios run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
+| Preview checks | `docs/preview-checks.md` | Checking a change in the browser, and the log of checks run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
 ## Renderer
 
