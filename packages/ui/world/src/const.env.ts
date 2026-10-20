@@ -80,7 +80,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 /** Vertical field of view (degrees) of the world camera, up to `cameraRefAspect` */
-export const cameraFov = 50;
+export const cameraFov = 30;
 
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;
@@ -90,10 +90,10 @@ export const defaultBrightness = 1;
 /** How much of their skin an npc keeps, so the player's light reads as light ON them — a theme may say otherwise */
 export const defaultNpcBrightness = 0.25;
 
-export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
+export const defaultCameraMinDistance = isTouchDevice() ? 12 : 14;
 
 /** How far out the camera's outer zoom stop sits, in metres */
-export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
+export const defaultCameraMaxDistance = isTouchDevice() ? 20 : 24;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** What can be carried, and how — see `docs/inventory.md` */
