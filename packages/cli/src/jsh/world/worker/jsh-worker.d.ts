@@ -9,6 +9,39 @@ declare namespace WW {
     roomDoors: { [grKey: string]: string[] };
   };
 
+  /** A geomorph instance of the map, so the worker can place its spots */
+  type GmForSpots = { key: string; transform: Geom.AffineTransform };
+
+  /** An npc as a spot query sees them, snapshotted by main as the batch is sent */
+  type SpotNpc = { key: string; point: Geom.VectJson; grKey: null | string };
+
+  /** One question about spots. `a`, `b` and `npc` are a spot key (`g0s12`) or an npc key — see `docs/spots.md` */
+  type SpotQuery =
+    | { q: "of"; npc: string }
+    | { q: "get"; key: string }
+    | { q: "list"; rooms?: string[]; kinds?: string[]; near?: { npc: string; within: number } }
+    | { q: "sees"; a: string; b: string }
+    | { q: "seenBy"; a: string };
+
+  /** A spot in world coords; `sees` counts the spots it sees */
+  type SpotJson = {
+    key: string;
+    kind: string;
+    x: number;
+    y: number;
+    grKey: null | string;
+    facing?: number;
+    sees: number;
+  };
+
+  /** Aligned with its query: `of`, `get` give a spot or `null`; `list`, `seenBy` spots; `sees` a verdict */
+  type SpotAnswer =
+    | null
+    | SpotJson
+    | SpotJson[]
+    | { sees: boolean; via: null | string; from: string; to: string }
+    | { error: string };
+
   /** An npc, as an op sees them — see `npcQuery` in `plan.main.ts` */
   type NpcQuery = {
     key: string;
@@ -41,12 +74,21 @@ declare namespace WW {
         /** The room wanted round each */
         by: number;
       }
-    | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson };
+    | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson }
+    | { key: "spots"; npcs: SpotNpc[]; queries: SpotQuery[] };
 
   type JshOpKey = JshOp["key"];
 
   type JshMsgToNavWorker =
-    | { type: "jsh-setup"; mapKey: string; doorFrames: DoorFrame[]; roomDoors: { [grKey: string]: string[] } }
+    | {
+        type: "jsh-setup";
+        mapKey: string;
+        doorFrames: DoorFrame[];
+        roomDoors: { [grKey: string]: string[] };
+        gms: GmForSpots[];
+        /** Changes as the dev server remakes the spot files, so the worker fetches them again */
+        spotsRev: number;
+      }
     | JshRequest;
 
   type JshMsgFromNavWorker = JshResult;
@@ -61,6 +103,8 @@ declare namespace WW {
     pad: (null | PadPlan)[];
     /** `to`, slid along the navmesh from where they stand — `null` off the mesh */
     nudge: null | Geom.VectJson;
+    /** Aligned with `queries` */
+    spots: SpotAnswer[];
   };
 
   type JshRequest = { type: "jsh-plan"; uid: string; op: JshOp };

@@ -1,5 +1,6 @@
 /// <reference path="./worker/jsh-worker.d.ts" />
 
+import { spotsChangedEvent } from "@npc-cli/ui__world/spot.schema";
 import { parked } from "./pred";
 
 /**
@@ -95,17 +96,55 @@ export function isPaused(e: unknown) {
   return e instanceof Error && e.message === "paused";
 }
 
-/** The worker is told a map's door frames and room doors once, before the first request on it */
+/** The worker is told a map's door frames, room doors and geomorphs once, before the first request on it */
 function ensureSetup(w: JshCli.WorldState, worker: Worker) {
-  if (setupMapKey.get(worker) === w.mapKey) return;
+  const setupKey = `${w.mapKey} ${w.gmsHash} ${spotsRev}`;
+  if (setupMapKey.get(worker) === setupKey) return;
   const rooms = w.gmRoomGraph.nodesArray.flatMap((node) => (node.type === "room" ? node.grKey : []));
   worker.postMessage({
     type: "jsh-setup",
     mapKey: w.mapKey,
     doorFrames: Object.values(w.d).map(({ gdKey, src, dst, normal }) => ({ gdKey, src, dst, normal })),
     roomDoors: Object.fromEntries(rooms.map((grKey) => [grKey, getRoomDoorKeys(w, grKey)])),
+    gms: w.gms.map(({ key, transform }) => ({ key, transform })),
+    spotsRev,
   } satisfies WW.JshMsgToNavWorker);
-  setupMapKey.set(worker, w.mapKey);
+  setupMapKey.set(worker, setupKey);
+}
+
+/** Bumped as the dev server remakes the spot files, so the next request sets the worker up again */
+let spotsRev = 0;
+import.meta.hot?.on(spotsChangedEvent, () => void spotsRev++);
+
+/**
+ * A batch of spot queries, answered by the worker in one round trip, under the shell's pause/kill.
+ * The npcs they name are snapshotted now — see `docs/spots.md`
+ */
+export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.SpotQuery[]) {
+  const { w } = ct;
+  const named = new Set(queries.flatMap(namedIn));
+  const npcs = [...named].flatMap((key): WW.SpotNpc[] => {
+    const point = w.n[key]?.point;
+    if (point === undefined) return []; // a spot key
+    return [{ key, point: { x: point.x, y: point.y }, grKey: w.npc.npcToRoom.get(key)?.grKey ?? null }];
+  });
+  return plan({ api: ct.api, w, op: { key: "spots", npcs, queries } });
+}
+
+/** The keys a query names, npcs among them */
+function namedIn(q: WW.SpotQuery): string[] {
+  switch (q.q) {
+    case "of":
+      return [q.npc];
+    case "get":
+      return [];
+    case "list":
+      return q.near === undefined ? [] : [q.near.npc];
+    case "sees":
+      return [q.a, q.b];
+    case "seenBy":
+      return [q.a];
+  }
 }
 
 function getRoomDoorKeys(w: JshCli.WorldState, grKey: Geomorph.GmRoomKey) {
@@ -119,7 +158,7 @@ function getWorker(w: JshCli.WorldState) {
   return worker;
 }
 
-/** The map each worker was last set up for */
+/** What each worker was last set up for: map, layout and spots */
 const setupMapKey = new WeakMap<Worker, string>();
 
 /**

@@ -34,6 +34,7 @@ Pnpm monorepo. Key packages:
 **Code**
 - TSX/TS for almost everything. `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A selector is a base-ui `Select`, never a native `<select>`. Its trigger is only as wide as what is chosen. Use `Picker`, from `@npc-cli/util/picker`.
+- A modal opened from a ui panel stays inside that panel, never over the whole page. Portal it into the panel's root (base-ui `Dialog.Portal container`) and position it `absolute`, not `fixed`.
 - `useStateRef` (from `@npc-cli/util`) makes a stable ref-backed state object. Treat it like a class instance, not React state. Its methods go in alphabetical order.
 - A frame loop (`useFrame`, `w.e.addFrameCallback`) never drives a React render: no `state.update()` from one, even on a change. Write to the DOM instead, e.g. `el.style`, as `NpcFocus` places and fades its marks.
 - Geometry in 2D uses `x/y` on the xz world plane: `y` in 2D is `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) convert.
@@ -255,6 +256,11 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 **`api` methods are bound to `{ meta, node }` alone** (`provideProcessCtxt` in `shell/command.ts`).
 - So inside `processApi`, `this` is not the api. `this.setPtags(…)` from another method is undefined at runtime, though it typechecks.
 - Share logic via a `CmdService` method taking `meta`, e.g. `cmdService.setPtags(this.meta, …)`.
+
+**Never spread a command's context** (`ct`, `JshCli.RunArg`).
+- It is a Proxy (`provideProcessCtxt`): `api`, `args` and `w` exist only through its `get` trap.
+- So `{ ...ct }` keeps only `etc`, `home`, `lib` and `shared`, and `api` is then `undefined`.
+- Pass what is needed by name, e.g. `plan({ api: ct.api, w: ct.w, op })`.
 
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it.
 - Register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop: unsubscribe, or resolve a promise the loop is racing.

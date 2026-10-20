@@ -59,7 +59,7 @@ Queries: spots by side of a door, coverage (the union of `sees`), the spot seein
 
 ### Queries they share
 
-- **Npc to spot:** `spotOf(npc)`, and their room and facing.
+- **Npc to spot:** `spot of:rob` (the nearest in their room), and their room and facing.
 - **Sight between spots:** `sees`, `seesVia` given which doors are open, `seesDoors`, `crouchHidden`.
 - **Sets of spots:** in reach or in a room, coverage, not yet seen, held by other npcs.
 - **Picking:** nearest, most new coverage, pairs that meet a condition.

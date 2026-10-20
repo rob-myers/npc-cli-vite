@@ -1,0 +1,235 @@
+import { type Spot, SpotsFileSchema } from "@npc-cli/ui__world/spot.schema";
+import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
+
+/**
+ * The map's spots, worker-side: each geomorph's under a map-wide key `g{gmId}s{id}` and in world coords,
+ * indexed by room and by grid cell. Fetched afresh by each `jsh-setup` that changes them — see `docs/spots.md`
+ */
+export function setupSpots(msg: { mapKey: string; gms: WW.GmForSpots[]; spotsRev: number }) {
+  const cacheKey = `${msg.mapKey} ${JSON.stringify(msg.gms)} ${msg.spotsRev}`;
+  if (current?.cacheKey !== cacheKey) current = { cacheKey, promise: createMapSpots(msg.gms) };
+}
+
+/** The spots of the map last set up */
+export function getSpots(): Promise<MapSpots> {
+  if (current === null) throw Error("no spots set up");
+  return current.promise;
+}
+
+let current: null | { cacheKey: string; promise: Promise<MapSpots> } = null;
+
+/** Answers each query of a batch in order. One that fails answers `{ error }`, not the batch */
+export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.JshOp, { key: "spots" }>) {
+  const npcByKey = new Map(npcs.map((npc) => [npc.key, npc]));
+  /** A spot key, else the spot an npc is at */
+  const resolve = (ref: string) => {
+    const npc = npcByKey.get(ref);
+    const spot = spotKeyRe.test(ref) ? all.get(ref) : npc && all.spotOf(npc.key, npc.point, npc.grKey);
+    if (spot === undefined) throw Error(`${ref}: no spot`);
+    return spot;
+  };
+  return queries.map((query): WW.SpotAnswer => {
+    try {
+      switch (query.q) {
+        case "of":
+          return toJson(resolve(query.npc));
+        case "get":
+          return toJson(resolve(query.key));
+        case "list": {
+          let found = query.rooms === undefined ? [...all.byKey.values()] : all.inRooms(query.rooms);
+          if (query.kinds !== undefined) found = found.filter((s) => query.kinds?.includes(s.kind));
+          if (query.near !== undefined) {
+            const npc = npcByKey.get(query.near.npc);
+            if (npc === undefined) throw Error(`${query.near.npc}: not sent`);
+            const keep = new Set(found);
+            found = all.near(npc.point, query.near.within).filter((s) => keep.has(s));
+          }
+          return found.map(toJson);
+        }
+        case "sees": {
+          const [a, b] = [resolve(query.a), resolve(query.b)];
+          return { sees: all.sees(a, b), via: all.seesVia(a, b), from: a.key, to: b.key };
+        }
+        case "seenBy":
+          return all.seenBy(resolve(query.a)).map(toJson);
+      }
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
+  });
+}
+
+async function createMapSpots(gms: WW.GmForSpots[]) {
+  const gmKeys = [...new Set(gms.map((gm) => gm.key))];
+  const files = await Promise.all(
+    gmKeys.map((gmKey) => fetchParsed(`/spot/${gmKey}.json${getDevCacheBustQueryParam()}`, SpotsFileSchema)),
+  );
+  const byGmKey = Object.fromEntries(files.map((file) => [file.gmKey, file]));
+  const spots: MapSpot[] = gms.flatMap((gm, gmId) => {
+    const { a, b, c, d, e, f } = gm.transform;
+    return (byGmKey[gm.key]?.spots ?? []).map((spot) => ({
+      key: `g${gmId}s${spot.id}`,
+      gmId,
+      kind: spot.kind,
+      x: a * spot.x + c * spot.y + e,
+      y: b * spot.x + d * spot.y + f,
+      grKey: spot.roomId === null ? null : `g${gmId}r${spot.roomId}`,
+      facing:
+        spot.facing === undefined
+          ? undefined
+          : Math.atan2(
+              b * Math.cos(spot.facing) + d * Math.sin(spot.facing),
+              a * Math.cos(spot.facing) + c * Math.sin(spot.facing),
+            ),
+      spot,
+    }));
+  });
+  return new MapSpots(spots);
+}
+
+function toJson({ key, kind, x, y, grKey, facing, spot }: MapSpot): WW.SpotJson {
+  return {
+    key,
+    kind,
+    x: round(x),
+    y: round(y),
+    grKey,
+    ...(facing === undefined ? {} : { facing: round(facing) }),
+    sees: spot.sees.length,
+  };
+}
+
+const round = (x: number) => Math.round(x * 100) / 100;
+const spotKeyRe = /^g\d+s\d+$/;
+
+export class MapSpots {
+  byKey = new Map<string, MapSpot>();
+  byRoom = new Map<string, MapSpot[]>();
+  byCell = new Map<string, MapSpot[]>();
+
+  constructor(spots: MapSpot[]) {
+    for (const s of spots) {
+      this.byKey.set(s.key, s);
+      if (s.grKey !== null) push(this.byRoom, s.grKey, s);
+      push(this.byCell, cellKey(s.x, s.y), s);
+    }
+  }
+
+  /** Each npc's spot last found, kept whilst it is certainly still the nearest */
+  lastSpotOf = new Map<string, MapSpot>();
+  /** By spot key: half the distance to its room's next nearest spot. Anyone that near it is nearest it */
+  halfGapOf = new Map<string, number>();
+
+  get(key: string) {
+    return this.byKey.get(key);
+  }
+
+  /** The spot npc `npcKey` at `p` is at: their last, if still nearest, else found afresh */
+  spotOf(npcKey: string, p: Geom.VectJson, grKey?: null | string) {
+    const last = this.lastSpotOf.get(npcKey);
+    if (last !== undefined && last.grKey === grKey && dist(last, p) <= this.halfGap(last)) return last;
+    const spot = this.nearestTo(p, grKey);
+    // off any room it is found afresh: the reach, not the room, decides it
+    if (spot === undefined || grKey == null) this.lastSpotOf.delete(npcKey);
+    else this.lastSpotOf.set(npcKey, spot);
+    return spot;
+  }
+
+  /** Infinite for a room's only spot: anywhere in that room is nearest it */
+  halfGap(s: MapSpot) {
+    let half = this.halfGapOf.get(s.key);
+    if (half === undefined) {
+      const others = s.grKey === null ? [] : (this.byRoom.get(s.grKey) ?? []);
+      half = others.reduce((min, t) => (t === s ? min : Math.min(min, dist(s, t) / 2)), Infinity);
+      this.halfGapOf.set(s.key, half);
+    }
+    return half;
+  }
+
+  /** In any of these rooms */
+  inRooms(grKeys: string[]) {
+    return grKeys.flatMap((grKey) => this.byRoom.get(grKey) ?? []);
+  }
+
+  /** Within `r` metres of `p`, nearest first */
+  near(p: Geom.VectJson, r: number) {
+    const found: MapSpot[] = [];
+    const [cx, cy, n] = [Math.floor(p.x / cellSize), Math.floor(p.y / cellSize), Math.ceil(r / cellSize)];
+    for (let i = cx - n; i <= cx + n; i++) {
+      for (let j = cy - n; j <= cy + n; j++) {
+        for (const s of this.byCell.get(`${i},${j}`) ?? []) if (dist(s, p) <= r) found.push(s);
+      }
+    }
+    return found.sort((u, v) => dist(u, p) - dist(v, p));
+  }
+
+  /** The spot nearest `p` in room `grKey`, else nearest within `spotOfReach` */
+  nearestTo(p: Geom.VectJson, grKey?: null | string) {
+    if (grKey == null || this.byRoom.has(grKey) === false) return this.near(p, spotOfReach)[0];
+    const [cx, cy] = [Math.floor(p.x / cellSize), Math.floor(p.y / cellSize)];
+    let best: undefined | MapSpot;
+    let bestDist = Infinity;
+    // ring by ring outwards, until no cell of the next ring can be nearer than the best found
+    for (let k = 0; k <= maxRings && (k - 1) * cellSize <= bestDist; k++) {
+      for (let i = cx - k; i <= cx + k; i++) {
+        for (let j = cy - k; j <= cy + k; j++) {
+          if (Math.max(Math.abs(i - cx), Math.abs(j - cy)) !== k) continue; // on the ring only
+          for (const s of this.byCell.get(`${i},${j}`) ?? []) {
+            const d = dist(s, p);
+            if (s.grKey === grKey && d < bestDist) [best, bestDist] = [s, d];
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  /** `a` sees `b`, doors shut. Only within a geomorph, as spots are made */
+  sees(a: MapSpot, b: MapSpot) {
+    // a spot sees itself, e.g. two npcs at one spot see each other
+    return a === b || (a.gmId === b.gmId && a.spot.sees.includes(b.spot.id));
+  }
+
+  /** The door `a` would see `b` through, once open, as a gdKey */
+  seesVia(a: MapSpot, b: MapSpot) {
+    const via = a.gmId === b.gmId ? a.spot.seesVia.find(([id]) => id === b.spot.id) : undefined;
+    return via === undefined ? null : `g${a.gmId}d${via[1]}`;
+  }
+
+  /** Fully crouched at cover spot `a`, they are hidden from `b` */
+  crouchHidden(a: MapSpot, b: MapSpot) {
+    return a.gmId === b.gmId && a.spot.crouchHidden?.includes(b.spot.id) === true;
+  }
+
+  /** Every spot `a` sees */
+  seenBy(a: MapSpot) {
+    return a.spot.sees.flatMap((id) => this.byKey.get(`g${a.gmId}s${id}`) ?? []);
+  }
+}
+
+/** A spot of the map, in world coords. `spot` is its geomorph's own record */
+export type MapSpot = {
+  key: string;
+  gmId: number;
+  kind: Spot["kind"];
+  x: number;
+  y: number;
+  grKey: null | string;
+  /** Radians on the ground plane, as `x/y` */
+  facing: undefined | number;
+  spot: Spot;
+};
+
+/** Metres per grid cell */
+const cellSize = 2;
+/** Metres: off any room, e.g. in a doorway, the nearest spot this near is theirs */
+const spotOfReach = 2;
+/** Grid rings searched for the nearest spot in a room: 40 metres, past any room's size */
+const maxRings = 20;
+
+const cellKey = (x: number, y: number) => `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
+const dist = (u: Geom.VectJson, v: Geom.VectJson) => Math.hypot(u.x - v.x, u.y - v.y);
+
+function push<T>(map: Map<string, T[]>, key: string, value: T) {
+  map.get(key)?.push(value) ?? map.set(key, [value]);
+}

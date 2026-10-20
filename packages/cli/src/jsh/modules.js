@@ -11,6 +11,7 @@ export * as demo_mcp from "./world/demo_mcp.ts";
 export * as pred from "./world/pred.ts";
 export * as shots from "./world/shots.ts";
 export * as sidestep from "./world/sidestep.ts";
+export * as spot from "./world/spot.ts";
 
 import { pausablePtag } from "../shell/pause-group";
 

@@ -1,0 +1,40 @@
+{
+  "key": "scenario/hide-and-seek",
+  "kind": "scenario",
+  "short": "hns",
+  "title": "Hide and seek",
+  "summary": "A seeker counts, the hiders hide, and each hider found joins the search.",
+  "map": "101-only",
+  "rooms": ["g0r16", "g0r12", "g0r22"],
+  "roles": { "seeker": { "count": 1, "skin": "mtf-" }, "hider": { "count": 3, "skin": "d-" } },
+  "cast": {},
+  "params": { "countSecs": 10, "limitSecs": 120, "prefer": "cover,doable", "perceiveSecs": 0.25, "reactSecs": 0.6 },
+  "phases": [
+    { "key": "setup", "until": "s => s.all(n => n.done)" },
+    { "key": "count", "until": "s => s.phaseSecs >= s.params.countSecs" },
+    { "key": "search", "until": "s => s.all('hider', n => n.found) || s.phaseSecs >= s.params.limitSecs" },
+    { "key": "end", "until": "s => s.all(n => n.done)" }
+  ],
+  "cells": {
+    "seeker": {
+      "setup": ["go to:start"],
+      "count": ["face wall", "pose eyes:shut"],
+      "search": ["pose eyes:open", "search"],
+      "end": ["say Done."]
+    },
+    "hider": {
+      "setup": ["go to:near-start"],
+      "count": ["hide from:seeker prefer:$prefer"],
+      "search": ["stay hidden from:seeker"],
+      "end": ["go to:start"]
+    }
+  },
+  "rules": [
+    {
+      "for": "hider",
+      "when": "(s, n) => !n.found && s.seenBy('seeker', n)",
+      "do": ["say Found."],
+      "apply": "(s, n) => { n.found = true; n.role = 'seeker'; }"
+    }
+  ]
+}
