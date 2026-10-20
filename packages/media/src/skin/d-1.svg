@@ -40,6 +40,7 @@
 </pattern>
 <path id="plaits" d="M0.5 -2.6L2.3 -1.3L4.1 -2.6M0.5 0L2.3 1.3L4.1 0M0.5 2.6L2.3 3.9L4.1 2.6M0.5 5.2L2.3 6.5L4.1 5.2M0.5 7.8L2.3 9.1L4.1 7.8M0.5 10.4L2.3 11.7L4.1 10.4M0.5 13L2.3 14.3L4.1 13M0.5 15.6L2.3 16.9L4.1 15.6M0.5 18.2L2.3 19.5L4.1 18.2M0.5 20.8L2.3 22.1L4.1 20.8M0.5 23.4L2.3 24.7L4.1 23.4M0.5 26L2.3 27.3L4.1 26M0.5 28.6L2.3 29.9L4.1 28.6M0.5 31.2L2.3 32.5L4.1 31.2M0.5 33.8L2.3 35.1L4.1 33.8" style="fill: none; stroke: #b08c48; stroke-opacity: 0.6; stroke-width: 0.6px; stroke-linecap: round;"/>
 <clipPath id="suit"><path d="M0 80h88v4h-88zM104 80h120v4h-120zM0 84h92v4h-92zM100 84h124v4h-124zM0 88h224v4h-224zM0 92h100v4h-100zM108 92h116v4h-116zM0 96h224v16h-224zM0 112h160v4h-160zM8 116h32v4h-32zM64 116h96v12h-96z"/><path d="M64 208h128v32h-128zM64 240h64v4h-64zM72 244h32v4h-32z"/></clipPath>
+<clipPath id="suit-pale"><path d="M16 64h16v4h-16zM80 64h64v4h-64zM176 64h16v4h-16zM16 68h16v4h-16zM80 68h4v4h-4zM108 68h36v4h-36zM176 68h16v4h-16zM16 72h16v4h-16zM80 72h4v4h-4zM108 72h36v4h-36zM176 72h16v4h-16zM16 76h16v4h-16zM80 76h4v4h-4zM108 76h36v4h-36zM176 76h16v4h-16zM0 80h88v4h-88zM104 80h120v4h-120zM0 84h92v4h-92zM100 84h124v4h-124zM0 88h224v4h-224zM0 92h100v4h-100zM108 92h116v4h-116zM0 96h224v4h-224zM0 100h224v4h-224zM0 104h224v4h-224zM0 108h224v4h-224zM0 112h192v4h-192zM8 116h32v4h-32zM64 116h128v4h-128zM64 120h128v4h-128zM64 124h128v4h-128zM160 172h64v4h-64zM80 192h16v4h-16zM144 192h16v4h-16zM80 196h16v4h-16zM144 196h16v4h-16zM80 200h16v4h-16zM144 200h16v4h-16zM80 204h16v4h-16zM144 204h16v4h-16zM64 208h128v4h-128zM64 212h128v4h-128zM64 216h128v4h-128zM64 220h128v4h-128zM64 224h128v4h-128zM64 228h128v4h-128zM64 232h128v4h-128zM64 236h192v4h-192zM64 240h64v4h-64zM72 244h32v4h-32z"/></clipPath>
 <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
 <rect width="1" height="8" style="fill: #1c0800;"/>
 </pattern>
@@ -50,6 +51,9 @@
 <title>d-1--2a2804c8ff60ef75</title>
 </image>
 </g>
+<rect width="256" height="256" style="pointer-events: none; fill: #505050; mix-blend-mode: screen; clip-path: url(&quot;#suit-pale&quot;);">
+<title>paler suit</title>
+</rect>
 <rect width="256" height="256" style="pointer-events: none; fill: url(&quot;#hatch&quot;); fill-opacity: 0.35; clip-path: url(&quot;#suit&quot;);">
 <title>hatching</title>
 </rect>
