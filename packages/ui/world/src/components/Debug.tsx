@@ -2,6 +2,7 @@ import { useStateRef } from "@npc-cli/util";
 import { Rect } from "@npc-cli/util/geom";
 import { pause } from "@npc-cli/util/legacy/generic";
 import { useFrame } from "@react-three/fiber";
+import debounce from "debounce";
 import { createNavMeshHelper, type DebugObject as NavMeshHelperObject } from "navcat/three";
 import { useContext, useEffect, useMemo } from "react";
 import { attribute, float, select, smoothstep, texture, uv, vec2 } from "three/tsl";
@@ -71,14 +72,11 @@ export function Debug() {
         return item ? { ...item.meta } : null;
       },
       onPhysicsDebugData(e) {
-        if (e.data.type === "physics-debug-data-response") {
-          // console.log('🔔 RECEIVED', e.data);
-          state.physicsColliders = e.data.items;
-          state.physicsLines.dispose();
-          state.physicsLines = new THREE.BufferGeometry();
-          state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
-          w.physics.worker.removeEventListener("message", state.onPhysicsDebugData);
-        }
+        if (e.data.type !== "physics-debug-data-response") return;
+        state.physicsColliders = e.data.items;
+        state.physicsLines.dispose();
+        state.physicsLines = new THREE.BufferGeometry();
+        state.physicsLines.setAttribute("position", new THREE.BufferAttribute(new Float32Array(e.data.lines), 3));
         state.update();
         w.view.forceUpdate();
       },
@@ -88,12 +86,8 @@ export function Debug() {
           physicsColliders: [],
           physicsLines: new THREE.BufferGeometry(),
         });
-        if (shouldShow) {
-          w.physics.worker.addEventListener("message", state.onPhysicsDebugData);
-          w.physics.worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker);
-        } else {
-          pause().then(() => w.view.forceUpdate());
-        }
+        // the listener and the first request are the effect's, below
+        if (shouldShow === false) pause().then(() => w.view.forceUpdate());
       },
       updateDoorNormals() {
         const inst = state.doorNormalsInst;
@@ -226,6 +220,27 @@ export function Debug() {
     state.updateDecorPoints();
     state.update();
   }, [w.hash, w.gmsData, w.decor?.ready, state.doPointsShown]);
+
+  // "colliders": refetched as decor, which may be a collider, comes and goes
+  useEffect(() => {
+    const worker = w.physics?.worker;
+    if (state.physicsCollidersShown === false || !worker) return;
+    const onMessage = (e: MessageEvent<WW.MsgFromWorker>) => state.onPhysicsDebugData(e);
+    const refetch = debounce(
+      () => worker.postMessage({ type: "get-physics-debug-data" } satisfies WW.MsgToWorker),
+      100,
+    );
+    worker.addEventListener("message", onMessage);
+    refetch();
+    const sub = w.events.subscribe({
+      next: (e) => void ((e.key === "decor-created" || e.key === "decor-removed") && refetch()),
+    });
+    return () => {
+      worker.removeEventListener("message", onMessage);
+      sub.unsubscribe();
+      refetch.clear();
+    };
+  }, [state.physicsCollidersShown, w.physics?.worker]);
 
   // "toggle doors"
   useEffect(() => {
@@ -472,6 +487,7 @@ export type State = {
   decodeDebugPointInstanceId(instanceId: number): Meta<Geomorph.GmRoomId> | null;
   updateDoorNormals(): void;
   updateDecorPoints(): void;
+  /** Takes the worker's colliders, ignoring its other messages */
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
   setLocalBoundary(segs: XZSeg[]): void;
