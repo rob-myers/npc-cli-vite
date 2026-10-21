@@ -136,23 +136,29 @@ async function hidingSpot(ctx: Ctx, opts: Opts, avoid?: string) {
   return isSpot(spot) ? spot : null;
 }
 
-/** Whether any of `from` sees their spot, from where they stand or are headed. `crouchHides`: crouching hides them from all */
+/**
+ * Whether any of `from` sees their spots, from where they stand or are headed. `at` is a spot of theirs seen.
+ * `crouchHides`: crouching hides them from all
+ */
 async function threat(ctx: Ctx, opts: Opts) {
   const { w } = ctx.ct;
   const watchers = fromKeys(ctx, opts);
   const headed = watchers.flatMap((key) => (w.n[key].isMoving() ? [w.n[key].last.dst] : []));
-  const [mine, ...theirs] = await spotQuery(ctx.ct, [
-    { q: "of", npc: ctx.npcKey },
-    ...watchers.map((npc): WW.SpotQuery => ({ q: "of", npc })),
-    ...headed.map((point): WW.SpotQuery => ({ q: "at", point: { x: point.x, y: point.y } })),
-  ]);
-  if (isSpot(mine) === false) return null;
+  const ahead =
+    headed.length === 0
+      ? []
+      : await spotQuery(
+          ctx.ct,
+          headed.map((point): WW.SpotQuery => ({ q: "at", point: { x: point.x, y: point.y } })),
+        );
   const answers = await spotQuery(
     ctx.ct,
-    theirs.filter(isSpot).map((s): WW.SpotQuery => ({ q: "sees", a: s.key, b: mine.key })),
+    [...watchers, ...ahead.filter(isSpot).map((s) => s.key)].map(
+      (a): WW.SpotQuery => ({ q: "sees", a, b: ctx.npcKey }),
+    ),
   );
-  const seeing = answers.filter((x) => x !== null && "crouchHides" in x && x.sees) as { crouchHides: boolean }[];
-  return seeing.length === 0 ? null : { at: mine.key, crouchHides: seeing.every((x) => x.crouchHides) };
+  const seeing = answers.flatMap((x) => (x != null && "crouchHides" in x && x.sees ? [x] : []));
+  return seeing.length === 0 ? null : { at: seeing[0].to, crouchHides: seeing.every((x) => x.crouchHides) };
 }
 
 /** The npcs `from` names, but this one */

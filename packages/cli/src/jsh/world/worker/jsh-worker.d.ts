@@ -12,12 +12,16 @@ declare namespace WW {
   /** A geomorph instance of the map, so the worker can place its spots */
   type GmForSpots = { key: string; transform: Geom.AffineTransform };
 
-  /** An npc as a spot query sees them, snapshotted by main as the batch is sent */
-  type SpotNpc = { key: string; point: Geom.VectJson; grKey: null | string };
+  /** An npc as a spot query sees them, snapshotted by main as the batch is sent. `grKeys`: theirs, and in a doorway both */
+  type SpotNpc = { key: string; point: Geom.VectJson; grKeys: string[] };
 
-  /** One question about spots. `a`, `b` and `npc` are a spot key (`g0s12`) or an npc key — see `docs/spots.md` */
+  /**
+   * One question about spots. `a`, `b` and `npc` are a spot key (`g0s12`) or an npc key — see `docs/spots.md`.
+   * For sight an npc stands at all their spots
+   */
   type SpotQuery =
-    | { q: "of"; npc: string }
+    /** Their nearest spot, else with `all` every spot of theirs */
+    | { q: "of"; npc: string; all?: boolean }
     | { q: "get"; key: string }
     | { q: "list"; rooms?: string[]; kinds?: string[]; near?: { npc: string; within: number } }
     | { q: "sees"; a: string; b: string }
@@ -42,12 +46,12 @@ declare namespace WW {
     sees: number;
   };
 
-  /** Aligned with its query: `of`, `get` give a spot or `null`; `list`, `seenBy` spots; `sees` a verdict */
+  /** Aligned with its query: `of`, `get` give a spot or `null`; `of` with `all`, `list`, `seenBy` spots; `sees` a verdict */
   type SpotAnswer =
     | null
     | SpotJson
     | SpotJson[]
-    /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover */
+    /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any */
     | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
     | { error: string };
 

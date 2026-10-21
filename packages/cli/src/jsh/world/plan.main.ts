@@ -126,7 +126,9 @@ export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.Spot
   const npcs = [...named].flatMap((key): WW.SpotNpc[] => {
     const point = w.n[key]?.point;
     if (point === undefined) return []; // a spot key
-    return [{ key, point: { x: point.x, y: point.y }, grKey: w.npc.npcToRoom.get(key)?.grKey ?? null }];
+    const rooms = [w.npc.npcToRoom.get(key), ...(w.e.insideDoorways.get(key)?.rooms ?? [])];
+    const grKeys = [...new Set(rooms.flatMap((room) => room?.grKey ?? []))];
+    return [{ key, point: { x: point.x, y: point.y }, grKeys }];
   });
   return plan({ api: ct.api, w, op: { key: "spots", npcs, queries } });
 }

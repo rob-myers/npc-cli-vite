@@ -12,7 +12,7 @@ A spot is a place an npc might stand, made per geomorph key with what it sees an
 | Bin | `scripts/src/bins/gen-spots.ts` (`--force`, `--gmKeys='["g-101--multipurpose"]'`) |
 | Dev server | `scripts/src/vite-plugin-spots.ts`. `POST /api/gen-spots` forces a run. |
 | View | `packages/ui/decorator/src/SpotsLayer.tsx` |
-| Queries | The jsh worker holds the map's spots (`cli/src/jsh/world/worker/spots.ts`). Main sends a batch with `spotQuery(ct, queries)` (`plan.main.ts`), one `spots` op per round trip. jsh: `spot of:rob`, `spot g0s12`, `sees g0s12 g0s40`, `spots room:… kind:… near:…`. Between npcs `sees` also asks their eyes and facing: see `docs/scenarios.md` |
+| Queries | The jsh worker holds the map's spots (`cli/src/jsh/world/worker/spots.ts`). Main sends a batch with `spotQuery(ct, queries)` (`plan.main.ts`), one `spots` op per round trip. For sight an npc is at all their spots: those of their room within 1 m, else its nearest, and in a doorway the other side's too. One sees another if any pair does. jsh: `spot of:rob` (the nearest), `spots of:rob` (all), `spot g0s12`, `sees g0s12 g0s40`, `spots room:… kind:… near:…`. Between npcs `sees` also asks their eyes and facing: see `docs/scenarios.md` |
 
 ## Coords
 

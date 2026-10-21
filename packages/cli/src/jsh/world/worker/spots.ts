@@ -26,12 +26,19 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
     if (npc === undefined) throw Error(`${key}: not sent`);
     return npc;
   };
-  /** A spot key, else the spot an npc is at */
+  /** A spot key, else the spot an npc is nearest */
   const resolve = (ref: string) => {
     const npc = npcByKey.get(ref);
-    const spot = spotKeyRe.test(ref) ? all.get(ref) : npc && all.spotOf(npc.key, npc.point, npc.grKey);
+    const spot = spotKeyRe.test(ref) ? all.get(ref) : npc && all.spotOf(npc.key, npc.point, npc.grKeys[0] ?? null);
     if (spot === undefined) throw Error(`${ref}: no spot`);
     return spot;
+  };
+  /** A spot key, else every spot an npc is at */
+  const resolveAll = (ref: string) => {
+    const npc = npcByKey.get(ref);
+    const spots = npc === undefined ? [resolve(ref)] : all.spotsOf(npc);
+    if (spots.length === 0) throw Error(`${ref}: no spot`);
+    return spots;
   };
   /** The spots in `rooms`, else every one */
   const inRooms = (rooms: undefined | string[]) => (rooms === undefined ? [...all.byKey.values()] : all.inRooms(rooms));
@@ -39,7 +46,7 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
     try {
       switch (query.q) {
         case "of":
-          return toJson(resolve(query.npc));
+          return query.all === true ? resolveAll(query.npc).map(toJson) : toJson(resolve(query.npc));
         case "get":
           return toJson(resolve(query.key));
         case "list": {
@@ -54,24 +61,26 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
           return found.map(toJson);
         }
         case "sees": {
-          const [a, b] = [resolve(query.a), resolve(query.b)];
+          const pairs = resolveAll(query.a).flatMap((a) => resolveAll(query.b).map((b) => [a, b] as const));
+          const inSight = pairs.filter(([a, b]) => all.sees(a, b));
+          const [a, b] = inSight[0] ?? pairs[0];
           return {
-            sees: all.sees(a, b),
-            via: all.seesVia(a, b),
-            crouchHides: all.crouchHidden(b, a),
+            sees: inSight.length > 0,
+            via: pairs.map(([a, b]) => all.seesVia(a, b)).find((via) => via !== null) ?? null,
+            crouchHides: inSight.length > 0 && inSight.every(([a, b]) => all.crouchHidden(b, a)),
             from: a.key,
             to: b.key,
           };
         }
         case "seenBy":
-          return all.seenBy(resolve(query.a)).map(toJson);
+          return [...new Set(resolveAll(query.a).flatMap((a) => all.seenBy(a)))].map(toJson);
         case "at": {
           const spot = all.nearestTo(query.point, query.grKey);
           return spot === undefined ? null : toJson(spot);
         }
         case "hide": {
           const npc = resolveNpc(query.npc);
-          const watchers = query.from.map(resolve);
+          const watchers = query.from.flatMap(resolveAll);
           const exclude = new Set(query.exclude);
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
@@ -187,6 +196,15 @@ export class MapSpots {
     return spot;
   }
 
+  /** Every spot `npc` is at: in each of their rooms, those within `ownReach`, else the nearest */
+  spotsOf({ point, grKeys }: WW.SpotNpc) {
+    const close = this.near(point, ownReach);
+    return (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
+      const own = close.filter((s) => s.grKey === grKey);
+      return own.length > 0 ? own : (this.nearestTo(point, grKey) ?? []);
+    });
+  }
+
   /** Infinite for a room's only spot: anywhere in that room is nearest it */
   halfGap(s: MapSpot) {
     let half = this.halfGapOf.get(s.key);
@@ -278,6 +296,8 @@ export type MapSpot = {
 const cellSize = 2;
 /** Metres: off any room, e.g. in a doorway, the nearest spot this near is theirs */
 const spotOfReach = 2;
+/** Metres: the spots of their room this near are all theirs */
+const ownReach = 1;
 /** Grid rings searched for the nearest spot in a room: 40 metres, past any room's size */
 const maxRings = 20;
 

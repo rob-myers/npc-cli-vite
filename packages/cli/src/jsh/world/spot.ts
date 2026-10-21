@@ -1,22 +1,26 @@
 import { spotQuery } from "./plan.main";
 
 /**
- * The map's spots: in rooms, of kinds, or near an npc, nearest first. Answered by the worker — see `docs/spots.md`
+ * The map's spots: in rooms, of kinds, or near an npc, nearest first. With `of`, every spot an npc is at.
+ * Answered by the worker — see `docs/spots.md`
  *
  * ```sh
  * spots room:g0r16 kind:cover,corner
  * spots near:rob within:3
+ * spots of:rob
  * ```
  */
 export async function* spots(ct: JshCli.RunArg) {
-  const opts: { room?: string; kind?: string; near?: string; within?: number } = ct.api.jsArg(ct.args);
+  const opts: { room?: string; kind?: string; near?: string; within?: number; of?: string } = ct.api.jsArg(ct.args);
   const [found] = await spotQuery(ct, [
-    {
-      q: "list",
-      rooms: csv(opts.room),
-      kinds: csv(opts.kind),
-      near: opts.near === undefined ? undefined : { npc: opts.near, within: opts.within ?? 3 },
-    },
+    opts.of !== undefined
+      ? { q: "of", npc: opts.of, all: true }
+      : {
+          q: "list",
+          rooms: csv(opts.room),
+          kinds: csv(opts.kind),
+          near: opts.near === undefined ? undefined : { npc: opts.near, within: opts.within ?? 3 },
+        },
   ]);
   yield* answered(found) as WW.SpotJson[];
 }
