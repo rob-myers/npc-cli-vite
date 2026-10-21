@@ -153,10 +153,10 @@ export function WorldView(props: React.PropsWithChildren) {
       keysDown: new Set(),
       lastKeyMs: 0,
       crouchHeld: false,
-      compassDial: saved.compassDial ?? true,
       compassPoint: 0,
-      compassSkew: 0,
-      wasdPoint: null,
+      wasdSkew: 0,
+      wasdSnapped: true,
+      wasdHeading: null,
       compassSnap: false,
       postFx: createPostProcessing(),
       rgbShiftFx: createRgbShift(),
@@ -487,17 +487,16 @@ export function WorldView(props: React.PropsWithChildren) {
       getWasdDirection() {
         const right = (state.keysDown.has("d") ? 1 : 0) - (state.keysDown.has("a") ? 1 : 0);
         const up = (state.keysDown.has("w") ? 1 : 0) - (state.keysDown.has("s") ? 1 : 0);
-        const m = state.controls.object.matrixWorld.elements; // its x and y axes: its forward points down at birdseye
-        if (state.compassDial === false) return new Vect(right * m[0] + up * m[4], right * m[2] + up * m[6]);
-        // the dial has `w` head along the world axis nearest up the screen, which its button names
-        const [ux, uz] = compassVectors[state.syncWasdPoint() ?? 0];
-        return new Vect(up * ux - right * uz, up * uz + right * ux);
+        // `w` heads up the screen, snapped onto a world axis near it
+        const heading = state.syncWasdHeading() ?? snapHeading(state.controls.spherical.theta);
+        const [sin, cos] = [Math.sin(heading), Math.cos(heading)];
+        return new Vect(right * cos - up * sin, -right * sin - up * cos);
       },
-      syncWasdPoint() {
-        const held = state.compassDial === true && wasdKeys.some((key) => state.keysDown.has(key));
-        if (held === false) state.wasdPoint = null;
-        else state.wasdPoint ??= state.compassPoint;
-        return state.wasdPoint;
+      syncWasdHeading() {
+        const held = wasdKeys.some((key) => state.keysDown.has(key));
+        if (held === false) state.wasdHeading = null;
+        else state.wasdHeading ??= snapHeading(state.controls.spherical.theta);
+        return state.wasdHeading;
       },
       getFollowedPlayer() {
         const player = w.player?.get();
@@ -579,15 +578,15 @@ export function WorldView(props: React.PropsWithChildren) {
         // follow or a frontier ease has no end at all. The store debounces the write
         state.persistCamera();
 
-        // `w`'s own axis whilst a move key holds it, else the last, kept until the view turns well past it
-        const compassPoint = state.syncWasdPoint() ?? stickyCompassPoint(state.compassPoint, spherical.theta);
+        // where `w` heads: held whilst a move key is down, else up the screen, snapped near an axis
+        const heading = state.syncWasdHeading() ?? snapHeading(spherical.theta);
+        const compassPoint = Math.round(heading / halfPi) & 3;
+        const wasdSnapped = Math.abs(deltaAngle(compassPoint * halfPi, heading)) < 1e-6;
         // in coarse steps, so a turn redraws the bar a few times rather than every frame
-        const skew = deltaAngle(compassPoint * halfPi, spherical.theta);
-        const compassSkew = Math.round(skew / compassSkewStep) * compassSkewStep;
-        if (compassPoint !== state.compassPoint || compassSkew !== state.compassSkew) {
-          state.compassPoint = compassPoint;
-          state.compassSkew = compassSkew;
-          w.hud?.update(); // its compass button names the point, and leans by the skew
+        const wasdSkew = Math.round(deltaAngle(heading, spherical.theta) / compassSkewStep) * compassSkewStep;
+        if (compassPoint !== state.compassPoint || wasdSnapped !== state.wasdSnapped || wasdSkew !== state.wasdSkew) {
+          Object.assign(state, { compassPoint, wasdSnapped, wasdSkew });
+          w.hud?.update(); // its compass names the point, and marks where `w` heads
         }
 
         const { controls } = state;
@@ -946,7 +945,7 @@ export function WorldView(props: React.PropsWithChildren) {
       onKeyUp(e) {
         const key = e.key.toLowerCase();
         state.keysDown.delete(key);
-        if (state.wasdPoint !== null) w.r3f?.invalidate(); // a frame, for the button to drop a held point
+        if (state.wasdHeading !== null) w.r3f?.invalidate(); // a frame, for the compass to drop a held heading
         if (isTypingTarget(e)) return;
         if (key === "f" && state.cHeld === false) {
           state.onLookGesture(false);
@@ -1252,11 +1251,6 @@ export function WorldView(props: React.PropsWithChildren) {
         state.forceUpdate();
         w.menu?.update(); // its toggle shows it
         w.r3f?.invalidate();
-      },
-      setCompassDial(on) {
-        state.compassDial = on;
-        store.patch({ compassDial: on });
-        w.hud?.update();
       },
       setCameraMode(cameraMode) {
         if (cameraMode === "embodied") {
@@ -1817,7 +1811,7 @@ export type State = {
   zoomCrossEl: null | THREE.Mesh;
   /** The crosshair's point whilst it shows, for a turn to go about — see `rotateAbout` */
   getCrosshairPivot(): THREE.Vector3 | null;
-  /** Ground direction of the held `wasd` keys: as seen, or along the world's axes whilst `compassDial` — zero when none or opposites are held */
+  /** Ground direction of the held `wasd` keys: `w` up the screen, snapped onto a world axis near it. Zero when none or opposites are held */
   getWasdDirection(): Vect;
   /** Shows the pick colours on screen, or stops: the debug menu's "view pick", and `0` */
   toggleViewPick(): void;
@@ -1880,16 +1874,16 @@ export type State = {
   lastKeyMs: number;
   /** Whether `c` has been held long enough for a full crouch */
   crouchHeld: boolean;
-  /** Whether `wasd` heads along the world's axes. Its `WorldHud` button toggles it, and its needle shows where `w` heads */
-  compassDial: boolean;
-  /** Where `w` heads: `0` north (-z), then west, south, east. Kept until the view is `compassSwitchRad` off it */
+  /** The compass point nearest where `w` heads: `0` north (-z), then west, south, east */
   compassPoint: number;
-  /** `w`'s compass point whilst a move key is down under the dial, so a turn mid-walk does not swerve them */
-  wasdPoint: null | number;
-  /** Takes `wasdPoint` as the first move key goes down, and drops it once none is held. Returns it */
-  syncWasdPoint(): null | number;
-  /** How far the view is turned off `compassPoint`, in radians, in steps of `compassSkewStep` */
-  compassSkew: number;
+  /** `w`'s heading whilst a move key is down, as an azimuth, so a turn mid-walk does not swerve them */
+  wasdHeading: null | number;
+  /** Takes `wasdHeading` as the first move key goes down, and drops it once none is held. Returns it */
+  syncWasdHeading(): null | number;
+  /** How far the view is turned off where `w` heads, in radians, in steps of `compassSkewStep`: `0` unless snapped */
+  wasdSkew: number;
+  /** Whether `w` heads along a world axis, `compassPoint`, having snapped onto it */
+  wasdSnapped: boolean;
   /** Whether a turn let go also snaps to a compass point — see `detentEmbodiedAzimuth`. Off: nothing sets it */
   compassSnap: boolean;
   /** Frames the player and their frontier, as the follow would, until the camera is next touched */
@@ -1999,8 +1993,6 @@ export type State = {
   /** Drives the polar outright: pinning both clamps blocks the drag's polar input with it */
   /** `embodied`'s azimuth: a turn let go whilst `compassSnap` snaps to a compass point (multiple of π/2) */
   detentEmbodiedAzimuth(spherical: THREE.Spherical): void;
-  /** Turns the compass dial on or off. On, the view is brought clear of the diagonals at once */
-  setCompassDial(on: boolean): void;
   /** How far the current turn is from `embodiedFrom`, as it will come to rest */
   getEmbodiedHeading(): number;
   /** Puts the crosshair on a ground point and shows it at full strength */
@@ -2113,9 +2105,10 @@ function getCameraFov(aspect: number) {
   return 2 * Math.atan((halfTan * cameraRefAspect) / aspect) * THREE.MathUtils.RAD2DEG;
 }
 
-/** `point` until `theta` is `compassSwitchRad` off it, then the compass point nearest */
-function stickyCompassPoint(point: number, theta: number) {
-  return Math.abs(deltaAngle(point * halfPi, theta)) <= compassSwitchRad ? point : Math.round(theta / halfPi) & 3;
+/** Where `w` heads for a view turned `theta`: up the screen, onto the world axis nearest within `compassSnapRad` */
+function snapHeading(theta: number) {
+  const axis = Math.round(theta / halfPi) * halfPi;
+  return Math.abs(deltaAngle(axis, theta)) <= compassSnapRad ? axis : theta;
 }
 
 /** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
@@ -2300,17 +2293,10 @@ const phiSettledEpsilon = 0.0001;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 const halfPi = Math.PI / 2;
-/** Radians the view turns off `compassPoint` before `w` takes the axis nearest up the screen. Past π/4, so a view near a diagonal never flips it */
-const compassSwitchRad = Math.PI / 3;
+/** Radians off a world axis within which `w`, heading up the screen, snaps onto it. So doors line up without a square view */
+const compassSnapRad = Math.PI / 9;
 const compassSkewStep = Math.PI / 36;
 const wasdKeys = ["w", "a", "s", "d"];
-/** A compass point's ground direction, by `compassPoint`: north is -z */
-const compassVectors = [
-  [0, -1],
-  [-1, 0],
-  [0, 1],
-  [1, 0],
-];
 /** A page closed within this of a key over the world asks first */
 const closeConfirmMs = 2000;
 /** In quarter turns: a turn from this near a compass point advances past the next one */

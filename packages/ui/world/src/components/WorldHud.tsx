@@ -6,7 +6,6 @@ import {
   LockOpenIcon,
   PersonSimpleRunIcon,
   PersonSimpleWalkIcon,
-  TriangleIcon,
   UserFocusIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -375,10 +374,6 @@ function PlayerButtons() {
   const press = useRef({ timer: 0, long: false });
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
-  const compassDial = w.view?.compassDial === true;
-  const compassLetter = compassLetters[w.view?.compassPoint ?? 0];
-  /** Radians the view is turned off `w`'s axis, which the needle leans back by */
-  const compassSkew = compassDial ? (w.view?.compassSkew ?? 0) : 0;
   const big = w.touchDevice;
   const hurry = w.player.get()?.anim.hurry === true;
   const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
@@ -395,150 +390,94 @@ function PlayerButtons() {
     if (cancelled === false && press.current.long === false && w.hud?.dragged !== true) w.view.onLookGesture(false);
   };
 
-  const toggleCompass = () => w.hud?.dragged !== true && w.view.setCompassDial(!compassDial);
-
   return (
-    <>
-      <div
-        className="pointer-events-auto ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
-        // the canvas keeps the focus
-        onMouseDown={(e) => e.preventDefault()}
-      >
-        {/* a client's moves are not theirs to pace */}
-        {w.client !== true && (
-          <div
-            className={buttonClass}
-            title={hurry ? "run" : "walk"}
-            onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
-          >
-            {/* always white: the icon itself changes with the gait */}
-            <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
-          </div>
-        )}
-        {/* a press looks at the player, or stops a follow (white); a long press toggles it — as `f` */}
+    <div
+      className="pointer-events-auto ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
+      // the canvas keeps the focus
+      onMouseDown={(e) => e.preventDefault()}
+    >
+      {/* a client's moves are not theirs to pace */}
+      {w.client !== true && (
         <div
           className={buttonClass}
-          title={`follow ${follow ? "on" : "off"}: f`}
-          onPointerDown={() => {
-            press.current.long = false;
-            press.current.timer = window.setTimeout(() => {
-              if (w.hud?.dragged === true) return; // dragging the bar is not a press
-              press.current.long = true;
-              w.view.onLookGesture(true);
-            }, longPressMs);
-          }}
-          onPointerUp={() => endPress(false)}
-          onPointerLeave={() => endPress(true)}
-          onContextMenu={(e) => e.preventDefault()}
+          title={hurry ? "run" : "walk"}
+          onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
         >
-          <AnimatePresence>
-            {w.view?.lookingAt === true && (
-              // pulses whilst a pan is under way, which a black screen or a paused world would hide
-              <motion.div
-                className="pointer-events-none absolute inset-0 bg-white/60"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
-                transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
-              />
-            )}
-          </AnimatePresence>
-          {followFlash > 0 && (
-            // keyed by the count, so each toggle replays the fade
+          {/* always white: the icon itself changes with the gait */}
+          <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
+        </div>
+      )}
+      {/* a press looks at the player, or stops a follow (white); a long press toggles it — as `f` */}
+      <div
+        className={buttonClass}
+        title={`follow ${follow ? "on" : "off"}: f`}
+        onPointerDown={() => {
+          press.current.long = false;
+          press.current.timer = window.setTimeout(() => {
+            if (w.hud?.dragged === true) return; // dragging the bar is not a press
+            press.current.long = true;
+            w.view.onLookGesture(true);
+          }, longPressMs);
+        }}
+        onPointerUp={() => endPress(false)}
+        onPointerLeave={() => endPress(true)}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <AnimatePresence>
+          {w.view?.lookingAt === true && (
+            // pulses whilst a pan is under way, which a black screen or a paused world would hide
             <motion.div
-              key={followFlash}
-              className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
-              initial={{ opacity: 0.55 }}
-              animate={{ opacity: 0 }}
-              transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
+              className="pointer-events-none absolute inset-0 bg-white/60"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0, transition: { duration: lookingAtFadeMs / 1000, ease: "easeOut" } }}
+              transition={{ duration: lookingAtPulseMs / 1000, repeat: Infinity, repeatType: "reverse" }}
             />
           )}
-          <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
-        </div>
-        {/* on touch, which has no `wasd`: whilst on (white) `w` heads to the point named */}
-        {big && (
-          <div className="relative flex shrink-0">
-            <div
-              className={buttonClass}
-              title={compassDial ? `compass on: w heads ${compassLetter}` : "compass off"}
-              onClick={toggleCompass}
-            >
-              {/* where `w` heads */}
-              <span className={cn(buttonIcon(compassDial), "font-extralight font-sans text-lg leading-none")}>
-                {compassLetter}
-              </span>
-            </div>
-            {/* a compass needle, from the middle out past the top, leaning to where `w` heads on screen */}
-            <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${compassSkew}rad)` }}>
-              <div
-                className={cn(
-                  "absolute top-0.5 bottom-[62%] left-1/2 w-0.5 -translate-x-1/2 rounded-full",
-                  compassDial ? "bg-amber-300" : "bg-neutral-500",
-                )}
-              />
-              <TriangleIcon
-                className={cn(
-                  "absolute -top-2 left-1/2 size-3.5 -translate-x-1/2 drop-shadow-[0_1px_2px_rgb(0_0_0/0.9)]",
-                  compassDial ? "text-amber-300" : "text-neutral-500",
-                )}
-                weight="fill"
-              />
-            </div>
-          </div>
+        </AnimatePresence>
+        {followFlash > 0 && (
+          // keyed by the count, so each toggle replays the fade
+          <motion.div
+            key={followFlash}
+            className={cn("pointer-events-none absolute inset-0", follow ? "bg-neutral-100" : "bg-neutral-400")}
+            initial={{ opacity: 0.55 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: followFlashMs / 1000, ease: "easeOut" }}
+          />
         )}
+        <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
       </div>
+      {/* desktop only: touch has no `wasd` */}
       {big === false && (
         <CompassRose
-          on={compassDial}
           point={w.view?.compassPoint ?? 0}
-          skew={w.view?.compassSkew ?? 0}
-          onClick={toggleCompass}
+          snapped={w.view?.wasdSnapped !== false}
+          skew={w.view?.wasdSkew ?? 0}
         />
       )}
-    </>
+    </div>
   );
 }
 
-/** Desktop's compass dial: N, E, S and W as the view has them, and an arrow to where `w` heads */
-function CompassRose({ on, point, skew, onClick }: { on: boolean; point: number; skew: number; onClick(): void }) {
+/** Desktop's compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen */
+function CompassRose({ point, snapped, skew }: { point: number; snapped: boolean; skew: number }) {
   return (
-    <svg
-      viewBox="-28 -28 56 56"
-      className="pointer-events-auto ml-2 size-14 shrink-0 cursor-pointer self-center drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]"
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-    >
-      <title>{on ? `compass on: w heads ${compassLetters[point]}` : "compass off"}</title>
-      <circle
-        r={26}
-        strokeWidth={1}
-        className={cn("fill-neutral-900/70", on ? "stroke-neutral-400/70" : "stroke-neutral-600/60")}
+    <svg viewBox="-18 -18 36 36" className="pointer-events-auto size-9 shrink-0 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]">
+      <title>{`w heads ${snapped ? "" : "near "}${compassLetters[point]}`}</title>
+      <circle r={13} fill="none" strokeWidth={0.8} className="stroke-neutral-500/70" />
+      <text
+        textAnchor="middle"
+        dominantBaseline="central"
+        className={cn("font-sans font-semibold text-[13px]", snapped ? "fill-white" : "fill-neutral-400")}
+      >
+        {compassLetters[point]}
+      </text>
+      {/* amber whilst snapped onto the axis, else pale and straight up */}
+      <path
+        d="M0 -17.5L3.5 -11.5L-3.5 -11.5Z"
+        transform={`rotate(${(skew * 180) / Math.PI})`}
+        className={snapped ? "fill-amber-300" : "fill-neutral-200"}
       />
-      {compassLetters.map((letter, k) => {
-        /** Clockwise from up the screen: `w`'s point leans by `skew`, and each next one is a quarter anticlockwise */
-        const angle = skew + (point - k) * (Math.PI / 2);
-        return (
-          <text
-            key={letter}
-            x={roseLetterRadius * Math.sin(angle)}
-            y={-roseLetterRadius * Math.cos(angle)}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className={cn(
-              "font-sans text-[10px]",
-              on === false ? "fill-neutral-600" : k === point ? "fill-white font-bold" : "fill-neutral-500",
-            )}
-          >
-            {letter}
-          </text>
-        );
-      })}
-      {on && (
-        <g transform={`rotate(${(skew * 180) / Math.PI})`} className="fill-amber-300 stroke-amber-300">
-          <line y1={5} y2={-8} strokeWidth={2} strokeLinecap="round" />
-          <path d="M0 -14L-4.5 -7L4.5 -7Z" stroke="none" />
-        </g>
-      )}
     </svg>
   );
 }
@@ -796,8 +735,6 @@ const hudBarHeight = 110;
 const hudDragTop = 8;
 /** Compass points by `w.view.compassPoint` */
 const compassLetters = ["N", "W", "S", "E"];
-/** Svg units from the rose's middle to its letters */
-const roseLetterRadius = 19;
 /** How long a touch is held before a slot's menu opens, or the look button before it toggles the follow */
 const longPressMs = 500;
 /** How long the look button's flash takes to fade, when follow is turned on or off */

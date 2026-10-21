@@ -161,11 +161,10 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 **`embodied` restricts what may be steered, by zoom.**
 
 Azimuth:
-- Free at every zoom, and untouched by zooming or by the compass dial (`compassDial`: its button on `WorldHud` beside look/follow, `setCompassDial`).
-- Whilst the dial is on, `w`, `a`, `s` and `d` head along the world's axes (`getWasdDirection`). A turned view still lines up with doors.
-- `w`'s axis is kept until the view is `compassSwitchRad` (π/3) off it, then it takes the one nearest up the screen (`stickyCompassPoint`). So a view resting near a diagonal never flips it.
-- That axis is held whilst any of them is down (`wasdPoint`), so a turn mid-walk doesn't swerve them.
-- The button names `w`'s compass point (`compassPoint`: N is -z). Its amber needle leans by `compassSkew`, to where `w` heads on screen.
+- Free at every zoom, and untouched by zooming.
+- `w` heads up the screen, snapped onto a world axis within `compassSnapRad` (20°) of it (`snapHeading`, `getWasdDirection`). So doors line up without a square view, and a view near a diagonal walks diagonally, as seen.
+- That heading is held whilst any of `w`, `a`, `s` and `d` is down (`wasdHeading`), so a turn mid-walk doesn't swerve them.
+- On desktop the HUD's compass names `compassPoint`, the point nearest `w`'s heading (N is -z), white whilst snapped onto it (`wasdSnapped`). A marker on its rim shows where `w` heads on screen (`wasdSkew`): amber and leaning whilst snapped, else straight up.
 - The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets.
 - Zoomed out (`t > embodiedAxisLockFrom`), a drag locks to one axis.
 
@@ -199,7 +198,7 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 
 ## Player input
 
-- **Walking.** With the compass dial off, `w`, `a`, `s` and `d` head as seen. For the dial, see [`embodied` mode](#embodied-mode).
+- **Walking.** `w`, `a`, `s` and `d` head as seen, snapped onto a world axis near it: see [`embodied` mode](#embodied-mode).
 - **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): held, a full crouch; a tap is contextual, half or back up. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Running.** An npc runs whilst `anim.hurry`.
