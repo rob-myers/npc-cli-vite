@@ -73,10 +73,14 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
           const exclude = new Set(query.exclude);
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
-          const best = all
+          const unseen = all
             .inRooms(query.rooms)
-            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key) && !watchers.some((w) => all.sees(w, s)))
-            .sort((u, v) => rank(u) - rank(v) || dist(u, npc.point) - dist(v, npc.point))[0];
+            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key) && !watchers.some((w) => all.sees(w, s)));
+          const { away = 0 } = query;
+          const far = unseen.filter((s) => watchers.every((w) => dist(s, w) >= away));
+          const best = (far.length > 0 ? far : unseen).sort(
+            (u, v) => rank(u) - rank(v) || dist(u, npc.point) - dist(v, npc.point),
+          )[0];
           return best === undefined ? null : toJson(best);
         }
         case "search": {
@@ -88,8 +92,9 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
             all.seenBy(s).filter((t) => unseen.has(t.key)).length +
             (unseen.has(s.key) ? 1 : 0) -
             searchWalkCost * dist(s, npc.point);
+          const exclude = new Set(query.exclude);
           const best = area
-            .filter((s) => placeKinds.includes(s.kind))
+            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key))
             .map((s) => ({ s, score: score(s) }))
             .sort((u, v) => v.score - u.score)[0];
           return best === undefined || best.score <= 0 ? null : toJson(best.s);

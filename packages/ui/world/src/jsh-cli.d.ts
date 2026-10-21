@@ -194,6 +194,8 @@ declare namespace JshCli {
     strafe?: boolean;
     /** A target neither doable nor navigable becomes the navigable point nearest it, rather than throwing */
     near?: boolean;
+    /** A push, e.g. a sidestep's: it moves them even whilst stood pacified */
+    shove?: boolean;
   };
   /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {

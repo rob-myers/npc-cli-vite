@@ -5,10 +5,19 @@
   "title": "Hide and seek",
   "summary": "A seeker counts, the hiders hide, and each hider found joins the search.",
   "map": "101-only",
-  "rooms": ["g0r16", "g0r12", "g0r22"],
+  "rooms": ["g0r16", "g0r12", "g0r13", "g0r14", "g0r19", "g0r22", "g0r18", "g0r5", "g0r24"],
   "roles": {"seeker": {"count": 1, "skin": "mtf-"}, "hider": {"count": 3, "skin": "d-"}},
   "cast": {},
-  "params": {"countSecs": 10, "limitSecs": 120, "prefer": "cover,doable", "perceiveSecs": 0.25, "reactSecs": 0.6},
+  "params": {
+    "countSecs": 10,
+    "limitSecs": 120,
+    "prefer": "cover,doable",
+    "perceiveSecs": 0.25,
+    "reactSecs": 0.6,
+    "awayMin": 6,
+    "searchPauseSecs": 2,
+    "setupStaggerSecs": 4
+  },
   "phases": [
     {"key": "setup", "until": "s => s.all(n => n.done)", "label": "all there"},
     {"key": "count", "until": "s => s.all('seeker', n => n.done)", "label": "seekers done"},
@@ -21,14 +30,14 @@
   ],
   "cells": {
     "seeker": {
-      "setup": ["go to:start"],
+      "setup": ["wait up:2", "go to:start"],
       "count": ["face wall", "pose eyes:shut", "count to:$countSecs"],
       "search": ["pose eyes:open", "say Ready or not!", "search"],
       "end": ["say Done."]
     },
     "hider": {
-      "setup": ["go to:near-start"],
-      "count": ["hide from:seeker prefer:$prefer"],
+      "setup": ["wait up:$setupStaggerSecs", "go to:near-start"],
+      "count": ["hide from:seeker prefer:$prefer away:$awayMin"],
       "search": ["stay hidden from:seeker"],
       "end": ["go to:start"]
     }
@@ -38,7 +47,8 @@
       "for": "hider",
       "phases": ["search"],
       "when": "(s, n) => !n.found && s.seenBy('seeker', n)",
-      "do": ["say Found."],
+      "do": ["pose stand", "face $by", "say Aww.", "wait 1"],
+      "by": ["face $for", "say Found you, $for!", "wait 2"],
       "apply": "(s, n) => { n.found = true; n.role = 'seeker'; }",
       "label": "seen"
     }

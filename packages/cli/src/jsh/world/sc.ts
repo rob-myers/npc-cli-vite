@@ -138,7 +138,10 @@ async function* run(ct: JshCli.RunArg, args: string[]) {
   const firstRoom = spots.filter((s) => s.grKey === def.rooms[0]);
   /** The spot of the first room seeing most */
   const start = (firstRoom.length > 0 ? firstRoom : spots).reduce((u, v) => (v.sees > u.sees ? v : u));
-  const byNearness = spots.filter((s) => s !== start).sort((u, v) => dist(u, start) - dist(v, start));
+  /** Spots of the start's room, nearest it first */
+  const byNearness = (firstRoom.length > 1 ? firstRoom : spots)
+    .filter((s) => s !== start)
+    .sort((u, v) => dist(u, start) - dist(v, start));
 
   const id = nextInstanceId(def.short);
   const inst: ScInstance = {
@@ -164,8 +167,8 @@ async function* run(ct: JshCli.RunArg, args: string[]) {
 
   let failed = false;
   try {
-    // named npcs play their roles, others are spawned furthest from the start
-    const furthest = [...byNearness].reverse();
+    // named npcs play their roles, others are spawned at random spots of the start's room
+    const scattered = shuffle(byNearness.slice());
     for (const [role, { count, skin }] of Object.entries(def.roles)) {
       const named = csv(opts[role]) ?? def.cast[role] ?? [];
       for (let i = 0; i < count; i++) {
@@ -173,13 +176,17 @@ async function* run(ct: JshCli.RunArg, args: string[]) {
         const spawned = named[i] === undefined;
         inst.npcs[key] = { key, role, done: false, spawned, rev: 0 };
         if (spawned) {
-          const at = furthest.shift() ?? start;
+          const at = scattered.shift() ?? start;
           await ct.w.npc.spawn({ npcKey: key, at: { x: at.x, y: at.y }, as: skin });
         } else ct.w.npc.get(key);
       }
     }
+    // each their own spot near the start, apart from it and each other so none sidesteps
+    const nearStart = byNearness
+      .reduce((kept, s) => (kept.every((t) => dist(t, s) >= nearStartGap) ? [...kept, s] : kept), [start])
+      .slice(1);
     Object.keys(inst.npcs).forEach((key, i) => {
-      if (byNearness[i] !== undefined) inst.places[`near-start:${key}`] = byNearness[i].key;
+      if (nearStart[i] !== undefined) inst.places[`near-start:${key}`] = nearStart[i].key;
     });
 
     emit(ct, { id, kind: "started", phase: inst.phase });
@@ -219,9 +226,13 @@ async function actor(ct: JshCli.RunArg, args: string[]) {
 
   inst.actorPids[npcKey] = ct.api.meta.pid;
   let rev = "";
+  /** The line of their cell running, which a hold resumes */
+  let line = 0;
+  let held = false;
   let current: null | Task = null;
   const stop = () => {
     current?.cancel();
+    current = null;
     ct.w.n[npcKey]?.rejectAll(Error("cancelled"));
   };
   const handlers = ct.api.handleStatus({
@@ -232,14 +243,22 @@ async function actor(ct: JshCli.RunArg, args: string[]) {
   try {
     while (inst.status === "running" && getInstances()[inst.id] === inst && inst.npcs[npcKey].out !== true) {
       const n = inst.npcs[npcKey];
-      if (`${inst.rev}.${n.rev}` !== rev) {
+      const next = `${inst.rev}.${n.rev}`;
+      if (n.held === true) {
+        if (held === false) {
+          held = true;
+          stop();
+        }
+      } else if (next !== rev || held === true) {
         if (current !== null) stop();
-        rev = `${inst.rev}.${n.rev}`;
+        if (next !== rev) line = 0;
+        rev = next;
+        held = false;
         const lines = def.cells[n.role]?.[inst.phase] ?? [];
         const task = (current = gameTask(ct));
         task
           .run(async () => {
-            for (const line of lines) await runLine({ ct, npcKey, inst, def, task }, line);
+            for (; line < lines.length; line++) await runLine({ ct, npcKey, inst, def, task }, lines[line]);
           })
           .catch((e) => task.isCancelled || warn(`${id} ${npcKey}: ${e instanceof Error ? e.message : e}`))
           .finally(() => current === task && (n.done = true));
@@ -330,16 +349,27 @@ async function updateSight(ct: JshCli.RunArg, inst: ScInstance) {
 async function applyRules(ct: JshCli.RunArg, inst: ScInstance, def: ScenarioDef, s: ScState) {
   for (const rule of def.rules) {
     if (rule.phases !== undefined && rule.phases.includes(inst.phase) === false) continue;
-    const when = compile<(s: ScState, n: ScNpc) => boolean>(rule.when);
+    const when = compile<(s: ScState, n: ScNpc) => unknown>(rule.when);
     const apply = rule.apply === undefined ? undefined : compile<(s: ScState, n: ScNpc) => void>(rule.apply);
     for (const n of s.inRole(rule.for)) {
-      if (when(s, n) !== true) continue;
+      const held = when(s, n);
+      if (held === undefined || held === false || held === null) continue;
+      /** The npc `when` returned, e.g. who saw them */
+      const by = typeof held === "object" && "key" in held ? (held as ScNpc) : undefined;
       const role = n.role;
-      for (const line of rule.do) {
-        await runLine({ ct, npcKey: n.key, inst, def, task: gameTask(ct) }, line).catch((e) =>
-          warn(`${inst.id}: ${e}`),
-        );
-      }
+      const vars = { for: n.key, by: by?.key ?? "" };
+      const runLines = async (m: ScNpc, lines: string[]) => {
+        for (const line of lines) {
+          await runLine({ ct, npcKey: m.key, inst, def, task: gameTask(ct), vars }, line).catch((e) =>
+            warn(`${inst.id}: ${e}`),
+          );
+        }
+      };
+      const pair = by === undefined ? [n] : [n, by];
+      for (const m of pair) m.held = true;
+      await wSleep(ct, 2 * actorPollSecs); // their actors stop first
+      await Promise.all([runLines(n, rule.do), by === undefined ? undefined : runLines(by, rule.by)]);
+      for (const m of pair) m.held = false;
       apply?.(s, n);
       if (n.role !== role) {
         n.rev++;
@@ -404,6 +434,15 @@ function freshName(w: JshCli.WorldState) {
   }
 }
 
+/** `items` in a random order, in place */
+function shuffle<T>(items: T[]) {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
 const csv = (x: unknown) => (typeof x === "string" ? x.split(",") : undefined);
 const dist = (u: Geom.VectJson, v: Geom.VectJson) => Math.hypot(u.x - v.x, u.y - v.y);
 const isNaked = (arg: string) => arg.includes(":") === false && arg.startsWith("-") === false;
@@ -433,6 +472,8 @@ const castNames = [
   "wes",
   "zoe",
 ];
+/** Metres between the spots by the start the cast gathers at */
+const nearStartGap = 1.5;
 /** Spots a cast member may be placed at: not a doable, nor in a doorway */
 const standKinds = ["wall", "corner", "cover", "fill", "decor"];
 /** Game seconds between the director's checks, unless its params say */

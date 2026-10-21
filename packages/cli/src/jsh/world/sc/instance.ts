@@ -41,6 +41,8 @@ export type ScNpc = {
   lost?: number;
   /** Out of the instance: their actor was lost twice */
   out?: boolean;
+  /** Held by a rule running its lines: their actor stops, then resumes its line */
+  held?: boolean;
   [mark: string]: unknown;
 };
 
@@ -52,8 +54,8 @@ export type ScState = ScInstance & {
   all(roleOrPred: string | NpcPred, pred?: NpcPred): boolean;
   some(roleOrPred: string | NpcPred, pred?: NpcPred): boolean;
   inRole(role: string): ScNpc[];
-  /** Some npc of `role` sees `n`, as of the last check */
-  seenBy(role: string, n: ScNpc): boolean;
+  /** An npc of `role` who sees `n`, as of the last check */
+  seenBy(role: string, n: ScNpc): undefined | ScNpc;
 };
 
 type NpcPred = (n: ScNpc) => boolean;
@@ -113,7 +115,7 @@ export function stateOf(inst: ScInstance, def: ScenarioDef, nowSecs: number): Sc
       return f.list.some(f.pred);
     },
     inRole: (role) => npcs.filter((n) => n.role === role),
-    seenBy: (role, n) => npcs.some((m) => m.role === role && m !== n && inst.sight.includes(`${m.key} ${n.key}`)),
+    seenBy: (role, n) => npcs.find((m) => m.role === role && m !== n && inst.sight.includes(`${m.key} ${n.key}`)),
   };
 }
 

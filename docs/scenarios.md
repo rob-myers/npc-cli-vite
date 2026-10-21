@@ -27,7 +27,7 @@ One file per scenario, `packages/media/src/scenario/scenario/{slug}.json`, serve
 - `params`: read by a line's `$name`, and by conditions as `s.params`. `perceiveSecs` and `reactSecs` pace sight and reactions.
 - `phases`: in order, each ending once `until`, a function of the state, holds.
 - `cells`: by role, then phase, the lines its npcs run in order.
-- `rules`: for each npc of `for`, in `phases` if given: once `when` holds, it runs `do`, then `apply` changes the state, e.g. `n.role = 'seeker'`.
+- `rules`: for each npc of `for`, in `phases` if given: once `when` holds, it runs `do`, then `apply` changes the state, e.g. `n.role = 'seeker'`. If `when` returns an npc, e.g. the seeker from `seenBy`, that npc runs `by` beside `do`. Both are held meanwhile: their actors stop, then resume the line they were on. In those lines `$for` is the npc and `$by` the other.
 
 ## Running: jsh `sc`
 
@@ -46,7 +46,7 @@ One file per scenario, `packages/media/src/scenario/scenario/{slug}.json`, serve
 
 **An actor** runs its npc's cell, and starts afresh on a phase change, or a role change of its own. Paused by `sc pause`, not by the World, its npc stops, and it starts its cell afresh on resume. One lost, e.g. killed from the Jobs panel, is restarted once. Lost again, its npc is out.
 
-**State** is at `/shared/sc/{id}`: `phase`, `phaseSecs`, `params`, `npcs` (each `role`, `done`, `rev`, and marks a rule adds, e.g. `found`), `seen`, `reserved`, and `sight` (pairs `{watcher} {seen}`: in sight, eyes open, within 60° of facing, and not crouched behind cover). Helpers: `all`, `some`, `inRole`, `seenBy(role, n)`.
+**State** is at `/shared/sc/{id}`: `phase`, `phaseSecs`, `params`, `npcs` (each `role`, `done`, `rev`, and marks a rule adds, e.g. `found`), `seen`, `reserved`, and `sight` (pairs `{watcher} {seen}`: in sight, eyes open, within 60° of facing, and not crouched behind cover). Helpers: `all`, `some`, `inRole`, `seenBy(role, n)` (an npc of `role` seeing `n`).
 
 ### Steps
 
@@ -56,9 +56,10 @@ One file per scenario, `packages/media/src/scenario/scenario/{slug}.json`, serve
 | `face <target>` | `wall` (their spot's nearest occluder), an npc, a role's nearest, or a spot |
 | `pose eyes:shut`, `pose crouch`, `pose stand` | |
 | `say <words>`, `count to:<n> [every:<secs>]` | |
-| `hide from:<role or npcs> [prefer:<kinds>]` | To a free spot none of them sees, reserved for them |
+| `wait <secs>`, `wait up:<secs>`, `wait <least> up:<most>` | Game seconds, or a random while |
+| `hide from:<role or npcs> [prefer:<kinds>] [away:<m>]` | To a free spot none of them sees, `away` metres from them if one is, reserved for them |
 | `stay hidden from:<role or npcs>` | Threatened from where they stand or are headed for `reactSecs`, crouches behind cover, else hides again |
-| `search` | To the spot seeing most not yet `seen`, again and again |
+| `search` | To the spot seeing most not yet `seen`, looking to either side there for `searchPauseSecs`, again and again |
 
 Spot queries run in the jsh worker (`docs/spots.md`).
 

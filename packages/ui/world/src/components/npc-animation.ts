@@ -1047,6 +1047,7 @@ export class NpcAnimation {
       return;
     }
 
+    this.npc.last.idleTime = this.w.gameTime.now();
     const agent = this.npc.agent;
 
     if (agent) {

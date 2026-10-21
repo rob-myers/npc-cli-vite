@@ -4,14 +4,22 @@ import { spotQuery } from "../plan.main";
 import type { ScInstance } from "./instance";
 
 /** What a step runs with: its npc, its instance, and a game-time task cancelled by a kill or a change of cell */
-export type StepCtx = { ct: JshCli.RunArg; npcKey: string; inst: ScInstance; def: ScenarioDef; task: Task };
+export type StepCtx = {
+  ct: JshCli.RunArg;
+  npcKey: string;
+  inst: ScInstance;
+  def: ScenarioDef;
+  task: Task;
+  /** Read by `$name` before `params`, e.g. a rule's `$for` and `$by` */
+  vars?: Record<string, string>;
+};
 
 /**
  * A cell's line, e.g. `go to:start`, run as `npcKey`. `$name` reads the definition's params — see `docs/scenarios.md`
  */
 export async function runLine(ctx: StepCtx, line: string) {
   const [name, ...args] = line
-    .replace(/\$(\w+)/g, (_, key: string) => String(ctx.def.params[key] ?? ""))
+    .replace(/\$(\w+)/g, (_, key: string) => String(ctx.vars?.[key] ?? ctx.def.params[key] ?? ""))
     .trim()
     .split(/\s+/);
   const step = steps[name];
@@ -54,6 +62,12 @@ const steps: Record<string, Step> = {
   async say(ctx, words) {
     ctx.ct.w.speech.say(ctx.npcKey, words.join(" "));
   },
+  /** `wait <secs>`, `wait up:<secs>` a random time up to it, or `wait <least> up:<most>` */
+  async wait(ctx, args) {
+    const { up } = ctx.ct.api.jsArg(args) as { up?: number };
+    const least = Number(args.find((arg) => arg.includes(":") === false) ?? 0);
+    await waitSecs(ctx, up === undefined ? least : least + Math.random() * (Number(up) - least));
+  },
   /** `count to:<n> [every:<secs>]`: says each number in turn, a game second apart unless `every` says */
   async count(ctx, args) {
     const opts = ctx.ct.api.jsArg(args) as { to?: number; every?: number };
@@ -63,11 +77,14 @@ const steps: Record<string, Step> = {
       await waitSecs(ctx, every);
     }
   },
-  /** `hide from:<role or npcs> [prefer:<kinds>]`: to a free spot of the area none of them sees, reserved for them */
+  /**
+   * `hide from:<role or npcs> [prefer:<kinds>] [away:<m>]`: to a free spot of the area none of them sees,
+   * `away` metres from them if one is, reserved for them
+   */
   async hide(ctx, args) {
-    const opts = ctx.ct.api.jsArg(args) as { from?: string; prefer?: string };
+    const opts = ctx.ct.api.jsArg(args) as { from?: string; prefer?: string; away?: number };
     if (opts.from === undefined) throw Error("hide: expected from:<role>");
-    const spot = await reserveHidingSpot(ctx, opts.from, opts.prefer?.split(","));
+    const spot = await reserveHidingSpot(ctx, opts.from, opts.prefer?.split(","), undefined, opts.away);
     if (spot !== null) await goTo(ctx, spot);
   },
   /**
@@ -96,20 +113,40 @@ const steps: Record<string, Step> = {
   /** `search`: to the spot seeing most of the area not yet seen, again and again. All seen, it starts over */
   async search(ctx) {
     const { ct, inst, npcKey } = ctx;
+    /** Spots they were blocked from, skipped until the area is all seen */
+    const blocked = new Set<string>();
     while (true) {
-      const [spot] = await spotQuery(ct, [{ q: "search", npc: npcKey, rooms: ctx.def.rooms, seen: inst.seen }]);
+      const [spot] = await spotQuery(ct, [
+        { q: "search", npc: npcKey, rooms: ctx.def.rooms, seen: inst.seen, exclude: [...blocked] },
+      ]);
       if (isSpot(spot) === false) {
         inst.seen = [];
+        blocked.clear();
         await waitSecs(ctx, param(ctx, "perceiveSecs", 0.25));
         continue;
       }
-      await goTo(ctx, spot);
+      if ((await goTo(ctx, spot)) === false) {
+        blocked.add(spot.key);
+        continue;
+      }
+      await lookAround(ctx, spot, param(ctx, "searchPauseSecs", 2));
       const [seen] = await spotQuery(ct, [{ q: "seenBy", a: spot.key }]);
       const keys = [spot.key, ...(Array.isArray(seen) ? seen.map((s) => s.key) : [])];
       inst.seen = [...new Set([...inst.seen, ...keys])];
     }
   },
 };
+
+/** Looks to either side of where `spot` faces, else of a random way, pausing `secs` in all */
+async function lookAround(ctx: StepCtx, spot: WW.SpotJson, secs: number) {
+  const npc = ctx.ct.w.npc.get(ctx.npcKey);
+  const facing = spot.facing ?? Math.random() * 2 * Math.PI;
+  for (const side of [1, -1]) {
+    const angle = facing + side * (0.5 + Math.random() * 0.6);
+    await ctx.task.wait(npc.look({ at: { x: npc.point.x + Math.cos(angle), y: npc.point.y + Math.sin(angle) } }));
+    await waitSecs(ctx, secs / 2);
+  }
+}
 
 /** Whether any of `role` sees their spot, from where they stand or are headed. `crouchHides`: crouching hides them from all */
 async function threat(ctx: StepCtx, role: string) {
@@ -133,7 +170,7 @@ async function threat(ctx: StepCtx, role: string) {
 }
 
 /** A free spot none of `role` sees, now reserved for this npc in place of any they held. `null` if there is none */
-async function reserveHidingSpot(ctx: StepCtx, role: string, prefer?: string[], avoid?: string) {
+async function reserveHidingSpot(ctx: StepCtx, role: string, prefer?: string[], avoid?: string, away?: number) {
   const { inst, npcKey } = ctx;
   const taken = Object.keys(inst.reserved).filter((key) => inst.reserved[key] !== npcKey);
   const [spot] = await spotQuery(ctx.ct, [
@@ -144,6 +181,7 @@ async function reserveHidingSpot(ctx: StepCtx, role: string, prefer?: string[], 
       rooms: ctx.def.rooms,
       prefer,
       exclude: avoid === undefined ? taken : [...taken, avoid],
+      away,
     },
   ]);
   if (isSpot(spot) === false) return null;
@@ -163,9 +201,25 @@ function keysInRole(ctx: StepCtx, from: string) {
   });
 }
 
-function goTo(ctx: StepCtx, at: Geom.VectJson) {
-  return ctx.task.wait(ctx.ct.w.e.move({ npcKey: ctx.npcKey, to: { x: at.x, y: at.y } }));
+/** Walks there, giving up once they stall, e.g. blocked by the player. Resolves whether they arrived */
+async function goTo(ctx: StepCtx, at: Geom.VectJson) {
+  const npc = ctx.ct.w.npc.get(ctx.npcKey);
+  const move = ctx.ct.w.e.move({ npcKey: ctx.npcKey, to: { x: at.x, y: at.y } }).then(
+    () => true,
+    (e) => (e instanceof Error && e.message === "blocked" ? false : Promise.reject(e)),
+  );
+  for (let from = { ...npc.point }; ; from = { ...npc.point }) {
+    const arrived = await ctx.task.wait(move, 1000 * stall.secs);
+    if (arrived !== undefined) return arrived;
+    if (Math.hypot(npc.point.x - from.x, npc.point.y - from.y) < stall.dist) {
+      npc.rejectAll(Error("blocked"));
+      return move;
+    }
+  }
 }
+
+/** Under `dist` metres walked in `secs` of game time is a stall */
+const stall = { secs: 2, dist: 0.3 };
 
 /** Waits game seconds, unless cancelled */
 function waitSecs(ctx: StepCtx, secs: number) {

@@ -24,10 +24,10 @@ declare namespace WW {
     | { q: "seenBy"; a: string }
     /** The spot nearest a point, in room `grKey` if given */
     | { q: "at"; point: Geom.VectJson; grKey?: null | string }
-    /** The best spot in `rooms` none of `from` sees: of `prefer` kinds first, then nearest `npc` */
-    | { q: "hide"; npc: string; from: string[]; rooms: string[]; prefer?: string[]; exclude?: string[] }
+    /** The best spot in `rooms` none of `from` sees, `away` metres from them if any is: of `prefer` kinds first, then nearest `npc` */
+    | { q: "hide"; npc: string; from: string[]; rooms: string[]; prefer?: string[]; exclude?: string[]; away?: number }
     /** The spot in `rooms` whose sight adds most not yet `seen`, for its distance from `npc` */
-    | { q: "search"; npc: string; rooms: string[]; seen: string[] };
+    | { q: "search"; npc: string; rooms: string[]; seen: string[]; exclude?: string[] };
 
   /** A spot in world coords; `sees` counts the spots it sees */
   type SpotJson = {

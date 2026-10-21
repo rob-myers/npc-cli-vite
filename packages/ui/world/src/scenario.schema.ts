@@ -60,6 +60,8 @@ export const ScenarioDefSchema = z.object({
         phases: z.array(z.string()).optional(),
         when: z.string(),
         do: z.array(z.string()).default([]),
+        /** Lines for the npc `when` returns, e.g. the seeker who saw them, run beside `do` */
+        by: z.array(z.string()).default([]),
         apply: z.string().optional(),
         /** A few words for the rule, e.g. on a diagram */
         label: z.string().optional(),
