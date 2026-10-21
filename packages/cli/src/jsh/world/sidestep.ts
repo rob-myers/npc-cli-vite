@@ -6,7 +6,9 @@ import { parked } from "./pred";
 /**
  * Npcs step out of the way (idempotent).
  * - idle ones holding up a walker strafe off-path, partly backing away, turning to face them.
- * - the player never does.
+ * - stood pacified ones do too, without turning.
+ * - the player does too, unless aiming or crouched.
+ * - none does within `stillSecs` of stopping, e.g. having just stepped aside.
  * - collapsed npcs sans padding are parked so they don't block navmesh.
  *
  * ```sh
@@ -56,9 +58,11 @@ function onSidestepEvent(e: JshCli.Event, w: JshCli.WorldState) {
   }
 }
 
-/** Stood idle on their feet, and not the player */
+/** Stood idle on their feet for `stillSecs`, and if the player, neither aiming nor crouched */
 function canSidestep(w: JshCli.WorldState, npc: JshCli.Npc) {
-  if (w.player.is(npc.key) === true || npc.agent === null || npc.anim.hurt !== null) return false;
+  if (w.gameTime.now() - npc.last.idleTime < sidestepConfig.stillSecs) return false;
+  if (npc.agent === null || (npc.anim.hurt !== null && npc.anim.hurt.key !== "pacified")) return false;
+  if (w.player.is(npc.key) === true && (npc.anim.face.aim !== null || npc.anim.crouched === true)) return false;
   return !(npc.isMoving() || npc.isLooking() || npc.isNotStanding() || npc.isFading());
 }
 
@@ -75,7 +79,7 @@ function heldUp(w: JshCli.WorldState, beside: Map<string, Beside>, npc: JshCli.N
   return false;
 }
 
-/** Strafes `npc` off `walker`'s path on their side of it, partly back from them, turning to face them */
+/** Strafes `npc` off `walker`'s path on their side of it, partly back from them, turning to face them unless pacified */
 function stepAside(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc) {
   const [vx, , vz] = walker.agent?.velocity ?? [0, 0, 0];
   const dx = npc.position.x - walker.position.x;
@@ -89,8 +93,8 @@ function stepAside(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc) {
   if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < sidestepConfig.minMove) return;
   /** Eased round to face them whilst stepping, dropped at rest */
   const aim = { at: walker.point, rate: 1, untilRest: true };
-  npc.anim.face.aim = aim;
-  void w.e.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true }).catch(() => {
+  if (npc.anim.hurt === null) npc.anim.face.aim = aim;
+  void w.e.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true, shove: true }).catch(() => {
     if (npc.anim.face.aim === aim) npc.anim.face.aim = null; // a new push may interrupt
   });
 }
@@ -123,6 +127,8 @@ const sidestepConfig = {
   minMove: 0.2,
   /** Up to this share of a step is back, away from the walker */
   backMax: 0.6,
+  /** Seconds after stopping before they step aside, so a step aside or an arrival settles first */
+  stillSecs: 2,
   /** Seconds a collapsed npc lies where they fell before being parked */
   parkAfterSecs: 1,
   /** Metres at most a collapsed npc is parked from where they fell: further reads as a teleport */

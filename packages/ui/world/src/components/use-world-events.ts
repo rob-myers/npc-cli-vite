@@ -176,9 +176,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
         };
       },
-      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near }) {
+      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near, shove }) {
         const npc = w.npc.get(npcKey);
-        if (npc.anim.hurt !== null) throw Error("hurt");
+        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) throw Error("hurt");
         if (w.player.is(npcKey) && w.npcFocus?.isFixated() === true) throw Error("focused");
         /** Can be overridden if unreachable due to locked doors */
         let groundPoint = helper.parseGroundPoint(to);
@@ -254,6 +254,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             groundPoint = helper.parseGroundPoint(nearDoor.position);
           }
 
+          // an aim held until rest, e.g. a sidestep's, gives way to a new move
+          if (strafe !== true && npc.anim.face.aim?.untilRest === true) npc.anim.face.aim = null;
           npc.anim.strafe = strafe ?? Boolean(npc.anim.face.aim); // aiming, they strafe unless told not to
           npc.anim.strafeFollowsAim = strafe === undefined; // so an npc armed mid-move strafes at once
           npc.anim.backwards =
