@@ -28,7 +28,6 @@ import {
   embodiedSnapCancel,
   embodiedZoomInRate,
   frontierMargin,
-  frontierNearest,
   frontierNearFrac,
   frontierPanFrac,
   frontierRate,
@@ -747,10 +746,9 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.zoomCrossFadeMs === 0) state.zoomCrossFadeMs = performance.now();
       },
       /**
-       * The outer zoom stop is the nearest radius that still shows both the player and their
-       * frontier, with `frontierMargin` to spare — the view held between them by `followPlayer`
-       * — up to the persisted stop, so open floor is seen from as far as ever and a wall ahead is
-       * seen from close. Eased, since the frontier jumps as they turn past a doorway, and eased
+       * Following, the inner zoom stop is the nearest radius that still shows both the player and
+       * their frontier, with `frontierMargin` to spare — the view held between them by `followPlayer`
+       * — up to the persisted OUTER stop. The outer stop is that by the persisted stops' ratio. Eased, since the frontier jumps as they turn past a doorway, and eased
        * BACK to the persisted stops whenever the view is not following the player — a look press
        * only pans, and a free look is as high as ever. `update` re-derives the radius from the
        * stops each frame, so moving the stop is all that moving the camera takes
@@ -809,10 +807,10 @@ export function WorldView(props: React.PropsWithChildren) {
           // the view sits `frontierPanFrac` of the way along, so the far end is what must fit
           const far = Math.max(frontierPanFrac, 1 - frontierPanFrac) * frontierMargin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
-          wanted = Math.min(outer, Math.max(min + (outer - min) * frontierNearFrac, fit));
-          // and zoomed in, the same fit draws the INNER stop in — only ever nearer than persisted,
-          // so open floor is seen from the usual distance and a wall ahead from closer still
-          wantedMin = Math.min(min, Math.max(frontierNearest, fit));
+          // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
+          wantedMin = Math.min(outer, Math.max(min + (outer - min) * frontierNearFrac, fit));
+          // zoomed out, further by the persisted stops' own ratio
+          wanted = wantedMin * (outer / min);
         }
         tmpStops[0] = wanted;
         tmpStops[1] = wantedMin;

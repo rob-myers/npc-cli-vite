@@ -190,9 +190,9 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
 
-**The stops draw in** (`easeFrontier`, in `onCameraFrame`):
-- `controls.maxDistance` eases to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare. It is clamped between `frontierNearFrac` of the travel and the persisted stop.
-- `controls.minDistance` eases to the same fit, clamped between `frontierNearest` and the persisted inner stop.
+**Following, the stops sit further out** (`easeFrontier`, in `onCameraFrame`), as the 30° fov is narrow:
+- `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare. It is clamped between `frontierNearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
+- `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
 - Both go back to persisted when not following (a look press only pans), or when there is nothing to read.
 - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
 - On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.

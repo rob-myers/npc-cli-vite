@@ -183,8 +183,6 @@ export const frontierReadMinMs = 50;
 export const frontierNearFrac = 0.05; // not `0`: `t` divides by the travel that would leave
 export const frontierMargin = 1.3;
 export const frontierPanFrac = 0.5;
-/** The nearest the INNER stop comes, in metres, when the frontier is close — see `easeFrontier` */
-export const frontierNearest = 4;
 
 /** Camera rotate speed: touch drags are much shorter than mouse drags, so they get more per-pixel */
 export const rotateSpeedDesktop = 1;
