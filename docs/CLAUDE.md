@@ -179,9 +179,9 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ### Following the player
 
 **Zoomed out, the view frames the player and their frontier.**
-- `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierReadMinMs`.
+- `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierConfig.readMinMs`.
 - It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
-- `followPlayer` holds the target `frontierPanFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
+- `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
 **Look and follow**
 - `follow` is on or off (`setFollow`). A long press on the button, or holding `f`, toggles it.
@@ -191,7 +191,7 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
 
 **Following, the stops sit further out** (`easeFrontier`, in `onCameraFrame`), as the 30° fov is narrow:
-- `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare. It is clamped between `frontierNearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
+- `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
 - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
 - Both go back to persisted when not following (a look press only pans), or when there is nothing to read.
 - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.

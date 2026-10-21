@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useContext, useEffect } from "react";
 import type * as THREE from "three/webgpu";
-import { frontierCalmRate, frontierSmoothRate } from "../const.env";
+import { frontierConfig } from "../const.env";
 import { WorldContext } from "./world-context";
 
 /**
@@ -31,10 +31,10 @@ export default function LightSweep() {
     );
     // and how far ahead they can see, off the sweep just dispatched — only whilst it is wanted
     if (player !== undefined && w.view.cameraMode === "embodied") {
-      // eased more gently whilst they are off the mesh or mid fade-spawn — see `frontierCalmRate`
+      // eased more gently whilst they are off the mesh or mid fade-spawn — see `frontierConfig.calmRate`
       const calm = player.agentId === null || player.isFading() === true;
       // the way their head faces, which is not always their body's
-      w.view.playerFrontier.update(player.lookY, delta, calm ? frontierCalmRate : frontierSmoothRate);
+      w.view.playerFrontier.update(player.lookY, delta, calm ? frontierConfig.calmRate : frontierConfig.smoothRate);
     }
   }, -2);
 

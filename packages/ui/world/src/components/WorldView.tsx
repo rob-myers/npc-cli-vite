@@ -18,6 +18,7 @@ import { npcDims } from "../const.both";
 import {
   cameraFov,
   cameraRefAspect,
+  cameraSpeed,
   compilingShadersText,
   crosshairY,
   defaultCameraMaxDistance,
@@ -27,17 +28,10 @@ import {
   embodiedSnapArm,
   embodiedSnapCancel,
   embodiedZoomInRate,
-  frontierMargin,
-  frontierNearFrac,
-  frontierPanFrac,
-  frontierRate,
+  frontierConfig,
   rgbShiftZoomedOutScale,
   roomLabel,
-  rotateSpeedDesktop,
-  rotateSpeedMobile,
   unfoldDelayMs,
-  zoomSpeedDesktop,
-  zoomSpeedMobile,
 } from "../const.env";
 import {
   type CameraControls as BaseCameraControls,
@@ -121,8 +115,8 @@ export function WorldView(props: React.PropsWithChildren) {
         maxDistance: defaultCameraMaxDistance,
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
-        rotateSpeed: w.touchDevice ? rotateSpeedMobile : rotateSpeedDesktop,
-        zoomSpeed: w.touchDevice ? zoomSpeedMobile : zoomSpeedDesktop,
+        rotateSpeed: w.touchDevice ? cameraSpeed.rotate.touch : cameraSpeed.rotate.desktop,
+        zoomSpeed: w.touchDevice ? cameraSpeed.zoom.touch : cameraSpeed.zoom.desktop,
       },
       initial: saved.cameraInitial ?? defaultInitialCamera,
       persistedCamera: null,
@@ -525,8 +519,8 @@ export function WorldView(props: React.PropsWithChildren) {
         if (state.cameraMode !== "embodied" || state.playerFrontier.ahead(tmpAhead) === false) {
           return false;
         }
-        let offsetX = tmpAhead.x * frontierPanFrac;
-        let offsetZ = tmpAhead.z * frontierPanFrac;
+        let offsetX = tmpAhead.x * frontierConfig.panFrac;
+        let offsetZ = tmpAhead.z * frontierConfig.panFrac;
         const { controls } = state;
         const camera = controls.object;
         const view = camera.matrixWorldInverse;
@@ -544,7 +538,7 @@ export function WorldView(props: React.PropsWithChildren) {
           const z = controls.target.z - offsetZ;
           const feet = getOffCentre(tmpProjected.set(x, floorY, z), camera, back);
           const head = getOffCentre(tmpProjected.set(x, topY, z), camera, back);
-          const over = Math.max(feet, head) * frontierMargin;
+          const over = Math.max(feet, head) * frontierConfig.margin;
           if (over <= 1) break;
           offsetX /= over;
           offsetZ /= over;
@@ -616,7 +610,9 @@ export function WorldView(props: React.PropsWithChildren) {
         const { minDistance: inner, maxDistance: outer } = state.ctrlOpts;
         state.labelScale.value = clamp01(max / outer);
         /** `0` with the outer stop as near as `easeFrontier` draws it, `1` at the persisted one */
-        const drawnOut = clamp01(((max - inner) / (outer - inner) - frontierNearFrac) / (1 - frontierNearFrac));
+        const drawnOut = clamp01(
+          ((max - inner) / (outer - inner) - frontierConfig.nearFrac) / (1 - frontierConfig.nearFrac),
+        );
         state.labelZoomFade.value =
           (roomLabel.nearAlpha + (roomLabel.farAlpha - roomLabel.nearAlpha) * eased) *
           (roomLabel.drawnInAlpha + (1 - roomLabel.drawnInAlpha) * drawnOut);
@@ -747,7 +743,7 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       /**
        * Following, the inner zoom stop is the nearest radius that still shows both the player and
-       * their frontier, with `frontierMargin` to spare — the view held between them by `followPlayer`
+       * their frontier, with `frontierConfig.margin` to spare — the view held between them by `followPlayer`
        * — up to the persisted OUTER stop. The outer stop is that by the persisted stops' ratio. Eased, since the frontier jumps as they turn past a doorway, and eased
        * BACK to the persisted stops whenever the view is not following the player — a look press
        * only pans, and a free look is as high as ever. `update` re-derives the radius from the
@@ -769,12 +765,12 @@ export function WorldView(props: React.PropsWithChildren) {
         const now = performance.now();
         const deltaSecs = Math.min((now - state.frontierMs) / 1000, 0.1);
         state.frontierMs = now;
-        const alpha = 1 - Math.exp(-frontierRate * deltaSecs);
+        const alpha = 1 - Math.exp(-frontierConfig.rate * deltaSecs);
 
         const remaining = wanted - controls.maxDistance;
         const remainingMin = wantedMin - controls.minDistance;
         const remainingOffset = Math.hypot(tmpOffset.x - offset.x, tmpOffset.z - offset.z);
-        if (Math.max(Math.abs(remaining), Math.abs(remainingMin), remainingOffset) < frontierSettleUntil) {
+        if (Math.max(Math.abs(remaining), Math.abs(remainingMin), remainingOffset) < frontierConfig.settleUntil) {
           controls.maxDistance = wanted;
           controls.minDistance = wantedMin;
           offset.x = tmpOffset.x;
@@ -804,11 +800,11 @@ export function WorldView(props: React.PropsWithChildren) {
           const alongX = Math.abs(tmpAhead.x * m[0] + tmpAhead.z * m[2]);
           const alongY = Math.abs(tmpAhead.x * m[4] + tmpAhead.z * m[6]);
           const halfTan = Math.tan((camera.fov * Math.PI) / 360);
-          // the view sits `frontierPanFrac` of the way along, so the far end is what must fit
-          const far = Math.max(frontierPanFrac, 1 - frontierPanFrac) * frontierMargin;
+          // the view sits `frontierConfig.panFrac` of the way along, so the far end is what must fit
+          const far = Math.max(frontierConfig.panFrac, 1 - frontierConfig.panFrac) * frontierConfig.margin;
           const fit = Math.max((alongX * far) / (halfTan * camera.aspect), (alongY * far) / halfTan);
           // zoomed in, a follow is as far out as a free look zoomed out: the fov is too narrow for nearer
-          wantedMin = Math.min(outer, Math.max(min + (outer - min) * frontierNearFrac, fit));
+          wantedMin = Math.min(outer, Math.max(min + (outer - min) * frontierConfig.nearFrac, fit));
           // zoomed out, further by the persisted stops' own ratio
           wanted = wantedMin * (outer / min);
         }
@@ -2130,8 +2126,6 @@ function getPixelRatio() {
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
 const followRate = 6;
 const followUntil = 0.01;
-/** Near enough the outer stop it is easing to that it simply lands there */
-const frontierSettleUntil = 0.001;
 
 /**
  * An animated `lookAt` lasts `lookAtMinMs + distance * lookAtMsPerUnit`, capped — and scaled down

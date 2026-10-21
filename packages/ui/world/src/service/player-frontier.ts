@@ -1,16 +1,16 @@
-import { frontierHalfDeg, frontierReadMinMs } from "../const.env";
+import { frontierConfig } from "../const.env";
 import { lightAngles, type PlayerLight } from "./player-light";
 
 /**
  * How far the player can see ahead, in metres — read off the light's own sweep, which has already
- * cast every direction on the GPU. The furthest of a fan `frontierHalfDeg` either side of the
+ * cast every direction on the GPU. The furthest of a fan `frontierConfig.halfDeg` either side of the
  * facing, since one ray flickers as they turn past a jamb. Read only after a fresh sweep, and at
- * most once per `frontierReadMinMs`; the read is asynchronous, so the answer is a frame or so
+ * most once per `frontierConfig.readMinMs`; the read is asynchronous, so the answer is a frame or so
  * behind, which the eased camera never notices — provided a frame follows, hence `onRead`, since
  * under a demand frameloop the frames may have stopped. See `WorldView`'s `easeFrontier`
  */
 export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => void): PlayerFrontier {
-  const halfCount = Math.round((lightAngles * frontierHalfDeg) / 360);
+  const halfCount = Math.round((lightAngles * frontierConfig.halfDeg) / 360);
   const table = new Float32Array(lightAngles);
   /** The frontier vector, eased: the reading leaps, and a turn swings it. `null` until first read */
   let eased: null | { x: number; z: number } = null;
@@ -43,7 +43,7 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       }
 
       const nowMs = performance.now();
-      if (pending === false && sweeps !== readSweep && nowMs - lastReadMs >= frontierReadMinMs) {
+      if (pending === false && sweeps !== readSweep && nowMs - lastReadMs >= frontierConfig.readMinMs) {
         const read = getLight().readTable(table);
         if (read !== null) {
           pending = true;
