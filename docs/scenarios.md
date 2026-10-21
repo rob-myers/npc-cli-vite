@@ -6,70 +6,17 @@ A query becomes an interaction when it is asked again, on a tick or an event, an
 
 ## The panel: `ui/scenario`
 
-`@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. It is bound to a tty (`meta.sessionKey`, the picker in its top bar), and shows that tty's World (its `WORLD_KEY`, else `meta.worldKey`). Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner. A modal of the panel, e.g. the room picker, is drawn inside it.
+`@npc-cli/ui__scenario` (uiKey `Scenario`), `Scenario.tsx`. `meta.worldKey` names its World (default `world-0`), found by `useWorld`. Without one it still edits. The text zoom buttons (`meta.zoom`) float over its top right corner.
 
 On the left is one list in three sections: **scenarios**, **characters** and **conversations**. Beside it is the entry chosen (`meta.entryKey`): `scenario/{key}`, `character/{slug}` or `talk/{key}`. Wide enough (`wideWidth`, at the text's zoom) the two columns sit side by side and resize (`meta.split`). Narrower, they stack.
 
-### A scenario's card (`ScenarioCard.tsx`)
-
-- **Header:** its title, short form and **run**. On another map, run first asks to switch (`ConfirmDialog`). A live run shows beneath, with pause or resume, and kill.
-- **Phases**, foremost, as the panel last showed them (`meta.phasesView`): the **grid** (`PhaseGrid.tsx`, roles down, phases across, a block per phase when narrow) or the **machine** (`PhaseMachine.tsx`, react-flow: phase nodes joined by their `until`, and roles joined where a rule moves npcs between them). The machine keeps its height and pan and zoom (`meta.machineHeight`, `meta.machineViewport`), and centres the start until it has some. Whilst a run is live its phase is marked, and in the grid each npc is a chip in the cell it is running.
-- **Folded:** runs, area (rooms, and in DEV **pick rooms**, `RoomPicker.tsx`), roles, params.
-- Its buttons run `sc` commands in the bound tty (`runInTty`, `runs.ts`). Its runs are read from `/shared/sc` (`getInstances`, `@npc-cli/cli/sc`), again on each `scenario` event, and each second whilst one is live.
-
-## A definition
-
-One file per scenario, `packages/media/src/scenario/scenario/{slug}.json`, served as characters are (below). `ScenarioDefSchema` (`ui/world/src/scenario.schema.ts`):
-
-- `short`, e.g. `hns`: an instance is `hns-1`, `hns-2`…
-- `map` and `rooms`: the play area. Queries stay inside it.
-- `roles`: by role, `count` and a `skin` key or prefix for those spawned. `cast`: by role, npcs named to play it.
-- `params`: read by a line's `$name`, and by conditions as `s.params`. `perceiveSecs` and `reactSecs` pace sight and reactions.
-- `phases`: in order, each ending once `until`, a function of the state, holds.
-- `cells`: by role, then phase, the lines its npcs run in order.
-- `rules`: for each npc of `for`, in `phases` if given: once `when` holds, it runs `do`, then `apply` changes the state, e.g. `n.role = 'seeker'`. If `when` returns an npc, e.g. the seeker from `seenBy`, that npc runs `by` beside `do`. Both are held meanwhile: their actors stop, then resume the line they were on. In those lines `$for` is the npc and `$by` the other.
-
-## Running: jsh `sc`
-
-`packages/cli/src/jsh/world/sc.ts`, with `sc/instance.ts` (state, also exported as `@npc-cli/cli/sc`) and `sc/steps.ts`.
-
-| Command | Does |
-| --- | --- |
-| `sc list`, `sc info hns` | Definitions; one's summary, `--json` its whole |
-| `sc run hns [role:npc,…] [--switch]` | Starts an instance, and directs it. On another map it refuses unless `--switch` |
-| `sc ps`, `sc default hns-2` | This tty's instances; the one the commands below default to |
-| `sc pause`, `sc resume`, `sc kill` | On the default, or `id:hns-2`. `kill` on an ended one clears it and its spawned npcs |
-| `sc ? 's => …'` | A function of the live state |
-| `sc do npc:abe <line>`, `sc <step> abe …` | A line run as an npc, e.g. `sc hide cal from:rob` |
-
-**`sc run`** casts the roles (named npcs, else spawned with short names, `ada`, `ben`…), starts an **actor** job per npc (tagged `sc={id}`), then is the **director**: every `perceiveSecs` of game time it works out who sees whom, applies the rules, and moves to the next phase once `until` holds. It emits `w.events` `{ key: "scenario", id, kind }`. Killed, it ends its actors and removes the npcs it spawned. Ended by itself, they are left to be seen.
-
-**An actor** runs its npc's cell, and starts afresh on a phase change, or a role change of its own. Paused by `sc pause`, not by the World, its npc stops, and it starts its cell afresh on resume. One lost, e.g. killed from the Jobs panel, is restarted once. Lost again, its npc is out.
-
-**State** is at `/shared/sc/{id}`: `phase`, `phaseSecs`, `params`, `npcs` (each `role`, `done`, `rev`, and marks a rule adds, e.g. `found`), `seen`, `reserved`, and `sight` (pairs `{watcher} {seen}`: in sight, eyes open, within 60° of facing, and not crouched behind cover). Helpers: `all`, `some`, `inRole`, `seenBy(role, n)` (an npc of `role` seeing `n`).
-
-### Steps
-
-| Step | Does |
-| --- | --- |
-| `go to:<place>` | `start`, `near-start`, a spot key or an npc |
-| `face <target>` | `wall` (their spot's nearest occluder), an npc, a role's nearest, or a spot |
-| `pose eyes:shut`, `pose crouch`, `pose stand` | |
-| `say <words>`, `count to:<n> [every:<secs>]` | |
-| `wait <secs>`, `wait up:<secs>`, `wait <least> up:<most>` | Game seconds, or a random while |
-| `hide from:<role or npcs> [prefer:<kinds>] [away:<m>]` | To a free spot none of them sees, `away` metres from them if one is, reserved for them |
-| `stay hidden from:<role or npcs>` | Threatened from where they stand or are headed for `reactSecs`, crouches behind cover, else hides again |
-| `search` | To the spot seeing most not yet `seen`, looking to either side there for `searchPauseSecs`, again and again |
-
-Spot queries run in the jsh worker (`docs/spots.md`).
-
 ## The scenarios
 
-Hide and seek is defined and runs. The rest are stubs in `ui/scenario/src/scenarios.ts`, their cards listing their steps.
+As yet each is a stub in `ui/scenario/src/scenarios.ts`, its card listing its steps.
 
 | Scenario | Npcs | Status |
 | --- | --- | --- |
-| [Hide and seek](#hide-and-seek) | a seeker, 2-3 hiders | runs (`hide-and-seek.json`) |
+| [Hide and seek](#hide-and-seek) | a seeker, 2-3 hiders | not started |
 | [Guard and intruder](#guard-and-intruder) | 2 guards, an intruder | not started |
 | [Meeting in secret](#meeting-in-secret) | 2 conspirators, a watcher | not started |
 | [Breach and clear](#breach-and-clear) | a squad of 3, those inside | not started |
@@ -112,11 +59,27 @@ Queries: spots by side of a door, coverage (the union of `sees`), the spot seein
 
 ### Queries they share
 
-- **Npc to spot:** `spot of:rob` (the nearest in their room), and their room and facing.
+- **Npc to spot:** `spotOf(npc)`, and their room and facing.
 - **Sight between spots:** `sees`, `seesVia` given which doors are open, `seesDoors`, `crouchHidden`.
 - **Sets of spots:** in reach or in a room, coverage, not yet seen, held by other npcs.
 - **Picking:** nearest, most new coverage, pairs that meet a condition.
 - **Live checks:** who sees whom now, and a reaction when it changes.
+
+## Acts: jsh `act`
+
+The pieces of a scenario, played by hand rather than directed. `act <verb> <npc> …` (`cli/src/jsh/world/act.ts`) runs one on game time until done or killed. Run several as background jobs (`&`) to compose them. `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map.
+
+| Verb | Does |
+| --- | --- |
+| `count rob to:10 [every:1]` | Says each number in turn |
+| `face rob wall` | Looks towards their spot's nearest occluder. Also an npc or a spot key |
+| `hide cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is. Skips spots others stand at or head for |
+| `lurk cal from:rob [react:0.6]` | Seen from where they stand or are headed, still so after `react`: crouches if cover hides them, else hides again |
+| `search rob [pause:2]` | To the spot seeing most not yet seen, looking either side there. All seen, it starts over |
+
+A walk that stalls, e.g. blocked by the player, is given up: `search` skips that spot for a while.
+
+`sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. Both exit 1 if none, for `if` and `while`.
 
 ## Characters
 

@@ -1,13 +1,6 @@
-import { sessionApi } from "@npc-cli/cli";
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
-import {
-  type CharacterEntry,
-  type ScenarioDef,
-  type ScenarioEntry,
-  scenarioChangedEvent,
-  scenarioSlugRe,
-} from "@npc-cli/ui__world/scenario.schema";
+import { type ScenarioEntry, scenarioChangedEvent, scenarioSlugRe } from "@npc-cli/ui__world/scenario.schema";
 import {
   deleteScenarioEntry,
   loadScenarioEntries,
@@ -29,12 +22,11 @@ import {
 import { Allotment } from "allotment";
 import { useContext, useEffect, useRef, useState } from "react";
 import { ConversationCard } from "./ConversationCard";
-import { columnClass, inputClass, sectionClass } from "./classes";
+import { columnClass, inputClass } from "./classes";
 import { conversations } from "./demo/trees";
 import { IconButton, Picker } from "./parts";
-import { ScenarioCard } from "./ScenarioCard";
 import { type ScenarioStub, scenarios } from "./scenarios";
-import type { CardPrefs, ScenarioUiMeta } from "./schema";
+import type { ScenarioUiMeta } from "./schema";
 
 import "./scenario.css";
 
@@ -43,21 +35,8 @@ import "./scenario.css";
  * conversation trees, listed beside the one chosen — see `docs/scenarios.md`
  */
 export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
-  const { uiStore, uiStoreApi } = useContext(UiContext);
-  /** The ttys there are, joined: a string, so the store's selector needs no shallow compare */
-  const ttys = uiStore(({ byId }) =>
-    Object.values(byId)
-      .flatMap(({ meta }) => (meta.uiKey === "Jsh" ? String(meta.sessionKey) : []))
-      .join(" "),
-  )
-    .split(" ")
-    .filter(Boolean);
-  const sessionKey = meta.sessionKey !== undefined && ttys.includes(meta.sessionKey) ? meta.sessionKey : ttys[0];
-  /** The tty's World, else the panel's own */
-  const worldKey =
-    (sessionKey === undefined ? undefined : (sessionApi.getSession(sessionKey)?.var.WORLD_KEY as undefined | string)) ??
-    meta.worldKey;
-  const w = useWorld(worldKey);
+  const w = useWorld(meta.worldKey);
+  const { uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(
     (): State => ({
@@ -83,7 +62,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
       },
       show(key) {
         const entry = key === undefined ? undefined : state.entries[key];
-        state.set({ draft: entry?.kind === "character" ? structuredClone(entry) : null, dirty: false });
+        state.set({ draft: entry === undefined ? null : structuredClone(entry), dirty: false });
       },
       select(key) {
         if (key === state.draft?.key) return;
@@ -91,15 +70,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ScenarioUiMeta).entryKey = key));
         state.show(key);
         const entry = state.entries[key];
-        if (entry?.kind === "character") state.locate(entry);
-      },
-      async saveDef(def) {
-        try {
-          await saveScenarioEntry(def);
-          state.set({ error: null }); // the watcher's `scenario-changed` reloads
-        } catch (e) {
-          state.set({ error: String(e) });
-        }
+        if (entry !== undefined) state.locate(entry);
       },
       patch(partial) {
         if (state.draft === null) return;
@@ -164,7 +135,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
             w.hud?.update();
           }
           w.view.forceUpdate();
-          scenarioShared.set(worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
+          scenarioShared.set(meta.worldKey, { renamed: { from: prev, to: next } }); // a map shows them still
         } catch (e) {
           state.set({ error: String(e) });
         }
@@ -176,9 +147,6 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         npc.setSkin(skin);
         w.view.forceUpdate();
       },
-      setPrefs(patch) {
-        uiStoreApi.setUiMeta(meta.id, (draft) => void Object.assign(draft, patch));
-      },
       zoomBy(delta) {
         uiStoreApi.setUiMeta(meta.id, (draft) => {
           const d = draft as ScenarioUiMeta;
@@ -188,7 +156,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
       locate(entry) {
         if (w === undefined) return;
         const npc = entry.npcKey === undefined ? undefined : w.n?.[entry.npcKey];
-        if (npc !== undefined) return scenarioShared.set(worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
+        if (npc !== undefined) return scenarioShared.set(meta.worldKey, { locate: { x: npc.point.x, y: npc.point.y } });
         const grKey = entry.maps[w.mapKey]?.rooms[0];
         if (grKey === undefined) return;
         const { gmId, roomId } = helper.getGmRoomId(grKey as Geomorph.GmRoomKey);
@@ -197,7 +165,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
         if (room === undefined) return;
         const { x, y } = room.center;
         const { a, b, c, d, e, f } = gm.transform;
-        scenarioShared.set(worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
+        scenarioShared.set(meta.worldKey, { locate: { x: a * x + c * y + e, y: b * x + d * y + f } });
       },
     }),
     { deps: [w, meta.entryKey] },
@@ -215,20 +183,14 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
 
   // a map of this World outlines the entry's rooms and doors, and spawns its npc as edited
   useEffect(() => {
-    scenarioShared.set(worldKey, { entry: state.draft === null ? null : { ...state.draft } });
-    return () => scenarioShared.set(worldKey, { entry: null });
-  }, [worldKey, state.draft, state.rev]);
-
-  const { draft, entries } = state;
-  const characters = Object.values(entries).filter((e) => e.kind === "character");
-  const defs = Object.values(entries).filter((e) => e.kind === "scenario");
-  /** Those with no definition yet */
-  const stubs = scenarios.filter((x) => defs.every((d) => d.key !== `${scenarioPrefix}${x.key}`));
+    scenarioShared.set(meta.worldKey, { entry: state.draft === null ? null : { ...state.draft } });
+    return () => scenarioShared.set(meta.worldKey, { entry: null });
+  }, [meta.worldKey, state.draft, state.rev]);
 
   // choosing an npc on such a map shows their entry
-  const { npcKey: mapNpcKey } = useScenarioShared(worldKey);
+  const { npcKey: mapNpcKey } = useScenarioShared(meta.worldKey);
   useEffect(() => {
-    const entry = characters.find((e) => mapNpcKey !== null && e.npcKey === mapNpcKey);
+    const entry = Object.values(state.entries).find((e) => mapNpcKey !== null && e.npcKey === mapNpcKey);
     if (entry !== undefined) state.select(entry.key);
   }, [mapNpcKey]);
 
@@ -240,6 +202,7 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
     return () => observer.disconnect();
   }, []);
 
+  const { draft, entries } = state;
   const zoom = meta.zoom ?? 1;
   /** Room for both columns, which are then resizable; else they stack */
   const wide = width / zoom >= wideWidth;
@@ -263,12 +226,11 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
     <div className="p-3 flex flex-col gap-2">
       <div>
         <div className={sectionClass}>scenarios</div>
-        {defs.map((d) => listButton(d.key, d.title, d.summary))}
-        {stubs.map((x) => listButton(`${scenarioPrefix}${x.key}`, x.title, `${x.npcs} (stub)`))}
+        {scenarios.map((x) => listButton(`${scenarioPrefix}${x.key}`, x.title, x.npcs))}
       </div>
       <div>
         <div className={sectionClass}>characters</div>
-        {characters.map((e) => listButton(e.key, e.name || e.key, e.npcKey))}
+        {Object.values(entries).map((e) => listButton(e.key, e.name || e.key, e.npcKey))}
       </div>
       {editable && (
         <div className="flex gap-1">
@@ -325,24 +287,11 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
       </div>
     );
   const conv = conversations.find((c) => `${talkPrefix}${c.key}` === meta.entryKey);
-  const def = defs.find((d) => d.key === meta.entryKey);
-  const stub = stubs.find((x) => `${scenarioPrefix}${x.key}` === meta.entryKey);
+  const stub = scenarios.find((x) => `${scenarioPrefix}${x.key}` === meta.entryKey);
   /** The scenario or conversation chosen, else the character */
   const shownCol =
-    def !== undefined ? (
-      <ScenarioCard
-        w={w}
-        def={def}
-        container={root.current}
-        editable={editable}
-        sessionKey={sessionKey}
-        zoom={zoom}
-        prefs={meta}
-        onPrefs={state.setPrefs}
-        onSave={state.saveDef}
-      />
-    ) : stub !== undefined ? (
-      <ScenarioStubCard stub={stub} />
+    stub !== undefined ? (
+      <ScenarioCard stub={stub} />
     ) : conv !== undefined ? (
       <ConversationCard key={conv.key} w={w} conv={conv} />
     ) : (
@@ -356,15 +305,6 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
     >
       {/* over the pane, so in reach however far it has scrolled */}
       <div className="absolute z-10 top-1 right-1 flex items-center gap-1 px-1 rounded bg-zinc-950/80 opacity-60 hover:opacity-100">
-        {ttys.length > 0 && (
-          <Picker
-            value={sessionKey ?? ""}
-            options={ttys}
-            onChange={(key) =>
-              uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as ScenarioUiMeta).sessionKey = key))
-            }
-          />
-        )}
         <span className="text-zinc-500">{Math.round(zoom * 100)}%</span>
         <IconButton title="smaller text" icon={MagnifyingGlassMinusIcon} onClick={() => state.zoomBy(-zoomStep)} />
         <IconButton title="larger text" icon={MagnifyingGlassPlusIcon} onClick={() => state.zoomBy(zoomStep)} />
@@ -401,8 +341,8 @@ export default function Scenario({ meta }: { meta: ScenarioUiMeta }) {
   );
 }
 
-/** A scenario's steps, until it has a definition */
-function ScenarioStubCard({ stub }: { stub: ScenarioStub }) {
+/** A scenario's steps, until it can be run */
+function ScenarioCard({ stub }: { stub: ScenarioStub }) {
   return (
     <div className="p-3 flex flex-col gap-2">
       <div className="text-zinc-100">{stub.title}</div>
@@ -423,7 +363,7 @@ function ScenarioStubCard({ stub }: { stub: ScenarioStub }) {
 /** Their npc and skin in the World */
 function NpcFields(props: {
   w: WorldState;
-  draft: CharacterEntry;
+  draft: ScenarioEntry;
   onNpcKey(npcKey: string | undefined): void;
   onSkin(skin: string | undefined): void;
 }) {
@@ -476,8 +416,8 @@ function hasRoom(w: WorldState, key: string) {
  */
 function KeyBox(props: {
   w: WorldState | undefined;
-  draft: CharacterEntry;
-  onPatch(partial: Partial<CharacterEntry>): void;
+  draft: ScenarioEntry;
+  onPatch(partial: Partial<ScenarioEntry>): void;
 }) {
   const { w, draft } = props;
   const [text, setText] = useState("");
@@ -580,6 +520,7 @@ function KeyBox(props: {
 /** Prefix a scenario's or a conversation's key in `meta.entryKey`, where a character's is `character/{slug}` */
 const scenarioPrefix = "scenario/";
 const talkPrefix = "talk/";
+const sectionClass = "text-zinc-500 uppercase text-[10px]";
 /** Files are only writable through the DEV server */
 const editable = import.meta.env.DEV;
 const bareButtonClass = "shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-100";
@@ -594,8 +535,8 @@ const maxZoom = 2;
 type State = {
   entries: Record<string, ScenarioEntry>;
   error: null | string;
-  /** The character shown, as edited */
-  draft: null | CharacterEntry;
+  /** The entry shown, as edited */
+  draft: null | ScenarioEntry;
   dirty: boolean;
   /** Counts edits, so a save knows whether more came whilst it was under way */
   rev: number;
@@ -606,17 +547,14 @@ type State = {
   show(key: string | undefined): void;
   select(key: string): void;
   zoomBy(delta: number): void;
-  setPrefs(patch: Partial<CardPrefs>): void;
   /** Their npc in the World, if there, is respawned under the new key */
   setNpcKey(npcKey: string | undefined): Promise<void>;
   /** Their npc in the World, if there, takes it */
   setSkin(skin: string | undefined): void;
-  patch(partial: Partial<CharacterEntry>): void;
+  patch(partial: Partial<ScenarioEntry>): void;
   save(): Promise<void>;
   remove(): Promise<void>;
   add(): Promise<void>;
   /** Centre the map on their npc, else their room */
-  locate(entry: CharacterEntry): void;
-  /** Writes a definition, e.g. its rooms picked */
-  saveDef(def: ScenarioDef): Promise<void>;
+  locate(entry: ScenarioEntry): void;
 };

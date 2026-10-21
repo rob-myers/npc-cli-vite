@@ -1,4 +1,4 @@
-/** A scenario of `docs/scenarios.md` with no definition yet: its steps only described */
+/** A scenario of `docs/scenarios.md`: as yet a stub, its steps only described */
 export type ScenarioStub = {
   key: string;
   title: string;
@@ -8,6 +8,21 @@ export type ScenarioStub = {
 };
 
 export const scenarios: ScenarioStub[] = [
+  {
+    key: "hide-and-seek",
+    title: "Hide and seek",
+    npcs: "a seeker, 2-3 hiders",
+    status: "not started",
+    steps: [
+      {
+        title: "Scatter",
+        text: "Each hider takes a spot the seeker's spot does not see, preferring cover or a doable.",
+      },
+      { title: "Search", text: "The seeker walks to the spot that sees the most spots it has not yet seen." },
+      { title: "React", text: "A hider about to be seen crouches behind cover, else sneaks to a spot neither sees." },
+      { title: "Found", text: "Once the seeker sees a hider, it says so, and that hider searches too." },
+    ],
+  },
   {
     key: "guard-and-intruder",
     title: "Guard and intruder",

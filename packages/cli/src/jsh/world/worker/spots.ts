@@ -33,6 +33,8 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
     if (spot === undefined) throw Error(`${ref}: no spot`);
     return spot;
   };
+  /** The spots in `rooms`, else every one */
+  const inRooms = (rooms: undefined | string[]) => (rooms === undefined ? [...all.byKey.values()] : all.inRooms(rooms));
   return queries.map((query): WW.SpotAnswer => {
     try {
       switch (query.q) {
@@ -41,7 +43,7 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
         case "get":
           return toJson(resolve(query.key));
         case "list": {
-          let found = query.rooms === undefined ? [...all.byKey.values()] : all.inRooms(query.rooms);
+          let found = inRooms(query.rooms);
           if (query.kinds !== undefined) found = found.filter((s) => query.kinds?.includes(s.kind));
           if (query.near !== undefined) {
             const npc = npcByKey.get(query.near.npc);
@@ -73,9 +75,9 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
           const exclude = new Set(query.exclude);
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
-          const unseen = all
-            .inRooms(query.rooms)
-            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key) && !watchers.some((w) => all.sees(w, s)));
+          const unseen = inRooms(query.rooms).filter(
+            (s) => placeKinds.includes(s.kind) && !exclude.has(s.key) && !watchers.some((w) => all.sees(w, s)),
+          );
           const { away = 0 } = query;
           const far = unseen.filter((s) => watchers.every((w) => dist(s, w) >= away));
           const best = (far.length > 0 ? far : unseen).sort(
@@ -85,7 +87,7 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
         }
         case "search": {
           const npc = resolveNpc(query.npc);
-          const area = all.inRooms(query.rooms);
+          const area = inRooms(query.rooms);
           const unseen = new Set(area.filter((s) => !query.seen.includes(s.key)).map((s) => s.key));
           /** Spots it would see not yet seen, less a cost for the walk there */
           const score = (s: MapSpot) =>

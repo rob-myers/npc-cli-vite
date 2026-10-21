@@ -1,9 +1,9 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import { helper } from "@npc-cli/ui__world/helper";
-import type { CharacterEntry } from "@npc-cli/ui__world/scenario.schema";
+import type { ScenarioEntry } from "@npc-cli/ui__world/scenario.schema";
 
 /** On the map, the rooms and doors the Scenario panel's character has on this World's map */
-export function CharacterLayer({ w, entry }: { w: WorldState; entry: CharacterEntry }) {
+export function CharacterLayer({ w, entry }: { w: WorldState; entry: ScenarioEntry }) {
   const here = entry.maps[w.mapKey];
   if (here === undefined) return null;
   return (

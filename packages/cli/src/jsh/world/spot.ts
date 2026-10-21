@@ -22,18 +22,31 @@ export async function* spots(ct: JshCli.RunArg) {
 }
 
 /**
- * Whether one spot sees another, doors shut, else the door it would through. Alone, every spot it sees.
- * An npc stands for their spot
+ * Npcs: those the first sees, or with `--all` each ordered pair `a b` where `a` sees `b`. Exits 1 if none.
+ * Spots: whether one sees another, doors shut, else the door it would through. Alone, every spot it sees
  *
  * ```sh
+ * sees rob abe cal
+ * sees --all abe ben cal
  * sees g0s12 g0s40
- * sees rob abe
  * sees g0s12
  * ```
  */
 export async function* sees(ct: JshCli.RunArg) {
-  const [a, b] = ct.args;
-  if (a === undefined) throw Error("expected a spot key or an npc key");
+  const { all } = ct.api.jsArg(ct.args, { "--all": "all" }) as { all?: boolean };
+  const keys = ct.args.filter((arg) => arg.startsWith("-") === false);
+  const [a, b] = keys;
+  if (a === undefined) throw Error("expected npcs or spots");
+  if (b !== undefined && keys.every((key) => ct.w.n[key] !== undefined)) {
+    const pairs =
+      all === true
+        ? keys.flatMap((u) => keys.flatMap((v) => (u === v ? [] : [[u, v]])))
+        : keys.slice(1).map((v) => [a, v]);
+    const seen = await perceive(ct, pairs as [string, string][]);
+    if (seen.length === 0) throw ct.api.getShError("", 1);
+    yield* seen.map(([u, v]) => (all === true ? `${u} ${v}` : v));
+    return;
+  }
   const [answer] = await spotQuery(ct, [b === undefined ? { q: "seenBy", a } : { q: "sees", a, b }]);
   const result = answered(answer);
   if (Array.isArray(result)) yield* result;
@@ -55,6 +68,26 @@ export async function spot(ct: JshCli.RunArg) {
   ]);
   return answered(answer);
 }
+
+/** The pairs whose first sees the second: their spots in sight, eyes open, within `sightHalfArc` of facing, not crouched behind cover */
+async function perceive(ct: JshCli.RunArg, pairs: [string, string][]) {
+  const { w } = ct;
+  const answers = await spotQuery(
+    ct,
+    pairs.map(([a, b]) => ({ q: "sees", a, b })),
+  );
+  return pairs.filter(([a, b], i) => {
+    const x = answers[i];
+    if (x === null || x === undefined || !("crouchHides" in x) || x.sees === false) return false;
+    const [watcher, seen] = [w.n[a], w.n[b]];
+    if (watcher.anim.eyes.look === "shut" || (x.crouchHides && seen.anim.crouchLevel === 2)) return false;
+    const off = watcher.anim.bearingOf(seen.point) - watcher.rotation.y;
+    return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc;
+  });
+}
+
+/** Radians either side of their facing that an npc sees */
+const sightHalfArc = Math.PI / 3;
 
 /** `a,b,c` as a list, e.g. `room:g0r1,g0r2` */
 const csv = (x: undefined | string) => (x === undefined ? undefined : String(x).split(","));

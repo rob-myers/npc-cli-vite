@@ -47,7 +47,6 @@ declare namespace JshCli {
     | { key: "spawned"; npcKey: string; gmRoomId: Geomorph.GmRoomId; spawns: number }
     | { key: "spawned-many"; npcKeys: string[] }
     | { key: "speech"; npcKey: string; words: string; epochMs: number; to?: string[] }
-    | ScenarioEvent
     | { key: "started-moving"; npcKey: string }
     | {
         /** Arrived, or the move was stopped — not one cut short by the next move */
@@ -95,19 +94,6 @@ declare namespace JshCli {
         /** The rooms in view have changed — the debug room outlines follow it */
         key: "update-faded-rooms";
       };
-
-  /** A scenario instance `id`, e.g. `hns-1`, as its director runs it — see `docs/scenarios.md` */
-  type ScenarioEvent = {
-    key: "scenario";
-    id: string;
-    kind: "started" | "phase" | "role" | "status" | "actor-lost" | "ended";
-    /** For `status`: `running`, `paused` or `partly paused` */
-    status?: string;
-    phase?: string;
-    /** Their name, not `npcKey`: an event with one is an npc's, and goes to its keyed listeners */
-    npc?: string;
-    role?: string;
-  };
 
   /** A phaser shot by `by` at `npcKey`'s `part` */
   type Shot = { by: string; npcKey: string; part: null | string };

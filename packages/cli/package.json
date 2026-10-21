@@ -8,7 +8,6 @@
     "./jsh/profiles": "./src/jsh/profiles.js",
     "./jsh/scripts": "./src/jsh/scripts.js",
     "./jsh/world/worker/register": "./src/jsh/world/worker/register.ts",
-    "./sc": "./src/jsh/world/sc/instance.ts",
     "./shell/const": "./src/shell/const.ts",
     "./shell/js-to-shell": "./src/shell/js-to-shell.ts",
     "./shell/query-client": "./src/shell/query-client.ts",

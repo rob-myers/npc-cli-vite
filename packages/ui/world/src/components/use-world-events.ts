@@ -760,7 +760,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "net-changed":
           case "npcs-restored":
-          case "scenario": // jsh's own, for panels and jsh listeners
             break;
           case "disabled":
           case "enabled":
