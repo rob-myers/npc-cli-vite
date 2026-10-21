@@ -30,8 +30,8 @@ declare namespace WW {
     | { q: "at"; point: Geom.VectJson; grKey?: null | string }
     /** The best spot in `rooms` (else any) none of `from` sees, `away` metres from them if any is: of `prefer` kinds first, then nearest `npc` */
     | { q: "hide"; npc: string; from: string[]; rooms?: string[]; prefer?: string[]; exclude?: string[]; away?: number }
-    /** The spot in `rooms` (else any) whose sight adds most not yet `seen`, for its distance from `npc` */
-    | { q: "search"; npc: string; rooms?: string[]; seen: string[]; exclude?: string[] };
+    /** The spot nearest `npc` in their rooms clear of a walker's `path` (from them on) and of `others`, or `null` */
+    | { q: "makeWay"; npc: string; path: Geom.VectJson[]; others: Geom.VectJson[] };
 
   /** A spot in world coords; `sees` counts the spots it sees */
   type SpotJson = {
@@ -88,7 +88,8 @@ declare namespace WW {
         by: number;
       }
     | { key: "nudge"; npc: NpcQuery; to: Geom.VectJson }
-    | { key: "spots"; npcs: SpotNpc[]; queries: SpotQuery[] };
+    /** `openDoors`: gdKeys, through which spots seen via them are in sight */
+    | { key: "spots"; npcs: SpotNpc[]; openDoors: string[]; queries: SpotQuery[] };
 
   type JshOpKey = JshOp["key"];
 

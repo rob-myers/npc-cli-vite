@@ -73,11 +73,9 @@ The pieces of a scenario, played by hand rather than directed. `act <verb> <npc>
 | --- | --- |
 | `count rob to:10 [every:1]` | Says each number in turn |
 | `face rob wall` | Looks towards their spot's nearest occluder. Also an npc or a spot key |
-| `hide cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is. Skips spots others stand at or head for |
-| `lurk cal from:rob [react:0.6]` | Seen from where they stand or are headed, still so after `react`: crouches if cover hides them, else hides again |
-| `search rob [pause:2]` | To the spot seeing most not yet seen, looking either side there. All seen, it starts over |
+| `hide cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is. Skips spots others stand at or head for. Already hidden, it stays put. Blocked, it tries another, failing after 3 |
 
-A walk that stalls, e.g. blocked by the player, is given up: `search` skips that spot for a while.
+A walk that stalls, e.g. blocked by the player, is given up.
 
 `sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. Both exit 1 if none, for `if` and `while`.
 

@@ -1,11 +1,12 @@
 import { standConfig } from "@npc-cli/ui__world/const.npc";
 import { warn } from "@npc-cli/util/legacy/generic";
-import { npcQuery, parkedNow, requestDetached, roomOthers } from "./plan.main";
+import { npcQuery, parkedNow, requestDetached, roomOthers, spotQueryDetached } from "./plan.main";
 import { parked } from "./pred";
 
 /**
  * Npcs step out of the way (idempotent).
- * - idle ones holding up a walker strafe across their way, turning to face them.
+ * - idle ones holding up a walker strafe to a spot clear of their path, else across their way, turning to face them.
+ * - none steps to a spot another is stepping to, nor beside another.
  * - stood pacified ones do too, without turning.
  * - the player does too, unless aiming or crouched.
  * - none does within `stillSecs` of stopping, e.g. having just stepped aside.
@@ -26,6 +27,8 @@ export function sidestep({ args, w }: JshCli.RunArg) {
   const beside = new Map<string, Beside>();
   /** Each npc's nearest walker this tick, and its distance squared */
   const nearest = new Map<string, { walker: JshCli.Npc; dist: number }>();
+  /** Npcs making way, and where to once known */
+  const stepping = new Map<string, null | Geom.VectJson>();
   w.e.addKeyedListener("sidestep", onSidestepEvent);
   w.e.addKeyedTick("sidestep", (w) => {
     if (w.client === true) return;
@@ -44,13 +47,13 @@ export function sidestep({ args, w }: JshCli.RunArg) {
     for (const npcKey of beside.keys()) if (nearest.has(npcKey) === false) beside.delete(npcKey);
     for (const [npcKey, { walker }] of nearest) {
       const npc = w.n[npcKey];
-      if (canSidestep(w, npc) === false) beside.delete(npcKey);
-      else if (heldUp(w, beside, npc, walker) === true) stepAside(w, npc, walker);
+      if (stepping.has(npcKey) || canSidestep(w, npc) === false) beside.delete(npcKey);
+      else if (heldUp(w, beside, npc, walker) === true) makeWay(w, npc, walker, stepping);
     }
   });
 }
 
-type Beside = { walker: JshCli.Npc; since: number; at: JshCli.GroundPoint };
+type Beside = { walker: JshCli.Npc; since: number; left: number };
 
 function onSidestepEvent(e: JshCli.Event, w: JshCli.WorldState) {
   if (w.client === true) return;
@@ -67,12 +70,13 @@ function canSidestep(w: JshCli.WorldState, npc: JshCli.Npc) {
   return !(npc.isMoving() || npc.isLooking() || npc.isNotStanding() || npc.isFading());
 }
 
-/** Has `walker` been beside `npc` for `lingerSecs`, making little headway? */
+/** Has `walker` been beside `npc` for `lingerSecs`, getting little nearer their target? Sliding round them is no headway */
 function heldUp(w: JshCli.WorldState, beside: Map<string, Beside>, npc: JshCli.Npc, walker: JshCli.Npc) {
   const now = w.gameTime.now();
   const prev = beside.get(npc.key);
-  if (prev?.walker !== walker || walker.distanceTo(prev.at) > sidestepConfig.progress) {
-    beside.set(npc.key, { walker, since: now, at: walker.point }); // time it afresh
+  const left = walker.distanceTo(walker.last.dst);
+  if (prev?.walker !== walker || prev.left - left > sidestepConfig.progress) {
+    beside.set(npc.key, { walker, since: now, left }); // time it afresh
   } else if (now - prev.since >= sidestepConfig.lingerSecs) {
     beside.delete(npc.key);
     return true;
@@ -80,25 +84,54 @@ function heldUp(w: JshCli.WorldState, beside: Map<string, Beside>, npc: JshCli.N
   return false;
 }
 
-/** Strafes `npc` across `walker`'s way, their own side first, turning to face them unless pacified */
-function stepAside(w: JshCli.WorldState, npc: JshCli.Npc, walker: JshCli.Npc) {
+/**
+ * Strafes `npc` to the nearest spot clear of `walker`'s path, else across their way, turning to face them unless pacified.
+ * Neither is where another stands or is stepping to
+ */
+function makeWay(
+  w: JshCli.WorldState,
+  npc: JshCli.Npc,
+  walker: JshCli.Npc,
+  stepping: Map<string, null | Geom.VectJson>,
+) {
+  stepping.set(npc.key, null);
+  const path = [walker.point, ...(walker.agent?.corners ?? []).map(({ position: [x, , z] }) => ({ x, y: z }))];
+  const others = [
+    ...(npc.agent?.neis ?? []).flatMap(({ agentId }) => {
+      const other = w.npc.byAgentId[agentId];
+      return other === undefined || other === walker ? [] : [other.point];
+    }),
+    ...[...stepping.values()].flatMap((to) => to ?? []),
+  ];
+  void spotQueryDetached(w, [{ q: "makeWay", npc: npc.key, path, others }])
+    .then(async ([spot]) => {
+      if (canSidestep(w, npc) === false) return;
+      const to = spot != null && "x" in spot && !Array.isArray(spot) ? spot : acrossWay(npc, walker);
+      if (to === null) return;
+      stepping.set(npc.key, to);
+      /** Eased round to face them whilst stepping, dropped at rest */
+      const aim = { at: walker.point, rate: 1, untilRest: true };
+      if (npc.anim.hurt === null) npc.anim.face.aim = aim;
+      await w.e.move({ npcKey: npc.key, to: { x: to.x, y: to.y }, strafe: true, shove: true }).catch(() => {
+        if (npc.anim.face.aim === aim) npc.anim.face.aim = null; // a new push may interrupt
+      });
+    })
+    .catch((e) => warn(`sidestep: ${e}`))
+    .finally(() => stepping.delete(npc.key));
+}
+
+/** A step across `walker`'s way, `npc`'s own side first, slid along the navmesh: `null` if neither side has room */
+function acrossWay(npc: JshCli.Npc, walker: JshCli.Npc) {
   const dx = npc.position.x - walker.position.x;
   const dz = npc.position.z - walker.position.z;
   const [hx, hz] = headingOf(walker) ?? [dx, dz];
-  /** A step across their way, towards this npc's side */
   const by = ((-hz * dx + hx * dz < 0 ? 1 : -1) * sidestepConfig.by) / (Math.hypot(hx, hz) || 1);
-  const [sx, sz] = [hz * by, -hx * by];
   for (const sign of [1, -1]) {
-    const slide = npc.getSlideResult({ x: sign * sx, y: sign * sz });
-    if (slide?.success !== true || npc.distanceTo(slide.groundPoint) < sidestepConfig.minMove) continue;
-    /** Eased round to face them whilst stepping, dropped at rest */
-    const aim = { at: walker.point, rate: 1, untilRest: true };
-    if (npc.anim.hurt === null) npc.anim.face.aim = aim;
-    void w.e.move({ npcKey: npc.key, to: slide.groundPoint, strafe: true, shove: true }).catch(() => {
-      if (npc.anim.face.aim === aim) npc.anim.face.aim = null; // a new push may interrupt
-    });
-    return;
+    const slide = npc.getSlideResult({ x: sign * hz * by, y: -sign * hx * by });
+    if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= sidestepConfig.minMove)
+      return slide.groundPoint;
   }
+  return null;
 }
 
 /** Which way `walker` means to go, their desired velocity, else as they move. Held up, they barely move */
@@ -129,7 +162,7 @@ async function parkIfInTheWay(w: JshCli.WorldState, npcKey: string) {
 const sidestepConfig = {
   /** Within this of a walker they step aside: the crowd's `collisionQueryRange`, within which its avoidance holds one up */
   dist: 0.7,
-  /** A walker beside them this long, making less headway (metres), is held up. Sooner than `stuckDuration` */
+  /** A walker beside them this long, getting less nearer their target (metres), is held up. Sooner than `stuckDuration` */
   lingerSecs: 0.2,
   progress: 0.15,
   /** Metres they step aside by, and the least worth moving once slid along the navmesh */

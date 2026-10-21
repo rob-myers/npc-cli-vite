@@ -121,7 +121,15 @@ import.meta.hot?.on(spotsChangedEvent, () => void spotsRev++);
  * The npcs they name are snapshotted now — see `docs/spots.md`
  */
 export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.SpotQuery[]) {
-  const { w } = ct;
+  return plan({ api: ct.api, w: ct.w, op: spotOp(ct.w, queries) });
+}
+
+/** As `spotQuery`, outside any process, e.g. from a keyed tick */
+export function spotQueryDetached(w: JshCli.WorldState, queries: WW.SpotQuery[]) {
+  return requestDetached(w, spotOp(w, queries));
+}
+
+function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): Extract<WW.JshOp, { key: "spots" }> {
   const named = new Set(queries.flatMap(namedIn));
   const npcs = [...named].flatMap((key): WW.SpotNpc[] => {
     const point = w.n[key]?.point;
@@ -130,7 +138,8 @@ export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.Spot
     const grKeys = [...new Set(rooms.flatMap((room) => room?.grKey ?? []))];
     return [{ key, point: { x: point.x, y: point.y }, grKeys }];
   });
-  return plan({ api: ct.api, w, op: { key: "spots", npcs, queries } });
+  const openDoors = Object.values(w.door.byKey).flatMap((door) => (door.open ? door.gdKey : []));
+  return { key: "spots", npcs, openDoors, queries };
 }
 
 /** The keys a query names, npcs among them */
@@ -150,7 +159,7 @@ function namedIn(q: WW.SpotQuery): string[] {
       return [];
     case "hide":
       return [q.npc, ...q.from];
-    case "search":
+    case "makeWay":
       return [q.npc];
   }
 }

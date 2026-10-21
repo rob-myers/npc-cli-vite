@@ -1,4 +1,5 @@
 import { type Spot, SpotsFileSchema } from "@npc-cli/ui__world/spot.schema";
+import { inSight } from "@npc-cli/ui__world/worker/nav";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 
 /**
@@ -19,7 +20,18 @@ export function getSpots(): Promise<MapSpots> {
 let current: null | { cacheKey: string; promise: Promise<MapSpots> } = null;
 
 /** Answers each query of a batch in order. One that fails answers `{ error }`, not the batch */
-export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.JshOp, { key: "spots" }>) {
+export function answerSpotQueries(all: MapSpots, { npcs, openDoors, queries }: Extract<WW.JshOp, { key: "spots" }>) {
+  const open = new Set(openDoors);
+  /** Spot `a` sees spot `b` as the doors stand */
+  const sees = (a: MapSpot, b: MapSpot) => all.sees(a, b) || open.has(all.seesVia(a, b) ?? "");
+  /** Where `ref` looks from: an npc's own point, else a spot's */
+  const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.point ?? resolve(ref);
+  /** Some of a body at `b` is in sight from `a`: a ray to its centre or either side, as the doors stand */
+  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson) => {
+    const [dx, dy] = [b.x - a.x, b.y - a.y];
+    const [px, py] = [(-dy * bodyRadius) / (Math.hypot(dx, dy) || 1), (dx * bodyRadius) / (Math.hypot(dx, dy) || 1)];
+    return [0, 1, -1].some((k) => inSight(a, { x: b.x + k * px, y: b.y + k * py }, open));
+  };
   const npcByKey = new Map(npcs.map((npc) => [npc.key, npc]));
   const resolveNpc = (key: string) => {
     const npc = npcByKey.get(key);
@@ -61,13 +73,12 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
           return found.map(toJson);
         }
         case "sees": {
-          const pairs = resolveAll(query.a).flatMap((a) => resolveAll(query.b).map((b) => [a, b] as const));
-          const inSight = pairs.filter(([a, b]) => all.sees(a, b));
-          const [a, b] = inSight[0] ?? pairs[0];
+          const [a, b] = [resolve(query.a), resolve(query.b)];
+          const npcs = npcByKey.has(query.a) || npcByKey.has(query.b);
           return {
-            sees: inSight.length > 0,
-            via: pairs.map(([a, b]) => all.seesVia(a, b)).find((via) => via !== null) ?? null,
-            crouchHides: inSight.length > 0 && inSight.every(([a, b]) => all.crouchHidden(b, a)),
+            sees: npcs ? eyeSees(eyeOf(query.a), eyeOf(query.b)) : sees(a, b),
+            via: all.seesVia(a, b),
+            crouchHides: all.crouchHidden(b, a),
             from: a.key,
             to: b.key,
           };
@@ -80,35 +91,35 @@ export function answerSpotQueries(all: MapSpots, { npcs, queries }: Extract<WW.J
         }
         case "hide": {
           const npc = resolveNpc(query.npc);
-          const watchers = query.from.flatMap(resolveAll);
+          const watchers = query.from.map(eyeOf);
           const exclude = new Set(query.exclude);
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
-          const unseen = inRooms(query.rooms).filter(
-            (s) => placeKinds.includes(s.kind) && !exclude.has(s.key) && !watchers.some((w) => all.sees(w, s)),
-          );
           const { away = 0 } = query;
-          const far = unseen.filter((s) => watchers.every((w) => dist(s, w) >= away));
-          const best = (far.length > 0 ? far : unseen).sort(
-            (u, v) => rank(u) - rank(v) || dist(u, npc.point) - dist(v, npc.point),
-          )[0];
+          const isFar = (s: MapSpot) => watchers.every((w) => dist(s, w) >= away);
+          const isUnseen = (s: MapSpot) => !watchers.some((w) => eyeSees(w, s));
+          // best first, so sight is tested only until one passes: a far one, else a near one
+          const ordered = inRooms(query.rooms)
+            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key))
+            .sort((u, v) => rank(u) - rank(v) || dist(u, npc.point) - dist(v, npc.point));
+          const best = ordered.find((s) => isFar(s) && isUnseen(s)) ?? ordered.find((s) => !isFar(s) && isUnseen(s));
           return best === undefined ? null : toJson(best);
         }
-        case "search": {
+        case "makeWay": {
           const npc = resolveNpc(query.npc);
-          const area = inRooms(query.rooms);
-          const unseen = new Set(area.filter((s) => !query.seen.includes(s.key)).map((s) => s.key));
-          /** Spots it would see not yet seen, less a cost for the walk there */
-          const score = (s: MapSpot) =>
-            all.seenBy(s).filter((t) => unseen.has(t.key)).length +
-            (unseen.has(s.key) ? 1 : 0) -
-            searchWalkCost * dist(s, npc.point);
-          const exclude = new Set(query.exclude);
-          const best = area
-            .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key))
-            .map((s) => ({ s, score: score(s) }))
-            .sort((u, v) => v.score - u.score)[0];
-          return best === undefined || best.score <= 0 ? null : toJson(best.s);
+          const [walker, ...corners] = query.path;
+          const legs = corners.map((b, i) => [query.path[i], b] as const);
+          const best = all
+            .near(npc.point, makeWay.within)
+            .find(
+              (s) =>
+                placeKinds.includes(s.kind) &&
+                (npc.grKeys.length === 0 || (s.grKey !== null && npc.grKeys.includes(s.grKey))) &&
+                legs.every(([a, b]) => distToSeg(s, a, b) >= makeWay.clear) &&
+                query.others.every((p) => dist(s, p) >= makeWay.clear) &&
+                distToSeg(walker, npc.point, s) >= makeWay.pass,
+            );
+          return best === undefined ? null : toJson(best);
         }
       }
     } catch (e) {
@@ -157,10 +168,12 @@ function toJson({ key, kind, x, y, grKey, facing, wall, spot }: MapSpot): WW.Spo
 }
 
 const round = (x: number) => Math.round(x * 100) / 100;
+/** Metres either side of a body's centre that sight is tested to */
+const bodyRadius = 0.25;
 /** Spots an npc is sent to: not a doable, which needs its decor, nor in a doorway */
 const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
-/** Seen spots a metre more walk is worth, choosing where to search */
-const searchWalkCost = 0.5;
+/** Metres: making way, a spot this near the blocker, this clear of the walker's path and others, not passing within `pass` of the walker */
+const makeWay = { within: 2, clear: 0.6, pass: 0.4 };
 const spotKeyRe = /^g\d+s\d+$/;
 
 export class MapSpots {
@@ -303,6 +316,13 @@ const maxRings = 20;
 
 const cellKey = (x: number, y: number) => `${Math.floor(x / cellSize)},${Math.floor(y / cellSize)}`;
 const dist = (u: Geom.VectJson, v: Geom.VectJson) => Math.hypot(u.x - v.x, u.y - v.y);
+
+/** From `p` to the segment `a` `b` */
+function distToSeg(p: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) {
+  const [dx, dy] = [b.x - a.x, b.y - a.y];
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+}
 
 function push<T>(map: Map<string, T[]>, key: string, value: T) {
   map.get(key)?.push(value) ?? map.set(key, [value]);

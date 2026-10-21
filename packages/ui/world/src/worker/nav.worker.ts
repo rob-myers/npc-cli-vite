@@ -6,6 +6,8 @@ import { navForFloorDraw } from "./nav-util";
 import { createGmRayCastSystems, sendRaycastResult, setRayCastShields } from "./ray-cast";
 import { findUnreachableResult, setRoomGraph } from "./room-graph";
 
+export { inSight } from "./ray-cast";
+
 /** The navmesh, once generated — for queries here, e.g. jsh's ops */
 let navMesh: null | NavMesh = null;
 
