@@ -161,11 +161,11 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 **`embodied` restricts what may be steered, by zoom.**
 
 Azimuth:
-- Free at every zoom, and untouched by zooming.
-- The compass dial (`compassDial`: its button on `WorldHud` beside look/follow, `setCompassDial`) only keeps it clear of the diagonals. A view let go more than `maxAzimuthSkew` (π/8) off square eases back to that (`keepNearSquare`), on switching on too.
-- Whilst the dial is on, `w`, `a`, `s` and `d` head along the world's axes, `w` along the one nearest up the screen (`getWasdDirection`). A turned view still lines up with doors, and that axis never flips under a resting view.
+- Free at every zoom, and untouched by zooming or by the compass dial (`compassDial`: its button on `WorldHud` beside look/follow, `setCompassDial`).
+- Whilst the dial is on, `w`, `a`, `s` and `d` head along the world's axes (`getWasdDirection`). A turned view still lines up with doors.
+- `w`'s axis is kept until the view is `compassSwitchRad` (π/3) off it, then it takes the one nearest up the screen (`stickyCompassPoint`). So a view resting near a diagonal never flips it.
 - That axis is held whilst any of them is down (`wasdPoint`), so a turn mid-walk doesn't swerve them.
-- The button names `w`'s compass point (`compassPoint`: N is -z). Its needle leans by `compassSkew`, to where `w` heads on screen.
+- The button names `w`'s compass point (`compassPoint`: N is -z). Its amber needle leans by `compassSkew`, to where `w` heads on screen.
 - The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets.
 - Zoomed out (`t > embodiedAxisLockFrom`), a drag locks to one axis.
 
