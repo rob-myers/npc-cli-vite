@@ -89,6 +89,7 @@ async function hidingSpot(ctx: Ctx, opts: Opts, avoid: string[]) {
       prefer: csv(opts.prefer),
       exclude: [...exclude, ...avoid],
       away: opts.away === undefined ? undefined : Number(opts.away),
+      ahead: aheadOf(ctx, opts),
     },
   ]);
   return isSpot(spot) ? spot : null;
@@ -98,23 +99,18 @@ async function hidingSpot(ctx: Ctx, opts: Opts, avoid: string[]) {
 async function isHidden(ctx: Ctx, opts: Opts) {
   const { w } = ctx.ct;
   const npc = w.npc.get(ctx.npcKey);
-  const watchers = fromKeys(ctx, opts);
-  if (watchers.some((key) => npc.distanceTo(w.n[key].point) < Number(opts.away ?? 0))) return false;
-  const headed = watchers.flatMap((key) => (w.n[key].isMoving() ? [w.n[key].last.dst] : []));
-  const ahead =
-    headed.length === 0
-      ? []
-      : await spotQuery(
-          ctx.ct,
-          headed.map((point): WW.SpotQuery => ({ q: "at", point: { x: point.x, y: point.y } })),
-        );
-  const answers = await spotQuery(
-    ctx.ct,
-    [...watchers, ...ahead.filter(isSpot).map((s) => s.key)].map(
-      (a): WW.SpotQuery => ({ q: "sees", a, b: ctx.npcKey }),
-    ),
+  const from = fromKeys(ctx, opts);
+  if (from.some((key) => npc.distanceTo(w.n[key].point) < Number(opts.away ?? 0))) return false;
+  const [answer] = await spotQuery(ctx.ct, [{ q: "hidden", npc: ctx.npcKey, from, ahead: aheadOf(ctx, opts) }]);
+  return answer != null && "hidden" in answer && answer.hidden;
+}
+
+/** Where any of `from` are walking to */
+function aheadOf(ctx: Ctx, opts: Opts) {
+  const { w } = ctx.ct;
+  return fromKeys(ctx, opts).flatMap((key) =>
+    w.n[key].isMoving() ? [{ x: w.n[key].last.dst.x, y: w.n[key].last.dst.y }] : [],
   );
-  return answers.every((x) => x == null || !("crouchHides" in x) || x.sees === false);
 }
 
 /** The npcs `from` names, but this one */

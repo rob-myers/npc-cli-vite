@@ -53,6 +53,21 @@ function getPerception(w: JshCli.WorldState) {
       spotsRev,
       occluders: sightOccluders(w.gms),
       openDoors: Object.keys(w.door.byKey).filter((gdKey) => w.door.isSeenThrough(gdKey as Geomorph.GmDoorKey)),
+      doableKeys: Object.fromEntries(
+        w.gms.flatMap((gm, gmId) =>
+          gm.decor.flatMap((d, decorId) =>
+            d.type === "point" && typeof d.meta.do === "string" && d.key !== undefined
+              ? [[`${gmId}/${decorId}`, d.key]]
+              : [],
+          ),
+        ),
+      ),
+      hullPairs: w.gms.flatMap((gm, gmId) =>
+        gm.hullDoors.flatMap((_, doorId): [string, string][] => {
+          const adj = w.gmGraph.getAdjacentRoomCtxt(gmId, doorId);
+          return adj === null ? [] : [[`g${gmId}d${doorId}`, adj.adjGdKey]];
+        }),
+      ),
     } satisfies WW.PerceptionMsgTo);
     p.setupKey = setupKey;
   }
@@ -126,7 +141,11 @@ function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
     const grKeys = [...new Set(rooms.flatMap((room) => room?.grKey ?? []))];
     const posture = npc.anim.posture as WW.SpotNpc["posture"];
     const crouched = npc.anim.crouchLevel === 2;
-    return [{ key, point: { x: npc.point.x, y: npc.point.y }, grKeys, posture, crouched }];
+    const seeRooms = [...new Set(grKeys.flatMap((grKey) => w.e.roomsInView(grKey).map((room) => room.grKey)))];
+    const doable = w.decor.byKey[w.npc.npcToDoable[key] ?? ""];
+    const doAt = posture !== "stand" && doable?.type === "point" ? { x: doable.x, y: doable.y } : undefined;
+    const at = { x: npc.point.x, y: npc.point.y };
+    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt }];
   });
   return { npcs, queries };
 }
@@ -147,6 +166,7 @@ function namedIn(q: WW.SpotQuery): string[] {
     case "at":
       return [];
     case "hide":
+    case "hidden":
       return [q.npc, ...q.from];
     case "makeWay":
       return [q.npc];

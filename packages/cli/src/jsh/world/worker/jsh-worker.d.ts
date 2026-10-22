@@ -20,6 +20,10 @@ declare namespace WW {
     posture: "stand" | "sit" | "lie";
     /** Fully crouched */
     crouched: boolean;
+    /** Rooms in view from theirs, as the doors stand — see `w.e.roomsInView` */
+    seeRooms: string[];
+    /** The doable they sit or lie at, if any */
+    doAt?: Geom.VectJson;
   };
 
   /** One question about spots, of the perception worker — see `docs/perception.md` */
@@ -85,6 +89,18 @@ declare namespace WW {
         exclude?: string[];
         /** Metres from each of `from`, if any spot is */
         away?: number;
+        /** Where any of `from` are walking to: they are as good as there */
+        ahead?: Geom.VectJson[];
+      }
+    | {
+        /** Whether none of `from` may see `npc`, from where they stand or are headed */
+        q: "hidden";
+        /** Who hides */
+        npc: string;
+        /** Whom from: npc keys */
+        from: string[];
+        /** Where any of `from` are walking to */
+        ahead?: Geom.VectJson[];
       }
     | {
         /** The spot nearest `npc` in their rooms clear of a walker's `path` and of `others`, or `null` */
@@ -100,7 +116,6 @@ declare namespace WW {
   /** A spot in world coords; `sees` counts the spots it sees */
   type SpotJson = {
     key: string;
-    kind: string;
     x: number;
     y: number;
     grKey: null | string;
@@ -108,7 +123,19 @@ declare namespace WW {
     /** Radians towards its nearest occluder */
     wall: number;
     sees: number;
-  };
+  } & (
+    | {
+        kind: "door";
+        /** Its door */
+        gdKey: string;
+      }
+    | {
+        kind: "doable";
+        /** Its decor, `null` until the World has keyed its decor */
+        decorKey: null | string;
+      }
+    | { kind: Exclude<import("@npc-cli/ui__world/spot.schema").SpotKind, "door" | "doable"> }
+  );
 
   /** Aligned with its query: `of`, `get` give a spot or `null`; `of` with `all`, `list`, `seenBy` spots; `sees` a verdict */
   type SpotAnswer =
@@ -117,6 +144,7 @@ declare namespace WW {
     | SpotJson[]
     /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any */
     | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
+    | { hidden: boolean }
     | { error: string };
 
   /** An npc, as an op sees them — see `npcQuery` in `plan.main.ts` */
@@ -206,6 +234,10 @@ declare namespace WW {
         occluders: SightOccluder[];
         /** gdKeys of doors seen through */
         openDoors: string[];
+        /** The two records of each hull door where geomorphs meet, as gdKeys */
+        hullPairs: [string, string][];
+        /** By `{gmId}/{decorId}`, each doable's decor key */
+        doableKeys: Record<string, string>;
       }
     | {
         /** A door now seen through, or shut */

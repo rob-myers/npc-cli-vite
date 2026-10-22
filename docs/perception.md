@@ -36,3 +36,31 @@ The nav worker's own jsh side, the plan ops (`park`, `pad`, `nudge`, `boundary`)
 - **A line of sight** passes through the worker's `SegGrid`. Walls and tall obstacles stop it, and so do doors unless open.
 - **To or from an npc,** sight is a body: lines to its centre and either side.
 - **Spot to spot,** sight is the precomputed lists, with doors as they stand: `sight`, `always` and `via`. From a doable sat or lain at (`doArc`), it is `doSight` and `doVia` instead: from its point, within its arc. So it can be one-way, e.g. someone behind a chair sees its sitter, not the reverse.
+
+## Npcs in the lists
+
+- **Their spots.** A standing npc is at their region spots: those of their room(s) within `regionRadius`, else the nearest.
+- **Sitting or lying,** an npc is at the doable they use (`w.npc.npcToDoable`, sent as `doAt`), if it has an arc.
+- **Rooms in view** (`seeRooms`) come from `w.e.roomsInView`, which walks the room graph through doors seen through. It is cached by room until a door changes.
+
+## `sees` with an npc
+
+Each step only runs if the one before leaves it open:
+1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).
+2. **Rooms:** `b` must be in a room `a` has in view.
+3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
+4. **Lines,** for the rest: to `b`'s body, with heights by posture.
+
+Answers are cached by who, where to a quarter metre and how, and the doors' revision.
+
+## `hide` and `hidden`
+
+- **Unsafe** is every spot the watchers' spots may see by the lists, as the doors stand. So are those seen from where they are walking to.
+- **`hide`** picks the best spot not unsafe, with no lines.
+- **`hidden`** asks whether none of the hider's spots are unsafe.
+
+## Across hull doors
+
+- **A hull door is two records,** one in each geomorph it joins, e.g. `g0d3` and `g1d7`. Main sends these `hullPairs` in setup.
+- **A pair of spots** in different geomorphs may see each other only if each is on its side's `hull` list for the two records of one door, with that door seen through.
+- **Not covered:** sight through two hull doors.

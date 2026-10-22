@@ -117,7 +117,7 @@ const arcStep = Math.PI / 36;
 
 /**
  * Which spots' regions may see which, and through which doors: sound, so a spot not listed is unseen
- * from anywhere in one region to anywhere in the other — see `docs/sight.md`
+ * from anywhere in one region to anywhere in the other — see `docs/perception.md`
  */
 export function computeSight({ spots, layout, grid, within, lowNear, radius }: SightInput): SightResult {
   const c = sightConfig;

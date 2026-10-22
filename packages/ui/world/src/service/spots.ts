@@ -3,7 +3,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { ANY_QUERY_FILTER, getPolyWallSegments, type NavMesh } from "navcat";
 import { type Spot, type SpotKind, spotKinds } from "../spot.schema";
 import { generateTiledNavMeshResult } from "../worker/generate-tiled-navmesh";
-import { type Occluder, type SegGrid, segsHit } from "./seg-grid";
+import type { Occluder, SegGrid } from "./seg-grid";
 import { computeSight, createSightGrid, sightConfig } from "./spot-sight";
 
 /** Tuning for `computeSpots`. Lengths in metres */
@@ -210,8 +210,6 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       roomId: roomId === -1 ? null : roomId,
       ...(facing === undefined ? {} : { facing: round(facing, 3) }),
       depth,
-      sees: [],
-      seesVia: [],
       seesDoors: seenDoors(p, layout, grid, skip),
       near: nearTo(p, layout, obstacles),
       ...(ref === undefined ? {} : { ref }),
@@ -222,45 +220,6 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       doSight: [],
       doVia: [],
     };
-  });
-
-  for (let i = 0; i < cands.length; i++) {
-    for (let j = i + 1; j < cands.length; j++) {
-      const [u, v] = [cands[i].p, cands[j].p];
-      if (Math.hypot(v.x - u.x, v.y - u.y) > c.radius) continue;
-      const skip = new Set([...within[i], ...within[j]]);
-      const doors = new Set<number>();
-      let blocked = false as boolean;
-      grid.forEachOn(u, v, (o) => {
-        if (isSkipped(o, skip)) return false;
-        if (o.kind === "door") return doors.add(o.id), doors.size > 1;
-        return (blocked = true);
-      });
-      if (blocked === true || doors.size > 1) continue;
-      if (doors.size === 0) {
-        spots[i].sees.push(j);
-        spots[j].sees.push(i);
-      } else {
-        const [doorId] = doors;
-        spots[i].seesVia.push([j, doorId]);
-        spots[j].seesVia.push([i, doorId]);
-      }
-    }
-  }
-
-  // cover hides its spot from those whose line to it crosses a low obstacle beside it
-  spots.forEach((spot, i) => {
-    if (spot.kind !== "cover") return;
-    const p = cands[i].p;
-    const low = obstacles.filter(
-      (o) =>
-        o.height >= c.crouchHideHeight &&
-        o.height < sightConfig.standBlockHeight &&
-        Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach,
-    );
-    spot.crouchHidden = spot.sees.filter((j) =>
-      low.some((o) => o.segs.some(([a, b]) => segsHit(p, cands[j].p, a, b) !== -1)),
-    );
   });
 
   return { spots, within };

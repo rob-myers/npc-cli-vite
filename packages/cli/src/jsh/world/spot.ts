@@ -27,17 +27,19 @@ export async function* spots(ct: JshCli.RunArg) {
 
 /**
  * Npcs: those the first sees, or with `--all` each ordered pair `a b` where `a` sees `b`. Exits 1 if none.
+ * `--los` asks for line of sight alone, whatever their eyes and facing.
  * Spots: whether one sees another, doors shut, else the door it would through. Alone, every spot it sees
  *
  * ```sh
  * sees rob abe cal
  * sees --all abe ben cal
+ * sees --los --all abe ben
  * sees g0s12 g0s40
  * sees g0s12
  * ```
  */
 export async function* sees(ct: JshCli.RunArg) {
-  const { all } = ct.api.jsArg(ct.args, { "--all": "all" }) as { all?: boolean };
+  const { all, los } = ct.api.jsArg(ct.args, { "--all": "all", "--los": "los" }) as { all?: boolean; los?: boolean };
   const keys = ct.args.filter((arg) => arg.startsWith("-") === false);
   const [a, b] = keys;
   if (a === undefined) throw Error("expected npcs or spots");
@@ -46,7 +48,7 @@ export async function* sees(ct: JshCli.RunArg) {
       all === true
         ? keys.flatMap((u) => keys.flatMap((v) => (u === v ? [] : [[u, v]])))
         : keys.slice(1).map((v) => [a, v]);
-    const seen = await perceive(ct, pairs as [string, string][]);
+    const seen = await perceive(ct, pairs as [string, string][], los === true);
     if (seen.length === 0) throw ct.api.getShError("", 1);
     yield* seen.map(([u, v]) => (all === true ? `${u} ${v}` : v));
     return;
@@ -75,11 +77,12 @@ export async function spot(ct: JshCli.RunArg) {
 
 /**
  * The pairs whose first sees the second: eyes open, within `sightHalfArc` of where their head faces, then in sight.
- * The worker's lines decide the last, e.g. over a low obstacle hiding one crouched
+ * The worker decides the last, e.g. a low obstacle hiding one crouched. `los` asks only that
  */
-async function perceive(ct: JshCli.RunArg, pairs: [string, string][]) {
+async function perceive(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
   const { w } = ct;
   const facing = pairs.filter(([a, b]) => {
+    if (los) return true;
     const [watcher, seen] = [w.n[a], w.n[b]];
     if (watcher.anim.eyes.look === "shut") return false;
     const off = watcher.anim.bearingOf(seen.point) - watcher.lookY; // the head's way, e.g. sat and turned

@@ -35,8 +35,10 @@ export function useSvgZoom(
     pinch: null as null | (Grab & { dist: number }),
     /** `centreOn`'s glide: its frame, and where it has got to. A gesture stops it there */
     glide: { frame: 0, at: null as null | SvgZoomState },
-    /** The svg, which a glide moves directly, frame by frame */
+    /** The svg, whose viewBox each change sets directly, so a gesture never re-renders the map */
     svg: null as null | SVGSVGElement,
+    /** `onChange` waits for this, so a gesture stores where it ends, not each step */
+    settle: 0,
 
     /**
      * Glides the point to the centre, at least this far in, or `offsetPx` from it on screen e.g. clear of a sidebar.
@@ -140,11 +142,13 @@ export function useSvgZoom(
     reset() {
       state.show({ zoom: 1, pan: { x: 0, y: 0 } });
     },
-    /** Shows `next`, and tells `onChange` */
+    /** Shows `next`, and tells `onChange` once changes stop */
     show(next: SvgZoomState) {
       Object.assign(state, next);
-      state.onChange?.(next);
-      state.update();
+      if (state.svg === null) state.update();
+      else state.svg.setAttribute("viewBox", viewBoxOf(state.bounds, state.zoom, state.pan));
+      clearTimeout(state.settle);
+      state.settle = window.setTimeout(() => state.onChange?.({ zoom: state.zoom, pan: state.pan }), settleMs);
     },
     /** Stops a glide where it has got to, so the view does not jump back */
     stopGlide() {
@@ -167,7 +171,7 @@ export function useSvgZoom(
   state.bounds = bounds;
   state.onChange = opts.onChange;
   state.viewBox = viewBoxOf(bounds, state.zoom, state.pan);
-  useEffect(() => () => cancelAnimationFrame(state.glide.frame), []);
+  useEffect(() => () => (cancelAnimationFrame(state.glide.frame), clearTimeout(state.settle)), []);
   return state;
 }
 
@@ -182,6 +186,9 @@ const clampZoom = (zoom: number) => Math.min(20, Math.max(0.5, zoom));
 
 /** How long `centreOn` takes to glide there */
 const centreOnMs = 550;
+
+/** Ms without a change before `onChange` hears of it */
+const settleMs = 200;
 
 function viewBoxOf(bounds: Bounds, zoom: number, pan: { x: number; y: number }) {
   const w = bounds.width / zoom;

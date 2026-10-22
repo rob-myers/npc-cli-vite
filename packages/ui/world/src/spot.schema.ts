@@ -22,10 +22,6 @@ export const SpotSchema = z.object({
   facing: z.number().optional(),
   /** Metres to the nearest occluder at each of `angles` directions from `+x`, stood, doors shut */
   depth: z.array(z.number()),
-  /** Spots in sight, stood, doors shut */
-  sees: z.array(z.number()),
-  /** Spots in sight through one door, once it opens: `[spotId, doorId]` */
-  seesVia: z.array(z.tuple([z.number(), z.number()])),
   seesDoors: z.array(z.number()),
   /** Ids within `nearRadius`. `decor` and `doables` index `layout.decor` */
   near: z.object({
@@ -36,11 +32,9 @@ export const SpotSchema = z.object({
   }),
   /** What it was made for */
   ref: z.object({ doorId: z.number(), decorId: z.number(), obstacleId: z.number() }).partial().optional(),
-  /** Cover only: spots in `sees` which lose sight of it once it fully crouches */
-  crouchHidden: z.array(z.number()).optional(),
   /**
    * Spots whose region its region may see, needing no door. Not here, nor in `always` or `via`: never seen.
-   * Further than `radius` is unknown, so may — see `docs/sight.md`
+   * Further than `radius` is unknown, so may — see `docs/perception.md`
    */
   sight: z.array(z.number()).default([]),
   /** Spots whose region its region always sees: every line between is clear */
