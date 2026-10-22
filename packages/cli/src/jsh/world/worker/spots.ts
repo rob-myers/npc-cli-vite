@@ -98,13 +98,18 @@ export function answerSpotQueries(
     remember(key, answer);
     return answer;
   };
-  /** Every spot `from`, or where they are headed, may see, as the doors stand */
+  /** Every spot `from`, or where they are headed, may see, as the doors stand. An npc sees only their rooms in view */
   const unsafeFrom = (from: string[], ahead: Geom.VectJson[] = []) => {
     const unsafe = new Set<string>();
-    const add = (at: At) => {
-      for (const s of at.spots) for (const key of all.seenFrom(s, at.seated, isOpen)) unsafe.add(key);
+    const add = (at: At, inView?: string[]) => {
+      for (const s of at.spots) {
+        for (const key of all.seenFrom(s, at.seated, isOpen)) {
+          const grKey = all.get(key)?.grKey ?? null;
+          if (inView === undefined || grKey === null || inView.includes(grKey)) unsafe.add(key);
+        }
+      }
     };
-    from.forEach((ref) => add(spotsAt(ref)));
+    for (const ref of from) add(spotsAt(ref), npcByKey.get(ref)?.seeRooms);
     for (const p of ahead) {
       const spot = all.nearestTo(p);
       if (spot !== undefined) add({ spots: [spot], seated: false });

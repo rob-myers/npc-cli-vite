@@ -18,8 +18,8 @@ export const spotConfig = {
   edgeInset: 0.05,
   /** Door spots, either side of its centre line */
   doorStandOff: 0.6,
-  /** No wall or cover spot this near a door's centre line */
-  doorwayClearance: 0.4,
+  /** Past half a doorway's depth: its sensor's outset and a body's radius, with a margin. A spot within holds it open */
+  doorwayClearance: 0.35,
   /** The least turn of the boundary, outwards, that makes a corner */
   cornerDegrees: 30,
   /** How far into the walkable side a corner spot stands */
@@ -68,7 +68,12 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
   const wallSegs = layout.walls.flatMap((poly) => poly.lineSegs);
   /** `poly.lineSegs`, not `seg`: some windows are curved */
   const windowSegs = layout.windows.flatMap(({ poly }) => poly.lineSegs);
-  const doorSegs = layout.doors.map(({ seg }) => seg);
+  const doorways = layout.doors.map(({ seg, poly, center: o, normal: n }) => ({
+    seg,
+    reach: Math.max(...poly.outline.map((p) => Math.abs((p.x - o.x) * n.x + (p.y - o.y) * n.y))) + c.doorwayClearance,
+  }));
+  /** Standing here holds a door open, so only door spots and doables may */
+  const inDoorway = (p: Geom.VectJson) => doorways.some(({ seg, reach }) => distToSeg(p, seg) < reach);
   const obstacles = layout.obstacles.map(({ origPoly, transform, height, meta }, obstacleId) => ({
     obstacleId,
     height,
@@ -94,7 +99,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     for (let k = 0; k < n; k++) {
       const t = ((k + 0.5) / n) * e.len;
       const p = { x: e.a.x + e.d.x * t + e.n.x * c.edgeInset, y: e.a.y + e.d.y * t + e.n.y * c.edgeInset };
-      if (doorSegs.some((seg) => distToSeg(p, seg) < c.doorwayClearance)) continue;
+      if (inDoorway(p)) continue;
       const ref = source.obstacleId === undefined ? undefined : { obstacleId: source.obstacleId };
       cands.push({ kind, p, facing: Math.atan2(e.n.y, e.n.x), ref });
     }
@@ -103,7 +108,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
   // where the boundary turns outwards, as round a wall's end or an obstacle
   for (const { at, n } of getOuterCorners(boundary, c.cornerDegrees)) {
     const p = { x: at.x + n.x * c.cornerPush, y: at.y + n.y * c.cornerPush };
-    if (onMesh(p)) cands.push({ kind: "corner", p, facing: Math.atan2(n.y, n.x) });
+    if (onMesh(p) && !inDoorway(p)) cands.push({ kind: "corner", p, facing: Math.atan2(n.y, n.x) });
   }
 
   // either side of each door, facing it
@@ -120,7 +125,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
       cands.push({ kind: "doable", p: { x: d.x, y: d.y }, facing: (d.orient * Math.PI) / 180, ref: { decorId } });
     } else if (d.type === "quad" && d.meta.switch === undefined) {
       const p = nearestWalkable(d.center, boundary, onMesh, c);
-      if (p !== null) cands.push({ kind: "decor", p, ref: { decorId } });
+      if (p !== null && !inDoorway(p)) cands.push({ kind: "decor", p, ref: { decorId } });
     }
   });
 
@@ -137,7 +142,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
       const p = { x, y };
       if (onMesh(p) === false) continue;
       floor.push(p);
-      if (near.nearest(p, c.fillGap) >= c.fillGap) kept.push({ kind: "fill", p }), near.add(p);
+      if (!inDoorway(p) && near.nearest(p, c.fillGap) >= c.fillGap) kept.push({ kind: "fill", p }), near.add(p);
     }
   }
   const coverage = Math.max(0, ...floor.map((p) => near.nearest(p, 2 * c.fillGap)));

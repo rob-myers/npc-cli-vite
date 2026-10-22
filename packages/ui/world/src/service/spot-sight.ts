@@ -8,6 +8,8 @@ export const sightConfig = {
   regionRadius: 1.25,
   /** Sight is tested to a body this wide either side of a point */
   bodyRadius: 0.25,
+  /** Past `bodyRadius`, how clear of a wall or door a rim sample stays. A body there then never touches it */
+  rimClearance: 0.02,
   /** Samples on a region's rim, besides its centre */
   rimSamples: 4,
   /** Points along a hull door's opening tested from each spot */
@@ -84,15 +86,23 @@ export function visionAt(grid: SegGrid, p: Geom.VectJson, radius: number, skip =
   );
 }
 
-/** A region's samples on its rim, besides its centre `v.p`: pulled in off walls, so it stays on their side */
+/** A region's samples on its rim, besides its centre `v.p`: pulled in until a body there is clear of what it sees */
 export function rimSamples(v: Vision) {
   const c = sightConfig;
+  const occs = v.occ.filter((o) => o !== null);
+  const clear = c.bodyRadius + c.rimClearance;
   return Array.from({ length: c.rimSamples }, (_, k) => {
     const a = (2 * Math.PI * k) / c.rimSamples - Math.PI;
-    const r = Math.max(0, Math.min(c.regionRadius, distAt(v, a) - c.bodyRadius));
-    return { x: v.p.x + Math.cos(a) * r, y: v.p.y + Math.sin(a) * r };
+    let r = Math.max(0, Math.min(c.regionRadius, distAt(v, a) - clear));
+    const at = () => ({ x: v.p.x + Math.cos(a) * r, y: v.p.y + Math.sin(a) * r });
+    // a ray meeting a wall aslant leaves its point nearer the wall than along the ray
+    while (r > 0 && occs.some((o) => distToSeg(at(), o) < clear)) r = Math.max(0, r - rimStep);
+    return at();
   });
 }
+
+/** Metres a rim sample is pulled in at a time, until clear */
+const rimStep = 0.05;
 
 /** `v` as a polygon, its open stretches as arcs `radius` out */
 export function visionPolygon(v: Vision, radius: number) {

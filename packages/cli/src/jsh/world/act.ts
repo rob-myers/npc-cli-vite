@@ -53,7 +53,8 @@ const verbs: Record<string, Verb> = {
   },
   /**
    * `from:<npcs> [prefer:<kinds>] [away:<m>]`: to a spot none of them sees, `away` metres from them if one is.
-   * Spots others stand at or head for are skipped. Already hidden, they stay put
+   * Spots others stand at or head for are skipped. Already hidden, they stay put.
+   * Seen on arrival, e.g. by a watcher who stepped aside for them, they hide again
    */
   async hide(ctx, opts) {
     if (await isHidden(ctx, opts)) return;
@@ -62,10 +63,10 @@ const verbs: Record<string, Verb> = {
     for (let i = 0; i < hideTries; i++) {
       const spot = await hidingSpot(ctx, opts, blocked);
       if (spot === null) throw Error("no hiding spot");
-      if (await goTo(ctx, spot)) return;
-      blocked.push(spot.key);
+      if ((await goTo(ctx, spot)) === false) blocked.push(spot.key);
+      else if (await isHidden(ctx, opts)) return;
     }
-    throw Error("blocked");
+    throw Error("not hidden");
   },
 };
 
