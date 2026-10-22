@@ -35,7 +35,7 @@ import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
-import { type SpotPick, useSpots } from "./use-spots";
+import { type SpotPick, spotWorldPoint, useSpots } from "./use-spots";
 
 /** The map pane, once there is a World */
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
@@ -48,11 +48,36 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const characters = useScenarioCharacters(character);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
-  /** Chooses a spot found by key, and centres the map on it */
+  /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
   const findSpot = (pick: SpotPick, at: Geom.VectJson) => {
     state.chooseSpot(pick);
-    map.current?.centreOn(at.x, at.y, locateZoom);
+    map.current?.centreOn(at.x, at.y, locateZoom, sidebarOffset());
   };
+  /** Chooses a spot, and glides the map just far enough to show it, if the sidebar covers it or it is off screen */
+  const revealSpot = (pick: null | SpotPick) => {
+    state.chooseSpot(pick);
+    const file = pick === null ? undefined : spots?.[w.gms[pick.gmId]?.key];
+    const shown = state.mapEl?.getBoundingClientRect();
+    if (pick === null || file === undefined || shown === undefined) return;
+    const at = spotWorldPoint(w, file, pick);
+    const p = map.current?.toClient(at.x, at.y);
+    if (p == null) return;
+    const m = revealMarginPx;
+    // choosing a spot opens the sidebar, so it is kept clear of where the sidebar will be
+    const [left, right, top, bottom] = [
+      shown.left + meta.sidebarWidth + m,
+      shown.right - m,
+      shown.top + m,
+      shown.bottom - m,
+    ];
+    /** Where on screen it should end up: no further than needed */
+    const to = { x: Math.min(Math.max(p.x, left), right), y: Math.min(Math.max(p.y, top), bottom) };
+    if (to.x === p.x && to.y === p.y) return;
+    const centre = { x: shown.left + shown.width / 2, y: shown.top + shown.height / 2 };
+    map.current?.centreOn(at.x, at.y, 0, { x: to.x - centre.x, y: to.y - centre.y });
+  };
+  /** On screen, the centre of the map left clear by the sidebar, from the map's own centre. A chosen spot opens it */
+  const sidebarOffset = () => ({ x: meta.sidebarWidth / 2, y: 0 });
 
   const state = useStateRef(
     (): State => ({
@@ -71,6 +96,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       menuBlockedUntil: 0,
       spot: null,
       sidebarTab: "decor",
+      mapEl: null,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -369,7 +395,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         ))}
       </div>
 
-      <div className="relative flex-1 min-h-0 flex">
+      <div ref={(el) => void (state.mapEl = el)} className="relative flex-1 min-h-0 flex">
         {meta.sidebarOpen && (
           // over the map: dark smoked glass, the map behind blurred and greyed
           <div
@@ -429,7 +455,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   byGmKey={spots}
                   onFind={findSpot}
                   pick={state.spot}
-                  onChoose={state.chooseSpot}
+                  onChoose={revealSpot}
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
@@ -466,7 +492,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                 ?.closest("[data-spot]")
                 ?.getAttribute("data-spot");
               const match = key?.match(/^g(\d+)s(\d+)$/);
-              if (match != null) state.chooseSpot({ gmId: Number(match[1]), id: Number(match[2]) });
+              if (match != null) revealSpot({ gmId: Number(match[1]), id: Number(match[2]) });
             }}
             cursor={state.tool === "select" && state.spawning === null ? undefined : "crosshair"}
             onClick={state.onMapClick}
@@ -476,7 +502,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           >
             {character !== null && <CharacterLayer w={w} entry={character} />}
             {meta.show.spots && spots !== undefined && (
-              <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={state.chooseSpot} />
+              <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={revealSpot} />
             )}
             <DecorLayer
               w={w}
@@ -631,6 +657,8 @@ type State = {
   onKeyDown(e: React.KeyboardEvent): void;
   /** The spot shown in the sidebar, and on the map what it sees */
   spot: null | SpotPick;
+  /** The map's own area, under the sidebar */
+  mapEl: null | HTMLDivElement;
   /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
   sidebarTab: SidebarTab;
   chooseSpot(pick: null | SpotPick): void;
@@ -652,6 +680,8 @@ const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point
 const minSidebarWidth = 120;
 /** Ms after a press ends that no context menu opens */
 const menuAfterUpMs = 100;
+/** Screen px a chosen spot must be clear of the map's visible edges, else the map glides to it */
+const revealMarginPx = 72;
 
 /** The events after which the map looks different. Doors redraw on their own — see `NavMap2d` */
 const redrawOn = new Set<string>(["map-settled", "nav-updated", "decor-ready", "decor-created", "decor-removed"]);

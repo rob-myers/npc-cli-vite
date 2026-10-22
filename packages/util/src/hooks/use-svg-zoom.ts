@@ -38,14 +38,23 @@ export function useSvgZoom(
     /** The svg, which a glide moves directly, frame by frame */
     svg: null as null | SVGSVGElement,
 
-    /** Glides the point to the centre, at least this far in. The svg is moved directly, and React told once at the end */
-    centreOn(x: number, y: number, minZoom = 1) {
+    /**
+     * Glides the point to the centre, at least this far in, or `offsetPx` from it on screen e.g. clear of a sidebar.
+     * The svg is moved directly, and React told once at the end
+     */
+    centreOn(x: number, y: number, minZoom = 1, offsetPx = { x: 0, y: 0 }) {
       state.stopGlide();
       const { bounds: b, glide } = state;
       const from = { zoom: state.zoom, pan: state.pan };
+      const zoom = Math.max(from.zoom, minZoom);
+      /** Screen px per world unit once there */
+      const pxPerUnit = (state.svg?.getScreenCTM()?.a ?? 1) * (zoom / from.zoom);
       const to = {
-        pan: { x: x - (b.minX + b.width / 2), y: y - (b.minY + b.height / 2) },
-        zoom: Math.max(from.zoom, minZoom),
+        pan: {
+          x: x - offsetPx.x / pxPerUnit - (b.minX + b.width / 2),
+          y: y - offsetPx.y / pxPerUnit - (b.minY + b.height / 2),
+        },
+        zoom,
       };
       const startMs = performance.now();
       const step = (nowMs: number) => {
@@ -147,6 +156,11 @@ export function useSvgZoom(
     svgRef(el: SVGSVGElement | null) {
       state.svg = el;
       preventPopupGestures(el);
+    },
+    /** A map point on screen, as the svg is drawn now: `null` before it mounts */
+    toClient(x: number, y: number): null | { x: number; y: number } {
+      const ctm = state.svg?.getScreenCTM();
+      return ctm == null ? null : new DOMPoint(x, y).matrixTransform(ctm);
     },
   }));
 

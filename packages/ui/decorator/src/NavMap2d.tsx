@@ -33,7 +33,7 @@ export function NavMap2d(props: Props) {
     onChange: (view) => store.patch({ view }),
   });
 
-  if (apiRef !== undefined) apiRef.current = { centreOn: zoom.centreOn };
+  if (apiRef !== undefined) apiRef.current = { centreOn: zoom.centreOn, toClient: zoom.toClient };
 
   // a press on the map itself: with shift a marquee, else a pan — and, unmoved, a click
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
@@ -417,7 +417,9 @@ type Props = {
 };
 
 export type NavMap2dApi = {
-  centreOn(x: number, y: number, minZoom?: number): void;
+  centreOn(x: number, y: number, minZoom?: number, offsetPx?: Geom.VectJson): void;
+  /** A map point on screen, `null` before the map mounts */
+  toClient(x: number, y: number): null | Geom.VectJson;
 };
 
 type Press = { at: Geom.VectJson; client: Geom.VectJson; marquee: boolean };

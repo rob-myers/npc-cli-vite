@@ -48,3 +48,10 @@ export const inkOf: Record<SpotKind, string> = {
 
 /** A spot, by its geomorph instance and its id there */
 export type SpotPick = { gmId: number; id: number };
+
+/** Where a spot is in the World, from its geomorph's own space */
+export function spotWorldPoint(w: WorldState, file: SpotsFile, pick: SpotPick) {
+  const spot = file.spots[pick.id];
+  const { a, b, c, d, e, f } = w.gms[pick.gmId].transform;
+  return { x: a * spot.x + c * spot.y + e, y: b * spot.x + d * spot.y + f };
+}
