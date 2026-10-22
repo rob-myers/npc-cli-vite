@@ -34,6 +34,7 @@ Pnpm monorepo. Key packages:
 **Code**
 - TSX/TS for almost everything. `camera-controls.js` and `CameraControls.jsx` are plain JS by design.
 - A selector is a base-ui `Select`, never a native `<select>`. Its trigger is only as wide as what is chosen. Use `Picker`, from `@npc-cli/util/picker`.
+- A modal opened from a ui panel stays inside that panel, never over the whole page. Portal it into the panel's root (base-ui `Dialog.Portal container`) and position it `absolute`, not `fixed`.
 - `useStateRef` (from `@npc-cli/util`) makes a stable ref-backed state object. Treat it like a class instance, not React state. Its methods go in alphabetical order.
 - A frame loop (`useFrame`, `w.e.addFrameCallback`) never drives a React render: no `state.update()` from one, even on a change. Write to the DOM instead, e.g. `el.style`, as `NpcFocus` places and fades its marks.
 - Geometry in 2D uses `x/y` on the xz world plane: `y` in 2D is `z` in 3D. `parseGroundPoint` / `groudPointToTuple` (note the typo) convert.
@@ -80,7 +81,8 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Memory | `docs/memory.md` | A `TexArray` can hold its pixels three times over (GPU, CPU mirror, 2D canvas), so memory is mostly how many layers each has. The floor and ceiling are a layer per geomorph KEY. A `gpu` array has no mirror. |
 | Deploys and stale tabs | `docs/deploys.md` | A tab can outlive its deploy. Production keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json` also logs each deploy's ui chunk paths and sizes), and `NewVersionToast` offers a reload. Ui chunk names stay put unless their code changed. Keep them so: nothing a ui imports may value-import `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`). `stableEntryPlugin` keeps chunks from importing the entry. |
 | Spots | `docs/spots.md` | Places an npc might stand, per geomorph key (`public/spot/{gmKey}.json`, committed): along walls, at corners, by doors, doables and low cover. Each has its depth at 16 angles, the spots it sees, and what is near. `gen-spots` makes them in Node from a navcat navmesh, run by the dev server whenever `assets.json` changes. The Decorator's **spots** layer shows them, and a press on one shows what it sees. |
-| Scenarios | `docs/scenarios.md` | The Scenario panel, `packages/ui/scenario`, lists three sections. **Scenarios**: npcs interacting, directed by queries over spots and live npc state (hide and seek, guard and intruder, meeting in secret, breach and clear), as yet stubs. **Characters**: name, npc, skin, rooms and door keys, one JSON each in `packages/media/src/scenario/character/{slug}.json`; DEV saves through `/api/scenario` (`vite-plugin-scenario`), a build bundles them as `virtual:scenario`. Their schema and the store shared with the Decorator are in `ui/world` (`scenario.schema.ts`, `scenario-shared.ts`). **Conversations**: trees (`ui/world/src/service/talk.ts`), played in `WorldSpeech`'s history by thread. |
+| Scenarios | `docs/scenarios.md` | The Scenario panel, `packages/ui/scenario`, lists three sections. **Scenarios**: npcs interacting, directed by queries over spots and live npc state (hide and seek, guard and intruder, meeting in secret, breach and clear), as yet stubs. **Characters**: name, npc, skin, rooms and door keys, one JSON each in `packages/media/src/scenario/character/{slug}.json`; DEV saves through `/api/scenario` (`vite-plugin-scenario`), a build bundles them as `virtual:scenario`. Their schema and the store shared with the Decorator are in `ui/world` (`scenario.schema.ts`, `scenario-shared.ts`). jsh `act {count,face,hide} <npc> …` plays their pieces by hand, and `sees rob abe` / `sees --all …` ask who sees whom. **Conversations**: trees (`ui/world/src/service/talk.ts`), played in `WorldSpeech`'s history by thread. |
+| Perception | `docs/perception.md` | The perception worker answers spot and sight queries (`spotQuery`), apart from the nav worker. `perception.main.ts` makes one per World lazily, sets it up per map with what blocks sight, and tells it of doors as they change. `worker/perception.worker.ts` and `worker/spots.ts` answer. |
 | MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
 | Preview checks | `docs/preview-checks.md` | Checking a change in the browser, and the log of checks run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
@@ -161,10 +163,9 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 Azimuth:
 - Free at every zoom, and untouched by zooming.
-- The compass dial (`compassDial`: its button on `WorldHud` beside look/follow, `setCompassDial`) only keeps it clear of the diagonals. A view let go more than `maxAzimuthSkew` (π/8) off square eases back to that (`keepNearSquare`), on switching on too.
-- Whilst the dial is on, `w`, `a`, `s` and `d` head along the world's axes, `w` along the one nearest up the screen (`getWasdDirection`). A turned view still lines up with doors, and that axis never flips under a resting view.
-- That axis is held whilst any of them is down (`wasdPoint`), so a turn mid-walk doesn't swerve them.
-- The button names `w`'s compass point (`compassPoint`: N is -z). Its needle leans by `compassSkew`, to where `w` heads on screen.
+- `w` heads up the screen, snapped onto a world axis within `compassSnapRad` (20°) of it (`snapHeading`, `getWasdDirection`). So doors line up without a square view, and a view near a diagonal walks diagonally, as seen.
+- That heading is held whilst any of `w`, `a`, `s` and `d` is down (`wasdHeading`), so a turn mid-walk doesn't swerve them.
+- On desktop the HUD's compass names `compassPoint`, the point nearest `w`'s heading (N is -z), white whilst snapped onto it (`wasdSnapped`). A marker on its rim shows where `w` heads on screen (`wasdSkew`): amber and leaning whilst snapped, else straight up.
 - The older detent, a turn let go snapping to a compass point (`detentEmbodiedAzimuth`), is kept behind `compassSnap`, which nothing sets.
 - Zoomed out (`t > embodiedAxisLockFrom`), a drag locks to one axis.
 
@@ -178,9 +179,9 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ### Following the player
 
 **Zoomed out, the view frames the player and their frontier.**
-- `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierReadMinMs`.
+- `service/player-frontier` reads a fan of the light sweep's polar table back off the GPU (`playerLight.readTable`), into one kept `ReadbackBuffer`. One read is in flight at a time, and at most one per `frontierConfig.readMinMs`.
 - It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
-- `followPlayer` holds the target `frontierPanFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
+- `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
 **Look and follow**
 - `follow` is on or off (`setFollow`). A long press on the button, or holding `f`, toggles it.
@@ -189,16 +190,16 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
 
-**The stops draw in** (`easeFrontier`, in `onCameraFrame`):
-- `controls.maxDistance` eases to the nearest radius that fits the segment in the frustum with `frontierMargin` to spare. It is clamped between `frontierNearFrac` of the travel and the persisted stop.
-- `controls.minDistance` eases to the same fit, clamped between `frontierNearest` and the persisted inner stop.
+**Following, the stops sit further out** (`easeFrontier`, in `onCameraFrame`), as the 30° fov is narrow:
+- `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
+- `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
 - Both go back to persisted when not following (a look press only pans), or when there is nothing to read.
 - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
 - On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
 
 ## Player input
 
-- **Walking.** With the compass dial off, `w`, `a`, `s` and `d` head as seen. For the dial, see [`embodied` mode](#embodied-mode).
+- **Walking.** `w`, `a`, `s` and `d` head as seen, snapped onto a world axis near it: see [`embodied` mode](#embodied-mode).
 - **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): held, a full crouch; a tap is contextual, half or back up. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Running.** An npc runs whilst `anim.hurry`.
@@ -220,7 +221,8 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 
 **Workers** (see `docs/workers.md`):
 - Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycast, `w.navWorker`).
-- jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one.
+- jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one with jsh's plan ops (`park`, `pad`…), sent from `plan.main.ts`.
+- jsh's perception worker holds spots and sight, sent from `perception.main.ts`: see `docs/perception.md`.
 
 ## Which room an npc is in
 
@@ -243,7 +245,7 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 ## jsh commands
 
 **Modules**
-- Exports of `packages/cli/src/jsh/world/{core,demo,demo_mcp,debug,decor,pred,shots,sidestep}.ts` become shell commands, and hot-reload. `modules.js` lists them.
+- Exports of `packages/cli/src/jsh/world/{act,core,demo,demo_mcp,debug,decor,pred,shots,sidestep,spot}.ts` become shell commands, and hot-reload. `modules.js` lists them.
 - The default profile sources them all through `/etc/jsh-default.sh` (`world/jsh-default.sh`). A new module goes in both.
 - Shell files reach `/etc` as exports of `scripts.js`, named `fooBarSh` for `/etc/foo-bar.sh`: `sources.ts` drops the `Sh` and kebab-cases the rest.
 - An exported *function* becomes a command. Export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
@@ -256,12 +258,19 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - So inside `processApi`, `this` is not the api. `this.setPtags(…)` from another method is undefined at runtime, though it typechecks.
 - Share logic via a `CmdService` method taking `meta`, e.g. `cmdService.setPtags(this.meta, …)`.
 
+**Never spread a command's context** (`ct`, `JshCli.RunArg`).
+- It is a Proxy (`provideProcessCtxt`): `api`, `args` and `w` exist only through its `get` trap.
+- So `{ ...ct }` keeps only `etc`, `home`, `lib` and `shared`, and `api` is then `undefined`.
+- Pass what is needed by name, e.g. `plan({ api: ct.api, w: ct.w, op })`.
+
 **A long-running command must support kill**, or ctrl-c does nothing and only a page reload ends it.
 - Register `const handlers = api.handleStatus({ cleanup })`, and have `cleanup` end the loop: unsubscribe, or resolve a promise the loop is racing.
 - Never `await` something a kill cannot interrupt. `w.npc.nextTick()` never resolves whilst the World is paused, so race it: `Promise.race([w.npc.nextTick(), killed])`.
 - On the way out, `handlers.dispose()`, then `throw api.getKillError()`.
 - World code it awaits, which a kill must end, runs as a `Task`: see `docs/tasks.md`.
 - Examples: `events` in `core.ts` (async iterable) and `demo_corners` in `demo.ts` (frame callback).
+
+**An error ends its process**, as bash's `set -e`, so the statements after it never run. `set +e` lets it run on, `$?` holding the code. Subprocesses inherit it (`process.errexit`).
 
 **Watching every tick needs no process.** `w.e.addKeyedTick(key, tick)` runs after each npc tick, so only whilst unpaused. `w.e.keyedTick.delete(key)` stops it. See `sidestep.ts`.
 

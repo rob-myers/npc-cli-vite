@@ -65,6 +65,20 @@ Queries: spots by side of a door, coverage (the union of `sees`), the spot seein
 - **Picking:** nearest, most new coverage, pairs that meet a condition.
 - **Live checks:** who sees whom now, and a reaction when it changes.
 
+## Acts: jsh `act`
+
+The pieces of a scenario, played by hand rather than directed. `act <verb> <npc> …` (`cli/src/jsh/world/act.ts`) runs one on game time until done or killed. Run several as background jobs (`&`) to compose them. `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map.
+
+| Verb | Does |
+| --- | --- |
+| `count rob to:10 [every:1]` | Says each number in turn |
+| `face rob wall` | Looks towards their spot's nearest occluder. Also an npc or a spot key |
+| `hide cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is. Skips spots others stand at or head for. Already hidden, it stays put. Blocked, it tries another, failing after 3 |
+
+A walk that stalls, e.g. blocked by the player, is given up.
+
+`sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. Both exit 1 if none, for `if` and `while`.
+
 ## Characters
 
 Authored in DEV and shipped as data. One JSON file per character, `packages/media/src/scenario/character/{slug}.json`, its key `character/{slug}`. `ScenarioEntrySchema` (`ui/world/src/scenario.schema.ts`) has `name`, `npcKey`, `skin`, and `maps`: what they have in the World (below). `scenarioKinds` is `character` alone, as yet.

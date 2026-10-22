@@ -3,13 +3,15 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { ANY_QUERY_FILTER, getPolyWallSegments, type NavMesh } from "navcat";
 import { type Spot, type SpotKind, spotKinds } from "../spot.schema";
 import { generateTiledNavMeshResult } from "../worker/generate-tiled-navmesh";
+import { type Occluder, type SegGrid, segsHit } from "./seg-grid";
+import { computeSight, createSightGrid, sightConfig } from "./spot-sight";
 
 /** Tuning for `computeSpots`. Lengths in metres */
 export const spotConfig = {
   /** Rays per `depth`, evenly round from `+x` */
   angles: 16,
-  /** The furthest `depth` and `sees` reach */
-  radius: 10,
+  /** The furthest `depth`, `sees` and `sight` reach: further is unknown */
+  radius: 12,
   /** Spacing of wall and cover spots along the walkable boundary */
   wallStep: 1,
   /** How far off the boundary a spot along it stands */
@@ -24,15 +26,15 @@ export const spotConfig = {
   cornerPush: 0.15,
   /** A decor spot is this near its decor at most */
   decorReach: 0.8,
-  /** Fill spots are at least this far from any other */
-  fillGap: 1.5,
+  /** Fill spots are at least this far from any other, so all floor is within `regionRadius` of one */
+  fillGap: 1,
+  /** The grid fill spots are tried on */
+  fillStep: 0.25,
   /** Spots nearer than this are merged into the first made, by `spotKinds` order */
   mergeGap: 0.5,
   nearRadius: 1.5,
-  /** Obstacles this high block sight stood */
-  standBlockHeight: 1.4,
   /** Obstacles this high hide someone fully crouched */
-  crouchHideHeight: 0.6,
+  crouchHideHeight: sightConfig.crouchHideHeight,
   /** Cover spots lose sight past obstacles this near */
   coverReach: 0.5,
 };
@@ -56,9 +58,13 @@ export async function createGmNavMesh(layout: Geomorph.Layout): Promise<NavMesh>
   return result.navMesh;
 }
 
-/** Places an npc might stand in `layout`, each with what it sees and what is near — see `docs/spots.md` */
-export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh): Spot[] {
+/**
+ * Places an npc might stand in `layout`, each with what it sees and what is near, and sight between their regions.
+ * Also how long each part took, and the furthest any floor is from a spot — see `docs/spots.md`
+ */
+export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
   const c = spotConfig;
+  let t0 = performance.now();
   const wallSegs = layout.walls.flatMap((poly) => poly.lineSegs);
   /** `poly.lineSegs`, not `seg`: some windows are curved */
   const windowSegs = layout.windows.flatMap(({ poly }) => poly.lineSegs);
@@ -73,12 +79,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh): Spot[] 
   const onMesh = (p: Geom.VectJson) => navPolys.some((poly) => inConvex(poly, p));
 
   // stood, sight is blocked by walls, shut doors and tall obstacles
-  const grid = new SegGrid(1);
-  for (const seg of wallSegs) grid.add(seg, "wall", -1);
-  doorSegs.forEach((seg, doorId) => grid.add(seg, "door", doorId));
-  for (const o of obstacles) {
-    if (o.height >= c.standBlockHeight) for (const seg of o.segs) grid.add(seg, "obstacle", o.obstacleId);
-  }
+  const grid = createSightGrid(layout);
 
   const cands: Cand[] = [];
   const boundary = getBoundary(navMesh);
@@ -88,7 +89,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh): Spot[] 
   for (const e of boundary) {
     const source = sourceOf(e);
     if (source === null) continue;
-    const kind: SpotKind = source.height >= c.standBlockHeight ? "wall" : "cover";
+    const kind: SpotKind = source.height >= sightConfig.standBlockHeight ? "wall" : "cover";
     const n = Math.max(1, Math.round(e.len / c.wallStep));
     for (let k = 0; k < n; k++) {
       const t = ((k + 0.5) / n) * e.len;
@@ -125,23 +126,68 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh): Spot[] 
 
   const kept = mergeCands(cands, c.mergeGap);
 
-  // the gaps between, on a grid, nearest first
-  const step = c.fillGap / 2;
+  // the gaps between, on a grid: every grid point is then within `fillGap` of a spot
+  const step = c.fillStep;
   const { x: bx, y: by, width, height } = layout.bounds;
+  const floor: Geom.VectJson[] = [];
+  const near = new PointBuckets(c.fillGap);
+  for (const { p } of kept) near.add(p);
   for (let y = by + step / 2; y < by + height; y += step) {
     for (let x = bx + step / 2; x < bx + width; x += step) {
       const p = { x, y };
-      if (onMesh(p) && kept.every((o) => Math.hypot(o.p.x - x, o.p.y - y) >= c.fillGap)) {
-        kept.push({ kind: "fill", p });
-      }
+      if (onMesh(p) === false) continue;
+      floor.push(p);
+      if (near.nearest(p, c.fillGap) >= c.fillGap) kept.push({ kind: "fill", p }), near.add(p);
     }
   }
+  const coverage = Math.max(0, ...floor.map((p) => near.nearest(p, 2 * c.fillGap)));
+  const placesMs = performance.now() - t0;
+  t0 = performance.now();
 
-  return describe(kept, layout, obstacles, grid);
+  const { spots, within } = describe(kept, layout, obstacles, grid);
+  const describeMs = performance.now() - t0;
+
+  const low = obstacles.filter((o) => o.height >= c.crouchHideHeight && o.height < sightConfig.standBlockHeight);
+  const lowNear = kept.map(({ kind, p }) =>
+    kind !== "cover"
+      ? []
+      : low
+          .filter((o) => Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach)
+          .flatMap((o) => o.segs.map(([a, b]): Occluder => ({ a, b, kind: "obstacle", id: o.obstacleId }))),
+  );
+  const { sight, always, via, crouchSafe, doArcs, doSight, doVia, rooms, hull, ms } = computeSight({
+    spots,
+    layout,
+    grid,
+    within,
+    lowNear,
+    radius: c.radius,
+  });
+  spots.forEach((spot, i) =>
+    Object.assign(spot, {
+      sight: sight[i],
+      always: always[i],
+      via: via[i],
+      crouchSafe: crouchSafe[i],
+      ...(doArcs[i] === undefined ? {} : { doArc: Math.round(doArcs[i] * 1000) / 1000 }),
+      doSight: doSight[i],
+      doVia: doVia[i],
+    }),
+  );
+
+  return {
+    spots,
+    rooms,
+    hull,
+    regionRadius: sightConfig.regionRadius,
+    /** Metres from the furthest floor sampled to its nearest spot */
+    coverage,
+    ms: { places: placesMs, describe: describeMs, ...ms },
+  };
 }
 
-/** Each spot's room, depth, what it sees, and what is near */
-function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[], grid: SegGrid): Spot[] {
+/** Each spot's room, depth, what it sees, and what is near. Also the obstacles each stands in */
+function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[], grid: SegGrid) {
   const c = spotConfig;
   /** Obstacles each stands in, e.g. a bed's doable: their own sides do not hide them */
   const within = cands.map(({ p }) => obstacles.filter((o) => inPoly(o.segs, p)).map((o) => o.obstacleId));
@@ -169,6 +215,12 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       seesDoors: seenDoors(p, layout, grid, skip),
       near: nearTo(p, layout, obstacles),
       ...(ref === undefined ? {} : { ref }),
+      sight: [],
+      always: [],
+      via: [],
+      crouchSafe: [],
+      doSight: [],
+      doVia: [],
     };
   });
 
@@ -203,7 +255,7 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
     const low = obstacles.filter(
       (o) =>
         o.height >= c.crouchHideHeight &&
-        o.height < c.standBlockHeight &&
+        o.height < sightConfig.standBlockHeight &&
         Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach,
     );
     spot.crouchHidden = spot.sees.filter((j) =>
@@ -211,7 +263,7 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
     );
   });
 
-  return spots;
+  return { spots, within };
 }
 
 /** Doors in sight of `p` at a quarter, half or three quarters of the way across */
@@ -368,16 +420,6 @@ function distToSeg(p: Geom.VectJson, [a, b]: [Geom.VectJson, Geom.VectJson]) {
   return geomService.getDistanceToSeg(p.x, p.y, a, b);
 }
 
-/** Where along `p → q` it crosses `a → b`, from `0` to `1`, else `-1` */
-function segsHit(p: Geom.VectJson, q: Geom.VectJson, a: Geom.VectJson, b: Geom.VectJson) {
-  const [rx, ry, sx, sy] = [q.x - p.x, q.y - p.y, b.x - a.x, b.y - a.y];
-  const z = rx * sy - ry * sx;
-  if (z === 0) return -1;
-  const t = ((a.x - p.x) * sy - (a.y - p.y) * sx) / z;
-  const u = ((a.x - p.x) * ry - (a.y - p.y) * rx) / z;
-  return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? t : -1;
-}
-
 function isSkipped(o: Occluder, skip: Set<number>) {
   return o.kind === "obstacle" && skip.has(o.id);
 }
@@ -387,52 +429,31 @@ function round(x: number, decimals = 2) {
   return Math.round(x * f) / f;
 }
 
-/** Occluding segments bucketed by cell, so a line meets only those along it */
-class SegGrid {
-  cells = new Map<string, Occluder[]>();
-  /** Stamped as met, so one in many cells is met once per line */
-  seen = new Map<Occluder, number>();
-  stamp = 0;
-  /** Metres */
+/** Points bucketed by cell, for the nearest within a reach */
+class PointBuckets {
+  cells = new Map<string, Geom.VectJson[]>();
   cell: number;
 
   constructor(cell: number) {
     this.cell = cell;
   }
 
-  add([a, b]: [Geom.VectJson, Geom.VectJson], kind: Occluder["kind"], id: number) {
-    const o: Occluder = { a, b, kind, id };
-    const c = this.cell;
-    for (let x = Math.floor(Math.min(a.x, b.x) / c); x <= Math.floor(Math.max(a.x, b.x) / c); x++) {
-      for (let y = Math.floor(Math.min(a.y, b.y) / c); y <= Math.floor(Math.max(a.y, b.y) / c); y++) {
-        const key = `${x},${y}`;
-        this.cells.get(key)?.push(o) ?? this.cells.set(key, [o]);
-      }
-    }
+  add(p: Geom.VectJson) {
+    const key = `${Math.floor(p.x / this.cell)},${Math.floor(p.y / this.cell)}`;
+    this.cells.get(key)?.push(p) ?? this.cells.set(key, [p]);
   }
 
-  /** Calls `fn` with each occluder `p → q` crosses and where, stopping once it returns `true` */
-  forEachOn(p: Geom.VectJson, q: Geom.VectJson, fn: (o: Occluder, lambda: number) => boolean | undefined) {
-    const stamp = ++this.stamp;
-    const c = this.cell;
-    const [dx, dy] = [q.x - p.x, q.y - p.y];
-    let [cx, cy] = [Math.floor(p.x / c), Math.floor(p.y / c)];
-    const [ex, ey] = [Math.floor(q.x / c), Math.floor(q.y / c)];
-    const [sx, sy] = [Math.sign(dx), Math.sign(dy)];
-    const tdx = dx === 0 ? Infinity : Math.abs(c / dx);
-    const tdy = dy === 0 ? Infinity : Math.abs(c / dy);
-    let tmx = dx === 0 ? Infinity : ((sx > 0 ? cx + 1 : cx) * c - p.x) / dx;
-    let tmy = dy === 0 ? Infinity : ((sy > 0 ? cy + 1 : cy) * c - p.y) / dy;
-    for (let n = Math.abs(ex - cx) + Math.abs(ey - cy); n >= 0; n--) {
-      for (const o of this.cells.get(`${cx},${cy}`) ?? []) {
-        if (this.seen.get(o) === stamp) continue;
-        this.seen.set(o, stamp);
-        const lambda = segsHit(p, q, o.a, o.b);
-        if (lambda !== -1 && fn(o, lambda) === true) return;
+  /** Metres to the nearest within `reach`, else `Infinity` */
+  nearest(p: Geom.VectJson, reach: number) {
+    const [c, n] = [this.cell, Math.ceil(reach / this.cell)];
+    const [cx, cy] = [Math.floor(p.x / c), Math.floor(p.y / c)];
+    let least = Infinity;
+    for (let x = cx - n; x <= cx + n; x++) {
+      for (let y = cy - n; y <= cy + n; y++) {
+        for (const q of this.cells.get(`${x},${y}`) ?? []) least = Math.min(least, Math.hypot(q.x - p.x, q.y - p.y));
       }
-      if (tmx < tmy) (tmx += tdx), (cx += sx);
-      else (tmy += tdy), (cy += sy);
     }
+    return least;
   }
 }
 
@@ -442,5 +463,3 @@ type Cand = { kind: SpotKind; p: Geom.VectJson; facing?: number; ref?: Spot["ref
 type Edge = { a: Geom.VectJson; d: Geom.VectJson; len: number; n: Geom.VectJson };
 
 type Obstacle = { obstacleId: number; height: number; meta: Meta; segs: [Geom.Vect, Geom.Vect][] };
-
-type Occluder = { a: Geom.VectJson; b: Geom.VectJson; kind: "wall" | "door" | "obstacle"; id: number };

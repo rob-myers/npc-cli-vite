@@ -9,8 +9,8 @@ The ONLY doc for the player leaving their body and waking in another: `component
 
 ## Phases
 
-- **leave** (`leaving`): follow is turned off and the zoom held (`zoomHeld`) until they arrive (`handBack`). The camera pans onto their forehead, turned to the side their face is on as far as the compass
-  dial allows (`frame`, `lookAt`'s `theta`). The light draws in to nothing at their forehead (`foreheadOf`, through the head bone), and the unseen goes black
+- **leave** (`leaving`): follow is turned off and the zoom held (`zoomHeld`) until they arrive (`handBack`). The camera pans onto their forehead, turned to the side their face is on
+  (`frame`, `lookAt`'s `theta`). The light draws in to nothing at their forehead (`foreheadOf`, through the head bone), and the unseen goes black
   (`playerLight.setVeil`), but not in `ship` mode (`veil`). A breath under way
   is let finish, and the pause after it drawn out (`breath.pace`). Their eyes shut halfway.
 - **commit**: who to wake in, `findTarget`: anyone sitting or lying, else someone spawned in a free bed, else a

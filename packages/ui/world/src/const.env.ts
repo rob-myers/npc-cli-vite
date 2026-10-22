@@ -80,7 +80,7 @@ export const assetsJsonChangedEvent = "assets-json-changed";
 export const mapEditSymbolSavedEvent = "map-edit:symbol-saved";
 
 /** Vertical field of view (degrees) of the world camera, up to `cameraRefAspect` */
-export const cameraFov = 50;
+export const cameraFov = 30;
 
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;
@@ -90,10 +90,10 @@ export const defaultBrightness = 1;
 /** How much of their skin an npc keeps, so the player's light reads as light ON them — a theme may say otherwise */
 export const defaultNpcBrightness = 0.25;
 
-export const defaultCameraMinDistance = isTouchDevice() ? 4 : 8;
+export const defaultCameraMinDistance = isTouchDevice() ? 12 : 14;
 
 /** How far out the camera's outer zoom stop sits, in metres */
-export const defaultCameraMaxDistance = isTouchDevice() ? 12 : 14;
+export const defaultCameraMaxDistance = isTouchDevice() ? 20 : 24;
 /** Default `w.player.key` */
 export const defaultPlayerKey = "rob";
 /** What can be carried, and how — see `docs/inventory.md` */
@@ -161,37 +161,36 @@ export const embodiedZoomInRate = 2.8;
 /** The zoom crosshair sits this far off the floor, so it is not in the floor's own plane */
 export const crosshairY = 0.01;
 /**
- * `embodied` zoomed out: the view FRAMES the player and their frontier — the point ahead their
- * light reaches — panning between them and drawing the outer zoom stop in until both are in view.
+ * `embodied` following: the view FRAMES the player and their frontier, the point ahead their light reaches.
  * See `service/player-frontier`, and `WorldView`'s `easeFrontier` and `followPlayer`.
- * Half the fan of directions that is read, in degrees; how fast the stop eases, per second; the
- * nearest it comes, as a share of the travel between the stops; the slack the fit is given, as a
- * factor; and how far from the player towards the frontier the follow holds the view — `0.5`
- * is the midpoint, `0` the player as ever
  */
-export const frontierHalfDeg = 15;
-export const frontierRate = 2;
-/** How fast the frontier vector itself is eased, per second — the reading leaps, and a turn swings it */
-export const frontierSmoothRate = 3;
-/**
- * …and whilst the player is off the mesh or mid fade-spawn, when their facing changes twice in
- * quick succession — turned to face a doable, then set by it — which the camera should glide over
- */
-export const frontierCalmRate = 0.8;
-/** The least time between two reads of the sweep — the ease above hides anything quicker */
-export const frontierReadMinMs = 50;
-export const frontierNearFrac = 0.05; // not `0`: `t` divides by the travel that would leave
-export const frontierMargin = 1.3;
-export const frontierPanFrac = 0.5;
-/** The nearest the INNER stop comes, in metres, when the frontier is close — see `easeFrontier` */
-export const frontierNearest = 4;
+export const frontierConfig = {
+  /** Half the fan of directions read, in degrees */
+  halfDeg: 15,
+  /** The least time between two reads of the sweep: the eases hide anything quicker */
+  readMinMs: 50,
+  /** How fast the frontier vector is eased, per second: the reading leaps, and a turn swings it */
+  smoothRate: 3,
+  /** The same whilst the player is off the mesh or mid fade-spawn, so a facing set twice in quick succession glides */
+  calmRate: 0.8,
+  /** How fast the zoom stops and the view's offset ease, per second */
+  rate: 2,
+  /** Near enough what they ease to, so no further frame is asked for */
+  settleUntil: 0.001,
+  /** The nearest the inner stop comes, as a share of the travel between the stops. Not `0`: `t` divides by it */
+  nearFrac: 0.05,
+  /** The slack the fit is given, as a factor */
+  margin: 1.3,
+  /** How far from the player towards the frontier the view is held: `0.5` the midpoint, `0` the player */
+  panFrac: 0.5,
+};
 
-/** Camera rotate speed: touch drags are much shorter than mouse drags, so they get more per-pixel */
-export const rotateSpeedDesktop = 1;
-export const rotateSpeedMobile = 1.75;
-/** Camera zoom speed: applied as an exponent to the pinch spread ratio (and to the wheel scale) */
-export const zoomSpeedDesktop = 0.3;
-export const zoomSpeedMobile = 0.8;
+/** Camera speeds by device. A touch drag is far shorter than a mouse's, so it gets more per pixel */
+export const cameraSpeed = {
+  rotate: { desktop: 1, touch: 1.75 },
+  /** An exponent on the pinch's spread ratio, and on the wheel's scale */
+  zoom: { desktop: 0.3, touch: 0.8 },
+};
 
 export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
   post: { lightBg: "#000000", darkBg: "#000000", fadedFloorTint: 0.1, fadedObstacleTint: 0.1 },

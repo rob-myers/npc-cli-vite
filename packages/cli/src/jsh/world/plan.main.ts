@@ -3,8 +3,8 @@
 import { parked } from "./pred";
 
 /**
- * One op on jsh's side of the worker, under the shell's pause/kill — see `worker/plan.worker.ts`
- * for the ops, and `awaitPausable` for what a pause or kill does
+ * One plan op on the nav worker, which `worker/jsh.worker.ts` extends, under the shell's pause/kill.
+ * The ops are in `worker/plan.worker.ts`. Spots and sight are the perception worker's: see `perception.main.ts`
  */
 export function plan<O extends WW.JshOp>({ api, w, op }: Pick<JshCli.RunArg, "api" | "w"> & { op: O }) {
   return awaitPausable(api, (signal) => request(w, api, op, signal));
@@ -97,7 +97,8 @@ export function isPaused(e: unknown) {
 
 /** The worker is told a map's door frames and room doors once, before the first request on it */
 function ensureSetup(w: JshCli.WorldState, worker: Worker) {
-  if (setupMapKey.get(worker) === w.mapKey) return;
+  const setupKey = `${w.mapKey} ${w.gmsHash}`;
+  if (setupMapKey.get(worker) === setupKey) return;
   const rooms = w.gmRoomGraph.nodesArray.flatMap((node) => (node.type === "room" ? node.grKey : []));
   worker.postMessage({
     type: "jsh-setup",
@@ -105,7 +106,7 @@ function ensureSetup(w: JshCli.WorldState, worker: Worker) {
     doorFrames: Object.values(w.d).map(({ gdKey, src, dst, normal }) => ({ gdKey, src, dst, normal })),
     roomDoors: Object.fromEntries(rooms.map((grKey) => [grKey, getRoomDoorKeys(w, grKey)])),
   } satisfies WW.JshMsgToNavWorker);
-  setupMapKey.set(worker, w.mapKey);
+  setupMapKey.set(worker, setupKey);
 }
 
 function getRoomDoorKeys(w: JshCli.WorldState, grKey: Geomorph.GmRoomKey) {
@@ -119,7 +120,7 @@ function getWorker(w: JshCli.WorldState) {
   return worker;
 }
 
-/** The map each worker was last set up for */
+/** What each worker was last set up for: map and layout */
 const setupMapKey = new WeakMap<Worker, string>();
 
 /**

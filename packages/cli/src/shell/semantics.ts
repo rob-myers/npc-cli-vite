@@ -80,8 +80,9 @@ export class JShSemantics {
       ttyError(`${node.meta.sessionKey}: pid ${node.meta.pid}: stderr does not exist`, message);
     }
 
-    // Kill process in line with `set -e`
     node.exitCode = e.exitCode;
+    // runs on after `set +e`, else killed as `set -e`
+    if (sessionApi.getProcess(node.meta)?.errexit === false) return;
     throw killError(node.meta, e.exitCode);
   }
 
@@ -495,6 +496,7 @@ export class JShSemantics {
     } catch (e) {
       const error = this.normalizeError(node, cmdStackIndex, e);
       sem.handleShError(node, error);
+      node.meta.stack.splice(cmdStackIndex); // ran on after `set +e`: the next error starts afresh
     }
   }
 

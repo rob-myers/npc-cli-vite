@@ -6,12 +6,13 @@ A spot is a place an npc might stand, made per geomorph key with what it sees an
 
 | What | Where |
 | --- | --- |
-| Output | `packages/app/public/spot/{gmKey}.json`, committed. One spot a line. |
+| Output | `packages/app/public/spot/{gmKey}.json`, committed. One spot a line. None for a playground geomorph (`--playground`), which is edited at runtime: it has no spots. |
 | Schema | `packages/ui/world/src/spot.schema.ts` |
 | Making them | `computeSpots` in `packages/ui/world/src/service/spots.ts`, tuned by `spotConfig` there |
 | Bin | `scripts/src/bins/gen-spots.ts` (`--force`, `--gmKeys='["g-101--multipurpose"]'`) |
 | Dev server | `scripts/src/vite-plugin-spots.ts`. `POST /api/gen-spots` forces a run. |
-| View | `packages/ui/decorator/src/SpotsLayer.tsx` |
+| View | `packages/ui/decorator/src/SpotsLayer.tsx`. The sidebar's spot tab (`SpotCard.tsx`) shows one, pressed on the map or entered by key, e.g. `g0s455`. |
+| Queries | The perception worker holds the map's spots (`cli/src/jsh/world/worker/spots.ts`): see `docs/perception.md`. Main sends a batch with `spotQuery(ct, queries)` (`perception.main.ts`), one round trip each. Sight from or to an npc is a line from their own point through that worker's occluders, across geomorphs, through open doors. Spot to spot it is the precomputed `sees`, plus `seesVia` an open door. An npc's spots (`spots of:rob`) are those of their room within 1 m, else its nearest, and in a doorway the other side's too. jsh: `spot of:rob` (the nearest), `spots of:rob` (all), `spot g0s12`, `sees g0s12 g0s40`, `spots room:… kind:… near:…`. Between npcs `sees` also asks their eyes and facing: see `docs/scenarios.md` |
 
 ## Coords
 

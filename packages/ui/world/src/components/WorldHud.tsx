@@ -6,7 +6,6 @@ import {
   LockOpenIcon,
   PersonSimpleRunIcon,
   PersonSimpleWalkIcon,
-  TriangleIcon,
   UserFocusIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -375,12 +374,6 @@ function PlayerButtons() {
   const press = useRef({ timer: 0, long: false });
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
-  const compassDial = w.view?.compassDial === true;
-  const compassLetter = compassLetters[w.view?.compassPoint ?? 0];
-  /** Radians the view is turned off `w`'s axis, which the needle leans back by */
-  const compassSkew = compassDial ? (w.view?.compassSkew ?? 0) : 0;
-  /** The same off the axis NEAREST up the screen, where `w` heads once the move keys are let go */
-  const nextSkew = compassSkew - Math.round(compassSkew / (Math.PI / 2)) * (Math.PI / 2);
   const big = w.touchDevice;
   const hurry = w.player.get()?.anim.hurry === true;
   const GaitIcon = hurry ? PersonSimpleRunIcon : PersonSimpleWalkIcon;
@@ -454,33 +447,38 @@ function PlayerButtons() {
         )}
         <UserFocusIcon className={cn(buttonIcon(follow), "size-5")} weight="light" />
       </div>
-      {/* whilst on (white) `wasd` heads along the world's axes, `w` to the point named */}
-      <div className="relative flex shrink-0">
-        <div
-          className={buttonClass}
-          title={compassDial ? `compass on: w heads ${compassLetter}` : "compass off"}
-          onClick={() => w.hud?.dragged !== true && w.view.setCompassDial(!compassDial)}
-        >
-          {/* where `w` heads */}
-          <span className={cn(buttonIcon(compassDial), "font-extralight font-sans text-lg leading-none")}>
-            {compassLetter}
-          </span>
-        </div>
-        {/* a compass needle's tip out of the button's top, leaning to where `w` heads on screen */}
-        <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${compassSkew}rad)` }}>
-          <TriangleIcon
-            className={cn("absolute -top-1 left-1/2 size-2 -translate-x-1/2", iconColor(compassDial))}
-            weight="fill"
-          />
-        </div>
-        {/* a second, hollow, once the view has turned past a diagonal with a move key held */}
-        {nextSkew !== compassSkew && (
-          <div className="pointer-events-none absolute inset-0" style={{ transform: `rotate(${nextSkew}rad)` }}>
-            <TriangleIcon className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 text-neutral-400" weight="bold" />
-          </div>
-        )}
-      </div>
+      {/* desktop only: touch has no `wasd` */}
+      {big === false && (
+        <CompassRose
+          point={w.view?.compassPoint ?? 0}
+          snapped={w.view?.wasdSnapped !== false}
+          skew={w.view?.wasdSkew ?? 0}
+        />
+      )}
     </div>
+  );
+}
+
+/** Desktop's compass, button sized: the cardinal point nearest where `w` heads, and a marker on its rim where it heads on screen */
+function CompassRose({ point, snapped, skew }: { point: number; snapped: boolean; skew: number }) {
+  return (
+    <svg viewBox="-18 -18 36 36" className="pointer-events-auto size-9 shrink-0 drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]">
+      <title>{`w heads ${snapped ? "" : "near "}${compassLetters[point]}`}</title>
+      <circle r={13} fill="none" strokeWidth={0.8} className="stroke-neutral-500/70" />
+      <text
+        textAnchor="middle"
+        dominantBaseline="central"
+        className={cn("font-sans font-semibold text-[13px]", snapped ? "fill-white" : "fill-neutral-400")}
+      >
+        {compassLetters[point]}
+      </text>
+      {/* amber whilst snapped onto the axis, else pale and straight up */}
+      <path
+        d="M0 -17.5L3.5 -11.5L-3.5 -11.5Z"
+        transform={`rotate(${(skew * 180) / Math.PI})`}
+        className={snapped ? "fill-amber-300" : "fill-neutral-200"}
+      />
+    </svg>
   );
 }
 

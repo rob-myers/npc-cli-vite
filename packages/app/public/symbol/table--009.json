@@ -27,7 +27,7 @@
       "children": [
         {
           "id": "808d6435-0b19-4837-8e3e-f1a94dd9e387",
-          "name": "extra--003--chair y=0.3",
+          "name": "extra--003--chair y=0.3 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -35,18 +35,18 @@
             "b": -0.766,
             "c": 0.766,
             "d": 0.6428,
-            "e": 27.3186,
-            "f": 9.8486
+            "e": 27.5,
+            "f": 9
           },
           "type": "symbol",
           "srcKey": "extra--003--chair",
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": 0.18142973609852803, "y": -0.3835143424426505},
-          "cssTransform": "matrix(0.6427876096865393, -0.7660444431189782, 0.7660444431189782, 0.6427876096865393, 27.5, 9.4651)"
+          "cssTransform": "matrix(0.6428, -0.766, 0.766, 0.6428, 27.6814, 8.6165)"
         },
         {
           "id": "01e6b0ca-bcec-4c3c-a563-2ad17f91fc7e",
-          "name": "extra--003--chair y=0.3",
+          "name": "extra--003--chair y=0.3 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -54,18 +54,18 @@
             "b": 0.766,
             "c": 0.766,
             "d": -0.6428,
-            "e": 27.8186,
-            "f": 40.6165
+            "e": 28,
+            "f": 41.5
           },
           "type": "symbol",
           "srcKey": "extra--003--chair",
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": 0.1814, "y": 0.3835},
-          "cssTransform": "matrix(0.6427876096865393, 0.7660444431189782, 0.7660444431189782, -0.6427876096865393, 28, 41)"
+          "cssTransform": "matrix(0.6428, 0.766, 0.766, -0.6428, 28.1814, 41.8835)"
         },
         {
           "id": "5387b1f1-d6a4-4200-8fda-4432375117ec",
-          "name": "extra--003--chair y=0.3",
+          "name": "extra--003--chair y=0.3 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -73,18 +73,18 @@
             "b": -0.766,
             "c": -0.766,
             "d": 0.6428,
-            "e": 23.358,
-            "f": 10.3486
+            "e": 22.358,
+            "f": 8.8486
           },
           "type": "symbol",
           "srcKey": "extra--003--chair",
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": -0.1814, "y": -0.3835},
-          "cssTransform": "matrix(-0.6427876096865393, -0.7660444431189782, -0.7660444431189782, 0.6427876096865393, 23.1766, 9.9651)"
+          "cssTransform": "matrix(-0.6428, -0.766, -0.766, 0.6428, 22.1766, 8.4651)"
         },
         {
           "id": "5ca8f074-602b-46d7-9646-acd75b710baf",
-          "name": "extra--003--chair y=0.3",
+          "name": "extra--003--chair y=0.3 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -92,14 +92,14 @@
             "b": 0.766,
             "c": -0.766,
             "d": -0.6428,
-            "e": 23.358,
-            "f": 41.1165
+            "e": 22.5,
+            "f": 41.5
           },
           "type": "symbol",
           "srcKey": "extra--003--chair",
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": -0.1814, "y": 0.3835},
-          "cssTransform": "matrix(-0.6427876096865393, 0.7660444431189782, -0.7660444431189782, -0.6427876096865393, 23.1766, 41.5)"
+          "cssTransform": "matrix(-0.6428, 0.766, -0.766, -0.6428, 22.3186, 41.8835)"
         }
       ]
     },

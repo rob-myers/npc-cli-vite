@@ -3,7 +3,9 @@
 /**
  * Prints each file's size raw, gzipped and brotlied, at the levels a host would serve.
  * ```sh
- * pnpm compare-gzip-brotli packages/media/src/blockbench/current/current.glb
+ * pnpm compare-brotli packages/media/src/blockbench/current/current.glb
+ * pnpm compare-brotli packages/app/public/assets.json
+ * pnpm compare-brotli packages/app/public/spot/g-101--multipurpose.json
  * ```
  */
 

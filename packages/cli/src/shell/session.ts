@@ -54,6 +54,8 @@ export const sessionApi = {
     origSrc?: string;
     posPositionals?: string[];
     ptags: Meta;
+    /** Defaults to `true` */
+    errexit?: boolean;
   }) {
     const pid = sessionApi.getNextPid(def.sessionKey);
     const processes = sessionApi.getSession(def.sessionKey).process;
@@ -74,6 +76,7 @@ export const sessionApi = {
       localVar: {},
       inheritVar: {},
       ptags: def.ptags,
+      errexit: def.errexit ?? true,
     });
   },
   createSession(sessionKey: string, env: Record<string, any>): Session {
@@ -591,6 +594,8 @@ export type ProcessMeta = {
   /** Inherited local variables. */
   inheritVar: Record<string, unknown>;
   ptags: Ptags;
+  /** An error ends it, as `set -e`. With `set +e` it runs on. A subprocess inherits it */
+  errexit: boolean;
   /** Why it is suspended, when a `KillOpts.reason` suspended it */
   holds?: Set<HoldReason>;
 };

@@ -1,32 +1,36 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import { queryClientApi } from "@npc-cli/ui__world/query-client";
 import { type SpotKind, type SpotsFile, SpotsFileSchema, spotsChangedEvent } from "@npc-cli/ui__world/spot.schema";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-/** Every geomorph key's spots on this map, refetched as the dev server remakes them. `undefined` until fetched */
+/**
+ * Every geomorph key's spots on this map, refetched as the dev server remakes them. `undefined` until fetched.
+ * Fetched in an effect, not `useQuery`: a query added mid-render wakes every `useWorld`, which reads the query cache
+ */
 export function useSpots(w: WorldState, enabled: boolean) {
-  const gmKeys = [...new Set(w.gms.map((gm) => gm.key))];
-  const byGmKey = useQuery({
-    queryKey: ["spots", ...gmKeys],
-    enabled,
-    async queryFn() {
-      const files = await Promise.all(
-        gmKeys.map((gmKey) =>
-          fetchParsed(`/spot/${gmKey}.json${getDevCacheBustQueryParam()}`, SpotsFileSchema).catch(() => null),
-        ),
-      );
-      return Object.fromEntries(files.flatMap((file) => (file === null ? [] : [[file.gmKey, file]])));
-    },
-  }).data as undefined | Record<string, SpotsFile>;
+  const gmKeys = [...new Set(w.gms.map((gm) => gm.key))].join(" ");
+  const [byGmKey, setByGmKey] = useState<undefined | Record<string, SpotsFile>>();
 
   useEffect(() => {
-    if (!import.meta.hot) return;
-    const onChanged = () => queryClientApi.queryClient.invalidateQueries({ queryKey: ["spots"] });
-    import.meta.hot.on(spotsChangedEvent, onChanged);
-    return () => import.meta.hot?.off(spotsChangedEvent, onChanged);
-  }, []);
+    if (enabled === false) return;
+    let gone = false;
+    const load = async () => {
+      const files = await Promise.all(
+        gmKeys
+          .split(" ")
+          .map((gmKey) =>
+            fetchParsed(`/spot/${gmKey}.json${getDevCacheBustQueryParam()}`, SpotsFileSchema).catch(() => null),
+          ),
+      );
+      if (gone === false) setByGmKey(Object.fromEntries(files.flatMap((f) => (f === null ? [] : [[f.gmKey, f]]))));
+    };
+    void load();
+    import.meta.hot?.on(spotsChangedEvent, load);
+    return () => {
+      gone = true;
+      import.meta.hot?.off(spotsChangedEvent, load);
+    };
+  }, [enabled, gmKeys]);
 
   return byGmKey;
 }
@@ -44,3 +48,10 @@ export const inkOf: Record<SpotKind, string> = {
 
 /** A spot, by its geomorph instance and its id there */
 export type SpotPick = { gmId: number; id: number };
+
+/** Where a spot is in the World, from its geomorph's own space */
+export function spotWorldPoint(w: WorldState, file: SpotsFile, pick: SpotPick) {
+  const spot = file.spots[pick.id];
+  const { a, b, c, d, e, f } = w.gms[pick.gmId].transform;
+  return { x: a * spot.x + c * spot.y + e, y: b * spot.x + d * spot.y + f };
+}

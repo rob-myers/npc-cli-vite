@@ -31,8 +31,7 @@ After the slots come buttons for the player themself. A client gets only these. 
 
 - **walk/run**, not on a client: `w.player.toggleRun()`, their `anim.hurry`.
 - **look/follow**: a press looks, and a long press toggles the follow, as `f` does.
-- **compass dial** (`w.view.setCompassDial`): a letter naming the compass point up the screen. It is
-  persisted per World and on by default.
+- **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 
 Rules:
 

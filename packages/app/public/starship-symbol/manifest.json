@@ -72,6 +72,12 @@
       "width": 106,
       "height": 178
     },
+    "extra--023--machine": {
+      "key": "extra--023--machine",
+      "group": "extra",
+      "width": 1102,
+      "height": 1101
+    },
     "g-301--playground": {
       "key": "g-301--playground",
       "group": "playground",

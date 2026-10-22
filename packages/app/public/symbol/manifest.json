@@ -827,6 +827,15 @@
       "bounds": {"x": -2, "y": -2, "width": 246.6, "height": 244},
       "type": "symbol",
       "key": "office--074"
+    },
+    "extra--023--machine": {
+      "filename": "extra--023--machine.json",
+      "thumbnailFilename": "extra--023--machine.thumbnail.png",
+      "width": 220.4,
+      "height": 220.2,
+      "bounds": {"x": 0, "y": 0, "width": 220.4, "height": 220.2},
+      "type": "symbol",
+      "key": "extra--023--machine"
     }
   }
 }

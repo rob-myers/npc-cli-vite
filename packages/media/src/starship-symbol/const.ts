@@ -21,6 +21,7 @@ export const symbolByGroup = {
     "extra--021--shower": true,
     //
     "extra--022--fresher": true,
+    "extra--023--machine": true,
   } satisfies Partial<Record<keyof typeof extraSymbols, true>>,
 
   playground: {
@@ -221,6 +222,7 @@ const extraSymbols = {
   "extra--021--shower": true,
   // npc-cli-vite
   "extra--022--fresher": true,
+  "extra--023--machine": true,
 } as const;
 
 export const symbolByGroupHash = hashJson(symbolByGroup);

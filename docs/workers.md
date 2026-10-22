@@ -1,12 +1,13 @@
 # Workers
 
 Two web workers live under `packages/ui/world/src/worker/`. Each is owned by a component in
-`packages/ui/world/src/components/`.
+`packages/ui/world/src/components/`. A third, jsh's perception worker, is in `packages/cli`.
 
 | worker | its job | owner | handle |
 |---|---|---|---|
 | `physics.worker.ts` | rapier: npc bodies, door sensors, decor colliders | `PhysicsWorker` | `w.physics` |
-| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts, jsh's ops | `NavWorker` | `w.navWorker` |
+| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts; jsh's plan ops via `jsh.worker.ts` | `NavWorker` | `w.navWorker`, jsh's `plan.main.ts` |
+| `perception.worker.ts` (cli) | spots, and sight between npcs and spots | `perception.main.ts`, lazily | `spotQuery` |
 
 `w.nav` is the navmesh response the nav worker last sent. It is not the worker.
 
@@ -35,6 +36,9 @@ They were once one worker. Splitting them means:
 - **`stepWorld` steps twice.** Rapier finds contacts before it moves its bodies, so one step reports
   where they were. With one step, an npc respawned into a collider got no `enter-collider` until
   they next moved.
+- **A new body is made 1000 below and moved in** (`add-physics-npcs`), then stepped. A body made
+  inside a sensor never enters it. Someone seated has no body, so a spawn off a chair into a doorway
+  left the door shut.
 
 ## The jsh plug-in
 
@@ -110,6 +114,10 @@ Then call it with `plan({ api, w, op: { key, ... } })`.
 
 **Parked npcs.** `park` sets `w.e.parked` after the move. A move or respawn clears it, so an npc is
 parked only if it was explicitly parked.
+
+## Perception
+
+The perception worker, spots and sight, has its own doc: `docs/perception.md`.
 
 ## Stability
 

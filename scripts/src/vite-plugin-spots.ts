@@ -6,7 +6,9 @@ import { PROJECT_ROOT } from "./const.ts";
 const ASSETS_JSON_PATH = path.join(PROJECT_ROOT, "packages/app/public/assets.json");
 const GEN_SPOTS_BIN = path.join(PROJECT_ROOT, "scripts/src/bins/gen-spots.ts");
 /** Their code: edited, every geomorph's spots are made again */
-const SPOT_SOURCES = [path.join(PROJECT_ROOT, "packages/ui/world/src/service/spots.ts")];
+const SPOT_SOURCES = ["spots.ts", "spot-sight.ts", "seg-grid.ts"].map((name) =>
+  path.join(PROJECT_ROOT, "packages/ui/world/src/service", name),
+);
 
 /** Remakes `public/spot/*.json` in a child process once `assets.json` or their code changes — see `docs/spots.md` */
 export function spotsPlugin(): Plugin {
@@ -21,12 +23,14 @@ export function spotsPlugin(): Plugin {
       const run = async (server: ViteDevServer, force = false) => {
         if (running) return void (again = true);
         running = true;
+        server.hot.send({ type: "custom", event: spotsGeneratingEvent, data: { running: true } });
         try {
           await genSpots(force);
           server.hot.send({ type: "custom", event: spotsChangedEvent });
         } catch (err) {
           console.error("[spots] gen-spots failed:", err);
         }
+        server.hot.send({ type: "custom", event: spotsGeneratingEvent, data: { running: false } });
         running = false;
         if (again) {
           again = false;
@@ -67,3 +71,4 @@ function genSpots(force: boolean) {
 // Type mirroring avoids HMR issue
 type SpotSchema = typeof import("@npc-cli/ui__world/spot.schema");
 const spotsChangedEvent: SpotSchema["spotsChangedEvent"] = "spots-changed";
+const spotsGeneratingEvent: SpotSchema["spotsGeneratingEvent"] = "spots-generating";

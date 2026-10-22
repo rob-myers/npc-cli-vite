@@ -32,10 +32,10 @@ import {
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
-import { SpotCard } from "./SpotCard";
+import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
-import { type SpotPick, useSpots } from "./use-spots";
+import { type SpotPick, spotWorldPoint, useSpots } from "./use-spots";
 
 /** The map pane, once there is a World */
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
@@ -48,6 +48,36 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const characters = useScenarioCharacters(character);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
+  /** Chooses a spot found by key, and centres the map on it, clear of the sidebar */
+  const findSpot = (pick: SpotPick, at: Geom.VectJson) => {
+    state.chooseSpot(pick);
+    map.current?.centreOn(at.x, at.y, locateZoom, sidebarOffset());
+  };
+  /** Chooses a spot, and glides the map just far enough to show it, if the sidebar covers it or it is off screen */
+  const revealSpot = (pick: null | SpotPick) => {
+    state.chooseSpot(pick);
+    const file = pick === null ? undefined : spots?.[w.gms[pick.gmId]?.key];
+    const shown = state.mapEl?.getBoundingClientRect();
+    if (pick === null || file === undefined || shown === undefined) return;
+    const at = spotWorldPoint(w, file, pick);
+    const p = map.current?.toClient(at.x, at.y);
+    if (p == null) return;
+    const m = revealMarginPx;
+    // choosing a spot opens the sidebar, so it is kept clear of where the sidebar will be
+    const [left, right, top, bottom] = [
+      shown.left + meta.sidebarWidth + m,
+      shown.right - m,
+      shown.top + m,
+      shown.bottom - m,
+    ];
+    /** Where on screen it should end up: no further than needed */
+    const to = { x: Math.min(Math.max(p.x, left), right), y: Math.min(Math.max(p.y, top), bottom) };
+    if (to.x === p.x && to.y === p.y) return;
+    const centre = { x: shown.left + shown.width / 2, y: shown.top + shown.height / 2 };
+    map.current?.centreOn(at.x, at.y, 0, { x: to.x - centre.x, y: to.y - centre.y });
+  };
+  /** On screen, the centre of the map left clear by the sidebar, from the map's own centre. A chosen spot opens it */
+  const sidebarOffset = () => ({ x: meta.sidebarWidth / 2, y: 0 });
 
   const state = useStateRef(
     (): State => ({
@@ -66,6 +96,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       menuBlockedUntil: 0,
       spot: null,
       sidebarTab: "decor",
+      mapEl: null,
 
       select(keys) {
         state.selected = keys.filter((key) => key in w.decor.runtime.byKey);
@@ -271,7 +302,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       onKeyDown={state.onKeyDown}
     >
       {/* one line, whatever the tools show: it scrolls sideways rather than wrapping */}
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap *:shrink-0">
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap select-none *:shrink-0">
         <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
@@ -338,6 +369,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           onOpen={state.update}
           onSpawning={(spawning) => state.set({ spawning, spawnError: null })}
           onShown={state.setNpcKeys}
+          onLocate={(npcKey) => {
+            const npc = w.n?.[npcKey];
+            if (npc === undefined) return;
+            if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
+            map.current?.centreOn(npc.position.x, npc.position.z, locateZoom);
+          }}
         />
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         <ToolButton icon={ArrowUUpLeftIcon} title="undo (cmd-Z)" active={false} onClick={state.undo} />
@@ -358,19 +395,24 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         ))}
       </div>
 
-      <div className="flex-1 min-h-0 flex">
+      <div ref={(el) => void (state.mapEl = el)} className="relative flex-1 min-h-0 flex">
         {meta.sidebarOpen && (
-          <div className="relative shrink-0 flex flex-col" style={{ width: meta.sidebarWidth }}>
-            <div className="shrink-0 flex border-r border-b border-zinc-800">
+          // over the map: dark smoked glass, the map behind blurred and greyed
+          <div
+            className="absolute inset-y-0 left-0 z-10 flex flex-col bg-neutral-900/45 text-zinc-300 backdrop-blur-sm backdrop-saturate-0"
+            style={{ width: meta.sidebarWidth }}
+          >
+            {/* a segmented control: the chosen tab a raised pill */}
+            <div className="shrink-0 flex gap-0.5 m-1.5 p-0.5 rounded-md bg-zinc-900/70">
               {sidebarTabs.map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   className={cn(
-                    "px-2 py-0.5 -mb-px border-b-2",
+                    "flex-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider cursor-pointer",
                     state.sidebarTab === tab
-                      ? "border-zinc-400 text-zinc-100"
-                      : "border-transparent text-zinc-500 hover:text-zinc-300",
+                      ? "bg-zinc-950 text-zinc-100 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-300",
                   )}
                   onClick={() => state.set({ sidebarTab: tab })}
                 >
@@ -400,13 +442,20 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
               (meta.show.spots === false ? (
                 <SidebarHint>turn on the spots layer</SidebarHint>
               ) : state.spot === null || spots?.[w.gms[state.spot.gmId]?.key] === undefined ? (
-                <SidebarHint>press a spot on the map</SidebarHint>
+                <>
+                  <div className="shrink-0 flex px-3 pt-3">
+                    <SpotKeyField w={w} byGmKey={spots} onFind={findSpot} />
+                  </div>
+                  <SidebarHint>press a spot on the map, or enter its key</SidebarHint>
+                </>
               ) : (
                 <SpotCard
                   w={w}
                   file={spots[w.gms[state.spot.gmId].key]}
+                  byGmKey={spots}
+                  onFind={findSpot}
                   pick={state.spot}
-                  onChoose={state.chooseSpot}
+                  onChoose={revealSpot}
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
@@ -414,7 +463,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         )}
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
         <div
-          className="shrink-0 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
+          className="absolute inset-y-0 z-10 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
+          style={{ left: meta.sidebarOpen ? meta.sidebarWidth : 0 }}
           onMouseDown={state.onSidebarResizeStart}
         />
         <DecorMenu
@@ -434,6 +484,16 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             show={meta.show}
             npcKeys={meta.npcKeys}
             onNpcDrop={state.spawnNpc}
+            onNpcClick={(_npcKey, clientX, clientY) => {
+              // the spot under them, which their mark covers
+              const key = document
+                .elementsFromPoint(clientX, clientY)
+                .find((el) => el.closest("[data-spot]") !== null)
+                ?.closest("[data-spot]")
+                ?.getAttribute("data-spot");
+              const match = key?.match(/^g(\d+)s(\d+)$/);
+              if (match != null) revealSpot({ gmId: Number(match[1]), id: Number(match[2]) });
+            }}
             cursor={state.tool === "select" && state.spawning === null ? undefined : "crosshair"}
             onClick={state.onMapClick}
             onMarquee={(rect, e) =>
@@ -442,7 +502,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           >
             {character !== null && <CharacterLayer w={w} entry={character} />}
             {meta.show.spots && spots !== undefined && (
-              <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={state.chooseSpot} />
+              <SpotsLayer w={w} byGmKey={spots} chosen={state.spot} onChoose={revealSpot} />
             )}
             <DecorLayer
               w={w}
@@ -481,8 +541,8 @@ function ToolButton(props: {
 }
 
 /**
- * The characters and whoever else is in the World. A name arms a spawn, where the map is
- * next clicked; the eye beside it says whether they are drawn on the map
+ * The characters and whoever else is in the World. A name centres on them, staying open, else arms a spawn
+ * where the map is next clicked. The eye beside it says whether they are drawn on the map
  */
 function NpcsMenu(props: {
   npcKeys: string[];
@@ -494,6 +554,8 @@ function NpcsMenu(props: {
   onOpen(): void;
   onSpawning(npcKey: null | string): void;
   onShown(npcKeys: string[]): void;
+  /** Centres the map on one in the World, showing them */
+  onLocate(npcKey: string): void;
 }) {
   const { npcKeys, spawned, shown, spawning } = props;
   return (
@@ -501,7 +563,7 @@ function NpcsMenu(props: {
       <Menu.Trigger
         title={
           spawning === null
-            ? "npcs: click one, then the map, to put them there — or drag them on the map"
+            ? "npcs: click one to centre on them, or one not in the World, then the map, to put them there. Drag them on the map"
             : `click the map to put ${spawning} there (Esc cancels)`
         }
         className={cn(
@@ -530,7 +592,13 @@ function NpcsMenu(props: {
                       spawned.includes(npcKey) ? "text-zinc-100" : "text-zinc-500",
                       spawning === npcKey && "text-yellow-200",
                     )}
-                    onClick={() => props.onSpawning(spawning === npcKey ? null : npcKey)}
+                    // centring leaves it open, so another can be found
+                    closeOnClick={spawned.includes(npcKey) === false}
+                    onClick={() =>
+                      spawned.includes(npcKey)
+                        ? props.onLocate(npcKey)
+                        : props.onSpawning(spawning === npcKey ? null : npcKey)
+                    }
                   >
                     {npcKey}
                   </Menu.Item>
@@ -589,6 +657,8 @@ type State = {
   onKeyDown(e: React.KeyboardEvent): void;
   /** The spot shown in the sidebar, and on the map what it sees */
   spot: null | SpotPick;
+  /** The map's own area, under the sidebar */
+  mapEl: null | HTMLDivElement;
   /** What the sidebar shows: the decor list, or the chosen spot. Choosing a spot shows it */
   sidebarTab: SidebarTab;
   chooseSpot(pick: null | SpotPick): void;
@@ -610,19 +680,11 @@ const toolByKey: Record<string, "select" | DecorType> = { v: "select", p: "point
 const minSidebarWidth = 120;
 /** Ms after a press ends that no context menu opens */
 const menuAfterUpMs = 100;
+/** Screen px a chosen spot must be clear of the map's visible edges, else the map glides to it */
+const revealMarginPx = 72;
 
-/** The events after which the map looks different */
-const redrawOn = new Set<string>([
-  "map-settled",
-  "nav-updated",
-  "decor-ready",
-  "decor-created",
-  "decor-removed",
-  "door-open",
-  "door-closed",
-  "door-locked",
-  "door-unlocked",
-]);
+/** The events after which the map looks different. Doors redraw on their own — see `NavMap2d` */
+const redrawOn = new Set<string>(["map-settled", "nav-updated", "decor-ready", "decor-created", "decor-removed"]);
 
 /** Its popup is portalled out of the panel, so it is told whose theme to take */
 function Picker<T extends string>(props: Omit<Parameters<typeof BasePicker<T>>[0], "popupClassName">) {

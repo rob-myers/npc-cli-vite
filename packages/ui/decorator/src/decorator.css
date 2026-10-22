@@ -100,3 +100,76 @@
   --color-zinc-500: #8e8e99;
   --color-zinc-400: #b4b4bd;
 }
+
+/* The sidebar, light over the dark map: the zinc scale turned over, so its dark grounds go light and its light text dark */
+.decorator-inverted {
+  --color-zinc-950: #fafafa;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-600: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #52525b;
+  --color-zinc-300: #3f3f46;
+  --color-zinc-200: #27272a;
+  --color-zinc-100: #18181b;
+  --color-zinc-50: #09090b;
+}
+
+/* Trial looks for the sidebar, by its `data-look`: each a zinc scale and a backdrop tint */
+.decorator-inverted[data-look="paper"] {
+  background-color: rgba(60, 40, 10, 0.25);
+  --color-zinc-950: #fdf8ee;
+  --color-zinc-900: #f6eedd;
+  --color-zinc-800: #e9dcc2;
+  --color-zinc-700: #d9c7a5;
+  --color-zinc-600: #b39d78;
+  --color-zinc-500: #8a7558;
+  --color-zinc-400: #6b5a42;
+  --color-zinc-300: #4a3d2c;
+  --color-zinc-200: #33291d;
+  --color-zinc-100: #241c13;
+  --color-zinc-50: #140f0a;
+}
+.decorator-inverted[data-look="slate"] {
+  background-color: rgba(15, 30, 60, 0.25);
+  --color-zinc-950: #f8fafc;
+  --color-zinc-900: #eef2f7;
+  --color-zinc-800: #dde4ee;
+  --color-zinc-700: #c5d0de;
+  --color-zinc-600: #94a3b8;
+  --color-zinc-500: #64748b;
+  --color-zinc-400: #475569;
+  --color-zinc-300: #334155;
+  --color-zinc-200: #1e293b;
+  --color-zinc-100: #0f172a;
+  --color-zinc-50: #020617;
+}
+.decorator-inverted[data-look="night"] {
+  background-color: rgba(5, 8, 12, 0.35);
+  --color-zinc-950: #0b0d10;
+  --color-zinc-900: #161a20;
+  --color-zinc-800: #222831;
+  --color-zinc-700: #2e3540;
+  --color-zinc-600: #4a5361;
+  --color-zinc-500: #7b8594;
+  --color-zinc-400: #a3acb9;
+  --color-zinc-300: #d0d6de;
+  --color-zinc-200: #e6eaef;
+  --color-zinc-100: #f4f6f8;
+  --color-zinc-50: #ffffff;
+}
+.decorator-inverted[data-look="amber"] {
+  background-color: rgba(20, 12, 0, 0.4);
+  --color-zinc-950: #120d05;
+  --color-zinc-900: #1c1408;
+  --color-zinc-800: #2a1e0c;
+  --color-zinc-700: #3a2a11;
+  --color-zinc-600: #6b4f1f;
+  --color-zinc-500: #a37a35;
+  --color-zinc-400: #d29b45;
+  --color-zinc-300: #f2c46d;
+  --color-zinc-200: #ffd88a;
+  --color-zinc-100: #ffe8b8;
+  --color-zinc-50: #fff6e0;
+}

@@ -1,7 +1,7 @@
 {
   "filename": "301-302.json",
   "width": 1200,
-  "height": 2400,
+  "height": 1200,
   "nodes": [
     {
       "id": "bddbb2e7-3203-4b93-ac6a-95f2177376a7",
@@ -28,7 +28,7 @@
       "cssTransform": "matrix(1, 0, 0, -1, -4, 1262)"
     }
   ],
-  "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 2422},
+  "bounds": {"x": -5.5, "y": -22, "width": 1205.5, "height": 1284},
   "type": "map",
   "key": "301-302"
 }
