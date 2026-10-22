@@ -15,6 +15,7 @@
     "./scenario-shared": "./src/service/scenario-shared.ts",
     "./spots": "./src/service/spots.ts",
     "./spot-sight": "./src/service/spot-sight.ts",
+    "./seg-grid": "./src/service/seg-grid.ts",
     "./connector": "./src/service/Connector.ts",
     "./query-client": "./src/service/query-client.ts",
     "./use-world": "./src/service/use-world.ts",

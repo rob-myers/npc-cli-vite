@@ -2,8 +2,8 @@ import type { WorldState } from "@npc-cli/ui__world";
 import { geomorphGridMeters } from "@npc-cli/ui__world/const.env";
 import { helper } from "@npc-cli/ui__world/helper";
 import { Mat } from "@npc-cli/util/geom";
-import { preventPopupGestures, useSvgZoom } from "@npc-cli/util/use-svg-zoom";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { useSvgZoom } from "@npc-cli/util/use-svg-zoom";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { halfGridMeters, isPress, stepOf, toMap } from "./decor-edit";
 import type { DecoratorUiMeta } from "./schema";
 import { getDecoratorMapStore } from "./storage";
@@ -12,7 +12,8 @@ import { getDecoratorMapStore } from "./storage";
  * The map from above, in world metres: 2D `x/y` is world `x/z`. Drawn from each geomorph's own
  * layout and the navmesh, so it is where things really are — see `docs/decorator.md`
  */
-export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpcDrop, cursor, apiRef }: Props) {
+export function NavMap2d(props: Props) {
+  const { w, show, npcKeys, children, onClick, onMarquee, onNpcDrop, onNpcClick, cursor, apiRef } = props;
   const press = useRef<Press | null>(null);
   const marqueeEl = useRef<SVGRectElement>(null);
 
@@ -74,7 +75,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpc
 
   return (
     <svg
-      ref={preventPopupGestures}
+      ref={zoom.svgRef}
       className="size-full touch-none select-none bg-(--deco-bg)"
       style={{ cursor }}
       viewBox={zoom.viewBox}
@@ -123,22 +124,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpc
           />
         ))}
 
-      {/* doors are the World's own, in world space, so they show what is open and what is locked */}
-      {doors.map((door) => (
-        <line
-          key={door.gdKey}
-          x1={door.src.x}
-          y1={door.src.y}
-          x2={door.dst.x}
-          y2={door.dst.y}
-          stroke={door.locked ? ink.doorLocked : door.open ? ink.doorOpen : ink.door}
-          strokeWidth={door.open ? 1.5 : 3}
-          strokeDasharray={door.open ? "3 3" : undefined}
-          vectorEffect="non-scaling-stroke"
-        >
-          <title>{`${door.gdKey}${door.locked ? " (locked)" : ""}`}</title>
-        </line>
-      ))}
+      <Doors w={w} />
 
       {show.labels && <Labels w={w} doors={doors} />}
 
@@ -156,7 +142,7 @@ export function NavMap2d({ w, show, npcKeys, children, onClick, onMarquee, onNpc
         pointerEvents="none"
       />
 
-      <NpcDots w={w} npcKeys={npcKeys} onNpcDrop={onNpcDrop} />
+      <NpcDots w={w} npcKeys={npcKeys} onNpcDrop={onNpcDrop} onNpcClick={onNpcClick} />
     </svg>
   );
 }
@@ -203,6 +189,32 @@ const Geomorphs = memo(function Geomorphs(props: {
     );
   });
 });
+
+/** The World's doors in world space, showing what is open and locked. Redrawn alone as they change */
+function Doors({ w }: { w: WorldState }) {
+  const [, setChanges] = useState(0);
+  useEffect(() => {
+    const sub = w.events.subscribe({ next: (e) => void (doorEvents.has(e.key) && setChanges((n) => n + 1)) });
+    return () => sub.unsubscribe();
+  }, [w]);
+  return Object.values(w.door?.byKey ?? {}).map((door) => (
+    <line
+      key={door.gdKey}
+      x1={door.src.x}
+      y1={door.src.y}
+      x2={door.dst.x}
+      y2={door.dst.y}
+      stroke={door.locked ? ink.doorLocked : door.open ? ink.doorOpen : ink.door}
+      strokeWidth={door.open ? 1.5 : 3}
+      strokeDasharray={door.open ? "3 3" : undefined}
+      vectorEffect="non-scaling-stroke"
+    >
+      <title>{`${door.gdKey}${door.locked ? " (locked)" : ""}`}</title>
+    </line>
+  ));
+}
+
+const doorEvents = new Set<string>(["door-open", "door-closed", "door-locked", "door-unlocked"]);
 
 /** The navigable area as the floor itself draws it: triangles, as `x y z` triples */
 function navPath(tris: NonNullable<WorldState["nav"]>["toNavTris"][number] = []) {
@@ -279,7 +291,7 @@ function Labels({ w, doors }: { w: WorldState; doors: Geomorph.DoorState[] }) {
  * The chosen npcs, moved straight through their refs on the World's frames, not by rendering.
  * One can be dragged and dropped, onto the grid with shift or ctrl — let go off the map, or Escape, cancels
  */
-function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpcDrop">) {
+function NpcDots({ w, npcKeys, onNpcDrop, onNpcClick }: Pick<Props, "w" | "npcKeys" | "onNpcDrop" | "onNpcClick">) {
   const els = useRef(new Map<string, SVGGElement>());
   /** Whoever is being dragged follows the pointer, not themself: `at` once it has moved */
   const drag = useRef<null | { npcKey: string; client: Geom.VectJson; at: null | Geom.VectJson }>(null);
@@ -355,6 +367,7 @@ function NpcDots({ w, npcKeys, onNpcDrop }: Pick<Props, "w" | "npcKeys" | "onNpc
         const d = drag.current;
         endDrag();
         if (d?.npcKey === npcKey && d.at !== null && isOverMap(e)) onNpcDrop(npcKey, d.at);
+        else if (d?.npcKey === npcKey && d.at === null) onNpcClick?.(npcKey, e.clientX, e.clientY); // never moved
       },
       onPointerCancel: endDrag,
     };
@@ -396,6 +409,8 @@ type Props = {
   onMarquee?(rect: Geom.RectJson, e: PointerEvent): void;
   /** A shown npc dragged, and let go on the map: without it they cannot be */
   onNpcDrop?(npcKey: string, at: Geom.VectJson): void;
+  /** A shown npc pressed and let go unmoved, where on screen */
+  onNpcClick?(npcKey: string, clientX: number, clientY: number): void;
   cursor?: string;
   /** For whoever renders it to steer the map */
   apiRef?: React.RefObject<NavMap2dApi | null>;

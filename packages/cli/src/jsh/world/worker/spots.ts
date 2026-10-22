@@ -1,10 +1,11 @@
+import type { SegGrid } from "@npc-cli/ui__world/seg-grid";
 import { type Spot, SpotsFileSchema } from "@npc-cli/ui__world/spot.schema";
-import { inSight } from "@npc-cli/ui__world/worker/nav";
+import { sightIdStride } from "@npc-cli/ui__world/spot-sight";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 
 /**
  * The map's spots, worker-side: each geomorph's under a map-wide key `g{gmId}s{id}` and in world coords,
- * indexed by room and by grid cell. Fetched afresh by each `jsh-setup` that changes them — see `docs/spots.md`
+ * indexed by room and by grid cell. Fetched afresh by each `perception-setup` that changes them — see `docs/spots.md`
  */
 export function setupSpots(msg: { mapKey: string; gms: WW.GmForSpots[]; spotsRev: number }) {
   const cacheKey = `${msg.mapKey} ${JSON.stringify(msg.gms)} ${msg.spotsRev}`;
@@ -19,18 +20,48 @@ export function getSpots(): Promise<MapSpots> {
 
 let current: null | { cacheKey: string; promise: Promise<MapSpots> } = null;
 
-/** Answers each query of a batch in order. One that fails answers `{ error }`, not the batch */
-export function answerSpotQueries(all: MapSpots, { npcs, openDoors, queries }: Extract<WW.JshOp, { key: "spots" }>) {
-  const open = new Set(openDoors);
+/** Answers each query of a batch in order, `sight` blocking lines. One that fails answers `{ error }`, not the batch */
+export function answerSpotQueries(
+  all: MapSpots,
+  { npcs, queries }: WW.SpotsOp,
+  { grid, open }: { grid: SegGrid; open: Set<string> },
+) {
   /** Spot `a` sees spot `b` as the doors stand */
-  const sees = (a: MapSpot, b: MapSpot) => all.sees(a, b) || open.has(all.seesVia(a, b) ?? "");
+  /** Spot `a` may see spot `b` by its lists, doors as they stand: from its point within its arc, if sat or lain at */
+  const sees = (a: MapSpot, b: MapSpot) => {
+    if (a.gmId !== b.gmId) return false;
+    const [s, id] = [a.spot, b.spot.id];
+    const opened = ([doorIds, ids]: [number[], number[]]) =>
+      ids.includes(id) && doorIds.every((doorId) => open.has(`g${a.gmId}d${doorId}`));
+    if (s.doArc !== undefined) return s.doSight.includes(id) || s.doVia.some(opened);
+    return s.sight.includes(id) || s.always.includes(id) || s.via.some(opened);
+  };
   /** Where `ref` looks from: an npc's own point, else a spot's */
   const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.point ?? resolve(ref);
-  /** Some of a body at `b` is in sight from `a`: a ray to its centre or either side, as the doors stand */
-  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson) => {
+  /**
+   * Some of a body at `b` is in sight from `a`: a line to its centre or either side, as the doors stand.
+   * `from` and `to` are npcs there, if any: their posture sets the line's ends, which a low obstacle may rise above
+   */
+  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
     const [dx, dy] = [b.x - a.x, b.y - a.y];
-    const [px, py] = [(-dy * bodyRadius) / (Math.hypot(dx, dy) || 1), (dx * bodyRadius) / (Math.hypot(dx, dy) || 1)];
-    return [0, 1, -1].some((k) => inSight(a, { x: b.x + k * px, y: b.y + k * py }, open));
+    const d = Math.hypot(dx, dy) || 1;
+    const [px, py] = [(-dy * bodyRadius) / d, (dx * bodyRadius) / d];
+    const [eye, top] = [heightsOf(from).eye, heightsOf(to).top];
+    // one sat or lain is on the furniture, which does not hide them
+    const lowHides = to === undefined || to.posture === "stand";
+    return [0, 1, -1].some((k) => lineClear(a, { x: b.x + k * px, y: b.y + k * py }, eye, lowHides ? top : null));
+  };
+  /** Nothing stops the line: no wall nor tall obstacle, only doors standing open, and no low one it passes under */
+  const lineClear = (p: Geom.VectJson, q: Geom.VectJson, eye: number, top: null | number) => {
+    let blocked = false;
+    grid.forEachOn(p, q, (o, lambda) => {
+      if (o.kind === "door")
+        return open.has(`g${Math.floor(o.id / sightIdStride)}d${o.id % sightIdStride}`) ? false : (blocked = true);
+      if (o.kind === "low")
+        return top !== null && (o.top ?? 0) >= eye + (top - eye) * lambda ? (blocked = true) : false;
+      return (blocked = true);
+    });
+    return blocked === false;
   };
   const npcByKey = new Map(npcs.map((npc) => [npc.key, npc]));
   const resolveNpc = (key: string) => {
@@ -76,7 +107,9 @@ export function answerSpotQueries(all: MapSpots, { npcs, openDoors, queries }: E
           const [a, b] = [resolve(query.a), resolve(query.b)];
           const npcs = npcByKey.has(query.a) || npcByKey.has(query.b);
           return {
-            sees: npcs ? eyeSees(eyeOf(query.a), eyeOf(query.b)) : sees(a, b),
+            sees: npcs
+              ? eyeSees(eyeOf(query.a), eyeOf(query.b), npcByKey.get(query.a), npcByKey.get(query.b))
+              : sees(a, b),
             via: all.seesVia(a, b),
             crouchHides: all.crouchHidden(b, a),
             from: a.key,
@@ -91,13 +124,13 @@ export function answerSpotQueries(all: MapSpots, { npcs, openDoors, queries }: E
         }
         case "hide": {
           const npc = resolveNpc(query.npc);
-          const watchers = query.from.map(eyeOf);
+          const watchers = query.from.map((ref) => ({ ...eyeOf(ref), npc: npcByKey.get(ref) }));
           const exclude = new Set(query.exclude);
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
           const { away = 0 } = query;
           const isFar = (s: MapSpot) => watchers.every((w) => dist(s, w) >= away);
-          const isUnseen = (s: MapSpot) => !watchers.some((w) => eyeSees(w, s));
+          const isUnseen = (s: MapSpot) => !watchers.some((w) => eyeSees(w, s, w.npc));
           // best first, so sight is tested only until one passes: a far one, else a near one
           const ordered = inRooms(query.rooms)
             .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key))
@@ -173,6 +206,19 @@ function toJson({ key, kind, x, y, grKey, facing, wall, spot }: MapSpot): WW.Spo
 const round = (x: number) => Math.round(x * 100) / 100;
 /** Metres either side of a body's centre that sight is tested to */
 const bodyRadius = 0.25;
+
+/** Metres: an npc's eye height, and the top of their body, by posture. Crouched is full */
+const bodyHeights = {
+  stand: { eye: 1.55, top: 1.7 },
+  crouched: { eye: 0.9, top: 0.6 },
+  sit: { eye: 1.15, top: 1.3 },
+  lie: { eye: 0.4, top: 0.5 },
+};
+
+/** A spot stands for someone stood */
+function heightsOf(npc?: WW.SpotNpc) {
+  return npc === undefined ? bodyHeights.stand : npc.crouched ? bodyHeights.crouched : bodyHeights[npc.posture];
+}
 /** Spots an npc is sent to: not a doable, which needs its decor, nor in a doorway */
 const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
 /** Metres: making way, a spot this near the blocker, this clear of the walker's path and others, not passing within `pass` of the walker */

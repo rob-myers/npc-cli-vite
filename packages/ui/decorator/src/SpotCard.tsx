@@ -1,18 +1,22 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import type { SpotsFile } from "@npc-cli/ui__world/spot.schema";
-import { CrosshairIcon, XIcon } from "@phosphor-icons/react";
-import { Fragment } from "react";
+import { cn } from "@npc-cli/util";
+import { CheckIcon, CopyIcon, CrosshairIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
+import { Fragment, useState } from "react";
 import { inkOf, type SpotPick } from "./use-spots";
 
 /** The chosen spot's fields, naming rooms, doors, decor and obstacles as the World does — see `docs/spots.md` */
-export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
+export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }: Props) {
+  /** Whilst the header asks for another spot's key */
+  const [searching, setSearching] = useState(false);
+  /** Whilst the copy button shows a tick, having copied the key */
+  const [copied, setCopied] = useState(false);
   const spot = file.spots[pick.id];
   const gm = w.gms[pick.gmId];
   if (spot === undefined || gm === undefined) return null;
 
   const g = `g${pick.gmId}`;
-  const { a, b, c, d, e, f } = gm.transform;
-  const at = { x: a * spot.x + c * spot.y + e, y: b * spot.x + d * spot.y + f };
+  const at = spotWorldPoint(w, file, pick);
   const open = spot.depth.filter((r) => r >= file.radius).length;
   const chips = (ids: number[]) =>
     ids.length === 0 ? (
@@ -40,12 +44,46 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
   const obstacleOf = (obstacleId: number) => describeObstacle(gm.obstacles[obstacleId]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin border-r border-zinc-800 p-2 text-xs">
-      <div className="flex items-center gap-1 mb-1">
+    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin border-r border-zinc-800 p-3 text-xs flex flex-col gap-3">
+      <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-900/70">
         <span className="size-2 rounded-full" style={{ background: inkOf[spot.kind] }} />
-        <span className="font-mono flex-1" title="its key, as jsh takes it e.g. `spot g0s12`">
-          {spot.kind} {g}s{spot.id}
-        </span>
+        {searching ? (
+          <SpotKeyField
+            w={w}
+            byGmKey={byGmKey}
+            autoFocus
+            onFind={(next, nextAt) => {
+              setSearching(false);
+              onFind(next, nextAt);
+            }}
+            onCancel={() => setSearching(false)}
+          />
+        ) : (
+          <span className="font-mono flex-1" title="its key, as jsh takes it e.g. `spot g0s12`">
+            {spot.kind} {g}s{spot.id}
+          </span>
+        )}
+        <button
+          type="button"
+          className={iconButton}
+          title="go to another spot by key"
+          onClick={() => setSearching(!searching)}
+        >
+          <MagnifyingGlassIcon />
+        </button>
+        <button
+          type="button"
+          className={iconButton}
+          title="copy its key"
+          onClick={() =>
+            void navigator.clipboard.writeText(`${g}s${spot.id}`).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), copiedMs);
+            })
+          }
+        >
+          {copied ? <CheckIcon /> : <CopyIcon />}
+        </button>
         <button type="button" className={iconButton} title="centre the map on it" onClick={() => onLocate(at)}>
           <CrosshairIcon />
         </button>
@@ -53,7 +91,7 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
           <XIcon />
         </button>
       </div>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 [&>dt]:text-zinc-500">
+      <dl className={sectionClass}>
         <dt>room</dt>
         <dd className="font-mono">{spot.roomId === null ? "none" : `${g}r${spot.roomId}`}</dd>
         <dt>at</dt>
@@ -92,6 +130,18 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
             <dd>{chips(ids)}</dd>
           </Fragment>
         ))}
+        {spot.kind === "doable" && (
+          <>
+            <dt title="seen by whoever sits or lies there, within its arc">from it {spot.doSight.length}</dt>
+            <dd>{chips(spot.doSight)}</dd>
+            {spot.doVia.map(([doorIds, ids]) => (
+              <Fragment key={`do-${doorIds}`}>
+                <dt className="font-mono">from it via {doorIds.map((doorId) => `${g}d${doorId}`).join(" ")}</dt>
+                <dd>{chips(ids)}</dd>
+              </Fragment>
+            ))}
+          </>
+        )}
         {hullDoors.length > 0 && (
           <>
             <dt>hull doors</dt>
@@ -106,7 +156,9 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
             <dd>{chips(spot.crouchSafe)}</dd>
           </>
         )}
-        <dt className="col-span-2 mt-1 text-zinc-400">near</dt>
+      </dl>
+      <dl className={sectionClass}>
+        <dt className="col-span-2 text-zinc-400">near</dt>
         <dt>doors</dt>
         <dd className="font-mono">{list(spot.near.doors.map((doorId) => `${g}d${doorId}`))}</dd>
         <dt>doables</dt>
@@ -150,12 +202,75 @@ function describeObstacle(o: undefined | Geomorph.LayoutObstacle) {
   return `${o.symbolKey}${tags.length > 0 ? ` ${tags.join(" ")}` : ""} ${o.height}m`;
 }
 
+/** A field taking a spot's key, e.g. `g0s455`: Enter chooses it, if this map has it */
+export function SpotKeyField(props: {
+  w: WorldState;
+  byGmKey: undefined | Record<string, SpotsFile>;
+  autoFocus?: boolean;
+  onFind(pick: SpotPick, at: Geom.VectJson): void;
+  onCancel?(): void;
+}) {
+  const [text, setText] = useState("");
+  const [missing, setMissing] = useState(false);
+  return (
+    <input
+      autoFocus={props.autoFocus}
+      className={cn(
+        "min-w-0 flex-1 px-1.5 py-0.5 rounded border bg-zinc-950 font-mono outline-none",
+        missing ? "border-red-500/70" : "border-zinc-700 focus:border-zinc-500",
+      )}
+      placeholder="spot key e.g. g0s455"
+      value={text}
+      onChange={(e) => {
+        setText(e.currentTarget.value);
+        setMissing(false);
+      }}
+      onKeyDown={(e) => {
+        e.stopPropagation(); // not the Editor's own keys
+        if (e.key === "Escape") return props.onCancel?.();
+        if (e.key !== "Enter") return;
+        const pick = parseSpotKey(text);
+        const file = pick === null ? undefined : props.byGmKey?.[props.w.gms[pick.gmId]?.key];
+        if (pick === null || file?.spots[pick.id] === undefined) return setMissing(true);
+        props.onFind(pick, spotWorldPoint(props.w, file, pick));
+      }}
+    />
+  );
+}
+
+/** `g{gmId}s{id}` as a pick, else `null` */
+function parseSpotKey(text: string): null | SpotPick {
+  const match = text.trim().match(/^g(\d+)s(\d+)$/i);
+  return match === null ? null : { gmId: Number(match[1]), id: Number(match[2]) };
+}
+
+/** Where a spot is in the World, from its geomorph's own space */
+function spotWorldPoint(w: WorldState, file: SpotsFile, pick: SpotPick) {
+  const spot = file.spots[pick.id];
+  const { a, b, c, d, e, f } = w.gms[pick.gmId].transform;
+  return { x: a * spot.x + c * spot.y + e, y: b * spot.x + d * spot.y + f };
+}
+
 const iconButton = "p-0.5 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800";
+/** How long the copy button shows its tick */
+const copiedMs = 1200;
+/** A section of the card: keys and values on a dark ground, each value scrolled on its own past 60px */
+const sectionClass = cn(
+  "shrink-0 grid grid-cols-[minmax(auto,5rem)_1fr] content-start gap-x-1.5 gap-y-1 [&>dt]:text-zinc-400 [&>*]:leading-tight",
+  "[&>dd]:rounded [&>dt]:rounded [&>dd]:bg-zinc-900/70 [&>dt]:bg-zinc-900/70 [&>dd]:px-1.5 [&>dt]:px-1.5 [&>dd]:py-0.5 [&>dt]:py-0.5",
+  "[&>dd]:max-h-[60px] [&>dd]:overflow-y-auto [&>dd]:scrollbar-thin",
+  // each hugs its own text rather than filling its cell
+  "[&>*]:self-start [&>*]:justify-self-start [&>dd]:max-w-full",
+);
 
 type Props = {
   w: WorldState;
   file: SpotsFile;
+  /** Every geomorph's spots, for going to another by key */
+  byGmKey: Record<string, SpotsFile>;
   pick: SpotPick;
   onChoose(pick: null | SpotPick): void;
   onLocate(at: Geom.VectJson): void;
+  /** Chooses another spot, found by key, and centres on it */
+  onFind(pick: SpotPick, at: Geom.VectJson): void;
 };

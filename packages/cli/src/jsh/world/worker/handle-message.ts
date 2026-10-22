@@ -1,6 +1,5 @@
 import { getNavMesh } from "@npc-cli/ui__world/worker/nav";
 import { ops } from "./plan.worker";
-import { setupSpots } from "./spots";
 
 /** What the worker keeps per map, replaced by each `jsh-setup` */
 let map: WW.JshMapSetup = { mapKey: "", doorFrames: {}, roomDoors: {} };
@@ -45,7 +44,6 @@ export function handleJshMessage(data: unknown): boolean {
     case "jsh-setup": {
       const doorFrames = Object.fromEntries(msg.doorFrames.map((frame) => [frame.gdKey, frame]));
       map = { mapKey: msg.mapKey, doorFrames, roomDoors: msg.roomDoors };
-      setupSpots(msg);
       return true;
     }
     case "jsh-plan": {

@@ -34,7 +34,7 @@ export const spotConfig = {
   mergeGap: 0.5,
   nearRadius: 1.5,
   /** Obstacles this high hide someone fully crouched */
-  crouchHideHeight: 0.6,
+  crouchHideHeight: sightConfig.crouchHideHeight,
   /** Cover spots lose sight past obstacles this near */
   coverReach: 0.5,
 };
@@ -155,7 +155,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
           .filter((o) => Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach)
           .flatMap((o) => o.segs.map(([a, b]): Occluder => ({ a, b, kind: "obstacle", id: o.obstacleId }))),
   );
-  const { sight, always, via, crouchSafe, rooms, hull, ms } = computeSight({
+  const { sight, always, via, crouchSafe, doArcs, doSight, doVia, rooms, hull, ms } = computeSight({
     spots,
     layout,
     grid,
@@ -164,7 +164,15 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     radius: c.radius,
   });
   spots.forEach((spot, i) =>
-    Object.assign(spot, { sight: sight[i], always: always[i], via: via[i], crouchSafe: crouchSafe[i] }),
+    Object.assign(spot, {
+      sight: sight[i],
+      always: always[i],
+      via: via[i],
+      crouchSafe: crouchSafe[i],
+      ...(doArcs[i] === undefined ? {} : { doArc: Math.round(doArcs[i] * 1000) / 1000 }),
+      doSight: doSight[i],
+      doVia: doVia[i],
+    }),
   );
 
   return {
@@ -211,6 +219,8 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       always: [],
       via: [],
       crouchSafe: [],
+      doSight: [],
+      doVia: [],
     };
   });
 

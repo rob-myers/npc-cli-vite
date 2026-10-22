@@ -14,7 +14,6 @@ import {
   type NavMesh,
   type QueryFilter,
 } from "navcat";
-import { answerSpotQueries, getSpots } from "./spots";
 
 /**
  * One function per op, each pure given the navmesh and the map's doors: plain, async, or a
@@ -171,10 +170,6 @@ export const ops: {
     const filter = createParkFilter(new Set(npc.blockedGdKeys), nodeRef);
     const slid = moveAlongSurface(navMesh, nodeRef, [npc.point.x, 0, npc.point.y], [to.x, 0, to.y], filter);
     return slid.success === true ? { x: slid.position[0], y: slid.position[2] } : null;
-  },
-  /** A batch of spot queries, against the spots of the map last set up — see `spots.ts` */
-  async spots(op) {
-    return answerSpotQueries(await getSpots(), op);
   },
 };
 

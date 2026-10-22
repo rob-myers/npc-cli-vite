@@ -11,8 +11,8 @@ export class SegGrid {
     this.cell = cell;
   }
 
-  add([a, b]: [Geom.VectJson, Geom.VectJson], kind: Occluder["kind"], id: number) {
-    const o: Occluder = { a, b, kind, id };
+  add([a, b]: [Geom.VectJson, Geom.VectJson], kind: Occluder["kind"], id: number, top?: number) {
+    const o: Occluder = top === undefined ? { a, b, kind, id } : { a, b, kind, id, top };
     const c = this.cell;
     for (let x = Math.floor(Math.min(a.x, b.x) / c); x <= Math.floor(Math.max(a.x, b.x) / c); x++) {
       for (let y = Math.floor(Math.min(a.y, b.y) / c); y <= Math.floor(Math.max(a.y, b.y) / c); y++) {
@@ -91,4 +91,11 @@ export function segsHit(p: Geom.VectJson, q: Geom.VectJson, a: Geom.VectJson, b:
   return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? t : -1;
 }
 
-export type Occluder = { a: Geom.VectJson; b: Geom.VectJson; kind: "wall" | "door" | "obstacle"; id: number };
+/** `low` is an obstacle `top` metres tall, which hides only what the line passes under — see `sightOccluders` */
+export type Occluder = {
+  a: Geom.VectJson;
+  b: Geom.VectJson;
+  kind: "wall" | "door" | "obstacle" | "low";
+  id: number;
+  top?: number;
+};

@@ -10,8 +10,6 @@ import { type Body, intersectLinePolygon, type Line, Polygon, System } from "det
 
 /** The geomorphs as of the last navmesh request, whose transforms a raycast needs */
 let gmGeoms: WW.GmGeomForNav[] = [];
-/** Each geomorph's world-to-local transform, by gmId */
-let gmToLocal: Mat[] = [];
 const gmRayCast: { [gmKey: string]: System } = {};
 
 /** The shields, in world space: kept apart, as a navmesh request clears the geomorphs' own */
@@ -26,7 +24,6 @@ export function setRayCastShields({ shields }: Extract<WW.MsgToNavWorker, { type
 
 export function createGmRayCastSystems(gmKeyToData: WW.RaycastSetupData, nextGmGeoms: WW.GmGeomForNav[]) {
   gmGeoms = nextGmGeoms;
-  gmToLocal = nextGmGeoms.map((gm) => new Mat(gm.inverseMat3));
 
   for (const { key: gmKey, walls, doors, obstacles } of Object.values(gmKeyToData)) {
     // construct system per geomorph
@@ -88,42 +85,6 @@ export function sendRaycastResult({ uid, src, dst, gmId }: WW.GetRaycast) {
     shields: nearestFirst(world.passed, reach).map(({ body }) => body.userData.key),
   } satisfies WW.RaycastResultResponse);
 }
-
-/**
- * Whether world point `dst` is in sight from `src`, cast through each geomorph the line crosses.
- * Walls, doors not in `openGdKeys`, and obstacles reaching `sightBlockTop` stop it. Windows do not
- */
-export function inSight(src: Geom.VectJson, dst: Geom.VectJson, openGdKeys: Set<string>) {
-  const [minX, maxX, minY, maxY] = [
-    Math.min(src.x, dst.x),
-    Math.max(src.x, dst.x),
-    Math.min(src.y, dst.y),
-    Math.max(src.y, dst.y),
-  ];
-  return gmGeoms.every(({ key, worldBounds: b }, gmId) => {
-    if (b.x > maxX || b.x + b.width < minX || b.y > maxY || b.y + b.height < minY) return true;
-    const system = gmRayCast[key];
-    if (system === undefined) return false;
-    const toLocal = gmToLocal[gmId];
-    const hit = system.raycast(
-      toLocal.transformPoint(Object.assign(tmpSrc, src)),
-      toLocal.transformPoint(Object.assign(tmpDst, dst)),
-      ({ userData }) =>
-        userData.type === "door"
-          ? openGdKeys.has(`g${gmId}d${userData.doorId}`) === false
-          : userData.type === "wall" || userData.obstacle.top >= sightBlockTop,
-    );
-    return hit == null;
-  });
-}
-
-/** Scratch points for `inSight`, transformed in place */
-const [tmpSrc, tmpDst] = [
-  { x: 0, y: 0 },
-  { x: 0, y: 0 },
-];
-/** Metres: an obstacle reaching this high blocks sight, as `spotConfig.standBlockHeight` */
-const sightBlockTop = 1.4;
 
 const isNotWall = (body: Body) => body.userData.type !== "wall";
 

@@ -32,7 +32,7 @@ import {
 } from "./decor-edit";
 import { DecorHistory, mergeKey } from "./history";
 import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
-import { SpotCard } from "./SpotCard";
+import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
 import { type SpotPick, useSpots } from "./use-spots";
@@ -48,6 +48,11 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   const characters = useScenarioCharacters(character);
   const { uiStoreApi } = useContext(UiContext);
   const spots = useSpots(w, meta.show.spots);
+  /** Chooses a spot found by key, and centres the map on it */
+  const findSpot = (pick: SpotPick, at: Geom.VectJson) => {
+    state.chooseSpot(pick);
+    map.current?.centreOn(at.x, at.y, locateZoom);
+  };
 
   const state = useStateRef(
     (): State => ({
@@ -271,7 +276,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       onKeyDown={state.onKeyDown}
     >
       {/* one line, whatever the tools show: it scrolls sideways rather than wrapping */}
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap *:shrink-0">
+      <div className="flex items-center gap-1 px-2 py-1 border-b border-zinc-800 overflow-x-auto scrollbar-thin whitespace-nowrap select-none *:shrink-0">
         <span className="text-zinc-500 pr-2">
           {meta.worldKey} · {w.mapKey}
         </span>
@@ -338,6 +343,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           onOpen={state.update}
           onSpawning={(spawning) => state.set({ spawning, spawnError: null })}
           onShown={state.setNpcKeys}
+          onLocate={(npcKey) => {
+            const npc = w.n?.[npcKey];
+            if (npc === undefined) return;
+            if (meta.npcKeys.includes(npcKey) === false) state.setNpcKeys([...meta.npcKeys, npcKey]);
+            map.current?.centreOn(npc.position.x, npc.position.z, locateZoom);
+          }}
         />
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         <ToolButton icon={ArrowUUpLeftIcon} title="undo (cmd-Z)" active={false} onClick={state.undo} />
@@ -358,19 +369,24 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         ))}
       </div>
 
-      <div className="flex-1 min-h-0 flex">
+      <div className="relative flex-1 min-h-0 flex">
         {meta.sidebarOpen && (
-          <div className="relative shrink-0 flex flex-col" style={{ width: meta.sidebarWidth }}>
-            <div className="shrink-0 flex border-r border-b border-zinc-800">
+          // over the map: dark smoked glass, the map behind blurred and greyed
+          <div
+            className="absolute inset-y-0 left-0 z-10 flex flex-col bg-neutral-900/45 text-zinc-300 backdrop-blur-sm backdrop-saturate-0"
+            style={{ width: meta.sidebarWidth }}
+          >
+            {/* a segmented control: the chosen tab a raised pill */}
+            <div className="shrink-0 flex gap-0.5 m-1.5 p-0.5 rounded-md bg-zinc-900/70">
               {sidebarTabs.map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   className={cn(
-                    "px-2 py-0.5 -mb-px border-b-2",
+                    "flex-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider cursor-pointer",
                     state.sidebarTab === tab
-                      ? "border-zinc-400 text-zinc-100"
-                      : "border-transparent text-zinc-500 hover:text-zinc-300",
+                      ? "bg-zinc-950 text-zinc-100 shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-300",
                   )}
                   onClick={() => state.set({ sidebarTab: tab })}
                 >
@@ -400,11 +416,18 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
               (meta.show.spots === false ? (
                 <SidebarHint>turn on the spots layer</SidebarHint>
               ) : state.spot === null || spots?.[w.gms[state.spot.gmId]?.key] === undefined ? (
-                <SidebarHint>press a spot on the map</SidebarHint>
+                <>
+                  <div className="shrink-0 flex px-3 pt-3">
+                    <SpotKeyField w={w} byGmKey={spots} onFind={findSpot} />
+                  </div>
+                  <SidebarHint>press a spot on the map, or enter its key</SidebarHint>
+                </>
               ) : (
                 <SpotCard
                   w={w}
                   file={spots[w.gms[state.spot.gmId].key]}
+                  byGmKey={spots}
+                  onFind={findSpot}
                   pick={state.spot}
                   onChoose={state.chooseSpot}
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
@@ -414,7 +437,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         )}
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
         <div
-          className="shrink-0 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
+          className="absolute inset-y-0 z-10 w-1.5 -ml-0.5 cursor-col-resize hover:bg-zinc-700/60 select-none"
+          style={{ left: meta.sidebarOpen ? meta.sidebarWidth : 0 }}
           onMouseDown={state.onSidebarResizeStart}
         />
         <DecorMenu
@@ -434,6 +458,16 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             show={meta.show}
             npcKeys={meta.npcKeys}
             onNpcDrop={state.spawnNpc}
+            onNpcClick={(_npcKey, clientX, clientY) => {
+              // the spot under them, which their mark covers
+              const key = document
+                .elementsFromPoint(clientX, clientY)
+                .find((el) => el.closest("[data-spot]") !== null)
+                ?.closest("[data-spot]")
+                ?.getAttribute("data-spot");
+              const match = key?.match(/^g(\d+)s(\d+)$/);
+              if (match != null) state.chooseSpot({ gmId: Number(match[1]), id: Number(match[2]) });
+            }}
             cursor={state.tool === "select" && state.spawning === null ? undefined : "crosshair"}
             onClick={state.onMapClick}
             onMarquee={(rect, e) =>
@@ -481,8 +515,8 @@ function ToolButton(props: {
 }
 
 /**
- * The characters and whoever else is in the World. A name arms a spawn, where the map is
- * next clicked; the eye beside it says whether they are drawn on the map
+ * The characters and whoever else is in the World. A name centres on them, staying open, else arms a spawn
+ * where the map is next clicked. The eye beside it says whether they are drawn on the map
  */
 function NpcsMenu(props: {
   npcKeys: string[];
@@ -494,6 +528,8 @@ function NpcsMenu(props: {
   onOpen(): void;
   onSpawning(npcKey: null | string): void;
   onShown(npcKeys: string[]): void;
+  /** Centres the map on one in the World, showing them */
+  onLocate(npcKey: string): void;
 }) {
   const { npcKeys, spawned, shown, spawning } = props;
   return (
@@ -501,7 +537,7 @@ function NpcsMenu(props: {
       <Menu.Trigger
         title={
           spawning === null
-            ? "npcs: click one, then the map, to put them there — or drag them on the map"
+            ? "npcs: click one to centre on them, or one not in the World, then the map, to put them there. Drag them on the map"
             : `click the map to put ${spawning} there (Esc cancels)`
         }
         className={cn(
@@ -530,7 +566,13 @@ function NpcsMenu(props: {
                       spawned.includes(npcKey) ? "text-zinc-100" : "text-zinc-500",
                       spawning === npcKey && "text-yellow-200",
                     )}
-                    onClick={() => props.onSpawning(spawning === npcKey ? null : npcKey)}
+                    // centring leaves it open, so another can be found
+                    closeOnClick={spawned.includes(npcKey) === false}
+                    onClick={() =>
+                      spawned.includes(npcKey)
+                        ? props.onLocate(npcKey)
+                        : props.onSpawning(spawning === npcKey ? null : npcKey)
+                    }
                   >
                     {npcKey}
                   </Menu.Item>
@@ -611,18 +653,8 @@ const minSidebarWidth = 120;
 /** Ms after a press ends that no context menu opens */
 const menuAfterUpMs = 100;
 
-/** The events after which the map looks different */
-const redrawOn = new Set<string>([
-  "map-settled",
-  "nav-updated",
-  "decor-ready",
-  "decor-created",
-  "decor-removed",
-  "door-open",
-  "door-closed",
-  "door-locked",
-  "door-unlocked",
-]);
+/** The events after which the map looks different. Doors redraw on their own — see `NavMap2d` */
+const redrawOn = new Set<string>(["map-settled", "nav-updated", "decor-ready", "decor-created", "decor-removed"]);
 
 /** Its popup is portalled out of the panel, so it is told whose theme to take */
 function Picker<T extends string>(props: Omit<Parameters<typeof BasePicker<T>>[0], "popupClassName">) {

@@ -1,5 +1,5 @@
 import { Task } from "@npc-cli/util";
-import { spotQuery } from "./plan.main";
+import { spotQuery } from "./perception.main";
 
 /**
  * An npc acting on the spots about them, until done or killed — see `docs/scenarios.md`.

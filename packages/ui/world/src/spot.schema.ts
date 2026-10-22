@@ -49,6 +49,12 @@ export const SpotSchema = z.object({
   via: z.array(z.tuple([z.array(z.number()), z.array(z.number())])).default([]),
   /** Cover only: spots whose region cannot see it fully crouched */
   crouchSafe: z.array(z.number()).default([]),
+  /** Doable only: radians either side of its facing seen by whoever sits or lies there. Without one it is stood at */
+  doArc: z.number().optional(),
+  /** Doable only: spots seen by whoever sits or lies there, from its point within `doArc` */
+  doSight: z.array(z.number()).default([]),
+  /** Doable only: `[doorIds, spotIds]`, as `doSight` once all those doors are open */
+  doVia: z.array(z.tuple([z.array(z.number()), z.array(z.number())])).default([]),
 });
 export type Spot = z.infer<typeof SpotSchema>;
 

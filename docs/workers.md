@@ -1,12 +1,13 @@
 # Workers
 
 Two web workers live under `packages/ui/world/src/worker/`. Each is owned by a component in
-`packages/ui/world/src/components/`.
+`packages/ui/world/src/components/`. A third, jsh's perception worker, is in `packages/cli`.
 
 | worker | its job | owner | handle |
 |---|---|---|---|
 | `physics.worker.ts` | rapier: npc bodies, door sensors, decor colliders | `PhysicsWorker` | `w.physics` |
-| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts, jsh's ops | `NavWorker` | `w.navWorker` |
+| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts; jsh's plan ops via `jsh.worker.ts` | `NavWorker` | `w.navWorker`, jsh's `plan.main.ts` |
+| `perception.worker.ts` (cli) | spots, and sight between npcs and spots | `perception.main.ts`, lazily | `spotQuery` |
 
 `w.nav` is the navmesh response the nav worker last sent. It is not the worker.
 
@@ -113,6 +114,10 @@ Then call it with `plan({ api, w, op: { key, ... } })`.
 
 **Parked npcs.** `park` sets `w.e.parked` after the move. A move or respawn clears it, so an npc is
 parked only if it was explicitly parked.
+
+## Perception
+
+The perception worker, spots and sight, has its own doc: `docs/perception.md`.
 
 ## Stability
 

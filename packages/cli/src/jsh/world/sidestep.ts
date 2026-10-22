@@ -1,6 +1,7 @@
 import { standConfig } from "@npc-cli/ui__world/const.npc";
 import { warn } from "@npc-cli/util/legacy/generic";
-import { npcQuery, parkedNow, requestDetached, roomOthers, spotQueryDetached } from "./plan.main";
+import { spotQueryDetached } from "./perception.main";
+import { npcQuery, parkedNow, requestDetached, roomOthers } from "./plan.main";
 import { parked } from "./pred";
 
 /**

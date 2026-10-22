@@ -1,4 +1,4 @@
-import { spotQuery } from "./plan.main";
+import { spotQuery } from "./perception.main";
 
 /**
  * The map's spots: in rooms, of kinds, or near an npc, nearest first. With `of`, every spot an npc is at.
@@ -73,24 +73,30 @@ export async function spot(ct: JshCli.RunArg) {
   return answered(answer);
 }
 
-/** The pairs whose first sees the second: their spots in sight, eyes open, within `sightHalfArc` of facing, not crouched behind cover */
+/**
+ * The pairs whose first sees the second: eyes open, within `sightHalfArc` of where their head faces, then in sight.
+ * The worker's lines decide the last, e.g. over a low obstacle hiding one crouched
+ */
 async function perceive(ct: JshCli.RunArg, pairs: [string, string][]) {
   const { w } = ct;
+  const facing = pairs.filter(([a, b]) => {
+    const [watcher, seen] = [w.n[a], w.n[b]];
+    if (watcher.anim.eyes.look === "shut") return false;
+    const off = watcher.anim.bearingOf(seen.point) - watcher.lookY; // the head's way, e.g. sat and turned
+    return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc;
+  });
+  if (facing.length === 0) return [];
   const answers = await spotQuery(
     ct,
-    pairs.map(([a, b]) => ({ q: "sees", a, b })),
+    facing.map(([a, b]) => ({ q: "sees", a, b })),
   );
-  return pairs.filter(([a, b], i) => {
+  return facing.filter((_, i) => {
     const x = answers[i];
-    if (x === null || x === undefined || !("crouchHides" in x) || x.sees === false) return false;
-    const [watcher, seen] = [w.n[a], w.n[b]];
-    if (watcher.anim.eyes.look === "shut" || (x.crouchHides && seen.anim.crouchLevel === 2)) return false;
-    const off = watcher.anim.bearingOf(seen.point) - watcher.rotation.y;
-    return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc;
+    return x != null && "crouchHides" in x && x.sees;
   });
 }
 
-/** Radians either side of their facing that an npc sees */
+/** Radians either side of where their head faces that an npc sees */
 const sightHalfArc = Math.PI / 3;
 
 /** `a,b,c` as a list, e.g. `room:g0r1,g0r2` */

@@ -14,6 +14,10 @@ export const sightConfig = {
   doorSamples: 5,
   /** Obstacles this high block sight stood */
   standBlockHeight: 1.4,
+  /** Obstacles this high hide someone fully crouched */
+  crouchHideHeight: 0.6,
+  /** Radians either side of a doable's facing seen from it, by its `do`. Any other `do` is stood at */
+  doArcs: { sit: (100 * Math.PI) / 180, lie: (30 * Math.PI) / 180 } as Record<string, number>,
 };
 
 /** What blocks sight stood, in `layout`'s coords: walls, doors, and obstacles `standBlockHeight` tall. Not windows */
@@ -30,11 +34,25 @@ export function createWorldSightGrid(gms: (SightLayout & { matrix: Geom.Mat })[]
   return grid;
 }
 
+/**
+ * What blocks sight across `gms`, in world coords, as a list: e.g. to post to a worker.
+ * Also lower obstacles, as `low`: they hide only what the line passes under, e.g. someone crouched
+ */
+export function sightOccluders(gms: (SightLayout & { matrix: Geom.Mat })[]) {
+  const occluders: Occluder[] = [];
+  const into = {
+    add: ([a, b]: [Geom.VectJson, Geom.VectJson], kind: Occluder["kind"], id: number, top?: number) =>
+      void occluders.push(top === undefined ? { a, b, kind, id } : { a, b, kind, id, top }),
+  };
+  gms.forEach((gm, gmId) => addOccluders(into, gm, gm.matrix, gmId * sightIdStride, true));
+  return occluders;
+}
+
 /** Room for a geomorph's door and obstacle ids, in a world grid */
 export const sightIdStride = 10000;
 
-/** Adds `layout`'s occluders to `grid`, by `matrix` if given, their ids offset by `base` */
-function addOccluders(grid: SegGrid, layout: SightLayout, matrix?: Geom.Mat, base = 0) {
+/** Adds `layout`'s occluders to `grid`, by `matrix` if given, their ids offset by `base`. With `low`, lower obstacles too */
+function addOccluders(grid: Pick<SegGrid, "add">, layout: SightLayout, matrix?: Geom.Mat, base = 0, low = false) {
   const place = ([a, b]: [Geom.VectJson, Geom.VectJson]): [Geom.VectJson, Geom.VectJson] =>
     matrix === undefined
       ? [a, b]
@@ -42,9 +60,11 @@ function addOccluders(grid: SegGrid, layout: SightLayout, matrix?: Geom.Mat, bas
   for (const poly of layout.walls) for (const seg of poly.lineSegs) grid.add(place(seg), "wall", -1);
   layout.doors.forEach(({ seg }, doorId) => grid.add(place(seg), "door", base + doorId));
   layout.obstacles.forEach(({ origPoly, transform, height }, obstacleId) => {
-    if (height < sightConfig.standBlockHeight) return;
+    const tall = height >= sightConfig.standBlockHeight;
+    if (tall === false && (low === false || height < sightConfig.crouchHideHeight)) return;
     for (const seg of origPoly.clone().applyMatrix(new Mat(transform)).lineSegs) {
-      grid.add(place(seg), "obstacle", base + obstacleId);
+      if (tall) grid.add(place(seg), "obstacle", base + obstacleId);
+      else grid.add(place(seg), "low", base + obstacleId, height);
     }
   });
 }
@@ -101,7 +121,7 @@ const arcStep = Math.PI / 36;
  */
 export function computeSight({ spots, layout, grid, within, lowNear, radius }: SightInput): SightResult {
   const c = sightConfig;
-  const ms = { vision: 0, pairs: 0, hull: 0 };
+  const ms = { vision: 0, pairs: 0, do: 0, hull: 0 };
   let t0 = performance.now();
 
   const regions = spots.map((spot, i): Region => {
@@ -166,6 +186,33 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
   ms.pairs = performance.now() - t0;
   t0 = performance.now();
 
+  // from a doable's own point, within its arc: who is there cannot step about, nor turn round
+  const doArcs: (undefined | number)[] = spots.map(() => undefined);
+  const doSight: number[][] = spots.map(() => []);
+  const doVia: Map<string, number[]>[] = spots.map(() => new Map());
+  spots.forEach((u, i) => {
+    const decorId = u.kind === "doable" ? u.ref?.decorId : undefined;
+    const doing = decorId === undefined ? undefined : layout.decor[decorId]?.meta.do;
+    const arc = typeof doing === "string" ? c.doArcs[doing] : undefined;
+    if (arc === undefined || u.facing === undefined) return;
+    doArcs[i] = arc;
+    const A = regions[i];
+    const p = A.samples[0];
+    for (let j = 0; j < spots.length; j++) {
+      if (j === i || Math.hypot(spots[j].x - u.x, spots[j].y - u.y) > radius) continue;
+      const B = regions[j];
+      const inArc = B.samples.filter((q) => withinArc(p, q, u.facing as number, arc));
+      if (inArc.some((q) => seesDisc(A.open[0], q, c.bodyRadius)) === false) continue;
+      const doors = inArc.some((q) => seesDisc(A.shut[0], q, c.bodyRadius))
+        ? []
+        : doorsOnEvery(grid, [p], inArc, new Set([...A.skip, ...B.skip]), -1);
+      if (doors.length === 0) doSight[i].push(j);
+      else doVia[i].get(`${doors}`)?.push(j) ?? doVia[i].set(`${doors}`, [j]);
+    }
+  });
+  ms.do = performance.now() - t0;
+  t0 = performance.now();
+
   const hull: [number, number[][]][] = [];
   layout.doors.forEach(({ seg: [a, b], meta }, doorId) => {
     if (meta.hull !== true) return;
@@ -191,6 +238,11 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
       [...byDoors].map(([key, ids]): [number[], number[]] => [key.split(",").map(Number), ids]),
     ),
     crouchSafe,
+    doArcs,
+    doSight,
+    doVia: doVia.map((byDoors) =>
+      [...byDoors].map(([key, ids]): [number[], number[]] => [key.split(",").map(Number), ids]),
+    ),
     rooms,
     hull,
     ms,
@@ -308,6 +360,14 @@ function doorsOnEvery(grid: SegGrid, as: Geom.VectJson[], bs: Geom.VectJson[], s
     }
   }
   return common ?? [];
+}
+
+/** `q` is within `arc` either side of `facing` from `p`, a body wide */
+function withinArc(p: Geom.VectJson, q: Geom.VectJson, facing: number, arc: number) {
+  const d = Math.hypot(q.x - p.x, q.y - p.y);
+  if (d === 0) return true;
+  const off = Math.atan2(q.y - p.y, q.x - p.x) - facing;
+  return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= arc + Math.asin(Math.min(1, sightConfig.bodyRadius / d));
 }
 
 /** Nothing occludes the convex hull of `ps`, so every line between them is clear */
@@ -460,10 +520,16 @@ type SightResult = {
   via: [number[], number[]][][];
   /** By cover spot, those its region cannot see it from, fully crouched */
   crouchSafe: number[][];
+  /** By spot, a doable's arc, if sat or lain at */
+  doArcs: (undefined | number)[];
+  /** By doable spot with an arc, those seen from its point within that arc, needing no door */
+  doSight: number[][];
+  /** By doable spot, `[doorIds, spotIds]`: as `doSight`, once all those doors are open */
+  doVia: [number[], number[]][][];
   /** `[roomId, roomId, ...doorIds]`, lesser room first */
   rooms: number[][];
   /** `[hullDoorId, [spotId, ...doorIds][]]` */
   hull: [number, number[][]][];
   /** Milliseconds each part took */
-  ms: { vision: number; pairs: number; hull: number };
+  ms: { vision: number; pairs: number; do: number; hull: number };
 };

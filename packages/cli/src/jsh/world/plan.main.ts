@@ -1,11 +1,10 @@
 /// <reference path="./worker/jsh-worker.d.ts" />
 
-import { spotsChangedEvent } from "@npc-cli/ui__world/spot.schema";
 import { parked } from "./pred";
 
 /**
- * One op on jsh's side of the worker, under the shell's pause/kill — see `worker/plan.worker.ts`
- * for the ops, and `awaitPausable` for what a pause or kill does
+ * One plan op on the nav worker, which `worker/jsh.worker.ts` extends, under the shell's pause/kill.
+ * The ops are in `worker/plan.worker.ts`. Spots and sight are the perception worker's: see `perception.main.ts`
  */
 export function plan<O extends WW.JshOp>({ api, w, op }: Pick<JshCli.RunArg, "api" | "w"> & { op: O }) {
   return awaitPausable(api, (signal) => request(w, api, op, signal));
@@ -96,9 +95,9 @@ export function isPaused(e: unknown) {
   return e instanceof Error && e.message === "paused";
 }
 
-/** The worker is told a map's door frames, room doors and geomorphs once, before the first request on it */
+/** The worker is told a map's door frames and room doors once, before the first request on it */
 function ensureSetup(w: JshCli.WorldState, worker: Worker) {
-  const setupKey = `${w.mapKey} ${w.gmsHash} ${spotsRev}`;
+  const setupKey = `${w.mapKey} ${w.gmsHash}`;
   if (setupMapKey.get(worker) === setupKey) return;
   const rooms = w.gmRoomGraph.nodesArray.flatMap((node) => (node.type === "room" ? node.grKey : []));
   worker.postMessage({
@@ -106,62 +105,8 @@ function ensureSetup(w: JshCli.WorldState, worker: Worker) {
     mapKey: w.mapKey,
     doorFrames: Object.values(w.d).map(({ gdKey, src, dst, normal }) => ({ gdKey, src, dst, normal })),
     roomDoors: Object.fromEntries(rooms.map((grKey) => [grKey, getRoomDoorKeys(w, grKey)])),
-    gms: w.gms.map(({ key, transform }) => ({ key, transform })),
-    spotsRev,
   } satisfies WW.JshMsgToNavWorker);
   setupMapKey.set(worker, setupKey);
-}
-
-/** Bumped as the dev server remakes the spot files, so the next request sets the worker up again */
-let spotsRev = 0;
-import.meta.hot?.on(spotsChangedEvent, () => void spotsRev++);
-
-/**
- * A batch of spot queries, answered by the worker in one round trip, under the shell's pause/kill.
- * The npcs they name are snapshotted now — see `docs/spots.md`
- */
-export function spotQuery(ct: Pick<JshCli.RunArg, "api" | "w">, queries: WW.SpotQuery[]) {
-  return plan({ api: ct.api, w: ct.w, op: spotOp(ct.w, queries) });
-}
-
-/** As `spotQuery`, outside any process, e.g. from a keyed tick */
-export function spotQueryDetached(w: JshCli.WorldState, queries: WW.SpotQuery[]) {
-  return requestDetached(w, spotOp(w, queries));
-}
-
-function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): Extract<WW.JshOp, { key: "spots" }> {
-  const named = new Set(queries.flatMap(namedIn));
-  const npcs = [...named].flatMap((key): WW.SpotNpc[] => {
-    const point = w.n[key]?.point;
-    if (point === undefined) return []; // a spot key
-    const rooms = [w.npc.npcToRoom.get(key), ...(w.e.insideDoorways.get(key)?.rooms ?? [])];
-    const grKeys = [...new Set(rooms.flatMap((room) => room?.grKey ?? []))];
-    return [{ key, point: { x: point.x, y: point.y }, grKeys }];
-  });
-  const openDoors = Object.values(w.door.byKey).flatMap((door) => (door.open ? door.gdKey : []));
-  return { key: "spots", npcs, openDoors, queries };
-}
-
-/** The keys a query names, npcs among them */
-function namedIn(q: WW.SpotQuery): string[] {
-  switch (q.q) {
-    case "of":
-      return [q.npc];
-    case "get":
-      return [];
-    case "list":
-      return q.near === undefined ? [] : [q.near.npc];
-    case "sees":
-      return [q.a, q.b];
-    case "seenBy":
-      return [q.a];
-    case "at":
-      return [];
-    case "hide":
-      return [q.npc, ...q.from];
-    case "makeWay":
-      return [q.npc];
-  }
 }
 
 function getRoomDoorKeys(w: JshCli.WorldState, grKey: Geomorph.GmRoomKey) {
@@ -175,7 +120,7 @@ function getWorker(w: JshCli.WorldState) {
   return worker;
 }
 
-/** What each worker was last set up for: map, layout and spots */
+/** What each worker was last set up for: map and layout */
 const setupMapKey = new WeakMap<Worker, string>();
 
 /**

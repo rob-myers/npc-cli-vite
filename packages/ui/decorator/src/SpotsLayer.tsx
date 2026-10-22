@@ -9,22 +9,22 @@ import {
   visionPolygon,
 } from "@npc-cli/ui__world/spot-sight";
 import { Poly, Vect } from "@npc-cli/util/geom";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { inkOf, type SpotPick } from "./use-spots";
 
-/** Each geomorph's spots, placed by its transform. A press on one chooses it, showing what it sees */
-export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
+/** Each geomorph's spots, placed by its transform. A press on one chooses it, showing what it sees. Memoised: thousands */
+export const SpotsLayer = memo(function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
   const chosenFile = chosen === null ? undefined : byGmKey[w.gms[chosen.gmId]?.key];
   const chosenSpot = chosen === null ? undefined : chosenFile?.spots[chosen.id];
   /** By gmId, the spots across a hull door its region may see the opening of */
-  const throughHull = new Map<number, number[]>();
+  const throughHull = new Map<number, Set<number>>();
   if (chosen !== null && chosenFile !== undefined) {
     for (const [doorId, seers] of chosenFile.hull) {
       if (seers.some(([id]) => id === chosen.id) === false) continue;
       const adj = w.gmGraph.getAdjacentRoomCtxt(chosen.gmId, doorId);
       const adjFile = adj === null ? undefined : byGmKey[w.gms[adj.adjGmId].key];
       const ids = adjFile?.hull.find(([d]) => d === adj?.adjDoorId)?.[1].map(([id]) => id) ?? [];
-      if (adj !== null) throughHull.set(adj.adjGmId, [...(throughHull.get(adj.adjGmId) ?? []), ...ids]);
+      if (adj !== null) throughHull.set(adj.adjGmId, new Set([...(throughHull.get(adj.adjGmId) ?? []), ...ids]));
     }
   }
 
@@ -41,7 +41,7 @@ export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
         return (
           <g key={gmId} transform={`matrix(${a},${b},${c},${d},${e},${f})`}>
             {spot !== undefined && <ChosenSpot spot={spot} file={file} />}
-            {throughHull.get(gmId)?.map((id) => (
+            {[...(throughHull.get(gmId) ?? [])].map((id) => (
               <circle
                 key={`hull-${id}`}
                 cx={file.spots[id].x}
@@ -59,6 +59,8 @@ export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
               <g
                 key={s.id}
                 data-no-pan
+                // found under a shown npc, whose own mark takes the press
+                data-spot={`g${gmId}s${s.id}`}
                 className="group cursor-pointer"
                 onPointerDown={(e) => {
                   if (e.button !== 0) return;
@@ -92,7 +94,7 @@ export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
       })}
     </>
   );
-}
+});
 
 /**
  * What `spot`'s region sees, doors open, in world coords: the union of what its samples see.
@@ -124,8 +126,9 @@ function ChosenVision({ w, gmId, spot, radius }: { w: WorldState; gmId: number; 
         strokeDasharray="4 3"
         vectorEffect="non-scaling-stroke"
       />
-      {samples.map((q) => (
-        <circle key={`${q.x},${q.y}`} cx={q.x} cy={q.y} r={dotRadius * 0.6} fill={ink.line} />
+      {samples.map((q, k) => (
+        // two may coincide, pulled in against a wall
+        <circle key={k} cx={q.x} cy={q.y} r={dotRadius * 0.6} fill={ink.line} />
       ))}
     </g>
   );
