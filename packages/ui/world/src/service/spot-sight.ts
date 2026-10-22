@@ -17,25 +17,47 @@ export const sightConfig = {
 };
 
 /** What blocks sight stood, in `layout`'s coords: walls, doors, and obstacles `standBlockHeight` tall. Not windows */
-export function createSightGrid(layout: Pick<Geomorph.Layout, "walls" | "doors" | "obstacles">) {
+export function createSightGrid(layout: SightLayout) {
   const grid = new SegGrid(1);
-  for (const poly of layout.walls) for (const seg of poly.lineSegs) grid.add(seg, "wall", -1);
-  layout.doors.forEach(({ seg }, doorId) => grid.add(seg, "door", doorId));
-  layout.obstacles.forEach(({ origPoly, transform, height }, obstacleId) => {
-    if (height < sightConfig.standBlockHeight) return;
-    for (const seg of origPoly.clone().applyMatrix(new Mat(transform)).lineSegs) grid.add(seg, "obstacle", obstacleId);
-  });
+  addOccluders(grid, layout);
   return grid;
 }
 
-/** What `p` sees stood in `layout` to `radius`, doors shut and open — e.g. to draw */
-export function visionAt(grid: SegGrid, layout: Pick<Geomorph.Layout, "obstacles">, p: Geom.VectJson, radius: number) {
-  /** Obstacles it stands in: their own sides hide nothing */
-  const skip = new Set(
-    layout.obstacles.flatMap(({ origPoly, transform }, id) =>
-      origPoly.clone().applyMatrix(new Mat(transform)).contains(p) ? id : [],
-    ),
+/** What blocks sight stood across `gms`, in world coords: ids are `gmId * sightIdStride` on */
+export function createWorldSightGrid(gms: (SightLayout & { matrix: Geom.Mat })[]) {
+  const grid = new SegGrid(1);
+  gms.forEach((gm, gmId) => addOccluders(grid, gm, gm.matrix, gmId * sightIdStride));
+  return grid;
+}
+
+/** Room for a geomorph's door and obstacle ids, in a world grid */
+export const sightIdStride = 10000;
+
+/** Adds `layout`'s occluders to `grid`, by `matrix` if given, their ids offset by `base` */
+function addOccluders(grid: SegGrid, layout: SightLayout, matrix?: Geom.Mat, base = 0) {
+  const place = ([a, b]: [Geom.VectJson, Geom.VectJson]): [Geom.VectJson, Geom.VectJson] =>
+    matrix === undefined
+      ? [a, b]
+      : [matrix.transformPoint({ x: a.x, y: a.y }), matrix.transformPoint({ x: b.x, y: b.y })];
+  for (const poly of layout.walls) for (const seg of poly.lineSegs) grid.add(place(seg), "wall", -1);
+  layout.doors.forEach(({ seg }, doorId) => grid.add(place(seg), "door", base + doorId));
+  layout.obstacles.forEach(({ origPoly, transform, height }, obstacleId) => {
+    if (height < sightConfig.standBlockHeight) return;
+    for (const seg of origPoly.clone().applyMatrix(new Mat(transform)).lineSegs) {
+      grid.add(place(seg), "obstacle", base + obstacleId);
+    }
+  });
+}
+
+/** The obstacles of `layout` that `p`, in its coords, stands in: their own sides hide nothing from it */
+export function obstaclesAt(layout: Pick<Geomorph.Layout, "obstacles">, p: Geom.VectJson) {
+  return layout.obstacles.flatMap(({ origPoly, transform }, id) =>
+    origPoly.clone().applyMatrix(new Mat(transform)).contains(p) ? id : [],
   );
+}
+
+/** What `p` sees to `radius` in `grid`'s coords, doors shut and open, the obstacles `skip` aside — e.g. to draw */
+export function visionAt(grid: SegGrid, p: Geom.VectJson, radius: number, skip = new Set<number>()) {
   return visionsFrom(
     p,
     grid.around(p, radius).filter((o) => isSkipped(o, skip) === false && distToSeg(p, o) <= radius),
@@ -402,6 +424,8 @@ function isSkipped(o: Occluder, skip: Set<number>) {
 }
 
 const wrap = (a: number) => (a < -Math.PI ? a + 2 * Math.PI : a >= Math.PI ? a - 2 * Math.PI : a);
+
+type SightLayout = Pick<Geomorph.Layout, "walls" | "doors" | "obstacles">;
 
 /** What a point sees — see `visionsFrom` */
 export type Vision = {

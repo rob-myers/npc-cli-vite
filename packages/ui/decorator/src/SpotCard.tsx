@@ -27,12 +27,15 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
   const list = (items: string[]) =>
     items.length === 0 ? <span className="text-zinc-600">none</span> : items.join(", ");
   const decorOf = (decorId: number) => describeDecor(gm.decor[decorId]);
-  /** Hull doors its region may see the opening of, with the inner doors that needs */
+  /** Hull doors its region may see the opening of, the door meeting each across, and the inner doors needed */
   const hullDoors = file.hull.flatMap(([doorId, seers]) => {
     const seer = seers.find(([id]) => id === spot.id);
     if (seer === undefined) return [];
     const inner = seer.slice(1).map((d) => `${g}d${d}`);
-    return [`${g}d${doorId}${inner.length > 0 ? ` via ${inner.join(" ")}` : ""}`];
+    const adj = w.gmGraph.getAdjacentRoomCtxt(pick.gmId, doorId);
+    return [
+      `${g}d${doorId}${adj === null ? "" : ` → ${adj.adjGdKey}`}${inner.length > 0 ? ` via ${inner.join(" ")}` : ""}`,
+    ];
   });
   const obstacleOf = (obstacleId: number) => describeObstacle(gm.obstacles[obstacleId]);
 
