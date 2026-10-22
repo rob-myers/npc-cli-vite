@@ -6,7 +6,7 @@ A spot is a place an npc might stand, made per geomorph key with what it sees an
 
 | What | Where |
 | --- | --- |
-| Output | `packages/app/public/spot/{gmKey}.json`, committed. One spot a line. |
+| Output | `packages/app/public/spot/{gmKey}.json`, committed. One spot a line. None for a playground geomorph (`--playground`), which is edited at runtime: it has no spots. |
 | Schema | `packages/ui/world/src/spot.schema.ts` |
 | Making them | `computeSpots` in `packages/ui/world/src/service/spots.ts`, tuned by `spotConfig` there |
 | Bin | `scripts/src/bins/gen-spots.ts` (`--force`, `--gmKeys='["g-101--multipurpose"]'`) |

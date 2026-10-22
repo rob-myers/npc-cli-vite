@@ -1,5 +1,7 @@
 # TODO
 
+- saw `move: npc not found: /shared/pred/player` when I changed to map 102-only while you were building 102 hull symbol.
+
 ## World
 
 ### Animation and Npc
@@ -22,9 +24,10 @@
 
 ### Cleanliness
 
-- w.npc.npcToRoom -> w.npc.toRoom etc
-
+- assets.json efficient sub-json
 - fix precision in `assets.json`
+
+- w.npc.npcToRoom -> w.npc.toRoom etc
 
 - `npc.ts`: getters `navMesh` and `nodeRef` (`agent.corridor.path[0]`) instead of `this.w.nav.navMesh` / `this.w.npc.getNodeRef(agent)`
   - `docs/CLAUDE.md` already says "read `npc.nodeRef`", but it doesn't exist yet

@@ -130,10 +130,13 @@ export function answerSpotQueries(all: MapSpots, { npcs, openDoors, queries }: E
 
 async function createMapSpots(gms: WW.GmForSpots[]) {
   const gmKeys = [...new Set(gms.map((gm) => gm.key))];
+  // a geomorph without a file has no spots, e.g. a playground, edited at runtime
   const files = await Promise.all(
-    gmKeys.map((gmKey) => fetchParsed(`/spot/${gmKey}.json${getDevCacheBustQueryParam()}`, SpotsFileSchema)),
+    gmKeys.map((gmKey) =>
+      fetchParsed(`/spot/${gmKey}.json${getDevCacheBustQueryParam()}`, SpotsFileSchema).catch(() => null),
+    ),
   );
-  const byGmKey = Object.fromEntries(files.map((file) => [file.gmKey, file]));
+  const byGmKey = Object.fromEntries(files.flatMap((file) => (file === null ? [] : [[file.gmKey, file]])));
   const spots: MapSpot[] = gms.flatMap((gm, gmId) => {
     const { a, b, c, d, e, f } = gm.transform;
     /** A local angle, as world radians */

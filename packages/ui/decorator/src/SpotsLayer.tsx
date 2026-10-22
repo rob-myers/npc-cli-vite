@@ -1,5 +1,8 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import type { Spot, SpotsFile } from "@npc-cli/ui__world/spot.schema";
+import { createSightGrid, rimSamples, visionAt, visionPolygon } from "@npc-cli/ui__world/spot-sight";
+import { Poly, Vect } from "@npc-cli/util/geom";
+import { useMemo } from "react";
 import { inkOf, type SpotPick } from "./use-spots";
 
 /** Each geomorph's spots, placed by its transform. A press on one chooses it, showing what it sees */
@@ -11,7 +14,7 @@ export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
     const spot = chosen?.gmId === gmId ? file.spots[chosen.id] : undefined;
     return (
       <g key={gmId} transform={`matrix(${a},${b},${c},${d},${e},${f})`}>
-        {spot !== undefined && <ChosenSpot spot={spot} file={file} />}
+        {spot !== undefined && <ChosenSpot spot={spot} file={file} gm={gm} />}
         {file.spots.map((s) => (
           <g
             key={s.id}
@@ -49,48 +52,61 @@ export function SpotsLayer({ w, byGmKey, chosen, onChoose }: Props) {
   });
 }
 
-/** What `spot` sees: lines to the spots in sight, dashed through a door, and its depth as a polygon */
-function ChosenSpot({ spot, file }: { spot: Spot; file: SpotsFile }) {
+/**
+ * What `spot`'s region may see: a ring on each spot it may see, green if always, dashed if through doors,
+ * red if it is hidden from it crouched. Its region as a circle, with what its samples see, doors open — see `docs/sight.md`
+ */
+function ChosenSpot({ spot, file, gm }: { spot: Spot; file: SpotsFile; gm: Geomorph.LayoutInstance }) {
   const { x, y } = spot;
-  const depth = spot.depth.map((r, k) => {
-    const angle = (2 * Math.PI * k) / file.angles;
-    return `${x + Math.cos(angle) * r},${y + Math.sin(angle) * r}`;
-  });
-  const hidden = new Set(spot.crouchHidden);
+  /** Its samples, and what they see, doors open, as one outlined path. Else unoutlined, should the union fail */
+  const { samples, seen } = useMemo(() => {
+    const grid = sightGridOf(gm);
+    const samples = [spot, ...rimSamples(visionAt(grid, gm, spot, file.radius).shut)];
+    const polys = samples.map((q) => tidy(visionPolygon(visionAt(grid, gm, q, file.radius).open, file.radius)));
+    return { samples, seen: unionPath(polys) };
+  }, [spot, gm, file.radius]);
+  const hidden = new Set(spot.crouchSafe);
+  const ring = (id: number, stroke: string, dashed = false) => (
+    <circle
+      key={`${stroke}-${id}`}
+      cx={file.spots[id].x}
+      cy={file.spots[id].y}
+      r={dotRadius * 1.6}
+      fill="none"
+      stroke={hidden.has(id) ? ink.hidden : stroke}
+      strokeWidth={1.5}
+      strokeDasharray={dashed ? "2 2" : undefined}
+      vectorEffect="non-scaling-stroke"
+    />
+  );
   return (
     <g pointerEvents="none">
-      <polygon
-        points={depth.join(" ")}
+      <path
+        d={seen.d}
         fill={ink.depth}
-        stroke={ink.line}
+        fillRule="nonzero"
+        stroke={seen.outlined ? ink.line : "none"}
+        strokeOpacity={0.9}
         strokeWidth={1}
+        strokeDasharray="4 3"
         vectorEffect="non-scaling-stroke"
       />
-      {spot.sees.map((id) => (
-        <line
-          key={id}
-          x1={x}
-          y1={y}
-          x2={file.spots[id].x}
-          y2={file.spots[id].y}
-          stroke={hidden.has(id) ? ink.hidden : ink.line}
-          strokeWidth={1}
-          vectorEffect="non-scaling-stroke"
-        />
+      {samples.map((q) => (
+        <circle key={`${q.x},${q.y}`} cx={q.x} cy={q.y} r={dotRadius * 0.6} fill={ink.line} />
       ))}
-      {spot.seesVia.map(([id]) => (
-        <line
-          key={`via-${id}`}
-          x1={x}
-          y1={y}
-          x2={file.spots[id].x}
-          y2={file.spots[id].y}
-          stroke={ink.line}
-          strokeWidth={1}
-          strokeDasharray="3 3"
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
+      <circle
+        cx={x}
+        cy={y}
+        r={file.regionRadius}
+        fill={ink.region}
+        stroke={ink.line}
+        strokeWidth={1}
+        strokeDasharray="4 2"
+        vectorEffect="non-scaling-stroke"
+      />
+      {spot.always.map((id) => ring(id, ink.always))}
+      {spot.sight.map((id) => ring(id, ink.may))}
+      {spot.via.flatMap(([, ids]) => ids.map((id) => ring(id, ink.may, true)))}
       <circle
         cx={x}
         cy={y}
@@ -104,13 +120,48 @@ function ChosenSpot({ spot, file }: { spot: Spot; file: SpotsFile }) {
   );
 }
 
+/** Rounded to a millimetre, without repeats: polygon-clipping fails on near-duplicate points */
+function tidy(points: Geom.VectJson[]) {
+  const tidied: Vect[] = [];
+  for (const { x, y } of points) {
+    const p = new Vect(Math.round(x * 1000) / 1000, Math.round(y * 1000) / 1000);
+    const last = tidied[tidied.length - 1];
+    if (last === undefined || last.x !== p.x || last.y !== p.y) tidied.push(p);
+  }
+  if (tidied.length > 1 && tidied[0].equals(tidied[tidied.length - 1])) tidied.pop();
+  return tidied;
+}
+
+/** Their union as one path, else each as a subpath, filled `nonzero` to look the same */
+function unionPath(polys: Vect[][]) {
+  try {
+    return {
+      d: Poly.union(polys.map((points) => new Poly(points)))
+        .map((poly) => poly.svgPath)
+        .join(" "),
+      outlined: true,
+    };
+  } catch {
+    return { d: polys.map((points) => `M${points.map((p) => `${p.x},${p.y}`).join("L")}Z`).join(" "), outlined: false };
+  }
+}
+
+/** A geomorph's sight occluders, made once per layout */
+function sightGridOf(gm: Geomorph.LayoutInstance) {
+  let grid = sightGrids.get(gm);
+  if (grid === undefined) sightGrids.set(gm, (grid = createSightGrid(gm)));
+  return grid;
+}
+
+const sightGrids = new WeakMap<Geomorph.LayoutInstance, ReturnType<typeof createSightGrid>>();
+
 function describe(s: Spot) {
   const { doors, decor, doables, obstacles } = s.near;
   return [
     `${s.kind} ${s.id} in room ${s.roomId}`,
-    `sees ${s.sees.length}, ${s.seesVia.length} more through a door, doors ${s.seesDoors.join(" ") || "none"}`,
+    `always sees ${s.always.length}, may see ${s.sight.length}, ${s.via.reduce((n, [, ids]) => n + ids.length, 0)} more through doors`,
     `near: doors ${doors.join(" ") || "none"}, decor ${decor.length}, doables ${doables.length}, obstacles ${obstacles.length}`,
-    ...(s.crouchHidden === undefined ? [] : [`crouched, hidden from ${s.crouchHidden.length}`]),
+    ...(s.kind === "cover" ? [`crouched, hidden from ${s.crouchSafe.length}`] : []),
   ].join("\n");
 }
 
@@ -121,8 +172,13 @@ const hitRadius = 0.12;
 const tickLength = 0.18;
 
 const ink = {
-  depth: "rgba(64, 192, 224, 0.12)",
+  depth: "rgba(64, 192, 224, 0.06)",
   line: "rgba(64, 192, 224, 0.6)",
+  region: "rgba(64, 192, 224, 0.08)",
+  /** A spot whose region it always sees */
+  always: "rgba(96, 220, 120, 0.9)",
+  /** A spot whose region it may see */
+  may: "rgba(240, 190, 60, 0.9)",
   /** A line its cover hides it from, once crouched */
   hidden: "rgba(240, 80, 80, 0.8)",
 };

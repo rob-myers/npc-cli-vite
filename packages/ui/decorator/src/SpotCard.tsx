@@ -1,6 +1,7 @@
 import type { WorldState } from "@npc-cli/ui__world";
 import type { SpotsFile } from "@npc-cli/ui__world/spot.schema";
 import { CrosshairIcon, XIcon } from "@phosphor-icons/react";
+import { Fragment } from "react";
 import { inkOf, type SpotPick } from "./use-spots";
 
 /** The chosen spot's fields, naming rooms, doors, decor and obstacles as the World does — see `docs/spots.md` */
@@ -26,14 +27,21 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
   const list = (items: string[]) =>
     items.length === 0 ? <span className="text-zinc-600">none</span> : items.join(", ");
   const decorOf = (decorId: number) => describeDecor(gm.decor[decorId]);
+  /** Hull doors its region may see the opening of, with the inner doors that needs */
+  const hullDoors = file.hull.flatMap(([doorId, seers]) => {
+    const seer = seers.find(([id]) => id === spot.id);
+    if (seer === undefined) return [];
+    const inner = seer.slice(1).map((d) => `${g}d${d}`);
+    return [`${g}d${doorId}${inner.length > 0 ? ` via ${inner.join(" ")}` : ""}`];
+  });
   const obstacleOf = (obstacleId: number) => describeObstacle(gm.obstacles[obstacleId]);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin border-r border-zinc-800 p-2 text-xs">
       <div className="flex items-center gap-1 mb-1">
         <span className="size-2 rounded-full" style={{ background: inkOf[spot.kind] }} />
-        <span className="font-mono flex-1">
-          {spot.kind} {spot.id}
+        <span className="font-mono flex-1" title="its key, as jsh takes it e.g. `spot g0s12`">
+          {spot.kind} {g}s{spot.id}
         </span>
         <button type="button" className={iconButton} title="centre the map on it" onClick={() => onLocate(at)}>
           <CrosshairIcon />
@@ -71,27 +79,28 @@ export function SpotCard({ w, file, pick, onChoose, onLocate }: Props) {
         <dd title={spot.depth.join(" ")}>
           {Math.min(...spot.depth)}–{Math.max(...spot.depth)}m, {open} of {file.angles} open
         </dd>
-        <dt>sees {spot.sees.length}</dt>
-        <dd>{chips(spot.sees)}</dd>
-        <dt>by door {spot.seesVia.length}</dt>
-        <dd className="flex flex-wrap gap-0.5">
-          {spot.seesVia.length === 0 && <span className="text-zinc-600">none</span>}
-          {spot.seesVia.map(([id, doorId]) => (
-            <SpotChip
-              key={id}
-              file={file}
-              id={id}
-              suffix={`${g}d${doorId}`}
-              onClick={() => onChoose({ gmId: pick.gmId, id })}
-            />
-          ))}
-        </dd>
+        <dt>always {spot.always.length}</dt>
+        <dd>{chips(spot.always)}</dd>
+        <dt>may {spot.sight.length}</dt>
+        <dd>{chips(spot.sight)}</dd>
+        {spot.via.map(([doorIds, ids]) => (
+          <Fragment key={`${doorIds}`}>
+            <dt className="font-mono">via {doorIds.map((doorId) => `${g}d${doorId}`).join(" ")}</dt>
+            <dd>{chips(ids)}</dd>
+          </Fragment>
+        ))}
+        {hullDoors.length > 0 && (
+          <>
+            <dt>hull doors</dt>
+            <dd className="font-mono">{list(hullDoors)}</dd>
+          </>
+        )}
         <dt>doors seen</dt>
         <dd className="font-mono">{list(spot.seesDoors.map((doorId) => `${g}d${doorId}`))}</dd>
-        {spot.crouchHidden !== undefined && (
+        {spot.kind === "cover" && (
           <>
             <dt>crouched, hidden from</dt>
-            <dd>{chips(spot.crouchHidden)}</dd>
+            <dd>{chips(spot.crouchSafe)}</dd>
           </>
         )}
         <dt className="col-span-2 mt-1 text-zinc-400">near</dt>

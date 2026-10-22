@@ -40,6 +40,7 @@ import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
 import { flushWorldStores, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
+import { spotsGeneratingEvent } from "../spot.schema";
 import Ceiling from "./Ceiling";
 import { Debug } from "./Debug";
 import Decor from "./Decor";
@@ -278,7 +279,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         );
       },
       mapSettled: debounce(() => {
-        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).length > 0) {
+        // making spots is the dev server's, and holds nothing up
+        if (state.settledMapKey === state.mapKey || Object.keys(state.pending).some((key) => key !== "spots")) {
           return;
         }
         state.settledMapKey = state.mapKey;
@@ -331,6 +333,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         const listeners: [event: string, handler: (...args: any[]) => void][] = [
           [assetsJsonChangingEvent, () => {
             state.setNextPending({ assets: true });
+          }],
+          [spotsGeneratingEvent, ({ running }: { running: boolean }) => {
+            state.setNextPending({ spots: running });
           }],
           [assetsJsonChangedEvent, () => {
             debug("[World] assets.json changed: refetching");
@@ -746,7 +751,7 @@ const worldFoldMs = 400;
 
 const touchDevice = isTouchDevice();
 
-type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins";
+type PendingKey = "assets" | "ceiling" | "decor" | "floor" | "gltf" | "nav" | "obstacles" | "skins" | "spots";
 
 /**
  * Cancel MeshStandardMaterial 1/π factor.

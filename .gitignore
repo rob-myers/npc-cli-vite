@@ -31,3 +31,6 @@ packages/media/src/starship-symbol/input/*
 !packages/media/src/starship-symbol/input/SymbolsHighRes.zip
 !packages/media/src/starship-symbol/input/Geomorphs.zip
 !packages/media/src/starship-symbol/input/SmallCraftHighRes.zip
+
+# gen-spots writes each file here first, then renames it
+packages/app/public/spot/*.tmp
