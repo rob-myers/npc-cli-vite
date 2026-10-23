@@ -168,6 +168,10 @@ declare namespace WW {
         lines: { from: Geom.VectJson; to: Geom.VectJson; hit: null | SightHit }[];
         /** Their spots the lists best had seeing each other, if any */
         pair: null | [string, string];
+        /** Metres up to `a`'s eye, where the lines start */
+        eye: number;
+        /** Metres up to the top of `b`, where they end */
+        top: number;
       }
     | { error: string };
 

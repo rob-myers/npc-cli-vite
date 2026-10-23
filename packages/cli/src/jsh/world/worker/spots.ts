@@ -214,7 +214,7 @@ export function answerSpotQueries(
           const { eye, top, ends } = eyeLines(a, b, na, nb);
           const lines = ends.map((to) => ({ from: a, to, hit: lineHit(a, to, eye, top, true) }));
           const { pair } = all.bestListed(spotsAt(query.a), spotsAt(query.b), isOpen);
-          return { ...judge(query.a, query.b), lines, pair };
+          return { ...judge(query.a, query.b), lines, pair, eye, top: heightsOf(nb).top };
         }
         case "makeWay": {
           const npc = resolveNpc(query.npc);
@@ -280,10 +280,13 @@ const round = (x: number) => Math.round(x * 100) / 100;
 /** Metres either side of a body's centre that sight is tested to */
 const bodyRadius = 0.25;
 
-/** Metres: an npc's eye height, and the top of their body, by posture. Crouched is full */
+/**
+ * Metres: an npc's eye height, and the top of their body, by posture, as the models stand. Crouched is full.
+ * Its top is a rule, not the model's: their head clears a desk, yet cover `crouchHideHeight` tall hides them
+ */
 const bodyHeights = {
-  stand: { eye: 1.55, top: 1.7 },
-  crouched: { eye: 0.9, top: 0.6 },
+  stand: { eye: 1.37, top: 1.53 },
+  crouched: { eye: 0.88, top: 0.6 },
   sit: { eye: 1.15, top: 1.3 },
   lie: { eye: 0.4, top: 0.5 },
 };

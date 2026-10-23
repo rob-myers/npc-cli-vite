@@ -162,22 +162,22 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
           changed.push({ sees, line });
         }
         if (x?.settled !== "lines") continue;
-        const [ya, yb] = [eyeY(w, a), eyeY(w, b)];
         const needed = x.sees ? x.lines.slice(0, x.lines.findIndex((line) => line.hit === null) + 1) : x.lines;
         for (const [k, { from, to, hit }] of needed.entries()) {
           const key = `sees-debug/${a}>${b}/${k}`;
           const end = hit ?? to;
-          // a stopped ray rises only as far as it reached
+          // the heights the worker tested, so a stopped ray ends on what stopped it
           const t =
             hit === null
               ? 1
               : Math.hypot(hit.x - from.x, hit.y - from.y) / (Math.hypot(to.x - from.x, to.y - from.y) || 1);
           w.debug.setPolyline(key, {
             points: [
-              [from.x, from.y, ya],
-              [end.x, end.y, ya + (yb - ya) * t],
+              [from.x, from.y, x.eye],
+              [end.x, end.y, x.eye + (x.top - x.eye) * t],
             ],
-            color: hit === null ? "#40d080" : hit.kind === "low" ? "#f0a030" : "#e04040",
+            // amber where low cover stopped one, yet another got over it
+            color: hit === null ? "#40d080" : hit.kind === "low" && x.sees ? "#f0a030" : "#e04040",
             ...rayStyle,
           });
           rays.add(key);
@@ -223,18 +223,6 @@ function reasonOf(x: Extract<WW.SpotAnswer, { settled: string }>, ansi: JshCli.R
     }
   }
 }
-
-/** Metres up to an npc's eyes as drawn: above their head bone, which follows them crouching, sat or lain */
-function eyeY(w: JshCli.WorldState, ref: string) {
-  const head = w.n[ref]?.skinnedMesh.skeleton.getBoneByName("head");
-  // its world matrix's height, as the last frame posed it
-  return head === undefined ? standEyeY : head.matrixWorld.elements[13] + eyeAboveHead;
-}
-
-/** Metres from the head bone, at the neck, up to the eyes */
-const eyeAboveHead = 0.18;
-/** Metres up to the eyes of one stood: a spot's */
-const standEyeY = 1.35;
 
 /** Game seconds between looks at a pair: as quick as anyone would notice */
 const watchSecs = 0.25;
