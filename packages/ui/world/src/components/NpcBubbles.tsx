@@ -1,7 +1,7 @@
 import { Select } from "@base-ui/react/select";
 import { cn, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
-import { type ReactNode, useContext, useEffect, useReducer, useState } from "react";
+import { type ReactNode, useContext, useEffect } from "react";
 import { type ThoughtTag, thoughtConfig } from "../service/thoughts";
 import BreathControls from "./BreathControls";
 import type { AnimationClipKey } from "./NPCs";
@@ -106,6 +106,19 @@ export default function NpcBubbles() {
 
   w.bubble = state;
 
+  useEffect(() => {
+    const sub = w.events.subscribe({
+      next: (e) => {
+        if (isBubbleEvent(e) === false || state.debugs.size === 0) return;
+        if ("npcKey" in e) return void (state.debugs.has(e.npcKey) && state.sync(e.npcKey));
+        for (const npcKey of e.key === "spawned-many" ? e.npcKeys : state.debugs) {
+          if (state.debugs.has(npcKey)) state.sync(npcKey);
+        }
+      },
+    });
+    return () => sub.unsubscribe();
+  }, []);
+
   return null;
 }
 
@@ -133,19 +146,8 @@ function ThoughtBubble({ words, tag }: { words: string; tag: ThoughtTag }) {
 
 /** The line said, if any, over what debugging them needs */
 function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?: string }) {
-  const [grKey, setGrKey] = useState(() => w.npc.npcToRoom.get(npcKey)?.grKey);
-  const [pose, setPose] = useState(() => w.n[npcKey]?.anim.pose);
-  const [, rerender] = useReducer((count: number) => count + 1, 0);
-
-  useEffect(() => {
-    // not only theirs e.g. "spawned-many", "nav-updated" — and an unchanged key re-renders nothing
-    const sub = w.events.subscribe({ next: () => setGrKey(w.npc.npcToRoom.get(npcKey)?.grKey) });
-    // the pose changes on its own too e.g. walking, idling
-    const id = setInterval(() => setPose(w.n[npcKey]?.anim.pose), posePollMs);
-    return () => (sub.unsubscribe(), clearInterval(id));
-  }, [w, npcKey]);
-
   const npc = w.n[npcKey];
+  const grKey = w.npc.npcToRoom.get(npcKey)?.grKey;
 
   return (
     <div className="pointer-events-auto flex max-h-(--html-height,none) w-(--html-width,32rem) flex-col gap-3 overflow-y-auto rounded-2xl scrollbar-thin border-4 border-white/40 bg-black/70 px-5 py-4 text-lg text-white/90">
@@ -166,12 +168,11 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
       )}
       {npc !== undefined && (
         <Select.Root
-          value={pose}
+          value={npc.anim.pose}
           onValueChange={(next) => {
             if (next === null || w.n[npcKey] === undefined) return;
             w.n[npcKey].anim.setHurt(null); // else they go back to it
             w.n[npcKey].anim.setPose(next);
-            setPose(next);
           }}
         >
           <Select.Trigger className="flex min-w-0 items-center gap-2 rounded-lg border-2 border-white/20 bg-black/50 px-3 py-0.5 text-left outline-none cursor-pointer focus:border-white/60">
@@ -207,7 +208,7 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
               title={`${had ? "take away" : "give"} ${name}`}
               onClick={() => {
                 had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name);
-                rerender();
+                w.bubble.sync(npcKey); // a gift is not announced
               }}
             >
               {name}
@@ -218,37 +219,20 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
           <ToggleButton
             on={npc.anim.breath.on}
             title={`${npc.anim.breath.on ? "stop" : "start"} breathing`}
-            onClick={() => {
-              npc.anim.setBreathing(!npc.anim.breath.on);
-              rerender();
-            }}
+            onClick={() => npc.anim.setBreathing(!npc.anim.breath.on)}
           >
             breath
           </ToggleButton>
         )}
         {npc !== undefined && npcKey !== w.player?.key && (
-          <ToggleButton
-            on={npc.lit}
-            onClick={() => {
-              w.e.setNpcLit(npc);
-              w.speech.update(); // its menu shows them lit
-              rerender();
-            }}
-          >
-            {npc.lit ? "unlight" : "light"}
+          <ToggleButton on={npc.lit} onClick={() => w.e.setNpcLit(npc)}>
+            lit
           </ToggleButton>
         )}
-        {/* the speech menu's added items e.g. pick/unpick */}
+        {/* the speech menu's added items e.g. picked */}
         {w.speech.menuItems.map((item) => (
-          <ToggleButton
-            key={item.key}
-            onClick={() => {
-              item.action(npcKey);
-              w.speech.update();
-              rerender();
-            }}
-          >
-            {typeof item.text === "function" ? item.text(npcKey) : item.text}
+          <ToggleButton key={item.key} on={item.on?.(npcKey)} onClick={() => item.action(npcKey)}>
+            {item.text}
           </ToggleButton>
         ))}
       </div>
@@ -269,10 +253,26 @@ function ToggleButton({ on, ...props }: { on?: boolean; title?: string; onClick(
 }
 
 const bubbleKey = (npcKey: string) => `bubble:${npcKey}`;
+/** Events that may change a debug section: their room, pose, what they carry, a toggle e.g. lit. Most name the npc */
+const bubbleEvents = new Set([
+  "carried",
+  "enter-room",
+  "npc-posed",
+  "npc-toggled",
+  "spawned",
+  "spawned-many",
+  "nav-updated", // e.g. after a map edit: every room is recomputed
+  "requested-physics",
+] as const) satisfies Set<JshCli.Event["key"]>;
+
+/** `e` is one of `bubbleEvents`, narrowed to them */
+function isBubbleEvent(
+  e: JshCli.Event,
+): e is Extract<JshCli.Event, { key: typeof bubbleEvents extends Set<infer K> ? K : never }> {
+  return (bubbleEvents as ReadonlySet<string>).has(e.key);
+}
 /** Seconds a line said stays over them, whilst unpaused: long enough to be found, then read */
 const lineSecs = 8;
-/** Their pose changes on its own, and nothing announces it */
-const posePollMs = 250;
 
 export type State = {
   /** Whose debug section is open */

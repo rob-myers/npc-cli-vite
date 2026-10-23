@@ -982,6 +982,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "carried":
+          case "npc-toggled":
+          case "npc-posed":
           case "npc-hit":
           case "npc-hurt":
           case "npc-shot":
@@ -1376,6 +1378,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (state.syncLitRoom(npc) === true) {
           state.syncFadeRooms();
         }
+        w.events.next({ key: "npc-toggled", npcKey: npc.key });
       },
       setRoomLit(input, next) {
         const { grKey, gmId, roomId } = typeof input === "string" ? helper.getGmRoomId(input) : input;

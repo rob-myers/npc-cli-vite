@@ -103,6 +103,16 @@ declare namespace JshCli {
         /** A spot was chosen, in the Decorator or on the World's overlay, else none — see `w.debug.chooseSpot` */
         key: "spot-chosen";
         spotKey: null | string;
+      }
+    | {
+        /** Something about them shown on or off changed: lit, breathing, or a speech menu toggle e.g. picked */
+        key: "npc-toggled";
+        npcKey: string;
+      }
+    | {
+        /** Their pose changed, e.g. walking, idling or sitting — see `anim.setPose` */
+        key: "npc-posed";
+        npcKey: string;
       };
 
   /** A phaser shot by `by` at `npcKey`'s `part` */

@@ -2,7 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { cn, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, CaretRightIcon, ChatCircleTextIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useDragControls, useMotionValue } from "motion/react";
-import { useContext, useEffect, useState } from "react";
+import { type ReactNode, useContext, useEffect, useState } from "react";
 import { npcDims } from "../const.both";
 import { psiKhandhas } from "../const.npc";
 
@@ -271,6 +271,7 @@ export function WorldSpeech() {
         if (e.key === "net-changed" && e.mode === "client" && e.phase === "connected") {
           state.set({ panelOpen: false });
         }
+        if (e.key === "npc-toggled") state.update(); // their menu shows it
       },
     });
     return () => sub.unsubscribe();
@@ -538,13 +539,23 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
   const w = useContext(WorldContext);
   /** `remove` is armed by its first click and takes effect on the second, in the same place */
   const [armed, setArmed] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const npc = w.n[npcKey];
   // `setNpcLit` refuses the player, so the item would silently do nothing for them
   const canLightOrDelete = npc !== undefined && npc.key !== w.player?.key;
 
   return (
-    <Menu.Root onOpenChange={() => setArmed(false)}>
+    <Menu.Root
+      open={open}
+      // a press outside, e.g. on the World, lands there and leaves it open: the trigger, Escape or an item closes it
+      modal={false}
+      onOpenChange={(next, { reason }) => {
+        if (next === false && reason === "outside-press") return;
+        setArmed(false);
+        setOpen(next);
+      }}
+    >
       <Menu.Trigger
         className={cn(
           "pointer-events-auto shrink-0 px-3 inline-flex items-center gap-1 font-medium tracking-wider text-blue-200/80 cursor-pointer hover:text-sky-200 data-popup-open:text-sky-100",
@@ -585,13 +596,8 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
               </Menu.Item>
             )}
             {canLightOrDelete === true && (
-              <Menu.Item
-                className={speechMenuItemClassName}
-                closeOnClick={false}
-                // `setNpcLit` writes a uniform, so nothing here re-renders on its own
-                onClick={() => (w.e.setNpcLit(npc), w.speech.update())}
-              >
-                {npc.lit === true ? "unlight" : "light"}
+              <Menu.Item className={speechMenuItemClassName} closeOnClick={false} onClick={() => w.e.setNpcLit(npc)}>
+                <MenuToggle on={npc.lit === true}>lit</MenuToggle>
               </Menu.Item>
             )}
             {canLightOrDelete && (
@@ -609,9 +615,9 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
                 key={item.key}
                 className={speechMenuItemClassName}
                 closeOnClick={false}
-                onClick={() => (item.action(npcKey), w.speech.update())} // its `text` may change, e.g. pick/unpick
+                onClick={() => item.action(npcKey)}
               >
-                {typeof item.text === "function" ? item.text(npcKey) : item.text}
+                {item.on === undefined ? item.text : <MenuToggle on={item.on(npcKey)}>{item.text}</MenuToggle>}
               </Menu.Item>
             ))}
           </Menu.Popup>
@@ -619,6 +625,11 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
       </Menu.Portal>
     </Menu.Root>
   );
+}
+
+/** A menu item's text, amber whilst `on` */
+function MenuToggle({ on, children }: { on: boolean; children: ReactNode }) {
+  return <span className={cn(on && "text-amber-200")}>{children}</span>;
 }
 
 const speechMenuItemClassName =
@@ -655,7 +666,9 @@ type Thread = { key: string; parties: string[]; entries: SpeechEntry[] };
 /** An item added to every `NpcKeyMenu` by e.g. a jsh command — see `addMenuItem` */
 export type SpeechMenuItem = {
   key: string;
-  text: string | ((npcKey: string) => string);
+  text: string;
+  /** A toggle, shown on for this npc, e.g. picked. Its `action` emits `npc-toggled`, so the menus show the change */
+  on?(npcKey: string): boolean;
   action(npcKey: string): void;
 };
 

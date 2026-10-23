@@ -224,6 +224,7 @@ export class NpcAnimation {
     this.headY = this.w.npc.headYByPose[next];
     this.npc.setBubbleHeight(bubbleHeightForClip(next));
     this.npc.setLabelYShift(labelYShiftForClip(next));
+    this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 
   /**
@@ -450,6 +451,7 @@ export class NpcAnimation {
     const clock = on === true ? this.breathClock() : null;
     if (clock !== null) breath.phase = phaseOfClip(clock, this.breathTune.inhale);
     this.w.r3f?.invalidate();
+    this.w.events.next({ key: "npc-toggled", npcKey: this.npc.key });
   }
 
   /** The player's is the World's, set in their bubble: anyone else's the default. Read each tick, so not a copy */
