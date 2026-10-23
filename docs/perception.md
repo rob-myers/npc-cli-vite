@@ -49,7 +49,7 @@ Each step only runs if the one before leaves it open:
 1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).
 2. **Rooms:** `b` must be in a room `a` has in view.
 3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
-4. **Lines,** for the rest: from `a`'s eye to the top of `b`'s body, at fixed heights by posture (`bodyHeights`). A low obstacle stops one passing at or below its top. A fully crouched npc's top is 0.6 m by rule, though their head is above a desk, so cover `crouchHideHeight` tall hides them.
+4. **Lines,** for the rest: from `a`'s eye to the top of `b`'s body, at fixed heights by posture (`bodyHeights`) above what they are on: the floor, else their seat or bed (its `meta.y`, so a top bunk too). Lying, on their back or a side. A low obstacle stops one passing at or below its top. A fully crouched npc's top is 0.6 m by rule, though their head is above a desk, so cover `crouchHideHeight` tall hides them.
 
 **The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.
 - **Its key:** each npc's name, position to the centimetre, posture and crouch (a spot's is its key), then the doors' revision. Any door opening or shutting, or a new setup, bumps that revision, so every earlier answer goes unused.

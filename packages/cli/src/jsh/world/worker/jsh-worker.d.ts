@@ -24,6 +24,10 @@ declare namespace WW {
     seeRooms: string[];
     /** The doable they sit or lie at, if any */
     doAt?: Geom.VectJson;
+    /** Metres up to what they sit or lie on, e.g. a top bunk: the floor stood */
+    onY: number;
+    /** Lying on a side, not their back */
+    onSide: boolean;
   };
 
   /** One question about spots, of the perception worker — see `docs/perception.md` */

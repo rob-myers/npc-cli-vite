@@ -148,7 +148,9 @@ function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
     const doable = w.decor.byKey[w.npc.npcToDoable[key] ?? ""];
     const doAt = posture !== "stand" && doable?.type === "point" ? { x: doable.x, y: doable.y } : undefined;
     const at = { x: npc.point.x, y: npc.point.y };
-    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt }];
+    const onY = posture === "stand" ? 0 : (doable?.meta.y ?? 0);
+    const onSide = npc.anim.pose === "lie_left" || npc.anim.pose === "lie_right";
+    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt, onY, onSide }];
   });
   return { npcs, queries };
 }

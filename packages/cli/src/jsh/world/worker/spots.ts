@@ -281,19 +281,22 @@ const round = (x: number) => Math.round(x * 100) / 100;
 const bodyRadius = 0.25;
 
 /**
- * Metres: an npc's eye height, and the top of their body, by posture, as the models stand. Crouched is full.
+ * Metres above what they are on: an npc's eye, and the top of their body, as the models pose. Crouched is full.
  * Its top is a rule, not the model's: their head clears a desk, yet cover `crouchHideHeight` tall hides them
  */
 const bodyHeights = {
   stand: { eye: 1.37, top: 1.53 },
   crouched: { eye: 0.88, top: 0.6 },
-  sit: { eye: 1.15, top: 1.3 },
-  lie: { eye: 0.4, top: 0.5 },
+  sit: { eye: 0.83, top: 0.99 },
+  lie: { eye: 0.28, top: 0.3 },
+  lieSide: { eye: 0.2, top: 0.37 },
 };
 
-/** A spot stands for someone stood */
+/** Metres off the floor, as `bodyHeights`. A spot stands for someone stood */
 function heightsOf(npc?: WW.SpotNpc) {
-  return npc === undefined ? bodyHeights.stand : npc.crouched ? bodyHeights.crouched : bodyHeights[npc.posture];
+  if (npc === undefined) return bodyHeights.stand;
+  const { eye, top } = bodyHeights[npc.crouched ? "crouched" : npc.onSide ? "lieSide" : npc.posture];
+  return { eye: eye + npc.onY, top: top + npc.onY };
 }
 /** Spots an npc is sent to: not a doable, which needs its decor, nor in a doorway */
 const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
@@ -542,8 +545,8 @@ function remember(key: string, answer: boolean) {
 /** An npc by where they stand to the centimetre and how, else a spot key: so it only serves those standing still */
 function cacheKeyOf(ref: string, npc?: WW.SpotNpc) {
   if (npc === undefined) return ref;
-  const { point, posture, crouched } = npc;
-  return `${ref} ${point.x.toFixed(2)} ${point.y.toFixed(2)} ${posture} ${crouched}`;
+  const { point, posture, crouched, onY, onSide } = npc;
+  return `${ref} ${point.x.toFixed(2)} ${point.y.toFixed(2)} ${posture} ${crouched} ${onY} ${onSide}`;
 }
 /** Grid rings searched for the nearest spot in a room: 40 metres, past any room's size */
 const maxRings = 20;
