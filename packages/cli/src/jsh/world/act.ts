@@ -9,6 +9,7 @@ import { spotQuery } from "./perception.main";
  * act count rob to:10
  * act face rob wall
  * act hide cal from:rob away:6 prefer:cover,corner
+ * act avoid cal from:rob
  * ```
  */
 export async function act(ct: JshCli.RunArg) {
@@ -51,27 +52,38 @@ const verbs: Record<string, Verb> = {
     if (point === null) throw Error(`face ${at ?? ""}: not wall, npc or spot`);
     await ctx.task.wait(ctx.ct.w.npc.get(ctx.npcKey).look({ at: point }));
   },
+  /** As `avoid`, judged by every spot they will be at, their room's doors open: they open one going in, or stand by one */
+  hide: (ctx, opts) => hideFrom(ctx, opts, true),
   /**
    * `from:<npcs> [prefer:<kinds>] [away:<m>]`: to a spot none of them sees, `away` metres from them if one is.
-   * Spots others stand at or head for are skipped. Already hidden, they stay put.
-   * Seen on arrival, e.g. by a watcher who stepped aside for them, they hide again
+   * Spots others stand at or head for are skipped. Already unseen, they stay put, else they get up first.
+   * Blocked, they try another. Seen on arrival, it fails saying why
    */
-  async hide(ctx, opts) {
-    if (await isHidden(ctx, opts)) return;
-    /** Spots they were blocked from */
-    const blocked: string[] = [];
-    for (let i = 0; i < hideTries; i++) {
-      const spot = await hidingSpot(ctx, opts, blocked);
-      if (spot === null) throw Error("no hiding spot");
-      if ((await goTo(ctx, spot)) === false) blocked.push(spot.key);
-      else if (await isHidden(ctx, opts)) return;
-    }
-    throw Error("not hidden");
-  },
+  avoid: (ctx, opts) => hideFrom(ctx, opts, false),
 };
 
+/** `hide` or `avoid`: `strict` judges their whole region, their room's doors open, else the spot alone */
+async function hideFrom(ctx: Ctx, opts: Opts, strict: boolean) {
+  if ((await seenWhy(ctx, opts, strict)) === null) return;
+  await getUp(ctx);
+  /** Spots they were blocked from */
+  const blocked: string[] = [];
+  for (let i = 0; i < hideTries; i++) {
+    const spot = await hidingSpot(ctx, opts, blocked, strict);
+    if (spot === null) throw Error("no hiding spot");
+    if ((await goTo(ctx, spot)) === false) {
+      blocked.push(spot.key);
+      continue;
+    }
+    const why = await seenWhy(ctx, opts, strict);
+    if (why === null) return;
+    throw Error(`seen at ${spot.key}: ${why}`);
+  }
+  throw Error(`blocked from ${blocked.join(",")}`);
+}
+
 /** A spot none of `from` sees, skipping those others nearby stand at or head for. `null` if there is none */
-async function hidingSpot(ctx: Ctx, opts: Opts, avoid: string[]) {
+async function hidingSpot(ctx: Ctx, opts: Opts, skip: string[], strict: boolean) {
   const { w } = ctx.ct;
   /** Only those within two doors: hiding spots are tried nearest first */
   const others = w.e.getNpcsInReach(ctx.npcKey, 2);
@@ -88,22 +100,43 @@ async function hidingSpot(ctx: Ctx, opts: Opts, avoid: string[]) {
       from: fromKeys(ctx, opts),
       rooms: csv(opts.rooms),
       prefer: csv(opts.prefer),
-      exclude: [...exclude, ...avoid],
+      exclude: [...exclude, ...skip],
       away: opts.away === undefined ? undefined : Number(opts.away),
       ahead: aheadOf(ctx, opts),
+      strict,
     },
   ]);
   return isSpot(spot) ? spot : null;
 }
 
-/** Unseen by `from`, where they stand or are headed, and `away` metres from them if asked */
-async function isHidden(ctx: Ctx, opts: Opts) {
+/**
+ * Why `from` may see them, or they are within `away` metres, else `null`. By lines from their eyes, as `sees --los`.
+ * `strict`, by the lists over every spot they are at, their rooms' doors open, also from where `from` are headed
+ */
+async function seenWhy(ctx: Ctx, opts: Opts, strict: boolean) {
   const { w } = ctx.ct;
   const npc = w.npc.get(ctx.npcKey);
   const from = fromKeys(ctx, opts);
-  if (from.some((key) => npc.distanceTo(w.n[key].point) < Number(opts.away ?? 0))) return false;
+  const near = from.find((key) => npc.distanceTo(w.n[key].point) < Number(opts.away ?? 0));
+  if (near !== undefined) return `within ${opts.away}m of ${near}`;
+  if (strict === false) return seenBy(ctx, from);
   const [answer] = await spotQuery(ctx.ct, [{ q: "hidden", npc: ctx.npcKey, from, ahead: aheadOf(ctx, opts) }]);
-  return answer != null && "hidden" in answer && answer.hidden;
+  if (answer == null || !("hidden" in answer)) return "not answered";
+  return answer.hidden ? null : `their spots ${answer.seen.join(",")} may be seen`;
+}
+
+/** Which of `from` sees them now, and how, whichever way they face: `null` if none */
+async function seenBy(ctx: Ctx, from: string[]) {
+  const answers = await spotQuery(
+    ctx.ct,
+    from.map((a): WW.SpotQuery => ({ q: "explain", a, b: ctx.npcKey })),
+  );
+  for (const [i, x] of answers.entries()) {
+    if (x == null || !("settled" in x) || x.sees === false) continue;
+    const clear = x.lines.findIndex((line) => line.hit === null);
+    return `${from[i]} sees them, ${x.settled === "lines" ? `ray ${["direct", "right", "left"][clear]}` : x.settled}`;
+  }
+  return null;
 }
 
 /** Where any of `from` are walking to */
@@ -118,6 +151,16 @@ function aheadOf(ctx: Ctx, opts: Opts) {
 function fromKeys(ctx: Ctx, opts: Opts) {
   if (typeof opts.from !== "string") throw Error("expected from:<npcs>");
   return opts.from.split(",").filter((key) => key !== ctx.npcKey && ctx.ct.w.n[key] !== undefined);
+}
+
+/** Off a seat or bed onto the floor beside it: a move from there would fade them all the way */
+async function getUp(ctx: Ctx) {
+  const { w } = ctx.ct;
+  if (typeof w.npc.npcToDoable[ctx.npcKey] !== "string") return;
+  const npc = w.npc.get(ctx.npcKey);
+  const near = w.npc.getClosestPoly(npc.point, 4);
+  if (near.success === false) throw Error("nowhere to stand");
+  await ctx.task.wait(npc.fadeSpawn({ at: { x: near.position[0], y: near.position[2] } }));
 }
 
 /** Walks there, giving up once they stall or are stuck, e.g. blocked by the player. Resolves whether they arrived */

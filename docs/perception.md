@@ -61,8 +61,9 @@ Each step only runs if the one before leaves it open:
 ## `hide` and `hidden`
 
 - **Unsafe** is every spot the watchers' spots may see by the lists, as the doors stand. So are those seen from where they are walking to.
-- **`hide`** picks the best spot not unsafe, with no lines.
-- **`hidden`** asks whether none of the hider's spots are unsafe.
+- **`hide`** picks the best spot not unsafe, with no lines. With `strict`, as jsh `act hide` asks, every spot it would count as at must be unsafe-free with its room's doors open, as the hider opens one going in or stands by one.
+- **`hidden`** asks whether none of the hider's spots are unsafe, their rooms' doors open: `act hide`'s judgement on arrival. It names those seen.
+- jsh `act avoid` picks with `hide` alone, and judges on arrival by lines from the watchers' eyes (`explain`, as `sees --los`).
 
 ## Across hull doors
 

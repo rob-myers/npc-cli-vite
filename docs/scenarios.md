@@ -73,7 +73,8 @@ The pieces of a scenario, played by hand rather than directed. `act <verb> <npc>
 | --- | --- |
 | `count rob to:10 [every:1]` | Says each number in turn |
 | `face rob wall` | Looks towards their spot's nearest occluder. Also an npc or a spot key |
-| `hide cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is. Skips spots others stand at or head for. Already hidden, it stays put. Blocked, it tries another, failing after 3 |
+| `hide cal from:rob [away:6] [prefer:cover,corner]` | As `avoid`, judged strictly: every spot it will count as at must be unseen, with its room's doors open, as it opens one going in and may stand by one. So it goes further than `avoid` |
+| `avoid cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is, judged by that spot alone. Skips spots others stand at or head for. Already unseen, it stays put. Sat or lain, it first gets up beside its seat or bed. Blocked, it tries another, failing after 3. Seen on arrival, it fails saying why, e.g. which of its spots may be seen |
 
 A walk that stalls, e.g. blocked by the player, is given up.
 
