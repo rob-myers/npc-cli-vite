@@ -19,7 +19,7 @@ import {
   sguToWorldScale,
 } from "../const.env";
 import type { AStarSearchResult } from "../pathfinding/AStar";
-import { MODE_FADE_SECS } from "../service/fade-rooms";
+import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
@@ -36,6 +36,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       handling: new Set(),
       reachedRight: new Set(),
       insideDoorways: new Map(),
+      inView: { graph: null, byRoom: new Map() },
       doorOpen: {},
       doorToNpcs: {},
       externalNpcs: new Set(),
@@ -401,6 +402,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const arm = w.n?.[npcKey]?.anim.upperLeft;
         return arm?.key === "psi" && arm.target === 1;
       },
+      roomsInView(grKey) {
+        // a new map has a new graph
+        if (state.inView.graph !== w.gmRoomGraph) state.inView = { graph: w.gmRoomGraph, byRoom: new Map() };
+        let rooms = state.inView.byRoom.get(grKey);
+        if (rooms === undefined) state.inView.byRoom.set(grKey, (rooms = roomsInViewFrom(w, grKey)));
+        return rooms;
+      },
       getNpcsInReach(npcKey, doors = 1) {
         const at = w.npc.npcToRoom.get(npcKey);
         if (at === undefined) return [];
@@ -709,10 +717,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               const adj = w.gmGraph.getAdjacentRoomCtxt(door.gmId, door.doorId);
               adj !== null && w.e.toggleDoor(adj.adjGdKey, { open: true, access: true });
             }
-            state.syncFadeRooms(); // seen through at once
+            state.inView.byRoom.clear(); // seen through at once
+            state.syncFadeRooms();
             break;
           }
           case "door-closed":
+            state.inView.byRoom.clear();
             state.doorOpen[e.gdKey] = false;
             state.syncFadeRooms();
             break;
@@ -785,6 +795,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
+            // a right click on the spots overlay chooses one, or a long press on touch. Again, none
+            if ((e.rightDown === true || (w.touchDevice && e.longDown === true)) && e.meta.type === "spot") {
+              w.debug.chooseSpot(w.debug.chosenSpot === e.meta.spotKey ? null : e.meta.spotKey);
+            }
             // a long press is how you get at an npc: they say "...", its npcKey in the history the
             // handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
             // forwarded, and the server's mirrored speech comes back instead
@@ -807,7 +821,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               w.bubble.openDebug(e.meta.npcKey, { focus: true });
             }
             // a right click has the player look there, as a tap of fingers does on touch. Not at themself
-            if (e.rightDown === true && e.meta.type !== "npc" && e.srcWorld === w.key) w.player?.lookAtPoint(e.x, e.z);
+            if (e.rightDown === true && e.meta.type !== "npc" && e.meta.type !== "spot" && e.srcWorld === w.key)
+              w.player?.lookAtPoint(e.x, e.z);
             break;
           }
           case "spawned-many": {
@@ -823,6 +838,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
+            break;
+          case "spots-overlay":
+          case "spot-chosen":
             break;
           default:
             throw new ExhaustiveError(e);
@@ -1695,6 +1713,10 @@ export type State = {
   hasItem(npcKey: string, name: "psi" | ItemKind): boolean;
   /** The others in their room, and in the rooms up to `doors` open doors away: whom they could walk to */
   getNpcsInReach(npcKey: string, doors?: number): Npc[];
+  /** The rooms in view from `grKey`, through doors seen through and windows they vouch for — see `fade-rooms.ts` */
+  roomsInView(grKey: Geomorph.GmRoomKey): Geomorph.GmRoomId[];
+  /** `roomsInView`'s answers by room, until a door changes what is seen through, or the map does */
+  inView: { graph: null | Graph.GmRoomGraph; byRoom: Map<string, Geomorph.GmRoomId[]> };
   /** Raises psi for each, or lowers it: a hand at their temple, their breath shown — see `docs/psi.md` */
   setPsi(active: boolean, ...npcKeys: string[]): void;
   /** Whether their hand is at their temple. The player's, by default */

@@ -489,7 +489,11 @@ export class JShSemantics {
           }
           await device.writeData(item);
         } catch (e) {
-          // reachable?
+          // the pipe stopped: ended, not thrown into, as `throw` cannot reach through a `yield*` over an array
+          if (e instanceof SigKillError) {
+            await generator.return(undefined);
+            throw e;
+          }
           await generator.throw(e);
         }
       }

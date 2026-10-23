@@ -270,6 +270,8 @@ export function WorldMenu() {
         return w.debug?.doPointsShown ?? false;
       case "decorations":
         return w.debug?.decorShown ?? false;
+      case "spots":
+        return w.debug?.spotsShown ?? false;
       case "npc contextmenu":
         return w.debug?.npcContextMenu ?? false;
       case "hud debug":
@@ -391,6 +393,9 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
+      case "spots":
+        w.debug?.toggleSpots();
+        break;
     }
   };
 
@@ -1379,12 +1384,19 @@ const debugGroups = {
     { key: "lit", value: "lit npcs" },
     { key: "outline", value: "npc outline" },
   ],
-  overlay: ["colliders", "decor points", "decorations", "door normals", "grid", "navmesh", "room outlines"].map(
-    (value) => ({
-      key: value,
-      value,
-    }),
-  ),
+  overlay: [
+    "colliders",
+    "decor points",
+    "decorations",
+    "door normals",
+    "grid",
+    "navmesh",
+    "room outlines",
+    "spots",
+  ].map((value) => ({
+    key: value,
+    value,
+  })),
   "door ui": [
     { key: "pick", value: "pick doors" },
     { key: "toggle", value: "toggle doors" },

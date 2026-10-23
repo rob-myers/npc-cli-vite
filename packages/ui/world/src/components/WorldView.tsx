@@ -302,6 +302,16 @@ export function WorldView(props: React.PropsWithChildren) {
             if (!decoded) return null;
             return { ...pick, debugPoint: true, ...decoded };
           }
+          case "spot": {
+            const spot = w.debug.spots[pick.instanceId];
+            if (spot === undefined) return null;
+            const decor = spot.decorKey == null ? undefined : w.decor.byKey[spot.decorKey];
+            const base = { ...pick, spot: true, spotKey: spot.key } as const;
+            // a doable's acts as its decor, a door's toggles its door, any other's walks there
+            if (decor !== undefined) return { ...base, ...decor.meta, decorKey: decor.key };
+            if (spot.kind === "door") return { ...base, gdKey: spot.gdKey };
+            return { ...base, floor: true };
+          }
           case "npc": {
             const { pickId, jointIndex } = decodeNpcPickId(pick.instanceId);
             const npc = w.npc.byPickId[pickId];
@@ -382,6 +392,18 @@ export function WorldView(props: React.PropsWithChildren) {
           case "debugPoint":
             mesh = getTempInstanceMesh(w.debug.debugPointsInst as THREE.InstancedMesh, picked.instanceId);
             break;
+          case "spot": {
+            // its icon stands off the floor, so it lands on the spot itself
+            const spot = w.debug.spots[picked.instanceId];
+            if (spot === undefined) return null;
+            const point = new THREE.Vector3(spot.x, 0, spot.y);
+            return {
+              distance: point.distanceTo(state.raycaster.ray.origin),
+              point,
+              object: w.debug.spotsInst,
+              normal: up,
+            };
+          }
           default:
             throw testNever(picked);
         }
@@ -921,7 +943,10 @@ export function WorldView(props: React.PropsWithChildren) {
             w.menu?.update();
           }
         } else if (e.key === "0") {
-          if (e.repeat === false) state.toggleViewPick();
+          if (e.repeat === false) {
+            w.debug?.toggleSpots();
+            w.menu?.update();
+          }
         } else if (key === "c") {
           // held, as `f`: its repeat is the hold, a full crouch. A tap waits for the release
           if (e.repeat === false) {
@@ -1131,10 +1156,12 @@ export function WorldView(props: React.PropsWithChildren) {
           meta: {
             ...picked,
             ...gmRoomId,
-            nav: (picked.type === "floor" || picked.type === "decor") && w.npc.getClosestPoly(point, 0.1).success,
+            nav:
+              (picked.type === "floor" || picked.type === "decor" || picked.type === "spot") &&
+              w.npc.getClosestPoly(point, 0.1).success,
             do:
               // picked decor with meta.do string
-              (picked.type === "decor" && !!w.decor.byKey[picked.decorKey]?.meta.do) ||
+              ((picked.type === "decor" || picked.type === "spot") && !!w.decor.byKey[picked.decorKey]?.meta.do) ||
               // picked obstacle with meta.decorIds array
               (picked.type === "obstacle" && !!w.gms[picked.gmId].obstacles[picked.obstacleId].meta.decorIds),
           },
@@ -2317,6 +2344,7 @@ export type Picked = {
   // static and runtime decor have same decode format
   | ({ type: "decor"; decor: true } & ReturnType<import("./Decor").State["decodeInstanceId"]>)
   | ({ type: "debugPoint"; debugPoint: true } & ReturnType<import("./Debug").State["decodeDebugPointInstanceId"]>)
+  | ({ type: "spot"; spot: true; spotKey: string } & Meta)
   // we require spawn inside room but map might change
   | ({ type: "npc"; npcKey: string; bodyPart: NpcBodyPart; npcLabel?: true } & Partial<Geomorph.GmRoomId>)
 );

@@ -13,10 +13,12 @@ self.addEventListener("message", (e: MessageEvent<WW.PerceptionMsgTo>) => {
       sight.grid = new SegGrid(1);
       for (const { a, b, kind, id, top } of msg.occluders) sight.grid.add([a, b], kind, id, top);
       sight.open = new Set(msg.openDoors);
+      sight.doorRev++;
       break;
     case "perception-door":
       if (msg.open) sight.open.add(msg.gdKey);
       else sight.open.delete(msg.gdKey);
+      sight.doorRev++;
       break;
     case "perception-query":
       void answer(msg);
@@ -24,8 +26,8 @@ self.addEventListener("message", (e: MessageEvent<WW.PerceptionMsgTo>) => {
   }
 });
 
-/** What blocks sight on the map last set up, and the doors standing open */
-const sight = { grid: new SegGrid(1), open: new Set<string>() };
+/** What blocks sight on the map last set up, the doors seen through, and how often those have changed */
+const sight = { grid: new SegGrid(1), open: new Set<string>(), doorRev: 0 };
 
 /** Always answers, else main waits forever */
 async function answer({ uid, op }: Extract<WW.PerceptionMsgTo, { type: "perception-query" }>) {

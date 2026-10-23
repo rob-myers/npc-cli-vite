@@ -13,6 +13,9 @@ import { awaitPausable } from "./plan.main";
 let spotsRev = 0;
 import.meta.hot?.on(spotsChangedEvent, () => void spotsRev++);
 
+/** Which remaking of the spot files is current, e.g. to redraw them */
+export const getSpotsRev = () => spotsRev;
+
 /**
  * A batch of spot queries, answered by the perception worker in one round trip, under the shell's pause/kill.
  * The npcs they name are snapshotted now — see `docs/perception.md`
@@ -53,6 +56,21 @@ function getPerception(w: JshCli.WorldState) {
       spotsRev,
       occluders: sightOccluders(w.gms),
       openDoors: Object.keys(w.door.byKey).filter((gdKey) => w.door.isSeenThrough(gdKey as Geomorph.GmDoorKey)),
+      doableKeys: Object.fromEntries(
+        w.gms.flatMap((gm, gmId) =>
+          gm.decor.flatMap((d, decorId) =>
+            d.type === "point" && typeof d.meta.do === "string" && d.key !== undefined
+              ? [[`${gmId}/${decorId}`, d.key]]
+              : [],
+          ),
+        ),
+      ),
+      hullPairs: w.gms.flatMap((gm, gmId) =>
+        gm.hullDoors.flatMap((_, doorId): [string, string][] => {
+          const adj = w.gmGraph.getAdjacentRoomCtxt(gmId, doorId);
+          return adj === null ? [] : [[`g${gmId}d${doorId}`, adj.adjGdKey]];
+        }),
+      ),
     } satisfies WW.PerceptionMsgTo);
     p.setupKey = setupKey;
   }
@@ -117,6 +135,21 @@ type Perception = {
   stop(): void;
 };
 
+/** An npc's eyes on the front of their head as last posed, else above their point */
+function eyeOf(npc: JshCli.WorldState["n"][string]): WW.SpotNpc["eye"] {
+  const e = npc.anim.upperHead.entry?.bone.matrixWorld.elements;
+  if (e === undefined) return { x: npc.point.x, y: npc.point.y, h: 1.37 };
+  const { up, ahead } = eyeAt;
+  // the bone's origin, then its y and z columns
+  return {
+    x: e[12] + e[4] * up + e[8] * ahead,
+    y: e[14] + e[6] * up + e[10] * ahead,
+    h: e[13] + e[5] * up + e[9] * ahead,
+  };
+}
+/** Where the eyes are in the head bone's own units, from the neck: up it, and out to the face, as the model faces its -z */
+const eyeAt = { up: 0.19, ahead: -0.23 };
+
 function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
   const named = new Set(queries.flatMap(namedIn));
   const npcs = [...named].flatMap((key): WW.SpotNpc[] => {
@@ -126,7 +159,11 @@ function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
     const grKeys = [...new Set(rooms.flatMap((room) => room?.grKey ?? []))];
     const posture = npc.anim.posture as WW.SpotNpc["posture"];
     const crouched = npc.anim.crouchLevel === 2;
-    return [{ key, point: { x: npc.point.x, y: npc.point.y }, grKeys, posture, crouched }];
+    const seeRooms = [...new Set(grKeys.flatMap((grKey) => w.e.roomsInView(grKey).map((room) => room.grKey)))];
+    const doable = w.decor.byKey[w.npc.npcToDoable[key] ?? ""];
+    const doAt = posture !== "stand" && doable?.type === "point" ? { x: doable.x, y: doable.y } : undefined;
+    const at = { x: npc.point.x, y: npc.point.y };
+    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt, eye: eyeOf(npc) }];
   });
   return { npcs, queries };
 }
@@ -147,8 +184,13 @@ function namedIn(q: WW.SpotQuery): string[] {
     case "at":
       return [];
     case "hide":
+    case "hidden":
       return [q.npc, ...q.from];
     case "makeWay":
       return [q.npc];
+    case "view":
+      return [q.from];
+    case "explain":
+      return [q.a, q.b];
   }
 }

@@ -9,8 +9,6 @@ import { inkOf, type SpotPick, spotWorldPoint } from "./use-spots";
 export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }: Props) {
   /** Whilst the header asks for another spot's key */
   const [searching, setSearching] = useState(false);
-  /** Whilst the copy button shows a tick, having copied the key */
-  const [copied, setCopied] = useState(false);
   const spot = file.spots[pick.id];
   const gm = w.gms[pick.gmId];
   if (spot === undefined || gm === undefined) return null;
@@ -31,6 +29,8 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
   const list = (items: string[]) =>
     items.length === 0 ? <span className="text-zinc-600">none</span> : items.join(", ");
   const decorOf = (decorId: number) => describeDecor(gm.decor[decorId]);
+  /** The decor it was made for, as the World and the shell name it */
+  const decorKey = spot.ref?.decorId === undefined ? undefined : gm.decor[spot.ref.decorId]?.key;
   /** Hull doors its region may see the opening of, the door meeting each across, and the inner doors needed */
   const hullDoors = file.hull.flatMap(([doorId, seers]) => {
     const seer = seers.find(([id]) => id === spot.id);
@@ -71,19 +71,7 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
         >
           <MagnifyingGlassIcon />
         </button>
-        <button
-          type="button"
-          className={iconButton}
-          title="copy its key"
-          onClick={() =>
-            void navigator.clipboard.writeText(`${g}s${spot.id}`).then(() => {
-              setCopied(true);
-              setTimeout(() => setCopied(false), copiedMs);
-            })
-          }
-        >
-          {copied ? <CheckIcon /> : <CopyIcon />}
-        </button>
+        <CopyButton text={`${g}s${spot.id}`} title="copy its key" />
         <button type="button" className={iconButton} title="centre the map on it" onClick={() => onLocate(at)}>
           <CrosshairIcon />
         </button>
@@ -92,6 +80,18 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
         </button>
       </div>
       <dl className={sectionClass}>
+        {decorKey !== undefined && (
+          <>
+            <dt>decor key</dt>
+            <dd className="min-w-0 flex items-center gap-1">
+              {/* long: it scrolls sideways rather than wrapping */}
+              <span className="min-w-0 overflow-x-auto whitespace-nowrap scrollbar-thin font-mono select-all">
+                {decorKey}
+              </span>
+              <CopyButton text={decorKey} title="copy the decor key" />
+            </dd>
+          </>
+        )}
         <dt>room</dt>
         <dd className="font-mono">{spot.roomId === null ? "none" : `${g}r${spot.roomId}`}</dd>
         <dt>at</dt>
@@ -169,6 +169,26 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
         <dd>{list(spot.near.obstacles.map(obstacleOf))}</dd>
       </dl>
     </div>
+  );
+}
+
+/** Copies `text`, ticked a moment once copied */
+function CopyButton({ text, title }: { text: string; title: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className={iconButton}
+      title={title}
+      onClick={() =>
+        void navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), copiedMs);
+        })
+      }
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
   );
 }
 

@@ -8,12 +8,16 @@ export const sightConfig = {
   regionRadius: 1.25,
   /** Sight is tested to a body this wide either side of a point */
   bodyRadius: 0.25,
+  /** Past `bodyRadius`, how clear of a wall or door a rim sample stays. A body there then never touches it */
+  rimClearance: 0.02,
   /** Samples on a region's rim, besides its centre */
   rimSamples: 4,
   /** Points along a hull door's opening tested from each spot */
   doorSamples: 5,
   /** Obstacles this high block sight stood */
   standBlockHeight: 1.4,
+  /** Metres an obstacle reaches down from its top without `meta.h`, as `Obstacles` draws it (`skirtDepth`) */
+  obstacleDepth: 0.5,
   /** Obstacles this high hide someone fully crouched */
   crouchHideHeight: 0.6,
   /** Radians either side of a doable's facing seen from it, by its `do`. Any other `do` is stood at */
@@ -59,7 +63,10 @@ function addOccluders(grid: Pick<SegGrid, "add">, layout: SightLayout, matrix?: 
       : [matrix.transformPoint({ x: a.x, y: a.y }), matrix.transformPoint({ x: b.x, y: b.y })];
   for (const poly of layout.walls) for (const seg of poly.lineSegs) grid.add(place(seg), "wall", -1);
   layout.doors.forEach(({ seg }, doorId) => grid.add(place(seg), "door", base + doorId));
-  layout.obstacles.forEach(({ origPoly, transform, height }, obstacleId) => {
+  layout.obstacles.forEach(({ origPoly, transform, height, meta }, obstacleId) => {
+    // hung above anyone stood, e.g. a window's lintel: it hides nothing
+    const depth = typeof meta.h === "number" ? meta.h : Math.min(height, sightConfig.obstacleDepth);
+    if (height - depth >= sightConfig.standBlockHeight) return;
     const tall = height >= sightConfig.standBlockHeight;
     if (tall === false && (low === false || height < sightConfig.crouchHideHeight)) return;
     for (const seg of origPoly.clone().applyMatrix(new Mat(transform)).lineSegs) {
@@ -84,15 +91,23 @@ export function visionAt(grid: SegGrid, p: Geom.VectJson, radius: number, skip =
   );
 }
 
-/** A region's samples on its rim, besides its centre `v.p`: pulled in off walls, so it stays on their side */
+/** A region's samples on its rim, besides its centre `v.p`: pulled in until a body there is clear of what it sees */
 export function rimSamples(v: Vision) {
   const c = sightConfig;
+  const occs = v.occ.filter((o) => o !== null);
+  const clear = c.bodyRadius + c.rimClearance;
   return Array.from({ length: c.rimSamples }, (_, k) => {
     const a = (2 * Math.PI * k) / c.rimSamples - Math.PI;
-    const r = Math.max(0, Math.min(c.regionRadius, distAt(v, a) - c.bodyRadius));
-    return { x: v.p.x + Math.cos(a) * r, y: v.p.y + Math.sin(a) * r };
+    let r = Math.max(0, Math.min(c.regionRadius, distAt(v, a) - clear));
+    const at = () => ({ x: v.p.x + Math.cos(a) * r, y: v.p.y + Math.sin(a) * r });
+    // a ray meeting a wall aslant leaves its point nearer the wall than along the ray
+    while (r > 0 && occs.some((o) => distToSeg(at(), o) < clear)) r = Math.max(0, r - rimStep);
+    return at();
   });
 }
+
+/** Metres a rim sample is pulled in at a time, until clear */
+const rimStep = 0.05;
 
 /** `v` as a polygon, its open stretches as arcs `radius` out */
 export function visionPolygon(v: Vision, radius: number) {
@@ -117,7 +132,7 @@ const arcStep = Math.PI / 36;
 
 /**
  * Which spots' regions may see which, and through which doors: sound, so a spot not listed is unseen
- * from anywhere in one region to anywhere in the other — see `docs/sight.md`
+ * from anywhere in one region to anywhere in the other — see `docs/perception.md`
  */
 export function computeSight({ spots, layout, grid, within, lowNear, radius }: SightInput): SightResult {
   const c = sightConfig;
@@ -479,8 +494,9 @@ function distToSeg(p: Geom.VectJson, { a, b }: { a: Geom.VectJson; b: Geom.VectJ
   return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
 }
 
+/** An obstacle stood in, by id, or a door spot's own door, by `-(doorId + 1)`: whoever stands there holds it open */
 function isSkipped(o: Occluder, skip: Set<number>) {
-  return o.kind === "obstacle" && skip.has(o.id);
+  return (o.kind === "obstacle" && skip.has(o.id)) || (o.kind === "door" && skip.has(-(o.id + 1)));
 }
 
 const wrap = (a: number) => (a < -Math.PI ? a + 2 * Math.PI : a >= Math.PI ? a - 2 * Math.PI : a);

@@ -3,7 +3,7 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { ANY_QUERY_FILTER, getPolyWallSegments, type NavMesh } from "navcat";
 import { type Spot, type SpotKind, spotKinds } from "../spot.schema";
 import { generateTiledNavMeshResult } from "../worker/generate-tiled-navmesh";
-import { type Occluder, type SegGrid, segsHit } from "./seg-grid";
+import type { Occluder, SegGrid } from "./seg-grid";
 import { computeSight, createSightGrid, sightConfig } from "./spot-sight";
 
 /** Tuning for `computeSpots`. Lengths in metres */
@@ -16,10 +16,10 @@ export const spotConfig = {
   wallStep: 1,
   /** How far off the boundary a spot along it stands */
   edgeInset: 0.05,
-  /** Door spots, either side of its centre line */
+  /** Doorway spots, either side of its door's centre line */
   doorStandOff: 0.6,
-  /** No wall or cover spot this near a door's centre line */
-  doorwayClearance: 0.4,
+  /** Past half a doorway's depth: its sensor's outset and a body's radius, with a margin. A spot within holds it open */
+  doorwayClearance: 0.35,
   /** The least turn of the boundary, outwards, that makes a corner */
   cornerDegrees: 30,
   /** How far into the walkable side a corner spot stands */
@@ -32,6 +32,8 @@ export const spotConfig = {
   fillStep: 0.25,
   /** Spots nearer than this are merged into the first made, by `spotKinds` order */
   mergeGap: 0.5,
+  /** A wall or cover spot merged away slides along its piece of edge in these steps, to stand clear */
+  slideStep: 0.1,
   nearRadius: 1.5,
   /** Obstacles this high hide someone fully crouched */
   crouchHideHeight: sightConfig.crouchHideHeight,
@@ -68,7 +70,12 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
   const wallSegs = layout.walls.flatMap((poly) => poly.lineSegs);
   /** `poly.lineSegs`, not `seg`: some windows are curved */
   const windowSegs = layout.windows.flatMap(({ poly }) => poly.lineSegs);
-  const doorSegs = layout.doors.map(({ seg }) => seg);
+  const doorways = layout.doors.map(({ seg, poly, center: o, normal: n }) => ({
+    seg,
+    reach: Math.max(...poly.outline.map((p) => Math.abs((p.x - o.x) * n.x + (p.y - o.y) * n.y))) + c.doorwayClearance,
+  }));
+  /** Standing here holds a door open, so only door spots and doables may */
+  const inDoorway = (p: Geom.VectJson) => doorways.some(({ seg, reach }) => distToSeg(p, seg) < reach);
   const obstacles = layout.obstacles.map(({ origPoly, transform, height, meta }, obstacleId) => ({
     obstacleId,
     height,
@@ -91,28 +98,35 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     if (source === null) continue;
     const kind: SpotKind = source.height >= sightConfig.standBlockHeight ? "wall" : "cover";
     const n = Math.max(1, Math.round(e.len / c.wallStep));
+    const slides = Array.from({ length: Math.floor(e.len / n / 2 / c.slideStep) }, (_, i) => (i + 1) * c.slideStep);
     for (let k = 0; k < n; k++) {
-      const t = ((k + 0.5) / n) * e.len;
-      const p = { x: e.a.x + e.d.x * t + e.n.x * c.edgeInset, y: e.a.y + e.d.y * t + e.n.y * c.edgeInset };
-      if (doorSegs.some((seg) => distToSeg(p, seg) < c.doorwayClearance)) continue;
+      const [p, ...alts] = [0, ...slides.flatMap((dt) => [-dt, dt])]
+        .map((dt) => ((k + 0.5) / n) * e.len + dt)
+        .map((t) => ({ x: e.a.x + e.d.x * t + e.n.x * c.edgeInset, y: e.a.y + e.d.y * t + e.n.y * c.edgeInset }));
+      if (inDoorway(p)) continue;
       const ref = source.obstacleId === undefined ? undefined : { obstacleId: source.obstacleId };
-      cands.push({ kind, p, facing: Math.atan2(e.n.y, e.n.x), ref });
+      cands.push({ kind, p, alts: alts.filter((q) => !inDoorway(q)), facing: Math.atan2(e.n.y, e.n.x), ref });
     }
   }
 
   // where the boundary turns outwards, as round a wall's end or an obstacle
   for (const { at, n } of getOuterCorners(boundary, c.cornerDegrees)) {
     const p = { x: at.x + n.x * c.cornerPush, y: at.y + n.y * c.cornerPush };
-    if (onMesh(p)) cands.push({ kind: "corner", p, facing: Math.atan2(n.y, n.x) });
+    if (onMesh(p) && !inDoorway(p)) cands.push({ kind: "corner", p, facing: Math.atan2(n.y, n.x) });
   }
 
-  // either side of each door, facing it
+  // either side of each door, in its doorway, facing it
   layout.doors.forEach(({ center, normal }, doorId) => {
     for (const sign of [1, -1]) {
       const p = { x: center.x + normal.x * sign * c.doorStandOff, y: center.y + normal.y * sign * c.doorStandOff };
       if (onMesh(p))
-        cands.push({ kind: "door", p, facing: Math.atan2(-normal.y * sign, -normal.x * sign), ref: { doorId } });
+        cands.push({ kind: "doorway", p, facing: Math.atan2(-normal.y * sign, -normal.x * sign), ref: { doorId } });
     }
+  });
+
+  // in each door, bar a hull door: whoever stands there holds it open
+  layout.doors.forEach(({ center, meta }, doorId) => {
+    if (meta.hull !== true && onMesh(center)) cands.push({ kind: "door", p: center.json, ref: { doorId } });
   });
 
   layout.decor.forEach((d, decorId) => {
@@ -120,7 +134,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
       cands.push({ kind: "doable", p: { x: d.x, y: d.y }, facing: (d.orient * Math.PI) / 180, ref: { decorId } });
     } else if (d.type === "quad" && d.meta.switch === undefined) {
       const p = nearestWalkable(d.center, boundary, onMesh, c);
-      if (p !== null) cands.push({ kind: "decor", p, ref: { decorId } });
+      if (p !== null && !inDoorway(p)) cands.push({ kind: "decor", p, ref: { decorId } });
     }
   });
 
@@ -137,7 +151,7 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
       const p = { x, y };
       if (onMesh(p) === false) continue;
       floor.push(p);
-      if (near.nearest(p, c.fillGap) >= c.fillGap) kept.push({ kind: "fill", p }), near.add(p);
+      if (!inDoorway(p) && near.nearest(p, c.fillGap) >= c.fillGap) kept.push({ kind: "fill", p }), near.add(p);
     }
   }
   const coverage = Math.max(0, ...floor.map((p) => near.nearest(p, 2 * c.fillGap)));
@@ -163,7 +177,15 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     lowNear,
     radius: c.radius,
   });
-  spots.forEach((spot, i) =>
+  /** Whether `t` is on the obstacle's side of cover spot `s`, which faces away from it */
+  const behind = (s: Spot, t: Spot) =>
+    (t.x - s.x) * Math.cos(s.facing ?? 0) + (t.y - s.y) * Math.sin(s.facing ?? 0) < 0;
+  spots.forEach((spot, i) => {
+    // cover backed onto a wall hides from no one
+    if (spot.kind === "cover" && !crouchSafe[i].some((j) => behind(spot, spots[j]))) {
+      spot.kind = "wall";
+      crouchSafe[i] = [];
+    }
     Object.assign(spot, {
       sight: sight[i],
       always: always[i],
@@ -172,8 +194,8 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
       ...(doArcs[i] === undefined ? {} : { doArc: Math.round(doArcs[i] * 1000) / 1000 }),
       doSight: doSight[i],
       doVia: doVia[i],
-    }),
-  );
+    });
+  });
 
   return {
     spots,
@@ -189,8 +211,11 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
 /** Each spot's room, depth, what it sees, and what is near. Also the obstacles each stands in */
 function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[], grid: SegGrid) {
   const c = spotConfig;
-  /** Obstacles each stands in, e.g. a bed's doable: their own sides do not hide them */
-  const within = cands.map(({ p }) => obstacles.filter((o) => inPoly(o.segs, p)).map((o) => o.obstacleId));
+  /** What each ignores: obstacles it stands in, e.g. a bed's doable, and a door spot's own door — see `isSkipped` */
+  const within = cands.map(({ kind, p, ref }) => [
+    ...obstacles.filter((o) => inPoly(o.segs, p)).map((o) => o.obstacleId),
+    ...(kind === "door" && ref?.doorId !== undefined ? [-(ref.doorId + 1)] : []),
+  ]);
 
   const spots = cands.map(({ kind, p, facing, ref }, id): Spot => {
     const skip = new Set(within[id]);
@@ -210,8 +235,6 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       roomId: roomId === -1 ? null : roomId,
       ...(facing === undefined ? {} : { facing: round(facing, 3) }),
       depth,
-      sees: [],
-      seesVia: [],
       seesDoors: seenDoors(p, layout, grid, skip),
       near: nearTo(p, layout, obstacles),
       ...(ref === undefined ? {} : { ref }),
@@ -222,45 +245,6 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       doSight: [],
       doVia: [],
     };
-  });
-
-  for (let i = 0; i < cands.length; i++) {
-    for (let j = i + 1; j < cands.length; j++) {
-      const [u, v] = [cands[i].p, cands[j].p];
-      if (Math.hypot(v.x - u.x, v.y - u.y) > c.radius) continue;
-      const skip = new Set([...within[i], ...within[j]]);
-      const doors = new Set<number>();
-      let blocked = false as boolean;
-      grid.forEachOn(u, v, (o) => {
-        if (isSkipped(o, skip)) return false;
-        if (o.kind === "door") return doors.add(o.id), doors.size > 1;
-        return (blocked = true);
-      });
-      if (blocked === true || doors.size > 1) continue;
-      if (doors.size === 0) {
-        spots[i].sees.push(j);
-        spots[j].sees.push(i);
-      } else {
-        const [doorId] = doors;
-        spots[i].seesVia.push([j, doorId]);
-        spots[j].seesVia.push([i, doorId]);
-      }
-    }
-  }
-
-  // cover hides its spot from those whose line to it crosses a low obstacle beside it
-  spots.forEach((spot, i) => {
-    if (spot.kind !== "cover") return;
-    const p = cands[i].p;
-    const low = obstacles.filter(
-      (o) =>
-        o.height >= c.crouchHideHeight &&
-        o.height < sightConfig.standBlockHeight &&
-        Math.min(...o.segs.map((seg) => distToSeg(p, seg))) <= c.coverReach,
-    );
-    spot.crouchHidden = spot.sees.filter((j) =>
-      low.some((o) => o.segs.some(([a, b]) => segsHit(p, cands[j].p, a, b) !== -1)),
-    );
   });
 
   return { spots, within };
@@ -306,9 +290,17 @@ function nearTo(p: Geom.VectJson, layout: Geomorph.Layout, obstacles: Obstacle[]
 function mergeCands(cands: Cand[], gap: number) {
   const sorted = cands.slice().sort((u, v) => spotKinds.indexOf(u.kind) - spotKinds.indexOf(v.kind));
   const kept: Cand[] = [];
+  const near = ({ x, y }: Geom.VectJson) => kept.filter(({ p }) => Math.hypot(p.x - x, p.y - y) < gap);
   for (const cand of sorted) {
-    const { x, y } = cand.p;
-    if (cand.kind === "doable" || kept.every(({ p }) => Math.hypot(p.x - x, p.y - y) >= gap)) kept.push(cand);
+    const blockers = cand.kind === "doable" ? [] : near(cand.p);
+    // one already lining the wall makes it redundant, else it may slide clear
+    const p =
+      blockers.length === 0
+        ? cand.p
+        : blockers.some(({ kind }) => alongKinds.has(kind))
+          ? undefined
+          : cand.alts?.find((q) => near(q).length === 0);
+    if (p !== undefined) kept.push({ ...cand, p });
   }
   return kept;
 }
@@ -420,8 +412,9 @@ function distToSeg(p: Geom.VectJson, [a, b]: [Geom.VectJson, Geom.VectJson]) {
   return geomService.getDistanceToSeg(p.x, p.y, a, b);
 }
 
+/** An obstacle stood in, by id, or a door spot's own door, by `-(doorId + 1)` */
 function isSkipped(o: Occluder, skip: Set<number>) {
-  return o.kind === "obstacle" && skip.has(o.id);
+  return (o.kind === "obstacle" && skip.has(o.id)) || (o.kind === "door" && skip.has(-(o.id + 1)));
 }
 
 function round(x: number, decimals = 2) {
@@ -457,7 +450,11 @@ class PointBuckets {
   }
 }
 
-type Cand = { kind: SpotKind; p: Geom.VectJson; facing?: number; ref?: Spot["ref"] };
+/** Kinds that line a wall or obstacle */
+const alongKinds = new Set<SpotKind>(["corner", "cover", "wall"]);
+
+/** `alts`: where else it may stand, nearest `p` first, if merged away there */
+type Cand = { kind: SpotKind; p: Geom.VectJson; alts?: Geom.VectJson[]; facing?: number; ref?: Spot["ref"] };
 
 /** A navmesh boundary edge from `a`, along unit `d` for `len`, its walkable side `n` */
 type Edge = { a: Geom.VectJson; d: Geom.VectJson; len: number; n: Geom.VectJson };

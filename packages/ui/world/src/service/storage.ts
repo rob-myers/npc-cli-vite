@@ -62,6 +62,8 @@ export type WorldSettings = {
   decorShown: boolean;
   /** Whether an npc's contextmenu opens their bubble — see `Debug`'s `npcContextMenu` */
   npcContextMenu: boolean;
+  /** Whether the map's spots are drawn — see `Debug`'s `spotsShown` */
+  spotsShown: boolean;
   /** Whether the player's bar shows debug controls, e.g. forcing a shot's outcome — see `Debug`'s `hudDebug` */
   hudDebug: boolean;
   /** Game time per real second, `0` to `2` — see `GameTime.setScale` */
@@ -108,6 +110,7 @@ const defaultWorldSettings: WorldSettings = {
   pickDoors: false,
   decorShown: false,
   npcContextMenu: true,
+  spotsShown: false,
   hudDebug: false,
   timeScale: 1,
   timeSliderOpen: true,

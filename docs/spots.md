@@ -20,12 +20,14 @@ Spots are in their geomorph's own coords, like `layout.rooms`. Apply the instanc
 
 ## Kinds
 
-Spots are made in this order, and a later one too near (`mergeGap`) an earlier one is dropped. Doables are always kept.
+Spots are made in this order, and a later one too near (`mergeGap`) an earlier one is dropped. Doables are always kept. A wall or cover spot too near only doable, doorway or door spots slides along its wall instead, so a wall beside a door keeps one.
 
 - **doable**: a seat or bed (`meta.do`). `facing` is its `orient`.
-- **door**: either side of a door, facing it.
+- **doorway**: either side of a door, in its doorway, facing it.
+- **door**: at a door's centre, bar a hull door. Whoever stands there holds it open, so its lists ignore that door. It is in no room, and `hide` and `makeWay` never choose it.
 - **corner**: where the walkable boundary turns outwards, as round a wall's end or an obstacle.
 - **cover**: along an obstacle that hides someone fully crouched (`crouchHideHeight` up to `standBlockHeight`).
+  - A spot crouching hides from no one behind the obstacle is a wall spot instead, e.g. at a desk against a wall.
 - **wall**: along a wall or a tall obstacle, facing into the room.
 - **decor**: by a decor quad, other than a switch.
 - **fill**: the gaps between, at least `fillGap` from any other.
@@ -33,12 +35,20 @@ Spots are made in this order, and a later one too near (`mergeGap`) an earlier o
 ## Fields
 
 - `depth`: metres to the nearest occluder at each of `angles` directions from `+x`, capped at `radius`.
-- `sees`: spots in a clear line, within `radius`. `seesVia` are those through exactly one door, as `[spotId, doorId]`.
 - `seesDoors`: doors in sight at a quarter, half or three quarters across.
 - `near`: doors, decor, doables and obstacles within `nearRadius`. Decor and doables index `layout.decor`. Obstacles index `layout.obstacles`, whose `meta` says what they are.
-- `crouchHidden` (cover only): spots in `sees` whose line to it crosses a low obstacle beside it. Fully crouched, it is hidden from them.
+- **Region sight**, within `radius`, between regions: the floor within `regionRadius` of each spot.
+  - `sight`: spots it may see with no door.
+  - `always`: spots every line to which is clear.
+  - `via`: `[doorIds, spotIds]`, those it may see once all those doors are open.
+  - `crouchSafe` (cover only): spots that cannot see it fully crouched.
+  - A spot in none of them is never seen from its region.
+- **Seated sight** (doables only): `doArc`, and `doSight` / `doVia` as seen from its point within that arc.
+- **Per file:** `rooms` (rooms which may see each other) and `hull` (by hull door, the spots which may see its opening).
 
-Sight is as stood, with doors shut. Walls, shut doors and obstacles of `standBlockHeight` or more block it. Windows do not, as for the player light. "Hidden from" is not stored: it is what `sees` leaves out.
+Sight is as stood. Walls, shut doors and obstacles of `standBlockHeight` or more block it. Windows do not, as for the player light. How sight is asked of them, including across hull doors: `docs/perception.md`.
+
+An obstacle reaches down from its top (`height`) by `meta.h`, else by `sightConfig.obstacleDepth` (0.5 m, as `Obstacles` draws it). One whose bottom is at `standBlockHeight` or above hangs over anyone stood, e.g. a window's lintel, so it blocks nothing.
 
 ## How they are made
 

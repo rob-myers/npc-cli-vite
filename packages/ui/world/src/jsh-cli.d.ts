@@ -93,6 +93,16 @@ declare namespace JshCli {
     | {
         /** The rooms in view have changed — the debug room outlines follow it */
         key: "update-faded-rooms";
+      }
+    | {
+        /** The spots overlay was turned on or off — see jsh `spot_overlay` */
+        key: "spots-overlay";
+        shown: boolean;
+      }
+    | {
+        /** A spot was chosen, in the Decorator or on the World's overlay, else none — see `w.debug.chooseSpot` */
+        key: "spot-chosen";
+        spotKey: null | string;
       };
 
   /** A phaser shot by `by` at `npcKey`'s `part` */

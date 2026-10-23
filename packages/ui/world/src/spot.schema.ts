@@ -6,10 +6,22 @@ export const spotsChangedEvent = "spots-changed";
 /** Sent by the dev server as it starts making them, `{ running: true }`, and as it ends */
 export const spotsGeneratingEvent = "spots-generating";
 
-/** Spots made first win a merge: a fill is dropped for a door spot beside it, never the reverse */
-export const spotKinds = ["doable", "door", "corner", "cover", "wall", "decor", "fill"] as const;
+/** Spots made first win a merge: a fill is dropped for a doorway spot beside it, never the reverse */
+export const spotKinds = ["doable", "doorway", "door", "corner", "cover", "wall", "decor", "fill"] as const;
 export const SpotKindSchema = z.enum(spotKinds);
 export type SpotKind = z.infer<typeof SpotKindSchema>;
+
+/** Each kind's colour, wherever spots are drawn: the Decorator, and the World's overlay */
+export const spotKindInk: Record<SpotKind, string> = {
+  doable: "#a970ff",
+  doorway: "#f0a030",
+  door: "#ffd27a",
+  corner: "#40c0e0",
+  cover: "#40d080",
+  wall: "#8090a0",
+  decor: "#e070b0",
+  fill: "#c0c040",
+};
 
 /** A place an npc might stand, in its geomorph's coords — see `docs/spots.md` */
 export const SpotSchema = z.object({
@@ -22,10 +34,6 @@ export const SpotSchema = z.object({
   facing: z.number().optional(),
   /** Metres to the nearest occluder at each of `angles` directions from `+x`, stood, doors shut */
   depth: z.array(z.number()),
-  /** Spots in sight, stood, doors shut */
-  sees: z.array(z.number()),
-  /** Spots in sight through one door, once it opens: `[spotId, doorId]` */
-  seesVia: z.array(z.tuple([z.number(), z.number()])),
   seesDoors: z.array(z.number()),
   /** Ids within `nearRadius`. `decor` and `doables` index `layout.decor` */
   near: z.object({
@@ -36,11 +44,9 @@ export const SpotSchema = z.object({
   }),
   /** What it was made for */
   ref: z.object({ doorId: z.number(), decorId: z.number(), obstacleId: z.number() }).partial().optional(),
-  /** Cover only: spots in `sees` which lose sight of it once it fully crouches */
-  crouchHidden: z.array(z.number()).optional(),
   /**
    * Spots whose region its region may see, needing no door. Not here, nor in `always` or `via`: never seen.
-   * Further than `radius` is unknown, so may — see `docs/sight.md`
+   * Further than `radius` is unknown, so may — see `docs/perception.md`
    */
   sight: z.array(z.number()).default([]),
   /** Spots whose region its region always sees: every line between is clear */

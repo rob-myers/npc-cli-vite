@@ -1,15 +1,16 @@
 import type { SegGrid } from "@npc-cli/ui__world/seg-grid";
 import { type Spot, SpotsFileSchema } from "@npc-cli/ui__world/spot.schema";
-import { sightIdStride } from "@npc-cli/ui__world/spot-sight";
+import { sightConfig, sightIdStride } from "@npc-cli/ui__world/spot-sight";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 
 /**
  * The map's spots, worker-side: each geomorph's under a map-wide key `g{gmId}s{id}` and in world coords,
  * indexed by room and by grid cell. Fetched afresh by each `perception-setup` that changes them — see `docs/spots.md`
  */
-export function setupSpots(msg: { mapKey: string; gms: WW.GmForSpots[]; spotsRev: number }) {
+export function setupSpots(msg: Extract<WW.PerceptionMsgTo, { type: "perception-setup" }>) {
   const cacheKey = `${msg.mapKey} ${JSON.stringify(msg.gms)} ${msg.spotsRev}`;
-  if (current?.cacheKey !== cacheKey) current = { cacheKey, promise: createMapSpots(msg.gms) };
+  if (current?.cacheKey !== cacheKey) current = { cacheKey, promise: createMapSpots(msg.gms, msg.hullPairs) };
+  void current.promise.then((all) => void (all.doableKeys = msg.doableKeys)); // keyed as the World's decor loads
 }
 
 /** The spots of the map last set up */
@@ -20,49 +21,16 @@ export function getSpots(): Promise<MapSpots> {
 
 let current: null | { cacheKey: string; promise: Promise<MapSpots> } = null;
 
-/** Answers each query of a batch in order, `sight` blocking lines. One that fails answers `{ error }`, not the batch */
+/**
+ * Answers each query of a batch in order. Sight is from the lists where they settle it, else lines through `sight`.
+ * One that fails answers `{ error }`, not the batch — see `docs/perception.md`
+ */
 export function answerSpotQueries(
   all: MapSpots,
   { npcs, queries }: WW.SpotsOp,
-  { grid, open }: { grid: SegGrid; open: Set<string> },
+  { grid, open, doorRev }: { grid: SegGrid; open: Set<string>; doorRev: number },
 ) {
-  /** Spot `a` sees spot `b` as the doors stand */
-  /** Spot `a` may see spot `b` by its lists, doors as they stand: from its point within its arc, if sat or lain at */
-  const sees = (a: MapSpot, b: MapSpot) => {
-    if (a.gmId !== b.gmId) return false;
-    const [s, id] = [a.spot, b.spot.id];
-    const opened = ([doorIds, ids]: [number[], number[]]) =>
-      ids.includes(id) && doorIds.every((doorId) => open.has(`g${a.gmId}d${doorId}`));
-    if (s.doArc !== undefined) return s.doSight.includes(id) || s.doVia.some(opened);
-    return s.sight.includes(id) || s.always.includes(id) || s.via.some(opened);
-  };
-  /** Where `ref` looks from: an npc's own point, else a spot's */
-  const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.point ?? resolve(ref);
-  /**
-   * Some of a body at `b` is in sight from `a`: a line to its centre or either side, as the doors stand.
-   * `from` and `to` are npcs there, if any: their posture sets the line's ends, which a low obstacle may rise above
-   */
-  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
-    const [dx, dy] = [b.x - a.x, b.y - a.y];
-    const d = Math.hypot(dx, dy) || 1;
-    const [px, py] = [(-dy * bodyRadius) / d, (dx * bodyRadius) / d];
-    const [eye, top] = [heightsOf(from).eye, heightsOf(to).top];
-    // one sat or lain is on the furniture, which does not hide them
-    const lowHides = to === undefined || to.posture === "stand";
-    return [0, 1, -1].some((k) => lineClear(a, { x: b.x + k * px, y: b.y + k * py }, eye, lowHides ? top : null));
-  };
-  /** Nothing stops the line: no wall nor tall obstacle, only doors standing open, and no low one it passes under */
-  const lineClear = (p: Geom.VectJson, q: Geom.VectJson, eye: number, top: null | number) => {
-    let blocked = false;
-    grid.forEachOn(p, q, (o, lambda) => {
-      if (o.kind === "door")
-        return open.has(`g${Math.floor(o.id / sightIdStride)}d${o.id % sightIdStride}`) ? false : (blocked = true);
-      if (o.kind === "low")
-        return top !== null && (o.top ?? 0) >= eye + (top - eye) * lambda ? (blocked = true) : false;
-      return (blocked = true);
-    });
-    return blocked === false;
-  };
+  const isOpen = (gdKey: string) => open.has(gdKey);
   const npcByKey = new Map(npcs.map((npc) => [npc.key, npc]));
   const resolveNpc = (key: string) => {
     const npc = npcByKey.get(key);
@@ -76,12 +44,95 @@ export function answerSpotQueries(
     if (spot === undefined) throw Error(`${ref}: no spot`);
     return spot;
   };
-  /** A spot key, else every spot an npc is at */
-  const resolveAll = (ref: string) => {
+  /** Where `ref` is, for the lists: an npc's spots by posture, else the spot, which is sat at if a doable with an arc */
+  const spotsAt = (ref: string): At => {
     const npc = npcByKey.get(ref);
-    const spots = npc === undefined ? [resolve(ref)] : all.spotsOf(npc);
-    if (spots.length === 0) throw Error(`${ref}: no spot`);
-    return spots;
+    if (npc !== undefined) return all.npcSpots(npc);
+    const spot = resolve(ref);
+    return { spots: [spot], seated: spot.spot.doArc !== undefined };
+  };
+  /** Where `ref` looks from: an npc's own point, else a spot's */
+  const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.eye ?? resolve(ref);
+  /**
+   * The lines from `a` to a body at `b`: to its centre and either side. `from` and `to` are npcs there, if any.
+   * Their postures set the heights, which a low obstacle may rise above
+   */
+  const eyeLines = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
+    const [dx, dy] = [b.x - a.x, b.y - a.y];
+    const d = Math.hypot(dx, dy) || 1;
+    const [px, py] = [(-dy * headRadius) / d, (dx * headRadius) / d];
+    // one sat or lain is on the furniture, which does not hide them
+    const lowHides = to === undefined || to.posture === "stand";
+    return {
+      eye: heightsOf(from).eye,
+      top: lowHides ? heightsOf(to).top : null,
+      ends: [0, 1, -1].map((k) => ({ x: b.x + k * px, y: b.y + k * py })),
+    };
+  };
+  /** Some of a body at `b` is in sight from `a`, as the doors stand */
+  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
+    const { eye, top, ends } = eyeLines(a, b, from, to);
+    return ends.some((q) => lineHit(a, q, eye, top) === null);
+  };
+  /**
+   * What stops the line, else `null`: a wall, a tall obstacle, a shut door, or a low one it passes under.
+   * The first met, or with `nearest` the nearest
+   */
+  const lineHit = (p: Geom.VectJson, q: Geom.VectJson, eye: number, top: null | number, nearest = false) => {
+    let [hit, at] = [null as null | WW.SightHit, Infinity];
+    grid.forEachOn(p, q, (o, lambda) => {
+      if (o.kind === "door" && open.has(`g${Math.floor(o.id / sightIdStride)}d${o.id % sightIdStride}`)) return false;
+      if (o.kind === "low" && (top === null || (o.top ?? 0) < eye + (top - eye) * lambda)) return false;
+      if (lambda < at)
+        [hit, at] = [{ x: p.x + (q.x - p.x) * lambda, y: p.y + (q.y - p.y) * lambda, kind: o.kind }, lambda];
+      return nearest === false;
+    });
+    return hit;
+  };
+  /**
+   * Whether `a` sees `b` now, and what settled it. Rooms out of view, and pairs the lists never list, are no.
+   * Spot to spot the lists say. Those always listed are yes, unless `b` crouches. Only the rest cast lines
+   */
+  const judge = (refA: string, refB: string): { sees: boolean; settled: WW.SeesSettled } => {
+    const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
+    const [A, B] = [spotsAt(refA), spotsAt(refB)];
+    const roomsB = nb?.grKeys ?? B.spots.flatMap((s) => s.grKey ?? []);
+    const inView = na === undefined || roomsB.length === 0 || roomsB.some((grKey) => na.seeRooms.includes(grKey));
+    if (inView === false) return { sees: false, settled: "rooms" };
+    const listed = all.listedAny(A, B, isOpen);
+    if (listed === "never") return { sees: false, settled: "never" };
+    if (na === undefined && nb === undefined) return { sees: true, settled: listed };
+    if (listed === "always" && nb?.crouched !== true) return { sees: true, settled: "always" };
+    return { sees: eyeSees(eyeOf(refA), eyeOf(refB), na, nb), settled: "lines" };
+  };
+  /** `judge`'s verdict, cached with an npc by where they stand and how */
+  const seesNow = (refA: string, refB: string) => {
+    const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
+    if (na === undefined && nb === undefined) return judge(refA, refB).sees;
+    const key = `${cacheKeyOf(refA, na)}|${cacheKeyOf(refB, nb)}|${doorRev}`;
+    const cached = seesCache.get(key);
+    if (cached !== undefined) return cached;
+    const { sees } = judge(refA, refB);
+    remember(key, sees);
+    return sees;
+  };
+  /** Every spot `from`, or where they are headed, may see, as the doors stand. An npc sees only their rooms in view */
+  const unsafeFrom = (from: string[], ahead: Geom.VectJson[] = []) => {
+    const unsafe = new Set<string>();
+    const add = (at: At, inView?: string[]) => {
+      for (const s of at.spots) {
+        for (const key of all.seenFrom(s, at.seated, isOpen)) {
+          const grKey = all.get(key)?.grKey ?? null;
+          if (inView === undefined || grKey === null || inView.includes(grKey)) unsafe.add(key);
+        }
+      }
+    };
+    for (const ref of from) add(spotsAt(ref), npcByKey.get(ref)?.seeRooms);
+    for (const p of ahead) {
+      const spot = all.nearestTo(p);
+      if (spot !== undefined) add({ spots: [spot], seated: false });
+    }
+    return unsafe;
   };
   /** The spots in `rooms`, else every one */
   const inRooms = (rooms: undefined | string[]) => (rooms === undefined ? [...all.byKey.values()] : all.inRooms(rooms));
@@ -89,9 +140,9 @@ export function answerSpotQueries(
     try {
       switch (query.q) {
         case "of":
-          return query.all === true ? resolveAll(query.npc).map(toJson) : toJson(resolve(query.npc));
+          return query.all === true ? spotsAt(query.npc).spots.map(all.json) : all.json(resolve(query.npc));
         case "get":
-          return toJson(resolve(query.key));
+          return all.json(resolve(query.key));
         case "list": {
           let found = inRooms(query.rooms);
           if (query.kinds !== undefined) found = found.filter((s) => query.kinds?.includes(s.kind));
@@ -101,42 +152,69 @@ export function answerSpotQueries(
             const keep = new Set(found);
             found = all.near(npc.point, query.near.within).filter((s) => keep.has(s));
           }
-          return found.map(toJson);
+          return found.map(all.json);
         }
         case "sees": {
-          const [a, b] = [resolve(query.a), resolve(query.b)];
-          const npcs = npcByKey.has(query.a) || npcByKey.has(query.b);
+          const [a, b] = [spotsAt(query.a).spots[0], spotsAt(query.b).spots[0]];
           return {
-            sees: npcs
-              ? eyeSees(eyeOf(query.a), eyeOf(query.b), npcByKey.get(query.a), npcByKey.get(query.b))
-              : sees(a, b),
-            via: all.seesVia(a, b),
-            crouchHides: all.crouchHidden(b, a),
+            sees: seesNow(query.a, query.b),
+            via: all.viaOf(a, b),
+            crouchHides: a.gmId === b.gmId && b.spot.crouchSafe.includes(a.spot.id),
             from: a.key,
             to: b.key,
           };
         }
         case "seenBy":
-          return [...new Set(resolveAll(query.a).flatMap((a) => all.seenBy(a)))].map(toJson);
+          return [...unsafeFrom([query.a])].flatMap((key) => all.get(key) ?? []).map(all.json);
         case "at": {
           const spot = all.nearestTo(query.point, query.grKey);
-          return spot === undefined ? null : toJson(spot);
+          return spot === undefined ? null : all.json(spot);
         }
         case "hide": {
           const npc = resolveNpc(query.npc);
-          const watchers = query.from.map((ref) => ({ ...eyeOf(ref), npc: npcByKey.get(ref) }));
+          const watchers = query.from.map(eyeOf);
+          const unsafe = unsafeFrom(query.from, query.ahead);
           const exclude = new Set(query.exclude);
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
           const { away = 0 } = query;
           const isFar = (s: MapSpot) => watchers.every((w) => dist(s, w) >= away);
-          const isUnseen = (s: MapSpot) => !watchers.some((w) => eyeSees(w, s, w.npc));
-          // best first, so sight is tested only until one passes: a far one, else a near one
+          const isUnseen = (s: MapSpot) => unsafe.has(s.key) === false;
+          // best first: a far one, else a near one
           const ordered = inRooms(query.rooms)
             .filter((s) => placeKinds.includes(s.kind) && !exclude.has(s.key))
             .sort((u, v) => rank(u) - rank(v) || dist(u, npc.point) - dist(v, npc.point));
           const best = ordered.find((s) => isFar(s) && isUnseen(s)) ?? ordered.find((s) => !isFar(s) && isUnseen(s));
-          return best === undefined ? null : toJson(best);
+          return best === undefined ? null : all.json(best);
+        }
+        case "hidden": {
+          const unsafe = unsafeFrom(query.from, query.ahead);
+          return { hidden: spotsAt(query.npc).spots.every((s) => unsafe.has(s.key) === false) };
+        }
+        case "view": {
+          const A = spotsAt(query.from);
+          const own = new Set(A.spots);
+          const seeRooms = npcByKey.get(query.from)?.seeRooms;
+          const view: Record<string, WW.SpotHow> = {};
+          for (const s of all.byKey.values()) {
+            if (own.has(s)) {
+              view[s.key] = "own";
+              continue;
+            }
+            const B = { spots: [s], seated: false };
+            const inView = seeRooms === undefined || s.grKey === null || seeRooms.includes(s.grKey);
+            const listed = inView ? all.listedAny(A, B, isOpen) : "never";
+            view[s.key] = listed !== "never" ? listed : all.listedAny(A, B, anyOpen) === "never" ? "never" : "shut";
+          }
+          return { view };
+        }
+        case "explain": {
+          const [na, nb] = [npcByKey.get(query.a), npcByKey.get(query.b)];
+          const [a, b] = [eyeOf(query.a), eyeOf(query.b)];
+          const { eye, top, ends } = eyeLines(a, b, na, nb);
+          const lines = ends.map((to) => ({ from: a, to, hit: lineHit(a, to, eye, top, true) }));
+          const { pair } = all.bestListed(spotsAt(query.a), spotsAt(query.b), isOpen);
+          return { ...judge(query.a, query.b), lines, pair, eye, top: heightsOf(nb).top };
         }
         case "makeWay": {
           const npc = resolveNpc(query.npc);
@@ -152,7 +230,7 @@ export function answerSpotQueries(
                 query.others.every((p) => dist(s, p) >= makeWay.clear) &&
                 distToSeg(walker, npc.point, s) >= makeWay.pass,
             );
-          return best === undefined ? null : toJson(best);
+          return best === undefined ? null : all.json(best);
         }
       }
     } catch (e) {
@@ -161,7 +239,7 @@ export function answerSpotQueries(
   });
 }
 
-async function createMapSpots(gms: WW.GmForSpots[]) {
+async function createMapSpots(gms: WW.GmForSpots[], hullPairs: [string, string][]) {
   const gmKeys = [...new Set(gms.map((gm) => gm.key))];
   // a geomorph without a file has no spots, e.g. a playground, edited at runtime
   const files = await Promise.all(
@@ -187,38 +265,30 @@ async function createMapSpots(gms: WW.GmForSpots[]) {
       spot,
     }));
   });
-  return new MapSpots(spots);
-}
-
-function toJson({ key, kind, x, y, grKey, facing, wall, spot }: MapSpot): WW.SpotJson {
-  return {
-    key,
-    kind,
-    x: round(x),
-    y: round(y),
-    grKey,
-    ...(facing === undefined ? {} : { facing: round(facing) }),
-    wall: round(wall),
-    sees: spot.sees.length,
-  };
+  const hullSpots = new Map(
+    gms.flatMap((gm, gmId) =>
+      (byGmKey[gm.key]?.hull ?? []).map(
+        ([doorId, seers]) =>
+          [`g${gmId}d${doorId}`, new Map(seers.map(([id, ...inner]) => [`g${gmId}s${id}`, inner]))] as const,
+      ),
+    ),
+  );
+  return new MapSpots(spots, hullSpots, hullPairs);
 }
 
 const round = (x: number) => Math.round(x * 100) / 100;
-/** Metres either side of a body's centre that sight is tested to */
-const bodyRadius = 0.25;
+/** Metres either side of the eyes that sight is tested to: inside the head, 0.15 m either side */
+const headRadius = 0.12;
 
-/** Metres: an npc's eye height, and the top of their body, by posture. Crouched is full */
-const bodyHeights = {
-  stand: { eye: 1.55, top: 1.7 },
-  crouched: { eye: 0.9, top: 0.6 },
-  sit: { eye: 1.15, top: 1.3 },
-  lie: { eye: 0.4, top: 0.5 },
-};
-
-/** A spot stands for someone stood */
+/** Metres up to an npc's eye, and to where lines to them end: their eye too, bar fully crouched */
 function heightsOf(npc?: WW.SpotNpc) {
-  return npc === undefined ? bodyHeights.stand : npc.crouched ? bodyHeights.crouched : bodyHeights[npc.posture];
+  const eye = npc?.eye.h ?? standEyeHeight;
+  return { eye, top: npc?.crouched === true ? crouchedTop : eye };
 }
+/** Metres up to the eyes of one stood, as a spot stands for */
+const standEyeHeight = 1.37;
+/** Metres up to a fully crouched npc as seen. A rule: their head clears a desk, yet cover `crouchHideHeight` tall hides them */
+const crouchedTop = 0.6;
 /** Spots an npc is sent to: not a doable, which needs its decor, nor in a doorway */
 const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
 /** Metres: making way, a spot this near the blocker, this clear of the walker's path and others, not passing within `pass` of the walker */
@@ -229,13 +299,26 @@ export class MapSpots {
   byKey = new Map<string, MapSpot>();
   byRoom = new Map<string, MapSpot[]>();
   byCell = new Map<string, MapSpot[]>();
+  /** By hull door's gdKey, the spots which may see its opening, each with the inner doors needed */
+  hullSpots: Map<string, Map<string, number[]>>;
+  /** The same by spot key */
+  hullOf = new Map<string, Map<string, number[]>>();
+  /** Each hull door's record on the other side */
+  hullPair: Map<string, string>;
+  /** By `{gmId}/{decorId}`, each doable's decor key, as of the last setup */
+  doableKeys: Record<string, string> = {};
 
-  constructor(spots: MapSpot[]) {
+  constructor(spots: MapSpot[], hullSpots: Map<string, Map<string, number[]>>, hullPairs: [string, string][]) {
     for (const s of spots) {
       this.byKey.set(s.key, s);
       if (s.grKey !== null) push(this.byRoom, s.grKey, s);
       push(this.byCell, cellKey(s.x, s.y), s);
     }
+    this.hullSpots = hullSpots;
+    for (const [gdKey, seers] of hullSpots) {
+      for (const [key, inner] of seers) this.hullOf.set(key, (this.hullOf.get(key) ?? new Map()).set(gdKey, inner));
+    }
+    this.hullPair = new Map(hullPairs);
   }
 
   /** Each npc's spot last found, kept whilst it is certainly still the nearest */
@@ -246,6 +329,23 @@ export class MapSpots {
   get(key: string) {
     return this.byKey.get(key);
   }
+
+  /** As answered: a door or doorway spot names its door, a doable its decor */
+  json = (s: MapSpot): WW.SpotJson => {
+    const { key, gmId, kind, x, y, grKey, facing, wall, spot } = s;
+    const base = {
+      key,
+      x: round(x),
+      y: round(y),
+      grKey,
+      ...(facing === undefined ? {} : { facing: round(facing) }),
+      wall: round(wall),
+      sees: spot.sight.length + spot.always.length,
+    };
+    if (kind === "door" || kind === "doorway") return { ...base, kind, gdKey: `g${gmId}d${spot.ref?.doorId}` };
+    if (kind === "doable") return { ...base, kind, decorKey: this.doableKeys[`${gmId}/${spot.ref?.decorId}`] ?? null };
+    return { ...base, kind };
+  };
 
   /** The spot npc `npcKey` at `p` is at: their last, if still nearest, else found afresh */
   spotOf(npcKey: string, p: Geom.VectJson, grKey?: null | string) {
@@ -261,10 +361,14 @@ export class MapSpots {
   /** Every spot `npc` is at: in each of their rooms, those within `ownReach`, else the nearest */
   spotsOf({ point, grKeys }: WW.SpotNpc) {
     const close = this.near(point, ownReach);
-    return (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
-      const own = close.filter((s) => s.grKey === grKey);
-      return own.length > 0 ? own : (this.nearestTo(point, grKey) ?? []);
-    });
+    // a door spot is in no room
+    const door = close.filter((s) => s.kind === "door" && dist(s, point) <= doorReach);
+    return door.concat(
+      (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
+        const own = close.filter((s) => s.grKey === grKey);
+        return own.length > 0 ? own : (this.nearestTo(point, grKey) ?? []);
+      }),
+    );
   }
 
   /** Infinite for a room's only spot: anywhere in that room is nearest it */
@@ -316,26 +420,74 @@ export class MapSpots {
     return best;
   }
 
-  /** `a` sees `b`, doors shut. Only within a geomorph, as spots are made */
-  sees(a: MapSpot, b: MapSpot) {
-    // a spot sees itself, e.g. two npcs at one spot see each other
-    return a === b || (a.gmId === b.gmId && a.spot.sees.includes(b.spot.id));
+  /** Where `npc` is, for the lists: the doable they sit or lie at, if it has an arc, else their region spots */
+  npcSpots(npc: WW.SpotNpc): At {
+    const seat =
+      npc.posture === "stand" || npc.doAt === undefined
+        ? undefined
+        : this.near(npc.doAt, seatReach).find((s) => s.kind === "doable" && s.spot.doArc !== undefined);
+    return seat === undefined ? { spots: this.spotsOf(npc), seated: false } : { spots: [seat], seated: true };
   }
 
-  /** The door `a` would see `b` through, once open, as a gdKey */
-  seesVia(a: MapSpot, b: MapSpot) {
-    const via = a.gmId === b.gmId ? a.spot.seesVia.find(([id]) => id === b.spot.id) : undefined;
-    return via === undefined ? null : `g${a.gmId}d${via[1]}`;
+  /** How the lists have `a` see `b`, as the doors stand: from `a`'s point within its arc if `seated` */
+  listed(a: MapSpot, b: MapSpot, seated: boolean, isOpen: (gdKey: string) => boolean): Listed {
+    if (a === b) return "always";
+    if (a.gmId !== b.gmId) return this.throughHull(a, isOpen).some((key) => key === b.key) ? "may" : "never";
+    const [s, id] = [a.spot, b.spot.id];
+    const via = ([doorIds, ids]: [number[], number[]]) =>
+      ids.includes(id) && doorIds.every((doorId) => isOpen(`g${a.gmId}d${doorId}`));
+    if (seated) return s.doSight.includes(id) || s.doVia.some(via) ? "may" : "never";
+    if (s.always.includes(id)) return "always";
+    return s.sight.includes(id) || s.via.some(via) ? "may" : "never";
   }
 
-  /** Fully crouched at cover spot `a`, they are hidden from `b` */
-  crouchHidden(a: MapSpot, b: MapSpot) {
-    return a.gmId === b.gmId && a.spot.crouchHidden?.includes(b.spot.id) === true;
+  /** The best of `listed` over every pair of their spots */
+  listedAny(A: At, B: At, isOpen: (gdKey: string) => boolean): Listed {
+    return this.bestListed(A, B, isOpen).listed;
   }
 
-  /** Every spot `a` sees */
-  seenBy(a: MapSpot) {
-    return a.spot.sees.flatMap((id) => this.byKey.get(`g${a.gmId}s${id}`) ?? []);
+  /** As `listedAny`, with the pair of spots that gave it */
+  bestListed(A: At, B: At, isOpen: (gdKey: string) => boolean) {
+    let best: { listed: Listed; pair: null | [string, string] } = { listed: "never", pair: null };
+    for (const a of A.spots) {
+      for (const b of B.spots) {
+        const listed = this.listed(a, b, A.seated, isOpen);
+        if (listed === "always") return { listed, pair: [a.key, b.key] as [string, string] };
+        if (listed === "may" && best.listed === "never") best = { listed, pair: [a.key, b.key] };
+      }
+    }
+    return best;
+  }
+
+  /** Every spot `a` may see by its lists, as the doors stand: also across a hull door whose opening it sees */
+  seenFrom(a: MapSpot, seated: boolean, isOpen: (gdKey: string) => boolean) {
+    const seen = new Set([a.key]);
+    const [s, g] = [a.spot, `g${a.gmId}`];
+    const add = (ids: number[]) => ids.forEach((id) => seen.add(`${g}s${id}`));
+    const addVia = ([doorIds, ids]: [number[], number[]]) =>
+      doorIds.every((doorId) => isOpen(`${g}d${doorId}`)) && add(ids);
+    if (seated) add(s.doSight), s.doVia.forEach(addVia);
+    else add(s.always), add(s.sight), s.via.forEach(addVia);
+    for (const key of this.throughHull(a, isOpen)) seen.add(key);
+    return seen;
+  }
+
+  /** The spots `a` may see across a hull door: those on the other side's list, the doors needed open */
+  *throughHull(a: MapSpot, isOpen: (gdKey: string) => boolean) {
+    const opened = (g: string, doorIds: number[]) => doorIds.every((d) => isOpen(`${g}d${d}`));
+    for (const [gdKey, inner] of this.hullOf.get(a.key) ?? []) {
+      const pair = this.hullPair.get(gdKey);
+      if (pair === undefined || !isOpen(gdKey) || !isOpen(pair) || !opened(`g${a.gmId}`, inner)) continue;
+      const pairG = pair.slice(0, pair.indexOf("d"));
+      for (const [key, pairInner] of this.hullSpots.get(pair) ?? []) if (opened(pairG, pairInner)) yield key;
+    }
+  }
+
+  /** The first door `a` needs open to see `b`, as a gdKey, if any */
+  viaOf(a: MapSpot, b: MapSpot) {
+    if (a.gmId !== b.gmId) return null;
+    const group = [...a.spot.via, ...a.spot.doVia].find(([, ids]) => ids.includes(b.spot.id));
+    return group === undefined ? null : `g${a.gmId}d${group[0][0]}`;
   }
 }
 
@@ -359,7 +511,34 @@ const cellSize = 2;
 /** Metres: off any room, e.g. in a doorway, the nearest spot this near is theirs */
 const spotOfReach = 2;
 /** Metres: the spots of their room this near are all theirs */
-const ownReach = 1;
+const ownReach = sightConfig.regionRadius;
+/** Metres from a door spot that stand in its door */
+const doorReach = 0.5;
+/** Metres from where they sit or lie to its doable spot */
+const seatReach = 0.1;
+
+/** Every door open: what may be seen once they are */
+const anyOpen = () => true;
+
+/** Where someone is, for the lists: their spots, and whether they sit or lie at the one */
+type At = { spots: MapSpot[]; seated: boolean };
+type Listed = "never" | "may" | "always";
+
+/** Recent answers of `sees` with an npc, by who, where and how, and the doors' revision */
+const seesCache = new Map<string, boolean>();
+const seesCacheMax = 2000;
+
+function remember(key: string, answer: boolean) {
+  if (seesCache.size >= seesCacheMax) seesCache.delete(seesCache.keys().next().value as string);
+  seesCache.set(key, answer);
+}
+
+/** An npc by where they stand to the centimetre and how, else a spot key: so it only serves those standing still */
+function cacheKeyOf(ref: string, npc?: WW.SpotNpc) {
+  if (npc === undefined) return ref;
+  const { eye, posture, crouched } = npc;
+  return `${ref} ${eye.x.toFixed(2)} ${eye.y.toFixed(2)} ${eye.h.toFixed(2)} ${posture} ${crouched}`;
+}
 /** Grid rings searched for the nearest spot in a room: 40 metres, past any room's size */
 const maxRings = 20;
 

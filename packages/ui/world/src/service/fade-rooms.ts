@@ -206,19 +206,24 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
   if (w.gmRoomGraph.getNode(gmRoomId.grKey) === null) {
     return null; // a map edit removed the room they were in
   }
+  return w.e.roomsInView(gmRoomId.grKey);
+}
 
+/** The rooms in view from `grKey`, as the doors stand: the walk `roomsInView` describes. Cached by `w.e.roomsInView` */
+export function roomsInViewFrom(w: WorldType, grKey: Geomorph.GmRoomKey): Geomorph.GmRoomId[] {
+  if (w.gmRoomGraph.getNode(grKey) === null) return [];
   /** Windows vouched for by an open door already reached — see `node.lineOfSight` */
   const vouched = new Set<Geomorph.SeesKey>();
 
   return w.gmRoomGraph
-    .getReachableUpTo(gmRoomId.grKey, (node, depth) => {
+    .getReachableUpTo(grKey, (node, depth) => {
       if (node.type === "door") {
         if (w.door.isSeenThrough(node.gdKey) === false) return true;
         // an open door we have reached vouches for whatever it says it can see
         for (const key of node.lineOfSight ?? []) vouched.add(key);
         return false;
       }
-      // glass in the player's OWN room is seen through (`depth` 1 being its connectors); further off
+      // glass in their OWN room is seen through (`depth` 1 being its connectors); further off
       // only where a door said so, else one window onto a corridor lights the whole ship
       return node.type === "window" && depth > 1 && vouched.has(node.id) === false;
     })

@@ -154,11 +154,12 @@ export function DecorLayer({ w, selected, showStatic, onSelect, onCommit, onPres
 
   return (
     <g>
-      {statics.map((d) => (
-        <g key={d.key} opacity={0.25} pointerEvents="none">
-          <Shape w={w} decor={d} color={ink.static} />
-        </g>
-      ))}
+      {/* faded as one group: an opacity per decor costs a layer each, on every repaint */}
+      <g opacity={0.25} pointerEvents="none">
+        {statics.map((d) => (
+          <Shape key={d.key} w={w} decor={d} color={ink.static} />
+        ))}
+      </g>
       {runtime.map((d) => {
         const isSelected = selected.includes(d.key);
         return (

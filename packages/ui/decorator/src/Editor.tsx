@@ -10,7 +10,9 @@ import {
   CaretDownIcon,
   EyeIcon,
   EyeSlashIcon,
+  FrameCornersIcon,
   SidebarSimpleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
 import { CharacterLayer } from "./CharacterLayer";
@@ -246,6 +248,7 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       },
 
       chooseSpot(pick) {
+        w.debug?.chooseSpot(pick === null ? null : `g${pick.gmId}s${pick.id}`); // the World's overlay follows
         state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
         if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
       },
@@ -283,6 +286,10 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
     state.setNpcKeys(meta.npcKeys.flatMap((key) => (key !== renamed.from ? key : (renamed.to ?? []))));
   }, [shared.renamed]);
 
+  /** The latest, for the World's events */
+  const reveal = useRef(revealSpot);
+  reveal.current = revealSpot;
+
   useEffect(() => {
     // what the map is drawn from changes under it
     const sub = w.events.subscribe({
@@ -290,6 +297,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         // `create` removes first: only drop what is still gone once its re-create has landed
         if (e.key === "decor-removed") queueMicrotask(() => state.select(state.selected));
         if (redrawOn.has(e.key)) state.update();
+        // a spot pressed on the World's overlay
+        if (e.key === "spot-chosen") {
+          const [, gmId, id] = e.spotKey?.match(/^g(\d+)s(\d+)$/)?.map(Number) ?? [];
+          const pick = gmId === undefined || id === undefined ? null : { gmId, id };
+          if (pick?.gmId !== state.spot?.gmId || pick?.id !== state.spot?.id) reveal.current(pick);
+        }
       },
     });
     return () => sub.unsubscribe();
@@ -307,13 +320,6 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
           {meta.worldKey} · {w.mapKey}
         </span>
         {state.spawnError !== null && <span className="text-red-400">{state.spawnError}</span>}
-        <ToolButton
-          icon={SidebarSimpleIcon}
-          title={meta.sidebarOpen ? "hide the list" : "show the list"}
-          active={meta.sidebarOpen}
-          onClick={() => state.setSidebar({ sidebarOpen: !meta.sidebarOpen })}
-        />
-        <span className="w-px h-4 mx-1 bg-zinc-800" />
         {/* the tool: select, or add one of a type where the map is clicked */}
         <Picker
           title={
@@ -379,6 +385,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         <ToolButton icon={ArrowUUpLeftIcon} title="undo (cmd-Z)" active={false} onClick={state.undo} />
         <ToolButton icon={ArrowUUpRightIcon} title="redo (shift-cmd-Z)" active={false} onClick={state.redo} />
+        <ToolButton
+          icon={FrameCornersIcon}
+          title="reset the view"
+          active={false}
+          onClick={() => map.current?.reset()}
+        />
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         {layers.map((layer) => (
           <button
@@ -402,23 +414,33 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
             className="absolute inset-y-0 left-0 z-10 flex flex-col bg-neutral-900/45 text-zinc-300 backdrop-blur-sm backdrop-saturate-0"
             style={{ width: meta.sidebarWidth }}
           >
-            {/* a segmented control: the chosen tab a raised pill */}
-            <div className="shrink-0 flex gap-0.5 m-1.5 p-0.5 rounded-md bg-zinc-900/70">
-              {sidebarTabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={cn(
-                    "flex-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider cursor-pointer",
-                    state.sidebarTab === tab
-                      ? "bg-zinc-950 text-zinc-100 shadow-sm"
-                      : "text-zinc-500 hover:text-zinc-300",
-                  )}
-                  onClick={() => state.set({ sidebarTab: tab })}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="shrink-0 flex items-center gap-1 m-1.5">
+              {/* a segmented control: the chosen tab a raised pill */}
+              <div className="flex-1 flex gap-0.5 p-0.5 rounded-md bg-zinc-900/70">
+                {sidebarTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={cn(
+                      "flex-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider cursor-pointer",
+                      state.sidebarTab === tab
+                        ? "bg-zinc-950 text-zinc-100 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-300",
+                    )}
+                    onClick={() => state.set({ sidebarTab: tab })}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                title="hide the inspector"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer"
+                onClick={() => state.setSidebar({ sidebarOpen: false })}
+              >
+                <XIcon className="size-3.5" />
+              </button>
             </div>
             {state.sidebarTab === "decor" && (
               <div className="flex-1 min-h-0 flex">
@@ -459,6 +481,16 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                   onLocate={({ x, y }) => map.current?.centreOn(x, y, locateZoom)}
                 />
               ))}
+          </div>
+        )}
+        {meta.sidebarOpen === false && (
+          <div className="absolute top-1.5 left-1.5 z-10">
+            <ToolButton
+              icon={SidebarSimpleIcon}
+              title="show the inspector"
+              active={false}
+              onClick={() => state.setSidebar({ sidebarOpen: true })}
+            />
           </div>
         )}
         {/* drag the list's edge to resize it — in past its narrowest to close it, and out again to open */}
