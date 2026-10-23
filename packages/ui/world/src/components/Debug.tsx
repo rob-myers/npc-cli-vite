@@ -220,7 +220,9 @@ export function Debug() {
         const inst = state.spotsInst;
         const dims = w.sheets?.maxDecorSheetDim;
         if (!inst || !dims) return;
+        const had = state.spots.length > 0;
         state.spots = spots.slice(0, maxSpots);
+        if (had !== state.spots.length > 0) w.menu?.update(); // it greys them out whilst there are none
         const data = spotsGeo.spotBuffer.array as Float32Array;
         const arrowInk = spotArrowsGeo.getAttribute("arrowInk").array as Float32Array;
         for (const [i, spot] of state.spots.entries()) {

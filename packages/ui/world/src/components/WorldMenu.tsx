@@ -238,6 +238,10 @@ export function WorldMenu() {
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
 
+  /** Spots greyed out until jsh `spot_overlay`, run by a terminal's profile, fills them */
+  const withSpotsGreyed = <T extends { value: string }>(item: T) =>
+    item.value === "spots" && (w.debug?.spots.length ?? 0) === 0 ? { ...item, disabled: true } : item;
+
   const isDebugActive = (item: string) => {
     switch (item) {
       case "view pick":
@@ -624,7 +628,7 @@ export function WorldMenu() {
                     />
                   );
                 }
-                const group = item in debugGroups ? debugGroups[item as DebugGroup] : null;
+                const group = item in debugGroups ? debugGroups[item as DebugGroup].map(withSpotsGreyed) : null;
                 const active = group?.map(({ value }) => value).filter(isDebugActive);
                 return group !== null && active !== undefined ? (
                   <MenuMultiSelect
@@ -1508,7 +1512,7 @@ function MenuMultiSelect<T extends string>({
   onValueChange,
 }: {
   className?: string;
-  items: { key: string; value: T }[];
+  items: { key: string; value: T; disabled?: boolean }[];
   label: string;
   side?: "left" | "right" | "bottom" | "top";
   value: T[];
@@ -1538,7 +1542,11 @@ function MenuMultiSelect<T extends string>({
                 <Select.Item
                   key={item.key}
                   value={item.value}
-                  className={selectItemClassName(touch, value.includes(item.value))}
+                  disabled={item.disabled}
+                  className={cn(
+                    selectItemClassName(touch, value.includes(item.value)),
+                    "data-disabled:opacity-40 data-disabled:cursor-default",
+                  )}
                 >
                   <Select.ItemText>{item.key}</Select.ItemText>
                 </Select.Item>
