@@ -213,7 +213,8 @@ export function answerSpotQueries(
           const [a, b] = [eyeOf(query.a), eyeOf(query.b)];
           const { eye, top, ends } = eyeLines(a, b, na, nb);
           const lines = ends.map((to) => ({ from: a, to, hit: lineHit(a, to, eye, top, true) }));
-          return { ...judge(query.a, query.b), lines };
+          const { pair } = all.bestListed(spotsAt(query.a), spotsAt(query.b), isOpen);
+          return { ...judge(query.a, query.b), lines, pair };
         }
         case "makeWay": {
           const npc = resolveNpc(query.npc);
@@ -445,12 +446,17 @@ export class MapSpots {
 
   /** The best of `listed` over every pair of their spots */
   listedAny(A: At, B: At, isOpen: (gdKey: string) => boolean): Listed {
-    let best: Listed = "never";
+    return this.bestListed(A, B, isOpen).listed;
+  }
+
+  /** As `listedAny`, with the pair of spots that gave it */
+  bestListed(A: At, B: At, isOpen: (gdKey: string) => boolean) {
+    let best: { listed: Listed; pair: null | [string, string] } = { listed: "never", pair: null };
     for (const a of A.spots) {
       for (const b of B.spots) {
         const listed = this.listed(a, b, A.seated, isOpen);
-        if (listed === "always") return listed;
-        if (listed === "may") best = listed;
+        if (listed === "always") return { listed, pair: [a.key, b.key] as [string, string] };
+        if (listed === "may" && best.listed === "never") best = { listed, pair: [a.key, b.key] };
       }
     }
     return best;
@@ -530,11 +536,11 @@ function remember(key: string, answer: boolean) {
   seesCache.set(key, answer);
 }
 
-/** An npc by where they stand to a quarter metre and how, else a spot key */
+/** An npc by where they stand to the centimetre and how, else a spot key: so it only serves those standing still */
 function cacheKeyOf(ref: string, npc?: WW.SpotNpc) {
   if (npc === undefined) return ref;
   const { point, posture, crouched } = npc;
-  return `${ref} ${Math.round(point.x * 4)} ${Math.round(point.y * 4)} ${posture} ${crouched}`;
+  return `${ref} ${point.x.toFixed(2)} ${point.y.toFixed(2)} ${posture} ${crouched}`;
 }
 /** Grid rings searched for the nearest spot in a room: 40 metres, past any room's size */
 const maxRings = 20;

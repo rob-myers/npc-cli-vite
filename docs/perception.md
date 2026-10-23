@@ -51,7 +51,12 @@ Each step only runs if the one before leaves it open:
 3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
 4. **Lines,** for the rest: to `b`'s body, with heights by posture.
 
-Answers are cached by who, where to a quarter metre and how, and the doors' revision.
+**The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.
+- **Its key:** each npc's name, position to the centimetre, posture and crouch (a spot's is its key), then the doors' revision. Any door opening or shutting, or a new setup, bumps that revision, so every earlier answer goes unused.
+- **What it serves:** only those standing still. Anyone walking moves more than a centimetre a tick, so is always worked out afresh. Coarser steps (a quarter metre, then 5 cm) gave wrong answers near a wall's edge, where sight changes within a step.
+- **Who uses it:** `sees` between npcs (`seesNow`) reads it first, and stores what it works out. `hide`, `hidden`, `view` and `sees --debug`'s `explain` never touch it.
+- **Its size:** 2000 answers. When full, the oldest goes.
+- Step 1, eyes and facing, is on main and never cached.
 
 ## `hide` and `hidden`
 
@@ -73,4 +78,4 @@ Answers are cached by who, where to a quarter metre and how, and the doors' revi
 - jsh `spot_overlay`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`w.debug.setSpots`, `colourSpots`).
 - A right click on one chooses it, or a long press on touch (`w.debug.chooseSpot`, event `spot-chosen`). Again, it is let go. The Decorator follows, and its own choice is followed back. A press walks there, as on the floor.
 
-**`sees --show a b`** prints what decided it, e.g. `lines: seen` or `rooms: unseen`, from the worker's `explain` query. It draws the three lines for 4 game seconds: green clear, red stopped, amber by a low obstacle.
+**`sees --debug a b`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, eye to eye: green clear, red stopped, amber by a low obstacle. It looks again every quarter game second, and every tick whilst rays are drawn for someone moving. `--los` ignores eyes and facing, `--all` takes every ordered pair.

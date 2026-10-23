@@ -39,7 +39,8 @@ export function Debug() {
     const geo = createXzQuad();
     // 1 for the discs, 0 for the lines joining them — see `materials.polylines`
     geo.setAttribute("isDisc", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances), 1));
-    geo.setAttribute("lineColor", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances * 3), 3));
+    // rgb, then opacity
+    geo.setAttribute("lineColor", new THREE.InstancedBufferAttribute(new Float32Array(maxPolylineInstances * 4), 4));
     return geo;
   }, []);
   const decorPointsGeo = useMemo(() => {
@@ -241,9 +242,6 @@ export function Debug() {
         inst.count = state.spots.length;
         state.colourSpots(null);
       },
-      spotKeyOf(instanceId) {
-        return state.spots[instanceId]?.key ?? null;
-      },
       setPolyline(key, polyline) {
         state.polylines.set(key, polyline);
         state.drawPolylines();
@@ -263,17 +261,25 @@ export function Debug() {
         const isDisc = polylinesGeo.getAttribute("isDisc").array as Float32Array;
         const lineColor = polylinesGeo.getAttribute("lineColor").array as Float32Array;
         let offset = 0;
-        for (const { points, color } of state.polylines.values()) {
+        for (const {
+          points,
+          color,
+          opacity = 1,
+          width = pathWidth,
+          discRadius = polylineDiscRadius,
+        } of state.polylines.values()) {
           const ps = points.slice(0, Math.floor((maxPolylineInstances - offset + 1) / 2));
           if (ps.length === 0) continue;
           tmpColor.set(color);
           // a disc per point, then the lines joining them, all one colour
-          for (const [i, [x, z]] of ps.entries()) writeDiscInstance(inst, offset + i, x, z, polylineDiscRadius);
-          const segs = ps.slice(1).map((p, i): XZSeg => [ps[i][0], ps[i][1], p[0], p[1]]);
-          writeSegmentInstances(inst, segs, debugSegHeight, offset + ps.length);
+          for (const [i, [x, z, y]] of ps.entries()) writeDiscInstance(inst, offset + i, x, z, discRadius, y);
+          const segs = ps.slice(1).map((q, i) => [ps[i], q] as const);
+          for (const [i, [p, q]] of segs.entries()) writeSegmentInstance(inst, offset + ps.length + i, p, q, width);
+          inst.count = offset + ps.length + segs.length;
           for (let i = 0; i < ps.length + segs.length; i++) {
             isDisc[offset + i] = i < ps.length ? 1 : 0;
-            tmpColor.toArray(lineColor, (offset + i) * 3);
+            tmpColor.toArray(lineColor, (offset + i) * 4);
+            lineColor[(offset + i) * 4 + 3] = opacity;
           }
           offset += ps.length + segs.length;
         }
@@ -340,7 +346,9 @@ export function Debug() {
         if (
           state.pickGdkeyOpensDoors === true &&
           event.key === "picked" &&
-          (event.meta.type === "door" || event.meta.type === "decor") &&
+          (event.meta.type === "door" ||
+            event.meta.type === "decor" ||
+            (event.meta.type === "spot" && event.rightDown !== true)) && // a spot's right click chooses it
           event.clickId === undefined // ignore e.g. `pick 1`
         ) {
           const { gdKey } = event.meta;
@@ -385,8 +393,9 @@ export function Debug() {
     // a disc is cut out of the quad, rather than given a geometry of its own
     const disc = smoothstep(0.45, 0.5, uv().sub(0.5).length()).oneMinus();
     const isDisc = attribute<"float">("isDisc", "float").greaterThan(0.5);
-    const polylines = create("white", selectAs<"float">(isDisc, disc, float(1)), false);
-    polylines.colorNode = attribute<"vec3">("lineColor", "vec3"); // each polyline its own
+    const lineColor = attribute<"vec4">("lineColor", "vec4"); // each polyline its own
+    const polylines = create("white", selectAs<"float">(isDisc, disc, float(1)).mul(lineColor.w), false);
+    polylines.colorNode = lineColor.xyz;
     return {
       navPath: create("rgb(255, 50, 0)", float(1)),
       origin: create("red", float(0.1)),
@@ -590,10 +599,16 @@ const tmpColor = new THREE.Color();
 type XZSeg = [number, number, number, number];
 /** A ground point `[x, z]` */
 export type XZPoint = [number, number];
+/** A polyline's point `[x, z]`, else `[x, z, height]` off the floor */
+export type PolylinePoint = XZPoint | [number, number, number];
 
 export type Polyline = {
-  points: XZPoint[];
+  points: PolylinePoint[];
   color: THREE.ColorRepresentation;
+  /** Each defaults to the usual: opaque, `pathWidth` wide, discs `polylineDiscRadius` */
+  opacity?: number;
+  width?: number;
+  discRadius?: number;
 };
 
 /** A spot as the overlay draws it: `img` its icon's decor key, `color` its own when none is given */
@@ -605,6 +620,11 @@ export type SpotDraw = {
   grKey: null | string;
   img: string;
   color: THREE.ColorRepresentation;
+  /** A doable's decor, which a press on it is as one on */
+  decorKey?: null | string;
+  kind?: string;
+  /** A door or doorway spot's door */
+  gdKey?: string;
   /** Metres it stands above the floor, e.g. a doable on a seat */
   lift?: number;
   /** Its icon is not drawn, e.g. a wall spot's arrow says enough. It can still be picked */
@@ -612,8 +632,19 @@ export type SpotDraw = {
 };
 
 /** A disc of radius `r` centred on `(x, z)` — the quad's disc is cut out by its material */
-function writeDiscInstance(inst: THREE.InstancedMesh, i: number, x: number, z: number, r: number) {
-  embedXZMat4({ a: r * 2, b: 0, c: 0, d: r * 2, e: x - r, f: z - r }, { yHeight: debugSegHeight, mat4: tmpMat4 });
+function writeDiscInstance(inst: THREE.InstancedMesh, i: number, x: number, z: number, r: number, y = debugSegHeight) {
+  embedXZMat4({ a: r * 2, b: 0, c: 0, d: r * 2, e: x - r, f: z - r }, { yHeight: y, mat4: tmpMat4 });
+  inst.setMatrixAt(i, tmpMat4);
+}
+
+/** A thin quad from `p` to `q`, `width` across level with the floor: sloped when their heights differ */
+function writeSegmentInstance(inst: THREE.InstancedMesh, i: number, p: PolylinePoint, q: PolylinePoint, width: number) {
+  const [[x1, z1, y1 = debugSegHeight], [x2, z2, y2 = debugSegHeight]] = [p, q];
+  const [dx, dz] = [x2 - x1, z2 - z1];
+  const len = Math.hypot(dx, dz);
+  const [nx, nz] = len > 0 ? [dx / len, dz / len] : [1, 0];
+  // the unit quad's x along the segment, its z across it
+  tmpMat4.set(dx, 0, -width * nz, x1, y2 - y1, 1, 0, y1, dz, 0, width * nx, z1, 0, 0, 0, 1);
   inst.setMatrixAt(i, tmpMat4);
 }
 
@@ -728,8 +759,6 @@ export type State = {
   setSpots(spots: SpotDraw[]): void;
   /** Colours the spots drawn by key, the rest their own, with `null` all their own. `chosen` is drawn larger */
   colourSpots(colors: null | Record<string, THREE.ColorRepresentation>, chosen?: null | string): void;
-  /** The key of the spot drawn as an instance, for a pick */
-  spotKeyOf(instanceId: number): null | string;
   setPolyline(key: string, polyline: Polyline): void;
   removePolyline(key: string): void;
   /** Writes `localBoundary` into its mesh */

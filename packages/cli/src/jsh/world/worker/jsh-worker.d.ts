@@ -161,7 +161,14 @@ declare namespace WW {
     | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
     | { hidden: boolean }
     | { view: Record<string, SpotHow> }
-    | { sees: boolean; settled: SeesSettled; lines: { from: Geom.VectJson; to: Geom.VectJson; hit: null | SightHit }[] }
+    | {
+        sees: boolean;
+        settled: SeesSettled;
+        /** To `b`'s centre, then either side */
+        lines: { from: Geom.VectJson; to: Geom.VectJson; hit: null | SightHit }[];
+        /** Their spots the lists best had seeing each other, if any */
+        pair: null | [string, string];
+      }
     | { error: string };
 
   /** A spot as seen from another, or an npc: their own, always, may, may once a shut door opens, or never */

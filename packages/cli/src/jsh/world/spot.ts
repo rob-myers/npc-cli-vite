@@ -30,35 +30,31 @@ export async function* spots(ct: JshCli.RunArg) {
 /**
  * Npcs: those the first sees, or with `--all` each ordered pair `a b` where `a` sees `b`. Exits 1 if none.
  * `--los` asks for line of sight alone, whatever their eyes and facing.
- * `--show` says what decided it, and draws the lines a while. Exits 1 if unseen.
+ * `--debug` says why, then again as that changes, drawing the rays it needed, until killed.
  * Spots: whether one sees another, doors shut, else the door it would through. Alone, every spot it sees
  *
  * ```sh
  * sees rob abe cal
  * sees --all abe ben cal
  * sees --los --all abe ben
- * sees --show rob kate
+ * sees --debug rob kate
  * sees g0s12 g0s40
  * sees g0s12
  * ```
  */
 export async function* sees(ct: JshCli.RunArg) {
-  const flags = { "--all": "all", "--los": "los", "--show": "show" };
-  const { all, los, show } = ct.api.jsArg(ct.args, flags) as { all?: boolean; los?: boolean; show?: boolean };
+  const flags = { "--all": "all", "--los": "los", "--debug": "debug" };
+  const { all, los, debug } = ct.api.jsArg(ct.args, flags) as { all?: boolean; los?: boolean; debug?: boolean };
   const keys = ct.args.filter((arg) => arg.startsWith("-") === false);
   const [a, b] = keys;
   if (a === undefined) throw Error("expected npcs or spots");
-  if (show === true) {
+  if (debug === true) {
     if (b === undefined) throw Error("expected two npcs or spots");
-    yield await showSight(ct, a, b, los === true);
+    yield* watchSight(ct, pairsOf(keys, all === true), los === true);
     return;
   }
   if (b !== undefined && keys.every((key) => ct.w.n[key] !== undefined)) {
-    const pairs =
-      all === true
-        ? keys.flatMap((u) => keys.flatMap((v) => (u === v ? [] : [[u, v]])))
-        : keys.slice(1).map((v) => [a, v]);
-    const seen = await perceive(ct, pairs as [string, string][], los === true);
+    const seen = await perceive(ct, pairsOf(keys, all === true), los === true);
     if (seen.length === 0) throw ct.api.getShError("", 1);
     yield* seen.map(([u, v]) => (all === true ? `${u} ${v}` : v));
     return;
@@ -102,56 +98,148 @@ async function perceive(ct: JshCli.RunArg, pairs: [string, string][], los: boole
   });
 }
 
+/** The first and each of the rest, else with `all` every ordered pair */
+function pairsOf(keys: string[], all: boolean): [string, string][] {
+  return all
+    ? keys.flatMap((u) => keys.flatMap((v): [string, string][] => (u === v ? [] : [[u, v]])))
+    : keys.slice(1).map((v): [string, string] => [keys[0], v]);
+}
+
 /** Npc `a`'s eyes are open, and `b` is within `sightHalfArc` of where their head faces */
 function faces(w: JshCli.WorldState, a: string, b: string) {
+  return unfaced(w, a, b) === null;
+}
+
+/** Why npc `a` cannot see `b` for their eyes or the way their head faces, else `null` */
+function unfaced(w: JshCli.WorldState, a: string, b: string) {
   const [watcher, seen] = [w.n[a], w.n[b]];
-  if (watcher.anim.eyes.look === "shut") return false;
+  if (watcher.anim.eyes.look === "shut") return "eyes shut";
   const off = watcher.anim.bearingOf(seen.point) - watcher.lookY; // the head's way, e.g. sat and turned
-  return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc;
+  return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) <= sightHalfArc ? null : "fov";
 }
 
 /** Radians either side of where their head faces that an npc sees */
 const sightHalfArc = Math.PI / 3;
 
 /**
- * What decided whether `a` sees `b`, e.g. `lines: seen`, its lines drawn for `showSecs` game seconds.
- * Green is clear, red stopped, amber by a low obstacle. Throws exit 1 after, if unseen
+ * Until killed, why each pair's first sees the second or not: said at first, then each time that changes.
+ * Every `watchSecs` the rays a verdict needed are drawn: to the centre, then either side until one is clear
  */
-async function showSight(ct: JshCli.RunArg, a: string, b: string, los: boolean) {
+async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
   const { api, w } = ct;
-  const npcs = w.n[a] !== undefined && w.n[b] !== undefined;
-  if (npcs && los === false && faces(w, a, b) === false) throw api.getShError("facing: unseen", 1);
-  const [answer] = await spotQuery(ct, [{ q: "explain", a, b }]);
-  const x = answered(answer);
-  if (x == null || !("settled" in x)) throw Error(`${a} ${b}: cannot explain`);
-  const keys = x.lines.map((_, i) => `sees-show/${i}`);
-  x.lines.forEach(({ from, to, hit }, i) => {
-    const end = hit ?? to;
-    const color = hit === null ? "#40d080" : hit.kind === "low" ? "#f0a030" : "#e04040";
-    w.debug.setPolyline(keys[i], {
-      points: [
-        [from.x, from.y],
-        [end.x, end.y],
-      ],
-      color,
-    });
-  });
-  w.view.forceUpdate();
+  /** By pair, what was last said: whether it sees, and why */
+  const said = new Map<string, string>();
+  let drawn = new Set<string>();
   let killed = () => {};
+  const stopped = new Promise<void>((resolve) => void (killed = resolve));
   const handlers = api.handleStatus({ cleanup: () => killed() });
   try {
-    await Promise.race([w.e.wait(showSecs), new Promise<void>((resolve) => void (killed = resolve))]);
+    while (true) {
+      const why = pairs.map(([a, b]) =>
+        los || w.n[a] === undefined || w.n[b] === undefined ? null : unfaced(w, a, b),
+      );
+      const asked = pairs.filter((_, i) => why[i] === null);
+      const answers =
+        asked.length === 0
+          ? []
+          : await spotQuery(
+              ct,
+              asked.map(([a, b]) => ({ q: "explain", a, b })),
+            );
+      const rays = new Set<string>();
+      /** What changed this look, said seen first */
+      const changed: { sees: boolean; line: string }[] = [];
+      const { ansi } = api;
+      for (const [i, [a, b]] of pairs.entries()) {
+        const answer = why[i] === null ? answered(answers[asked.indexOf(pairs[i])]) : null;
+        const x = answer != null && "settled" in answer ? answer : null;
+        const sees = x?.sees === true;
+        const reason = why[i] ?? (x === null ? "?" : reasonOf(x, ansi));
+        if (said.get(`${a} ${b}`) !== `${sees} ${reason}`) {
+          said.set(`${a} ${b}`, `${sees} ${reason}`);
+          const arrow = `${sees ? ansi.GreenBright : ansi.Red}→`; // `↛` renders too wide
+          const line = `${ansi.White}${a} ${arrow}${ansi.Reset} ${ansi.White}${b} ${ansi.GreenBright}${reason}${ansi.Reset}`;
+          changed.push({ sees, line });
+        }
+        if (x?.settled !== "lines") continue;
+        const [ya, yb] = [eyeY(w, a), eyeY(w, b)];
+        const needed = x.sees ? x.lines.slice(0, x.lines.findIndex((line) => line.hit === null) + 1) : x.lines;
+        for (const [k, { from, to, hit }] of needed.entries()) {
+          const key = `sees-debug/${a}>${b}/${k}`;
+          const end = hit ?? to;
+          // a stopped ray rises only as far as it reached
+          const t =
+            hit === null
+              ? 1
+              : Math.hypot(hit.x - from.x, hit.y - from.y) / (Math.hypot(to.x - from.x, to.y - from.y) || 1);
+          w.debug.setPolyline(key, {
+            points: [
+              [from.x, from.y, ya],
+              [end.x, end.y, ya + (yb - ya) * t],
+            ],
+            color: hit === null ? "#40d080" : hit.kind === "low" ? "#f0a030" : "#e04040",
+            ...rayStyle,
+          });
+          rays.add(key);
+        }
+      }
+      for (const { line } of changed.sort((u, v) => Number(v.sees) - Number(u.sees))) yield line;
+      for (const key of drawn) if (rays.has(key) === false) w.debug.removePolyline(key);
+      drawn = rays;
+      w.view.forceUpdate();
+      // rays drawn for someone moving keep up with them, a tick at a time
+      const moving = drawn.size > 0 && pairs.some(([a, b]) => w.n[a]?.isMoving() || w.n[b]?.isMoving());
+      const next = moving ? w.npc.nextTick() : w.e.wait(watchSecs);
+      if ((await Promise.race([next.then(() => true), stopped.then(() => false)])) === false) {
+        throw api.getKillError();
+      }
+    }
   } finally {
     handlers.dispose();
-    keys.forEach((key) => w.debug.removePolyline(key));
+    for (const key of drawn) w.debug.removePolyline(key);
     w.view.forceUpdate();
   }
-  if (x.sees === false) throw api.getShError(`${x.settled}: unseen`, 1);
-  return `${x.settled}: seen`;
 }
 
-/** Game seconds `sees --show` draws its lines */
-const showSecs = 4;
+/** What settled a verdict, tersely */
+function reasonOf(x: Extract<WW.SpotAnswer, { settled: string }>, ansi: JshCli.RunArg["api"]["ansi"]) {
+  const pair = (x.pair ?? ["?", "?"]).join(" ");
+  switch (x.settled) {
+    case "rooms":
+      return "room out of view";
+    case "never":
+      return "spots never";
+    case "always":
+      return `always ${pair}`;
+    case "may":
+      return `may ${pair}`;
+    case "lines": {
+      const kind = x.lines[0]?.hit?.kind;
+      if (x.sees === false) return kind === "low" ? "crouched behind cover" : `blocked by ${kind ?? "?"}`;
+      // rays go to the centre, then right, then left
+      const clear = x.lines.findIndex((line) => line.hit === null);
+      const partial = x.lines.slice(0, clear).some((line) => line.hit?.kind === "low");
+      return `ray ${["direct", "right", "left"][clear]}${partial ? ` ${ansi.Orange}partial${ansi.GreenBright}` : ""}`;
+    }
+  }
+}
+
+/** Metres up to an npc's eyes as drawn: above their head bone, which follows them crouching, sat or lain */
+function eyeY(w: JshCli.WorldState, ref: string) {
+  const head = w.n[ref]?.skinnedMesh.skeleton.getBoneByName("head");
+  // its world matrix's height, as the last frame posed it
+  return head === undefined ? standEyeY : head.matrixWorld.elements[13] + eyeAboveHead;
+}
+
+/** Metres from the head bone, at the neck, up to the eyes */
+const eyeAboveHead = 0.18;
+/** Metres up to the eyes of one stood: a spot's */
+const standEyeY = 1.35;
+
+/** Game seconds between looks at a pair: as quick as anyone would notice */
+const watchSecs = 0.25;
+/** Rays as `sees --debug` draws them: thin, faint, with small discs */
+const rayStyle = { width: 0.008, opacity: 0.5, discRadius: 0.03 };
 
 /**
  * Draws the map's spots in the World whilst its overlay is on (debug menu, overlay, spots), an icon per kind.

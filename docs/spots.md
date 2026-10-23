@@ -47,6 +47,8 @@ Spots are made in this order, and a later one too near (`mergeGap`) an earlier o
 
 Sight is as stood. Walls, shut doors and obstacles of `standBlockHeight` or more block it. Windows do not, as for the player light. How sight is asked of them, including across hull doors: `docs/perception.md`.
 
+An obstacle reaches down from its top (`height`) by `meta.h`, else by `sightConfig.obstacleDepth` (0.5 m, as `Obstacles` draws it). One whose bottom is at `standBlockHeight` or above hangs over anyone stood, e.g. a window's lintel, so it blocks nothing.
+
 ## How they are made
 
 1. A navcat navmesh is built per geomorph in Node (`createGmNavMesh`), from `layout.navDecomp`, as the nav worker builds the map's.
