@@ -32,6 +32,8 @@ export const spotConfig = {
   fillStep: 0.25,
   /** Spots nearer than this are merged into the first made, by `spotKinds` order */
   mergeGap: 0.5,
+  /** A wall or cover spot merged away slides along its piece of edge in these steps, to stand clear */
+  slideStep: 0.1,
   nearRadius: 1.5,
   /** Obstacles this high hide someone fully crouched */
   crouchHideHeight: sightConfig.crouchHideHeight,
@@ -96,12 +98,14 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     if (source === null) continue;
     const kind: SpotKind = source.height >= sightConfig.standBlockHeight ? "wall" : "cover";
     const n = Math.max(1, Math.round(e.len / c.wallStep));
+    const slides = Array.from({ length: Math.floor(e.len / n / 2 / c.slideStep) }, (_, i) => (i + 1) * c.slideStep);
     for (let k = 0; k < n; k++) {
-      const t = ((k + 0.5) / n) * e.len;
-      const p = { x: e.a.x + e.d.x * t + e.n.x * c.edgeInset, y: e.a.y + e.d.y * t + e.n.y * c.edgeInset };
+      const [p, ...alts] = [0, ...slides.flatMap((dt) => [-dt, dt])]
+        .map((dt) => ((k + 0.5) / n) * e.len + dt)
+        .map((t) => ({ x: e.a.x + e.d.x * t + e.n.x * c.edgeInset, y: e.a.y + e.d.y * t + e.n.y * c.edgeInset }));
       if (inDoorway(p)) continue;
       const ref = source.obstacleId === undefined ? undefined : { obstacleId: source.obstacleId };
-      cands.push({ kind, p, facing: Math.atan2(e.n.y, e.n.x), ref });
+      cands.push({ kind, p, alts: alts.filter((q) => !inDoorway(q)), facing: Math.atan2(e.n.y, e.n.x), ref });
     }
   }
 
@@ -286,9 +290,17 @@ function nearTo(p: Geom.VectJson, layout: Geomorph.Layout, obstacles: Obstacle[]
 function mergeCands(cands: Cand[], gap: number) {
   const sorted = cands.slice().sort((u, v) => spotKinds.indexOf(u.kind) - spotKinds.indexOf(v.kind));
   const kept: Cand[] = [];
+  const near = ({ x, y }: Geom.VectJson) => kept.filter(({ p }) => Math.hypot(p.x - x, p.y - y) < gap);
   for (const cand of sorted) {
-    const { x, y } = cand.p;
-    if (cand.kind === "doable" || kept.every(({ p }) => Math.hypot(p.x - x, p.y - y) >= gap)) kept.push(cand);
+    const blockers = cand.kind === "doable" ? [] : near(cand.p);
+    // one already lining the wall makes it redundant, else it may slide clear
+    const p =
+      blockers.length === 0
+        ? cand.p
+        : blockers.some(({ kind }) => alongKinds.has(kind))
+          ? undefined
+          : cand.alts?.find((q) => near(q).length === 0);
+    if (p !== undefined) kept.push({ ...cand, p });
   }
   return kept;
 }
@@ -438,7 +450,11 @@ class PointBuckets {
   }
 }
 
-type Cand = { kind: SpotKind; p: Geom.VectJson; facing?: number; ref?: Spot["ref"] };
+/** Kinds that line a wall or obstacle */
+const alongKinds = new Set<SpotKind>(["corner", "cover", "wall"]);
+
+/** `alts`: where else it may stand, nearest `p` first, if merged away there */
+type Cand = { kind: SpotKind; p: Geom.VectJson; alts?: Geom.VectJson[]; facing?: number; ref?: Spot["ref"] };
 
 /** A navmesh boundary edge from `a`, along unit `d` for `len`, its walkable side `n` */
 type Edge = { a: Geom.VectJson; d: Geom.VectJson; len: number; n: Geom.VectJson };

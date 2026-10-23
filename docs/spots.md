@@ -20,7 +20,7 @@ Spots are in their geomorph's own coords, like `layout.rooms`. Apply the instanc
 
 ## Kinds
 
-Spots are made in this order, and a later one too near (`mergeGap`) an earlier one is dropped. Doables are always kept.
+Spots are made in this order, and a later one too near (`mergeGap`) an earlier one is dropped. Doables are always kept. A wall or cover spot too near only doable, doorway or door spots slides along its wall instead, so a wall beside a door keeps one.
 
 - **doable**: a seat or bed (`meta.do`). `facing` is its `orient`.
 - **doorway**: either side of a door, in its doorway, facing it.
