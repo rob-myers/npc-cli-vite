@@ -489,8 +489,9 @@ function distToSeg(p: Geom.VectJson, { a, b }: { a: Geom.VectJson; b: Geom.VectJ
   return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
 }
 
+/** An obstacle stood in, by id, or a door spot's own door, by `-(doorId + 1)`: whoever stands there holds it open */
 function isSkipped(o: Occluder, skip: Set<number>) {
-  return o.kind === "obstacle" && skip.has(o.id);
+  return (o.kind === "obstacle" && skip.has(o.id)) || (o.kind === "door" && skip.has(-(o.id + 1)));
 }
 
 const wrap = (a: number) => (a < -Math.PI ? a + 2 * Math.PI : a >= Math.PI ? a - 2 * Math.PI : a);

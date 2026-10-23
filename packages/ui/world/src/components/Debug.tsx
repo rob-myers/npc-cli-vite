@@ -65,6 +65,7 @@ export function Debug() {
     geo.setAttribute("spotSlot", new THREE.InterleavedBufferAttribute(buffer, 1, 7));
     geo.setAttribute("uvTextureIds", new THREE.InterleavedBufferAttribute(buffer, 1, 8));
     geo.setAttribute("spotCentre", new THREE.InterleavedBufferAttribute(buffer, 4, 9));
+    geo.setAttribute("spotShown", new THREE.InterleavedBufferAttribute(buffer, 1, 13));
     return Object.assign(geo, { spotBuffer: buffer });
   }, []);
 
@@ -229,7 +230,8 @@ export function Debug() {
           data[at + 7] = room === null ? alwaysShownSlot : slotOf(room.gmId, room.roomId);
           arrowInk[i * 4 + 3] = data[at + 7];
           data[at + 8] = entry?.sheetId ?? 0;
-          data.set([spot.x, spotIconLift, spot.y], at + 9);
+          data.set(iconAt(spot), at + 9);
+          data[at + 13] = spot.iconHidden === true ? 0 : 1;
           if (state.spotArrowsInst) writeSpotArrow(state.spotArrowsInst, i, spot);
         }
         if (state.spotArrowsInst) {
@@ -436,8 +438,9 @@ export function Debug() {
     const corner = vec2(positionGeometry.x.sub(0.5), positionGeometry.z.sub(0.5)).mul(centre.w.mul(grow));
     const viewCentre = cameraViewMatrix.mul(vec4(centre.xyz, 1));
     mat.vertexNode = cameraProjectionMatrix.mul(viewCentre.add(vec4(corner, 0, 0)));
-    // picked, the whole square counts, not only the icon's strokes
-    const alpha = selectAs<"float">(picking, float(1), texNode.a.mul(seen).mul(spotOpacity.icon));
+    // picked, the whole square counts, not only the icon's strokes, even one not shown
+    const shown = attribute<"float">("spotShown", "float");
+    const alpha = selectAs<"float">(picking, float(1), texNode.a.mul(seen).mul(spotOpacity.icon).mul(shown));
     mat.colorNode = vec4(texNode.rgb.mul(attribute<"vec3">("spotColor", "vec3")), alpha);
     // opaque when picking: a blended id would be another's
     mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.spot, 1);
@@ -555,14 +558,16 @@ const maxDoorNormals = 512;
 const maxSpots = 4096;
 /** After the floor, which is transparent too: they write no depth to keep it out */
 const spotsRenderOrder = 10;
-/** Floats per spot: `uvOffsets` 2, `uvDimensions` 2, `spotColor` 3, `spotSlot` 1, `uvTextureIds` 1, `spotCentre` 4 */
-const spotStride = 13;
+/** Floats per spot: `uvOffsets` 2, `uvDimensions` 2, `spotColor` 3, `spotSlot` 1, `uvTextureIds` 1, `spotCentre` 4, `spotShown` 1 */
+const spotStride = 14;
 /** Metres across a spot's icon */
 const spotIconSize = 0.15;
 /** Metres its centre stands off the floor */
 const spotIconLift = 0.12;
 /** Metres along a spot's arrow, from its point along its facing */
 const spotArrowLen = 0.18;
+/** How far along its arrow the middle of its head is — see `createOpenArrowGeo` */
+const arrowheadAt = 0.82;
 /** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spot_overlay`'s */
 const spotInk = { dark: { icon: 0.4, arrow: 0.3 }, light: { icon: 1, arrow: 0.7 } };
 /** A spot's icon, this much larger when picking: easier to press */
@@ -600,6 +605,10 @@ export type SpotDraw = {
   grKey: null | string;
   img: string;
   color: THREE.ColorRepresentation;
+  /** Metres it stands above the floor, e.g. a doable on a seat */
+  lift?: number;
+  /** Its icon is not drawn, e.g. a wall spot's arrow says enough. It can still be picked */
+  iconHidden?: boolean;
 };
 
 /** A disc of radius `r` centred on `(x, z)` — the quad's disc is cut out by its material */
@@ -608,13 +617,21 @@ function writeDiscInstance(inst: THREE.InstancedMesh, i: number, x: number, z: n
   inst.setMatrixAt(i, tmpMat4);
 }
 
+/** Where a spot's icon stands. One not shown covers its arrowhead instead, so pressing that picks it */
+function iconAt(spot: SpotDraw): [number, number, number] {
+  const lift = spot.lift ?? 0;
+  if (spot.iconHidden !== true || spot.facing === undefined) return [spot.x, spotIconLift + lift, spot.y];
+  const along = arrowheadAt * spotArrowLen;
+  return [spot.x + Math.cos(spot.facing) * along, lift + debugSegHeight, spot.y + Math.sin(spot.facing) * along];
+}
+
 /** A spot's arrow on the floor along its facing, else none */
 function writeSpotArrow(inst: THREE.InstancedMesh, i: number, spot: SpotDraw) {
   const [c, s] = spot.facing === undefined ? [0, 0] : [Math.cos(spot.facing), Math.sin(spot.facing)];
   const len = spotArrowLen;
   embedXZMat4(
     { a: c * len, b: s * len, c: -s * len, d: c * len, e: spot.x, f: spot.y },
-    { yHeight: debugSegHeight, mat4: tmpMat4 },
+    { yHeight: debugSegHeight + (spot.lift ?? 0), mat4: tmpMat4 },
   );
   inst.setMatrixAt(i, tmpMat4);
 }

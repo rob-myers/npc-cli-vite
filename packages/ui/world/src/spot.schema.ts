@@ -6,15 +6,16 @@ export const spotsChangedEvent = "spots-changed";
 /** Sent by the dev server as it starts making them, `{ running: true }`, and as it ends */
 export const spotsGeneratingEvent = "spots-generating";
 
-/** Spots made first win a merge: a fill is dropped for a door spot beside it, never the reverse */
-export const spotKinds = ["doable", "door", "corner", "cover", "wall", "decor", "fill"] as const;
+/** Spots made first win a merge: a fill is dropped for a doorway spot beside it, never the reverse */
+export const spotKinds = ["doable", "doorway", "door", "corner", "cover", "wall", "decor", "fill"] as const;
 export const SpotKindSchema = z.enum(spotKinds);
 export type SpotKind = z.infer<typeof SpotKindSchema>;
 
 /** Each kind's colour, wherever spots are drawn: the Decorator, and the World's overlay */
 export const spotKindInk: Record<SpotKind, string> = {
   doable: "#a970ff",
-  door: "#f0a030",
+  doorway: "#f0a030",
+  door: "#ffd27a",
   corner: "#40c0e0",
   cover: "#40d080",
   wall: "#8090a0",

@@ -1,3 +1,4 @@
+import { wallHeight } from "@npc-cli/ui__world/const.env";
 import { spotKindInk } from "@npc-cli/ui__world/spot.schema";
 import { getSpotsRev, spotQuery, spotQueryDetached } from "./perception.main";
 
@@ -234,11 +235,15 @@ const howInk: Record<"dark" | "light", Record<WW.SpotHow, string>> = {
 };
 const inkOf = (w: JshCli.WorldState) => howInk[w.themeKey === "light-theme" ? "light" : "dark"];
 
-/** A spot as the overlay draws it: a doable's icon by its decor's `do` */
+/**
+ * A spot as the overlay draws it: a doable's icon by its decor's `do`, raised to its height, e.g. on a seat.
+ * A door spot's atop its door. A wall's is its arrow alone
+ */
 function toDraw(w: JshCli.WorldState, spot: WW.SpotJson) {
-  const doing = spot.kind === "doable" ? w.decor.byKey[spot.decorKey ?? ""]?.meta.do : undefined;
-  const icon = spot.kind !== "doable" ? spot.kind : doing === "sit" || doing === "lie" ? doing : "do";
-  return { ...spot, img: `icon--spot-${icon}`, color: spotKindInk[spot.kind] };
+  const meta = spot.kind === "doable" ? w.decor.byKey[spot.decorKey ?? ""]?.meta : undefined;
+  const icon = spot.kind !== "doable" ? spot.kind : meta?.do === "sit" || meta?.do === "lie" ? meta.do : "do";
+  const lift = spot.kind === "door" ? wallHeight : (meta?.y ?? 0);
+  return { ...spot, img: `icon--spot-${icon}`, color: spotKindInk[spot.kind], lift, iconHidden: spot.kind === "wall" };
 }
 
 /** `a,b,c` as a list, e.g. `room:g0r1,g0r2` */

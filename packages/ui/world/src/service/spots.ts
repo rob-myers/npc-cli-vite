@@ -16,7 +16,7 @@ export const spotConfig = {
   wallStep: 1,
   /** How far off the boundary a spot along it stands */
   edgeInset: 0.05,
-  /** Door spots, either side of its centre line */
+  /** Doorway spots, either side of its door's centre line */
   doorStandOff: 0.6,
   /** Past half a doorway's depth: its sensor's outset and a body's radius, with a margin. A spot within holds it open */
   doorwayClearance: 0.35,
@@ -111,13 +111,18 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     if (onMesh(p) && !inDoorway(p)) cands.push({ kind: "corner", p, facing: Math.atan2(n.y, n.x) });
   }
 
-  // either side of each door, facing it
+  // either side of each door, in its doorway, facing it
   layout.doors.forEach(({ center, normal }, doorId) => {
     for (const sign of [1, -1]) {
       const p = { x: center.x + normal.x * sign * c.doorStandOff, y: center.y + normal.y * sign * c.doorStandOff };
       if (onMesh(p))
-        cands.push({ kind: "door", p, facing: Math.atan2(-normal.y * sign, -normal.x * sign), ref: { doorId } });
+        cands.push({ kind: "doorway", p, facing: Math.atan2(-normal.y * sign, -normal.x * sign), ref: { doorId } });
     }
+  });
+
+  // in each door, bar a hull door: whoever stands there holds it open
+  layout.doors.forEach(({ center, meta }, doorId) => {
+    if (meta.hull !== true && onMesh(center)) cands.push({ kind: "door", p: center.json, ref: { doorId } });
   });
 
   layout.decor.forEach((d, decorId) => {
@@ -194,8 +199,11 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
 /** Each spot's room, depth, what it sees, and what is near. Also the obstacles each stands in */
 function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[], grid: SegGrid) {
   const c = spotConfig;
-  /** Obstacles each stands in, e.g. a bed's doable: their own sides do not hide them */
-  const within = cands.map(({ p }) => obstacles.filter((o) => inPoly(o.segs, p)).map((o) => o.obstacleId));
+  /** What each ignores: obstacles it stands in, e.g. a bed's doable, and a door spot's own door — see `isSkipped` */
+  const within = cands.map(({ kind, p, ref }) => [
+    ...obstacles.filter((o) => inPoly(o.segs, p)).map((o) => o.obstacleId),
+    ...(kind === "door" && ref?.doorId !== undefined ? [-(ref.doorId + 1)] : []),
+  ]);
 
   const spots = cands.map(({ kind, p, facing, ref }, id): Spot => {
     const skip = new Set(within[id]);
@@ -384,8 +392,9 @@ function distToSeg(p: Geom.VectJson, [a, b]: [Geom.VectJson, Geom.VectJson]) {
   return geomService.getDistanceToSeg(p.x, p.y, a, b);
 }
 
+/** An obstacle stood in, by id, or a door spot's own door, by `-(doorId + 1)` */
 function isSkipped(o: Occluder, skip: Set<number>) {
-  return o.kind === "obstacle" && skip.has(o.id);
+  return (o.kind === "obstacle" && skip.has(o.id)) || (o.kind === "door" && skip.has(-(o.id + 1)));
 }
 
 function round(x: number, decimals = 2) {

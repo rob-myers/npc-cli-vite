@@ -139,7 +139,8 @@ declare namespace WW {
     sees: number;
   } & (
     | {
-        kind: "door";
+        /** In a door, else either side of it */
+        kind: "door" | "doorway";
         /** Its door */
         gdKey: string;
       }
@@ -148,7 +149,7 @@ declare namespace WW {
         /** Its decor, `null` until the World has keyed its decor */
         decorKey: null | string;
       }
-    | { kind: Exclude<import("@npc-cli/ui__world/spot.schema").SpotKind, "door" | "doable"> }
+    | { kind: Exclude<import("@npc-cli/ui__world/spot.schema").SpotKind, "door" | "doorway" | "doable"> }
   );
 
   /** Aligned with its query: `of`, `get` give a spot or `null`; `of` with `all`, `list`, `seenBy` spots; `sees` a verdict */

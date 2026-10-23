@@ -332,7 +332,7 @@ export class MapSpots {
     return this.byKey.get(key);
   }
 
-  /** As answered: a door spot names its door, a doable its decor */
+  /** As answered: a door or doorway spot names its door, a doable its decor */
   json = (s: MapSpot): WW.SpotJson => {
     const { key, gmId, kind, x, y, grKey, facing, wall, spot } = s;
     const base = {
@@ -344,7 +344,7 @@ export class MapSpots {
       wall: round(wall),
       sees: spot.sight.length + spot.always.length,
     };
-    if (kind === "door") return { ...base, kind, gdKey: `g${gmId}d${spot.ref?.doorId}` };
+    if (kind === "door" || kind === "doorway") return { ...base, kind, gdKey: `g${gmId}d${spot.ref?.doorId}` };
     if (kind === "doable") return { ...base, kind, decorKey: this.doableKeys[`${gmId}/${spot.ref?.decorId}`] ?? null };
     return { ...base, kind };
   };
@@ -363,10 +363,14 @@ export class MapSpots {
   /** Every spot `npc` is at: in each of their rooms, those within `ownReach`, else the nearest */
   spotsOf({ point, grKeys }: WW.SpotNpc) {
     const close = this.near(point, ownReach);
-    return (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
-      const own = close.filter((s) => s.grKey === grKey);
-      return own.length > 0 ? own : (this.nearestTo(point, grKey) ?? []);
-    });
+    // a door spot is in no room
+    const door = close.filter((s) => s.kind === "door" && dist(s, point) <= doorReach);
+    return door.concat(
+      (grKeys.length > 0 ? grKeys : [null]).flatMap((grKey) => {
+        const own = close.filter((s) => s.grKey === grKey);
+        return own.length > 0 ? own : (this.nearestTo(point, grKey) ?? []);
+      }),
+    );
   }
 
   /** Infinite for a room's only spot: anywhere in that room is nearest it */
@@ -505,6 +509,8 @@ const cellSize = 2;
 const spotOfReach = 2;
 /** Metres: the spots of their room this near are all theirs */
 const ownReach = sightConfig.regionRadius;
+/** Metres from a door spot that stand in its door */
+const doorReach = 0.5;
 /** Metres from where they sit or lie to its doable spot */
 const seatReach = 0.1;
 

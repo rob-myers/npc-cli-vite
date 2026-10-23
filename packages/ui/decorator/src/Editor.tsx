@@ -10,6 +10,7 @@ import {
   CaretDownIcon,
   EyeIcon,
   EyeSlashIcon,
+  FrameCornersIcon,
   SidebarSimpleIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -384,6 +385,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         <ToolButton icon={ArrowUUpLeftIcon} title="undo (cmd-Z)" active={false} onClick={state.undo} />
         <ToolButton icon={ArrowUUpRightIcon} title="redo (shift-cmd-Z)" active={false} onClick={state.redo} />
+        <ToolButton
+          icon={FrameCornersIcon}
+          title="reset the view"
+          active={false}
+          onClick={() => map.current?.reset()}
+        />
         <span className="w-px h-4 mx-1 bg-zinc-800" />
         {layers.map((layer) => (
           <button
