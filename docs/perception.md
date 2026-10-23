@@ -34,7 +34,7 @@ The nav worker's own jsh side, the plan ops (`park`, `pad`, `nudge`, `boundary`)
 - **Occluders.** These are the walls, the doors, and obstacles `standBlockHeight` tall, in world coords. Windows are not among them. They are the same occluders `gen-spots` makes its lists from (`docs/spots.md`).
 - **Ids.** A door's or obstacle's id is `gmId * sightIdStride + localId`.
 - **A line of sight** passes through the worker's `SegGrid`. Walls and tall obstacles stop it, and so do doors unless open.
-- **To or from an npc,** sight is a body: lines to its centre and either side.
+- **To or from an npc,** sight is a head: lines to its eyes and either side, inside the head.
 - **Spot to spot,** sight is the precomputed lists, with doors as they stand: `sight`, `always` and `via`. From a doable sat or lain at (`doArc`), it is `doSight` and `doVia` instead: from its point, within its arc. So it can be one-way, e.g. someone behind a chair sees its sitter, not the reverse.
 
 ## Npcs in the lists
@@ -49,7 +49,7 @@ Each step only runs if the one before leaves it open:
 1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).
 2. **Rooms:** `b` must be in a room `a` has in view.
 3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
-4. **Lines,** for the rest: from `a`'s eye to the top of `b`'s body, at fixed heights by posture (`bodyHeights`) above what they are on: the floor, else their seat or bed (its `meta.y`, so a top bunk too). Lying, on their back or a side. A low obstacle stops one passing at or below its top. A fully crouched npc's top is 0.6 m by rule, though their head is above a desk, so cover `crouchHideHeight` tall hides them.
+4. **Lines,** for the rest: from `a`'s eyes to `b`'s, to their centre and either side. An npc's eyes are on the front of their head as last posed, from its bone (`eyeOf` in `perception.main.ts`), so they follow a crouch, a seat, a bed or a top bunk. A spot's are 1.37 m up. A low obstacle stops a line passing at or below its top. Lines to a fully crouched npc end 0.6 m up by rule, though their head clears a desk, so cover `crouchHideHeight` tall hides them.
 
 **The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.
 - **Its key:** each npc's name, position to the centimetre, posture and crouch (a spot's is its key), then the doors' revision. Any door opening or shutting, or a new setup, bumps that revision, so every earlier answer goes unused.
@@ -78,4 +78,4 @@ Each step only runs if the one before leaves it open:
 - jsh `spot_overlay`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`w.debug.setSpots`, `colourSpots`).
 - A right click on one chooses it, or a long press on touch (`w.debug.chooseSpot`, event `spot-chosen`). Again, it is let go. The Decorator follows, and its own choice is followed back. A press walks there, as on the floor.
 
-**`sees --debug a b`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, at the heights it tested: green clear, red stopped, amber stopped by a low obstacle in a pair still seen (`partial`). It looks again every quarter game second, and every tick whilst rays are drawn for someone moving. `--los` ignores eyes and facing, `--all` takes every ordered pair.
+**`sees --debug a b`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, at the heights it tested: green clear, red stopped, amber stopped by a low obstacle in a pair still seen (`partial`). It looks again every tick whilst it draws rays, as they follow the heads, else every quarter game second. `--los` ignores eyes and facing, `--all` takes every ordered pair.

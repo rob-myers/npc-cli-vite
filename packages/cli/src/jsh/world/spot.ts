@@ -123,7 +123,7 @@ const sightHalfArc = Math.PI / 3;
 
 /**
  * Until killed, why each pair's first sees the second or not: said at first, then each time that changes.
- * Every `watchSecs` the rays a verdict needed are drawn: to the centre, then either side until one is clear
+ * The rays a verdict needed are drawn, to the centre then either side until one is clear, kept up each tick
  */
 async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
   const { api, w } = ct;
@@ -187,9 +187,8 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
       for (const key of drawn) if (rays.has(key) === false) w.debug.removePolyline(key);
       drawn = rays;
       w.view.forceUpdate();
-      // rays drawn for someone moving keep up with them, a tick at a time
-      const moving = drawn.size > 0 && pairs.some(([a, b]) => w.n[a]?.isMoving() || w.n[b]?.isMoving());
-      const next = moving ? w.npc.nextTick() : w.e.wait(watchSecs);
+      // rays from their eyes follow every turn of the head
+      const next = drawn.size > 0 ? w.npc.nextTick() : w.e.wait(watchSecs);
       if ((await Promise.race([next.then(() => true), stopped.then(() => false)])) === false) {
         throw api.getKillError();
       }
@@ -224,7 +223,7 @@ function reasonOf(x: Extract<WW.SpotAnswer, { settled: string }>, ansi: JshCli.R
   }
 }
 
-/** Game seconds between looks at a pair: as quick as anyone would notice */
+/** Game seconds between looks whilst no rays are drawn: as quick as anyone would notice */
 const watchSecs = 0.25;
 /** Rays as `sees --debug` draws them: thin, faint, with small discs */
 const rayStyle = { width: 0.008, opacity: 0.5, discRadius: 0.03 };

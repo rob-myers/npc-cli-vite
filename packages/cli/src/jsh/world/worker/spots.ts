@@ -52,7 +52,7 @@ export function answerSpotQueries(
     return { spots: [spot], seated: spot.spot.doArc !== undefined };
   };
   /** Where `ref` looks from: an npc's own point, else a spot's */
-  const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.point ?? resolve(ref);
+  const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.eye ?? resolve(ref);
   /**
    * The lines from `a` to a body at `b`: to its centre and either side. `from` and `to` are npcs there, if any.
    * Their postures set the heights, which a low obstacle may rise above
@@ -60,7 +60,7 @@ export function answerSpotQueries(
   const eyeLines = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
     const [dx, dy] = [b.x - a.x, b.y - a.y];
     const d = Math.hypot(dx, dy) || 1;
-    const [px, py] = [(-dy * bodyRadius) / d, (dx * bodyRadius) / d];
+    const [px, py] = [(-dy * headRadius) / d, (dx * headRadius) / d];
     // one sat or lain is on the furniture, which does not hide them
     const lowHides = to === undefined || to.posture === "stand";
     return {
@@ -277,27 +277,18 @@ async function createMapSpots(gms: WW.GmForSpots[], hullPairs: [string, string][
 }
 
 const round = (x: number) => Math.round(x * 100) / 100;
-/** Metres either side of a body's centre that sight is tested to */
-const bodyRadius = 0.25;
+/** Metres either side of the eyes that sight is tested to: inside the head, 0.15 m either side */
+const headRadius = 0.12;
 
-/**
- * Metres above what they are on: an npc's eye, and the top of their body, as the models pose. Crouched is full.
- * Its top is a rule, not the model's: their head clears a desk, yet cover `crouchHideHeight` tall hides them
- */
-const bodyHeights = {
-  stand: { eye: 1.37, top: 1.53 },
-  crouched: { eye: 0.88, top: 0.6 },
-  sit: { eye: 0.83, top: 0.99 },
-  lie: { eye: 0.28, top: 0.3 },
-  lieSide: { eye: 0.2, top: 0.37 },
-};
-
-/** Metres off the floor, as `bodyHeights`. A spot stands for someone stood */
+/** Metres up to an npc's eye, and to where lines to them end: their eye too, bar fully crouched */
 function heightsOf(npc?: WW.SpotNpc) {
-  if (npc === undefined) return bodyHeights.stand;
-  const { eye, top } = bodyHeights[npc.crouched ? "crouched" : npc.onSide ? "lieSide" : npc.posture];
-  return { eye: eye + npc.onY, top: top + npc.onY };
+  const eye = npc?.eye.h ?? standEyeHeight;
+  return { eye, top: npc?.crouched === true ? crouchedTop : eye };
 }
+/** Metres up to the eyes of one stood, as a spot stands for */
+const standEyeHeight = 1.37;
+/** Metres up to a fully crouched npc as seen. A rule: their head clears a desk, yet cover `crouchHideHeight` tall hides them */
+const crouchedTop = 0.6;
 /** Spots an npc is sent to: not a doable, which needs its decor, nor in a doorway */
 const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
 /** Metres: making way, a spot this near the blocker, this clear of the walker's path and others, not passing within `pass` of the walker */
@@ -545,8 +536,8 @@ function remember(key: string, answer: boolean) {
 /** An npc by where they stand to the centimetre and how, else a spot key: so it only serves those standing still */
 function cacheKeyOf(ref: string, npc?: WW.SpotNpc) {
   if (npc === undefined) return ref;
-  const { point, posture, crouched, onY, onSide } = npc;
-  return `${ref} ${point.x.toFixed(2)} ${point.y.toFixed(2)} ${posture} ${crouched} ${onY} ${onSide}`;
+  const { eye, posture, crouched } = npc;
+  return `${ref} ${eye.x.toFixed(2)} ${eye.y.toFixed(2)} ${eye.h.toFixed(2)} ${posture} ${crouched}`;
 }
 /** Grid rings searched for the nearest spot in a room: 40 metres, past any room's size */
 const maxRings = 20;

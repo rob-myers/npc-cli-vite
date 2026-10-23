@@ -135,6 +135,21 @@ type Perception = {
   stop(): void;
 };
 
+/** An npc's eyes on the front of their head as last posed, else above their point */
+function eyeOf(npc: JshCli.WorldState["n"][string]): WW.SpotNpc["eye"] {
+  const e = npc.anim.upperHead.entry?.bone.matrixWorld.elements;
+  if (e === undefined) return { x: npc.point.x, y: npc.point.y, h: 1.37 };
+  const { up, ahead } = eyeAt;
+  // the bone's origin, then its y and z columns
+  return {
+    x: e[12] + e[4] * up + e[8] * ahead,
+    y: e[14] + e[6] * up + e[10] * ahead,
+    h: e[13] + e[5] * up + e[9] * ahead,
+  };
+}
+/** Where the eyes are in the head bone's own units, from the neck: up it, and out to the face, as the model faces its -z */
+const eyeAt = { up: 0.19, ahead: -0.23 };
+
 function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
   const named = new Set(queries.flatMap(namedIn));
   const npcs = [...named].flatMap((key): WW.SpotNpc[] => {
@@ -148,9 +163,7 @@ function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
     const doable = w.decor.byKey[w.npc.npcToDoable[key] ?? ""];
     const doAt = posture !== "stand" && doable?.type === "point" ? { x: doable.x, y: doable.y } : undefined;
     const at = { x: npc.point.x, y: npc.point.y };
-    const onY = posture === "stand" ? 0 : (doable?.meta.y ?? 0);
-    const onSide = npc.anim.pose === "lie_left" || npc.anim.pose === "lie_right";
-    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt, onY, onSide }];
+    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt, eye: eyeOf(npc) }];
   });
   return { npcs, queries };
 }
