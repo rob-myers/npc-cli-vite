@@ -16,7 +16,7 @@ The nav worker's own jsh side, the plan ops (`park`, `pad`, `nudge`, `boundary`)
 `spotQuery(ct, queries)` sends a batch in one round trip, under the shell's pause and kill (`awaitPausable`). `spotQueryDetached(w, queries)` does the same from no process, e.g. sidestep's keyed tick.
 
 - **The npcs a batch names** are snapshotted as it is sent: their point, and their rooms (both sides in a doorway).
-- **The queries** (`WW.SpotQuery` in `jsh-worker.d.ts`): `of`, `get`, `list`, `sees`, `seenBy`, `at`, `hide` and `makeWay`.
+- **The queries** (`WW.SpotQuery` in `jsh-worker.d.ts`): `of`, `get`, `list`, `sees`, `seenBy`, `at`, `hide`, `hidden`, `makeWay`, `view` and `explain`.
 - **Callers**: `act.ts`, `spot.ts` (jsh `spots`, `spot`, `sees`) and `sidestep.ts`.
 
 ## The worker's life
@@ -64,3 +64,13 @@ Answers are cached by who, where to a quarter metre and how, and the doors' revi
 - **A hull door is two records,** one in each geomorph it joins, e.g. `g0d3` and `g1d7`. Main sends these `hullPairs` in setup.
 - **A pair of spots** in different geomorphs may see each other only if each is on its side's `hull` list for the two records of one door, with that door seen through.
 - **Not covered:** sight through two hull doors.
+
+## Seeing it in the World
+
+**The spots overlay** is **spots** in the debug **overlay** select (`w.debug.spotsShown`, persisted).
+- Every spot of the map is a billboard icon by kind (`media/src/decor/icon--spot-*.svg`, Phosphor duotone, white so a colour tints them). One with a facing has a faint open arrow on the floor, that way.
+- They are coloured by sight from the chosen spot, else the player: blue their own, as is the chosen one (larger), green `always`, yellow `may`, white once a shut door opens, dim `never`. A faded room's are dimmed.
+- jsh `spot_overlay`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`w.debug.setSpots`, `colourSpots`).
+- A right click on one chooses it, or a long press on touch (`w.debug.chooseSpot`, event `spot-chosen`). Again, it is let go. The Decorator follows, and its own choice is followed back. A press walks there, as on the floor.
+
+**`sees --show a b`** prints what decided it, e.g. `lines: seen` or `rooms: unseen`, from the worker's `explain` query. It draws the three lines for 4 game seconds: green clear, red stopped, amber by a low obstacle.

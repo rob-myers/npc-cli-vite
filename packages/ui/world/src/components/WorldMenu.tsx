@@ -270,6 +270,8 @@ export function WorldMenu() {
         return w.debug?.doPointsShown ?? false;
       case "decorations":
         return w.debug?.decorShown ?? false;
+      case "spots":
+        return w.debug?.spotsShown ?? false;
       case "npc contextmenu":
         return w.debug?.npcContextMenu ?? false;
       case "hud debug":
@@ -388,6 +390,14 @@ export function WorldMenu() {
         w.debug?.set({ decorShown: next });
         store.patch({ decorShown: next });
         w.decor.setupRuntimeInstances(); // decor not meant to show is drawn whilst decorating
+        w.view.forceUpdate();
+        break;
+      }
+      case "spots": {
+        const shown = !w.debug?.spotsShown;
+        w.debug?.set({ spotsShown: shown });
+        store.patch({ spotsShown: shown });
+        w.events.next({ key: "spots-overlay", shown }); // jsh `spot_overlay` fills it
         w.view.forceUpdate();
         break;
       }
@@ -1379,12 +1389,19 @@ const debugGroups = {
     { key: "lit", value: "lit npcs" },
     { key: "outline", value: "npc outline" },
   ],
-  overlay: ["colliders", "decor points", "decorations", "door normals", "grid", "navmesh", "room outlines"].map(
-    (value) => ({
-      key: value,
-      value,
-    }),
-  ),
+  overlay: [
+    "colliders",
+    "decor points",
+    "decorations",
+    "door normals",
+    "grid",
+    "navmesh",
+    "room outlines",
+    "spots",
+  ].map((value) => ({
+    key: value,
+    value,
+  })),
   "door ui": [
     { key: "pick", value: "pick doors" },
     { key: "toggle", value: "toggle doors" },

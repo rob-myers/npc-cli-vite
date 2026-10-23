@@ -11,6 +11,17 @@ export const spotKinds = ["doable", "door", "corner", "cover", "wall", "decor", 
 export const SpotKindSchema = z.enum(spotKinds);
 export type SpotKind = z.infer<typeof SpotKindSchema>;
 
+/** Each kind's colour, wherever spots are drawn: the Decorator, and the World's overlay */
+export const spotKindInk: Record<SpotKind, string> = {
+  doable: "#a970ff",
+  door: "#f0a030",
+  corner: "#40c0e0",
+  cover: "#40d080",
+  wall: "#8090a0",
+  decor: "#e070b0",
+  fill: "#c0c040",
+};
+
 /** A place an npc might stand, in its geomorph's coords — see `docs/spots.md` */
 export const SpotSchema = z.object({
   id: z.number(),

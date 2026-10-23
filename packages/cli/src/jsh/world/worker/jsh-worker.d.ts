@@ -103,6 +103,20 @@ declare namespace WW {
         ahead?: Geom.VectJson[];
       }
     | {
+        /** Every spot's sight from `from`, by the lists alone as the doors stand: see `SpotHow` */
+        q: "view";
+        /** An npc or a spot key */
+        from: string;
+      }
+    | {
+        /** How `sees` decides whether `a` sees `b`, uncached, and the lines it casts or would */
+        q: "explain";
+        /** Who looks: a spot or an npc */
+        a: string;
+        /** Who is seen: a spot or an npc */
+        b: string;
+      }
+    | {
         /** The spot nearest `npc` in their rooms clear of a walker's `path` and of `others`, or `null` */
         q: "makeWay";
         /** Who makes way */
@@ -145,7 +159,16 @@ declare namespace WW {
     /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any */
     | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
     | { hidden: boolean }
+    | { view: Record<string, SpotHow> }
+    | { sees: boolean; settled: SeesSettled; lines: { from: Geom.VectJson; to: Geom.VectJson; hit: null | SightHit }[] }
     | { error: string };
+
+  /** A spot as seen from another, or an npc: their own, always, may, may once a shut door opens, or never */
+  type SpotHow = "own" | "always" | "may" | "shut" | "never";
+  /** What decided `sees`: rooms out of view, the lists (spot to spot `may` too), else lines */
+  type SeesSettled = "rooms" | "never" | "always" | "may" | "lines";
+  /** Where a line of sight is stopped, and by what */
+  type SightHit = Geom.VectJson & { kind: import("@npc-cli/ui__world/seg-grid").Occluder["kind"] };
 
   /** An npc, as an op sees them — see `npcQuery` in `plan.main.ts` */
   type NpcQuery = {

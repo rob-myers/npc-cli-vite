@@ -54,49 +54,67 @@ export function answerSpotQueries(
   /** Where `ref` looks from: an npc's own point, else a spot's */
   const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.point ?? resolve(ref);
   /**
-   * Some of a body at `b` is in sight from `a`: a line to its centre or either side, as the doors stand.
-   * `from` and `to` are npcs there, if any: their posture sets the line's ends, which a low obstacle may rise above
+   * The lines from `a` to a body at `b`: to its centre and either side. `from` and `to` are npcs there, if any.
+   * Their postures set the heights, which a low obstacle may rise above
    */
-  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
+  const eyeLines = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
     const [dx, dy] = [b.x - a.x, b.y - a.y];
     const d = Math.hypot(dx, dy) || 1;
     const [px, py] = [(-dy * bodyRadius) / d, (dx * bodyRadius) / d];
-    const [eye, top] = [heightsOf(from).eye, heightsOf(to).top];
     // one sat or lain is on the furniture, which does not hide them
     const lowHides = to === undefined || to.posture === "stand";
-    return [0, 1, -1].some((k) => lineClear(a, { x: b.x + k * px, y: b.y + k * py }, eye, lowHides ? top : null));
+    return {
+      eye: heightsOf(from).eye,
+      top: lowHides ? heightsOf(to).top : null,
+      ends: [0, 1, -1].map((k) => ({ x: b.x + k * px, y: b.y + k * py })),
+    };
   };
-  /** Nothing stops the line: no wall nor tall obstacle, only doors standing open, and no low one it passes under */
-  const lineClear = (p: Geom.VectJson, q: Geom.VectJson, eye: number, top: null | number) => {
-    let blocked = false;
-    grid.forEachOn(p, q, (o, lambda) => {
-      if (o.kind === "door")
-        return open.has(`g${Math.floor(o.id / sightIdStride)}d${o.id % sightIdStride}`) ? false : (blocked = true);
-      if (o.kind === "low")
-        return top !== null && (o.top ?? 0) >= eye + (top - eye) * lambda ? (blocked = true) : false;
-      return (blocked = true);
-    });
-    return blocked === false;
+  /** Some of a body at `b` is in sight from `a`, as the doors stand */
+  const eyeSees = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
+    const { eye, top, ends } = eyeLines(a, b, from, to);
+    return ends.some((q) => lineHit(a, q, eye, top) === null);
   };
   /**
-   * Whether `a` sees `b` now. Rooms out of view, and pairs the lists never list, are no.
-   * Those always listed are yes, unless `b` crouches. Only the rest cast lines, and an npc's answer is cached
+   * What stops the line, else `null`: a wall, a tall obstacle, a shut door, or a low one it passes under.
+   * The first met, or with `nearest` the nearest
    */
-  const seesNow = (refA: string, refB: string) => {
+  const lineHit = (p: Geom.VectJson, q: Geom.VectJson, eye: number, top: null | number, nearest = false) => {
+    let [hit, at] = [null as null | WW.SightHit, Infinity];
+    grid.forEachOn(p, q, (o, lambda) => {
+      if (o.kind === "door" && open.has(`g${Math.floor(o.id / sightIdStride)}d${o.id % sightIdStride}`)) return false;
+      if (o.kind === "low" && (top === null || (o.top ?? 0) < eye + (top - eye) * lambda)) return false;
+      if (lambda < at)
+        [hit, at] = [{ x: p.x + (q.x - p.x) * lambda, y: p.y + (q.y - p.y) * lambda, kind: o.kind }, lambda];
+      return nearest === false;
+    });
+    return hit;
+  };
+  /**
+   * Whether `a` sees `b` now, and what settled it. Rooms out of view, and pairs the lists never list, are no.
+   * Spot to spot the lists say. Those always listed are yes, unless `b` crouches. Only the rest cast lines
+   */
+  const judge = (refA: string, refB: string): { sees: boolean; settled: WW.SeesSettled } => {
     const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
     const [A, B] = [spotsAt(refA), spotsAt(refB)];
-    if (na === undefined && nb === undefined) return all.listedAny(A, B, isOpen) !== "never"; // the lists say
+    const roomsB = nb?.grKeys ?? B.spots.flatMap((s) => s.grKey ?? []);
+    const inView = na === undefined || roomsB.length === 0 || roomsB.some((grKey) => na.seeRooms.includes(grKey));
+    if (inView === false) return { sees: false, settled: "rooms" };
+    const listed = all.listedAny(A, B, isOpen);
+    if (listed === "never") return { sees: false, settled: "never" };
+    if (na === undefined && nb === undefined) return { sees: true, settled: listed };
+    if (listed === "always" && nb?.crouched !== true) return { sees: true, settled: "always" };
+    return { sees: eyeSees(eyeOf(refA), eyeOf(refB), na, nb), settled: "lines" };
+  };
+  /** `judge`'s verdict, cached with an npc by where they stand and how */
+  const seesNow = (refA: string, refB: string) => {
+    const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
+    if (na === undefined && nb === undefined) return judge(refA, refB).sees;
     const key = `${cacheKeyOf(refA, na)}|${cacheKeyOf(refB, nb)}|${doorRev}`;
     const cached = seesCache.get(key);
     if (cached !== undefined) return cached;
-    const roomsB = nb?.grKeys ?? B.spots.flatMap((s) => s.grKey ?? []);
-    const inView = na === undefined || roomsB.length === 0 || roomsB.some((grKey) => na.seeRooms.includes(grKey));
-    const listed = inView ? all.listedAny(A, B, isOpen) : "never";
-    const answer =
-      listed !== "never" &&
-      ((listed === "always" && nb?.crouched !== true) || eyeSees(eyeOf(refA), eyeOf(refB), na, nb));
-    remember(key, answer);
-    return answer;
+    const { sees } = judge(refA, refB);
+    remember(key, sees);
+    return sees;
   };
   /** Every spot `from`, or where they are headed, may see, as the doors stand. An npc sees only their rooms in view */
   const unsafeFrom = (from: string[], ahead: Geom.VectJson[] = []) => {
@@ -172,6 +190,30 @@ export function answerSpotQueries(
         case "hidden": {
           const unsafe = unsafeFrom(query.from, query.ahead);
           return { hidden: spotsAt(query.npc).spots.every((s) => unsafe.has(s.key) === false) };
+        }
+        case "view": {
+          const A = spotsAt(query.from);
+          const own = new Set(A.spots);
+          const seeRooms = npcByKey.get(query.from)?.seeRooms;
+          const view: Record<string, WW.SpotHow> = {};
+          for (const s of all.byKey.values()) {
+            if (own.has(s)) {
+              view[s.key] = "own";
+              continue;
+            }
+            const B = { spots: [s], seated: false };
+            const inView = seeRooms === undefined || s.grKey === null || seeRooms.includes(s.grKey);
+            const listed = inView ? all.listedAny(A, B, isOpen) : "never";
+            view[s.key] = listed !== "never" ? listed : all.listedAny(A, B, anyOpen) === "never" ? "never" : "shut";
+          }
+          return { view };
+        }
+        case "explain": {
+          const [na, nb] = [npcByKey.get(query.a), npcByKey.get(query.b)];
+          const [a, b] = [eyeOf(query.a), eyeOf(query.b)];
+          const { eye, top, ends } = eyeLines(a, b, na, nb);
+          const lines = ends.map((to) => ({ from: a, to, hit: lineHit(a, to, eye, top, true) }));
+          return { ...judge(query.a, query.b), lines };
         }
         case "makeWay": {
           const npc = resolveNpc(query.npc);
@@ -465,6 +507,9 @@ const spotOfReach = 2;
 const ownReach = sightConfig.regionRadius;
 /** Metres from where they sit or lie to its doable spot */
 const seatReach = 0.1;
+
+/** Every door open: what may be seen once they are */
+const anyOpen = () => true;
 
 /** Where someone is, for the lists: their spots, and whether they sit or lie at the one */
 type At = { spots: MapSpot[]; seated: boolean };

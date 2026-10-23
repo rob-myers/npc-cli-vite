@@ -531,37 +531,100 @@
       "originalWidth": 6,
       "originalHeight": 6
     },
+    "icon--spot-corner": {
+      "key": "icon--spot-corner",
+      "rect": {"x": 107, "y": 351, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-cover": {
+      "key": "icon--spot-cover",
+      "rect": {"x": 161, "y": 297, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-decor": {
+      "key": "icon--spot-decor",
+      "rect": {"x": 161, "y": 351, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-do": {
+      "key": "icon--spot-do",
+      "rect": {"x": 215, "y": 297, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-door": {
+      "key": "icon--spot-door",
+      "rect": {"x": 215, "y": 351, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-fill": {
+      "key": "icon--spot-fill",
+      "rect": {"x": 269, "y": 297, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-lie": {
+      "key": "icon--spot-lie",
+      "rect": {"x": 323, "y": 297, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-sit": {
+      "key": "icon--spot-sit",
+      "rect": {"x": 269, "y": 351, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
+    "icon--spot-wall": {
+      "key": "icon--spot-wall",
+      "rect": {"x": 323, "y": 351, "width": 52, "height": 52},
+      "sheetId": 0,
+      "originalWidth": 12,
+      "originalHeight": 12
+    },
     "icon--warn": {
       "key": "icon--warn",
-      "rect": {"x": 107, "y": 351, "width": 52, "height": 52},
+      "rect": {"x": 382, "y": 2, "width": 52, "height": 52},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     },
     "number-one": {
       "key": "number-one",
-      "rect": {"x": 331, "y": 122, "width": 43, "height": 43},
+      "rect": {"x": 382, "y": 56, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "number-zero": {
       "key": "number-zero",
-      "rect": {"x": 331, "y": 167, "width": 43, "height": 43},
+      "rect": {"x": 377, "y": 101, "width": 43, "height": 43},
       "sheetId": 0,
       "originalWidth": 10,
       "originalHeight": 10
     },
     "switch": {
       "key": "switch",
-      "rect": {"x": 331, "y": 212, "width": 26, "height": 26},
+      "rect": {"x": 314, "y": 122, "width": 26, "height": 26},
       "sheetId": 0,
       "originalWidth": 6,
       "originalHeight": 6
     }
   },
-  "decorSheetDims": [{"width": 382, "height": 427}],
-  "maxDecorSheetDim": {"width": 382, "height": 427},
+  "decorSheetDims": [{"width": 436, "height": 427}],
+  "maxDecorSheetDim": {"width": 436, "height": 427},
   "skin": {
     "d-0": {
       "key": "d-0",

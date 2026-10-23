@@ -1,5 +1,5 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import { type SpotKind, type SpotsFile, SpotsFileSchema, spotsChangedEvent } from "@npc-cli/ui__world/spot.schema";
+import { type SpotsFile, SpotsFileSchema, spotKindInk, spotsChangedEvent } from "@npc-cli/ui__world/spot.schema";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { useEffect, useState } from "react";
 
@@ -35,16 +35,8 @@ export function useSpots(w: WorldState, enabled: boolean) {
   return byGmKey;
 }
 
-/** Each kind's colour, a mid tone read on either theme */
-export const inkOf: Record<SpotKind, string> = {
-  doable: "#a970ff",
-  door: "#f0a030",
-  corner: "#40c0e0",
-  cover: "#40d080",
-  wall: "#8090a0",
-  decor: "#e070b0",
-  fill: "#c0c040",
-};
+/** Each kind's colour, as the World's overlay draws it too */
+export const inkOf = spotKindInk;
 
 /** A spot, by its geomorph instance and its id there */
 export type SpotPick = { gmId: number; id: number };

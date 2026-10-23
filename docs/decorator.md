@@ -124,6 +124,8 @@ thing — `createLabelResources(…, { occluded: true })` — unlike room labels
 are the World's — a press there would be picked as one, and on release the wrapper focuses itself,
 so a clicked field lost focus at once. The frame therefore stops both.
 
+**A chosen spot is shared with the World**: `chooseSpot` calls `w.debug.chooseSpot`, and a `spot-chosen` event, e.g. a press on the World's spots overlay, reveals it here. See `docs/perception.md`.
+
 ## From the shell
 
 `decor.ts` is sourced by the default profile. What is piped in says where:

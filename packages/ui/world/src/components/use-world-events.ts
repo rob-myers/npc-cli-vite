@@ -795,6 +795,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
+            // a right click on the spots overlay chooses one, or a long press on touch. Again, none
+            if ((e.rightDown === true || (w.touchDevice && e.longDown === true)) && e.meta.type === "spot") {
+              w.debug.chooseSpot(w.debug.chosenSpot === e.meta.spotKey ? null : e.meta.spotKey);
+            }
             // a long press is how you get at an npc: they say "...", its npcKey in the history the
             // handle onto everything else — see `WorldSpeech`. Clients skip: the pick is
             // forwarded, and the server's mirrored speech comes back instead
@@ -817,7 +821,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               w.bubble.openDebug(e.meta.npcKey, { focus: true });
             }
             // a right click has the player look there, as a tap of fingers does on touch. Not at themself
-            if (e.rightDown === true && e.meta.type !== "npc" && e.srcWorld === w.key) w.player?.lookAtPoint(e.x, e.z);
+            if (e.rightDown === true && e.meta.type !== "npc" && e.meta.type !== "spot" && e.srcWorld === w.key)
+              w.player?.lookAtPoint(e.x, e.z);
             break;
           }
           case "spawned-many": {
@@ -833,6 +838,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
+            break;
+          case "spots-overlay":
+          case "spot-chosen":
             break;
           default:
             throw new ExhaustiveError(e);

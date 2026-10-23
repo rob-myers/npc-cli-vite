@@ -32,6 +32,78 @@
       "outputWidth": 137,
       "outputHeight": 137
     },
+    "icon--spot-corner": {
+      "key": "icon--spot-corner",
+      "filename": "icon--spot-corner.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-cover": {
+      "key": "icon--spot-cover",
+      "filename": "icon--spot-cover.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-decor": {
+      "key": "icon--spot-decor",
+      "filename": "icon--spot-decor.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-do": {
+      "key": "icon--spot-do",
+      "filename": "icon--spot-do.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-door": {
+      "key": "icon--spot-door",
+      "filename": "icon--spot-door.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-fill": {
+      "key": "icon--spot-fill",
+      "filename": "icon--spot-fill.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-lie": {
+      "key": "icon--spot-lie",
+      "filename": "icon--spot-lie.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-sit": {
+      "key": "icon--spot-sit",
+      "filename": "icon--spot-sit.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
+    "icon--spot-wall": {
+      "key": "icon--spot-wall",
+      "filename": "icon--spot-wall.svg",
+      "width": 12,
+      "height": 12,
+      "outputWidth": 52,
+      "outputHeight": 52
+    },
     "icon--warn": {
       "key": "icon--warn",
       "filename": "icon--warn.svg",

@@ -13,6 +13,9 @@ import { awaitPausable } from "./plan.main";
 let spotsRev = 0;
 import.meta.hot?.on(spotsChangedEvent, () => void spotsRev++);
 
+/** Which remaking of the spot files is current, e.g. to redraw them */
+export const getSpotsRev = () => spotsRev;
+
 /**
  * A batch of spot queries, answered by the perception worker in one round trip, under the shell's pause/kill.
  * The npcs they name are snapshotted now — see `docs/perception.md`
@@ -170,5 +173,9 @@ function namedIn(q: WW.SpotQuery): string[] {
       return [q.npc, ...q.from];
     case "makeWay":
       return [q.npc];
+    case "view":
+      return [q.from];
+    case "explain":
+      return [q.a, q.b];
   }
 }
