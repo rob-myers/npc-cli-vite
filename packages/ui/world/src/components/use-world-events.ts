@@ -952,6 +952,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             (w.npc.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(e.npcKey);
             // a spawn is how an npc ARRIVES somewhere: `fadeSpawn` and teleports land here rather
             // than at `enter-room`, which only fires for one who walked there
+            state.syncLitRoom(npc); // a lit npc lights their new room, not the last
             state.syncFadeRooms();
 
             break;
