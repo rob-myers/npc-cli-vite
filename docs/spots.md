@@ -40,7 +40,8 @@ Spots are made in this order, and a later one too near (`mergeGap`) an earlier o
 - **Region sight**, within `radius`, between regions: the floor within `regionRadius` of each spot.
   - `sight`: spots it may see with no door.
   - `always`: spots every line to which is clear.
-  - `via`: `[doorIds, spotIds]`, those it may see once all those doors are open.
+  - `via`: `[doorIds, spotIds]`, those it may see once all those doors are open. One seen by several routes, e.g. through either of two doors, is listed under each: any one open will do.
+  - A route's doors come from clear lines between the regions. One seen only past a body's edge is found by a line to that edge.
   - `crouchSafe` (cover only): spots that cannot see it fully crouched.
   - A spot in none of them is never seen from its region.
 - **Seated sight** (doables only): `doArc`, and `doSight` / `doVia` as seen from its point within that arc.

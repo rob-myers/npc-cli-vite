@@ -952,6 +952,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             (w.npc.roomToNpcs[e.gmRoomId.gmId][e.gmRoomId.roomId] ??= new Set()).add(e.npcKey);
             // a spawn is how an npc ARRIVES somewhere: `fadeSpawn` and teleports land here rather
             // than at `enter-room`, which only fires for one who walked there
+            state.syncLitRoom(npc); // a lit npc lights their new room, not the last
             state.syncFadeRooms();
 
             break;
@@ -981,6 +982,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             }
             break;
           case "carried":
+          case "npc-toggled":
+          case "npc-posed":
           case "npc-hit":
           case "npc-hurt":
           case "npc-shot":
@@ -1375,6 +1378,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (state.syncLitRoom(npc) === true) {
           state.syncFadeRooms();
         }
+        w.events.next({ key: "npc-toggled", npcKey: npc.key });
       },
       setRoomLit(input, next) {
         const { grKey, gmId, roomId } = typeof input === "string" ? helper.getGmRoomId(input) : input;

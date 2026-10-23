@@ -178,14 +178,15 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
       if (seesAny(A.open, B.samples) === false && seesAny(B.open, A.samples) === false) continue;
       const skip = new Set([...A.skip, ...B.skip]);
       const doorless = seesAny(A.shut, B.samples) || seesAny(B.shut, A.samples);
-      const doors = doorless ? [] : doorsOnEvery(grid, A.samples, B.samples, skip, -1);
+      const sets = doorless ? [[]] : doorSets(grid, A.samples, B.samples, skip, -1, c.bodyRadius);
+      if (sets === null) continue;
       const clear = doorless && hullClear(grid, [...A.samples, ...B.samples], skip);
       for (const [k, l] of [
         [i, j],
         [j, i],
       ]) {
-        if (doors.length > 0) via[k].get(`${doors}`)?.push(l) ?? via[k].set(`${doors}`, [l]);
-        else (clear ? always : sight)[k].push(l);
+        if (sets[0].length === 0) (clear ? always : sight)[k].push(l);
+        else for (const doors of sets) via[k].get(`${doors}`)?.push(l) ?? via[k].set(`${doors}`, [l]);
         const [watcher, hider] = [regions[l], regions[k]];
         if (spots[k].kind === "cover" && crouchHidden(grid, watcher.samples, hider.samples[0], lowNear[k], skip)) {
           crouchSafe[k].push(l);
@@ -194,6 +195,8 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
       if (u.roomId !== null && v.roomId !== null && u.roomId !== v.roomId) {
         const key = `${Math.min(u.roomId, v.roomId)},${Math.max(u.roomId, v.roomId)}`;
         const prev = roomDoors.get(key);
+        /** Those on every route */
+        const doors = sets.reduce((both, set) => both.filter((d) => set.includes(d)));
         roomDoors.set(key, prev === undefined ? doors : prev.filter((d) => doors.includes(d)));
       }
     }
@@ -218,11 +221,12 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
       const B = regions[j];
       const inArc = B.samples.filter((q) => withinArc(p, q, u.facing as number, arc));
       if (inArc.some((q) => seesDisc(A.open[0], q, c.bodyRadius)) === false) continue;
-      const doors = inArc.some((q) => seesDisc(A.shut[0], q, c.bodyRadius))
-        ? []
-        : doorsOnEvery(grid, [p], inArc, new Set([...A.skip, ...B.skip]), -1);
-      if (doors.length === 0) doSight[i].push(j);
-      else doVia[i].get(`${doors}`)?.push(j) ?? doVia[i].set(`${doors}`, [j]);
+      const sets = inArc.some((q) => seesDisc(A.shut[0], q, c.bodyRadius))
+        ? [[]]
+        : doorSets(grid, [p], inArc, new Set([...A.skip, ...B.skip]), -1, c.bodyRadius);
+      if (sets === null) continue;
+      if (sets[0].length === 0) doSight[i].push(j);
+      else for (const doors of sets) doVia[i].get(`${doors}`)?.push(j) ?? doVia[i].set(`${doors}`, [j]);
     }
   });
   ms.do = performance.now() - t0;
@@ -239,7 +243,8 @@ export function computeSight({ spots, layout, grid, within, lowNear, radius }: S
       if (distToSeg(spot, { a, b }) > radius) return [];
       const R = regions[i];
       if (R.open.some((v) => opening.some((q) => seesDisc(v, q, 0))) === false) return [];
-      return [[i, ...doorsOnEvery(grid, R.samples, opening, R.skip, doorId)]];
+      const sets = doorSets(grid, R.samples, opening, R.skip, doorId);
+      return sets === null ? [] : [[i, ...sets[0]]]; // the fewest doors
     });
     hull.push([doorId, seers]);
   });
@@ -357,24 +362,60 @@ export function seesDisc(v: Vision, c: Geom.VectJson, r: number) {
   return someAngleIn(v.angles, theta - alpha, theta + alpha, (a) => seenAt(a - 1e-7) || seenAt(a + 1e-7));
 }
 
-/** The doors crossed by every clear line between `as` and `bs`, bar `except`. None clear: none needed */
-function doorsOnEvery(grid: SegGrid, as: Geom.VectJson[], bs: Geom.VectJson[], skip: Set<number>, except: number) {
-  let common: null | number[] = null;
+/**
+ * The door sets on clear lines from `as` to discs `r` across at `bs`, bar `except`, fewest first: any one open will do.
+ * `[[]]` if one needs none, `null` if none is clear. A disc's sides are tried only if its centre is hidden
+ */
+function doorSets(
+  grid: SegGrid,
+  as: Geom.VectJson[],
+  bs: Geom.VectJson[],
+  skip: Set<number>,
+  except: number,
+  r = 0,
+): null | number[][] {
+  /** The doors on a line, else `null` if anything else stops it */
+  const doorsOn = (p: Geom.VectJson, q: Geom.VectJson) => {
+    const doors: number[] = [];
+    let blocked = false;
+    grid.forEachOn(p, q, (o) => {
+      if (isSkipped(o, skip)) return false;
+      if (o.kind === "door") return void (o.id !== except && doors.push(o.id));
+      return (blocked = true);
+    });
+    return blocked ? null : doors.sort((u, v) => u - v);
+  };
+  const sets = new Map<string, number[]>();
   for (const p of as) {
-    for (const q of bs) {
-      const doors: number[] = [];
-      let blocked = false;
-      grid.forEachOn(p, q, (o) => {
-        if (isSkipped(o, skip)) return false;
-        if (o.kind === "door") return void (o.id !== except && doors.push(o.id));
-        return (blocked = true);
-      });
-      if (blocked) continue;
-      common = common === null ? doors : common.filter((d) => doors.includes(d));
-      if (common.length === 0) return common;
+    for (const b of bs) {
+      const centre = doorsOn(p, b);
+      const clear =
+        centre !== null
+          ? [centre]
+          : discSides(p, b, r)
+              .map((q) => doorsOn(p, q))
+              .filter((doors) => doors !== null);
+      for (const doors of clear) {
+        if (doors.length === 0) return [[]];
+        sets.set(`${doors}`, doors);
+      }
     }
   }
-  return common ?? [];
+  if (sets.size === 0) return null;
+  const fewest = [...sets.values()].sort((u, v) => u.length - v.length);
+  // one holding another is never needed
+  return fewest.filter((set, i) => fewest.slice(0, i).every((other) => !other.every((d) => set.includes(d))));
+}
+
+/** The two sides of a disc at `q`, `r` across, as seen from `p`: none if `r` is 0 */
+function discSides(p: Geom.VectJson, q: Geom.VectJson, r: number) {
+  if (r === 0) return [];
+  const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+  const [px, py] = [(-(q.y - p.y) * r) / d, ((q.x - p.x) * r) / d];
+  return [
+    { x: q.x + px, y: q.y + py },
+    { x: q.x - px, y: q.y - py },
+  ];
 }
 
 /** `q` is within `arc` either side of `facing` from `p`, a body wide */

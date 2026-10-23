@@ -61,8 +61,9 @@ Each step only runs if the one before leaves it open:
 ## `hide` and `hidden`
 
 - **Unsafe** is every spot the watchers' spots may see by the lists, as the doors stand. So are those seen from where they are walking to.
-- **`hide`** picks the best spot not unsafe, with no lines.
-- **`hidden`** asks whether none of the hider's spots are unsafe.
+- **`hide`** picks the best spot not unsafe, with no lines. With `strict`, as jsh `act hide` asks, every spot it would count as at must be unsafe-free with its room's doors open, as the hider opens one going in or stands by one.
+- **`hidden`** asks whether none of the hider's spots are unsafe, their rooms' doors open: `act hide`'s judgement on arrival. It names those seen.
+- jsh `act avoid` picks with `hide` alone, and judges on arrival by lines from the watchers' eyes (`explain`, as `sees --los`).
 
 ## Across hull doors
 
@@ -78,4 +79,4 @@ Each step only runs if the one before leaves it open:
 - jsh `spot_overlay`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`w.debug.setSpots`, `colourSpots`).
 - A right click on one chooses it, or a long press on touch (`w.debug.chooseSpot`, event `spot-chosen`). Again, it is let go. The Decorator follows, and its own choice is followed back. A press walks there, as on the floor.
 
-**`sees --debug a b`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, at the heights it tested: green clear, red stopped, amber stopped by a low obstacle in a pair still seen (`partial`). It looks again every tick whilst it draws rays, as they follow the heads, else every quarter game second. `--los` ignores eyes and facing, `--all` takes every ordered pair.
+**`sees --debug a b`** runs until killed, from the worker's `explain` query. It prints each pair and why, e.g. `rob → kate fov`, again whenever that changes, seen pairs first: the arrow green if seen, red if not. It draws the rays a verdict needed, at the heights it tested: green clear, red stopped, amber stopped by a low obstacle in a pair still seen (`partial`). It looks again every tick whilst it draws rays, as they follow the heads, else every quarter game second. An npc removed meanwhile is `gone`, and picked up again if they return. `--los` ignores eyes and facing, `--all` takes every ordered pair.

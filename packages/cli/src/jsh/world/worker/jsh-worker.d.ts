@@ -93,9 +93,11 @@ declare namespace WW {
         away?: number;
         /** Where any of `from` are walking to: they are as good as there */
         ahead?: Geom.VectJson[];
+        /** Unseen is its whole region, its room's doors open: the hider opens one going in. Else the spot alone */
+        strict?: boolean;
       }
     | {
-        /** Whether none of `from` may see `npc`, from where they stand or are headed */
+        /** Whether none of `from` may see any spot `npc` is at, their rooms' doors open, from where they stand or are headed */
         q: "hidden";
         /** Who hides */
         npc: string;
@@ -161,7 +163,8 @@ declare namespace WW {
     | SpotJson[]
     /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any */
     | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
-    | { hidden: boolean }
+    /** `seen`: their spots any watcher may see */
+    | { hidden: boolean; seen: string[] }
     | { view: Record<string, SpotHow> }
     | {
         sees: boolean;

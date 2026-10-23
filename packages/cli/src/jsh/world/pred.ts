@@ -165,6 +165,7 @@ function togglePicked(w: JshCli.WorldState, npcKey: string) {
   p.lastPicked = npcKey;
   if (p.picked.delete(npcKey) === false) p.picked.add(npcKey);
   visualisePredicates(w, [npcKey]);
+  w.events.next({ key: "npc-toggled", npcKey });
 }
 
 /**
@@ -178,7 +179,8 @@ export function predicates(ct: JshCli.RunArg) {
   // picking is otherwise a click on the npc alone, which the speech UI has no way to do
   ct.w.speech.addMenuItem({
     key: "pred-toggle-picked",
-    text: (npcKey) => (pred.get().picked.has(npcKey) ? "unpick" : "pick"),
+    text: "picked",
+    on: (npcKey) => pred.get().picked.has(npcKey),
     action: (npcKey) => togglePicked(ct.w, npcKey),
   });
 }

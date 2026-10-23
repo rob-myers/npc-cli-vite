@@ -217,6 +217,8 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
     ...(kind === "door" && ref?.doorId !== undefined ? [-(ref.doorId + 1)] : []),
   ]);
 
+  /** By room, the area of its bounds: a room nested in another is smaller */
+  const roomSizes = layout.rooms.map((room) => room.rect.area);
   const spots = cands.map(({ kind, p, facing, ref }, id): Spot => {
     const skip = new Set(within[id]);
     const depth = Array.from({ length: c.angles }, (_, k) => {
@@ -226,7 +228,11 @@ function describe(cands: Cand[], layout: Geomorph.Layout, obstacles: Obstacle[],
       grid.forEachOn(p, to, (o, lambda) => void (isSkipped(o, skip) === false && (least = Math.min(least, lambda))));
       return round(least * c.radius);
     });
-    const roomId = layout.rooms.findIndex((room) => room.contains(p));
+    // the smallest that contains it, as the room-hit canvas paints a nested room over its outer one
+    const roomId = layout.rooms.reduce(
+      (best, room, i) => (room.contains(p) && (best === -1 || roomSizes[i] < roomSizes[best]) ? i : best),
+      -1,
+    );
     return {
       id,
       kind,

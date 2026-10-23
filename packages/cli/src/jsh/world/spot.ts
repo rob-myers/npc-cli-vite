@@ -86,7 +86,7 @@ export async function spot(ct: JshCli.RunArg) {
  * The worker decides the last, e.g. a low obstacle hiding one crouched. `los` asks only that
  */
 async function perceive(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
-  const facing = pairs.filter(([a, b]) => los || faces(ct.w, a, b));
+  const facing = pairs.filter(([a, b]) => los || unfaced(ct.w, a, b) === null);
   if (facing.length === 0) return [];
   const answers = await spotQuery(
     ct,
@@ -103,11 +103,6 @@ function pairsOf(keys: string[], all: boolean): [string, string][] {
   return all
     ? keys.flatMap((u) => keys.flatMap((v): [string, string][] => (u === v ? [] : [[u, v]])))
     : keys.slice(1).map((v): [string, string] => [keys[0], v]);
-}
-
-/** Npc `a`'s eyes are open, and `b` is within `sightHalfArc` of where their head faces */
-function faces(w: JshCli.WorldState, a: string, b: string) {
-  return unfaced(w, a, b) === null;
 }
 
 /** Why npc `a` cannot see `b` for their eyes or the way their head faces, else `null` */
@@ -127,7 +122,9 @@ const sightHalfArc = Math.PI / 3;
  */
 async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: boolean) {
   const { api, w } = ct;
-  /** By pair, what was last said: whether it sees, and why */
+  /** Those npcs at first: one removed is gone, not taken for a spot */
+  const npcKeys = new Set(pairs.flat().filter((key) => w.n[key] !== undefined));
+  /** By pair, what was last said */
   const said = new Map<string, string>();
   let drawn = new Set<string>();
   let killed = () => {};
@@ -135,55 +132,16 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
   const handlers = api.handleStatus({ cleanup: () => killed() });
   try {
     while (true) {
-      const why = pairs.map(([a, b]) =>
-        los || w.n[a] === undefined || w.n[b] === undefined ? null : unfaced(w, a, b),
-      );
-      const asked = pairs.filter((_, i) => why[i] === null);
-      const answers =
-        asked.length === 0
-          ? []
-          : await spotQuery(
-              ct,
-              asked.map(([a, b]) => ({ q: "explain", a, b })),
-            );
-      const rays = new Set<string>();
-      /** What changed this look, said seen first */
-      const changed: { sees: boolean; line: string }[] = [];
-      const { ansi } = api;
-      for (const [i, [a, b]] of pairs.entries()) {
-        const answer = why[i] === null ? answered(answers[asked.indexOf(pairs[i])]) : null;
-        const x = answer != null && "settled" in answer ? answer : null;
-        const sees = x?.sees === true;
-        const reason = why[i] ?? (x === null ? "?" : reasonOf(x, ansi));
-        if (said.get(`${a} ${b}`) !== `${sees} ${reason}`) {
-          said.set(`${a} ${b}`, `${sees} ${reason}`);
-          const arrow = `${sees ? ansi.GreenBright : ansi.Red}→`; // `↛` renders too wide
-          const line = `${ansi.White}${a} ${arrow}${ansi.Reset} ${ansi.White}${b} ${ansi.GreenBright}${reason}${ansi.Reset}`;
-          changed.push({ sees, line });
-        }
-        if (x?.settled !== "lines") continue;
-        const needed = x.sees ? x.lines.slice(0, x.lines.findIndex((line) => line.hit === null) + 1) : x.lines;
-        for (const [k, { from, to, hit }] of needed.entries()) {
-          const key = `sees-debug/${a}>${b}/${k}`;
-          const end = hit ?? to;
-          // the heights the worker tested, so a stopped ray ends on what stopped it
-          const t =
-            hit === null
-              ? 1
-              : Math.hypot(hit.x - from.x, hit.y - from.y) / (Math.hypot(to.x - from.x, to.y - from.y) || 1);
-          w.debug.setPolyline(key, {
-            points: [
-              [from.x, from.y, x.eye],
-              [end.x, end.y, x.eye + (x.top - x.eye) * t],
-            ],
-            // amber where low cover stopped one, yet another got over it
-            color: hit === null ? "#40d080" : hit.kind === "low" && x.sees ? "#f0a030" : "#e04040",
-            ...rayStyle,
-          });
-          rays.add(key);
-        }
-      }
-      for (const { line } of changed.sort((u, v) => Number(v.sees) - Number(u.sees))) yield line;
+      const looks = await explainPairs(ct, pairs, los, npcKeys);
+      const changed = looks.filter(({ pair, sees, reason }) => {
+        const [key, now] = [pair.join(" "), `${sees} ${reason}`];
+        if (said.get(key) === now) return false;
+        said.set(key, now);
+        return true;
+      });
+      for (const look of changed.sort((u, v) => Number(v.sees) - Number(u.sees))) yield sayLook(api.ansi, look);
+
+      const rays = new Set(looks.flatMap((look) => drawRays(w, look)));
       for (const key of drawn) if (rays.has(key) === false) w.debug.removePolyline(key);
       drawn = rays;
       w.view.forceUpdate();
@@ -200,8 +158,64 @@ async function* watchSight(ct: JshCli.RunArg, pairs: [string, string][], los: bo
   }
 }
 
+/** Each pair's verdict and why: gone, or eyes and facing, on main, else the worker's `explain` */
+async function explainPairs(ct: JshCli.RunArg, pairs: [string, string][], los: boolean, npcKeys: Set<string>) {
+  const isNpc = (key: string) => ct.w.n[key] !== undefined;
+  const why = pairs.map(([a, b]) => {
+    if ([a, b].some((key) => npcKeys.has(key) && !isNpc(key))) return "gone";
+    return los || !isNpc(a) || !isNpc(b) ? null : unfaced(ct.w, a, b);
+  });
+  const asked = pairs.filter((_, i) => why[i] === null);
+  const answers =
+    asked.length === 0
+      ? []
+      : await spotQuery(
+          ct,
+          asked.map(([a, b]) => ({ q: "explain", a, b })),
+        );
+  return pairs.map((pair, i): Look => {
+    const answer = why[i] === null ? answered(answers[asked.indexOf(pair)]) : null;
+    const x = answer != null && "settled" in answer ? answer : null;
+    return { pair, sees: x?.sees === true, reason: why[i] ?? (x === null ? "?" : reasonOf(x, ct.api.ansi)), x };
+  });
+}
+
+/** A verdict as said: the names white, the arrow green if seen else red, then why */
+function sayLook(ansi: JshCli.RunArg["api"]["ansi"], { pair: [a, b], sees, reason }: Look) {
+  const arrow = `${sees ? ansi.GreenBright : ansi.Red}→`; // `↛` renders too wide
+  return `${ansi.White}${a} ${arrow}${ansi.Reset} ${ansi.White}${b} ${ansi.GreenBright}${reason}${ansi.Reset}`;
+}
+
+/** Draws the rays a verdict needed, at the heights the worker tested, and gives their keys */
+function drawRays(w: JshCli.WorldState, { pair: [a, b], x }: Look) {
+  if (x?.settled !== "lines") return [];
+  const needed = x.sees ? x.lines.slice(0, x.lines.findIndex((line) => line.hit === null) + 1) : x.lines;
+  return needed.map(({ from, to, hit }, k) => {
+    const key = `sees-debug/${a}>${b}/${k}`;
+    const end = hit ?? to;
+    // so a stopped ray ends on what stopped it
+    const t =
+      hit === null ? 1 : Math.hypot(end.x - from.x, end.y - from.y) / (Math.hypot(to.x - from.x, to.y - from.y) || 1);
+    w.debug.setPolyline(key, {
+      points: [
+        [from.x, from.y, x.eye],
+        [end.x, end.y, x.eye + (x.top - x.eye) * t],
+      ],
+      // amber where low cover stopped one, yet another got over it
+      color: hit === null ? "#40d080" : hit.kind === "low" && x.sees ? "#f0a030" : "#e04040",
+      ...rayStyle,
+    });
+    return key;
+  });
+}
+
+/** One pair's verdict: whether the first sees the second, why, and the worker's account if it was asked */
+type Look = { pair: [string, string]; sees: boolean; reason: string; x: null | Explained };
+/** The worker's `explain` answer */
+type Explained = Extract<WW.SpotAnswer, { settled: string }>;
+
 /** What settled a verdict, tersely */
-function reasonOf(x: Extract<WW.SpotAnswer, { settled: string }>, ansi: JshCli.RunArg["api"]["ansi"]) {
+function reasonOf(x: Explained, ansi: JshCli.RunArg["api"]["ansi"]) {
   const pair = (x.pair ?? ["?", "?"]).join(" ");
   switch (x.settled) {
     case "rooms":

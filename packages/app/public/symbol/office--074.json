@@ -111,7 +111,7 @@
         },
         {
           "id": "cf8d2b71-210f-0e87-557d-14e0ec3dc356",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -119,18 +119,18 @@
             "b": 0,
             "c": 0,
             "d": -1,
-            "e": 26.82,
-            "f": 39.65
+            "e": 27.32,
+            "f": 39.15
           },
           "type": "symbol",
           "srcKey": "extra--003--chair",
           "baseRect": {"width": 20, "height": 20},
           "offset": {"x": -0.3, "y": 0.3},
-          "cssTransform": "matrix(-1, 0, 0, -1, 26.52, 39.95)"
+          "cssTransform": "matrix(-1, 0, 0, -1, 27.02, 39.45)"
         },
         {
           "id": "5b586ff9-1b80-ffb5-8ae1-1dca341f21e2",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -149,7 +149,7 @@
         },
         {
           "id": "2a442d36-cd47-061f-caeb-aac19b350bd5",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -168,7 +168,7 @@
         },
         {
           "id": "cab6ce42-f5d3-557a-ff86-32839aaedf43",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -187,7 +187,7 @@
         },
         {
           "id": "e16c7303-7d1f-b195-b149-81ca653d1389",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -206,7 +206,7 @@
         },
         {
           "id": "bc8b71e7-9250-8e44-e950-6ba9d9dfe73b",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {
@@ -225,7 +225,7 @@
         },
         {
           "id": "96df2927-831f-7186-cbc0-6e9640572ead",
-          "name": "extra--003--chair y=0.4",
+          "name": "extra--003--chair y=0.4 do:underTable",
           "locked": true,
           "visible": true,
           "transform": {

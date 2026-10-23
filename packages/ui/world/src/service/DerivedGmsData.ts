@@ -142,7 +142,9 @@ export default class DerivedGmsData {
     for (const [windowId, window] of gm.windows.entries()) {
       drawPolygonsCrisp(roomCt, window.poly, { fillStyle: gmHitUtil.encodeWindow(windowId) });
     }
-    for (const [roomId, room] of gm.rooms.entries()) {
+    // largest first, by its bounds: a room nested in another is painted over it, whatever their order
+    const bySize = [...gm.rooms.entries()].sort(([, u], [, v]) => v.rect.area - u.rect.area);
+    for (const [roomId, room] of bySize) {
       drawPolygonsCrisp(roomCt, room, { fillStyle: gmHitUtil.encodeRoom(roomId) });
     }
 
