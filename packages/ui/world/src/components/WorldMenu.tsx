@@ -393,14 +393,9 @@ export function WorldMenu() {
         w.view.forceUpdate();
         break;
       }
-      case "spots": {
-        const shown = !w.debug?.spotsShown;
-        w.debug?.set({ spotsShown: shown });
-        store.patch({ spotsShown: shown });
-        w.events.next({ key: "spots-overlay", shown }); // jsh `spot_overlay` fills it
-        w.view.forceUpdate();
+      case "spots":
+        w.debug?.toggleSpots();
         break;
-      }
     }
   };
 

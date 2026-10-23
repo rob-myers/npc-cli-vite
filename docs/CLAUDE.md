@@ -130,7 +130,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 **Keys**
 - `1`, `2` and `3` select the fade mode: `sight`, `sense`, `ship` (`fadeRoomsModeByKey`). The menu's button cycles them.
-- `0` toggles the debug menu's "view pick" (`toggleViewPick`), the pick colours on screen.
+- `0` toggles the spots overlay (`w.debug.toggleSpots`), as the debug menu's **spots** does.
 
 ### Zoom
 

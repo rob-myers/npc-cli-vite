@@ -297,6 +297,8 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
 
   w.e.addKeyedListener(overlayKey, (e, w) => {
     if (e.key === "spots-overlay" && e.shown === false) return void (drawn.spots = "");
+    // the rooms beyond fade out first, their spots in the colours they had
+    if (e.key === "door-closed") return void setTimeout(() => void sync(), roomFadeOutMs);
     if (redrawOn.has(e.key) || (e.key === "enter-room" && e.npcKey === w.player.key)) void sync();
   });
   // moved far enough, the spot files remade, or the theme changed
@@ -312,14 +314,16 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
 
 const overlayKey = "spot-overlay";
 /** Events after which the overlay is coloured afresh */
-const redrawOn = new Set<string>(["spots-overlay", "spot-chosen", "set-player", "door-opening", "door-closed"]);
+const redrawOn = new Set<string>(["spots-overlay", "spot-chosen", "set-player", "door-opening"]);
+/** Milliseconds a room takes to fade out, on the wall clock: `ROOM_FADE_OUT_SECS` in `fade-rooms` */
+const roomFadeOutMs = 600;
 /** Metres the player walks before the overlay redraws */
 const overlayStep = 0.5;
 
 /** How each `view` answer is coloured, by theme: muted on a dark floor, mid tones on a light one. A chosen spot is its own */
 const howInk: Record<"dark" | "light", Record<WW.SpotHow, string>> = {
-  dark: { own: "#5b8cff", always: "#2f9a60", may: "#a89a30", shut: "#ffffff", never: "#3a3f46" },
-  light: { own: "#4a7cff", always: "#3cc870", may: "#f0b820", shut: "#ffffff", never: "#c0c8d0" },
+  dark: { own: "#5b8cff", always: "#2f9a60", may: "#a89a30", shut: "#ffffff", never: "#8a929c" },
+  light: { own: "#4a7cff", always: "#3cc870", may: "#f0b820", shut: "#ffffff", never: "#7a8490" },
 };
 const inkOf = (w: JshCli.WorldState) => howInk[w.themeKey === "light-theme" ? "light" : "dark"];
 

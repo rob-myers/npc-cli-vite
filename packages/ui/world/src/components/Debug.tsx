@@ -67,6 +67,7 @@ export function Debug() {
     geo.setAttribute("uvTextureIds", new THREE.InterleavedBufferAttribute(buffer, 1, 8));
     geo.setAttribute("spotCentre", new THREE.InterleavedBufferAttribute(buffer, 4, 9));
     geo.setAttribute("spotShown", new THREE.InterleavedBufferAttribute(buffer, 1, 13));
+    geo.setAttribute("spotSlotB", new THREE.InterleavedBufferAttribute(buffer, 1, 14));
     return Object.assign(geo, { spotBuffer: buffer });
   }, []);
 
@@ -228,8 +229,10 @@ export function Debug() {
           const room = spot.grKey === null ? null : w.helper.getGmRoomId(spot.grKey as Geomorph.GmRoomKey);
           const at = i * spotStride;
           data.set([x / dims.width, y / dims.height, width / dims.width, height / dims.height], at);
-          data[at + 7] = room === null ? alwaysShownSlot : slotOf(room.gmId, room.roomId);
-          arrowInk[i * 4 + 3] = data[at + 7];
+          const slot = room === null ? alwaysShownSlot : slotOf(room.gmId, room.roomId);
+          const [slotA, slotB] = doorSlotsOf(w, spot) ?? [slot, slot];
+          data[at + 7] = arrowInk[i * 4 + 3] = slotA;
+          data[at + 14] = slotB;
           data[at + 8] = entry?.sheetId ?? 0;
           data.set(iconAt(spot), at + 9);
           data[at + 13] = spot.iconHidden === true ? 0 : 1;
@@ -241,6 +244,13 @@ export function Debug() {
         }
         inst.count = state.spots.length;
         state.colourSpots(null);
+      },
+      toggleSpots() {
+        const shown = !state.spotsShown;
+        state.set({ spotsShown: shown });
+        getWorldStore(w.key).patch({ spotsShown: shown });
+        w.events.next({ key: "spots-overlay", shown }); // jsh `spot_overlay` fills it
+        w.view.forceUpdate();
       },
       setPolyline(key, polyline) {
         state.polylines.set(key, polyline);
@@ -428,15 +438,16 @@ export function Debug() {
     return { material: mat, uid: crypto.randomUUID() };
   }, [state.doPointsShown]);
 
-  /** A faded room keeps its spots, dimmed */
-  const spotSeen = (slot: THREE.Node<"float">) => w.view.fadeRoomsFx.getVisiblity(slot).mul(0.75).add(0.25);
+  /** How much of a spot shows, given its rooms' fade `shown`: only in sight mode does it fade with them */
+  const spotSeen = (shown: THREE.Node<"float">) => shown.max(w.view.fadeRoomsFx.sightNode.oneMinus());
 
   const spotsMaterial = useMemo(() => {
     const uvDims = attribute<"vec2">("uvDimensions", "vec2");
     const uvOffs = attribute<"vec2">("uvOffsets", "vec2");
     const texNode = texture(w.texDecor.tex, vec2(uv().x, uv().y.oneMinus()).mul(uvDims).add(uvOffs));
     texNode.depthNode = uint(attribute<"float">("uvTextureIds", "float"));
-    const seen = spotSeen(attribute<"float">("spotSlot", "float"));
+    const slots = vec2(attribute<"float">("spotSlot", "float"), attribute<"float">("spotSlotB", "float"));
+    const seen = spotSeen(w.view.fadeRoomsFx.fadeAtPair(slots));
     // biome-ignore format: succint
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false, alphaTest: 0.05 });
     // a billboard `w` across, upright on screen: its arrow on the floor gives its facing
@@ -458,7 +469,7 @@ export function Debug() {
 
   const spotArrowsMaterial = useMemo(() => {
     const ink = attribute<"vec4">("arrowInk", "vec4");
-    const seen = spotSeen(ink.w);
+    const seen = spotSeen(w.view.fadeRoomsFx.getVisiblity(ink.w));
     // biome-ignore format: succint
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false });
     mat.colorNode = vec4(
@@ -567,8 +578,8 @@ const maxDoorNormals = 512;
 const maxSpots = 4096;
 /** After the floor, which is transparent too: they write no depth to keep it out */
 const spotsRenderOrder = 10;
-/** Floats per spot: `uvOffsets` 2, `uvDimensions` 2, `spotColor` 3, `spotSlot` 1, `uvTextureIds` 1, `spotCentre` 4, `spotShown` 1 */
-const spotStride = 14;
+/** Floats per spot: `uvOffsets` 2, `uvDimensions` 2, `spotColor` 3, `spotSlot` 1, `uvTextureIds` 1, `spotCentre` 4, `spotShown` 1, `spotSlotB` 1 */
+const spotStride = 15;
 /** Metres across a spot's icon */
 const spotIconSize = 0.15;
 /** Metres its centre stands off the floor */
@@ -649,6 +660,16 @@ function writeSegmentInstance(inst: THREE.InstancedMesh, i: number, p: PolylineP
 }
 
 /** Where a spot's icon stands. One not shown covers its arrowhead instead, so pressing that picks it */
+/** A door spot's two rooms' slots, as it shows whilst either does */
+function doorSlotsOf(w: React.ContextType<typeof WorldContext>, spot: SpotDraw): null | [number, number] {
+  const door = spot.kind === "door" ? w.door.byKey[spot.gdKey as Geomorph.GmDoorKey] : undefined;
+  if (door === undefined) return null;
+  const [a, b] = door.connector.roomIds.map((roomId) =>
+    roomId === null ? alwaysShownSlot : slotOf(door.gmId, roomId),
+  );
+  return [a, b];
+}
+
 function iconAt(spot: SpotDraw): [number, number, number] {
   const lift = spot.lift ?? 0;
   if (spot.iconHidden !== true || spot.facing === undefined) return [spot.x, spotIconLift + lift, spot.y];
@@ -757,6 +778,8 @@ export type State = {
   chooseSpot(spotKey: null | string): void;
   /** Draws these spots, each in its own colour */
   setSpots(spots: SpotDraw[]): void;
+  /** Shows the spots overlay, else hides it, and remembers which */
+  toggleSpots(): void;
   /** Colours the spots drawn by key, the rest their own, with `null` all their own. `chosen` is drawn larger */
   colourSpots(colors: null | Record<string, THREE.ColorRepresentation>, chosen?: null | string): void;
   setPolyline(key: string, polyline: Polyline): void;

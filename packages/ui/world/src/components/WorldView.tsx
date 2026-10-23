@@ -943,7 +943,10 @@ export function WorldView(props: React.PropsWithChildren) {
             w.menu?.update();
           }
         } else if (e.key === "0") {
-          if (e.repeat === false) state.toggleViewPick();
+          if (e.repeat === false) {
+            w.debug?.toggleSpots();
+            w.menu?.update();
+          }
         } else if (key === "c") {
           // held, as `f`: its repeat is the hold, a full crouch. A tap waits for the release
           if (e.repeat === false) {
