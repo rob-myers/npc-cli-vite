@@ -27,6 +27,7 @@ Spots are made in this order, and a later one too near (`mergeGap`) an earlier o
 - **door**: at a door's centre, bar a hull door. Whoever stands there holds it open, so its lists ignore that door. It is in no room, and `hide` and `makeWay` never choose it.
 - **corner**: where the walkable boundary turns outwards, as round a wall's end or an obstacle.
 - **cover**: along an obstacle that hides someone fully crouched (`crouchHideHeight` up to `standBlockHeight`).
+  - A spot crouching hides from no one behind the obstacle is a wall spot instead, e.g. at a desk against a wall.
 - **wall**: along a wall or a tall obstacle, facing into the room.
 - **decor**: by a decor quad, other than a switch.
 - **fill**: the gaps between, at least `fillGap` from any other.

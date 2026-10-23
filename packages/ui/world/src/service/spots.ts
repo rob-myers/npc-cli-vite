@@ -173,7 +173,15 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
     lowNear,
     radius: c.radius,
   });
-  spots.forEach((spot, i) =>
+  /** Whether `t` is on the obstacle's side of cover spot `s`, which faces away from it */
+  const behind = (s: Spot, t: Spot) =>
+    (t.x - s.x) * Math.cos(s.facing ?? 0) + (t.y - s.y) * Math.sin(s.facing ?? 0) < 0;
+  spots.forEach((spot, i) => {
+    // cover backed onto a wall hides from no one
+    if (spot.kind === "cover" && !crouchSafe[i].some((j) => behind(spot, spots[j]))) {
+      spot.kind = "wall";
+      crouchSafe[i] = [];
+    }
     Object.assign(spot, {
       sight: sight[i],
       always: always[i],
@@ -182,8 +190,8 @@ export function computeSpots(layout: Geomorph.Layout, navMesh: NavMesh) {
       ...(doArcs[i] === undefined ? {} : { doArc: Math.round(doArcs[i] * 1000) / 1000 }),
       doSight: doSight[i],
       doVia: doVia[i],
-    }),
-  );
+    });
+  });
 
   return {
     spots,

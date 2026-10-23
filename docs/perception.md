@@ -73,7 +73,7 @@ Each step only runs if the one before leaves it open:
 ## Seeing it in the World
 
 **The spots overlay** is **spots** in the debug **overlay** select (`w.debug.spotsShown`, persisted).
-- Every spot of the map is a billboard icon by kind (`media/src/decor/icon--spot-*.svg`, Phosphor duotone, white so a colour tints them). One with a facing has a faint open arrow on the floor, that way.
+- Every spot of the map is a billboard icon by kind (`media/src/decor/icon--spot-*.svg`, Phosphor duotone, white so a colour tints them). One with a facing has a faint open arrow on the floor, that way, bar cover, seats and beds.
 - They are coloured by sight from the chosen spot, else the player: blue their own, as is the chosen one (larger), green `always`, yellow `may`, white once a shut door opens, dim `never`. A faded room's are dimmed.
 - jsh `spot_overlay`, run by the profile, fills it: `list` once per map, then the worker's `view` query as the focus moves or doors change. The World only draws (`w.debug.setSpots`, `colourSpots`).
 - A right click on one chooses it, or a long press on touch (`w.debug.chooseSpot`, event `spot-chosen`). Again, it is let go. The Decorator follows, and its own choice is followed back. A press walks there, as on the floor.

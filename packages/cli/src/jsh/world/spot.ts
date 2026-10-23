@@ -331,7 +331,10 @@ function toDraw(w: JshCli.WorldState, spot: WW.SpotJson) {
   const meta = spot.kind === "doable" ? w.decor.byKey[spot.decorKey ?? ""]?.meta : undefined;
   const icon = spot.kind !== "doable" ? spot.kind : meta?.do === "sit" || meta?.do === "lie" ? meta.do : "do";
   const lift = spot.kind === "door" ? wallHeight : (meta?.y ?? 0);
-  return { ...spot, img: `icon--spot-${icon}`, color: spotKindInk[spot.kind], lift, iconHidden: spot.kind === "wall" };
+  /** Cover, seats and beds are drawn without an arrow */
+  const facing = spot.kind === "cover" || icon === "sit" || icon === "lie" ? undefined : spot.facing;
+  const img = `icon--spot-${icon}`;
+  return { ...spot, facing, img, color: spotKindInk[spot.kind], lift, iconHidden: spot.kind === "wall" };
 }
 
 /** `a,b,c` as a list, e.g. `room:g0r1,g0r2` */
