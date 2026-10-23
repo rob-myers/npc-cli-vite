@@ -1,7 +1,7 @@
 import { Select } from "@base-ui/react/select";
 import { cn, useStateRef } from "@npc-cli/util";
 import { CaretDownIcon, PersonSimpleIcon } from "@phosphor-icons/react";
-import { useContext, useEffect, useReducer, useState } from "react";
+import { type ReactNode, useContext, useEffect, useReducer, useState } from "react";
 import { type ThoughtTag, thoughtConfig } from "../service/thoughts";
 import BreathControls from "./BreathControls";
 import type { AnimationClipKey } from "./NPCs";
@@ -197,47 +197,75 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
         </Select.Root>
       )}
       {/* what they have: lit if so, and a press gives or takes it away */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(["psi", "phaser"] as const).map((name) => {
           const had = w.e.hasItem(npcKey, name);
           return (
-            <button
+            <ToggleButton
               key={name}
-              type="button"
+              on={had}
               title={`${had ? "take away" : "give"} ${name}`}
-              className={cn(
-                "cursor-pointer rounded-lg border-2 px-3 py-0.5",
-                had ? "border-amber-300/60 text-amber-200" : "border-white/20 text-white/40",
-              )}
               onClick={() => {
                 had ? w.e.revokeItem(npcKey, name) : w.e.giveItem(npcKey, name);
                 rerender();
               }}
             >
               {name}
-            </button>
+            </ToggleButton>
           );
         })}
         {npc !== undefined && (
-          <button
-            type="button"
+          <ToggleButton
+            on={npc.anim.breath.on}
             title={`${npc.anim.breath.on ? "stop" : "start"} breathing`}
-            className={cn(
-              "cursor-pointer rounded-lg border-2 px-3 py-0.5",
-              npc.anim.breath.on ? "border-amber-300/60 text-amber-200" : "border-white/20 text-white/40",
-            )}
             onClick={() => {
               npc.anim.setBreathing(!npc.anim.breath.on);
               rerender();
             }}
           >
             breath
-          </button>
+          </ToggleButton>
         )}
+        {npc !== undefined && npcKey !== w.player?.key && (
+          <ToggleButton
+            on={npc.lit}
+            onClick={() => {
+              w.e.setNpcLit(npc);
+              w.speech.update(); // its menu shows them lit
+              rerender();
+            }}
+          >
+            {npc.lit ? "unlight" : "light"}
+          </ToggleButton>
+        )}
+        {/* the speech menu's added items e.g. pick/unpick */}
+        {w.speech.menuItems.map((item) => (
+          <ToggleButton
+            key={item.key}
+            onClick={() => {
+              item.action(npcKey);
+              w.speech.update();
+              rerender();
+            }}
+          >
+            {typeof item.text === "function" ? item.text(npcKey) : item.text}
+          </ToggleButton>
+        ))}
       </div>
       {npcKey === w.player?.key && <BreathControls w={w} />}
     </div>
   );
+}
+
+/** A bubble's button: amber whilst `on`, dim whilst off, plain if neither */
+function ToggleButton({ on, ...props }: { on?: boolean; title?: string; onClick(): void; children: ReactNode }) {
+  const look =
+    on === undefined
+      ? "border-white/20 text-white/60"
+      : on
+        ? "border-amber-300/60 text-amber-200"
+        : "border-white/20 text-white/40";
+  return <button type="button" className={cn("cursor-pointer rounded-lg border-2 px-3 py-0.5", look)} {...props} />;
 }
 
 const bubbleKey = (npcKey: string) => `bubble:${npcKey}`;
