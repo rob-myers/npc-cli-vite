@@ -19,6 +19,7 @@ export async function act(ct: JshCli.RunArg) {
     throw Error(`usage: act {${Object.keys(verbs).join(",")}} <npc> …`);
   }
   ct.w.npc.get(npcKey);
+  ct.api.meta.stack.push(verb); // an error then names it, e.g. `act: hide: …`
   // its waits run down only whilst it runs
   const task = new Task(
     () => ct.api.isRunning() === false,
@@ -52,7 +53,7 @@ const verbs: Record<string, Verb> = {
   /** `wall`, towards their spot's nearest occluder; else an npc or a spot key */
   async face(ctx, _, [at]) {
     const point = at === undefined ? null : at === "wall" ? await wallPoint(ctx) : await facingPoint(ctx, at);
-    if (point === null) throw Error(`face ${at ?? ""}: not wall, npc or spot`);
+    if (point === null) throw Error(`${at ?? "nothing"}: not wall, npc or spot`);
     await ctx.task.wait(ctx.ct.w.npc.get(ctx.npcKey).look({ at: point }));
   },
   /** As `avoid`, judged by every spot they will be at, their room's doors open: they open one going in, or stand by one */
