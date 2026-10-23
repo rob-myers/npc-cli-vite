@@ -19,12 +19,15 @@ export async function act(ct: JshCli.RunArg) {
     throw Error(`usage: act {${Object.keys(verbs).join(",")}} <npc> …`);
   }
   ct.w.npc.get(npcKey);
+  // its waits run down only whilst it runs
   const task = new Task(
-    () => false,
+    () => ct.api.isRunning() === false,
     () => 1000 * ct.w.gameTime.now(),
   );
   const handlers = ct.api.handleStatus({
     cleanup: () => (task.cancel(), ct.w.n[npcKey]?.rejectAll(Error("killed"))),
+    // paused by more than the World, which holds them itself, they stop, to walk on once resumed
+    onSuspend: () => (ct.api.isHeldOnlyBy("world") === false && ct.w.n[npcKey]?.rejectAll(Error("paused")), true),
   });
   try {
     await task.run(() => run({ ct, npcKey, task }, ct.api.jsArg(args) as Opts, args));
@@ -163,19 +166,29 @@ async function getUp(ctx: Ctx) {
   await ctx.task.wait(npc.fadeSpawn({ at: { x: near.position[0], y: near.position[2] } }));
 }
 
-/** Walks there, giving up once they stall or are stuck, e.g. blocked by the player. Resolves whether they arrived */
+/**
+ * Walks there, giving up once they stall or are stuck, e.g. blocked by the player. Resolves whether they arrived.
+ * Stopped by a pause, they walk on once resumed
+ */
 async function goTo(ctx: Ctx, at: Geom.VectJson) {
-  const npc = ctx.ct.w.npc.get(ctx.npcKey);
-  const move = ctx.ct.w.e.move({ npcKey: ctx.npcKey, to: { x: at.x, y: at.y } }).then(
-    () => true,
-    (e) => (e instanceof Error && (e.message === "blocked" || e.message === "stuck") ? false : Promise.reject(e)),
-  );
+  const { api, w } = ctx.ct;
+  const npc = w.npc.get(ctx.npcKey);
+  const walk = () =>
+    w.e.move({ npcKey: ctx.npcKey, to: { x: at.x, y: at.y } }).then(
+      () => true as const,
+      (e) => (e instanceof Error ? walkEnds[e.message] : undefined) ?? Promise.reject(e),
+    );
+  let move = walk();
   for (let from = npc.point; ; from = npc.point) {
     const arrived = await ctx.task.wait(move, 1000 * stall.secs);
-    if (arrived !== undefined) return arrived;
-    if (npc.distanceTo(from) < stall.dist) {
+    if (arrived === "paused") {
+      await ctx.task.wait(api.awaitResume());
+      move = walk();
+    } else if (arrived !== undefined) {
+      return arrived;
+    } else if (npc.distanceTo(from) < stall.dist) {
       npc.rejectAll(Error("blocked"));
-      return move;
+      return (await move) === true;
     }
   }
 }
@@ -209,6 +222,8 @@ function isSpot(answer: undefined | WW.SpotAnswer): answer is WW.SpotJson {
 /** `a,b,c` as a list, e.g. `rooms:g0r1,g0r2` */
 const csv = (x: Opts[string]) => (typeof x === "string" ? x.split(",") : undefined);
 
+/** How a walk ends besides arriving, by its error: given up on, or stopped by a pause */
+const walkEnds: Partial<Record<string, false | "paused">> = { blocked: false, stuck: false, paused: "paused" };
 /** Spots `hide` tries, each it is blocked from skipped, before failing */
 const hideTries = 3;
 /** Under `dist` metres walked in `secs` of game time is a stall */

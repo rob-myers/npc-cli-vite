@@ -78,6 +78,8 @@ The pieces of a scenario, played by hand rather than directed. `act <verb> <npc>
 
 A walk that stalls, e.g. blocked by the player, is given up.
 
+An act pauses with the World, as any world command (`docs/jsh-pause.md`). Paused by hand or by the Jsh pane, the npc stops, and walks on once resumed. Its waits count only whilst it runs.
+
 `sees rob abe cal` says whom `rob` sees: their spots in sight, eyes open, within 60° of facing, and not crouched behind cover. `sees --all abe ben cal` gives each ordered pair `a b` where `a` sees `b`. `--los` asks for line of sight alone, ignoring eyes and facing, e.g. `sees --los --all abe ben`. Both exit 1 if none, for `if` and `while`.
 
 ## Characters
