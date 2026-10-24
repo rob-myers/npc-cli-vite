@@ -83,7 +83,6 @@ export function Debug() {
       spotsInst: null as unknown as THREE.InstancedMesh,
       spotArrowsInst: null as unknown as THREE.InstancedMesh,
       debugPointInstanceIdToDecorId: [],
-      chosenSpot: null,
       spots: [],
       spotsShown: getWorldStore(w.key).read().spotsShown,
       localBoundary: [] as XZSeg[],
@@ -195,12 +194,7 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
         uvOffs.needsUpdate = uvDims.needsUpdate = uvTexIds.needsUpdate = true;
       },
-      chooseSpot(spotKey) {
-        if (state.chosenSpot === spotKey) return;
-        state.chosenSpot = spotKey;
-        w.events.next({ key: "spot-chosen", spotKey });
-      },
-      colourSpots(colors, chosen = null) {
+      colourSpots(colors) {
         const inst = state.spotsInst;
         if (!inst) return;
         const buffer = spotsGeo.spotBuffer;
@@ -208,7 +202,7 @@ export function Debug() {
         for (const [i, spot] of state.spots.entries()) {
           tmpColor.set(colors?.[spot.key] ?? spot.color).toArray(buffer.array, i * spotStride + 4);
           tmpColor.toArray(arrowInk.array, i * 4);
-          buffer.array[i * spotStride + 12] = spotIconSize * (spot.key === chosen ? chosenSpotScale : 1);
+          buffer.array[i * spotStride + 12] = spotIconSize;
         }
         buffer.needsUpdate = arrowInk.needsUpdate = true;
       },
@@ -462,7 +456,12 @@ export function Debug() {
     mat.vertexNode = cameraProjectionMatrix.mul(viewCentre.add(vec4(corner, 0, 0)));
     // picked, the whole square counts, not only the icon's strokes, even one not shown
     const shown = attribute<"float">("spotShown", "float");
-    const alpha = selectAs<"float">(picking, float(1), texNode.a.mul(seen).mul(spotOpacity.icon).mul(shown));
+    // faded with the world's fold, so they come up as it unfolds on load
+    const alpha = selectAs<"float">(
+      picking,
+      float(1),
+      texNode.a.mul(seen).mul(spotOpacity.icon).mul(shown).mul(w.view.foldNode),
+    );
     mat.colorNode = vec4(texNode.rgb.mul(attribute<"vec3">("spotColor", "vec3")), alpha);
     // opaque when picking: a blended id would be another's
     mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.spot, 1);
@@ -476,7 +475,7 @@ export function Debug() {
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false });
     mat.colorNode = vec4(
       ink.rgb,
-      selectAs<"float">(w.view.objectPick.notEqual(0), float(0), seen.mul(spotOpacity.arrow)),
+      selectAs<"float">(w.view.objectPick.notEqual(0), float(0), seen.mul(spotOpacity.arrow).mul(w.view.foldNode)),
     );
     return mat;
   }, [w.view.fadeRoomsFx.uid]);
@@ -594,8 +593,6 @@ const arrowheadAt = 0.82;
 const spotInk = { dark: { icon: 0.4, arrow: 0.3 }, light: { icon: 1, arrow: 0.7 } };
 /** A spot's icon, this much larger when picking: easier to press */
 const spotPickScale = 1.4;
-/** The chosen spot's icon, this much larger */
-const chosenSpotScale = 1.25;
 const polylineDiscRadius = 0.08;
 const debugSegHeight = 0.02;
 const onPointHeight = 0.005;
@@ -736,8 +733,6 @@ export type State = {
   /** Each spot's arrow, along its facing */
   spotArrowsInst: THREE.InstancedMesh;
   debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
-  /** The spot chosen, in the Decorator or on the overlay: sight is coloured from it */
-  chosenSpot: null | string;
   /** The spots drawn, by instance id */
   spots: SpotDraw[];
   /** Whether the map's spots are drawn — see jsh `spot_overlay` */
@@ -776,14 +771,12 @@ export type State = {
   onPhysicsDebugData(e: MessageEvent<WW.MsgFromWorker>): void;
   showPhysicsColliders(shouldShow?: boolean): void;
   setLocalBoundary(segs: XZSeg[]): void;
-  /** Chooses a spot, else none, telling whoever follows it: `spot-chosen` */
-  chooseSpot(spotKey: null | string): void;
   /** Draws these spots, each in its own colour */
   setSpots(spots: SpotDraw[]): void;
   /** Shows the spots overlay, else hides it, and remembers which */
   toggleSpots(): void;
-  /** Colours the spots drawn by key, the rest their own, with `null` all their own. `chosen` is drawn larger */
-  colourSpots(colors: null | Record<string, THREE.ColorRepresentation>, chosen?: null | string): void;
+  /** Colours the spots drawn by key, the rest their own, with `null` all their own */
+  colourSpots(colors: null | Record<string, THREE.ColorRepresentation>): void;
   setPolyline(key: string, polyline: Polyline): void;
   removePolyline(key: string): void;
   /** Writes `localBoundary` into its mesh */

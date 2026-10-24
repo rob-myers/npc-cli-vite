@@ -248,7 +248,6 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
       },
 
       chooseSpot(pick) {
-        w.debug?.chooseSpot(pick === null ? null : `g${pick.gmId}s${pick.id}`); // the World's overlay follows
         state.set(pick === null ? { spot: null } : { spot: pick, sidebarTab: "spot" });
         if (pick !== null && meta.sidebarOpen === false) state.setSidebar({ sidebarOpen: true });
       },
@@ -297,11 +296,12 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         // `create` removes first: only drop what is still gone once its re-create has landed
         if (e.key === "decor-removed") queueMicrotask(() => state.select(state.selected));
         if (redrawOn.has(e.key)) state.update();
-        // a spot pressed on the World's overlay
+        // a spot pressed on the World's overlay: followed here, never the other way
         if (e.key === "spot-chosen") {
-          const [, gmId, id] = e.spotKey?.match(/^g(\d+)s(\d+)$/)?.map(Number) ?? [];
-          const pick = gmId === undefined || id === undefined ? null : { gmId, id };
-          if (pick?.gmId !== state.spot?.gmId || pick?.id !== state.spot?.id) reveal.current(pick);
+          const [, gmId, id] = e.spotKey.match(/^g(\d+)s(\d+)$/)?.map(Number) ?? [];
+          if (gmId === undefined || id === undefined || (gmId === state.spot?.gmId && id === state.spot?.id)) return;
+          reveal.current({ gmId, id });
+          w.hud?.say("decorator selected");
         }
       },
     });

@@ -244,7 +244,7 @@ const rayStyle = { width: 0.008, opacity: 0.5, discRadius: 0.03 };
 
 /**
  * Draws the map's spots in the World whilst its overlay is on (debug menu, overlay, spots), an icon per kind.
- * Each is coloured by sight from the chosen spot, else the player, kept up as they move and doors change (idempotent)
+ * Each is coloured by sight from the player, kept up as they move and doors change (idempotent)
  *
  * ```sh
  * spot_overlay
@@ -277,18 +277,17 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
         if (Array.isArray(all)) w.debug.setSpots(all.map((spot) => toDraw(w, spot)));
         drawn.spots = key;
       }
-      const chosen = w.debug.chosenSpot;
-      const from = chosen ?? (w.n[w.player.key] === undefined ? null : w.player.key);
+      const from = w.n[w.player.key] === undefined ? null : w.player.key;
       const [view] = from === null ? [null] : await spotQueryDetached(w, [{ q: "view", from }]);
       const ink = inkOf(w);
       const colors =
         view == null || !("view" in view)
           ? null
           : Object.fromEntries(Object.entries(view.view).map(([key, how]) => [key, ink[how]]));
-      w.debug.colourSpots(colors, chosen);
+      w.debug.colourSpots(colors);
       drawn.from = from ?? "";
       drawn.theme = w.themeKey;
-      drawn.at = from === null || chosen !== null ? null : { ...w.n[from].point };
+      drawn.at = from === null ? null : { ...w.n[from].point };
       w.view.forceUpdate();
     } finally {
       busy = false;
@@ -300,7 +299,8 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
     if (e.key === "spots-overlay" && e.shown === false) return void (drawn.spots = "");
     // the rooms beyond fade out first, their spots in the colours they had
     if (e.key === "door-closed") return void setTimeout(() => void sync(), roomFadeOutMs);
-    if (redrawOn.has(e.key) || (e.key === "enter-room" && e.npcKey === w.player.key)) void sync();
+    const player = (e.key === "enter-room" || e.key === "spawned") && e.npcKey === w.player.key;
+    if (redrawOn.has(e.key) || player) void sync();
   });
   // moved far enough, the spot files remade, or the theme changed
   w.e.addKeyedTick(overlayKey, (w) => {
@@ -314,14 +314,20 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
 }
 
 const overlayKey = "spot-overlay";
-/** Events after which the overlay is coloured afresh */
-const redrawOn = new Set<string>(["spots-overlay", "spot-chosen", "set-player", "door-opening"]);
+/** Events after which the overlay is coloured afresh. The load's last steps among them, else it waits on a move */
+const redrawOn = new Set<string>([
+  "spots-overlay",
+  "set-player",
+  "door-opening",
+  "map-settled",
+  "npcs-restored",
+]);
 /** Milliseconds a room takes to fade out, on the wall clock: `ROOM_FADE_OUT_SECS` in `fade-rooms` */
 const roomFadeOutMs = 600;
 /** Metres the player walks before the overlay redraws */
 const overlayStep = 0.5;
 
-/** How each `view` answer is coloured, by theme: muted on a dark floor, mid tones on a light one. A chosen spot is its own */
+/** How each `view` answer is coloured, by theme: muted on a dark floor, mid tones on a light one */
 const howInk: Record<"dark" | "light", Record<WW.SpotHow, string>> = {
   dark: { own: "#5b8cff", always: "#2f9a60", may: "#a89a30", shut: "#ffffff", never: "#8a929c" },
   light: { own: "#4a7cff", always: "#3cc870", may: "#f0b820", shut: "#ffffff", never: "#7a8490" },

@@ -94823,7 +94823,7 @@
         "panel": "dark",
         "dissolve": false
       },
-      "walls": {"color": "#000", "opacity": 0.5, "bandBrightness": 1}
+      "walls": {"color": "#000", "opacity": 0.25, "bandBrightness": 1}
     },
     "light-theme": {
       "post": {

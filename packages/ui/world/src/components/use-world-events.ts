@@ -795,9 +795,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
-            // a right click on the spots overlay chooses one, or a long press on touch. Again, none
+            // a right click on the spots overlay, or a long press on touch, chooses it in the Decorator alone
             if ((e.rightDown === true || (w.touchDevice && e.longDown === true)) && e.meta.type === "spot") {
-              w.debug.chooseSpot(w.debug.chosenSpot === e.meta.spotKey ? null : e.meta.spotKey);
+              w.events.next({ key: "spot-chosen", spotKey: e.meta.spotKey });
             }
             // a long press is how you get at an npc: they say "...", its npcKey in the history the
             // handle onto everything else — see `WorldSpeech`. Clients skip: the pick is

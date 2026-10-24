@@ -100,9 +100,9 @@ declare namespace JshCli {
         shown: boolean;
       }
     | {
-        /** A spot was chosen, in the Decorator or on the World's overlay, else none — see `w.debug.chooseSpot` */
+        /** A spot right-clicked on the World's overlay, for the Decorator to choose */
         key: "spot-chosen";
-        spotKey: null | string;
+        spotKey: string;
       }
     | {
         /** Something about them shown on or off changed: lit, breathing, or a speech menu toggle e.g. picked */
