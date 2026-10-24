@@ -83,6 +83,7 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
 - **Windows**: a tiled strip along a wall is a window, not a shelf. Leave that wall out of the room and
   let the parent place `window--005` (120 long) or `window--007` (180 long) over it.
 - **Label**: `decor point label=office`, a `label` decor at half scale, or `label=medical` on the door.
+  A parent's own label names a room over any a sub-symbol brings into it: see `docs/floor.md`.
 - **Sub-symbols**: a `symbol` node, its name carrying the height e.g. `console--051 y=0.5`. Prefer one
   that exists: `console--051` is the armchair, `extra--003--chair` the small chair,
   `extra--010--machine` the COMP unit, `extra--001--fresher` a basin, `extra--002--fresher` a toilet,

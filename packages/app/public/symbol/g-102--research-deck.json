@@ -1003,20 +1003,13 @@
           "name": "decor point label=corridor",
           "locked": true,
           "visible": true,
-          "transform": {
-            "a": 0.5,
-            "b": 0,
-            "c": 0,
-            "d": 0.5,
-            "e": 885,
-            "f": 651.3
-          },
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 890, "f": 650},
           "type": "image",
           "srcType": "decor",
           "srcKey": "label",
           "baseRect": {"width": 40, "height": 15},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(0.5, 0, 0, 0.5, 885, 651.3)"
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 890, 650)"
         },
         {
           "id": "8239c0cb-8330-ce6a-45ea-203388ecc90d",
@@ -1161,6 +1154,37 @@
           "d": "M 343.5 256.5 L 348.5 256.5 L 348.5 305.5 L 336.5 306.5 L 336.5 318.5 L 348.5 318.5 L 348.5 347.5 L 318.5 348.5 L 318.5 336.5 L 306.5 336.5 L 305.5 348.5 L 256.5 348.5 L 256.5 343.5 L 285.5 314.5 L 298.5 313.5 L 297.5 303.5 L 301.5 298.5 L 313.5 298.5 L 313.5 286.5 Z",
           "baseRect": {"width": 1200, "height": 1200},
           "cssTransform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ]
+    },
+    {
+      "id": "d816c7c2-29d7-48b7-8f70-eaa71da2246c",
+      "name": "decor",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": false,
+      "children": [
+        {
+          "id": "cd79c6e1-1ffa-4a47-926b-bc745ecbcdce",
+          "name": "decor point label=corridor",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 100,
+            "f": 1100
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 100, 1100)"
         }
       ]
     }

@@ -30,6 +30,7 @@ import {
   deckConfig,
   drawDoorTicks,
   drawRoomFloors,
+  drawRoomWiring,
   drawSkirtEdges,
   setDeckInks,
   softEdges,
@@ -113,11 +114,13 @@ export default function Floor() {
         const labelOfRoom: (undefined | string)[] = [];
         for (const decor of Object.values(w.decor.byKey)) {
           if (helper.isRoomLabel(decor) === false || decor.meta.gmId !== gmId) continue;
-          labelOfRoom[decor.meta.roomId] = decor.meta.label;
+          // the first wins: a symbol's own decor precedes its sub-symbols', so a parent's label names the room
+          labelOfRoom[decor.meta.roomId] ??= decor.meta.label;
         }
 
-        // the deck itself — plated, with a line inside each room's walls. See `deckConfig`
-        drawRoomFloors(ct, layout, labelOfRoom);
+        // the deck itself, plated, and conduit along the walls of some rooms. See `deckConfig`
+        drawRoomFloors(ct, layout);
+        drawRoomWiring(ct, layout, labelOfRoom);
 
         // the nav mesh of the FIRST instance, as decoration: it differs per instance. Two paths
         // rather than one call per triangle — adjacent triangles share an edge, and stroking each

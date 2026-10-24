@@ -88,6 +88,11 @@ over `w.decor.byKey`, where `Decor`'s ready pass has already resolved `meta.gmId
 Set it to `"all"` for every room, or list labels. `doorTicks.rooms` reads the same list, and
 nothing else does.
 
+**A room with several labels is named by the first.** A symbol's own decor comes before its
+sub-symbols' (`flattenSymbol`), so a parent's label wins: `g-102--research-deck` labels its big open
+room 6 `corridor` twice, over the `lounge` its `lounge--0xx` sub-symbol brings, and it is wired. A
+label added later in MapEdit is no later here. `RoomLabels` draws every label point regardless.
+
 **Beware how few rooms a label can name.** `common` names exactly ONE room in the whole asset set
 (`g-101--multipurpose` room 14, 8.9 × 10.5 m); `g-301--bridge` has none at all, so on a 301 map the
 default `rooms: ["common"]` draws nothing anywhere. Use `"all"` when tuning the look.
@@ -143,7 +148,7 @@ paints. The deck laid on top of it is `deckConfig`, so there is one place to tun
 
 Hull fill and its 45° hatch → wall bases (`#000`) → `drawRoomFloors` → broad-wall aliasing fix →
 the layout's triangulation → door shadows → door ticks → the blurred edges → skirt edges → obstacle
-drop shadows.
+drop shadows. `drawRoomWiring` follows `drawRoomFloors`, so the blurred edges darken it too.
 
 The ticks go **after** the nav mesh on purpose: its translucent fill would otherwise wash them out.
 

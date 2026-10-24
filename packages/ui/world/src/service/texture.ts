@@ -323,12 +323,7 @@ export function setDeckInks(key: keyof typeof deckInks) {
 }
 
 /** Every room's deck, and the doorways between them */
-export function drawRoomFloors(
-  ct: CanvasRenderingContext2D,
-  layout: Geomorph.Layout,
-  /** The room's `meta.label` by roomId — only `deckConfig.wiring` reads it. See `Floor`'s `drawGm` */
-  labelOfRoom: (undefined | string)[] = [],
-) {
+export function drawRoomFloors(ct: CanvasRenderingContext2D, layout: Geomorph.Layout) {
   ct.save();
   ct.lineJoin = "round";
   ct.lineCap = "round";
@@ -336,18 +331,28 @@ export function drawRoomFloors(
   // a doorway is not a room, and the deck reaches the bulkhead, so without this the structural
   // `hullFill` shows through between the decks either side
   for (const door of layout.doors) drawDeck(ct, door.poly);
+  for (const room of layout.rooms) drawDeck(ct, room);
 
+  ct.restore();
+}
+
+/** The conduit in the rooms `deckConfig.wiring.rooms` names */
+export function drawRoomWiring(
+  ct: CanvasRenderingContext2D,
+  layout: Geomorph.Layout,
+  /** The room's `meta.label` by roomId, which `wiring.rooms` names. See `Floor`'s `drawGm` */
+  labelOfRoom: (undefined | string)[] = [],
+) {
+  const { wiring } = deckConfig;
+  ct.save();
+  ct.lineJoin = "round";
+  ct.lineCap = "round";
   for (const [roomId, room] of layout.rooms.entries()) {
-    drawDeck(ct, room);
-
-    const { wiring } = deckConfig;
     if (wantsFeature(wiring.rooms, wiring.shown, labelOfRoom[roomId]) === false) continue;
-
     // the filter is not free — see `DerivedGmsData`, which fills `roomIds` in
     const roomDoors = layout.doors.filter((door) => door.roomIds.includes(roomId) === true);
     drawWiring(ct, room, wiringRuns(room.clone().removeHoles(), roomDoors));
   }
-
   ct.restore();
 }
 
