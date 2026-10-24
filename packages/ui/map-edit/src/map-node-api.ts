@@ -139,6 +139,18 @@ export function findNodeById(
   return [null, null];
 }
 
+/** The node and its folders, top-level first, else `[]` */
+export function findNodePath(parentArray: MapNode[], id: string): MapNode[] {
+  for (const child of parentArray) {
+    if (child.id === id) return [child];
+    if (child.type === "group") {
+      const path = findNodePath(child.children, id);
+      if (path.length > 0) return [child, ...path];
+    }
+  }
+  return [];
+}
+
 export function findNodeByIdWithDepth(
   parentArray: MapNode[],
   id: string,

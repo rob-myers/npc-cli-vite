@@ -86,6 +86,7 @@ import {
   traverseNodesSync,
 } from "./map-node-api";
 import { type ParsedPath, PathPickerModal } from "./PathPickerModal";
+import { SelectionBreadcrumbs } from "./SelectionBreadcrumbs";
 import { SymbolPickerModalMemo } from "./SymbolPickerModal";
 import type { MapEditUiMeta } from "./schema";
 
@@ -161,6 +162,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
       dragEl: null,
       expandTimer: null as ReturnType<typeof setTimeout> | null,
       lastClickedNode: null as { id: string; time: number } | null,
+      lockedHintShown: false,
       svgEl: null,
       wrapperEl: null,
 
@@ -1031,6 +1033,10 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
             return;
           }
           state.dragEl = null; // cancel any pending drag
+          if (!state.lockedHintShown && !e.altKey && state.isLockedAt(e.clientX, e.clientY)) {
+            state.lockedHintShown = true;
+            state.toast("alt-click selects a locked node");
+          }
           if (e.shiftKey) {
             // shift+drag empty space draws selection box
             const increment = e.ctrlKey ? inc.small : inc.default;
@@ -1055,20 +1061,23 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           state.set({ selectedIds: new Set([nodeId]), selectionBox: null });
         }
 
-        if (state.selectedIds.size === 1) {
-          state.scrollInspectorNodeIntoView(nodeId);
+        // an alt-click is named by the breadcrumbs, rather than opening its folders
+        if (!e.altKey) {
+          if (state.selectedIds.size === 1) {
+            state.scrollInspectorNodeIntoView(nodeId);
+          }
+
+          // Double-click: expand any collapsed ancestor groups in the inspector
+          const now = Date.now();
+          if (state.lastClickedNode?.id === nodeId && now - state.lastClickedNode.time < 300) {
+            state.expandCollapsedAncestors(nodeId);
+            state.lastClickedNode = null;
+          } else {
+            state.lastClickedNode = { id: nodeId, time: now };
+          }
         }
 
-        // Double-click: expand any collapsed ancestor groups in the inspector
-        const now = Date.now();
-        if (state.lastClickedNode?.id === nodeId && now - state.lastClickedNode.time < 300) {
-          state.expandCollapsedAncestors(nodeId);
-          state.lastClickedNode = null;
-        } else {
-          state.lastClickedNode = { id: nodeId, time: now };
-        }
-
-        state.startDragSelection(e);
+        if (target.dataset.locked === undefined) state.startDragSelection(e);
       },
       onSvgPointerMove(e) {
         if (!state.dragEl) return;
@@ -1235,6 +1244,16 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const inspectorNodeEl = state.wrapperEl?.querySelector(`aside [data-node-id="${nodeId}"]`);
         inspectorNodeEl?.scrollIntoView({ block: "nearest" });
       },
+      isLockedAt(clientX, clientY) {
+        const wasOn = state.svgEl?.hasAttribute("data-pick-locked") ?? false;
+        state.setPickLocked(true);
+        const el = document.elementFromPoint(clientX, clientY) as SVGElement | null;
+        state.setPickLocked(wasOn);
+        return el?.dataset.locked !== undefined;
+      },
+      setPickLocked(on) {
+        state.svgEl?.toggleAttribute("data-pick-locked", on);
+      },
       startDragSelection(e) {
         if (state.isReadOnly()) return;
         e.stopPropagation();
@@ -1244,7 +1263,9 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
         const starts = new Map(
           Array.from(state.selectedIds.values()).flatMap((id) => {
             const [node] = findNodeById(state.nodes, id);
-            return isNodeTransformable(node) ? [[id, { x: node.transform.e, y: node.transform.f }]] : [];
+            return isNodeTransformable(node) && !node.locked
+              ? [[id, { x: node.transform.e, y: node.transform.f }]]
+              : [];
           }),
         );
 
@@ -1655,8 +1676,11 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     if (!wrapper) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Alt") state.setPickLocked(true);
       if (state.editingId || !wrapper.contains(e.target as Element)) return;
 
+      // copies selected text, e.g. a breadcrumb, rather than nodes
+      if (e.key === "c" && (e.metaKey || e.ctrlKey) && window.getSelection()?.isCollapsed === false) return;
       if (e.key in keyShouldPreventDefault) e.preventDefault();
 
       // Delete
@@ -1752,16 +1776,21 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Alt") state.setPickLocked(false);
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         state.applyBoundsOffset();
       }
     };
+    /** Alt's keyup is lost to a window switch */
+    const handleBlur = () => state.setPickLocked(false);
 
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleBlur);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
     };
   }, [state.wrapperEl]); // key events
 
@@ -1823,6 +1852,7 @@ export default function MapEdit(props: { meta: MapEditUiMeta }) {
           >
             <MapEditSvg root={state} uiId={props.meta.id} />
           </div>
+          <SelectionBreadcrumbs root={state} />
         </Allotment.Pane>
         <Allotment.Pane visible={hidden !== "inspector"} snap minSize={minAsideWidth} preferredSize={defaultAsideWidth}>
           <aside className="size-full flex flex-col bg-background">
@@ -1994,6 +2024,12 @@ export type State = {
   isReadOnly: (file?: MapEditFileSpecifier) => boolean;
   scrollInspectorNodeIntoView(nodeId: string): void;
   startDragSelection: (e: React.PointerEvent<SVGSVGElement>) => void;
+  /** Whether a locked node is drawn topmost at a client point */
+  isLockedAt: (clientX: number, clientY: number) => boolean;
+  /** The alt-click hint toasts once per MapEdit */
+  lockedHintShown: boolean;
+  /** Whilst on (Alt held), locked nodes can be picked on the map */
+  setPickLocked: (on: boolean) => void;
   startResizeRect: (e: React.PointerEvent<SVGSVGElement>, handle: ResizeHandle) => void;
   startSelectionBox: (e: React.PointerEvent<SVGSVGElement>, increment: number) => void;
 
