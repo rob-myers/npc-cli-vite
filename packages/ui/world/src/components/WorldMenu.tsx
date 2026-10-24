@@ -1,10 +1,12 @@
 import { Menu } from "@base-ui/react/menu";
+import { Popover } from "@base-ui/react/popover";
 import { Select } from "@base-ui/react/select";
 import { Slider } from "@base-ui/react/slider";
 import { UiContext } from "@npc-cli/ui-sdk/UiContext";
 import { cn, Spinner, type UseStateRef, useStateRef } from "@npc-cli/util";
 import { hashJson } from "@npc-cli/util/legacy/generic";
 import {
+  ArrowCounterClockwiseIcon,
   ArrowsClockwiseIcon,
   BrainIcon,
   CaretDownIcon,
@@ -21,6 +23,7 @@ import {
   PlayIcon,
   PowerIcon,
   RobotIcon,
+  SlidersHorizontalIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import debounce from "debounce";
@@ -33,7 +36,8 @@ import { compilingShadersText, defaultBrightness } from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
 import { queryClientApi } from "../service/query-client";
-import { getWorldStore, listWorldKeysWithMap } from "../service/storage";
+import { cameraPresets, distanceOfView, getDefaultCameraView, getPresetCameraView } from "../service/camera-view";
+import { type CameraView, getSiteStore, getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
 import type { CameraModeType } from "./CameraControls";
 import { WorldContext } from "./world-context";
@@ -502,6 +506,7 @@ export function WorldMenu() {
                 </span>
               </div>
             </div>
+            <CameraSliders touch={touch} />
 
             <div className={cn("flex", touch && "items-center border-t border-neutral-800")}>
               <div className={cn("text-white text-xs flex items-center px-2", touch && "text-sm px-3 py-1")}>map:</div>
@@ -1105,10 +1110,10 @@ const lights = {
 /** How long the button must be held to restore its light's default */
 const lightResetHoldMs = 500;
 
-/** ONE slider for both: the button says which and a click swaps them, a hold resets the one shown */
+/** ONE slider for both: the button says which and a click swaps them, a hold resets the one shown. Site-wide */
 function LightSlider({ touch }: { touch: boolean }) {
   const w = useContext(WorldContext);
-  const store = getWorldStore(w.key);
+  const store = getSiteStore();
   const [key, setKey] = useState(() => store.read().lightKey);
   const { icon: WhichIcon, label, min, max, step, fallback, color } = lights[key];
   const other = key === "npc" ? "world" : "npc";
@@ -1176,6 +1181,126 @@ function LightSlider({ touch }: { touch: boolean }) {
         className={rangeInputClass(touch, touch ? "flex-1" : "w-24")}
       />
       <span className="w-9 text-right tabular-nums text-neutral-400">{value.toFixed(step < 0.1 ? 2 : 1)}×</span>
+    </div>
+  );
+}
+
+/** The camera's framing: presets in its row, the fov and each stop's view in a pop-up. Site-wide */
+function CameraSliders({ touch }: { touch: boolean }) {
+  const w = useContext(WorldContext);
+  const view = w.view?.cameraView ?? getDefaultCameraView();
+  /** Toggled by its button alone: it stays open beside the menu, and goes with it */
+  const [slidersOpen, setSlidersOpen] = useState(false);
+
+  /** The far view never below the near, so the stops never cross */
+  function set(next: null | CameraView) {
+    if (next !== null) next.farView = Math.max(next.farView, next.nearView);
+    w.view.setCameraView(next);
+    w.menu?.update();
+  }
+
+  const rows = [
+    { key: "fov", label: "fov", min: 15, max: 60, step: 1, unit: "°" },
+    { key: "nearView", label: "near", min: 3, max: 20, step: 0.1, unit: "m" },
+    { key: "farView", label: "far", min: 3, max: 40, step: 0.1, unit: "m" },
+  ] as const;
+  const chip = "cursor-pointer rounded px-1 hover:bg-white/10";
+
+  return (
+    // under `camera:`, on its background and indented, as a part of it
+    <div
+      className={cn(
+        "flex items-center gap-1 bg-neutral-700 pr-2 pb-1 pl-5 text-xs text-neutral-300",
+        touch && "pr-3 pl-6 text-sm",
+      )}
+    >
+      <span className="text-neutral-400">framing</span>
+      {(Object.keys(cameraPresets) as (keyof typeof cameraPresets)[]).map((name) => {
+        const preset = getPresetCameraView(name);
+        const active = preset.fov === view.fov && Math.abs(preset.nearView - view.nearView) < 0.05;
+        return (
+          <button
+            key={name}
+            type="button"
+            title={`${preset.fov}°, near ${preset.nearView.toFixed(1)} m: - and + step through them`}
+            className={cn(chip, active && "bg-white/15 text-white", name === "low" && "ml-auto")}
+            onClick={(e) => {
+              e.stopPropagation();
+              set(preset);
+            }}
+          >
+            {name}
+          </button>
+        );
+      })}
+      <button
+        type="button"
+        title="the device's defaults"
+        className={chip}
+        onClick={(e) => {
+          e.stopPropagation();
+          set(null);
+        }}
+      >
+        <ArrowCounterClockwiseIcon className="size-3.5" />
+      </button>
+      <Popover.Root
+        open={slidersOpen}
+        onOpenChange={(next, details) => details.reason === "trigger-press" && setSlidersOpen(next)}
+      >
+        <Popover.Trigger
+          title="fov, and the floor seen at each zoom stop"
+          className={cn(chip, slidersOpen && "bg-white/15 text-white")}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SlidersHorizontalIcon className="size-3.5" />
+        </Popover.Trigger>
+        <Popover.Portal container={w.rootEl}>
+          <Popover.Positioner className="z-50" side="right" align="start" sideOffset={6}>
+            <Popover.Popup
+              className="flex gap-3 rounded-md border border-neutral-500/40 bg-neutral-900/95 px-3 py-2 text-xs text-neutral-300"
+              // portalled, its presses still bubble to the menu through React, which would drag it
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {rows.map(({ key, label, min, max, step, unit }) => (
+                <div
+                  key={key}
+                  className="flex flex-col items-center gap-1"
+                  // the floor seen is the slider; the stop it implies, at this fov, is its tooltip
+                  title={
+                    key === "fov"
+                      ? "vertical field of view"
+                      : `${distanceOfView(view[key], view.fov).toFixed(1)} m away`
+                  }
+                >
+                  <span>{label}</span>
+                  <Slider.Root
+                    orientation="vertical"
+                    min={key === "farView" ? view.nearView : min}
+                    max={max}
+                    step={step}
+                    value={view[key]}
+                    onValueChange={(value) => set({ ...view, [key]: value as number })}
+                    className={touch ? "h-32" : "h-24"}
+                  >
+                    <Slider.Control className="flex h-full w-5 cursor-pointer justify-center py-1.5">
+                      <Slider.Track className="relative h-full w-1 rounded-full bg-white/40">
+                        <Slider.Thumb
+                          className={cn("rounded-full bg-white outline-none", touch ? "size-5" : "size-3")}
+                        />
+                      </Slider.Track>
+                    </Slider.Control>
+                  </Slider.Root>
+                  <span className="tabular-nums text-neutral-400">
+                    {view[key].toFixed(step < 1 ? 1 : 0)}
+                    {unit}
+                  </span>
+                </div>
+              ))}
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
     </div>
   );
 }

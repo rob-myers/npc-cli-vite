@@ -82,7 +82,7 @@ That gives a simple rule, and the two artifact classes fall straight out of it:
 | `Obstacles` | transparent | −3 | ✓ (alphaTest) | holes where it stands in front |
 | `Decor` | transparent | −2 | ✓ (alphaTest) | holes the shape of its icons |
 | `NPCs` | transparent | 0 | ✓ | writes the mask |
-| `Walls`, trim | transparent | 4 | ✗ | dims it to `1 - 0.5` — the border shows through |
+| `Walls` | transparent | 4 | ✗ | dims it to `1 - 0.5` — the border shows through |
 | `Ceiling` | transparent | 6 | ✓ | dims it where drawn |
 
 **Holes are the enemy**, because a hole's rim is a silhouette as far as the border is concerned. The

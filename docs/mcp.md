@@ -10,6 +10,12 @@ what works as TypeScript, run it, and see what happened.
   lists it as `npc-cli`.
 - On first use it attaches to Chrome on CDP port `NPC_MCP_CDP_PORT` (9382). If none is running, it
   launches a visible one with its own profile, and opens the dev page there.
+- That Chrome is a second instance, not a window of your own: the Dock and Spotlight open your usual one.
+  If it has no window, e.g. started with `--no-startup-window`, ask it for one on the dev page:
+  ```sh
+  curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
+  ```
+  `open -na "Google Chrome" --args --user-data-dir=…` hands off to it and opens nothing.
 
 ## The page side
 
@@ -89,8 +95,8 @@ from `ct.w` and returns plain data.
 
 - **`click` a world point only when it is on-screen.** Otherwise point the camera there first with
   `w view.lookAt '{ x, y }'`. Turn follow off first, or it pulls back to the player.
-- **To show the player, use `w view.holdFrontier`.** It is the look button's short press, framing them and
-  their frontier. `w view.onLookGesture false` is the press itself, but it stops a follow instead of looking.
+- **To show the player, use `w view.holdFrontier`.** It frames them and their frontier, and follows them until
+  the camera is next touched. The follow button and `f` only turn the follow on or off.
 
 ## While Claude drives the page
 

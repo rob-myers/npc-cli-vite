@@ -77,6 +77,12 @@ export function useSvgZoom(
       };
       glide.frame = requestAnimationFrame(step);
     },
+    /** The map rect in view, as the viewBox before letterboxing */
+    getViewRect(): { x: number; y: number; width: number; height: number } {
+      const { bounds: b, zoom, pan } = state;
+      const [width, height] = [b.width / zoom, b.height / zoom];
+      return { x: b.minX + (b.width - width) / 2 + pan.x, y: b.minY + (b.height - height) / 2 + pan.y, width, height };
+    },
     /** What is under the pointer now, and the scale it is seen at */
     grabAt(svg: SVGSVGElement, clientX: number, clientY: number): Grab | null {
       const ctm = svg.getScreenCTM();

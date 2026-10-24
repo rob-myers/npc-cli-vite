@@ -223,10 +223,16 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     panel: "dark",
     dissolve: false,
   },
-  walls: { color: "#000000", opacity: 0.5, bandBrightness: 1 },
+  walls: { color: "#000000", opacity: 0.5 },
 };
 
 export const wallHeight = 1.8;
+/** A door is the wall's full height, just short of its top */
+export const doorHeight = wallHeight - 0.001;
+/** Metres a lintel hangs down over a door, in front of it */
+export const lintelHeight = 0.1;
+/** A door's depth: a little more than the walls beside it (faces ±0.05, a hull's about ±0.1), so it stands out of them */
+export const doorPanelDepth = { hull: 0.24, nonHull: 0.12 };
 
 export const floorFadeDelayMs = 260;
 

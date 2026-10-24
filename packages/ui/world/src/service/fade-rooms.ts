@@ -180,16 +180,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
  * in the next geomorph — so this is that graph walked outwards, stopping at any door that is SHUT.
  * One on its way open already counts as open, so the room beyond fades in as it opens.
  *
- * The player's own room's windows are always seen through; any further off only where an
- * open door already reached declares a line of sight to it (tag `rel=sees:{name}`).
- *
- * Vouching works in one pass because the walk is breadth-first and a room's DOORS are connected
- * before its windows in `GmRoomGraph.fromGmGraph`, so a door has had its say before the window it
- * names is tested.
- *
- * `getReachableUpTo` keeps the node it stops on and takes none of its successors, so a shut door is
- * reached and not passed through. Nothing else stops it: the shut doors decide how far the light
- * gets, which is what being able to see amounts to, over a graph of a couple of hundred nodes.
+ * Every window reached is seen through, but the room beyond is a dead end: none of its own doors or
+ * windows is walked, else one window onto a corridor would light the whole ship.
  *
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
@@ -211,23 +203,30 @@ function roomsInView(w: WorldType): null | Geomorph.GmRoomId[] {
 
 /** The rooms in view from `grKey`, as the doors stand: the walk `roomsInView` describes. Cached by `w.e.roomsInView` */
 export function roomsInViewFrom(w: WorldType, grKey: Geomorph.GmRoomKey): Geomorph.GmRoomId[] {
-  if (w.gmRoomGraph.getNode(grKey) === null) return [];
-  /** Windows vouched for by an open door already reached — see `node.lineOfSight` */
-  const vouched = new Set<Geomorph.SeesKey>();
+  const start = w.gmRoomGraph.getNode(grKey);
+  if (start === null) return [];
+  const seen = new Set<Graph.GmRoomGraphNode>([start]);
+  /** Rooms reached through open doors, whose connectors are walked in turn */
+  const entered = new Set<Graph.GmRoomGraphNode>([start]);
+  const queue = [start];
 
-  return w.gmRoomGraph
-    .getReachableUpTo(grKey, (node, depth) => {
-      if (node.type === "door") {
-        if (w.door.isSeenThrough(node.gdKey) === false) return true;
-        // an open door we have reached vouches for whatever it says it can see
-        for (const key of node.lineOfSight ?? []) vouched.add(key);
-        return false;
+  for (const node of queue) {
+    for (const next of w.gmRoomGraph.getSuccs(node)) {
+      if (next.type === "room") {
+        seen.add(next);
+        // a room seen through glass is shown, but not looked beyond
+        if (node.type === "window" || entered.has(next)) continue;
+        entered.add(next);
+        queue.push(next);
+      } else if (seen.has(next) === false) {
+        seen.add(next);
+        if (next.type === "door" && w.door.isSeenThrough(next.gdKey) === false) continue;
+        queue.push(next);
       }
-      // glass in their OWN room is seen through (`depth` 1 being its connectors); further off
-      // only where a door said so, else one window onto a corridor lights the whole ship
-      return node.type === "window" && depth > 1 && vouched.has(node.id) === false;
-    })
-    .flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []));
+    }
+  }
+
+  return [...seen].flatMap((node) => (node.type === "room" ? helper.getGmRoomId(node.gmId, node.roomId) : []));
 }
 
 /**

@@ -5,8 +5,10 @@ import { geomService } from "@npc-cli/util/geom-service";
 import { entries } from "@npc-cli/util/legacy/generic";
 import { drawPolygonsCrisp } from "@npc-cli/util/service/canvas";
 import {
+  doorPanelDepth,
   floorTextureDimension,
   gmFloorExtraScale,
+  lintelHeight,
   roomHitTextureScaleDown,
   wallHeight,
   worldToSguScale,
@@ -27,10 +29,10 @@ export default class DerivedGmsData {
   count = {
     door: 0,
     wall: 0,
+    lintel: 0,
     window: 0,
     obstacles: 0,
     obstacleSkirtEdges: 0,
-    wallPolySegs: [] as number[],
   };
 
   byKey = Object.fromEntries(geomorphKeys.map((gmKey) => [gmKey, createEmptyGmData(gmKey)])) as Record<
@@ -52,14 +54,12 @@ export default class DerivedGmsData {
     this.count = {
       door: gms.reduce((sum, { key }) => sum + this.byKey[key].doorSegs.length, 0),
       wall: gms.reduce((sum, { key }) => sum + this.byKey[key].wallSegs.length, 0),
+      lintel: gms.reduce((sum, { key }) => sum + this.byKey[key].lintelSegs.length, 0),
       window: gms.reduce((sum, { key }) => sum + this.byKey[key].windowSegs.length, 0),
       obstacles: gms.reduce((sum, { obstacles }) => sum + obstacles.length, 0),
       obstacleSkirtEdges: gms.reduce(
         (sum, { obstacles }) => sum + obstacles.reduce((s, o) => s + o.origPoly.outline.length, 0),
         0,
-      ),
-      wallPolySegs: gms.map(({ key: gmKey }) =>
-        this.byKey[gmKey].wallPolySegCounts.reduce((sum, count) => sum + count, 0),
       ),
     };
 
@@ -93,17 +93,7 @@ export default class DerivedGmsData {
       x.lineSegs.map((seg) => ({ seg, meta: x.meta, broadWallId: broadWallIdByWallId[wallId] ?? null })),
     );
 
-    gmData.wallPolyCount = gm.walls.length;
-
-    gmData.wallPolySegCounts = gm.walls.map(
-      ({ outline, holes }) => outline.length + holes.reduce((sum, hole) => sum + hole.length, 0),
-    );
-
-    // 🚧 remove lintels
-    // lintels (2 quads per door):
-    gmData.wallPolySegCounts.push(2 * gm.doors.length);
-    // windows (upper/lower, may not be quads):
-    gmData.wallPolySegCounts.push(2 * gm.windows.reduce((sum, x) => sum + x.poly.outline.length, 0));
+    gmData.lintelSegs = gm.doors.flatMap((door, doorId) => getLintelSegs(door, doorId));
 
     const nonHullWallsTouchCeil = gm.walls.filter(
       (poly) =>
@@ -238,6 +228,27 @@ export default class DerivedGmsData {
   }
 }
 
+/**
+ * A door's two lintels, hung over its top, one just in front of each face of its panel and facing
+ * out of the doorway. `normal` points at the room of `roomIds[0]`
+ */
+function getLintelSegs(door: Geomorph.Connector, doorId: number): Geomorph.GmData["lintelSegs"] {
+  const {
+    seg: [u, v],
+    normal,
+    meta,
+  } = door;
+  const out = doorPanelDepth[meta.hull === true ? "hull" : "nonHull"] / 2 + lintelClearance;
+  const lintelMeta = { ...meta, y: wallHeight - lintelHeight, h: lintelHeight, lintel: true };
+  return [
+    { seg: [v.clone().addScaled(normal, out), u.clone().addScaled(normal, out)], meta: lintelMeta, doorId },
+    { seg: [u.clone().addScaled(normal, -out), v.clone().addScaled(normal, -out)], meta: lintelMeta, doorId },
+  ];
+}
+
+/** Metres a lintel stands in front of its door's face */
+const lintelClearance = 0.002;
+
 function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
   return {
     gmKey,
@@ -245,8 +256,7 @@ function createEmptyGmData(gmKey: StarShipGeomorphKey): Geomorph.GmData {
     doorSegs: [],
     unseen: true,
     wallSegs: [],
-    wallPolyCount: 0,
-    wallPolySegCounts: [],
+    lintelSegs: [],
     windowSegs: [],
     polyDecals: [],
     tops: { broad: [], hullDoor: [], hullWall: [], nonHullDoor: [], nonHullWall: [], window: [] },

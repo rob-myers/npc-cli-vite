@@ -35,6 +35,15 @@ export function NavMap2d(props: Props) {
 
   if (apiRef !== undefined) apiRef.current = { centreOn: zoom.centreOn, reset: zoom.reset, toClient: zoom.toClient };
 
+  // a view left where no geomorph is, e.g. from another layout, is reset to the whole map
+  useEffect(() => {
+    const v = zoom.getViewRect();
+    const seen = w.gms.some(
+      ({ gridRect: r }) => r.x < v.x + v.width && v.x < r.x + r.width && r.y < v.y + v.height && v.y < r.y + r.height,
+    );
+    if (w.gms.length > 0 && seen === false) zoom.reset();
+  }, [w.gmsHash]);
+
   // a press on the map itself: with shift a marquee, else a pan — and, unmoved, a click
   function onPointerDown(e: React.PointerEvent<SVGSVGElement>) {
     if (e.button !== 0 || (e.target as Element).closest?.("[data-no-pan]")) return;

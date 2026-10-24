@@ -15,7 +15,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
     if (root.selectedIds.size !== 1) return null;
     const [selectedId] = root.selectedIds;
     const [node] = findNodeById(root.nodes, selectedId);
-    if (!node) return null;
+    if (!node || node.locked) return null;
     if (node.type === "rect" || node.type === "image") return node;
     return null;
   }, [root.selectedIds, root.nodes]);
@@ -40,7 +40,7 @@ export function MapEditSvg({ root, uiId }: { root: UseStateRef<State>; uiId: str
       viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       width={root.svgWidth}
       height={root.svgHeight}
-      className="size-full drop-shadow-2xl border border-white/20 overflow-visible"
+      className={cn("size-full drop-shadow-2xl border border-white/20 overflow-visible", pickLockedCss)}
       onPointerDown={root.onSvgPointerDown}
       onPointerMove={root.onSvgPointerMove}
       onPointerUp={root.onSvgPointerUp}
@@ -109,6 +109,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <image
             key={node.id}
             data-node-id={node.id}
+            data-locked={node.locked || undefined}
             // versioned as the picker's thumbnails are: rebuilt decor art keeps its key and url
             href={
               node.srcType === "decor"
@@ -146,6 +147,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <image
             key={node.id}
             data-node-id={node.id}
+            data-locked={node.locked || undefined}
             href={`/symbol/${node.srcKey}.thumbnail.png?v=${root.localVersion ?? 0}`}
             width={symbol.bounds.width}
             height={symbol.bounds.height}
@@ -169,6 +171,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <path
             key={node.id}
             data-node-id={node.id}
+            data-locked={node.locked || undefined}
             d={node.d}
             style={{ transform: node.cssTransform, strokeWidth: 4 / root.zoom, outlineWidth: outlinePx(root, true) }}
             className={cn(
@@ -188,6 +191,7 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
           <rect
             key={node.id}
             data-node-id={node.id}
+            data-locked={node.locked || undefined}
             x={0}
             y={0}
             width={node.baseRect.width}
@@ -213,6 +217,15 @@ export const RenderMapNodes = ({ nodes, root }: { nodes: MapNode[]; root: UseSta
     }
   });
 };
+
+/** Whilst Alt is held (`data-pick-locked`), a locked node can be picked, and lights up under the pointer */
+const pickLockedCss = cn(
+  "[&[data-pick-locked]_[data-node-id]]:pointer-events-auto",
+  "[&[data-pick-locked]_[data-locked]:hover]:cursor-pointer",
+  "[&[data-pick-locked]_[data-locked]:hover]:opacity-100",
+  "[&[data-pick-locked]_[data-locked]:hover]:outline-amber-400",
+  "[&[data-pick-locked]_[data-locked]:hover]:stroke-amber-400",
+);
 
 /**
  * A node's outline width in svg units, so it keeps its width ON SCREEN at any zoom. A css outline

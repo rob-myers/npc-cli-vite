@@ -245,10 +245,8 @@ export const WorldThemeSchema = z.object({
     .object({
       color: z.string().default("#000000"),
       opacity: z.number().min(0).max(1).default(0.5),
-      /** A multiple for the bands along a wall's floor and ceiling */
-      bandBrightness: z.number().default(1),
     })
-    .default({ color: "#000000", opacity: 0.5, bandBrightness: 1 }),
+    .default({ color: "#000000", opacity: 0.5 }),
 });
 export type WorldTheme = z.infer<typeof WorldThemeSchema>;
 

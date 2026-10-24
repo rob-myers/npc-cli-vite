@@ -54,6 +54,18 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   already supply is `wall optional e`, added only by a parent's `walls=['e']`.
 - **Doors**: a `rect` over the drawn door, 8 by 45, named e.g. `door e slide=[0,-1]`. Each is followed
   by its two `decor quad key=switch` images, one each side of the wall, beside the door.
+- **In a hull's final layout, every switch's centre is inside a room**, clear of the wall's face. Decor
+  takes the room containing its centre (`findRoomContaining`), and one in no room is always shown: it
+  never fades in `sight` mode. A switch in a sub-symbol may lie outside that symbol's own rooms, e.g.
+  beyond its wall, where the parent's room meets it. What counts is where it lands in the hull.
+  A room inside a hull wall at `y=0` starts at about `4.3`, so a 6-unit switch there is placed at `f=2`
+  (centre `5`), not `f=0` (centre `3`, in the wall). `g-102--research-deck`'s top-right hull switch was
+  the latter, and `engineering--047`'s switch beside its corner door sat in room 6's side wall.
+- **Check a door's two switches are not the wrong way round** where it meets another symbol. In
+  `g-102--research-deck`, a door intersecting `engineering--047` had its pair the wrong way round.
+  - Find any left over with `Object.values(w.decor.byKey).filter((d) => d.meta.switch && !(d.meta.roomId >= 0))`.
+  - Where a door fills its wall, there is no room beside it for a switch. One may yet be added
+    elsewhere, or one in a wall dropped.
 - **A door's `slide` sets its normal, which must point INTO the room.** The normal is `slide` turned
   90°, `(slide.y, -slide.x)` (`Connector`), and a door's label names the room it points into, e.g. a
   `label=lab` door points into the lab. The debug **overlay** select's **door normals** shows them.
@@ -71,6 +83,7 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
 - **Windows**: a tiled strip along a wall is a window, not a shelf. Leave that wall out of the room and
   let the parent place `window--005` (120 long) or `window--007` (180 long) over it.
 - **Label**: `decor point label=office`, a `label` decor at half scale, or `label=medical` on the door.
+  A parent's own label names a room over any a sub-symbol brings into it: see `docs/floor.md`.
 - **Sub-symbols**: a `symbol` node, its name carrying the height e.g. `console--051 y=0.5`. Prefer one
   that exists: `console--051` is the armchair, `extra--003--chair` the small chair,
   `extra--010--machine` the COMP unit, `extra--001--fresher` a basin, `extra--002--fresher` a toilet,
@@ -92,8 +105,11 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 - **Include the drawn border.** Trace the OUTSIDE of the outline, not the fill within it. A grey fill
   traced as is loses its line: grow the mask by the line's width (7 px for a thin line) before tracing.
 - **Cover the thick lines under it.** Where an obstacle runs into a thick line, e.g. the wall at a table's
-  end, take the polygon to that line's FAR edge: `office--006`'s table spans `-2` to `122`. Art outside
-  the polygon is not in the spritesheet, so the obstacle would otherwise end short of its own edge.
+  end, take the polygon nearly to that line's FAR edge. Art outside the polygon is not in the
+  spritesheet, so the obstacle would otherwise end short of its own edge.
+- **Stop 0.4 short of a wall's far face.** A wall's far face is its far edge, e.g. `-2` for one centred
+  on `0`, and a skirt in that plane z-fights it, seen from the next room. So end at `-1.6`, still
+  inside the wall: `lab--018`'s table ran round its room to `-2` and `242`, and now to `-1.6` and `241.6`.
 - **Just enough points.** Simplify the traced contour (about 3 px of tolerance), which leaves a curve
   as a few straight runs: a quarter circle wants four or five, not twenty.
 - **Square the corners.** A rounded stroke leaves a short chamfer at each corner. Replace it with the
@@ -129,8 +145,9 @@ To fix one whose obstacles leave thick lines showing, check it by machine before
    `gen-starship-sheets`.
 
 What it usually finds:
-- **Wall lines.** An obstacle against a wall stops at the wall's near edge (`2`, `178`). Take it to the
-  far edge (`-2`, `182`), as the walls are drawn 4 thick about the room's edge.
+- **Wall lines.** An obstacle against a wall stops at the wall's near edge (`2`, `178`). Take it to
+  0.4 short of the far edge (`-1.6`, `181.6`), as the walls are drawn 4 thick about the room's edge
+  and a skirt on the far face z-fights it.
 - **Curve tips.** A simplified curve cuts inside its outline either side of the extreme point. Move that
   bulge's vertices out by about 0.3.
 - **Neighbours z-fight.** Two obstacles sharing an edge put their sides in one plane, back to back. Keep
@@ -140,7 +157,7 @@ What it usually finds:
   about 24 sides, its vertices about 0.2 INSIDE that edge. Past it, each vertex takes a sliver of what lies
   beyond, e.g. a chair's line.
 
-Cleaned so far: `medical--008`, `table--009`.
+Cleaned so far: `medical--008`, `table--009`, `console--033` (its rect now a hull of the chair's silhouette).
 
 ## What a tracer needs
 

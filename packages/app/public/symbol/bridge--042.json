@@ -75,7 +75,7 @@
         },
         {
           "id": "3ce3b38b-0558-4d97-ad7a-eefcb361c604",
-          "name": "window--007 y=1.8 name=window",
+          "name": "window--007 y=1.8",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180, "f": 300.5},
@@ -270,7 +270,7 @@
         },
         {
           "id": "17783229-5fd3-4013-8770-da0f371e9a6e",
-          "name": "door slide=[1,0] auto rel=sees:window",
+          "name": "door slide=[1,0] auto",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 214, "f": 178},
@@ -440,7 +440,7 @@
         },
         {
           "id": "c3772c73-a93f-4815-94fb-ba486e8bad74",
-          "name": "door slide=[0,-1] rel=sees:window",
+          "name": "door slide=[0,-1]",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 250},
@@ -509,7 +509,7 @@
         },
         {
           "id": "da5c2e7a-3296-48b2-a6eb-5016f4d85487",
-          "name": "door slide=[0,1] backLabel=bridge rel=sees:window",
+          "name": "door slide=[0,1] backLabel=bridge",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 250},
@@ -581,7 +581,7 @@
         },
         {
           "id": "440e09cd-bcdb-41ea-b822-92cc9be32f97",
-          "name": "door manual slide=[0,-1] backLabel=briefing rel=sees:window",
+          "name": "door manual slide=[0,-1] backLabel=briefing",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 116, "f": 370},
@@ -630,7 +630,7 @@
         },
         {
           "id": "0b640094-ade5-4363-9b4d-5f3c63a20ce3",
-          "name": "door slide=[0,1] backLabel=briefing rel=sees:window",
+          "name": "door slide=[0,1] backLabel=briefing",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 356, "f": 370},

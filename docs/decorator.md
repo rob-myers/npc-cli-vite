@@ -18,7 +18,7 @@ menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
 |---|---|
 | `ui/decorator/src/Decorator.tsx` | the panel: finds the World (`useWorld`, from `ui/world`) |
 | `ui/decorator/src/Editor.tsx` | the map pane: the tools, selection, keys, npc picker |
-| `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots |
+| `ui/decorator/src/NavMap2d.tsx` | the map as SVG: pan/zoom, clicks and marquees on it, the npc dots. A view left over no geomorph is reset |
 | `ui/decorator/src/DecorLayer.tsx` | the decor drawn over the map, selectable and draggable |
 | `ui/decorator/src/DecorMenu.tsx` | the map's context menu: add on empty map, edit a decor; `HeightInput` |
 | `ui/decorator/src/DecorSidebar.tsx` | the map's decor as a list: select, rename, arrange, locate on the map |
@@ -124,7 +124,7 @@ thing — `createLabelResources(…, { occluded: true })` — unlike room labels
 are the World's — a press there would be picked as one, and on release the wrapper focuses itself,
 so a clicked field lost focus at once. The frame therefore stops both.
 
-**A chosen spot is shared with the World**: `chooseSpot` calls `w.debug.chooseSpot`, and a `spot-chosen` event, e.g. a press on the World's spots overlay, reveals it here. See `docs/perception.md`.
+**A spot chosen in the World is followed here**: a `spot-chosen` event, e.g. a right click on the World's spots overlay, reveals it, and the World's bar says "decorator selected". The World chooses nothing itself, and `chooseSpot` here leaves its overlay alone. See `docs/perception.md`.
 
 ## From the shell
 

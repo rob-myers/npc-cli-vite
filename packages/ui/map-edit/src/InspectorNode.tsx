@@ -187,7 +187,7 @@ export const InspectorNode: React.FC<TreeItemProps> = ({ node, level, root }) =>
             "flex items-center justify-center text-on-background/50 hover:text-on-background",
             node.locked && "text-on-background/80",
           )}
-          title={node.locked ? "Unlock" : "Lock"}
+          title={node.locked ? "Unlock (or alt-click)" : "Lock"}
           onClick={(e) => {
             e.stopPropagation();
             if (root.isReadOnly()) return;

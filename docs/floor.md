@@ -45,8 +45,14 @@ w.floor.drawAll();
 `plate.chequerInk`, if not `null`, is laid over every other plate (`drawChequer`), which chequers
 the deck: darker plates in the light theme, faintly lighter ones in the dark.
 
-Six parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `nav`. Each but `tone` and
+Seven parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `skirt`, `nav`. Each but `tone` and
 `nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
+
+`skirt` is a lit edge along each wall's foot, `width` out from its face (`drawSkirtEdges`). It is
+drawn into the floor rather than as a mesh of its own: a band beside a translucent wall, drawn as its
+own mesh, showed through any nearer wall. The walls darken their own foot and top instead (`Walls`,
+`wallBandHeight`), in their own colour, so they blend alike in any order. It is clipped to the rooms,
+and a raised wall (`meta.y`) gets none.
 
 Two of them read a room's **label** — `wiring.rooms` and `doorTicks.rooms`, each a list of labels or
 `"all"`. Nothing else on the floor is label-driven.
@@ -81,6 +87,11 @@ decor point, gathered in `Floor.drawGm` the same way `RoomLabels` gathers it (`h
 over `w.decor.byKey`, where `Decor`'s ready pass has already resolved `meta.gmId` / `meta.roomId`).
 Set it to `"all"` for every room, or list labels. `doorTicks.rooms` reads the same list, and
 nothing else does.
+
+**A room with several labels is named by the first.** A symbol's own decor comes before its
+sub-symbols' (`flattenSymbol`), so a parent's label wins: `g-102--research-deck` labels its big open
+room 6 `corridor` twice, over the `lounge` its `lounge--0xx` sub-symbol brings, and it is wired. A
+label added later in MapEdit is no later here. `RoomLabels` draws every label point regardless.
 
 **Beware how few rooms a label can name.** `common` names exactly ONE room in the whole asset set
 (`g-101--multipurpose` room 14, 8.9 × 10.5 m); `g-301--bridge` has none at all, so on a 301 map the
@@ -136,7 +147,8 @@ paints. The deck laid on top of it is `deckConfig`, so there is one place to tun
 ## Draw order (`Floor.drawGm`)
 
 Hull fill and its 45° hatch → wall bases (`#000`) → `drawRoomFloors` → broad-wall aliasing fix →
-the layout's triangulation → door shadows → door ticks → the blurred edges → obstacle drop shadows.
+the layout's triangulation → door shadows → door ticks → the blurred edges → skirt edges → obstacle
+drop shadows. `drawRoomWiring` follows `drawRoomFloors`, so the blurred edges darken it too.
 
 The ticks go **after** the nav mesh on purpose: its translucent fill would otherwise wash them out.
 

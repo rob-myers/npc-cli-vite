@@ -23,6 +23,10 @@ declare namespace JshCli {
       }
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
     | {
+        /** `onChangeMap` began, before the outgoing map's npcs are removed */
+        key: "map-changing";
+      }
+    | {
         /** The map's pending keys have stopped changing i.e. it is ready */
         key: "map-settled";
       }
@@ -100,9 +104,9 @@ declare namespace JshCli {
         shown: boolean;
       }
     | {
-        /** A spot was chosen, in the Decorator or on the World's overlay, else none — see `w.debug.chooseSpot` */
+        /** A spot right-clicked on the World's overlay, for the Decorator to choose */
         key: "spot-chosen";
-        spotKey: null | string;
+        spotKey: string;
       }
     | {
         /** Something about them shown on or off changed: lit, breathing, or a speech menu toggle e.g. picked */

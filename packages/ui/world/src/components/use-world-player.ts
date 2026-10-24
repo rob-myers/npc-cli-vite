@@ -22,6 +22,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       cancelLook: () => {},
+      strafe: false,
+      tapMs: {},
+      keepAim: { at: 0, rate: 0, untilRest: false },
+      pointerAim: { at: { x: 0, y: 0 }, rate: 1, untilRest: false },
 
       aimAtPointer() {
         const npc = state.get();
@@ -32,7 +36,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const lookAt = free ? state.lookAt : null;
         const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
-        if ((held === false || posture !== "stand") && face.aim === pointerAim) face.aim = null;
+        if ((held === false || posture !== "stand") && face.aim === state.pointerAim) face.aim = null;
+        /** Strafing, they keep their facing. Never over another's aim e.g. the phaser's */
+        const keep = held === false && free && posture === "stand" && state.strafe;
+        if (keep === false && face.aim === state.keepAim) face.aim = null;
+        else if (keep === true && face.aim === null) face.aim = state.keepAim;
         if (held === false) return;
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
@@ -43,20 +51,20 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           raycaster.setFromCamera(tmpNdc, w.r3f.camera);
           if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
         }
-        Object.assign(pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
+        Object.assign(state.pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
         w.r3f.invalidate(); // a held key draws nothing of itself
         if (posture === "lie") {
           // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
-          if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, pointerAim.at);
-          return void npc.anim.lookLain(pointerAim.at);
+          if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, state.pointerAim.at);
+          return void npc.anim.lookLain(state.pointerAim.at);
         }
         if (posture === "sit") {
-          w.phasers?.pointAt(state.key, pointerAim.at); // armed, the arm goes with them
+          w.phasers?.pointAt(state.key, state.pointerAim.at); // armed, the arm goes with them
           // sat they do not turn round: their head, and a little of their torso
-          return void npc.anim.turnTo(pointerAim.at);
+          return void npc.anim.turnTo(state.pointerAim.at);
         }
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
-        face.aim = pointerAim;
+        face.aim = state.pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
       },
       assign(npcKey, { pan = true } = {}) {
@@ -96,6 +104,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       is(npcKey) {
         return npcKey === state.key;
       },
+      isDoubleTap(key, ms) {
+        const double = ms - (state.tapMs[key] ?? -Infinity) < doubleTapMs;
+        state.tapMs[key] = double ? -Infinity : ms; // a third is a fresh first
+        return double;
+      },
       lookTowards(clientX, clientY) {
         const npc = state.get();
         // paused, the look would run out before they could turn
@@ -124,6 +137,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       onKeyDown(e) {
         if (isTypingTarget(e) || e.repeat === true || w.client === true) return;
+        // twice quickly toggles strafing, whatever else is held
+        if (e.key === "Shift") return void (state.isDoubleTap("Shift", e.timeStamp) && state.toggleStrafe());
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
@@ -131,6 +146,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           const tap = state.runTap;
           if (e.code === tap.code && e.timeStamp - tap.ms < doubleTapMs) state.setTapRun(true);
           return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
+        }
+        if (e.code === "KeyC") {
+          // twice quickly, a full crouch. Once: half from standing or full, else stood
+          const anim = state.get()?.anim;
+          if (state.isDoubleTap(e.code, e.timeStamp)) anim?.setCrouch(2);
+          else anim?.setCrouch(anim.crouchLevel === 1 ? 0 : 1);
+          return;
         }
         if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
         if (e.code === "KeyQ") state.togglePsi();
@@ -250,6 +272,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         npc?.anim.setHurry(!npc.anim.hurry);
         state.runTap.on = false; // theirs now, to end as they began it
         w.hud?.update();
+        w.hud?.say(npc?.anim.hurry === true ? "run" : "walk");
+      },
+      toggleStrafe() {
+        state.strafe = !state.strafe;
+        w.hud?.update(); // its gait button shows it
+        if (state.strafe === false) w.hud?.say("strafe off"); // on, the bar keeps a notice of it
+        w.r3f?.invalidate();
       },
       setupDom() {
         const el = w.rootEl;
@@ -307,11 +336,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 
   w.player = state;
 
-  useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
+  // `setupDom` is new on each hmr, so an edit to it re-adds the listeners
+  useEffect(() => w.rootEl && state.setupDom(), [w.rootEl, state.setupDom]);
 }
 
-/** The aim `aimAtPointer` gives the player: ours alone to clear */
-const pointerAim = { at: { x: 0, y: 0 }, rate: 1, untilRest: false };
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
@@ -336,6 +364,16 @@ export type State = {
   ensure(): Promise<boolean>;
   /** Whilst `r` is held they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
+  /** Whilst on they keep their facing, so a move strafes, at a walk. A double tap of Shift toggles it */
+  strafe: boolean;
+  /** When each key last went down, for its double tap */
+  tapMs: Record<string, number>;
+  /** Whether a press at `ms` follows one of the same key within `doubleTapMs` */
+  isDoubleTap(key: string, ms: number): boolean;
+  /** The aim strafing gives the player: at `rate` `0` it turns them not at all. Ours alone to clear, so kept over hmr */
+  keepAim: { at: number; rate: number; untilRest: boolean };
+  /** The aim `aimAtPointer` gives the player. Ours alone to clear, so kept over hmr */
+  pointerAim: { at: Geom.VectJson; rate: number; untilRest: boolean };
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
   /** The move key last pressed and when, and whether a double tap of one has them running */
@@ -364,10 +402,12 @@ export type State = {
   onKeyDown(e: KeyboardEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
-  /** Run or walk — their `anim.hurry` */
+  /** Run or walk — their `anim.hurry` — saying so */
   toggleRun(): void;
   /** Psi off, else on — on needs psi */
   togglePsi(): void;
+  /** Strafing or not, saying so */
+  toggleStrafe(): void;
   /** Pans the camera onto the player, or snaps when `animate` is false */
   panTo(opts?: { animate?: boolean }): Promise<void>;
   /** Saves every npc for `w.mapKey` — see `w.e.persistNpcs` */

@@ -23,7 +23,6 @@ import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
-import { wallBandBrightness } from "../service/wall-band";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -539,6 +538,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onChangeMap() {
         w.settledMapKey = null; // changing from here to "map-settled" — see `isMapChanging`
         state.changingMap = true;
+        w.events.next({ key: "map-changing" });
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
@@ -648,14 +648,13 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onChangeTheme() {
-        const { obstacles, doors, npcs, lights, post, walls } = w.getTheme();
+        const { obstacles, doors, npcs, lights, post } = w.getTheme();
         w.obs.setBrightness(obstacles.brightness, obstacles.skirtBrightness);
-        wallBandBrightness.value = walls.bandBrightness;
         w.door.setBrightness(doors.brightness);
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
         w.npc?.setAmbient(npcs.ambient);
-        w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
+        w.npcBrightness = persisted.getSiteStore().read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.phasers?.syncTheme();
         w.shields?.syncTheme();
@@ -768,6 +767,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-locked":
             break;
+          case "map-changing":
           case "net-changed":
           case "npcs-restored":
             break;
@@ -795,9 +795,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
-            // a right click on the spots overlay chooses one, or a long press on touch. Again, none
+            // a right click on the spots overlay, or a long press on touch, chooses it in the Decorator alone
             if ((e.rightDown === true || (w.touchDevice && e.longDown === true)) && e.meta.type === "spot") {
-              w.debug.chooseSpot(w.debug.chosenSpot === e.meta.spotKey ? null : e.meta.spotKey);
+              w.events.next({ key: "spot-chosen", spotKey: e.meta.spotKey });
             }
             // a long press is how you get at an npc: they say "...", its npcKey in the history the
             // handle onto everything else — see `WorldSpeech`. Clients skip: the pick is

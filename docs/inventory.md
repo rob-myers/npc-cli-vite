@@ -29,8 +29,8 @@ nor phasers are mirrored.
 
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 
-- **walk/run**, not on a client: `w.player.toggleRun()`, their `anim.hurry`.
-- **look/follow**: a press looks, and a long press toggles the follow, as `f` does.
+- **gait**, not on a client: walk or run (`w.player.toggleRun()`). A ↔ badge shows whilst strafing, toggled by a double tap of Shift. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim" instead, and its "x" lowers the phaser.
+- **follow**: a press turns it on or off, as `f` does.
 - **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 
 Rules:
@@ -163,8 +163,8 @@ Two crouches, behind cover such as a sofa: `crouch_half`, the head 1.32m up, and
 `anim.crouched`) until they stand or another clip is posed. On the move they stay crouched, in that crouch's gaits
 (`docs/npc-strafe.md`).
 
-- The player's `c`: held, a full crouch, once the key repeats (as `f`'s long press). A tap, on release, crouches half
-  from standing, stands from half, and comes up to half from full.
+- The player's `c`: a double tap, a full crouch, as a double tap of Shift toggles strafing. A tap crouches half from
+  standing, stands from half, and comes up to half from full.
 - jsh: `pose rob as:crouch_half`, `pose rob as:crouch_cover`, `pose rob as:breathe`.
 
 - Raised, they stay crouched. `Phasers` skips its stance, and `phaser_aim` / `phaser_aim_avoid` play over the head and

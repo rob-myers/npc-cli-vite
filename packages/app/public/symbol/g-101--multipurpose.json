@@ -367,7 +367,7 @@
         },
         {
           "id": "bd678555-de9d-4029-a06d-b43920825967",
-          "name": "window--001 name=window-left",
+          "name": "window--001",
           "locked": true,
           "visible": true,
           "transform": {
@@ -386,7 +386,7 @@
         },
         {
           "id": "f299bba3-04d9-46e3-90c0-2933b0d6b1d3",
-          "name": "window--001 name=window-right",
+          "name": "window--001",
           "locked": true,
           "visible": true,
           "transform": {
@@ -1235,7 +1235,7 @@
         },
         {
           "id": "0823c19d-b238-4bc4-a852-17f50e84b2c9",
-          "name": "door auto slide=[1,0] rel=sees:window-left,window-right",
+          "name": "door auto slide=[1,0]",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 548, "f": 537.5},
@@ -1271,7 +1271,7 @@
         },
         {
           "id": "8f0fa97b-48c5-4881-ad8d-58b71525c361",
-          "name": "door auto slide=[1,0] rel=sees:window-left,window-right",
+          "name": "door auto slide=[1,0]",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 604, "f": 537.5},
@@ -1575,6 +1575,79 @@
       "type": "group",
       "expanded": false,
       "children": [
+        {
+          "id": "009639a1-4015-42c8-97ef-1f4198cb3016",
+          "name": "decor point label=corridor",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 927,
+            "f": 919.5
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 927, 919.5)"
+        },
+        {
+          "id": "8515b959-d5a1-4576-968f-2cae64a78bd8",
+          "name": "decor point label=corridor",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 268,
+            "f": 928.5
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 268, 928.5)"
+        },
+        {
+          "id": "5750b433-6d78-4374-a548-ed0ee942e5de",
+          "name": "decor point label=corridor",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0.5, "b": 0, "c": 0, "d": 0.5, "e": 240, "f": 290},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 240, 290)"
+        },
+        {
+          "id": "532747c9-f7c3-4c6d-8ff7-28aaa8ad3c10",
+          "name": "decor point label=corridor",
+          "locked": true,
+          "visible": true,
+          "transform": {
+            "a": 0.5,
+            "b": 0,
+            "c": 0,
+            "d": 0.5,
+            "e": 590.5,
+            "f": 596.5
+          },
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "label",
+          "baseRect": {"width": 40, "height": 15},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0.5, 0, 0, 0.5, 590.5, 596.5)"
+        },
         {
           "id": "d4090db3-168a-4f1e-bf36-690ad628bc1f",
           "name": "decor point spawn",

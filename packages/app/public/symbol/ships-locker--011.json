@@ -40,26 +40,26 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 7, "f": -2},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 10, "f": -2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, -1, 7, -2)"
+          "cssTransform": "matrix(-1, 0, 0, -1, 10, -2)"
         },
         {
           "id": "fd407264-b74d-4d2d-ab28-b5ce3eabf6db",
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1, "f": 2},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 4, "f": 2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 1, 2)"
+          "cssTransform": "matrix(1, 0, 0, 1, 4, 2)"
         },
         {
           "id": "ec2ec3ef-8e3e-4830-9a39-732e912d5e4b",
@@ -76,26 +76,26 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 119, "f": -2},
+          "transform": {"a": -1, "b": 0, "c": 0, "d": -1, "e": 118, "f": -2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(-1, 0, 0, -1, 119, -2)"
+          "cssTransform": "matrix(-1, 0, 0, -1, 118, -2)"
         },
         {
           "id": "f552821e-bd6f-4275-a00e-8bcf1c4cadd7",
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 113, "f": 2},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 112, "f": 2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 113, 2)"
+          "cssTransform": "matrix(1, 0, 0, 1, 112, 2)"
         }
       ]
     },

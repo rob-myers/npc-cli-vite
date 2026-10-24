@@ -52,15 +52,28 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
     await api.sleep(0.05);
   }
 
-  // world commands pause with it — see `docs/jsh-pause.md`
+  // world commands pause with it and during map changes — see `docs/jsh-pause.md`
   api.setPausable("world", false);
   const w = api.getCached(WORLD_KEY);
   const group = api.pauseGroup("world");
-  const sub = w.events.subscribe({
-    next: (e) => (e.key === "disabled" ? group.pause() : e.key === "enabled" && group.resume()),
+  const listenerKey = `pause:${api.meta.sessionKey}`;
+  /** From "map-changing" until the npcs are back */
+  let changing = w.isMapChanging();
+  const sync = () => (w.disabled === true || changing ? group.pause() : group.resume());
+
+  w.e.addKeyedListener(listenerKey, (e) => {
+    if (e.key === "map-changing") {
+      changing = true;
+    } else if (changing && (e.key === "npcs-restored" || (e.key === "map-settled" && w.client === true))) {
+      changing = false;
+      api.writeInfo(`loaded map ${w.mapKey}`);
+    } else if (e.key !== "disabled" && e.key !== "enabled") {
+      return;
+    }
+    sync();
   });
-  group.own(() => sub.unsubscribe());
-  if (w.disabled === true) group.pause();
+  group.own(() => w.e.keyedListener.delete(listenerKey));
+  sync();
 }
 
 /**
@@ -754,15 +767,18 @@ async function move_next(
 
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
-      const movePromise = movePausable(
-        {
-          ...moveFlags(opts),
-          npcKey: npc.key,
-          to: next,
-          arrive: next.meta?.preventArrive !== true, // for wasd_delta --nav
-        },
-        { "not navigable": false, occupied: false, stuck: false },
-      );
+      const movePromise =
+        next.meta?.look === true
+          ? npc.look({ at: next }).catch(() => {}) // wasd_delta --nav blocked: turn that way instead
+          : movePausable(
+              {
+                ...moveFlags(opts),
+                npcKey: npc.key,
+                to: next,
+                arrive: next.meta?.preventArrive !== true, // for wasd_delta --nav
+              },
+              { "not navigable": false, occupied: false, stuck: false },
+            );
       await Promise.race([movePromise, (pendingRead = api.read())]);
     }
   } finally {
@@ -1665,6 +1681,7 @@ export async function warp(
  * - On hold w/a/s/d over World, emits a target just ahead of the npc: up, left, down or right (XZ camera)
  * - --nav ensures target is navigable, so is not emitted where the mesh ends.
  *   Outputs have `meta.preventArrive` honoured by `move` via move_next.
+ *   Blocked from rest, it outputs a point that way with `meta.look`, which `move` turns to face.
  * ```sh
  * wasd_delta --nav rob | move rob
  * wasd_delta rob | look rob
@@ -1683,6 +1700,8 @@ export async function* wasd_delta(
 
   /** Sent again on release without `meta.preventArrive` so we arrive */
   let lastTarget: null | Geom.VectJson = null;
+  /** The blocked direction last looked along, so a held key looks once */
+  let lastLook: null | Geom.VectJson = null;
 
   while (true) {
     await api.sleep(wasdConfig.intervalSecs); // a kill rejects it
@@ -1704,11 +1723,19 @@ export async function* wasd_delta(
       // none held, or opposites, or the mesh's edge
       const slide = direction.length === 0 ? null : npc.getSlideResult(direction.normalize(length));
       if (slide?.success === true && npc.distanceTo(slide.groundPoint) >= wasdConfig.minMove) {
+        lastLook = null;
         // passed through, not arrived at: a move slows as it arrives, and this near they would never run
         yield { ...(lastTarget = slide.groundPoint), meta: { floor: true, nav: true, preventArrive: true } };
       } else if (lastTarget !== null) {
         yield { ...lastTarget, meta: { floor: true, nav: true } }; // let go, or blocked: there they stop
         lastTarget = null;
+      } else if (direction.length === 0) {
+        lastLook = null;
+      } else if (lastLook === null || lastLook.x !== direction.x || lastLook.y !== direction.y) {
+        // blocked from rest, e.g. a wall right beside them: they turn that way instead
+        lastLook = { x: direction.x, y: direction.y };
+        const { x, y } = direction.normalize(wasdConfig.lookDist);
+        yield { x: npc.position.x + x, y: npc.position.z + y, meta: { look: true } };
       }
     } else if (direction.length > 0) {
       const { x, y } = direction.normalize(wasdConfig.lookDist);

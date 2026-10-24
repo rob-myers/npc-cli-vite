@@ -37,7 +37,7 @@ import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
-import { flushWorldStores, getWorldStore } from "../service/storage";
+import { flushWorldStores, getSiteStore, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import { spotsGeneratingEvent } from "../spot.schema";
@@ -87,7 +87,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       worldGroup: null,
       worldQueryPrefix: ["world", meta.worldKey],
 
-      brightness: getWorldStore(meta.worldKey).read().brightness,
+      brightness: getSiteStore().read().brightness,
       npcBrightness: defaultNpcBrightness, // the theme's, once there is one — see `onChangeTheme`
 
       events: new Broadcaster(),
@@ -256,9 +256,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       },
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
-      },
-      getTrimCount() {
-        return state.gmsData.count.wall + state.gmsData.count.door + state.gmsData.count.window;
       },
       isPlaygroundMap() {
         if (isPlaygroundMapKey(state.mapKey)) return true;
@@ -693,8 +690,6 @@ export type State = {
   foldTo(amount: number, ms?: number): Promise<void>;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
-  /** One band per wall segment, per door, and per segment of a window's outline */
-  getTrimCount(): number;
   /** Either playground map or mentions a playground hull-symbol */
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;

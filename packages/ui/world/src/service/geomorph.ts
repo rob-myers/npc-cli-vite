@@ -23,7 +23,6 @@ import {
   debug,
   deepClone,
   error,
-  hashText,
   tagsToMeta,
   textToTags,
   toPrecision,
@@ -74,7 +73,6 @@ function computeFlatDoorsDecorObstacles(
 
   // ensure `decor.meta.doorId` points to correct doorId
   let doorIdOffset = symbol.doors.length;
-  // 🔔 cloned, so `numberRelatedNames` cannot write back into `assets.symbol`
   const flatDoors = symbol.doors
     .map((x) => x.cleanClone())
     .concat(
@@ -517,43 +515,6 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
   return poly;
 }
 
-/** The suffix `numberRelatedNames` adds, e.g. `window#1f4a0c` */
-const relatedNameRegex = /#[0-9a-z]{6}$/;
-
-/** Off the name too, so two already-tagged `window`s do not merge when a copy is re-tagged */
-function relatedNameTag(scope: string, name: string) {
-  return (hashText(`${scope}|${name}`) >>> 0).toString(36).padStart(6, "0").slice(-6);
-}
-
-/**
- * A `name={name}` and the `rel={relation}:{name}` pointing at it are authored in ONE file, so the
- * name is tagged as we leave it — else two symbols using `name=window` would be identified.
- * `instantiateFlatSymbol` re-tags per copy, so nor can two copies of one symbol.
- *
- * `only` says which names a pass owns: `"bare"` those written in the file being left, `"numbered"`
- * those a deeper level has dealt with. The tag hashes `scope` rather than counting — a count
- * depends on how many symbols came before, so a partial rebuild renumbers names nothing touched
- */
-function numberRelatedNames(polys: Poly[], only: "bare" | "numbered", scope: string): void {
-  const renumber = (name: string): null | string =>
-    relatedNameRegex.test(name) === (only === "numbered")
-      ? `${name.replace(relatedNameRegex, "")}#${relatedNameTag(scope, name)}`
-      : null;
-
-  for (const { meta } of polys) {
-    if (typeof meta.name === "string") {
-      const next = renumber(meta.name);
-      next !== null && (meta.name = next);
-    }
-    if (typeof meta.rel === "string") {
-      // `meta.rel` is `{relation}:{name},{name}…`, each name numbered on its own
-      const at = meta.rel.indexOf(":");
-      const names = meta.rel.slice(at + 1).split(",");
-      meta.rel = `${meta.rel.slice(0, at + 1)}${names.map((name) => renumber(name) ?? name).join(",")}`;
-    }
-  }
-}
-
 /**
  * - Mutates `flattened`
  * - Returns flattened symbol.
@@ -564,11 +525,10 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
   /** Sub-symbols tagged `optional`. They are kept apart for the parent to choose from. */
   const optionalParts: NonNullable<Geomorph.FlatSymbol["optionalParts"]> = [];
 
-  const flats = symbols.flatMap(({ symbolKey, meta, transform }, i) => {
+  const flats = symbols.flatMap(({ symbolKey, meta, transform }) => {
     const flat = flattened[symbolKey];
     if (flat) {
-      // scoped per copy, so two copies of one child cannot see each other's names
-      const instance = instantiateFlatSymbol(flat, meta, transform, `${key}/${symbolKey}#${i}`);
+      const instance = instantiateFlatSymbol(flat, meta, transform);
       // a hull symbol has no parent, so its optional sub-symbols always stay
       if (meta.optional !== true || isHull === true) return instance;
       optionalParts.push({ tags: Object.keys(meta).filter((tag) => meta[tag] === true), flat: instance });
@@ -581,10 +541,6 @@ export function flattenSymbol(symbol: Geomorph.Symbol, flattened: AssetsType["fl
 
   const { flatDoors, flatDecor } = computeFlatDoorsDecorObstacles(symbol.key, symbol, flats);
   const flatWindows = windows.map((x) => x.cleanClone()).concat(flats.flatMap((x) => x.windows));
-
-  // the last level at which a name written in THIS file is still bare, and where the `rel`
-  // pointing at it sits alongside — so where the two are tied together
-  numberRelatedNames(flatDoors.concat(flatWindows), "bare", key);
 
   return (flattened[key] = {
     key,
@@ -705,8 +661,6 @@ export function instantiateFlatSymbol(
   sym: Geomorph.FlatSymbol,
   meta: Meta<{ doors?: string[]; walls?: string[]; symbols?: string[] }>,
   transform: Geom.AffineTransform,
-  /** Identifies this copy — see `numberRelatedNames` */
-  scope: string,
 ): Geomorph.FlatSymbol {
   const mat = tmpMat1.setMatrixValue(transform);
   const det = Math.round(mat.determinant); // -1 or +1
@@ -763,16 +717,6 @@ export function instantiateFlatSymbol(
     if (!doorIdsToRemove.has(i)) doorIdRemap.set(i, newDoorId++);
   }
 
-  /**
-   * A sub-symbol node tagged `name=x` or `rel=sees:x` applies it to ALL of its doors and windows
-   * that lack their own — which is how a parent relates a connector buried in one sub-symbol to one
-   * buried in another, neither being nameable from outside otherwise
-   */
-  const relatedOf = (poly: Poly): Meta => ({
-    ...(typeof meta.name === "string" && poly.meta.name === undefined && { name: meta.name }),
-    ...(typeof meta.rel === "string" && poly.meta.rel === undefined && { rel: meta.rel }),
-  });
-
   /** e.g. tag `do:foo=42` sets `foo: 42` on every do point within */
   const doMeta = Object.fromEntries(
     Object.entries(meta).flatMap(([k, v]) => (k.startsWith("do:") ? [[k.slice(3), v]] : [])),
@@ -791,16 +735,13 @@ export function instantiateFlatSymbol(
     .filter((_, doorId) => !doorIdsToRemove.has(doorId))
     .map((poly) => {
       const sd = poly.meta.slide;
-      if (!Array.isArray(sd)) return poly.cleanClone(mat, relatedOf(poly));
+      if (!Array.isArray(sd)) return poly.cleanClone(mat);
       // transform meta.slide
       const v = mat.transformSansTranslate(tmpVect1.set(sd[0], sd[1]));
-      return poly.cleanClone(mat, { ...relatedOf(poly), slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
+      return poly.cleanClone(mat, { slide: [v.x, v.y], det: det * (poly.meta.det ?? +1) });
     });
 
-  const windows = src.windows.map((poly) => poly.cleanClone(tmpMat1, relatedOf(poly)));
-
-  // a name `relatedOf` has only just stamped stays bare, for the parent's `flattenSymbol` to tag
-  numberRelatedNames(doors.concat(windows), "numbered", scope);
+  const windows = src.windows.map((poly) => poly.cleanClone(tmpMat1));
 
   return {
     key: sym.key,
