@@ -2,6 +2,11 @@
 
 ## World
 
+### Act
+
+- ✅ `act count kate to:5` should fade on final said
+- ✅ act avoid/hide should support pause
+
 ### Animation and Npc
 
 - ✅ sidestep (command executed in PROFILE)
@@ -40,6 +45,7 @@
 
 ### Camera
 
+- ✅ debug sliders for fov/minDist/maxDist with natural relationship
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
 ### Cleanliness
@@ -84,13 +90,15 @@
     - `w.gmRoomGraph.getReachableUpTo(gmRoomId.grKey, (node) => node.type === "door" && w.d[node.gdKey]?.open !== true)`
   - ✅ fix `door-opening` TypeError reading 'hull' on save
 
-### Shield
+### Perception
 
-- ✅ improve shield phaser suppression
-  - can raise weapon when not pointing towards shield
-  - cannot turn into shield
+- ✅ spots overlay toggle not grey if `spot_overlay` has run
+- ✅ some cover spots don't provide cover
 
 ### Phaser and Psi
+
+- ✅ can strafe without raising phaser
+  - double tap shift
 
 - ✅ remove aim-freeze
   - can use slow-slider instead
@@ -215,8 +223,15 @@
 - ✅ player can activate on mobile
 
 
+### Shield
+
+- ✅ improve shield phaser suppression
+  - can raise weapon when not pointing towards shield
+  - cannot turn into shield
+
 ### Unorganised Bugs
 
+- ✅ why don't we see any floor wires in 102
 - ✅ pause World while `move` then resume is jerky
 - ✅ BUG only some room labels shown when change to map 301-101-301
 
@@ -275,6 +290,12 @@
 
 ## Jsh and Jobs
 
+- ✅ saw `move: npc not found: /shared/pred/player` when I changed to map 102-only while you were building 102 hull symbol.
+
+- ✅ reconsider turn when wasd_delta outputs nothing by perpendicular wall
+
+- ✅ the error stack should include act subcommand e.g. by pushing onto stack
+
 - ✅ Jobs: can be confusing whether process is paused due to World or explicitly
   - ✅ indicate process tags
   - ✅ put back process tag `always` and can set from ui
@@ -289,6 +310,7 @@
 
 ## MapEdit
 
+- ✅ MapEdit: can select sub-symbol without unlocking folder
 - ✅ MapEdit uses allotment for 2 panes
 - ✅ finish geomorph 101
 - ✅ finish geomorph 302
@@ -300,7 +322,6 @@
 ## Media
 
 - ✅ ask Claude to create some sub-symbols of 101
-
 
 ## Site
 

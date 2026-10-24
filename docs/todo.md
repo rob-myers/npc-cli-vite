@@ -1,6 +1,6 @@
 # TODO
 
-- saw `move: npc not found: /shared/pred/player` when I changed to map 102-only while you were building 102 hull symbol.
+- return to scenarios and start acting them out
 
 ## World
 
@@ -8,7 +8,7 @@
 
 - ✅ skin face eyes
 
-- refine psi breathing
+- ❌ refine psi breathing
   - do lungs/diaphragm actually move like that?
 
 - fix lowered phaser going through a closed door
