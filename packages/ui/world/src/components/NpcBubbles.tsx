@@ -101,7 +101,16 @@ export default function NpcBubbles() {
               className="flex flex-col items-center"
             >
               {thought !== undefined && <ThoughtBubble words={thought.words} tag={thought.tag} />}
-              {line !== undefined && <SaidBubble words={line.words} elRef={(el) => void (line.el = el)} />}
+              {line !== undefined && (
+                <SaidBubble
+                  words={line.words}
+                  elRef={(el) => {
+                    line.el = el;
+                    // the element is reused by the next line said, at its own fade, e.g. none whilst paused
+                    if (el !== null) el.style.opacity = `${Math.min(1, line.secs / lineFadeSecs)}`;
+                  }}
+                />
+              )}
             </div>
           ),
           // its close button closes the debug section alone: a line said stays up
