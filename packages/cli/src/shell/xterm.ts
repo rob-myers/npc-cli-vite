@@ -733,7 +733,15 @@ export class TtyXterm {
           break;
         }
         case "line": {
-          this.xterm.writeln(command.line);
+          if (this.promptReady === true) {
+            // a line whilst idle, e.g. from a background job, goes above the prompt
+            const input = this.input;
+            this.clearInput();
+            this.xterm.writeln(command.line);
+            this.setInput(input);
+          } else {
+            this.xterm.writeln(command.line);
+          }
           numLines++;
           break;
         }
