@@ -140,7 +140,7 @@ What it usually finds:
   about 24 sides, its vertices about 0.2 INSIDE that edge. Past it, each vertex takes a sliver of what lies
   beyond, e.g. a chair's line.
 
-Cleaned so far: `medical--008`, `table--009`.
+Cleaned so far: `medical--008`, `table--009`, `console--033` (its rect now a hull of the chair's silhouette).
 
 ## What a tracer needs
 

@@ -360,22 +360,22 @@
       "rect": {"x": 2727, "y": 3258, "width": 105, "height": 180},
       "sheetId": 0
     },
+    "console--033 0": {
+      "symbolKey": "console--033",
+      "obstacleId": 0,
+      "rect": {"x": 3551, "y": 1362, "width": 135.5, "height": 162},
+      "sheetId": 0
+    },
     "extra--002--fresher 0": {
       "symbolKey": "extra--002--fresher",
       "obstacleId": 0,
-      "rect": {"x": 3551, "y": 1362, "width": 110, "height": 157.5},
+      "rect": {"x": 3551, "y": 1532, "width": 110, "height": 157.5},
       "sheetId": 0
     },
     "console--051 0": {
       "symbolKey": "console--051",
       "obstacleId": 0,
-      "rect": {"x": 3551, "y": 1528, "width": 137.5, "height": 155},
-      "sheetId": 0
-    },
-    "console--033 0": {
-      "symbolKey": "console--033",
-      "obstacleId": 0,
-      "rect": {"x": 3551, "y": 1691, "width": 135, "height": 152.5},
+      "rect": {"x": 3551, "y": 1698, "width": 137.5, "height": 155},
       "sheetId": 0
     },
     "console--019 1": {
