@@ -104,8 +104,11 @@ An obstacle's top is its polygon cut out of the png, so the polygon decides what
 - **Include the drawn border.** Trace the OUTSIDE of the outline, not the fill within it. A grey fill
   traced as is loses its line: grow the mask by the line's width (7 px for a thin line) before tracing.
 - **Cover the thick lines under it.** Where an obstacle runs into a thick line, e.g. the wall at a table's
-  end, take the polygon to that line's FAR edge: `office--006`'s table spans `-2` to `122`. Art outside
-  the polygon is not in the spritesheet, so the obstacle would otherwise end short of its own edge.
+  end, take the polygon nearly to that line's FAR edge. Art outside the polygon is not in the
+  spritesheet, so the obstacle would otherwise end short of its own edge.
+- **Stop 0.4 short of a wall's far face.** A wall's far face is its far edge, e.g. `-2` for one centred
+  on `0`, and a skirt in that plane z-fights it, seen from the next room. So end at `-1.6`, still
+  inside the wall: `lab--018`'s table ran round its room to `-2` and `242`, and now to `-1.6` and `241.6`.
 - **Just enough points.** Simplify the traced contour (about 3 px of tolerance), which leaves a curve
   as a few straight runs: a quarter circle wants four or five, not twenty.
 - **Square the corners.** A rounded stroke leaves a short chamfer at each corner. Replace it with the
@@ -141,8 +144,9 @@ To fix one whose obstacles leave thick lines showing, check it by machine before
    `gen-starship-sheets`.
 
 What it usually finds:
-- **Wall lines.** An obstacle against a wall stops at the wall's near edge (`2`, `178`). Take it to the
-  far edge (`-2`, `182`), as the walls are drawn 4 thick about the room's edge.
+- **Wall lines.** An obstacle against a wall stops at the wall's near edge (`2`, `178`). Take it to
+  0.4 short of the far edge (`-1.6`, `181.6`), as the walls are drawn 4 thick about the room's edge
+  and a skirt on the far face z-fights it.
 - **Curve tips.** A simplified curve cuts inside its outline either side of the extreme point. Move that
   bulge's vertices out by about 0.3.
 - **Neighbours z-fight.** Two obstacles sharing an edge put their sides in one plane, back to back. Keep
