@@ -3,20 +3,24 @@ import { spotQuery } from "./perception.main";
 
 /**
  * An npc acting on the spots about them, until done or killed — see `docs/scenarios.md`.
- * `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map
+ * `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map.
+ * Npc first, a verb takes its main option as `<verb>:<value>`
  *
  * ```sh
  * act count rob to:10
  * act face rob wall
  * act hide cal from:rob away:6 prefer:cover,corner
  * act avoid cal from:rob
+ * act cal avoid:rob away:3
+ * act rob count:10
  * ```
  */
 export async function act(ct: JshCli.RunArg) {
-  const [verb, npcKey, ...args] = ct.args;
-  const run = verb === undefined ? undefined : verbs[verb];
-  if (run === undefined || npcKey === undefined) {
-    throw Error(`usage: act {${Object.keys(verbs).join(",")}} <npc> …`);
+  const { verb, npcKey, args } = parseAct(ct.args);
+  const found = verb === undefined ? undefined : verbs[verb];
+  if (verb === undefined || found === undefined || npcKey === undefined) {
+    const names = Object.keys(verbs).join(",");
+    throw Error(`usage: act {${names}} <npc> …, or act <npc> {${names}}:<value> …`);
   }
   ct.w.npc.get(npcKey);
   ct.api.meta.stack.push(verb); // an error then names it, e.g. `act: hide: …`
@@ -31,11 +35,31 @@ export async function act(ct: JshCli.RunArg) {
     onSuspend: () => (ct.api.isHeldOnlyBy("world") === false && ct.w.n[npcKey]?.rejectAll(Error("paused")), true),
   });
   try {
-    await task.run(() => run({ ct, npcKey, task }, ct.api.jsArg(args) as Opts, args));
+    await task.run(() => found({ ct, npcKey, task }, ct.api.jsArg(args) as Opts, args));
   } finally {
     handlers.dispose();
   }
 }
+
+/** `act <verb> <npc> …`, else `act <npc> <verb>:<value> …` as the args that verb takes */
+function parseAct([first, ...rest]: string[]) {
+  if (first !== undefined && Object.hasOwn(verbs, first)) return { verb: first, npcKey: rest[0], args: rest.slice(1) };
+  for (const [i, arg] of rest.entries()) {
+    const [verb, value] = [arg.slice(0, arg.indexOf(":")), arg.slice(arg.indexOf(":") + 1)];
+    if (arg.includes(":") && Object.hasOwn(shorthands, verb)) {
+      return { verb, npcKey: first, args: [...shorthands[verb](value), ...rest.toSpliced(i, 1)] };
+    }
+  }
+  return { verb: undefined, npcKey: first, args: rest };
+}
+
+/** `act <npc> <verb>:<value>`: the args each verb takes `value` as */
+const shorthands: Record<string, (value: string) => string[]> = {
+  avoid: (value) => [`from:${value}`],
+  count: (value) => [`to:${value}`],
+  face: (value) => [value],
+  hide: (value) => [`from:${value}`],
+};
 
 /** What a verb runs with: its npc, and a game-time task a kill cancels */
 type Ctx = { ct: JshCli.RunArg; npcKey: string; task: Task };
@@ -43,9 +67,19 @@ type Opts = Record<string, undefined | string | number | boolean>;
 type Verb = (ctx: Ctx, opts: Opts, args: string[]) => Promise<void>;
 
 const verbs: Record<string, Verb> = {
-  /** `to:<n> [every:<secs>]`: says each number in turn, a game second apart unless `every` says */
+  /**
+   * `[from:<n>] [to:<n>] [every:<secs>] [down]`: says each number from `from` to `to`, `every` game seconds apart.
+   * By default 1 to 10, a second apart. `from` alone counts down to 1, as does `down` from `to`
+   */
   async count(ctx, opts) {
-    for (let i = 1; i <= Number(opts.to ?? 10); i++) {
+    const [from, to] =
+      opts.from !== undefined
+        ? [Number(opts.from), Number(opts.to ?? 1)]
+        : opts.down === true
+          ? [Number(opts.to ?? 10), 1]
+          : [1, Number(opts.to ?? 10)];
+    const step = from <= to ? 1 : -1;
+    for (let i = from; i !== to + step; i += step) {
       ctx.ct.w.speech.say(ctx.npcKey, `${i}`);
       await waitSecs(ctx, Number(opts.every ?? 1));
     }

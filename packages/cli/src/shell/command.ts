@@ -1308,12 +1308,12 @@ type CommandName = keyof typeof commandKeys;
 export const commandNames = keys(commandKeys);
 
 export interface HandleStatusHandlers {
-  /* An optional cleanup */
+  /** An optional cleanup */
   cleanup?: ProcessMeta["cleanups"][number];
-  /* An optional resume */
+  /** An optional resume, kept if returns `true` */
   onResume?: ProcessMeta["onResumes"][number];
   onSignal?: ProcessMeta["onSignals"][number];
-  /* An optional suspend */
+  /** An optional suspend, kept if returns `true` */
   onSuspend?: ProcessMeta["onSuspends"][number];
 }
 

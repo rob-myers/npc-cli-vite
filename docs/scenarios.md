@@ -69,9 +69,11 @@ Queries: spots by side of a door, coverage (the union of `sees`), the spot seein
 
 The pieces of a scenario, played by hand rather than directed. `act <verb> <npc> …` (`cli/src/jsh/world/act.ts`) runs one on game time until done or killed. Run several as background jobs (`&`) to compose them. `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map.
 
+Npc first, a verb takes its main option as `<verb>:<value>`: `act kate avoid:rob` is `act avoid kate from:rob`, as are `hide:rob` (`from:rob`), `face:g0s12` and `count:10` (`to:10`). Other options follow, e.g. `act kate avoid:rob away:3`.
+
 | Verb | Does |
 | --- | --- |
-| `count rob to:10 [every:1]` | Says each number in turn |
+| `count rob [from:1] [to:10] [every:1] [down]` | Says each number from `from` to `to`, either way. `from:3` alone counts down to 1, as does `down` from `to` |
 | `face rob wall` | Looks towards their spot's nearest occluder. Also an npc or a spot key |
 | `hide cal from:rob [away:6] [prefer:cover,corner]` | As `avoid`, judged strictly: every spot it will count as at must be unseen, with its room's doors open, as it opens one going in and may stand by one. So it goes further than `avoid` |
 | `avoid cal from:rob [away:6] [prefer:cover,corner]` | To a spot none of them sees, `away` metres from them if one is, judged by that spot alone. Skips spots others stand at or head for. Already unseen, it stays put. Sat or lain, it first gets up beside its seat or bed. Blocked, it tries another, failing after 3. Seen on arrival, it fails saying why, e.g. which of its spots may be seen |
