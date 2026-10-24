@@ -30,6 +30,7 @@ import {
   deckConfig,
   drawDoorTicks,
   drawRoomFloors,
+  drawSkirtEdges,
   setDeckInks,
   softEdges,
   toEdgeOpts,
@@ -145,6 +146,9 @@ export default function Floor() {
         // — hence the union. One pass for the lot: per doorway, each would walk it all again
         const walkable = Poly.union([...layout.rooms, ...layout.doors.map((x) => x.poly)]);
         drawBlurredEdge(ct, getPolysPath(layout.doors.map((x) => x.poly)), walkable, edge);
+
+        // lit along each wall's foot, after the darkening so it stays crisp. See `deckConfig.skirt`
+        drawSkirtEdges(ct, layout, w.gmsData.byKey[gmKey].wallSegs);
 
         // obstacle drop shadows
         drawPolygons(

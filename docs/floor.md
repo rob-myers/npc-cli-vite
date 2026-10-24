@@ -45,8 +45,14 @@ w.floor.drawAll();
 `plate.chequerInk`, if not `null`, is laid over every other plate (`drawChequer`), which chequers
 the deck: darker plates in the light theme, faintly lighter ones in the dark.
 
-Six parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `nav`. Each but `tone` and
+Seven parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `skirt`, `nav`. Each but `tone` and
 `nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
+
+`skirt` is a lit edge along each wall's foot, `width` out from its face (`drawSkirtEdges`). It is
+drawn into the floor rather than as a mesh of its own: a band beside a translucent wall, drawn as its
+own mesh, showed through any nearer wall. The walls darken their own foot and top instead (`Walls`,
+`wallBandHeight`), in their own colour, so they blend alike in any order. It is clipped to the rooms,
+and a raised wall (`meta.y`) gets none.
 
 Two of them read a room's **label** — `wiring.rooms` and `doorTicks.rooms`, each a list of labels or
 `"all"`. Nothing else on the floor is label-driven.
@@ -136,7 +142,8 @@ paints. The deck laid on top of it is `deckConfig`, so there is one place to tun
 ## Draw order (`Floor.drawGm`)
 
 Hull fill and its 45° hatch → wall bases (`#000`) → `drawRoomFloors` → broad-wall aliasing fix →
-the layout's triangulation → door shadows → door ticks → the blurred edges → obstacle drop shadows.
+the layout's triangulation → door shadows → door ticks → the blurred edges → skirt edges → obstacle
+drop shadows.
 
 The ticks go **after** the nav mesh on purpose: its translucent fill would otherwise wash them out.
 

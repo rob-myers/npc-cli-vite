@@ -257,9 +257,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       getTheme() {
         return state.assets?.theme?.[state.themeKey] ?? defaultWorldTheme;
       },
-      getTrimCount() {
-        return state.gmsData.count.wall + state.gmsData.count.door + state.gmsData.count.window;
-      },
       isPlaygroundMap() {
         if (isPlaygroundMapKey(state.mapKey)) return true;
         const mapDef = state.assets.map[state.mapKey] ?? emptyMapDef;
@@ -693,8 +690,6 @@ export type State = {
   foldTo(amount: number, ms?: number): Promise<void>;
   getGmKeyTexId(gmKey: StarShipGeomorphKey): number;
   getTheme(): import("../assets.schema").WorldTheme;
-  /** One band per wall segment, per door, and per segment of a window's outline */
-  getTrimCount(): number;
   /** Either playground map or mentions a playground hull-symbol */
   /** From `onChangeMap` — which unsets `settledMapKey` — until "map-settled"; the first boot included */
   isMapChanging(): boolean;

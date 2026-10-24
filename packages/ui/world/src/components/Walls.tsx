@@ -1,7 +1,7 @@
 import { useStateRef } from "@npc-cli/util";
 import { Mat, Vect } from "@npc-cli/util/geom";
 import { useContext, useEffect, useMemo } from "react";
-import { attribute, uniform } from "three/tsl";
+import { attribute, float, mix, positionGeometry, step, uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { wallHeight } from "../const.env";
 import * as geometry from "../service/geometry";
@@ -9,9 +9,6 @@ import { createTwoSidedXyQuad } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
 import { bootstrapInstanceColor } from "../service/texture";
-import { fadeSplit } from "../service/wall-band";
-import WallSkirts from "./WallSkirts";
-import WallTrims from "./WallTrims";
 import { WorldContext } from "./world-context";
 
 export default function Walls() {
@@ -25,11 +22,15 @@ export default function Walls() {
       decodeInstanceId(instanceId: number) {
         let id = instanceId;
         const gmId = w.gms.findIndex(({ key }) => {
-          const count = w.gmsData.byKey[key].wallSegs.length;
+          const { wallSegs, lintelSegs } = w.gmsData.byKey[key];
+          const count = wallSegs.length + lintelSegs.length;
           return id < count || ((id -= count), false);
         });
-        const wallSeg = w.gmsData.byKey[w.gms[gmId].key].wallSegs[id];
-        return { gmId, seg: wallSeg.seg, meta: wallSeg.meta };
+        const { wallSegs, lintelSegs } = w.gmsData.byKey[w.gms[gmId].key];
+        if (id < wallSegs.length) return { gmId, seg: wallSegs[id].seg, meta: wallSegs[id].meta };
+        // each geomorph's lintels follow its walls
+        const lintel = lintelSegs[id - wallSegs.length];
+        return { gmId, seg: lintel.seg, meta: { ...lintel.meta, doorId: lintel.doorId } };
       },
       getWallMat([u, v], transform, determinant, height, baseHeight) {
         tmpMat1.setMatrixValue(transform);
@@ -48,12 +49,12 @@ export default function Walls() {
           { yScale: height ?? wallHeight, yHeight: baseHeight, mat4: tmpMatFour1 },
         );
       },
-      setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }, ignoreBroadWall) {
+      setSegSlots(slots, instanceId, gmId, { seg, meta, broadWallId }) {
         if (meta.hull === true) {
           // the hull is the ship's outside, which fade mode has nothing behind — and
           // `neverShownSlot` is 1 whilst the fade is off, so this costs nothing there
           slots.setXY(instanceId, neverShownSlot, neverShownSlot);
-        } else if (broadWallId !== null && ignoreBroadWall !== true) {
+        } else if (broadWallId !== null) {
           // A BROAD wall goes on its own slot, whole: it is one piece of structure, and the ceiling
           // draws one lid over the lot on that same slot.
           const slot = broadWallSlotOf(gmId, broadWallId);
@@ -66,25 +67,21 @@ export default function Walls() {
           slots.setXY(instanceId, slot, slot);
         }
       },
-      setConnectorSlots(slots, instanceId, gmId, roomIds) {
-        // a missing side is `neverShownSlot`, NOT `alwaysShownSlot`: the pair is read as a max, so
-        // an always-shown side would win outright — which is what kept every HULL door showing,
-        // its other side lying in the neighbouring geomorph and so reading as `null` here
-        const [a, b] = roomIds.map((x) => (typeof x === "number" ? slotOf(gmId, x) : neverShownSlot));
-        slots.setXY(instanceId, a, b);
-      },
       positionInstances() {
         const { inst: ws } = state;
         if (!ws) return;
-        const slots = ensureRoomSlots(state.quad, w.gmsData.count.wall);
+        const count = w.gmsData.count.wall + w.gmsData.count.lintel;
+        const slots = ensureRoomSlots(state.quad, count);
+        const heights = ensureWallHeights(state.quad, count);
 
         let instanceId = 0;
         const color = new THREE.Color(w.getTheme().walls.color);
 
-        for (const [gmId, { key: gmKey, transform, determinant }] of w.gms.entries()) {
+        for (const [gmId, { key: gmKey, transform, determinant, doors }] of w.gms.entries()) {
           for (const wallSeg of w.gmsData.byKey[gmKey].wallSegs) {
             const { seg, meta } = wallSeg;
             state.setSegSlots(slots, instanceId, gmId, wallSeg);
+            heights.setX(instanceId, typeof meta.h === "number" ? meta.h : wallHeight);
             ws.setMatrixAt(
               instanceId,
               state.getWallMat(
@@ -98,9 +95,20 @@ export default function Walls() {
 
             ws.setColorAt(instanceId++, color);
           }
+
+          for (const { seg, meta, doorId } of w.gmsData.byKey[gmKey].lintelSegs) {
+            // shown with either of its door's rooms: a missing side never, else every hull lintel would show
+            const [a, b] = doors[doorId].roomIds.map((id) =>
+              typeof id === "number" ? slotOf(gmId, id) : neverShownSlot,
+            );
+            slots.setXY(instanceId, a, b);
+            heights.setX(instanceId, meta.h);
+            ws.setMatrixAt(instanceId, state.getWallMat(seg, transform, determinant, meta.h, meta.y));
+            ws.setColorAt(instanceId++, color);
+          }
         }
 
-        slots.needsUpdate = true;
+        slots.needsUpdate = heights.needsUpdate = true;
         ws.computeBoundingSphere();
         ws.instanceMatrix.needsUpdate = true;
         if (ws.instanceColor) ws.instanceColor.needsUpdate = true;
@@ -110,12 +118,14 @@ export default function Walls() {
 
   w.wall = state;
 
-  const wallCount = w.gmsData.count.wall;
+  /** Walls, and the lintels over doors */
+  const wallCount = w.gmsData.count.wall + w.gmsData.count.lintel;
 
   // before the materials below, which read `roomSlots`: an attribute a shader names has to be on
   // the geometry by the time it compiles, and `positionInstances` only fills it in an effect
   useMemo(() => {
     ensureRoomSlots(state.quad, wallCount);
+    ensureWallHeights(state.quad, wallCount);
   }, [wallCount]);
 
   const mat = useMemo(() => {
@@ -132,10 +142,17 @@ export default function Walls() {
     // `sight` fades the ALPHA out; the other modes keep it solid and take its COLOUR to black
     const [alphaFade, colorFade] = fadeSplit(w.view.fadeRoomsFx.sightNode, fade);
 
+    // darker along its foot and its top, in its own colour: walls of one colour blend alike in any order
+    const height = attribute<"float">("wallHeight", "float");
+    const inBand = step(positionGeometry.y.mul(height), wallBandHeight).max(
+      step(positionGeometry.y.oneMinus().mul(height), wallBandHeight),
+    );
+    const bandOpacity = mix(float(1), float(wallBandDarken), inBand);
+
     const litOpacityNode = w.view.objectPick.notEqual(0).select(
       // objectPick 0.5 ignores walls for easier picking
       w.view.objectPick.notEqual(1).select(0, 1),
-      opacityUniform.mul(alphaFade), // beauty render
+      opacityUniform.mul(alphaFade).mul(bandOpacity).min(1), // beauty render
     );
 
     return {
@@ -165,31 +182,43 @@ export default function Walls() {
   }, [w.mapKey, w.hash, w.themeKey, w.decor.ready, mat.uuid]);
 
   return wallCount ? (
-    <>
-      <instancedMesh
+    <instancedMesh
+      key={mat.uuid}
+      name="walls"
+      ref={state.ref("inst", bootstrapInstanceColor)}
+      args={[state.quad, undefined, wallCount]}
+      renderOrder={4}
+    >
+      <meshStandardNodeMaterial
         key={mat.uuid}
-        name="walls"
-        ref={state.ref("inst", bootstrapInstanceColor)}
-        args={[state.quad, undefined, wallCount]}
-        renderOrder={4}
-      >
-        <meshStandardNodeMaterial
-          key={mat.uuid}
-          side={THREE.FrontSide} // 1 draw call
-          transparent
-          depthWrite={false}
-          colorNode={mat.colorNode}
-          opacityNode={mat.opacityNode}
-          outputNode={mat.outputNode}
-        />
-      </instancedMesh>
-
-      {/* Inside `Walls`, which sets `w.wall` in its own body — so both are free to use its
-          `getWallMat` and slot writers the moment they render */}
-      <WallTrims />
-      <WallSkirts />
-    </>
+        side={THREE.FrontSide} // 1 draw call
+        transparent
+        depthWrite={false}
+        colorNode={mat.colorNode}
+        opacityNode={mat.opacityNode}
+        outputNode={mat.outputNode}
+      />
+    </instancedMesh>
   ) : null;
+}
+
+/** `[alphaFade, colorFade]`: `sight` fades alpha out, the other modes fade colour to black */
+function fadeSplit(focus: THREE.Node<"float">, fade: THREE.Node<"float">) {
+  return [mix(float(1), fade, focus), mix(fade, float(1), focus)] as const;
+}
+
+/** Metres a wall's darker band reaches up from its foot, and down from its top */
+const wallBandHeight = 0.2;
+/** A band's opacity, as a multiple of the wall's */
+const wallBandDarken = 2;
+
+/** Each wall's height, which its bands are measured off */
+function ensureWallHeights(geo: THREE.BufferGeometry, count: number) {
+  const existing = geo.getAttribute("wallHeight") as undefined | THREE.InstancedBufferAttribute;
+  if (existing !== undefined && existing.count >= count) return existing;
+  const attr = new THREE.InstancedBufferAttribute(new Float32Array(count).fill(wallHeight), 1);
+  geo.setAttribute("wallHeight", attr);
+  return attr;
 }
 
 export type State = {
@@ -210,15 +239,6 @@ export type State = {
     instanceId: number,
     gmId: number,
     wallSeg: Geomorph.GmData["wallSegs"][number],
-    /** Takes a broad wall by its ROOM as any other segment, rather than by its own slot */
-    ignoreBroadWall?: boolean,
-  ) => void;
-  /** The same for a door or window, which knows its rooms already */
-  setConnectorSlots: (
-    slots: THREE.InstancedBufferAttribute,
-    instanceId: number,
-    gmId: number,
-    roomIds: (null | number)[],
   ) => void;
   positionInstances: () => void;
 };

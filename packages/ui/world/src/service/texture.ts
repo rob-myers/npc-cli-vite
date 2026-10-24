@@ -250,6 +250,14 @@ export const deckConfig = {
     lipOffset: 0.025,
   },
 
+  /** A lit edge along each wall's foot, where its skirting stood — see `drawSkirtEdges` */
+  skirt: {
+    shown: true,
+    /** Metres it reaches out from the wall */
+    width: 0.03,
+    ink: "rgba(190, 205, 225, 0.22)",
+  },
+
   /** The nav mesh over the deck — see `Floor`'s `drawNavMesh` */
   nav: {
     /** The walkable area, lifted a shade */
@@ -276,6 +284,7 @@ const deckInks = {
       clampInk: deckConfig.wiring.clampInk,
     },
     doorTicks: { grooveInk: deckConfig.doorTicks.grooveInk, lipInk: deckConfig.doorTicks.lipInk },
+    skirt: { ink: deckConfig.skirt.ink },
     nav: { fill: deckConfig.nav.fill, ink: deckConfig.nav.ink },
   },
   light: {
@@ -292,6 +301,7 @@ const deckInks = {
       clampInk: "rgba(70, 85, 105, 0.7)",
     },
     doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.55)" },
+    skirt: { ink: "rgba(255, 255, 255, 0.5)" },
     nav: { fill: "rgba(255, 255, 255, 0.0)", ink: "rgba(30, 30, 30, 0.04)" },
   },
 };
@@ -302,12 +312,13 @@ let deckInksKey: keyof typeof deckInks = "dark";
 export function setDeckInks(key: keyof typeof deckInks) {
   if (key === deckInksKey) return;
   deckInksKey = key;
-  const { tone, plate, rivet, wiring, doorTicks, nav } = deckInks[key];
+  const { tone, plate, rivet, wiring, doorTicks, skirt, nav } = deckInks[key];
   deckConfig.tone = tone;
   Object.assign(deckConfig.plate, plate);
   Object.assign(deckConfig.rivet, rivet);
   Object.assign(deckConfig.wiring, wiring);
   Object.assign(deckConfig.doorTicks, doorTicks);
+  Object.assign(deckConfig.skirt, skirt);
   Object.assign(deckConfig.nav, nav);
 }
 
@@ -424,6 +435,31 @@ export function drawDoorTicks(
     }
   }
 
+  ct.restore();
+}
+
+/** A lit edge along each wall's foot, where the skirting stood — see `deckConfig.skirt` */
+export function drawSkirtEdges(
+  ct: CanvasRenderingContext2D,
+  layout: Geomorph.Layout,
+  wallSegs: Geomorph.GmData["wallSegs"],
+) {
+  const opts = deckConfig.skirt;
+  if (opts.shown === false) return;
+  ct.save();
+  // in rooms only: never on the hull's outside, nor under a wall
+  ct.clip(getPolysPath(layout.rooms));
+  ct.beginPath();
+  for (const { seg, meta } of wallSegs) {
+    if (typeof meta.y === "number" && meta.y > 0) continue; // raised, it never meets the floor
+    ct.moveTo(seg[0].x, seg[0].y);
+    ct.lineTo(seg[1].x, seg[1].y);
+  }
+  // centred on the wall's face, so the clip leaves half of it in the room
+  ct.lineWidth = 2 * opts.width;
+  ct.lineCap = "butt";
+  ct.strokeStyle = opts.ink;
+  ct.stroke();
   ct.restore();
 }
 

@@ -35,8 +35,8 @@ declare namespace Geomorph {
     unseen: boolean;
     /** `broadWallId` indexes `broadWalls` */
     wallSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta; broadWallId: null | number }[];
-    wallPolyCount: number;
-    wallPolySegCounts: number[];
+    /** Two per door, one at each face of its doorway, above the door — drawn by `Walls`, apart from `wallSegs` */
+    lintelSegs: { seg: [Geom.Vect, Geom.Vect]; meta: Meta; doorId: number }[];
     /** `poly.lineSegs` rather than `connector.seg`  */
     windowSegs: { seg: [Geom.Vect, Geom.Vect] }[];
     roomHitCt: CanvasRenderingContext2D;

@@ -21,7 +21,14 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
-import { defaultDoorOpacity, lockedDoorTint, MAX_DOORS, unlockedDoorTint, wallHeight } from "../const.env";
+import {
+  defaultDoorOpacity,
+  doorHeight,
+  doorPanelDepth,
+  lockedDoorTint,
+  MAX_DOORS,
+  unlockedDoorTint,
+} from "../const.env";
 import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -358,7 +365,7 @@ export default function Doors() {
             const nz = len > 0 ? dz / len : 0;
             const mx = (tmpV1.x + tmpV2.x) / 2;
             const mz = (tmpV1.y + tmpV2.y) / 2;
-            const depth = hull ? hullPanelDepth : panelDepth;
+            const depth = doorPanelDepth[hull === true ? "hull" : "nonHull"];
 
             const instanceId = state.encodeGmDoorId(gmId, localId);
 
@@ -783,12 +790,9 @@ export type State = {
 
 /** The door's rim, dark against its lit faces */
 const doorEdgeColor = "#333333";
-const doorHeight = wallHeight - 0.001;
 const doorSpeed = 4;
 const doorOpenTarget = 0.98;
 const doorOpenTest = 0.8;
-const panelDepth = 0.08;
-const hullPanelDepth = 0.2;
 /** How many floats each instance has in `doorMetaArray` */
 const doorMetaSize = 4;
 /** Offsets within each instance's `doorMetaArray` entry */

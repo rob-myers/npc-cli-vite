@@ -58,6 +58,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Topic | Doc | In short |
 | --- | --- | --- |
 | Floor | `docs/floor.md` | The look comes from one mutable object, `deckConfig` in `service/texture.ts`. Mutate it and call `w.floor.drawAll()`. |
+| Walls | `docs/walls.md` | `Walls` draws walls and the lintels over doors (two per door, `lintelSegs`, apart from `wallSegs`). Heights are `wallHeight`, `doorHeight`, `lintelHeight` in `const.env`. A wall's own `meta.y` / `meta.h` is drawn, but sight, the player light and spots still take it as full height. Each wall is darker at its foot and top, in its own colour, so walls blend in any order. |
 | Crisp fills | `docs/crisp-fills.md` | A canvas read back as ids (the room-hit canvas, room slots) is filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids into a third. |
 | Obstacle spritesheets | `docs/starship-sheets.md` | `gen-starship-sheets` packs one rect per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in `sheets.json`. `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any MapEdit obstacle change. |
 | Npc skins | `docs/skins.md` | `gen-skin-sheets` lays out a 256px cell per skin in `sheets.json`. A DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves it, so a build fetches neither. Load a DEV World before committing. Also how to make a skin: classic arms, opaque overlays, the face layout. |

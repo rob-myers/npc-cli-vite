@@ -23,7 +23,6 @@ import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
-import { wallBandBrightness } from "../service/wall-band";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -648,9 +647,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       onChangeTheme() {
-        const { obstacles, doors, npcs, lights, post, walls } = w.getTheme();
+        const { obstacles, doors, npcs, lights, post } = w.getTheme();
         w.obs.setBrightness(obstacles.brightness, obstacles.skirtBrightness);
-        wallBandBrightness.value = walls.bandBrightness;
         w.door.setBrightness(doors.brightness);
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
