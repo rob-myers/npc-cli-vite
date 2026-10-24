@@ -9,6 +9,7 @@
 
 ### Animation and Npc
 
+- ✅ skin face eyes
 - ✅ sidestep (command executed in PROFILE)
 
 - ✅ time slow-slider
