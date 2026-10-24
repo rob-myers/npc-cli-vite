@@ -957,7 +957,8 @@ export function WorldView(props: React.PropsWithChildren) {
         last.longPress = false;
         last.rightPress = isRMB(e.nativeEvent);
 
-        state.canvas.style.cursor = e.shiftKey === true ? "grabbing" : "move";
+        const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
+        state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
         last.multi = state.otherPointerDown(e);
         last.pick = null;
