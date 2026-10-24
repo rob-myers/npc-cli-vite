@@ -10,6 +10,12 @@ what works as TypeScript, run it, and see what happened.
   lists it as `npc-cli`.
 - On first use it attaches to Chrome on CDP port `NPC_MCP_CDP_PORT` (9382). If none is running, it
   launches a visible one with its own profile, and opens the dev page there.
+- That Chrome is a second instance, not a window of your own: the Dock and Spotlight open your usual one.
+  If it has no window, e.g. started with `--no-startup-window`, ask it for one on the dev page:
+  ```sh
+  curl -s -X PUT "http://127.0.0.1:9382/json/new?http://localhost:5173"
+  ```
+  `open -na "Google Chrome" --args --user-data-dir=…` hands off to it and opens nothing.
 
 ## The page side
 
