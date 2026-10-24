@@ -653,7 +653,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
         w.npc?.setAmbient(npcs.ambient);
-        w.npcBrightness = persisted.getWorldStore(w.key).read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
+        w.npcBrightness = persisted.getSiteStore().read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.phasers?.syncTheme();
         w.shields?.syncTheme();

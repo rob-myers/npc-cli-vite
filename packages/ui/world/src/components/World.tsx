@@ -37,7 +37,7 @@ import { GmRoomGraph } from "../service/gm-room-graph";
 import { helper } from "../service/helper";
 import { queryClientApi } from "../service/query-client";
 import { recomputeAssetsViaDrafts } from "../service/recompute-assets";
-import { flushWorldStores, getWorldStore } from "../service/storage";
+import { flushWorldStores, getSiteStore, getWorldStore } from "../service/storage";
 import { TexArray } from "../service/tex-array";
 import { cancelClearWorldFlags, scheduleClearWorldFlags } from "../service/world-flags";
 import { spotsGeneratingEvent } from "../spot.schema";
@@ -87,7 +87,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       worldGroup: null,
       worldQueryPrefix: ["world", meta.worldKey],
 
-      brightness: getWorldStore(meta.worldKey).read().brightness,
+      brightness: getSiteStore().read().brightness,
       npcBrightness: defaultNpcBrightness, // the theme's, once there is one — see `onChangeTheme`
 
       events: new Broadcaster(),

@@ -30,11 +30,6 @@ export type PersistedCamera = {
 
 /** `null` means "no preference yet", where the default depends on the device */
 export type WorldSettings = {
-  brightness: number;
-  /** The npcs' own, by theme key, where the menu's slider has overridden the theme's — see `NPCs`' `dimNode` */
-  npcBrightnessByTheme: Record<string, number>;
-  /** Which of the two the menu's one slider last adjusted */
-  lightKey: "world" | "npc";
   cameraMode: null | CameraModeType;
   cameraInitial: null | PersistedCamera;
   /** Whether the camera follows the player — an option of either `cameraMode` */
@@ -92,9 +87,6 @@ export type WorldSettings = {
 };
 
 const defaultWorldSettings: WorldSettings = {
-  brightness: defaultBrightness,
-  npcBrightnessByTheme: {},
-  lightKey: "world",
   cameraMode: "embodied",
   cameraInitial: null,
   follow: isTouchDevice(),
@@ -178,6 +170,33 @@ export type PersistedNpc = {
   /** The doors of this map they hold keys to */
   access?: string[];
 };
+
+/** How the camera frames the floor: its vertical fov, and the metres of floor seen at each zoom stop */
+export type CameraView = { fov: number; nearView: number; farView: number };
+
+/** Shared by every World on the site, under one key: the menu's light slider, and the camera's framing */
+export type SiteSettings = {
+  brightness: number;
+  /** The npcs' own, by theme key, where the menu's slider has overridden the theme's — see `NPCs`' `dimNode` */
+  npcBrightnessByTheme: Record<string, number>;
+  /** Which of the two the menu's one slider last adjusted */
+  lightKey: "world" | "npc";
+  /** `null` for the defaults, which depend on the device — see `getDefaultCameraView` in `service/camera-view` */
+  camera: null | CameraView;
+};
+
+const defaultSiteSettings: SiteSettings = {
+  brightness: defaultBrightness,
+  npcBrightnessByTheme: {},
+  lightKey: "world",
+  camera: null,
+};
+
+let siteStore: undefined | LocalStore<SiteSettings>;
+
+export function getSiteStore() {
+  return (siteStore ??= createLocalStore("site", defaultSiteSettings));
+}
 
 const worldStores = {} as Record<string, LocalStore<WorldSettings>>;
 const worldMapStores = {} as Record<string, LocalStore<WorldMapState>>;

@@ -16,12 +16,10 @@ import { float, instanceIndex, output, pass, uniform, vec4 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import {
-  cameraFov,
   cameraRefAspect,
   cameraSpeed,
   compilingShadersText,
   crosshairY,
-  defaultCameraMaxDistance,
   defaultCameraMinDistance,
   defaultCameraMode,
   embodiedAxisLockFrom,
@@ -63,7 +61,14 @@ import { createPostProcessing, type PostProcessing as PostProcessingType } from 
 import { createRgbShift, type RgbShiftFx, rgbShiftAmount } from "../service/rgb-shift";
 import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
-import { getWorldStore, type PersistedCamera } from "../service/storage";
+import { type CameraView, getSiteStore, getWorldStore, type PersistedCamera } from "../service/storage";
+import {
+  cameraPresetStepByKey,
+  getDefaultCameraView,
+  getPresetCameraView,
+  getZoomStops,
+  stepCameraPreset,
+} from "../service/camera-view";
 import { selectAs } from "../service/tsl";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -104,14 +109,15 @@ export function WorldView(props: React.PropsWithChildren) {
       zoomInSlow: false,
       centreHint: false,
       clickIds: [],
+      cameraView: readCameraView(),
       controls: null as any,
       ctrlOpts: {
         minAzimuthAngle: -Infinity,
         maxAzimuthAngle: +Infinity,
         minPolarAngle: 0,
         maxPolarAngle: Math.PI / 2 - Math.PI / 8,
-        minDistance: defaultCameraMinDistance,
-        maxDistance: defaultCameraMaxDistance,
+        // from the saved framing, as `ctrlOpts` is reset on hmr — see `setCameraView`
+        ...getZoomStops(readCameraView()),
         panSpeed: 2,
         // touch gestures have far less travel than a mouse drag/wheel, so they need more per-pixel
         rotateSpeed: w.touchDevice ? cameraSpeed.rotate.touch : cameraSpeed.rotate.desktop,
@@ -923,6 +929,7 @@ export function WorldView(props: React.PropsWithChildren) {
       onKeyDown(e) {
         if (isTypingTarget(e)) return;
         const key = e.key.toLowerCase();
+        const presetStep = cameraPresetStepByKey[e.key];
         state.keysDown.add(key);
         state.lastKeyMs = Date.now();
         if (e.key === "Escape") {
@@ -938,6 +945,12 @@ export function WorldView(props: React.PropsWithChildren) {
         } else if (e.key === "0") {
           if (e.repeat === false) {
             w.debug?.toggleSpots();
+            w.menu?.update();
+          }
+        } else if (presetStep !== undefined) {
+          // `-` and `+` step the camera's framing through `cameraPresets`
+          if (e.repeat === false) {
+            state.setCameraView(getPresetCameraView(stepCameraPreset(state.cameraView, presetStep)));
             w.menu?.update();
           }
         } else if (key === "f") {
@@ -1427,6 +1440,15 @@ export function WorldView(props: React.PropsWithChildren) {
         w.rootEl?.style.setProperty("--world-veil", `${opaque ? 1 : 0}`);
         return pause(durationMs);
       },
+      setCameraView(next) {
+        const view = next ?? getDefaultCameraView();
+        state.cameraView = view;
+        // `ctrlOpts` reach the controls as props on the render below, and a follow eases from them
+        state.ctrlOpts = { ...state.ctrlOpts, ...getZoomStops(view) };
+        getSiteStore().patch({ camera: next });
+        state.update(); // the camera's fov is a prop too
+        w.r3f?.invalidate();
+      },
       resetCamera() {
         // first, else the follow would pull the reset view straight back onto the player
         if (state.follow === true) state.setFollow(false);
@@ -1657,7 +1679,11 @@ export function WorldView(props: React.PropsWithChildren) {
           parent={{ current: w.rootEl }}
         />
 
-        <PerspectiveCamera fov={getCameraFov(bounds.width / bounds.height)} makeDefault zoom={1} />
+        <PerspectiveCamera
+          fov={getCameraFov(bounds.width / bounds.height, state.cameraView.fov)}
+          makeDefault
+          zoom={1}
+        />
 
         <CameraControls
           ref={state.ref("controls")}
@@ -2049,6 +2075,10 @@ export type State = {
   /** Black over the canvas contents, hiding a floor swap — see `world.css` */
   veilCanvas(opaque: boolean, durationMs?: number): Promise<void>;
   resetCamera(): void;
+  /** How the camera frames the floor: its fov, and the floor seen at each zoom stop. Site-wide */
+  cameraView: CameraView;
+  /** Frames the floor so, the zoom stops following, and saves it site-wide. `null` for the defaults */
+  setCameraView(next: null | CameraView): void;
   syncRenderMode(): RootState["frameloop"];
   /**
    * TSL node for `outputNode`: when state.objectPick==1, outputs raw unlit pick color;
@@ -2086,13 +2116,13 @@ export type State = {
 
 /**
  * `fov` is vertical, so a short wide viewport derives an ever wider horizontal one — 91° at
- * 16:9 but 127° at 3.5:1, where the edges smear. Keep `cameraFov` up to `cameraRefAspect`,
+ * 16:9 but 127° at 3.5:1, where the edges smear. Keep the chosen `fov` up to `cameraRefAspect`,
  * then hold the horizontal angle that implies and close the vertical instead.
  */
-function getCameraFov(aspect: number) {
+function getCameraFov(aspect: number, fov: number) {
   // `false` for the NaN of an unmeasured element, leaving the fov alone
-  if (!(aspect > cameraRefAspect)) return cameraFov;
-  const halfTan = Math.tan(cameraFov * 0.5 * THREE.MathUtils.DEG2RAD);
+  if (!(aspect > cameraRefAspect)) return fov;
+  const halfTan = Math.tan(fov * 0.5 * THREE.MathUtils.DEG2RAD);
   return 2 * Math.atan((halfTan * cameraRefAspect) / aspect) * THREE.MathUtils.RAD2DEG;
 }
 
@@ -2100,6 +2130,11 @@ function getCameraFov(aspect: number) {
 function snapHeading(theta: number) {
   const axis = Math.round(theta / halfPi) * halfPi;
   return Math.abs(deltaAngle(axis, theta)) <= compassSnapRad ? axis : theta;
+}
+
+/** The saved framing, else the default */
+function readCameraView() {
+  return getSiteStore().read().camera ?? getDefaultCameraView();
 }
 
 /** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
