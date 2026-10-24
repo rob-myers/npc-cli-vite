@@ -524,13 +524,13 @@
           "name": "decor quad key=switch",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 950.5, "f": 0},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 950.5, "f": 2},
           "type": "image",
           "srcType": "decor",
           "srcKey": "switch",
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
-          "cssTransform": "matrix(1, 0, 0, 1, 950.5, 0)"
+          "cssTransform": "matrix(1, 0, 0, 1, 950.5, 2)"
         },
         {
           "id": "c57dd73d-1a7d-87d9-7df8-e0cd826a8e8a",

@@ -54,6 +54,16 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   already supply is `wall optional e`, added only by a parent's `walls=['e']`.
 - **Doors**: a `rect` over the drawn door, 8 by 45, named e.g. `door e slide=[0,-1]`. Each is followed
   by its two `decor quad key=switch` images, one each side of the wall, beside the door.
+- **In a hull's final layout, every switch's centre is inside a room**, clear of the wall's face. Decor
+  takes the room containing its centre (`findRoomContaining`), and one in no room is always shown: it
+  never fades in `sight` mode. A switch in a sub-symbol may lie outside that symbol's own rooms, e.g.
+  beyond its wall, where the parent's room meets it. What counts is where it lands in the hull.
+  A room inside a hull wall at `y=0` starts at about `4.3`, so a 6-unit switch there is placed at `f=2`
+  (centre `5`), not `f=0` (centre `3`, in the wall). `g-102--research-deck`'s top-right hull switch was
+  the latter, and `engineering--047`'s switch beside its corner door sat in room 6's side wall.
+  - Find any left over with `Object.values(w.decor.byKey).filter((d) => d.meta.switch && !(d.meta.roomId >= 0))`.
+  - Where a door fills its wall, there is no room beside it for a switch. One may yet be added
+    elsewhere, or one in a wall dropped.
 - **A door's `slide` sets its normal, which must point INTO the room.** The normal is `slide` turned
   90°, `(slide.y, -slide.x)` (`Connector`), and a door's label names the room it points into, e.g. a
   `label=lab` door points into the lab. The debug **overlay** select's **door normals** shows them.
