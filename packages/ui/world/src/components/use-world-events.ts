@@ -538,6 +538,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       onChangeMap() {
         w.settledMapKey = null; // changing from here to "map-settled" — see `isMapChanging`
         state.changingMap = true;
+        w.events.next({ key: "map-changing" });
         // whilst the outgoing map still exists
         state.persistNpcs();
         state.persistDecor();
@@ -766,6 +767,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           case "door-locked":
             break;
+          case "map-changing":
           case "net-changed":
           case "npcs-restored":
             break;

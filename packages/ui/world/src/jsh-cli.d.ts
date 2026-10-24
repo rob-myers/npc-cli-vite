@@ -23,6 +23,10 @@ declare namespace JshCli {
       }
     | ({ key: "exit-collider"; npcKey: string } & BaseColliderEvent)
     | {
+        /** `onChangeMap` began, before the outgoing map's npcs are removed */
+        key: "map-changing";
+      }
+    | {
         /** The map's pending keys have stopped changing i.e. it is ready */
         key: "map-settled";
       }

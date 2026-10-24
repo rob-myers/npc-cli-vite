@@ -414,6 +414,11 @@ class CmdService {
       await cmdService.sleep(this.meta, seconds);
     },
 
+    /** Writes an info line to the session's tty, even once this process has ended */
+    writeInfo(message: string) {
+      sessionApi.writeMsg(this.meta.sessionKey, message, "info");
+    },
+
     writeError(message: string) {
       const device = sessionApi.resolve(1, this.meta);
       device.writeData(`${ansi.Red}${message}${ansi.Reset}`); // do not wait for promise

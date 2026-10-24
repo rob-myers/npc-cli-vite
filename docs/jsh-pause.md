@@ -115,11 +115,17 @@ Opted out today, because each must work whilst the World is paused (e.g. `phaser
 `awaitWorld` (`jsh/world/core.ts`), once the World is ready:
 
 1. creates `api.pauseGroup("world")`, holding the jobs tagged `WORLD_PAUSABLE`,
-2. subscribes to `w.events`: `disabled` calls `pause()`, `enabled` calls `resume()`,
-3. pauses the group at once if the World is already paused.
+2. adds the keyed listener `pause:{sessionKey}` (`w.e.addKeyedListener`), removed when the group is disposed,
+3. holds the group whilst the World is paused or its map is changing, at once if it already is.
+
+A map change runs from `map-changing` (`onChangeMap`, before the npcs are removed) until `npcs-restored`,
+or `map-settled` on a client, which restores none. The tty then says `loaded map {mapKey}`
+(`api.writeInfo`), so a piped `move` never reads a point for an npc not yet back.
 
 So pausing the World suspends every job running a world command, and resuming releases only
 what the World held. Anything the terminal or a user paused stays paused.
+
+A remounted World has a new `w.e`, without the listener, until `awaitWorld` runs again, e.g. the profile.
 
 ## Adding a long-running world command
 

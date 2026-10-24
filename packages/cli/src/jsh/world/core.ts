@@ -52,15 +52,28 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
     await api.sleep(0.05);
   }
 
-  // world commands pause with it — see `docs/jsh-pause.md`
+  // world commands pause with it and during map changes — see `docs/jsh-pause.md`
   api.setPausable("world", false);
   const w = api.getCached(WORLD_KEY);
   const group = api.pauseGroup("world");
-  const sub = w.events.subscribe({
-    next: (e) => (e.key === "disabled" ? group.pause() : e.key === "enabled" && group.resume()),
+  const listenerKey = `pause:${api.meta.sessionKey}`;
+  /** From "map-changing" until the npcs are back */
+  let changing = w.isMapChanging();
+  const sync = () => (w.disabled === true || changing ? group.pause() : group.resume());
+
+  w.e.addKeyedListener(listenerKey, (e) => {
+    if (e.key === "map-changing") {
+      changing = true;
+    } else if (changing && (e.key === "npcs-restored" || (e.key === "map-settled" && w.client === true))) {
+      changing = false;
+      api.writeInfo(`loaded map ${w.mapKey}`);
+    } else if (e.key !== "disabled" && e.key !== "enabled") {
+      return;
+    }
+    sync();
   });
-  group.own(() => sub.unsubscribe());
-  if (w.disabled === true) group.pause();
+  group.own(() => w.e.keyedListener.delete(listenerKey));
+  sync();
 }
 
 /**
