@@ -41,7 +41,7 @@ declare namespace WW {
     | {
         /** One spot */
         q: "get";
-        /** A spot key, e.g. `g0s12` */
+        /** A spot key, e.g. `g0s12`, or its alias, e.g. `g0r12-3` */
         key: string;
       }
     | {
@@ -133,6 +133,7 @@ declare namespace WW {
 
   /** A spot in world coords; `sees` counts the spots it sees */
   type SpotJson = {
+    /** Its alias, e.g. `g0r12-3` */
     key: string;
     x: number;
     y: number;
@@ -161,8 +162,11 @@ declare namespace WW {
     | null
     | SpotJson
     | SpotJson[]
-    /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any */
-    | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
+    /**
+     * `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any.
+     * `settled` says how: by the lists alone unless `lines`, as always with a room or door either side
+     */
+    | { sees: boolean; settled: SeesSettled; via: null | string; crouchHides: boolean; from: string; to: string }
     /** `seen`: their spots any watcher may see */
     | { hidden: boolean; seen: string[] }
     | { view: Record<string, SpotHow> }

@@ -38,8 +38,8 @@ export async function* spots(ct: JshCli.RunArg) {
  * sees --all abe ben cal
  * sees --los --all abe ben
  * sees --debug rob kate
- * sees g0s12 g0s40
- * sees g0s12
+ * sees g0r4-0 g0r4-7
+ * sees g0r4-0
  * ```
  */
 export async function* sees(ct: JshCli.RunArg) {
@@ -70,7 +70,7 @@ export async function* sees(ct: JshCli.RunArg) {
  *
  * ```sh
  * spot of:rob
- * spot g0s116
+ * spot g0r12-3
  * ```
  */
 export async function spot(ct: JshCli.RunArg) {
@@ -175,7 +175,7 @@ async function explainPairs(ct: JshCli.RunArg, pairs: [string, string][], los: b
         );
   return pairs.map((pair, i): Look => {
     const answer = why[i] === null ? answered(answers[asked.indexOf(pair)]) : null;
-    const x = answer != null && "settled" in answer ? answer : null;
+    const x = answer != null && "lines" in answer ? answer : null;
     return { pair, sees: x?.sees === true, reason: why[i] ?? (x === null ? "?" : reasonOf(x, ct.api.ansi)), x };
   });
 }
@@ -212,7 +212,7 @@ function drawRays(w: JshCli.WorldState, { pair: [a, b], x }: Look) {
 /** One pair's verdict: whether the first sees the second, why, and the worker's account if it was asked */
 type Look = { pair: [string, string]; sees: boolean; reason: string; x: null | Explained };
 /** The worker's `explain` answer */
-type Explained = Extract<WW.SpotAnswer, { settled: string }>;
+type Explained = Extract<WW.SpotAnswer, { lines: unknown }>;
 
 /** What settled a verdict, tersely */
 function reasonOf(x: Explained, ansi: JshCli.RunArg["api"]["ansi"]) {
@@ -317,13 +317,7 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
 
 const overlayKey = "spot-overlay";
 /** Events after which the overlay is coloured afresh. The load's last steps among them, else it waits on a move */
-const redrawOn = new Set<string>([
-  "spots-overlay",
-  "set-player",
-  "door-opening",
-  "map-settled",
-  "npcs-restored",
-]);
+const redrawOn = new Set<string>(["spots-overlay", "set-player", "door-opening", "map-settled", "npcs-restored"]);
 /** Milliseconds a room takes to fade out, on the wall clock: `ROOM_FADE_OUT_SECS` in `fade-rooms` */
 const roomFadeOutMs = 600;
 /** Metres the player walks before the overlay redraws */

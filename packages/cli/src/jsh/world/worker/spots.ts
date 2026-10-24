@@ -1,11 +1,12 @@
 import type { SegGrid } from "@npc-cli/ui__world/seg-grid";
-import { type Spot, SpotsFileSchema } from "@npc-cli/ui__world/spot.schema";
+import { type Spot, SpotsFileSchema, spotAliasesOf, spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { sightConfig, sightIdStride } from "@npc-cli/ui__world/spot-sight";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 
 /**
  * The map's spots, worker-side: each geomorph's under a map-wide key `g{gmId}s{id}` and in world coords,
- * indexed by room and by grid cell. Fetched afresh by each `perception-setup` that changes them — see `docs/spots.md`
+ * indexed by room and by grid cell. Answers name each by its alias, e.g. `g0r12-3`, and take either.
+ * Fetched afresh by each `perception-setup` that changes them — see `docs/spots.md`
  */
 export function setupSpots(msg: Extract<WW.PerceptionMsgTo, { type: "perception-setup" }>) {
   const cacheKey = `${msg.mapKey} ${JSON.stringify(msg.gms)} ${msg.spotsRev}`;
@@ -37,17 +38,25 @@ export function answerSpotQueries(
     if (npc === undefined) throw Error(`${key}: not sent`);
     return npc;
   };
+  /** A room's or door's spots, by its key e.g. `g0r12` */
+  const isGroup = (ref: string) => all.byPrefix.has(ref);
   /** A spot key, else the spot an npc is nearest */
   const resolve = (ref: string) => {
+    if (isGroup(ref)) throw Error(`${ref}: a room or door, not a spot`);
     const npc = npcByKey.get(ref);
     const spot = spotKeyRe.test(ref) ? all.get(ref) : npc && all.spotOf(npc.key, npc.point, npc.grKeys[0] ?? null);
     if (spot === undefined) throw Error(`${ref}: no spot`);
     return spot;
   };
-  /** Where `ref` is, for the lists: an npc's spots by posture, else the spot, which is sat at if a doable with an arc */
+  /**
+   * Where `ref` is, for the lists: an npc's spots by posture, a room's or door's spots,
+   * else the spot, which is sat at if a doable with an arc
+   */
   const spotsAt = (ref: string): At => {
     const npc = npcByKey.get(ref);
     if (npc !== undefined) return all.npcSpots(npc);
+    const group = all.byPrefix.get(ref);
+    if (group !== undefined) return { spots: group, seated: false };
     const spot = resolve(ref);
     return { spots: [spot], seated: spot.spot.doArc !== undefined };
   };
@@ -93,7 +102,7 @@ export function answerSpotQueries(
    * Whether `a` sees `b` now, and what settled it. Rooms out of view, and pairs the lists never list, are no.
    * Spot to spot the lists say. Those always listed are yes, unless `b` crouches. Only the rest cast lines
    */
-  const judge = (refA: string, refB: string): { sees: boolean; settled: WW.SeesSettled } => {
+  const judge = (refA: string, refB: string): Verdict => {
     const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
     const [A, B] = [spotsAt(refA), spotsAt(refB)];
     const roomsB = nb?.grKeys ?? B.spots.flatMap((s) => s.grKey ?? []);
@@ -101,20 +110,22 @@ export function answerSpotQueries(
     if (inView === false) return { sees: false, settled: "rooms" };
     const listed = all.listedAny(A, B, isOpen);
     if (listed === "never") return { sees: false, settled: "never" };
-    if (na === undefined && nb === undefined) return { sees: true, settled: listed };
+    // a room has no one eye to cast lines from
+    if ((na === undefined && nb === undefined) || isGroup(refA) || isGroup(refB))
+      return { sees: true, settled: listed };
     if (listed === "always" && nb?.crouched !== true) return { sees: true, settled: "always" };
     return { sees: eyeSees(eyeOf(refA), eyeOf(refB), na, nb), settled: "lines" };
   };
   /** `judge`'s verdict, cached with an npc by where they stand and how */
   const seesNow = (refA: string, refB: string) => {
     const [na, nb] = [npcByKey.get(refA), npcByKey.get(refB)];
-    if (na === undefined && nb === undefined) return judge(refA, refB).sees;
+    if (na === undefined && nb === undefined) return judge(refA, refB);
     const key = `${cacheKeyOf(refA, na)}|${cacheKeyOf(refB, nb)}|${doorRev}`;
     const cached = seesCache.get(key);
     if (cached !== undefined) return cached;
-    const { sees } = judge(refA, refB);
-    remember(key, sees);
-    return sees;
+    const verdict = judge(refA, refB);
+    remember(key, verdict);
+    return verdict;
   };
   /**
    * Every spot `from`, or where they are headed, may see, as the doors stand, else with `alsoOpen` open too.
@@ -159,13 +170,16 @@ export function answerSpotQueries(
           return found.map(all.json);
         }
         case "sees": {
-          const [a, b] = [spotsAt(query.a).spots[0], spotsAt(query.b).spots[0]];
+          const [A, B] = [spotsAt(query.a), spotsAt(query.b)];
+          // of a room's spots, those that settled it
+          const pair = isGroup(query.a) || isGroup(query.b) ? all.bestListed(A, B, isOpen).pair : null;
+          const [a, b] = pair === null ? [A.spots[0], B.spots[0]] : pair.map((key) => all.get(key) as MapSpot);
           return {
-            sees: seesNow(query.a, query.b),
+            ...seesNow(query.a, query.b),
             via: all.viaOf(a, b),
             crouchHides: a.gmId === b.gmId && b.spot.crouchSafe.includes(a.spot.id),
-            from: a.key,
-            to: b.key,
+            from: a.alias,
+            to: b.alias,
           };
         }
         case "seenBy":
@@ -176,9 +190,9 @@ export function answerSpotQueries(
         }
         case "hide": {
           const npc = resolveNpc(query.npc);
-          const watchers = query.from.map(eyeOf);
+          const watchers = query.from.filter((ref) => !isGroup(ref)).map(eyeOf); // a room has no eye to be away from
           const unsafe = unsafeFrom(query.from, query.ahead);
-          const exclude = new Set(query.exclude);
+          const exclude = new Set(query.exclude?.map((key) => all.get(key)?.key ?? key));
           const prefer = query.prefer ?? [];
           const rank = (s: MapSpot) => (prefer.includes(s.kind) ? prefer.indexOf(s.kind) : prefer.length);
           const { away = 0 } = query;
@@ -206,7 +220,7 @@ export function answerSpotQueries(
         case "hidden": {
           const doors = resolveNpc(query.npc).grKeys.flatMap((grKey) => all.roomDoors.get(grKey) ?? []);
           const unsafe = unsafeFrom(query.from, query.ahead, doors);
-          const seen = spotsAt(query.npc).spots.flatMap((s) => (unsafe.has(s.key) ? [s.key] : []));
+          const seen = spotsAt(query.npc).spots.flatMap((s) => (unsafe.has(s.key) ? [s.alias] : []));
           return { hidden: seen.length === 0, seen };
         }
         case "view": {
@@ -216,13 +230,13 @@ export function answerSpotQueries(
           const view: Record<string, WW.SpotHow> = {};
           for (const s of all.byKey.values()) {
             if (own.has(s)) {
-              view[s.key] = "own";
+              view[s.alias] = "own";
               continue;
             }
             const B = { spots: [s], seated: false };
             const inView = seeRooms === undefined || s.grKey === null || seeRooms.includes(s.grKey);
             const listed = inView ? all.listedAny(A, B, isOpen) : "never";
-            view[s.key] = listed !== "never" ? listed : all.listedAny(A, B, anyOpen) === "never" ? "never" : "shut";
+            view[s.alias] = listed !== "never" ? listed : all.listedAny(A, B, anyOpen) === "never" ? "never" : "shut";
           }
           return { view };
         }
@@ -271,8 +285,11 @@ async function createMapSpots(gms: WW.GmForSpots[], hullPairs: [string, string][
     /** A local angle, as world radians */
     const turn = (angle: number) =>
       Math.atan2(b * Math.cos(angle) + d * Math.sin(angle), a * Math.cos(angle) + c * Math.sin(angle));
-    return (byGmKey[gm.key]?.spots ?? []).map((spot) => ({
+    const file = byGmKey[gm.key];
+    const aliases = file === undefined ? [] : spotAliasesOf(file);
+    return (file?.spots ?? []).map((spot) => ({
       key: `g${gmId}s${spot.id}`,
+      alias: `g${gmId}${aliases[spot.id]}`,
       gmId,
       kind: spot.kind,
       x: a * spot.x + c * spot.y + e,
@@ -311,10 +328,12 @@ const crouchedTop = 0.6;
 const placeKinds = ["cover", "corner", "wall", "fill", "decor"];
 /** Metres: making way, a spot this near the blocker, this clear of the walker's path and others, not passing within `pass` of the walker */
 const makeWay = { within: 2, clear: 0.6, pass: 0.4 };
-const spotKeyRe = /^g\d+s\d+$/;
 
 export class MapSpots {
   byKey = new Map<string, MapSpot>();
+  byAlias = new Map<string, MapSpot>();
+  /** By a room's or door's key, e.g. `g0r12`, the spots whose alias it begins */
+  byPrefix = new Map<string, MapSpot[]>();
   byRoom = new Map<string, MapSpot[]>();
   byCell = new Map<string, MapSpot[]>();
   /** By room, the gdKeys of its doors, from its doorway spots */
@@ -331,6 +350,8 @@ export class MapSpots {
   constructor(spots: MapSpot[], hullSpots: Map<string, Map<string, number[]>>, hullPairs: [string, string][]) {
     for (const s of spots) {
       this.byKey.set(s.key, s);
+      this.byAlias.set(s.alias, s);
+      push(this.byPrefix, s.alias.slice(0, s.alias.lastIndexOf("-")), s);
       if (s.grKey !== null) push(this.byRoom, s.grKey, s);
       if (s.kind === "doorway" && s.grKey !== null) push(this.roomDoors, s.grKey, `g${s.gmId}d${s.spot.ref?.doorId}`);
       push(this.byCell, cellKey(s.x, s.y), s);
@@ -347,15 +368,16 @@ export class MapSpots {
   /** By spot key: half the distance to its room's next nearest spot. Anyone that near it is nearest it */
   halfGapOf = new Map<string, number>();
 
+  /** By key or alias */
   get(key: string) {
-    return this.byKey.get(key);
+    return this.byKey.get(key) ?? this.byAlias.get(key);
   }
 
   /** As answered: a door or doorway spot names its door, a doable its decor */
   json = (s: MapSpot): WW.SpotJson => {
-    const { key, gmId, kind, x, y, grKey, facing, wall, spot } = s;
+    const { alias, gmId, kind, x, y, grKey, facing, wall, spot } = s;
     const base = {
-      key,
+      key: alias,
       x: round(x),
       y: round(y),
       grKey,
@@ -467,14 +489,14 @@ export class MapSpots {
     return this.bestListed(A, B, isOpen).listed;
   }
 
-  /** As `listedAny`, with the pair of spots that gave it */
+  /** As `listedAny`, with the pair of spots that gave it, by alias */
   bestListed(A: At, B: At, isOpen: (gdKey: string) => boolean) {
     let best: { listed: Listed; pair: null | [string, string] } = { listed: "never", pair: null };
     for (const a of A.spots) {
       for (const b of B.spots) {
         const listed = this.listed(a, b, A.seated, isOpen);
-        if (listed === "always") return { listed, pair: [a.key, b.key] as [string, string] };
-        if (listed === "may" && best.listed === "never") best = { listed, pair: [a.key, b.key] };
+        if (listed === "always") return { listed, pair: [a.alias, b.alias] as [string, string] };
+        if (listed === "may" && best.listed === "never") best = { listed, pair: [a.alias, b.alias] };
       }
     }
     return best;
@@ -512,9 +534,14 @@ export class MapSpots {
   }
 }
 
+/** Whether `a` sees `b`, and what settled it */
+type Verdict = { sees: boolean; settled: WW.SeesSettled };
+
 /** A spot of the map, in world coords. `spot` is its geomorph's own record */
 export type MapSpot = {
   key: string;
+  /** Its key as answered and typed, e.g. `g0r12-3` — see `spotAliasesOf` */
+  alias: string;
   gmId: number;
   kind: Spot["kind"];
   x: number;
@@ -546,10 +573,10 @@ type At = { spots: MapSpot[]; seated: boolean };
 type Listed = "never" | "may" | "always";
 
 /** Recent answers of `sees` with an npc, by who, where and how, and the doors' revision */
-const seesCache = new Map<string, boolean>();
+const seesCache = new Map<string, Verdict>();
 const seesCacheMax = 2000;
 
-function remember(key: string, answer: boolean) {
+function remember(key: string, answer: Verdict) {
   if (seesCache.size >= seesCacheMax) seesCache.delete(seesCache.keys().next().value as string);
   seesCache.set(key, answer);
 }

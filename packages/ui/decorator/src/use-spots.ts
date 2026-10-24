@@ -1,5 +1,12 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import { type SpotsFile, SpotsFileSchema, spotKindInk, spotsChangedEvent } from "@npc-cli/ui__world/spot.schema";
+import {
+  type SpotsFile,
+  SpotsFileSchema,
+  spotAliasesOf,
+  spotKeyRe,
+  spotKindInk,
+  spotsChangedEvent,
+} from "@npc-cli/ui__world/spot.schema";
 import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-parsed";
 import { useEffect, useState } from "react";
 
@@ -40,6 +47,24 @@ export const inkOf = spotKindInk;
 
 /** A spot, by its geomorph instance and its id there */
 export type SpotPick = { gmId: number; id: number };
+
+/** Its alias on this map, e.g. `g0r12-3` */
+export const spotAlias = (file: SpotsFile, pick: SpotPick) => `g${pick.gmId}${spotAliasesOf(file)[pick.id]}`;
+
+/** A spot's alias, e.g. `g0r12-3`, or its key, e.g. `g0s455`, as a pick, if this map has it */
+export function parseSpotPick(
+  text: string,
+  w: WorldState,
+  byGmKey: undefined | Record<string, SpotsFile>,
+): null | SpotPick {
+  const match = text.trim().toLowerCase().match(spotKeyRe);
+  if (match === null) return null;
+  const gmId = Number(match[1]);
+  const file = byGmKey?.[w.gms[gmId]?.key];
+  if (file === undefined) return null;
+  const id = match[2] !== undefined ? Number(match[2]) : spotAliasesOf(file).indexOf(match[3]);
+  return file.spots[id] === undefined ? null : { gmId, id };
+}
 
 /** Where a spot is in the World, from its geomorph's own space */
 export function spotWorldPoint(w: WorldState, file: SpotsFile, pick: SpotPick) {

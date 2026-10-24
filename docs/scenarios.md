@@ -69,7 +69,7 @@ Queries: spots by side of a door, coverage (the union of `sees`), the spot seein
 
 The pieces of a scenario, played by hand rather than directed. `act <verb> <npc> …` (`cli/src/jsh/world/act.ts`) runs one on game time until done or killed. Run several as background jobs (`&`) to compose them. `from` names npcs, comma-separated. `rooms` limits the spots, else the whole map.
 
-Npc first, a verb takes its main option as `<verb>:<value>`: `act kate avoid:rob` is `act avoid kate from:rob`, as are `hide:rob` (`from:rob`), `face:g0s12` and `count:10` (`to:10`). Other options follow, e.g. `act kate avoid:rob away:3`.
+Npc first, a verb takes its main option as `<verb>:<value>`: `act kate avoid:rob` is `act avoid kate from:rob`, as are `hide:rob` (`from:rob`), `face:g0r12-3` and `count:10` (`to:10`). Other options follow, e.g. `act kate avoid:rob away:3`.
 
 | Verb | Does |
 | --- | --- |

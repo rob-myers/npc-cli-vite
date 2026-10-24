@@ -1,5 +1,5 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import type { Spot, SpotsFile } from "@npc-cli/ui__world/spot.schema";
+import { type Spot, type SpotsFile, spotAliasesOf } from "@npc-cli/ui__world/spot.schema";
 import {
   createWorldSightGrid,
   obstaclesAt,
@@ -36,6 +36,7 @@ export const SpotsLayer = memo(function SpotsLayer({ w, byGmKey, chosen, onChoos
       {w.gms.map((gm, gmId) => {
         const file = byGmKey[gm.key];
         if (file === undefined) return null;
+        const aliases = spotAliasesOf(file);
         const { a, b, c, d, e, f } = gm.transform;
         const spot = chosen?.gmId === gmId ? chosenSpot : undefined;
         return (
@@ -60,14 +61,14 @@ export const SpotsLayer = memo(function SpotsLayer({ w, byGmKey, chosen, onChoos
                 key={s.id}
                 data-no-pan
                 // found under a shown npc, whose own mark takes the press
-                data-spot={`g${gmId}s${s.id}`}
+                data-spot={`g${gmId}${aliases[s.id]}`}
                 className="group cursor-pointer"
                 onPointerDown={(e) => {
                   if (e.button !== 0) return;
                   onChoose(chosen?.gmId === gmId && chosen.id === s.id ? null : { gmId, id: s.id });
                 }}
               >
-                <title>{describe(s)}</title>
+                <title>{describe(s, `g${gmId}${aliases[s.id]}`)}</title>
                 <circle
                   cx={s.x}
                   cy={s.y}
@@ -217,10 +218,10 @@ function worldSightGridOf(gms: Geomorph.LayoutInstance[]) {
 
 const sightGrids = new WeakMap<Geomorph.LayoutInstance[], ReturnType<typeof createWorldSightGrid>>();
 
-function describe(s: Spot) {
+function describe(s: Spot, alias: string) {
   const { doors, decor, doables, obstacles } = s.near;
   return [
-    `${s.kind} ${s.id} in room ${s.roomId}`,
+    `${alias}: ${s.kind} in room ${s.roomId}`,
     `always sees ${s.always.length}, may see ${s.sight.length}, ${s.via.reduce((n, [, ids]) => n + ids.length, 0)} more through doors`,
     `near: doors ${doors.join(" ") || "none"}, decor ${decor.length}, doables ${doables.length}, obstacles ${obstacles.length}`,
     ...(s.kind === "cover" ? [`crouched, hidden from ${s.crouchSafe.length}`] : []),

@@ -1,3 +1,4 @@
+import { spotKeyRe } from "@npc-cli/ui__world/spot.schema";
 import { Task } from "@npc-cli/util";
 import { spotQuery } from "./perception.main";
 
@@ -170,7 +171,7 @@ async function seenBy(ctx: Ctx, from: string[]) {
     from.map((a): WW.SpotQuery => ({ q: "explain", a, b: ctx.npcKey })),
   );
   for (const [i, x] of answers.entries()) {
-    if (x == null || !("settled" in x) || x.sees === false) continue;
+    if (x == null || !("lines" in x) || x.sees === false) continue;
     const clear = x.lines.findIndex((line) => line.hit === null);
     return `${from[i]} sees them, ${x.settled === "lines" ? `ray ${["direct", "right", "left"][clear]}` : x.settled}`;
   }
@@ -245,7 +246,7 @@ async function wallPoint(ctx: Ctx) {
 async function facingPoint(ctx: Ctx, at: string): Promise<null | Geom.VectJson> {
   const npc = ctx.ct.w.n[at];
   if (npc !== undefined) return npc.point;
-  if (/^g\d+s\d+$/.test(at) === false) return null;
+  if (spotKeyRe.test(at) === false) return null;
   const [spot] = await spotQuery(ctx.ct, [{ q: "get", key: at }]);
   return isSpot(spot) ? { x: spot.x, y: spot.y } : null;
 }
