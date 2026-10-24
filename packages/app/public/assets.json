@@ -583,7 +583,6 @@
             "door": true,
             "slide": [1, 0],
             "auto": true,
-            "rel": "sees:window",
             "label": "bridge"
           }
         },
@@ -616,12 +615,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 6.25], [3.1, 7.3], [2.9, 7.3], [2.9, 6.25]]],
-          "meta": {
-            "door": true,
-            "slide": [0, -1],
-            "rel": "sees:window",
-            "label": "locker"
-          }
+          "meta": {"door": true, "slide": [0, -1], "label": "locker"}
         },
         {
           "type": "Polygon",
@@ -630,7 +624,6 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "bridge",
-            "rel": "sees:window",
             "label": "fresher"
           }
         },
@@ -649,7 +642,6 @@
             "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
-            "rel": "sees:window",
             "label": "office"
           }
         },
@@ -660,7 +652,6 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "briefing",
-            "rel": "sees:window",
             "label": "stateroom"
           }
         }
@@ -1256,7 +1247,7 @@
           "width": 4.5,
           "height": 0.3,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 4.5, "f": 7.5125},
-          "meta": {"window--007": true, "y": 1.8, "name": "window"}
+          "meta": {"window--007": true, "y": 1.8}
         },
         {
           "symbolKey": "table--004",
@@ -4254,7 +4245,6 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left,window-right",
             "label": "common"
           }
         },
@@ -4267,7 +4257,6 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left,window-right",
             "label": "common"
           }
         },
@@ -4749,7 +4738,7 @@
             "e": 12.7625,
             "f": 16.7375
           },
-          "meta": {"window--001": true, "name": "window-left"}
+          "meta": {"window--001": true}
         },
         {
           "symbolKey": "window--001",
@@ -4763,7 +4752,7 @@
             "e": 18.725638,
             "f": 16.745642
           },
-          "meta": {"window--001": true, "name": "window-right"}
+          "meta": {"window--001": true}
         },
         {
           "symbolKey": "counter--006",
@@ -11783,23 +11772,8 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[21.25, 0], [21.25, 0.15], [21.1, 0.15], [21.1, 0]]],
-          "meta": {
-            "decor": true,
-            "quad": true,
-            "key": "switch",
-            "img": "switch",
-            "switch": true,
-            "y": 1.2,
-            "tilt": true,
-            "transform": [1, 0, 0, 1, 21.1, 0],
-            "doorId": 2
-          }
-        },
-        {
-          "type": "Polygon",
           "coordinates": [
-            [[23.8875, 0], [23.8875, 0.15], [23.7375, 0.15], [23.7375, 0]]
+            [[21.25, 0.05], [21.25, 0.2], [21.1, 0.2], [21.1, 0.05]]
           ],
           "meta": {
             "decor": true,
@@ -11809,7 +11783,24 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 23.7375, 0],
+            "transform": [1, 0, 0, 1, 21.1, 0.05],
+            "doorId": 2
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[23.9125, 0], [23.9125, 0.15], [23.7625, 0.15], [23.7625, 0]]
+          ],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [1, 0, 0, 1, 23.7625, 0],
             "doorId": 3
           }
         },
@@ -14335,7 +14326,7 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[0.05, 1.45], [0.2, 1.45], [0.2, 1.6], [0.05, 1.6]]],
+          "coordinates": [[[0.05, 1.35], [0.2, 1.35], [0.2, 1.5], [0.05, 1.5]]],
           "meta": {
             "decor": true,
             "quad": true,
@@ -14344,14 +14335,14 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.05, 1.45],
+            "transform": [0, 1, 1, 0, 0.05, 1.35],
             "doorId": 0
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [[-0.05, 1.6], [-0.2, 1.6], [-0.2, 1.45], [-0.05, 1.45]]
+            [[-0.05, 1.5], [-0.2, 1.5], [-0.2, 1.35], [-0.05, 1.35]]
           ],
           "meta": {
             "decor": true,
@@ -14361,7 +14352,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, -0.05, 1.45],
+            "transform": [0, 1, -1, 0, -0.05, 1.35],
             "doorId": 0
           }
         }
@@ -26232,7 +26223,6 @@
             "door": true,
             "slide": [1, 0],
             "auto": true,
-            "rel": "sees:window#ur9qcn",
             "label": "bridge"
           }
         },
@@ -26265,12 +26255,7 @@
         {
           "type": "Polygon",
           "coordinates": [[[3.1, 6.25], [3.1, 7.3], [2.9, 7.3], [2.9, 6.25]]],
-          "meta": {
-            "door": true,
-            "slide": [0, -1],
-            "rel": "sees:window#ur9qcn",
-            "label": "locker"
-          }
+          "meta": {"door": true, "slide": [0, -1], "label": "locker"}
         },
         {
           "type": "Polygon",
@@ -26279,7 +26264,6 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "bridge",
-            "rel": "sees:window#ur9qcn",
             "label": "fresher"
           }
         },
@@ -26298,7 +26282,6 @@
             "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
-            "rel": "sees:window#ur9qcn",
             "label": "office"
           }
         },
@@ -26309,7 +26292,6 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "briefing",
-            "rel": "sees:window#ur9qcn",
             "label": "stateroom"
           }
         }
@@ -27377,7 +27359,7 @@
           "coordinates": [
             [[9.025, 7.5], [9.025, 7.825], [4.4875, 7.825], [4.4875, 7.5]]
           ],
-          "meta": {"window": true, "name": "window#ur9qcn"}
+          "meta": {"window": true}
         }
       ],
       "removableDoors": [],
@@ -32991,7 +32973,6 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left#sk9ant,window-right#co7z8q",
             "label": "common"
           }
         },
@@ -33004,7 +32985,6 @@
             "door": true,
             "auto": true,
             "slide": [1, 0],
-            "rel": "sees:window-left#sk9ant,window-right#co7z8q",
             "label": "common"
           }
         },
@@ -37306,7 +37286,7 @@
               [12.7875, 16.75]
             ]
           ],
-          "meta": {"window": true, "name": "window-left#sk9ant"}
+          "meta": {"window": true}
         },
         {
           "type": "Polygon",
@@ -37318,7 +37298,7 @@
               [18.7506, 16.7581]
             ]
           ],
-          "meta": {"window": true, "name": "window-right#co7z8q"}
+          "meta": {"window": true}
         }
       ],
       "removableDoors": [],
@@ -40136,7 +40116,6 @@
             "door": true,
             "slide": [1, 0],
             "auto": true,
-            "rel": "sees:window#aa5358",
             "label": "bridge",
             "det": 1
           }
@@ -40193,13 +40172,7 @@
               [11.9125, 7.7625]
             ]
           ],
-          "meta": {
-            "door": true,
-            "slide": [0, -1],
-            "rel": "sees:window#aa5358",
-            "label": "locker",
-            "det": 1
-          }
+          "meta": {"door": true, "slide": [0, -1], "label": "locker", "det": 1}
         },
         {
           "type": "Polygon",
@@ -40215,7 +40188,6 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "bridge",
-            "rel": "sees:window#aa5358",
             "label": "fresher",
             "det": 1
           }
@@ -40247,7 +40219,6 @@
             "manual": true,
             "slide": [0, -1],
             "backLabel": "briefing",
-            "rel": "sees:window#aa5358",
             "label": "office",
             "det": 1
           }
@@ -40266,7 +40237,6 @@
             "door": true,
             "slide": [0, 1],
             "backLabel": "briefing",
-            "rel": "sees:window#aa5358",
             "label": "stateroom",
             "det": 1
           }
@@ -43051,7 +43021,7 @@
               [13.5, 9.0125]
             ]
           ],
-          "meta": {"window": true, "name": "window#aa5358"}
+          "meta": {"window": true}
         }
       ],
       "removableDoors": [],
@@ -43375,23 +43345,8 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[21.25, 0], [21.25, 0.15], [21.1, 0.15], [21.1, 0]]],
-          "meta": {
-            "decor": true,
-            "quad": true,
-            "key": "switch",
-            "img": "switch",
-            "switch": true,
-            "y": 1.2,
-            "tilt": true,
-            "transform": [1, 0, 0, 1, 21.1, 0],
-            "doorId": 2
-          }
-        },
-        {
-          "type": "Polygon",
           "coordinates": [
-            [[23.8875, 0], [23.8875, 0.15], [23.7375, 0.15], [23.7375, 0]]
+            [[21.25, 0.05], [21.25, 0.2], [21.1, 0.2], [21.1, 0.05]]
           ],
           "meta": {
             "decor": true,
@@ -43401,7 +43356,24 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [1, 0, 0, 1, 23.7375, 0],
+            "transform": [1, 0, 0, 1, 21.1, 0.05],
+            "doorId": 2
+          }
+        },
+        {
+          "type": "Polygon",
+          "coordinates": [
+            [[23.9125, 0], [23.9125, 0.15], [23.7625, 0.15], [23.7625, 0]]
+          ],
+          "meta": {
+            "decor": true,
+            "quad": true,
+            "key": "switch",
+            "img": "switch",
+            "switch": true,
+            "y": 1.2,
+            "tilt": true,
+            "transform": [1, 0, 0, 1, 23.7625, 0],
             "doorId": 3
           }
         },
@@ -45713,7 +45685,7 @@
         {
           "type": "Polygon",
           "coordinates": [
-            [[9.0438, 9.05], [9.0438, 9.2], [8.8938, 9.2], [8.8938, 9.05]]
+            [[9.1438, 9.05], [9.1438, 9.2], [8.9938, 9.2], [8.9938, 9.05]]
           ],
           "meta": {
             "decor": true,
@@ -45723,14 +45695,14 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, 1, 9.043750000000001, 9.05],
+            "transform": [-1, 0, 0, 1, 9.14375, 9.05],
             "doorId": 37
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [[8.8938, 8.95], [8.8938, 8.8], [9.0438, 8.8], [9.0438, 8.95]]
+            [[8.9938, 8.95], [8.9938, 8.8], [9.1438, 8.8], [9.1438, 8.95]]
           ],
           "meta": {
             "decor": true,
@@ -45740,7 +45712,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [-1, 0, 0, -1, 9.043750000000001, 8.95],
+            "transform": [-1, 0, 0, -1, 9.14375, 8.95],
             "doorId": 37
           }
         },
@@ -53879,7 +53851,7 @@
         },
         {
           "type": "Polygon",
-          "coordinates": [[[0.05, 1.45], [0.2, 1.45], [0.2, 1.6], [0.05, 1.6]]],
+          "coordinates": [[[0.05, 1.35], [0.2, 1.35], [0.2, 1.5], [0.05, 1.5]]],
           "meta": {
             "decor": true,
             "quad": true,
@@ -53888,14 +53860,14 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, 1, 0, 0.05, 1.45],
+            "transform": [0, 1, 1, 0, 0.05, 1.35],
             "doorId": 0
           }
         },
         {
           "type": "Polygon",
           "coordinates": [
-            [[-0.05, 1.6], [-0.2, 1.6], [-0.2, 1.45], [-0.05, 1.45]]
+            [[-0.05, 1.5], [-0.2, 1.5], [-0.2, 1.35], [-0.05, 1.35]]
           ],
           "meta": {
             "decor": true,
@@ -53905,7 +53877,7 @@
             "switch": true,
             "y": 1.2,
             "tilt": true,
-            "transform": [0, 1, -1, 0, -0.05, 1.45],
+            "transform": [0, 1, -1, 0, -0.05, 1.35],
             "doorId": 0
           }
         },
@@ -64982,7 +64954,6 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-left#sk9ant,window-right#co7z8q",
               "label": "common"
             }
           },
@@ -65004,7 +64975,6 @@
               "door": true,
               "auto": true,
               "slide": [1, 0],
-              "rel": "sees:window-left#sk9ant,window-right#co7z8q",
               "label": "common"
             }
           },
@@ -71666,7 +71636,7 @@
                 [12.7875, 16.75]
               ]
             ],
-            "meta": {"window": true, "name": "window-left#sk9ant"}
+            "meta": {"window": true}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -71682,7 +71652,7 @@
                 [18.7506, 16.7581]
               ]
             ],
-            "meta": {"window": true, "name": "window-right#co7z8q"}
+            "meta": {"window": true}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -76530,7 +76500,6 @@
               "door": true,
               "slide": [1, 0],
               "auto": true,
-              "rel": "sees:window#aa5358",
               "label": "bridge",
               "det": 1
             }
@@ -76616,7 +76585,6 @@
             "meta": {
               "door": true,
               "slide": [0, -1],
-              "rel": "sees:window#aa5358",
               "label": "locker",
               "det": 1
             }
@@ -76639,7 +76607,6 @@
               "door": true,
               "slide": [0, 1],
               "backLabel": "bridge",
-              "rel": "sees:window#aa5358",
               "label": "fresher",
               "det": 1
             }
@@ -76684,7 +76651,6 @@
               "manual": true,
               "slide": [0, -1],
               "backLabel": "briefing",
-              "rel": "sees:window#aa5358",
               "label": "office",
               "det": 1
             }
@@ -76707,7 +76673,6 @@
               "door": true,
               "slide": [0, 1],
               "backLabel": "briefing",
-              "rel": "sees:window#aa5358",
               "label": "stateroom",
               "det": 1
             }
@@ -81360,7 +81325,7 @@
                 [13.5, 9.0125]
               ]
             ],
-            "meta": {"window": true, "name": "window#aa5358"}
+            "meta": {"window": true}
           },
           "navRectId": -1,
           "roomIds": [null, null]
@@ -82294,11 +82259,11 @@
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 21.1, "y": 0, "width": 0.15, "height": 0.15},
+          "bounds": {"x": 21.1, "y": 0.05, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, 1, 21.1, 0],
-          "center": {"x": 21.175, "y": 0.075},
-          "topCenter": {"x": 21.175, "y": 0},
+          "transform": [1, 0, 0, 1, 21.1, 0.05],
+          "center": {"x": 21.175, "y": 0.125},
+          "topCenter": {"x": 21.175, "y": 0.05},
           "det": 1
         },
         {
@@ -82316,11 +82281,11 @@
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 23.7375, "y": 0, "width": 0.15, "height": 0.15},
+          "bounds": {"x": 23.7625, "y": 0, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [1, 0, 0, 1, 23.7375, 0],
-          "center": {"x": 23.813, "y": 0.075},
-          "topCenter": {"x": 23.813, "y": 0},
+          "transform": [1, 0, 0, 1, 23.7625, 0],
+          "center": {"x": 23.838, "y": 0.075},
+          "topCenter": {"x": 23.838, "y": 0},
           "det": 1
         },
         {
@@ -85070,11 +85035,11 @@
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 8.8938, "y": 9.05, "width": 0.15, "height": 0.15},
+          "bounds": {"x": 8.9938, "y": 9.05, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, 1, 9.043750000000001, 9.05],
-          "center": {"x": 8.969, "y": 9.125},
-          "topCenter": {"x": 8.969, "y": 9.05},
+          "transform": [-1, 0, 0, 1, 9.14375, 9.05],
+          "center": {"x": 9.069, "y": 9.125},
+          "topCenter": {"x": 9.069, "y": 9.05},
           "det": -1
         },
         {
@@ -85092,11 +85057,11 @@
             "grKey": "g-1r-1",
             "roomId": -1
           },
-          "bounds": {"x": 8.8938, "y": 8.8, "width": 0.15, "height": 0.15},
+          "bounds": {"x": 8.9938, "y": 8.8, "width": 0.15, "height": 0.15},
           "type": "quad",
-          "transform": [-1, 0, 0, -1, 9.043750000000001, 8.95],
-          "center": {"x": 8.969, "y": 8.875},
-          "topCenter": {"x": 8.969, "y": 8.95},
+          "transform": [-1, 0, 0, -1, 9.14375, 8.95],
+          "center": {"x": 9.069, "y": 8.875},
+          "topCenter": {"x": 9.069, "y": 8.95},
           "det": 1
         },
         {
