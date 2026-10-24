@@ -270,13 +270,14 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
     if (busy) return void (again = true);
     busy = true;
     try {
-      if (w.debug.spotsShown === false) return;
+      // listed whilst hidden too, else the menu's toggle stays greyed out
       const key = spotsKey();
       if (drawn.spots !== key) {
         const [all] = await spotQueryDetached(w, [{ q: "list" }]);
         if (Array.isArray(all)) w.debug.setSpots(all.map((spot) => toDraw(w, spot)));
         drawn.spots = key;
       }
+      if (w.debug.spotsShown === false) return;
       const from = w.n[w.player.key] === undefined ? null : w.player.key;
       const [view] = from === null ? [null] : await spotQueryDetached(w, [{ q: "view", from }]);
       const ink = inkOf(w);
@@ -296,7 +297,6 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
   }
 
   w.e.addKeyedListener(overlayKey, (e, w) => {
-    if (e.key === "spots-overlay" && e.shown === false) return void (drawn.spots = "");
     // the rooms beyond fade out first, their spots in the colours they had
     if (e.key === "door-closed") return void setTimeout(() => void sync(), roomFadeOutMs);
     const player = (e.key === "enter-room" || e.key === "spawned") && e.npcKey === w.player.key;
@@ -304,10 +304,12 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
   });
   // moved far enough, the spot files remade, or the theme changed
   w.e.addKeyedTick(overlayKey, (w) => {
-    if (w.debug.spotsShown === false || busy) return;
+    if (busy) return;
+    if (drawn.spots !== spotsKey()) return void sync();
+    if (w.debug.spotsShown === false) return;
     const at = drawn.at;
     const npc = drawn.from === "" ? undefined : w.n[drawn.from];
-    if (drawn.spots !== spotsKey() || drawn.theme !== w.themeKey) void sync();
+    if (drawn.theme !== w.themeKey) void sync();
     else if (at !== null && npc !== undefined && npc.distanceTo(at) >= overlayStep) void sync();
   });
   void sync();
