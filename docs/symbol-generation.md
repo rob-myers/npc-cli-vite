@@ -61,6 +61,8 @@ The first node is the locked `image` of the symbol's own png. The rest go in gro
   A room inside a hull wall at `y=0` starts at about `4.3`, so a 6-unit switch there is placed at `f=2`
   (centre `5`), not `f=0` (centre `3`, in the wall). `g-102--research-deck`'s top-right hull switch was
   the latter, and `engineering--047`'s switch beside its corner door sat in room 6's side wall.
+- **Check a door's two switches are not the wrong way round** where it meets another symbol. In
+  `g-102--research-deck`, a door intersecting `engineering--047` had its pair the wrong way round.
   - Find any left over with `Object.values(w.decor.byKey).filter((d) => d.meta.switch && !(d.meta.roomId >= 0))`.
   - Where a door fills its wall, there is no room beside it for a switch. One may yet be added
     elsewhere, or one in a wall dropped.
