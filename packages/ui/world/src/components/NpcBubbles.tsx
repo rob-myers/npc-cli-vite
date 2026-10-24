@@ -19,6 +19,7 @@ export default function NpcBubbles() {
   const state = useStateRef(
     (): State => ({
       debugs: new Set(),
+      els: new Map(),
       lines: new Map(),
       thoughts: new Map(),
 
@@ -35,7 +36,7 @@ export default function NpcBubbles() {
         state.debugs.delete(npcKey);
         state.sync(npcKey);
       },
-      say(npcKey, words, { secs = lineSecs, hold = false } = {}) {
+      say(npcKey, words, { secs = lineSecsOf(words), hold = false } = {}) {
         if (!(npcKey in w.n)) return;
         state.lines.set(npcKey, { words, secs, held: hold });
         state.sync(npcKey);
@@ -50,12 +51,17 @@ export default function NpcBubbles() {
           const line = state.lines.get(npcKey);
           if (line?.held !== true) continue;
           line.held = false;
-          line.secs = lineSecs;
+          line.secs = lineSecsOf(line.words);
         }
       },
       onTick(delta) {
         for (const [npcKey, line] of state.lines) {
-          if (line.held || (line.secs -= delta) > 0) continue;
+          if (line.held) continue;
+          if ((line.secs -= delta) > 0) {
+            // written to the DOM, rendering nothing. A new line replaces it at full opacity
+            if (line.secs < lineFadeSecs && line.el) line.el.style.opacity = `${line.secs / lineFadeSecs}`;
+            continue;
+          }
           state.lines.delete(npcKey);
           state.sync(npcKey);
         }
@@ -63,6 +69,15 @@ export default function NpcBubbles() {
           if ((thought.secs -= delta) > 0) continue;
           state.thoughts.delete(npcKey);
           state.sync(npcKey);
+        }
+        state.syncRoomFades(); // e.g. walked into a room out of view
+      },
+      syncRoomFades() {
+        for (const [npcKey, el] of state.els) {
+          const npc = w.n[npcKey];
+          if (npc === undefined) continue;
+          const lit = npc.npcLit.value * w.view.litNpcsEnabled.value;
+          el.style.opacity = `${Math.max(w.view.fadeRoomsFx.visibilityOf(npc.roomSlot.value), lit)}`;
         }
       },
       sync(npcKey) {
@@ -79,9 +94,14 @@ export default function NpcBubbles() {
           debug ? (
             <NpcBubble w={w} npcKey={npcKey} words={line?.words} />
           ) : (
-            <div className="flex flex-col items-center">
+            <div
+              ref={(el) =>
+                void (el === null ? state.els.delete(npcKey) : (state.els.set(npcKey, el), state.syncRoomFades()))
+              }
+              className="flex flex-col items-center"
+            >
               {thought !== undefined && <ThoughtBubble words={thought.words} tag={thought.tag} />}
-              {line !== undefined && <SaidBubble words={line.words} />}
+              {line !== undefined && <SaidBubble words={line.words} elRef={(el) => void (line.el = el)} />}
             </div>
           ),
           // its close button closes the debug section alone: a line said stays up
@@ -123,9 +143,12 @@ export default function NpcBubbles() {
 }
 
 /** Just the line said, click-through */
-function SaidBubble({ words }: { words: string }) {
+function SaidBubble({ words, elRef }: { words: string; elRef: (el: HTMLDivElement | null) => void }) {
   return (
-    <div className="mb-3 w-max max-w-[28rem] rounded-2xl border-2 border-white/30 bg-black/75 px-5 py-2 text-xl text-white/95">
+    <div
+      ref={elRef}
+      className="mb-3 w-max max-w-[28rem] rounded-2xl border-2 border-white/30 bg-black/75 px-5 py-2 text-xl text-white/95"
+    >
       <Glyphed text={words} />
     </div>
   );
@@ -271,14 +294,20 @@ function isBubbleEvent(
 ): e is Extract<JshCli.Event, { key: typeof bubbleEvents extends Set<infer K> ? K : never }> {
   return (bubbleEvents as ReadonlySet<string>).has(e.key);
 }
-/** Seconds a line said stays over them, whilst unpaused: long enough to be found, then read */
-const lineSecs = 8;
+/** Seconds a line said stays over them, whilst unpaused: long enough to be found, then read, word by word */
+const lineSecsOf = (words: string) =>
+  Math.min(lineConfig.minSecs + lineConfig.wordSecs * words.trim().split(/\s+/).length, lineConfig.maxSecs);
+const lineConfig = { minSecs: 2, wordSecs: 0.4, maxSecs: 10 };
+/** Its last seconds, in which it fades out */
+const lineFadeSecs = 1;
 
 export type State = {
   /** Whose debug section is open */
   debugs: Set<string>;
+  /** Each bubble bar a debug section, by npcKey, faded with their room */
+  els: Map<string, HTMLDivElement>;
   /** The line each said last, and the seconds it has left — none whilst `held` */
-  lines: Map<string, { words: string; secs: number; held: boolean }>;
+  lines: Map<string, { words: string; secs: number; held: boolean; el?: HTMLDivElement | null }>;
   /** The thought last read off each, and the seconds it has left */
   thoughts: Map<string, { words: string; tag: ThoughtTag; secs: number }>;
   /** Opens their debug section — `focus` its close button, open already or not */
@@ -289,10 +318,12 @@ export type State = {
   say(npcKey: string, words: string, opts?: { secs?: number; hold?: boolean }): void;
   /** Over them as a thought, above anything they are saying, for `thoughtConfig.shownSecs` */
   think(npcKey: string, words: string, tag: ThoughtTag): void;
-  /** A held line starts its `lineSecs`, e.g. once answered */
+  /** A held line starts its `lineSecsOf`, e.g. once answered */
   release(...npcKeys: string[]): void;
   /** Lines run down whilst unpaused — see `World`'s `onTick` */
   onTick(delta: number): void;
+  /** Each bubble's opacity is their body's: their room's fade, unless they are lit. Written to the DOM */
+  syncRoomFades(): void;
   /** Their bubble as it should be: a line, a debug section, both, or gone */
   sync(npcKey: string): void;
   delete(...npcKeys: string[]): void;
