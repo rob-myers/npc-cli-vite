@@ -39,6 +39,9 @@ turning to it is the usual exponential ease.
   facing with an aim at `rate` `0`, which turns them not at all, so every move strafes — bar one told
   not to, which it leaves to face its path, else its forward gait would slide.
 - Psi sets no aim: the phaser's is the only one.
+- **The player strafing** (a double tap of Shift toggles it) gets an aim at `rate` `0` (`keepAim`, set and cleared each tick by
+  `w.player.aimAtPointer`), so WASD strafes, armed or not, at a walk. Only whilst standing, and only
+  where there is no aim already. `r`, a tap's look and a lock-on take over from it.
 
 Not to be confused with `NpcAnimation.aimAt`, which aims the crowd at a move's target.
 

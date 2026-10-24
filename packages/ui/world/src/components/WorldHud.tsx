@@ -2,6 +2,7 @@ import { Menu } from "@base-ui/react/menu";
 import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
 import {
+  ArrowsHorizontalIcon,
   LockIcon,
   LockOpenIcon,
   PersonSimpleRunIcon,
@@ -18,7 +19,7 @@ import { WorldContext } from "./world-context";
 
 /**
  * The player's bar: psi, their phaser, their keys and what they carry, then walk/run and
- * look/follow — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
+ * follow — see `docs/inventory.md`. A slot is pressed, or its digit is. What they have is `w.e.carried`
  */
 export default function WorldHud() {
   const w = useContext(WorldContext);
@@ -161,6 +162,7 @@ export default function WorldHud() {
     );
 
   const { key: playerKey } = w.player;
+  const strafing = w.player.strafe;
   const big = w.touchDevice;
 
   const heldDoors = w.e.getHeldDoors(playerKey) ?? [];
@@ -170,6 +172,12 @@ export default function WorldHud() {
   const psiOn = w.e.isPsiRaised();
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
+  /** The notice kept over the bar: a raised phaser strafes them too, so it comes first */
+  const kept = armed
+    ? { label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) }
+    : strafing
+      ? { label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() }
+      : null;
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -242,12 +250,29 @@ export default function WorldHud() {
   return (
     <div ref={(el) => void (state.barEl = el)} className={barClass}>
       {/* out here, not in the row: it scrolls, so would clip it */}
-      {state.notice !== null && (
+      {(state.notice !== null || kept !== null) && (
         <motion.div
           style={{ y }}
-          className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded bg-neutral-900/90 px-2 py-0.5 text-xs text-amber-200"
+          className="absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200"
         >
-          {state.notice}
+          {/* kept whilst aiming or strafing, the "x" ending it */}
+          {kept !== null && (
+            <div className="pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2">
+              {kept.label}
+              <button
+                type="button"
+                title={kept.title}
+                className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
+                onClick={() => {
+                  kept.end();
+                  w.view.focus();
+                }}
+              >
+                <XIcon className="size-3" weight="bold" />
+              </button>
+            </div>
+          )}
+          {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
         </motion.div>
       )}
       <motion.div className={rowClass} {...dragProps}>
@@ -371,7 +396,6 @@ export default function WorldHud() {
 /** The player themself, after the slots: where the camera stands by them, and how they go */
 function PlayerButtons() {
   const w = useContext(WorldContext);
-  const press = useRef({ timer: 0, long: false });
   const follow = w.view?.follow === true; // the view mounts after us
   const followFlash = useChangeCount(follow);
   const big = w.touchDevice;
@@ -385,11 +409,6 @@ function PlayerButtons() {
   const iconColor = (on: boolean) => (on ? "text-white" : "text-neutral-500");
   const buttonIcon = (on: boolean) => cn("relative drop-shadow-[0_1px_3px_rgb(0_0_0/0.9)]", iconColor(on));
 
-  const endPress = (cancelled: boolean) => {
-    window.clearTimeout(press.current.timer);
-    if (cancelled === false && press.current.long === false && w.hud?.dragged !== true) w.view.onLookGesture(false);
-  };
-
   return (
     <div
       className="pointer-events-auto ml-4 flex shrink-0 self-center rounded-md border border-neutral-400/25 bg-neutral-900/60"
@@ -400,28 +419,21 @@ function PlayerButtons() {
       {w.client !== true && (
         <div
           className={buttonClass}
-          title={hurry ? "run" : "walk"}
+          title={`${hurry ? "run" : "walk"}: shift twice strafes`}
           onClick={() => w.hud?.dragged !== true && w.player.toggleRun()}
         >
           {/* always white: the icon itself changes with the gait */}
           <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
+          {w.player.strafe && (
+            <ArrowsHorizontalIcon className={cn(buttonIcon(true), "absolute right-0.5 bottom-0.5 size-3")} weight="bold" />
+          )}
         </div>
       )}
-      {/* a press looks at the player, or stops a follow (white); a long press toggles it — as `f` */}
+      {/* follow on (white) or off, as `f` */}
       <div
         className={buttonClass}
         title={`follow ${follow ? "on" : "off"}: f`}
-        onPointerDown={() => {
-          press.current.long = false;
-          press.current.timer = window.setTimeout(() => {
-            if (w.hud?.dragged === true) return; // dragging the bar is not a press
-            press.current.long = true;
-            w.view.onLookGesture(true);
-          }, longPressMs);
-        }}
-        onPointerUp={() => endPress(false)}
-        onPointerLeave={() => endPress(true)}
-        onContextMenu={(e) => e.preventDefault()}
+        onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}
       >
         <AnimatePresence>
           {w.view?.lookingAt === true && (
@@ -735,11 +747,11 @@ const hudBarHeight = 110;
 const hudDragTop = 8;
 /** Compass points by `w.view.compassPoint` */
 const compassLetters = ["N", "W", "S", "E"];
-/** How long a touch is held before a slot's menu opens, or the look button before it toggles the follow */
+/** How long a touch is held before a slot's menu opens */
 const longPressMs = 500;
-/** How long the look button's flash takes to fade, when follow is turned on or off */
+/** How long the follow button's flash takes to fade, when follow is turned on or off */
 const followFlashMs = 550;
-/** Half a pulse of the look button, whilst a pan is under way */
+/** Half a pulse of the follow button, whilst a pan is under way */
 const lookingAtPulseMs = 700;
 /** How long the pulse takes to fade once the pan lands */
 const lookingAtFadeMs = 400;

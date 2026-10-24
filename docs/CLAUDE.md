@@ -183,28 +183,29 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - It keeps the furthest as `reach`. `ahead` is the vector to the frontier point.
 - `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
-**Look and follow**
-- `follow` is on or off (`setFollow`). A long press on the button, or holding `f`, toggles it.
-- Following, a short look press (`f`, or the button) stops the follow.
-- Not following, it calls `holdFrontier`: a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
+**Follow**
+- `follow` is on or off (`setFollow`). The button, or `f`, toggles it.
+- `holdFrontier` (MCP's way to show the player) is a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
 - A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.
 
 **Following, the stops sit further out** (`easeFrontier`, in `onCameraFrame`), as the 30° fov is narrow:
 - `controls.minDistance` eases to the nearest radius that fits the segment in the frustum with `frontierConfig.margin` to spare. It is clamped between `frontierConfig.nearFrac` of the travel and the persisted OUTER stop. So zoomed in, a follow is as far out as a free look zoomed out.
 - `controls.maxDistance` is that times the persisted stops' ratio (`getFrontierStops`).
-- Both go back to persisted when not following (a look press only pans), or when there is nothing to read.
+- Both go back to persisted when not following (`holdFrontier` only pans), or when there is nothing to read.
 - `t` is measured off the live stop, so a drawn-in view is still fully zoomed out.
 - On TOUCH the stops are never drawn in (`getFrontierStops`). A follow only pans, and a pinch zooms continuously between the persisted stops (`freeZoom`), resting wherever it is let go.
 
 ## Player input
 
 - **Walking.** `w`, `a`, `s` and `d` head as seen, snapped onto a world axis near it: see [`embodied` mode](#embodied-mode).
-- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): held, a full crouch; a tap is contextual, half or back up. Touch has no way yet.
+- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap is contextual, half or back up. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
-- **Running.** An npc runs whilst `anim.hurry`.
+- **Gait.** `x` held runs, once the key repeats, and a tap ends the run (`w.player.setGait`, `getGait`). A toast names each.
+  - The gait button on `WorldHud`, beside follow, toggles walk and run (`toggleRun`). A ↔ badge shows whilst strafing.
+- **Strafing.** A double tap of Shift toggles it (`toggleStrafe`), whatever else is held. Whilst on they keep their facing, so WASD strafes (`w.player.strafe`, `keepAim` in `aimAtPointer`). Standing only, never over another's aim. A raised phaser strafes them whatever is held. See `docs/npc-strafe.md`.
+- **Running.** An npc runs whilst `anim.hurry`. Strafing, they walk, and run again once it stops.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
-  - Its button on `WorldHud`, beside look/follow, toggles the player's.
   - A double tap of `w`, `a`, `s` or `d` runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
 - **Closing the page.** Ctrl or cmd with `w` closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
 - **Turning the player.**

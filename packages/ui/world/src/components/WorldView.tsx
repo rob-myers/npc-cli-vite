@@ -103,7 +103,6 @@ export function WorldView(props: React.PropsWithChildren) {
       zoomCrossFadeMs: 0,
       zoomInSlow: false,
       centreHint: false,
-      cHeld: false,
       clickIds: [],
       controls: null as any,
       ctrlOpts: {
@@ -152,7 +151,6 @@ export function WorldView(props: React.PropsWithChildren) {
       frontierHold: false,
       keysDown: new Set(),
       lastKeyMs: 0,
-      crouchHeld: false,
       compassPoint: 0,
       wasdSkew: 0,
       wasdSnapped: true,
@@ -766,7 +764,7 @@ export function WorldView(props: React.PropsWithChildren) {
        * Following, the inner zoom stop is the nearest radius that still shows both the player and
        * their frontier, with `frontierConfig.margin` to spare — the view held between them by `followPlayer`
        * — up to the persisted OUTER stop. The outer stop is that by the persisted stops' ratio. Eased, since the frontier jumps as they turn past a doorway, and eased
-       * BACK to the persisted stops whenever the view is not following the player — a look press
+       * BACK to the persisted stops whenever the view is not following the player — `holdFrontier`
        * only pans, and a free look is as high as ever. `update` re-derives the radius from the
        * stops each frame, so moving the stop is all that moving the camera takes
        */
@@ -809,7 +807,7 @@ export function WorldView(props: React.PropsWithChildren) {
         const { controls } = state;
         if (state.zoomHeld === true) return [controls.maxDistance, controls.minDistance];
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
-        // a look press only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
+        // `holdFrontier` only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
         const player = state.follow === true && w.touchDevice === false ? w.player?.get() : undefined;
         let wanted = outer;
         let wantedMin = min;
@@ -909,11 +907,6 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         w.update();
       },
-      onLookGesture(held) {
-        // a short press looks, or stops a follow; a long one toggles the follow
-        if (held === false && state.follow === false) return state.holdFrontier();
-        state.setFollow(!state.follow);
-      },
       holdFrontier() {
         if (w.player?.get() === undefined) return;
         // the follow's framing — the player and their frontier — without the follow: held until
@@ -947,38 +940,14 @@ export function WorldView(props: React.PropsWithChildren) {
             w.debug?.toggleSpots();
             w.menu?.update();
           }
-        } else if (key === "c") {
-          // held, as `f`: its repeat is the hold, a full crouch. A tap waits for the release
-          if (e.repeat === false) {
-            state.crouchHeld = false;
-          } else if (state.crouchHeld === false) {
-            state.crouchHeld = true;
-            w.n?.[w.player.key ?? ""]?.anim.setCrouch(2);
-          }
         } else if (key === "f") {
-          // the look button's gesture on a key: a held key REPEATS, which is the long press — no
-          // timer of our own, and a tap never gets there. The short press waits for the release,
-          // since only by then is it known not to have been a hold
-          if (e.repeat === false) {
-            state.cHeld = false;
-          } else if (state.cHeld === false) {
-            state.cHeld = true;
-            state.onLookGesture(true);
-          }
+          if (e.repeat === false) state.setFollow(!state.follow);
         }
       },
       onKeyUp(e) {
         const key = e.key.toLowerCase();
         state.keysDown.delete(key);
         if (state.wasdHeading !== null) w.r3f?.invalidate(); // a frame, for the compass to drop a held heading
-        if (isTypingTarget(e)) return;
-        if (key === "f" && state.cHeld === false) {
-          state.onLookGesture(false);
-        } else if (key === "c" && state.crouchHeld === false) {
-          // a tap crouches half from standing, stands from half, and comes up to half from full
-          const anim = w.n?.[w.player.key ?? ""]?.anim;
-          anim?.setCrouch(anim.crouchLevel === 1 ? 0 : 1);
-        }
       },
       onPointerDown(e) {
         const last = state.lastPointer;
@@ -988,8 +957,7 @@ export function WorldView(props: React.PropsWithChildren) {
         last.longPress = false;
         last.rightPress = isRMB(e.nativeEvent);
 
-        const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
-        state.canvas.style.cursor = modifier ? "grabbing" : "move";
+        state.canvas.style.cursor = e.shiftKey === true ? "grabbing" : "move";
 
         last.multi = state.otherPointerDown(e);
         last.pick = null;
@@ -1202,7 +1170,10 @@ export function WorldView(props: React.PropsWithChildren) {
         });
         ro.observe(w.rootEl);
 
-        const { onKeyDown, onKeyUp, onZoomWheel } = state;
+        // the latest, over hmr
+        const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e);
+        const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
+        const onZoomWheel = (e: WheelEvent) => state.onZoomWheel(e);
         // a key released after focus has gone elsewhere never reaches `onKeyUp`
         const onBlur = () => state.keysDown.clear();
         w.rootEl.addEventListener("keydown", onKeyDown);
@@ -1269,7 +1240,7 @@ export function WorldView(props: React.PropsWithChildren) {
         if (follow === true) state.lookAtPlayer({ minMs: followTakeoverMs, softLanding: true });
         store.patch({ follow });
         state.set({ follow });
-        w.update(); // the look button shows it
+        w.update(); // the follow button shows it
         w.hud?.update();
         w.r3f?.invalidate();
       },
@@ -1297,7 +1268,7 @@ export function WorldView(props: React.PropsWithChildren) {
         }
         store.patch({ cameraMode });
         state.set({ cameraMode });
-        w.update(); // the menu shows the mode, on its label and on the look button
+        w.update(); // the menu shows the mode, on its label and on the follow button
         w.r3f?.invalidate();
       },
       hideCentreHint() {
@@ -1379,7 +1350,7 @@ export function WorldView(props: React.PropsWithChildren) {
         };
 
         try {
-          // Nothing to travel — pressing the look button whilst already on them, say. Taken as an
+          // Nothing to travel — turning follow on whilst already on them, say. Taken as an
           // instant move rather than animated: the taper below would give it a zero duration, and
           // the first frame's `0 / 0` would lerp the target to NaN and take the camera with it
           if (opts.animate !== true || (opts.ms === undefined && from.distanceTo(to) < lookAtUntil)) {
@@ -1391,7 +1362,7 @@ export function WorldView(props: React.PropsWithChildren) {
           // a leftover gesture would otherwise keep decaying underneath the pan
           controls.u.panOffset.set(0, 0, 0);
           controls.sphericalDelta.set(0, 0, 0);
-          state.lookingAt = true; // the look button shows it, e.g. a pan nobody can see yet
+          state.lookingAt = true; // the follow button shows it, e.g. a pan nobody can see yet
           w.hud?.update();
 
           // Further pans take longer, so the apparent speed stays similar. The floor tapers away
@@ -1646,7 +1617,8 @@ export function WorldView(props: React.PropsWithChildren) {
 
   w.view = state;
 
-  useEffect(() => w.rootEl && state.setupDom(), [w.rootEl]);
+  // `setupDom` is new on each hmr, so an edit to it re-adds the listeners
+  useEffect(() => w.rootEl && state.setupDom(), [w.rootEl, state.setupDom]);
 
   // the rooms are read off whatever map is up now, and arrived at rather than faded to
   useEffect(() => {
@@ -1842,7 +1814,7 @@ export type State = {
   getWasdDirection(): Vect;
   /** Shows the pick colours on screen, or stops: the debug menu's "view pick", and `0` */
   toggleViewPick(): void;
-  /** The player, whilst the view follows them — or a look press holds it on them — and they exist */
+  /** The player, whilst the view follows them — or `holdFrontier` holds it on them — and they exist */
   getFollowedPlayer(): Npc | undefined;
   /** Where the follow holds the target, into `out` — `false`, and untouched, whilst not following */
   getFollowGoal(out: { x: number; z: number }): boolean;
@@ -1893,14 +1865,12 @@ export type State = {
   frontierMs: number;
   /** How far the follow's goal is held towards the frontier, eased with the zoom — see `easeFrontier` */
   frontierOffset: { x: number; z: number };
-  /** Whether a short look press is holding the view on the player and their frontier, not following */
+  /** Whether `holdFrontier` is holding the view on the player and their frontier, not following */
   frontierHold: boolean;
   /** The keys held down over the world, lowercased — `wasd_delta` reads them */
   keysDown: Set<string>;
   /** When a key last went down over the world, epoch ms */
   lastKeyMs: number;
-  /** Whether `c` has been held long enough for a full crouch */
-  crouchHeld: boolean;
   /** The compass point nearest where `w` heads: `0` north (-z), then west, south, east */
   compassPoint: number;
   /** `w`'s heading whilst a move key is down, as an azimuth, so a turn mid-walk does not swerve them */
@@ -1967,13 +1937,6 @@ export type State = {
   onCreated(rootState: RootState): void;
   onKeyDown(e: KeyboardEvent): void;
   onKeyUp(e: KeyboardEvent): void;
-  /** Whether the `f` key has been held long enough to have done its long press */
-  cHeld: boolean;
-  /**
-   * The look BUTTON's gesture and `f`'s alike, so the two cannot drift apart: a press looks, a hold
-   * takes up the follow, and whilst following either one leaves it. See `WorldMenu`'s look button
-   */
-  onLookGesture(held: boolean): void;
   /** Pans onto the player, following them as they walk — what turning `follow` on does */
   lookAtPlayer(opts?: { minMs?: number; softLanding?: boolean }): void;
   /** A teleport of the player, e.g. `fadeSpawn`: the frontier is read afresh, and a follow pans there */
@@ -1990,7 +1953,7 @@ export type State = {
   renderPick(uv: { u: number; v: number }): Promise<THREE.TypedArray>;
   /** Builds the pick pass's pipelines ahead of the first pick — see within */
   warmPick(): Promise<void>;
-  /** Whilst an animated `lookAt` runs — the look button is lit by it */
+  /** Whilst an animated `lookAt` runs — the follow button is lit by it */
   lookingAt: boolean;
   /** Whilst `warmPick` holds the renderer in pick state, when no frame may be drawn */
   warmingPick: boolean;

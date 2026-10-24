@@ -95,8 +95,8 @@ from `ct.w` and returns plain data.
 
 - **`click` a world point only when it is on-screen.** Otherwise point the camera there first with
   `w view.lookAt '{ x, y }'`. Turn follow off first, or it pulls back to the player.
-- **To show the player, use `w view.holdFrontier`.** It is the look button's short press, framing them and
-  their frontier. `w view.onLookGesture false` is the press itself, but it stops a follow instead of looking.
+- **To show the player, use `w view.holdFrontier`.** It frames them and their frontier, and follows them until
+  the camera is next touched. The follow button and `f` only turn the follow on or off.
 
 ## While Claude drives the page
 
