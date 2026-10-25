@@ -60,10 +60,12 @@ export function answerSpotQueries(
     const spot = resolve(ref);
     return { spots: [spot], seated: spot.spot.doArc !== undefined };
   };
-  /** Where `ref` looks from: an npc's own point, else a spot's */
+  /** Where `ref` looks from: an npc's eyes, else a spot's point */
   const eyeOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.eye ?? resolve(ref);
+  /** Where lines to `ref` end: an npc's head centre, else a spot's point */
+  const headOf = (ref: string): Geom.VectJson => npcByKey.get(ref)?.head ?? resolve(ref);
   /**
-   * The lines from `a` to a body at `b`: to its centre and either side. `from` and `to` are npcs there, if any.
+   * The lines from `a` to a head at `b`: to its centre and either side. `from` and `to` are npcs there, if any.
    * Their postures set the heights, which a low obstacle may rise above
    */
   const eyeLines = (a: Geom.VectJson, b: Geom.VectJson, from?: WW.SpotNpc, to?: WW.SpotNpc) => {
@@ -114,7 +116,7 @@ export function answerSpotQueries(
     if ((na === undefined && nb === undefined) || isGroup(refA) || isGroup(refB))
       return { sees: true, settled: listed };
     if (listed === "always" && nb?.crouched !== true) return { sees: true, settled: "always" };
-    return { sees: eyeSees(eyeOf(refA), eyeOf(refB), na, nb), settled: "lines" };
+    return { sees: eyeSees(eyeOf(refA), headOf(refB), na, nb), settled: "lines" };
   };
   /** `judge`'s verdict, cached with an npc by where they stand and how */
   const seesNow = (refA: string, refB: string) => {
@@ -242,7 +244,7 @@ export function answerSpotQueries(
         }
         case "explain": {
           const [na, nb] = [npcByKey.get(query.a), npcByKey.get(query.b)];
-          const [a, b] = [eyeOf(query.a), eyeOf(query.b)];
+          const [a, b] = [eyeOf(query.a), headOf(query.b)];
           const { eye, top, ends } = eyeLines(a, b, na, nb);
           const lines = ends.map((to) => ({ from: a, to, hit: lineHit(a, to, eye, top, true) }));
           const { pair } = all.bestListed(spotsAt(query.a), spotsAt(query.b), isOpen);
@@ -312,13 +314,13 @@ async function createMapSpots(gms: WW.GmForSpots[], hullPairs: [string, string][
 }
 
 const round = (x: number) => Math.round(x * 100) / 100;
-/** Metres either side of the eyes that sight is tested to: inside the head, 0.15 m either side */
-const headRadius = 0.12;
+/** Metres either side of a head's centre that sight is tested to: half its width */
+const headRadius = 0.15;
 
-/** Metres up to an npc's eye, and to where lines to them end: their eye too, bar fully crouched */
+/** Metres up to an npc's eye, and to where lines to them end: their head's centre, bar fully crouched */
 function heightsOf(npc?: WW.SpotNpc) {
   const eye = npc?.eye.h ?? standEyeHeight;
-  return { eye, top: npc?.crouched === true ? crouchedTop : eye };
+  return { eye, top: npc?.crouched === true ? crouchedTop : (npc?.head.h ?? standEyeHeight) };
 }
 /** Metres up to the eyes of one stood, as a spot stands for */
 const standEyeHeight = 1.37;
