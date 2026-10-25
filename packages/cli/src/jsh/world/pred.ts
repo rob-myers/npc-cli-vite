@@ -32,7 +32,7 @@ pred.setHandler(function onWorldEvent(e, w) {
   const p = pred.get();
   switch (e.key) {
     case "picked":
-      if (w.helper.isNpcPickEvent(e) === true && e.longDown === false && isTargeting(w) === false) {
+      if (w.helper.isNpcPickEvent(e) === true && e.longDown === false && isReading(w) === false) {
         visualisePredicates(w, onPickNpc(e));
       }
       break;
@@ -152,10 +152,9 @@ function onPickNpc(e: JshCli.NpcPickEvent) {
   return changed;
 }
 
-/** Whether `inventory` takes a press on an npc: as the phaser's target, or for psi to read */
-function isTargeting(w: JshCli.WorldState) {
-  if (w.e.keyedListener.has("inventory") === false) return false;
-  return w.phasers?.isArmed(w.player.key) === true || w.e.isPsiRaised();
+/** Whether `inventory` takes a press on an npc for psi to read. A raised phaser still picks them */
+function isReading(w: JshCli.WorldState) {
+  return w.e.keyedListener.has("inventory") === true && w.e.isPsiRaised();
 }
 
 /** In or out again, as a shift-click does */
