@@ -250,7 +250,12 @@ export default function NpcFocus() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div ref={(el) => void (state.el = el)} className="absolute inset-0 transition-opacity duration-400">
+          <div
+            ref={(el) => void (state.el = el)}
+            className="absolute inset-0 transition-opacity duration-400"
+            // the World keeps the focus, and with it the keys
+            onMouseDown={(e) => e.preventDefault()}
+          >
             <svg className="absolute inset-0 size-full overflow-visible" aria-hidden="true">
               {state.offered.map(({ part }) => (
                 <line
