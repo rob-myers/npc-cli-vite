@@ -605,6 +605,12 @@ export class NpcAnimation {
     return fits(this.pose) ? this.pose : (lieKeys.find(fits) ?? null);
   }
 
+  /** Their head faces ahead at once, rather than easing round: e.g. respawned unseen */
+  faceAhead() {
+    this.headTurn.identity();
+    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0 });
+  }
+
   /** Turn towards `at`, a point or bearing, whilst sat, as far as they can without turning round — `null` to face ahead again */
   turnTo(at: null | number | Geom.VectJson) {
     const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
