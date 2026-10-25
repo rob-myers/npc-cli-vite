@@ -147,7 +147,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
 
 **Workers** (see `docs/workers.md`):
-- Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycast, `w.navWorker`).
+- Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycasts on a `SegGrid`, `w.navWorker`). See `docs/workers.md`.
 - jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one with jsh's plan ops (`park`, `pad`…), sent from `plan.main.ts`.
 - The same worker holds spots and sight, asked from `perception.main.ts`: see `docs/perception.md`. Every jsh request goes through `worker.main.ts`.
 

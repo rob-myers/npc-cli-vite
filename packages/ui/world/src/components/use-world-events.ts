@@ -47,7 +47,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       timers: new Set(),
       npcToAccess: {},
       npcToDoors: {},
-      pendingRaycast: {},
       pendingUnreachable: {},
 
       addFrameCallback(cb) {
@@ -1083,130 +1082,28 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (w.n[key] === npc) rearm?.();
       },
       async raycast(origSrc, origDst) {
-        let src = helper.parseGroundPoint(origSrc);
+        const src = helper.parseGroundPoint(origSrc);
         const dst = helper.parseGroundPoint(origDst);
-        const start = src;
 
         // Both points must reside in a room or doorway
         const srcGrId = w.findRoomContaining(src, true);
-        const dstGrId = w.findRoomContaining(dst, true);
         if (srcGrId === null) {
           throw Error(`${"raycast"}: src must be in a room/doorway ${JSON.stringify({ x: src.x, y: src.y })}`);
-        } else if (dstGrId === null) {
+        } else if (w.findRoomContaining(dst, true) === null) {
           throw Error(`${"raycast"}: dst must be in a room/doorway ${JSON.stringify({ x: dst.x, y: dst.y })}`);
         }
-
-        if (Math.abs(src.x - dst.x) < 0.01 && Math.abs(src.y - dst.y) < 0.01) {
-          // avoid 'detect-collisions' throw on zero-length rays
-          return {
-            success: true,
-            hit: null,
-            rooms: [srcGrId.grKey],
-            doors: [],
-            hitDoor: null,
-            shields: [],
-            obstacles: [],
-          };
+        if (!(w.navWorker.worker instanceof Worker)) {
+          throw Error(`${"raycast"}: nav worker not ready`); // a stub swallows posts before it mounts
         }
 
-        const [grIds, gdIds] = [[] as Geomorph.GmRoomId[], [] as Geomorph.GmDoorId[]];
-        /** The first leg's: shields are in world space, so it has the whole ray's */
-        let shields: undefined | string[];
-        const obstacles: JshCli.RaycastResult["obstacles"] = [];
-        let gmId = srcGrId.gmId;
-        let roomId = srcGrId.roomId;
-        let hit: null | Geom.VectJson = null;
-        let hitDoor: null | Geomorph.GmDoorKey = null;
-
-        const raycastUid = shortUuid.generate();
-        let maxAdjGeomorphs = 2; // 🔔 detect ray between at most 2 geomorphs
-
-        while (maxAdjGeomorphs-- > 0) {
-          grIds.push(helper.getGmRoomId(gmId, roomId));
-
-          w.navWorker.worker.postMessage({
-            type: "get-raycast",
-            uid: raycastUid,
-            src,
-            dst,
-            gmId,
-          } satisfies WW.MsgToNavWorker);
-
-          const result = await new Promise<WW.RaycastResultResponse>(
-            (resolve, reject) => (state.pendingRaycast[raycastUid] = { resolve, reject }),
-          );
-
-          hit = result.hit;
-          shields ??= result.shields;
-          /** Metres from the ray's start to this leg's */
-          const legFrom = Math.hypot(src.x - start.x, src.y - start.y);
-          for (const o of result.obstacles) obstacles.push({ ...o, gmId, dist: o.dist + legFrom });
-          // check whether ray is blocked by a door panel (accounting for partial open)
-          for (const gdId of result.gmDoorIds) {
-            const door = w.d[gdId.gdKey];
-            const blockResult = w.door.checkRayDoorBlock(src, dst, gdId.gdKey);
-            if (blockResult.blocked) {
-              // `null` if ray intersects door rect but not door seg (ends inside doorway)
-              if (blockResult.hit !== null) hit = blockResult.hit;
-              if (hit !== null) hitDoor = gdId.gdKey;
-              break;
-            }
-            // ray passes through gap
-            gdIds.push(gdId);
-            const otherRoomId = door.connector.roomIds.find((x) => x !== roomId) ?? null;
-            otherRoomId !== null && grIds.push(helper.getGmRoomId(gmId, otherRoomId));
-          }
-
-          const lastGdId = gdIds[gdIds.length - 1];
-
-          if (
-            hit !== null || // hit something
-            lastGdId === undefined || // no doors touched
-            w.d[lastGdId.gdKey].hull === false // last open door NOT a hull door
-          ) {
-            break;
-          }
-
-          // check open hull door intersect
-          hit = w.door.computeRayDoorIntersect(src, dst, lastGdId.gdKey);
-          const adjCtxt = w.gmGraph.getAdjacentRoomCtxt(gmId, lastGdId.doorId);
-
-          if (
-            hit === null || // dst in hull doorway (distinct gmId since hull doorways overlap)
-            adjCtxt === null // should be unreachable: sealed hull door always closed
-          ) {
-            break;
-          }
-
-          // next, start from hull door intersection
-          src = hit;
-          hit = null;
-          gmId = adjCtxt.adjGmId;
-          roomId = adjCtxt.adjRoomId;
-        }
-
-        return {
-          success: hit === null,
-          hit: hit === null ? null : geomService.precision2d(hit, 2),
-          hitDoor,
-          doors: gdIds.map(({ gdKey }) => gdKey),
-          rooms: grIds.map(({ grKey }) => grKey),
-          shields: shields ?? [],
-          // none past a closed door that stopped it
-          obstacles:
-            hit === null ? obstacles : obstacles.filter((o) => o.dist <= Math.hypot(hit.x - start.x, hit.y - start.y)),
-        };
+        const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
+        const signal = new AbortController().signal;
+        return (await w.navWorker.request(msg, signal)) as JshCli.RaycastResult;
       },
       rejectPendingUnreachable(err) {
         for (const uid of Object.keys(state.pendingUnreachable)) {
           state.pendingUnreachable[uid].reject(err);
           delete state.pendingUnreachable[uid];
-        }
-      },
-      rejectPendingRaycast(err) {
-        for (const uid of Object.keys(state.pendingRaycast)) {
-          state.pendingRaycast[uid].reject(err);
-          delete state.pendingRaycast[uid];
         }
       },
       async requestUnreachable(npc, srcIndex, dstIndex) {
@@ -1783,7 +1680,6 @@ export type State = {
   syncLitRoom(npc: Npc, alsoAt?: Geomorph.GmRoomId): boolean;
   /** Re-derives `litRooms` off every npc, and drops `handLitRooms` the map no longer has */
   syncLitRooms(): void;
-  pendingRaycast: { [uid: string]: { resolve(result: WW.RaycastResultResponse): void; reject(err: Error): void } };
   pendingUnreachable: {
     [uid: string]: { resolve(result: WW.UnreachableResult): void; reject(err: Error): void };
   };
@@ -1823,8 +1719,6 @@ export type State = {
   requestUnreachable(npc: Npc, srcIndex: number, dstIndex: number): Promise<WW.UnreachableResult["blocked"]>;
   /** Fails everything waiting on `requestUnreachable`, e.g. because the map is going */
   rejectPendingUnreachable(err: Error): void;
-  /** ...and on `raycast`, e.g. because the nav worker is going */
-  rejectPendingRaycast(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   move(opts: JshCli.MoveOpts): Promise<void>;
   /**

@@ -49,24 +49,17 @@ export function getPhysicsDoorsPayload(gms: Geomorph.LayoutInstance[]): WW.Physi
   );
 }
 
-/**
- * We provide local coords unlike `getNavmeshPayload`.
- *
- * Raycasting currently only supports:
- * - static walls determined by gmKey
- * - dynamic doors checked in main thread
- */
+/** Walls and obstacles per geomorph key, in its own coords: the worker places them. Doors come from `Doors` */
 export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSetupData {
   const gmPairs = [...new Set(gms.map(({ key }) => key))].map(
     (key) => [key, gms.find((g) => g.key === key) as Geomorph.LayoutInstance] as const,
   );
 
   return Object.fromEntries(
-    gmPairs.map(([gmKey, { walls, doors, obstacles }]) => [
+    gmPairs.map(([gmKey, { walls, obstacles }]) => [
       gmKey,
       {
         key: gmKey,
-        doors: doors.map(({ poly }) => poly.geoJson),
         walls: walls.map((poly) => poly.geoJson),
         obstacles: obstacles.flatMap(({ origPoly, transform, height, meta }, obstacleId) =>
           height > 0

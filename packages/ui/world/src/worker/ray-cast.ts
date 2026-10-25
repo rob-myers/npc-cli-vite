@@ -1,115 +1,169 @@
 /**
- * The nav worker's raycasts. Two kinds, each against relatively few bodies:
- * 1. within a single geomorph, in its own space: its static walls, doors and obstacles;
- * 2. across the whole world: every shield.
- *
- * The main thread may ask for (1) more than once for a single ray, a leg a geomorph, but usually not
+ * The nav worker's raycasts, along one world-space `SegGrid`. Walls stop a ray, and so does a door
+ * unless it crosses that door's gap. Obstacles and shields it passes are named, nearest first
  */
 import { Mat, Poly } from "@npc-cli/util/geom"; // 🔔 @npc-cli/util breaks worker via react-refresh window undefined
-import { type Body, intersectLinePolygon, type Line, Polygon, System } from "detect-collisions";
+import { type Occluder, SegGrid, segsHit } from "../service/seg-grid";
 
-/** The geomorphs as of the last navmesh request, whose transforms a raycast needs */
-let gmGeoms: WW.GmGeomForNav[] = [];
-const gmRayCast: { [gmKey: string]: System } = {};
+/** Walls and obstacles in world coords, as of the last navmesh request */
+let statics: { walls: Seg[]; obstacles: RayObstacle[] } = { walls: [], obstacles: [] };
+/** As `Doors` last sent them */
+let doors: WW.RayDoor[] = [];
+/** By gdKey, each door's open ratio */
+const ratios = new Map<string, number>();
+let shields: { key: string; points: Geom.VectJson[] }[] = [];
+/** Made on the next ray once the walls, obstacles or doors change */
+let grid: null | SegGrid = null;
 
-/** The shields, in world space: kept apart, as a navmesh request clears the geomorphs' own */
-const shieldSystem = new System();
-
-export function setRayCastShields({ shields }: Extract<WW.MsgToNavWorker, { type: "set-raycast-shields" }>) {
-  shieldSystem.clear();
-  for (const { key, points } of shields) {
-    shieldSystem.insert(new Polygon({ x: 0, y: 0 }, points, { isStatic: true, userData: { key } }));
-  }
-}
-
-export function createGmRayCastSystems(gmKeyToData: WW.RaycastSetupData, nextGmGeoms: WW.GmGeomForNav[]) {
-  gmGeoms = nextGmGeoms;
-
-  for (const { key: gmKey, walls, doors, obstacles } of Object.values(gmKeyToData)) {
-    // construct system per geomorph
-    const system = (gmRayCast[gmKey] ??= new System());
-    system.clear();
-
-    // Geomorph.Layout not Geomorph.LayoutInstance
-    const zero = { x: 0, y: 0 };
-
-    walls
-      .map((json) => Poly.from(json))
-      .forEach((wall, wallId) =>
-        system.insert(new Polygon(zero, wall.outline, { isStatic: true, userData: { type: "wall", wallId } })),
-      );
-    doors
-      .map((json) => Poly.from(json))
-      .forEach((door, doorId) =>
-        system.insert(new Polygon(zero, door.outline, { isStatic: true, userData: { type: "door", doorId } })),
-      );
-    for (const { outline, ...obstacle } of obstacles) {
-      const poly = Poly.from(outline);
-      system.insert(
-        new Polygon(zero, poly.outline, { isStatic: true, userData: { type: "obstacle", poly, obstacle } }),
-      );
+export function setRaycastStatics(gmKeyToData: WW.RaycastSetupData, gmGeoms: WW.GmGeomForNav[]) {
+  const walls: Seg[] = [];
+  const obstacles: RayObstacle[] = [];
+  gmGeoms.forEach((gm, gmId) => {
+    const { walls: wallPolys, obstacles: gmObstacles } = gmKeyToData[gm.key];
+    const toWorld = new Mat(gm.mat3);
+    for (const json of wallPolys) for (const seg of Poly.from(json).applyMatrix(toWorld).lineSegs) walls.push(seg);
+    for (const { outline, ...obstacle } of gmObstacles) {
+      obstacles.push({ ...obstacle, gmId, outline: Poly.from(outline).applyMatrix(toWorld).outline });
     }
-  }
-}
-
-/**
- * One leg of a ray, within geomorph `gmId`. Walls stop it. Doors, obstacles and shields do not: each it reaches is
- * named, nearest first, and the main thread decides — it knows which doors stand open, and whose phaser is tuned
- */
-export function sendRaycastResult({ uid, src, dst, gmId }: WW.GetRaycast) {
-  const gm = gmGeoms[gmId];
-  const [toWorld, toLocal] = [new Mat(gm.mat3), new Mat(gm.inverseMat3)];
-  const localSrc = toLocal.transformPoint({ ...src });
-
-  // walls and doors are in their geomorph's own space, shields in the world's
-  const local = cast(gmRayCast[gm.key], localSrc, toLocal.transformPoint({ ...dst }), isNotWall);
-  const world = cast(shieldSystem, { ...src }, { ...dst }, () => true);
-  /** Metres to the wall that stopped it, the same in either space: nothing beyond counts */
-  const reach =
-    local.hit === undefined ? Infinity : Math.hypot(local.hit.point.x - localSrc.x, local.hit.point.y - localSrc.y);
-  const gmDoorIds: Geomorph.GmDoorId[] = [];
-  const obstacles: WW.RaycastObstacle[] = [];
-  for (const { body, dist } of nearestFirst(local.passed, reach)) {
-    const { userData } = body;
-    if (userData.type === "door")
-      gmDoorIds.push({ gmId, doorId: userData.doorId, gdKey: `g${gmId}d${userData.doorId}` });
-    else if (userData.poly.contains(localSrc) === false) obstacles.push({ ...userData.obstacle, dist });
-  }
-
-  self.postMessage({
-    type: "raycast-result",
-    uid,
-    hit: local.hit === undefined ? null : toWorld.transformPoint(local.hit.point),
-    gmDoorIds,
-    obstacles,
-    shields: nearestFirst(world.passed, reach).map(({ body }) => body.userData.key),
-  } satisfies WW.RaycastResultResponse);
-}
-
-const isNotWall = (body: Body) => body.userData.type !== "wall";
-
-/** A body the ray went on past, and how far along it met it */
-type Passed = { body: Body; dist: number };
-
-/** Casts through `system`: what `passes` is noted and gone past, anything else stops it — `hit`, if anything did */
-function cast(system: System, src: Geom.VectJson, dst: Geom.VectJson, passes: (body: Body) => boolean) {
-  const passed: Passed[] = [];
-  const hit = system.raycast(src, dst, (body, ray) => {
-    if (passes(body) === false) return true;
-    passed.push({ body, dist: distanceAlong(ray as Line, body) });
-    return false;
   });
-  return { hit, passed };
+  statics = { walls, obstacles };
+  grid = null;
 }
 
-/** How far along the ray it meets `body` — `0` if it never crosses its edge, so lies inside it */
-function distanceAlong(ray: Line, body: Body) {
-  const { start } = ray;
-  const dists = intersectLinePolygon(ray, body as Polygon).map((p) => Math.hypot(p.x - start.x, p.y - start.y));
-  return dists.length === 0 ? 0 : Math.min(...dists);
+export function setRaycastDoors({ doors: next }: Extract<WW.MsgToNavWorker, { type: "set-raycast-doors" }>) {
+  doors = next;
+  ratios.clear();
+  for (const { gdKey, ratio } of doors) ratios.set(gdKey, ratio);
+  grid = null;
 }
 
-/** Those within `reach`, nearest first: the library hands them over in no order, and from beyond a wall too */
-function nearestFirst(passed: Passed[], reach: number) {
-  return passed.filter(({ dist }) => dist <= reach).sort((a, b) => a.dist - b.dist);
+export function setDoorRatios({ ratios: changed }: Extract<WW.MsgToNavWorker, { type: "set-door-ratios" }>) {
+  for (const [gdKey, ratio] of Object.entries(changed)) ratios.set(gdKey, ratio);
 }
+
+export function setRayCastShields(msg: Extract<WW.MsgToNavWorker, { type: "set-raycast-shields" }>) {
+  shields = msg.shields;
+}
+
+/** Always answers, else main waits forever */
+export function sendRaycastResult(msg: WW.GetRaycast) {
+  let output: null | JshCli.RaycastResult = null;
+  let error: undefined | string;
+  try {
+    output = raycast(msg);
+  } catch (e) {
+    error = e instanceof Error ? e.message : String(e);
+  }
+  self.postMessage({ uid: msg.uid, output, error } satisfies WW.NavWorkerReply);
+}
+
+function raycast({ src, dst, grKey }: WW.GetRaycast): JshCli.RaycastResult {
+  const crossed: { o: Occluder; lambda: number }[] = [];
+  getGrid().forEachOn(src, dst, (o, lambda) => void crossed.push({ o, lambda }));
+  crossed.sort((a, b) => a.lambda - b.lambda);
+
+  /** Where along it a wall or door stopped it */
+  let stop = Infinity;
+  let hitDoor: null | Geomorph.GmDoorKey = null;
+  const passed: Geomorph.GmDoorKey[] = [];
+  const rooms: Geomorph.GmRoomKey[] = [grKey];
+  /** By obstacle index, where it first meets it */
+  const met = new Map<number, number>();
+
+  for (const { o, lambda } of crossed) {
+    if (o.kind === "wall") {
+      stop = lambda;
+      break;
+    }
+    if (o.kind !== "door") {
+      if (met.has(o.id) === false) met.set(o.id, lambda);
+      continue;
+    }
+    const door = doors[o.id];
+    if (inGap(door, pointAt(src, dst, lambda)) === false) {
+      [stop, hitDoor] = [lambda, door.gdKey];
+      break;
+    }
+    passed.push(door.gdKey);
+    const next = nextRoom(door, rooms);
+    if (next !== null) rooms.push(next);
+  }
+
+  const length = Math.hypot(dst.x - src.x, dst.y - src.y);
+  const obstacles = [...met].flatMap(([index, lambda]) => {
+    const { outline, ...obstacle } = statics.obstacles[index];
+    return lambda > stop || contains(outline, src) ? [] : [{ ...obstacle, dist: lambda * length }];
+  });
+  const hit = stop === Infinity ? null : round(pointAt(src, dst, stop));
+  return {
+    success: hit === null,
+    hit,
+    hitDoor,
+    doors: passed,
+    rooms,
+    shields: shieldsPassed(src, dst, stop),
+    obstacles: obstacles.sort((a, b) => a.dist - b.dist),
+  };
+}
+
+function getGrid() {
+  if (grid !== null) return grid;
+  const next = new SegGrid(1);
+  for (const seg of statics.walls) next.add(seg, "wall", -1);
+  doors.forEach(({ src, dst }, index) => next.add([src, dst], "door", index));
+  statics.obstacles.forEach(({ outline }, index) => {
+    outline.forEach((p, i) => next.add([p, outline[(i + 1) % outline.length]], "obstacle", index));
+  });
+  return (grid = next);
+}
+
+/** As `Doors` slides it: its gap grows from one end by its open ratio */
+function inGap(door: WW.RayDoor, p: Geom.VectJson) {
+  const ratio = ratios.get(door.gdKey) ?? 0;
+  if (ratio === 0) return false;
+  const [dx, dy] = [door.dst.x - door.src.x, door.dst.y - door.src.y];
+  const lambda = ((p.x - door.src.x) * dx + (p.y - door.src.y) * dy) / (dx ** 2 + dy ** 2);
+  return door.gapAtHighLambda ? lambda >= 1 - ratio : lambda <= ratio;
+}
+
+/** The room beyond `door`. A hull door's second record leads to its own room, unless that is already listed */
+function nextRoom(door: WW.RayDoor, rooms: Geomorph.GmRoomKey[]) {
+  const current = rooms[rooms.length - 1];
+  if (door.grKeys.includes(current)) return door.grKeys.find((grKey) => grKey !== null && grKey !== current) ?? null;
+  return door.grKeys.find((grKey) => grKey !== null && rooms.includes(grKey) === false) ?? null;
+}
+
+/** Decor keys of the shields it meets before `stop`, nearest first */
+function shieldsPassed(src: Geom.VectJson, dst: Geom.VectJson, stop: number) {
+  return shields
+    .flatMap(({ key, points }) => {
+      let first = contains(points, src) ? 0 : Infinity;
+      points.forEach((p, i) => {
+        const lambda = segsHit(src, dst, p, points[(i + 1) % points.length]);
+        if (lambda !== -1 && lambda < first) first = lambda;
+      });
+      return first !== Infinity && first <= stop ? [{ key, first }] : [];
+    })
+    .sort((a, b) => a.first - b.first)
+    .map(({ key }) => key);
+}
+
+/** Even-odd: is `p` inside the polygon `points`? */
+function contains(points: Geom.VectJson[], p: Geom.VectJson) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [a, b] = [points[i], points[j]];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+
+const pointAt = (src: Geom.VectJson, dst: Geom.VectJson, lambda: number) => ({
+  x: src.x + lambda * (dst.x - src.x),
+  y: src.y + lambda * (dst.y - src.y),
+});
+
+const round = ({ x, y }: Geom.VectJson) => ({ x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
+
+type Seg = [Geom.VectJson, Geom.VectJson];
+type RayObstacle = Omit<WW.RaycastObstacle, "dist"> & { gmId: number; outline: Geom.VectJson[] };

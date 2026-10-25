@@ -25,11 +25,6 @@ export default function NavWorker() {
         switch (msg.type) {
           case "pong":
             break;
-          case "raycast-result": {
-            w.e.pendingRaycast[msg.uid]?.resolve(msg);
-            delete w.e.pendingRaycast[msg.uid];
-            break;
-          }
           case "unreachable-result": {
             w.e.pendingUnreachable[msg.uid]?.resolve(msg);
             delete w.e.pendingUnreachable[msg.uid];
@@ -85,7 +80,6 @@ export default function NavWorker() {
       worker.terminate();
       // whatever it was still being asked, it can no longer answer
       w.e.rejectPendingUnreachable(new Error("worker terminated"));
-      w.e.rejectPendingRaycast(new Error("worker terminated"));
       for (const { reject } of state.pending.values()) reject(Error("worker terminated"));
       state.pending.clear();
     };
@@ -127,7 +121,9 @@ export default function NavWorker() {
       mapKey: w.mapKey,
       roomGraph: getRoomGraphPayload(w.gmRoomGraph),
     } satisfies WW.MsgToNavWorker);
-    w.shields?.sendToRaycast(); // a fresh worker has none
+    // a fresh worker has none
+    w.door?.sendToRaycast();
+    w.shields?.sendToRaycast();
   }, [w.gmsHash, state.reloads]); // request navmesh, room graph
 
   return null;

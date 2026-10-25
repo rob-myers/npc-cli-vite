@@ -15,7 +15,7 @@ Two web workers live under `packages/ui/world/src/worker/`. Each is owned by a c
 They were once one worker. Splitting them means:
 
 - nav work and jsh's ops never stall the physics step;
-- each bundle carries only its own library: rapier in one, navcat and `detect-collisions` in the other.
+- each bundle carries only its own library: rapier in one, navcat in the other.
 
 ## Messages and payloads
 
@@ -119,6 +119,26 @@ Then call it with `plan({ api, w, op: { key, ... } })`.
 **Parked npcs.** `park` marks them (`parked.mark` in `pred.ts`) after the move. A move or respawn clears it, so an npc is
 parked only if it was explicitly parked.
 
+## Raycasts
+
+`w.e.raycast(src, dst)` is one request (`get-raycast`). `worker/ray-cast.ts` walks a world-space
+`SegGrid` (`service/seg-grid.ts`) along it, every crossing nearest first.
+
+- **What it holds.** Walls, door centre lines, and the edges of every obstacle above the floor. Walls
+  and obstacles come with the navmesh request (`rayCast`, in each geomorph's own coords). Doors come
+  from `Doors` (`set-raycast-doors`): on each build, and to a fresh worker.
+- **What stops it.** A wall, or a door crossed outside its gap. The gap grows from one end by the
+  door's open ratio (`gapAtHighLambda`). `Doors.onTick` posts the ratios that changed
+  (`set-door-ratios`), so only whilst a door moves.
+- **What it names.** The doors it passed and the rooms beyond, `src`'s first. The obstacles and shields
+  it met before stopping, nearest first. Not an obstacle it starts inside, e.g. a seat.
+- **Hull doors.** Both records of one are in the grid, each with its own ratio. A ray crosses as many
+  geomorphs as it reaches.
+- **Shields** (`set-raycast-shields`) are a short list, tested edge by edge: few, and only rays count them.
+
+The grid is apart from perception's sight grid. Sight keeps only what blocks it, and decides doors by
+seen-through, not by ratio.
+
 ## Perception
 
 Spots and sight, answered on the nav worker, have their own doc: `docs/perception.md`.
@@ -129,8 +149,9 @@ Spots and sight, answered on the nav worker, have their own doc: `docs/perceptio
   promise nothing can resolve.
   - `request-unreachable` answers "reachable".
   - `jsh-plan` answers `error`, e.g. `"no navmesh"` whilst the nav worker is still generating it.
+  - `get-raycast` answers `error` if the ray throws.
 - **Teardown rejects what is pending.**
-  - `NavWorker` rejects `pendingUnreachable`, `pendingRaycast` and jsh's `pending` with "worker
+  - `NavWorker` rejects `pendingUnreachable` and its `pending` requests (rays, jsh's) with "worker
     terminated".
   - `PhysicsWorker` releases pending `settle`s.
   - A map change rejects with "map changed".
