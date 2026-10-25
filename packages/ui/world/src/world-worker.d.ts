@@ -274,7 +274,7 @@ declare namespace WW {
       key: Geomorph.StarShipGeomorphKey;
       walls: Geom.GeoJsonPolygon[];
       /** Those off the floor, in the geomorph's own space */
-      obstacles: (Omit<RaycastObstacle, "dist"> & { outline: Geom.GeoJsonPolygon })[];
+      obstacles: (Omit<RaycastObstacle, "dist" | "leave"> & { outline: Geom.GeoJsonPolygon })[];
     };
   };
 
@@ -289,6 +289,6 @@ declare namespace WW {
     ratio: number;
   };
 
-  /** An obstacle a ray passed: its `top` and `bottom` in metres off the floor, and metres along the ray */
-  type RaycastObstacle = { obstacleId: number; top: number; bottom: number; dist: number };
+  /** An obstacle a ray passed: its `top` and `bottom` metres off the floor. It is inside its outline from `dist` to `leave` metres */
+  type RaycastObstacle = { obstacleId: number; top: number; bottom: number; dist: number; leave: number };
 }

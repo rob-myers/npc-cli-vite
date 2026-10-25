@@ -16,13 +16,18 @@ export const sightConfig = {
   doorSamples: 5,
   /** Obstacles this high block sight stood */
   standBlockHeight: 1.4,
-  /** Metres an obstacle reaches down from its top without `meta.h`, as `Obstacles` draws it (`skirtDepth`) */
+  /** Metres an obstacle reaches down from its top without `meta.h`: its skirt */
   obstacleDepth: 0.5,
   /** Obstacles this high hide someone fully crouched */
   crouchHideHeight: 0.6,
   /** Radians either side of a doable's facing seen from it, by its `do`. Any other `do` is stood at */
   doArcs: { sit: (100 * Math.PI) / 180, lie: (30 * Math.PI) / 180 } as Record<string, number>,
 };
+
+/** Metres up to an obstacle's underside, as `Obstacles` draws it: `meta.h` below its top, else `obstacleDepth` */
+export function obstacleBottom(height: number, meta: { h?: unknown }) {
+  return height - (typeof meta.h === "number" ? meta.h : Math.min(height, sightConfig.obstacleDepth));
+}
 
 /** What blocks sight stood, in `layout`'s coords: walls, doors, and obstacles `standBlockHeight` tall. Not windows */
 export function createSightGrid(layout: SightLayout) {
@@ -65,8 +70,7 @@ function addOccluders(grid: Pick<SegGrid, "add">, layout: SightLayout, matrix?: 
   layout.doors.forEach(({ seg }, doorId) => grid.add(place(seg), "door", base + doorId));
   layout.obstacles.forEach(({ origPoly, transform, height, meta }, obstacleId) => {
     // hung above anyone stood, e.g. a window's lintel: it hides nothing
-    const depth = typeof meta.h === "number" ? meta.h : Math.min(height, sightConfig.obstacleDepth);
-    if (height - depth >= sightConfig.standBlockHeight) return;
+    if (obstacleBottom(height, meta) >= sightConfig.standBlockHeight) return;
     const tall = height >= sightConfig.standBlockHeight;
     if (tall === false && (low === false || height < sightConfig.crouchHideHeight)) return;
     for (const seg of origPoly.clone().applyMatrix(new Mat(transform)).lineSegs) {

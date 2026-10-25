@@ -34,6 +34,7 @@ import { createTwoSidedXyQuad, createTwoSidedXzQuad, embedXZMat4 } from "../serv
 import { alongFace, panelSeams } from "../service/panel-seams";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, broadWallSlotOf, ensureRoomSlots, neverShownSlot, slotOf } from "../service/room-slots";
+import { obstacleBottom } from "../service/spot-sight";
 import { bootstrapInstanceColor, deckConfig } from "../service/texture";
 import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
@@ -279,7 +280,7 @@ export default function Obstacles(_props: Props) {
               const dx = p2.x - p1.x, dy = p2.y - p1.y;
               const len = Math.sqrt(dx * dx + dy * dy);
               const nx = -dy / len, ny = dx / len; // unit normal perpendicular to edge
-              const skirtDimY = typeof meta.h === 'number' ? meta.h : Math.min(height, skirtDepth);
+              const skirtDimY = height - obstacleBottom(height, meta);
               tmpMat2.feedFromArray([dx, dy, nx, ny, p1.x, p1.y]);
               slots.setXY(sId, slot, slot);
               state.skirtObstacleIds[sId] = instanceId ?? 0; // a pick on a skirt picks its obstacle
@@ -537,7 +538,6 @@ export type State = {
   sendDataToGpu(): void;
 };
 
-const skirtDepth = 0.5;
 const tmpMat1 = new Mat();
 const tmpMat2 = new Mat();
 const tmpVec1 = new Vect();
