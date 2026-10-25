@@ -1,6 +1,7 @@
 import { wallHeight } from "@npc-cli/ui__world/const.env";
 import { spotKindInk } from "@npc-cli/ui__world/spot.schema";
-import { getSpotsRev, spotQuery, spotQueryDetached } from "./perception.main";
+import { spotQuery, spotQueryDetached } from "./perception.main";
+import { getSpotsRev } from "./worker.main";
 
 /**
  * The map's spots: in rooms, of kinds, or near an npc, nearest first. With `of`, every spot an npc is at.
@@ -38,8 +39,8 @@ export async function* spots(ct: JshCli.RunArg) {
  * sees --all abe ben cal
  * sees --los --all abe ben
  * sees --debug rob kate
- * sees g0s12 g0s40
- * sees g0s12
+ * sees g0r4-0 g0r4-7
+ * sees g0r4-0
  * ```
  */
 export async function* sees(ct: JshCli.RunArg) {
@@ -70,7 +71,7 @@ export async function* sees(ct: JshCli.RunArg) {
  *
  * ```sh
  * spot of:rob
- * spot g0s116
+ * spot g0r12-3
  * ```
  */
 export async function spot(ct: JshCli.RunArg) {
@@ -175,7 +176,7 @@ async function explainPairs(ct: JshCli.RunArg, pairs: [string, string][], los: b
         );
   return pairs.map((pair, i): Look => {
     const answer = why[i] === null ? answered(answers[asked.indexOf(pair)]) : null;
-    const x = answer != null && "settled" in answer ? answer : null;
+    const x = answer != null && "lines" in answer ? answer : null;
     return { pair, sees: x?.sees === true, reason: why[i] ?? (x === null ? "?" : reasonOf(x, ct.api.ansi)), x };
   });
 }
@@ -212,7 +213,7 @@ function drawRays(w: JshCli.WorldState, { pair: [a, b], x }: Look) {
 /** One pair's verdict: whether the first sees the second, why, and the worker's account if it was asked */
 type Look = { pair: [string, string]; sees: boolean; reason: string; x: null | Explained };
 /** The worker's `explain` answer */
-type Explained = Extract<WW.SpotAnswer, { settled: string }>;
+type Explained = Extract<WW.SpotAnswer, { lines: unknown }>;
 
 /** What settled a verdict, tersely */
 function reasonOf(x: Explained, ansi: JshCli.RunArg["api"]["ansi"]) {
@@ -270,13 +271,14 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
     if (busy) return void (again = true);
     busy = true;
     try {
-      if (w.debug.spotsShown === false) return;
+      // listed whilst hidden too, else the menu's toggle stays greyed out
       const key = spotsKey();
       if (drawn.spots !== key) {
         const [all] = await spotQueryDetached(w, [{ q: "list" }]);
         if (Array.isArray(all)) w.debug.setSpots(all.map((spot) => toDraw(w, spot)));
         drawn.spots = key;
       }
+      if (w.debug.spotsShown === false) return;
       const from = w.n[w.player.key] === undefined ? null : w.player.key;
       const [view] = from === null ? [null] : await spotQueryDetached(w, [{ q: "view", from }]);
       const ink = inkOf(w);
@@ -296,7 +298,6 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
   }
 
   w.e.addKeyedListener(overlayKey, (e, w) => {
-    if (e.key === "spots-overlay" && e.shown === false) return void (drawn.spots = "");
     // the rooms beyond fade out first, their spots in the colours they had
     if (e.key === "door-closed") return void setTimeout(() => void sync(), roomFadeOutMs);
     const player = (e.key === "enter-room" || e.key === "spawned") && e.npcKey === w.player.key;
@@ -304,10 +305,12 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
   });
   // moved far enough, the spot files remade, or the theme changed
   w.e.addKeyedTick(overlayKey, (w) => {
-    if (w.debug.spotsShown === false || busy) return;
+    if (busy) return;
+    if (drawn.spots !== spotsKey()) return void sync();
+    if (w.debug.spotsShown === false) return;
     const at = drawn.at;
     const npc = drawn.from === "" ? undefined : w.n[drawn.from];
-    if (drawn.spots !== spotsKey() || drawn.theme !== w.themeKey) void sync();
+    if (drawn.theme !== w.themeKey) void sync();
     else if (at !== null && npc !== undefined && npc.distanceTo(at) >= overlayStep) void sync();
   });
   void sync();
@@ -315,13 +318,7 @@ export function spot_overlay({ args, w }: JshCli.RunArg) {
 
 const overlayKey = "spot-overlay";
 /** Events after which the overlay is coloured afresh. The load's last steps among them, else it waits on a move */
-const redrawOn = new Set<string>([
-  "spots-overlay",
-  "set-player",
-  "door-opening",
-  "map-settled",
-  "npcs-restored",
-]);
+const redrawOn = new Set<string>(["spots-overlay", "set-player", "door-opening", "map-settled", "npcs-restored"]);
 /** Milliseconds a room takes to fade out, on the wall clock: `ROOM_FADE_OUT_SECS` in `fade-rooms` */
 const roomFadeOutMs = 600;
 /** Metres the player walks before the overlay redraws */

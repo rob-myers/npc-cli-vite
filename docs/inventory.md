@@ -216,7 +216,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
   height now. So crouching draws in at once, without waiting for the next cast. Crouched, it draws in over
   `quickDrawInSecs`.
 - A ray passes obstacles, as it does doors (`w.e.raycast`'s `obstacles`: `top`, `bottom`, `dist`, nearest first). The
-  nav worker keeps them in each geomorph's own system, beside its walls, bar those flat on the floor. One the ray
+  nav worker keeps their edges in its ray grid, beside the walls, bar those flat on the floor. One the ray
   starts inside, e.g. a seat, is not listed.
 
 | | someone in the way | drawn in is |

@@ -1,20 +1,24 @@
 # TODO
 
-- saw `move: npc not found: /shared/pred/player` when I changed to map 102-only while you were building 102 hull symbol.
+- spotKey format -> {grKey}-{id}, {gdKey}-{id}
+- ✅ support `act {npcKey}` format
+  - `act kate count:3 down` or `act count kate from:3`
+  - `act kate avoid:rob`
+- 🚧 return to scenarios and start acting them out
+  - hide-and-seek: can `act hide kate from:rob`
+    - fail if any dst nearby spot maybe seen by rob
+  - hide-and-seek: can `act avoid kate from:rob`
 
 ## World
 
 ### Animation and Npc
 
-- ✅ skin face eyes
-
-- refine psi breathing
-  - do lungs/diaphragm actually move like that?
-
 - fix lowered phaser going through a closed door
   - seen whilst idle in `breathe` with the phaser in hand: the rocking arms carry it through
 
-- skin remapping
+- ❌ refine psi breathing
+  - do lungs/diaphragm actually move like that?
+- ❌ skin remapping
   - currently only have skinIndex
   - could support mix-and-match body parts
 

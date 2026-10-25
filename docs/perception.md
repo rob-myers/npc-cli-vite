@@ -1,15 +1,16 @@
 # Perception
 
-The perception worker answers spot and sight queries: where npcs might stand, and who sees whom. It runs apart from the nav worker, so neither waits on the other, and editing spot code never regenerates the navmesh.
+Perception answers spot and sight queries: where npcs might stand, and who sees whom. It runs on the nav worker, beside jsh's plan ops: `hide`, `hidden`, `list` and `view` on its `bulk` copy, the rest on `fast`. Editing its code respawns the worker but keeps the navmesh (`docs/workers.md`).
 
 | Side | File | What |
 | --- | --- | --- |
-| main | `packages/cli/src/jsh/world/perception.main.ts` | `spotQuery`, `spotQueryDetached`; the worker per World, its setup and door changes |
-| worker | `packages/cli/src/jsh/world/worker/perception.worker.ts` | messages in and out |
+| main | `packages/cli/src/jsh/world/perception.main.ts` | `spotQuery`, `spotQueryDetached` |
+| main | `packages/cli/src/jsh/world/worker.main.ts` | every jsh request, the map setup and door changes |
+| worker | `packages/cli/src/jsh/world/worker/handle-perception.ts` | setup, doors, queries |
 | worker | `packages/cli/src/jsh/world/worker/spots.ts` | the map's spots, and `answerSpotQueries` |
 | shared | `packages/ui/world/src/service/spot-sight.ts` | what blocks sight (`sightOccluders`), and how the static lists are made |
 
-The nav worker's own jsh side, the plan ops (`park`, `pad`, `nudge`, `boundary`), is separate: `plan.main.ts` on main, `worker/plan.worker.ts` there. See `docs/workers.md`.
+The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup: `plan.main.ts` on main, `worker/plan.worker.ts` there. See `docs/workers.md`.
 
 ## Queries
 
@@ -19,15 +20,15 @@ The nav worker's own jsh side, the plan ops (`park`, `pad`, `nudge`, `boundary`)
 - **The queries** (`WW.SpotQuery` in `jsh-worker.d.ts`): `of`, `get`, `list`, `sees`, `seenBy`, `at`, `hide`, `hidden`, `makeWay`, `view` and `explain`.
 - **Callers**: `act.ts`, `spot.ts` (jsh `spots`, `spot`, `sees`) and `sidestep.ts`.
 
-## The worker's life
+## Setup and doors
 
-- **Made lazily** by the first query, one per World. They are kept on `globalThis` by `w.key`, so an hmr of `perception.main.ts` does not orphan one. A remounted World gets a fresh one.
-- **Set up** (`perception-setup`) per map, layout and spots rev:
+- **The worker** is the World's nav worker. Its life, HMR and retry are `NavWorker`'s.
+- **Set up** (`jsh-setup`, shared with the plan ops) per worker, map, layout and spots rev:
   - the geomorphs, whose spot files it fetches (`public/spot/{gmKey}.json`, none for a playground);
   - what blocks sight (`sightOccluders`);
   - the doors seen through.
-- **Doors** are told as they change (`perception-door`): open on `door-opening`, shut on `door-closed`.
-- **Hmr** respawns it and rejects what was pending ("perception restarted"). The next query sets it up again. In DEV, one that fails to load is retried after 2s.
+- **Doors** are told as they change (`perception-door`): open on `door-opening`, shut on `door-closed`. One feed per World, from its first request, posts to whichever worker is current.
+- **A respawn** rejects what was pending ("worker terminated"). The next request sets it up again.
 
 ## Sight
 

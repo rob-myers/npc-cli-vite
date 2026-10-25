@@ -44,7 +44,6 @@ catalog:
   cli-columns: ^4.0.0
   clsx: ^2.1.1
   debounce: ^3.0.0
-  detect-collisions: 10.10.2025
   earcut: ^3.0.2
   getopts: 2.3.0
   globals: ^16.5.0

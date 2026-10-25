@@ -4,8 +4,13 @@ import { ops } from "./plan.worker";
 /** What the worker keeps per map, replaced by each `jsh-setup` */
 let map: WW.JshMapSetup = { mapKey: "", doorFrames: {}, roomDoors: {} };
 
+export function setupPlan(msg: WW.JshSetup) {
+  const doorFrames = Object.fromEntries(msg.doorFrames.map((frame) => [frame.gdKey, frame]));
+  map = { mapKey: msg.mapKey, doorFrames, roomDoors: msg.roomDoors };
+}
+
 /** Runs an op off the listener, and always answers — else main waits forever */
-async function runOp(msg: WW.JshRequest) {
+export async function runOp(msg: WW.JshRequest) {
   let output: unknown = null;
   let error: undefined | string;
   try {
@@ -36,21 +41,3 @@ async function finish(result: unknown) {
 
 /** Not yet in the lib types — nor in every browser, hence the fallback above */
 declare const self: { scheduler?: { yield(): Promise<void> }; postMessage(msg: unknown): void };
-
-/** jsh's cases; `false` leaves the message to the nav worker */
-export function handleJshMessage(data: unknown): boolean {
-  const msg = data as WW.JshMsgToNavWorker;
-  switch (msg?.type) {
-    case "jsh-setup": {
-      const doorFrames = Object.fromEntries(msg.doorFrames.map((frame) => [frame.gdKey, frame]));
-      map = { mapKey: msg.mapKey, doorFrames, roomDoors: msg.roomDoors };
-      return true;
-    }
-    case "jsh-plan": {
-      void runOp(msg);
-      return true;
-    }
-    default:
-      return false;
-  }
-}

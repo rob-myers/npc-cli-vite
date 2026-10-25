@@ -3,7 +3,7 @@ import { debug, warn } from "@npc-cli/util/legacy/generic";
 import type { NavMesh } from "navcat";
 import { generateTiledNavMeshResult } from "./generate-tiled-navmesh";
 import { navForFloorDraw } from "./nav-util";
-import { createGmRayCastSystems, sendRaycastResult, setRayCastShields } from "./ray-cast";
+import { sendRaycastResult, setDoorRatios, setRayCastShields, setRaycastDoors, setRaycastStatics } from "./ray-cast";
 import { findUnreachableResult, setRoomGraph } from "./room-graph";
 
 /** The navmesh, once generated — for queries here, e.g. jsh's ops */
@@ -43,18 +43,34 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
       break;
     }
     case "request-tiled-navmesh": {
-      createGmRayCastSystems(msg.rayCast, msg.gmGeoms);
       const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
       navMesh = tiledNavMeshResult.navMesh;
       self.postMessage({
         type: "tiled-navmesh-response",
+        gmsHash: msg.gmsHash,
         ...tiledNavMeshResult,
         toNavTris: navForFloorDraw(msg.gmGeoms, tiledNavMeshResult.navMesh),
       } satisfies WW.MsgFromNavWorker);
       break;
     }
+    case "set-navmesh": {
+      navMesh = msg.navMesh;
+      break;
+    }
+    case "set-raycast-statics": {
+      setRaycastStatics(msg.rayCast, msg.gmGeoms);
+      break;
+    }
     case "set-raycast-shields": {
       setRayCastShields(msg);
+      break;
+    }
+    case "set-raycast-doors": {
+      setRaycastDoors(msg);
+      break;
+    }
+    case "set-door-ratios": {
+      setDoorRatios(msg);
       break;
     }
     case "get-raycast": {

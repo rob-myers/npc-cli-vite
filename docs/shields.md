@@ -7,7 +7,7 @@ A shield is a see-through panel that stops phaser fire. Anyone can walk through 
 | `ui/world/src/components/Shields.tsx` | the shields, `w.shields`: which exist, who stands in one, what a crossing does |
 | `ui/world/src/service/shield-shader.ts` | how one is drawn, and `shaderConfig`, its look |
 | `ui/world/src/components/Phasers.tsx` | where a beam asks the shields to stop it |
-| `ui/world/src/worker/ray-cast.ts` | the nav worker's raycast, which reports the shields a ray passes |
+| `ui/world/src/worker/ray-cast.ts` | the nav worker's raycast, which reports the shields a ray passes (`docs/workers.md`) |
 | `ui/world/src/service/worker-data.ts` | `isColliderDecor`: a shield is a collider without being tagged one |
 | `cli/src/jsh/world/core.ts` | `shield`, `phaser` |
 | `cli/src/jsh/world/decor.ts` | `decor`, which makes one |
@@ -66,9 +66,9 @@ A phaser already casts a ray for line of sight: `w.phasers.recast`, a method of 
 once they, their target or a door has changed. Shields ride on it:
 
 1. `Shields.sync` sends every shield's rect to the nav worker (`set-raycast-shields`), where they
-   are kept in one world-space system apart from the geomorphs', which a navmesh request clears.
+   are kept in world space apart from the walls and doors.
 2. A ray notes each shield it crosses and goes on: `w.e.raycast` returns `shields`, nearest first.
-   `doors` are nearest first too, and neither includes anything past the wall that stopped the ray.
+   `doors` are nearest first too, and neither includes anything past the wall or door that stopped the ray.
 3. `w.phasers.recast` keeps those keys on the arm. Each tick `Phasers.onTick` calls
    `w.shields.stop(keys, body, tip, part, freqs)`, which takes the first that is on and not tuned
    to, and intersects the beam with its centre line for the exact end.

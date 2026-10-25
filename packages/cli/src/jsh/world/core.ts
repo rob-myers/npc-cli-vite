@@ -1,11 +1,8 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
-import { agentConfig, type PoseKey, poseConfig, standConfig } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, type PoseKey, poseConfig } from "@npc-cli/ui__world/const.npc";
 import { Task } from "@npc-cli/util";
-import { Vect } from "@npc-cli/util/geom";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
-import { awaitPausable, isPaused, npcQuery, parkedNow, plan, request, roomOthers } from "./plan.main";
-import { padded, parked } from "./pred";
 
 /**
  * Get at most one decor containing a given point.
@@ -788,56 +785,6 @@ async function move_next(
 
 /**
  * ```sh
- * nudge npc:kate
- * nudge kate
- * nudge npc:kate from:rob
- * nudge npc:kate from:$( pick 1 ) by:1
- * ```
- */
-export async function nudge(
-  ct: JshCli.RunArg,
-  opts: { npcKey?: string; from?: string | JshCli.PointAnyFormat; by?: number } = ct.api.jsArg(ct.args, {
-    npc: "npcKey",
-    src: "from",
-  }),
-) {
-  opts.npcKey ??= getFirstUnknownNaked(opts) as string;
-  opts.by ??= 0.5;
-
-  const { w, api } = ct;
-  const npc = w.npc.get(opts.npcKey);
-
-  if (!opts.from) {
-    // nudge from a random angle
-    const angle = Math.random() * Math.PI * 2;
-    opts.from = { x: npc.point.x + opts.by * Math.cos(angle), y: npc.point.y + opts.by * Math.sin(angle) };
-  }
-
-  if (typeof opts.from === "string") {
-    opts.from = w.npc.get(opts.from).point;
-  }
-
-  const src = npc.point;
-  const delta = Vect.from(src).sub(w.helper.parseGroundPoint(opts.from)).normalize(opts.by);
-
-  // slid along the navmesh, so a nudge into a wall (or a door they cannot pass) stops at it
-  const to = await plan({
-    api,
-    w,
-    op: { key: "nudge", npc: npcQuery(w, npc), to: { x: src.x + delta.x, y: src.y + delta.y } },
-  });
-  if (to === null || Math.hypot(to.x - src.x, to.y - src.y) < nudgeMinMove) {
-    return; // nowhere to go i.e. backed against something
-  }
-
-  await w.e.move({ npcKey: npc.key, to });
-}
-
-/** Below this much of a clamped nudge, we do not move at all */
-const nudgeMinMove = 0.05;
-
-/**
- * ```sh
  * open g0d29 g0d30
  * open door:g0d29
  * open doors:['g0d29','g0d30']
@@ -848,117 +795,6 @@ export function open(
   opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
 ) {
   doorAction(ct, "open", opts);
-}
-
-/**
- * Stand npcs where there is room to walk right round them: `by` (default `standConfig.padClearance`) from
- * their room's walls and doorways, and from everyone else standing in it — the spot is remembered
- * in `/shared/pred`. Planned together on the worker, then everyone with a spot fades into place at
- * once; one without is left where they stand and named in the error
- * ```sh
- * pad kate
- * pad kate rob
- * pad kate by:1
- * ```
- */
-export async function pad(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey?: string; npcKeys?: string[]; by?: number } = api.jsArg(args, { npc: "npcKey" }),
-) {
-  // ignore non-existent npcKey including e.g. npc:foo
-  const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
-
-  await awaitPausable(api, async (signal) => {
-    const plans = await request(
-      w,
-      api,
-      {
-        key: "pad",
-        npcs: npcs.map((npc) => npcQuery(w, npc)),
-        others: roomOthers(w, npcs),
-        by: opts.by ?? standConfig.padClearance,
-      },
-      signal,
-    );
-    const leftOut = npcs.filter((_, i) => plans[i] === null);
-
-    // a kill stops them where they are; a pause does not — see `awaitPausable`
-    const onAbort = () => isPaused(signal.reason) === false && npcs.forEach((npc) => npc.rejectAll(signal.reason));
-    signal.addEventListener("abort", onAbort, { once: true });
-    try {
-      await Promise.all(
-        npcs.map(async (npc, i) => {
-          const plan = plans[i];
-          if (plan === null) return;
-          if (Math.hypot(plan.at.x - npc.point.x, plan.at.y - npc.point.y) > standConfig.parkMinMove) {
-            await npc.fadeSpawn({ at: plan.at, angle: npc.rotation.y }); // facing as they were
-          }
-          padded.mark(npc.key);
-        }),
-      );
-    } finally {
-      signal.removeEventListener("abort", onAbort);
-    }
-    if (leftOut.length > 0) throw Error(`not padded: ${leftOut.map((npc) => npc.key).join(" ")}`);
-  });
-}
-
-/**
- * Stand npcs against a nearby wall, out of the way: clear of its corners, the room's doorways and its other
- * parked npcs, and remembered in `/shared/pred` — see `pred.ts`. Planned together on the worker, then everyone
- * moves at once — bar one with no clear spot, left where they stand and named in the error.
- * A kill rejects the npcs; a pause lets a fade or look finish
- * ```sh
- * park npc:kate
- * park kate
- * park kate rob
- * ```
- */
-export async function park(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey?: string; npcKeys?: string[] } = api.jsArg(args, { npc: "npcKey" }),
-) {
-  // ignore non-existent npcKey including e.g. npc:foo
-  const npcs = [opts.npcKey ?? [], opts.npcKeys ?? [], args].flat().flatMap((npcKey) => w.n[npcKey] ?? []);
-
-  await awaitPausable(api, async (signal) => {
-    const plans = await request(
-      w,
-      api,
-      {
-        key: "park",
-        npcs: npcs.map((npc) => npcQuery(w, npc)),
-        parked: parkedNow(w),
-      },
-      signal,
-    );
-    // no wall in reach, or no clear spot on any: left where they stand, and named once the rest are parked
-    const leftOut = npcs.filter((_, i) => plans[i] === null);
-
-    // a kill stops them where they are; a pause does not — see `awaitPausable`
-    const onAbort = () => isPaused(signal.reason) === false && npcs.forEach((npc) => npc.rejectAll(signal.reason));
-    signal.addEventListener("abort", onAbort, { once: true });
-    try {
-      await Promise.all(
-        npcs.map(async (npc, i) => {
-          const plan = plans[i];
-          if (plan === null) return;
-          const { at, facing, seg } = plan;
-          // hurt, they cannot look: a respawn turns them, and keeps the hurt clip
-          if (Math.hypot(at.x - npc.point.x, at.y - npc.point.y) > standConfig.parkMinMove || npc.anim.hurt !== null) {
-            await npc.fadeSpawn({ at, facing });
-          } else {
-            await npc.look({ at: facing });
-          }
-
-          parked.mark(npc.key, seg);
-        }),
-      );
-    } finally {
-      signal.removeEventListener("abort", onAbort);
-    }
-    if (leftOut.length > 0) throw Error(`not parked: ${leftOut.map((npc) => npc.key).join(" ")}`);
-  });
 }
 
 export function pause({ api, w }: JshCli.RunArg) {

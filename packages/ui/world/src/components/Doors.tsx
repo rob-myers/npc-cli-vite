@@ -155,45 +155,6 @@ export default function Doors() {
         door.cancelClose?.();
         delete door.cancelClose;
       },
-      checkRayDoorBlock(src, dst, gdKey) {
-        const door = w.d[gdKey];
-        const openRatio = state.openRatioArray[door.instanceId];
-        const rayLambda = geomService.getLineSegsIntersection(src, dst, door.src, door.dst);
-
-        if (rayLambda === null) {
-          return { blocked: openRatio === 0, hit: null };
-        }
-
-        if (openRatio === 0) {
-          // blocked by closed door and hits
-          return {
-            blocked: true,
-            hit: geomService.precision2d(
-              { x: src.x + rayLambda * (dst.x - src.x), y: src.y + rayLambda * (dst.y - src.y) },
-              2,
-            ),
-          };
-        }
-
-        const hitX = src.x + rayLambda * (dst.x - src.x);
-        const hitY = src.y + rayLambda * (dst.y - src.y);
-
-        // project hit onto door segment to get doorLambda ∈ [0,1] (0=door.src, 1=door.dst)
-        const dDoorX = door.dst.x - door.src.x;
-        const dDoorY = door.dst.y - door.src.y;
-        const doorLambda = ((hitX - door.src.x) * dDoorX + (hitY - door.src.y) * dDoorY) / (dDoorX ** 2 + dDoorY ** 2);
-
-        const inGap = door.gapAtHighLambda ? doorLambda >= 1 - openRatio : doorLambda <= openRatio;
-
-        return { blocked: !inGap, hit: inGap ? null : geomService.precision2d({ x: hitX, y: hitY }, 2) };
-      },
-      computeRayDoorIntersect(src, dst, gdKey) {
-        const door = w.d[gdKey];
-        const lambda = geomService.getLineSegsIntersection(src, dst, door.src, door.dst);
-        return lambda === null
-          ? null
-          : geomService.precision2d({ x: src.x + lambda * (dst.x - src.x), y: src.y + lambda * (dst.y - src.y) }, 2);
-      },
       decodeInstanceId(instanceId) {
         const { gmId, doorId, gdKey } = state.fromInstanceId[instanceId];
         const gm = w.gms[gmId];
@@ -294,7 +255,7 @@ export default function Doors() {
       },
       onTick(delta: number) {
         if (state.animTargets.size === 0) return;
-        let changed = false;
+        const ratios: { [gdKey: string]: number } = {};
         for (const [instanceId, target] of state.animTargets) {
           const cur = state.openRatioArray[instanceId];
           const next = cur + Math.sign(target - cur) * delta * doorSpeed;
@@ -303,13 +264,11 @@ export default function Doors() {
           } else {
             state.openRatioArray[instanceId] = next;
           }
-          changed = true;
+          ratios[state.fromInstanceId[instanceId].gdKey] = state.openRatioArray[instanceId];
         }
-        if (changed) {
-          const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
-          if (attr) attr.needsUpdate = true;
-          // if (w.disabled) w.view.forceUpdate();
-        }
+        const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
+        if (attr) attr.needsUpdate = true;
+        w.navWorker.post({ type: "set-door-ratios", ratios } satisfies WW.MsgToNavWorker, "fast");
       },
       snapOpen(door) {
         if (door.sealed === true || door.open === true) return false;
@@ -317,6 +276,8 @@ export default function Doors() {
         state.onDoorChanged(door.instanceId, doorOpenTarget);
         const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
         if (attr) attr.needsUpdate = true;
+        const ratios = { [door.gdKey]: doorOpenTarget };
+        w.navWorker.post({ type: "set-door-ratios", ratios } satisfies WW.MsgToNavWorker, "fast");
         return true;
       },
       positionInstances() {
@@ -452,6 +413,19 @@ export default function Doors() {
         for (const door of Object.values(state.byKey)) {
           state.syncLockTint(door);
         }
+      },
+      sendToRaycast() {
+        const doors = Object.values(state.byKey).map(
+          ({ gdKey, gmId, src, dst, gapAtHighLambda, connector, instanceId }): WW.RayDoor => ({
+            gdKey,
+            src,
+            dst,
+            gapAtHighLambda,
+            grKeys: connector.roomIds.map((roomId) => (roomId === null ? null : helper.getGmRoomKey(gmId, roomId))),
+            ratio: state.openRatioArray[instanceId],
+          }),
+        );
+        w.navWorker.post({ type: "set-raycast-doors", doors } satisfies WW.MsgToNavWorker, "fast");
       },
       sendDataToGpu() {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;
@@ -671,6 +645,7 @@ export default function Doors() {
     }
     state.buildByKey();
     state.positionInstances();
+    state.sendToRaycast();
     state.drawDoorTextures();
     state.sendDataToGpu();
     state.syncLockTints();
@@ -738,12 +713,6 @@ export type State = {
   /** (Re)builds `toInstanceId`/`fromInstanceId`/`instanceCount`; returns `instanceCount` */
   buildInstanceIds: () => number;
   cancelClose: (door: Geomorph.DoorState) => void;
-  computeRayDoorIntersect: (src: Geom.VectJson, dst: Geom.VectJson, gdKey: Geomorph.GmDoorKey) => Geom.VectJson | null;
-  checkRayDoorBlock: (
-    src: Geom.VectJson,
-    dst: Geom.VectJson,
-    gdKey: Geomorph.GmDoorKey,
-  ) => { blocked: boolean; hit: Geom.VectJson | null };
   decodeInstanceId: (instanceId: number) => Geomorph.GmDoorId & {
     seg: [Geom.Vect, Geom.Vect];
     hull: boolean;
@@ -780,6 +749,8 @@ export type State = {
   /** Lock exactly the doors the map itself asks for, forgetting what we'd locked since */
   resetLocks: () => void;
   sendDataToGpu: () => void;
+  /** Every door, with its open ratio, to the nav worker's raycasts */
+  sendToRaycast: () => void;
   toggleDoor: (door: Geomorph.DoorState, opts?: Geomorph.ToggleDoorOpts) => boolean;
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
   /** Tint this door's switches to match `door.locked` */

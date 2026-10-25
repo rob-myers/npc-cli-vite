@@ -1,5 +1,6 @@
 export const emptyTiledNavmeshResponse: WW.TiledNavMeshResponse = {
   type: "tiled-navmesh-response",
+  gmsHash: 0,
   navMesh: {
     origin: [-1.5049999952316284, -0.004999999888241291, -1.5049999952316284],
     tileWidth: 1.5,

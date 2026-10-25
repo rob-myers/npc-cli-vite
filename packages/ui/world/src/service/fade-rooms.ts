@@ -2,7 +2,7 @@ import { Discard, Fn, float, mix, select, uniform, uniformArray, vec4 } from "th
 import * as THREE from "three/webgpu";
 import type { State as WorldType } from "../components/World";
 import { helper } from "./helper";
-import { arrivedAt, type Morph, morphNode, retarget, settled } from "./morph";
+import { arrivedAt, type Morph, morphAt, morphNode, retarget, settled } from "./morph";
 import { alwaysShownSlot, broadWallSlotOf, slotOf, totalSlots } from "./room-slots";
 
 /**
@@ -62,6 +62,11 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
     hasArrived(slot) {
       const morph = morphs[slot];
       return morph !== undefined && morph.to === 1 && settled(morph, fadeSecsOf(morph), nowSecs()) === true;
+    },
+
+    visibilityOf(slot) {
+      const morph = morphs[slot];
+      return morph === undefined ? 1 : morphAt(morph, fadeSecsOf(morph), nowSecs());
     },
 
     isHidden(slot) {
@@ -160,6 +165,7 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
       // a fade plays out over frames rather than syncs, and does so whilst the world is paused —
       // so an npc changing room is settled here rather than waiting on a tick that may not come
       w.e?.syncNpcRoomSlots();
+      w.bubble?.syncRoomFades();
       w.r3f?.invalidate();
       framesRaf = performance.now() < framesUntilMs ? requestAnimationFrame(frame) : 0;
     };
@@ -302,6 +308,8 @@ export type FadeRooms = {
   isArriving(slot: number): boolean;
   /** Whether `slot` is shown and settled, with nothing of its fade left to play */
   hasArrived(slot: number): boolean;
+  /** How much of `slot` is shown now, as `getVisiblity` draws it, for what is not drawn by a shader */
+  visibilityOf(slot: number): number;
   /** Whether `slot` is out of view and settled so: nothing in it is drawn */
   isHidden(slot: number): boolean;
   /**

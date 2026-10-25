@@ -37,7 +37,7 @@ import { NavMap2d, type NavMap2dApi } from "./NavMap2d";
 import { SpotCard, SpotKeyField } from "./SpotCard";
 import { SpotsLayer } from "./SpotsLayer";
 import type { DecoratorUiMeta, NavMapLayer } from "./schema";
-import { type SpotPick, spotWorldPoint, useSpots } from "./use-spots";
+import { parseSpotPick, type SpotPick, spotWorldPoint, useSpots } from "./use-spots";
 
 /** The map pane, once there is a World */
 export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
@@ -288,6 +288,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
   /** The latest, for the World's events */
   const reveal = useRef(revealSpot);
   reveal.current = revealSpot;
+  const spotsNow = useRef(spots);
+  spotsNow.current = spots;
 
   useEffect(() => {
     // what the map is drawn from changes under it
@@ -298,9 +300,9 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
         if (redrawOn.has(e.key)) state.update();
         // a spot pressed on the World's overlay: followed here, never the other way
         if (e.key === "spot-chosen") {
-          const [, gmId, id] = e.spotKey.match(/^g(\d+)s(\d+)$/)?.map(Number) ?? [];
-          if (gmId === undefined || id === undefined || (gmId === state.spot?.gmId && id === state.spot?.id)) return;
-          reveal.current({ gmId, id });
+          const pick = parseSpotPick(e.spotKey, w, spotsNow.current);
+          if (pick === null || (pick.gmId === state.spot?.gmId && pick.id === state.spot?.id)) return;
+          reveal.current(pick);
           w.hud?.say("decorator selected");
         }
       },
@@ -523,8 +525,8 @@ export function Editor(props: { w: WorldState; meta: DecoratorUiMeta }) {
                 .find((el) => el.closest("[data-spot]") !== null)
                 ?.closest("[data-spot]")
                 ?.getAttribute("data-spot");
-              const match = key?.match(/^g(\d+)s(\d+)$/);
-              if (match != null) revealSpot({ gmId: Number(match[1]), id: Number(match[2]) });
+              const pick = key == null ? null : parseSpotPick(key, w, spots);
+              if (pick !== null) revealSpot(pick);
             }}
             cursor={state.tool === "select" && state.spawning === null ? undefined : "crosshair"}
             onClick={state.onMapClick}

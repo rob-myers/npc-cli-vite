@@ -79,3 +79,25 @@ export const SpotsFileSchema = z.object({
   spots: z.array(SpotSchema),
 });
 export type SpotsFile = z.infer<typeof SpotsFileSchema>;
+
+/**
+ * Each spot's alias, by id: `r{roomId}-{n}`, or a door spot's `d{doorId}-{n}`, counting its room's or door's spots.
+ * Inferred, never stored. On a map it follows its geomorph, e.g. `g0r12-3`
+ */
+export function spotAliasesOf(file: SpotsFile): string[] {
+  let aliases = aliasCache.get(file);
+  if (aliases !== undefined) return aliases;
+  const counts = new Map<string, number>();
+  aliases = file.spots.map((s) => {
+    const at = s.kind === "door" && s.ref?.doorId !== undefined ? `d${s.ref.doorId}` : `r${s.roomId ?? ""}`;
+    const n = counts.get(at) ?? 0;
+    counts.set(at, n + 1);
+    return `${at}-${n}`;
+  });
+  aliasCache.set(file, aliases);
+  return aliases;
+}
+const aliasCache = new WeakMap<SpotsFile, string[]>();
+
+/** A spot's key on a map, e.g. `g0s455`, or its alias, e.g. `g0r12-3`: groups its gmId, then its id or file alias */
+export const spotKeyRe = /^g(\d+)(?:s(\d+)|([rd]\d*-\d+))$/;

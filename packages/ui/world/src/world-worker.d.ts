@@ -6,8 +6,21 @@ declare namespace WW {
   type MsgToNavWorker =
     | { type: "ping" }
     | {
+        /** To bulk alone, which sends it back */
         type: "request-tiled-navmesh";
         mapKey: string;
+        /** The layout it is for, sent back with the navmesh */
+        gmsHash: number;
+        gmGeoms: WW.GmGeomForNav[];
+      }
+    | {
+        /** A navmesh made already: bulk's to fast, or main's to a respawned pair. Nothing is sent back */
+        type: "set-navmesh";
+        navMesh: import("navcat").NavMesh;
+      }
+    | {
+        /** The walls and obstacles rays meet, per map: to fast, at once */
+        type: "set-raycast-statics";
         gmGeoms: WW.GmGeomForNav[];
         rayCast: RaycastSetupData;
       }
@@ -18,11 +31,23 @@ declare namespace WW {
         shields: { key: string; points: Geom.VectJson[] }[];
       }
     | {
+        /** Every door, as `Doors` builds them: on each build, and to a fresh worker */
+        type: "set-raycast-doors";
+        doors: RayDoor[];
+      }
+    | {
+        /** Doors whose open ratio changed, by gdKey: posted only whilst they move */
+        type: "set-door-ratios";
+        ratios: { [gdKey: string]: number };
+      }
+    | {
+        /** Answered by a `NavWorkerReply` whose `output` is a `JshCli.RaycastResult` */
         type: "get-raycast";
         uid: string;
         src: Geom.VectJson;
         dst: Geom.VectJson;
-        gmId: number;
+        /** The room `src` is in */
+        grKey: Geomorph.GmRoomKey;
       };
 
   type RoomGraphMsgToWorker =
@@ -131,9 +156,15 @@ declare namespace WW {
   /** From the nav worker */
   type MsgFromNavWorker =
     | { type: "pong" }
-    | { type: "worker-hot-module-reload" }
+    | {
+        type: "worker-hot-module-reload";
+        /** Only jsh's code changed, so the navmesh it last made still holds */
+        keepNavMesh?: true;
+      }
     | ({
         type: "tiled-navmesh-response";
+        /** The layout it was made for */
+        gmsHash: number;
         toNavTris: import("./worker/nav-util").GmFloorNavTris;
       } & import("navcat/blocks").TiledNavMeshResult)
     | {
@@ -141,17 +172,6 @@ declare namespace WW {
         uid: string;
         /** `null` iff the npc can get there — the door node they'd be stopped by otherwise */
         blocked: null | { doorIndex: number; roomIndex: number };
-      }
-    | {
-        type: "raycast-result";
-        uid: string;
-        hit: null | Geom.VectJson;
-        /** The doors it reached, nearest first */
-        gmDoorIds: Geomorph.GmDoorId[];
-        /** Decor keys of the shields it reached, nearest first */
-        shields: string[];
-        /** The obstacles it reached, nearest first: not one it set out from inside */
-        obstacles: RaycastObstacle[];
       };
 
   type PhysicsMsgFromWorker =
@@ -174,7 +194,11 @@ declare namespace WW {
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromNavWorker, { type: "tiled-navmesh-response" }>;
-  type RaycastResultResponse = Extract<MsgFromNavWorker, { type: "raycast-result" }>;
+  /** Which copy of the nav worker: `bulk` makes the navmesh and runs long ops, `fast` answers rays and quick queries */
+  type NavRole = "bulk" | "fast";
+  /** Another entry's request, answered by a `NavWorkerReply` with the same `uid` — see `NavWorker`'s `request` */
+  type NavWorkerRequest = { type: string; uid: string };
+  type NavWorkerReply = { uid: string; output?: unknown; error?: string };
   type UnreachableResult = Extract<MsgFromNavWorker, { type: "unreachable-result" }>;
 
   /**
@@ -248,11 +272,21 @@ declare namespace WW {
   type RaycastSetupData = {
     [gmKey: string]: {
       key: Geomorph.StarShipGeomorphKey;
-      doors: Geom.GeoJsonPolygon[];
       walls: Geom.GeoJsonPolygon[];
       /** Those off the floor, in the geomorph's own space */
       obstacles: (Omit<RaycastObstacle, "dist"> & { outline: Geom.GeoJsonPolygon })[];
     };
+  };
+
+  /** A door as a ray meets it: its centre line, the side its gap opens from, its rooms, how open it is */
+  type RayDoor = {
+    gdKey: Geomorph.GmDoorKey;
+    src: Geom.VectJson;
+    dst: Geom.VectJson;
+    gapAtHighLambda: boolean;
+    /** Either side; `null` beyond a hull door */
+    grKeys: (null | Geomorph.GmRoomKey)[];
+    ratio: number;
   };
 
   /** An obstacle a ray passed: its `top` and `bottom` in metres off the floor, and metres along the ray */

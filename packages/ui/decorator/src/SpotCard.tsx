@@ -1,9 +1,9 @@
 import type { WorldState } from "@npc-cli/ui__world";
-import type { SpotsFile } from "@npc-cli/ui__world/spot.schema";
+import { type SpotsFile, spotAliasesOf } from "@npc-cli/ui__world/spot.schema";
 import { cn } from "@npc-cli/util";
 import { CheckIcon, CopyIcon, CrosshairIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { Fragment, useState } from "react";
-import { inkOf, type SpotPick, spotWorldPoint } from "./use-spots";
+import { inkOf, parseSpotPick, type SpotPick, spotAlias, spotWorldPoint } from "./use-spots";
 
 /** The chosen spot's fields, naming rooms, doors, decor and obstacles as the World does — see `docs/spots.md` */
 export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }: Props) {
@@ -14,6 +14,7 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
   if (spot === undefined || gm === undefined) return null;
 
   const g = `g${pick.gmId}`;
+  const alias = spotAlias(file, pick);
   const at = spotWorldPoint(w, file, pick);
   const open = spot.depth.filter((r) => r >= file.radius).length;
   const chips = (ids: number[]) =>
@@ -59,8 +60,12 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
             onCancel={() => setSearching(false)}
           />
         ) : (
-          <span className="font-mono flex-1" title="its key, as jsh takes it e.g. `spot g0s12`">
-            {spot.kind} {g}s{spot.id}
+          <span
+            className="font-mono flex-1"
+            title={`its key, as jsh takes it e.g. \`spot ${alias}\`, else ${g}s${spot.id}`}
+          >
+            <span className="font-semibold text-zinc-100">{alias}</span>{" "}
+            <span className="text-zinc-400">{spot.kind}</span>
           </span>
         )}
         <button
@@ -71,7 +76,7 @@ export function SpotCard({ w, file, byGmKey, pick, onChoose, onLocate, onFind }:
         >
           <MagnifyingGlassIcon />
         </button>
-        <CopyButton text={`${g}s${spot.id}`} title="copy its key" />
+        <CopyButton text={alias} title="copy its key" />
         <button type="button" className={iconButton} title="centre the map on it" onClick={() => onLocate(at)}>
           <CrosshairIcon />
         </button>
@@ -202,7 +207,7 @@ function SpotChip(props: { file: SpotsFile; id: number; suffix?: string; onClick
       title={kind}
       onClick={props.onClick}
     >
-      {props.id}
+      {spotAliasesOf(props.file)[props.id]}
       {props.suffix !== undefined && <span className="text-zinc-500"> {props.suffix}</span>}
     </button>
   );
@@ -222,7 +227,7 @@ function describeObstacle(o: undefined | Geomorph.LayoutObstacle) {
   return `${o.symbolKey}${tags.length > 0 ? ` ${tags.join(" ")}` : ""} ${o.height}m`;
 }
 
-/** A field taking a spot's key, e.g. `g0s455`: Enter chooses it, if this map has it */
+/** A field taking a spot's key, e.g. `g0r12-3` or `g0s455`: Enter chooses it, if this map has it */
 export function SpotKeyField(props: {
   w: WorldState;
   byGmKey: undefined | Record<string, SpotsFile>;
@@ -239,7 +244,7 @@ export function SpotKeyField(props: {
         "min-w-0 flex-1 px-1.5 py-0.5 rounded border bg-zinc-950 font-mono outline-none",
         missing ? "border-red-500/70" : "border-zinc-700 focus:border-zinc-500",
       )}
-      placeholder="spot key e.g. g0s455"
+      placeholder="spot key e.g. g0r12-3"
       value={text}
       onChange={(e) => {
         setText(e.currentTarget.value);
@@ -249,19 +254,12 @@ export function SpotKeyField(props: {
         e.stopPropagation(); // not the Editor's own keys
         if (e.key === "Escape") return props.onCancel?.();
         if (e.key !== "Enter") return;
-        const pick = parseSpotKey(text);
-        const file = pick === null ? undefined : props.byGmKey?.[props.w.gms[pick.gmId]?.key];
-        if (pick === null || file?.spots[pick.id] === undefined) return setMissing(true);
-        props.onFind(pick, spotWorldPoint(props.w, file, pick));
+        const pick = parseSpotPick(text, props.w, props.byGmKey);
+        if (pick === null || props.byGmKey === undefined) return setMissing(true);
+        props.onFind(pick, spotWorldPoint(props.w, props.byGmKey[props.w.gms[pick.gmId].key], pick));
       }}
     />
   );
-}
-
-/** `g{gmId}s{id}` as a pick, else `null` */
-function parseSpotKey(text: string): null | SpotPick {
-  const match = text.trim().match(/^g(\d+)s(\d+)$/i);
-  return match === null ? null : { gmId: Number(match[1]), id: Number(match[2]) };
 }
 
 const iconButton = "p-0.5 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800";

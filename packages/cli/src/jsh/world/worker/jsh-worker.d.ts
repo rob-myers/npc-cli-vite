@@ -28,7 +28,7 @@ declare namespace WW {
     eye: Geom.VectJson & { h: number };
   };
 
-  /** One question about spots, of the perception worker — see `docs/perception.md` */
+  /** One question about spots — see `docs/perception.md` */
   type SpotQuery =
     | {
         /** Their nearest spot, else with `all` every spot of theirs */
@@ -41,7 +41,7 @@ declare namespace WW {
     | {
         /** One spot */
         q: "get";
-        /** A spot key, e.g. `g0s12` */
+        /** A spot key, e.g. `g0s12`, or its alias, e.g. `g0r12-3` */
         key: string;
       }
     | {
@@ -133,6 +133,7 @@ declare namespace WW {
 
   /** A spot in world coords; `sees` counts the spots it sees */
   type SpotJson = {
+    /** Its alias, e.g. `g0r12-3` */
     key: string;
     x: number;
     y: number;
@@ -161,8 +162,11 @@ declare namespace WW {
     | null
     | SpotJson
     | SpotJson[]
-    /** `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any */
-    | { sees: boolean; via: null | string; crouchHides: boolean; from: string; to: string }
+    /**
+     * `crouchHides`: `b` fully crouched is hidden from `a`, by cover. `from` and `to` are a pair in sight, if any.
+     * `settled` says how: by the lists alone unless `lines`, as always with a room or door either side
+     */
+    | { sees: boolean; settled: SeesSettled; via: null | string; crouchHides: boolean; from: string; to: string }
     /** `seen`: their spots any watcher may see */
     | { hidden: boolean; seen: string[] }
     | { view: Record<string, SpotHow> }
@@ -223,14 +227,27 @@ declare namespace WW {
 
   type JshOpKey = JshOp["key"];
 
-  type JshMsgToNavWorker =
-    | {
-        type: "jsh-setup";
-        mapKey: string;
-        doorFrames: DoorFrame[];
-        roomDoors: { [grKey: string]: string[] };
-      }
-    | JshRequest;
+  type JshMsgToNavWorker = JshSetup | JshRequest;
+
+  /** A map to answer for, for plan ops and perception: sent before the first request, and again as map, layout or spots change */
+  type JshSetup = {
+    type: "jsh-setup";
+    mapKey: string;
+    doorFrames: DoorFrame[];
+    roomDoors: { [grKey: string]: string[] };
+    /** The map's geomorph instances, by gmId: whose spot files it fetches, and where it places them */
+    gms: GmForSpots[];
+    /** Changes as the dev server remakes the spot files, so the worker fetches them again */
+    spotsRev: number;
+    /** What blocks sight across the whole map, in world coords */
+    occluders: SightOccluder[];
+    /** gdKeys of doors seen through */
+    openDoors: string[];
+    /** The two records of each hull door where geomorphs meet, as gdKeys */
+    hullPairs: [string, string][];
+    /** By `{gmId}/{decorId}`, each doable's decor key */
+    doableKeys: Record<string, string>;
+  };
 
   type JshMsgFromNavWorker = JshResult;
 
@@ -259,26 +276,8 @@ declare namespace WW {
     top?: number;
   };
 
-  /** To the perception worker — see `perception.worker.ts` */
+  /** Perception's, to the nav worker — see `handle-perception.ts` */
   type PerceptionMsgTo =
-    | {
-        /** A map to answer for, sent whole: on its first query, and again once the map, layout or spots change */
-        type: "perception-setup";
-        /** The map, which keys its spots with `gms` and `spotsRev` */
-        mapKey: string;
-        /** The map's geomorph instances, by gmId: whose spot files it fetches, and where it places them */
-        gms: GmForSpots[];
-        /** Changes as the dev server remakes the spot files, so the worker fetches them again */
-        spotsRev: number;
-        /** What blocks sight across the whole map, in world coords */
-        occluders: SightOccluder[];
-        /** gdKeys of doors seen through */
-        openDoors: string[];
-        /** The two records of each hull door where geomorphs meet, as gdKeys */
-        hullPairs: [string, string][];
-        /** By `{gmId}/{decorId}`, each doable's decor key */
-        doableKeys: Record<string, string>;
-      }
     | {
         /** A door now seen through, or shut */
         type: "perception-door";
@@ -296,22 +295,19 @@ declare namespace WW {
         op: SpotsOp;
       };
 
-  /** From the perception worker — see `perception.worker.ts` */
-  type PerceptionMsgFrom =
-    | {
-        /** A query's answers, else why none */
-        type: "perception-result";
-        /** The query's `uid` */
-        uid: string;
-        /** Aligned with the query's `queries`: one that failed is `{ error }`, not the batch */
-        output: SpotAnswer[];
-        /** Why the whole batch failed, e.g. no spots set up */
-        error?: string;
-      }
-    | {
-        /** Its own code changed: main respawns it and sets it up again */
-        type: "worker-hot-module-reload";
-      };
+  type PerceptionQuery = Extract<PerceptionMsgTo, { type: "perception-query" }>;
+
+  /** Perception's, from the nav worker */
+  type PerceptionMsgFrom = {
+    /** A query's answers, else why none */
+    type: "perception-result";
+    /** The query's `uid` */
+    uid: string;
+    /** Aligned with the query's `queries`: one that failed is `{ error }`, not the batch */
+    output: SpotAnswer[];
+    /** Why the whole batch failed, e.g. no spots set up */
+    error?: string;
+  };
 
   type JshRequest = { type: "jsh-plan"; uid: string; op: JshOp };
   type JshResult<K extends JshOpKey = JshOpKey> = {

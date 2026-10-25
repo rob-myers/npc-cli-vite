@@ -83,8 +83,8 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Memory | `docs/memory.md` | A `TexArray` can hold its pixels three times over (GPU, CPU mirror, 2D canvas), so memory is mostly how many layers each has. The floor and ceiling are a layer per geomorph KEY. A `gpu` array has no mirror. |
 | Deploys and stale tabs | `docs/deploys.md` | A tab can outlive its deploy. Production keeps superseded hashed assets for 30 deploys (`assetHistoryPlugin`, whose `/asset-history.json` also logs each deploy's ui chunk paths and sizes), and `NewVersionToast` offers a reload. Ui chunk names stay put unless their code changed. Keep them so: nothing a ui imports may value-import `@npc-cli/ui-registry` or another ui package's root (use a subpath, e.g. `/schemas`). `stableEntryPlugin` keeps chunks from importing the entry. |
 | Spots | `docs/spots.md` | Places an npc might stand, per geomorph key (`public/spot/{gmKey}.json`, committed): along walls, at corners, by doors, doables and low cover. Each has its depth at 16 angles, the spots it sees, and what is near. `gen-spots` makes them in Node from a navcat navmesh, run by the dev server whenever `assets.json` changes. The Decorator's **spots** layer shows them, and a press on one shows what it sees. |
-| Scenarios | `docs/scenarios.md` | The Scenario panel, `packages/ui/scenario`, lists three sections. **Scenarios**: npcs interacting, directed by queries over spots and live npc state (hide and seek, guard and intruder, meeting in secret, breach and clear), as yet stubs. **Characters**: name, npc, skin, rooms and door keys, one JSON each in `packages/media/src/scenario/character/{slug}.json`; DEV saves through `/api/scenario` (`vite-plugin-scenario`), a build bundles them as `virtual:scenario`. Their schema and the store shared with the Decorator are in `ui/world` (`scenario.schema.ts`, `scenario-shared.ts`). jsh `act {count,face,hide} <npc> …` plays their pieces by hand, and `sees rob abe` / `sees --all …` ask who sees whom. **Conversations**: trees (`ui/world/src/service/talk.ts`), played in `WorldSpeech`'s history by thread. |
-| Perception | `docs/perception.md` | The perception worker answers spot and sight queries (`spotQuery`), apart from the nav worker. `perception.main.ts` makes one per World lazily, sets it up per map with what blocks sight, and tells it of doors as they change. `worker/perception.worker.ts` and `worker/spots.ts` answer: from the static lists where they settle it (rooms in view, never, always), casting lines only for the rest. The **spots** debug overlay shows them in the World, coloured by sight (jsh `spot_overlay`). `sees --debug a b` says and draws why. |
+| Scenarios | `docs/scenarios.md` | The Scenario panel, `packages/ui/scenario`, lists three sections. **Scenarios**: npcs interacting, directed by queries over spots and live npc state (hide and seek, guard and intruder, meeting in secret, breach and clear), as yet stubs. **Characters**: name, npc, skin, rooms and door keys, one JSON each in `packages/media/src/scenario/character/{slug}.json`; DEV saves through `/api/scenario` (`vite-plugin-scenario`), a build bundles them as `virtual:scenario`. Their schema and the store shared with the Decorator are in `ui/world` (`scenario.schema.ts`, `scenario-shared.ts`). jsh `act {count,face,hide,avoid,park,pad,nudge} <npc> …` plays their pieces by hand, and `sees rob abe` / `sees --all …` ask who sees whom. **Conversations**: trees (`ui/world/src/service/talk.ts`), played in `WorldSpeech`'s history by thread. |
+| Perception | `docs/perception.md` | Spot and sight queries (`spotQuery`) are answered on the nav worker, beside the plan ops. `worker.main.ts` sets it up per map with what blocks sight, and tells it of doors as they change. `worker/handle-perception.ts` and `worker/spots.ts` answer: from the static lists where they settle it (rooms in view, never, always), casting lines only for the rest. The **spots** debug overlay shows them in the World, coloured by sight (jsh `spot_overlay`). `sees --debug a b` says and draws why. |
 | MCP server | `docs/mcp.md` | See [MCP server](#mcp-server). |
 | Preview checks | `docs/preview-checks.md` | Checking a change in the browser, and the log of checks run. A production preview in a visible Chrome, never headless, driven by typing into the app's own jsh terminal one step at a time, pausing for "next". Players are moved, not spawned. |
 
@@ -147,9 +147,10 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - The first corner's `nodeRef` is the poly *after* it, not the current one.
 
 **Workers** (see `docs/workers.md`):
-- Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycast, `w.navWorker`).
+- Under `packages/ui/world/src/worker/`: `physics.worker.ts` (rapier, `w.physics`) and `nav.worker.ts` (navmesh generation, room graph, raycasts on a `SegGrid`, `w.navWorker`). See `docs/workers.md`.
+- The nav worker runs as two copies: `bulk` (navmesh, `park`, `pad`, `hide`...) and `fast` (rays, `sees`, quick queries). Post with `w.navWorker.post(msg, role?)`, never to a `Worker` directly.
 - jsh's `jsh.worker.ts` in `packages/cli` wraps the nav one with jsh's plan ops (`park`, `pad`…), sent from `plan.main.ts`.
-- jsh's perception worker holds spots and sight, sent from `perception.main.ts`: see `docs/perception.md`.
+- The same worker holds spots and sight, asked from `perception.main.ts`: see `docs/perception.md`. Every jsh request goes through `worker.main.ts`.
 
 ## Which room an npc is in
 
@@ -165,8 +166,8 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 
 - `state.placeNpcAt(npc, at, type)` places or teleports an npc. The `"navigable"` type throws if the position is off the navmesh. `"doable"` silently removes the agent instead.
 - **Parked npcs are jsh state**, not the World's: `parked` in `/shared/map/{mapKey}/pred`, owned by `packages/cli/src/jsh/world/pred.ts` and persisted with the rest of `/shared`. It holds the wall segment each stands against.
-  - `park` records via `parked.mark`. A move, respawn or removal unparks.
-- `padded` beside it is the same for `pad`: a Set of those stood with room to walk right round them.
+  - `act park` records via `parked.mark`. A move, respawn or removal unparks.
+- `padded` beside it is the same for `act pad`: a Set of those stood with room to walk right round them.
 - An npc is parked or padded, never both.
 
 ## jsh commands
