@@ -58,12 +58,7 @@ export async function awaitPausable<T>(
 }
 
 /** One request to the worker, which is set up for the map first if need be */
-export function request<O extends WW.JshOp>(
-  w: JshCli.WorldState,
-  api: JshCli.RunArg["api"],
-  op: O,
-  signal: AbortSignal,
-) {
+function request<O extends WW.JshOp>(w: JshCli.WorldState, api: JshCli.RunArg["api"], op: O, signal: AbortSignal) {
   return post(w, api.getUid(), op, signal);
 }
 

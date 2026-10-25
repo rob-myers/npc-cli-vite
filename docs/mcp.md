@@ -164,9 +164,9 @@ Whilst "mcp testing" is up, the page logs the user's `pointerdown`, `keydown` an
 - **Spawn with a skin, then look**: `spawn npc:bot0 at:[14.5,0,5] skin:robot-0`, then
   `look bot0 at:rob; look bot1 at:rob`. `;` chains lines.
 - **A patrol is a background job**, so the tty stays free: `patrol_route bot2 patrol-bot2- | move bot2 &`.
-  It follows a point that is moved whilst they head for it. `pad` or `park` anyone idling on its route
+  It follows a point that is moved whilst they head for it. `act pad` or `act park` anyone idling on its route
   first, e.g. in a doorway, else they block it.
-- **`pad` needs room.** In a crowded room it fails with `not padded: bot0`. `park` stands them against a wall instead.
+- **`act pad` needs room.** In a crowded room it fails with `not padded: bot0`. `act park` stands them against a wall instead.
 - **Check a facing** with `w.n[key].rotation.y`. Towards a point `(dx, dz)` away it is `-(atan2(dz, dx) + π/2)`.
 
 ### Speech

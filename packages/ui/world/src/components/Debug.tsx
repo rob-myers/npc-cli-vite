@@ -737,7 +737,7 @@ export type State = {
   spots: SpotDraw[];
   /** Whether the map's spots are drawn — see jsh `spot_overlay` */
   spotsShown: boolean;
-  /** An npc's local navmesh boundary, drawn whilst non-empty — see `demo_boundary` */
+  /** An npc's local navmesh boundary, drawn whilst non-empty — see `debug_boundary` */
   localBoundary: XZSeg[];
   /** By key, drawn as a disc per point joined by lines — see `debug_corners` */
   polylines: Map<string, Polyline>;

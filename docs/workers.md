@@ -61,7 +61,7 @@ They were once one worker. Splitting them means:
 
 ## The jsh plug-in
 
-Npc behaviour computations run on the nav worker: `park` first, then `boundary`, `pad` and `nudge`.
+Npc behaviour computations run on the nav worker: `park`, `boundary`, `pad` and `nudge`.
 They are owned by `packages/cli`'s jsh, under `src/jsh/world/worker/`.
 
 cli depends on world, not the other way round, so world's worker cannot import cli. Instead cli owns
@@ -90,7 +90,7 @@ a generator. `handle-message.ts` drives them all the same way.
 |---|---|---|
 | `park` | `npcs: NpcQuery[]`, `parked` (everyone parked, with their seg) | a `ParkPlan` per npc, or `null` with no wall in reach |
 | `boundary` | `npc` | the boundary segments within `parkQueryRange`, nearest first |
-| `pad` | `npc`, `by` | a step of `by` off the nearest wall, along its inward normal |
+| `pad` | `npcs: NpcQuery[]`, `others` (everyone stood in their rooms), `by` | a `PadPlan` per npc: a spot `by` clear of walls, doorways and others, or `null` |
 | `nudge` | `npc`, `to` | `to`, slid along the navmesh under the npc's door filter |
 
 **`NpcQuery`** is an npc as an op sees them:
@@ -122,21 +122,20 @@ changes. `plan.main.ts` exports:
 - **`plan({ api, w, op })`** runs one op under the shell's pause and kill. Its result type follows
   `op.key`.
 - **`npcQuery(w, npc)`** builds the `NpcQuery`.
-- **`request(w, api, op, signal)`** sends one message and awaits its reply, matched by uid. It
-  rejects on the worker's `error`, or on abort.
 - **`awaitPausable(api, run)`** handles pause and kill.
   - A kill aborts `run`'s signal with the kill error.
   - A pause aborts it with `"paused"`, and reruns it once resumed.
-  - `run` decides what an abort interrupts. `park` lets a fade or look finish on a pause, since
-    `npc.rejectAll` would zero the fade.
+  - `run` decides what an abort interrupts.
+- **`requestDetached(w, op)`** sends one from no process, e.g. a keyed tick or an `act` verb, which waits on
+  it through its own `Task`.
 
-The commands stay where they were: `park`, `pad` and `nudge` in `core.ts`, and `demo_boundary` in
-`demo.ts`, which draws exactly the segments `park` sees.
+The ops are played by jsh `act park`, `act pad` and `act nudge` (`act.ts`, see `docs/scenarios.md`), and by
+`sidestep.ts`. `debug_boundary` (`debug.ts`) draws exactly the segments `park` sees.
 
 **To add an op:** add a member of `WW.JshOp`, an entry in `WW.JshOutput` and a function on `ops`.
 Then call it with `plan({ api, w, op: { key, ... } })`.
 
-**Parked npcs.** `park` marks them (`parked.mark` in `pred.ts`) after the move. A move or respawn clears it, so an npc is
+**Parked npcs.** `act park` marks them (`parked.mark` in `pred.ts`) after the move. A move or respawn clears it, so an npc is
 parked only if it was explicitly parked.
 
 ## Raycasts
