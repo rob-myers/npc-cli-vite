@@ -35,7 +35,7 @@ The plan ops (`park`, `pad`, `nudge`, `boundary`) share the worker and its setup
 - **Occluders.** These are the walls, the doors, and obstacles `standBlockHeight` tall, in world coords. Windows are not among them. They are the same occluders `gen-spots` makes its lists from (`docs/spots.md`).
 - **Ids.** A door's or obstacle's id is `gmId * sightIdStride + localId`.
 - **A line of sight** passes through the worker's `SegGrid`. Walls and tall obstacles stop it, and so do doors unless open.
-- **To or from an npc,** sight is a head: lines to its eyes and either side, inside the head.
+- **To or from an npc,** sight is a head: lines to its centre and either side, half its width away.
 - **Spot to spot,** sight is the precomputed lists, with doors as they stand: `sight`, `always` and `via`. From a doable sat or lain at (`doArc`), it is `doSight` and `doVia` instead: from its point, within its arc. So it can be one-way, e.g. someone behind a chair sees its sitter, not the reverse.
 
 ## Npcs in the lists
@@ -50,7 +50,7 @@ Each step only runs if the one before leaves it open:
 1. **Eyes and head facing,** on main (`perceive` in `spot.ts`).
 2. **Rooms:** `b` must be in a room `a` has in view.
 3. **The lists,** over every pair of their spots: never listed is no, `always` is yes unless `b` is crouched.
-4. **Lines,** for the rest: from `a`'s eyes to `b`'s, to their centre and either side. An npc's eyes are on the front of their head as last posed, from its bone (`eyeOf` in `perception.main.ts`), so they follow a crouch, a seat, a bed or a top bunk. A spot's are 1.37 m up. A low obstacle stops a line passing at or below its top. Lines to a fully crouched npc end 0.6 m up by rule, though their head clears a desk, so cover `crouchHideHeight` tall hides them.
+4. **Lines,** for the rest: from `a`'s eyes to `b`'s head: its centre, and 0.15 m either side across the line. An npc's eyes are on the front of their head as last posed, and its centre inside it, from its bone (`headOf` in `perception.main.ts`), so they follow a crouch, a seat, a bed or a top bunk. Which way `b` faces does not move the lines. A spot's are 1.37 m up. A low obstacle stops a line passing at or below its top. Lines to a fully crouched npc end 0.6 m up by rule, though their head clears a desk, so cover `crouchHideHeight` tall hides them.
 
 **The cache** (`seesCache` in `worker/spots.ts`) holds steps 2 to 4's verdict, seen or not, for a pair with an npc in it.
 - **Its key:** each npc's name, position to the centimetre, posture and crouch (a spot's is its key), then the doors' revision. Any door opening or shutting, or a new setup, bumps that revision, so every earlier answer goes unused.

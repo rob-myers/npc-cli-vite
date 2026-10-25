@@ -2,6 +2,7 @@ import { ExhaustiveError } from "@npc-cli/util/exhaustive-error";
 import { Mat, Poly } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
 import { helper } from "./helper";
+import { obstacleBottom } from "./spot-sight";
 
 /**
  * We transform everything into world coords except `triangulation`.
@@ -66,7 +67,7 @@ export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSet
             ? {
                 obstacleId,
                 top: height,
-                bottom: typeof meta.h === "number" ? height - meta.h : 0,
+                bottom: obstacleBottom(height, meta),
                 outline: origPoly.clone().applyMatrix(new Mat(transform)).geoJson,
               }
             : [],

@@ -273,6 +273,7 @@ export class Npc {
             : undefined),
         facing,
       });
+      this.anim.faceAhead(); // unseen, else the follow swings round after their head
 
       this.w.rings.fadeOutSpawnRing(this.key);
       await this.fadeIn();

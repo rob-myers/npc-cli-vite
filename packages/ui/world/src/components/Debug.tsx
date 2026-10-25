@@ -194,6 +194,10 @@ export function Debug() {
         inst.instanceMatrix.needsUpdate = true;
         uvOffs.needsUpdate = uvDims.needsUpdate = uvTexIds.needsUpdate = true;
       },
+      countSpots() {
+        const count = state.spotsShown ? state.spots.length : 0;
+        for (const inst of [state.spotsInst, state.spotArrowsInst]) if (inst) inst.count = count;
+      },
       colourSpots(colors) {
         const inst = state.spotsInst;
         if (!inst) return;
@@ -234,16 +238,14 @@ export function Debug() {
           data[at + 13] = spot.iconHidden === true ? 0 : 1;
           if (state.spotArrowsInst) writeSpotArrow(state.spotArrowsInst, i, spot);
         }
-        if (state.spotArrowsInst) {
-          state.spotArrowsInst.count = state.spots.length;
-          state.spotArrowsInst.instanceMatrix.needsUpdate = true;
-        }
-        inst.count = state.spots.length;
+        if (state.spotArrowsInst) state.spotArrowsInst.instanceMatrix.needsUpdate = true;
+        state.countSpots();
         state.colourSpots(null);
       },
       toggleSpots() {
         const shown = !state.spotsShown;
         state.set({ spotsShown: shown });
+        state.countSpots();
         getWorldStore(w.key).patch({ spotsShown: shown });
         w.events.next({ key: "spots-overlay", shown }); // jsh `spot_overlay` fills it
         w.view.forceUpdate();
@@ -542,14 +544,14 @@ export function Debug() {
         renderOrder={-5}
       />
 
-      {/* the map's spots, an icon per kind coloured by sight — filled by jsh `spot_overlay` */}
+      {/* the map's spots, an icon per kind coloured by sight — filled by jsh `spot_overlay`. Hidden with no
+          instances, not `visible`: their pipelines are then built at load, not on the first show */}
       <instancedMesh
         key={spotsMaterial.uid}
         ref={state.ref("spotsInst")}
         args={[spotsGeo, spotsMaterial.material, maxSpots]}
         count={0}
         frustumCulled={false}
-        visible={state.spotsShown}
         renderOrder={spotsRenderOrder}
       />
       <instancedMesh
@@ -558,7 +560,6 @@ export function Debug() {
         args={[spotArrowsGeo, spotArrowsMaterial, maxSpots]}
         count={0}
         frustumCulled={false}
-        visible={state.spotsShown}
         renderOrder={spotsRenderOrder}
       />
 
@@ -777,6 +778,8 @@ export type State = {
   toggleSpots(): void;
   /** Colours the spots drawn by key, the rest their own, with `null` all their own */
   colourSpots(colors: null | Record<string, THREE.ColorRepresentation>): void;
+  /** Draws every spot whilst shown, else none */
+  countSpots(): void;
   setPolyline(key: string, polyline: Polyline): void;
   removePolyline(key: string): void;
   /** Writes `localBoundary` into its mesh */

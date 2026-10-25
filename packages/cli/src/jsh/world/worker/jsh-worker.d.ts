@@ -26,6 +26,8 @@ declare namespace WW {
     doAt?: Geom.VectJson;
     /** Their eyes as last posed, from their head: world XZ as `x/y`, and `h` metres up */
     eye: Geom.VectJson & { h: number };
+    /** Their head's centre as last posed, where lines to them end */
+    head: Geom.VectJson & { h: number };
   };
 
   /** One question about spots — see `docs/perception.md` */
@@ -173,7 +175,7 @@ declare namespace WW {
     | {
         sees: boolean;
         settled: SeesSettled;
-        /** To `b`'s centre, then either side */
+        /** To `b`'s head centre, then either side */
         lines: { from: Geom.VectJson; to: Geom.VectJson; hit: null | SightHit }[];
         /** Their spots the lists best had seeing each other, if any */
         pair: null | [string, string];

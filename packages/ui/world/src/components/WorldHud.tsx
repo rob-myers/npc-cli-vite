@@ -106,6 +106,11 @@ export default function WorldHud() {
         state.update();
         w.view.forceUpdate();
       },
+      watchAim(el) {
+        return w.e.addFrameCallback(() => {
+          el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
+        });
+      },
     }),
   );
 
@@ -172,12 +177,15 @@ export default function WorldHud() {
   const psiOn = w.e.isPsiRaised();
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
-  /** The notice kept over the bar: a raised phaser strafes them too, so it comes first */
-  const kept = armed
-    ? { label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) }
+  /** The notices kept over the bar. A raised phaser strafes them too, which only lowering it ends */
+  const kept: { label: string; title: string; end?: () => void }[] = armed
+    ? [
+        { label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) },
+        { label: "strafe", title: "strafing whilst aiming" },
+      ]
     : strafing
-      ? { label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() }
-      : null;
+      ? [{ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() }]
+      : [];
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -250,26 +258,41 @@ export default function WorldHud() {
   return (
     <div ref={(el) => void (state.barEl = el)} className={barClass}>
       {/* out here, not in the row: it scrolls, so would clip it */}
-      {(state.notice !== null || kept !== null) && (
+      {(state.notice !== null || kept.length > 0) && (
         <motion.div
           style={{ y }}
           className="absolute bottom-full left-1/2 mb-1 flex -translate-x-1/2 flex-col items-center gap-1 whitespace-nowrap text-xs text-amber-200"
         >
-          {/* kept whilst aiming or strafing, the "x" ending it */}
-          {kept !== null && (
-            <div className="pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 pr-0.5 pl-2">
-              {kept.label}
-              <button
-                type="button"
-                title={kept.title}
-                className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
-                onClick={() => {
-                  kept.end();
-                  w.view.focus();
-                }}
-              >
-                <XIcon className="size-3" weight="bold" />
-              </button>
+          {/* kept whilst aiming or strafing, an "x" ending one that may be ended */}
+          {kept.length > 0 && (
+            <div className="flex gap-1">
+              {kept.map(({ label, title, end }) => (
+                <div
+                  key={label}
+                  ref={label === "aim" ? state.watchAim : undefined}
+                  title={end === undefined ? title : undefined}
+                  className={cn(
+                    "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
+                    end === undefined ? "px-2" : "pr-0.5 pl-2",
+                  )}
+                >
+                  <span className="group-[.blocked]:hidden">{label}</span>
+                  {label === "aim" && <span className="hidden group-[.blocked]:inline">aim blocked</span>}
+                  {end !== undefined && (
+                    <button
+                      type="button"
+                      title={title}
+                      className="grid size-4 cursor-pointer place-items-center rounded-full border border-sky-300/50 bg-sky-950 text-sky-100 hover:border-red-400/70 hover:text-red-300"
+                      onClick={() => {
+                        end();
+                        w.view.focus();
+                      }}
+                    >
+                      <XIcon className="size-3" weight="bold" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
           {state.notice !== null && <div className="rounded bg-neutral-900/90 px-2 py-0.5">{state.notice}</div>}
@@ -808,4 +831,6 @@ export type State = {
   onTouchEnd(e: PointerEvent): void;
   /** As a click on that slot, from `0`: psi, phaser, keys, then items */
   press(index: number): void;
+  /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
+  watchAim(el: null | HTMLDivElement): () => void;
 };

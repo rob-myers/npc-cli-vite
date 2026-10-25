@@ -63,7 +63,7 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
       changing = true;
     } else if (changing && (e.key === "npcs-restored" || (e.key === "map-settled" && w.client === true))) {
       changing = false;
-      api.writeInfo(`loaded map ${w.mapKey}`);
+      api.writeInfo(`loaded map ${api.ansi.White}${w.mapKey}`);
     } else if (e.key !== "disabled" && e.key !== "enabled") {
       return;
     }
@@ -621,6 +621,8 @@ type NamedErrorHandlers = Record<string, false | (() => void | Promise<void>)>;
  *
  * move rob to:$( pick 1 ) facing:$( pick 1 )
  * move rob --fast to:$( pick 1 )
+ * # fade onto or off a doable however far, rather than walking up to it
+ * move rob --far to:$( pick 1 )
  * ```
  */
 export async function move(
@@ -638,6 +640,7 @@ export async function move(
     "--back": "backwards",
     "--strafe": "strafe",
     "--backstep": "backstep",
+    "--far": "far",
   }),
 ) {
   if (!opts.to && ct.api.isTtyAt(0)) {
@@ -1617,8 +1620,8 @@ const wasdConfig = {
 } as const;
 
 /** How each move is made, as the command line gave it */
-function moveFlags({ fast, backwards, backstep, strafe, near }: Omit<JshCli.MoveOpts, "to">) {
-  return { fast, backwards, backstep, strafe, near };
+function moveFlags({ fast, backwards, backstep, strafe, near, far }: Omit<JshCli.MoveOpts, "to">) {
+  return { fast, backwards, backstep, strafe, near, far };
 }
 
 function isArrayOfPoints(x: unknown): x is JshCli.PointAnyFormat[] {
@@ -1655,6 +1658,7 @@ const booleanJsOptSomewhere = {
   backwards: true,
   detail: true,
   facing: true,
+  far: true,
   fast: true,
   force: true,
   lower: true,

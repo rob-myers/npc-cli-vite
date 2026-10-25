@@ -50,7 +50,11 @@ A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), a
 
 ## What a hit does
 
-As a beam reaches its target, and no shield stops it, a `hit` outcome has `w.npc.hit` play a clip on them. The clip depends on the part
+**Obstacles.** The beam's cast runs from the muzzle at full aim to the part (`arm.sight`). Each tick it stops where
+it first meets one: at its side, or down through its top or up through its underside (`acrossStop`). Nothing within
+`partDepth` of the part's middle stops it, e.g. a thigh on its seat. Stopped, it never lands.
+
+As a beam reaches its target, and no shield or obstacle stops it, a `hit` outcome has `w.npc.hit` play a clip on them. The clip depends on the part
 locked on to, and on whether they stand, sit or lie (`hitConfig` in `const.npc`). It emits `npc-hit`.
 
 | part | stood | sat / lain |

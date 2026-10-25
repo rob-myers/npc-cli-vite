@@ -25,20 +25,25 @@ function perceive(w: JshCli.WorldState, uid: string, op: WW.SpotsOp, signal: Abo
   return ask<WW.SpotAnswer[]>(w, { type: "perception-query", uid, op }, signal);
 }
 
-/** An npc's eyes on the front of their head as last posed, else above their point */
-function eyeOf(npc: JshCli.WorldState["n"][string]): WW.SpotNpc["eye"] {
+/** An npc's eyes on the front of their head, and its centre, as last posed. Else both above their point */
+function headOf(npc: JshCli.WorldState["n"][string]): Pick<WW.SpotNpc, "eye" | "head"> {
   const e = npc.anim.upperHead.entry?.bone.matrixWorld.elements;
-  if (e === undefined) return { x: npc.point.x, y: npc.point.y, h: 1.37 };
-  const { up, ahead } = eyeAt;
+  if (e === undefined) {
+    const above = { x: npc.point.x, y: npc.point.y, h: 1.37 };
+    return { eye: above, head: above };
+  }
   // the bone's origin, then its y and z columns
-  return {
+  const through = ({ up, ahead }: typeof eyeAt) => ({
     x: e[12] + e[4] * up + e[8] * ahead,
     y: e[14] + e[6] * up + e[10] * ahead,
     h: e[13] + e[5] * up + e[9] * ahead,
-  };
+  });
+  return { eye: through(eyeAt), head: through(headAt) };
 }
 /** Where the eyes are in the head bone's own units, from the neck: up it, and out to the face, as the model faces its -z */
 const eyeAt = { up: 0.19, ahead: -0.23 };
+/** The centre of the head's box, in the same units */
+const headAt = { up: 0.17, ahead: -0.015 };
 
 function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
   const named = new Set(queries.flatMap(namedIn));
@@ -53,7 +58,7 @@ function spotOp(w: JshCli.WorldState, queries: WW.SpotQuery[]): WW.SpotsOp {
     const doable = w.decor.byKey[w.npc.npcToDoable[key] ?? ""];
     const doAt = posture !== "stand" && doable?.type === "point" ? { x: doable.x, y: doable.y } : undefined;
     const at = { x: npc.point.x, y: npc.point.y };
-    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt, eye: eyeOf(npc) }];
+    return [{ key, point: at, grKeys, posture, crouched, seeRooms, doAt, ...headOf(npc) }];
   });
   return { npcs, queries };
 }

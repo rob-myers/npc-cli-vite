@@ -67,8 +67,8 @@ function raycast({ src, dst, grKey }: WW.GetRaycast): JshCli.RaycastResult {
   let hitDoor: null | Geomorph.GmDoorKey = null;
   const passed: Geomorph.GmDoorKey[] = [];
   const rooms: Geomorph.GmRoomKey[] = [grKey];
-  /** By obstacle index, where it first meets it */
-  const met = new Map<number, number>();
+  /** By obstacle index, where it first and last meets it */
+  const met = new Map<number, [number, number]>();
 
   for (const { o, lambda } of crossed) {
     if (o.kind === "wall") {
@@ -76,7 +76,9 @@ function raycast({ src, dst, grKey }: WW.GetRaycast): JshCli.RaycastResult {
       break;
     }
     if (o.kind !== "door") {
-      if (met.has(o.id) === false) met.set(o.id, lambda);
+      const at = met.get(o.id);
+      if (at === undefined) met.set(o.id, [lambda, lambda]);
+      else at[1] = lambda;
       continue;
     }
     const door = doors[o.id];
@@ -90,9 +92,12 @@ function raycast({ src, dst, grKey }: WW.GetRaycast): JshCli.RaycastResult {
   }
 
   const length = Math.hypot(dst.x - src.x, dst.y - src.y);
-  const obstacles = [...met].flatMap(([index, lambda]) => {
+  const obstacles = [...met].flatMap(([index, [enter, leave]]) => {
     const { outline, ...obstacle } = statics.obstacles[index];
-    return lambda > stop || contains(outline, src) ? [] : [{ ...obstacle, dist: lambda * length }];
+    if (enter > stop) return [];
+    // begun or ended inside its outline, it meets it there
+    const [from, to] = [contains(outline, src) ? 0 : enter, contains(outline, dst) ? 1 : leave];
+    return [{ ...obstacle, dist: from * length, leave: to * length }];
   });
   const hit = stop === Infinity ? null : round(pointAt(src, dst, stop));
   return {
@@ -166,4 +171,4 @@ const pointAt = (src: Geom.VectJson, dst: Geom.VectJson, lambda: number) => ({
 const round = ({ x, y }: Geom.VectJson) => ({ x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
 
 type Seg = [Geom.VectJson, Geom.VectJson];
-type RayObstacle = Omit<WW.RaycastObstacle, "dist"> & { gmId: number; outline: Geom.VectJson[] };
+type RayObstacle = Omit<WW.RaycastObstacle, "dist" | "leave"> & { gmId: number; outline: Geom.VectJson[] };
