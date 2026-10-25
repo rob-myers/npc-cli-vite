@@ -1,6 +1,7 @@
 import { wallHeight } from "@npc-cli/ui__world/const.env";
 import { spotKindInk } from "@npc-cli/ui__world/spot.schema";
-import { getSpotsRev, spotQuery, spotQueryDetached } from "./perception.main";
+import { spotQuery, spotQueryDetached } from "./perception.main";
+import { getSpotsRev } from "./worker.main";
 
 /**
  * The map's spots: in rooms, of kinds, or near an npc, nearest first. With `of`, every spot an npc is at.

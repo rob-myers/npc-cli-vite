@@ -48,9 +48,15 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
       navMesh = tiledNavMeshResult.navMesh;
       self.postMessage({
         type: "tiled-navmesh-response",
+        gmsHash: msg.gmsHash,
         ...tiledNavMeshResult,
         toNavTris: navForFloorDraw(msg.gmGeoms, tiledNavMeshResult.navMesh),
       } satisfies WW.MsgFromNavWorker);
+      break;
+    }
+    case "set-navmesh": {
+      createGmRayCastSystems(msg.rayCast, msg.gmGeoms);
+      navMesh = msg.navMesh;
       break;
     }
     case "set-raycast-shields": {

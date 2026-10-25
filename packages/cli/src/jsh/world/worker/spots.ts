@@ -6,9 +6,9 @@ import { fetchParsed, getDevCacheBustQueryParam } from "@npc-cli/util/fetch-pars
 /**
  * The map's spots, worker-side: each geomorph's under a map-wide key `g{gmId}s{id}` and in world coords,
  * indexed by room and by grid cell. Answers name each by its alias, e.g. `g0r12-3`, and take either.
- * Fetched afresh by each `perception-setup` that changes them — see `docs/spots.md`
+ * Fetched afresh by each `jsh-setup` that changes them — see `docs/spots.md`
  */
-export function setupSpots(msg: Extract<WW.PerceptionMsgTo, { type: "perception-setup" }>) {
+export function setupSpots(msg: WW.JshSetup) {
   const cacheKey = `${msg.mapKey} ${JSON.stringify(msg.gms)} ${msg.spotsRev}`;
   if (current?.cacheKey !== cacheKey) current = { cacheKey, promise: createMapSpots(msg.gms, msg.hullPairs) };
   void current.promise.then((all) => void (all.doableKeys = msg.doableKeys)); // keyed as the World's decor loads

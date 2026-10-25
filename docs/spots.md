@@ -12,13 +12,13 @@ A spot is a place an npc might stand, made per geomorph key with what it sees an
 | Bin | `scripts/src/bins/gen-spots.ts` (`--force`, `--gmKeys='["g-101--multipurpose"]'`) |
 | Dev server | `scripts/src/vite-plugin-spots.ts`. `POST /api/gen-spots` forces a run. |
 | View | `packages/ui/decorator/src/SpotsLayer.tsx`. The sidebar's spot tab (`SpotCard.tsx`) shows one, pressed on the map or entered by key, e.g. `g0r12-3`. |
-| Queries | The perception worker holds the map's spots (`cli/src/jsh/world/worker/spots.ts`): see `docs/perception.md`. Main sends a batch with `spotQuery(ct, queries)` (`perception.main.ts`), one round trip each. Sight from or to an npc is a line from their own point through that worker's occluders, across geomorphs, through open doors. Spot to spot it is the precomputed `sees`, plus `seesVia` an open door. An npc's spots (`spots of:rob`) are those of their room within 1 m, else its nearest, and in a doorway the other side's too. jsh: `spot of:rob` (the nearest), `spots of:rob` (all), `spot g0r12-3`, `sees g0r4-0 g0r4-7`, `spots room:… kind:… near:…`. Between npcs `sees` also asks their eyes and facing: see `docs/scenarios.md` |
+| Queries | The nav worker holds the map's spots (`cli/src/jsh/world/worker/spots.ts`): see `docs/perception.md`. Main sends a batch with `spotQuery(ct, queries)` (`perception.main.ts`), one round trip each. Sight from or to an npc is a line from their own point through that worker's occluders, across geomorphs, through open doors. Spot to spot it is the precomputed `sees`, plus `seesVia` an open door. An npc's spots (`spots of:rob`) are those of their room within 1 m, else its nearest, and in a doorway the other side's too. jsh: `spot of:rob` (the nearest), `spots of:rob` (all), `spot g0r12-3`, `sees g0r4-0 g0r4-7`, `spots room:… kind:… near:…`. Between npcs `sees` also asks their eyes and facing: see `docs/scenarios.md` |
 
 ## Keys
 
 A spot's alias is `r{roomId}-{n}`, or a door spot's `d{doorId}-{n}`, `n` counting its room's or door's spots in file order (`spotAliasesOf` in `spot.schema.ts`). It is inferred, never stored. On a map it follows its geomorph, e.g. `g0r12-3`, and is what jsh, the Decorator and every answer show.
 
-Within a file, spots are still ids: their index, which every list (`sight`, `via`, `hull`...) holds. The perception worker keys them `g{gmId}s{id}` internally, and takes either form.
+Within a file, spots are still ids: their index, which every list (`sight`, `via`, `hull`...) holds. The worker keys them `g{gmId}s{id}` internally, and takes either form.
 
 ## Coords
 

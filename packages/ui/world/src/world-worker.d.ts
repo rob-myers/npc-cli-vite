@@ -8,6 +8,15 @@ declare namespace WW {
     | {
         type: "request-tiled-navmesh";
         mapKey: string;
+        /** The layout it is for, sent back with the navmesh */
+        gmsHash: number;
+        gmGeoms: WW.GmGeomForNav[];
+        rayCast: RaycastSetupData;
+      }
+    | {
+        /** A respawned worker's navmesh, kept by main from the last it made: nothing is generated or sent back */
+        type: "set-navmesh";
+        navMesh: import("navcat").NavMesh;
         gmGeoms: WW.GmGeomForNav[];
         rayCast: RaycastSetupData;
       }
@@ -131,9 +140,15 @@ declare namespace WW {
   /** From the nav worker */
   type MsgFromNavWorker =
     | { type: "pong" }
-    | { type: "worker-hot-module-reload" }
+    | {
+        type: "worker-hot-module-reload";
+        /** Only jsh's code changed, so the navmesh it last made still holds */
+        keepNavMesh?: true;
+      }
     | ({
         type: "tiled-navmesh-response";
+        /** The layout it was made for */
+        gmsHash: number;
         toNavTris: import("./worker/nav-util").GmFloorNavTris;
       } & import("navcat/blocks").TiledNavMeshResult)
     | {
@@ -174,6 +189,9 @@ declare namespace WW {
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromNavWorker, { type: "tiled-navmesh-response" }>;
+  /** Another entry's request, answered by a `NavWorkerReply` with the same `uid` — see `NavWorker`'s `request` */
+  type NavWorkerRequest = { type: string; uid: string };
+  type NavWorkerReply = { uid: string; output?: unknown; error?: string };
   type RaycastResultResponse = Extract<MsgFromNavWorker, { type: "raycast-result" }>;
   type UnreachableResult = Extract<MsgFromNavWorker, { type: "unreachable-result" }>;
 

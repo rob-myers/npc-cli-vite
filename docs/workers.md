@@ -1,13 +1,12 @@
 # Workers
 
 Two web workers live under `packages/ui/world/src/worker/`. Each is owned by a component in
-`packages/ui/world/src/components/`. A third, jsh's perception worker, is in `packages/cli`.
+`packages/ui/world/src/components/`.
 
 | worker | its job | owner | handle |
 |---|---|---|---|
 | `physics.worker.ts` | rapier: npc bodies, door sensors, decor colliders | `PhysicsWorker` | `w.physics` |
-| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts; jsh's plan ops via `jsh.worker.ts` | `NavWorker` | `w.navWorker`, jsh's `plan.main.ts` |
-| `perception.worker.ts` (cli) | spots, and sight between npcs and spots | `perception.main.ts`, lazily | `spotQuery` |
+| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts; jsh's plan ops and perception via `jsh.worker.ts` | `NavWorker` | `w.navWorker`, jsh's `worker.main.ts` |
 
 `w.nav` is the navmesh response the nav worker last sent. It is not the worker.
 
@@ -49,12 +48,15 @@ cli depends on world, not the other way round, so world's worker cannot import c
 the **entry** the world spawns:
 
 - **`jsh.worker.ts`** imports the nav worker's listener and removes it. It registers its own, which
-  handles jsh's messages first and hands the rest on.
+  handles jsh's messages first and hands the rest on: plan ops (`handle-message.ts`) and perception
+  (`handle-perception.ts`).
 - **`register.ts`** gives that entry to `overrideNavWorkerFactory` (world's
   `service/nav-worker-factory.ts`).
   - The app's entry, `packages/app/src/main.tsx`, imports it. So it is set before any World mounts,
     and only one nav worker is ever spawned.
-  - World's own `nav.worker.ts` is the fallback. `NavWorker`'s `default` case lets jsh's replies pass.
+  - World's own `nav.worker.ts` is the fallback.
+- **Requests.** `w.navWorker.request(msg, signal)` posts one with a `uid`. `NavWorker`'s `default`
+  case settles it from the reply with that `uid`: its `output`, else its `error`.
 - **The navmesh.** The nav worker keeps the one it generates (`getNavMesh`). World exports
   `./worker/nav`, `./worker/nav-util` and `./nav-worker-factory` for the jsh side.
 
@@ -83,9 +85,10 @@ a generator. `handle-message.ts` drives them all the same way.
 which keeps only the 8 nearest segments: from a doorway, those are all its frame. `queryBoundary`
 keeps every wall in range.
 
-**Setup.** Door frames and each room's door keys go to each worker once per map (`jsh-setup`).
-`ensureSetup` sends them before the first request. Door access is sent per request, so nothing goes
-stale.
+**Setup.** One `jsh-setup` per worker, map, layout and spots rev serves plan ops and perception.
+`ensureSetup` in `worker.main.ts` sends it before the first request. It holds door frames, each
+room's door keys, and what perception needs (`docs/perception.md`). Door access is sent per request,
+so nothing goes stale.
 
 **Yields.** Every `yield` of a generator op is a breath. The dispatcher turns it into an event-loop
 yield (`scheduler.yield`, else a macrotask), so e.g. a raycast queued behind a long op still runs.
@@ -93,7 +96,8 @@ yield (`scheduler.yield`, else a macrotask), so e.g. a raycast queued behind a l
 
 ### The client
 
-`plan.main.ts` exports:
+`worker.main.ts` sends every jsh request (`ask`), setting the worker up first, and feeds it door
+changes. `plan.main.ts` exports:
 
 - **`plan({ api, w, op })`** runs one op under the shell's pause and kill. Its result type follows
   `op.key`.
@@ -112,12 +116,12 @@ The commands stay where they were: `park`, `pad` and `nudge` in `core.ts`, and `
 **To add an op:** add a member of `WW.JshOp`, an entry in `WW.JshOutput` and a function on `ops`.
 Then call it with `plan({ api, w, op: { key, ... } })`.
 
-**Parked npcs.** `park` sets `w.e.parked` after the move. A move or respawn clears it, so an npc is
+**Parked npcs.** `park` marks them (`parked.mark` in `pred.ts`) after the move. A move or respawn clears it, so an npc is
 parked only if it was explicitly parked.
 
 ## Perception
 
-The perception worker, spots and sight, has its own doc: `docs/perception.md`.
+Spots and sight, answered on the nav worker, have their own doc: `docs/perception.md`.
 
 ## Stability
 
@@ -126,13 +130,17 @@ The perception worker, spots and sight, has its own doc: `docs/perception.md`.
   - `request-unreachable` answers "reachable".
   - `jsh-plan` answers `error`, e.g. `"no navmesh"` whilst the nav worker is still generating it.
 - **Teardown rejects what is pending.**
-  - `NavWorker` rejects `pendingUnreachable` and `pendingRaycast` with "worker terminated".
+  - `NavWorker` rejects `pendingUnreachable`, `pendingRaycast` and jsh's `pending` with "worker
+    terminated".
   - `PhysicsWorker` releases pending `settle`s.
   - A map change rejects with "map changed".
 - **HMR is per worker.** Each owner has its own `reloads`, bumped by its worker's
   `worker-hot-module-reload`.
   - Editing nav code respawns the nav worker, which re-requests the navmesh and room graph. The
     physics bodies are left alone, and vice versa.
+  - Editing jsh's worker code alone (`jsh.worker.ts` accepts it) reloads with `keepNavMesh`. The
+    respawned worker is sent main's `w.nav.navMesh` (`set-navmesh`) instead of making it again.
+    `nav-updated` is not emitted.
   - `setup-physics` carries the full npc and collider snapshot, so a respawned physics worker
     rebuilds its world.
 - **A worker that fails to load is retried** (`use-worker-load-retry.ts`, dev only).
