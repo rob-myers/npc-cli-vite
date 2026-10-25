@@ -209,9 +209,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (doResult.type === "use-current") {
             await w.npc.spawn({ npcKey, at: to }); // respawn
           } else {
-            const beside = fades ? null : navNear(w, groundPoint);
+            const beside = fades
+              ? null
+              : besideDoable(w, groundPoint, npc.point, helper.maybeGmRoomId(doResult.meta)?.grKey);
             if (beside !== null) {
-              const walk = state.move({ npcKey, to: beside, fast, strafe }); // up to it first
+              const walk = state.move({ npcKey, to: beside, fast, strafe }); // up to it first, on their side
               npc.last.dst = helper.parseGroundPoint(to); // set by the walk: a pause resumes this move
               await walk;
             }
@@ -236,7 +238,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.agentId === null) {
           // fade off the doable: onto the target if near, else beside it, walking on
           if (fades) return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
-          const beside = navNear(w, npc.point);
+          const beside = besideDoable(w, npc.point, groundPoint, w.npc.npcToRoom.get(npcKey)?.grKey);
           if (beside === null) throw Error("not navigable");
           await npc.fadeSpawn({ at: beside, facing: groundPoint });
         }
@@ -1577,13 +1579,25 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
   }, []);
 }
 
-/** Half a quad's or point's width and height in metres, as its image has them: nought for anything else */
-/** The navigable point nearest `p`, if any */
-function navNear(w: WorldState, p: Geom.VectJson): null | Geom.VectJson {
-  const near = w.npc.getClosestPoly(p, 4);
+/** The navigable point nearest `p`, within `within` metres, if any */
+function navNear(w: WorldState, p: Geom.VectJson, within: 0.1 | 4 = 4): null | Geom.VectJson {
+  const near = w.npc.getClosestPoly(p, within);
   return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
 }
 
+/** A navigable point of room `grKey` beside the doable at `at`: the first on the way to `toward`, else the nearest */
+function besideDoable(w: WorldState, at: Geom.VectJson, toward: Geom.VectJson, grKey?: string) {
+  const d = Math.hypot(toward.x - at.x, toward.y - at.y);
+  for (let s = besideStep; s < Math.min(d, w.npc.config.dist.doableLook); s += besideStep) {
+    const p = navNear(w, { x: at.x + ((toward.x - at.x) * s) / d, y: at.y + ((toward.y - at.y) * s) / d }, besideStep);
+    if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) return p;
+  }
+  return navNear(w, at);
+}
+/** Metres between the points `besideDoable` tries */
+const besideStep = 0.1;
+
+/** Half a quad's or point's width and height in metres, as its image has them: nought for anything else */
 function halfSizeOf(sheets: WorldState["sheets"], def: Geomorph.DecorDef) {
   const entry = def.type === "quad" || def.type === "point" ? sheets.decor[def.img ?? ""] : undefined;
   const scale = (sguToWorldScale / 2) * (def.type === "point" ? (def.scale ?? 1) : 1);
