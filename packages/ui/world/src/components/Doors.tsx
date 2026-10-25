@@ -268,7 +268,7 @@ export default function Doors() {
         }
         const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
         if (attr) attr.needsUpdate = true;
-        w.navWorker.worker.postMessage({ type: "set-door-ratios", ratios } satisfies WW.MsgToNavWorker);
+        w.navWorker.post({ type: "set-door-ratios", ratios } satisfies WW.MsgToNavWorker, "fast");
       },
       snapOpen(door) {
         if (door.sealed === true || door.open === true) return false;
@@ -277,7 +277,7 @@ export default function Doors() {
         const attr = state.box.getAttribute("openRatio") as THREE.BufferAttribute | undefined;
         if (attr) attr.needsUpdate = true;
         const ratios = { [door.gdKey]: doorOpenTarget };
-        w.navWorker.worker.postMessage({ type: "set-door-ratios", ratios } satisfies WW.MsgToNavWorker);
+        w.navWorker.post({ type: "set-door-ratios", ratios } satisfies WW.MsgToNavWorker, "fast");
         return true;
       },
       positionInstances() {
@@ -425,7 +425,7 @@ export default function Doors() {
             ratio: state.openRatioArray[instanceId],
           }),
         );
-        w.navWorker.worker.postMessage({ type: "set-raycast-doors", doors } satisfies WW.MsgToNavWorker);
+        w.navWorker.post({ type: "set-raycast-doors", doors } satisfies WW.MsgToNavWorker, "fast");
       },
       sendDataToGpu() {
         if (state.inst) state.inst.instanceMatrix.needsUpdate = true;

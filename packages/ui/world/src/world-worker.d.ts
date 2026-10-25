@@ -6,17 +6,21 @@ declare namespace WW {
   type MsgToNavWorker =
     | { type: "ping" }
     | {
+        /** To bulk alone, which sends it back */
         type: "request-tiled-navmesh";
         mapKey: string;
         /** The layout it is for, sent back with the navmesh */
         gmsHash: number;
         gmGeoms: WW.GmGeomForNav[];
-        rayCast: RaycastSetupData;
       }
     | {
-        /** A respawned worker's navmesh, kept by main from the last it made: nothing is generated or sent back */
+        /** A navmesh made already: bulk's to fast, or main's to a respawned pair. Nothing is sent back */
         type: "set-navmesh";
         navMesh: import("navcat").NavMesh;
+      }
+    | {
+        /** The walls and obstacles rays meet, per map: to fast, at once */
+        type: "set-raycast-statics";
         gmGeoms: WW.GmGeomForNav[];
         rayCast: RaycastSetupData;
       }
@@ -190,6 +194,8 @@ declare namespace WW {
   type WorldSetupResponse = Extract<MsgFromWorker, { type: "world-setup-response" }>;
   type PhysicsDebugDataResponse = Extract<MsgFromWorker, { type: "physics-debug-data-response" }>;
   type TiledNavMeshResponse = Extract<MsgFromNavWorker, { type: "tiled-navmesh-response" }>;
+  /** Which copy of the nav worker: `bulk` makes the navmesh and runs long ops, `fast` answers rays and quick queries */
+  type NavRole = "bulk" | "fast";
   /** Another entry's request, answered by a `NavWorkerReply` with the same `uid` — see `NavWorker`'s `request` */
   type NavWorkerRequest = { type: string; uid: string };
   type NavWorkerReply = { uid: string; output?: unknown; error?: string };

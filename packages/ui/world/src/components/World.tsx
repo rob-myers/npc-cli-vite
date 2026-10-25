@@ -182,7 +182,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       menu: {} as State["menu"],
       n: null as any,
       // stubs swallow posts before the workers mount
-      navWorker: { worker: { postMessage() {} } } as any,
+      navWorker: { workers: null, post() {} } as any,
       net: null as any,
       npc: null as any,
       obs: null as any,

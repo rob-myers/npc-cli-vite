@@ -1092,13 +1092,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         } else if (w.findRoomContaining(dst, true) === null) {
           throw Error(`${"raycast"}: dst must be in a room/doorway ${JSON.stringify({ x: dst.x, y: dst.y })}`);
         }
-        if (!(w.navWorker.worker instanceof Worker)) {
-          throw Error(`${"raycast"}: nav worker not ready`); // a stub swallows posts before it mounts
-        }
+        if (w.navWorker.workers === null) throw Error(`${"raycast"}: nav worker not ready`);
 
         const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
         const signal = new AbortController().signal;
-        return (await w.navWorker.request(msg, signal)) as JshCli.RaycastResult;
+        return (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
       },
       rejectPendingUnreachable(err) {
         for (const uid of Object.keys(state.pendingUnreachable)) {
@@ -1107,7 +1105,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
       },
       async requestUnreachable(npc, srcIndex, dstIndex) {
-        if (w.navWorker?.worker === undefined) {
+        if (w.navWorker.workers === null) {
           return null; // asked before the worker was up, e.g. a scripted move on bootstrap
         }
 
@@ -1124,7 +1122,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         const uid = shortUuid.generate();
-        w.navWorker.worker.postMessage(
+        w.navWorker.post(
           {
             type: "request-unreachable",
             uid,
@@ -1137,6 +1135,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             locked,
             open,
           } satisfies WW.MsgToNavWorker,
+          "fast",
           [locked.buffer, open.buffer],
         );
 

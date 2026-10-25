@@ -111,10 +111,13 @@ export default function Shields() {
         if (w.isMapChanging() === false) w.e.persistDecor();
       },
       sendToRaycast() {
-        w.navWorker.worker.postMessage({
-          type: "set-raycast-shields",
-          shields: [...state.segs].map(([key, { points }]) => ({ key, points })),
-        } satisfies WW.MsgToNavWorker);
+        w.navWorker.post(
+          {
+            type: "set-raycast-shields",
+            shields: [...state.segs].map(([key, { points }]) => ({ key, points })),
+          } satisfies WW.MsgToNavWorker,
+          "fast",
+        );
         w.phasers?.markDirty();
       },
       reaches(from, to, freqs) {

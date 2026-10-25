@@ -1,6 +1,6 @@
 # Perception
 
-Perception answers spot and sight queries: where npcs might stand, and who sees whom. It runs on the nav worker, beside jsh's plan ops. Editing its code respawns the worker but keeps the navmesh (`docs/workers.md`).
+Perception answers spot and sight queries: where npcs might stand, and who sees whom. It runs on the nav worker, beside jsh's plan ops: `hide`, `hidden`, `list` and `view` on its `bulk` copy, the rest on `fast`. Editing its code respawns the worker but keeps the navmesh (`docs/workers.md`).
 
 | Side | File | What |
 | --- | --- | --- |

@@ -15,15 +15,24 @@ import.meta.hot?.on(spotsChangedEvent, () => void spotsRev++);
 /** Which remaking of the spot files is current, e.g. to redraw them */
 export const getSpotsRev = () => spotsRev;
 
-/** One request, after the map setup if need be: its reply's `output`, else it rejects */
+/** One request to the copy it suits, after the map setup if need be: its reply's `output`, else it rejects */
 export function ask<T>(w: JshCli.WorldState, msg: WW.JshRequest | WW.PerceptionQuery, signal: AbortSignal) {
-  const worker = w.navWorker.worker;
-  // a stub swallows posts before it mounts
-  if (!(worker instanceof Worker)) return Promise.reject<T>(Error("worker not ready"));
-  ensureSetup(w, worker);
+  const { workers } = w.navWorker;
+  if (workers === null) return Promise.reject<T>(Error("worker not ready"));
+  const role = roleOf(msg);
+  ensureSetup(w, workers[role]);
   ensureDoorFeed(w);
-  return w.navWorker.request(msg, signal) as Promise<T>;
+  return w.navWorker.request(msg, signal, role) as Promise<T>;
 }
+
+/** Long ops go to `bulk`, so rays and quick queries on `fast` never wait behind them */
+function roleOf(msg: WW.JshRequest | WW.PerceptionQuery): WW.NavRole {
+  if (msg.type === "jsh-plan") return bulkOps.has(msg.op.key) ? "bulk" : "fast";
+  return msg.op.queries.some(({ q }) => bulkQueries.has(q)) ? "bulk" : "fast";
+}
+
+const bulkOps = new Set<WW.JshOpKey>(["park", "pad"]);
+const bulkQueries = new Set<WW.SpotQuery["q"]>(["hide", "hidden", "list", "view"]);
 
 /** A uid for a request from no process */
 export const detachedUid = () => `detached-${++detached}`;
@@ -70,7 +79,7 @@ function ensureSetup(w: JshCli.WorldState, worker: Worker) {
 /** What each worker was last set up for: a respawned one is set up again */
 const setupKeys = new WeakMap<Worker, string>();
 
-/** Tells whichever worker is current of each door seen through or shut, from `w`'s first request on */
+/** Tells both current copies of each door seen through or shut, from `w`'s first request on */
 function ensureDoorFeed(w: JshCli.WorldState) {
   const feed = doorFeeds.get(w);
   if (feed?.madeBy === thisModule) return;
@@ -79,7 +88,7 @@ function ensureDoorFeed(w: JshCli.WorldState) {
     next(e) {
       if (e.key !== "door-opening" && e.key !== "door-closed") return;
       const open = e.key === "door-opening";
-      w.navWorker.worker.postMessage({ type: "perception-door", gdKey: e.gdKey, open } satisfies WW.PerceptionMsgTo);
+      w.navWorker.post({ type: "perception-door", gdKey: e.gdKey, open } satisfies WW.PerceptionMsgTo);
     },
   });
   doorFeeds.set(w, { madeBy: thisModule, sub });

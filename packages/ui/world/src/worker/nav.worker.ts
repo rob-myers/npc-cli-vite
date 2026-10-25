@@ -43,7 +43,6 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
       break;
     }
     case "request-tiled-navmesh": {
-      setRaycastStatics(msg.rayCast, msg.gmGeoms);
       const tiledNavMeshResult = await generateTiledNavMeshResult(msg.gmGeoms);
       navMesh = tiledNavMeshResult.navMesh;
       self.postMessage({
@@ -55,8 +54,11 @@ export const onMessage = async (e: MessageEvent<WW.MsgToNavWorker>) => {
       break;
     }
     case "set-navmesh": {
-      setRaycastStatics(msg.rayCast, msg.gmGeoms);
       navMesh = msg.navMesh;
+      break;
+    }
+    case "set-raycast-statics": {
+      setRaycastStatics(msg.rayCast, msg.gmGeoms);
       break;
     }
     case "set-raycast-shields": {

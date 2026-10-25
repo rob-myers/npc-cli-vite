@@ -6,9 +6,29 @@ Two web workers live under `packages/ui/world/src/worker/`. Each is owned by a c
 | worker | its job | owner | handle |
 |---|---|---|---|
 | `physics.worker.ts` | rapier: npc bodies, door sensors, decor colliders | `PhysicsWorker` | `w.physics` |
-| `nav.worker.ts` | the navmesh, the room graph and its reachability query, raycasts; jsh's plan ops and perception via `jsh.worker.ts` | `NavWorker` | `w.navWorker`, jsh's `worker.main.ts` |
+| `nav.worker.ts`, two copies | the navmesh, the room graph and its reachability query, raycasts; jsh's plan ops and perception via `jsh.worker.ts` | `NavWorker` | `w.navWorker`, jsh's `worker.main.ts` |
 
 `w.nav` is the navmesh response the nav worker last sent. It is not the worker.
+
+## Two copies of the nav worker
+
+`NavWorker` spawns the same bundle twice (`w.navWorker.workers`), so quick answers never wait behind
+long work:
+
+- **`bulk`** makes the navmesh, and runs `park`, `pad`, and spot batches with `hide`, `hidden`,
+  `list` or `view`;
+- **`fast`** answers rays, `request-unreachable`, `boundary`, `nudge`, and every other spot batch:
+  `sees`, `explain`, `makeWay`...
+
+`w.navWorker.post(msg, role?)` sends to one copy, or to both. `request(msg, signal, role)` awaits a
+reply from one. jsh's `ask` picks the role (`roleOf` in `worker.main.ts`).
+
+- **Both get** the room graph, door changes (`perception-door`), and jsh's setup, each on its first
+  request.
+- **Only `fast` gets** the ray statics (`set-raycast-statics`), doors and their ratios, and shields.
+- **The navmesh.** `bulk` makes it. Main sends it on to `fast` (`set-navmesh`) as it arrives. Rays
+  answer meanwhile: generating one for `101+edges` takes about 670 ms, whilst a ray answers in about
+  50 ms of `fast` starting (it waited about 690 ms with one worker).
 
 ## Why two
 
@@ -55,7 +75,7 @@ the **entry** the world spawns:
   - The app's entry, `packages/app/src/main.tsx`, imports it. So it is set before any World mounts,
     and only one nav worker is ever spawned.
   - World's own `nav.worker.ts` is the fallback.
-- **Requests.** `w.navWorker.request(msg, signal)` posts one with a `uid`. `NavWorker`'s `default`
+- **Requests.** `w.navWorker.request(msg, signal, role)` posts one with a `uid`. `NavWorker`'s `default`
   case settles it from the reply with that `uid`: its `output`, else its `error`.
 - **The navmesh.** The nav worker keeps the one it generates (`getNavMesh`). World exports
   `./worker/nav`, `./worker/nav-util` and `./nav-worker-factory` for the jsh side.
@@ -125,7 +145,7 @@ parked only if it was explicitly parked.
 `SegGrid` (`service/seg-grid.ts`) along it, every crossing nearest first.
 
 - **What it holds.** Walls, door centre lines, and the edges of every obstacle above the floor. Walls
-  and obstacles come with the navmesh request (`rayCast`, in each geomorph's own coords). Doors come
+  and obstacles come per map (`set-raycast-statics`, in each geomorph's own coords). Doors come
   from `Doors` (`set-raycast-doors`): on each build, and to a fresh worker.
 - **What stops it.** A wall, or a door crossed outside its gap. The gap grows from one end by the
   door's open ratio (`gapAtHighLambda`). `Doors.onTick` posts the ratios that changed
@@ -157,17 +177,18 @@ Spots and sight, answered on the nav worker, have their own doc: `docs/perceptio
   - A map change rejects with "map changed".
 - **HMR is per worker.** Each owner has its own `reloads`, bumped by its worker's
   `worker-hot-module-reload`.
-  - Editing nav code respawns the nav worker, which re-requests the navmesh and room graph. The
+  - Editing nav code respawns both nav copies, which re-request the navmesh and room graph. The
     physics bodies are left alone, and vice versa.
+  - Both copies post `worker-hot-module-reload`. Only `bulk`'s respawns the pair.
   - Editing jsh's worker code alone (`jsh.worker.ts` accepts it) reloads with `keepNavMesh`. The
-    respawned worker is sent main's `w.nav.navMesh` (`set-navmesh`) instead of making it again.
+    respawned pair is sent main's `w.nav.navMesh` (`set-navmesh`) instead of making it again.
     `nav-updated` is not emitted.
   - `setup-physics` carries the full npc and collider snapshot, so a respawned physics worker
     rebuilds its world.
 - **A worker that fails to load is retried** (`use-worker-load-retry.ts`, dev only).
   - A syntax error saved at the wrong moment spawns a worker whose module never loads. It never
     speaks, and has no hmr client to hear the fix.
-  - One that errors before speaking is respawned every 2s until it comes up.
+  - One that errors before speaking is respawned every 2s until it comes up, with its pair.
   - To respawn by hand: `w navWorker.set '{ reloads: 5 }'` (any new value).
 - **Setup is per worker instance.** jsh's `ensureSetup` keys its map setup by `Worker`, so a
   respawned nav worker is set up again before its first request.
