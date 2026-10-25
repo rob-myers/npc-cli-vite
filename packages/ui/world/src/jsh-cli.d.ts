@@ -206,6 +206,8 @@ declare namespace JshCli {
     near?: boolean;
     /** A push, e.g. a sidestep's: it moves them even whilst stood pacified */
     shove?: boolean;
+    /** Fade onto or off a doable however far. Else only within `doableLook`, walking the rest */
+    far?: boolean;
   };
   /** Whilst strafing, a look eases them round without stopping — see `npc.anim.face.aim` */
   type LookOpts = {

@@ -175,7 +175,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
         };
       },
-      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near, shove }) {
+      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near, shove, far }) {
         const npc = w.npc.get(npcKey);
         if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) throw Error("hurt");
         if (w.player.is(npcKey) && w.npcFocus?.isFixated() === true) throw Error("focused");
@@ -190,6 +190,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (result.success === true) groundPoint = { x: result.position[0], y: result.position[2] };
         }
         const { config } = w.npc;
+        /** Near enough to fade onto or off a doable, else they walk the rest */
+        const fades = far === true || npc.distanceTo(groundPoint) <= config.dist.doableLook;
 
         if (doResult.type === "occupied") {
           throw Error("occupied");
@@ -207,6 +209,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (doResult.type === "use-current") {
             await w.npc.spawn({ npcKey, at: to }); // respawn
           } else {
+            const beside = fades ? null : navNear(w, groundPoint);
+            if (beside !== null) {
+              const walk = state.move({ npcKey, to: beside, fast, strafe }); // up to it first
+              npc.last.dst = helper.parseGroundPoint(to); // set by the walk: a pause resumes this move
+              await walk;
+            }
             w.events.next({ key: "npc-pre-do", npcKey });
 
             if (w.npc.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < config.dist.doableLook) {
@@ -226,9 +234,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         if (npc.agentId === null) {
-          // fade spawn from doable to nav
-          await npc.fadeSpawn({ at: result.position, facingTarget: true });
-          return;
+          // fade off the doable: onto the target if near, else beside it, walking on
+          if (fades) return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
+          const beside = navNear(w, npc.point);
+          if (beside === null) throw Error("not navigable");
+          await npc.fadeSpawn({ at: beside, facing: groundPoint });
         }
 
         w.npc.setNpcDo(npcKey, null); // in case do=stand
@@ -1568,6 +1578,12 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 }
 
 /** Half a quad's or point's width and height in metres, as its image has them: nought for anything else */
+/** The navigable point nearest `p`, if any */
+function navNear(w: WorldState, p: Geom.VectJson): null | Geom.VectJson {
+  const near = w.npc.getClosestPoly(p, 4);
+  return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
+}
+
 function halfSizeOf(sheets: WorldState["sheets"], def: Geomorph.DecorDef) {
   const entry = def.type === "quad" || def.type === "point" ? sheets.decor[def.img ?? ""] : undefined;
   const scale = (sguToWorldScale / 2) * (def.type === "point" ? (def.scale ?? 1) : 1);
