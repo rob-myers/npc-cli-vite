@@ -346,6 +346,13 @@ export default function Phasers() {
           w.r3f?.invalidate();
         });
       },
+      respawned(npcKey) {
+        const [arm, npc] = [state.arms.get(npcKey), w.n?.[npcKey]];
+        if (arm?.armed !== true || npc === undefined) return;
+        state.disarm(npcKey);
+        // at rest before they fade back in, so it never shows where it was
+        if (isPhaserPose(npc.anim.upper.key)) npc.anim.setUpper(null, { fadeSecs: phaserConfig.snapSecs });
+      },
       sync() {
         state.onTick(w.disabled === true); // paused: nothing fades, so a change is at once
         w.r3f?.invalidate();
@@ -532,7 +539,8 @@ export default function Phasers() {
         const ry = armBearingOf(npc, arm);
         const [tx, tz] = target === undefined ? [0, 0] : [target.position.x, target.position.z];
 
-        arm.cast = { x, z, ry, tx, tz, target: target?.key ?? null };
+        const cast = { x, z, ry, tx, tz, target: target?.key ?? null };
+        arm.cast = cast;
         arm.castSecs = secs;
         arm.casting = true;
         // off the map throws: read as blocked
@@ -554,7 +562,7 @@ export default function Phasers() {
                 () => none,
               ),
         ] as const)
-          .then(([hits, seen]) => Object.assign(arm, hits, seen))
+          .then(([hits, seen]) => arm.cast === cast && Object.assign(arm, hits, seen)) // else respawned since
           .finally(() => {
             arm.casting = false;
             w.r3f?.invalidate();
@@ -587,6 +595,7 @@ export default function Phasers() {
         if (e.key === "door-open" || e.key === "door-closed") state.markDirty();
         // whoever carries one has it in hand: on taking one up, standing up, or arriving
         else if (e.key === "carried" || e.key === "npc-do" || e.key === "spawned") state.hold(e.npcKey);
+        if (e.key === "spawned" && e.spawns > 1) state.respawned(e.npcKey);
         else if (e.key === "spawned-many") e.npcKeys.forEach(state.hold);
       },
     });
@@ -662,6 +671,8 @@ export type State = PhaserResources & {
   wield(npc: Npc, arm: ArmEntry, delta: number): void;
   /** Raycast `reach` ahead and to the target — but only once something has changed, and one at a time */
   recast(npc: Npc, arm: ArmEntry, target: undefined | Npc, secs: number): void;
+  /** Respawned armed, they lower it at once: the gun is never left raised into a wall it was put beside */
+  respawned(npcKey: string): void;
 };
 
 type ArmEntry = {
@@ -977,6 +988,8 @@ const phaserConfig = {
   drawInSecs: 0.3,
   /** Seconds to draw in crouched: the gun drops with them, and is nearer what it meets */
   quickDrawInSecs: 0.12,
+  /** An arm put at rest at once, e.g. on a respawn */
+  snapSecs: 0.01,
   /** Seconds the arm takes to come down, stowed lain */
   stowSecs: 0.8,
   /** Seconds back out to the aim, once clear */
