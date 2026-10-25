@@ -288,7 +288,8 @@ export default function Phasers() {
         tmpAt.addScaledVector(along, phaserConfig.grip * tmpScale.x * (1 - present));
         const sign = (item?.dead?.length ?? 0) > 0 ? -1 : 1; // negative: dead, see `gunNodes`
         put(state.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
-        put(state.quatData, i, tmpQuat.x, tmpQuat.y, tmpQuat.z, tmpQuat.w);
+        const flip = arm.armed === tmpQuat.w > 0 ? 1 : -1; // so `w > 0` says armed, see `gunNodes`
+        put(state.quatData, i, tmpQuat.x * flip, tmpQuat.y * flip, tmpQuat.z * flip, tmpQuat.w * flip);
         return true;
       },
       strike(npc, arm) {

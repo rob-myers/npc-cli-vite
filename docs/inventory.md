@@ -29,7 +29,7 @@ nor phasers are mirrored.
 
 After the slots come buttons for the player themself. A client gets only these. One that is on is white, else grey.
 
-- **gait**, not on a client: walk or run (`w.player.toggleRun()`). A ↔ badge shows whilst strafing, toggled by a double tap of Shift. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim" instead, and its "x" lowers the phaser.
+- **gait**, not on a client: walk or run (`w.player.toggleRun()`). A ↔ badge shows whilst strafing, toggled by a double tap of Shift. Whilst on, a notice "strafe" stays over the bar, its "x" turning it off. With the phaser raised it says "aim", its "x" lowering the phaser, and "strafe" with no "x": a double tap of Shift does nothing then. "aim blocked", in grey, is whilst something in the way draws the phaser in.
 - **follow**: a press turns it on or off, as `f` does.
 - **compass**, desktop only: the point `w` heads nearest, and a marker on its rim where `w` heads on screen.
 

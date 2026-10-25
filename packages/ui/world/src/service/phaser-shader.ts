@@ -45,7 +45,7 @@ export function createPhaserResources() {
     new THREE.InstancedBufferAttribute(data, 4).setUsage(THREE.DynamicDrawUsage),
   );
 
-  /** `glow` marks the gun's emitter, lit as the beam is */
+  /** `glow` marks the gun's emitter, lit whilst armed */
   const glowing = (geo: THREE.BufferGeometry, glow: number) =>
     geo.setAttribute(
       "phaserGlow",
@@ -142,6 +142,8 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
   const vSeen = varying(seenBy(view)(rooms.x, rooms.z), "vGunSeen");
   const glow = attribute<"float">("phaserGlow", "float");
   const vGlow = varying<"float">(glow as THREE.Node<"float">, "vGunGlow");
+  /** Armed, its quaternion's `w` is positive: `q` and `-q` turn alike */
+  const vArmed = varying<"float">(quat.w.greaterThan(0).select(1, 0) as THREE.Node<"float">, "vGunArmed");
   /** A dead one's scale is negative */
   const vDead = varying<"float">(gun.w.lessThan(0).select(1, 0) as THREE.Node<"float">, "vGunDead");
   /** Lit from above, so its faces tell apart */
@@ -154,7 +156,7 @@ function gunNodes({ color, gunColor, deadColor, gain }: PhaserResources, view: P
     const face = uv();
     const fromEdge = face.min(face.oneMinus()).div(fwidth(face).max(1e-6));
     const edge = smoothstep(edgePx - 0.5, edgePx + 0.5, fromEdge.x.min(fromEdge.y)).oneMinus();
-    const emitter = mix(color.mul(gain.min(1)), deadColor.mul(vShade), vDead);
+    const emitter = mix(mix(gunColor, deadColor, vDead).mul(vShade), color.mul(gain.min(1)), vArmed);
     const body = mix(gunColor.mul(vShade), emitter, vGlow);
     return vec4(body.mul(edge.mul(edgeDarken).oneMinus()), a);
   })();
