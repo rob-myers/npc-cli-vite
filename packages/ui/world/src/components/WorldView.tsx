@@ -1786,7 +1786,8 @@ export function WorldView(props: React.PropsWithChildren) {
         onPointerDown={state.forwardPointer}
         className={cn(
           indicatorClassName,
-          "top-[40%] transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
+          // over npc focus's labels (`z-20`)
+          "top-[40%] z-30 transition-opacity duration-500 bg-black/60 rounded-xl touch-none",
           // it stays mounted for the fade out, so it must stop taking clicks the moment it is not
           // paused — else an invisible button sits over the middle of a running world
           state.showsPaused() === false
