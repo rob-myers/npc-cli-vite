@@ -7,7 +7,7 @@ awaitWorld
 predicates
 inventory
 sidestep
-spot_overlay
+spots --show
 
 `.trim();
 
