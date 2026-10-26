@@ -198,7 +198,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         }
 
         // so can resume doable or nav
-        npc.last.dst = helper.parseGroundPoint(to);
+        const dst = (npc.last.dst = helper.parseGroundPoint(to));
+        /** Another move has taken them over, e.g. whilst they walked up to or faded off a doable */
+        const superseded = () => npc.last.dst !== dst;
 
         npc.rejectAll(new Error("move again"));
 
@@ -214,8 +216,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
               : besideDoable(w, groundPoint, npc.point, helper.maybeGmRoomId(doResult.meta)?.grKey);
             if (beside !== null) {
               const walk = state.move({ npcKey, to: beside, fast, strafe }); // up to it first, on their side
-              npc.last.dst = helper.parseGroundPoint(to); // set by the walk: a pause resumes this move
+              npc.last.dst = dst; // set by the walk: a pause resumes this move
               await walk;
+              if (superseded()) return;
             }
             w.events.next({ key: "npc-pre-do", npcKey });
 
@@ -241,6 +244,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           const beside = besideDoable(w, npc.point, groundPoint, w.npc.npcToRoom.get(npcKey)?.grKey);
           if (beside === null) throw Error("not navigable");
           await npc.fadeSpawn({ at: beside, facing: groundPoint });
+          if (superseded()) return;
         }
 
         w.npc.setNpcDo(npcKey, null); // in case do=stand
@@ -1585,17 +1589,21 @@ function navNear(w: WorldState, p: Geom.VectJson, within: 0.1 | 4 = 4): null | G
   return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
 }
 
-/** A navigable point of room `grKey` beside the doable at `at`: the first on the way to `toward`, else the nearest */
+/** A navigable point of room `grKey` beside the doable at `at`: the first on the way to `toward`, else turning from it */
 function besideDoable(w: WorldState, at: Geom.VectJson, toward: Geom.VectJson, grKey?: string) {
-  const d = Math.hypot(toward.x - at.x, toward.y - at.y);
-  for (let s = besideStep; s < Math.min(d, w.npc.config.dist.doableLook); s += besideStep) {
-    const p = navNear(w, { x: at.x + ((toward.x - at.x) * s) / d, y: at.y + ((toward.y - at.y) * s) / d }, besideStep);
-    if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) return p;
+  const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
+  for (let k = 0; k <= besideRays; k++) {
+    // either side in turn, round to behind
+    const angle = ahead + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * ((2 * Math.PI) / besideRays);
+    for (let s = besideStep; s <= w.npc.config.dist.doableLook; s += besideStep) {
+      const p = navNear(w, { x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
+      if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) return p;
+    }
   }
-  return navNear(w, at);
+  return null;
 }
-/** Metres between the points `besideDoable` tries */
-const besideStep = 0.1;
+/** Metres between the points `besideDoable` tries, and the ways it tries round the doable */
+const [besideStep, besideRays] = [0.1, 16] as const;
 
 /** Half a quad's or point's width and height in metres, as its image has them: nought for anything else */
 function halfSizeOf(sheets: WorldState["sheets"], def: Geomorph.DecorDef) {
