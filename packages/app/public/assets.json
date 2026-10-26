@@ -15681,7 +15681,7 @@
           "coordinates": [
             [[1.6, 3.1875], [1.6, 4.3125], [1.4, 4.3125], [1.4, 3.1875]]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "fresher"}
+          "meta": {"door": true, "slide": [0, -1], "label": "fresher"}
         },
         {
           "type": "Polygon",
@@ -47117,7 +47117,12 @@
               [28.3937, 27.1938]
             ]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "fresher", "det": -1}
+          "meta": {
+            "door": true,
+            "slide": [0, -1],
+            "label": "fresher",
+            "det": -1
+          }
         },
         {
           "type": "Polygon",
@@ -56132,7 +56137,7 @@
           "coordinates": [
             [[1.6, 3.1875], [1.6, 4.3125], [1.4, 4.3125], [1.4, 3.1875]]
           ],
-          "meta": {"door": true, "slide": [0, 1], "label": "fresher"}
+          "meta": {"door": true, "slide": [0, -1], "label": "fresher"}
         },
         {
           "type": "Polygon",
@@ -86925,7 +86930,7 @@
             ],
             "meta": {
               "door": true,
-              "slide": [0, 1],
+              "slide": [0, -1],
               "label": "fresher",
               "det": -1
             }

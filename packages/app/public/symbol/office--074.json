@@ -387,7 +387,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "9e48b459-2d92-2f4d-7129-5a2982ee5199",
@@ -411,7 +411,7 @@
         },
         {
           "id": "bc41ea70-1f02-5305-b067-233f4e433601",
-          "name": "door slide=[0,1]",
+          "name": "door slide=[0,-1]",
           "locked": true,
           "visible": true,
           "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 56, "f": 127.5},
