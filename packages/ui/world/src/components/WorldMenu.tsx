@@ -36,7 +36,13 @@ import { compilingShadersText, defaultBrightness } from "../const.env";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
 import { queryClientApi } from "../service/query-client";
-import { cameraPresets, distanceOfView, getDefaultCameraView, getPresetCameraView } from "../service/camera-view";
+import {
+  cameraPresets,
+  distanceOfView,
+  getDefaultCameraView,
+  getPresetCameraView,
+  minNearView,
+} from "../service/camera-view";
 import { type CameraView, getSiteStore, getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
 import type { CameraModeType } from "./CameraControls";
@@ -1201,7 +1207,7 @@ function CameraSliders({ touch }: { touch: boolean }) {
 
   const rows = [
     { key: "fov", label: "fov", min: 15, max: 60, step: 1, unit: "°" },
-    { key: "nearView", label: "near", min: 3, max: 20, step: 0.1, unit: "m" },
+    { key: "nearView", label: "near", min: minNearView, max: 20, step: 0.1, unit: "m" },
     { key: "farView", label: "far", min: 3, max: 40, step: 0.1, unit: "m" },
   ] as const;
   const chip = "cursor-pointer rounded px-1 hover:bg-white/10";

@@ -1,3 +1,4 @@
+import { isTouchDevice } from "@npc-cli/util/legacy/dom";
 import * as THREE from "three/webgpu";
 import { cameraFov, defaultCameraMaxDistance, defaultCameraMinDistance } from "../const.env";
 import type { CameraView } from "./storage";
@@ -26,14 +27,17 @@ export function getDefaultCameraView(): CameraView {
   };
 }
 
+/** Metres of floor the near stop shows at least: as zoomed in as a framing goes */
+export const minNearView = 3;
+
 /**
  * Framings to try: a wider fov nearer in, so the near stop shows less floor. `near` and `far` scale the
- * default's views, the far less the wider the fov, to stay zoomed in
+ * default's views, the far less the wider the fov, to stay zoomed in. A `near` of `null` is `minNearView`: `high`'s on touch
  */
 export const cameraPresets = {
   low: { fov: 20, near: 1.2, far: 1 },
   mid: { fov: 30, near: 1, far: 0.85 },
-  high: { fov: 45, near: 0.8, far: 0.7 },
+  high: { fov: 45, near: isTouchDevice() ? null : 0.8, far: 0.7 },
 } as const;
 
 /** Each key's step through the presets, low to high — see `WorldView`'s `onKeyDown`. `=` is `+` unshifted */
@@ -51,5 +55,6 @@ export function stepCameraPreset(view: CameraView, step: -1 | 1): keyof typeof c
 export function getPresetCameraView(name: keyof typeof cameraPresets): CameraView {
   const { fov, near, far } = cameraPresets[name];
   const { nearView, farView } = getDefaultCameraView();
-  return { fov, nearView: nearView * near, farView: Math.max(farView * far, nearView * near) };
+  const presetNear = near === null ? minNearView : nearView * near;
+  return { fov, nearView: presetNear, farView: Math.max(farView * far, presetNear) };
 }
