@@ -1142,8 +1142,9 @@ export function WorldView(props: React.PropsWithChildren) {
               (picked.type === "floor" || picked.type === "decor" || picked.type === "spot") &&
               w.npc.getClosestPoly(point, 0.1).success,
             do:
-              // picked decor with meta.do string
-              ((picked.type === "decor" || picked.type === "spot") && !!w.decor.byKey[picked.decorKey]?.meta.do) ||
+              // picked decor with meta.do string: kept, e.g. `sit`, as `move` reads it
+              ((picked.type === "decor" || picked.type === "spot") &&
+                (w.decor.byKey[picked.decorKey]?.meta.do ?? false)) ||
               // picked obstacle with meta.decorIds array
               (picked.type === "obstacle" && !!w.gms[picked.gmId].obstacles[picked.obstacleId].meta.decorIds),
           },
