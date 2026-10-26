@@ -16,6 +16,9 @@ slow a walker for a goal beside one; a long range for npcs is what lets them pla
 The optional agent param is used by `updateLocalBoundaries` in place of `collisionQueryRange`, for
 the gather and its re-gather threshold. `getAgentParams` sets both; `devHotReload` re-applies them.
 
+It is `0` (`crowdConfig`): the navmesh is already cut back from walls by a body's width, so avoidance takes
+no walls, else a narrow strip of navmesh slows a walker as if they touched one.
+
 ## 3. A corner given up stays given up
 
 Each tick an agent steers at the first corner of its corridor. Navcat gives a corner up only
