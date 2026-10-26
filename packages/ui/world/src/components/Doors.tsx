@@ -112,6 +112,7 @@ export default function Doors() {
                 sealed === true ? true : (prev?.locked ?? savedLocked?.has(gdKey) ?? connector.meta.locked === true),
               open: prev?.open ?? false,
               sealed,
+              held: prev?.held ?? false,
               proximity: connector.meta.proximity ?? auto === true,
               hull,
 
@@ -498,6 +499,8 @@ export default function Doors() {
 
         // Actually lock/unlock door
         door.locked = !door.locked;
+        door.held = door.locked && door.open && opts.hold === true;
+        if (door.held) state.cancelClose(door); // else a close already due shuts it
 
         state.syncLockTint(door);
         state.persistLocks();

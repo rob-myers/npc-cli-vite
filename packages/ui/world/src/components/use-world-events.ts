@@ -1505,6 +1505,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           warn(`${gdKey}: toggleDoor: no such door`); // e.g. onchange map, or a stale pick
           return false;
         }
+        if (door.held === true && opts.npcKey !== undefined) return false; // a held door is left to presses
 
         // clear if closed or no npc "inside" collider
         opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.inside.size > 0);
@@ -1585,7 +1586,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
-        if (!door) return; // onchange map
+        if (!door || door.held === true) return; // onchange map, or held open
 
         w.door.cancelClose(door);
         door.cancelClose = state.after(defaultDoorCloseMs / 1000, () => {
