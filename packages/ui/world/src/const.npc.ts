@@ -121,8 +121,8 @@ export const crowdConfig = {
   /** Neighbour search range (tried 0.5–1.5) */
   collisionQueryRange: 0.7,
   // collisionQueryRange: 1.7,
-  /** Wall search range: shorter, else walkers slow early beside walls */
-  boundaryQueryRange: 0.4,
+  /** Wall search range for avoidance: none, since the navmesh is already cut back from walls by a body's width */
+  boundaryQueryRange: 0,
   /** Keeps a side once taken: `2` intersects less, `0.75` rounds npcs better */
   avoidanceWeightCurVel: 0.75,
   // avoidanceWeightCurVel: 1.5,

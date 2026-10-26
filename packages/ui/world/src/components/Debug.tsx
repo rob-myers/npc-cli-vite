@@ -360,7 +360,10 @@ export function Debug() {
           event.clickId === undefined // ignore e.g. `pick 1`
         ) {
           const { gdKey } = event.meta;
-          if (gdKey !== undefined && w.helper.isGmDoorKey(gdKey)) w.e.toggleDoor(gdKey);
+          if (gdKey === undefined || w.helper.isGmDoorKey(gdKey) === false) return;
+          // a long press locks it, keyless: open, it is held open
+          if (event.longDown === true) w.e.toggleLock(gdKey, { hold: true });
+          else w.e.toggleDoor(gdKey);
         }
       },
     });

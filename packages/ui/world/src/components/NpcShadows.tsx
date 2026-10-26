@@ -21,7 +21,8 @@ export default function NpcShadows() {
         for (const npc of Object.values(w.n)) {
           xzoData[i * 4] = npc.position.x;
           xzoData[i * 4 + 1] = npc.position.z;
-          xzoData[i * 4 + 2] = 1;
+          // sat or lain, the body no longer hides it
+          xzoData[i * 4 + 2] = npc.isNotStanding() ? 0 : 1;
           // a shadow goes where the npc casting it goes, faded room and all
           xzoData[i * 4 + 3] = npc.roomSlot.value;
           i++;

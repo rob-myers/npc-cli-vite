@@ -31,11 +31,19 @@ import {
   roomLabel,
   unfoldDelayMs,
 } from "../const.env";
+import type { WorldUiMeta } from "../schema";
 import {
   type CameraControls as BaseCameraControls,
   defaultZoomSettleRate,
   zoomCommitIn,
 } from "../service/camera-controls";
+import {
+  cameraPresetStepByKey,
+  getDefaultCameraView,
+  getPresetCameraView,
+  getZoomStops,
+  stepCameraPreset,
+} from "../service/camera-view";
 import { createExtraFx, type ExtraFx, type ExtraFxKey, parseExtraFxKey, warpExtraFxUv } from "../service/extra-fx";
 import {
   createFadeRooms,
@@ -61,14 +69,14 @@ import { createPostProcessing, type PostProcessing as PostProcessingType } from 
 import { createRgbShift, type RgbShiftFx, rgbShiftAmount } from "../service/rgb-shift";
 import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
-import { type CameraView, getSiteStore, getWorldStore, type PersistedCamera } from "../service/storage";
 import {
-  cameraPresetStepByKey,
-  getDefaultCameraView,
-  getPresetCameraView,
-  getZoomStops,
-  stepCameraPreset,
-} from "../service/camera-view";
+  type CameraView,
+  getSiteStore,
+  getWorldMapStore,
+  getWorldStore,
+  type PersistedCamera,
+  type PersistedNpcs,
+} from "../service/storage";
 import { selectAs } from "../service/tsl";
 import { getWorldFlag, setWorldFlag } from "../service/world-flags";
 import { CameraControls, type CameraModeType } from "./CameraControls";
@@ -98,7 +106,6 @@ export function WorldView(props: React.PropsWithChildren) {
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
       follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
-      embodiedPolar: (saved.cameraInitial ?? defaultInitialCamera).polar,
       zoomHeld: false,
       embodiedFrom: 0,
       embodiedDragging: false,
@@ -123,7 +130,11 @@ export function WorldView(props: React.PropsWithChildren) {
         rotateSpeed: w.touchDevice ? cameraSpeed.rotate.touch : cameraSpeed.rotate.desktop,
         zoomSpeed: w.touchDevice ? cameraSpeed.zoom.touch : cameraSpeed.zoom.desktop,
       },
-      initial: saved.cameraInitial ?? defaultInitialCamera,
+      ...openingCamera(
+        (uiStoreApi.getUi(w.id)?.meta as undefined | WorldUiMeta)?.cameraOnPlayer === true,
+        saved.cameraInitial,
+        getWorldMapStore(w.key, w.mapKey).read().npcs,
+      ),
       persistedCamera: null,
       lookAtAnimId: 0,
       lookingAt: false,
@@ -902,6 +913,9 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       onCreated(rootState) {
         w.threeReady = true;
+        // used once: later mounts restore the camera saved
+        if (state.initial.onPlayer)
+          uiStoreApi.setUiMeta(w.id, (draft) => void ((draft as WorldUiMeta).cameraOnPlayer = false));
         // override THREE.WebGPURenderer
         w.r3f = rootState as Omit<typeof rootState, "gl"> as typeof w.r3f;
         w.texFloor.renderer = w.texCeil.renderer = w.texObs.renderer = w.r3f.gl;
@@ -1142,8 +1156,9 @@ export function WorldView(props: React.PropsWithChildren) {
               (picked.type === "floor" || picked.type === "decor" || picked.type === "spot") &&
               w.npc.getClosestPoly(point, 0.1).success,
             do:
-              // picked decor with meta.do string
-              ((picked.type === "decor" || picked.type === "spot") && !!w.decor.byKey[picked.decorKey]?.meta.do) ||
+              // picked decor with meta.do string: kept, e.g. `sit`, as `move` reads it
+              ((picked.type === "decor" || picked.type === "spot") &&
+                (w.decor.byKey[picked.decorKey]?.meta.do ?? false)) ||
               // picked obstacle with meta.decorIds array
               (picked.type === "obstacle" && !!w.gms[picked.gmId].obstacles[picked.obstacleId].meta.decorIds),
           },
@@ -1245,6 +1260,7 @@ export function WorldView(props: React.PropsWithChildren) {
         w.r3f?.invalidate();
       },
       showCentreHint() {
+        if (state.initial.onPlayer === true) return; // already on them
         state.set({ centreHint: true });
       },
       setFollow(follow) {
@@ -1857,7 +1873,13 @@ export type State = {
   /** The persisted zoom stops are always given — `easeFrontier` eases the live ones back to them */
   ctrlOpts: MapControlsProps & { minDistance: number; maxDistance: number };
   /** Avoid HMR veil */
-  initial: { azimuthal: number; polar: number; position: { x: number; y: number; z: number } };
+  initial: {
+    azimuthal: number;
+    polar: number;
+    position: { x: number; y: number; z: number };
+    /** Opened on the player, by `cameraOnPlayer` */
+    onPlayer?: true;
+  };
   /** What `persistCamera` last stored, so a frame that moved nothing stores nothing */
   persistedCamera: null | PersistedCamera;
   lastPointer: {
@@ -2222,6 +2244,16 @@ function cameraDidNotChange(last: null | PersistedCamera, { spherical, target }:
     last.position.y === spherical.radius &&
     last.position.z === target.z
   );
+}
+
+/** Where the camera opens: as saved, else the default. With `onPlayer` (`cameraOnPlayer`), on the map's saved player */
+function openingCamera(onPlayer: boolean, saved: null | PersistedCamera, npcs: null | PersistedNpcs) {
+  const at = npcs?.npcs.find((npc) => npc.key === npcs.playerKey)?.at;
+  const { position } = defaultInitialCamera;
+  const initial: State["initial"] = onPlayer
+    ? { ...defaultInitialCamera, position: { ...position, ...(at && { x: at.x, z: at.y }) }, onPlayer }
+    : (saved ?? defaultInitialCamera);
+  return { embodiedPolar: initial.polar, initial };
 }
 
 const defaultInitialCamera: State["initial"] = {

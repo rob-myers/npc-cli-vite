@@ -124,13 +124,13 @@ export default function Decor() {
         return true;
       },
       writeRoomSlot(slots, id, decor) {
-        const { gmId, roomId } = decor.meta;
-        const slot =
-          typeof gmId === "number" && typeof roomId === "number" && roomId >= 0
-            ? slotOf(gmId, roomId)
-            : alwaysShownSlot;
-        slots[id * 2] = slot;
-        slots[id * 2 + 1] = slot;
+        const { gmId, roomId, doorId } = decor.meta;
+        const slot = (r: unknown) =>
+          typeof gmId === "number" && typeof r === "number" && r >= 0 ? slotOf(gmId, r) : alwaysShownSlot;
+        // a door's switch is in its door's other room too
+        const beyond = w.gms[gmId]?.doors[doorId]?.roomIds.find((r) => r !== null && r !== roomId);
+        slots[id * 2] = slot(roomId);
+        slots[id * 2 + 1] = slot(beyond ?? roomId);
       },
       clearGridAndRoomLookup() {
         Object.values(state.grid).forEach((col) => col.clear());
@@ -746,8 +746,9 @@ export default function Decor() {
       const texNode = texture(w.texDecor.tex, transformedUv);
       texNode.depthNode = int(uvDataAttr.y.floor()); // decode sheetId
 
-      // decor stands in one room, so both components of `roomSlots` carry it and `.x` will do
-      const fade = w.view.fadeRoomsFx.getVisiblity(attribute<"vec2">("roomSlots", "vec2").x);
+      // shown if either of its rooms is: one room twice, bar a door's switch
+      const slots = attribute<"vec2">("roomSlots", "vec2");
+      const fade = w.view.fadeRoomsFx.getVisiblity(slots.x).max(w.view.fadeRoomsFx.getVisiblity(slots.y));
       // `1` outside `sight`, which alone takes hidden decor to the fade's `shade`
       const shown = fade.max(w.view.fadeRoomsFx.sightNode.oneMinus());
       /** Absent until the floor's art is there, so decor arrives with the unfold — see `Floor.fadeTo` */

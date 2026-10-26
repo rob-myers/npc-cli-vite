@@ -10,7 +10,7 @@ mesh of translucent quads, two-sided geometry drawn `FrontSide`, `renderOrder` 4
 | A wall | `wallHeight`, `const.env` (and its copy in `worker/physics.ts`) | 1.8 m |
 | A door | `doorHeight`, `const.env` | the wall's, less 1 mm |
 | A lintel | `lintelHeight`, `const.env` | 0.1 m, hung over the door's top |
-| A door's depth | `doorPanelDepth`, `const.env` | 0.12 m, a hull door 0.24 m |
+| A door's depth | `doorPanelDepth`, `const.env` | 0.101 m, a hull door 0.201 m: just proud of its walls |
 
 A door is a little deeper than the walls either side (faces ±0.05 m, a hull's about ±0.1 m), so it
 stands out of them.

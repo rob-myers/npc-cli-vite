@@ -112,6 +112,7 @@ export default function Doors() {
                 sealed === true ? true : (prev?.locked ?? savedLocked?.has(gdKey) ?? connector.meta.locked === true),
               open: prev?.open ?? false,
               sealed,
+              held: prev?.held ?? false,
               proximity: connector.meta.proximity ?? auto === true,
               hull,
 
@@ -319,11 +320,13 @@ export default function Doors() {
             tmpMat.transformPoint(tmpV1);
             tmpMat.transformPoint(tmpV2);
 
-            const dx = tmpV2.x - tmpV1.x - 0.01;
+            const dx = tmpV2.x - tmpV1.x;
             const dz = tmpV2.y - tmpV1.y;
             const len = tmpV1.distanceTo(tmpV2);
             const nx = len > 0 ? dx / len : 1;
             const nz = len > 0 ? dz / len : 0;
+            /** Short of the doorway, so its ends never fight the jambs */
+            const span = len - doorEndGap;
             const mx = (tmpV1.x + tmpV2.x) / 2;
             const mz = (tmpV1.y + tmpV2.y) / 2;
             const depth = doorPanelDepth[hull === true ? "hull" : "nonHull"];
@@ -352,9 +355,9 @@ export default function Doors() {
 
             // biome-ignore format: matrix layout
             tmpMat4.set(
-              len * nx,  0,           -depth * nz,  mx,
+              span * nx, 0,           -depth * nz,  mx,
               0,         doorHeight,   0,            doorHeight / 2,
-              len * nz,  0,            depth * nx,   mz,
+              span * nz, 0,            depth * nx,   mz,
               0,         0,            0,            1,
             );
 
@@ -498,6 +501,8 @@ export default function Doors() {
 
         // Actually lock/unlock door
         door.locked = !door.locked;
+        door.held = door.locked && door.open && opts.hold === true;
+        if (door.held) state.cancelClose(door); // else a close already due shuts it
 
         state.syncLockTint(door);
         state.persistLocks();
@@ -778,6 +783,8 @@ const LAYER_PLAIN = 0;
 const tmpMat = new Mat();
 const tmpV1 = new Vect();
 const tmpV2 = new Vect();
+/** Metres a door is short of its doorway, along it */
+const doorEndGap = 0.01;
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4();
 

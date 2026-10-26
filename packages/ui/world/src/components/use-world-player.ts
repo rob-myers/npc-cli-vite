@@ -275,7 +275,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         w.hud?.say(npc?.anim.hurry === true ? "run" : "walk");
       },
       toggleStrafe() {
-        if (w.phasers?.isArmed(state.key) === true) return; // aiming strafes them regardless
+        // aiming strafes them regardless, and sat or lain they never do
+        if (w.phasers?.isArmed(state.key) === true || state.get()?.posture !== "stand") return;
         state.strafe = !state.strafe;
         w.hud?.update(); // its gait button shows it
         if (state.strafe === false) w.hud?.say("strafe off"); // on, the bar keeps a notice of it

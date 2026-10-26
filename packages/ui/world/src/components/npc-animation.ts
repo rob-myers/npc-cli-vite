@@ -382,7 +382,8 @@ export class NpcAnimation {
     const { colorScale, rotation } = this.npc;
 
     const { aim } = face;
-    if (aim && face.turn === null) {
+    // sat or lain their body keeps its facing, e.g. a seat's: else an aim not yet let go turns it
+    if (aim && face.turn === null && this.posture === "stand") {
       face.target = this.bearingOf(aim.at);
       face.rate = aim.rate;
     }

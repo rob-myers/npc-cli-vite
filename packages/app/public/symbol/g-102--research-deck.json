@@ -1164,7 +1164,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": false,
+      "expanded": true,
       "children": [
         {
           "id": "cd79c6e1-1ffa-4a47-926b-bc745ecbcdce",
@@ -1185,6 +1185,19 @@
           "baseRect": {"width": 40, "height": 15},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0.5, 0, 0, 0.5, 100, 1100)"
+        },
+        {
+          "id": "81a34212-48b3-4421-8303-b598288989c1",
+          "name": "decor point spawn",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 996, "f": 890},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "arrow",
+          "baseRect": {"width": 6, "height": 6},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 996, 890)"
         }
       ]
     }

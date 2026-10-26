@@ -186,8 +186,8 @@ export function createFadeRooms(initialMode: FadeRoomsMode = "ship"): FadeRooms 
  * in the next geomorph — so this is that graph walked outwards, stopping at any door that is SHUT.
  * One on its way open already counts as open, so the room beyond fades in as it opens.
  *
- * Every window reached is seen through, but the room beyond is a dead end: none of its own doors or
- * windows is walked, else one window onto a corridor would light the whole ship.
+ * Every window reached is seen through. Through one of their own room's windows the walk goes on, as from
+ * the room itself. Beyond any other the room is a dead end, else one window onto a corridor would light the whole ship.
  *
  * `null` where there is no player to see from — which is not the same as an empty answer, and is
  * why this does not give one. See `sync`
@@ -215,13 +215,15 @@ export function roomsInViewFrom(w: WorldType, grKey: Geomorph.GmRoomKey): Geomor
   /** Rooms reached through open doors, whose connectors are walked in turn */
   const entered = new Set<Graph.GmRoomGraphNode>([start]);
   const queue = [start];
+  /** Its own windows: through these the rooms beyond are looked into too */
+  const ownWindows = new Set(w.gmRoomGraph.getSuccs(start).filter((node) => node.type === "window"));
 
   for (const node of queue) {
     for (const next of w.gmRoomGraph.getSuccs(node)) {
       if (next.type === "room") {
         seen.add(next);
-        // a room seen through glass is shown, but not looked beyond
-        if (node.type === "window" || entered.has(next)) continue;
+        // a room seen through glass is shown, but not looked beyond, unless through a window of their own room
+        if ((node.type === "window" && ownWindows.has(node) === false) || entered.has(next)) continue;
         entered.add(next);
         queue.push(next);
       } else if (seen.has(next) === false) {

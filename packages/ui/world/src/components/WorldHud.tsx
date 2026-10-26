@@ -167,7 +167,9 @@ export default function WorldHud() {
     );
 
   const { key: playerKey } = w.player;
-  const strafing = w.player.strafe;
+  /** Sat or lain they never strafe, aiming or not */
+  const stood = w.player.get()?.posture === "stand";
+  const strafing = w.player.strafe && stood;
   const big = w.touchDevice;
 
   const heldDoors = w.e.getHeldDoors(playerKey) ?? [];
@@ -181,7 +183,7 @@ export default function WorldHud() {
   const kept: { label: string; title: string; end?: () => void }[] = armed
     ? [
         { label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) },
-        { label: "strafe", title: "strafing whilst aiming" },
+        ...(stood ? [{ label: "strafe", title: "strafing whilst aiming" }] : []),
       ]
     : strafing
       ? [{ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() }]
@@ -447,7 +449,7 @@ function PlayerButtons() {
         >
           {/* always white: the icon itself changes with the gait */}
           <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
-          {w.player.strafe && (
+          {w.player.strafe && w.player.get()?.posture === "stand" && (
             <ArrowsHorizontalIcon className={cn(buttonIcon(true), "absolute right-0.5 bottom-0.5 size-3")} weight="bold" />
           )}
         </div>

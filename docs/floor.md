@@ -48,7 +48,8 @@ the deck: darker plates in the light theme, faintly lighter ones in the dark.
 Seven parts: `tone`, `plate`, `rivet`, `wiring`, `doorTicks`, `skirt`, `nav`. Each but `tone` and
 `nav` has a `shown` flag that turns it off outright. Lengths are in METRES.
 
-`skirt` is a lit edge along each wall's foot, `width` out from its face (`drawSkirtEdges`). It is
+`skirt` is an edge along each wall's foot, `width` out from its face (`drawSkirtEdges`): lit on a dark deck, a
+shadow on a light one. It is
 drawn into the floor rather than as a mesh of its own: a band beside a translucent wall, drawn as its
 own mesh, showed through any nearer wall. The walls darken their own foot and top instead (`Walls`,
 `wallBandHeight`), in their own colour, so they blend alike in any order. It is clipped to the rooms,

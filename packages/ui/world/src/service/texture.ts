@@ -250,7 +250,7 @@ export const deckConfig = {
     lipOffset: 0.025,
   },
 
-  /** A lit edge along each wall's foot, where its skirting stood — see `drawSkirtEdges` */
+  /** An edge along each wall's foot, where its skirting stood: lit, else on a light deck a shadow — see `drawSkirtEdges` */
   skirt: {
     shown: true,
     /** Metres it reaches out from the wall */
@@ -301,7 +301,7 @@ const deckInks = {
       clampInk: "rgba(70, 85, 105, 0.7)",
     },
     doorTicks: { grooveInk: "rgba(40, 55, 75, 0.4)", lipInk: "rgba(255, 255, 255, 0.55)" },
-    skirt: { ink: "rgba(255, 255, 255, 0.5)" },
+    skirt: { ink: "rgba(25, 35, 50, 0.3)" }, // a contact shadow: light on a light deck would only glare
     nav: { fill: "rgba(255, 255, 255, 0.0)", ink: "rgba(30, 30, 30, 0.04)" },
   },
 };

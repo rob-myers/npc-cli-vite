@@ -231,8 +231,8 @@ export const wallHeight = 1.8;
 export const doorHeight = wallHeight - 0.001;
 /** Metres a lintel hangs down over a door, in front of it */
 export const lintelHeight = 0.1;
-/** A door's depth: a little more than the walls beside it (faces ±0.05, a hull's about ±0.1), so it stands out of them */
-export const doorPanelDepth = { hull: 0.24, nonHull: 0.12 };
+/** A door's depth: just proud of the walls beside it (faces ±0.05, a hull's ±0.1), so their trim stays behind */
+export const doorPanelDepth = { hull: 0.201, nonHull: 0.101 };
 
 export const floorFadeDelayMs = 260;
 
