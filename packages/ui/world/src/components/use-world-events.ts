@@ -175,11 +175,95 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           meta: { npcKey, ...w.npc.npcToRoom.get(npcKey) },
         };
       },
-      async move({ npcKey, to, arrive = true, fast, backwards, backstep, strafe, near, shove, far }) {
+      async move(opts) {
+        const { npcKey, to, near, shove, far } = opts;
         const npc = w.npc.get(npcKey);
-        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) throw Error("hurt");
-        if (w.player.is(npcKey) && w.npcFocus?.isFixated() === true) throw Error("focused");
-        /** Can be overridden if unreachable due to locked doors */
+
+        if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) {
+          throw Error("hurt");
+        }
+        if (w.player.is(npcKey) && w.npcFocus?.isFixated() === true) {
+          throw Error("focused");
+        }
+        const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
+        if (doResult.type === "occupied") {
+          throw Error("occupied");
+        }
+
+        // so can resume doable or nav
+        const dst = (npc.last.dst = helper.parseGroundPoint(to));
+        npc.rejectAll(new Error("move again"));
+        /** Near enough to fade onto or off a doable, else they walk the rest */
+        const fades = far === true || npc.distanceTo(groundPoint) <= w.npc.config.dist.doableLook;
+
+        // doable overrides navigable
+        if (doResult.type !== "none") {
+          return state.moveOntoDoable(npc, dst, doResult, fades, opts);
+        }
+        if (result.success === false) {
+          throw Error("not navigable");
+        }
+
+        if (npc.agentId === null) {
+          // fade off the doable: onto the target if near, else beside it, walking on
+          if (fades) {
+            return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
+          }
+          await state.stepOff(npc, groundPoint);
+          if (npc.last.dst !== dst) {
+            return; // another move took them over
+          }
+        }
+
+        await state.walkTo(npc, groundPoint, result, opts);
+      },
+      besideDoable(at, toward, grKey) {
+        const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
+        let best = { p: null as null | Geom.VectJson, cost: Infinity };
+        for (let k = 0; k < besideRays; k++) {
+          const turn = (2 * Math.PI * Math.min(k, besideRays - k)) / besideRays;
+          const angle = ahead + (2 * Math.PI * k) / besideRays;
+          // along this way, the first point in their room: none past the best so far
+          for (
+            let s = besideStep;
+            s <= w.npc.config.dist.doableLook && s + besideTurnCost * turn < best.cost;
+            s += besideStep
+          ) {
+            const p = state.navNear({ x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
+            if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) {
+              best = { p, cost: s + besideTurnCost * turn };
+              break;
+            }
+          }
+        }
+        return best.p;
+      },
+      async moveOntoDoable(npc, dst, doResult, fades, { fast, strafe }) {
+        /** An interrupted walk ends here. Left on, a strafe let go would show its gait over the pose */
+        npc.anim.moving = false;
+        if (doResult.type === "use-current") return void (await w.npc.spawn({ npcKey: npc.key, at: dst })); // respawn
+
+        const { dist, time } = w.npc.config;
+        const beside = fades ? null : state.besideDoable(dst, npc.point, helper.maybeGmRoomId(doResult.meta)?.grKey);
+        if (beside !== null) {
+          if (npc.agentId === null) await state.stepOff(npc, beside); // off their own first, so they walk
+          if (npc.last.dst !== dst) return;
+          const walk = state.move({ npcKey: npc.key, to: beside, fast, strafe }); // up to it first, on their side
+          npc.last.dst = dst; // set by the walk: a pause resumes this move
+          await walk;
+          if (npc.last.dst !== dst) return;
+        }
+        w.events.next({ key: "npc-pre-do", npcKey: npc.key });
+
+        if (w.npc.npcToDoable[npc.key] === null && npc.distanceTo(dst) < dist.doableLook) {
+          // look when standing nearby
+          // else an npc interrupted mid-move keeps its momentum and slides through the look
+          w.npc.clearMomentum(npc);
+          await npc.look({ at: dst, minMs: time.look * 1000 });
+        }
+        await npc.fadeSpawn({ at: dst });
+      },
+      moveTarget(npcKey, to, near) {
         let groundPoint = helper.parseGroundPoint(to);
         let result = w.npc.getClosestPoly(groundPoint, 0.5);
         const doResult = w.npc.findFreeDoMeta(to?.meta ?? emptyMeta, npcKey, groundPoint);
@@ -189,69 +273,23 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           // a target off the mesh could never be arrived at: the mesh nearest it instead
           if (result.success === true) groundPoint = { x: result.position[0], y: result.position[2] };
         }
+        return { groundPoint, result, doResult };
+      },
+      navNear(p, within = 4) {
+        const near = w.npc.getClosestPoly(p, within);
+        return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
+      },
+      async stepOff(npc, toward) {
+        const beside = state.besideDoable(npc.point, toward, w.npc.npcToRoom.get(npc.key)?.grKey);
+        if (beside === null) throw Error("not navigable");
+        await npc.fadeSpawn({ at: beside, facing: toward });
+      },
+      async walkTo(npc, groundPoint, result, { arrive = true, fast, backwards, backstep, strafe }) {
         const { config } = w.npc;
-        /** Near enough to fade onto or off a doable, else they walk the rest */
-        const fades = far === true || npc.distanceTo(groundPoint) <= config.dist.doableLook;
-
-        if (doResult.type === "occupied") {
-          throw Error("occupied");
-        }
-
-        // so can resume doable or nav
-        const dst = (npc.last.dst = helper.parseGroundPoint(to));
-        /** Another move has taken them over, e.g. whilst they walked up to or faded off a doable */
-        const superseded = () => npc.last.dst !== dst;
-
-        npc.rejectAll(new Error("move again"));
-
-        if (doResult.type !== "none") {
-          // doable overrides navigable
-          /** An interrupted walk ends here. Left on, a strafe let go would show its gait over the pose */
-          npc.anim.moving = false;
-          if (doResult.type === "use-current") {
-            await w.npc.spawn({ npcKey, at: to }); // respawn
-          } else {
-            const beside = fades
-              ? null
-              : besideDoable(w, groundPoint, npc.point, helper.maybeGmRoomId(doResult.meta)?.grKey);
-            if (beside !== null) {
-              const walk = state.move({ npcKey, to: beside, fast, strafe }); // up to it first, on their side
-              npc.last.dst = dst; // set by the walk: a pause resumes this move
-              await walk;
-              if (superseded()) return;
-            }
-            w.events.next({ key: "npc-pre-do", npcKey });
-
-            if (w.npc.npcToDoable[npcKey] === null && npc.distanceTo(groundPoint) < config.dist.doableLook) {
-              // look when standing nearby
-              // else an npc interrupted mid-move keeps its momentum and slides through the look
-              w.npc.clearMomentum(npc);
-              await npc.look({ at: to, minMs: config.time.look * 1000 });
-            }
-
-            await npc.fadeSpawn({ at: to });
-          }
-          return;
-        }
-
-        if (!result.success) {
-          throw Error("not navigable");
-        }
-
-        if (npc.agentId === null) {
-          // fade off the doable: onto the target if near, else beside it, walking on
-          if (fades) return void (await npc.fadeSpawn({ at: result.position, facingTarget: true }));
-          const beside = besideDoable(w, npc.point, groundPoint, w.npc.npcToRoom.get(npcKey)?.grKey);
-          if (beside === null) throw Error("not navigable");
-          await npc.fadeSpawn({ at: beside, facing: groundPoint });
-          if (superseded()) return;
-        }
-
-        w.npc.setNpcDo(npcKey, null); // in case do=stand
+        w.npc.setNpcDo(npc.key, null); // in case do=stand
 
         await npc.ensureLegalPosition();
 
-        // code below is interruptible by next move
         try {
           // navigation unreachable relative to locked doors?
           const unreachableResult = await state.testTargetUnreachable(npc, w.findRoomContaining(groundPoint));
@@ -280,7 +318,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           await w.npc.turnBeforeMoving(npc);
           npc.anim.startMoving(arrive);
 
-          w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey });
+          w.npc.postCrowdTickEvents.push({ key: "started-moving", npcKey: npc.key });
 
           await new Promise<string>((resolve, reject) => {
             npc.resolve.move = resolve;
@@ -293,7 +331,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (!(e instanceof Error && e.message === "look again")) {
             npc.anim.startIdle({ force: true }); // delegated to look
           }
-          w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey });
+          w.npc.postCrowdTickEvents.push({ key: "stopped-moving", npcKey: npc.key });
           throw e;
         }
       },
@@ -1583,27 +1621,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
   }, []);
 }
 
-/** The navigable point nearest `p`, within `within` metres, if any */
-function navNear(w: WorldState, p: Geom.VectJson, within: 0.1 | 4 = 4): null | Geom.VectJson {
-  const near = w.npc.getClosestPoly(p, within);
-  return near.success === true ? { x: near.position[0], y: near.position[2] } : null;
-}
-
-/** A navigable point of room `grKey` beside the doable at `at`: the first on the way to `toward`, else turning from it */
-function besideDoable(w: WorldState, at: Geom.VectJson, toward: Geom.VectJson, grKey?: string) {
-  const ahead = Math.atan2(toward.y - at.y, toward.x - at.x);
-  for (let k = 0; k <= besideRays; k++) {
-    // either side in turn, round to behind
-    const angle = ahead + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * ((2 * Math.PI) / besideRays);
-    for (let s = besideStep; s <= w.npc.config.dist.doableLook; s += besideStep) {
-      const p = navNear(w, { x: at.x + Math.cos(angle) * s, y: at.y + Math.sin(angle) * s }, besideStep);
-      if (p !== null && w.findRoomContaining(p, true)?.grKey === grKey) return p;
-    }
-  }
-  return null;
-}
-/** Metres between the points `besideDoable` tries, and the ways it tries round the doable */
-const [besideStep, besideRays] = [0.1, 16] as const;
+/** Metres between the points `besideDoable` tries, the ways it tries round the doable, and metres a radian off costs */
+const [besideStep, besideRays, besideTurnCost] = [0.1, 16, 0.3] as const;
 
 /** Half a quad's or point's width and height in metres, as its image has them: nought for anything else */
 function halfSizeOf(sheets: WorldState["sheets"], def: Geomorph.DecorDef) {
@@ -1758,6 +1777,37 @@ export type State = {
   rejectPendingUnreachable(err: Error): void;
   getPoint(npcKey: string): Meta<JshCli.GroundPoint>;
   move(opts: JshCli.MoveOpts): Promise<void>;
+  /** A navigable point of room `grKey` beside the doable at `at`, the nearest by `besideTurnCost` metres per radian off the way to `toward` */
+  besideDoable(at: Geom.VectJson, toward: Geom.VectJson, grKey?: string): null | Geom.VectJson;
+  /** Onto the doable `dst`: faded on, unless `fades` walking up beside it first. Stops if another move takes over */
+  moveOntoDoable(
+    npc: Npc,
+    dst: Meta<Geom.VectJson>,
+    doResult: ReturnType<WorldState["npc"]["findFreeDoMeta"]>,
+    fades: boolean,
+    opts: JshCli.MoveOpts,
+  ): Promise<void>;
+  /** Where `to` is on the ground and the navmesh, and the doable it picks, if any */
+  moveTarget(
+    npcKey: string,
+    to: JshCli.MoveOpts["to"],
+    near?: boolean,
+  ): {
+    groundPoint: Geom.VectJson;
+    result: ReturnType<WorldState["npc"]["getClosestPoly"]>;
+    doResult: ReturnType<WorldState["npc"]["findFreeDoMeta"]>;
+  };
+  /** The navigable point nearest `p`, within `within` metres, if any */
+  navNear(p: Geom.VectJson, within?: 0.1 | 4): null | Geom.VectJson;
+  /** Fades `npc` off their doable, beside it on the way to `toward` */
+  stepOff(npc: Npc, toward: Geom.VectJson): Promise<void>;
+  /** Walks them to `groundPoint`, else as near a locked door in the way as they can. Interruptible by the next move */
+  walkTo(
+    npc: Npc,
+    groundPoint: Geom.VectJson,
+    result: ReturnType<WorldState["npc"]["getClosestPoly"]>,
+    opts: JshCli.MoveOpts,
+  ): Promise<void>;
   /**
    * @param planning asks whether they COULD pass it, rather than whether they could pass it from
    * where they stand — a locked door standing open counts, since walking up to it is what grants
