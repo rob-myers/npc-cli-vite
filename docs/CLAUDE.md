@@ -173,7 +173,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 ## jsh commands
 
 **Modules**
-- Exports of `packages/cli/src/jsh/world/{act,core,demo,demo_mcp,debug,decor,pred,shots,sidestep,spot}.ts` become shell commands, and hot-reload. `modules.js` lists them.
+- Exports of `packages/cli/src/jsh/world/{act,core,demo,debug,decor,pred,shots,sidestep,spot}.ts` become shell commands, and hot-reload. `modules.js` lists them.
 - The default profile sources them all through `/etc/jsh-default.sh` (`world/jsh-default.sh`). A new module goes in both.
 - Shell files reach `/etc` as exports of `scripts.js`, named `fooBarSh` for `/etc/foo-bar.sh`: `sources.ts` drops the `Sh` and kebab-cases the rest.
 - An exported *function* becomes a command. Export an object to keep helpers out of the shell (see `parked` in `pred.ts`).
