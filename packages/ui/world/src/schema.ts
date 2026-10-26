@@ -14,6 +14,8 @@ export const WorldUiSchema = z.object({
   pauseOnHideTab: BaseUiMetaSchema.shape.pauseOnHideTab.default("mobile"),
   worldKey: z.templateLiteral(["world-", z.number()]),
   mapKey: z.string().default(defaultMapKey),
+  /** We start at player in unvisited Worlds or post-layout-reset (`false` thereafter) */
+  cameraOnPlayer: z.boolean().default(true),
 });
 
 export type WorldUiMeta = z.infer<typeof WorldUiSchema>;
