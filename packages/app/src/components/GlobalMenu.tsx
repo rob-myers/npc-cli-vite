@@ -131,7 +131,8 @@ export function GlobalMenu() {
 
                 <Menu.Separator className={separatorCls} />
 
-                <div className={cn(itemCls, "cursor-default hover:bg-transparent")}>
+                {/* a phone has no room for panes side by side */}
+                <div className={cn(itemCls, touchDevice && "hidden", "cursor-default hover:bg-transparent")}>
                   Split
                   <span className="ml-auto flex gap-1">
                     <Menu.Item
