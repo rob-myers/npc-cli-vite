@@ -5,7 +5,7 @@
   "nodes": [
     {
       "id": "7139b512-ab4b-403a-b7d1-42fc908ad2ed",
-      "name": "extra--002--fresher 1",
+      "name": "extra--002--fresher",
       "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
@@ -18,8 +18,8 @@
     },
     {
       "id": "ede6f529-3cfe-4e94-b19d-1a8659750d94",
-      "name": "obstacle toilet inset=2",
-      "locked": false,
+      "name": "obstacle toilet inset=2 nav-outset=6",
+      "locked": true,
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "path",
@@ -30,7 +30,7 @@
     {
       "id": "820893f7-8304-49bf-b326-8f8c7b179278",
       "name": "decor point do=sit on",
-      "locked": false,
+      "locked": true,
       "visible": true,
       "transform": {"a": 0, "b": 1, "c": 1, "d": 0, "e": 9, "f": 14},
       "type": "image",
