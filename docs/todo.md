@@ -1,13 +1,20 @@
 # TODO
 
-- spotKey format -> {grKey}-{id}, {gdKey}-{id}
-- ✅ support `act {npcKey}` format
-  - `act kate count:3 down` or `act count kate from:3`
-  - `act kate avoid:rob`
+- phaser rethink: realtime after focus: target highlight and press space
+
 - 🚧 return to scenarios and start acting them out
-  - hide-and-seek: can `act hide kate from:rob`
-    - fail if any dst nearby spot maybe seen by rob
-  - hide-and-seek: can `act avoid kate from:rob`
+  - ✅ support `act {npcKey}` format
+    - `act kate count:3 down` or `act count kate from:3`
+    - `act kate avoid:rob`
+  - ✅ hide-and-seek sketch
+    - can `act hide kate from:rob` failing if any dst nearby spot maybe seen by rob
+    - can `act avoid kate from:rob` failing if dst's nearest spot maybe seen by rob
+    - can `act kate count:3 down`
+    - can `act count kate from:3 to:0`
+  - 🚧 guard-and-intruder sketch
+
+- light-theme wall skirts/trims look worse now
+- tab select GlobalMenu should be able to open on enter
 
 ## World
 
