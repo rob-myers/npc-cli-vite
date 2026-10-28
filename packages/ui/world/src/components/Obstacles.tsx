@@ -63,41 +63,6 @@ export default function Obstacles(_props: Props) {
       toInstanceId: [],
       fromInstanceId: [],
       roomSlotByInstanceId: [],
-      buildInstanceIds() {
-        state.toInstanceId = [];
-        state.fromInstanceId = [];
-        state.roomSlotByInstanceId = [];
-        const roomIdsByGmKey: Partial<Record<Geomorph.StarShipGeomorphKey, (null | number)[]>> = {};
-        const broadIdsByGmKey: typeof roomIdsByGmKey = {};
-        let nextId = 0;
-        for (const [gmId, gm] of w.gms.entries()) {
-          // avoid recompute roomId for multiple instances
-          const roomIds = (roomIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.roomIdOf(gmId, o)));
-          const broadIds = (broadIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.broadWallIdOf(gmId, o)));
-          state.toInstanceId[gmId] = [];
-          for (const [obstacleId] of gm.obstacles.entries()) {
-            if (nextId < MAX_OBSTACLE_QUAD_INSTANCES) {
-              const roomId = roomIds[obstacleId];
-              state.toInstanceId[gmId][obstacleId] = nextId;
-              state.fromInstanceId[nextId] = { gmId, obstacleId };
-              const broadId = broadIds[obstacleId];
-              // shown with its ROOM: a broad wall abuts many, and would show it from any of them.
-              // In no room it goes as the broad wall it stands on, else only with everything
-              state.roomSlotByInstanceId[nextId] =
-                roomId !== null
-                  ? slotOf(gmId, roomId)
-                  : broadId !== null
-                    ? broadWallSlotOf(gmId, broadId)
-                    : neverShownSlot;
-            }
-            nextId++;
-          }
-        }
-        if (nextId > MAX_OBSTACLE_QUAD_INSTANCES) {
-          warn(`Obstacles: ${nextId} exceeds MAX_OBSTACLE_QUAD_INSTANCES (${MAX_OBSTACLE_QUAD_INSTANCES})`);
-        }
-        return (state.instanceCount = Math.min(nextId, MAX_OBSTACLE_QUAD_INSTANCES));
-      },
 
       addUvs() {
         if (!w.sheets) return;
@@ -141,6 +106,52 @@ export default function Obstacles(_props: Props) {
           }
         }
       },
+      broadWallIdOf(gmId, { origPoly, transform }) {
+        // by HALF its corners or more: one merely against such a wall has only a few within
+        const toGm = tmpMat2.setMatrixValue(transform);
+        const counts = new Map<number, number>();
+        for (const p of origPoly.outline) {
+          const id = w.view.roomSlots.broadWallAt(gmId, toGm.transformPoint({ x: p.x, y: p.y }));
+          if (id !== null) counts.set(id, (counts.get(id) ?? 0) + 1);
+        }
+        for (const [id, count] of counts) if (count * 2 >= origPoly.outline.length) return id;
+        return null;
+      },
+      buildInstanceIds() {
+        state.toInstanceId = [];
+        state.fromInstanceId = [];
+        state.roomSlotByInstanceId = [];
+        const roomIdsByGmKey: Partial<Record<Geomorph.StarShipGeomorphKey, (null | number)[]>> = {};
+        const broadIdsByGmKey: typeof roomIdsByGmKey = {};
+        let nextId = 0;
+        for (const [gmId, gm] of w.gms.entries()) {
+          // avoid recompute roomId for multiple instances
+          const roomIds = (roomIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.roomIdOf(gmId, o)));
+          const broadIds = (broadIdsByGmKey[gm.key] ??= gm.obstacles.map((o) => state.broadWallIdOf(gmId, o)));
+          state.toInstanceId[gmId] = [];
+          for (const [obstacleId] of gm.obstacles.entries()) {
+            if (nextId < MAX_OBSTACLE_QUAD_INSTANCES) {
+              const roomId = roomIds[obstacleId];
+              state.toInstanceId[gmId][obstacleId] = nextId;
+              state.fromInstanceId[nextId] = { gmId, obstacleId };
+              const broadId = broadIds[obstacleId];
+              // shown with its ROOM: a broad wall abuts many, and would show it from any of them.
+              // In no room it goes as the broad wall it stands on, else only with everything
+              state.roomSlotByInstanceId[nextId] =
+                roomId !== null
+                  ? slotOf(gmId, roomId)
+                  : broadId !== null
+                    ? broadWallSlotOf(gmId, broadId)
+                    : neverShownSlot;
+            }
+            nextId++;
+          }
+        }
+        if (nextId > MAX_OBSTACLE_QUAD_INSTANCES) {
+          warn(`Obstacles: ${nextId} exceeds MAX_OBSTACLE_QUAD_INSTANCES (${MAX_OBSTACLE_QUAD_INSTANCES})`);
+        }
+        return (state.instanceCount = Math.min(nextId, MAX_OBSTACLE_QUAD_INSTANCES));
+      },
       async draw() {
         if (!w.sheets || state.images.length === 0) return;
         const { ct } = w.texObs;
@@ -172,6 +183,24 @@ export default function Obstacles(_props: Props) {
       encodeInstanceId(gmId, obstacleId) {
         return state.toInstanceId[gmId]?.[obstacleId] ?? null;
       },
+      roomIdOf(gmId, { origPoly, transform }) {
+        // Where it stands, from its centre in the geomorph's OWN space — which is what `roomSlots`
+        // is drawn in, so the answer belongs to the LAYOUT and any instance of it may be asked.
+        //
+        // Kept off `obstacle.meta`, unlike the `gmId` `instantiateDecor` stamps onto decor: a room
+        // is a property of the LAYOUT, so it would be the same answer written once per instance
+        const { rect } = origPoly;
+        const toGm = tmpMat2.setMatrixValue(transform);
+        const centre = toGm.transformPoint({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+        const roomId = w.view.roomSlots.roomAt(gmId, centre);
+        if (roomId !== null) return roomId;
+        // a curved one's centre can lie outside it, e.g. a hull window's bench: ask its corners
+        for (const p of origPoly.outline) {
+          const cornerRoomId = w.view.roomSlots.roomAt(gmId, toGm.transformPoint({ x: p.x, y: p.y }));
+          if (cornerRoomId !== null) return cornerRoomId;
+        }
+        return null;
+      },
       setBrightness(next, skirtNext) {
         state.brightnessNode.value = next;
         state.skirtBrightnessNode.value = skirtNext;
@@ -192,35 +221,6 @@ export default function Obstacles(_props: Props) {
 
         if (state.skirtInst) state.skirtInst.instanceMatrix.needsUpdate = true;
         if (state.skirtInst?.instanceColor) state.skirtInst.instanceColor.needsUpdate = true;
-      },
-      roomIdOf(gmId, { origPoly, transform }) {
-        // Where it stands, from its centre in the geomorph's OWN space — which is what `roomSlots`
-        // is drawn in, so the answer belongs to the LAYOUT and any instance of it may be asked.
-        //
-        // Kept off `obstacle.meta`, unlike the `gmId` `instantiateDecor` stamps onto decor: a room
-        // is a property of the LAYOUT, so it would be the same answer written once per instance
-        const { rect } = origPoly;
-        const toGm = tmpMat2.setMatrixValue(transform);
-        const centre = toGm.transformPoint({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
-        const roomId = w.view.roomSlots.roomAt(gmId, centre);
-        if (roomId !== null) return roomId;
-        // a curved one's centre can lie outside it, e.g. a hull window's bench: ask its corners
-        for (const p of origPoly.outline) {
-          const cornerRoomId = w.view.roomSlots.roomAt(gmId, toGm.transformPoint({ x: p.x, y: p.y }));
-          if (cornerRoomId !== null) return cornerRoomId;
-        }
-        return null;
-      },
-      broadWallIdOf(gmId, { origPoly, transform }) {
-        // by HALF its corners or more: one merely against such a wall has only a few within
-        const toGm = tmpMat2.setMatrixValue(transform);
-        const counts = new Map<number, number>();
-        for (const p of origPoly.outline) {
-          const id = w.view.roomSlots.broadWallAt(gmId, toGm.transformPoint({ x: p.x, y: p.y }));
-          if (id !== null) counts.set(id, (counts.get(id) ?? 0) + 1);
-        }
-        for (const [id, count] of counts) if (count * 2 >= origPoly.outline.length) return id;
-        return null;
       },
       transformAndColorObstacles() {
         if (!state.inst) return;
