@@ -140,8 +140,9 @@ parked only if it was explicitly parked.
 
 ## Raycasts
 
-`w.e.raycast(src, dst)` is one request (`get-raycast`). `worker/ray-cast.ts` walks a world-space
-`SegGrid` (`service/seg-grid.ts`) along it, every crossing nearest first.
+`w.e.raycast(src, dst)` is one request (`get-raycast`). `w.e.raycasts` sends several as one
+(`get-raycasts`), each `null` where it failed: every raised phaser's cast, per frame. `worker/ray-cast.ts`
+walks a world-space `SegGrid` (`service/seg-grid.ts`) along each, every crossing nearest first.
 
 - **What it holds.** Walls, door centre lines, and the edges of every obstacle above the floor. Walls
   and obstacles come per map (`set-raycast-statics`, in each geomorph's own coords). Doors come
@@ -154,6 +155,10 @@ parked only if it was explicitly parked.
 - **Hull doors.** Both records of one are in the grid, each with its own ratio. A ray crosses as many
   geomorphs as it reaches.
 - **Shields** (`set-raycast-shields`) are a short list, tested edge by edge: few, and only rays count them.
+- **Decor that stops a shot** (`stopsShots`: a quad, bar a switch or keycard) is in the grid, as the outline in plan
+  of the cuboid `Decor` draws (`quadBox` in `service/decor-box.ts`). `Decor` sends it all once built, and to a fresh
+  worker, then only what is created or removed (`set-raycast-decor`). The worker keeps it by key and puts it back
+  in a rebuilt grid. A ray names what it passes, as obstacles, in `decor`.
 
 The grid is apart from perception's sight grid. Sight keeps only what blocks it, and decides doors by
 seen-through, not by ratio.

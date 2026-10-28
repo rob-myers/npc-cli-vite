@@ -23,7 +23,7 @@ nor phasers are mirrored.
 | slot | shows | a press |
 | --- | --- | --- |
 | psi, `q` | faded unless granted; its neurons fire whilst on | `w.player.togglePsi()` |
-| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. A shot needs no raising first: see npc focus in `docs/engagements.md` |
+| phaser, `e` | faded unless carried; its emitter lit whilst drawn, with a beam whilst locked on | `w.player.toggleArm()`, the key and the slot alike: draws it, else unlocks it, else puts it away. Space fires, or raises it, see Targeting in `docs/engagements.md` |
 | keys | how many doors they hold keys to; a padlock at one of them | locks or unlocks that door; right-click splits a key off |
 | items | what else they carry, at most `inventoryConfig.maxCarried` | selects it, or lets it go |
 
@@ -243,7 +243,7 @@ The arm is drawn in for a wall or closed door within reach, a shield, a target o
 
 ### Shots, hits and choosing a part
 
-How a shot ends, what a hit does, and the player's choice of part to shoot (npc focus) are in `docs/engagements.md`.
+How a shot ends, what a hit does, and targeting are in `docs/engagements.md`.
 
 ## The `inventory` command
 
@@ -252,8 +252,7 @@ How a shot ends, what a hit does, and the player's choice of part to shoot (npc 
 - **On an item**, the player walks up to it, stopping `standOff` short, or as near as the navmesh allows, e.g.
   beside its table. They take it if then within `inventoryConfig.reach`: tight for one on the floor, looser for one
   whose top (`y3d`) is higher. Sat or lain in reach, they take it from there. A newer press abandons it.
-- **On another npc**, with psi or the phaser raised, it focuses on them: the phaser offers their parts, psi offers
-  to become them (see npc focus in `docs/engagements.md`).
+- **On another npc**, with psi raised, it focuses psi on them, offering its actions (see `docs/psi.md`).
 - **On the player's own right arm**, a raised phaser is lowered, its target forgotten. A press elsewhere on them does
   nothing.
 - **On the player's own LEFT arm**, psi is lowered, phaser drawn or not.

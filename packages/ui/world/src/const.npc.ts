@@ -630,3 +630,6 @@ export const strafeSpeed = {
 };
 /** Seconds the directional gaits take to follow a change of heading — else a turnabout snaps */
 export const strafeEaseSecs = 0.25;
+
+/** What psi may do to whom it focuses on: placeholders */
+export const psiActions = ["distract", "rush", "tired", "toilet"] as const;

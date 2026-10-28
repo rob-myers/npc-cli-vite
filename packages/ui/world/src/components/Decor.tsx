@@ -22,7 +22,6 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 import {
-  decorCuboidHeight,
   decorKeyFallback,
   decorPointDefaultRadius,
   decorPointKeyFallback,
@@ -33,13 +32,8 @@ import {
   sguToWorldScale,
   unlockedDoorTint,
 } from "../const.env";
-import {
-  createUnitBox,
-  createXzQuad,
-  embedXZMat4,
-  getRotAxisMatrix,
-  setRotMatrixAboutPoint,
-} from "../service/geometry";
+import { quadBox, quadMatrix, stopsShots } from "../service/decor-box";
+import { createUnitBox, createXzQuad, embedXZMat4 } from "../service/geometry";
 import { addToDecorGrid, queryDecorGridRect, removeFromDecorGrid } from "../service/grid";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
@@ -292,6 +286,7 @@ export default function Decor() {
         if (state.hasInstance(d)) {
           state.addRuntimeInstance(d);
         }
+        if (stopsShots(d)) state.sendToRaycast({ added: [d], removed: [] });
 
         if (isColliderDecor(d) && (def.type === "circle" || def.type === "rect")) {
           state.addDecorColliders(def);
@@ -411,6 +406,8 @@ export default function Decor() {
         if (!runtime.inst) return;
 
         const removed = [] as string[];
+        /** Those that stopped a shot */
+        const solids = [] as string[];
         for (const decorKey of decorKeys) {
           const d = runtime.byKey[decorKey];
           if (!d) {
@@ -418,6 +415,7 @@ export default function Decor() {
             continue;
           }
           removed.push(decorKey);
+          if (stopsShots(d)) solids.push(decorKey);
 
           removeFromDecorGrid(d, state.grid);
           delete runtime.byKey[decorKey];
@@ -453,8 +451,21 @@ export default function Decor() {
         if (removed.length > 0) {
           w.events.next({ key: "decor-removed", decorKeys: removed });
         }
+        if (solids.length > 0) state.sendToRaycast({ added: [], removed: solids });
 
         w.view.forceUpdate();
+      },
+      sendToRaycast(changes) {
+        const added = changes?.added ?? Object.values(state.byKey);
+        const boxes = added.flatMap((d) => {
+          const entry = stopsShots(d) ? w.sheets?.decor[state.getDecorImgKey(d)] : undefined;
+          return entry === undefined || d.type !== "quad" ? [] : [quadBox(d, entry)];
+        });
+        w.navWorker?.post(
+          { type: "set-raycast-decor", full: changes === undefined, boxes, removed: changes?.removed ?? [] },
+          "fast",
+        );
+        w.phasers?.markDirty();
       },
       syncStaticColliders() {
         const statics = Object.values(state.byKey).filter((d) => !(d.key in state.runtime.byKey));
@@ -548,29 +559,10 @@ export default function Decor() {
           id * 4,
         );
 
-        tmpMat.setMatrixValue(decor.transform);
         if (decor.type === "quad") {
-          // e.g. key=switch and screen
-          const shouldTilt = decor.meta.tilt === true;
-          let tiltMat4: THREE.Matrix4 | null = null;
-          if (shouldTilt) {
-            const { a, b, c, d } = tmpMat;
-            // NORMALISED: `makeRotationAxis` takes a unit axis, and this one is a column of the
-            // decor's own transform — so a scaled decor would hand it a longer vector, and what
-            // came back would not be a rotation at all
-            const axisLength = Math.hypot(a, b) || 1;
-            tiltMat4 = getRotAxisMatrix(a / axisLength, 0, b / axisLength, (a * d - b * c > 0 ? 1 : -1) * 90);
-            setRotMatrixAboutPoint(tiltMat4, decor.topCenter.x, decor.meta.y, decor.topCenter.y);
-          }
-          //biome-ignore format: preserve newlines
-          tmpMat.preMultiply([ entry.originalWidth * sguToWorldScale, 0, 0, entry.originalHeight * sguToWorldScale, 0, 0]);
-          // meta.y is top and meta.h is height (unsupported for tilt)
-          const yScale = decor.meta.h ?? cuboidHeight;
-          //biome-ignore format: preserve newlines
-          const mat4 = embedXZMat4(tmpMat, { yScale, yHeight: (decor.meta.y ?? 0) + (shouldTilt ? 0 : -yScale), mat4: tmpMat4 });
-          if (tiltMat4) mat4.premultiply(tiltMat4);
-          batch.inst.setMatrixAt(id, mat4);
+          batch.inst.setMatrixAt(id, quadMatrix(decor, entry, tmpMat4));
         } else {
+          tmpMat.setMatrixValue(decor.transform);
           // a flat face-up quad
           const s = decor.scale * sguToWorldScale;
           //biome-ignore format: preserve newlines
@@ -828,6 +820,7 @@ export default function Decor() {
       if (buildId !== state.buildId) return null;
 
       state.ready = true;
+      state.sendToRaycast();
       if (w.physics.physicsRebuilds > 0) state.syncStaticColliders(); // else its setup's reply does
       w.door?.syncLockTints();
       w.events.next({ key: "decor-ready" });
@@ -969,6 +962,8 @@ export type State = {
   /** Runtime decor only; `false` when there is none such, or `next` is taken */
   rename(decorKey: string, next: string): boolean;
   tintDecor(colorRep: string, ...decorKeys: string[]): void;
+  /** Sends the nav worker's rays the decor that stops a shot (`stopsShots`): all of it, else `changes` */
+  sendToRaycast(changes?: { added: Geomorph.Decor[]; removed: string[] }): void;
   /** Sends the physics worker every static decor that senses — see `isColliderDecor` */
   syncStaticColliders(): void;
   removeDecorColliders(...decor: Extract<Geomorph.Decor, { type: "rect" | "circle" }>[]): void;
@@ -1013,7 +1008,6 @@ type ShapeBatch = Batch & {
 };
 
 const MAX_RUNTIME_DECOR_INSTANCES = 1024;
-const cuboidHeight = decorCuboidHeight;
 /** How far off the floor a rect or circle lies */
 const shapeY = 0.003;
 const cuboidIconHeight = 0.005;

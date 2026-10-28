@@ -106,7 +106,6 @@ export function WorldView(props: React.PropsWithChildren) {
       // `follow` used to be a mode of its own: one stored from before becomes `free` with the
       // follow option ON, which is what it meant
       follow: (saved.cameraMode as string) === "follow" || saved.follow === true,
-      zoomHeld: false,
       embodiedFrom: 0,
       embodiedDragging: false,
       embodiedPeak: 0,
@@ -822,7 +821,6 @@ export function WorldView(props: React.PropsWithChildren) {
       },
       getFrontierStops() {
         const { controls } = state;
-        if (state.zoomHeld === true) return [controls.maxDistance, controls.minDistance];
         const { minDistance: min, maxDistance: outer } = state.ctrlOpts;
         // `holdFrontier` only pans. Nor on touch, where the zoom is the pinch's alone, the whole way out and in
         const player = state.follow === true && w.touchDevice === false ? w.player?.get() : undefined;
@@ -984,7 +982,7 @@ export function WorldView(props: React.PropsWithChildren) {
         last.longPress = false;
         last.rightPress = isRMB(e.nativeEvent);
 
-        const modifier = e.shiftKey === true || e.ctrlKey === true || e.metaKey === true;
+        const modifier = e.shiftKey === true || e.ctrlKey === true || e.altKey === true;
         state.canvas.style.cursor = modifier ? "grabbing" : "move";
 
         last.multi = state.otherPointerDown(e);
@@ -1830,8 +1828,6 @@ export type State = {
   follow: boolean;
   /** `embodied`'s tilt, the same at every zoom */
   embodiedPolar: number;
-  /** Whilst set, the zoom stops stay where they are, e.g. through the spirit effect */
-  zoomHeld: boolean;
   /** The azimuth the current turn set out from */
   embodiedFrom: number;
   /** Whether a turn is underway — the compass dial is decided on its release, once */

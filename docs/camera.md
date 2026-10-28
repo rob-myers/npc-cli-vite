@@ -9,7 +9,7 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 - r3f skips `undefined` props, so a prop `ctrlOpts` omits keeps the class default. That is how `zoomToCursor` stays on.
 
 **Pointer** (`onMouseDown`)
-- A left drag pans, a right drag turns. Shift, ctrl or cmd held swaps them. The middle button zooms.
+- A left drag pans, a right drag turns. Shift, ctrl or alt held swaps them. The middle button zooms.
 - Whilst following, panning is off (`enablePan`), so a left drag turns.
 - On touch, one finger pans and two turn or pinch.
 

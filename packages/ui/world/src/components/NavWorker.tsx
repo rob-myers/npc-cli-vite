@@ -131,6 +131,7 @@ export default function NavWorker() {
     // fresh workers have none
     w.door?.sendToRaycast();
     w.shields?.sendToRaycast();
+    w.decor?.sendToRaycast();
   }, [w.gmsHash, state.reloads]); // request navmesh, room graph
 
   return null;

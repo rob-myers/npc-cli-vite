@@ -59,6 +59,22 @@ declare namespace JshCli {
       }
     | { key: "phasers"; armed: boolean; npcKeys: string[] }
     | {
+        /** `by`'s psi acted on them, a placeholder */
+        key: "psi-action";
+        by: string;
+        npcKey: string;
+        action: string;
+      }
+    | {
+        /** A shot at no one ended: on a wall, door, obstacle or shield, else `alongMax` metres out */
+        key: "phaser-struck";
+        by: string;
+        at: { x: number; y: number; z: number };
+        what: import("./service/phaser-beam").StruckKind;
+        /** What it struck, if decor */
+        decorKey: null | string;
+      }
+    | {
         /** A phaser's beam reached `part` of them, and `clip` is its effect */
         key: "npc-hit";
         npcKey: string;
@@ -228,6 +244,8 @@ declare namespace JshCli {
     shields: string[];
     /** The obstacles it passed, nearest first, which stop no ray: `dist` is metres from its start */
     obstacles: (WW.RaycastObstacle & { gmId: number })[];
+    /** The decor it passed that stops a shot, nearest first, which stops no ray: as `obstacles` */
+    decor: { decorKey: string; top: number; bottom: number; dist: number; leave: number }[];
     /** Alternated with `gdKeys` i.e. `firstGrKey -> firstGdKey ->  ... -> lastGrKey` */
     rooms: Geomorph.GmRoomKey[];
   };

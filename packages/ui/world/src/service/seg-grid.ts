@@ -4,6 +4,8 @@ export class SegGrid {
   /** Stamped as met, so one in many cells is met once per walk */
   seen = new Map<Occluder, number>();
   stamp = 0;
+  /** By id, the cells each decor occluder is in: only decor is removed */
+  decorCells = new Map<number, string[]>();
   /** Metres */
   cell: number;
 
@@ -18,8 +20,23 @@ export class SegGrid {
       for (let y = Math.floor(Math.min(a.y, b.y) / c); y <= Math.floor(Math.max(a.y, b.y) / c); y++) {
         const key = `${x},${y}`;
         this.cells.get(key)?.push(o) ?? this.cells.set(key, [o]);
+        if (kind === "decor") this.decorCells.get(id)?.push(key) ?? this.decorCells.set(id, [key]);
       }
     }
+  }
+
+  /** Removes decor `id`'s occluders */
+  removeDecor(id: number) {
+    for (const key of this.decorCells.get(id) ?? []) {
+      const kept = (this.cells.get(key) ?? []).filter((o) => {
+        if (o.kind !== "decor" || o.id !== id) return true;
+        this.seen.delete(o);
+        return false;
+      });
+      if (kept.length === 0) this.cells.delete(key);
+      else this.cells.set(key, kept);
+    }
+    this.decorCells.delete(id);
   }
 
   /** Each occluder in a cell within `r` of `p`, once */
@@ -95,7 +112,7 @@ export function segsHit(p: Geom.VectJson, q: Geom.VectJson, a: Geom.VectJson, b:
 export type Occluder = {
   a: Geom.VectJson;
   b: Geom.VectJson;
-  kind: "wall" | "door" | "obstacle" | "low";
+  kind: "wall" | "door" | "obstacle" | "low" | "decor";
   id: number;
   top?: number;
 };

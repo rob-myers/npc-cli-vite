@@ -574,7 +574,6 @@ export function Debug() {
 }
 
 const pathWidth = 0.02;
-const maxPathSegments = 256;
 const maxBoundarySegs = 64;
 /** Across every polyline: a disc per point, plus the lines joining them */
 const maxPolylineInstances = 1024;
@@ -594,7 +593,7 @@ const spotArrowLen = 0.18;
 /** How far along its arrow the middle of its head is — see `createOpenArrowGeo` */
 const arrowheadAt = 0.82;
 /** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spots --show`'s */
-const spotInk = { dark: { icon: 0.4, arrow: 0.3 }, light: { icon: 1, arrow: 0.7 } };
+const spotInk = { dark: { icon: 0.2, arrow: 0.2 }, light: { icon: 1, arrow: 0.7 } };
 /** A spot's icon, this much larger when picking: easier to press */
 const spotPickScale = 1.4;
 const polylineDiscRadius = 0.08;

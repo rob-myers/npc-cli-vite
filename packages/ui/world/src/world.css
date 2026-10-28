@@ -34,3 +34,14 @@
     opacity: 0.9;
   }
 }
+
+/* the laser dot, whilst on someone: see `NpcFocus` */
+@keyframes laser-pulse {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.8;
+  }
+}

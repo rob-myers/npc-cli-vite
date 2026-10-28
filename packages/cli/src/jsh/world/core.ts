@@ -1,6 +1,6 @@
 import { type EyesKey, eyeFrames, npcDims } from "@npc-cli/ui__world/const.both";
 import { type ItemKind, inventoryConfig } from "@npc-cli/ui__world/const.env";
-import { agentConfig, type PoseKey, poseConfig } from "@npc-cli/ui__world/const.npc";
+import { agentConfig, type PoseKey, poseConfig, psiActions } from "@npc-cli/ui__world/const.npc";
 import { Task } from "@npc-cli/util";
 import { isStringInt, keys } from "@npc-cli/util/legacy/generic";
 
@@ -181,23 +181,6 @@ export async function* events<T extends JshCli.Event = JshCli.Event>(
  * give npc:rob items:'["phaser","book","box"]'
  * ```
  */
-/** The player focuses on `npc` as a press does, raising the phaser if psi is not raised. A kill cancels it */
-export async function focus(
-  { api, args, w }: JshCli.RunArg,
-  opts: { npcKey?: string } = api.jsArg(args, { npc: "npcKey" }),
-) {
-  api.setPausable("world", false); // its choice may be made whilst paused
-  const { key } = w.npc.get(opts.npcKey ?? (getFirstUnknownNaked(opts) as string));
-  let onKill = () => {};
-  const killed = new Promise<never>((_, reject) => (onKill = () => reject(api.getKillError())));
-  const handlers = api.handleStatus({ cleanup: () => (w.npcFocus.cancel(), onKill()) });
-  try {
-    await Promise.race([w.npcFocus.aimAt(key), killed]); // over, or cancelled by a kill
-  } finally {
-    handlers.dispose();
-  }
-}
-
 export function give(
   { api, args, w }: JshCli.RunArg,
   opts: CarryOpts = api.jsArg(args, { npc: "npcKey", item: "items" }, { array: { items: true } }),
@@ -277,10 +260,8 @@ function onInventoryEvent(e: JshCli.Event, w: JshCli.WorldState) {
       // the arm that holds it lowers it, its target forgotten — elsewhere on themselves, nothing
       const rightArm = meta.bodyPart === "rightarm" || meta.bodyPart === "rightforearm";
       if (rightArm === true && w.phasers?.isArmed(playerKey) === true) w.phasers.disarm(playerKey);
-    } else if (w.npcFocus.npcKey === meta.npcKey) {
-      // pressed again: it stays open
-    } else if (psiOn === true || w.phasers?.isArmed(playerKey) === true) {
-      void w.npcFocus.aimAt(meta.npcKey); // npc focus: its choices are from psi and the phaser, whichever are raised
+    } else if (psiOn === true && w.npcFocus.psis.get(playerKey)?.npcKey !== meta.npcKey) {
+      w.npcFocus.focus(playerKey, meta.npcKey, true); // psi's actions on them, Cancel under the press
     }
   }
 }
@@ -945,29 +926,50 @@ export async function* pick(ct: JshCli.RunArg) {
 
 /**
  * An npc's phaser: `shoot` raises it, locked on an npc through a body `part`; `grant` and `revoke` are the shield
- * frequencies it knows — bare, what it knows. Theirs, so it returns at once: see `docs/shields.md`
+ * frequencies it knows — bare, what it knows. Theirs, so it returns at once: see `docs/shields.md`.
+ * `--target` targets whoever its line crosses, as the player's raised phaser does, until `--fire` or `--cancel`.
+ * `at` targets, aiming at another's `part` (default chest): `--held` keeps aiming until killed. It pauses with the World.
+ * `tilt` is a detent: -1 down, 0 level, 1 up. `--laser` shows a laser dot, as the player's does, and `laser:false` stops it.
+ * See `docs/engagements.md`
  * ```sh
  * phaser rob
  * phaser rob shoot:npc-0
  * phaser rob shoot:npc-0 part:hips
  * phaser rob --raise
  * phaser rob --lower
+ * phaser rob --target tilt:-1
+ * phaser kate at:rob part:leftarm
+ * phaser kate at:rob part:head --held &
+ * phaser rob --fire
+ * phaser rob --cancel
+ * phaser rob --laser
  * phaser rob grant:"1 2 3"
  * phaser npc:rob revoke:"[1, 2]"
  * ```
  */
-export function phaser(
+export async function phaser(
   { api, args, w }: JshCli.RunArg,
   opts: PhaserOpts = api.jsArg(
     args,
-    { npc: "npcKey", "--raise": "raise", "--lower": "lower" },
+    {
+      npc: "npcKey",
+      "--raise": "raise",
+      "--lower": "lower",
+      "--target": "target",
+      "--fire": "fire",
+      "--cancel": "cancel",
+      "--laser": "laser",
+      "--held": "held",
+    },
     { array: { grant: true, revoke: true } },
   ),
 ) {
-  api.setPausable("world", false); // raises whilst paused
+  if (opts.at === undefined) api.setPausable("world", false); // raises whilst paused
   opts.npcKey ??= getFirstUnknownNaked(opts) as string;
   const { key } = w.npc.get(opts.npcKey);
   if (opts.lower === true) return void w.phasers.disarm(key); // which needs no phaser
+  if (opts.cancel === true) return void w.npcFocus.cancel(key);
+  if (opts.laser !== undefined) return void w.npcFocus.setLaser(key, opts.laser !== false && opts.laser !== "false");
   if (w.e.hasItem(key, "phaser") === false) throw Error(`${key} carries no phaser: give ${key} item:phaser`);
 
   if (opts.grant !== undefined || opts.revoke !== undefined) {
@@ -977,6 +979,24 @@ export function phaser(
     for (const freq of revoke) known.delete(freq);
     w.shields.tune(key, [...known]);
   }
+  if (opts.tilt !== undefined) {
+    const tilt = Number(opts.tilt);
+    if (tilt !== -1 && tilt !== 0 && tilt !== 1) throw Error("tilt: expected -1, 0 or 1");
+    w.phasers.tilt(key, tilt);
+    if (opts.target !== true && opts.fire !== true) return;
+  }
+  if (opts.at !== undefined) {
+    const at = w.npc.get(opts.at).key;
+    w.npcFocus.target(key);
+    if (w.npcFocus.phasers.has(key) === false) throw Error(`${key}: cannot target`);
+    return aimAtPart({ api, w }, key, { npcKey: at, part: opts.part ?? "chest", held: opts.held === true });
+  }
+  if (opts.target === true || opts.fire === true) {
+    if (opts.target === true) w.npcFocus.target(key);
+    if (w.npcFocus.phasers.has(key) === false) throw Error(`${key}: not targeting: phaser ${key} --target`);
+    if (opts.fire === true && w.npcFocus.fire(key) === false) throw Error(`${key}: cannot fire`);
+    return;
+  }
   if (opts.shoot !== undefined || opts.raise === true) {
     const at = opts.shoot === undefined ? null : w.npc.get(opts.shoot).key;
     return void w.phasers.arm(key, { at, part: opts.part ?? "head" });
@@ -985,12 +1005,39 @@ export function phaser(
   return { freqs, dead };
 }
 
+/** Aims `npcKey` at a part (`w.phasers.aimAt`) until let go of: once aimed, else by a tilt, a cancel or lowering. A kill lets go */
+async function aimAtPart(
+  { api, w }: Pick<JshCli.RunArg, "api" | "w">,
+  npcKey: string,
+  at: { npcKey: string; part: string; held: boolean },
+) {
+  w.phasers.aimAt(npcKey, at);
+  const aimed = w.phasers.arms.get(npcKey)?.aimAt;
+  const task = new Task();
+  const handlers = api.handleStatus({ cleanup: () => task.cancel() });
+  try {
+    await task.run(() => task.until(() => w.phasers.arms.get(npcKey)?.aimAt !== aimed));
+  } finally {
+    handlers.dispose();
+  }
+  if (task.isCancelled === false) return;
+  if (w.phasers.arms.get(npcKey)?.aimAt === aimed) w.phasers.aimAt(npcKey, null);
+  throw api.getKillError();
+}
+
 type PhaserOpts = {
   npcKey?: string;
+  at?: string;
+  held?: boolean;
   shoot?: string;
   part?: string;
   raise?: boolean;
   lower?: boolean;
+  target?: boolean;
+  fire?: boolean;
+  cancel?: boolean;
+  laser?: boolean | string;
+  tilt?: number | string;
   grant?: (number | string)[];
   revoke?: (number | string)[];
 };
@@ -1113,34 +1160,50 @@ const posing = new Map<string, (why: "replaced") => void>();
 
 /**
  * Psi on, or `off`: their hand goes to their temple. The player's, unless npcs are named. See `w.e.setPsi`.
+ * `on` focuses it on someone, raising it if need be, and `act` acts on them. See `docs/psi.md`.
  * It is theirs, not a process's, so like `phaser` it returns at once
  * ```sh
  * psi
  * psi off
  * psi npc-0 npc-1
  * psi off npc-0
+ * psi on:kate
+ * psi rob on:kate
+ * psi rob act:distract
+ * psi rob --cancel
  * ```
  */
 export function psi({ api, args, w }: JshCli.RunArg) {
   api.setPausable("world", false); // switches it whilst paused
+  if (args.some((arg) => arg.includes(":") || arg.startsWith("--"))) {
+    return psiFocus(w, api.jsArg(args, { npc: "npcKey", "--cancel": "cancel" }));
+  }
   const on = args[0] !== "off";
   const npcKeys = on === true ? args : args.slice(1);
   if (npcKeys.length === 0) return w.player.psi(on);
   w.e.setPsi(on, ...npcKeys.map((npcKey) => w.npc.get(npcKey).key));
 }
 
-/**
- * The player leaves their body and wakes in another: `npcKey`, else anyone sitting or lying, else someone spawned
- * in a bed or seat.
- * As "Become" in npc focus does. Returns at once. See `w.spirit`
- * ```sh
- * spirit
- * spirit npc-0
- * ```
- */
-export function spirit({ args, w }: JshCli.RunArg) {
-  w.spirit.start(args[0] === undefined ? undefined : w.npc.get(args[0]).key);
+/** `psi`'s focus on someone, and its actions on them */
+function psiFocus(w: JshCli.WorldState, opts: PsiOpts) {
+  const { key: by } = w.npc.get(opts.npcKey ?? (getFirstUnknownNaked(opts) as undefined | string) ?? w.player.key);
+  if (opts.cancel === true) return void w.npcFocus.unfocus(by);
+  if (opts.on !== undefined) {
+    const { key } = w.npc.get(opts.on);
+    if (w.e.isPsiRaised(by) === false) by === w.player.key ? w.player.psi(true) : w.e.setPsi(true, by);
+    if (w.e.isPsiRaised(by) === false) throw Error(`${by}: psi not raised`);
+    w.npcFocus.focus(by, key);
+  }
+  if (opts.act !== undefined) {
+    if ((psiActions as readonly string[]).includes(opts.act) === false) {
+      throw Error(`act: expected one of ${psiActions.join(", ")}`);
+    }
+    if (w.npcFocus.psis.has(by) === false) throw Error(`${by}: no psi focus: psi ${by} on:{npcKey}`);
+    w.npcFocus.act(by, opts.act);
+  }
 }
+
+type PsiOpts = { npcKey?: string; on?: string; act?: string; cancel?: boolean };
 
 /**
  * Test if ray hits walls or closed doors.
@@ -1656,15 +1719,20 @@ const booleanJsOptSomewhere = {
   along: true,
   backstep: true,
   backwards: true,
+  cancel: true,
   detail: true,
   facing: true,
   far: true,
   fast: true,
+  fire: true,
   force: true,
+  laser: true,
+  held: true,
   lower: true,
   nav: true,
   near: true,
   point: true,
   raise: true,
   strafe: true,
+  target: true,
 };
