@@ -253,17 +253,22 @@ export function createPlayerLight(): PlayerLight {
   }
 
   /**
-   * How far inside the cone they are looking down this fragment lies, `1` within it and `0` beyond.
+   * How much of the cone they are looking down lights this fragment: `1` on the line they look along, falling off to
+   * `0` at `beamHalfWidth` either side of it, and `0` beyond the cone. So the way they face shows.
    *
-   * Softened over `coneSoftDeg` either side rather than cut at the edge: a hard one is a straight
-   * line drawn across the floor, and it crawls as they turn
+   * The cone's edge is softened over `coneSoftDeg` either side rather than cut: a hard one is a
+   * straight line drawn across the floor, and it crawls as they turn
    */
   function coneAt(away: THREE.Node<"vec2">, fromPlayer: THREE.Node<"float">) {
     // The dot BEFORE the divide: `dot(v / d, f)` is `dot(v, f) / d`, and one scalar divide is
     // cheaper than a vec2 one. `max` guards it — at their very feet `d` is nought, and what comes
     // out is a NaN that nothing downstream swallows
     const ahead = away.dot(facing).div(fromPlayer.max(parallelUntil));
-    return smoothstep(float(coneOuterCos), float(coneInnerCos), ahead);
+    /** Metres off the line they look along: `facing` is a unit vector */
+    const off = away.x.mul(facing.y).sub(away.y.mul(facing.x)).abs();
+    return smoothstep(float(coneOuterCos), float(coneInnerCos), ahead).mul(
+      smoothstep(float(0), float(beamHalfWidth), off).oneMinus(),
+    );
   }
 
   /**
@@ -655,6 +660,8 @@ const coneFrom = lightRadius * 0.2;
 const coneHalfDeg = 60;
 const coneSoftDeg = 3;
 const coneInnerCos = Math.cos(((coneHalfDeg - coneSoftDeg) * Math.PI) / 180);
+/** Metres either side of the line they look along that the cone's light falls off over */
+const beamHalfWidth = 1.5;
 const coneOuterCos = Math.cos(((coneHalfDeg + coneSoftDeg) * Math.PI) / 180);
 /** The cosine either side of edge-on a face turning away from the light is softened over */
 const backSoft = 0.15;
