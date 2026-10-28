@@ -547,6 +547,9 @@ const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
   keychain: 0.7,
   book: 0.6,
   box: 0.7,
+  "box-case": 0.7,
+  "box-crate": 0.7,
+  "box-tote": 0.7,
   keycard: 0.58,
 };
 const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });

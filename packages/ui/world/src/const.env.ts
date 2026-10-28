@@ -99,9 +99,16 @@ export const defaultPlayerKey = "rob";
 /** What can be carried, and how — see `docs/inventory.md` */
 export const inventoryConfig = {
   /** A decor's `meta.item` */
-  kinds: ["phaser", "book", "box", "keycard"],
+  kinds: ["phaser", "book", "box", "box-case", "box-crate", "box-tote", "keycard"],
   /** Metres each stands off the floor, as its quad's `meta.h` — one without is a point, flat on it */
-  height: { phaser: 0.12, book: 0.05, box: 0.1 } as Partial<Record<string, number>>,
+  height: {
+    phaser: 0.12,
+    book: 0.05,
+    box: 0.1,
+    "box-case": 0.12,
+    "box-crate": 0.25,
+    "box-tote": 0.12,
+  } as Partial<Record<string, number>>,
   /** Put down on a surface: `margin` metres in from its edge, tried every `step` along that edge as far as `span` either way */
   surface: { margin: 0.05, step: 0.02, span: 1 },
   /** Seconds their arm is given to reach out, before what they put down is there, or what they take is gone */
@@ -119,7 +126,12 @@ export const inventoryConfig = {
   /** An item quad's sides, unless its `meta.sides` says otherwise: what is not its one textured face */
   sides: "#222",
   /** Sides of its own, by kind */
-  sideOf: { box: "#5e4526" } as Partial<Record<string, string>>,
+  sideOf: {
+    box: "#5e4526",
+    "box-case": "#c9ced6",
+    "box-crate": "#3a3f46",
+    "box-tote": "#245a8a",
+  } as Partial<Record<string, string>>,
   /** How much larger than life a point is drawn, to be seen and pressed */
   pointScale: 2,
   /** Metres within which an item can be taken — further for one topping `raisedFrom` e.g. on a desk, and further again sat at it */
