@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="32" height="20">
+  <g>
+    <title>px-per-tile=512</title>
+    <rect x="3" y="3" width="314" height="194" rx="12" fill="#1b1f24" stroke="#6b7280" stroke-width="6"/>
+    <rect x="16" y="16" width="288" height="168" rx="5" fill="#06161c"/>
+    <path d="M30 40H206M30 160H206" stroke="#0f3a44" stroke-width="2"/>
+    <path d="M34 100V100" stroke="#f4d35e" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M47.5 131.6V68.4" stroke="#ee6c4d" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M61 145.9V54.1" stroke="#7bdff2" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M74.5 135.1V64.9" stroke="#b2f7ef" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M88 105.2V94.8" stroke="#f4d35e" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M101.5 72.3V127.7" stroke="#ee6c4d" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M115 54.6V145.4" stroke="#7bdff2" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M128.5 61.8V138.2" stroke="#b2f7ef" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M142 89.8V110.2" stroke="#f4d35e" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M155.5 123.4V76.6" stroke="#ee6c4d" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M169 144.2V55.8" stroke="#7bdff2" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M182.5 140.9V59.1" stroke="#b2f7ef" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M196 115.2V84.8" stroke="#f4d35e" stroke-width="4" stroke-opacity="0.8"/>
+    <path d="M30 100 L32.9 107.2 L35.9 114.2 L38.8 120.9 L41.7 127 L44.7 132.5 L47.6 137.2 L50.5 141 L53.5 143.7 L56.4 145.4 L59.3 146 L62.3 145.4 L65.2 143.7 L68.1 141 L71.1 137.2 L74 132.5 L76.9 127 L79.9 120.9 L82.8 114.2 L85.7 107.2 L88.7 100 L91.6 92.8 L94.5 85.8 L97.5 79.1 L100.4 73 L103.3 67.5 L106.3 62.8 L109.2 59 L112.1 56.3 L115.1 54.6 L118 54 L120.9 54.6 L123.9 56.3 L126.8 59 L129.7 62.8 L132.7 67.5 L135.6 73 L138.5 79.1 L141.5 85.8 L144.4 92.8 L147.3 100 L150.3 107.2 L153.2 114.2 L156.1 120.9 L159.1 127 L162 132.5 L164.9 137.2 L167.9 141 L170.8 143.7 L173.7 145.4 L176.7 146 L179.6 145.4 L182.5 143.7 L185.5 141 L188.4 137.2 L191.3 132.5 L194.3 127 L197.2 120.9 L200.1 114.2 L203.1 107.2 L206 100" fill="none" stroke="#48e0ff" stroke-width="6" stroke-linecap="round"/>
+    <path d="M30 100 L32.9 92.8 L35.9 85.8 L38.8 79.1 L41.7 73 L44.7 67.5 L47.6 62.8 L50.5 59 L53.5 56.3 L56.4 54.6 L59.3 54 L62.3 54.6 L65.2 56.3 L68.1 59 L71.1 62.8 L74 67.5 L76.9 73 L79.9 79.1 L82.8 85.8 L85.7 92.8 L88.7 100 L91.6 107.2 L94.5 114.2 L97.5 120.9 L100.4 127 L103.3 132.5 L106.3 137.2 L109.2 141 L112.1 143.7 L115.1 145.4 L118 146 L120.9 145.4 L123.9 143.7 L126.8 141 L129.7 137.2 L132.7 132.5 L135.6 127 L138.5 120.9 L141.5 114.2 L144.4 107.2 L147.3 100 L150.3 92.8 L153.2 85.8 L156.1 79.1 L159.1 73 L162 67.5 L164.9 62.8 L167.9 59 L170.8 56.3 L173.7 54.6 L176.7 54 L179.6 54.6 L182.5 56.3 L185.5 59 L188.4 62.8 L191.3 67.5 L194.3 73 L197.2 79.1 L200.1 85.8 L203.1 92.8 L206 100" fill="none" stroke="#2a9fd6" stroke-width="6" stroke-linecap="round"/>
+    <rect x="222" y="34" width="72" height="132" rx="3" fill="#0b2630" stroke="#1d5866" stroke-width="2"/>
+    <rect x="232" y="46" width="52" height="7" fill="#48e0ff"/>
+    <rect x="232" y="65" width="38" height="7" fill="#7bdff2"/>
+    <rect x="232" y="84" width="60" height="7" fill="#48e0ff"/>
+    <rect x="232" y="103" width="30" height="7" fill="#ee6c4d"/>
+    <rect x="232" y="122" width="46" height="7" fill="#7bdff2"/>
+    <rect x="232" y="141" width="24" height="7" fill="#f4d35e"/>
+  </g>
+</svg>

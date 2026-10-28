@@ -1,6 +1,21 @@
 # TODO
 
-- phaser rethink: realtime after focus: target highlight and press space
+- ✅ phaser rethink
+  - show red dot when phaser raised
+  - intersect npc
+
+- faster strafe
+- clean spots in Debug
+- phaser red dot supports decor quads too e.g. screen
+- held open door has blue lock and is persisted
+- bug when move to chair while crouch_half phaser raised
+- LightSweep central lighter cone falls off linearly from midline
+- improve shielded npc animation: larger surface area
+- no park-teleport on collapse i.e. support collapse slow-move (nudged)
+- light-theme wall skirts/trims look worse now
+- tab select GlobalMenu should be able to open on enter
+- shade npcs by camera normal
+- consider improve turning animation
 
 - 🚧 return to scenarios and start acting them out
   - ✅ support `act {npcKey}` format
@@ -13,8 +28,6 @@
     - can `act count kate from:3 to:0`
   - 🚧 guard-and-intruder sketch
 
-- light-theme wall skirts/trims look worse now
-- tab select GlobalMenu should be able to open on enter
 
 ## World
 

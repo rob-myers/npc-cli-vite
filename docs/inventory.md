@@ -9,7 +9,7 @@ What an npc has, and the bar that shows the player's. The ONLY doc for it.
 | `ui/world/src/service/storage.ts` | `carried` (per World), `PersistedNpc.access` (per map) |
 | `ui/world/src/const.env.ts` | `inventoryConfig`: kinds, heights, reach, the most carried |
 | `cli/src/jsh/world/core.ts` | `give`, `drop`, `inventory` |
-| `media/src/decor/{phaser,book,box,keycard}.svg` | an item's one textured face, as decor |
+| `media/src/decor/{phaser,book,box,box-*,keycard}.svg` | an item's one textured face, as decor |
 | `media/src/icon/*-icon.svg` | its drawing in the bar, imported as `itemIconUrl` from `@npc-cli/media/icon` |
 
 The player sets out with psi and a phaser: `defaultWorldSettings.carried`, for `defaultPlayerKey`. A World
@@ -121,6 +121,8 @@ An item is a runtime quad decor (a point, if flat) with `meta.item`, one of `inv
 - Its other faces are `inventoryConfig.sides`, or its kind's `sideOf` (the `box` is cardboard). Any other decor
   quad's are black. `meta.sides`, a colour, overrides either.
 - A kind with no `inventoryConfig.height` is a point, the `keycard`, and `give` makes it one.
+- A symbol can place one: `decor quad item=box-case y=0.82 h=0.12`. It is not drawn as layout decor.
+  `w.e.seedItems` makes it runtime decor once per map, noted in `seeded`, so one taken stays gone.
 
 ```sh
 pick 1 | decor type:quad img:book meta:'{ item: "book", h: 0.05 }' y3d:0.05

@@ -24,6 +24,30 @@
       "outputWidth": 103,
       "outputHeight": 128
     },
+    "box-case": {
+      "key": "box-case",
+      "filename": "box-case.svg",
+      "width": 16,
+      "height": 10,
+      "outputWidth": 137,
+      "outputHeight": 86
+    },
+    "box-crate": {
+      "key": "box-crate",
+      "filename": "box-crate.svg",
+      "width": 20,
+      "height": 14,
+      "outputWidth": 171,
+      "outputHeight": 120
+    },
+    "box-tote": {
+      "key": "box-tote",
+      "filename": "box-tote.svg",
+      "width": 18,
+      "height": 12,
+      "outputWidth": 154,
+      "outputHeight": 103
+    },
     "box": {
       "key": "box",
       "filename": "box.svg",
@@ -167,6 +191,38 @@
       "height": 32,
       "outputWidth": 188,
       "outputHeight": 137
+    },
+    "screen-graph": {
+      "key": "screen-graph",
+      "filename": "screen-graph.svg",
+      "width": 32,
+      "height": 20,
+      "outputWidth": 274,
+      "outputHeight": 171
+    },
+    "screen-helix": {
+      "key": "screen-helix",
+      "filename": "screen-helix.svg",
+      "width": 32,
+      "height": 20,
+      "outputWidth": 274,
+      "outputHeight": 171
+    },
+    "screen-scan": {
+      "key": "screen-scan",
+      "filename": "screen-scan.svg",
+      "width": 32,
+      "height": 20,
+      "outputWidth": 274,
+      "outputHeight": 171
+    },
+    "sign-hazard": {
+      "key": "sign-hazard",
+      "filename": "sign-hazard.svg",
+      "width": 10,
+      "height": 10,
+      "outputWidth": 171,
+      "outputHeight": 171
     },
     "switch": {
       "key": "switch",
