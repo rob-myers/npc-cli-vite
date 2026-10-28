@@ -108,7 +108,7 @@ export class NpcAnimation {
     on: false,
     amount: 0,
     phase: Math.random(),
-    /** Multiplies their tune's rate, and its reach and glow — see `Spirit` */
+    /** Multiplies their tune's rate, and its reach and glow */
     pace: 1,
     swell: 1,
     /** The air in their lungs and the effort of breathing in, `0` to `1`, then their tune's — read by `NpcBreath` */

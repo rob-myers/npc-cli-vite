@@ -247,7 +247,7 @@ export function Debug() {
         state.set({ spotsShown: shown });
         state.countSpots();
         getWorldStore(w.key).patch({ spotsShown: shown });
-        w.events.next({ key: "spots-overlay", shown }); // jsh `spot_overlay` fills it
+        w.events.next({ key: "spots-overlay", shown }); // jsh `spots --show` fills it
         w.view.forceUpdate();
       },
       setPolyline(key, polyline) {
@@ -547,7 +547,7 @@ export function Debug() {
         renderOrder={-5}
       />
 
-      {/* the map's spots, an icon per kind coloured by sight — filled by jsh `spot_overlay`. Hidden with no
+      {/* the map's spots, an icon per kind coloured by sight — filled by jsh `spots --show`. Hidden with no
           instances, not `visible`: their pipelines are then built at load, not on the first show */}
       <instancedMesh
         key={spotsMaterial.uid}
@@ -574,7 +574,6 @@ export function Debug() {
 }
 
 const pathWidth = 0.02;
-const maxPathSegments = 256;
 const maxBoundarySegs = 64;
 /** Across every polyline: a disc per point, plus the lines joining them */
 const maxPolylineInstances = 1024;
@@ -593,8 +592,8 @@ const spotIconLift = 0.12;
 const spotArrowLen = 0.18;
 /** How far along its arrow the middle of its head is — see `createOpenArrowGeo` */
 const arrowheadAt = 0.82;
-/** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spot_overlay`'s */
-const spotInk = { dark: { icon: 0.4, arrow: 0.3 }, light: { icon: 1, arrow: 0.7 } };
+/** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spots --show`'s */
+const spotInk = { dark: { icon: 0.2, arrow: 0.2 }, light: { icon: 1, arrow: 0.7 } };
 /** A spot's icon, this much larger when picking: easier to press */
 const spotPickScale = 1.4;
 const polylineDiscRadius = 0.08;
@@ -739,7 +738,7 @@ export type State = {
   debugPointInstanceIdToDecorId: { gmId: number; decorId: number }[];
   /** The spots drawn, by instance id */
   spots: SpotDraw[];
-  /** Whether the map's spots are drawn — see jsh `spot_overlay` */
+  /** Whether the map's spots are drawn — see jsh `spots --show` */
   spotsShown: boolean;
   /** An npc's local navmesh boundary, drawn whilst non-empty — see `debug_boundary` */
   localBoundary: XZSeg[];

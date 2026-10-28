@@ -261,6 +261,11 @@ function NpcBubble({ w, npcKey, words }: { w: WorldState; npcKey: string; words?
             lit
           </ToggleButton>
         )}
+        {npc !== undefined && npcKey !== w.player?.key && (
+          <ToggleButton on={w.npcFocus.lasers.has(npcKey)} onClick={() => w.npcFocus.setLaser(npcKey)}>
+            laser
+          </ToggleButton>
+        )}
         {/* the speech menu's added items e.g. picked */}
         {w.speech.menuItems.map((item) => (
           <ToggleButton key={item.key} on={item.on?.(npcKey)} onClick={() => item.action(npcKey)}>

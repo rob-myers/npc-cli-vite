@@ -57,7 +57,7 @@ export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSet
   );
 
   return Object.fromEntries(
-    gmPairs.map(([gmKey, { walls, obstacles }]) => [
+    gmPairs.map(([gmKey, { walls, obstacles, windows }]) => [
       gmKey,
       {
         key: gmKey,
@@ -72,6 +72,7 @@ export function getRaycastPayload(gms: Geomorph.LayoutInstance[]): WW.RaycastSet
               }
             : [],
         ),
+        windows: windows.map(({ seg: [a, b], roomIds }) => ({ seg: [a.json, b.json], roomIds })),
       },
     ]),
   );

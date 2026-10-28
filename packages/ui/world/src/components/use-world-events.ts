@@ -182,9 +182,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (npc.anim.hurt !== null && (shove !== true || npc.anim.hurt.key !== "pacified")) {
           throw Error("hurt");
         }
-        if (w.player.is(npcKey) && w.npcFocus?.isFixated() === true) {
-          throw Error("focused");
-        }
         const { groundPoint, result, doResult } = state.moveTarget(npcKey, to, near);
         if (doResult.type === "occupied") {
           throw Error("occupied");
@@ -444,6 +441,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         for (const npcKey of npcKeys) {
           const anim = w.n?.[npcKey]?.anim;
           if (anim === undefined || active === state.isPsiRaised(npcKey)) continue;
+          if (active === false) w.npcFocus?.unfocus(npcKey);
           anim.setBreathing(active);
           anim.setUpper(active ? "psi" : null, { side: "left", past: true, onHead: true });
         }
@@ -888,6 +886,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "phasers":
+          case "phaser-struck":
             break;
           case "update-faded-rooms":
             if (w.view.roomOutline === true) w.view.roomOutlineFx.sync(w);
@@ -1040,6 +1039,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "npc-hit":
           case "npc-hurt":
           case "npc-shot":
+          case "psi-action":
           case "speech":
           case "stopped-moving":
             break;
@@ -1135,7 +1135,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (before !== null && anim.upper.aim === aim) anim.upper.aim = null;
         if (w.n[key] === npc) rearm?.();
       },
-      async raycast(origSrc, origDst) {
+      async raycast(origSrc, origDst, { offMap = false } = {}) {
         const src = helper.parseGroundPoint(origSrc);
         const dst = helper.parseGroundPoint(origDst);
 
@@ -1143,7 +1143,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const srcGrId = w.findRoomContaining(src, true);
         if (srcGrId === null) {
           throw Error(`${"raycast"}: src must be in a room/doorway ${JSON.stringify({ x: src.x, y: src.y })}`);
-        } else if (w.findRoomContaining(dst, true) === null) {
+        } else if (offMap === false && w.findRoomContaining(dst, true) === null) {
           throw Error(`${"raycast"}: dst must be in a room/doorway ${JSON.stringify({ x: dst.x, y: dst.y })}`);
         }
         if (w.navWorker.workers === null) throw Error(`${"raycast"}: nav worker not ready`);
@@ -1151,6 +1151,21 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const msg: WW.GetRaycast = { type: "get-raycast", uid: shortUuid.generate(), src, dst, grKey: srcGrId.grKey };
         const signal = new AbortController().signal;
         return (await w.navWorker.request(msg, signal, "fast")) as JshCli.RaycastResult;
+      },
+      async raycasts(segs, { offMap = false } = {}) {
+        const casts: WW.GetRaycasts["casts"] = [];
+        /** Each seg's index in `casts`: `-1` if not sent */
+        const sent = segs.map((seg) => {
+          const grKey = seg === null ? undefined : w.findRoomContaining(seg.src, true)?.grKey;
+          if (seg === null || grKey === undefined) return -1;
+          if (offMap === false && w.findRoomContaining(seg.dst, true) === null) return -1;
+          return casts.push({ src: seg.src, dst: seg.dst, grKey }) - 1;
+        });
+        if (casts.length === 0 || w.navWorker.workers === null) return segs.map(() => null);
+        const msg: WW.GetRaycasts = { type: "get-raycasts", uid: shortUuid.generate(), casts };
+        const signal = new AbortController().signal;
+        const output = (await w.navWorker.request(msg, signal, "fast")) as (null | JshCli.RaycastResult)[];
+        return sent.map((i) => (i === -1 ? null : output[i]));
       },
       rejectPendingUnreachable(err) {
         for (const uid of Object.keys(state.pendingUnreachable)) {
@@ -1853,7 +1868,17 @@ export type State = {
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
-  raycast(src: MaybeMeta<JshCli.PointAnyFormat>, dst: MaybeMeta<JshCli.PointAnyFormat>): Promise<JshCli.RaycastResult>;
+  /** `offMap`: `dst` may lie off the map, which the hull's walls close: else it must be in a room or doorway */
+  raycast(
+    src: MaybeMeta<JshCli.PointAnyFormat>,
+    dst: MaybeMeta<JshCli.PointAnyFormat>,
+    opts?: { offMap?: boolean },
+  ): Promise<JshCli.RaycastResult>;
+  /** Several `raycast`s as one worker request: `null` for each that cannot be cast */
+  raycasts(
+    segs: (null | { src: Geom.VectJson; dst: Geom.VectJson })[],
+    opts?: { offMap?: boolean },
+  ): Promise<(null | JshCli.RaycastResult)[]>;
   removeNpcs(...npcKeys: string[]): void;
   spawnMany(opts: JshCli.SpawnManyOpts): Promise<void>;
   /**

@@ -600,6 +600,15 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
                 <MenuToggle on={npc.lit === true}>lit</MenuToggle>
               </Menu.Item>
             )}
+            {canLightOrDelete === true && (
+              <Menu.Item
+                className={speechMenuItemClassName}
+                closeOnClick={false}
+                onClick={() => w.npcFocus.setLaser(npcKey)}
+              >
+                <MenuToggle on={w.npcFocus.lasers.has(npcKey)}>laser</MenuToggle>
+              </Menu.Item>
+            )}
             {canLightOrDelete && (
               <Menu.Item
                 className={cn(speechMenuItemClassName, armed === true && "text-red-300 data-highlighted:text-red-200")}

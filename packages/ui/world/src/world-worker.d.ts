@@ -31,6 +31,13 @@ declare namespace WW {
         shields: { key: string; points: Geom.VectJson[] }[];
       }
     | {
+        /** The decor that stops a shot: all of it if `full`, else `boxes` added or replaced and `removed` gone */
+        type: "set-raycast-decor";
+        full: boolean;
+        boxes: RayDecor[];
+        removed: string[];
+      }
+    | {
         /** Every door, as `Doors` builds them: on each build, and to a fresh worker */
         type: "set-raycast-doors";
         doors: RayDoor[];
@@ -48,6 +55,12 @@ declare namespace WW {
         dst: Geom.VectJson;
         /** The room `src` is in */
         grKey: Geomorph.GmRoomKey;
+      }
+    | {
+        /** Answered by a `NavWorkerReply` whose `output` has a `JshCli.RaycastResult` per cast, `null` where it failed */
+        type: "get-raycasts";
+        uid: string;
+        casts: Omit<GetRaycast, "type" | "uid">[];
       };
 
   type RoomGraphMsgToWorker =
@@ -119,6 +132,7 @@ declare namespace WW {
   type SendNpcPhysicsPositions = Extract<PhysicsMsgToWorker, { type: "send-npc-positions" }>;
   type SetupPhysicsWorld = Extract<PhysicsMsgToWorker, { type: "setup-physics" }>;
   type GetRaycast = Extract<MsgToNavWorker, { type: "get-raycast" }>;
+  type GetRaycasts = Extract<MsgToNavWorker, { type: "get-raycasts" }>;
 
   /** Colliders always on ground hence 2D position suffices */
   type PhysicsColliderDef = Geom.VectJson &
@@ -275,8 +289,13 @@ declare namespace WW {
       walls: Geom.GeoJsonPolygon[];
       /** Those off the floor, in the geomorph's own space */
       obstacles: (Omit<RaycastObstacle, "dist" | "leave"> & { outline: Geom.GeoJsonPolygon })[];
+      /** Each window's centre line and its rooms, in the geomorph's own space: a ray passes it into the room beyond */
+      windows: { seg: [Geom.VectJson, Geom.VectJson]; roomIds: (null | number)[] }[];
     };
   };
+
+  /** A decor quad as a ray meets it: its outline in plan, world space, and its heights. See `quadBox` */
+  type RayDecor = { decorKey: string; outline: Geom.VectJson[]; top: number; bottom: number };
 
   /** A door as a ray meets it: its centre line, the side its gap opens from, its rooms, how open it is */
   type RayDoor = {

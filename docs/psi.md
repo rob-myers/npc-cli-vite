@@ -16,8 +16,13 @@ kept and nothing ticks: raised IS their left arm showing `psi`, which `w.e.isPsi
 - **The player's is switched** by `q`, its bar slot, a press on their own left arm (jsh `inventory`), or jsh
   `psi` / `psi off`. Turning it on from the bar or `q` needs psi granted (`w.e.hasItem`).
 - **Anyone else's** by jsh `psi npc-0` / `psi off npc-0`, granted or not.
-- **Raised, a press on another npc focuses on them** (from jsh `inventory`), offering "Become": the player leaves their
-  body for theirs. No line of sight is needed. See npc focus in `docs/engagements.md`, and `docs/spirit.md`.
+- **Raised, a press on another npc focuses on them** (from jsh `inventory`, `w.npcFocus.focus`). No line of sight
+  is needed. Four placeholder actions show beside them: distract, rush, tired, toilet (`psiActions` in `const.npc`).
+  - Opened by a press, Cancel sits under it, and the column keeps there relative to them.
+  - One chosen emits `psi-action` and says so on the bar.
+  - Psi lowered, their room going unlit, or Cancel drops it.
+- **Anyone may focus**, through jsh: `psi rob on:kate`, `psi rob act:distract`, `psi rob --cancel`. No mark shows
+  over whom they focus on.
 - **A talk's reply can wait on it**: the `psi` need of `talkNeeds` is met whilst psi is raised.
 
 ## Thoughts
@@ -47,6 +52,8 @@ The khandhas a mind is modelled on, each depending on the one before:
 
 - **Becoming another npc by `q`.** Psi raised, the nearest npc in reach was ringed and breathed, and `q` again
   made them the player. Later, `q` held left the body. Both gave way to "Become" in npc focus.
+- **"Become"**, in npc focus. The player left their body for another's (`<Spirit>`), the light drawing in and a
+  spark crossing to them. Dropped with `<Spirit>` and jsh `spirit`.
 
 - **Targeting.** Psi was on someone: the npc last pressed, whose room was then shown, and jsh
   `psi npcKey`. A press now reads a thought and is forgotten.

@@ -60,8 +60,8 @@ About ttys:
 ## Working
 
 1. Prototype in a tty: pipelines, `map`, `w n.rob.anim.fast`.
-2. Keep what is reusable as an exported function of a `packages/cli/src/jsh/world/*_mcp.ts` module,
-   `demo_mcp.ts` first. Write it like the commands in `core.ts`. A new module must be added to
+2. Keep what is reusable as an exported function of a `packages/cli/src/jsh/world/*_mcp.ts` module.
+   Write it like the commands in `core.ts`. A new module must be added to
    `modules.js` and to the profile's `source /etc/{…}.js.sh`.
 3. Check it loaded: `jsh({ cmd: "declare -F" })`, or `console` for an error.
 4. Run it, interactively if need be. For example, `jsh({ cmd: "events 'e => e.key === \"enter-collider\"' | foo &" })`,

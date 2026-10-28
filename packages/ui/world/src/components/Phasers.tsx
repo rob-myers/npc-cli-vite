@@ -1,12 +1,28 @@
 import { useStateRef } from "@npc-cli/util";
+import { geomService } from "@npc-cli/util/geom-service";
 import { warn } from "@npc-cli/util/legacy/generic";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
+import { wallHeight } from "../const.env";
 import { hitConfig, lieAim } from "../const.npc";
+import { aimToRay } from "../service/aim-target";
 import { eased } from "../service/fade";
-import { advanceBeam, type Beam, type BeamTarget, beamEnd, bodyPartPoint, createBeam } from "../service/phaser-beam";
+import {
+  advanceBeam,
+  type Beam,
+  type BeamTarget,
+  beamEnd,
+  bodyPartPoint,
+  createBeam,
+  type FreeShot,
+  isFreeShot,
+  type NpcTarget,
+  partOnRay,
+  type StruckKind,
+  targetPoint,
+} from "../service/phaser-beam";
 import {
   createPhaserResources,
   MAX_PHASERS,
@@ -35,6 +51,37 @@ export default function Phasers() {
       arms: new Map(),
       tickedSecs: w.gameTime.now(),
 
+      aimAt(npcKey, at) {
+        if (at !== null && hitBones.includes(at.part) === false) {
+          throw Error(`${at.part}: expected one of ${hitBones.join(", ")}`);
+        }
+        const arm = at === null ? state.arms.get(npcKey) : state.ensure(npcKey);
+        if (arm !== undefined)
+          arm.aimAt = at === null ? null : { ...at, held: at.held === true, secs: w.gameTime.now() };
+        w.r3f?.invalidate();
+      },
+      aimOf(npcKey) {
+        const arm = state.arms.get(npcKey);
+        const npc = w.n?.[npcKey];
+        if (arm?.armed !== true || npc === undefined) return null;
+        const [ax, az, x, z] = gunLine(npc, arm);
+        // sat or lain, along the arm to where it points
+        const [tx, tz] = arm.armAim?.at === arm.armAt ? [arm.armAt.x, arm.armAt.z] : [x, z];
+        const { anim } = npc;
+        const hand = anim.posture === "stand" ? null : handOf(npc, arm);
+        hand?.updateWorldMatrix(true, false);
+        /** The muzzle's height: stood or crouched as `gunY`, sat or lain the tip's */
+        const y =
+          hand === null
+            ? anim.headY - phaserConfig.gunBelowHead
+            : hand.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom)).y;
+        const bearing = geomService.getThreeRotationY(tz - az, tx - ax);
+        return { from: { x, y: z }, bearing, y, pitch: arm.pitch ?? 0 }; // undefined in an entry from before hmr
+      },
+      aimRay(npcKey, out) {
+        const aim = state.aimOf(npcKey);
+        return aim === null ? null : aimToRay(aim, out);
+      },
       aimOff(npcKey, at) {
         const arm = state.arms.get(npcKey);
         const npc = w.n?.[npcKey];
@@ -52,7 +99,8 @@ export default function Phasers() {
         if (w.n?.[npcKey]?.anim.hurt != null) return; // nor in pain, or pacified
         const arm = state.ensure(npcKey);
         const at = opts.at ?? null;
-        arm.target = at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null };
+        arm.target =
+          at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null, local: opts.local ?? null };
         arm.toward = opts.toward ?? null;
         arm.cast = null; // look again, at once
         arm.hitAt = null;
@@ -62,6 +110,64 @@ export default function Phasers() {
         arm.armed = true;
         state.sync();
         drawn && w.events.next({ key: "phasers", armed: true, npcKeys: [npcKey] });
+      },
+      async castAlong(npc, arm, shot) {
+        shot.casting = true;
+        const [end] = await state.endsAlong([npc.key]);
+        shot.casting = false;
+        if (arm.target !== shot) return; // fired again, or let go of
+        if (end === null) return void (arm.target = null); // e.g. its muzzle off the map
+        Object.assign(shot, { at: end.at, what: end.what, decorKey: end.decorKey });
+        w.r3f?.invalidate();
+      },
+      async endsAlong(npcKeys) {
+        const run = phaserConfig.alongMax;
+        const aims = npcKeys.map((npcKey) => (w.n?.[npcKey] === undefined ? null : state.aimOf(npcKey)));
+        const segs = aims.map((aim) => {
+          if (aim === null) return null;
+          const { from, bearing } = aim;
+          return { src: from, dst: { x: from.x - Math.sin(bearing) * run, y: from.y - Math.cos(bearing) * run } };
+        });
+        const results = await w.e.raycasts(segs, { offMap: true }).catch(() => segs.map(() => null));
+        /** Where a shot at no one along `aim` stops, given its cast */
+        const endOf = (npcKey: string, aim: import("../service/aim-target").Aim, result: JshCli.RaycastResult) => {
+          const { from, y, pitch } = aim;
+          const slope = Math.tan(pitch);
+          /** Its height `d` metres along the ground */
+          const heightAt = (d: number) => y + d * slope;
+          const [dx, dz] = [-Math.sin(aim.bearing), -Math.cos(aim.bearing)];
+          let dist = result.hit === null ? run : Math.hypot(result.hit.x - from.x, result.hit.y - from.y);
+          let what: StruckKind = result.hit === null ? "nothing" : result.hitDoor !== null ? "door" : "wall";
+          // tilted, the floor or the ceiling first
+          const flat = pitch === 0 ? Infinity : (pitch < 0 ? -y : wallHeight - y) / slope;
+          if (flat < dist) [dist, what] = [flat, pitch < 0 ? "floor" : "ceiling"];
+          let decorKey: null | string = null;
+          // nearest first: in at its side, else down through its top or up through its underside
+          const solids = [...result.obstacles, ...(result.decor ?? [])].sort((a, b) => a.dist - b.dist);
+          for (const solid of solids) {
+            const { dist: d0, leave, top, bottom } = solid;
+            if (d0 >= dist) break;
+            const [h0, h1] = [heightAt(d0), heightAt(Math.min(leave, dist))];
+            if (Math.max(h0, h1) < bottom || Math.min(h0, h1) > top) continue;
+            const d = h0 >= bottom && h0 <= top ? d0 : ((h0 > top ? top : bottom) - y) / slope;
+            decorKey = "decorKey" in solid ? solid.decorKey : null;
+            [dist, what] = [d, decorKey === null ? "obstacle" : "decor"];
+            break;
+          }
+          const at = new THREE.Vector3(from.x + dx * dist, heightAt(dist), from.y + dz * dist);
+          const start = tmpBody.set(from.x, y, from.y);
+          const freqs = w.shields?.phaserOf(npcKey)?.meta?.freqs;
+          const stopped = w.shields?.stop(result.shields, start, start, at, freqs) ?? null;
+          if (stopped !== null) {
+            at.copy(stopped);
+            [what, decorKey] = ["shield", null];
+          }
+          return { at, what, decorKey, dist: Math.hypot(at.x - from.x, at.z - from.y), rooms: result.rooms };
+        };
+        return results.map((result, i) => {
+          const aim = aims[i];
+          return result === null || aim === null ? null : endOf(npcKeys[i], aim, result);
+        });
       },
       disarm(...npcKeys) {
         for (const npcKey of npcKeys) {
@@ -76,6 +182,11 @@ export default function Phasers() {
           arm = {
             armAim: null,
             armAt: new THREE.Vector3(),
+            pitch: 0,
+            tilt: 0,
+            aimAt: null,
+            pitchAt: null,
+            tiltAt: new THREE.Vector3(),
             armed: false,
             armHit: false,
             beam: createBeam(),
@@ -110,6 +221,16 @@ export default function Phasers() {
         }
         return arm;
       },
+      fireAlong(npcKey, end) {
+        if (state.isArmed(npcKey) === false) state.arm(npcKey);
+        const arm = state.arms.get(npcKey);
+        if (arm?.armed !== true) return false;
+        const [at, what] = end === undefined ? [null, null] : [end.at.clone(), end.what];
+        arm.target = { npcKey: null, part: null, at, what, decorKey: end?.decorKey ?? null, casting: false };
+        arm.hitAt = null;
+        state.sync();
+        return true;
+      },
       hold(npcKey) {
         if (state.arms.has(npcKey) || w.n?.[npcKey] === undefined || state.holds(npcKey) === false) return;
         state.ensure(npcKey).beam.gun.presence = 1; // there at once: taken up, stood up, or arrived
@@ -129,7 +250,7 @@ export default function Phasers() {
         const arm = state.arms.get(npcKey);
         const npc = w.n?.[npcKey];
         if (arm === undefined || npc === undefined || arm.casting === true) return false;
-        const target = arm.target === null ? undefined : w.n[arm.target.npcKey];
+        const target = arm.target === null || arm.target.npcKey === null ? undefined : w.n[arm.target.npcKey];
         // a hit found by the last cast draws it in only at the next tick
         if (isCastCurrent(arm, npc, target) === false || arm.armHit === true) return false;
         return state.isRaised(npcKey) === true && state.isDrawnIn(npcKey) === false;
@@ -154,13 +275,21 @@ export default function Phasers() {
         state.disarm(npcKey);
         return () => {
           if (state.isArmed(npcKey) === true) return; // raised since
-          const opts = { at: target?.npcKey, part: target?.part, toward: toward ?? undefined, once: lowerAt !== null };
+          const local = isFreeShot(target) ? null : target?.local;
+          const opts = {
+            at: target?.npcKey,
+            part: target?.part,
+            local,
+            toward: toward ?? undefined,
+            once: lowerAt !== null,
+          };
           state.arm(npcKey, opts);
           if (pointAt !== null) state.pointAt(npcKey, pointAt);
         };
       },
       markDirty() {
         for (const arm of state.arms.values()) arm.cast = null;
+        w.npcFocus?.recast();
       },
       outcomeOf(npcKey, to) {
         const forced = w.debug?.forceShot ?? null;
@@ -199,6 +328,10 @@ export default function Phasers() {
         }
         w.r3f?.invalidate();
       },
+      tilt(npcKey, tilt) {
+        Object.assign(state.ensure(npcKey), { tilt, aimAt: null, pitchAt: null });
+        w.r3f?.invalidate();
+      },
       toggle(npcKey) {
         if (state.isArmed(npcKey)) state.disarm(npcKey);
         else state.arm(npcKey);
@@ -222,7 +355,9 @@ export default function Phasers() {
           const { beam } = arm;
           advanceBeam(beam, step, w.n, instant);
           if (beam.locked.presence === 0) arm.struck = arm.hitAt = arm.shot = null; // no object made, most ticks
-          if (beam.to !== null && beam.locked.target === 1 && arm.shot?.to !== beam.to) state.shoot(npc, arm, beam.to);
+          if (beam.to !== null && beam.to.npcKey !== null && beam.locked.target === 1 && arm.shot?.to !== beam.to) {
+            state.shoot(npc, arm, beam.to);
+          }
           if (beam.locked.presence === 1 && beam.to !== arm.struck) state.strike(npc, arm);
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden && state.holds(srcKey) === false) {
@@ -230,7 +365,7 @@ export default function Phasers() {
             continue;
           }
           if (hidden || count === MAX_PHASERS) continue;
-          const dst = beam.to === null ? undefined : w.n[beam.to.npcKey];
+          const dst = beam.to === null || beam.to.npcKey === null ? undefined : w.n[beam.to.npcKey];
           // out of sight at both ends nothing of it is drawn, so nothing is worked out: `wield` above still ran
           if (unseen(w, npc) && (dst === undefined || unseen(w, dst))) continue;
 
@@ -253,13 +388,16 @@ export default function Phasers() {
         const along = tmpAlong.set(0, -1, 0).transformDirection(hand.matrixWorld); // the forearm, towards the hand
         /** Their phaser's own, looked up once: the frequencies it knows, and those it is dead to */
         const item = w.shields?.phaserOf(npc.key)?.meta;
+        const free = isFreeShot(beam.to) ? beam.to : null;
         const part =
-          dst === undefined
-            ? null
-            : (arm.hitAt ?? shotPast(arm, tip, tmpPart) ?? bodyPartPoint(dst, beam.to?.part ?? null, tmpPart));
-        /** Where a shield between them stops it: of those their last cast passed */
+          free !== null
+            ? (arm.hitAt ?? free.at)
+            : dst === undefined
+              ? null
+              : (arm.hitAt ?? shotPast(arm, tip, tmpPart) ?? targetPoint(dst, beam.to, tmpPart));
+        /** Where a shield between them stops it: of those their last cast passed. A shot at no one's cast settled it */
         const stopped =
-          part === null
+          part === null || free !== null
             ? null
             : (w.shields?.stop(
                 arm.sight.shields,
@@ -268,7 +406,7 @@ export default function Phasers() {
                 part,
                 item?.freqs,
               ) ?? null);
-        const blocked = part === null ? null : acrossStop(arm, tip, part, tmpAcross);
+        const blocked = part === null || free !== null ? null : acrossStop(arm, tip, part, tmpAcross);
         const stop =
           blocked !== null && (stopped === null || tip.distanceTo(blocked) < tip.distanceTo(stopped))
             ? blocked
@@ -277,7 +415,7 @@ export default function Phasers() {
         const shown = eased(beam.shown.presence);
         const locked = eased(beam.locked.presence);
         // struck where the beam IS, not where it is headed: it glides there
-        if (stopped !== null && stop === stopped) w.shields.strike(end, shown * locked);
+        if ((stopped !== null && stop === stopped) || free?.what === "shield") w.shields.strike(end, shown * locked);
         const { roomSlot, npcLit } = dst ?? npc;
         put(state.srcData, i, tip.x, tip.y, tip.z, shown);
         put(state.dstData, i, end.x, end.y, end.z, locked);
@@ -297,9 +435,24 @@ export default function Phasers() {
       },
       strike(npc, arm) {
         const to = (arm.struck = arm.beam.to);
+        if (isFreeShot(to)) {
+          if (to.at !== null && to.what !== null) {
+            const { x, y, z } = to.at;
+            w.events.next({
+              key: "phaser-struck",
+              by: npc.key,
+              at: { x, y, z },
+              what: to.what,
+              decorKey: to.decorKey ?? null,
+            });
+            arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(to.at); // fades where it ended
+          }
+          arm.target = arm.firedSecs = null;
+          return void w.hud?.update();
+        }
         const dst = to === null ? undefined : w.n[to.npcKey];
         if (to === null || dst === undefined) return;
-        const part = bodyPartPoint(dst, to.part, tmpPart);
+        const part = targetPoint(dst, to, tmpPart);
         const from = tmpBody.set(npc.position.x, part.y, npc.position.z);
         const end = shotPast(arm, from, tmpPast) ?? part;
         if (w.shields?.stop(arm.sight.shields, from, from, end, w.shields.phaserOf(npc.key)?.meta?.freqs) != null)
@@ -328,8 +481,10 @@ export default function Phasers() {
       },
       aimShot(npc, dst, shot) {
         if (shot.outcome === "dodged" && dst.anim.posture === "lie") shot.outcome = "hit"; // no dodging in bed
-        const aim = shot.outcome === "dodged" ? dodgeAimOf(dst, shot.to.part) : shot.to.part;
-        const through = bodyPartPoint(dst, aim, new THREE.Vector3());
+        const through =
+          shot.outcome === "dodged"
+            ? bodyPartPoint(dst, dodgeAimOf(dst, shot.to.part), new THREE.Vector3())
+            : targetPoint(dst, shot.to, new THREE.Vector3());
         if (shot.outcome === "dodged") {
           // where their part will be once they have turned to face it. No dodge of theirs clears it from here: missed
           const turn = w.npc.dodge(dst.key, shot.to.part, npc.point);
@@ -338,15 +493,30 @@ export default function Phasers() {
         }
         return through;
       },
+      meetPart(npc, arm, dst, to) {
+        const hand = handOf(npc, arm);
+        if (hand === null) return true; // no muzzle to tell from
+        hand.updateWorldMatrix(true, false);
+        const tip = hand.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
+        tmpShotRay.set(tip, tmpShotDir.subVectors(targetPoint(dst, to, tmpPart), tip).normalize());
+        const met = partOnRay(dst, tmpShotRay, hitBones);
+        if (met === null) return false;
+        // the part it meets first, e.g. a forearm in the way
+        Object.assign(to, { part: met.part, local: met.local.clone() });
+        return true;
+      },
       shoot(npc, arm, to) {
         const shot: ArmShot = { to, outcome: state.outcomeOf(npc.key, to), through: null, past: null };
         arm.shot = shot;
         const dst = w.n[to.npcKey];
         if (dst === undefined) return;
-        const through = state.aimShot(npc, dst, shot);
+        /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */
+        const clear = to.local != null && state.meetPart(npc, arm, dst, to) === false;
+        if (clear === true) shot.outcome = "missed";
+        const through = clear === true ? targetPoint(dst, to, new THREE.Vector3()) : state.aimShot(npc, dst, shot);
         if (shot.outcome !== "missed" && shot.outcome !== "dodged") return;
         // dodged, it passes through the middle of their part: they move, it does not
-        if (shot.outcome === "missed") passWide(through, npc.position, dst.position);
+        if (shot.outcome === "missed" && clear === false) passWide(through, npc.position, dst.position);
         shot.through = through;
         const length = Math.hypot(through.x - npc.position.x, through.z - npc.position.z) || 1;
         const dir = { x: (through.x - npc.position.x) / length, y: (through.z - npc.position.z) / length };
@@ -392,7 +562,10 @@ export default function Phasers() {
           inReach = on !== undefined && onto === anim.pose;
         }
         const { armed } = arm;
-        const target = armed === true && arm.target !== null ? w.n[arm.target.npcKey] : undefined;
+        const target =
+          armed === true && arm.target !== null && arm.target.npcKey !== null ? w.n[arm.target.npcKey] : undefined;
+        /** A shot at no one, along their aim */
+        const free = armed === true && isFreeShot(arm.target) ? arm.target : null;
         state.recast(npc, arm, target, secs);
         /** Locked on someone the last cast looked for and could not see: drawn in until it can */
         const blind =
@@ -483,27 +656,57 @@ export default function Phasers() {
 
         // the aim — only ours, so a look still turns them: at the target, else held so a move strafes
         const { face } = anim;
+        /** The middle of the part their aim is held on, untargeted */
+        const heldAt = target === undefined && free === null ? heldPoint(w, arm) : null;
+        /** Where they lock on, on the ground: their target's part, where a shot at no one ends, or the part held */
+        const lockAt =
+          target !== undefined
+            ? lockPoint(target, arm)
+            : free?.at != null
+              ? { x: free.at.x, y: free.at.z }
+              : heldAt === null
+                ? null
+                : { x: heldAt.x, y: heldAt.z };
         if (sat === true) {
           // sat they turn their head, not round: and only ours to put back
           if (face.aim !== null && face.aim === arm.ownAim) face.aim = arm.ownAim = null;
-          if (target !== undefined) anim.turnTo(bearingPast(npc, target, arm.muzzleRight));
+          if (lockAt !== null) anim.turnTo(bearingPast(npc, lockAt, arm.muzzleRight));
           else if (arm.ownTurn === true && armed === false) anim.turnTo(null); // kept whilst raised
-          arm.ownTurn = target !== undefined || (arm.ownTurn === true && armed === true);
+          arm.ownTurn = lockAt !== null || (arm.ownTurn === true && armed === true);
         } else if (lain === true) {
           // lain they do not turn: their arm and head do
           if (face.aim !== null && face.aim === arm.ownAim) face.aim = arm.ownAim = null;
         } else if (face.aim === null || face.aim === arm.ownAim) {
           /** On a move told not to strafe, whose forward gait a held aim would slide */
           const forwardOnly = npc.isMoving() && anim.strafe !== true && anim.strafeFollowsAim !== true;
-          if (target !== undefined) arm.lockAim.at = bearingPast(npc, target, arm.muzzleRight);
+          if (lockAt !== null) arm.lockAim.at = bearingPast(npc, lockAt, arm.muzzleRight);
           face.aim = arm.ownAim =
-            target !== undefined ? arm.lockAim : armed === true && forwardOnly === false ? heldAim : null;
+            lockAt !== null ? arm.lockAim : armed === true && forwardOnly === false ? heldAim : null;
+        }
+
+        // its tilt, eased between detents, or to the part held
+        const aimNow = heldAt === null ? null : state.aimOf(npc.key);
+        if (aimNow !== null && heldAt !== null) {
+          arm.pitchAt = Math.atan2(heldAt.y - aimNow.y, Math.hypot(heldAt.x - aimNow.from.x, heldAt.z - aimNow.from.y));
+        }
+        const pitchTo = arm.pitchAt ?? (arm.tilt ?? 0) * phaserConfig.tiltRad;
+        arm.pitch = (arm.pitch ?? 0) + (pitchTo - (arm.pitch ?? 0)) * (1 - Math.exp(-delta / phaserConfig.tiltSecs));
+        if (Math.abs(pitchTo - arm.pitch) < 1e-4) arm.pitch = pitchTo;
+        else w.r3f?.invalidate();
+        // aimed once, let go of as it settles: their facing and pitch stay
+        if (aimNow !== null && heldAt !== null && arm.aimAt?.held === false) {
+          const bearing = geomService.getThreeRotationY(heldAt.z - aimNow.from.y, heldAt.x - aimNow.from.x);
+          const settled =
+            arm.pitch === pitchTo && Math.abs(deltaAngle(aimNow.bearing, bearing)) < phaserConfig.aimedRad;
+          if (settled || secs - arm.aimAt.secs > phaserConfig.aimSecs) arm.aimAt = null;
         }
 
         // the gun in hand, and the beam: locked on whilst aiming and in sight
         const { beam } = arm;
         arm.armAim ??= { at: beam.at, from: muzzle, weight: 0 };
         arm.gliding = false;
+        /** Stood and tilted with no beam, along the pitched aim */
+        const tilted = arm.pitch !== 0 && beam.shown.presence === 0 ? state.aimRay(npc.key, tmpAimRay) : null;
         /** Raised, or still coming down: lowered at once, a pose drawn stood would swing the arm up */
         const aiming = armed === true || isPhaserPose(anim.upper.key);
         if (aiming === true && (sat === true || lain === true)) {
@@ -513,6 +716,11 @@ export default function Phasers() {
           const { key, swap } = anim.upper;
           const s = swap * swap * (3 - 2 * swap);
           Object.assign(arm.armAim, { at, weight: key === phaserConfig.avoid ? 1 - s : s, maxRad: Math.PI });
+        } else if (tilted !== null) {
+          // tilted, along its pitched aim, as far as tilted: level, the pose's own
+          const at = tilted.at(phaserConfig.aimAhead, (arm.tiltAt ??= new THREE.Vector3()));
+          const weight = Math.min(1, Math.abs(arm.pitch) / phaserConfig.pitchFullRad);
+          Object.assign(arm.armAim, { at, weight, maxRad: undefined });
         } else {
           // the arm follows the beam
           Object.assign(arm.armAim, { at: beam.at, weight: eased(beam.shown.presence), maxRad: undefined });
@@ -530,15 +738,19 @@ export default function Phasers() {
           beam.gun.target = lowering > 0 ? 1 : 0;
           beam.gun.presence = Math.min(beam.gun.presence, lowering);
         } else if (beam.gun.target === 1 && beam.gun.presence === 0) beam.gun.presence = 1; // e.g. armed throughout
-        const locking = target !== undefined && arm.sight.inSight === true && inReach;
+        const locking = (target !== undefined && arm.sight.inSight === true && inReach) || free?.at != null;
         /** The arm is all the way up: no beam on its way there, nor any left as it comes down */
         const raised = armed === true && anim.upper.key === phaserConfig.pose && anim.upper.blend === 1;
+        // a shot at no one looks along their aim once raised, so it fires where they then face
+        if (free !== null && free.at === null && free.casting === false && raised === true && avoid === false) {
+          void state.castAlong(npc, arm, free);
+        }
         beam.shown.target = locking && avoid === false && raised ? 1 : 0;
         if (armed === false) beam.shown.presence = beam.locked.presence = 0;
         if (avoid === false) beam.next = locking ? arm.target : null;
 
-        // a shot is short: then they let go of whom they were on, still drawn
-        if (target === undefined || beam.locked.presence === 0) arm.firedSecs = null;
+        // a shot is short: then they let go of whom they were on, still drawn. One at no one gives up as soon, unfired
+        if ((target === undefined || beam.locked.presence === 0) && free === null) arm.firedSecs = null;
         else if (secs - (arm.firedSecs ??= secs) > phaserConfig.fireSecs) {
           arm.target = arm.firedSecs = null;
           w.hud?.update();
@@ -570,7 +782,7 @@ export default function Phasers() {
           target === undefined
             ? { ...arm.sight, inSight: false } // kept: a beam let go of still fades against them
             : w.e
-                .raycast(from, bodyPartPoint(target, arm.target?.part ?? null, tmpPart))
+                .raycast(from, targetPoint(target, arm.target, tmpPart))
                 .catch(() => w.e.raycast((from = npc.point), target.point)) // its muzzle beyond a wall
                 .then(
                   ({ hit, obstacles, shields }): ArmSight => ({
@@ -640,15 +852,34 @@ export type State = PhaserResources & {
 
   /** Radians their arm points off `at`, sat or lain — `null` unless it aims by `armAt` */
   aimOff(npcKey: string, at: Geom.VectJson): null | number;
+  /** Their aim whilst armed: from the muzzle at full aim, on the ground, and its bearing. See `service/aim-target` */
+  aimOf(npcKey: string): null | import("../service/aim-target").Aim;
+  /** Aims them at `at`'s part, facing and pitched there, until aimed. `held`: until they tilt or lower. `null` lets go */
+  aimAt(npcKey: string, at: null | { npcKey: string; part: string; held?: boolean }): void;
+  /** Their aim as a ray from the muzzle, pitched by their tilt: `null` unless armed */
+  aimRay(npcKey: string, out: THREE.Ray): null | THREE.Ray;
+  /** Tilts them to a detent: down, level or up. Lowering levels it */
+  tilt(npcKey: string, tilt: Tilt): void;
   /** Arm them, locked on `at` an npc's `part` — no `at` unlocks */
   /** `once`: lowered again once the shot is over. `toward`: sat or lain, whom they point at without locking on */
-  arm(npcKey: string, opts?: { at?: null | string; part?: null | string; once?: boolean; toward?: string }): void;
+  /** `local`: where on the part it lands, in its bone's frame */
+  arm(
+    npcKey: string,
+    opts?: { at?: null | string; part?: null | string; local?: null | THREE.Vector3; once?: boolean; toward?: string },
+  ): void;
+  /** Where a shot at no one ends: one cast along their aim, level at the gun's height. Npcs are not looked for */
+  castAlong(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
+  /** Where a shot at no one along each one's aim would end now, and the rooms it passes through, in one worker request */
+  /** `null` where it cannot be cast */
+  endsAlong(npcKeys: string[]): Promise<(null | AlongEnd)[]>;
   /** Their pose, stance and aim are let go of, and the gun and beam fade */
   disarm(...npcKeys: string[]): void;
   /** Writes their gun and beam as instance `i`, the beam to `dst` if any — `false` with no forearm to hold it */
   draw(npc: Npc, arm: ArmEntry, dst: undefined | Npc, i: number): boolean;
   /** Their entry, made if absent */
   ensure(npcKey: string): ArmEntry;
+  /** Fires at no one, along their aim, raising it if need be: `false` if it cannot be raised. `end`: already found */
+  fireAlong(npcKey: string, end?: { at: THREE.Vector3; what: StruckKind; decorKey: null | string }): boolean;
   /** Gives them an entry if they hold one and have none: told by events, not looked for each tick */
   hold(npcKey: string): void;
   /** Carries one and stands, so has it in hand — raised or not */
@@ -669,7 +900,7 @@ export type State = PhaserResources & {
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
   /** How a shot at `to` by `npcKey` ends: the hud's debug badge decides, else jsh, else it hits */
-  outcomeOf(npcKey: string, to: BeamTarget): JshCli.ShotOutcome;
+  outcomeOf(npcKey: string, to: NpcTarget): JshCli.ShotOutcome;
   /** Armed, they point towards `at` on the ground, not at whom a focus did: lain, as near as their pose aims */
   pointAt(npcKey: string, at: Geom.VectJson): void;
   /** The gun's colour and the beam's gain, ink and blending from the theme — called by `onChangeTheme` */
@@ -681,7 +912,9 @@ export type State = PhaserResources & {
   /** Their beam has reached its end: its effect on whom it was at, unless a shield stops it */
   strike(npc: Npc, arm: ArmEntry): void;
   /** Their beam is locking on to `to`: decides the shot, and where one passing them ends */
-  shoot(npc: Npc, arm: ArmEntry, to: BeamTarget): void;
+  shoot(npc: Npc, arm: ArmEntry, to: NpcTarget): void;
+  /** The line from their muzzle through `to`'s point meets a part of `dst`'s, which `to` then takes: `false` for none */
+  meetPart(npc: Npc, arm: ArmEntry, dst: Npc, to: NpcTarget): boolean;
   /** Settles `shot`'s outcome against them: in bed, or a dodge that clears it. Returns where the beam aims through */
   aimShot(npc: Npc, dst: Npc, shot: ArmShot): THREE.Vector3;
   /** A shot by `npc` reached `dst`'s `part`: its effect, its event, and a word to the player if it did not hit */
@@ -695,7 +928,29 @@ export type State = PhaserResources & {
   respawned(npcKey: string): void;
 };
 
+/** A phaser's detent: down, level or up */
+export type Tilt = -1 | 0 | 1;
+
+/** Where a shot at no one would end, and the rooms its cast passed through */
+type AlongEnd = {
+  at: THREE.Vector3;
+  what: StruckKind;
+  decorKey: null | string;
+  dist: number;
+  rooms: Geomorph.GmRoomKey[];
+};
+
 type ArmEntry = {
+  /** Their tilt, and its angle as it eases there, radians up */
+  tilt: Tilt;
+  pitch: number;
+  /** Where the arm points whilst tilted with no beam, along the pitched aim */
+  tiltAt: THREE.Vector3;
+  /** Whose part they aim at, untargeted, since game `secs`: jsh `phaser kate at:rob part:head` */
+  /** Not `held`, it is let go of once aimed */
+  aimAt: null | { npcKey: string; part: string; held: boolean; secs: number };
+  /** The pitch kept in place of the detent: the last an aim at a part asked for */
+  pitchAt: null | number;
   /** The arm's aim we set, down the beam */
   armAim: null | UpperAim;
   /** Where the arm points sat or lain, ahead of any beam — see `armAimAt` */
@@ -751,7 +1006,7 @@ type ArmEntry = {
   sight: ArmSight;
   /** The lock already struck with, so one shot hits once */
   struck: null | BeamTarget;
-  /** Whom they lock on to whilst armed and in sight */
+  /** Whom they lock on to whilst armed and in sight, or a shot at no one */
   target: null | BeamTarget;
   /** Whom they point at without locking on, sat or lain — see `arm` */
   toward: null | string;
@@ -778,7 +1033,7 @@ type ArmSight = {
 };
 
 type ArmShot = {
-  to: BeamTarget;
+  to: NpcTarget;
   outcome: JshCli.ShotOutcome;
   /** Missed or dodged, where it passes them. It runs on to `past`, the wall beyond on the ground, once that is found */
   through: null | THREE.Vector3;
@@ -819,17 +1074,12 @@ function shotPast(arm: ArmEntry, from: THREE.Vector3, out: THREE.Vector3) {
 }
 
 /** Where a ray from `from` along `dir` meets a wall, within `passMax` metres. `null` where it cannot be cast */
-async function wallBeyond(w: import("./World").State, from: Geom.VectJson, dir: Geom.VectJson) {
-  for (let d = phaserConfig.passMax; d >= 1; d /= 2) {
-    const to = { x: from.x + dir.x * d, y: from.y + dir.y * d };
-    if (w.findRoomContaining(to, true) === null) continue; // off the map: nearer
-    try {
-      return (await w.e.raycast(from, to)).hit ?? to;
-    } catch {
-      return null;
-    }
-  }
-  return null;
+function wallBeyond(w: import("./World").State, from: Geom.VectJson, dir: Geom.VectJson) {
+  const to = { x: from.x + dir.x * phaserConfig.passMax, y: from.y + dir.y * phaserConfig.passMax };
+  return w.e.raycast(from, to, { offMap: true }).then(
+    (result) => result.hit ?? to,
+    () => null,
+  );
 }
 
 /** Does their gun at full aim meet someone in their room: their body, or their arm whilst raised? */
@@ -974,7 +1224,11 @@ function armAimAt(npc: Npc, arm: ArmEntry, on: undefined | Npc, inReach: boolean
   const ry = (anim.posture === "lie" && arm.pointAt !== null ? anim.lieAimBearing(arm.pointAt) : null) ?? facingOf(npc);
   const { x, y, z } = npc.position;
   const ahead = phaserConfig.aimAhead;
-  return out.set(x - Math.sin(ry) * ahead, y + npc.anim.headY, z - Math.cos(ry) * ahead);
+  return out.set(
+    x - Math.sin(ry) * ahead,
+    y + npc.anim.headY + ahead * Math.tan(arm.pitch ?? 0),
+    z - Math.cos(ry) * ahead,
+  );
 }
 
 /** Eases `arm.armAt` to `want` over `delta` seconds. Newly aimed by it, from where the gun points now */
@@ -994,11 +1248,24 @@ function glideArmAt(npc: Npc, arm: ArmEntry, want: THREE.Vector3, delta: number)
   return arm.armAt;
 }
 
-/** The facing that lines `target` up, not on `npc`, but on a line `right` metres to their side */
-function bearingPast(npc: Npc, target: Npc, right: number) {
-  const [dx, dz] = [target.position.x - npc.position.x, target.position.z - npc.position.z];
+/** The facing that lines `at` up, not on `npc`, but on a line `right` metres to their side */
+function bearingPast(npc: Npc, at: Geom.VectJson, right: number) {
+  const [dx, dz] = [at.x - npc.position.x, at.y - npc.position.z];
   const turn = Math.asin(THREE.MathUtils.clamp(right / Math.hypot(dx, dz), -0.5, 0.5));
-  return npc.anim.bearingOf(target.point) + turn;
+  return npc.anim.bearingOf(at) + turn;
+}
+
+/** The middle of the part their aim is held on: `null` for none, forgetting one whose npc has gone */
+function heldPoint(w: import("./World").State, arm: ArmEntry) {
+  const npc = arm.aimAt == null ? undefined : w.n[arm.aimAt.npcKey];
+  if (npc === undefined || arm.aimAt == null) return (arm.aimAt = null);
+  return bodyPartPoint(npc, arm.aimAt.part, tmpHeld);
+}
+
+/** The part locked on to, on the ground: their middle for none */
+function lockPoint(target: Npc, arm: ArmEntry) {
+  const { x, z } = targetPoint(target, arm.target, tmpLock);
+  return Object.assign(tmpLockAt, { x, y: z });
 }
 
 const phaserConfig = {
@@ -1038,11 +1305,21 @@ const phaserConfig = {
   armAimedRad: Math.PI / 60,
   /** Metres from their middle a miss passes, on the side of the part */
   missBy: 0.4,
+  /** Radians a detent tilts it, and seconds it eases there over */
+  tiltRad: (8 * Math.PI) / 180,
+  tiltSecs: 0.12,
+  /** Radians of pitch past which the arm aims fully along it: level, the pose's own */
+  pitchFullRad: 0.02,
+  /** Radians off a part an aim at it, not held, is let go of. Or after `aimSecs` */
+  aimedRad: 0.005,
+  aimSecs: 1.5,
   /** Metres a miss looks along for a wall, and runs on past them until it finds one */
   passMax: 12,
   passStub: 1,
   /** Seconds a shot lasts, before they let go of their target */
   fireSecs: 1.5,
+  /** Metres a shot at no one reaches at most: a geomorph's width (1200 sgu) */
+  alongMax: 30,
   /** Seconds a one-off shot may take before it is lowered regardless, e.g. never in sight */
   onceSecs: 4,
   /** Radians about the right forearm between an arm at rest and the pose's — see `onTick` */
@@ -1075,7 +1352,7 @@ function byAvoid(goal: null | AnimationClipKey, shown: null | AnimationClipKey, 
 
 /** Lowers it, forgetting whom it was on or pointed at: raised again, it is on nobody */
 function lower(arm: ArmEntry) {
-  Object.assign(arm, { armed: false, target: null, toward: null, pointAt: null });
+  Object.assign(arm, { armed: false, target: null, toward: null, pointAt: null, tilt: 0, aimAt: null, pitchAt: null });
 }
 
 /** Faded right out, mid-teleport: in their hand until then, and again as they fade back in */
@@ -1134,4 +1411,12 @@ const tmpArmWant = new THREE.Vector3();
 const tmpShoulder = new THREE.Vector3();
 const tmpPast = new THREE.Vector3();
 const tmpAcross = new THREE.Vector3();
+const tmpLock = new THREE.Vector3();
+/** The bones a shot may meet: those of a hit region */
+const hitBones = Object.keys(hitConfig.region);
+const tmpLockAt = { x: 0, y: 0 };
+const tmpHeld = new THREE.Vector3();
+const tmpShotRay = new THREE.Ray();
+const tmpShotDir = new THREE.Vector3();
+const tmpAimRay = new THREE.Ray();
 const yAxis = new THREE.Vector3(0, 1, 0);

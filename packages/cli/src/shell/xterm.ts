@@ -636,25 +636,19 @@ export class TtyXterm {
       this.setCursor(msg.cursor);
       this.lastCompletion = msg.candidates.length > 1 ? msg.input : null;
     } else if (msg.candidates.length > 1 && this.lastCompletion === this.input) {
-      // the second Tab: the candidates in columns, then the prompt and input back as they were
+      // the second Tab: the candidates in columns, then the prompt and input back as they were.
+      // synchronous write avoids prompt-per-line
       const { input, cursor } = this;
       this.setCursor(input.length);
       this.xterm.write("\r\n");
       this.input = "";
       this.cursor = 0;
-      this.queueCommands([
-        ...cliColumns(msg.candidates, { width: this.xterm.cols })
-          .split(/\r?\n/)
-          .map((line) => ({ key: "line" as const, line })),
-        ...(msg.commandsOmitted === true ? [{ key: "line" as const, line: completionHint }] : []),
-        {
-          key: "resolve",
-          resolve: () => {
-            this.setInput(input);
-            this.setCursor(cursor);
-          },
-        },
-      ]);
+      const listed = cliColumns(msg.candidates, { width: this.xterm.cols });
+      for (const line of `${listed}${msg.commandsOmitted === true ? `\n${completionHint}` : ""}`.split(/\r?\n/)) {
+        this.xterm.writeln(line);
+      }
+      this.setInput(input);
+      this.setCursor(cursor);
       this.lastCompletion = null;
     } else {
       this.lastCompletion = msg.candidates.length > 1 ? this.input : null;

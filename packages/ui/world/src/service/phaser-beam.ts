@@ -2,8 +2,32 @@ import * as THREE from "three/webgpu";
 import type { Npc } from "../components/npc";
 import { eased, type Fade, stepFade } from "./fade";
 
+/** Whom a weapon locks on to, or where a shot at no one ends */
+export type BeamTarget = NpcTarget | FreeShot;
+
 /** Whom a weapon locks on to, and which of their bones' parts — `null`, or none such, is over their head */
-export type BeamTarget = { npcKey: string; part: null | string };
+export type NpcTarget = {
+  npcKey: string;
+  part: null | string;
+  /** Where on the part it lands, in its bone's frame so it moves with them: else the part's middle */
+  local?: null | THREE.Vector3;
+};
+
+/** A shot at no one, along the aim: `at` and `what` once its cast is back */
+export type FreeShot = {
+  npcKey: null;
+  part: null;
+  at: null | THREE.Vector3;
+  what: null | StruckKind;
+  /** What it struck, if decor */
+  decorKey: null | string;
+  casting: boolean;
+};
+
+/** What a shot at no one ended on. `nothing` is `alongMax` metres out */
+export type StruckKind = "wall" | "door" | "obstacle" | "decor" | "shield" | "floor" | "ceiling" | "nothing";
+
+export const isFreeShot = (target: null | BeamTarget): target is FreeShot => target !== null && target.npcKey === null;
 
 /**
  * A weapon's beam, `shown` and `locked` on to `to` together, and the `gun` it leaves. A new target
@@ -49,7 +73,7 @@ export function createBeam(): Beam {
  * paused, but holds the gun: it comes and goes with the arm, which is then still
  */
 export function advanceBeam(x: Beam, step: number, npcs: Record<string, unknown>, instant: boolean) {
-  if (x.next !== null && !(x.next.npcKey in npcs)) x.next = null;
+  if (x.next !== null && x.next.npcKey !== null && !(x.next.npcKey in npcs)) x.next = null;
   if (sameTarget(x.to, x.next) === false) {
     const gliding = instant === false && x.to !== null && x.next !== null && x.locked.presence > 0;
     if (gliding) x.glide = { from: x.end.clone(), t: 0 };
@@ -59,8 +83,9 @@ export function advanceBeam(x: Beam, step: number, npcs: Record<string, unknown>
 
   stepFade(x.gun, instant ? 0 : step);
   if (instant) step = 1;
-  stepFade(x.shown, step);
-  stepFade(x.locked, step);
+  // shown and reaching out in a frame or two. Let go, it fades at the usual pace
+  stepFade(x.shown, x.shown.target === 1 ? step * beamConfig.lockRate : step);
+  stepFade(x.locked, x.locked.target === 1 ? step * beamConfig.lockRate : step);
   if (x.glide !== null && (x.glide.t = Math.min(1, x.glide.t + step)) === 1) x.glide = null;
 }
 
@@ -89,7 +114,24 @@ export function beamEnd(
 }
 
 const sameTarget = (a: null | BeamTarget, b: null | BeamTarget) =>
-  a === b || (a !== null && b !== null && a.npcKey === b.npcKey && a.part === b.part);
+  a === b ||
+  (a !== null &&
+    b !== null &&
+    a.npcKey !== null &&
+    b.npcKey !== null &&
+    a.npcKey === b.npcKey &&
+    a.part === b.part &&
+    a.local === b.local);
+
+/** Where a shot at `to` lands on `npc`: its `local` point on the part, else the part's middle */
+export function targetPoint(npc: Npc, to: null | BeamTarget, out: THREE.Vector3) {
+  const part = to?.part ?? null;
+  const local = to === null || to.npcKey === null ? null : (to.local ?? null);
+  const found = local === null ? null : bodyPart(npc, part);
+  if (local === null || found === null) return bodyPartPoint(npc, part, out);
+  found.bone.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
+  return out.copy(local).applyMatrix4(found.bone.matrixWorld);
+}
 
 /** `part`'s bone on `npc`, and the box round what it moves most, in its own frame. `null` for none such */
 export function bodyPart(npc: Npc, part: null | string) {
@@ -142,9 +184,83 @@ function partBoxes(mesh: THREE.SkinnedMesh) {
 const partBoxesByGeo = new WeakMap<THREE.BufferGeometry, Map<string, THREE.Box3>>();
 const tmpGlide = new THREE.Vector3();
 
+/** Where a ray meets a part: reused by each call, so copy what is kept */
+export type PartHit = { part: string; local: THREE.Vector3; point: THREE.Vector3; dist: number };
+
+/**
+ * The nearest of `bones` on `npc` whose part `ray` meets, by the box round what its bone moves most: its name, where
+ * in its frame, and where. Only bones near the ray's height across them are tested. `null` for none
+ */
+export function partOnRay(npc: Npc, ray: THREE.Ray, bones: Iterable<string>): null | PartHit {
+  const { origin: o, direction: d } = ray;
+  // where it crosses a cylinder about their middle, in plan: missing it, it misses them
+  const [fx, fz] = [o.x - npc.position.x, o.z - npc.position.z];
+  const [a, b] = [d.x * d.x + d.z * d.z, fx * d.x + fz * d.z];
+  const r = beamConfig.cullRadius;
+  const disc = b * b - a * (fx * fx + fz * fz - r * r);
+  if (a < 1e-9 || disc < 0) return null;
+  const [t0, t1] = [Math.max(0, (-b - Math.sqrt(disc)) / a), (-b + Math.sqrt(disc)) / a];
+  if (t1 < 0) return null;
+  /** Its heights across them */
+  const [y0, y1] = [o.y + d.y * t0, o.y + d.y * t1];
+  const [yMin, yMax] = [Math.min(y0, y1), Math.max(y0, y1)];
+  const { root, parts } = partsOf(npc.skinnedMesh);
+  root.updateWorldMatrix(true, true); // every bone as posed now, once
+  tmpPartHit.dist = Infinity;
+  for (const name of bones) {
+    const found = parts.get(name);
+    if (found === undefined) continue;
+    const { bone, box, reach } = found;
+    const boneY = bone.matrixWorld.elements[13];
+    if (boneY + reach < yMin || boneY - reach > yMax) continue;
+    const local = tmpBoneRay.copy(ray).applyMatrix4(tmpInverse.copy(bone.matrixWorld).invert());
+    if (local.intersectBox(box, tmpHit) === null) continue;
+    const dist = tmpWorld.copy(tmpHit).applyMatrix4(bone.matrixWorld).distanceTo(o);
+    if (dist >= tmpPartHit.dist) continue;
+    Object.assign(tmpPartHit, { part: name, dist });
+    tmpPartHit.local.copy(tmpHit);
+    tmpPartHit.point.copy(tmpWorld);
+  }
+  return tmpPartHit.dist === Infinity ? null : tmpPartHit;
+}
+
+/** Each bone of `mesh` with a part, by name: its box, and how far from the bone its farthest corner is. And their root */
+function partsOf(mesh: THREE.SkinnedMesh) {
+  let found = partsBySkeleton.get(mesh.skeleton);
+  if (found !== undefined) return found;
+  const boxes = partBoxes(mesh);
+  const { bones } = mesh.skeleton;
+  const parts = new Map(
+    bones.flatMap((bone) => {
+      const box = boxes.get(bone.name);
+      if (box === undefined) return [];
+      const { min, max } = box;
+      const reach = Math.hypot(...(["x", "y", "z"] as const).map((k) => Math.max(Math.abs(min[k]), Math.abs(max[k]))));
+      return [[bone.name, { bone, box, reach }] as const];
+    }),
+  );
+  found = { root: bones.find((bone) => bone.parent?.type !== "Bone") ?? bones[0], parts };
+  partsBySkeleton.set(mesh.skeleton, found);
+  return found;
+}
+
+const partsBySkeleton = new WeakMap<
+  THREE.Skeleton,
+  { root: THREE.Bone; parts: Map<string, { bone: THREE.Bone; box: THREE.Box3; reach: number }> }
+>();
+const tmpPartHit: PartHit = { part: "", local: new THREE.Vector3(), point: new THREE.Vector3(), dist: Infinity };
+const tmpBoneRay = new THREE.Ray();
+const tmpHit = new THREE.Vector3();
+const tmpWorld = new THREE.Vector3();
+const tmpInverse = new THREE.Matrix4();
+
 const beamConfig = {
+  /** How many times faster a beam shows and reaches out than it fades: too fast to see it extend */
+  lockRate: 10,
   /** Metres the beam is drawn back to as it lets go, on past the muzzle */
   stub: 0.05,
   /** Metres above the target's head bone the beam lands, for no body part */
   headAbove: 0.3,
+  /** Metres round an npc's middle their parts may reach, an arm past their body: a ray missing it misses them */
+  cullRadius: 0.45,
 } as const;

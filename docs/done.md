@@ -9,6 +9,9 @@
 
 ### Animation and Npc
 
+- ✅ `move` to doable goes nearby by default
+  - `move --far` is previous behaviour
+
 - ✅ skin face eyes
 - ✅ sidestep (command executed in PROFILE)
 
@@ -46,6 +49,7 @@
 
 ### Camera
 
+- ✅ improve follow camera transition when look wrong way in chair then spawn out
 - ✅ debug sliders for fov/minDist/maxDist with natural relationship
 - ✅ in follow mode zoomed-out seems closer so labels should be smaller
 
@@ -60,7 +64,14 @@
 - ❌ add shelves
 - ✅ separate dynamic/static decor into colliders and quads/points (2 more draw calls)
 
+### Focus
+
+- ✅ on cancel npc focus re-focus world
+
 ### Inventory
+
+- ✅ no "strafe" message or toggle when aim while sit/lie
+- ✅ "aim blocked" toast and phaser end colour matches inventory
 
 - ✅ why does npc focus need `inventory`?
   - needed to raise/lower/aim phaser
@@ -93,10 +104,17 @@
 
 ### Perception
 
+- ✅ avoid main thread stall on show spot-overlay first 1st time via `0`
+
+- ✅ sees rays should aim for center of head (not face)
+
+- ✅ spotKey alias {grKey}-{id}, {gdKey}-{id}
 - ✅ spots overlay toggle not grey if `spot_overlay` has run
 - ✅ some cover spots don't provide cover
 
 ### Phaser and Psi
+
+- ✅ phaser beam should use 3D sees intersection for miss detection
 
 - ✅ can strafe without raising phaser
   - double tap shift

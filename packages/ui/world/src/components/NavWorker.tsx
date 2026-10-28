@@ -112,6 +112,7 @@ export default function NavWorker() {
     if (state.regenNavMesh === false && state.navFor === w.gmsHash && w.nav.gmsHash === w.gmsHash) {
       // respawned for jsh's code alone: the navmesh made last still holds
       state.post({ type: "set-navmesh", navMesh: w.nav.navMesh } satisfies WW.MsgToNavWorker);
+      w.setNextPending({ nav: false }); // else a request lost with the old workers stays pending
     } else {
       w.setNextPending({ nav: true });
       state.post(
@@ -130,6 +131,7 @@ export default function NavWorker() {
     // fresh workers have none
     w.door?.sendToRaycast();
     w.shields?.sendToRaycast();
+    w.decor?.sendToRaycast();
   }, [w.gmsHash, state.reloads]); // request navmesh, room graph
 
   return null;

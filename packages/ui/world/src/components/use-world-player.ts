@@ -31,8 +31,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const npc = state.get();
         if (npc === undefined) return;
         const { face } = npc.anim;
-        // not whilst locked on, nor focused: the phaser's target is whom they face
-        const free = w.phasers?.isLocked(state.key) !== true && w.npcFocus?.isFixated() !== true;
+        // not whilst locked on: the phaser's target is whom they face
+        const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
         const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
         const { posture } = npc;
@@ -140,6 +140,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // twice quickly toggles strafing, whatever else is held
         if (e.key === "Shift") return void (state.isDoubleTap("Shift", e.timeStamp) && state.toggleStrafe());
         if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.code === "Space") {
+          // raised, it fires at whom its line crosses, else along it. Lowered, it is raised
+          e.preventDefault();
+          const raised = w.phasers?.isArmed(state.key) === true;
+          w.npcFocus?.target(state.key);
+          if (raised === true) w.npcFocus?.fire(state.key);
+          return;
+        }
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
           // the same one twice, quickly, runs

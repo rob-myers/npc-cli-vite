@@ -248,7 +248,7 @@ export function WorldMenu() {
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
 
-  /** Spots greyed out until jsh `spot_overlay`, run by a terminal's profile, fills them */
+  /** Spots greyed out until jsh `spots --show`, run by a terminal's profile, fills them */
   const withSpotsGreyed = <T extends { value: string }>(item: T) =>
     item.value === "spots" && (w.debug?.spots.length ?? 0) === 0 ? { ...item, disabled: true } : item;
 

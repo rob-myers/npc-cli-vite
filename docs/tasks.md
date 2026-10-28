@@ -1,13 +1,14 @@
 # Tasks
 
-The ONLY doc for `Task` (`packages/util/src/service/task.ts`, from `@npc-cli/util`): async World code that a
-jsh kill, or anything else, can end at once.
+The ONLY doc for `Task` (`packages/util/src/service/task.ts`, from `@npc-cli/util`): async code that a jsh kill,
+or anything else, can end at once. Usually a command's wait on the World, sometimes World code.
 
 ## Why
 
 A jsh command that awaits World code must end on ctrl-c (see "A long-running command must support kill" in
 `CLAUDE.md`). The command itself can stop waiting by racing a `killed` promise. The World code it started
-keeps going unless it can be told to stop. A `Task` is how it is told.
+keeps going unless it can be told to stop. A `Task` is how it is told. A `Task` in the command also waits on
+World state (`until`) and counts time (`wait`) as only a kill can end.
 
 ## The class
 
@@ -24,26 +25,28 @@ Every await inside `steps` goes through `wait` or `until`, so code after a cance
 
 ## The pattern
 
-The owner of the World state keeps the task in its state:
-
-1. Its start makes the task, e.g. `state.task = new Task()`.
-2. Its every way out cancels it and clears the field, in one place.
-3. Its async method runs as `await task.run(async () => { ... })`. To stay pending until the thing is over,
-   the last step is `await task.wait()`.
-4. Its `cancel()` ends the thing as a user would, e.g. Escape, and so cancels the task.
-
-The jsh command then calls the method, and its kill cleanup calls `cancel()`:
+**The command keeps the task** when the World only holds state, which its own tick changes. The command makes
+the task, its kill cleanup cancels it, and it waits with `until`:
 
 ```ts
-const handlers = api.handleStatus({ cleanup: () => (w.npcFocus.cancel(), onKill()) });
+w.phasers.aimAt(npcKey, at);
+const aimed = w.phasers.arms.get(npcKey)?.aimAt;
+const task = new Task();
+const handlers = api.handleStatus({ cleanup: () => task.cancel() });
 try {
-  await Promise.race([w.npcFocus.aimAt(key), killed]);
+  await task.run(() => task.until(() => w.phasers.arms.get(npcKey)?.aimAt !== aimed));
 } finally {
   handlers.dispose();
 }
+if (task.isCancelled === true) throw api.getKillError(); // after letting go of what it started
 ```
 
-`NpcFocus` (`begin`, `abandon`, `aimAt`, `cancel`) and jsh `focus` in `core.ts` are the example.
+`aimAtPart` (jsh `phaser kate at:rob`), `wSleep` in `core.ts` and `act` in `act.ts` are examples. A paused World
+ticks nothing, so the state does not change and the wait goes on.
+
+**The World code keeps the task** only when it runs async steps of its own, which a kill must stop. Its owner makes
+the task on starting, cancels it on every way out in one place, and runs as `await task.run(async () => { ... })`. A
+command calls it, and its kill cleanup calls the owner's `cancel()`. None does so at present.
 
 ## Where it is not used
 

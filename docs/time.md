@@ -21,8 +21,6 @@ Both are in `packages/ui/world/src/service/clock.ts`.
 
 - **Detection** follows for free. The physics worker steps on the npc positions each tick sends.
 - **Phasers**, shields and npc shields read `w.gameTime`.
-- **The Spirit** scales its frame delta by `w.gameTime.scale`.
-- **Npc focus** waits on a `Task` that counts game time, so its turn and raise timeouts stretch with a slowed turn.
 
 ## What runs on real time
 
@@ -30,6 +28,7 @@ Both are in `packages/ui/world/src/service/clock.ts`.
 - `foldTo` (the World folding flat on a map change).
 - `NpcRings`, whose morphs run on TSL's `time`. They fade whilst paused too.
 - r3f's own `useFrame` delta, e.g. `LightSweep`'s frontier easing.
+- Targeting's casts along a raised phaser, and its aim dot (`NpcFocus`): they follow the aim, not a clock.
 
 ## The time scale
 
