@@ -1,12 +1,17 @@
 /**
  * The nav worker's raycasts, along one world-space `SegGrid`. Walls stop a ray, and so does a door
- * unless it crosses that door's gap. Obstacles and shields it passes are named, nearest first
+ * unless it crosses that door's gap. A window leads it on into the room beyond. Obstacles and shields it
+ * passes are named, nearest first
  */
 import { Mat, Poly } from "@npc-cli/util/geom"; // 🔔 @npc-cli/util breaks worker via react-refresh window undefined
 import { type Occluder, SegGrid, segsHit } from "../service/seg-grid";
 
 /** Walls and obstacles in world coords, as of the last navmesh request */
-let statics: { walls: Seg[]; obstacles: RayObstacle[] } = { walls: [], obstacles: [] };
+let statics: { walls: Seg[]; obstacles: RayObstacle[]; windows: RayWindow[] } = {
+  walls: [],
+  obstacles: [],
+  windows: [],
+};
 /** As `Doors` last sent them */
 let doors: WW.RayDoor[] = [];
 /** By gdKey, each door's open ratio */
@@ -22,15 +27,22 @@ let grid: null | SegGrid = null;
 export function setRaycastStatics(gmKeyToData: WW.RaycastSetupData, gmGeoms: WW.GmGeomForNav[]) {
   const walls: Seg[] = [];
   const obstacles: RayObstacle[] = [];
+  const windows: RayWindow[] = [];
   gmGeoms.forEach((gm, gmId) => {
-    const { walls: wallPolys, obstacles: gmObstacles } = gmKeyToData[gm.key];
+    const { walls: wallPolys, obstacles: gmObstacles, windows: gmWindows = [] } = gmKeyToData[gm.key];
     const toWorld = new Mat(gm.mat3);
     for (const json of wallPolys) for (const seg of Poly.from(json).applyMatrix(toWorld).lineSegs) walls.push(seg);
     for (const { outline, ...obstacle } of gmObstacles) {
       obstacles.push({ ...obstacle, gmId, outline: Poly.from(outline).applyMatrix(toWorld).outline });
     }
+    for (const { seg, roomIds } of gmWindows) {
+      windows.push({
+        seg: [toWorld.transformPoint({ ...seg[0] }), toWorld.transformPoint({ ...seg[1] })],
+        grKeys: roomIds.map((roomId) => (roomId === null ? null : (`g${gmId}r${roomId}` as const))),
+      });
+    }
   });
-  statics = { walls, obstacles };
+  statics = { walls, obstacles, windows };
   grid = null;
 }
 
@@ -114,6 +126,11 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
       stop = lambda;
       break;
     }
+    if (o.kind === "window") {
+      const next = nextRoom(statics.windows[o.id].grKeys, rooms);
+      if (next !== null) rooms.push(next);
+      continue;
+    }
     if (o.kind !== "door") {
       const byId = o.kind === "decor" ? metDecor : met;
       const at = byId.get(o.id);
@@ -127,7 +144,7 @@ function raycast({ src, dst, grKey }: WW.GetRaycasts["casts"][number]): JshCli.R
       break;
     }
     passed.push(door.gdKey);
-    const next = nextRoom(door, rooms);
+    const next = nextRoom(door.grKeys, rooms);
     if (next !== null) rooms.push(next);
   }
 
@@ -165,6 +182,7 @@ function getGrid() {
   const next = new SegGrid(1);
   for (const seg of statics.walls) next.add(seg, "wall", -1);
   doors.forEach(({ src, dst }, index) => next.add([src, dst], "door", index));
+  statics.windows.forEach(({ seg }, index) => next.add(seg, "window", index));
   statics.obstacles.forEach(({ outline }, index) => {
     outline.forEach((p, i) => next.add([p, outline[(i + 1) % outline.length]], "obstacle", index));
   });
@@ -185,11 +203,11 @@ function inGap(door: WW.RayDoor, p: Geom.VectJson) {
   return door.gapAtHighLambda ? lambda >= 1 - ratio : lambda <= ratio;
 }
 
-/** The room beyond `door`. A hull door's second record leads to its own room, unless that is already listed */
-function nextRoom(door: WW.RayDoor, rooms: Geomorph.GmRoomKey[]) {
+/** The room beyond a door or window joining `grKeys`. A hull door's second record leads to its own room, unless that is already listed */
+function nextRoom(grKeys: (null | Geomorph.GmRoomKey)[], rooms: Geomorph.GmRoomKey[]) {
   const current = rooms[rooms.length - 1];
-  if (door.grKeys.includes(current)) return door.grKeys.find((grKey) => grKey !== null && grKey !== current) ?? null;
-  return door.grKeys.find((grKey) => grKey !== null && rooms.includes(grKey) === false) ?? null;
+  if (grKeys.includes(current)) return grKeys.find((grKey) => grKey !== null && grKey !== current) ?? null;
+  return grKeys.find((grKey) => grKey !== null && rooms.includes(grKey) === false) ?? null;
 }
 
 /** Decor keys of the shields it meets before `stop`, nearest first */
@@ -225,4 +243,5 @@ const pointAt = (src: Geom.VectJson, dst: Geom.VectJson, lambda: number) => ({
 const round = ({ x, y }: Geom.VectJson) => ({ x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 });
 
 type Seg = [Geom.VectJson, Geom.VectJson];
+type RayWindow = { seg: Seg; grKeys: (null | Geomorph.GmRoomKey)[] };
 type RayObstacle = Omit<WW.RaycastObstacle, "dist" | "leave"> & { gmId: number; outline: Geom.VectJson[] };

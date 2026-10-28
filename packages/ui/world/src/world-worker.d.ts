@@ -289,6 +289,8 @@ declare namespace WW {
       walls: Geom.GeoJsonPolygon[];
       /** Those off the floor, in the geomorph's own space */
       obstacles: (Omit<RaycastObstacle, "dist" | "leave"> & { outline: Geom.GeoJsonPolygon })[];
+      /** Each window's centre line and its rooms, in the geomorph's own space: a ray passes it into the room beyond */
+      windows: { seg: [Geom.VectJson, Geom.VectJson]; roomIds: (null | number)[] }[];
     };
   };
 

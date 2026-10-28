@@ -54,8 +54,11 @@ export function sightOccluders(gms: (SightLayout & { matrix: Geom.Mat })[]) {
       void occluders.push(top === undefined ? { a, b, kind, id } : { a, b, kind, id, top }),
   };
   gms.forEach((gm, gmId) => addOccluders(into, gm, gm.matrix, gmId * sightIdStride, true));
-  // decor is the phaser's alone
-  return occluders.filter((o): o is Occluder & { kind: Exclude<Occluder["kind"], "decor"> } => o.kind !== "decor");
+  // decor and windows are the phaser's alone
+  return occluders.filter(
+    (o): o is Occluder & { kind: Exclude<Occluder["kind"], "decor" | "window"> } =>
+      o.kind !== "decor" && o.kind !== "window",
+  );
 }
 
 /** Room for a geomorph's door and obstacle ids, in a world grid */

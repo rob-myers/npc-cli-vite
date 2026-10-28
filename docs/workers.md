@@ -144,13 +144,14 @@ parked only if it was explicitly parked.
 (`get-raycasts`), each `null` where it failed: every raised phaser's cast, per frame. `worker/ray-cast.ts`
 walks a world-space `SegGrid` (`service/seg-grid.ts`) along each, every crossing nearest first.
 
-- **What it holds.** Walls, door centre lines, and the edges of every obstacle above the floor. Walls
-  and obstacles come per map (`set-raycast-statics`, in each geomorph's own coords). Doors come
+- **What it holds.** Walls, door and window centre lines, and the edges of every obstacle above the
+  floor. Walls, windows and obstacles come per map (`set-raycast-statics`, in each geomorph's own coords). Doors come
   from `Doors` (`set-raycast-doors`): on each build, and to a fresh worker.
 - **What stops it.** A wall, or a door crossed outside its gap. The gap grows from one end by the
   door's open ratio (`gapAtHighLambda`). `Doors.onTick` posts the ratios that changed
   (`set-door-ratios`), so only whilst a door moves.
-- **What it names.** The doors it passed and the rooms beyond, `src`'s first. The obstacles and shields
+- **What it names.** The doors it passed and the rooms beyond, `src`'s first. A window leads it on into
+  the room beyond, as an open door does. The obstacles and shields
   it met before stopping, nearest first. Not an obstacle it starts inside, e.g. a seat.
 - **Hull doors.** Both records of one are in the grid, each with its own ratio. A ray crosses as many
   geomorphs as it reaches.

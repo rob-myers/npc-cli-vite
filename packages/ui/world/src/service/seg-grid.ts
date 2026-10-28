@@ -112,7 +112,7 @@ export function segsHit(p: Geom.VectJson, q: Geom.VectJson, a: Geom.VectJson, b:
 export type Occluder = {
   a: Geom.VectJson;
   b: Geom.VectJson;
-  kind: "wall" | "door" | "obstacle" | "low" | "decor";
+  kind: "wall" | "door" | "window" | "obstacle" | "low" | "decor";
   id: number;
   top?: number;
 };

@@ -109,7 +109,7 @@ does one with a laser.
   batch runs at a time, and again only once the muzzle has moved `castMovedM` (1mm), the
   aim turned or tilted `castTurnedRad`, or a door or shield changed (`recast`). So a still aim casts no more, and a
   frame is asked for only when its end changes: the World may rest.
-- The target is the nearest npc in those rooms whose parts the live aim's ray meets (`npcOnRay` in
+- The target is the nearest npc in those rooms, through doors and windows alike, whose parts the live aim's ray meets (`npcOnRay` in
   `service/aim-target.ts`), short of where the cast stopped, or within `againstM` past it. One it passes over or
   beside is not targeted, so whoever is behind them may be. It is found each frame on the main thread
   (`syncTarget`), so a strafe or `r` sweeps it. A wall between is never crossed.
