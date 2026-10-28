@@ -52,6 +52,7 @@ export default function Decor() {
       buildId: 0,
       byRoom: [],
       grid: {},
+      items: {},
       lastHmr: 0,
       ready: false,
       restored: false,
@@ -631,6 +632,7 @@ export default function Decor() {
       // - preserves runtime decor across HMR
       // - obstacles induce decor rects with `d.meta.gridOutline`
       state.byKey = { ...state.runtime.byKey };
+      state.items = {};
       state.clearGridAndRoomLookup();
       state.addRuntimeDecorAgain();
 
@@ -646,6 +648,18 @@ export default function Decor() {
 
           // rename periods because used as delimiter in CLI
           decor.key = `g${gmId}r${decor.meta.roomId ?? "?"}-${decor.type}-${`${metaPoint.x}-${decor.meta.y ?? 0}-${metaPoint.y}`.replace(/\./g, "_")}`;
+          if (decor.type === "quad" && typeof decor.meta.item === "string") {
+            const { img, y } = decor.meta;
+            state.items[decor.key] = {
+              type: "quad",
+              key: decor.key,
+              img,
+              transform: decor.transform,
+              y3d: y,
+              meta: { ...decor.meta },
+            };
+            continue;
+          }
           state.byKey[decor.key] = decor;
           decor.meta.decorKey = decor.key;
           // add even when gmRoomId null
@@ -708,7 +722,7 @@ export default function Decor() {
 
       for (const [gmId, gm] of w.gms.entries()) {
         for (const decor of gm.decor) {
-          if (!state.hasInstance(decor) || !state.pushInstance(decor, false)) {
+          if (decor.key in state.items || !state.hasInstance(decor) || !state.pushInstance(decor, false)) {
             continue;
           }
           if (decor.type === "quad" && typeof decor.meta.doorId === "number") {
@@ -897,6 +911,8 @@ export type State = {
   buildId: number;
   byRoom: (Geomorph.RoomDecor | undefined)[][];
   grid: Geomorph.DecorGrid;
+  /** The map's layout quads with `meta.item`, as defs. `w.e.seedItems` makes each one runtime decor, so it can be taken */
+  items: Record<string, Geomorph.DecorDef>;
   lastHmr: number;
   /** Also false briefly after HMR */
   ready: boolean;

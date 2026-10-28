@@ -142,12 +142,15 @@ export type WorldMapState = {
   doorLocks: null | string[];
   /** Runtime decor defs, replayed via `w.decor.create` on restore. `null` means never saved */
   decor: null | Geomorph.DecorDef[];
+  /** Keys of the layout items already made runtime decor, so one taken is not made again — see `w.e.seedItems` */
+  seeded: null | string[];
 };
 
 const defaultWorldMapState: WorldMapState = {
   npcs: null,
   doorLocks: null,
   decor: null,
+  seeded: null,
 };
 
 /** The npcs of some map, as left by the previous session */

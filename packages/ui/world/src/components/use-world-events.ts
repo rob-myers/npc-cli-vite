@@ -755,6 +755,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           case "decor-ready":
             // an edit may have taken the decor somebody was using
             state.standUpStrandedDoers();
+            // or added an item
+            if (w.decor.restored === true) state.seedItems();
             break;
           case "door-open":
             state.doorOpen[e.gdKey] = true;
@@ -1247,7 +1249,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
 
         state.removeNpcs(...Object.keys(w.n));
         w.decor.remove(...Object.keys(w.decor.runtime.byKey));
-        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, decor: null });
+        persisted.getWorldMapStore(w.key, w.mapKey).patch({ npcs: null, decor: null, seeded: null });
+        state.seedItems();
         // nothing saved to restore now, so the player respawns near the camera
         await w.player.ensure();
         await state.openDoorwaysWithNpcs();
@@ -1256,16 +1259,30 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         void w.player.panTo(); // as on load
       },
       restoreDecor(saved = persisted.getWorldMapStore(w.key, w.mapKey).read().decor) {
-        if (saved === null) {
-          return;
-        }
-        for (const def of saved) {
+        for (const def of saved ?? []) {
           try {
             w.decor.create(def);
           } catch (e) {
             warn(`decor ${def.key}: could not restore`, e);
           }
         }
+        state.seedItems();
+      },
+      seedItems() {
+        // else `w.decor.items` may be stale or empty
+        if (w.decor.ready !== true) return;
+        const store = persisted.getWorldMapStore(w.key, w.mapKey);
+        const prev = store.read().seeded ?? [];
+        const gone = prev.filter((key) => !(key in w.decor.items));
+        const added = Object.keys(w.decor.items).filter((key) => !prev.includes(key));
+        if (gone.length === 0 && added.length === 0) return;
+        w.decor.remove(...gone);
+        for (const key of added) w.decor.create(w.decor.items[key]);
+        // saved at once, even before `w.decor.restored`, else a reload finds them seeded but gone
+        store.patch({
+          seeded: Object.keys(w.decor.items),
+          decor: Object.values(w.decor.runtime.defByKey).filter((def) => def.meta?.noPersist !== true),
+        });
       },
       recomputeNpcRoomRelationships() {
         w.npc.roomToNpcs = w.gms.map(() => []);
@@ -1856,6 +1873,8 @@ export type State = {
   persistNpcs(): void;
   /** Recreate the runtime decor persisted for `w.mapKey` */
   restoreDecor(saved?: null | Geomorph.DecorDef[]): void;
+  /** Make runtime decor of this map's layout items not yet made, remove those it lost, and save */
+  seedItems(): void;
   /** Adopt another world's npcs, lit rooms and locked doors for `w.mapKey`, and apply them */
   restoreFromWorld(fromWorldKey: string): Promise<void>;
   /** Forget this map's saved state, leaving only the player, spawned near the camera */
