@@ -2,13 +2,14 @@ import { useFrame } from "@react-three/fiber";
 import { useContext, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { crosshairY } from "../const.env";
-import { createGroundCrosshairGeometry } from "../service/geometry";
+import { groundCrosshairOf } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 /** Where a tap has the player look: a cross on the floor there — see `w.player.lookTowards`. Whilst "view pick", where the last pick landed */
 export default function LookMark() {
   const w = useContext(WorldContext);
   const cross = useRef<THREE.Mesh>(null);
+  const look = groundCrosshairOf(w.themeKey);
 
   useFrame(() => {
     if (cross.current === null) return;
@@ -26,10 +27,10 @@ export default function LookMark() {
       ref={(mesh) => void (cross.current = w.view.lookMark = mesh)}
       visible={false}
       renderOrder={-2.5}
-      geometry={crossGeometry}
+      geometry={look.geometry}
     >
       <meshBasicMaterial
-        color="white"
+        color={look.color}
         opacity={0.5}
         transparent
         depthTest
@@ -40,5 +41,3 @@ export default function LookMark() {
     </mesh>
   );
 }
-
-const crossGeometry = createGroundCrosshairGeometry();

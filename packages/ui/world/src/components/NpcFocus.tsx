@@ -329,7 +329,15 @@ export default function NpcFocus() {
               data-off=""
               className={cn(markClass, "group flex size-2.5 items-center justify-center")}
             >
-              <span className="size-1 rounded-full bg-red-400 shadow-[0_0_0_1px_rgb(0_0_0/0.7),0_0_3px_1px_rgb(248_113_113)] group-data-on:animate-[laser-pulse_700ms_ease-in-out_infinite] group-data-paused/focus:[animation-play-state:paused]" />
+              <span
+                className={cn(
+                  "rounded-full group-data-on:animate-[laser-pulse_700ms_ease-in-out_infinite] group-data-paused/focus:[animation-play-state:paused]",
+                  // on a light floor, darker and ringed in white
+                  w.themeKey === "light-theme"
+                    ? "size-1.5 bg-red-600 shadow-[0_0_0_1px_rgb(255_255_255/0.9),0_0_4px_2px_rgb(220_38_38)]"
+                    : "size-1 bg-red-400 shadow-[0_0_0_1px_rgb(0_0_0/0.7),0_0_3px_1px_rgb(248_113_113)]",
+                )}
+              />
             </span>
           )}
         </Fragment>

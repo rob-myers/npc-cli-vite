@@ -488,3 +488,11 @@ export function createGroundCrosshairGeometry(gap = 0.04, len = 0.12, thickness 
   geometry.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   return geometry;
 }
+
+/** A floor cross by theme: black and thicker on a light floor, where it reads thinner than white on a dark one */
+export const groundCrosshairOf = (themeKey: string) =>
+  themeKey === "light-theme" ? crosshairs.light : crosshairs.dark;
+const crosshairs = {
+  dark: { geometry: createGroundCrosshairGeometry(), color: "white" },
+  light: { geometry: createGroundCrosshairGeometry(0.04, 0.12, 0.03), color: "black" },
+};

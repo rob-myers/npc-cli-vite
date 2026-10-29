@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import * as THREE from "three/webgpu";
 import { crosshairY } from "../const.env";
-import { createGroundCrosshairGeometry } from "../service/geometry";
+import { groundCrosshairOf } from "../service/geometry";
 import { WorldContext } from "./world-context";
 
 /**
@@ -10,17 +10,18 @@ import { WorldContext } from "./world-context";
  */
 export default function CrossHair() {
   const w = useContext(WorldContext);
+  const cross = groundCrosshairOf(w.themeKey);
   return (
     <mesh
       ref={w.view.ref("zoomCrossEl")}
       visible={false}
       // straight after the floor and obstacles (`-3`), so all else draws over it
       renderOrder={-2.5}
-      geometry={groundCrosshairGeometry}
+      geometry={cross.geometry}
       position={[0, crosshairY, 0]}
     >
       <meshBasicMaterial
-        color="white"
+        color={cross.color}
         transparent
         depthTest
         depthWrite={false}
@@ -30,5 +31,3 @@ export default function CrossHair() {
     </mesh>
   );
 }
-
-const groundCrosshairGeometry = createGroundCrosshairGeometry();

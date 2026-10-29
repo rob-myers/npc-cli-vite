@@ -326,7 +326,7 @@ const overlayStep = 0.5;
 /** How each `view` answer is coloured, by theme: muted on a dark floor, mid tones on a light one */
 const howInk: Record<"dark" | "light", Record<WW.SpotHow, string>> = {
   dark: { own: "#5b8cff", always: "#2f9a60", may: "#a89a30", shut: "#ffffff", never: "#8a929c" },
-  light: { own: "#4a7cff", always: "#3cc870", may: "#f0b820", shut: "#ffffff", never: "#7a8490" },
+  light: { own: "#1d4ed8", always: "#3cc870", may: "#f0b820", shut: "#ffffff", never: "#7a8490" },
 };
 const inkOf = (w: JshCli.WorldState) => howInk[w.themeKey === "light-theme" ? "light" : "dark"];
 
