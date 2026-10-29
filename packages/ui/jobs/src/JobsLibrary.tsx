@@ -269,7 +269,7 @@ export default function JobsLibrary(props: Props) {
                   "min-w-16 max-w-full px-1.5 py-0.5 rounded-sm bg-term-hover border border-term-border-subtle",
                   "text-sh-command text-xs outline-none focus:border-term-focus",
                   "aria-invalid:border-term-danger aria-invalid:text-term-danger",
-                  "field-sizing-content resize-none break-all",
+                  "field-sizing-content resize-none break-all select-text",
                 )}
                 onChange={state.onEditArg}
                 onBlur={() => state.set({ drafts: {} })} // back to the last valid
