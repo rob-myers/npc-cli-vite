@@ -11,6 +11,19 @@ One `World` can join another as a **client**: an extra camera into the **server*
 - **Not passive**: client picks are computed locally (same geometry) and forwarded; the server re-emits them on its own bus with `srcWorld: "world-N"`, so shell scripts can tell where a click came from.
 - **Pausing is per World**: a paused client stops only its own frame loop; a paused server stops the simulation, so clients see its npcs stand still.
 
+## Transport
+
+Two Worlds on one page may skip WebRTC: their channels can be `MessagePort`s instead.
+
+- **`PortChannel`** (`net-signaling.ts`) is as much of an `RTCDataChannel` as a session uses, over one end of a `MessageChannel`. A session's channels are a `DataChannel`, either kind.
+- **The server decides**, as it accepts a same-page join (`acceptJoin`):
+  - It uses ports at once if the debug menu's **net** select says `MessageChannel`, or if WebRTC cannot connect here.
+  - Otherwise it tries WebRTC, and falls back to ports if it has not connected in `localFallbackMs` (1.5s).
+- **To fall back**, the server closes its peer connection, wires its ends of two `MessageChannel`s, and sends the others in a `local` signal. The client's `onLocal` closes its own peer connection and attaches the ports through `attachChannel`, as it would WebRTC's.
+- **`probeWebRtc`** finds out once per page whether WebRTC connects at all: two loopback peers open a data channel, or fail to in 3s. A browser without local network access (e.g. one launched for MCP testing) offers only mDNS `.local` candidates, which never resolve. The **net** select greys out WebRTC there.
+- **The choice is site-wide**: `netTransport` in `getSiteStore()`, read by whichever World serves.
+- **Across tabs** a join is always WebRTC: a `MessagePort` cannot leave the page.
+
 ## New files
 
 ### `packages/ui/world/src/service/net-protocol.ts`
@@ -20,6 +33,8 @@ One `World` can join another as a **client**: an extra camera into the **server*
 `Signaling` interface (offer/answer/ICE + join-request/bye, presence + roster) with two impls:
 - `InMemorySignaling` — module-level map, same page only, works in PROD.
 - `DevWsSignaling` — rides `import.meta.hot` custom event `world-rtc`; heartbeat announce, roster callbacks. Absent in PROD.
+
+It also holds `PortChannel` and `probeWebRtc`: see [Transport](#transport).
 
 A page-scoped `pageId` disambiguates the same `worldKey` across tabs (`uid = ${pageId}/${worldKey}`); `sendSignal` picks the impl per target via `isSamePage`. It is pinned on `hot.data` so an HMR cannot remint it (this page's worlds would ghost into the roster as "another tab"); a `pagehide` goodbye drops closing tabs from rosters promptly.
 

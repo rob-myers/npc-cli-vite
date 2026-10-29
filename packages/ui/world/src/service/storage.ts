@@ -195,6 +195,8 @@ export type SiteSettings = {
   lightKey: "world" | "npc";
   /** `null` for the defaults, which depend on the device — see `getDefaultCameraView` in `service/camera-view` */
   camera: null | CameraView;
+  /** How same-page joins connect: a `MessageChannel` skips WebRTC — see `docs/web-rtc-worlds.md` */
+  netTransport: import("./net-signaling").NetTransport;
 };
 
 const defaultSiteSettings: SiteSettings = {
@@ -202,6 +204,7 @@ const defaultSiteSettings: SiteSettings = {
   npcBrightnessByTheme: {},
   lightKey: "world",
   camera: null,
+  netTransport: "WebRTC",
 };
 
 let siteStore: undefined | LocalStore<SiteSettings>;

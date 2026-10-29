@@ -42,6 +42,7 @@ import {
 } from "../service/camera-view";
 import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
 import { extraFxKeys } from "../service/extra-fx";
+import { probeWebRtc, webRtcWorks } from "../service/net-signaling";
 import { queryClientApi } from "../service/query-client";
 import { type CameraView, getSiteStore, getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
@@ -244,6 +245,8 @@ export function WorldMenu() {
   );
 
   w.menu = state;
+
+  useEffect(() => void probeWebRtc().then(() => state.update()), []); // greys WebRTC if it cannot connect
 
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
@@ -626,6 +629,28 @@ export function WorldMenu() {
 
             <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
               {debugItems.map((item) => {
+                if (item === "net") {
+                  // site-wide: how a same-page join connects. WebRTC is greyed where it cannot connect
+                  const transport = getSiteStore().read().netTransport;
+                  return (
+                    <MenuSelect
+                      key={item}
+                      caret
+                      side="bottom"
+                      label={`net: ${transport}`}
+                      className={debugButtonClassName(touch, transport !== "WebRTC")}
+                      value={transport}
+                      items={[
+                        { key: "WebRTC", value: "WebRTC", disabled: webRtcWorks() === false },
+                        { key: "MessageChannel", value: "MessageChannel" },
+                      ]}
+                      onValueChange={(next) => {
+                        if (next !== null) getSiteStore().patch({ netTransport: next });
+                        state.update();
+                      }}
+                    />
+                  );
+                }
                 if (item === "modals") {
                   return (
                     <MenuSelect
@@ -1513,6 +1538,7 @@ const debugItems = [
   "door ui",
   "hud debug",
   "modals",
+  "net",
   "npcs",
   "overlay",
   "post fx",
@@ -1582,7 +1608,7 @@ export function MenuSelect<T extends string>({
   /** Shows a down-caret, so it reads as a select rather than a button */
   caret?: boolean;
   className?: string;
-  items: { key: string; el?: React.JSX.Element; value: T }[];
+  items: { key: string; el?: React.JSX.Element; value: T; disabled?: boolean }[];
   /** Defaults to value */
   label?: string;
   side?: "left" | "right" | "bottom" | "top";
@@ -1630,7 +1656,11 @@ export function MenuSelect<T extends string>({
                 <Select.Item
                   key={item.key}
                   value={item.value}
-                  className={selectItemClassName(touch, item.value === value)}
+                  disabled={item.disabled}
+                  className={cn(
+                    selectItemClassName(touch, item.value === value),
+                    "data-disabled:cursor-default data-disabled:opacity-40",
+                  )}
                 >
                   <Select.ItemText>{item.el ?? item.key}</Select.ItemText>
                 </Select.Item>
