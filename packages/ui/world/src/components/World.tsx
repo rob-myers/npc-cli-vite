@@ -195,6 +195,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       phasers: null as any,
       npcFocus: null as any,
       shields: null as any,
+      spots: null as any,
       roomLabels: null as any,
       shadows: null as any,
       speech: null as any,
@@ -658,6 +659,8 @@ export type State = {
   phasers: UseStateRef<import("./Phasers").State>;
   npcFocus: UseStateRef<import("./NpcFocus").State>;
   shields: UseStateRef<import("./Shields").State>;
+  /** The spots overlay, mounted by `Debug` */
+  spots: UseStateRef<import("./SpotOverlay").State>;
   shadows: UseStateRef<import("./NpcShadows").State>;
   roomLabels: UseStateRef<import("./RoomLabels").State>;
   speech: UseStateRef<import("./WorldSpeech").State>;

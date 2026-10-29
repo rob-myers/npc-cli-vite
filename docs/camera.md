@@ -22,7 +22,7 @@ The World's camera: `service/camera-controls.ts`, driven by `WorldView`.
 
 **Keys**
 - `1`, `2` and `3` select the fade mode: `sight`, `sense`, `ship` (`fadeRoomsModeByKey`). The menu's button cycles them.
-- `0` toggles the spots overlay (`w.debug.toggleSpots`), as the debug menu's **spots** does.
+- `0` toggles the spots overlay (`w.spots.toggle`), as the debug menu's **spots** does.
 - `-` and `+` (or `=`) step the camera's framing down or up through the presets, low, mid and high (`stepCameraPreset`), from whichever is nearest by fov.
 
 ## Zoom

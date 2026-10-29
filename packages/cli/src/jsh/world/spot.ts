@@ -255,14 +255,14 @@ function showSpots(w: JshCli.WorldState, show: boolean) {
   if (show === false) {
     w.e.keyedListener.delete(overlayKey);
     w.e.keyedTick.delete(overlayKey);
-    w.debug.setSpots([]);
+    w.spots.draw([]);
     w.view.forceUpdate();
     return;
   }
   /** What was drawn: the spots, as of which map and files, then whose sight, from where */
   const drawn = { spots: "", from: "", at: null as null | Geom.VectJson, theme: "" };
   /** The spots as drawn: a remounted mesh, e.g. on its HMR, starts empty */
-  const spotsKey = () => `${w.mapKey} ${w.gmsHash} ${getSpotsRev()} ${w.debug.spotsInst?.uuid}`;
+  const spotsKey = () => `${w.mapKey} ${w.gmsHash} ${getSpotsRev()} ${w.spots.iconsInst?.uuid}`;
   let [busy, again] = [false, false];
 
   /** Redraws what has changed, one query at a time */
@@ -274,10 +274,10 @@ function showSpots(w: JshCli.WorldState, show: boolean) {
       const key = spotsKey();
       if (drawn.spots !== key) {
         const [all] = await spotQueryDetached(w, [{ q: "list" }]);
-        if (Array.isArray(all)) w.debug.setSpots(all.map((spot) => toDraw(w, spot)));
+        if (Array.isArray(all)) w.spots.draw(all.map((spot) => toDraw(w, spot)));
         drawn.spots = key;
       }
-      if (w.debug.spotsShown === false) return;
+      if (w.spots.shown === false) return;
       const from = w.n[w.player.key] === undefined ? null : w.player.key;
       const [view] = from === null ? [null] : await spotQueryDetached(w, [{ q: "view", from }]);
       const ink = inkOf(w);
@@ -285,7 +285,7 @@ function showSpots(w: JshCli.WorldState, show: boolean) {
         view == null || !("view" in view)
           ? null
           : Object.fromEntries(Object.entries(view.view).map(([key, how]) => [key, ink[how]]));
-      w.debug.colourSpots(colors);
+      w.spots.colour(colors);
       drawn.from = from ?? "";
       drawn.theme = w.themeKey;
       drawn.at = from === null ? null : { ...w.n[from].point };
@@ -306,7 +306,7 @@ function showSpots(w: JshCli.WorldState, show: boolean) {
   w.e.addKeyedTick(overlayKey, (w) => {
     if (busy) return;
     if (drawn.spots !== spotsKey()) return void sync();
-    if (w.debug.spotsShown === false) return;
+    if (w.spots.shown === false) return;
     const at = drawn.at;
     const npc = drawn.from === "" ? undefined : w.n[drawn.from];
     if (drawn.theme !== w.themeKey) void sync();

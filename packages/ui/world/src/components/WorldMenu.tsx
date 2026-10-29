@@ -33,9 +33,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
 import { compilingShadersText, defaultBrightness } from "../const.env";
-import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
-import { extraFxKeys } from "../service/extra-fx";
-import { queryClientApi } from "../service/query-client";
 import {
   cameraPresets,
   distanceOfView,
@@ -43,6 +40,9 @@ import {
   getPresetCameraView,
   minNearView,
 } from "../service/camera-view";
+import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { extraFxKeys } from "../service/extra-fx";
+import { queryClientApi } from "../service/query-client";
 import { type CameraView, getSiteStore, getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
 import type { CameraModeType } from "./CameraControls";
@@ -250,7 +250,7 @@ export function WorldMenu() {
 
   /** Spots greyed out until jsh `spots --show`, run by a terminal's profile, fills them */
   const withSpotsGreyed = <T extends { value: string }>(item: T) =>
-    item.value === "spots" && (w.debug?.spots.length ?? 0) === 0 ? { ...item, disabled: true } : item;
+    item.value === "spots" && (w.spots?.drawn.length ?? 0) === 0 ? { ...item, disabled: true } : item;
 
   const isDebugActive = (item: string) => {
     switch (item) {
@@ -285,7 +285,7 @@ export function WorldMenu() {
       case "decorations":
         return w.debug?.decorShown ?? false;
       case "spots":
-        return w.debug?.spotsShown ?? false;
+        return w.spots?.shown ?? false;
       case "npc contextmenu":
         return w.debug?.npcContextMenu ?? false;
       case "hud debug":
@@ -408,7 +408,7 @@ export function WorldMenu() {
         break;
       }
       case "spots":
-        w.debug?.toggleSpots();
+        w.spots?.toggle();
         break;
     }
   };
