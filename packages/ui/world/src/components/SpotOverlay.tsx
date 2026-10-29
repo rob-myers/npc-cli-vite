@@ -6,7 +6,10 @@ import {
   cameraProjectionMatrix,
   cameraViewMatrix,
   float,
+  mix,
   positionGeometry,
+  positionLocal,
+  step,
   texture,
   uint,
   uniform,
@@ -15,6 +18,7 @@ import {
   vec4,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { wallHeight } from "../const.env";
 import { createXzQuad, embedXZMat4 } from "../service/geometry";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, slotOf } from "../service/room-slots";
@@ -136,16 +140,32 @@ export function SpotOverlay() {
     const grow = selectAs<"float">(picking, float(spotPickScale), float(1));
     const corner = vec2(positionGeometry.x.sub(0.5), positionGeometry.z.sub(0.5)).mul(centre.w.mul(grow));
     const viewCentre = cameraViewMatrix.mul(vec4(centre.xyz, 1));
-    mat.vertexNode = cameraProjectionMatrix.mul(viewCentre.add(vec4(corner, 0, 0)));
     // picked, the whole square counts, not only the icon's strokes, even one not shown
     const shown = attribute<"float">("spotShown", "float");
+    // one showing nothing is a point, drawing no fragments. Picking, a hidden icon still counts
+    const blank = seen
+      .mul(w.view.foldNode)
+      .mul(selectAs<"float">(picking, float(1), shown))
+      .equal(0);
+    mat.vertexNode = selectAs<"vec4">(
+      blank,
+      vec4(0, 0, 0, 1),
+      cameraProjectionMatrix.mul(viewCentre.add(vec4(corner, 0, 0))),
+    );
     // faded with the world's fold, so they come up as it unfolds on load
+    // atop a wall, over nothing, it is solid but dim: the composite drops a faint pixel with nothing behind
+    const atop = step(float(wallHeight), centre.y);
     const alpha = selectAs<"float">(
       picking,
       float(1),
-      texNode.a.mul(seen).mul(opacity.icon).mul(shown).mul(w.view.foldNode),
+      texNode.a
+        .mul(seen)
+        .mul(mix(opacity.icon, float(1), atop))
+        .mul(shown)
+        .mul(w.view.foldNode),
     );
-    mat.colorNode = vec4(texNode.rgb.mul(attribute<"vec3">("spotColor", "vec3")), alpha);
+    const dim = mix(float(1), opacity.icon, atop);
+    mat.colorNode = vec4(texNode.rgb.mul(attribute<"vec3">("spotColor", "vec3")).mul(dim), alpha);
     // opaque when picking: a blended id would be another's
     mat.outputNode = w.view.withPickOutput(OBJECT_PICK_KEY_TO_RED.spot, 1);
     return { material: mat, uid: crypto.randomUUID() };
@@ -156,10 +176,10 @@ export function SpotOverlay() {
     const seen = spotSeen(w.view.fadeRoomsFx.getVisiblity(ink.w));
     // biome-ignore format: succint
     const mat = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide, forceSinglePass: true, transparent: true, depthWrite: false });
-    mat.colorNode = vec4(
-      ink.rgb,
-      selectAs<"float">(w.view.objectPick.notEqual(0), float(0), seen.mul(opacity.arrow).mul(w.view.foldNode)),
-    );
+    const alpha = seen.mul(opacity.arrow).mul(w.view.foldNode);
+    // a point, drawing no fragments, whilst picking or showing nothing
+    mat.positionNode = positionLocal.mul(w.view.objectPick.notEqual(0).or(alpha.equal(0)).select(0, 1));
+    mat.colorNode = vec4(ink.rgb, alpha);
     return mat;
   }, [w.view.fadeRoomsFx.uid]);
 
@@ -170,7 +190,7 @@ export function SpotOverlay() {
         key={iconsMaterial.uid}
         ref={state.ref("iconsInst")}
         args={[iconsGeo, iconsMaterial.material, maxSpots]}
-        count={0}
+        count={state.shown ? state.drawn.length : 0} // as before, should a new material remount it
         frustumCulled={false}
         renderOrder={spotsRenderOrder}
       />
@@ -178,7 +198,7 @@ export function SpotOverlay() {
         key={`${iconsMaterial.uid}-arrows`}
         ref={state.ref("arrowsInst")}
         args={[arrowsGeo, arrowsMaterial, maxSpots]}
-        count={0}
+        count={state.shown ? state.drawn.length : 0} // as before, should a new material remount it
         frustumCulled={false}
         renderOrder={spotsRenderOrder}
       />
