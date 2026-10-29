@@ -616,9 +616,9 @@ export const gaitStride = {
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */
 export const strafeSpeed = {
   walk: 1.2,
-  strafe_right: 0.5,
+  strafe_right: 0.73,
   backwards: 1,
-  strafe_left: 0.5,
+  strafe_left: 0.73,
   crouch_walk: 0.5,
   crouch_strafe_right: 0.3,
   crouch_backwards: 0.4,
