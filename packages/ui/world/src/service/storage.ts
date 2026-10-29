@@ -140,6 +140,8 @@ export type WorldMapState = {
    * — even one whose `meta.locked` says otherwise. `null` means never saved.
    */
   doorLocks: null | string[];
+  /** The `gdKey`s of the held doors. `null` means never saved */
+  doorHolds: null | string[];
   /** Runtime decor defs, replayed via `w.decor.create` on restore. `null` means never saved */
   decor: null | Geomorph.DecorDef[];
   /** Keys of the layout items already made runtime decor, so one taken is not made again — see `w.e.seedItems` */
@@ -149,6 +151,7 @@ export type WorldMapState = {
 const defaultWorldMapState: WorldMapState = {
   npcs: null,
   doorLocks: null,
+  doorHolds: null,
   decor: null,
   seeded: null,
 };

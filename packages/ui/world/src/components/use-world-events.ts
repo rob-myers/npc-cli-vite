@@ -8,8 +8,8 @@ import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import {
   decorCuboidHeight,
-  defaultDoorCloseMs,
   defaultPlayerKey,
+  doorConfig,
   floorFadeDelayMs,
   type ItemKind,
   inventoryConfig,
@@ -719,6 +719,17 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.playerLight.coneAmount.value = lights.cone;
         // w.view.forceUpdate();
       },
+      onPickDoor(e) {
+        const { meta } = e;
+        if (meta.type !== "door" && meta.type !== "decor" && meta.type !== "spot") return;
+        if (w.helper.isGmDoorKey(meta.gdKey) === false || e.clickId !== undefined) return; // e.g. `pick 1`
+        if (meta.type === "spot" && e.rightDown === true) return; // a spot's right click chooses it
+        const door = w.door.byKey[meta.gdKey];
+        // a long press on a switch or spot holds it as it is, or lets it go. On the door, it locks it keyless
+        if (e.longDown !== true) state.toggleDoor(meta.gdKey);
+        else if (meta.type === "door") state.toggleLock(meta.gdKey, {});
+        else if (door !== undefined) w.door.setHeld(door, !door.held);
+      },
       onEnterCollider(e, npc) {
         const door = w.door.byKey[e.meta.gdKey];
         if (!door) return; // onchange map
@@ -845,6 +856,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.npc?.warmCrowd();
             break;
           case "picked": {
+            // a press on a door, its switch or its spot — see the debug menu's "toggle doors"
+            if (w.debug?.pickGdkeyOpensDoors === true) state.onPickDoor(e);
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
@@ -1230,7 +1243,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // ours from now on, so a reload keeps it
         persisted.getWorldMapStore(w.key, w.mapKey).patch(saved);
 
-        w.door.applyLocks(saved.doorLocks ?? []);
+        w.door.applyLocks(saved.doorLocks ?? [], saved.doorHolds ?? []);
         w.view.setPostProcessingEnabled(true);
 
         state.removeNpcs(...Object.keys(w.n));
@@ -1537,8 +1550,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           warn(`${gdKey}: toggleDoor: no such door`); // e.g. onchange map, or a stale pick
           return false;
         }
-        if (door.held === true && opts.npcKey !== undefined) return false; // a held door is left to presses
-
         // clear if closed or no npc "inside" collider
         opts.clear ??= door.open === false || !(state.doorToNpcs[gdKey]?.inside.size > 0);
 
@@ -1549,13 +1560,19 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         const willIntersect = w.door.doesPathIntersectDoor(path, door);
         // console.log({ willIntersect, path });
 
+        // a held door is left to presses, to an npc holding or letting it go, and to one walking into it
+        if (door.held && opts.npcKey !== undefined && opts.held === undefined && !willIntersect) return false;
+
         opts.access ??=
           opts.npcKey === undefined ||
+          opts.close === true || // anyone may shut a door
           // non-auto should not open unless npc has access & will intersect
           (door.locked === false && !(door.auto === false && door.open === false)) ||
           (state.npcCanAccess(opts.npcKey, gdKey) && (path.length === 0 || willIntersect === true));
 
-        return w.door.toggleDoor(door, opts);
+        const toggled = w.door.toggleDoor(door, opts);
+        if (toggled && opts.held !== undefined) w.door.setHeld(door, opts.held);
+        return toggled;
       },
       takeItem(npcKey, decorKey) {
         const def = w.decor.runtime.defByKey[decorKey];
@@ -1618,10 +1635,10 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       },
       tryCloseDoor(gdKey) {
         const door = w.door.byKey[gdKey];
-        if (!door || door.held === true) return; // onchange map, or held open
+        if (!door || door.held === true) return; // onchange map, or held
 
         w.door.cancelClose(door);
-        door.cancelClose = state.after(defaultDoorCloseMs / 1000, () => {
+        door.cancelClose = state.after(doorConfig.closeMs / 1000, () => {
           delete door.cancelClose;
           if (door.open === true) state.toggleDoor(gdKey, { clear: state.canAutoCloseDoor(door), close: true });
         });
@@ -1884,6 +1901,8 @@ export type State = {
   onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
+  /** A press on a door, its switch or its spot: toggles it. A long press holds it, or on the door locks it */
+  onPickDoor(e: Extract<JshCli.Event, { key: "picked" }>): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
   recomputeNpcRoomRelationships(): void;
@@ -1922,6 +1941,8 @@ export type State = {
        * Intuitively the NPC flashed their authentication to enter.
        */
       npcIntention?: JshCli.GroundPoint[];
+      /** Then hold the door, else let it go — see `w.door.setHeld` */
+      held?: boolean;
     } & Geomorph.ToggleDoorOpts,
   ): boolean;
   toggleLock(

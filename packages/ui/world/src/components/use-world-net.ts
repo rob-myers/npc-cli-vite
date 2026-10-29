@@ -878,7 +878,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           if (door.sealed !== true && door.open === true) w.door.forceDoor(door.gmId, door.doorId, false);
         }
         const saved = getWorldMapStore(w.key, w.mapKey).read();
-        saved.doorLocks !== null ? w.door.applyLocks(saved.doorLocks) : w.door.resetLocks();
+        saved.doorLocks !== null ? w.door.applyLocks(saved.doorLocks, saved.doorHolds ?? []) : w.door.resetLocks();
 
         w.e.restoreDecor();
         w.player.assign(saved.npcs?.playerKey ?? w.player.key);

@@ -252,29 +252,6 @@ export function Debug() {
     };
   }, [state.physicsCollidersShown, w.physics?.worker]);
 
-  // "toggle doors"
-  useEffect(() => {
-    const sub = w.events.subscribe({
-      next(event) {
-        if (
-          state.pickGdkeyOpensDoors === true &&
-          event.key === "picked" &&
-          (event.meta.type === "door" ||
-            event.meta.type === "decor" ||
-            (event.meta.type === "spot" && event.rightDown !== true)) && // a spot's right click chooses it
-          event.clickId === undefined // ignore e.g. `pick 1`
-        ) {
-          const { gdKey } = event.meta;
-          if (gdKey === undefined || w.helper.isGmDoorKey(gdKey) === false) return;
-          // a long press locks it, keyless: open, it is held open
-          if (event.longDown === true) w.e.toggleLock(gdKey, { hold: true });
-          else w.e.toggleDoor(gdKey);
-        }
-      },
-    });
-    return () => sub.unsubscribe();
-  }, [state.pickGdkeyOpensDoors]);
-
   useEffect(() => {
     const navMeshHelper = createNavMeshHelper(w.nav?.navMesh);
 
@@ -504,6 +481,7 @@ export type State = {
   navMeshShown: boolean;
   doPointsShown: boolean;
   originShown: boolean;
+  /** Whether a press on a door, its switch or its spot toggles it — see `w.e.onPickDoor` */
   pickGdkeyOpensDoors: boolean;
   /** Whether the doors are drawn during object-picking, and so can be picked — see `pickObject` */
   pickDoors: boolean;

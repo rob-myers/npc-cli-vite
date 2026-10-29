@@ -25,12 +25,11 @@ import {
   decorKeyFallback,
   decorPointDefaultRadius,
   decorPointKeyFallback,
+  doorConfig,
   inventoryConfig,
-  lockedDoorTint,
   MAX_DECOR_QUAD_INSTANCES,
   precision,
   sguToWorldScale,
-  unlockedDoorTint,
 } from "../const.env";
 import { quadBox, quadMatrix, stopsShots } from "../service/decor-box";
 import { createUnitBox, createXzQuad, embedXZMat4 } from "../service/geometry";
@@ -730,7 +729,7 @@ export default function Decor() {
             const gdKey: Geomorph.GmDoorKey = `g${gmId}d${decor.meta.doorId}`;
             (state.static.gdKeyToDecorKeys[gdKey] ??= []).push(decor.key);
             const locked = w.door.byKey[gdKey]?.locked === true;
-            state.tintDecor(locked ? lockedDoorTint : unlockedDoorTint, decor.key);
+            state.tintDecor(locked ? doorConfig.tint.locked : doorConfig.tint.unlocked, decor.key);
           }
         }
       }

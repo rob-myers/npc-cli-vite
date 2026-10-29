@@ -137,10 +137,10 @@ A `keycard` may have `meta.door`, a gdKey. Not `meta.gdKey`: Debug's door toggle
 
 - Carried, it is just an item and opens nothing. Its slot's right-click menu has "add to keychain", which grants
   that door (`w.e.chainKey`) and uses the card up.
-- The keys slot's menu lists each held door. "split g0d8" takes it off the keys as a carried keycard again
+- The keys slot's menu lists each door they hold keys to. "split g0d8" takes it off the keys as a carried keycard again
   (`w.e.unchainKey`). That stamps `meta.map`, because a gdKey means nothing on another map, so the card only goes
   back on there.
-- Held doors are saved with the npc, per map.
+- Their keys are saved with the npc, per map. Not to be confused with a held door: see `docs/doors.md`.
 
 ## The phaser
 

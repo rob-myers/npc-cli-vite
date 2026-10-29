@@ -61,7 +61,7 @@ export function createPostProcessing(): PostProcessing {
         const beyond = mix(lightBg, darkBg, sight);
         const backdrop = selectAs(sceneColor.a.greaterThan(0), darkBg, beyond) as THREE.Node<"color" | "vec3">;
 
-        // Coverage counts for MORE than it is, so a door at `defaultDoorOpacity` reads solid
+        // Coverage counts for MORE than it is, so a door at `doorConfig.opacity` reads solid
         // against the backdrop and gives way only as the world dissolves it. Smoothstep rather than
         // a step, to keep silhouettes MSAA resolved into partial alpha from turning ragged.
         //

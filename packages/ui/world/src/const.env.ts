@@ -23,7 +23,6 @@ export const sguToWorldScale = (1 / 60) * geomorphGridMeters;
 export const worldToSguScale = 1 / sguToWorldScale;
 
 export const decorPointDefaultRadius = (5 + 2) * sguToWorldScale;
-export const doorSwitchHeight = 1.2;
 
 export const wallOutsetSgu = 10;
 
@@ -325,16 +324,19 @@ export const gmIdGridDim = 600 * sguToWorldScale;
 
 export const colliderHeight = 0.025;
 
-export const defaultDoorCloseMs = 5000;
-
 /** What the busy overlay says whilst shaders compile — a toggle's recompile, or the pick warm */
 export const compilingShadersText = "compiling shaders";
 
 export const html3DOpacityCssVar = "--html-3d-opacity";
 
-/** How solid a door looks. Dithered rather than blended — see `Doors`' `alphaHash` */
-export const defaultDoorOpacity = 0.8;
-
-export const lockedDoorTint = "#f44";
-
-export const unlockedDoorTint = "#4b4";
+/** How doors behave and look. Their dimensions are with the walls' — see `doorHeight` */
+export const doorConfig = {
+  /** How long an opened door waits before it tries to close */
+  closeMs: 5000,
+  /** How solid a door looks. Dithered rather than blended — see `Doors`' `alphaHash` */
+  opacity: 0.8,
+  /** Metres off the floor a door's switch is */
+  switchHeight: 1.2,
+  /** A door's switches, by its lock, and whether it is held */
+  tint: { locked: "#f44", unlocked: "#4b4", held: "#6af", heldLocked: "#a4f" },
+} as const;
