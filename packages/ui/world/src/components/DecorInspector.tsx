@@ -1,11 +1,7 @@
 import { useContext, useEffect } from "react";
-import { DecorCard } from "./DecorCard";
 import { WorldContext } from "./world-context";
 
-/**
- * Decorating, i.e. whilst the debug **Decorations** toggle is on: every runtime decor is labelled, and a
- * right-click on one (any pick, on touch) opens its card — see `docs/decorator.md`. The World's own, so it needs no terminal
- */
+/** Decorating, i.e. whilst the debug **Decorations** toggle is on: every runtime decor is labelled. See `docs/decorator.md` */
 export function DecorInspector() {
   const w = useContext(WorldContext);
 
@@ -31,54 +27,26 @@ export function DecorInspector() {
       };
     }
 
-    function showCard(decorKey: string) {
-      const at = anchorOf(decorKey);
-      if (at === null) return;
-      w.labels.remove(idOf(decorKey)); // the card stands in for the label whilst it is up
-      w.html.show(
-        idOf(decorKey),
-        { ...at, y3d: at.y3d + cardLift },
-        <DecorCard w={w} decorKey={decorKey} onRenamed={showCard} />,
-        { onHide: () => syncLabels(), focus: true },
-      );
-    }
-
-    /** A label per runtime decor, bar those whose card is up; and no card without its decor */
+    /** A label per runtime decor */
     function syncLabels() {
-      const decorKeys = Object.keys(w.decor.runtime.byKey);
       w.labels.remove(...[...w.labels.byKey.keys()].filter(ours));
-      w.html.hide(...[...w.html.byKey.keys()].filter((id) => ours(id) && !decorKeys.includes(id.slice(prefix.length))));
-      for (const decorKey of decorKeys) {
+      for (const decorKey of Object.keys(w.decor.runtime.byKey)) {
         const at = anchorOf(decorKey);
-        if (at !== null && w.html.byKey.has(idOf(decorKey)) === false) w.labels.add(idOf(decorKey), at);
+        if (at !== null) w.labels.add(idOf(decorKey), at);
       }
     }
 
     syncLabels();
     const sub = w.events.subscribe({
       next(e) {
-        if (e.key === "decor-created" || e.key === "map-settled") {
-          syncLabels();
-          // an edit re-creates the decor: its card follows
-          if (e.key === "decor-created") {
-            for (const decorKey of e.decorKeys) w.html.byKey.has(idOf(decorKey)) && showCard(decorKey);
-          }
-        }
-        // not at once: `create` removes the decor it replaces first, and its card must outlive that
+        if (e.key === "decor-created" || e.key === "map-settled") syncLabels();
+        // not at once: `create` removes the decor it replaces first
         if (e.key === "decor-removed") queueMicrotask(syncLabels);
-        // a right-click, so that a plain one stays a pick for e.g. `pick | move`. Touch has no such
-        // thing, so there any pick does
-        const toggles = e.key === "picked" && (e.rightDown === true || w.touchDevice === true);
-        if (toggles && e.key === "picked" && e.meta.type === "decor" && e.meta.decorKey in w.decor.runtime.byKey) {
-          const id = idOf(e.meta.decorKey);
-          w.html.byKey.has(id) ? w.html.hide(id) : showCard(e.meta.decorKey);
-        }
       },
     });
 
     return () => {
       sub.unsubscribe();
-      w.html.hide(...[...w.html.byKey.keys()].filter(ours));
       w.labels.remove(...[...w.labels.byKey.keys()].filter(ours));
     };
   }, []);
@@ -86,7 +54,5 @@ export function DecorInspector() {
   return null;
 }
 
-/** Of our labels and cards, which share `w.labels` and `w.html` with others */
+/** Of our labels, which share `w.labels` with others */
 const prefix = "decor:";
-/** How far over its decor a card sits */
-const cardLift = 0.6;

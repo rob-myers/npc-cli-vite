@@ -61,12 +61,20 @@ A door's switches are tinted by its state (`doorConfig.tint`, `syncLockTint`):
 | Not held | green `unlocked` | red `locked` |
 | Held | blue `held` | purple `heldLocked` |
 
+## Menu
+
+Whilst the debug **context menu** is on, a right-click on a switch (a long press on touch) opens its menu
+(`PickMenu`). It toggles **open**, **held**, **locked**, **auto** and **proximity**, and stays open
+whilst used. `w.door.setFlag` sets the last two, and emits `door-toggled`, as
+`setHeld` does. A sealed door's rows are disabled.
+
 ## Saved
 
 - Per World and map (`getWorldMapStore`): `doorLocks` and `doorHolds`, both lists of gdKeys. `doorLocks` is
   exhaustive, so a door the map locks (`meta.locked`) but we unlocked stays unlocked.
-- `persistLocks` saves both on each change. `buildByKey` restores them.
-- A reset of the map's state (`resetLocks`) locks just what the map asks for, and holds none.
+- `doorFlags` holds, by gdKey, each `auto` and `proximity` that differs from the map's.
+- `persistLocks` saves all three on each change. `buildByKey` restores them.
+- A reset of the map's state (`resetLocks`) locks just what the map asks for, holds none, and takes its `auto` and `proximity`.
 - Restoring from another World takes its locks and holds (`applyLocks`).
 - A client of a server World takes its locks and open doors, but not its holds: its switches show no hold.
 

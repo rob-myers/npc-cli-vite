@@ -719,6 +719,16 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.view.playerLight.coneAmount.value = lights.cone;
         // w.view.forceUpdate();
       },
+      openPickMenu(e) {
+        const { meta } = e;
+        const point = { x: e.x, y: e.y, z: e.z };
+        if (meta.type === "npc") w.pickMenu.open({ npcKey: meta.npcKey }, { point, part: meta.bodyPart });
+        else if (meta.type === "door") w.pickMenu.open({ gdKey: meta.gdKey }, { point });
+        else if (meta.type === "decor" && typeof meta.decorKey === "string") {
+          const gdKey = w.helper.isGmDoorKey(meta.gdKey) ? meta.gdKey : undefined; // a switch
+          w.pickMenu.open({ decorKey: meta.decorKey, gdKey }, { point });
+        }
+      },
       onPickDoor(e) {
         const { meta } = e;
         if (meta.type !== "door" && meta.type !== "decor" && meta.type !== "spot") return;
@@ -830,6 +840,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             if (w.client === false) state.tryCloseDoor(e.gdKey);
             break;
           case "door-locked":
+          case "door-toggled":
             break;
           case "map-changing":
           case "net-changed":
@@ -856,13 +867,24 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             w.npc?.warmCrowd();
             break;
           case "picked": {
+            /** Not a client's, forwarded */
+            const ours = e.srcWorld === w.key;
+            /** A right click, or a long press on touch */
+            const contextPress = e.rightDown === true || (w.touchDevice && e.longDown === true);
+            // one of ours opens a menu on an npc, decor or door
+            const menu =
+              contextPress &&
+              ours &&
+              w.debug?.contextMenu === true &&
+              (e.meta.type === "npc" || e.meta.type === "decor" || e.meta.type === "door");
+            if (menu === true) state.openPickMenu(e);
             // a press on a door, its switch or its spot — see the debug menu's "toggle doors"
-            if (w.debug?.pickGdkeyOpensDoors === true) state.onPickDoor(e);
+            else if (w.debug?.pickGdkeyOpensDoors === true) state.onPickDoor(e);
             if (e.meta.type === "floor") {
               w.rings?.showPickRing(e); // marked with a ring — see `NpcRings`
             }
-            // a right click on the spots overlay, or a long press on touch, chooses it in the Decorator alone
-            if ((e.rightDown === true || (w.touchDevice && e.longDown === true)) && e.meta.type === "spot") {
+            // one on the spots overlay chooses it in the Decorator alone
+            if (contextPress && e.meta.type === "spot") {
               w.events.next({ key: "spot-chosen", spotKey: e.meta.spotKey });
             }
             // a long press is how you get at an npc: they say "...", its npcKey in the history the
@@ -876,18 +898,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             ) {
               w.speech.say(e.meta.npcKey, "...");
             }
-            // debug: as the speech menu's "debug", but Enter closes it. Our own picks only, not a client's forwarded
-            if (
-              (e.rightDown === true || (w.touchDevice && e.longDown === true)) &&
-              e.meta.type === "npc" &&
-              typeof e.meta.npcKey === "string" &&
-              e.srcWorld === w.key &&
-              w.debug?.npcContextMenu === true
-            ) {
-              w.bubble.openDebug(e.meta.npcKey, { focus: true });
-            }
-            // a right click has the player look there, as a tap of fingers does on touch. Not at themself
-            if (e.rightDown === true && e.meta.type !== "npc" && e.meta.type !== "spot" && e.srcWorld === w.key)
+            // a right click elsewhere has the player look there, as a tap of fingers does on touch. Not at themself
+            if (e.rightDown === true && ours && !menu && e.meta.type !== "npc" && e.meta.type !== "spot")
               w.player?.lookAtPoint(e.x, e.z);
             break;
           }
@@ -1243,7 +1255,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         // ours from now on, so a reload keeps it
         persisted.getWorldMapStore(w.key, w.mapKey).patch(saved);
 
-        w.door.applyLocks(saved.doorLocks ?? [], saved.doorHolds ?? []);
+        w.door.applyLocks(saved.doorLocks ?? [], saved.doorHolds ?? [], saved.doorFlags ?? {});
         w.view.setPostProcessingEnabled(true);
 
         state.removeNpcs(...Object.keys(w.n));
@@ -1901,6 +1913,8 @@ export type State = {
   onChangeTheme(): void;
   onEvent(e: JshCli.Event): void;
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
+  /** Opens a menu on the npc, decor or door picked, its Cancel under the press — see `PickMenu` */
+  openPickMenu(e: Extract<JshCli.Event, { key: "picked" }>): void;
   /** A press on a door, its switch or its spot: toggles it. A long press holds it, or on the door locks it */
   onPickDoor(e: Extract<JshCli.Event, { key: "picked" }>): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;

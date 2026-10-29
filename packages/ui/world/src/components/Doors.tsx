@@ -26,7 +26,7 @@ import { createDoorBox } from "../service/geometry";
 import { helper } from "../service/helper";
 import { OBJECT_PICK_KEY_TO_RED } from "../service/pick";
 import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
-import { getWorldMapStore } from "../service/storage";
+import { type DoorFlags, getWorldMapStore } from "../service/storage";
 import { doorPanelMark, drawDoorLabelLayer, setDoorInks } from "../service/texture";
 import { WorldContext } from "./world-context";
 
@@ -71,7 +71,7 @@ export default function Doors() {
         state.builtMapKey = w.mapKey;
         state.builtGmsHash = w.gmsHash;
         state.byKey = {};
-        const { doorLocks: saved, doorHolds } = getWorldMapStore(w.key, w.mapKey).read();
+        const { doorLocks: saved, doorHolds, doorFlags } = getWorldMapStore(w.key, w.mapKey).read();
         const savedLocked = saved === null ? null : new Set(saved);
         const savedHeld = new Set(doorHolds ?? []);
 
@@ -90,7 +90,7 @@ export default function Doors() {
             const src = ut.json;
             const dst = vt.json;
             const normal = tmpMat.transformSansTranslate(connector.normal.clone()).json;
-            const auto = hull === true || connector.meta.auto === true;
+            const flags = { ...mapFlagsOf({ hull, connector }), ...doorFlags?.[gdKey] };
 
             state.byKey[gdKey] = {
               gdKey,
@@ -99,7 +99,7 @@ export default function Doors() {
               instanceId: state.encodeGmDoorId(gmId, doorId),
               connector,
 
-              auto,
+              auto: prev?.auto ?? flags.auto,
               axisAligned: connector.normal.x === 0 || connector.normal.y === 0,
               // live state wins on rebuild (e.g. hmr), then the previous session, then the map
               locked:
@@ -107,7 +107,7 @@ export default function Doors() {
               open: prev?.open ?? false,
               sealed,
               held: sealed === false && (prev?.held ?? savedHeld.has(gdKey)),
-              proximity: connector.meta.proximity ?? auto === true,
+              proximity: prev?.proximity ?? flags.proximity,
               hull,
 
               src,
@@ -388,14 +388,21 @@ export default function Doors() {
         // sealed doors are always locked, so they'd only bloat it
         const doorLocks = Object.values(state.byKey).flatMap((d) => (d.sealed === false && d.locked ? d.gdKey : []));
         const doorHolds = Object.values(state.byKey).flatMap((d) => (d.held ? d.gdKey : []));
-        getWorldMapStore(w.key, w.mapKey).patch({ doorLocks, doorHolds });
+        const doorFlags: Record<string, DoorFlags> = {};
+        for (const door of Object.values(state.byKey)) {
+          const map = mapFlagsOf(door);
+          if (door.auto !== map.auto) (doorFlags[door.gdKey] ??= {}).auto = door.auto;
+          if (door.proximity !== map.proximity) (doorFlags[door.gdKey] ??= {}).proximity = door.proximity;
+        }
+        getWorldMapStore(w.key, w.mapKey).patch({ doorLocks, doorHolds, doorFlags });
       },
-      applyLocks(gdKeys, heldKeys = []) {
+      applyLocks(gdKeys, heldKeys = [], flags = {}) {
         const locked = new Set(gdKeys);
         const held = new Set(heldKeys);
         for (const door of Object.values(state.byKey)) {
           door.locked = door.sealed === true || locked.has(door.gdKey);
           door.held = door.sealed === false && held.has(door.gdKey);
+          Object.assign(door, mapFlagsOf(door), flags[door.gdKey]);
         }
         state.syncLockTints();
       },
@@ -403,6 +410,7 @@ export default function Doors() {
         for (const door of Object.values(state.byKey)) {
           door.locked = door.sealed === true || door.connector.meta.locked === true;
           door.held = false;
+          Object.assign(door, mapFlagsOf(door));
         }
         state.syncLockTints();
         // persisted rather than cleared, so a reload agrees with what we just applied
@@ -416,6 +424,16 @@ export default function Doors() {
         else if (door.open) w.events.next({ key: "try-close-door", gdKey: door.gdKey });
         state.syncLockTint(door);
         state.persistLocks();
+        w.events.next({ key: "door-toggled", gdKey: door.gdKey });
+      },
+      setFlag(door, flag, next) {
+        if (door.sealed === true || door[flag] === next) return;
+        door[flag] = next;
+        // no longer kept open by those near
+        if (flag === "proximity" && next === false && door.open)
+          w.events.next({ key: "try-close-door", gdKey: door.gdKey });
+        state.persistLocks();
+        w.events.next({ key: "door-toggled", gdKey: door.gdKey });
       },
       syncLockTint(door) {
         const associatedDecorKeys = w.decor.static.gdKeyToDecorKeys?.[door.gdKey];
@@ -760,11 +778,11 @@ export type State = {
   setOpacity: (next: number, label?: number) => void;
   /** Sets `dissolveNode`'s value — called by `onChangeTheme` */
   setDissolve: (next: boolean) => void;
-  /** Save which doors are locked and held for `w.mapKey`, so `buildByKey` can restore them */
+  /** Save which doors are locked and held, and their `auto` and `proximity`, for `w.mapKey`. `buildByKey` restores them */
   persistLocks: () => void;
-  /** Lock and hold exactly these doors, e.g. having restored them from another world */
-  applyLocks: (gdKeys: string[], heldKeys?: string[]) => void;
-  /** Lock exactly the doors the map itself asks for, and hold none, forgetting what we'd done since */
+  /** Lock and hold exactly these doors, e.g. having restored them from another world. `flags` override the map's */
+  applyLocks: (gdKeys: string[], heldKeys?: string[], flags?: Record<string, DoorFlags>) => void;
+  /** Lock exactly the doors the map itself asks for, hold none, and take its `auto` and `proximity` */
   resetLocks: () => void;
   sendDataToGpu: () => void;
   /** Every door, with its open ratio, to the nav worker's raycasts */
@@ -773,6 +791,8 @@ export type State = {
   toggleLock: (door: Geomorph.DoorState, opts?: Geomorph.ToggleLockOpts) => boolean;
   /** Hold the door as it is, open or shut, else let it go, and save it. Only a press or a holder then changes it */
   setHeld: (door: Geomorph.DoorState, held: boolean) => void;
+  /** Sets and saves `auto` (opens to an npc coming by) or `proximity` (stays open whilst anyone is near) */
+  setFlag: (door: Geomorph.DoorState, flag: keyof DoorFlags, next: boolean) => void;
   /** Tint this door's switches to match `door.locked` and `door.held` */
   syncLockTint: (door: Geomorph.DoorState) => void;
   /** Re-apply every door's switch tint, e.g. once decor has been rebuilt */
@@ -802,6 +822,12 @@ const tmpV2 = new Vect();
 const doorEndGap = 0.01;
 const tmpMat4 = new THREE.Matrix4();
 const zeroMat4 = new THREE.Matrix4();
+
+/** A door's `auto` and `proximity` as its map has them. Every hull door is auto */
+function mapFlagsOf({ hull, connector }: Pick<Geomorph.DoorState, "hull" | "connector">): Required<DoorFlags> {
+  const auto = hull === true || connector.meta.auto === true;
+  return { auto, proximity: connector.meta.proximity ?? auto };
+}
 
 import.meta.hot?.on("vite:beforeUpdate", (payload) => {
   const updatedThisFile = payload.updates.some((update) => update.path.endsWith("Doors.tsx"));

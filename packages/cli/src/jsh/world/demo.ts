@@ -167,7 +167,7 @@ export function demo_npc_ui(
   opts: { npcKey: string } = api.jsArg(args, { npc: "npcKey" }),
 ) {
   const npc = w.npc.get(opts.npcKey ?? args[0]);
-  w.bubble.openDebug(npc.key);
+  w.pickMenu.open({ npcKey: npc.key });
 }
 
 export function demo_remove_decor(ct: JshCli.RunArg) {

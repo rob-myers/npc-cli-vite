@@ -59,7 +59,7 @@ export function Debug() {
       originShown: false,
       pickGdkeyOpensDoors: getWorldStore(w.key).read().pickOpenDoors,
       pickDoors: getWorldStore(w.key).read().pickDoors,
-      npcContextMenu: getWorldStore(w.key).read().npcContextMenu,
+      contextMenu: getWorldStore(w.key).read().contextMenu,
       hudDebug: getWorldStore(w.key).read().hudDebug,
       forceShot: null,
 
@@ -485,8 +485,8 @@ export type State = {
   pickGdkeyOpensDoors: boolean;
   /** Whether the doors are drawn during object-picking, and so can be picked — see `pickObject` */
   pickDoors: boolean;
-  /** Whether a right click or long press on an npc opens their bubble — see `pickObject` */
-  npcContextMenu: boolean;
+  /** Whether a right click or long press on an npc, decor or door opens its menu — see `PickMenu` */
+  contextMenu: boolean;
   /** Whether the player's bar shows debug controls — see `WorldHud` */
   hudDebug: boolean;
   /** Every phaser shot ends so, over `w.e.shotResolver`: set by the hud's debug badge */

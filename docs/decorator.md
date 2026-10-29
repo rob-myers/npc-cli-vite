@@ -27,8 +27,8 @@ menu itself (`useScenarioCharacters`), so no Scenario panel need be open.
 | `ui/decorator/src/storage.ts` | per World and map: where the map was left, how the list is arranged |
 | `ui/decorator/src/history.ts` | undo/redo over the runtime defs |
 | `util/src/hooks/use-svg-zoom.ts` | `useSvgZoom`, `preventPopupGestures` — shared with the World's debug modals |
-| `ui/world/src/components/DecorInspector.tsx` | decorating in 3D: a label per runtime decor, a card per pick |
-| `ui/world/src/components/DecorCard.tsx` | the card: a decor's fields, its `meta`, delete |
+| `ui/world/src/components/DecorInspector.tsx` | decorating in 3D: a label per runtime decor |
+| `ui/world/src/components/PickMenu.tsx` | a menu per right-click on a decor, npc or door |
 | `cli/src/jsh/world/decor.ts` | `decor`, `decor ls`, `decor rm` |
 
 ## It needs a live World
@@ -99,30 +99,17 @@ removes the outgoing map's decor after saving it. `meta.noPersist` keeps a decor
 
 - every runtime decor is drawn, whether or not `meta.shown` says so — `hasInstance` admits it, and
   the toggle rebuilds the runtime instances — so abstract decor can be seen and picked;
-- `DecorInspector` labels each through `w.labels` (its key, or `meta.label`) — which draws a text
-  once, keeps its layer, and redraws once per tick however many labels came and went — and a **right-click**
-  toggles its `DecorCard` through `w.html`, the label giving way whilst the card is up — so a plain
-  click stays a pick for e.g. `pick | decor`. Touch has no right-click, so there any pick
-  toggles. Its ids are `decor:<key>`. On desktop the card opens **focused**
-  (`w.html.show(…, { focus: true })`), so **Escape** closes it — or, in a field with an edit under
-  way, gives that up;
-- the card edits the def's own fields by type, renames, edits `meta` as key/value rows — a value is
-  JSON where it parses, else text — and deletes on a second press. Each commit is one
-  `w.decor.create(def)`.
+- `DecorInspector` labels each through `w.labels` (its key, or `meta.label`). It draws a text
+  once, keeps its layer, and redraws once per tick however many labels came and went. Its ids are
+  `decor:<key>`. The labels are occluded like any thing (`createLabelResources(…, { occluded: true })`),
+  unlike room labels, which draw over all.
 
-`create` removes the decor it replaces FIRST, so `decor-removed` arrives before `decor-created`. The
-inspector tidies up after a removal in a microtask, else every edit would close the card being used.
+A right-click on any decor, static or runtime, opens its menu whilst the debug **context menu** is on
+(a long press on touch). It is a `PickMenu`, pinned beside the decor until closed: its type, img,
+room and `meta`, and for runtime decor **shown** and a two-press **delete**. A plain click stays a
+pick for e.g. `pick | decor`. Its fields are edited here in the Decorator, not in the World.
 
 It is rendered by `<Debug>`, so needs neither the panel nor a terminal.
-
-`w.html` frames have no lock: they always take the pointer, and always show the close button, the
-grip and the width handle. Where a frame was dragged to and how wide it was made are remembered by
-key (per World, in memory), so a card reopens as it was left. The labels are occluded like any
-thing — `createLabelResources(…, { occluded: true })` — unlike room labels, which draw over all.
-
-`Html3d` appends its content INSIDE the r3f canvas's wrapper, whose `onPointerDown`/`onPointerUp`
-are the World's — a press there would be picked as one, and on release the wrapper focuses itself,
-so a clicked field lost focus at once. The frame therefore stops both.
 
 **A spot chosen in the World is followed here**: a `spot-chosen` event, e.g. a right click on the World's spots overlay, reveals it, and the World's bar says "decorator selected". The World chooses nothing itself, and `chooseSpot` here leaves its overlay alone. See `docs/perception.md`.
 
@@ -184,7 +171,7 @@ the run from the last plain click, as a file list would. Its rows are **dragged 
 **Undo / redo** (cmd-Z, shift-cmd-Z or cmd-Y, the toolbar): `DecorHistory` keeps snapshots of the
 runtime defs, one taken BEFORE each of the panel's edits — add, move, nudge, delete, rename — and
 applies one back by touching only what differs. It knows nothing of edits made from the shell or a
-card in between: undoing past one reverts it too. A number field's spinner or arrow keys commit each step at once, and
+World menu in between: undoing past one reverts it too. A number field's spinner or arrow keys commit each step at once, and
 steps on one field of one decor within `mergeWithinMs` of each other join one snapshot (`mark(merge)`),
 so one undo takes back the run; typing commits on Enter or blur.
 
@@ -199,7 +186,7 @@ by 0.1m, 0.5m with shift. Delete or Backspace deletes.
 an image the image's corner; dragging one redraws the def in place (`rectResized` keeps the
 opposite corner put, in the rect's own turned frame; `circleResized` sets the radius;
 `pointResized` sets the point's **`scale`**, a factor on its image's own size which the World
-honours — `Decor` scales the instance and the bounds by it, and the card has it as a field); a quad's
+honours — `Decor` scales the instance and the bounds by it); a quad's
 bottom-right corner scales it from its top line's middle (`quadResized`), where a tilt stands it up, its **scale** living in its
 `transform` — `quadScale` reads it back, taken as uniform) and
 commits it on release — one edit, so one undo. A selected rect or quad also has a **rotate** handle

@@ -286,8 +286,8 @@ export function WorldMenu() {
         return w.debug?.decorShown ?? false;
       case "spots":
         return w.spots?.shown ?? false;
-      case "npc contextmenu":
-        return w.debug?.npcContextMenu ?? false;
+      case "context menu":
+        return w.debug?.contextMenu ?? false;
       case "hud debug":
         return w.debug?.hudDebug ?? false;
       default:
@@ -392,10 +392,11 @@ export function WorldMenu() {
         state.update();
         break;
       }
-      case "npc contextmenu": {
-        const next = !w.debug?.npcContextMenu;
-        w.debug?.set({ npcContextMenu: next });
-        store.patch({ npcContextMenu: next });
+      case "context menu": {
+        const next = !w.debug?.contextMenu;
+        w.debug?.set({ contextMenu: next });
+        store.patch({ contextMenu: next });
+        if (next === false) w.pickMenu?.closeAll();
         state.update();
         break;
       }
@@ -1507,7 +1508,17 @@ const toastLingerMs = 2000;
 const spinnerMinMs = 300;
 
 const cameraModes: CameraModeType[] = ["free", "embodied"];
-const debugItems = ["door ui", "hud debug", "modals", "npcs", "overlay", "post fx", "rgb shift", "view pick"] as const;
+const debugItems = [
+  "context menu",
+  "door ui",
+  "hud debug",
+  "modals",
+  "npcs",
+  "overlay",
+  "post fx",
+  "rgb shift",
+  "view pick",
+] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
@@ -1515,7 +1526,6 @@ const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label
 /** Debug options merged into one multiselect, by its label */
 const debugGroups = {
   npcs: [
-    { key: "contextmenu", value: "npc contextmenu" },
     { key: "lit", value: "lit npcs" },
     { key: "outline", value: "npc outline" },
   ],

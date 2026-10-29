@@ -83,7 +83,6 @@ import { CameraControls, type CameraModeType } from "./CameraControls";
 import CrossHair from "./CrossHair";
 import LightSweep from "./LightSweep";
 import LookMark from "./LookMark";
-import NpcBubbles from "./NpcBubbles";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
@@ -945,7 +944,8 @@ export function WorldView(props: React.PropsWithChildren) {
         state.keysDown.add(key);
         state.lastKeyMs = Date.now();
         if (e.key === "Escape") {
-          uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
+          // a focused menu closes, else the World pauses
+          if (w.pickMenu?.closeFocused() !== true) uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         } else if (fadeRoomsModeByKey[e.key] !== undefined) {
@@ -1730,8 +1730,6 @@ export function WorldView(props: React.PropsWithChildren) {
         <CrossHair />
 
         <LookMark />
-
-        <NpcBubbles />
 
         {state.postProcessing && <PostProcessing />}
 

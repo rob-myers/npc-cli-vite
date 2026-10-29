@@ -50,6 +50,7 @@ import Labels from "./Labels";
 import NavWorker from "./NavWorker";
 import NPCs from "./NPCs";
 import NpcBreath from "./NpcBreath";
+import NpcBubbles from "./NpcBubbles";
 import NpcFocus from "./NpcFocus";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
@@ -57,13 +58,13 @@ import NpcShields from "./NpcShields";
 import Obstacles from "./Obstacles";
 import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
+import PickMenu from "./PickMenu";
 import RoomLabels from "./RoomLabels";
 import Shields from "./Shields";
 import useWorldEvents from "./use-world-events";
 import useWorldNet from "./use-world-net";
 import useWorldPlayer from "./use-world-player";
 import Walls from "./Walls";
-import WorldHtml from "./WorldHtml";
 import WorldHud from "./WorldHud";
 import { WorldMenu } from "./WorldMenu";
 import { WorldSpeech } from "./WorldSpeech";
@@ -186,7 +187,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npc: null as any,
       obs: null as any,
       physics: { worker: { postMessage() {} } } as any,
-      html: null as any,
       hud: null as any,
       labels: null as any,
       rings: null as any,
@@ -194,6 +194,7 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       npcShields: null as any,
       phasers: null as any,
       npcFocus: null as any,
+      pickMenu: null as any,
       shields: null as any,
       spots: null as any,
       roomLabels: null as any,
@@ -537,7 +538,6 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
               <RoomLabels key="room-labels" />
               <Labels key="labels" />
               <Debug key="debug" />
-              <WorldHtml key="html" />
             </group>
 
             <NPCs key="npcs" />
@@ -560,7 +560,9 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
         {state.view && <WorldMenu />}
         <WorldSpeech />
         <WorldHud />
+        <NpcBubbles />
         <NpcFocus />
+        <PickMenu />
       </div>
     </WorldContext.Provider>
   );
@@ -645,7 +647,6 @@ export type State = {
   e: UseStateRef<import("./use-world-events").State>;
   player: UseStateRef<import("./use-world-player").State>;
   floor: UseStateRef<import("./Floor").State>;
-  html: UseStateRef<import("./WorldHtml").State>;
   hud: UseStateRef<import("./WorldHud").State>;
   labels: UseStateRef<import("./Labels").State>;
   menu: UseStateRef<import("./WorldMenu").State>;
@@ -658,6 +659,7 @@ export type State = {
   npcShields: UseStateRef<import("./NpcShields").State>;
   phasers: UseStateRef<import("./Phasers").State>;
   npcFocus: UseStateRef<import("./NpcFocus").State>;
+  pickMenu: UseStateRef<import("./PickMenu").State>;
   shields: UseStateRef<import("./Shields").State>;
   /** The spots overlay, mounted by `Debug` */
   spots: UseStateRef<import("./SpotOverlay").State>;
