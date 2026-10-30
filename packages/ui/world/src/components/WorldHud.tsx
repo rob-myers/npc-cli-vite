@@ -793,7 +793,7 @@ const noticeMs = 1500;
 type SlotMenuItem = { label: string; run(): void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
-const shotCycle: JshCli.ShotOutcome[] = ["hit", "refract", "armour"];
+const shotCycle: JshCli.ShotOutcome[] = ["hit", "ghost", "armour"];
 
 type SlotOpts = {
   title: string;

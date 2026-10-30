@@ -20,30 +20,7 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 // deep import: the `Addons.js` barrel drags all 268 example modules into the bundle
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
-import {
-  attribute,
-  cameraPosition,
-  cameraProjectionMatrix,
-  cameraViewMatrix,
-  float,
-  mix,
-  modelWorldMatrix,
-  mrt,
-  normalGeometry,
-  normalWorld,
-  output,
-  positionLocal,
-  positionWorld,
-  select,
-  smoothstep,
-  step,
-  texture as tslTexture,
-  uniform,
-  uv,
-  vec2,
-  vec3,
-  vec4,
-} from "three/tsl";
+import { uniform } from "three/tsl";
 import * as THREE from "three/webgpu";
 import { AssetsSkinManifestSchema, type AssetsSkinManifestType, type SkinSheetEntry } from "../assets.schema";
 import { npcDims, skinSliceDims } from "../const.both";
@@ -55,7 +32,6 @@ import {
   crowdConfig,
   defaultBreathTune,
   defaultIdleAnimationClipKey,
-  eyesConfig,
   fromAnimationClipKey,
   npcConfig,
   npcMaterialConfig,
@@ -69,12 +45,11 @@ import {
   mergeWithGroupAttr,
 } from "../service/geometry";
 import { helper } from "../service/helper";
+import { createNpcMaterial, type NpcMaterial } from "../service/npc-material";
 import { npcToBodyKey } from "../service/physics-bijection";
-import { npcJointToPickGreen, OBJECT_PICK_KEY_TO_RED } from "../service/pick";
-import { alwaysShownSlot } from "../service/room-slots";
+import { npcJointToPickGreen } from "../service/pick";
 import { loadSkinSheets, loadSkinSliceSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
-import { selectAs } from "../service/tsl";
 import type { PhysicsBijection } from "../worker/physics.store";
 import { MemoNpcInstance } from "./NpcInstance";
 import { Npc, type NpcInit } from "./npc";
@@ -140,187 +115,8 @@ export default function NPCs() {
         // improve initial path accuracy
         state.crowd.quickSearchIterations = crowdConfig.quickSearchIterations;
       },
-      createMaterials(pickId: number, skinIndex: number) {
-        const {
-          labelHalfWidth,
-          labelHalfHeight,
-          rim: rimConfig,
-          ambient,
-          ambientInSight,
-          litAmbient,
-          faceShade,
-        } = npcMaterialConfig;
-        const skinIndexUniform = uniform(skinIndex);
-        const eyesUniform = uniform(0);
-        // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
-        const pickIdUniform = uniform(pickId);
-        const colorScale = uniform(1);
-        const npcLit = uniform(0);
-        const roomSlot = uniform(alwaysShownSlot, "float");
-
-        // - has value 1 iff lit and lighting shown
-        // - lit npcs will not be faded with their rooms
-        const litAmount = npcLit.mul(w.view.litNpcsEnabled);
-
-        const roomFade = w.view.fadeRoomsFx.getVisiblity(roomSlot);
-        // every mode drains the colour over the room's fade, leaving a black figure we can still
-        // watch move about — a lit npc keeps theirs
-        const bodyTint = roomFade.max(litAmount);
-
-        // Per-vertex groupId: 0=body, 1=label
-        const groupIdAttr = attribute<"float">("groupId", "float");
-        const isLabel = groupIdAttr.greaterThan(0.5);
-        const isMain = groupIdAttr.lessThan(0.5);
-
-        // Vertex node: billboard expansion for label, standard skinned MVP otherwise
-        const sign = attribute<"vec2">("billboardOffset", "vec2");
-        const labelYShift = uniform(0, "float");
-        // the text's own box in the label's uv, set by `drawLabel`
-        const labelRect = uniform(new THREE.Vector4(0, 0, 1, 1));
-        const anchor = vec4(positionLocal.x, positionLocal.y.add(labelYShift), positionLocal.z, 1);
-        const viewCtr = cameraViewMatrix.mul(modelWorldMatrix.mul(anchor));
-        const labelPos = cameraProjectionMatrix.mul(
-          viewCtr.add(vec4(sign.x.mul(labelHalfWidth), sign.y.mul(labelHalfHeight), 0, 0)),
-        );
-        const stdPos = cameraProjectionMatrix.mul(cameraViewMatrix.mul(modelWorldMatrix.mul(vec4(positionLocal, 1))));
-
-        // Color node
-        const skinTex = tslTexture(w.texSkin.tex, uv()).depth(skinIndexUniform);
-
-        // Their eyes: one slice of their skin's, over the face — see `docs/skin-slices.md`
-        const { face } = eyesConfig;
-        const faceUv = uv().sub(vec2(face.x, face.y)).div(face.size);
-        const inFace = step(0, faceUv.x)
-          .mul(step(faceUv.x, float(1)))
-          .mul(step(0, faceUv.y))
-          .mul(step(faceUv.y, float(1)));
-        const slicesPerRow = skinSliceDims.cell / skinSliceDims.slice;
-        const eyes = tslTexture(
-          w.texSkinSlices.tex,
-          vec2(eyesUniform.mod(slicesPerRow), eyesUniform.div(slicesPerRow).floor())
-            .add(faceUv.clamp(0, 0.999))
-            .div(slicesPerRow),
-        ).depth(skinIndexUniform);
-        const skinRgb = mix(skinTex.rgb, eyes.rgb, eyes.a.mul(inFace));
-
-        // An npc keeps its height whilst a map changes over, darkening and fading out together
-        // as the world folds around it — see `setWorldFold`
-        const fold = w.view.foldNode;
-
-        const toEye = cameraPosition.sub(positionWorld).normalize();
-        const facing = normalWorld.dot(toEye).clamp(0, 1);
-
-        // ambient + the player's light + more whilst lit, the light taking what the ambient leaves
-        const ambientNow = mix(float(ambient), float(ambientInSight), w.view.fadeRoomsFx.sightNode).max(
-          state.ambientNode,
-        );
-        const exposure = ambientNow
-          .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
-          .add(litAmount.mul(litAmbient))
-          .clamp(0, 1)
-          // flat-shaded from straight above, half-Lambert: whatever the light, and steady as the camera turns
-          .mul(normalWorld.y.mul(faceShade / 2).add(1 - faceShade / 2))
-          .mul(fold)
-          .mul(state.dimNode);
-
-        // Rim shading where the body turns away from the view: `1 - N·V` is largest exactly along
-        // the silhouette. Eased off as the camera climbs overhead, where nearly every surface in
-        // sight is a flank turned edge-on and the rim would otherwise take the whole npc rather
-        // than outlining them — `toEye.y` is how much of the view is straight down
-        const overhead = smoothstep(float(rimConfig.overheadFrom), float(rimConfig.overheadTo), toEye.y);
-        const rimBright = mix(float(rimConfig.amount), float(rimConfig.overheadAmount), overhead);
-        /** `0` on a cuboid's end caps, which a bent joint bares edge-on */
-        const notCap = normalGeometry.y.abs().oneMinus();
-        const rim = facing.oneMinus().pow(rimConfig.power).mul(rimBright).mul(notCap).mul(fold);
-        // `alphaTestNode` below gives way with this, or the body would be discarded whole the
-        // moment its alpha started dropping
-        const mainColor = vec4(
-          mix(
-            vec3(0).mul(positionLocal.y),
-            // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
-            // skin happened to be — a dark uniform takes a rim as readily as a pale one
-            skinRgb.mul(exposure).add(vec3(...rimConfig.color).mul(rim)),
-            colorScale,
-          ),
-          skinTex.a.mul(fold),
-        );
-
-        const isPickMode = w.view.objectPick.notEqual(0);
-        const labelTex = tslTexture(w.texNpcLabel.tex, uv()).depth(pickIdUniform);
-        const inRect = step(labelRect.x, uv().x)
-          .mul(step(labelRect.y, uv().y))
-          .mul(step(uv().x, labelRect.z))
-          .mul(step(uv().y, labelRect.w));
-        // picked as a solid box round the text, else only its ink would be
-        const labelAlpha = selectAs<"float">(isPickMode, inRect, labelTex.a);
-        // fades WITH the body: unlit, a cut label hung over a half-there figure
-        const labelColor = vec4(labelTex.rgb, labelAlpha.mul(colorScale).mul(fold));
-
-        // Output node: the pick's `g` is the joint drawn — see `npcJointToPickGreen`
-        const bodyPart = attribute<"float">("bodyPart", "float").round(); // interpolated, if all alike
-        const npcPickId = bodyPart.mul(256).add(pickIdUniform);
-        const npcPick = w.view.withPickOutputId(OBJECT_PICK_KEY_TO_RED.npc, npcPickId, 1); // opaque, else blended
-
-        // The silhouette the border is grown from — see `service/npc-outline`. The BODY only: the
-        // label is a billboard, and a border around it would read as a box floating overhead.
-        // PREMULTIPLIED, against an alpha of `1` — which under the blend is a replace, and the npc
-        // must replace rather than accumulate: an arm passing over the torso writes the mask twice,
-        // and blending would sum it. `bodyTint` takes the border with it as they black out, and it
-        // reaches `0` before the wipe does, so nothing outlines a figure that is no longer there
-        const maskAmount = colorScale.mul(fold).mul(bodyTint);
-
-        const material = new THREE.MeshStandardNodeMaterial({
-          transparent: true,
-          depthWrite: true,
-          side: THREE.FrontSide, // one draw call
-          // - keep these fixed or they'll effect label quad
-          // - could add metalness map but we'll handle via SVG edit instead
-          metalness: 0,
-          roughness: 1,
-        });
-        // - label/body fade in during unfold
-        // - label fades in/out with room, whereas the body is cut away rather than faded
-        material.alphaTestNode = selectAs(isLabel, float(0.1).mul(fold).mul(roomFade), float(0.9).mul(fold));
-        material.vertexNode = selectAs(isLabel, labelPos, stdPos);
-        // a label is a caption rather than a part of them: it fades over the WHOLE of its room's
-        // fade, well before and after the body's own share of it, and eased at both ends
-        const labelFade = smoothstep(float(0), float(1), roomFade).max(litAmount);
-        const label = w.view.fadeRoomsFx.applyFadeRgba(
-          w.view.fadeRoomsFx.applyFadeAlpha(labelColor, labelFade),
-          labelFade,
-        );
-        material.colorNode = w.view.fadeRoomsFx.dropPickWhenHidden(
-          (select as any)(isLabel, label, mainColor), // `bodyTint` is applied at the output, below
-          roomFade,
-          w.view.objectPick,
-        );
-        // blacked out at the OUTPUT: `colorNode` is only the albedo, and a standard material still
-        // adds specular off the scene lights to an albedo of zero
-        const beauty = selectAs(isMain, vec4(w.view.fadeRoomsFx.fadeRgb(output.rgb, bodyTint), output.a), output);
-        material.outputNode = selectAs(isPickMode, npcPick, beauty);
-        // The label writes no silhouette — it is not part of the figure — but marks itself in `g`
-        // as a caption the border may not paint over: it sits a few pixels above the head, well
-        // inside the border's reach. Keyed to the label's OWN alpha, so a faded one protects
-        // nothing; that alpha also scales `r` back under it, which only ever costs mask the
-        // caption is covering anyway
-        const maskMrt = mrt({
-          npcMask: selectAs(isMain, vec4(maskAmount, 0, 0, 1), vec4(0, 1, 0, label.a)),
-        });
-        // attached only whilst the scene pass declares the extra output — see `syncOutlineMask`
-        material.mrtNode = w.view.npcMaskMrt === null ? null : maskMrt;
-
-        return {
-          colorScale,
-          labelRectUniform: labelRect,
-          labelYShiftUniform: labelYShift,
-          maskMrt,
-          npcLit,
-          pickIdUniform,
-          roomSlot,
-          skinIndexUniform,
-          eyesUniform,
-          material,
-        };
+      createMaterials(pickId, skinIndex) {
+        return createNpcMaterial(w, { pickId, skinIndex, ambient: state.ambientNode, dim: state.dimNode });
       },
       buildNpcMesh() {
         // the clone brings its own skeleton; the label rides in the geometry
@@ -767,6 +563,7 @@ export default function NPCs() {
       resetMaterials(npc) {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
+        mat.dotScreen.value = npc.dotScreen?.value ?? 0; // undefined on an npc from before hmr
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
         mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
         mat.labelRectUniform.value.copy(npc.labelRectUniform.value);
@@ -1059,22 +856,8 @@ export type State = {
   setBrightness(next: number): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */
   syncOutlineMask(): void;
-  createMaterials(
-    pickId: number,
-    skinIndex: number,
-  ): Pick<
-    NpcInit,
-    | "colorScale"
-    | "labelRectUniform"
-    | "labelYShiftUniform"
-    | "maskMrt"
-    | "npcLit"
-    | "pickIdUniform"
-    | "roomSlot"
-    | "skinIndexUniform"
-    | "eyesUniform"
-    | "material"
-  >;
+  /** Their material and uniforms — see `service/npc-material` */
+  createMaterials(pickId: number, skinIndex: number): NpcMaterial;
   /**
    * Renumbers every npc's `pickId` from `0`, closing the gaps removals leave — so `nextPickId`,
    * and the label texture array it indexes, stay small

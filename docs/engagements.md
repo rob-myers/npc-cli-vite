@@ -8,12 +8,12 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
 | `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
 | `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
-| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`), armour's flinch (`flinch`), refract's look (`headAt`) |
-| `ui/world/src/components/NpcRefract.tsx`, `service/refract.ts` | refract: the psi beam, `w.npcRefract` |
+| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`), armour's flinch (`flinch`) |
+| `ui/world/src/components/NpcGhost.tsx` | ghost: a dot screen, `w.npcGhost` |
 | `ui/world/src/components/NpcArmour.tsx`, `service/armour.ts` | armour: ricochet and sparks, `w.npcArmour` |
 | `ui/world/src/components/NpcFocus.tsx` | who targets whom, `w.npcFocus` |
 | `ui/world/src/service/aim-target.ts` | whom a ray meets, and where (`npcOnRay`) |
-| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `refractConfig`, `armourConfig`, `flinchConfig` |
+| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `ghostConfig`, `armourConfig`, `flinchConfig` |
 
 ## How a shot ends
 
@@ -23,29 +23,29 @@ A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), a
 | outcome | the beam | effect |
 | --- | --- | --- |
 | `hit` | lands on the part | see [What a hit does](#what-a-hit-does) |
-| `refract` | stops where their psi beam meets it, before them | see [Refract](#refract) |
+| `ghost` | passes through them, once they are a dot screen | see [Ghost](#ghost) |
 | `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
 
 - **Who decides:** the player's bar's debug badge (`w.debug.forceShot`), `hit` by default.
 - **The badge** shows on the phaser slot whilst the World menu's debug **hud debug** is on (persisted per World). A
-  click cycles it through `hit`, `refract` and `armour`. Turning hud debug off resets it to `hit`.
+  click cycles it through `hit`, `ghost` and `armour`. Turning hud debug off resets it to `hit`.
 - **A shot whose line meets no part of them**, from the muzzle through the dot, has no outcome and sends no `npc-shot`.
   It passes there, e.g. they moved since it was aimed.
 - **A shot passing them** runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond`
   within `passMax` metres. Until that returns it runs `passStub` past them. It meets the floor first if it is heading down.
-- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `refract` or `armour`.
+- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `ghost` or `armour`.
 
-### Refract
+### Ghost
 
-Optical refraction by psi, heating the space before them (`w.npcRefract`, `refractConfig` in `const.npc`).
+They become a ghost, and the shot passes through them (`w.npcGhost`, `ghostConfig` in `const.npc`).
 
-- As the shot locks on (`shoot`), they turn to psi: the `psi` clip over the left arm. Their head looks to a point on
-  the shot's line (`anim.headAt`), at random from `standoffM` before where it would land to `reachShare` of the way
-  back, nearer the shooter more often (`towardShooter`).
-- A psi beam leaves their brow and reaches it in `reachSecs`: a tube, brightest down its middle as seen.
-- The phaser's beam ends there, as it reaches out and where it fades (`stopAt`, in `draw`). A glow sits where they
-  meet, flaring as it lands (`struck`).
-- The psi beam fades with the shot, over `outSecs` from the strike. Their head and left hand are then let go.
+- As the shot locks on (`shoot`, `ghost`), their body becomes a dot screen over `inSecs`, its dots fixed on the
+  screen (`dots`, as `dotScreen` in `extra-fx`). It is the npc's `dotScreen` uniform, which leaves their label and
+  outline be.
+- The shot waits, unseen, until they are a ghost (`isGhosting`), then passes through them to the wall beyond, as one
+  aimed beside them would (`shot.through`, `shot.past`). No clip plays, but `npc-shot` is emitted.
+- Meanwhile no phaser targets them (`syncTarget`): its dot passes through them to the wall, or whoever is behind.
+- They stay so `holdSecs` after it strikes, else `missSecs` after it locked on, then come back over `outSecs`.
 
 ### Armour
 

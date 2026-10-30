@@ -959,7 +959,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.breaths?.onTick();
-        w.npcRefract?.onTick();
+        w.npcGhost?.onTick();
         w.npcArmour?.onTick();
         w.phasers?.onTick();
         w.shields?.onTick();

@@ -361,6 +361,11 @@ export default function Phasers() {
           if (beam.to !== null && beam.to.npcKey !== null && beam.locked.target === 1 && arm.shot?.to !== beam.to) {
             state.shoot(npc, arm, beam.to);
           }
+          // a shot that passes through them waits, unseen, until they are a ghost
+          if (arm.shot?.to === beam.to && arm.shot.outcome === "ghost" && w.npcGhost?.isGhosting(arm.shot.to.npcKey)) {
+            beam.shown.presence = Math.min(beam.shown.presence, 1e-3);
+            beam.locked.presence = Math.min(beam.locked.presence, 1e-3);
+          }
           if (beam.locked.presence === 1 && beam.to !== arm.struck) state.strike(npc, arm);
           const hidden = beam.shown.presence === 0 && beam.gun.presence === 0;
           if (arm.armed === false && hidden && state.holds(srcKey) === false) {
@@ -392,17 +397,12 @@ export default function Phasers() {
         /** Their phaser's own, looked up once: the frequencies it knows, and those it is dead to */
         const item = w.shields?.phaserOf(npc.key)?.meta;
         const free = isFreeShot(beam.to) ? beam.to : null;
-        /** Refracted, where their psi meets it */
-        const refracted =
-          dst !== undefined && arm.hitAt === null && arm.shot?.to === beam.to && arm.shot.outcome === "refract"
-            ? (w.npcRefract?.stopAt(dst, tmpRefract) ?? null)
-            : null;
         const part =
           free !== null
             ? state.freeEndOf(npc, arm, free, tmpFree)
             : dst === undefined
               ? null
-              : (arm.hitAt ?? refracted ?? shotPast(arm, tip, tmpPart) ?? targetPoint(dst, beam.to, tmpPart));
+              : (arm.hitAt ?? shotPast(arm, tip, tmpPart) ?? targetPoint(dst, beam.to, tmpPart));
         /** Where a shield between them stops it: of those their last cast passed. A shot at no one's cast settled it */
         const stopped =
           part === null || free !== null
@@ -470,13 +470,16 @@ export default function Phasers() {
         hand?.updateWorldMatrix(true, false);
         const tip = hand?.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
         if (tip !== undefined && acrossStop(arm, tip, end, tmpAcross) !== null) return; // as drawn
+        const outcome = arm.shot?.to === to ? arm.shot.outcome : "hit";
+        if (outcome === "ghost") {
+          w.npcGhost?.struck(dst); // it passes through them
+          state.land(npc, dst, to.part, outcome);
+        }
         // the burst ends where it landed, rather than following them as they writhe. One passing them runs on
         if (end === part) {
-          const outcome = arm.shot?.to === to ? arm.shot.outcome : "hit";
           state.land(npc, dst, to.part, outcome);
-          const refracted = outcome === "refract" ? (w.npcRefract?.struck(dst, tmpRefract) ?? null) : null;
           if (outcome === "armour") w.npcArmour?.flash(dst, to.part, part, tip ?? from);
-          arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(refracted ?? part);
+          arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(part);
         }
         arm.target = arm.firedSecs = null;
         w.hud?.update();
@@ -508,13 +511,10 @@ export default function Phasers() {
         if (dst === undefined) return;
         /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */
         const clear = to.local != null && state.meetPart(npc, arm, dst, to) === false;
-        if (clear === false && shot.outcome === "refract") {
-          const hand = handOf(npc, arm);
-          hand?.updateWorldMatrix(true, false);
-          const from = hand?.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom)) ?? npc.position;
-          w.npcRefract?.ward(dst, from, targetPoint(dst, to, tmpAim));
-        }
-        if (clear === false) return;
+        // a ghost's passes through them, as one aimed beside them passes
+        const ghosted = clear === false && shot.outcome === "ghost";
+        if (ghosted === true) w.npcGhost?.ghost(dst);
+        if (clear === false && ghosted === false) return;
         const through = targetPoint(dst, to, new THREE.Vector3());
         shot.through = through;
         const length = Math.hypot(through.x - npc.position.x, through.z - npc.position.z) || 1;
@@ -1377,8 +1377,6 @@ function put(data: Float32Array, i: number, a: number, b: number, c: number, d: 
 const muzzle = new THREE.Vector3(...phaserConfig.beamFrom);
 const tmpTip = new THREE.Vector3();
 const tmpPart = new THREE.Vector3();
-const tmpRefract = new THREE.Vector3();
-const tmpAim = new THREE.Vector3();
 const tmpBody = new THREE.Vector3();
 const tmpAlong = new THREE.Vector3();
 const tmpAt = new THREE.Vector3();

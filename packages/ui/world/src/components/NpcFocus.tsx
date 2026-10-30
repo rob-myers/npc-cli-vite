@@ -229,12 +229,12 @@ export default function NpcFocus() {
       syncTarget(entry) {
         const { aim, end } = entry;
         if (aim == null || end == null) return void (entry.npcKey = null);
-        // those in the rooms its last cast passed through: no wall is between
+        // those in the rooms its last cast passed through: no wall is between. Not one it passes through
         tmpNear.length = 0;
         for (const { gmId, roomId } of end.roomIds ?? []) {
           for (const key of w.npc.roomToNpcs[gmId]?.[roomId] ?? []) {
             const npc = w.n[key];
-            if (npc !== undefined) tmpNear.push(npc);
+            if (npc !== undefined && w.npcGhost?.ghosts.has(key) !== true) tmpNear.push(npc);
           }
         }
         entry.met ??= { part: "", local: new THREE.Vector3(), point: new THREE.Vector3(), dist: 0 };

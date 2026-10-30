@@ -334,26 +334,17 @@ export const hitConfig = {
   } as Partial<Record<ClipKey, ClipKey>>,
 };
 
-/** Refract: they turn to psi and look to the shot, and a psi beam from their brow stops it, heating space — see `NpcRefract` */
-export const refractConfig = {
-  psiColor: "#c58cff",
-  /** Their psi meets it at random, from `standoffM` metres before where it would land to `reachShare` of the way back */
-  standoffM: 0.6,
-  reachShare: 0.8,
-  /** Over `1`, nearer the shooter more often */
-  towardShooter: 2.5,
-  /** Fired again before it fades, it meets the shot where it did whilst within this many metres of its line */
-  keepM: 0.1,
-  /** Seconds the psi beam takes to reach the shot, is held unstruck, and fades over from the strike, as the shot does */
-  reachSecs: 0.06,
-  holdSecs: 0.6,
-  outSecs: 0.3,
-  flareSecs: 0.3,
-  /** Metres across the psi beam, and the glow where it meets the shot */
-  width: 0.025,
-  flareM: 0.12,
-  /** The band floating round their head, which the beam leaves from, in the head bone's frame: its radius, height and thickness */
-  band: { radius: 0.33, y: 0.25, thick: 0.012, bob: 0.012, bobHz: 1.2, inSecs: 0.08 },
+/** Ghost: they become a dot screen as the shot locks on, and it passes through them — see `NpcGhost` */
+export const ghostConfig = {
+  /** How much of a dot screen their body becomes, over `inSecs` as the shot locks on, which waits till then */
+  amount: 1,
+  inSecs: 0.2,
+  /** The dots: radians the grid turns, per pixel so higher is smaller, as `dotScreen` in `extra-fx`, and how bright they read the body */
+  dots: { angle: Math.PI / 2, scale: 4.9, gain: 1.6 },
+  /** Seconds they stay so once it lands, else after it locked on, then come back over `outSecs` */
+  holdSecs: 0.4,
+  missSecs: 1.5,
+  outSecs: 0.5,
 };
 
 /** Armour: struck, the shot glances off the face it met, in a spray of sparks — see `NpcArmour` */
