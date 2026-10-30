@@ -472,6 +472,10 @@ export class Npc {
     return this.anim.posture !== "stand";
   }
 
+  isStrafing() {
+    return this.anim.strafe;
+  }
+
   /**
    * Can look at `npcKey`, point or angle.
    */

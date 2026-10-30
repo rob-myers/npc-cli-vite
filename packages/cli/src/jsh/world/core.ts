@@ -795,7 +795,7 @@ async function move_next(
     while ((next = pendingMoves.shift() ?? (await pendingRead)) !== api.eof && next) {
       const npc = getNpcOrThrow();
       const movePromise =
-        next.meta?.look === true
+        next.meta?.look === true && npc.isStrafing() === false
           ? npc.look({ at: next }).catch(() => {}) // wasd_delta --nav blocked: turn that way instead
           : movePausable(
               {
