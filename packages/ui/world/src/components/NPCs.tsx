@@ -451,18 +451,6 @@ export default function NPCs() {
             { type: "use-current", meta: w.decor.byKey[currentDecorKey].meta }
           : { type: "none", meta };
       },
-      dodge(npcKey, part, from) {
-        const npc = state.npc[npcKey];
-        if (npc === undefined || npc.anim.hurt !== null) return null; // in pain, pacified or collapsed: no dodging
-        const clip = npc.anim.dodgeClipFor(part, from);
-        if (clip === null) return null;
-        npc.rejectAll(new Error("dodge")); // a move's own catch idles them, onto the clip
-        // stood, they turn to face it, unless held to an aim
-        const turns = from !== undefined && npc.anim.posture === "stand" && npc.anim.face.aim === null;
-        const faceTo = turns ? npc.anim.bearingOf(from) : undefined;
-        npc.anim.setHurt(clip, { faceTo });
-        return faceTo === undefined ? 0 : deltaAngle(npc.rotation.y, faceTo);
-      },
       findFreeDoPoint(points, npcKey, near) {
         const free = points.filter((d) => {
           const otherNpcKey = state.doableToNpc[d.key] ?? null;
@@ -1145,8 +1133,6 @@ export type State = {
   get(npcKey: string): Npc;
   /** A phaser's beam reached `part` of them: stops them, and plays its clip if it has one */
   hit(npcKey: string, part: null | string): void;
-  /** They dodge a shot from `from` at their `part`: returns the radians they turn to face it, else `null` for no dodge */
-  dodge(npcKey: string, part: null | string, from?: Geom.VectJson): null | number;
   /** The skin of that key, else the first whose key begins with it, else `defaultSkinKey` */
   findSkinKey(prefix?: string): string;
   getSkinIndexBySkinKey(skinKey: string): number;

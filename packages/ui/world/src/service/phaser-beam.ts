@@ -48,7 +48,7 @@ export type Beam = {
   at: THREE.Vector3;
   /** Whether a shield stops it short of them */
   blocked: boolean;
-  /** How far out it has reached, `0` to `1`. Kept as it lets go, so it fades where it is */
+  /** How far out it has reached: `1` as it locks on, kept as it lets go so it fades where it is, `0` once gone */
   reach: number;
 };
 
@@ -107,7 +107,9 @@ export function beamEnd(
   if (part !== null) {
     const at = x.at.copy(stopped ?? part);
     if (x.glide !== null) at.lerpVectors(x.glide.from, tmpGlide.copy(at), eased(x.glide.t)); // tracks the target meanwhile
-    if (x.locked.target === 1 || x.locked.presence === 0) x.reach = eased(x.locked.presence);
+    // all the way at once as it locks on, even fired again as it fades: gone only once it has faded
+    if (x.locked.target === 1) x.reach = 1;
+    else if (x.locked.presence === 0) x.reach = 0;
     end.lerp(at, x.reach);
   }
   return end;

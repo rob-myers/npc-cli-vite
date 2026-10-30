@@ -142,7 +142,8 @@ declare namespace JshCli {
 
   /** A phaser shot by `by` at `npcKey`'s `part` */
   type Shot = { by: string; npcKey: string; part: null | string };
-  type ShotOutcome = "hit" | "missed" | "dodged" | "shielded";
+  /** How a shot at someone ends: one whose line meets no part of them passes, and has none */
+  type ShotOutcome = "hit" | "refract" | "armour";
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;

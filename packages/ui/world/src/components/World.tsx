@@ -49,12 +49,13 @@ import Floor from "./Floor";
 import Labels from "./Labels";
 import NavWorker from "./NavWorker";
 import NPCs from "./NPCs";
+import NpcArmour from "./NpcArmour";
 import NpcBreath from "./NpcBreath";
 import NpcBubbles from "./NpcBubbles";
 import NpcFocus from "./NpcFocus";
+import NpcRefract from "./NpcRefract";
 import NpcRings from "./NpcRings";
 import NpcShadows from "./NpcShadows";
-import NpcShields from "./NpcShields";
 import Obstacles from "./Obstacles";
 import Phasers from "./Phasers";
 import PhysicsWorker from "./PhysicsWorker";
@@ -191,7 +192,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
       labels: null as any,
       rings: null as any,
       breaths: null as any,
-      npcShields: null as any,
+      npcArmour: null as any,
+      npcRefract: null as any,
       phasers: null as any,
       npcFocus: null as any,
       pickMenu: null as any,
@@ -547,7 +549,8 @@ export default function World({ meta }: { meta: WorldUiMeta }) {
                 <NpcRings key="npc-rings" />
                 <NpcShadows key="npc-shadows" />
                 <NpcBreath key="npc-breath" />
-                <NpcShields key="npc-shields" />
+                <NpcRefract key="npc-refract" />
+                <NpcArmour key="npc-armour" />
                 <Phasers key="phasers" />
               </>
             )}
@@ -656,7 +659,8 @@ export type State = {
   obs: UseStateRef<import("./Obstacles").State>;
   rings: UseStateRef<import("./NpcRings").State>;
   breaths: UseStateRef<import("./NpcBreath").State>;
-  npcShields: UseStateRef<import("./NpcShields").State>;
+  npcArmour: UseStateRef<import("./NpcArmour").State>;
+  npcRefract: UseStateRef<import("./NpcRefract").State>;
   phasers: UseStateRef<import("./Phasers").State>;
   npcFocus: UseStateRef<import("./NpcFocus").State>;
   pickMenu: UseStateRef<import("./PickMenu").State>;

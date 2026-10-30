@@ -19,6 +19,7 @@ import {
   defaultIdleAnimationClipKey,
   defaultNpcLabelColor,
   npcLabelWeight,
+  npcMaterialConfig,
   npcScale,
   otherNpcLabelColor,
 } from "../const.npc";
@@ -550,6 +551,14 @@ export class Npc {
     return out.copy(this.position).setY(this.position.y + this.labelYShiftUniform.value * npcScale);
   }
 
+  /** Just below the middle of their label's text, as `camera` sees it: the label faces it, so is offset along its up */
+  getLabelBase(out: THREE.Vector3, camera: THREE.Camera) {
+    /** Its text's bottom, as a share of the label's half-height up from its middle: its `uv` runs down */
+    const below = 1 - 2 * this.labelRectUniform.value.w;
+    const up = tmpUp.setFromMatrixColumn(camera.matrixWorld, 1);
+    return this.getLabelPosition(out).addScaledVector(up, below * npcMaterialConfig.labelHalfHeight - labelBaseGap);
+  }
+
   setLabelYShift(shift: number) {
     // no lower than its floor, e.g. above a top bunk over them
     const target = Math.max(shift, ((this.labelFloor ?? -Infinity) - this.position.y) / npcScale);
@@ -629,3 +638,7 @@ export function rejectNoop(_e: Error): void {}
 
 /** Seconds their label takes to move to a new height */
 const labelMoveSecs = 0.3;
+/** Metres below their label's text its base is */
+const labelBaseGap = 0.04;
+
+const tmpUp = new THREE.Vector3();

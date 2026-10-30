@@ -5,7 +5,6 @@ import { type ButtonHTMLAttributes, memo, type ReactNode, useContext, useEffect,
 import * as THREE from "three/webgpu";
 import { doorHeight } from "../const.env";
 import { actionClass, cancelClass, markClass, OverlayBounds, offsetUnder, toScreen } from "../service/overlay";
-import { bodyPart, bodyPartPoint } from "../service/phaser-beam";
 import { slotOf } from "../service/room-slots";
 import BreathControls from "./BreathControls";
 import type { AnimationClipKey } from "./NPCs";
@@ -29,13 +28,10 @@ export default function PickMenu() {
 
       anchorOf({ target, picked }, out) {
         if ("npcKey" in target) {
+          // the bottom of their label: it keeps still as they animate, e.g. collapsed
           const npc = w.n?.[target.npcKey];
-          if (npc === undefined) return null;
-          // where it was pressed, moving with that part of them
-          const bone = picked === null ? undefined : bodyPart(npc, picked.part)?.bone;
-          if (bone === undefined || picked === null) return bodyPartPoint(npc, "chest", out);
-          bone.updateWorldMatrix(true, false);
-          return out.copy(picked.local).applyMatrix4(bone.matrixWorld);
+          const camera = w.r3f?.camera;
+          return npc === undefined || camera === undefined ? null : npc.getLabelBase(out, camera);
         }
         if ("decorKey" in target) {
           const d = w.decor.byKey[target.decorKey];
@@ -165,7 +161,8 @@ export default function PickMenu() {
         const menuKey = menuKeyOf(target);
         const entry = state.menus.get(menuKey) ?? newEntry(menuKey, target);
         state.menus.delete(menuKey); // to the front
-        state.menus.set(menuKey, unpin(entry, pressed !== undefined)); // opened again, placed afresh
+        // opened again, placed afresh: an npc's beside their label, else its Cancel under the press
+        state.menus.set(menuKey, unpin(entry, pressed !== undefined && !("npcKey" in target)));
         entry.picked = pressed === undefined ? null : state.pickedOf(target, pressed);
         entry.version++;
         entry.wantsFocus = w.touchDevice === false;
@@ -229,14 +226,9 @@ export default function PickMenu() {
         setStyle(v, "transform", `translate(${px(to.x)},${px(Math.min(at.y, to.y))})`);
         setStyle(v, "height", px(Math.abs(to.y - at.y)));
       },
-      pickedOf(target, { point, part }) {
-        if (!("npcKey" in target)) return { part: null, local: new THREE.Vector3().copy(point) };
-        const npc = w.n?.[target.npcKey];
-        const bone = npc === undefined ? undefined : bodyPart(npc, part ?? null)?.bone;
-        if (bone === undefined) return null; // e.g. their label: their chest
-        bone.updateWorldMatrix(true, false);
-        const local = new THREE.Vector3().copy(point).applyMatrix4(tmpMatrix.copy(bone.matrixWorld).invert());
-        return { part: bone.name, local };
+      pickedOf(target, { point }) {
+        // an npc's menu hangs from their label, wherever they were pressed
+        return "npcKey" in target ? null : { local: new THREE.Vector3().copy(point) };
       },
       pxPerMetre(entry) {
         const camera = w.r3f?.camera;
@@ -372,6 +364,8 @@ const Menu = memo(function Menu({ entry, collapsed }: { entry: Entry; version: n
         onContextMenu={(e) => e.preventDefault()} // not the browser's
         // the camera still zooms beneath it
         onWheel={(e) => {
+          // a dropdown's list is portalled out, though React bubbles its wheel here: it scrolls the list alone
+          if (e.currentTarget.contains(e.target as Node) === false) return;
           // a sideways scroll over its label scrolls the label
           const sideways = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
           if (sideways && (e.target as Element).closest("[data-scroll-x]") !== null) return;
@@ -446,22 +440,22 @@ function NpcRows({ npcKey, touch }: { npcKey: string; touch(): void }) {
 
   return (
     <>
-      {grKey !== undefined && <Info label="room">{grKey}</Info>}
-      <Picker
-        value={npc.anim.pose}
-        options={Object.keys(npc.clips) as AnimationClipKey[]}
-        title="anim"
-        className="pointer-events-auto border-white/20 bg-black/60 text-white"
-        popupClassName="font-mono"
-        onChange={(next) => {
-          if (w.n[npcKey] === undefined) return;
-          w.n[npcKey].anim.setHurt(null); // else they go back to it
-          w.n[npcKey].anim.setPose(next);
-          touch();
-        }}
-      />
-      {/* what they have: lit if so, and a press gives or takes it away */}
-      <div className="flex flex-wrap gap-1">
+      {/* one wrapping row: where they are, their pose, and what they have, lit if so */}
+      <div className="flex max-w-56 flex-wrap items-center gap-1">
+        {grKey !== undefined && <Info label="room">{grKey}</Info>}
+        <Picker
+          value={npc.anim.pose}
+          options={Object.keys(npc.clips) as AnimationClipKey[]}
+          title="anim"
+          className="pointer-events-auto border-white/20 bg-black/60 text-white"
+          popupClassName="font-mono"
+          onChange={(next) => {
+            if (w.n[npcKey] === undefined) return;
+            w.n[npcKey].anim.setHurt(null); // else they go back to it
+            w.n[npcKey].anim.setPose(next);
+            touch();
+          }}
+        />
         {(["psi", "phaser"] as const).map((name) => {
           const had = w.e.hasItem(npcKey, name);
           return (
@@ -752,7 +746,6 @@ const hiddenMeta = new Set([
 const confirmMs = 3000;
 
 const tmpPoint = new THREE.Vector3();
-const tmpMatrix = new THREE.Matrix4();
 
 const pickMenuConfig = {
   /** Least opacity, so a menu on one out of view is still usable */
@@ -777,8 +770,8 @@ type Pressed = { point: THREE.Vector3Like; part?: string };
 type Entry = {
   menuKey: string;
   target: PickMenuTarget;
-  /** Where it was pressed to open it: in that bone's frame on an npc, else in the world */
-  picked: null | { part: null | string; local: THREE.Vector3 };
+  /** Where it was pressed to open it, in the world: `null` on an npc, whose menu hangs from their label */
+  picked: null | { local: THREE.Vector3 };
   /** Opened by a press: its Cancel goes under it */
   atPointer: boolean;
   /** Bumped by `touch`: it renders again only then */
@@ -837,7 +830,7 @@ export type State = {
   /** A finger down over the World. Joining another, any on a menu go to the camera, so they pinch */
   onTouchDown(e: PointerEvent): void;
   onTouchUp(e: PointerEvent): void;
-  /** Opens `target`'s menu, or brings it to the front placed afresh. `pressed`: there, its Cancel under the press */
+  /** Opens `target`'s menu, or brings it to the front placed afresh. `pressed`: its Cancel under the press, bar an npc's */
   open(target: PickMenuTarget, pressed?: Pressed): void;
   /** Each frame: pins each menu beside its anchor, faded with its room */
   place(): void;
@@ -845,7 +838,7 @@ export type State = {
   placeOrigin(entry: Entry, at: Geom.VectJson, to: Geom.VectJson, opacity: string): void;
   /** Screen pixels a metre spans at `target`'s anchor, as the camera is now */
   pxPerMetre(entry: Entry): number;
-  /** `pressed` as an anchor: on an npc, in the frame of the bone pressed */
+  /** `pressed` as an anchor: none on an npc */
   pickedOf(target: PickMenuTarget, pressed: Pressed): Entry["picked"];
   /** Back beside its anchor, e.g. on a double click of its grip */
   resetOffset(menuKey: string): void;

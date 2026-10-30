@@ -389,7 +389,7 @@ export function WorldMenu() {
       }
       case "hud debug": {
         const next = !w.debug?.hudDebug;
-        w.debug?.set({ hudDebug: next, forceShot: null }); // hidden, nothing stays forced
+        w.debug?.set({ hudDebug: next, forceShot: "hit" }); // hidden, back to hitting
         store.patch({ hudDebug: next });
         w.hud?.update();
         state.update();

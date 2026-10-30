@@ -42,7 +42,6 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
       handLitRooms: new Set(),
       keyedListener: new Map(),
       keyedTick: new Map(),
-      shotResolver: null,
       litRooms: new Map(),
       timers: new Set(),
       npcToAccess: {},
@@ -1488,7 +1487,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.shadows?.onTick();
         w.rings?.onTick();
         w.breaths?.onTick();
-        w.npcShields?.onTick();
+        w.npcRefract?.onTick();
+        w.npcArmour?.onTick();
         w.phasers?.onTick();
         w.shields?.onTick();
         w.player?.aimAtPointer();
@@ -1771,8 +1771,6 @@ export type State = {
   keyedTick: Map<string, (world: JshCli.WorldState) => void>;
   /** Game-time timers, run after each npc tick — see `after` */
   timers: Set<{ at: number; fn: () => void }>;
-  /** Decides each phaser shot as it locks on, else it hits. Set by jsh `shots`, overridden by the hud's debug badge */
-  shotResolver: null | ((shot: JshCli.Shot) => JshCli.ShotOutcome);
   /**
    * Which rooms each LIT npc lights, by npc key — what `service/fade-rooms` shows on their account.
    * One room, or TWO whilst they stand in a doorway. By npc rather than by room, so one moving or

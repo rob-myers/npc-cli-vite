@@ -1,6 +1,5 @@
 import { useStateRef } from "@npc-cli/util";
 import { geomService } from "@npc-cli/util/geom-service";
-import { warn } from "@npc-cli/util/legacy/generic";
 import { deltaAngle } from "maath/misc";
 import { useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
@@ -291,16 +290,6 @@ export default function Phasers() {
         for (const arm of state.arms.values()) arm.cast = null;
         w.npcFocus?.recast();
       },
-      outcomeOf(npcKey, to) {
-        const forced = w.debug?.forceShot ?? null;
-        if (forced !== null) return forced;
-        try {
-          return w.e.shotResolver?.({ by: npcKey, npcKey: to.npcKey, part: to.part }) ?? "hit";
-        } catch (e) {
-          warn(`shotResolver: ${e}`);
-          return "hit";
-        }
-      },
       pointAt(npcKey, at) {
         const arm = state.arms.get(npcKey);
         if (arm?.armed !== true) return;
@@ -389,12 +378,17 @@ export default function Phasers() {
         /** Their phaser's own, looked up once: the frequencies it knows, and those it is dead to */
         const item = w.shields?.phaserOf(npc.key)?.meta;
         const free = isFreeShot(beam.to) ? beam.to : null;
+        /** Refracted, where their psi meets it */
+        const refracted =
+          dst !== undefined && arm.hitAt === null && arm.shot?.to === beam.to && arm.shot.outcome === "refract"
+            ? (w.npcRefract?.stopAt(dst, tmpRefract) ?? null)
+            : null;
         const part =
           free !== null
             ? (arm.hitAt ?? free.at)
             : dst === undefined
               ? null
-              : (arm.hitAt ?? shotPast(arm, tip, tmpPart) ?? targetPoint(dst, beam.to, tmpPart));
+              : (arm.hitAt ?? refracted ?? shotPast(arm, tip, tmpPart) ?? targetPoint(dst, beam.to, tmpPart));
         /** Where a shield between them stops it: of those their last cast passed. A shot at no one's cast settled it */
         const stopped =
           part === null || free !== null
@@ -461,12 +455,13 @@ export default function Phasers() {
         hand?.updateWorldMatrix(true, false);
         const tip = hand?.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
         if (tip !== undefined && acrossStop(arm, tip, end, tmpAcross) !== null) return; // as drawn
-        const outcome = arm.shot?.to === to ? arm.shot.outcome : "hit";
-        state.land(npc, dst, to.part, outcome);
         // the burst ends where it landed, rather than following them as they writhe. One passing them runs on
         if (end === part) {
-          const met = outcome === "shielded" ? (w.npcShields?.flash(dst, to.part, from) ?? part) : part;
-          arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(met);
+          const outcome = arm.shot?.to === to ? arm.shot.outcome : "hit";
+          state.land(npc, dst, to.part, outcome);
+          const refracted = outcome === "refract" ? (w.npcRefract?.struck(dst, tmpRefract) ?? null) : null;
+          if (outcome === "armour") w.npcArmour?.flash(dst, to.part, part, tip ?? from);
+          arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(refracted ?? part);
         }
         arm.target = arm.firedSecs = null;
         w.hud?.update();
@@ -478,20 +473,6 @@ export default function Phasers() {
         // lowered here, not by `disarm`, whose `sync` would tick again mid-tick
         const theirs = state.arms.get(dst.key);
         if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined) lower(theirs);
-      },
-      aimShot(npc, dst, shot) {
-        if (shot.outcome === "dodged" && dst.anim.posture === "lie") shot.outcome = "hit"; // no dodging in bed
-        const through =
-          shot.outcome === "dodged"
-            ? bodyPartPoint(dst, dodgeAimOf(dst, shot.to.part), new THREE.Vector3())
-            : targetPoint(dst, shot.to, new THREE.Vector3());
-        if (shot.outcome === "dodged") {
-          // where their part will be once they have turned to face it. No dodge of theirs clears it from here: missed
-          const turn = w.npc.dodge(dst.key, shot.to.part, npc.point);
-          if (turn === null) shot.outcome = "missed";
-          else if (turn !== 0) through.sub(dst.position).applyAxisAngle(yAxis, turn).add(dst.position);
-        }
-        return through;
       },
       meetPart(npc, arm, dst, to) {
         const hand = handOf(npc, arm);
@@ -506,17 +487,20 @@ export default function Phasers() {
         return true;
       },
       shoot(npc, arm, to) {
-        const shot: ArmShot = { to, outcome: state.outcomeOf(npc.key, to), through: null, past: null };
+        const shot: ArmShot = { to, outcome: w.debug?.forceShot ?? "hit", through: null, past: null };
         arm.shot = shot;
         const dst = w.n[to.npcKey];
         if (dst === undefined) return;
         /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */
         const clear = to.local != null && state.meetPart(npc, arm, dst, to) === false;
-        if (clear === true) shot.outcome = "missed";
-        const through = clear === true ? targetPoint(dst, to, new THREE.Vector3()) : state.aimShot(npc, dst, shot);
-        if (shot.outcome !== "missed" && shot.outcome !== "dodged") return;
-        // dodged, it passes through the middle of their part: they move, it does not
-        if (shot.outcome === "missed" && clear === false) passWide(through, npc.position, dst.position);
+        if (clear === false && shot.outcome === "refract") {
+          const hand = handOf(npc, arm);
+          hand?.updateWorldMatrix(true, false);
+          const from = hand?.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom)) ?? npc.position;
+          w.npcRefract?.ward(dst, from, targetPoint(dst, to, tmpAim));
+        }
+        if (clear === false) return;
+        const through = targetPoint(dst, to, new THREE.Vector3());
         shot.through = through;
         const length = Math.hypot(through.x - npc.position.x, through.z - npc.position.z) || 1;
         const dir = { x: (through.x - npc.position.x) / length, y: (through.z - npc.position.z) / length };
@@ -899,8 +883,6 @@ export type State = PhaserResources & {
   lowerAwhile(npcKey: string): null | (() => void);
   /** Look again at every arm and line of sight, e.g. a door changed */
   markDirty(): void;
-  /** How a shot at `to` by `npcKey` ends: the hud's debug badge decides, else jsh, else it hits */
-  outcomeOf(npcKey: string, to: NpcTarget): JshCli.ShotOutcome;
   /** Armed, they point towards `at` on the ground, not at whom a focus did: lain, as near as their pose aims */
   pointAt(npcKey: string, at: Geom.VectJson): void;
   /** The gun's colour and the beam's gain, ink and blending from the theme — called by `onChangeTheme` */
@@ -915,8 +897,6 @@ export type State = PhaserResources & {
   shoot(npc: Npc, arm: ArmEntry, to: NpcTarget): void;
   /** The line from their muzzle through `to`'s point meets a part of `dst`'s, which `to` then takes: `false` for none */
   meetPart(npc: Npc, arm: ArmEntry, dst: Npc, to: NpcTarget): boolean;
-  /** Settles `shot`'s outcome against them: in bed, or a dodge that clears it. Returns where the beam aims through */
-  aimShot(npc: Npc, dst: Npc, shot: ArmShot): THREE.Vector3;
   /** A shot by `npc` reached `dst`'s `part`: its effect, its event, and a word to the player if it did not hit */
   land(npc: Npc, dst: Npc, part: null | string, outcome: JshCli.ShotOutcome): void;
   sync(): void;
@@ -1035,29 +1015,10 @@ type ArmSight = {
 type ArmShot = {
   to: NpcTarget;
   outcome: JshCli.ShotOutcome;
-  /** Missed or dodged, where it passes them. It runs on to `past`, the wall beyond on the ground, once that is found */
+  /** Its line meeting no part of them, where it passes. It runs on to `past`, the wall beyond on the ground, once that is found */
   through: null | THREE.Vector3;
   past: null | Geom.VectJson;
 };
-
-/** The bone a dodged shot at `part` aims at: sat, an upper arm rather than the hand by the thigh */
-function dodgeAimOf(dst: Npc, part: null | string) {
-  const region = hitConfig.region[part ?? ""];
-  return (
-    (region === undefined ? undefined : hitConfig.dodgeAim[dst.anim.posture as "stand" | "sit" | "lie"]?.[region]) ??
-    part
-  );
-}
-
-/** Moves `through` to `missBy` from their `middle`, on the part's side: a miss never passes through them */
-function passWide(through: THREE.Vector3, from: THREE.Vector3, middle: THREE.Vector3) {
-  const length = Math.hypot(through.x - from.x, through.z - from.z) || 1;
-  const [px, pz] = [-(through.z - from.z) / length, (through.x - from.x) / length];
-  const across = (through.x - middle.x) * px + (through.z - middle.z) * pz;
-  const side = Math.abs(across) < 0.01 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(across);
-  through.x += px * (side * phaserConfig.missBy - across);
-  through.z += pz * (side * phaserConfig.missBy - across);
-}
 
 /** Where a shot passing them ends: on through them to the wall or floor beyond. `null` for any other shot */
 function shotPast(arm: ArmEntry, from: THREE.Vector3, out: THREE.Vector3) {
@@ -1303,8 +1264,6 @@ const phaserConfig = {
   armGlideSecs: 0.15,
   /** Radians off where it is headed the arm counts as aimed, though it eases on — see `isAimed` */
   armAimedRad: Math.PI / 60,
-  /** Metres from their middle a miss passes, on the side of the part */
-  missBy: 0.4,
   /** Radians a detent tilts it, and seconds it eases there over */
   tiltRad: (8 * Math.PI) / 180,
   tiltSecs: 0.12,
@@ -1401,6 +1360,8 @@ function put(data: Float32Array, i: number, a: number, b: number, c: number, d: 
 const muzzle = new THREE.Vector3(...phaserConfig.beamFrom);
 const tmpTip = new THREE.Vector3();
 const tmpPart = new THREE.Vector3();
+const tmpRefract = new THREE.Vector3();
+const tmpAim = new THREE.Vector3();
 const tmpBody = new THREE.Vector3();
 const tmpAlong = new THREE.Vector3();
 const tmpAt = new THREE.Vector3();
@@ -1419,4 +1380,3 @@ const tmpHeld = new THREE.Vector3();
 const tmpShotRay = new THREE.Ray();
 const tmpShotDir = new THREE.Vector3();
 const tmpAimRay = new THREE.Ray();
-const yAxis = new THREE.Vector3(0, 1, 0);
