@@ -163,6 +163,13 @@ export default function NpcFocus() {
         // along the aim as it is now, its length from the last cast: else it lags a turn
         pin(endEl, toScreenAt(alongAim(aim, end.dist, tmpEnd)));
       },
+      reachOf(by) {
+        const entry = state.phasers.get(by);
+        const npc = w.n?.[by];
+        if (entry?.aim == null || entry.end == null || npc === undefined) return null;
+        const at = alongAim(entry.aim, entry.end.dist, tmpEnd);
+        return Math.hypot(at.x - npc.position.x, at.z - npc.position.z);
+      },
       recast() {
         for (const entry of state.phasers.values()) entry.castAt = null;
         w.r3f?.invalidate();
@@ -491,6 +498,8 @@ export type State = {
   placeOn(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson): void;
   /** Pins `entry`'s dot where a shot at no one would land, whilst `shown`: no one is crossed */
   placeEnd(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson, shown: boolean): void;
+  /** Metres along the ground from `by` to where a shot at no one would land, `null` unless aiming and cast */
+  reachOf(by: string): null | number;
   /** Casts again along every aim, e.g. a door or shield changed */
   recast(): void;
   /** Forgets entries by or on `npcKeys` */

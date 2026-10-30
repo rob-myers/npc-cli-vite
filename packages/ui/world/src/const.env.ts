@@ -194,6 +194,8 @@ export const frontierConfig = {
   margin: 1.3,
   /** How far from the player towards the frontier the view is held: `0.5` the midpoint, `0` the player */
   panFrac: 0.5,
+  /** How far past the outer stop a follow may zoom out to show a raised phaser's dot, as a factor */
+  aimOuterScale: 3,
 };
 
 /** Camera speeds by device. A touch drag is far shorter than a mouse's, so it gets more per pixel */

@@ -33,7 +33,7 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       eased = null;
       epoch++;
     },
-    update(rotationY, deltaSecs, rate) {
+    update(rotationY, deltaSecs, rate, aimReach) {
       const lookAngle = -rotationY - Math.PI / 2; // three's rotation-Y to an angle in world XZ
       const sweeps = getLight().getSweeps();
       if (sweeps === 0) {
@@ -72,8 +72,9 @@ export function createPlayerFrontier(getLight: () => PlayerLight, onRead: () => 
       }
 
       if (frontier.reach === null) return;
-      const x = Math.cos(lookAngle) * frontier.reach;
-      const z = Math.sin(lookAngle) * frontier.reach;
+      const reach = Math.max(frontier.reach, aimReach ?? 0);
+      const x = Math.cos(lookAngle) * reach;
+      const z = Math.sin(lookAngle) * reach;
       if (eased === null) {
         eased = { x, z };
       } else {
@@ -92,11 +93,11 @@ export type PlayerFrontier = {
   reach: null | number;
   /** The eased vector from the player to their frontier, into `out` — `false`, and untouched, whilst unread */
   ahead(out: { x: number; z: number }): boolean;
-  /**
-   * Reads the sweep when there is a fresh one, and eases the vector at `rate` per second. Call
-   * once per frame, after the sweep
-   */
   /** Forgets the reading, e.g. on a teleport: eased, it would carry the view past them */
   reset(): void;
-  update(rotationY: number, deltaSecs: number, rate: number): void;
+  /**
+   * Reads the sweep when there is a fresh one, and eases the vector at `rate` per second.
+   * A raised phaser's `aimReach` extends it. Call once per frame, after the sweep
+   */
+  update(rotationY: number, deltaSecs: number, rate: number, aimReach: null | number): void;
 };
