@@ -83,6 +83,8 @@ export const cameraFov = 30;
 
 /** Wider than this (width / height) and the vertical fov closes — see `getCameraFov` */
 export const cameraRefAspect = 1.8;
+/** The most pixels the canvas draws. Past it the pixel ratio is lowered, as full screen at 2x drops frames */
+export const maxCanvasPixels = 5.5e6;
 
 export const defaultBrightness = 1;
 

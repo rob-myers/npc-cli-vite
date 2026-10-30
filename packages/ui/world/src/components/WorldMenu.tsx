@@ -696,11 +696,11 @@ export function WorldMenu() {
               })}
             </div>
 
-            <div className={cn("px-2 pb-1", touch && "px-3 pb-2")}>
+            <div className={cn("px-2 pb-1 flex items-center gap-2", touch && "px-3 pb-2")}>
               <button
                 type="button"
                 className={cn(
-                  "w-full cursor-pointer text-xs bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded px-2 py-0.5",
+                  "flex-1 cursor-pointer text-xs bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded px-2 py-0.5",
                   touch && "text-sm py-2 mt-1",
                 )}
                 onClick={(e) => {
@@ -711,6 +711,18 @@ export function WorldMenu() {
               >
                 log gpu info
               </button>
+              <span
+                className={cn(
+                  "shrink-0 whitespace-nowrap text-xs",
+                  w.view.pixelRatio.used < w.view.pixelRatio.native ? "text-gray-400" : "text-neutral-400",
+                  touch && "text-sm",
+                )}
+                title="pixel ratio drawn at, lowered to fit maxCanvasPixels"
+              >
+                {w.view.pixelRatio.used < w.view.pixelRatio.native
+                  ? `dpr ${w.view.pixelRatio.used} of ${w.view.pixelRatio.native}`
+                  : `dpr ${w.view.pixelRatio.used}`}
+              </span>
             </div>
 
             {import.meta.env.DEV && (

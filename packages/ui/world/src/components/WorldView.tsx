@@ -27,6 +27,7 @@ import {
   embodiedSnapCancel,
   embodiedZoomInRate,
   frontierConfig,
+  maxCanvasPixels,
   rgbShiftZoomedOutScale,
   roomLabel,
   unfoldDelayMs,
@@ -97,6 +98,7 @@ export function WorldView(props: React.PropsWithChildren) {
   const state = useStateRef(
     (): State => ({
       bounds: { x: 0, y: 0, width: 0, height: 0 },
+      pixelRatio: { native: 1, used: 1 },
       canvas: null as any,
       pausedEl: null,
       warmingPick: false,
@@ -226,7 +228,7 @@ export function WorldView(props: React.PropsWithChildren) {
         // before `init`, so attachments are created at the drawing buffer size,
         // rather than at 1x whilst the canvas is already scaled. Matches the `dpr`
         // given to `<Canvas>`, so r3f's own `setPixelRatio` is a no-op.
-        renderer.setPixelRatio(getPixelRatio());
+        renderer.setPixelRatio(state.pixelRatio.used);
 
         await renderer.init();
         return renderer;
@@ -1668,6 +1670,9 @@ export function WorldView(props: React.PropsWithChildren) {
 
   const [ref, bounds] = useMeasure({ offsetSize: true }); // integers, as for the canvas below
   state.bounds = bounds;
+  state.pixelRatio = getPixelRatio(bounds);
+
+  useEffect(() => void w.menu.update?.(), [state.pixelRatio.used]); // `{}` until WorldMenu mounts
 
   return (
     <div className="size-full" ref={ref}>
@@ -1682,7 +1687,7 @@ export function WorldView(props: React.PropsWithChildren) {
         onPointerLeave={state.onPointerLeave}
         onPointerMove={state.onPointerMove}
         onPointerUp={state.onPointerUp}
-        dpr={getPixelRatio()}
+        dpr={state.pixelRatio.used}
         // `offsetSize`: measures with integers avoids rebuilding render target (`RenderTarget.setSize`),
         // which makes the doors flicker, their see-through being a fraction of the MSAA samples
         resize={{ debounce: 0, offsetSize: true }}
@@ -1823,6 +1828,8 @@ export function WorldView(props: React.PropsWithChildren) {
 
 export type State = {
   bounds: Geom.RectJson;
+  /** The device's pixel ratio up to `2`, and the one drawn at: lower past `maxCanvasPixels` */
+  pixelRatio: { native: number; used: number };
   cameraMode: CameraModeType;
   /** Whether the view follows the player — an option of EITHER mode */
   follow: boolean;
@@ -2156,9 +2163,11 @@ function readCameraView() {
   return getSiteStore().read().camera ?? getDefaultCameraView();
 }
 
-/** Mirrors r3f's default `dpr={[1, 2]}` i.e. `calculateDpr` */
-function getPixelRatio() {
-  return Math.min(Math.max(1, window.devicePixelRatio), 2);
+/** r3f's default `dpr={[1, 2]}`, lowered in quarters to fit `bounds` within `maxCanvasPixels` */
+function getPixelRatio(bounds: Geom.RectJson) {
+  const native = Math.min(Math.max(1, window.devicePixelRatio), 2);
+  const fits = Math.floor(4 * Math.sqrt(maxCanvasPixels / Math.max(1, bounds.width * bounds.height))) / 4;
+  return { native, used: Math.max(1, Math.min(native, fits)) };
 }
 
 /** How quickly the follow camera closes on the player, and how near counts as arrived */
