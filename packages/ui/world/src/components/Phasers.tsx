@@ -6,7 +6,7 @@ import * as THREE from "three/webgpu";
 import { npcDims } from "../const.both";
 import { wallHeight } from "../const.env";
 import { hitConfig, lieAim } from "../const.npc";
-import { aimToRay } from "../service/aim-target";
+import { aimToRay, alongAim } from "../service/aim-target";
 import { eased } from "../service/fade";
 import {
   advanceBeam,
@@ -116,7 +116,7 @@ export default function Phasers() {
         shot.casting = false;
         if (arm.target !== shot) return; // fired again, or let go of
         if (end === null) return void (arm.target = null); // e.g. its muzzle off the map
-        Object.assign(shot, { at: end.at, what: end.what, decorKey: end.decorKey });
+        Object.assign(shot, { at: end.at, dist: end.dist, what: end.what, decorKey: end.decorKey });
         w.r3f?.invalidate();
       },
       async endsAlong(npcKeys) {
@@ -224,11 +224,25 @@ export default function Phasers() {
         if (state.isArmed(npcKey) === false) state.arm(npcKey);
         const arm = state.arms.get(npcKey);
         if (arm?.armed !== true) return false;
-        const [at, what] = end === undefined ? [null, null] : [end.at.clone(), end.what];
-        arm.target = { npcKey: null, part: null, at, what, decorKey: end?.decorKey ?? null, casting: false };
+        arm.target = {
+          npcKey: null,
+          part: null,
+          at: end?.at.clone() ?? null,
+          dist: end?.dist ?? null,
+          what: end?.what ?? null,
+          decorKey: end?.decorKey ?? null,
+          casting: false,
+        };
         arm.hitAt = null;
         state.sync();
         return true;
+      },
+      freeEndOf(npc, arm, shot, out) {
+        if (shot.at === null || shot.dist === null) return null;
+        const aim = state.aimOf(npc.key);
+        if (aim === null) return arm.hitAt ?? shot.at; // lowered
+        // the dot's own length, else the shot's cast
+        return alongAim(aim, w.npcFocus?.phasers.get(npc.key)?.end?.dist ?? shot.dist, out);
       },
       hold(npcKey) {
         if (state.arms.has(npcKey) || w.n?.[npcKey] === undefined || state.holds(npcKey) === false) return;
@@ -385,7 +399,7 @@ export default function Phasers() {
             : null;
         const part =
           free !== null
-            ? (arm.hitAt ?? free.at)
+            ? state.freeEndOf(npc, arm, free, tmpFree)
             : dst === undefined
               ? null
               : (arm.hitAt ?? refracted ?? shotPast(arm, tip, tmpPart) ?? targetPoint(dst, beam.to, tmpPart));
@@ -431,7 +445,8 @@ export default function Phasers() {
         const to = (arm.struck = arm.beam.to);
         if (isFreeShot(to)) {
           if (to.at !== null && to.what !== null) {
-            const { x, y, z } = to.at;
+            const at = state.freeEndOf(npc, arm, to, tmpFree) ?? to.at;
+            const { x, y, z } = at;
             w.events.next({
               key: "phaser-struck",
               by: npc.key,
@@ -439,7 +454,7 @@ export default function Phasers() {
               what: to.what,
               decorKey: to.decorKey ?? null,
             });
-            arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(to.at); // fades where it ended
+            arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at); // fades where it ended
           }
           arm.target = arm.firedSecs = null;
           return void w.hud?.update();
@@ -863,7 +878,9 @@ export type State = PhaserResources & {
   /** Their entry, made if absent */
   ensure(npcKey: string): ArmEntry;
   /** Fires at no one, along their aim, raising it if need be: `false` if it cannot be raised. `end`: already found */
-  fireAlong(npcKey: string, end?: { at: THREE.Vector3; what: StruckKind; decorKey: null | string }): boolean;
+  fireAlong(npcKey: string, end?: Omit<AlongEnd, "rooms">): boolean;
+  /** Where a shot at no one ends: its length along their live aim, so it follows a strafe as the dot does */
+  freeEndOf(npc: Npc, arm: ArmEntry, shot: FreeShot, out: THREE.Vector3): null | THREE.Vector3;
   /** Gives them an entry if they hold one and have none: told by events, not looked for each tick */
   hold(npcKey: string): void;
   /** Carries one and stands, so has it in hand — raised or not */
@@ -1372,6 +1389,7 @@ const tmpArmWant = new THREE.Vector3();
 const tmpShoulder = new THREE.Vector3();
 const tmpPast = new THREE.Vector3();
 const tmpAcross = new THREE.Vector3();
+const tmpFree = new THREE.Vector3();
 const tmpLock = new THREE.Vector3();
 /** The bones a shot may meet: those of a hit region */
 const hitBones = Object.keys(hitConfig.region);

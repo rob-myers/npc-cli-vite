@@ -18,6 +18,8 @@ export type FreeShot = {
   npcKey: null;
   part: null;
   at: null | THREE.Vector3;
+  /** Metres along the ground to `at`. The beam keeps it along the live aim */
+  dist: null | number;
   what: null | StruckKind;
   /** What it struck, if decor */
   decorKey: null | string;
@@ -76,7 +78,9 @@ export function advanceBeam(x: Beam, step: number, npcs: Record<string, unknown>
   if (x.next !== null && x.next.npcKey !== null && !(x.next.npcKey in npcs)) x.next = null;
   if (sameTarget(x.to, x.next) === false) {
     const gliding = instant === false && x.to !== null && x.next !== null && x.locked.presence > 0;
-    if (gliding) x.glide = { from: x.end.clone(), t: 0 };
+    /** One shot at no one after another: both follow the live aim, so neither glides */
+    const bothFree = isFreeShot(x.to) && isFreeShot(x.next);
+    if (gliding) x.glide = bothFree ? null : { from: x.end.clone(), t: 0 };
     if (gliding || instant || x.locked.presence === 0) x.to = x.next;
   }
   x.locked.target = x.to !== null && x.next !== null ? 1 : 0;

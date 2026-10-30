@@ -13,6 +13,12 @@ export function aimToRay(aim: Aim, out: THREE.Ray) {
   return out;
 }
 
+/** The point `dist` metres along the ground on `aim`, at its pitched height */
+export function alongAim(aim: Aim, dist: number, out: THREE.Vector3) {
+  const { from, bearing, y, pitch } = aim;
+  return out.set(from.x - Math.sin(bearing) * dist, y + dist * Math.tan(pitch), from.y - Math.cos(bearing) * dist);
+}
+
 /**
  * The nearest of `npcs`, bar `exclude`, with a part of `bones` that `ray` meets (`partOnRay`).
  * Where it meets them is written to `out`. Nothing between counts

@@ -61,6 +61,7 @@ The shot glances off them (`w.npcArmour`, `armourConfig`).
 Fired with no one targeted (`w.phasers.fireAlong`), a shot runs straight along the aim. Npcs are ignored.
 
 - It is a `FreeShot` beam target, a point rather than an npc. The fades are an npc shot's.
+- Its end keeps its length along the live aim (`freeEndOf`), as the dot does. So a strafe sweeps it along the wall.
 - Once the arm is up, one cast looks along the aim (`castAlong`, over `endsAlong`), from the muzzle's height:
   stood or crouched `headY - gunBelowHead`, sat or lain the tip's. So a crouched shot meets lower obstacles.
 - Tilted (`tilt`), it slopes: `y + d·tan(pitch)` at `d` metres along the ground.

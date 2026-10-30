@@ -3,7 +3,7 @@ import { deltaAngle } from "maath/misc";
 import { Fragment, useContext, useEffect } from "react";
 import * as THREE from "three/webgpu";
 import { hitConfig, psiActions } from "../const.npc";
-import { type Aim, aimToRay, npcOnRay } from "../service/aim-target";
+import { type Aim, aimToRay, alongAim, npcOnRay } from "../service/aim-target";
 import { helper } from "../service/helper";
 import {
   actionClass,
@@ -161,9 +161,7 @@ export default function NpcFocus() {
         if (aim == null || end == null || endEl == null) return;
         endEl.toggleAttribute("data-on", false);
         // along the aim as it is now, its length from the last cast: else it lags a turn
-        const [dx, dz] = [-Math.sin(aim.bearing), -Math.cos(aim.bearing)];
-        tmpEnd.set(aim.from.x + dx * end.dist, aim.y + end.dist * Math.tan(aim.pitch), aim.from.y + dz * end.dist);
-        pin(endEl, toScreenAt(tmpEnd));
+        pin(endEl, toScreenAt(alongAim(aim, end.dist, tmpEnd)));
       },
       recast() {
         for (const entry of state.phasers.values()) entry.castAt = null;
