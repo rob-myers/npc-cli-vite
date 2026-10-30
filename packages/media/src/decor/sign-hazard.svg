@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="10" height="10">
+  <g>
+    <title>px-per-tile=1024</title>
+    <rect x="3" y="3" width="94" height="94" rx="8" fill="#f2c230" stroke="#1a1a1a" stroke-width="5"/>
+    <rect x="10" y="10" width="80" height="80" rx="4" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+    <circle cx="50" cy="39" r="14" fill="none" stroke="#1a1a1a" stroke-width="7"/>
+    <circle cx="63" cy="61.5" r="14" fill="none" stroke="#1a1a1a" stroke-width="7"/>
+    <circle cx="37" cy="61.5" r="14" fill="none" stroke="#1a1a1a" stroke-width="7"/>
+    <circle cx="50" cy="54" r="7" fill="#f2c230" stroke="#1a1a1a" stroke-width="4"/>
+  </g>
+</svg>

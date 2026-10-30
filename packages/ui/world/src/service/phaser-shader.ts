@@ -238,7 +238,7 @@ export const shaderConfig = {
   radius: 0.01,
   tipRadius: 0.035,
   /** The beam's alpha on the way, and within `nearMetres` of the body part */
-  faint: 0.04,
+  faint: 0.45,
   solid: 0.9,
   nearMetres: 0.25,
   /** Pulses along the beam, drifting towards the target a band per second */

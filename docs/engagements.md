@@ -7,47 +7,54 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 | --- | --- |
 | `ui/world/src/components/Phasers.tsx` | a shot: `shoot` decides it as it locks on, `strike` lands it |
 | `ui/world/src/service/phaser-beam.ts` | where a part is (`bodyPartPoint`), and where the beam ends |
-| `ui/world/src/components/NPCs.tsx` | `w.npc.hit`, `w.npc.dodge` |
-| `ui/world/src/components/npc-animation.ts` | hurt and dodge clips: `setHurt`, `dodgeClipFor` |
-| `ui/world/src/components/NpcShields.tsx`, `service/shield-pieces.ts` | a personal shield's pieces, `w.npcShields` |
+| `ui/world/src/components/NPCs.tsx` | `w.npc.hit` |
+| `ui/world/src/components/npc-animation.ts` | hurt clips (`setHurt`), armour's flinch (`flinch`), refract's look (`headAt`) |
+| `ui/world/src/components/NpcRefract.tsx`, `service/refract.ts` | refract: the psi beam, `w.npcRefract` |
+| `ui/world/src/components/NpcArmour.tsx`, `service/armour.ts` | armour: ricochet and sparks, `w.npcArmour` |
 | `ui/world/src/components/NpcFocus.tsx` | who targets whom, `w.npcFocus` |
 | `ui/world/src/service/aim-target.ts` | whom a ray meets, and where (`npcOnRay`) |
-| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips, `dodgeClips`), `shieldConfig` |
-| `cli/src/jsh/world/shots.ts` | jsh `shots`, the odds of each outcome |
+| `ui/world/src/const.npc.ts` | `hitConfig` (hit clips), `refractConfig`, `armourConfig`, `flinchConfig` |
 
 ## How a shot ends
 
 A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), and takes effect as the beam arrives
-(`strike`), a frame or two later (`fadeSecs / lockRate`). Either way it emits `npc-shot` (`by`, `npcKey`, `part`, `outcome`).
+(`strike`), a frame or two later (`fadeSecs / lockRate`). It emits `npc-shot` (`by`, `npcKey`, `part`, `outcome`).
 
 | outcome | the beam | effect |
 | --- | --- | --- |
 | `hit` | lands on the part | see [What a hit does](#what-a-hit-does) |
-| `missed` | passes `missBy` to one side of the part | none |
-| `dodged` | passes where the part was as it locked on | a dodge clip, from the lock (`w.npc.dodge`) |
-| `shielded` | lands on the piece over the part | that piece lights and dissolves (`w.npcShields`) |
+| `refract` | stops where their psi beam meets it, before them | see [Refract](#refract) |
+| `armour` | lands where aimed, as a hit does | see [Armour](#armour) |
 
-- **Who decides:** the player's bar's debug badge, else `w.e.shotResolver`, else every shot hits.
-- **jsh `shots`** sets the resolver to odds, e.g. `shots missed:0.2 dodged:0.2 shielded:0.1`. `shots off` clears it.
+- **Who decides:** the player's bar's debug badge (`w.debug.forceShot`), `hit` by default.
 - **The badge** shows on the phaser slot whilst the World menu's debug **hud debug** is on (persisted per World). A
-  click cycles it through `auto`, `hit`, `missed`, `dodged` and `shielded`. Turning hud debug off resets it to `auto`.
+  click cycles it through `hit`, `refract` and `armour`. Turning hud debug off resets it to `hit`.
+- **A shot whose line meets no part of them**, from the muzzle through the dot, has no outcome and sends no `npc-shot`.
+  It passes there, e.g. they moved since it was aimed.
 - **A shot passing them** runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond`
   within `passMax` metres. Until that returns it runs `passStub` past them. It meets the floor first if it is heading down.
-- The player hears how a shot of theirs that did not hit ended (`w.hud.say`).
-- **A miss** passes `missBy` from their middle, on the side of the part, so it never runs through them.
-- **A dodge** plays one clip, once, as the beam locks on, over `dodgeFadeSecs`, through `anim.hurt` like a pain clip.
-  - Every dodged shot aims through the middle of its part, and the clip takes that part off the line. Sat, an arm shot aims
-    at the upper arm, which moves clear more often than the hand (`hitConfig.dodgeAim`).
-  - `hitConfig.dodgeClips` gives each clip a weight, and per part a 24-character string: one character per 15 degrees
-    of shooter bearing, from ahead round to their left, `1` where the clip clears that part's line. They were measured
-    in Blockbench by raycasting, with the beam's tilt for that part and its width, around its arrival.
-  - A dodged shot picks at random, by weight, among the clips of their posture whose character for the shooter's
-    bearing is `1` (`anim.dodgeClipFor`, over pools built once). None, or hurt already, and the shot is a miss.
-  - Lain, there is no dodging in bed: a dodged shot becomes a hit.
-  - Stood, they turn to face the shot as they dodge (`hurt.faceTo`), so the bearing is ahead. The beam aims where the
-    part will be once turned. Held to an aim they do not turn, and the shooter's bearing counts, as it always does sat.
-- **A shield piece** is a helmet over the head, else a band round the part, sized from what its bone moves. A hex
-  lattice spreads from the hit, holds, then dissolves cell by cell (`shieldConfig` in `const.npc`).
+- The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `refract` or `armour`.
+
+### Refract
+
+Optical refraction by psi, heating the space before them (`w.npcRefract`, `refractConfig` in `const.npc`).
+
+- As the shot locks on (`shoot`), they turn to psi: the `psi` clip over the left arm. Their head looks to a point on
+  the shot's line (`anim.headAt`), at random from `standoffM` before where it would land to `reachShare` of the way
+  back, nearer the shooter more often (`towardShooter`).
+- A psi beam leaves their brow and reaches it in `reachSecs`: a tube, brightest down its middle as seen.
+- The phaser's beam ends there, as it reaches out and where it fades (`stopAt`, in `draw`). A glow sits where they
+  meet, flaring as it lands (`struck`).
+- The psi beam fades with the shot, over `outSecs` from the strike. Their head and left hand are then let go.
+
+### Armour
+
+The shot glances off them (`w.npcArmour`, `armourConfig`).
+
+- A ricochet streak leaves where it landed, mirrored about the face of the part it met, with a spray of sparks off
+  that face. A shot at a part's middle takes the face it enters by.
+- They flinch: the struck part, and each bone it hangs from by `falloff` less, turns away from the shot about its
+  joint, easing back over `flinchConfig.secs`. The hips and legs stay, so the feet do.
 
 ### A shot at no one
 
@@ -127,7 +134,7 @@ does one with a laser.
   them.
 - As it locks on (`shoot`, `meetPart`), the line from the muzzle tip through the dot is tested against each hit
   region's bone, by the box round what it moves most (`partOnRay` in `phaser-beam.ts`). The nearest met is the part
-  hit, and its point: a forearm in the way takes it. Meeting none, it is `missed`, and runs on through the dot to the
+  hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to the
   wall beyond. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
 - With no one met, Space fires along the line (A shot at no one), at the dot's end if it was cast
   along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered raises it.

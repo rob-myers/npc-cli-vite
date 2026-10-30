@@ -17,7 +17,7 @@ export const OBJECT_PICK_KEY_TO_RED = {
   decorShape: 190,
   /** Decor points optionally shown via <Debug> */
   debugPoint: 200,
-  /** The spots overlay, by index into `w.debug.spots` */
+  /** The spots overlay, by index into `w.spots.drawn` */
   spot: 210,
   /** Runtime decor can be added or removed */
   runtimeDecor: 225,

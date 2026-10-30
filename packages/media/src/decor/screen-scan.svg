@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="32" height="20">
+  <g>
+    <title>px-per-tile=512</title>
+    <rect x="3" y="3" width="314" height="194" rx="12" fill="#1b1f24" stroke="#6b7280" stroke-width="6"/>
+    <rect x="16" y="16" width="288" height="168" rx="5" fill="#1a1006"/>
+    <circle cx="120" cy="100" r="70" fill="none" stroke="#5a3a12" stroke-width="3"/>
+    <circle cx="120" cy="100" r="46" fill="none" stroke="#5a3a12" stroke-width="2" stroke-dasharray="8 6"/>
+    <path d="M120 22V54M120 146V178M42 100H74M166 100H198" stroke="#c98b2b" stroke-width="3"/>
+    <path d="M142.5 113L120 126M120 126L97.5 113M97.5 113L97.5 87M97.5 87L120 74M120 74L142.5 87M142.5 87L142.5 113M142.5 113L166 126M97.5 87L74 74M120 74L120 50" stroke="#ffb347" stroke-width="5"/>
+    <circle cx="142.5" cy="113" r="8" fill="#ffb347"/>
+    <circle cx="120" cy="126" r="8" fill="#ffb347"/>
+    <circle cx="97.5" cy="113" r="8" fill="#ffb347"/>
+    <circle cx="97.5" cy="87" r="8" fill="#ffb347"/>
+    <circle cx="120" cy="74" r="8" fill="#ffb347"/>
+    <circle cx="142.5" cy="87" r="8" fill="#ffb347"/>
+    <circle cx="166" cy="126" r="11" fill="#ff6b4a" stroke="#1a1006" stroke-width="2"/>
+    <circle cx="74" cy="74" r="11" fill="#7bdff2" stroke="#1a1006" stroke-width="2"/>
+    <circle cx="120" cy="50" r="11" fill="#ff6b4a" stroke="#1a1006" stroke-width="2"/>
+    <rect x="216" y="34" width="78" height="132" rx="3" fill="#2a1a08" stroke="#5a3a12" stroke-width="2"/>
+    <rect x="226" y="46" width="58" height="7" fill="#ffb347"/>
+    <rect x="226" y="65" width="40" height="7" fill="#ffb347"/>
+    <rect x="226" y="84" width="50" height="7" fill="#ffb347"/>
+    <rect x="226" y="103" width="28" height="7" fill="#ff6b4a"/>
+    <rect x="226" y="122" width="54" height="7" fill="#ffb347"/>
+    <rect x="226" y="141" width="36" height="7" fill="#ffb347"/>
+  </g>
+</svg>

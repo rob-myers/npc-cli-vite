@@ -11,6 +11,11 @@ declare namespace JshCli {
     | ({ key: "door-locked" | "door-unlocked"; locked: boolean } & ReturnType<
         import("./components/Doors").State["decodeInstanceId"]
       >)
+    | {
+        /** A door was held or let go, or its `auto` or `proximity` changed */
+        key: "door-toggled";
+        gdKey: Geomorph.GmDoorKey;
+      }
     | { key: "enabled" }
     | ({ key: "enter-collider"; npcKey: string } & BaseColliderEvent)
     | { key: "enter-doorway"; npcKey: string; gmRoomId: Geomorph.GmRoomId; nextGmRoomId: Geomorph.GmRoomId }
@@ -137,7 +142,8 @@ declare namespace JshCli {
 
   /** A phaser shot by `by` at `npcKey`'s `part` */
   type Shot = { by: string; npcKey: string; part: null | string };
-  type ShotOutcome = "hit" | "missed" | "dodged" | "shielded";
+  /** How a shot at someone ends: one whose line meets no part of them passes, and has none */
+  type ShotOutcome = "hit" | "refract" | "armour";
 
   type ObjectPickKey = import("./service/pick").ObjectPickKey;
   type GroundPoint = import("./service/geometry").GroundPoint;

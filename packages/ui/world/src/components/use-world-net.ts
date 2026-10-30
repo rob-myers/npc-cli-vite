@@ -15,15 +15,19 @@ import {
   worldNetProtocol,
 } from "../service/net-protocol";
 import {
+  type DataChannel,
   DevWsSignaling,
   InMemorySignaling,
   isSamePage,
+  PortChannel,
+  probeWebRtc,
   type RemoteWorld,
   type SignalMsg,
   uidOf,
+  webRtcWorks,
 } from "../service/net-signaling";
 import { queryClientApi } from "../service/query-client";
-import { getWorldMapStore, getWorldStore } from "../service/storage";
+import { getSiteStore, getWorldMapStore, getWorldStore } from "../service/storage";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -95,6 +99,9 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           case "bye":
             state.onBye(fromUid);
             break;
+          case "local":
+            state.onLocal(fromUid, msg.events, msg.transforms);
+            break;
         }
       },
 
@@ -114,14 +121,39 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         const peer: ServerPeer = { uid: fromUid, worldKey: null, pc, events, transforms, ready: false, pendingIce: [] };
         state.clients.set(fromUid, peer);
 
-        events.onmessage = ({ data }) => state.onServerEventsMsg(peer, JSON.parse(data) as WorldNetMessage);
-        events.onclose = () => state.dropClient(fromUid);
+        const wire = (channel: DataChannel) => {
+          channel.onmessage = ({ data }) => state.onServerEventsMsg(peer, JSON.parse(data) as WorldNetMessage);
+          channel.onclose = () => state.dropClient(fromUid);
+        };
+        wire(events);
         pc.onicecandidate = (e) => {
           if (e.candidate !== null) state.sendSignal(fromUid, { kind: "ice", candidate: e.candidate.toJSON() });
         };
         pc.onconnectionstatechange = () => {
           if (badPcStates.includes(pc.connectionState)) state.dropClient(fromUid);
         };
+
+        /** Same page only: over `MessageChannel`s instead of WebRTC */
+        const viaPorts = () => {
+          if (state.clients.get(fromUid) !== peer || pc.connectionState === "connected") return;
+          events.onclose = null; // closing it drops no one
+          pc.onconnectionstatechange = null;
+          pc.close();
+          const [e, t] = [new MessageChannel(), new MessageChannel()];
+          peer.events = new PortChannel(e.port1);
+          peer.transforms = new PortChannel(t.port1);
+          wire(peer.events);
+          state.sendSignal(fromUid, { kind: "local", events: e.port2, transforms: t.port2 });
+        };
+        if (isSamePage(fromUid)) {
+          // as chosen, or as WebRTC cannot connect here, e.g. with no local network access
+          if (getSiteStore().read().netTransport === "MessageChannel" || webRtcWorks() === false) return viaPorts();
+          window.setTimeout(() => {
+            if (pc.connectionState === "connected") return;
+            warn(`net: WebRTC to ${fromUid} did not connect: a MessageChannel instead`);
+            viaPorts();
+          }, localFallbackMs);
+        }
 
         void (async () => {
           try {
@@ -452,18 +484,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
         pc.onconnectionstatechange = () => {
           if (badPcStates.includes(pc.connectionState)) void state.leave({ remote: true });
         };
-        pc.ondatachannel = ({ channel }) => {
-          if (channel.label === "events") {
-            session.events = channel;
-            channel.onmessage = ({ data }) => void state.onClientEventsMsg(JSON.parse(data) as WorldNetMessage);
-            channel.onopen = () => state.sendClient({ key: "hello", protocol: worldNetProtocol, worldKey: w.key });
-            channel.onclose = () => void state.leave({ remote: true });
-          } else if (channel.label === "transforms") {
-            session.transforms = channel;
-            channel.binaryType = "arraybuffer";
-            channel.onmessage = ({ data }) => state.applyTransforms(data as ArrayBuffer);
-          }
-        };
+        pc.ondatachannel = ({ channel }) => state.attachChannel(session, channel.label, channel);
 
         try {
           await pc.setRemoteDescription({ type: "offer", sdp });
@@ -476,6 +497,31 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           warn("net: answer failed", e);
           void state.leave({ remote: true });
         }
+      },
+      attachChannel(session, label, channel) {
+        if (label === "events") {
+          session.events = channel;
+          channel.onmessage = ({ data }) => void state.onClientEventsMsg(JSON.parse(data) as WorldNetMessage);
+          channel.onopen = () => state.sendClient({ key: "hello", protocol: worldNetProtocol, worldKey: w.key });
+          channel.onclose = () => void state.leave({ remote: true });
+        } else if (label === "transforms") {
+          session.transforms = channel;
+          channel.binaryType = "arraybuffer";
+          channel.onmessage = ({ data }) => state.applyTransforms(data as ArrayBuffer);
+        }
+      },
+      onLocal(fromUid, events, transforms) {
+        const session = state.server;
+        if (session === null || session.uid !== fromUid) return;
+        // the server gave up on WebRTC: closing it must not end the session
+        if (session.pc !== null) {
+          session.pc.onconnectionstatechange = null;
+          session.pc.ondatachannel = null;
+          session.pc.close();
+        }
+        if (session.events !== null) session.events.onclose = null;
+        state.attachChannel(session, "events", new PortChannel(events));
+        state.attachChannel(session, "transforms", new PortChannel(transforms));
       },
       async onIce(fromUid, candidate) {
         const peer = state.clients.get(fromUid);
@@ -878,7 +924,9 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
           if (door.sealed !== true && door.open === true) w.door.forceDoor(door.gmId, door.doorId, false);
         }
         const saved = getWorldMapStore(w.key, w.mapKey).read();
-        saved.doorLocks !== null ? w.door.applyLocks(saved.doorLocks) : w.door.resetLocks();
+        saved.doorLocks !== null
+          ? w.door.applyLocks(saved.doorLocks, saved.doorHolds ?? [], saved.doorFlags ?? {})
+          : w.door.resetLocks();
 
         w.e.restoreDecor();
         w.player.assign(saved.npcs?.playerKey ?? w.player.key);
@@ -926,6 +974,7 @@ export default function useWorldNet(w: UseStateRef<WorldState>) {
     // what lets live sessions ride out an HMR. Signaling (like the sessions) lives on `state`,
     // which survives the bounce, so it is only built once
     window.clearTimeout(state.teardownTimer);
+    void probeWebRtc(); // known by the time a same-page join comes
     if (state.signalingMem === null) {
       const mem = new InMemorySignaling(w.key);
       mem.onMessage((fromUid, msg) => state.onSignal(fromUid, msg));
@@ -964,8 +1013,8 @@ type ServerPeer = {
   /** From their `hello` */
   worldKey: null | string;
   pc: RTCPeerConnection;
-  events: RTCDataChannel;
-  transforms: RTCDataChannel;
+  events: DataChannel;
+  transforms: DataChannel;
   /** Snapshot sent — transforms/events flow from then on */
   ready: boolean;
   /** ICE candidates that arrived before the answer */
@@ -976,8 +1025,8 @@ type ClientSession = {
   uid: string;
   worldKey: string;
   pc: null | RTCPeerConnection;
-  events: null | RTCDataChannel;
-  transforms: null | RTCDataChannel;
+  events: null | DataChannel;
+  transforms: null | DataChannel;
   /** From `hello-ack` */
   mapKey: null | string;
   pendingIce: RTCIceCandidateInit[];
@@ -1061,6 +1110,10 @@ export type State = {
   waitForRosterWorld(worldKey: string, ms: number): Promise<null | RemoteWorld>;
   waitForPhase(phase: NetPhase, ms: number): Promise<void>;
   onOffer(fromUid: string, sdp: string): Promise<void>;
+  /** The client's channels, from WebRTC or else the server's `local` ports */
+  attachChannel(session: ClientSession, label: string, channel: DataChannel): void;
+  /** The server gave up on WebRTC for `MessagePort`s: same page only */
+  onLocal(fromUid: string, events: MessagePort, transforms: MessagePort): void;
   onIce(fromUid: string, candidate: RTCIceCandidateInit): Promise<void>;
   onBye(fromUid: string): void;
   sendClient(msg: WorldNetMessage): void;
@@ -1086,6 +1139,8 @@ const sampleIntervalMs = 60;
 const interpDelaySecs = 0.12;
 const rosterWaitMs = 5000;
 const connectWaitMs = 10_000;
+/** Milliseconds a same-page join waits on WebRTC before a `MessageChannel` */
+const localFallbackMs = 1500;
 /** A respawn further than this is a teleport — mirror it as a `fadeSpawn` */
 const fadeSpawnMinDist = 0.1;
 /** Per-second decay rate of a mirror's post-hold catch-up offset (~gone in 0.4s) */

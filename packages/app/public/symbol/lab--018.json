@@ -254,6 +254,43 @@
           "cssTransform": "matrix(1, 0, 0, 1, 238, 0)"
         }
       ]
+    },
+    {
+      "id": "2ad2d4d6-b289-4fd3-833e-39d983cc8243",
+      "name": "decor",
+      "locked": true,
+      "visible": true,
+      "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
+      "type": "group",
+      "expanded": true,
+      "children": [
+        {
+          "id": "2530ffca-13fc-46f5-958e-b747fbd81a15",
+          "name": "decor quad screen y=1.6 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 2, "f": 176},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "screen-graph",
+          "baseRect": {"width": 32, "height": 20},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, 1, 0, 2, 176)"
+        },
+        {
+          "id": "713c42db-c486-4905-b49b-ac6c625eefb2",
+          "name": "decor quad screen y=1.6 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 238, "f": 144},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "screen-scan",
+          "baseRect": {"width": 32, "height": 20},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 238, 144)"
+        }
+      ]
     }
   ],
   "bounds": {"x": -2, "y": -6.5, "width": 244, "height": 248.6},

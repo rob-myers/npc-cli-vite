@@ -78,41 +78,87 @@ export async function* awaitWorld({ api, home: { WORLD_KEY } }: JshCli.RunArg) {
  * close g0d29 g0d30
  * close door:g0d30
  * close doors:['g0d29','g0d30']
+ * # held shut: no npc opens it until let go
+ * close --hold g0d30
+ * close --release g0d30
+ * # as rob would, with his access
+ * close g0d30 npc:rob
+ * close g0d30 as:rob
  * ```
  */
-export function close(
-  ct: JshCli.RunArg,
-  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
-) {
+export function close(ct: JshCli.RunArg, opts: DoorActionOpts = ct.api.jsArg(ct.args, doorActionAliases)) {
   doorAction(ct, "close", opts);
 }
+
+type DoorActionOpts = {
+  all?: boolean;
+  door?: Geomorph.GmDoorKey;
+  doors?: Geomorph.GmDoorKey[];
+  /** Then hold the door, else let it go — see `w.door.setHeld` */
+  hold?: boolean;
+  /** As this npc would, with their access */
+  npcKey?: string;
+};
+const doorActionAliases = {
+  npc: "npcKey",
+  as: "npcKey",
+  "--hold": "hold",
+  "--held": "hold",
+  "--release": "hold:false",
+};
+/** The options `doorAction` knows, so any other naked arg is a door */
+const doorActionKeys = new Set(["all", "door", "doors", "hold", "npcKey"]);
 
 function doorAction(
   ct: JshCli.RunArg,
   act: "open" | "close" | "lock" | "unlock",
-  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
+  opts: DoorActionOpts = ct.api.jsArg(ct.args, doorActionAliases),
 ) {
-  const { w, api, args } = ct;
+  const { w } = ct;
+  const { npcKey, hold: held } = opts;
+  const unknown = keys(opts).find((key) => key.startsWith("-"));
+  if (unknown !== undefined) {
+    throw Error(`unknown option: ${unknown}`);
+  }
+  if (npcKey !== undefined && w.n[npcKey] === undefined) {
+    throw Error(`no such npc: ${npcKey}`);
+  }
 
   const inputs =
     opts.all === true
       ? keys(w.door.byKey)
-      : [...(opts.doors ?? []).concat(opts.door ?? []), ...api.getJsOperands(args, opts)];
+      : [
+          ...(opts.doors ?? []).concat(opts.door ?? []),
+          ...keys(opts).filter((key) => opts[key] === true && !doorActionKeys.has(key)),
+        ];
 
+  const refused = [] as string[];
   for (const gdKey of inputs) {
     if (!w.helper.isGmDoorKey(gdKey)) {
       throw Error(`invalid gdKey: ${gdKey}`);
     }
     // biome-ignore format: succinct
-    switch (act) {
-      case 'open': w.e.toggleDoor(gdKey, { open: true }); break;
-      case 'close': w.e.toggleDoor(gdKey, { close: true });break;
-      case 'lock': w.e.toggleLock(gdKey, { lock: true }); break;
-      case 'unlock': w.e.toggleLock(gdKey, { unlock: true }); break;
-    }
+    const done = act === 'open' ? w.e.toggleDoor(gdKey, { open: true, npcKey, held })
+      : act === 'close' ? w.e.toggleDoor(gdKey, { close: true, npcKey, held })
+      : w.e.toggleLock(gdKey, { [act]: true });
+    if (done === false) refused.push(`${gdKey}: ${doorRefusal(w, gdKey, act, opts)}`);
   }
 
   w.view.forceUpdate();
+  if (refused.length > 0) throw Error(refused.join("\n"));
+}
+
+/** Why `doorAction` could not `act` on a door */
+function doorRefusal(w: JshCli.WorldState, gdKey: Geomorph.GmDoorKey, act: string, opts: DoorActionOpts) {
+  const door = w.door.byKey[gdKey];
+  if (door === undefined) return "no such door";
+  if (door.sealed === true) return "sealed";
+  if (door.held === true && opts.npcKey !== undefined && opts.hold === undefined) {
+    return w.door.isHeadedOpen(door) ? "held open" : "held shut";
+  }
+  if (act === "open" && opts.npcKey !== undefined) return `locked: ${opts.npcKey} has no access`;
+  if (act === "close") return "doorway not clear";
+  return `cannot ${act}`;
 }
 
 /**
@@ -772,12 +818,14 @@ async function move_next(
  * open g0d29 g0d30
  * open door:g0d29
  * open doors:['g0d29','g0d30']
+ * # held open: it never closes of itself until let go
+ * open --hold g0d29
+ * open --release g0d29
+ * # as rob would, with his access
+ * open g0d29 npc:rob
  * ```
  */
-export function open(
-  ct: JshCli.RunArg,
-  opts: { all?: boolean; door?: Geomorph.GmDoorKey; doors?: Geomorph.GmDoorKey[] } = ct.api.jsArg(ct.args),
-) {
+export function open(ct: JshCli.RunArg, opts: DoorActionOpts = ct.api.jsArg(ct.args, doorActionAliases)) {
   doorAction(ct, "open", opts);
 }
 

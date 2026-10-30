@@ -121,7 +121,7 @@ declare namespace Geomorph {
     locked: boolean;
     /** Is the door sealed? */
     sealed: boolean;
-    /** Locked open by `hold`: then only a press opens or shuts it, not an npc nor its auto-close */
+    /** Kept open or shut as it is: only a press or a holder changes it, not a passing npc nor its auto-close */
     held: boolean;
     /**
      * - When `true` only changes when some/none npcs nearby (so won't close if npc nearby),
@@ -168,7 +168,5 @@ declare namespace Geomorph {
     lock?: boolean;
     /** Should we unlock the door? */
     unlock?: boolean;
-    /** Locked whilst open, it is held so. Unlocked, it is let go */
-    hold?: boolean;
   };
 }

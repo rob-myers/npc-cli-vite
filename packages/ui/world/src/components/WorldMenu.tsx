@@ -33,9 +33,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { WorldThemeSchema } from "../assets.schema";
 import { compilingShadersText, defaultBrightness } from "../const.env";
-import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
-import { extraFxKeys } from "../service/extra-fx";
-import { queryClientApi } from "../service/query-client";
 import {
   cameraPresets,
   distanceOfView,
@@ -43,6 +40,10 @@ import {
   getPresetCameraView,
   minNearView,
 } from "../service/camera-view";
+import { GeomorphGraphsModal, RoomHitModal, SkinsModal } from "../service/debug";
+import { extraFxKeys } from "../service/extra-fx";
+import { probeWebRtc, webRtcWorks } from "../service/net-signaling";
+import { queryClientApi } from "../service/query-client";
 import { type CameraView, getSiteStore, getWorldStore, listWorldKeysWithMap } from "../service/storage";
 import { clearWorldFlags } from "../service/world-flags";
 import type { CameraModeType } from "./CameraControls";
@@ -245,12 +246,14 @@ export function WorldMenu() {
 
   w.menu = state;
 
+  useEffect(() => void probeWebRtc().then(() => state.update()), []); // greys WebRTC if it cannot connect
+
   const y = useMotionValue(state.getClampedY(state.y));
   const dragControls = useDragControls();
 
   /** Spots greyed out until jsh `spots --show`, run by a terminal's profile, fills them */
   const withSpotsGreyed = <T extends { value: string }>(item: T) =>
-    item.value === "spots" && (w.debug?.spots.length ?? 0) === 0 ? { ...item, disabled: true } : item;
+    item.value === "spots" && (w.spots?.drawn.length ?? 0) === 0 ? { ...item, disabled: true } : item;
 
   const isDebugActive = (item: string) => {
     switch (item) {
@@ -285,9 +288,9 @@ export function WorldMenu() {
       case "decorations":
         return w.debug?.decorShown ?? false;
       case "spots":
-        return w.debug?.spotsShown ?? false;
-      case "npc contextmenu":
-        return w.debug?.npcContextMenu ?? false;
+        return w.spots?.shown ?? false;
+      case "context menu":
+        return w.debug?.contextMenu ?? false;
       case "hud debug":
         return w.debug?.hudDebug ?? false;
       default:
@@ -386,16 +389,17 @@ export function WorldMenu() {
       }
       case "hud debug": {
         const next = !w.debug?.hudDebug;
-        w.debug?.set({ hudDebug: next, forceShot: null }); // hidden, nothing stays forced
+        w.debug?.set({ hudDebug: next, forceShot: "hit" }); // hidden, back to hitting
         store.patch({ hudDebug: next });
         w.hud?.update();
         state.update();
         break;
       }
-      case "npc contextmenu": {
-        const next = !w.debug?.npcContextMenu;
-        w.debug?.set({ npcContextMenu: next });
-        store.patch({ npcContextMenu: next });
+      case "context menu": {
+        const next = !w.debug?.contextMenu;
+        w.debug?.set({ contextMenu: next });
+        store.patch({ contextMenu: next });
+        if (next === false) w.pickMenu?.closeAll();
         state.update();
         break;
       }
@@ -408,7 +412,7 @@ export function WorldMenu() {
         break;
       }
       case "spots":
-        w.debug?.toggleSpots();
+        w.spots?.toggle();
         break;
     }
   };
@@ -625,6 +629,28 @@ export function WorldMenu() {
 
             <div className={cn("px-2 pb-1 grid grid-cols-2 gap-0.5", touch && "px-3 pb-2 gap-1.5")}>
               {debugItems.map((item) => {
+                if (item === "net") {
+                  // site-wide: how a same-page join connects. WebRTC is greyed where it cannot connect
+                  const transport = getSiteStore().read().netTransport;
+                  return (
+                    <MenuSelect
+                      key={item}
+                      caret
+                      side="bottom"
+                      label={`net: ${transport}`}
+                      className={debugButtonClassName(touch, transport !== "WebRTC")}
+                      value={transport}
+                      items={[
+                        { key: "WebRTC", value: "WebRTC", disabled: webRtcWorks() === false },
+                        { key: "MessageChannel", value: "MessageChannel" },
+                      ]}
+                      onValueChange={(next) => {
+                        if (next !== null) getSiteStore().patch({ netTransport: next });
+                        state.update();
+                      }}
+                    />
+                  );
+                }
                 if (item === "modals") {
                   return (
                     <MenuSelect
@@ -1507,7 +1533,18 @@ const toastLingerMs = 2000;
 const spinnerMinMs = 300;
 
 const cameraModes: CameraModeType[] = ["free", "embodied"];
-const debugItems = ["door ui", "hud debug", "modals", "npcs", "overlay", "post fx", "rgb shift", "view pick"] as const;
+const debugItems = [
+  "context menu",
+  "door ui",
+  "hud debug",
+  "modals",
+  "net",
+  "npcs",
+  "overlay",
+  "post fx",
+  "rgb shift",
+  "view pick",
+] as const;
 
 /** Shorten a select trigger's displayed label (e.g. an npc/symbol key) to fit the compact lights grid */
 const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label.slice(0, max)}…` : label);
@@ -1515,7 +1552,6 @@ const truncateLabel = (label: string, max = 5) => (label.length > max ? `${label
 /** Debug options merged into one multiselect, by its label */
 const debugGroups = {
   npcs: [
-    { key: "contextmenu", value: "npc contextmenu" },
     { key: "lit", value: "lit npcs" },
     { key: "outline", value: "npc outline" },
   ],
@@ -1572,7 +1608,7 @@ export function MenuSelect<T extends string>({
   /** Shows a down-caret, so it reads as a select rather than a button */
   caret?: boolean;
   className?: string;
-  items: { key: string; el?: React.JSX.Element; value: T }[];
+  items: { key: string; el?: React.JSX.Element; value: T; disabled?: boolean }[];
   /** Defaults to value */
   label?: string;
   side?: "left" | "right" | "bottom" | "top";
@@ -1620,7 +1656,11 @@ export function MenuSelect<T extends string>({
                 <Select.Item
                   key={item.key}
                   value={item.value}
-                  className={selectItemClassName(touch, item.value === value)}
+                  disabled={item.disabled}
+                  className={cn(
+                    selectItemClassName(touch, item.value === value),
+                    "data-disabled:cursor-default data-disabled:opacity-40",
+                  )}
                 >
                   <Select.ItemText>{item.el ?? item.key}</Select.ItemText>
                 </Select.Item>

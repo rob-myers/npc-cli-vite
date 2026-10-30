@@ -19,18 +19,10 @@ import { filterNodes } from "@npc-cli/ui__map-edit/map-node-api";
 import type { AssetsType, SymbolPolysKey } from "@npc-cli/ui__world/assets.schema";
 import { Mat, Poly, Rect, Vect } from "@npc-cli/util/geom";
 import { geomService } from "@npc-cli/util/geom-service";
-import {
-  debug,
-  deepClone,
-  error,
-  tagsToMeta,
-  textToTags,
-  toPrecision,
-  warn,
-} from "@npc-cli/util/legacy/generic";
+import { debug, deepClone, error, tagsToMeta, textToTags, toPrecision, warn } from "@npc-cli/util/legacy/generic";
 import {
   decorPointDefaultRadius,
-  doorSwitchHeight,
+  doorConfig,
   obstacleOutset,
   precision,
   sguToWorldScale,
@@ -492,7 +484,7 @@ function extractDecorPolyFromMapEditNode(node: DecorImageMapNode, meta: Meta): P
 
   if (meta.img === "switch") {
     meta.switch = true;
-    meta.y = doorSwitchHeight;
+    meta.y = doorConfig.switchHeight;
     meta.tilt = true; // 90° around "top"
   }
 

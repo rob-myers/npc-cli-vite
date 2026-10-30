@@ -19,6 +19,8 @@ import {
   ArrowCounterClockwiseIcon,
   BookOpenTextIcon,
   CaretRightIcon,
+  CheckIcon,
+  CopyIcon,
   DotsThreeIcon,
   ListBulletsIcon,
   PauseIcon,
@@ -523,7 +525,8 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
   return (
     <div
       data-jobs-root
-      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col"
+      // nothing is selected by a stray drag or Cmd+A: a job's source is copied from its menu, an example by its button
+      className="bg-term-dashboard pt-2 h-full overflow-hidden text-term-foreground min-h-[50px] flex flex-col select-none"
     >
       <header className="shrink-0 flex items-stretch gap-1 font-mono">
         {/* toggles the processes below, and says how many there are */}
@@ -663,7 +666,13 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
                                 <ArrowCounterClockwiseIcon alt="reset" className="size-4" />
                               )}
                             </div>
-                            <JobTags job={p} session={session} onToggle={state.changeProcess} />
+                            <JobTags
+                              job={p}
+                              session={session}
+                              onToggle={state.changeProcess}
+                              copied={state.copiedSrc === p.src}
+                              onCopy={state.copySrc}
+                            />
                           </div>
 
                           {/* `data-more` whilst the source scrolls on below, which the fade shows */}
@@ -713,8 +722,16 @@ export default function Jobs({ meta }: { meta: TemplateUiMeta }) {
 }
 
 /** A job's tags take no room in its row: an ellipsis lists them on demand, `always` as a toggle */
-function JobTags(props: { job: ProcessLeader; session: undefined | Session; onToggle: State["changeProcess"] }) {
-  const { always, pid, status } = props.job;
+/** A job's menu: copy its source, toggle `always`, and its other tags */
+function JobTags(props: {
+  job: ProcessLeader;
+  session: undefined | Session;
+  onToggle: State["changeProcess"];
+  /** Whether its source was just copied */
+  copied: boolean;
+  onCopy: State["copySrc"];
+}) {
+  const { always, pid, status, src } = props.job;
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -731,6 +748,17 @@ function JobTags(props: { job: ProcessLeader; session: undefined | Session; onTo
       <Popover.Portal>
         <Popover.Positioner className="z-50" side="bottom" align="start" sideOffset={4}>
           <Popover.Popup className={cn(popupCss, "max-w-64 flex flex-wrap gap-1 p-2")}>
+            <div
+              className={cn(ptagCss, "flex items-center cursor-pointer hover:bg-term-hover-strong text-term-muted")}
+              title="copy"
+              onClick={() => props.onCopy(src)}
+            >
+              {props.copied ? (
+                <CheckIcon alt="copied" className="size-3.5 text-term-ok" />
+              ) : (
+                <CopyIcon alt="copy" className="size-3.5" />
+              )}
+            </div>
             <div
               className={cn(
                 ptagCss,

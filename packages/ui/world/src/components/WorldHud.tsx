@@ -336,7 +336,7 @@ export default function WorldHud() {
                     w.view.focus();
                   }}
                 >
-                  {w.debug.forceShot ?? "auto"}
+                  {w.debug.forceShot}
                 </button>
               )}
             </>,
@@ -450,7 +450,10 @@ function PlayerButtons() {
           {/* always white: the icon itself changes with the gait */}
           <GaitIcon className={cn(buttonIcon(true), "size-5")} weight="light" />
           {w.player.strafe && w.player.get()?.posture === "stand" && (
-            <ArrowsHorizontalIcon className={cn(buttonIcon(true), "absolute right-0.5 bottom-0.5 size-3")} weight="bold" />
+            <ArrowsHorizontalIcon
+              className={cn(buttonIcon(true), "absolute right-0.5 bottom-0.5 size-3")}
+              weight="bold"
+            />
           )}
         </div>
       )}
@@ -547,6 +550,9 @@ const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
   keychain: 0.7,
   book: 0.6,
   box: 0.7,
+  "box-case": 0.7,
+  "box-crate": 0.7,
+  "box-tote": 0.7,
   keycard: 0.58,
 };
 const iconStyle = (kind: keyof typeof iconScale) => ({ height: `${iconScale[kind] * 100}%` });
@@ -787,7 +793,7 @@ const noticeMs = 1500;
 type SlotMenuItem = { label: string; run(): void };
 
 /** What the debug badge cycles through: `null` leaves it to jsh */
-const shotCycle: (null | JshCli.ShotOutcome)[] = [null, "hit", "missed", "dodged", "shielded"];
+const shotCycle: JshCli.ShotOutcome[] = ["hit", "refract", "armour"];
 
 type SlotOpts = {
   title: string;

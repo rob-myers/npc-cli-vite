@@ -227,7 +227,7 @@ export const WorldThemeSchema = z.object({
         .number()
         .min(0)
         .max(1)
-        .default(0.8 satisfies typeof import("./const.env.ts").defaultDoorOpacity),
+        .default(0.8 satisfies typeof import("./const.env.ts").doorConfig.opacity),
       /** The label's own, on a `light` panel: solid whilst the panel is seen through. The panel's if absent */
       labelOpacity: z.number().min(0).max(1).optional(),
       /** Which of `doorInks` the panels are drawn in — see `service/texture` */

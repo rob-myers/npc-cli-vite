@@ -208,7 +208,6 @@ node scripts/src/bins/gen-clip-keys.ts phaser_aim rock=0.6 drop=0.4
 | `pain_*`, `{sit,lie}_pain_*` | 1.2–1.6s | a hit | posed by search |
 | `pacified`, `{sit,lie}_pacified` | 3s | after a head shot | posed |
 | `collapsed` | 1.8s | after a body shot stood: on the floor, breathing hard | posed by search |
-| `dodge_*`, `{sit,lie}_dodge` | 0.8s | a shot dodged, once | posed |
 
 ### walk / run: planted feet
 
@@ -444,44 +443,6 @@ small nod, as a deeper slump put the head into a neighbour's.
 | leftforearm | rotation | [35,0,10] | same |
 | thighs | rotation | [140,0,±8], knees drawn in | same |
 | shins / feet | rotation x | -93 / -48 | same |
-
-### Dodges (catmullrom; once, 0.8s)
-
-Each is checked by raycasting the beam's line through its part's centre in the rest pose (`window.__dodge` in a
-session: `centre`, `hits`). Each starts and ends on its base's first key: `breathe` stood, else `sit` or `lie`. Stood, a crouch of `a`
-keeps the feet planted: thighs `a`, shins `-2a`, feet `a`, root rotation 0 and position y `-10.75(1 - cos a)`.
-
-- **`dodge_duck`** (head): a crouch of 55 at 0.2, 50 at 0.45. Stomach -25, chest -15, head -15, arms up over the head
-  (arms [130,0,±15], forearms 110).
-- **`dodge_duck_low`** (torso): a crouch of 60 with a bow (stomach -45, chest -31.5, head -12), the arms tucked
-  ([71,0,±6], forearms 70). Searched as the least crouch and bow whose body is off the beam's line through the rest
-  pose's chest centre `(0, 20.36, -0.11)` from 8 bearings, ±0.5 across and up: clear from 0.18 to 0.45. It reaches
-  no wider than at rest, but bows 8.4 forward, towards the shooter.
-- **`dodge_arm_left`** (left arm): the root slid 0.8 to +x in a crouch of 15, a lean of -4 (stomach z), the left arm up
-  at [120,0,-10] with the forearm at 40. Searched as the least that keeps the body off the left forearm's line
-  `(-4.04, 13.76, -1.11)` from ahead (±10 degrees, ±0.5): wider, the hips are in the way, so the game turns them to
-  face the shot. Thigh z searched so the feet stay planted. **`dodge_arm_right`** is its mirror: left and right bones
-  swapped, rotation y and z and position x negated.
-- **`dodge_hop`** (legs): a crouch of 30 at 0.12, in the air at 0.32 (root y +2, thighs 65, shins -110, feet 30, arms
-  out ±45), landing in a crouch of 30 at 0.52. The feet clear the floor by 6.5.
-- **`sit_dodge_duck`**: a fold from `sit` (stomach -42, chest -29.4, head -20), hands up by the head.
-- **`sit_dodge_brace`**: folded onto the knees (stomach -75, chest -52.5, head -20), arms over the head.
-- **`sit_dodge_lean_left`** / `_right` (mirror): a sideways lean (stomach z +30, chest z +14, head z -16), the far arm up.
-- **`sit_dodge_back`**: a recline (stomach x +28, chest x +16, head +8), hands up before the face.
-- **`sit_dodge_legs`**: both legs lifted nearly straight (thighs 105, shins -10, feet 10).
-
-There are no lain dodges: the game makes a dodged shot at someone in bed a hit. Sit-ups, rolls, curls and
-propping up on an elbow were tried, from the back and from either side, but a steep beam onto a bed rarely clears.
-
-**Which part each clears, from where,** is `hitConfig.dodgeClips` in `const.npc`: 24 characters a part, 15 degrees
-apart from ahead round to their left. Measured with `window.__dodge.mask2(clip, centre, times, tilts, margin)` in a
-session: rays along the beam's line through the part's centre in the base pose, at the tilts a standing shooter's beam
-meets that part (stood head 0 to 8, chest -4 to 4, forearm -8 to 0, shin -15 to -5; sat head -4 to 4, chest and upper
-arm -6 to 2, shin -15 to -5), ±0.25 across (the beam is 0.2 thick), at 0.25, 0.3 and 0.35 around its arrival.
-Re-measure after changing a dodge.
-
-Tried and dropped, sat: a sat hand's line meets the thigh from all but dead ahead or behind; a twist-and-bend, a fold to
-the toes and a fall onto the side moved too much near other sitters.
 
 ### Hits, sat and lain: `{sit,lie}_pain_{low,high}`, `{sit,lie}_pacified`
 

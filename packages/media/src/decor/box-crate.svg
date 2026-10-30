@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140" width="20" height="14">
+  <g>
+    <title>px-per-tile=512</title>
+    <rect x="2" y="2" width="196" height="136" rx="4" fill="#4a5058" stroke="#1d2126" stroke-width="4"/>
+    <path d="M2 18H198M2 122H198" stroke="#1d2126" stroke-width="3"/>
+    <path d="M10 2 2 10M26 2 10 18M42 2 26 18M58 2 42 18M74 2 58 18M90 2 74 18M106 2 90 18M122 2 106 18M138 2 122 18M154 2 138 18M170 2 154 18M186 2 170 18M198 6 186 18" stroke="#e0b43a" stroke-width="6"/>
+    <path d="M10 122 2 130M26 122 10 138M42 122 26 138M58 122 42 138M74 122 58 138M90 122 74 138M106 122 90 138M122 122 106 138M138 122 122 138M154 122 138 138M170 122 154 138M186 122 170 138M198 126 186 138" stroke="#e0b43a" stroke-width="6"/>
+    <path d="M30 34V106M60 34V106M140 34V106M170 34V106" stroke="#3a3f46" stroke-width="5"/>
+    <rect x="76" y="44" width="48" height="52" rx="3" fill="#d9dde2" stroke="#1d2126" stroke-width="2.5"/>
+    <path d="M84 56H116M84 66H108M84 76H116M84 86H100" stroke="#3a3f46" stroke-width="3"/>
+  </g>
+</svg>

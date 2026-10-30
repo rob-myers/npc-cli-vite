@@ -83,7 +83,6 @@ import { CameraControls, type CameraModeType } from "./CameraControls";
 import CrossHair from "./CrossHair";
 import LightSweep from "./LightSweep";
 import LookMark from "./LookMark";
-import NpcBubbles from "./NpcBubbles";
 import type { Npc } from "./npc";
 import { WorldContext } from "./world-context";
 
@@ -317,7 +316,7 @@ export function WorldView(props: React.PropsWithChildren) {
             return { ...pick, debugPoint: true, ...decoded };
           }
           case "spot": {
-            const spot = w.debug.spots[pick.instanceId];
+            const spot = w.spots.drawn[pick.instanceId];
             if (spot === undefined) return null;
             const decor = spot.decorKey == null ? undefined : w.decor.byKey[spot.decorKey];
             const base = { ...pick, spot: true, spotKey: spot.key } as const;
@@ -408,13 +407,13 @@ export function WorldView(props: React.PropsWithChildren) {
             break;
           case "spot": {
             // its icon stands off the floor, so it lands on the spot itself
-            const spot = w.debug.spots[picked.instanceId];
+            const spot = w.spots.drawn[picked.instanceId];
             if (spot === undefined) return null;
             const point = new THREE.Vector3(spot.x, 0, spot.y);
             return {
               distance: point.distanceTo(state.raycaster.ray.origin),
               point,
-              object: w.debug.spotsInst,
+              object: w.spots.iconsInst,
               normal: up,
             };
           }
@@ -945,7 +944,8 @@ export function WorldView(props: React.PropsWithChildren) {
         state.keysDown.add(key);
         state.lastKeyMs = Date.now();
         if (e.key === "Escape") {
-          uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
+          // a focused menu closes, else the World pauses
+          if (w.pickMenu?.closeFocused() !== true) uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = true));
         } else if (e.key === "Enter") {
           uiStoreApi.setUiMeta(w.id, (draft) => (draft.disabled = false));
         } else if (fadeRoomsModeByKey[e.key] !== undefined) {
@@ -956,7 +956,7 @@ export function WorldView(props: React.PropsWithChildren) {
           }
         } else if (e.key === "0") {
           if (e.repeat === false) {
-            w.debug?.toggleSpots();
+            w.spots?.toggle();
             w.menu?.update();
           }
         } else if (presetStep !== undefined) {
@@ -1730,8 +1730,6 @@ export function WorldView(props: React.PropsWithChildren) {
         <CrossHair />
 
         <LookMark />
-
-        <NpcBubbles />
 
         {state.postProcessing && <PostProcessing />}
 

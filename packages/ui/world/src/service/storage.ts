@@ -55,8 +55,8 @@ export type WorldSettings = {
   pickDoors: boolean;
   /** Whether we are decorating — see `Debug`'s `decorShown` */
   decorShown: boolean;
-  /** Whether an npc's contextmenu opens their bubble — see `Debug`'s `npcContextMenu` */
-  npcContextMenu: boolean;
+  /** Whether a right click or long press opens a menu on an npc, decor or door — see `Debug`'s `contextMenu` */
+  contextMenu: boolean;
   /** Whether the map's spots are drawn — see `Debug`'s `spotsShown` */
   spotsShown: boolean;
   /** Whether the player's bar shows debug controls, e.g. forcing a shot's outcome — see `Debug`'s `hudDebug` */
@@ -101,7 +101,7 @@ const defaultWorldSettings: WorldSettings = {
   pickOpenDoors: true,
   pickDoors: false,
   decorShown: false,
-  npcContextMenu: true,
+  contextMenu: true,
   spotsShown: false,
   hudDebug: false,
   timeScale: 1,
@@ -140,15 +140,27 @@ export type WorldMapState = {
    * — even one whose `meta.locked` says otherwise. `null` means never saved.
    */
   doorLocks: null | string[];
+  /** The `gdKey`s of the held doors. `null` means never saved */
+  doorHolds: null | string[];
+  /** By `gdKey`, each door's `auto` and `proximity` where they differ from the map's. `null` means never saved */
+  doorFlags: null | Record<string, DoorFlags>;
   /** Runtime decor defs, replayed via `w.decor.create` on restore. `null` means never saved */
   decor: null | Geomorph.DecorDef[];
+  /** Keys of the layout items already made runtime decor, so one taken is not made again — see `w.e.seedItems` */
+  seeded: null | string[];
 };
 
 const defaultWorldMapState: WorldMapState = {
   npcs: null,
   doorLocks: null,
+  doorHolds: null,
+  doorFlags: null,
   decor: null,
+  seeded: null,
 };
+
+/** A door's own `auto` and `proximity`, set apart from its map's */
+export type DoorFlags = { auto?: boolean; proximity?: boolean };
 
 /** The npcs of some map, as left by the previous session */
 export type PersistedNpcs = {
@@ -183,6 +195,8 @@ export type SiteSettings = {
   lightKey: "world" | "npc";
   /** `null` for the defaults, which depend on the device — see `getDefaultCameraView` in `service/camera-view` */
   camera: null | CameraView;
+  /** How same-page joins connect: a `MessageChannel` skips WebRTC — see `docs/web-rtc-worlds.md` */
+  netTransport: import("./net-signaling").NetTransport;
 };
 
 const defaultSiteSettings: SiteSettings = {
@@ -190,6 +204,7 @@ const defaultSiteSettings: SiteSettings = {
   npcBrightnessByTheme: {},
   lightKey: "world",
   camera: null,
+  netTransport: "WebRTC",
 };
 
 let siteStore: undefined | LocalStore<SiteSettings>;

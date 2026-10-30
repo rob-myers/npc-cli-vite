@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" width="18" height="12">
+  <g>
+    <title>px-per-tile=512</title>
+    <rect x="3" y="3" width="174" height="114" rx="8" fill="#2f6fa8" stroke="#163552" stroke-width="4"/>
+    <rect x="16" y="16" width="148" height="88" rx="5" fill="#3b82c4" stroke="#245a8a" stroke-width="3"/>
+    <path d="M24 16V104M156 16V104" stroke="#245a8a" stroke-width="2"/>
+    <rect x="60" y="6" width="60" height="8" rx="4" fill="#163552"/>
+    <rect x="60" y="106" width="60" height="8" rx="4" fill="#163552"/>
+    <rect x="62" y="44" width="56" height="32" rx="2" fill="#f2f2ea" stroke="#163552" stroke-width="2"/>
+    <path d="M70 54H110M70 62H98" stroke="#3a3f46" stroke-width="3"/>
+  </g>
+</svg>

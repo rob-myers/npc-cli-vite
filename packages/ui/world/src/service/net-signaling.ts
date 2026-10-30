@@ -13,7 +13,87 @@ export type SignalMsg =
   | { kind: "join-request"; worldKey: string }
   | { kind: "offer" | "answer"; sdp: string }
   | { kind: "ice"; candidate: RTCIceCandidateInit }
-  | { kind: "bye" };
+  | { kind: "bye" }
+  /** Same page only: the data channels over `MessagePort`s, as WebRTC did not connect */
+  | { kind: "local"; events: MessagePort; transforms: MessagePort };
+
+/** What a session sends and receives over: a WebRTC data channel, else a same-page `PortChannel` */
+export type DataChannel = RTCDataChannel | PortChannel;
+
+/**
+ * As much of an `RTCDataChannel` as a session uses, over a `MessagePort`.
+ * A same-page join falls back to it when WebRTC cannot connect, e.g. without local network access
+ */
+export class PortChannel {
+  binaryType: BinaryType = "arraybuffer";
+  bufferedAmount = 0;
+  readyState: RTCDataChannelState = "connecting";
+  onclose: null | (() => void) = null;
+  onmessage: null | ((e: MessageEvent) => void) = null;
+  onopen: null | (() => void) = null;
+  #port: MessagePort;
+
+  constructor(port: MessagePort) {
+    this.#port = port;
+    port.onmessage = (e) => (e.data === portClosed ? this.#closed() : this.onmessage?.(e));
+    // once its handlers are set, as a data channel opens
+    queueMicrotask(() => {
+      if (this.readyState !== "connecting") return;
+      this.readyState = "open";
+      this.onopen?.();
+    });
+  }
+  send(data: string | ArrayBuffer) {
+    if (this.readyState === "open") this.#port.postMessage(data);
+  }
+  close() {
+    if (this.readyState === "closed") return;
+    this.#port.postMessage(portClosed); // a port's close is not seen by the other end
+    this.#closed();
+  }
+  #closed() {
+    if (this.readyState === "closed") return;
+    this.readyState = "closed";
+    this.#port.close();
+    this.onclose?.();
+  }
+}
+/** Tells the other end of a `PortChannel` it has closed */
+const portClosed = "port-channel-closed";
+
+/** How a same-page join carries its data channels: the site's choice, in the debug menu */
+export type NetTransport = "WebRTC" | "MessageChannel";
+
+/** Whether WebRTC connects here at all: `null` until `probeWebRtc` knows */
+export const webRtcWorks = () => probed;
+
+/** Opens a data channel between two peers on this page, once: without local network access none opens */
+export function probeWebRtc(): Promise<boolean> {
+  return (probing ??= new Promise((resolve) => {
+    const [a, b] = [new RTCPeerConnection(), new RTCPeerConnection()];
+    const done = (works: boolean) => {
+      if (probed !== null) return;
+      window.clearTimeout(timeoutId);
+      a.close();
+      b.close();
+      resolve((probed = works));
+    };
+    const timeoutId = window.setTimeout(() => done(false), probeMs);
+    a.onicecandidate = (e) => e.candidate !== null && void b.addIceCandidate(e.candidate).catch(() => {});
+    b.onicecandidate = (e) => e.candidate !== null && void a.addIceCandidate(e.candidate).catch(() => {});
+    a.createDataChannel("probe").onopen = () => done(true);
+    (async () => {
+      await a.setLocalDescription(await a.createOffer());
+      await b.setRemoteDescription(a.localDescription as RTCSessionDescriptionInit);
+      await b.setLocalDescription(await b.createAnswer());
+      await a.setRemoteDescription(b.localDescription as RTCSessionDescriptionInit);
+    })().catch(() => done(false));
+  }));
+}
+let probing: undefined | Promise<boolean>;
+let probed: null | boolean = null;
+/** Same-page peers connect in well under this, if at all */
+const probeMs = 3000;
 
 /** A joinable world seen via signaling — `uid` is `${pageId}/${worldKey}` */
 export type RemoteWorld = {

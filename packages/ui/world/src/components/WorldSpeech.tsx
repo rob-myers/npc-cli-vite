@@ -573,7 +573,7 @@ function NpcKeyMenu({ npcKey, className }: { npcKey: string; className?: string 
               <Menu.Item
                 className={speechMenuItemClassName}
                 closeOnClick={false}
-                onClick={() => w.bubble.toggleDebug(npcKey)}
+                onClick={() => w.pickMenu.toggle({ npcKey })}
               >
                 debug
               </Menu.Item>

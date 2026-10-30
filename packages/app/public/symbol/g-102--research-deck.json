@@ -827,10 +827,10 @@
           "name": "door auto slide=[1,0]",
           "locked": true,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1026, "f": 235.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1026, "f": 234},
           "type": "rect",
           "baseRect": {"width": 48, "height": 8},
-          "cssTransform": "matrix(1, 0, 0, 1, 1026, 235.5)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1026, 234)"
         },
         {
           "id": "f22b65d9-1cd6-dbd0-1999-7e4a2a1129dd",
@@ -1107,10 +1107,10 @@
           "name": "wall",
           "locked": false,
           "visible": true,
-          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1020, "f": 235.5},
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 1020, "f": 234},
           "type": "rect",
           "baseRect": {"width": 60, "height": 8},
-          "cssTransform": "matrix(1, 0, 0, 1, 1020, 235.5)"
+          "cssTransform": "matrix(1, 0, 0, 1, 1020, 234)"
         },
         {
           "id": "70b14fd9-9bbc-d7f6-3e57-766950b8518b",
@@ -1164,7 +1164,7 @@
       "visible": true,
       "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0},
       "type": "group",
-      "expanded": true,
+      "expanded": false,
       "children": [
         {
           "id": "cd79c6e1-1ffa-4a47-926b-bc745ecbcdce",
@@ -1198,6 +1198,71 @@
           "baseRect": {"width": 6, "height": 6},
           "offset": {"x": 0, "y": 0},
           "cssTransform": "matrix(0, 1, -1, 0, 996, 890)"
+        },
+        {
+          "id": "3ce5c876-65b4-4311-8367-ea5b0481b3a8",
+          "name": "decor quad screen y=1.6 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 362.25, "f": 181},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "screen-helix",
+          "baseRect": {"width": 32, "height": 20},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, 1, 0, 362.25, 181)"
+        },
+        {
+          "id": "55ba5d24-cd04-4ec1-891d-61bf4bc82800",
+          "name": "decor quad sign y=1.5 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 598.25, "f": 195},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "sign-hazard",
+          "baseRect": {"width": 10, "height": 10},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 598.25, 195)"
+        },
+        {
+          "id": "e4876eaf-8a64-4e12-b0d9-4c8f4bbb2814",
+          "name": "decor quad screen y=1.7 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": 1, "c": -1, "d": 0, "e": 837.75, "f": 143},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "screen-0",
+          "baseRect": {"width": 44, "height": 32},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, 1, -1, 0, 837.75, 143)"
+        },
+        {
+          "id": "9a29f893-36af-469e-aa0b-60e8ddaf8a1e",
+          "name": "decor quad sign y=1.5 tilt",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 0, "b": -1, "c": 1, "d": 0, "e": 601.75, "f": 205},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "sign-hazard",
+          "baseRect": {"width": 10, "height": 10},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(0, -1, 1, 0, 601.75, 205)"
+        },
+        {
+          "id": "a36fd9e6-cf20-43bd-90fe-dd47ff4cf11b",
+          "name": "decor quad item=box y=1.0 h=0.3",
+          "locked": true,
+          "visible": true,
+          "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 365.25, "f": 192},
+          "type": "image",
+          "srcType": "decor",
+          "srcKey": "box",
+          "baseRect": {"width": 16, "height": 16},
+          "offset": {"x": 0, "y": 0},
+          "cssTransform": "matrix(1.0, -0.0, 0.0, 1.0, 365.25, 192.0)"
         }
       ]
     }

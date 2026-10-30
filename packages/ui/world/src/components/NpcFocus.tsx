@@ -5,6 +5,16 @@ import * as THREE from "three/webgpu";
 import { hitConfig, psiActions } from "../const.npc";
 import { type Aim, aimToRay, npcOnRay } from "../service/aim-target";
 import { helper } from "../service/helper";
+import {
+  actionClass,
+  cancelClass,
+  markClass,
+  OverlayBounds,
+  offsetUnder,
+  pin,
+  showMark,
+  toScreen,
+} from "../service/overlay";
 import { bodyPartPoint, type PartHit, type StruckKind } from "../service/phaser-beam";
 import type { Npc } from "./npc";
 import type { State as WorldState } from "./World";
@@ -19,6 +29,7 @@ export default function NpcFocus() {
 
   const state = useStateRef(
     (): State => ({
+      boxes: new OverlayBounds(() => w.r3f?.invalidate()),
       phasers: new Map(),
       psis: new Map(),
       lasers: new Set(),
@@ -90,9 +101,9 @@ export default function NpcFocus() {
         // hidden already, there is nothing to place
         if (showing === false && state.showing === false) return;
         state.showing = showing;
+        if (state.boxes.sync(state.el, w.view.canvas) === false) return;
+        const { canvas, box } = state.boxes;
         camera.updateMatrixWorld(); // as it is this frame, not the last
-        const canvas = w.view.canvas.getBoundingClientRect();
-        const box = state.el.getBoundingClientRect();
         const toScreenAt = (point: THREE.Vector3) => toScreen(point, camera, canvas, box);
         const onScreen = (npc: Npc, bone: string) => toScreenAt(bodyPartPoint(npc, bone, tmpPoint));
         /** Each target's dots, in turn */
@@ -131,7 +142,7 @@ export default function NpcFocus() {
         // Cancel under the press that opened it, else beside their chest
         const { down } = w.view.lastPointer;
         own.offset ??= own.atPointer
-          ? { x: canvas.left - box.left + down.x - chest.x, y: canvas.top - box.top + down.y - chest.y }
+          ? offsetUnder(down, chest, canvas, box)
           : { x: actionsOffPx + cancelEl.offsetWidth / 2, y: 0 };
         const x = chest.x + own.offset.x - cancelEl.offsetLeft - cancelEl.offsetWidth / 2;
         const y = chest.y + own.offset.y - cancelEl.offsetTop - cancelEl.offsetHeight / 2;
@@ -276,7 +287,10 @@ export default function NpcFocus() {
       },
     });
     if (w.phasers?.isArmed(w.player.key) === true) state.target(w.player.key); // raised already, e.g. over hmr
-    return () => sub.unsubscribe();
+    return () => {
+      sub.unsubscribe();
+      state.boxes.dispose();
+    };
   }, []);
 
   const phasers = [...state.phasers.values()];
@@ -315,7 +329,15 @@ export default function NpcFocus() {
               data-off=""
               className={cn(markClass, "group flex size-2.5 items-center justify-center")}
             >
-              <span className="size-1 rounded-full bg-red-400 shadow-[0_0_0_1px_rgb(0_0_0/0.7),0_0_3px_1px_rgb(248_113_113)] group-data-on:animate-[laser-pulse_700ms_ease-in-out_infinite] group-data-paused/focus:[animation-play-state:paused]" />
+              <span
+                className={cn(
+                  "rounded-full group-data-on:animate-[laser-pulse_700ms_ease-in-out_infinite] group-data-paused/focus:[animation-play-state:paused]",
+                  // on a light floor, darker and ringed in white
+                  w.themeKey === "light-theme"
+                    ? "size-1.5 bg-red-600 shadow-[0_0_0_1px_rgb(255_255_255/0.9),0_0_4px_2px_rgb(220_38_38)]"
+                    : "size-1 bg-red-400 shadow-[0_0_0_1px_rgb(0_0_0/0.7),0_0_3px_1px_rgb(248_113_113)]",
+                )}
+              />
             </span>
           )}
         </Fragment>
@@ -327,7 +349,7 @@ export default function NpcFocus() {
               key={action}
               type="button"
               tabIndex={-1}
-              className="pointer-events-auto cursor-pointer rounded bg-black/60 px-1.5 py-0.5 text-left font-mono text-[11px] text-white opacity-80 hover:opacity-100"
+              className={actionClass}
               onPointerDown={(e) => e.stopPropagation()}
               // on click: removed on pointer down, the pointer up would press the World beneath
               onClick={() => state.act(own.by, action)}
@@ -339,7 +361,7 @@ export default function NpcFocus() {
             ref={(el) => void (state.cancelEl = el)}
             type="button"
             tabIndex={-1}
-            className="pointer-events-auto cursor-pointer rounded border border-red-500/50 bg-blue-950/40 px-1.5 py-0.5 text-left font-mono text-[11px] text-white hover:bg-red-900/50"
+            className={cancelClass}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => state.unfocus(own.by)}
           >
@@ -374,27 +396,6 @@ function endsDiffer(a: PhaserEntry["end"], b: PhaserEntry["end"]) {
 const isAiming = (w: WorldState, npcKey: string) =>
   w.phasers.isRaised(npcKey) === true && w.phasers.isDrawnIn(npcKey) === false;
 
-/** Fades a mark in or out. Out, it is left where it was, and takes no presses */
-function showMark(el: null | HTMLElement, shown: boolean) {
-  if (el === null) return;
-  el.toggleAttribute("data-off", !shown);
-  el.inert = !shown;
-}
-
-/** Centres `el` on `at`, in overlay pixels */
-function pin(el: HTMLElement, { x, y }: Geom.VectJson) {
-  el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`;
-}
-
-/** A world point's place in the overlay, in pixels */
-function toScreen(point: THREE.Vector3, camera: THREE.Camera, canvas: DOMRect, box: DOMRect) {
-  point.project(camera);
-  return {
-    x: canvas.left - box.left + ((point.x + 1) / 2) * canvas.width,
-    y: canvas.top - box.top + ((1 - point.y) / 2) * canvas.height,
-  };
-}
-
 const tmpPoint = new THREE.Vector3();
 const tmpEnd = new THREE.Vector3();
 const tmpRay = new THREE.Ray();
@@ -403,8 +404,6 @@ const tmpNear: Npc[] = [];
 const doorChanges = new Set<string>(["door-open", "door-closed", "door-opening", "door-closing"]);
 /** The bones a shot may meet: those of a hit region */
 const hitBones = Object.keys(hitConfig.region);
-
-const markClass = "absolute top-0 left-0 transition-opacity duration-150 data-off:opacity-0";
 
 const npcFocusConfig = {
   /** Metres past what stopped its cast an npc is still crossed: one stood against a wall */
@@ -460,6 +459,8 @@ export type PsiEntry = {
 };
 
 export type State = {
+  /** The canvas and this overlay, as last measured on a resize */
+  boxes: OverlayBounds;
   /** By shooter */
   phasers: Map<string, PhaserEntry>;
   /** By whom psi acts */

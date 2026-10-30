@@ -17,8 +17,8 @@ export default function BreathControls({ w }: { w: WorldState }) {
   };
 
   return (
-    <div className="flex flex-col gap-1.5 border-t-2 border-white/20 pt-3 text-lg">
-      <div className="flex items-center gap-3">
+    <div className="flex w-60 flex-col gap-1 border-t border-white/20 pt-1">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           className="flex flex-1 cursor-pointer items-center gap-2 text-left text-white/50 hover:text-white"
@@ -27,13 +27,13 @@ export default function BreathControls({ w }: { w: WorldState }) {
             setOpen(!open);
           }}
         >
-          <Caret className="size-5 shrink-0" />
+          <Caret className="size-3 shrink-0" />
           breathing
         </button>
         {open === true && (
           <button
             type="button"
-            className="cursor-pointer rounded-lg border-2 border-white/20 px-3 text-white/60 hover:text-white"
+            className="cursor-pointer rounded border border-white/20 px-1.5 text-white/60 hover:text-white"
             onClick={() => apply(defaultBreathTune)}
           >
             reset
@@ -69,8 +69,8 @@ function Slider(props: {
 }) {
   const [min, max, step] = props.range;
   return (
-    <label className="flex items-center gap-3">
-      <span className="w-24 shrink-0 whitespace-nowrap text-white/50">{props.label}</span>
+    <label className="flex items-center gap-2">
+      <span className="w-14 shrink-0 whitespace-nowrap text-white/50">{props.label}</span>
       <input
         type="range"
         min={min}
@@ -85,7 +85,7 @@ function Slider(props: {
         }
         style={props.track === undefined ? undefined : { background: props.track }}
       />
-      <span className="flex w-16 shrink-0 justify-end tabular-nums text-white/60">{props.children}</span>
+      <span className="flex w-10 shrink-0 justify-end tabular-nums text-white/60">{props.children}</span>
     </label>
   );
 }

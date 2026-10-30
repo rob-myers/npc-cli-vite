@@ -180,11 +180,6 @@ export const fromAnimationClipKey = {
   crouch_strafe_left: true,
   crouch_strafe_right: true,
   crouch_walk: true,
-  dodge_arm_left: true,
-  dodge_arm_right: true,
-  dodge_duck: true,
-  dodge_duck_low: true,
-  dodge_hop: true,
   drop: true,
   drop_left: true,
   idle: true,
@@ -210,12 +205,6 @@ export const fromAnimationClipKey = {
   run: true,
   shuffle: true,
   sit: true,
-  sit_dodge_back: true,
-  sit_dodge_brace: true,
-  sit_dodge_duck: true,
-  sit_dodge_lean_left: true,
-  sit_dodge_lean_right: true,
-  sit_dodge_legs: true,
   sit_pacified: true,
   sit_pain_head: true,
   sit_pain_high: true,
@@ -277,6 +266,12 @@ export const sitArmVia = { back: 1, there: 0.5, onFrom: 0.4, slow: 1.6 } as cons
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
 
+/**
+ * A shot armour took jolts them: radians the struck part turns at most, and seconds to that and in all.
+ * Each bone it hangs from turns `falloff` as far as the one below.
+ */
+export const flinchConfig = { rad: 0.3, peakSecs: 0.06, secs: 0.45, falloff: 0.5 } as const;
+
 type ClipKey = keyof typeof fromAnimationClipKey;
 export type HitRegion = "head" | "torso" | `${"arm" | "leg"}_${"left" | "right"}`;
 
@@ -325,58 +320,6 @@ export const hitConfig = {
       leg_right: "lie_pain_low",
     },
   } satisfies Record<string, Record<HitRegion, ClipKey>>,
-  /**
-   * The dodges, each played once as a shot locks on: its weight, and for each part's line the shooter's bearings it clears.
-   * 24 characters, 15 degrees apart from ahead round to their left, `1` clear: measured in Blockbench — see `w.npc.dodge`
-   */
-  dodgeClips: {
-    dodge_duck: { weight: 3, clears: { head: "111111111111111111111111" } },
-    dodge_duck_low: { weight: 2, clears: { head: "111111111111111111111111", torso: "111111111111111111111111" } },
-    dodge_arm_left: { weight: 3, clears: { arm_left: "110000000011110000000011" } },
-    dodge_arm_right: { weight: 3, clears: { arm_right: "111000000001111000000001" } },
-    dodge_hop: { weight: 3, clears: { leg_left: "111111111111111111100111", leg_right: "100100111111111111111111" } },
-    sit_dodge_duck: {
-      weight: 3,
-      clears: {
-        head: "111111111111111111111111",
-        arm_left: "110000000000110000000000",
-        arm_right: "100000000001100000000001",
-      },
-    },
-    sit_dodge_lean_left: {
-      weight: 3,
-      clears: { head: "111000000111111000000111", arm_right: "110100000001110100000001" },
-    },
-    sit_dodge_lean_right: {
-      weight: 3,
-      clears: { head: "111100000011111100000011", arm_left: "110000000101110000000101" },
-    },
-    sit_dodge_back: {
-      weight: 2,
-      clears: { arm_left: "100000011111100000111111", arm_right: "111111100000111111000000" },
-    },
-    sit_dodge_brace: {
-      weight: 1,
-      clears: {
-        head: "111111111111111111111111",
-        torso: "111111111111111111111111",
-        arm_left: "111111110111111111111111",
-        arm_right: "111111111111111101111111",
-      },
-    },
-    sit_dodge_legs: {
-      weight: 3,
-      clears: { leg_left: "111111111100000001111111", leg_right: "111111110000001111111111" },
-    },
-  } as Partial<Record<ClipKey, { weight: number; clears: Partial<Record<HitRegion, string>> }>>,
-  /** Where a dodged shot aims, by posture and part, else at the part. Sat, at the upper arm: a hand rests by the thigh */
-  dodgeAim: {
-    sit: { arm_left: "leftarm", arm_right: "rightarm" },
-  } as Partial<Record<"stand" | "sit" | "lie", Partial<Record<HitRegion, string>>>>,
-  /** Seconds a dodge takes to come in: quicker than any other pose, so it is under way as the beam arrives */
-  dodgeFadeSecs: 0.08,
-  /** How fast one stood turns to face a shot they dodge: each stood dodge clears its part's line from ahead */
-  dodgeTurnRate: 20,
   /** Looped until released: every other clip above plays once */
   pacified: ["pacified", "sit_pacified", "lie_pacified"] as ClipKey[],
   /**
@@ -391,20 +334,38 @@ export const hitConfig = {
   } as Partial<Record<ClipKey, ClipKey>>,
 };
 
-/** A personal shield's pieces, lit where a shot is stopped — see `NpcShields` */
-export const shieldConfig = {
+/** Refract: they turn to psi and look to the shot, and a psi beam from their brow stops it, heating space — see `NpcRefract` */
+export const refractConfig = {
+  psiColor: "#c58cff",
+  /** Their psi meets it at random, from `standoffM` metres before where it would land to `reachShare` of the way back */
+  standoffM: 0.6,
+  reachShare: 0.8,
+  /** Over `1`, nearer the shooter more often */
+  towardShooter: 2.5,
+  /** Fired again before it fades, it meets the shot where it did whilst within this many metres of its line */
+  keepM: 0.1,
+  /** Seconds the psi beam takes to reach the shot, is held unstruck, and fades over from the strike, as the shot does */
+  reachSecs: 0.06,
+  holdSecs: 0.6,
+  outSecs: 0.3,
+  flareSecs: 0.3,
+  /** Metres across the psi beam, and the glow where it meets the shot */
+  width: 0.025,
+  flareM: 0.12,
+  /** The band floating round their head, which the beam leaves from, in the head bone's frame: its radius, height and thickness */
+  band: { radius: 0.33, y: 0.25, thick: 0.012, bob: 0.012, bobHz: 1.2, inSecs: 0.08 },
+};
+
+/** Armour: struck, the shot glances off the face it met, in a spray of sparks — see `NpcArmour` */
+export const armourConfig = {
   color: "#8fe6ff",
-  /** Times the size of the head the helmet is */
-  helmet: 1.35,
-  /** Times its part's girth, and its length, a band is */
-  band: { girth: 1.35, length: 0.95 },
-  /** Hex cells round and along each kind */
-  cells: { helmet: [14, 4], band: [10, 3] } as Record<"helmet" | "band", [number, number]>,
-  /** Unit lengths a second the lattice spreads from the hit */
-  spreadSpeed: 4,
-  /** Seconds it holds, then the seconds by which it has dissolved, cell by cell */
-  holdSecs: 0.35,
-  endSecs: 0.9,
+  /** The shot glancing off: metres a second, metres long and wide, seconds, and how white */
+  ricochet: { speed: 9, length: 0.45, width: 0.03, life: 0.25, white: 0.6 },
+  /** Sparks round it: how many, radians off it at most, metres a second, metres long and wide, seconds */
+  sparks: { count: 10, spread: 0.9, speed: [1.5, 3.5] as [number, number], length: 0.05, width: 0.012, life: 0.35 },
+  /** How fast a streak slows, and how bright it is */
+  drag: 6,
+  bright: 0.9,
 };
 
 /** Seconds a pain clip takes to go limp into pacified: it ends stood, not slumped */
@@ -433,11 +394,6 @@ export const fadeSecs: Record<
   crouch_strafe_left: {},
   crouch_strafe_right: {},
   crouch_walk: {},
-  dodge_arm_left: {},
-  dodge_arm_right: {},
-  dodge_duck: {},
-  dodge_duck_low: {},
-  dodge_hop: {},
   drop: {},
   drop_left: {},
   idle: { shuffle: 0.15 },
@@ -464,12 +420,6 @@ export const fadeSecs: Record<
   // brief, so it must fade quickly to be seen at all
   shuffle: { breathe: 0.15, idle: 0.15 },
   sit: {},
-  sit_dodge_back: {},
-  sit_dodge_brace: {},
-  sit_dodge_duck: {},
-  sit_dodge_lean_left: {},
-  sit_dodge_lean_right: {},
-  sit_dodge_legs: {},
   sit_pacified: {},
   sit_pain_head: {},
   sit_pain_high: { sit_pacified: pacifyFadeSecs },
@@ -616,9 +566,9 @@ export const gaitStride = {
 /** Metres per second strafing each way, blended as the gaits are — see `w.e.move`'s `strafe`. Crouched, any move */
 export const strafeSpeed = {
   walk: 1.2,
-  strafe_right: 0.5,
+  strafe_right: 0.73,
   backwards: 1,
-  strafe_left: 0.5,
+  strafe_left: 0.73,
   crouch_walk: 0.5,
   crouch_strafe_right: 0.3,
   crouch_backwards: 0.4,
