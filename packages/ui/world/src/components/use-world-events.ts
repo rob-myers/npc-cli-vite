@@ -888,9 +888,9 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         if (w.helper.isGmDoorKey(meta.gdKey) === false || e.clickId !== undefined) return; // e.g. `pick 1`
         if (meta.type === "spot" && e.rightDown === true) return; // a spot's right click chooses it
         const door = w.door.byKey[meta.gdKey];
-        // a long press on a switch or spot holds it as it is, or lets it go. On the door, it locks it keyless
+        // a long press on a switch or spot holds an open door, or lets it go, and locks a shut one keyless
         if (e.longDown !== true) state.toggleDoor(meta.gdKey);
-        else if (meta.type === "door") state.toggleLock(meta.gdKey, {});
+        else if (meta.type === "door" || door?.open === false) state.toggleLock(meta.gdKey, {});
         else if (door !== undefined) w.door.setHeld(door, !door.held);
       },
       async openDoorwaysWithNpcs() {
@@ -1913,7 +1913,7 @@ export type State = {
   onEnterCollider(e: JshCli.EnterColliderEvent, npc: Npc): void;
   /** Opens a menu on the npc, decor or door picked, its Cancel under the press — see `PickMenu` */
   openPickMenu(e: Extract<JshCli.Event, { key: "picked" }>): void;
-  /** A press on a door, its switch or its spot: toggles it. A long press holds it, or on the door locks it */
+  /** A press on a door, its switch or its spot: toggles it. A long press holds an open door, and locks a shut one */
   onPickDoor(e: Extract<JshCli.Event, { key: "picked" }>): void;
   onExitCollider(e: JshCli.ExitColliderEvent, npc: Npc): void;
   onNpcEvent(e: Extract<JshCli.Event, { npcKey: string }>): void;
