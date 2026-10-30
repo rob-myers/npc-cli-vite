@@ -33,6 +33,10 @@ A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), a
   It passes there, e.g. they moved since it was aimed.
 - **A shot passing them** runs on to the wall beyond: one raycast from the target along the shot, found by `wallBeyond`
   within `passMax` metres. Until that returns it runs `passStub` past them. It meets the floor first if it is heading down.
+- **Whom it meets beyond** (`passOn`): those within reach of its target, in turn along its line, short of that wall,
+  by the box test targeting makes (`npcOnRay`). Each takes the badge's outcome, else `hit`. A ghost, or one already,
+  passes it on, kept a ghost. The first that is not stops it, and is landed on (`shot.beyond`). It waits, unseen,
+  until these are found, and every ghost among them is one (`shotWaits`).
 - The player hears how a shot of theirs that did not hit ended (`w.hud.say`): `ghost` or `armour`.
 
 ### Ghost
@@ -42,8 +46,9 @@ They become a ghost, and the shot passes through them (`w.npcGhost`, `ghostConfi
 - As the shot locks on (`shoot`, `ghost`), their body becomes a dot screen over `inSecs`, its dots fixed on the
   screen (`dots`, as `dotScreen` in `extra-fx`). It is the npc's `dotScreen` uniform, which leaves their label and
   outline be.
-- The shot waits, unseen, until they are a ghost (`isGhosting`), then passes through them to the wall beyond, as one
-  aimed beside them would (`shot.through`, `shot.past`). No clip plays, but `npc-shot` is emitted.
+- The shot waits, unseen, until they are a ghost (`isGhosting`), then passes through them, as one aimed beside them
+  would (`shot.through`, `shot.past`): on to whom it meets beyond (`passOn`), else the wall. No clip plays, but
+  `npc-shot` is emitted.
 - Meanwhile no phaser targets them (`syncTarget`): its dot passes through them to the wall, or whoever is behind.
 - They stay so `holdSecs` after it strikes, else `missSecs` after it locked on, then come back over `outSecs`.
 
@@ -135,8 +140,8 @@ does one with a laser.
   them.
 - As it locks on (`shoot`, `meetPart`), the line from the muzzle tip through the dot is tested against each hit
   region's bone, by the box round what it moves most (`partOnRay` in `phaser-beam.ts`). The nearest met is the part
-  hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to the
-  wall beyond. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
+  hit, and its point: a forearm in the way takes it. Meeting none, it has no outcome, and runs on through the dot to
+  whom it meets beyond, else the wall. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
 - With no one met, Space fires along the line (A shot at no one), at the dot's end if it was cast
   along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered raises it.
 - Anyone may target, through jsh: `phaser rob --target`, `tilt:1`, `--fire`, `--cancel`. An npc's ends when

@@ -361,8 +361,8 @@ export default function Phasers() {
           if (beam.to !== null && beam.to.npcKey !== null && beam.locked.target === 1 && arm.shot?.to !== beam.to) {
             state.shoot(npc, arm, beam.to);
           }
-          // a shot that passes through them waits, unseen, until they are a ghost
-          if (arm.shot?.to === beam.to && arm.shot.outcome === "ghost" && w.npcGhost?.isGhosting(arm.shot.to.npcKey)) {
+          // a shot passing them waits, unseen, until it knows whom it meets beyond, and each ghost is one
+          if (arm.shot?.to === beam.to && shotWaits(w, arm.shot)) {
             beam.shown.presence = Math.min(beam.shown.presence, 1e-3);
             beam.locked.presence = Math.min(beam.locked.presence, 1e-3);
           }
@@ -466,20 +466,24 @@ export default function Phasers() {
         const end = shotPast(arm, from, tmpPast) ?? part;
         if (w.shields?.stop(arm.sight.shields, from, from, end, w.shields.phaserOf(npc.key)?.meta?.freqs) != null)
           return;
-        const hand = handOf(npc, arm);
-        hand?.updateWorldMatrix(true, false);
-        const tip = hand?.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
-        if (tip !== undefined && acrossStop(arm, tip, end, tmpAcross) !== null) return; // as drawn
-        const outcome = arm.shot?.to === to ? arm.shot.outcome : "hit";
-        if (outcome === "ghost") {
-          w.npcGhost?.struck(dst); // it passes through them
-          state.land(npc, dst, to.part, outcome);
-        }
-        // the burst ends where it landed, rather than following them as they writhe. One passing them runs on
-        if (end === part) {
-          state.land(npc, dst, to.part, outcome);
-          if (outcome === "armour") w.npcArmour?.flash(dst, to.part, part, tip ?? from);
-          arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(part);
+        const tip = tipOf(npc, arm, tmpTip);
+        if (tip !== null && acrossStop(arm, tip, end, tmpAcross) !== null) return; // as drawn
+        const shot = arm.shot?.to === to ? arm.shot : null;
+        const outcome = shot?.outcome ?? "hit";
+        /** A ghost passes it on. Anyone else is where the burst ends, rather than following them as they writhe */
+        const landOn = (on: Npc, target: NpcTarget, outcome: JshCli.ShotOutcome, at: THREE.Vector3) => {
+          if (outcome === "ghost") w.npcGhost?.struck(on);
+          state.land(npc, on, target.part, outcome);
+          if (outcome === "ghost") return;
+          if (outcome === "armour") w.npcArmour?.flash(on, target.part, at, tip ?? from);
+          arm.hitAt = (arm.hitAt ?? new THREE.Vector3()).copy(at);
+        };
+        // one passing them, unless a ghost, has no outcome
+        if (outcome === "ghost" || end === part) landOn(dst, to, outcome, part);
+        // on through whoever it meets beyond, to the one it lands on
+        for (const next of shot?.beyond ?? []) {
+          const on = w.n[next.npcKey];
+          if (on !== undefined) landOn(on, next, next.outcome, targetPoint(on, next, tmpPart));
         }
         arm.target = arm.firedSecs = null;
         w.hud?.update();
@@ -493,10 +497,8 @@ export default function Phasers() {
         if (outcome === "hit" && dst.anim.hurt !== null && theirs !== undefined) lower(theirs);
       },
       meetPart(npc, arm, dst, to) {
-        const hand = handOf(npc, arm);
-        if (hand === null) return true; // no muzzle to tell from
-        hand.updateWorldMatrix(true, false);
-        const tip = hand.localToWorld(tmpTip.fromArray(phaserConfig.beamFrom));
+        const tip = tipOf(npc, arm, tmpTip);
+        if (tip === null) return true; // no muzzle to tell from
         tmpShotRay.set(tip, tmpShotDir.subVectors(targetPoint(dst, to, tmpPart), tip).normalize());
         const met = partOnRay(dst, tmpShotRay, hitBones);
         if (met === null) return false;
@@ -504,8 +506,38 @@ export default function Phasers() {
         Object.assign(to, { part: met.part, local: met.local.clone() });
         return true;
       },
+      passOn(npc, arm, shot) {
+        const { through, past } = shot;
+        const dst = w.n[shot.to.npcKey];
+        shot.beyond = [];
+        if (through === null || dst === undefined) return;
+        const tip = tipOf(npc, arm, tmpTip) ?? tmpTip.copy(npc.position);
+        const ray = tmpShotRay.set(tip, tmpShotDir.subVectors(through, tip).normalize());
+        /** Metres on the ground to the wall beyond */
+        const reach = past === null ? phaserConfig.passMax : Math.hypot(past.x - tip.x, past.y - tip.z);
+        // those within reach of whom it passes that its line meets short of the wall, in turn
+        const met = w.e
+          .getNpcsInReach(dst.key)
+          .flatMap((on) => {
+            const hit = on.key === npc.key ? null : partOnRay(on, ray, hitBones); // shared, so copied
+            if (hit === null || Math.hypot(hit.point.x - tip.x, hit.point.z - tip.z) > reach) return [];
+            return [{ on, part: hit.part, local: hit.local.clone(), x: hit.point.x, y: hit.point.z, dist: hit.dist }];
+          })
+          .sort((a, b) => a.dist - b.dist);
+        for (const { on, part, local, x, y } of met) {
+          // a ghost already passes it on too
+          const outcome = w.npcGhost?.ghosts.has(on.key) === true ? "ghost" : (w.debug?.forceShot ?? "hit");
+          shot.beyond.push({ npcKey: on.key, part, local, outcome });
+          if (outcome !== "ghost") {
+            shot.past = { x, y }; // it ends on them
+            break;
+          }
+          w.npcGhost?.ghost(on); // one, or kept one, as it passes through
+        }
+        w.r3f?.invalidate();
+      },
       shoot(npc, arm, to) {
-        const shot: ArmShot = { to, outcome: w.debug?.forceShot ?? "hit", through: null, past: null };
+        const shot: ArmShot = { to, outcome: w.debug?.forceShot ?? "hit", through: null, past: null, beyond: null };
         arm.shot = shot;
         const dst = w.n[to.npcKey];
         if (dst === undefined) return;
@@ -521,7 +553,7 @@ export default function Phasers() {
         const dir = { x: (through.x - npc.position.x) / length, y: (through.z - npc.position.z) / length };
         void wallBeyond(w, dst.point, dir).then((past) => {
           shot.past = past;
-          w.r3f?.invalidate();
+          state.passOn(npc, arm, shot);
         });
       },
       respawned(npcKey) {
@@ -914,6 +946,8 @@ export type State = PhaserResources & {
   shoot(npc: Npc, arm: ArmEntry, to: NpcTarget): void;
   /** The line from their muzzle through `to`'s point meets a part of `dst`'s, which `to` then takes: `false` for none */
   meetPart(npc: Npc, arm: ArmEntry, dst: Npc, to: NpcTarget): boolean;
+  /** Whom a shot passing its target meets beyond, short of the wall, ghosts passed through: `shot.beyond` */
+  passOn(npc: Npc, arm: ArmEntry, shot: ArmShot): void;
   /** A shot by `npc` reached `dst`'s `part`: its effect, its event, and a word to the player if it did not hit */
   land(npc: Npc, dst: Npc, part: null | string, outcome: JshCli.ShotOutcome): void;
   sync(): void;
@@ -1035,7 +1069,23 @@ type ArmShot = {
   /** Its line meeting no part of them, where it passes. It runs on to `past`, the wall beyond on the ground, once that is found */
   through: null | THREE.Vector3;
   past: null | Geom.VectJson;
+  /** Passing them, whom it meets beyond in turn, each with its outcome: ghosts, then whom it lands on. `null` until found */
+  beyond: null | (NpcTarget & { part: string; outcome: JshCli.ShotOutcome })[];
 };
+
+/** Their gun's muzzle in world space, written to `out`: `null` with no forearm to hold it */
+function tipOf(npc: Npc, arm: ArmEntry, out: THREE.Vector3) {
+  const hand = handOf(npc, arm);
+  hand?.updateWorldMatrix(true, false); // else a frame stale: the frameloop is on demand
+  return hand?.localToWorld(out.copy(muzzle)) ?? null;
+}
+
+/** A shot passing them waits until it knows whom it meets beyond, and every ghost among them is one */
+function shotWaits(w: import("./World").State, shot: ArmShot) {
+  if (shot.through !== null && shot.beyond === null) return true;
+  const ghosts = w.npcGhost;
+  return ghosts?.isGhosting(shot.to.npcKey) === true || shot.beyond?.some((b) => ghosts?.isGhosting(b.npcKey)) === true;
+}
 
 /** Where a shot passing them ends: on through them to the wall or floor beyond. `null` for any other shot */
 function shotPast(arm: ArmEntry, from: THREE.Vector3, out: THREE.Vector3) {
