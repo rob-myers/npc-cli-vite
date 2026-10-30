@@ -233,7 +233,7 @@ export const shaderConfig = {
   gunColor: "#5f6875",
   /** Its emitter, deactivated */
   deadColor: "#3d7fd9",
-  paleGunColor: "#474d57",
+  paleGunColor: "#7d8591",
   /** Metres of radius of the beam, and of the ball at its end */
   radius: 0.01,
   tipRadius: 0.035,

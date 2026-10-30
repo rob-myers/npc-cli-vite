@@ -45,3 +45,16 @@
     scale: 1.8;
   }
 }
+
+/* ...gentler on a light floor, where its ring and glow already make it plain */
+@keyframes laser-pulse-soft {
+  0%,
+  100% {
+    scale: 1;
+    opacity: 1;
+  }
+  50% {
+    scale: 1.3;
+    opacity: 0.75;
+  }
+}
