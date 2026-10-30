@@ -7,6 +7,7 @@ awaitWorld
 predicates
 inventory
 sidestep
+sounds
 spots --show
 
 `.trim();

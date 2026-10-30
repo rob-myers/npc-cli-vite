@@ -64,6 +64,11 @@ declare namespace JshCli {
       }
     | { key: "phasers"; armed: boolean; npcKeys: string[] }
     | {
+        /** A shot left `by`'s phaser: at someone as its beam locks on, else along its aim */
+        key: "phaser-fired";
+        by: string;
+      }
+    | {
         /** `by`'s psi acted on them, a placeholder */
         key: "psi-action";
         by: string;

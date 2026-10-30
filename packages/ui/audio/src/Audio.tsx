@@ -11,66 +11,97 @@ import {
   QuestionIcon,
   SlidersHorizontalIcon,
   StopIcon,
+  WaveformIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef } from "react";
 import {
-  type Ambience,
-  type AmbienceConfig,
-  type AmbienceKey,
-  type AmbienceMeterKey,
-  ambienceDefaults,
-  ambienceRanges,
-  ambienceUnits,
-  createAmbience,
-} from "./ambience";
+  type AudioKey,
+  type AudioMeterKey,
+  audioChanges,
+  audioConfigVersion,
+  audioDefaults,
+  audioRanges,
+  audioUnits,
+  getAudio,
+  isStepSet,
+  type SfxKey,
+  type Side,
+  sfxKeys,
+  stepSets,
+} from "./engine";
 import { graphColours } from "./graph-data";
-import { type HelpStep, help, helpIntro } from "./help";
+import { type HelpStep, type HelpWhen, help, helpIntro } from "./help";
 import { Graph } from "./NodeGraph";
 import type { AudioUiMeta } from "./schema";
 
-/** Plays the ambience and tunes it by ear, laid out as a mixing desk: a strip per channel */
+/** Plays the player's footsteps and the weapon sounds, tuned by ear on a mixing desk: a strip per channel */
 export default function Audio({ meta }: { meta: AudioUiMeta }) {
   const { uiStoreApi } = useContext(UiContext);
 
   const state = useStateRef(
     (): State => ({
       canvas: null,
-      config: { ...ambienceDefaults, ...meta.config },
-      engine: null,
+      bins: new Uint8Array(2048),
       frameId: 0,
+      live: false,
       help: null,
       rootEl: null,
-      levels: { drone: 0, air: 0, choir: 0, breath: 0, master: 0 },
-      meterEls: { drone: null, air: null, choir: null, breath: null, master: null },
+      stepSide: "left",
+      levels: { steps: 0, fx: 0, master: 0 },
+      meterEls: { steps: null, fx: null, master: null },
       wave: new Float32Array(1024),
 
-      play() {
-        state.engine = createAmbience(state.config);
-        state.draw();
-        state.update();
-      },
-      start() {
-        state.play();
-        state.setDisabled(false);
-      },
-      stop() {
-        state.engine?.stop();
-        state.engine = null;
-        cancelAnimationFrame(state.frameId);
-        for (const key of meterKeys) state.setMeter(key, 0);
+      draw() {
+        if (!state.live) return;
+        state.frameId = requestAnimationFrame(state.draw);
+        // nothing read or drawn whilst the desk is out of sight, as its tab hidden
+        if (state.rootEl?.checkVisibility() !== true) return;
+        const audio = getAudio();
+        for (const key of meterKeys) {
+          audio.meters[key].getFloatTimeDomainData(state.wave);
+          let peak = 0;
+          for (const sample of state.wave) peak = Math.max(peak, Math.abs(sample));
+          const level = Math.min(1, Math.max(0, 1 + (20 * Math.log10(peak || 1e-6)) / meterFloorDb));
+          state.setMeter(key, Math.max(level, state.levels[key] - meterFall));
+        }
+
         const { canvas } = state;
-        canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+        const g = canvas?.getContext("2d");
+        if (!canvas || !g) return;
+        const { bins } = state;
+        audio.analyser.getByteFrequencyData(bins);
+        const { width, height } = canvas;
+        g.clearRect(0, 0, width, height);
+        g.fillStyle = "#4ade80";
+        const hzPerBin = audio.ctx.sampleRate / audio.analyser.fftSize;
+        for (let x = 0; x < width; x += 3) {
+          const hz = spectrumHz[0] * (spectrumHz[1] / spectrumHz[0]) ** (x / width);
+          const level = bins[Math.min(bins.length - 1, Math.round(hz / hzPerBin))] / 255;
+          g.fillRect(x, height * (1 - level), 2, height * level);
+        }
+      },
+      onChange() {
+        const config = audioChanges(getAudio().config);
+        const { stepSet } = getAudio();
+        uiStoreApi.setUiMeta(meta.id, (draft) => {
+          Object.assign(draft as AudioUiMeta, { config, configVersion: audioConfigVersion, stepSet });
+        });
         state.update();
+      },
+      onKeyDown(e) {
+        if (e.key === "Escape") return state.setHelp(null);
+        const key = (e.target as HTMLElement).closest<HTMLElement>("[data-help]")?.dataset.help as AudioKey;
+        if (e.key !== "Enter" || key === undefined) return;
+        e.preventDefault();
+        state.help === null ? state.setHelp(key) : state.stepHelp(e.shiftKey ? -1 : 1);
+      },
+      playStep(run) {
+        state.stepSide = state.stepSide === "left" ? "right" : "left";
+        getAudio().step({ side: state.stepSide, run, level: run ? 1 : 0.7 });
       },
       setDisabled(disabled) {
         uiStoreApi.setUiMeta(meta.id, (draft) => void (draft.disabled = disabled));
-      },
-      setConfig(partial) {
-        state.config = { ...state.config, ...partial };
-        state.engine?.set(partial);
-        uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as AudioUiMeta).config = state.config));
-        state.update();
       },
       setHelp(step) {
         state.set({ help: step });
@@ -79,86 +110,92 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         // focused, so the arrow keys turn it at once
         el?.querySelector<HTMLElement>('[role="slider"]')?.focus({ preventScroll: true });
       },
-      onKeyDown(e) {
-        if (e.key === "Escape") return state.setHelp(null);
-        const key = (e.target as HTMLElement).closest<HTMLElement>("[data-help]")?.dataset.help as AmbienceKey;
-        if (e.key !== "Enter" || key === undefined) return;
-        e.preventDefault();
-        state.help === null ? state.setHelp(key) : state.stepHelp(e.shiftKey ? -1 : 1);
-      },
-      stepHelp(by) {
-        const at = state.help === null ? 0 : tour.indexOf(state.help) + by;
-        state.setHelp(tour[(at + tour.length) % tour.length]);
-      },
       setMeter(key, level) {
         state.levels[key] = level;
         const el = state.meterEls[key];
         if (el) el.style.height = `${(1 - level) * 100}%`;
       },
-      draw() {
-        state.frameId = requestAnimationFrame(state.draw);
-        const { canvas, engine } = state;
-        if (!engine) return;
-
-        for (const key of meterKeys) {
-          engine.meters[key].getFloatTimeDomainData(state.wave);
-          let peak = 0;
-          for (const sample of state.wave) peak = Math.max(peak, Math.abs(sample));
-          const level = Math.min(1, Math.max(0, 1 + (20 * Math.log10(peak || 1e-6)) / meterFloorDb));
-          state.setMeter(key, Math.max(level, state.levels[key] - meterFall));
+      setPaused(paused) {
+        const audio = getAudio();
+        paused ? audio.pause() : audio.play();
+        state.setDisabled(paused);
+      },
+      stepHelp(by) {
+        const at = state.help === null ? 0 : tour.indexOf(state.help) + by;
+        state.setHelp(tour[(at + tour.length) % tour.length]);
+      },
+      toggleLive() {
+        state.live = !state.live;
+        cancelAnimationFrame(state.frameId);
+        if (state.live) state.draw();
+        else {
+          for (const key of meterKeys) state.setMeter(key, 0);
+          const { canvas } = state;
+          canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
         }
-
-        const g = canvas?.getContext("2d");
-        if (!canvas || !g) return;
-        const bins = new Uint8Array(engine.analyser.frequencyBinCount);
-        engine.analyser.getByteFrequencyData(bins);
-        const { width, height } = canvas;
-        g.clearRect(0, 0, width, height);
-        g.fillStyle = "#4ade80";
-        const hzPerBin = engine.ctx.sampleRate / engine.analyser.fftSize;
-        for (let x = 0; x < width; x += 3) {
-          const hz = spectrumHz[0] * (spectrumHz[1] / spectrumHz[0]) ** (x / width);
-          const level = bins[Math.min(bins.length - 1, Math.round(hz / hzPerBin))] / 255;
-          g.fillRect(x, height * (1 - level), 2, height * level);
-        }
+        state.update();
+      },
+      togglePlay() {
+        const audio = getAudio();
+        if (audio.status === "playing") return audio.stop();
+        audio.play();
+        state.setDisabled(false);
       },
     }),
     { deps: [uiStoreApi] },
   );
 
-  useEffect(() => () => state.stop(), []);
-
+  // remade on an edit of the engine, which keeps its status
   useEffect(() => {
-    void state.engine?.ctx[meta.disabled ? "suspend" : "resume"]();
-  }, [meta.disabled, state.engine]);
+    const audio = getAudio();
+    if (meta.config !== undefined && meta.configVersion === audioConfigVersion) audio.set(meta.config);
+    if (isStepSet(meta.stepSet)) audio.setStepSet(meta.stepSet);
+    const unsubscribe = audio.subscribe(state.onChange);
+    if (state.live) state.draw();
+    return () => {
+      unsubscribe();
+      cancelAnimationFrame(state.frameId);
+    };
+  }, [getAudio]);
 
-  // an edit of the engine is heard without pressing play again
+  // its tab's button pauses it too, so only a change acts: a mount leaves the steps be
+  const wasDisabled = useRef(meta.disabled);
   useEffect(() => {
-    if (state.engine === null) return;
-    state.stop();
-    state.play();
-  }, [createAmbience]);
+    if (wasDisabled.current === meta.disabled) return;
+    wasDisabled.current = meta.disabled;
+    const audio = getAudio();
+    if (meta.disabled === true) audio.pause();
+    else if (audio.status === "paused") audio.play();
+  }, [meta.disabled]);
 
-  const playing = state.engine !== null;
-  const paused = playing && meta.disabled === true;
+  const audio = getAudio();
+  const { config } = audio;
+  const playing = audio.status !== "stopped";
+  const paused = audio.status === "paused";
   const view = meta.view ?? "desk";
   const setView = (next: AudioUiMeta["view"]) => {
     state.setHelp(null);
     uiStoreApi.setUiMeta(meta.id, (draft) => void ((draft as AudioUiMeta).view = next));
   };
+  const setConfig = (partial: Partial<Record<AudioKey, number>>) => audio.set(partial);
+  const playButton = (className: string) => (
+    <button type="button" title={playing ? "stop" : "play"} className={className} onClick={state.togglePlay}>
+      {playing ? <StopIcon className="size-4" weight="fill" /> : <PlayIcon className="size-4" weight="fill" />}
+    </button>
+  );
   const pauseButton = (baseClass: string, pausedClass: string) => (
     <button
       type="button"
       title={paused ? "resume" : "pause"}
       disabled={!playing}
       className={cn(baseClass, "disabled:cursor-default disabled:opacity-40", paused && pausedClass)}
-      onClick={() => state.setDisabled(!meta.disabled)}
+      onClick={() => state.setPaused(!paused)}
     >
       <PauseIcon className="size-4" weight="fill" />
     </button>
   );
   /** Touring, the control explained stands out and pressing another moves the tour to it */
-  const helped = (key: AmbienceKey) => ({
+  const helped = (key: AudioKey) => ({
     "data-help": key,
     className: cn(
       "rounded transition-opacity",
@@ -166,12 +203,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
     ),
     onFocusCapture: () => state.help !== null && state.help !== key && state.setHelp(key),
   });
-  const knob = (key: AmbienceKey, colour: string) => (
-    <div key={key} {...helped(key)}>
-      <Knob k={key} value={state.config[key]} colour={colour} onChange={(v) => state.setConfig({ [key]: v })} />
-    </div>
-  );
-  const fader = (key: AmbienceKey & AmbienceMeterKey, colour: string, heightClass = faderClass) => (
+  const fader = (key: AudioKey & AudioMeterKey, colour: string, heightClass = faderClass) => (
     <div className={cn("mt-auto flex justify-center gap-3 px-2 pt-3 [@container_(height<40rem)]:pt-1.5", heightClass)}>
       <div
         className="relative w-2.5 overflow-hidden rounded-sm bg-black ring-1 ring-black"
@@ -185,7 +217,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         <div className="absolute inset-0" style={{ backgroundImage: meterSegments }} />
       </div>
       <div {...helped(key)} className={cn(helped(key).className, "flex")}>
-        <Fader k={key} value={state.config[key]} colour={colour} onChange={(v) => state.setConfig({ [key]: v })} />
+        <Fader k={key} value={config[key]} colour={colour} onChange={(v) => setConfig({ [key]: v })} />
       </div>
     </div>
   );
@@ -213,29 +245,20 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
         >
           <FlowArrowIcon className="size-4" />
         </button>
-        {view === "graph" && (
-          <button
-            type="button"
-            title={playing ? "stop" : "play"}
-            className={cn(viewButtonClass, playing && "text-emerald-300")}
-            onClick={() => (playing ? state.stop() : state.start())}
-          >
-            {playing ? <StopIcon className="size-4" weight="fill" /> : <PlayIcon className="size-4" weight="fill" />}
-          </button>
-        )}
+        {view === "graph" && playButton(cn(viewButtonClass, playing && "text-emerald-300"))}
         {view === "graph" && pauseButton(viewButtonClass, "text-amber-300")}
       </div>
 
       {view === "graph" && (
-        <div className="flex size-full overflow-auto p-3 pt-11">
-          <Graph config={state.config} playing={playing} />
+        <div className="flex size-full overflow-auto scrollbar-thin p-3 pt-11">
+          <Graph config={config} playing={playing && !paused} />
         </div>
       )}
 
       {/* hidden, not unmounted, so its meters and screen keep their elements */}
       <div
         className={cn(
-          "[container-type:size] flex size-full overflow-auto p-3 pt-11 [@container_(height<40rem)]:pb-1",
+          "[container-type:size] flex size-full overflow-auto scrollbar-thin p-3 pt-11 [@container_(height<40rem)]:pb-1",
           state.help !== null && "pb-48",
           view === "graph" && "hidden",
         )}
@@ -244,20 +267,48 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
           className="m-auto flex @min-lg:h-full @min-lg:max-h-[42rem] min-h-fit max-w-full flex-wrap justify-center gap-1.5 @max-lg:w-full rounded-lg border border-black bg-[#1b1d21] p-2 [@container_(height<40rem)]:p-1 shadow-[inset_0_1px_0_#ffffff14,0_8px_24px_#000a]"
           style={{ backgroundImage: deskTexture }}
         >
-          {strips.map(({ key, title, colour, knobs, knobsClass }) => (
-            <Strip key={key} title={title} colour={colour} className="@max-lg:grow">
-              <div
-                className={cn(
-                  "grid justify-center gap-x-1 gap-y-2.5 px-2 pt-2 [@container_(height<40rem)]:gap-y-1",
-                  knobsClass,
-                )}
-              >
-                {knobs.map((k) => knob(k, colour))}
-              </div>
-              {fader(key, colour)}
-              <Readout value={state.config[key]} colour={colour} />
-            </Strip>
-          ))}
+          <Strip title="steps" colour={stepsColour} className="@max-lg:grow">
+            <div className="grid grid-cols-[3.5rem] justify-center gap-1.5 px-2 pt-2">
+              {stepSets.map((set) => (
+                <button
+                  key={set}
+                  type="button"
+                  title={`${set}: play a step and use these footsteps, shift for a running one`}
+                  className={cn(
+                    buttonClass,
+                    "h-7 w-full text-[9px] tracking-wider uppercase",
+                    audio.stepSet === set && "text-amber-300 shadow-[0_0_8px_#f59e0b66]",
+                  )}
+                  onClick={(e) => {
+                    audio.setStepSet(set);
+                    state.playStep(e.shiftKey);
+                  }}
+                >
+                  {set}
+                </button>
+              ))}
+            </div>
+            {fader("steps", stepsColour)}
+            <Readout value={config.steps} colour={stepsColour} />
+          </Strip>
+
+          <Strip title="fx" colour={fxColour} className="@max-lg:grow">
+            <div className="grid grid-cols-[3.5rem] justify-center gap-1.5 px-2 pt-2">
+              {sfxKeys.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={`play ${key}`}
+                  className={cn(buttonClass, "h-7 w-full text-[9px] tracking-wider uppercase")}
+                  onClick={() => audio.sfx(key)}
+                >
+                  {sfxLabels[key]}
+                </button>
+              ))}
+            </div>
+            {fader("fx", fxColour)}
+            <Readout value={config.fx} colour={fxColour} />
+          </Strip>
 
           {/* too narrow for another strip, it lies along the foot of the desk */}
           <Strip title="master" colour={masterColour} className="@max-lg:basis-full">
@@ -269,25 +320,15 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                   height={56}
                   className="h-14 w-33 @min-lg:@max-xl:w-17 rounded-sm border border-black bg-[#07140c] shadow-[inset_0_0_8px_#000]"
                 />
+
                 <div className="grid grid-cols-3 gap-1 @min-lg:@max-xl:grid-cols-2">
-                  <button
-                    type="button"
-                    title={playing ? "stop" : "play"}
-                    className={cn(buttonClass, playing && "text-emerald-300 shadow-[0_0_8px_#34d39966]")}
-                    onClick={() => (playing ? state.stop() : state.start())}
-                  >
-                    {playing ? (
-                      <StopIcon className="size-4" weight="fill" />
-                    ) : (
-                      <PlayIcon className="size-4" weight="fill" />
-                    )}
-                  </button>
+                  {playButton(cn(buttonClass, playing && "text-emerald-300 shadow-[0_0_8px_#34d39966]"))}
                   {pauseButton(buttonClass, "text-amber-300 shadow-[0_0_8px_#fbbf2466]")}
                   <button
                     type="button"
                     title="reset to defaults"
                     className={buttonClass}
-                    onClick={() => state.setConfig(ambienceDefaults)}
+                    onClick={() => setConfig(audioDefaults)}
                   >
                     <ArrowCounterClockwiseIcon className="size-4" />
                   </button>
@@ -295,9 +336,17 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                     type="button"
                     title="copy config"
                     className={buttonClass}
-                    onClick={() => void navigator.clipboard.writeText(JSON.stringify(state.config, null, 2))}
+                    onClick={() => void navigator.clipboard.writeText(JSON.stringify(config, null, 2))}
                   >
                     <CopyIcon className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    title={state.live ? "stop the live meters" : "live meters and spectrum, redrawn each frame"}
+                    className={cn(buttonClass, state.live && "text-emerald-300 shadow-[0_0_8px_#34d39966]")}
+                    onClick={state.toggleLive}
+                  >
+                    <WaveformIcon className="size-4" />
                   </button>
                   <button
                     type="button"
@@ -309,10 +358,9 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
                   </button>
                 </div>
               </div>
-              <div className="flex justify-center px-2 pt-2.5">{knob("reverb", masterColour)}</div>
               <div className="flex flex-1 flex-col @max-lg:flex-none">
                 {fader("master", masterColour, cn(faderClass, "@max-lg:basis-28 @max-lg:flex-none"))}
-                <Readout value={state.config.master} colour={masterColour} />
+                <Readout value={config.master} colour={masterColour} />
               </div>
             </div>
           </Strip>
@@ -322,7 +370,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
       {state.help !== null && (
         <HelpCard
           step={state.help}
-          value={state.help === "intro" ? null : state.config[state.help]}
+          value={state.help === "intro" ? null : config[state.help]}
           onStep={state.stepHelp}
           onClose={() => state.setHelp(null)}
         />
@@ -331,7 +379,7 @@ export default function Audio({ meta }: { meta: AudioUiMeta }) {
   );
 }
 
-/** The tour's caption, along the foot of the pane so it covers no strip's knobs */
+/** The tour's caption, along the foot of the pane so it covers no strip's controls */
 function HelpCard(props: { step: HelpStep; value: null | number; onStep(by: number): void; onClose(): void }) {
   const { step } = props;
   const entry = step === "intro" ? null : help[step];
@@ -346,10 +394,10 @@ function HelpCard(props: { step: HelpStep; value: null | number; onStep(by: numb
           <span
             className={cn(
               "rounded-sm px-1 py-px text-[9px] tracking-wider uppercase",
-              entry.live ? "bg-emerald-400/15 text-emerald-300" : "bg-amber-400/15 text-amber-300",
+              entry.when === "now" ? "bg-emerald-400/15 text-emerald-300" : "bg-amber-400/15 text-amber-300",
             )}
           >
-            {entry.live ? "heard at once" : `from the next ${step.startsWith("breath") ? "breath" : "chord"}`}
+            {whenLabels[entry.when]}
           </span>
         )}
       </div>
@@ -361,9 +409,9 @@ function HelpCard(props: { step: HelpStep; value: null | number; onStep(by: numb
       {step !== "intro" && (
         <div className="mt-2 font-mono text-[10px] tabular-nums text-zinc-500">
           now {props.value}
-          {ambienceUnits[step]} · range {ambienceRanges[step][0]} to {ambienceRanges[step][1]}
-          {ambienceUnits[step]} · default {ambienceDefaults[step]}
-          {ambienceUnits[step]}
+          {audioUnits[step]} · range {audioRanges[step][0]} to {audioRanges[step][1]}
+          {audioUnits[step]} · default {audioDefaults[step]}
+          {audioUnits[step]}
         </div>
       )}
       {/* the card grows upwards, so only its foot stays put under the pointer */}
@@ -418,60 +466,9 @@ function Readout({ value, colour }: { value: number; colour: string }) {
   );
 }
 
-/** Turned by dragging up and down, or the arrow keys. A double click restores its default */
-function Knob({ k, value, colour, onChange }: ControlProps) {
-  const range = ambienceRanges[k];
-  const [min, max] = range;
-  const frac = (value - min) / (max - min);
-  const drag = useRef<null | { y: number; value: number }>(null);
-
-  return (
-    <div className="flex flex-col items-center gap-1 [@container_(height<40rem)]:gap-0.5" title={k}>
-      <div
-        {...sliderProps(k, value, onChange)}
-        className="cursor-ns-resize touch-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          drag.current = { y: e.clientY, value };
-        }}
-        onPointerMove={(e) => {
-          if (drag.current === null) return;
-          const turned = (drag.current.y - e.clientY) / knobTravelPx;
-          onChange(snap(drag.current.value + turned * (max - min), range));
-        }}
-        onPointerUp={() => void (drag.current = null)}
-        onPointerCancel={() => void (drag.current = null)}
-        onDoubleClick={() => onChange(ambienceDefaults[k])}
-      >
-        <svg viewBox="0 0 40 40" className="size-10 [@container_(height<40rem)]:size-8" aria-hidden="true">
-          <circle {...knobArc} stroke="#09090b" strokeDasharray={`${knobSweep} ${knobRound}`} />
-          <circle {...knobArc} stroke={colour} strokeDasharray={`${knobSweep * frac} ${knobRound}`} />
-          <circle cx={20} cy={20} r={11.5} fill="#3f3f46" stroke="#18181b" strokeWidth={1.5} />
-          <circle cx={20} cy={19} r={9} fill="#52525b" />
-          <line
-            x1={20}
-            y1={9.5}
-            x2={20}
-            y2={15}
-            stroke="#fafafa"
-            strokeWidth={2}
-            strokeLinecap="round"
-            transform={`rotate(${-135 + 270 * frac} 20 20)`}
-          />
-        </svg>
-      </div>
-      <span className="text-[9px] leading-none tracking-wider text-zinc-400 uppercase">{labels[k] ?? k}</span>
-      <span className="font-mono text-[9px] leading-none tabular-nums text-zinc-500">
-        {value}
-        {ambienceUnits[k]}
-      </span>
-    </div>
-  );
-}
-
 /** A vertical fader: its cap goes to wherever on the track is pressed */
 function Fader({ k, value, colour, onChange }: ControlProps) {
-  const range = ambienceRanges[k];
+  const range = audioRanges[k];
   const [min, max] = range;
   const frac = (value - min) / (max - min);
   const dragging = useRef(false);
@@ -496,7 +493,7 @@ function Fader({ k, value, colour, onChange }: ControlProps) {
       onPointerMove={(e) => dragging.current && follow(e)}
       onPointerUp={() => void (dragging.current = false)}
       onPointerCancel={() => void (dragging.current = false)}
-      onDoubleClick={() => onChange(ambienceDefaults[k])}
+      onDoubleClick={() => onChange(audioDefaults[k])}
     >
       <div className="absolute inset-y-2 left-1/2 w-1.5 -translate-x-1/2 rounded-full bg-black shadow-[inset_0_0_2px_#000,0_1px_0_#ffffff14]" />
       <div
@@ -514,8 +511,8 @@ function Fader({ k, value, colour, onChange }: ControlProps) {
 }
 
 /** What makes a `div` a slider to the keyboard and to a screen reader */
-function sliderProps(k: AmbienceKey, value: number, onChange: (value: number) => void) {
-  const range = ambienceRanges[k];
+function sliderProps(k: AudioKey, value: number, onChange: (value: number) => void) {
+  const range = audioRanges[k];
   const [min, max, step] = range;
   return {
     role: "slider",
@@ -539,110 +536,66 @@ function snap(value: number, [min, max, step]: [number, number, number]) {
   return Math.min(max, Math.max(min, Number(stepped.toFixed(4))));
 }
 
-type ControlProps = { k: AmbienceKey; value: number; colour: string; onChange(value: number): void };
+type ControlProps = { k: AudioKey; value: number; colour: string; onChange(value: number): void };
 
 type State = {
   canvas: null | HTMLCanvasElement;
-  config: AmbienceConfig;
-  /** `null` whilst stopped */
-  engine: null | Ambience;
+  /** The spectrum's levels, read into each frame */
+  bins: Uint8Array<ArrayBuffer>;
   frameId: number;
+  /** Whether the meters and spectrum are redrawn each frame: off at first, and never saved */
+  live: boolean;
   /** The tour's stop, or `null` whilst it is closed */
   help: null | HelpStep;
   rootEl: null | HTMLDivElement;
+  /** The foot the desk's last step was on, so they alternate */
+  stepSide: Side;
   /** Each meter's reading, `0` to `1`, kept so it can fall slowly */
-  levels: Record<AmbienceMeterKey, number>;
+  levels: Record<AudioMeterKey, number>;
   /** Each meter's shade, drawn down over its unlit part */
-  meterEls: Record<AmbienceMeterKey, null | HTMLDivElement>;
+  meterEls: Record<AudioMeterKey, null | HTMLDivElement>;
   wave: Float32Array<ArrayBuffer>;
-  play(): void;
-  /** Plays, and enables a pane left paused */
-  start(): void;
-  stop(): void;
-  /** Pauses it, the engine kept. Its tab's button does the same */
-  setDisabled(disabled: boolean): void;
-  setConfig(partial: Partial<AmbienceConfig>): void;
-  setHelp(step: null | HelpStep): void;
+  /** Plays a step, a running one if `run` */
+  playStep(run: boolean): void;
+  /** Draws the meters and the spectrum each frame, whilst live and in sight */
+  draw(): void;
+  /** The engine changed, maybe from jsh: its config is kept in the pane's meta */
+  onChange(): void;
   /** On a control, enter opens the tour there, or moves it on. Escape closes it */
   onKeyDown(e: React.KeyboardEvent): void;
+  /** Its tab's button does the same */
+  setDisabled(disabled: boolean): void;
+  setHelp(step: null | HelpStep): void;
+  setMeter(key: AudioMeterKey, level: number): void;
+  /** Pauses or resumes the steps, and disables or enables the pane */
+  setPaused(paused: boolean): void;
   /** Moves the tour on or back, round the ends */
   stepHelp(by: number): void;
-  setMeter(key: AmbienceMeterKey, level: number): void;
-  /** Draws the meters and the spectrum each frame whilst playing */
-  draw(): void;
+  /** Starts or stops the live meters, leaving them empty when stopped */
+  toggleLive(): void;
+  /** Stops, else plays and enables a pane left paused */
+  togglePlay(): void;
 };
 
-const meterKeys: AmbienceMeterKey[] = ["drone", "air", "choir", "breath", "master"];
+const meterKeys: AudioMeterKey[] = ["steps", "fx", "master"];
 
-type StripDef = {
-  /** Its fader's setting, which is its meter's name too */
-  key: AmbienceKey & AmbienceMeterKey;
-  title: string;
-  colour: string;
-  knobs: AmbienceKey[];
-  /** Its knobs' columns, fewer where the pane is narrow */
-  knobsClass: string;
-};
-
-const strips: StripDef[] = [
-  {
-    key: "drone",
-    title: "engine",
-    colour: graphColours.drone,
-    knobs: ["droneHz", "droneCutoff"],
-    knobsClass: "grid-cols-[3rem]",
-  },
-  { key: "air", title: "air", colour: graphColours.air, knobs: ["airHz"], knobsClass: "grid-cols-[3rem]" },
-  {
-    key: "choir",
-    title: "choir",
-    colour: graphColours.choir,
-    knobs: [
-      "choirDry",
-      "choirCutoff",
-      "choirTranspose",
-      "choirDetune",
-      "voices",
-      "spread",
-      "chordSecs",
-      "rest",
-      "stagger",
-      "attack",
-      "release",
-      "grain",
-      "crossfade",
-    ],
-    knobsClass: "grid-cols-[repeat(4,3rem)] @max-xl:grid-cols-[repeat(3,3rem)]",
-  },
-  {
-    key: "breath",
-    title: "breath",
-    colour: graphColours.breath,
-    knobs: ["breathCutoff", "breathEffort", "breathRate", "breathInhale"],
-    knobsClass: "grid-cols-[3rem]",
-  },
-];
-
+const stepsColour = graphColours.steps;
+const fxColour = graphColours.fx;
 const masterColour = graphColours.master;
 
-/** The tour's order: across the desk, each strip's fader then its knobs */
-const tour: HelpStep[] = ["intro", ...strips.flatMap(({ key, knobs }) => [key, ...knobs]), "reverb", "master"];
+/** The tour's order: across the desk, strip by strip */
+const tour: HelpStep[] = ["intro", "steps", "fx", "master"];
 
-/** What a knob is called on the desk, where its key says more than fits */
-const labels: Partial<Record<AmbienceKey, string>> = {
-  droneHz: "pitch",
-  droneCutoff: "tone",
-  airHz: "tone",
-  choirDry: "dry",
-  choirCutoff: "tone",
-  choirTranspose: "transp",
-  choirDetune: "detune",
-  chordSecs: "chord",
-  crossfade: "x-fade",
-  breathCutoff: "tone",
-  breathEffort: "effort",
-  breathRate: "rate",
-  breathInhale: "inhale",
+const sfxLabels: Record<SfxKey, string> = {
+  phaser: "fire",
+  hit: "hit",
+  armour: "armour",
+  ghost: "ghost",
+  wall: "wall",
+};
+const whenLabels: Record<HelpWhen, string> = {
+  now: "heard at once",
+  note: "from the next step",
 };
 
 const keySigns: Record<string, number> = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 };
@@ -653,22 +606,7 @@ const spectrumHz = [20, 8000];
 const meterFloorDb = 48;
 /** How far a meter may fall in a frame */
 const meterFall = 0.015;
-/** How far a knob is dragged from one end of its range to the other */
-const knobTravelPx = 160;
 const faderCapPx = 22;
-
-const knobRound = 2 * Math.PI * 16;
-/** A knob turns through three quarters of a circle */
-const knobSweep = knobRound * 0.75;
-const knobArc = {
-  cx: 20,
-  cy: 20,
-  r: 16,
-  fill: "none",
-  strokeWidth: 3,
-  strokeLinecap: "round",
-  transform: "rotate(135 20 20)",
-} as const;
 
 const meterGradient = "linear-gradient(to top, #22c55e 0 62%, #eab308 62% 84%, #ef4444 84%)";
 const meterSegments = "repeating-linear-gradient(to top, transparent 0 3px, #000 3px 4px)";

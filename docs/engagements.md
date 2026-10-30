@@ -19,6 +19,7 @@ The ONLY doc for it. Carrying, raising and aiming the phaser are in `docs/invent
 
 A shot's outcome is decided as its beam starts to lock on (`w.phasers.shoot`), and takes effect as the beam arrives
 (`strike`), a frame or two later (`fadeSecs / lockRate`). It emits `npc-shot` (`by`, `npcKey`, `part`, `outcome`).
+Locking on, it emits `phaser-fired` (`by`), as `fireAlong` does a shot at no one. jsh `sounds` plays both: see `docs/audio.md`.
 
 | outcome | the beam | effect |
 | --- | --- | --- |

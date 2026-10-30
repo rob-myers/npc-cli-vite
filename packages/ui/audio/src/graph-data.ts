@@ -1,13 +1,12 @@
-import type { AmbienceKey } from "./ambience";
+import type { AudioKey } from "./steps";
 
-export type GraphGroup = "drone" | "air" | "choir" | "breath" | "master";
+export type GraphGroup = "steps" | "style" | "fx" | "master";
 
 /** A channel's colour, on the desk and on the diagram */
 export const graphColours: Record<GraphGroup, string> = {
-  drone: "#f59e0b",
-  air: "#38bdf8",
-  choir: "#a78bfa",
-  breath: "#5eead4",
+  steps: "#f59e0b",
+  style: "#a78bfa",
+  fx: "#5eead4",
   master: "#f87171",
 };
 
@@ -18,7 +17,7 @@ export type GraphNode = {
   at: [number, number];
   group: GraphGroup;
   /** The settings it takes, whose values it shows */
-  keys?: AmbienceKey[];
+  keys?: AudioKey[];
   /** What it shows otherwise */
   note?: string;
 };
@@ -26,92 +25,35 @@ export type GraphNode = {
 /** `mod` ones drive a parameter of their target, where the rest carry sound into it */
 export type GraphEdge = { from: string; to: string; mod?: true };
 
-/** The engine's nodes as `createAmbience` connects them. Keep the two in step */
+/** The engine's nodes as `engine.ts`, `steps.ts` and `sfx.ts` connect them. Keep them in step */
 export const graphNodes: GraphNode[] = [
-  { id: "saw1", label: "saw", at: [0, 0], group: "drone", keys: ["droneHz"] },
-  { id: "saw2", label: "saw", at: [0, 1], group: "drone", note: "+9 cents" },
-  { id: "sine", label: "sine", at: [0, 2], group: "drone", note: "octave up" },
-  { id: "rumbleLow", label: "lowpass", at: [1, 3], group: "drone", note: "70 Hz" },
-  { id: "rumbleGain", label: "gain", at: [2, 3], group: "drone", note: "x2" },
-  { id: "lfoDrone", label: "lfo", at: [3, 0], group: "drone", note: "0.06 Hz" },
-  { id: "droneMix", label: "mix", at: [3, 1], group: "drone", note: "x0.3" },
-  { id: "droneLow", label: "lowpass", at: [4, 1], group: "drone", keys: ["droneCutoff"] },
-  { id: "droneOut", label: "engine level", at: [5, 1], group: "drone", keys: ["drone"] },
-  { id: "droneSend", label: "send", at: [5, 2], group: "drone", note: "x0.15" },
+  { id: "feet", label: "footfalls", at: [0, 0.5], group: "style", note: "the player's and npcs' near" },
+  { id: "style", label: "kind, level", at: [1, 0.5], group: "style", note: "by their gait" },
+  { id: "step", label: "step sample", at: [2, 0.5], group: "steps", note: "level" },
+  { id: "side", label: "pan", at: [3, 0.5], group: "steps", note: "by its foot" },
+  { id: "stepsOut", label: "steps level", at: [5, 0.5], group: "steps", keys: ["steps"] },
 
-  { id: "noise", label: "pink noise", at: [0, 4], group: "air", note: "looped" },
-  { id: "airBand", label: "bandpass", at: [1, 5], group: "air", keys: ["airHz"] },
-  { id: "lfoAirHz", label: "lfo", at: [1, 6], group: "air", note: "0.031 Hz" },
-  { id: "airMix", label: "mix", at: [3, 5], group: "air", note: "x0.9" },
-  { id: "lfoAir", label: "lfo", at: [3, 6], group: "air", note: "0.05 Hz" },
-  { id: "airOut", label: "air level", at: [5, 5], group: "air", keys: ["air"] },
-  { id: "airSend", label: "send", at: [5, 6], group: "air", note: "x0.2" },
+  { id: "sfx", label: "sound effect", at: [2, 2.5], group: "fx", note: "synthesised" },
+  { id: "sfxPan", label: "pan", at: [3, 2.5], group: "fx", note: "by its npc" },
+  { id: "fxOut", label: "fx level", at: [4, 2.5], group: "fx", keys: ["fx"] },
 
-  { id: "sample", label: "sample", at: [0, 8], group: "choir", keys: ["choirTranspose", "choirDetune"] },
-  { id: "grainFade", label: "stretch fade", at: [1, 8], group: "choir", keys: ["grain", "crossfade"] },
-  { id: "noteEnv", label: "note envelope", at: [2, 8], group: "choir", keys: ["attack", "release"] },
-  { id: "pan", label: "pan", at: [3, 8], group: "choir", keys: ["spread"] },
-  { id: "choirLow", label: "lowpass", at: [4, 8], group: "choir", keys: ["choirCutoff"] },
-  { id: "choirOut", label: "choir level", at: [5, 8], group: "choir", keys: ["choir"] },
-  { id: "choirDry", label: "dry", at: [6, 8], group: "choir", keys: ["choirDry"] },
-
-  { id: "breathIn", label: "breath in", at: [0, 10.5], group: "breath", keys: ["breathRate", "breathInhale"] },
-  { id: "breathEx", label: "breath out", at: [0, 11.5], group: "breath", keys: ["breathEffort"] },
-  { id: "breathFit", label: "fit", at: [2, 11], group: "breath", note: "x0.6 to x1.5" },
-  { id: "breathLow", label: "lowpass", at: [4, 11], group: "breath", keys: ["breathCutoff"] },
-  { id: "breathOut", label: "breath level", at: [5, 11], group: "breath", keys: ["breath"] },
-  { id: "breathSend", label: "send", at: [5, 12], group: "breath", note: "x0.15" },
-
-  { id: "reverb", label: "convolver", at: [6, 9.5], group: "master", note: "6 s hall" },
-  { id: "wet", label: "reverb level", at: [7, 9.5], group: "master", keys: ["reverb"] },
-  { id: "master", label: "master level", at: [8, 4], group: "master", keys: ["master"] },
-  { id: "limiter", label: "limiter", at: [8, 5], group: "master", note: "compressor" },
-  { id: "analyser", label: "analyser", at: [8, 6], group: "master", note: "spectrum" },
-  { id: "out", label: "speakers", at: [8, 7], group: "master" },
+  { id: "master", label: "master level", at: [8, 0.5], group: "master", keys: ["master"] },
+  { id: "limiter", label: "limiter", at: [9, 0.5], group: "master", note: "compressor" },
+  { id: "analyser", label: "analyser", at: [9, 1.5], group: "master", note: "spectrum" },
+  { id: "out", label: "speakers", at: [9, 2.5], group: "master" },
 ];
 
 export const graphEdges: GraphEdge[] = [
-  { from: "saw1", to: "droneMix" },
-  { from: "saw2", to: "droneMix" },
-  { from: "sine", to: "droneMix" },
-  { from: "noise", to: "rumbleLow" },
-  { from: "rumbleLow", to: "rumbleGain" },
-  { from: "rumbleGain", to: "droneMix" },
-  { from: "lfoDrone", to: "droneMix", mod: true },
-  { from: "droneMix", to: "droneLow" },
-  { from: "droneLow", to: "droneOut" },
-  { from: "droneOut", to: "master" },
-  { from: "droneOut", to: "droneSend" },
-  { from: "droneSend", to: "reverb" },
+  { from: "feet", to: "style", mod: true },
+  { from: "style", to: "step", mod: true },
+  { from: "step", to: "side" },
+  { from: "side", to: "stepsOut" },
+  { from: "stepsOut", to: "master" },
 
-  { from: "noise", to: "airBand" },
-  { from: "lfoAirHz", to: "airBand", mod: true },
-  { from: "airBand", to: "airMix" },
-  { from: "lfoAir", to: "airMix", mod: true },
-  { from: "airMix", to: "airOut" },
-  { from: "airOut", to: "master" },
-  { from: "airOut", to: "airSend" },
-  { from: "airSend", to: "reverb" },
+  { from: "sfx", to: "sfxPan" },
+  { from: "sfxPan", to: "fxOut" },
+  { from: "fxOut", to: "master" },
 
-  { from: "sample", to: "grainFade" },
-  { from: "grainFade", to: "noteEnv" },
-  { from: "noteEnv", to: "pan" },
-  { from: "pan", to: "choirLow" },
-  { from: "choirLow", to: "choirOut" },
-  { from: "choirOut", to: "choirDry" },
-  { from: "choirDry", to: "master" },
-  { from: "choirOut", to: "reverb" },
-
-  { from: "breathIn", to: "breathFit" },
-  { from: "breathEx", to: "breathFit" },
-  { from: "breathFit", to: "breathLow" },
-  { from: "breathLow", to: "breathOut" },
-  { from: "breathOut", to: "master" },
-  { from: "breathOut", to: "breathSend" },
-  { from: "breathSend", to: "reverb" },
-
-  { from: "reverb", to: "wet" },
-  { from: "wet", to: "master" },
   { from: "master", to: "limiter" },
   { from: "limiter", to: "analyser" },
   { from: "analyser", to: "out" },

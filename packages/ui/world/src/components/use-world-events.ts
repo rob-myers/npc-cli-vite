@@ -721,6 +721,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
             break;
           }
           case "phasers":
+          case "phaser-fired":
           case "phaser-struck":
             break;
           case "update-faded-rooms":

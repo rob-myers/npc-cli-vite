@@ -235,6 +235,7 @@ export default function Phasers() {
         };
         arm.hitAt = null;
         state.sync();
+        w.events.next({ key: "phaser-fired", by: npcKey });
         return true;
       },
       freeEndOf(npc, arm, shot, out) {
@@ -539,6 +540,7 @@ export default function Phasers() {
       shoot(npc, arm, to) {
         const shot: ArmShot = { to, outcome: w.debug?.forceShot ?? "hit", through: null, past: null, beyond: null };
         arm.shot = shot;
+        w.events.next({ key: "phaser-fired", by: npc.key });
         const dst = w.n[to.npcKey];
         if (dst === undefined) return;
         /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */

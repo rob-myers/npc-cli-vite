@@ -5,7 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./ambience": "./src/ambience.ts"
+    "./engine": "./src/engine.ts"
   },
   "scripts": {},
   "dependencies": {
