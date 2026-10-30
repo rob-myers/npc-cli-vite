@@ -125,8 +125,33 @@ export class Npc {
     return this.w.npc.clips;
   }
 
+  /** Which layer of the label texture array is theirs: their pick id */
+  get labelLayerIndex() {
+    return this.pickIdUniform.value;
+  }
+
+  /** Whether they are lit up — the uniform IS the state, so there is nothing to keep in step */
+  get lit() {
+    return this.npcLit.value === 1;
+  }
+
+  /** The way their head faces, as a rotation about the vertical: not always their body's, e.g. sat and turned, or lain on a side */
+  get lookY() {
+    return this.anim.getLookY();
+  }
+
+  /** Their pick id, which `compactPickIds` renumbers. The uniform IS the state */
+  get pickId() {
+    return this.pickIdUniform.value;
+  }
+
   get point() {
     return { x: this.position.x, y: this.position.z };
+  }
+
+  /** Whether their current clip has them stood, sat or lain */
+  get posture() {
+    return this.anim.posture;
   }
 
   /** The move's intent, not the gait on show: it picks the arrival radii */
@@ -136,21 +161,6 @@ export class Npc {
 
   get skinIndex() {
     return this.skinIndexUniform.value;
-  }
-
-  /** Whether they are lit up — the uniform IS the state, so there is nothing to keep in step */
-  get lit() {
-    return this.npcLit.value === 1;
-  }
-
-  /** ...likewise their pick id, which `compactPickIds` renumbers */
-  get pickId() {
-    return this.pickIdUniform.value;
-  }
-
-  /** Which layer of the label texture array is theirs — the same number */
-  get labelLayerIndex() {
-    return this.pickIdUniform.value;
   }
 
   constructor(w: UseStateRef<import("./World").State>, init: NpcInit) {
@@ -177,6 +187,33 @@ export class Npc {
     this.bodyUid = addBodyKeyUidRelation(npcToBodyKey(this.key), w.npc.physics);
     this.anim.moveClip = this.clips.walk;
     this.anim.idleClip = this.clips[defaultIdleAnimationClipKey];
+  }
+
+  /**
+   * Whether this npc may use a nav node — the door areas of doors they cannot pass are refused.
+   *
+   * `exemptStanding` keeps the node under their own feet passable: they can be standing inside
+   * such an area (spawned in a doorway, or a door locked whilst they stood in it) and the crowd
+   * refuses to move an agent whose own node fails its filter. Searches only ever filter
+   * NEIGHBOURS, so this lets them walk out of the doorway without letting them walk through it.
+   * `w.e.move` uses `strictQueryFilter` — the same test without the exemption — to ask whether
+   * they are standing somewhere they should not be
+   */
+  canPassNode(nodeRef: number, navMesh: NavMesh, exemptStanding: boolean): boolean {
+    const node = getNodeByRef(navMesh, nodeRef);
+
+    if (isDoorAreaId(node.area) === true) {
+      const gmDoorId = decodeDoorAreaId(node.area);
+      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
+        if (exemptStanding === true && nodeRef === this.agent?.corridor.path[0]) {
+          return true;
+        }
+        this.last.blockingArea = node.area;
+        return false;
+      }
+    }
+
+    return true;
   }
 
   distanceTo(point: JshCli.PointAnyFormat) {
@@ -218,6 +255,52 @@ export class Npc {
     // ct.strokeText(labelText, width / 2, height / 2);
 
     this.w.texNpcLabel.updateIndex(this.labelLayerIndex);
+  }
+
+  /** Moves their label on along `labelMove`, at a steady speed, e.g. as they crouch. Nothing once it is there */
+  easeLabel(delta: number) {
+    const move = this.labelMove;
+    if (move == null) return; // `undefined` on an npc made before a hot reload
+    move.t = Math.min(1, move.t + delta / labelMoveSecs);
+    this.labelYShiftUniform.value = move.from + (move.to - move.from) * move.t;
+    if (move.t === 1) this.labelMove = null;
+    this.w.r3f?.invalidate(); // still on its way: the frameloop is on demand
+  }
+
+  /**
+   * Fades them onto the nearest ground `strictQueryFilter` allows, if they stand inside the area of
+   * a door they cannot pass — spawned in a doorway, or it locked whilst they stood there. No move
+   * can start until they are off it: the crowd will not steer an agent whose own node fails its
+   * filter.
+   *
+   * @returns whether they had to be moved
+   */
+  async ensureLegalPosition(): Promise<boolean> {
+    if (this.agentId === null) {
+      return false;
+    }
+
+    const { x, y, z } = this.position;
+    const allowed = findNearestPoly(
+      createFindNearestPolyResult(),
+      this.w.nav.navMesh,
+      [x, y, z],
+      legalPositionHalfExtents,
+      this.strictQueryFilter,
+    );
+
+    const dx = allowed.position[0] - x;
+    const dz = allowed.position[2] - z;
+    const dist = Math.hypot(dx, dz);
+
+    if (allowed.success !== true || dist < legalPositionEpsilon) {
+      return false; // nowhere legal within reach, or they are standing somewhere legal already
+    }
+
+    // a little beyond it, since the nearest allowed point is ON the edge they must leave
+    const beyond = (dist + legalPositionMargin) / dist;
+    await this.fadeSpawn({ at: { x: x + dx * beyond, y: z + dz * beyond } });
+    return true;
   }
 
   async fadeIn(speed = 4) {
@@ -295,48 +378,40 @@ export class Npc {
   }
 
   /**
-   * Fades them onto the nearest ground `strictQueryFilter` allows, if they stand inside the area of
-   * a door they cannot pass — spawned in a doorway, or it locked whilst they stood there. No move
-   * can start until they are off it: the crowd will not steer an agent whose own node fails its
-   * filter.
-   *
-   * @returns whether they had to be moved
-   */
-  async ensureLegalPosition(): Promise<boolean> {
-    if (this.agentId === null) {
-      return false;
-    }
-
-    const { x, y, z } = this.position;
-    const allowed = findNearestPoly(
-      createFindNearestPolyResult(),
-      this.w.nav.navMesh,
-      [x, y, z],
-      legalPositionHalfExtents,
-      this.strictQueryFilter,
-    );
-
-    const dx = allowed.position[0] - x;
-    const dz = allowed.position[2] - z;
-    const dist = Math.hypot(dx, dz);
-
-    if (allowed.success !== true || dist < legalPositionEpsilon) {
-      return false; // nowhere legal within reach, or they are standing somewhere legal already
-    }
-
-    // a little beyond it, since the nearest allowed point is ON the edge they must leave
-    const beyond = (dist + legalPositionMargin) / dist;
-    await this.fadeSpawn({ at: { x: x + dx * beyond, y: z + dz * beyond } });
-    return true;
-  }
-
-  /**
    * An npc with an agent and a target has corners.
    * We provide: `[currentGroundPoint, ...cornerGroundPoints]`
    */
   getCornersPath(): Geom.VectJson[] | null {
     const cornerGroundPoints = (this.agent?.corners ?? []).map(({ position }) => ({ x: position[0], y: position[2] }));
     return cornerGroundPoints.length > 0 ? [this.point, ...cornerGroundPoints] : null;
+  }
+
+  /** Just below the middle of their label's text, as `camera` sees it: the label faces it, so is offset along its up */
+  getLabelBase(out: THREE.Vector3, camera: THREE.Camera) {
+    /** Its text's bottom, as a share of the label's half-height up from its middle: its `uv` runs down */
+    const below = 1 - 2 * this.labelRectUniform.value.w;
+    const up = tmpUp.setFromMatrixColumn(camera.matrixWorld, 1);
+    return this.getLabelPosition(out).addScaledVector(up, below * npcMaterialConfig.labelHalfHeight - labelBaseGap);
+  }
+
+  /** Where their label hangs, in world space */
+  getLabelPosition(out = new THREE.Vector3()) {
+    return out.copy(this.position).setY(this.position.y + this.labelYShiftUniform.value * npcScale);
+  }
+
+  /** Slide by `delta` from where they stand, stopped by walls and doors they cannot pass — `null` without an agent */
+  getSlideResult(delta: Geom.VectJson) {
+    const agent = this.agent;
+    if (agent === null) return null;
+    const { x, z } = this.position;
+    const result = moveAlongSurface(
+      this.w.nav.navMesh,
+      this.w.npc.getNodeRef(agent),
+      [x, 0, z],
+      [x + delta.x, 0, z + delta.y],
+      this.queryFilter,
+    );
+    return { ...result, groundPoint: { x: result.position[0], y: result.position[2] } };
   }
 
   groupRef = (group: THREE.Group | null): void => {
@@ -361,48 +436,6 @@ export class Npc {
     this.anim.mixer.update(0);
     this.anim.tickUpper(0); // an upper pose too, e.g. whilst paused
   };
-
-  /**
-   * Whether this npc may use a nav node — the door areas of doors they cannot pass are refused.
-   *
-   * `exemptStanding` keeps the node under their own feet passable: they can be standing inside
-   * such an area (spawned in a doorway, or a door locked whilst they stood in it) and the crowd
-   * refuses to move an agent whose own node fails its filter. Searches only ever filter
-   * NEIGHBOURS, so this lets them walk out of the doorway without letting them walk through it.
-   * `w.e.move` uses `strictQueryFilter` — the same test without the exemption — to ask whether
-   * they are standing somewhere they should not be
-   */
-  canPassNode(nodeRef: number, navMesh: NavMesh, exemptStanding: boolean): boolean {
-    const node = getNodeByRef(navMesh, nodeRef);
-
-    if (isDoorAreaId(node.area) === true) {
-      const gmDoorId = decodeDoorAreaId(node.area);
-      if (!this.w.e.npcCanAccess(this.key, gmDoorId.gdKey)) {
-        if (exemptStanding === true && nodeRef === this.agent?.corridor.path[0]) {
-          return true;
-        }
-        this.last.blockingArea = node.area;
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /** Slide by `delta` from where they stand, stopped by walls and doors they cannot pass — `null` without an agent */
-  getSlideResult(delta: Geom.VectJson) {
-    const agent = this.agent;
-    if (agent === null) return null;
-    const { x, z } = this.position;
-    const result = moveAlongSurface(
-      this.w.nav.navMesh,
-      this.w.npc.getNodeRef(agent),
-      [x, 0, z],
-      [x + delta.x, 0, z + delta.y],
-      this.queryFilter,
-    );
-    return { ...result, groundPoint: { x: result.position[0], y: result.position[2] } };
-  }
 
   hasRing() {
     return this.w.rings.selectRingByNpc.has(this.key);
@@ -432,16 +465,6 @@ export class Npc {
 
   isMoving() {
     return this.anim.moving;
-  }
-
-  /** The way their head faces, as a rotation about the vertical: not always their body's, e.g. sat and turned, or lain on a side */
-  get lookY() {
-    return this.anim.getLookY();
-  }
-
-  /** Whether their current clip has them stood, sat or lain */
-  get posture() {
-    return this.anim.posture;
   }
 
   /** Whether their current clip has them off their feet, i.e. `sit` or `lie` */
@@ -536,27 +559,10 @@ export class Npc {
     this.bubbleOffset.y = y;
   }
 
-  /** Selector ring */
-  setRing(color?: THREE.ColorRepresentation) {
-    if (color) {
-      this.w.rings.showSelectRing(this.key, color);
-    } else {
-      this.w.rings.hideSelectRing(this.key);
-    }
-    this.w.view.forceUpdate();
-  }
-
-  /** Where their label hangs, in world space */
-  getLabelPosition(out = new THREE.Vector3()) {
-    return out.copy(this.position).setY(this.position.y + this.labelYShiftUniform.value * npcScale);
-  }
-
-  /** Just below the middle of their label's text, as `camera` sees it: the label faces it, so is offset along its up */
-  getLabelBase(out: THREE.Vector3, camera: THREE.Camera) {
-    /** Its text's bottom, as a share of the label's half-height up from its middle: its `uv` runs down */
-    const below = 1 - 2 * this.labelRectUniform.value.w;
-    const up = tmpUp.setFromMatrixColumn(camera.matrixWorld, 1);
-    return this.getLabelPosition(out).addScaledVector(up, below * npcMaterialConfig.labelHalfHeight - labelBaseGap);
+  /** The least world height their label hangs at, else `null` — see `w.npc.liftBunkLabels` */
+  setLabelFloor(y: null | number) {
+    this.labelFloor = y;
+    this.setLabelYShift(this.labelShift ?? this.labelYShiftUniform.value);
   }
 
   setLabelYShift(shift: number) {
@@ -574,20 +580,14 @@ export class Npc {
     }
   }
 
-  /** Moves their label on along `labelMove`, at a steady speed, e.g. as they crouch. Nothing once it is there */
-  easeLabel(delta: number) {
-    const move = this.labelMove;
-    if (move == null) return; // `undefined` on an npc made before a hot reload
-    move.t = Math.min(1, move.t + delta / labelMoveSecs);
-    this.labelYShiftUniform.value = move.from + (move.to - move.from) * move.t;
-    if (move.t === 1) this.labelMove = null;
-    this.w.r3f?.invalidate(); // still on its way: the frameloop is on demand
-  }
-
-  /** The least world height their label hangs at, else `null` — see `w.npc.liftBunkLabels` */
-  setLabelFloor(y: null | number) {
-    this.labelFloor = y;
-    this.setLabelYShift(this.labelShift ?? this.labelYShiftUniform.value);
+  /** Selector ring */
+  setRing(color?: THREE.ColorRepresentation) {
+    if (color) {
+      this.w.rings.showSelectRing(this.key, color);
+    } else {
+      this.w.rings.hideSelectRing(this.key);
+    }
+    this.w.view.forceUpdate();
   }
 
   setSkin(skinKey?: string) {

@@ -160,12 +160,414 @@ export class NpcAnimation {
     },
   };
 
-  constructor(npc: Npc) {
-    this.npc = npc;
+  /** The player's is the World's, set in their bubble: anyone else's the default. Read each tick, so not a copy */
+  get breathTune() {
+    return (this.npc.key === this.w.player?.key ? this.w.npc.breathTune : undefined) ?? defaultBreathTune;
+  }
+
+  /** How low they crouch: `0` stood, `1` half (`crouch_half`), `2` full (`crouch_cover`). Their gaits follow */
+  get crouchLevel(): CrouchLevel {
+    const key = keyOf(this.idleClip);
+    return key === "crouch_cover" ? 2 : key === "crouch_half" ? 1 : 0;
+  }
+
+  /** Crouched at all, half or full */
+  get crouched() {
+    return this.crouchLevel > 0;
+  }
+
+  /** The four directional gaits a strafe blends, by how low they crouch */
+  get gaitKeys() {
+    return gaitSets[this.crouchLevel];
+  }
+
+  /** What they stand, sit or lie in at rest: the hurt clip whilst there is one */
+  get restKey() {
+    return this.hurt?.key ?? keyOf(this.idleClip);
   }
 
   get w(): UseStateRef<import("./World").State> {
     return this.npc.w;
+  }
+
+  constructor(npc: Npc) {
+    this.npc = npc;
+  }
+
+  /** Swing the right arm at the shoulder, by `weight` of the turn that lines its forearm up on `aim.at` */
+  aimArm(aim: UpperAim, weight: number) {
+    const [entry, forearm] = [this.upper.bones[0], this.upper.bones[1]?.bone];
+    const arm = entry?.bone;
+    if (arm?.parent == null || forearm === undefined) return;
+    arm.parent.updateWorldMatrix(true, false);
+    arm.updateWorldMatrix(false, true); // just written, and read at once
+    const shoulder = tmpShoulder.setFromMatrixPosition(arm.matrixWorld);
+    const along = tmpAlong.set(0, -1, 0).transformDirection(forearm.matrixWorld);
+    const from = forearm.localToWorld(tmpFrom.copy(aim.from)).sub(shoulder);
+    const want = tmpWant.copy(aim.at).sub(shoulder);
+    // the point of the line of fire as far from the shoulder as the target is: turned onto it, the line runs through
+    const b = from.dot(along);
+    const reach = Math.sqrt(Math.max(0, b * b - from.lengthSq() + want.lengthSq())) - b;
+    from.addScaledVector(along, reach).normalize();
+    const turn = turnWithin(arm.parent, from, want.normalize(), aim.maxRad ?? upperAimMaxRad, weight);
+    if (turn === null) return;
+    entry.written.copy(arm.quaternion.premultiply(turn));
+  }
+
+  /**
+   * Ask the crowd for a path to `target`, pinned at rest. One crowd tick later its corners say
+   * where the first leg heads, which `w.npc.turnBeforeMoving` turns to before `startMoving`
+   * releases them — and the corridor is kept, so nothing is pathed twice
+   */
+  aimAt(target: { groundPoint: JshCli.GroundPoint; result: FindNearestPolyResult }) {
+    const agent = this.npc.agent;
+    if (!agent) {
+      throw Error(`cannot move without agent: ${this.npc.key}`);
+    }
+    // whilst walking, doors should block npcs
+    agent.queryFilter = this.npc.queryFilter;
+    agent.separationWeight = agentConfig.separationWeight.walk;
+    agent.maxSpeed = 0; // `startMoving` releases them
+
+    crowdApi.requestMoveTarget(
+      this.w.npc.crowd,
+      this.npc.agentId as string,
+      target.result.nodeRef,
+      helper.groundPointToTuple(target.groundPoint),
+    );
+
+    const { last } = this.npc;
+    // last.dst = groundPoint; // already set in `w.e.move`
+    last.dstGrId = this.w.findRoomContaining(target.groundPoint);
+    last.blockingArea = -1;
+    last.point = this.npc.point;
+    // arrival radius is relative to this, else a short move starts arrived
+    last.targetDistance = this.npc.distanceTo(target.groundPoint);
+    Object.assign(last, { stuckAccum: 0, nearest: Infinity, nearestAccum: 0 });
+  }
+
+  /**
+   * The bearing they aim along: their facing, sat, turned by `turn.aim`, or lain, `lieAim`'s `ahead` of it — `null` lain
+   * in a clip it lacks
+   */
+  aimBearing() {
+    const { rotation } = this.npc;
+    if (this.posture === "sit") return rotation.y + this.turn.aim;
+    if (this.posture !== "lie") return rotation.y;
+    const lain = lieAim[this.pose];
+    return lain === undefined ? null : rotation.y + lain.ahead;
+  }
+
+  /** Eases the head's turn towards `headGoal`'s, else back to none, and applies it */
+  aimHead(aim: null | { at: THREE.Vector3 }, weight: number, delta: number) {
+    const { entry } = this.upperHead;
+    const chest = entry?.bone.parent;
+    if (entry === null || chest == null) return;
+    const goal = this.headGoal(aim, weight, entry, chest);
+    const { headTurn } = this;
+    headTurn.slerp(goal, 1 - Math.exp(-headTurnRate * delta));
+    if (headTurn.angleTo(goal) < 1e-3) headTurn.copy(goal);
+    else this.w.r3f?.invalidate(); // still on its way
+    entry.written.copy(entry.bone.quaternion.premultiply(headTurn));
+  }
+
+  /** `face.aim.at` as a world angle, a point's from where they stand */
+  bearingOf(at: Geom.VectJson | number) {
+    return typeof at === "number"
+      ? at
+      : geomService.getThreeRotationY(at.y - this.npc.position.z, at.x - this.npc.position.x);
+  }
+
+  /** They blink, over whatever look they have */
+  blink(count = 1) {
+    this.eyes.blinks = count;
+    this.eyes.blinkSecs = 0;
+    this.tickEyes(0);
+  }
+
+  /** The clip a resting pose breathes by, which a breath runs by its own clock instead */
+  breathClock() {
+    return breathClips.has(this.pose) ? this.mixer.existingAction(this.npc.clips[this.pose]) : null;
+  }
+
+  /** They can aim at `at` as they are: sat, within `sitTurn`'s aim, lain, within their pose's `lieAim` */
+  canAimAt(at: Geom.VectJson) {
+    if (this.posture === "lie") return this.lieAimPoseFor(at) === this.pose;
+    if (this.posture === "stand") return true;
+    const off = deltaAngle(this.npc.rotation.y, this.bearingOf(at));
+    return off >= sitTurn.aimFrom && off <= sitTurn.aimTo;
+  }
+
+  /** Their head faces ahead at once, rather than easing round: e.g. respawned unseen */
+  faceAhead() {
+    this.headTurn.identity();
+    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0 });
+  }
+
+  /** A shot landing `at` along `dir` jolts `part`, and the bones it hangs from, away from it */
+  flinch(part: null | string, at: THREE.Vector3, dir: THREE.Vector3) {
+    const group = this.npc.group;
+    if (group === null) return;
+    this.undoFlinch(); // else what it last wrote stays
+    const { rad, falloff } = flinchConfig;
+    let bone = group.getObjectByName(part !== null && flinchBones.has(part) ? part : "stomach") ?? null;
+    const bones: FlinchBone[] = [];
+    for (let weight = 1; bone !== null && flinchBones.has(bone.name); bone = bone.parent, weight *= falloff) {
+      bone.updateWorldMatrix(true, false);
+      const axis = new THREE.Vector3().crossVectors(tmpLever.subVectors(at, bone.getWorldPosition(tmpPivot)), dir);
+      if (axis.lengthSq() < 1e-8) continue;
+      const parent = bone.parent?.getWorldQuaternion(tmpParentQuat).invert() ?? tmpParentQuat.identity();
+      const [before, written] = [new THREE.Quaternion(), new THREE.Quaternion(Number.NaN)];
+      bones.push({ bone, axis: axis.normalize().applyQuaternion(parent), rad: rad * weight, before, written });
+    }
+    this.flinchAt = bones.length === 0 ? null : { secs: 0, bones };
+    this.w.r3f?.invalidate();
+  }
+
+  /** The way their head faces, as a rotation about the vertical. Their own facing whilst it looks nearly straight up or down */
+  getLookY() {
+    const head = this.upperHead.entry?.bone;
+    if (head == null) return this.npc.rotation.y;
+    /** As last drawn, so a frame behind: whoever asks eases it anyway, and it saves walking the skeleton */
+    const e = head.matrixWorld.elements;
+    // the head's forward, its `-z`, in the world
+    const x = -e[8];
+    const y = -e[9];
+    const z = -e[10];
+    const flat = x * x + z * z;
+    return flat < lookFlatMin * (flat + y * y) ? this.npc.rotation.y : Math.atan2(-x, -z);
+  }
+
+  /** The turn's rate now, rad/s, `0` if none — a look superseding it sets off at it */
+  getTurnRate() {
+    const t = this.face.turn;
+    if (t === null || t.duration === 0) return 0;
+    const p = t.elapsed / t.duration;
+    return (t.diff * 6 * p * (1 - p)) / t.duration + t.v0 * (1 - p) * (1 - 3 * p);
+  }
+
+  hasUpper(animKey: AnimationClipKey | null) {
+    return this.upper.target === 1 && this.upper.key === animKey;
+  }
+
+  /** The head's turn from their facing to look at `aim`, by `weight`. Lain, from where it faces, so it lifts a little */
+  headGoal(aim: null | { at: THREE.Vector3 }, weight: number, entry: UpperBone, chest: THREE.Object3D) {
+    if (aim === null || weight <= 0) return tmpHeadGoal.identity();
+    chest.updateWorldMatrix(true, false);
+    const lain = this.posture === "lie";
+    const ry = this.npc.rotation.y;
+    const from = lain
+      ? tmpFrom.set(0, 0, -1).applyQuaternion(chest.getWorldQuaternion(tmpQuat).multiply(entry.bone.quaternion))
+      : tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
+    const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
+    const want = tmpWant.copy(aim.at).sub(neck);
+    /** On their back, how far the look heads towards their feet: what heads the other way looks straight up instead */
+    const along = this.pose === "lie" ? -want.x * Math.sin(ry) - want.z * Math.cos(ry) : 0;
+    if (along < 0) want.set(want.x + Math.sin(ry) * along, want.y - along, want.z + Math.cos(ry) * along); // never tips back
+    const maxRad = lain ? lieHeadMaxRad : headAimMaxRad;
+    const turn = turnWithin(chest, from, want.normalize(), maxRad, weight);
+    return turn === null ? tmpHeadGoal.identity() : tmpHeadGoal.copy(turn);
+  }
+
+  /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
+  hitClipFor(part: null | string): null | AnimationClipKey {
+    const region = hitConfig.region[part ?? ""];
+    return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
+  }
+
+  /** A roll in bed is still fading in */
+  isRolling() {
+    return this.w.gameTime.now() - this.rolledAt < lieRoll.secs;
+  }
+
+  /** Their seat is under a table: marked `meta.underTable` */
+  isUnderTable() {
+    const decorKey = this.w.npc.npcToDoable[this.npc.key];
+    return decorKey != null && this.w.decor.byKey[decorKey]?.meta.underTable === true;
+  }
+
+  /**
+   * An upper clip was drawn with its own torso lean, yet only its arms and head are applied. Returns the
+   * turn from the pose's torso, as it is this frame, to the clip's: those keys are corrected by it
+   */
+  leanOfUpper(u: Upper, torso: THREE.Interpolant[]) {
+    const lean = tmpLean.identity();
+    u.level.identity();
+    for (const { bone } of u.torso) lean.multiply(bone.quaternion);
+    lean.invert();
+    for (const interpolant of torso) lean.multiply(tmpQuat.fromArray(interpolant.evaluate(u.time)));
+    return lean;
+  }
+
+  /** Lain, the bearing nearest `at` that their pose aims along — `null` in a clip `lieAim` lacks */
+  lieAimBearing(at: Geom.VectJson) {
+    const lain = lieAim[this.pose];
+    if (lain === undefined) return null;
+    const { y } = this.npc.rotation;
+    return y + clampArc(deltaAngle(y, this.bearingOf(at)), lain.from, lain.to);
+  }
+
+  /** Lain, the pose they aim at `at` from: their own if it can, else one to roll onto — `null` if none can */
+  lieAimPoseFor(at: Geom.VectJson): null | AnimationClipKey {
+    const off = deltaAngle(this.npc.rotation.y, this.bearingOf(at));
+    const fits = (key: AnimationClipKey) => {
+      const lain = lieAim[key];
+      return lain !== undefined && off >= lain.from && off <= lain.to;
+    };
+    return fits(this.pose) ? this.pose : (lieKeys.find(fits) ?? null);
+  }
+
+  /**
+   * Turn to face `target` (radians) over a duration set by the arc, shuffling round a long one, and resolve
+   * `npc.resolve.look` on landing — setting off at `fromRate`, a superseded look's, rather than restarting
+   */
+  lookAt(target: number, minMs: number, rate = 1, fromRate = 0) {
+    const start = this.npc.rotation.y;
+    const diff = deltaAngle(start, target);
+    const arc = Math.abs(diff);
+    // a shuffle under way carries on, crossfading to idle as the turn lands. Crouched they turn on the spot: it is stood
+    const longLook = this.crouched === false && (arc > longLookAngle || (fromRate !== 0 && this.pose === "shuffle"));
+    let duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
+    // fresh, a quadratic ease-out: it sets off at `2 * arc / duration`
+    let v0 = duration === 0 ? 0 : (2 * diff) / duration;
+    if (fromRate !== 0) {
+      v0 = fromRate;
+      // sooner, else it overshoots: at `3 * arc / |v0|` it is a cubic ease-out
+      if (v0 * diff > 0 && Math.abs(v0) * duration > 3 * arc) duration = (3 * arc) / Math.abs(v0);
+      duration = Math.max(duration, minStopSecs);
+    }
+    this.face.turn = { start, diff, duration, elapsed: 0, longLook, v0 };
+    this.face.rate = 0;
+
+    if (longLook === true) {
+      this.setPose("shuffle");
+      // a `minMs` slow enough to drag it out shuffles gently, where the default rate gives 2
+      const rate = duration > 0 ? arc / duration : lookShuffleRate;
+      this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
+    } else if (this.pose === "shuffle") {
+      this.setPose(this.restKey); // a short look superseding a long one
+    }
+  }
+
+  /** Lain, look towards `at` as a phaser aims: rolled to the pose that reaches it, the head lifting to it, and held there */
+  lookLain(at: Geom.VectJson) {
+    if (this.posture !== "lie") return;
+    const pose = this.lieAimPoseFor(at);
+    if (pose !== null && this.isRolling() === false) this.rollOnto(pose); // a roll cut short by the next jerks them
+    this.lieLook.on = true;
+    this.lieLook.at.set(at.x, this.npc.position.y + this.headY, at.y);
+    this.w.r3f?.invalidate();
+  }
+
+  /** The agent's top speed for the move's intent: a strafe's is then `syncStrafe`'s, by heading */
+  maxSpeedFor() {
+    const { maxSpeed } = agentConfig;
+    if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
+    if (this.strafe === true) return strafeSpeed.walk;
+    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
+  }
+
+  /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow stays to the side it is on */
+  reachTo(side: Side, to: THREE.Vector3, weight: number) {
+    const [upper, fore] = this.upperOf(side).bones;
+    if (fore === undefined || upper.bone.parent === null) return;
+    upper.bone.updateWorldMatrix(true, true);
+    const shoulder = tmpShoulder.setFromMatrixPosition(upper.bone.matrixWorld);
+    const reach = tmpWant.copy(to).sub(shoulder);
+    const arm = tmpFrom.setFromMatrixPosition(fore.bone.matrixWorld).sub(shoulder);
+    /** The forearm is as long as the upper arm */
+    const tip = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(shoulder);
+    const [l1, l2] = [arm.length(), tip.distanceTo(arm)];
+    const d = THREE.MathUtils.clamp(reach.length(), 1e-4, (l1 + l2) * 0.999);
+    reach.normalize();
+    // two bones to a point: the elbow lies `along` the reach and `out` from it, towards where it is now
+    const along = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
+    const out = Math.sqrt(Math.max(0, l1 * l1 - along * along));
+    const pole = tmpPole.copy(arm).addScaledVector(reach, -arm.dot(reach)).normalize();
+    const elbow = tmpAlong.copy(reach).multiplyScalar(along).addScaledVector(pole, out).normalize();
+    const swing = turnWithin(upper.bone.parent, arm.normalize(), elbow, Math.PI, weight);
+    if (swing !== null) upper.written.copy(upper.bone.quaternion.premultiply(swing));
+
+    fore.bone.updateWorldMatrix(true, false);
+    const from = tmpFrom.setFromMatrixPosition(fore.bone.matrixWorld);
+    const tipNow = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(from).normalize();
+    const want = reach.multiplyScalar(d).add(shoulder).sub(from).normalize();
+    const bend = turnWithin(upper.bone, tipNow, want, Math.PI, weight);
+    if (bend !== null) fore.written.copy(fore.bone.quaternion.premultiply(bend));
+  }
+
+  /** Roll one lain onto `to`, a lie clip */
+  rollOnto(to: AnimationClipKey) {
+    const from = keyOf(this.idleClip);
+    if (isLieKey(from) === false || to === from) return;
+    this.rolledAt = this.w.gameTime.now();
+    this.idleClip = this.npc.clips[to];
+    if (this.pose === from) this.setPose(to);
+    this.w.r3f?.invalidate();
+  }
+
+  /** Breathe, or stop: eased either way, and nobody does until asked — see `docs/npc-breath.md` */
+  setBreathing(on: boolean) {
+    const { breath } = this;
+    breath.on = on;
+    // from where the pose's own breath has them, so nothing jumps
+    const clock = on === true ? this.breathClock() : null;
+    if (clock !== null) breath.phase = phaseOfClip(clock, this.breathTune.inhale);
+    this.w.r3f?.invalidate();
+    this.w.events.next({ key: "npc-toggled", npcKey: this.npc.key });
+  }
+
+  /** Crouch to `level`, or stand back up into the default idle with `0`. Only from standing, never sat or lain */
+  setCrouch(level: CrouchLevel) {
+    if (level === this.crouchLevel) return;
+    if (level > 0 && (this.posture !== "stand" || this.w.npc.npcToDoable[this.npc.key] != null)) return;
+    this.idleClip = this.npc.clips[crouchIdleKeys[level]];
+    if (this.moving === false) return this.setPose(this.restKey);
+    this.showGait(); // mid-move, the other gaits
+    const { agent } = this.npc;
+    if (agent !== null && this.strafe === false && agent.maxSpeed > 0) agent.maxSpeed = this.maxSpeedFor();
+  }
+
+  /** Their eyes take a look, whatever their pose */
+  setEyes(look: EyesKey) {
+    this.eyes.look = look;
+    this.eyes.secs = 0;
+    this.tickEyes(0);
+  }
+
+  /** A fresh skeleton: the bones an upper clip, or a shake of the head, writes */
+  setGroup(group: THREE.Group) {
+    const bonesOf = (...names: string[]) => names.flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
+    for (const side of ["left", "right"] as const) {
+      const bones = bonesOf(`${side}arm`, `${side}forearm`);
+      Object.assign(this.upperOf(side), { torso: bonesOf("stomach", "chest"), bones });
+    }
+    this.upperHead.entry = bonesOf("head")[0] ?? null;
+    this.turn.bones = bonesOf("stomach", "chest", "head");
+    this.breath.chest = null;
+  }
+
+  /** Run, or stop running, mid-move: the gait follows their speed — see `syncGait` */
+  setHurry(hurry: boolean) {
+    this.hurry = hurry;
+    const { agent } = this.npc;
+    // `0` is pinned for the turn, and a strafe's is `syncStrafe`'s
+    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
+      agent.maxSpeed = this.maxSpeedFor();
+  }
+
+  /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
+  setHurt(key: null | AnimationClipKey) {
+    /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
+    const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
+    const pacified = held !== null && isPacified(held);
+    if (key !== null && pacified && (isPacified(key) || headClips.has(key))) return;
+    const changed = key !== (this.hurt?.key ?? null);
+    // pacified, they stay so, whatever else hits them
+    this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held) };
+    this.setPose(this.restKey, { force: key !== null });
+    this.w.r3f?.invalidate();
+    if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key });
   }
 
   /** The ONLY way the clip on show changes: everything else fades out as `next` fades in */
@@ -229,6 +631,14 @@ export class NpcAnimation {
     this.w.events.next({ key: "npc-posed", npcKey: this.npc.key });
   }
 
+  /** Start or stop strafing mid-move, as `face.aim` comes or goes: stopping eases out in `syncStrafe` */
+  setStrafe(strafe: boolean) {
+    this.strafe = strafe;
+    this.backwards = false;
+    if (this.npc.agent !== null) this.npc.agent.maxSpeed = this.maxSpeedFor();
+    this.showGait();
+  }
+
   /**
    * Ease `key` in over an arm (and the head), or out with `null`, over `fadeSecs` — from another shown, in `swapSecs`.
    * `played`: start the clip at `0` and at full weight, for one whose first frame IS the pose e.g. `sit_reach`.
@@ -259,83 +669,124 @@ export class NpcAnimation {
     u.target = key === null ? 0 : 1;
   }
 
-  /** How low they crouch: `0` stood, `1` half (`crouch_half`), `2` full (`crouch_cover`). Their gaits follow */
-  get crouchLevel(): CrouchLevel {
-    const key = keyOf(this.idleClip);
-    return key === "crouch_cover" ? 2 : key === "crouch_half" ? 1 : 0;
-  }
-
-  /** Crouched at all, half or full */
-  get crouched() {
-    return this.crouchLevel > 0;
-  }
-
-  /** The four directional gaits a strafe blends, by how low they crouch */
-  get gaitKeys() {
-    return gaitSets[this.crouchLevel];
-  }
-
-  /** Crouch to `level`, or stand back up into the default idle with `0`. Only from standing, never sat or lain */
-  setCrouch(level: CrouchLevel) {
-    if (level === this.crouchLevel) return;
-    if (level > 0 && (this.posture !== "stand" || this.w.npc.npcToDoable[this.npc.key] != null)) return;
-    this.idleClip = this.npc.clips[crouchIdleKeys[level]];
-    if (this.moving === false) return this.setPose(this.restKey);
-    this.showGait(); // mid-move, the other gaits
-    const { agent } = this.npc;
-    if (agent !== null && this.strafe === false && agent.maxSpeed > 0) agent.maxSpeed = this.maxSpeedFor();
-  }
-
-  /** What they stand, sit or lie in at rest: the hurt clip whilst there is one */
-  get restKey() {
-    return this.hurt?.key ?? keyOf(this.idleClip);
-  }
-
-  /** The clip a hit on `part` plays, by whether they stand, sit or lie — `null` for none */
-  hitClipFor(part: null | string): null | AnimationClipKey {
-    const region = hitConfig.region[part ?? ""];
-    return region === undefined ? null : hitConfig.clips[postureOf(keyOf(this.idleClip))][region];
-  }
-
-  /** Show `key` in place of idle: a pain clip once, a looped one e.g. pacified until `null` releases them */
-  setHurt(key: null | AnimationClipKey) {
-    /** The looped clip they are in, e.g. pacified or collapsed: a pain clip goes back to it */
-    const held = this.hurt !== null && onceClips.has(this.hurt.key) === false ? this.hurt.key : null;
-    const pacified = held !== null && isPacified(held);
-    if (key !== null && pacified && (isPacified(key) || headClips.has(key))) return;
-    const changed = key !== (this.hurt?.key ?? null);
-    // pacified, they stay so, whatever else hits them
-    this.hurt = key === null ? null : { key, secs: 0, next: pacified ? held : (hitConfig.next[key] ?? held) };
-    this.setPose(this.restKey, { force: key !== null });
+  /** A "no": they shake their head, over whatever pose or upper clip has it */
+  shakeHead() {
+    this.headShake = 0;
     this.w.r3f?.invalidate();
-    if (changed) this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: key });
   }
 
-  tickHurt(delta: number) {
-    const { hurt } = this;
-    if (hurt === null || onceClips.has(hurt.key) === false) return;
-    hurt.secs += delta;
-    if (hurt.secs < this.npc.clips[hurt.key].duration) return;
-    if (hurt.next === null) return this.setHurt(null);
-    this.hurt = { key: hurt.next, secs: 0, next: null };
-    this.setPose(hurt.next);
-    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: hurt.next });
+  /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
+  showGait() {
+    const clipKey = this.gaitKeys[this.backwards === true ? 2 : 0]; // ahead, or a half turn round
+    // a look or a spawn in between puts idle on, and it must be shown again or they slide
+    const shown = this.backwards === true || this.crouched ? this.pose === clipKey : isGait(this.pose);
+    if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
+    this.moving = true;
+    this.moveClip = this.npc.clips[clipKey];
+    this.gaitSecs = 0;
+    this.setPose(clipKey, { force: this.strafing !== this.strafe });
   }
 
-  /** A fresh skeleton: the bones an upper clip, or a shake of the head, writes */
-  setGroup(group: THREE.Group) {
-    const bonesOf = (...names: string[]) => names.flatMap((name) => newUpperBone(group.getObjectByName(name)) ?? []);
-    for (const side of ["left", "right"] as const) {
-      const bones = bonesOf(`${side}arm`, `${side}forearm`);
-      Object.assign(this.upperOf(side), { torso: bonesOf("stomach", "chest"), bones });
+  startIdle({ force = false } = {}) {
+    this.npc.resolve.move("idle");
+
+    const skip = !this.arrive && !force;
+    this.arrive = true;
+
+    if (skip) {
+      return;
     }
-    this.upperHead.entry = bonesOf("head")[0] ?? null;
-    this.turn.bones = bonesOf("stomach", "chest", "head");
-    this.breath.chest = null;
+
+    this.npc.last.idleTime = this.w.gameTime.now();
+    const agent = this.npc.agent;
+
+    if (agent) {
+      agent.separationWeight = agentConfig.separationWeight.idle;
+      agent.maxAcceleration = agentConfig.maxAcceleration.idle;
+      agent.maxSpeed = agentConfig.maxSpeed.idle;
+      const [vx, , vz] = agent.velocity;
+
+      // pin ahead by stopping distance v²/2a so agent decelerates without reversing
+      const speed = Math.hypot(vx, vz);
+      const pinAhead = speed ** 2 / (2 * agentConfig.maxAcceleration.idle);
+      const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
+      const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
+      this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
+    }
+
+    this.face.rate = 0;
+    const { aim } = this.face;
+    if (aim?.untilRest === true) this.face.aim = null;
+    this.setPose(this.restKey, { force: this.moving });
+    this.moving = false;
+    // a look on the move they arrived before finishing: the rest of it on the spot
+    if (aim?.untilRest === true) this.lookAt(this.bearingOf(aim.at), 0, aim.rate);
   }
 
-  upperOf(side: Side) {
-    return side === "right" ? this.upper : this.upperLeft;
+  /**
+   * Show the gait — walk, from rest: `syncGait` breaks into a run — and release the agent `aimAt` pinned. A mirror npc
+   * has no agent: its movement arrives over the network (see `use-world-net`)
+   */
+  startMoving(arrive = true) {
+    const agent = this.npc.agent;
+    if (agent !== null) {
+      // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
+      agent.maxAcceleration = agentConfig.maxAcceleration.walk;
+      agent.maxSpeed = this.maxSpeedFor();
+    }
+    // after the turn, so a long one does not eat the stuck grace
+    this.npc.last.moveTime = this.w.gameTime.now();
+    this.arrive = arrive;
+    this.showGait();
+  }
+
+  /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
+  syncGait(delta: number) {
+    if (this.backwards === true || this.strafe === true) return; // one gait
+    const { runAbove, walkBelow, minSecs } = agentConfig.gait;
+    this.gaitSecs += delta;
+    const running = this.moveClip.name === "run";
+    const next = this.fast === true && (running ? this.speed >= walkBelow : this.speed > runAbove);
+    if (next === running || this.gaitSecs < minSecs || isGait(this.pose) === false) return;
+    this.gaitSecs = 0;
+    this.moveClip = this.npc.clips[next ? "run" : "walk"];
+    this.setPose(keyOf(this.moveClip));
+  }
+
+  /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
+  syncStrafe(delta: number) {
+    const { clips, agent, rotation } = this.npc;
+    const keys = this.gaitKeys;
+    const actions = keys.map((key) => this.mixer.clipAction(clips[key]));
+    const [vx, , vz] = agent?.velocity ?? [0, 0, 0];
+    const ease = 1 - Math.exp(-delta / strafeEaseSecs); // alike for all four, so they still sum to 1
+    if (this.strafe === false) {
+      // let go mid-move: all to `walk`, which then shows alone
+      actions.forEach((action, i) => void (action.weight += ((i === 0 ? 1 : 0) - action.weight) * ease));
+    } else if (Math.hypot(vx, vz) >= 0.05) {
+      // creeping, their velocity swings about: the last weights are kept
+      const [sin, cos] = [Math.sin(rotation.y), Math.cos(rotation.y)];
+      const heading = Math.atan2(vx * cos - vz * sin, -vx * sin - vz * cos); // `0` ahead, `π/2` to their right
+      actions.forEach((action, i) => {
+        const target = Math.max(0, 1 - Math.abs(deltaAngle(heading, (i * Math.PI) / 2)) / (Math.PI / 2));
+        action.weight += (target - action.weight) * ease;
+      });
+    }
+    const blend = (byKey: Record<keyof typeof gaitStride, number>) =>
+      actions.reduce((sum, action, i) => sum + action.weight * byKey[keys[i]], 0);
+    if (agent !== null && this.strafe === true) agent.maxSpeed = blend(strafeSpeed); // as fast as that way allows
+
+    const [walk] = actions;
+    const timeScale = walk.timeScale / (blend(gaitStride) || 1); // `tick`'s pace, per ground the blend covers
+    const phase = walk.time / walk.getClip().duration;
+    actions.forEach((action, i) => {
+      action.timeScale = timeScale;
+      if (i === 0) return;
+      // the third, `backwards` or `crouch_backwards`, is the first reversed: a half cycle on, the same foot swings
+      const offset = i === 2 ? 0.5 : 0;
+      action.time = ((phase + offset) % 1) * action.getClip().duration;
+    });
+    if (this.strafe === false && walk.weight > 0.99) this.setPose(keys[0], { force: true });
   }
 
   /** The ONLY per-frame work: the mixers, the colour fade, the gait's pace, and the facing */
@@ -428,25 +879,12 @@ export class NpcAnimation {
     }
   }
 
-  /** Breathe, or stop: eased either way, and nobody does until asked — see `docs/npc-breath.md` */
-  setBreathing(on: boolean) {
-    const { breath } = this;
-    breath.on = on;
-    // from where the pose's own breath has them, so nothing jumps
-    const clock = on === true ? this.breathClock() : null;
-    if (clock !== null) breath.phase = phaseOfClip(clock, this.breathTune.inhale);
-    this.w.r3f?.invalidate();
-    this.w.events.next({ key: "npc-toggled", npcKey: this.npc.key });
-  }
-
-  /** The player's is the World's, set in their bubble: anyone else's the default. Read each tick, so not a copy */
-  get breathTune() {
-    return (this.npc.key === this.w.player?.key ? this.w.npc.breathTune : undefined) ?? defaultBreathTune;
-  }
-
-  /** The clip a resting pose breathes by, which a breath runs by its own clock instead */
-  breathClock() {
-    return breathClips.has(this.pose) ? this.mixer.existingAction(this.npc.clips[this.pose]) : null;
+  /** After `tickTurn`, so a sat turn of the torso is allowed for */
+  tickAimArm() {
+    const r = this.upper;
+    if (r.key === null || r.aim === null) return;
+    const weight = r.aim.weight * r.eased;
+    if (weight > 0) this.aimArm(r.aim, weight);
   }
 
   /** Works out the air in their lungs, for `NpcBreath` to draw, and has their body breathe with them */
@@ -478,57 +916,70 @@ export class NpcAnimation {
     this.w.r3f?.invalidate();
   }
 
-  /** Slerp each arm from the pose towards its clip, by `blend` — and the head towards the left's, then the right's over it */
-  tickUpper(delta: number) {
-    const [l, r] = [this.upperLeft, this.upper];
-    this.tickUpperSide("left", delta);
-    this.tickUpperSide("right", delta);
-    const { entry } = this.upperHead;
-    /** Lain, their look turns the head whilst no arm aims it */
-    const look = r.aim === null && this.lieLook.weight > 0 ? this.lieLook : null;
-    const turned = this.headTurn.w !== 1; // still easing back from a look
-    const headAt = this.headAt ?? null; // undefined on an instance from before hmr
-    if (entry === null || (l.key === null && r.key === null && look === null && headAt === null && turned === false))
-      return;
-    const { bone, base, written } = entry;
-    if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
-    bone.quaternion.copy(base);
-    for (const u of [l, r]) if (u.key !== null && u.hasHead === true) bone.quaternion.slerp(u.head, u.eased);
-    for (const u of [l, r]) if (u.key !== null) bone.quaternion.premultiply(u.level);
-    written.copy(bone.quaternion);
-    if (r.key !== null && r.aim !== null) this.aimHead(r.aim, (r.aim.head ?? r.aim.weight) * r.eased, delta);
-    else if (headAt !== null) this.aimHead(headAt, 1, delta);
-    else if (look !== null) this.aimHead(look, look.weight * look.weight * (3 - 2 * look.weight), delta);
-    else this.aimHead(null, 0, delta); // back to none
-    for (const u of [l, r]) {
-      if (u.blend !== 0 || u.target !== 0) continue;
-      u.key = null; // the pose's own again
-      u.aim = null;
+  /** Shows the frame their look, or a blink, is at */
+  tickEyes(delta: number) {
+    const { eyes } = this;
+    const { blink, shifty } = eyesConfig;
+    let frame: EyeFrame =
+      eyes.look === "shifty"
+        ? shifty.frames[Math.floor((eyes.secs += delta) / shifty.frameSecs) % shifty.frames.length]
+        : eyes.look;
+
+    if (eyes.blinks > 0) {
+      const step = Math.floor((eyes.blinkSecs += delta) / blink.frameSecs);
+      if (step < blink.frames.length) frame = blink.frames[step];
+      else if (eyes.blinks === 1 || eyes.blinkSecs >= blink.frames.length * blink.frameSecs + blink.gapSecs) {
+        eyes.blinks--;
+        eyes.blinkSecs = 0;
+      }
     }
-  }
 
-  /** The way their head faces, as a rotation about the vertical. Their own facing whilst it looks nearly straight up or down */
-  getLookY() {
-    const head = this.upperHead.entry?.bone;
-    if (head == null) return this.npc.rotation.y;
-    /** As last drawn, so a frame behind: whoever asks eases it anyway, and it saves walking the skeleton */
-    const e = head.matrixWorld.elements;
-    // the head's forward, its `-z`, in the world
-    const x = -e[8];
-    const y = -e[9];
-    const z = -e[10];
-    const flat = x * x + z * z;
-    return flat < lookFlatMin * (flat + y * y) ? this.npc.rotation.y : Math.atan2(-x, -z);
-  }
-
-  /** Lain, look towards `at` as a phaser aims: rolled to the pose that reaches it, the head lifting to it, and held there */
-  lookLain(at: Geom.VectJson) {
-    if (this.posture !== "lie") return;
-    const pose = this.lieAimPoseFor(at);
-    if (pose !== null && this.isRolling() === false) this.rollOnto(pose); // a roll cut short by the next jerks them
-    this.lieLook.on = true;
-    this.lieLook.at.set(at.x, this.npc.position.y + this.headY, at.y);
+    this.npc.eyesUniform.value = eyeFrames.indexOf(frame);
+    eyes.busy = eyes.blinks > 0 || eyes.look === "shifty";
     this.w.r3f?.invalidate();
+  }
+
+  tickFlinch(delta: number) {
+    const f = this.flinchAt;
+    if (f == null) return; // undefined on an instance from before hmr
+    if ((f.secs += delta) >= flinchConfig.secs) return void (this.flinchAt = null); // undone already, this tick
+    const u = f.secs / flinchConfig.peakSecs;
+    /** `1` at `peakSecs`, easing back after */
+    const k = u * Math.exp(1 - u);
+    for (const b of f.bones) {
+      b.before.copy(b.bone.quaternion);
+      b.written.copy(b.bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(b.axis, b.rad * k)));
+    }
+    this.w.r3f?.invalidate();
+  }
+
+  tickHeadShake(delta: number) {
+    const { entry } = this.upperHead;
+    if (this.headShake === null || entry === null) return;
+    const { bone, base, written } = entry;
+    // with no upper clip, `tickUpper` has not put the head back to its pose
+    if (this.upper.key === null && this.upperLeft.key === null) {
+      if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
+      else base.copy(bone.quaternion);
+    }
+    const { secs, slowing, turns, rad } = headShakeConfig;
+    const p = Math.min(1, (this.headShake += delta) / secs);
+    const t = 1 - (1 - p) ** slowing;
+    /** Nought at either end */
+    const angle = rad * Math.sin(2 * Math.PI * turns * t) * Math.sin(Math.PI * t);
+    written.copy(bone.quaternion.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle)));
+    if (p === 1) this.headShake = null;
+  }
+
+  tickHurt(delta: number) {
+    const { hurt } = this;
+    if (hurt === null || onceClips.has(hurt.key) === false) return;
+    hurt.secs += delta;
+    if (hurt.secs < this.npc.clips[hurt.key].duration) return;
+    if (hurt.next === null) return this.setHurt(null);
+    this.hurt = { key: hurt.next, secs: 0, next: null };
+    this.setPose(hurt.next);
+    this.w.events.next({ key: "npc-hurt", npcKey: this.npc.key, clip: hurt.next });
   }
 
   /** Eases `lieLook` in or out: out once they no longer lie */
@@ -538,87 +989,6 @@ export class NpcAnimation {
     if (look.on === false && look.weight === 0) return;
     look.weight = THREE.MathUtils.clamp(look.weight + (look.on ? delta : -delta) / upperFadeSecs, 0, 1);
     if (look.weight > 0 && look.weight < 1) this.w.r3f?.invalidate(); // still on its way
-  }
-
-  /** A roll in bed is still fading in */
-  isRolling() {
-    return this.w.gameTime.now() - this.rolledAt < lieRoll.secs;
-  }
-
-  /** Roll one lain onto `to`, a lie clip */
-  rollOnto(to: AnimationClipKey) {
-    const from = keyOf(this.idleClip);
-    if (isLieKey(from) === false || to === from) return;
-    this.rolledAt = this.w.gameTime.now();
-    this.idleClip = this.npc.clips[to];
-    if (this.pose === from) this.setPose(to);
-    this.w.r3f?.invalidate();
-  }
-
-  /**
-   * The bearing they aim along: their facing, sat, turned by `turn.aim`, or lain, `lieAim`'s `ahead` of it — `null` lain
-   * in a clip it lacks
-   */
-  aimBearing() {
-    const { rotation } = this.npc;
-    if (this.posture === "sit") return rotation.y + this.turn.aim;
-    if (this.posture !== "lie") return rotation.y;
-    const lain = lieAim[this.pose];
-    return lain === undefined ? null : rotation.y + lain.ahead;
-  }
-
-  /** They can aim at `at` as they are: sat, within `sitTurn`'s aim, lain, within their pose's `lieAim` */
-  canAimAt(at: Geom.VectJson) {
-    if (this.posture === "lie") return this.lieAimPoseFor(at) === this.pose;
-    if (this.posture === "stand") return true;
-    const off = deltaAngle(this.npc.rotation.y, this.bearingOf(at));
-    return off >= sitTurn.aimFrom && off <= sitTurn.aimTo;
-  }
-
-  /** Lain, the bearing nearest `at` that their pose aims along — `null` in a clip `lieAim` lacks */
-  lieAimBearing(at: Geom.VectJson) {
-    const lain = lieAim[this.pose];
-    if (lain === undefined) return null;
-    const { y } = this.npc.rotation;
-    return y + clampArc(deltaAngle(y, this.bearingOf(at)), lain.from, lain.to);
-  }
-
-  /** Lain, the pose they aim at `at` from: their own if it can, else one to roll onto — `null` if none can */
-  lieAimPoseFor(at: Geom.VectJson): null | AnimationClipKey {
-    const off = deltaAngle(this.npc.rotation.y, this.bearingOf(at));
-    const fits = (key: AnimationClipKey) => {
-      const lain = lieAim[key];
-      return lain !== undefined && off >= lain.from && off <= lain.to;
-    };
-    return fits(this.pose) ? this.pose : (lieKeys.find(fits) ?? null);
-  }
-
-  /** Their head faces ahead at once, rather than easing round: e.g. respawned unseen */
-  faceAhead() {
-    this.headTurn.identity();
-    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0 });
-  }
-
-  /** Turn towards `at`, a point or bearing, whilst sat, as far as they can without turning round — `null` to face ahead again */
-  turnTo(at: null | number | Geom.VectJson) {
-    const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
-    this.turn.want = off;
-    const target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
-    if (target !== this.turn.target) this.w.r3f?.invalidate(); // else, at rest, no tick comes to ease it
-    this.turn.target = target;
-  }
-
-  /**
-   * Eases `turn.aim` to `turn.want` within `sitTurn`'s aim, round the front: never across behind them, which the arm
-   * cannot do. Past either end it goes to the end nearer what they look at
-   */
-  tickTurnAim(delta: number) {
-    const { turn } = this;
-    const goal = clampArc(turn.want, sitTurn.aimFrom, sitTurn.aimTo);
-    if (turn.aim === goal) return;
-    turn.aim += (goal - turn.aim) * (1 - Math.exp(-sitTurn.rate * delta));
-    if (Math.abs(turn.aim - goal) < 1e-3) turn.aim = goal;
-    else this.w.r3f?.invalidate();
   }
 
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
@@ -668,135 +1038,46 @@ export class NpcAnimation {
     }
   }
 
-  /** Brings an arm's hand to `to`, a world point, by `weight`. The elbow stays to the side it is on */
-  reachTo(side: Side, to: THREE.Vector3, weight: number) {
-    const [upper, fore] = this.upperOf(side).bones;
-    if (fore === undefined || upper.bone.parent === null) return;
-    upper.bone.updateWorldMatrix(true, true);
-    const shoulder = tmpShoulder.setFromMatrixPosition(upper.bone.matrixWorld);
-    const reach = tmpWant.copy(to).sub(shoulder);
-    const arm = tmpFrom.setFromMatrixPosition(fore.bone.matrixWorld).sub(shoulder);
-    /** The forearm is as long as the upper arm */
-    const tip = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(shoulder);
-    const [l1, l2] = [arm.length(), tip.distanceTo(arm)];
-    const d = THREE.MathUtils.clamp(reach.length(), 1e-4, (l1 + l2) * 0.999);
-    reach.normalize();
-    // two bones to a point: the elbow lies `along` the reach and `out` from it, towards where it is now
-    const along = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
-    const out = Math.sqrt(Math.max(0, l1 * l1 - along * along));
-    const pole = tmpPole.copy(arm).addScaledVector(reach, -arm.dot(reach)).normalize();
-    const elbow = tmpAlong.copy(reach).multiplyScalar(along).addScaledVector(pole, out).normalize();
-    const swing = turnWithin(upper.bone.parent, arm.normalize(), elbow, Math.PI, weight);
-    if (swing !== null) upper.written.copy(upper.bone.quaternion.premultiply(swing));
-
-    fore.bone.updateWorldMatrix(true, false);
-    const from = tmpFrom.setFromMatrixPosition(fore.bone.matrixWorld);
-    const tipNow = fore.bone.localToWorld(tmpTip.copy(fore.bone.position)).sub(from).normalize();
-    const want = reach.multiplyScalar(d).add(shoulder).sub(from).normalize();
-    const bend = turnWithin(upper.bone, tipNow, want, Math.PI, weight);
-    if (bend !== null) fore.written.copy(fore.bone.quaternion.premultiply(bend));
+  /**
+   * Eases `turn.aim` to `turn.want` within `sitTurn`'s aim, round the front: never across behind them, which the arm
+   * cannot do. Past either end it goes to the end nearer what they look at
+   */
+  tickTurnAim(delta: number) {
+    const { turn } = this;
+    const goal = clampArc(turn.want, sitTurn.aimFrom, sitTurn.aimTo);
+    if (turn.aim === goal) return;
+    turn.aim += (goal - turn.aim) * (1 - Math.exp(-sitTurn.rate * delta));
+    if (Math.abs(turn.aim - goal) < 1e-3) turn.aim = goal;
+    else this.w.r3f?.invalidate();
   }
 
-  /** Their eyes take a look, whatever their pose */
-  setEyes(look: EyesKey) {
-    this.eyes.look = look;
-    this.eyes.secs = 0;
-    this.tickEyes(0);
-  }
-
-  /** They blink, over whatever look they have */
-  blink(count = 1) {
-    this.eyes.blinks = count;
-    this.eyes.blinkSecs = 0;
-    this.tickEyes(0);
-  }
-
-  /** Shows the frame their look, or a blink, is at */
-  tickEyes(delta: number) {
-    const { eyes } = this;
-    const { blink, shifty } = eyesConfig;
-    let frame: EyeFrame =
-      eyes.look === "shifty"
-        ? shifty.frames[Math.floor((eyes.secs += delta) / shifty.frameSecs) % shifty.frames.length]
-        : eyes.look;
-
-    if (eyes.blinks > 0) {
-      const step = Math.floor((eyes.blinkSecs += delta) / blink.frameSecs);
-      if (step < blink.frames.length) frame = blink.frames[step];
-      else if (eyes.blinks === 1 || eyes.blinkSecs >= blink.frames.length * blink.frameSecs + blink.gapSecs) {
-        eyes.blinks--;
-        eyes.blinkSecs = 0;
-      }
-    }
-
-    this.npc.eyesUniform.value = eyeFrames.indexOf(frame);
-    eyes.busy = eyes.blinks > 0 || eyes.look === "shifty";
-    this.w.r3f?.invalidate();
-  }
-
-  /** A shot landing `at` along `dir` jolts `part`, and the bones it hangs from, away from it */
-  flinch(part: null | string, at: THREE.Vector3, dir: THREE.Vector3) {
-    const group = this.npc.group;
-    if (group === null) return;
-    this.undoFlinch(); // else what it last wrote stays
-    const { rad, falloff } = flinchConfig;
-    let bone = group.getObjectByName(part !== null && flinchBones.has(part) ? part : "stomach") ?? null;
-    const bones: FlinchBone[] = [];
-    for (let weight = 1; bone !== null && flinchBones.has(bone.name); bone = bone.parent, weight *= falloff) {
-      bone.updateWorldMatrix(true, false);
-      const axis = new THREE.Vector3().crossVectors(tmpLever.subVectors(at, bone.getWorldPosition(tmpPivot)), dir);
-      if (axis.lengthSq() < 1e-8) continue;
-      const parent = bone.parent?.getWorldQuaternion(tmpParentQuat).invert() ?? tmpParentQuat.identity();
-      const [before, written] = [new THREE.Quaternion(), new THREE.Quaternion(Number.NaN)];
-      bones.push({ bone, axis: axis.normalize().applyQuaternion(parent), rad: rad * weight, before, written });
-    }
-    this.flinchAt = bones.length === 0 ? null : { secs: 0, bones };
-    this.w.r3f?.invalidate();
-  }
-
-  tickFlinch(delta: number) {
-    const f = this.flinchAt;
-    if (f == null) return; // undefined on an instance from before hmr
-    if ((f.secs += delta) >= flinchConfig.secs) return void (this.flinchAt = null); // undone already, this tick
-    const u = f.secs / flinchConfig.peakSecs;
-    /** `1` at `peakSecs`, easing back after */
-    const k = u * Math.exp(1 - u);
-    for (const b of f.bones) {
-      b.before.copy(b.bone.quaternion);
-      b.written.copy(b.bone.quaternion.premultiply(tmpQuat.setFromAxisAngle(b.axis, b.rad * k)));
-    }
-    this.w.r3f?.invalidate();
-  }
-
-  /** Puts back what the flinch last wrote, unless something has written over it since */
-  undoFlinch() {
-    const bones = this.flinchAt?.bones;
-    if (bones === undefined) return; // nearly always
-    for (const { bone, before, written } of bones) if (bone.quaternion.equals(written)) bone.quaternion.copy(before);
-  }
-
-  /** A "no": they shake their head, over whatever pose or upper clip has it */
-  shakeHead() {
-    this.headShake = 0;
-    this.w.r3f?.invalidate();
-  }
-
-  tickHeadShake(delta: number) {
+  /** Slerp each arm from the pose towards its clip, by `blend` — and the head towards the left's, then the right's over it */
+  tickUpper(delta: number) {
+    const [l, r] = [this.upperLeft, this.upper];
+    this.tickUpperSide("left", delta);
+    this.tickUpperSide("right", delta);
     const { entry } = this.upperHead;
-    if (this.headShake === null || entry === null) return;
+    /** Lain, their look turns the head whilst no arm aims it */
+    const look = r.aim === null && this.lieLook.weight > 0 ? this.lieLook : null;
+    const turned = this.headTurn.w !== 1; // still easing back from a look
+    const headAt = this.headAt ?? null; // undefined on an instance from before hmr
+    if (entry === null || (l.key === null && r.key === null && look === null && headAt === null && turned === false))
+      return;
     const { bone, base, written } = entry;
-    // with no upper clip, `tickUpper` has not put the head back to its pose
-    if (this.upper.key === null && this.upperLeft.key === null) {
-      if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
-      else base.copy(bone.quaternion);
+    if (bone.quaternion.equals(written) === false) base.copy(bone.quaternion);
+    bone.quaternion.copy(base);
+    for (const u of [l, r]) if (u.key !== null && u.hasHead === true) bone.quaternion.slerp(u.head, u.eased);
+    for (const u of [l, r]) if (u.key !== null) bone.quaternion.premultiply(u.level);
+    written.copy(bone.quaternion);
+    if (r.key !== null && r.aim !== null) this.aimHead(r.aim, (r.aim.head ?? r.aim.weight) * r.eased, delta);
+    else if (headAt !== null) this.aimHead(headAt, 1, delta);
+    else if (look !== null) this.aimHead(look, look.weight * look.weight * (3 - 2 * look.weight), delta);
+    else this.aimHead(null, 0, delta); // back to none
+    for (const u of [l, r]) {
+      if (u.blend !== 0 || u.target !== 0) continue;
+      u.key = null; // the pose's own again
+      u.aim = null;
     }
-    const { secs, slowing, turns, rad } = headShakeConfig;
-    const p = Math.min(1, (this.headShake += delta) / secs);
-    const t = 1 - (1 - p) ** slowing;
-    /** Nought at either end */
-    const angle = rad * Math.sin(2 * Math.PI * turns * t) * Math.sin(Math.PI * t);
-    written.copy(bone.quaternion.multiply(tmpQuat.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, angle)));
-    if (p === 1) this.headShake = null;
   }
 
   tickUpperSide(side: Side, delta: number) {
@@ -844,23 +1125,13 @@ export class NpcAnimation {
     if (head !== undefined) u.head.fromArray(head.evaluate(u.time)).premultiply(lean);
   }
 
-  /** Their seat is under a table: marked `meta.underTable` */
-  isUnderTable() {
-    const decorKey = this.w.npc.npcToDoable[this.npc.key];
-    return decorKey != null && this.w.decor.byKey[decorKey]?.meta.underTable === true;
-  }
-
-  /**
-   * An upper clip was drawn with its own torso lean, yet only its arms and head are applied. Returns the
-   * turn from the pose's torso, as it is this frame, to the clip's: those keys are corrected by it
-   */
-  leanOfUpper(u: Upper, torso: THREE.Interpolant[]) {
-    const lean = tmpLean.identity();
-    u.level.identity();
-    for (const { bone } of u.torso) lean.multiply(bone.quaternion);
-    lean.invert();
-    for (const interpolant of torso) lean.multiply(tmpQuat.fromArray(interpolant.evaluate(u.time)));
-    return lean;
+  /** Turn towards `at`, a point or bearing, whilst sat, as far as they can without turning round — `null` to face ahead again */
+  turnTo(at: null | number | Geom.VectJson) {
+    const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
+    this.turn.want = off;
+    const target = THREE.MathUtils.clamp(off, -sitTurn.maxRad, sitTurn.maxRad);
+    if (target !== this.turn.target) this.w.r3f?.invalidate(); // else, at rest, no tick comes to ease it
+    this.turn.target = target;
   }
 
   /**
@@ -880,286 +1151,15 @@ export class NpcAnimation {
     return tmpLean.identity();
   }
 
-  /** After `tickTurn`, so a sat turn of the torso is allowed for */
-  tickAimArm() {
-    const r = this.upper;
-    if (r.key === null || r.aim === null) return;
-    const weight = r.aim.weight * r.eased;
-    if (weight > 0) this.aimArm(r.aim, weight);
+  /** Puts back what the flinch last wrote, unless something has written over it since */
+  undoFlinch() {
+    const bones = this.flinchAt?.bones;
+    if (bones === undefined) return; // nearly always
+    for (const { bone, before, written } of bones) if (bone.quaternion.equals(written)) bone.quaternion.copy(before);
   }
 
-  /** Swing the right arm at the shoulder, by `weight` of the turn that lines its forearm up on `aim.at` */
-  aimArm(aim: UpperAim, weight: number) {
-    const [entry, forearm] = [this.upper.bones[0], this.upper.bones[1]?.bone];
-    const arm = entry?.bone;
-    if (arm?.parent == null || forearm === undefined) return;
-    arm.parent.updateWorldMatrix(true, false);
-    arm.updateWorldMatrix(false, true); // just written, and read at once
-    const shoulder = tmpShoulder.setFromMatrixPosition(arm.matrixWorld);
-    const along = tmpAlong.set(0, -1, 0).transformDirection(forearm.matrixWorld);
-    const from = forearm.localToWorld(tmpFrom.copy(aim.from)).sub(shoulder);
-    const want = tmpWant.copy(aim.at).sub(shoulder);
-    // the point of the line of fire as far from the shoulder as the target is: turned onto it, the line runs through
-    const b = from.dot(along);
-    const reach = Math.sqrt(Math.max(0, b * b - from.lengthSq() + want.lengthSq())) - b;
-    from.addScaledVector(along, reach).normalize();
-    const turn = turnWithin(arm.parent, from, want.normalize(), aim.maxRad ?? upperAimMaxRad, weight);
-    if (turn === null) return;
-    entry.written.copy(arm.quaternion.premultiply(turn));
-  }
-
-  /** Eases the head's turn towards `headGoal`'s, else back to none, and applies it */
-  aimHead(aim: null | { at: THREE.Vector3 }, weight: number, delta: number) {
-    const { entry } = this.upperHead;
-    const chest = entry?.bone.parent;
-    if (entry === null || chest == null) return;
-    const goal = this.headGoal(aim, weight, entry, chest);
-    const { headTurn } = this;
-    headTurn.slerp(goal, 1 - Math.exp(-headTurnRate * delta));
-    if (headTurn.angleTo(goal) < 1e-3) headTurn.copy(goal);
-    else this.w.r3f?.invalidate(); // still on its way
-    entry.written.copy(entry.bone.quaternion.premultiply(headTurn));
-  }
-
-  /** The head's turn from their facing to look at `aim`, by `weight`. Lain, from where it faces, so it lifts a little */
-  headGoal(aim: null | { at: THREE.Vector3 }, weight: number, entry: UpperBone, chest: THREE.Object3D) {
-    if (aim === null || weight <= 0) return tmpHeadGoal.identity();
-    chest.updateWorldMatrix(true, false);
-    const lain = this.posture === "lie";
-    const ry = this.npc.rotation.y;
-    const from = lain
-      ? tmpFrom.set(0, 0, -1).applyQuaternion(chest.getWorldQuaternion(tmpQuat).multiply(entry.bone.quaternion))
-      : tmpFrom.set(-Math.sin(ry), 0, -Math.cos(ry));
-    const neck = tmpShoulder.copy(entry.bone.position).applyMatrix4(chest.matrixWorld);
-    const want = tmpWant.copy(aim.at).sub(neck);
-    /** On their back, how far the look heads towards their feet: what heads the other way looks straight up instead */
-    const along = this.pose === "lie" ? -want.x * Math.sin(ry) - want.z * Math.cos(ry) : 0;
-    if (along < 0) want.set(want.x + Math.sin(ry) * along, want.y - along, want.z + Math.cos(ry) * along); // never tips back
-    const maxRad = lain ? lieHeadMaxRad : headAimMaxRad;
-    const turn = turnWithin(chest, from, want.normalize(), maxRad, weight);
-    return turn === null ? tmpHeadGoal.identity() : tmpHeadGoal.copy(turn);
-  }
-
-  /** Whilst `fast` the gait follows `speed` — with hysteresis, and a least time on each — else walk */
-  syncGait(delta: number) {
-    if (this.backwards === true || this.strafe === true) return; // one gait
-    const { runAbove, walkBelow, minSecs } = agentConfig.gait;
-    this.gaitSecs += delta;
-    const running = this.moveClip.name === "run";
-    const next = this.fast === true && (running ? this.speed >= walkBelow : this.speed > runAbove);
-    if (next === running || this.gaitSecs < minSecs || isGait(this.pose) === false) return;
-    this.gaitSecs = 0;
-    this.moveClip = this.npc.clips[next ? "run" : "walk"];
-    this.setPose(keyOf(this.moveClip));
-  }
-
-  /** Start or stop strafing mid-move, as `face.aim` comes or goes: stopping eases out in `syncStrafe` */
-  setStrafe(strafe: boolean) {
-    this.strafe = strafe;
-    this.backwards = false;
-    if (this.npc.agent !== null) this.npc.agent.maxSpeed = this.maxSpeedFor();
-    this.showGait();
-  }
-
-  /** Run, or stop running, mid-move: the gait follows their speed — see `syncGait` */
-  setHurry(hurry: boolean) {
-    this.hurry = hurry;
-    const { agent } = this.npc;
-    // `0` is pinned for the turn, and a strafe's is `syncStrafe`'s
-    if (agent !== null && this.moving === true && this.strafe === false && agent.maxSpeed > 0)
-      agent.maxSpeed = this.maxSpeedFor();
-  }
-
-  /** Weigh the directional gaits by heading relative to facing — the nearest two — and keep them in step, paced and sped by that way */
-  syncStrafe(delta: number) {
-    const { clips, agent, rotation } = this.npc;
-    const keys = this.gaitKeys;
-    const actions = keys.map((key) => this.mixer.clipAction(clips[key]));
-    const [vx, , vz] = agent?.velocity ?? [0, 0, 0];
-    const ease = 1 - Math.exp(-delta / strafeEaseSecs); // alike for all four, so they still sum to 1
-    if (this.strafe === false) {
-      // let go mid-move: all to `walk`, which then shows alone
-      actions.forEach((action, i) => void (action.weight += ((i === 0 ? 1 : 0) - action.weight) * ease));
-    } else if (Math.hypot(vx, vz) >= 0.05) {
-      // creeping, their velocity swings about: the last weights are kept
-      const [sin, cos] = [Math.sin(rotation.y), Math.cos(rotation.y)];
-      const heading = Math.atan2(vx * cos - vz * sin, -vx * sin - vz * cos); // `0` ahead, `π/2` to their right
-      actions.forEach((action, i) => {
-        const target = Math.max(0, 1 - Math.abs(deltaAngle(heading, (i * Math.PI) / 2)) / (Math.PI / 2));
-        action.weight += (target - action.weight) * ease;
-      });
-    }
-    const blend = (byKey: Record<keyof typeof gaitStride, number>) =>
-      actions.reduce((sum, action, i) => sum + action.weight * byKey[keys[i]], 0);
-    if (agent !== null && this.strafe === true) agent.maxSpeed = blend(strafeSpeed); // as fast as that way allows
-
-    const [walk] = actions;
-    const timeScale = walk.timeScale / (blend(gaitStride) || 1); // `tick`'s pace, per ground the blend covers
-    const phase = walk.time / walk.getClip().duration;
-    actions.forEach((action, i) => {
-      action.timeScale = timeScale;
-      if (i === 0) return;
-      // the third, `backwards` or `crouch_backwards`, is the first reversed: a half cycle on, the same foot swings
-      const offset = i === 2 ? 0.5 : 0;
-      action.time = ((phase + offset) % 1) * action.getClip().duration;
-    });
-    if (this.strafe === false && walk.weight > 0.99) this.setPose(keys[0], { force: true });
-  }
-
-  /**
-   * Ask the crowd for a path to `target`, pinned at rest. One crowd tick later its corners say
-   * where the first leg heads, which `w.npc.turnBeforeMoving` turns to before `startMoving`
-   * releases them — and the corridor is kept, so nothing is pathed twice
-   */
-  aimAt(target: { groundPoint: JshCli.GroundPoint; result: FindNearestPolyResult }) {
-    const agent = this.npc.agent;
-    if (!agent) {
-      throw Error(`cannot move without agent: ${this.npc.key}`);
-    }
-    // whilst walking, doors should block npcs
-    agent.queryFilter = this.npc.queryFilter;
-    agent.separationWeight = agentConfig.separationWeight.walk;
-    agent.maxSpeed = 0; // `startMoving` releases them
-
-    crowdApi.requestMoveTarget(
-      this.w.npc.crowd,
-      this.npc.agentId as string,
-      target.result.nodeRef,
-      helper.groundPointToTuple(target.groundPoint),
-    );
-
-    const { last } = this.npc;
-    // last.dst = groundPoint; // already set in `w.e.move`
-    last.dstGrId = this.w.findRoomContaining(target.groundPoint);
-    last.blockingArea = -1;
-    last.point = this.npc.point;
-    // arrival radius is relative to this, else a short move starts arrived
-    last.targetDistance = this.npc.distanceTo(target.groundPoint);
-    Object.assign(last, { stuckAccum: 0, nearest: Infinity, nearestAccum: 0 });
-  }
-
-  /**
-   * Show the gait — walk, from rest: `syncGait` breaks into a run — and release the agent `aimAt` pinned. A mirror npc
-   * has no agent: its movement arrives over the network (see `use-world-net`)
-   */
-  startMoving(arrive = true) {
-    const agent = this.npc.agent;
-    if (agent !== null) {
-      // both on release: `onTick` drops the acceleration of anyone at rest, the pinned included
-      agent.maxAcceleration = agentConfig.maxAcceleration.walk;
-      agent.maxSpeed = this.maxSpeedFor();
-    }
-    // after the turn, so a long one does not eat the stuck grace
-    this.npc.last.moveTime = this.w.gameTime.now();
-    this.arrive = arrive;
-    this.showGait();
-  }
-
-  /** The agent's top speed for the move's intent: a strafe's is then `syncStrafe`'s, by heading */
-  maxSpeedFor() {
-    const { maxSpeed } = agentConfig;
-    if (this.crouched === true) return strafeSpeed[this.gaitKeys[0]];
-    if (this.strafe === true) return strafeSpeed.walk;
-    return this.backwards === true ? maxSpeed.backwards : this.fast === true ? maxSpeed.run : maxSpeed.walk;
-  }
-
-  /** Show the move's gait unless on show: a walk runs on into a move's next leg, a strafe let go eases out in `syncStrafe` */
-  showGait() {
-    const clipKey = this.gaitKeys[this.backwards === true ? 2 : 0]; // ahead, or a half turn round
-    // a look or a spawn in between puts idle on, and it must be shown again or they slide
-    const shown = this.backwards === true || this.crouched ? this.pose === clipKey : isGait(this.pose);
-    if (this.moving === true && shown === true && (this.strafe === false || this.strafing === true)) return;
-    this.moving = true;
-    this.moveClip = this.npc.clips[clipKey];
-    this.gaitSecs = 0;
-    this.setPose(clipKey, { force: this.strafing !== this.strafe });
-  }
-
-  startIdle({ force = false } = {}) {
-    this.npc.resolve.move("idle");
-
-    const skip = !this.arrive && !force;
-    this.arrive = true;
-
-    if (skip) {
-      return;
-    }
-
-    this.npc.last.idleTime = this.w.gameTime.now();
-    const agent = this.npc.agent;
-
-    if (agent) {
-      agent.separationWeight = agentConfig.separationWeight.idle;
-      agent.maxAcceleration = agentConfig.maxAcceleration.idle;
-      agent.maxSpeed = agentConfig.maxSpeed.idle;
-      const [vx, , vz] = agent.velocity;
-
-      // pin ahead by stopping distance v²/2a so agent decelerates without reversing
-      const speed = Math.hypot(vx, vz);
-      const pinAhead = speed ** 2 / (2 * agentConfig.maxAcceleration.idle);
-      const pinX = this.npc.position.x + (vx / (speed || 1)) * pinAhead;
-      const pinZ = this.npc.position.z + (vz / (speed || 1)) * pinAhead;
-      this.npc.pinTo(this.w.npc.getClosestPoly({ x: pinX, y: pinZ }));
-    }
-
-    this.face.rate = 0;
-    const { aim } = this.face;
-    if (aim?.untilRest === true) this.face.aim = null;
-    this.setPose(this.restKey, { force: this.moving });
-    this.moving = false;
-    // a look on the move they arrived before finishing: the rest of it on the spot
-    if (aim?.untilRest === true) this.lookAt(this.bearingOf(aim.at), 0, aim.rate);
-  }
-
-  /** `face.aim.at` as a world angle, a point's from where they stand */
-  bearingOf(at: Geom.VectJson | number) {
-    return typeof at === "number"
-      ? at
-      : geomService.getThreeRotationY(at.y - this.npc.position.z, at.x - this.npc.position.x);
-  }
-
-  /** The turn's rate now, rad/s, `0` if none — a look superseding it sets off at it */
-  getTurnRate() {
-    const t = this.face.turn;
-    if (t === null || t.duration === 0) return 0;
-    const p = t.elapsed / t.duration;
-    return (t.diff * 6 * p * (1 - p)) / t.duration + t.v0 * (1 - p) * (1 - 3 * p);
-  }
-
-  hasUpper(animKey: AnimationClipKey | null) {
-    return this.upper.target === 1 && this.upper.key === animKey;
-  }
-
-  /**
-   * Turn to face `target` (radians) over a duration set by the arc, shuffling round a long one, and resolve
-   * `npc.resolve.look` on landing — setting off at `fromRate`, a superseded look's, rather than restarting
-   */
-  lookAt(target: number, minMs: number, rate = 1, fromRate = 0) {
-    const start = this.npc.rotation.y;
-    const diff = deltaAngle(start, target);
-    const arc = Math.abs(diff);
-    // a shuffle under way carries on, crossfading to idle as the turn lands. Crouched they turn on the spot: it is stood
-    const longLook = this.crouched === false && (arc > longLookAngle || (fromRate !== 0 && this.pose === "shuffle"));
-    let duration = arc < 0.001 ? 0 : Math.max(Math.max(minLookSecs, (2 * arc) / (2 * Math.PI)) / rate, minMs / 1000);
-    // fresh, a quadratic ease-out: it sets off at `2 * arc / duration`
-    let v0 = duration === 0 ? 0 : (2 * diff) / duration;
-    if (fromRate !== 0) {
-      v0 = fromRate;
-      // sooner, else it overshoots: at `3 * arc / |v0|` it is a cubic ease-out
-      if (v0 * diff > 0 && Math.abs(v0) * duration > 3 * arc) duration = (3 * arc) / Math.abs(v0);
-      duration = Math.max(duration, minStopSecs);
-    }
-    this.face.turn = { start, diff, duration, elapsed: 0, longLook, v0 };
-    this.face.rate = 0;
-
-    if (longLook === true) {
-      this.setPose("shuffle");
-      // a `minMs` slow enough to drag it out shuffles gently, where the default rate gives 2
-      const rate = duration > 0 ? arc / duration : lookShuffleRate;
-      this.mixer.timeScale = THREE.MathUtils.clamp(rate / lookShuffleRate, minLookShuffleScale, maxLookShuffleScale);
-    } else if (this.pose === "shuffle") {
-      this.setPose(this.restKey); // a short look superseding a long one
-    }
+  upperOf(side: Side) {
+    return side === "right" ? this.upper : this.upperLeft;
   }
 }
 
