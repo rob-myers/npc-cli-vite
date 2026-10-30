@@ -48,6 +48,7 @@ import { helper } from "../service/helper";
 import { createNpcMaterial, type NpcMaterial } from "../service/npc-material";
 import { npcToBodyKey } from "../service/physics-bijection";
 import { npcJointToPickGreen } from "../service/pick";
+import { neverShownSlot } from "../service/room-slots";
 import { loadSkinSheets, loadSkinSliceSheets } from "../service/skin-sheets";
 import { getWorldStore } from "../service/storage";
 import type { PhysicsBijection } from "../worker/physics.store";
@@ -69,6 +70,8 @@ export default function NPCs() {
       // ONE uniform every npc material reads, so the slider is a value write rather than a rebuild
       dimNode: uniform(w.npcBrightness),
       ambientNode: uniform(w.getTheme().npcs.ambient),
+      sameRoomNode: uniform(w.getTheme().npcs.sameRoom),
+      playerRoom: neverShownSlot,
       gltf: null,
       gltfHash: 0,
       restored: false,
@@ -116,7 +119,8 @@ export default function NPCs() {
         state.crowd.quickSearchIterations = crowdConfig.quickSearchIterations;
       },
       createMaterials(pickId, skinIndex) {
-        return createNpcMaterial(w, { pickId, skinIndex, ambient: state.ambientNode, dim: state.dimNode });
+        const { ambientNode: ambient, dimNode: dim, sameRoomNode: sameRoom } = state;
+        return createNpcMaterial(w, pickId, skinIndex, { ambient, dim, sameRoom });
       },
       buildNpcMesh() {
         // the clone brings its own skeleton; the label rides in the geometry
@@ -564,6 +568,7 @@ export default function NPCs() {
         const mat = state.createMaterials(npc.pickId, npc.skinIndex);
         mat.npcLit.value = npc.lit === true ? 1 : 0;
         mat.dotScreen.value = npc.dotScreen?.value ?? 0; // undefined on an npc from before hmr
+        mat.roomLit.value = npc.roomLit?.value ?? 0;
         mat.roomSlot.value = npc.roomSlot.value; // fresh uniforms, but they stand where they did
         mat.labelYShiftUniform.value = npc.labelYShiftUniform.value; // ...and their label sits where it did
         mat.labelRectUniform.value.copy(npc.labelRectUniform.value);
@@ -627,8 +632,9 @@ export default function NPCs() {
 
         w.events.next({ key: "spawned", npcKey, gmRoomId, spawns: npc.spawns });
       },
-      setAmbient(next) {
+      setAmbient(next, sameRoom) {
         state.ambientNode.value = next;
+        state.sameRoomNode.value = sameRoom;
         w.r3f?.invalidate();
       },
       setBrightness(next) {
@@ -815,6 +821,10 @@ export type State = {
   dimNode: THREE.UniformNode<"float", number>;
   /** The least exposure an npc has, from `theme.npcs.ambient` — a light theme has no dark to stand in */
   ambientNode: THREE.UniformNode<"float", number>;
+  /** The exposure added to those in the player's room, from `theme.npcs.sameRoom` */
+  sameRoomNode: THREE.UniformNode<"float", number>;
+  /** The player's room slot, so those in it are lit more — see `syncNpcRoomSlots` and `NpcAnimation.tickRoomLit` */
+  playerRoom: number;
   gltf: GLTF | null;
   /** DEV: hash of the gltf the npc meshes were built from — see `devHotReload` */
   gltfHash: number;
@@ -850,8 +860,8 @@ export type State = {
   /** Leaves `npc` exactly where it is, at rest — a moving agent would otherwise slide on */
   clearMomentum(npc: Npc): void;
   configureCrowd(): void;
-  /** Sets `ambientNode`'s value — called by `onChangeTheme` */
-  setAmbient(next: number): void;
+  /** Sets `ambientNode`'s and `sameRoomNode`'s values — called by `onChangeTheme` */
+  setAmbient(next: number, sameRoom: number): void;
   /** Sets `dimNode`'s value — called by `WorldMenu`'s slider, never `.value` directly */
   setBrightness(next: number): void;
   /** Keeps every npc's `mrtNode` in step with `w.view.npcMaskMrt` */

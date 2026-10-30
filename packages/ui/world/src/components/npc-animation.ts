@@ -20,6 +20,7 @@ import {
   lieAim,
   lieHeadMaxRad,
   lieRoll,
+  npcMaterialConfig,
   npcScale,
   sitArmVia,
   sitTurn,
@@ -837,6 +838,7 @@ export class NpcAnimation {
         this.npc.resolve.fade("fade");
       }
     }
+    this.tickRoomLit(delta);
 
     if (this.moving === true) {
       this.syncGait(delta);
@@ -989,6 +991,16 @@ export class NpcAnimation {
     if (look.on === false && look.weight === 0) return;
     look.weight = THREE.MathUtils.clamp(look.weight + (look.on ? delta : -delta) / upperFadeSecs, 0, 1);
     if (look.weight > 0 && look.weight < 1) this.w.r3f?.invalidate(); // still on its way
+  }
+
+  /** Lit more in the player's room, eased in and out as either changes room — see `theme.npcs.sameRoom` */
+  tickRoomLit(delta: number) {
+    const { roomLit, roomSlot } = this.npc;
+    const goal = roomSlot.value === this.w.npc.playerRoom ? 1 : 0;
+    if (roomLit === undefined || roomLit.value === goal) return; // undefined on an npc from before hmr
+    const step = (goal === 1 ? delta : -delta) / npcMaterialConfig.sameRoomSecs;
+    roomLit.value = THREE.MathUtils.clamp(roomLit.value + step, 0, 1);
+    this.w.r3f?.invalidate();
   }
 
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */

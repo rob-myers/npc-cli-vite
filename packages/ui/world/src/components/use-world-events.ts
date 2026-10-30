@@ -21,7 +21,7 @@ import {
 import type { AStarSearchResult } from "../pathfinding/AStar";
 import { MODE_FADE_SECS, roomsInViewFrom } from "../service/fade-rooms";
 import { helper } from "../service/helper";
-import { alwaysShownSlot, slotOf } from "../service/room-slots";
+import { alwaysShownSlot, neverShownSlot, slotOf } from "../service/room-slots";
 import * as persisted from "../service/storage";
 import type { AnimationClipKey } from "./NPCs";
 import type { Npc } from "./npc";
@@ -527,7 +527,7 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
         w.door.setBrightness(doors.brightness);
         w.door.setOpacity(doors.opacity, doors.labelOpacity);
         w.door.setDissolve(doors.dissolve);
-        w.npc?.setAmbient(npcs.ambient);
+        w.npc?.setAmbient(npcs.ambient, npcs.sameRoom);
         w.npcBrightness = persisted.getSiteStore().read().npcBrightnessByTheme[w.themeKey] ?? npcs.brightness;
         w.npc?.setBrightness(w.npcBrightness);
         w.phasers?.syncTheme();
@@ -1469,6 +1469,8 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           if (fx.isArriving(next) === true && fx.hasArrived(npc.roomSlot.value) === true) continue;
           npc.roomSlot.value = next;
         }
+        // those in the player's room are lit more
+        if (w.npc != null) w.npc.playerRoom = w.n[w.player.key]?.roomSlot.value ?? neverShownSlot;
       },
       takeItem(npcKey, decorKey) {
         const def = w.decor.runtime.defByKey[decorKey];

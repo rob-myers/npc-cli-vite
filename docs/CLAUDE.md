@@ -60,6 +60,7 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 | Floor | `docs/floor.md` | The look comes from one mutable object, `deckConfig` in `service/texture.ts`. Mutate it and call `w.floor.drawAll()`. |
 | Doors | `docs/doors.md` | A door is `open`, `locked`, `sealed`, `auto`, `held`... (`w.door`, `w.d`). `w.e.toggleDoor` decides who may open or shut one: anyone may shut a door, only those with keys open a locked one. A held door stays open or shut as it is: only a press, or an npc asked to hold or let go, changes it. Its switches go blue (purple locked). Locks, holds, `auto` and `proximity` are saved per map. A switch's menu (`PickMenu`) sets them. |
 | Walls | `docs/walls.md` | `Walls` draws walls and the lintels over doors (two per door, `lintelSegs`, apart from `wallSegs`). Heights are `wallHeight`, `doorHeight`, `lintelHeight` in `const.env`. A wall's own `meta.y` / `meta.h` is drawn, but sight, the player light and spots still take it as full height. Each wall is darker at its foot and top, in its own colour, so walls blend in any order. |
+| Lighting | `docs/lighting.md` | The player's light: a compute pass sweeps occluders into a polar table each frame, which materials read (`applyLight`, `litBody`). Room lights: lit npcs' rooms and rooms lit by hand are shown besides what the player sees. An npc's exposure adds ambient, the player's light, `litAmbient` whilst lit, and `theme.npcs.sameRoom` in the player's room, eased. |
 | Crisp fills | `docs/crisp-fills.md` | A canvas read back as ids (the room-hit canvas, room slots) is filled with `drawPolygonsCrisp`, never `drawPolygons`, whose soft edges blend two ids into a third. |
 | Obstacle spritesheets | `docs/starship-sheets.md` | `gen-starship-sheets` packs one rect per obstacle polygon of each symbol, keyed `getObstacleSheetKey(symbolKey, obstacleId)` in `sheets.json`. `<Obstacles>` `addUvs` reads it directly. Keyed by index, so re-run it after any MapEdit obstacle change. |
 | Npc skins | `docs/skins.md` | `gen-skin-sheets` lays out a 256px cell per skin in `sheets.json`. A DEV World draws `sheet/skin.N.png` from the skins' svgs (else pngs) and saves it, so a build fetches neither. Load a DEV World before committing. Also how to make a skin: classic arms, opaque overlays, the face layout. |
@@ -92,36 +93,6 @@ Each doc below is the ONLY doc for its topic: update it rather than starting ano
 ## Renderer
 
 Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Use TSL imports (`three/tsl`) for shader nodes, not GLSL strings.
-
-## Player light (visibility sweep)
-
-`service/player-light.ts` answers "can the player see this?" once per frame instead of per fragment.
-
-- **A compute pass** (`Fn(...)().compute(lightAngles)`) sweeps `lightAngles` directions from the player. It writes the distance to the nearest occluder into a polar table, an `attributeArray` storage buffer.
-- `<PlayerLight>` in `WorldView` dispatches it from a `useFrame(..., -2)`, so it lands before the render.
-- **Materials read one entry** of that table:
-  ```
-  v = positionWorld.xz - lightXZ;  lit = |v| <= table[angleOf(v)]
-  ```
-- Two neighbouring angles are sampled and their *lit/unlit results* blended. Blending the distances instead would put a shadow edge where neither surface is.
-
-**Occluders**
-- Every wall segment: `gmsData.byKey[gmKey].wallSegs`, transformed to world on map change by `syncWalls`.
-- The **closed** part of each door. It is derived in-shader from the door's `src`/`dst`, `gapAtHighLambda` and live `openRatio`, mirroring `Doors`' own `inGap` test.
-- Windows are excluded on purpose: light passes through glass.
-- Except HULL windows (`meta.hull`). Their centre line `seg` joins the walls, so nothing beyond the hull is lit. A CURVED one (`meta.curved`) has an AABB `seg` cutting across its bay, so `curvedMidline` follows its arc instead.
-
-**The table is created once** and never rebuilt, so materials reading it survive a map change. Only the occluder buffers are refilled, and nothing but the sweep reads those.
-
-**Opting a material in** is one line: `m.colorNode = w.view.playerLight.applyLight(node)`, or `applyLightRgba` where the colour carries alpha.
-- Unlit fragments are tinted towards black.
-- A `strength` of `0` is exactly identity, so wrapping is unconditional. It is `0` with no player, or on a WebGL fallback backend, which has no real compute.
-
-**A surface turned away takes less.**
-- `applyLight` accepts a unit outward XZ normal, cut at edge-on. Obstacle skirts pass one per instance.
-- A FIGURE asks `litBody(normalWorld)` for the AMOUNT instead, `0`–`1`. It wraps round them half-Lambert, off a lamp hung in front of the player. Whoever stands on the light has no bearing from it, and the player always does.
-- The lamp hangs off the player's own height (`originY`), so it stays above one lain on a top bunk.
-- Npcs add up their own exposure: `ambient` + that + `litAmbient` whilst lit, all in `const.npc`. A tint would be capped at a 0.4 swing by `unlitTint`.
 
 ## Player input
 

@@ -156,10 +156,12 @@ export const npcMaterialConfig = {
   labelHalfHeight: 0.10625,
   /** Eased to `overheadAmount` as the view elevation goes `overheadFrom` → `overheadTo` */
   rim: { power: 5, amount: 0.2, color: [0.55, 0.72, 0.7], overheadAmount: 0.05, overheadFrom: 0.45, overheadTo: 0.85 },
-  /** Exposure is ADDED: `ambient` out of the light, the light taking what that leaves, `litAmbient` on top */
+  /** Exposure is ADDED: `ambient` out of the light, the light taking what that leaves, `litAmbient` on top, and `theme.npcs.sameRoom` */
   ambient: 0.3,
   ambientInSight: 0.12,
   litAmbient: 0.4,
+  /** Seconds the player's room's extra light eases over — see `theme.npcs.sameRoom` */
+  sameRoomSecs: 0.4,
   /** A light of the npcs' own, from straight above: how far an underside darkens, a side half as far */
   faceShade: 0.85,
 } as const;

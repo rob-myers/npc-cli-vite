@@ -41,6 +41,8 @@ export type NpcUniforms = {
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   pickIdUniform: THREE.UniformNode<"float", number>;
+  /** `1` in the player's room, eased — see `NpcAnimation.tickRoomLit` */
+  roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   skinIndexUniform: THREE.UniformNode<"float", number>;
 };
@@ -52,15 +54,15 @@ export type NpcMaterial = NpcUniforms & {
 
 type World = import("@npc-cli/util").UseStateRef<WorldState>;
 
+/** Uniforms every npc's material reads, so a theme or slider change is a value write */
+type NpcShared = { ambient: THREE.Node<"float">; dim: THREE.Node<"float">; sameRoom: THREE.Node<"float"> };
+
 /**
  * An npc's material and its uniforms: their body, and their label in the same draw.
- * `ambient` and `dim` are shared by every npc — see `NPCs`' `ambientNode` and `dimNode`
+ * `shared` is every npc's — see `NPCs`' `ambientNode`, `dimNode` and `sameRoomNode`
  */
-export function createNpcMaterial(
-  w: World,
-  opts: { pickId: number; skinIndex: number; ambient: THREE.Node<"float">; dim: THREE.Node<"float"> },
-): NpcMaterial {
-  const u = createUniforms(opts.pickId, opts.skinIndex);
+export function createNpcMaterial(w: World, pickId: number, skinIndex: number, shared: NpcShared): NpcMaterial {
+  const u = createUniforms(pickId, skinIndex);
 
   // - has value 1 iff lit and lighting shown
   // - lit npcs will not be faded with their rooms
@@ -83,7 +85,7 @@ export function createNpcMaterial(
   // ADDED rather than multiplied, so it lights the body rather than tinting whatever the
   // skin happened to be — a dark uniform takes a rim as readily as a pale one
   const litRgb = skinRgb
-    .mul(exposure(w, litAmount, opts.ambient, opts.dim, fold))
+    .mul(exposure(w, litAmount, u.roomLit, shared, fold))
     .add(vec3(...npcMaterialConfig.rim.color).mul(rim(fold)));
   // `alphaTestNode` below gives way with this, or the body would be discarded whole the
   // moment its alpha started dropping
@@ -160,6 +162,7 @@ function createUniforms(pickId: number, skinIndex: number): NpcUniforms {
     npcLit: uniform(0),
     // ONE uniform for both uses, so renumbering is a value write rather than a rebuilt material
     pickIdUniform: uniform(pickId),
+    roomLit: uniform(0),
     roomSlot: uniform(alwaysShownSlot, "float"),
     skinIndexUniform: uniform(skinIndex),
   };
@@ -197,12 +200,12 @@ function skinColor(w: World, u: NpcUniforms) {
   return { skinTex, skinRgb: mix(skinTex.rgb, eyes.rgb, eyes.a.mul(inFace)) };
 }
 
-/** Ambient, plus the player's light, plus more whilst lit: the light takes what the ambient leaves */
+/** Ambient, plus the player's light, plus more whilst lit or in the player's room: the light takes what the ambient leaves */
 function exposure(
   w: World,
   litAmount: THREE.Node<"float">,
-  ambient: THREE.Node<"float">,
-  dim: THREE.Node<"float">,
+  roomLit: THREE.Node<"float">,
+  { ambient, dim, sameRoom }: NpcShared,
   fold: THREE.Node<"float">,
 ) {
   const { ambient: least, ambientInSight, litAmbient, faceShade } = npcMaterialConfig;
@@ -211,6 +214,7 @@ function exposure(
     ambientNow
       .add(w.view.playerLight.litBody(normalWorld).mul(ambientNow.oneMinus()))
       .add(litAmount.mul(litAmbient))
+      .add(roomLit.mul(sameRoom))
       .clamp(0, 1)
       // flat-shaded from straight above, half-Lambert: whatever the light, and steady as the camera turns
       .mul(normalWorld.y.mul(faceShade / 2).add(1 - faceShade / 2))

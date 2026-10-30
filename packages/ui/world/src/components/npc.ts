@@ -71,6 +71,8 @@ export class Npc {
   npcLit: THREE.UniformNode<"float", number>;
   /** `1` draws their body as a dot screen, but not their label or outline — see `NpcGhost` */
   dotScreen: THREE.UniformNode<"float", number>;
+  /** `1` in the player's room, eased — see `NpcAnimation.tickRoomLit` */
+  roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   /** skin selection */
   skinIndexUniform: ReturnType<typeof uniform<"float", number>>;
@@ -177,6 +179,7 @@ export class Npc {
     this.labelYShiftUniform = init.labelYShiftUniform;
     this.npcLit = init.npcLit;
     this.dotScreen = init.dotScreen;
+    this.roomLit = init.roomLit;
     this.roomSlot = init.roomSlot;
     this.material = init.material;
     this.maskMrt = init.maskMrt;
@@ -613,6 +616,7 @@ export type NpcInit = {
   labelYShiftUniform: THREE.UniformNode<"float", number>;
   npcLit: THREE.UniformNode<"float", number>;
   dotScreen: THREE.UniformNode<"float", number>;
+  roomLit: THREE.UniformNode<"float", number>;
   roomSlot: THREE.UniformNode<"float", number>;
   material: THREE.MeshStandardNodeMaterial;
   maskMrt: ReturnType<typeof mrt>;

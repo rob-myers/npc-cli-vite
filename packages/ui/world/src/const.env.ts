@@ -227,7 +227,7 @@ export const defaultWorldTheme: import("./assets.schema").WorldTheme = {
     brightness: 1,
     skirtBrightness: 1,
   },
-  npcs: { ambient: 0, brightness: 0.25, fxStrength: 1 },
+  npcs: { ambient: 0, brightness: 0.25, fxStrength: 1, sameRoom: 0.2 },
   doors: {
     brightness: 1,
     opacity: 0.8,
