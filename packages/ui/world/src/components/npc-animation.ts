@@ -99,9 +99,10 @@ export class NpcAnimation {
   rolledAt = -Infinity;
   /**
    * A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head.
-   * `want` is the turn asked for, unclamped, and `aim` the phaser's — see `tickTurnAim`. `head`: stood, the head's alone
+   * `want` is the turn asked for, unclamped, and `aim` the phaser's — see `tickTurnAim`. `head`: stood, the head's alone.
+   * `held` is the torso's share for a hand at their head, eased — see `tickTurn`
    */
-  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0, head: false };
+  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0, head: false, held: 0 };
   /** Lain, a look whilst no arm aims: the head turns to `at` by `weight`, eased towards `on` — see `lookLain` */
   lieLook = { on: false, weight: 0, at: new THREE.Vector3() };
   /** A point the head looks at whilst no aimed arm has it, e.g. psi meeting a shot: `null` for none */
@@ -302,7 +303,7 @@ export class NpcAnimation {
   /** Their head faces ahead at once, rather than easing round: e.g. respawned unseen */
   faceAhead() {
     this.headTurn.identity();
-    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0, head: false });
+    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0, head: false, held: 0 });
   }
 
   /** A shot landing `at` along `dir` jolts `part`, and the bones it hangs from, away from it */
@@ -1012,11 +1013,12 @@ export class NpcAnimation {
     const aiming = this.posture === "sit" && this.upper.aim !== null ? this.upper.eased : 0;
     /** Radians the torso turns with the gun past `aimTorsoFrom` to their left */
     const torsoAim = aiming * Math.max(0, turn.aim - sitTurn.aimTorsoFrom);
-    if (turn.target === 0 && turn.value === 0 && torsoAim === 0) return; // nearly everyone, nearly always
-    turn.value += (turn.target - turn.value) * (1 - Math.exp(-sitTurn.rate * delta));
+    if (turn.target === 0 && turn.value === 0 && torsoAim === 0) return void (turn.held = 0); // nearly everyone, nearly always
+    const ease = 1 - Math.exp(-sitTurn.rate * delta);
+    turn.value += (turn.target - turn.value) * ease;
     if (Math.abs(turn.value - turn.target) < 1e-3) turn.value = turn.target;
     else this.w.r3f?.invalidate(); // still on its way
-    if (turn.value === 0 && torsoAim === 0) return;
+    if (turn.value === 0 && torsoAim === 0) return void (turn.held = 0);
     const head = this.upperHead.entry?.bone;
     /** Each hand at their head, where the head has it now: it goes there again once that has turned */
     for (const side of sides) {
@@ -1029,10 +1031,18 @@ export class NpcAnimation {
       head.worldToLocal(forearm.localToWorld(tmpHeld[side].copy(forearm.position)));
     }
     /** The torso's turn: a share of their look's, giving way whilst an arm aims to the gun's far to their left */
-    let torso = (1 - aiming) * (this.posture === "sit" ? sitTurn.body : 0) * turn.value + torsoAim;
-    // towards a hand at their head (their left is positive), the torso takes what the neck may not
-    if (held.left === true && turn.value > 0) torso = Math.max(torso, turn.value - sitTurn.heldNeckRad);
-    if (held.right === true && turn.value < 0) torso = Math.min(torso, turn.value + sitTurn.heldNeckRad);
+    const share = (1 - aiming) * (this.posture === "sit" ? sitTurn.body : 0) * turn.value + torsoAim;
+    /** The neck's turn, were the torso to take only its share */
+    const neckWant = turn.value - share;
+    /** What the neck may not turn towards a hand at their head (their left is positive), which the torso takes */
+    const heldWant =
+      (held.left ? Math.max(0, neckWant - sitTurn.heldNeckRad) : 0) +
+      (held.right ? Math.min(0, neckWant + sitTurn.heldNeckRad) : 0);
+    // eased, as the hand comes and goes e.g. psi lowered
+    turn.held += (heldWant - turn.held) * ease;
+    if (Math.abs(turn.held - heldWant) < 1e-3) turn.held = heldWant;
+    else this.w.r3f?.invalidate();
+    const torso = share + turn.held;
     /** The head's turn on the torso: where they look, as far as the neck lets it from a torso turned with the gun */
     const neck = THREE.MathUtils.clamp(turn.value - torso, -sitTurn.maxRad, sitTurn.maxRad);
     /** Each bone's parent's world turn, carried down the chain (stomach, chest, head): one walk up the skeleton, not three */
