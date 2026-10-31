@@ -859,9 +859,11 @@ export default function useWorldEvents(w: UseStateRef<WorldState>) {
           }
           case "npc-pre-do":
             if (w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
+            if (w.player.is(e.npcKey)) w.player.doing = true;
             break;
           case "npc-do":
             if (e.decorKey !== null && w.phasers?.isArmed(e.npcKey)) w.phasers.disarm(e.npcKey);
+            if (w.player.is(e.npcKey)) w.player.doing = false;
             break;
           case "enter-doorway":
             // a doorway belongs to two rooms, and a lit npc standing in one lights both

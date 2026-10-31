@@ -22,6 +22,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       cancelLook: () => {},
+      doing: false,
       look: false,
       lookYieldUntil: 0,
       strafe: false,
@@ -39,8 +40,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         const rHeld = w.view.keysDown.has("r") === true;
         /** Look mode alone, which a held `r` overrides */
         const auto = state.look === true && rHeld === false;
-        // it yields to what they do of their own accord: a reach, a turn, a fade onto a seat
-        if (auto && (w.e.handling.has(state.key) || face.turn !== null || npc.isFading()))
+        // it yields to what they do of their own accord: a reach, a turn, a fade onto a seat (not off one)
+        if (auto && (w.e.handling.has(state.key) || face.turn !== null || (state.doing && npc.isFading())))
           state.lookYieldUntil = w.gameTime.now() + lookYieldSecs;
         const held = lookAt !== null || ((rHeld || (state.look && state.isLookYielding() === false)) && free);
         const { posture } = npc;
@@ -408,6 +409,8 @@ export type State = {
   aimAtPointer(): void;
   /** Look mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
   look: boolean;
+  /** From `npc-pre-do` until `npc-do`: about to sit or lie, so look mode yields to their fade onto it */
+  doing: boolean;
   /** Game time until which look mode yields to what they do themselves, e.g. putting a box down */
   lookYieldUntil: number;
   /** Look mode is yielding: see `lookYieldUntil` */
