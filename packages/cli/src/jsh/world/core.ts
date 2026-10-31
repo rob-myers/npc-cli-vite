@@ -250,6 +250,7 @@ type CarryOpts = { npcKey?: string; items?: string[] };
  * ```sh
  * grant npc:rob g0d29
  * grant npc:rob g0d{0..5}
+ * grant rob g0d{0..5}
  * grant npc:rob all
  * ```
  */
@@ -257,10 +258,13 @@ export function grant(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  const operands = api.getJsOperands(args, opts);
-  const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
+  const npcKey = opts.npcKey ?? getFirstUnknownNaked(opts);
+  const npc = w.npc.get(npcKey);
+  const gdKeys =
+    opts.all === true
+      ? keys(w.door.byKey)
+      : (opts.doors ?? api.getJsOperands(args, opts).filter((op) => op !== npcKey));
 
-  const npc = w.npc.get(opts.npcKey);
   for (const gdKey of gdKeys) {
     if (w.helper.isGmDoorKey(gdKey)) w.e.setAccess(npc.key, gdKey, true);
     else throw Error(`invalid gdKey: ${gdKey}`);
@@ -1431,6 +1435,7 @@ export async function remove(
  * ```sh
  * revoke npc:rob g0d29
  * revoke npc:rob g0d{0..5}
+ * revoke rob g0d{0..5}
  * revoke npc:rob all
  * ```
  */
@@ -1438,10 +1443,13 @@ export function revoke(
   { api, args, w }: JshCli.RunArg,
   opts: { npcKey: string; all?: boolean; doors?: Geomorph.GmDoorKey[] } = api.jsArg(args, { npc: "npcKey" }),
 ) {
-  const operands = api.getJsOperands(args, opts);
-  const gdKeys = opts.all === true ? keys(w.door.byKey) : (opts.doors ?? operands);
+  const npcKey = opts.npcKey ?? getFirstUnknownNaked(opts);
+  const npc = w.npc.get(npcKey);
+  const gdKeys =
+    opts.all === true
+      ? keys(w.door.byKey)
+      : (opts.doors ?? api.getJsOperands(args, opts).filter((op) => op !== npcKey));
 
-  const npc = w.npc.get(opts.npcKey);
   for (const gdKey of gdKeys) {
     if (w.helper.isGmDoorKey(gdKey)) w.e.setAccess(npc.key, gdKey, false);
     else throw Error(`invalid gdKey: ${gdKey}`);
