@@ -969,7 +969,7 @@ export function WorldView(props: React.PropsWithChildren) {
             state.setCameraView(getPresetCameraView(stepCameraPreset(state.cameraView, presetStep)));
             w.menu?.update();
           }
-        } else if (key === "f") {
+        } else if (key === "v") {
           if (e.repeat === false) state.setFollow(!state.follow);
         }
       },
@@ -1678,6 +1678,8 @@ export function WorldView(props: React.PropsWithChildren) {
     <div className="size-full" ref={ref}>
       <Canvas
         style={{ filter: `brightness(${w.brightness})` }}
+        // inherited by the canvas, whose own cursor is set only whilst dragged
+        className={cn(w.player?.look === true && "cursor-crosshair")}
         ref={state.ref("canvas")}
         frameloop={state.syncRenderMode()}
         gl={state.createRenderer}

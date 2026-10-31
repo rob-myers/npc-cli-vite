@@ -110,6 +110,12 @@ export default function Phasers() {
         state.sync();
         drawn && w.events.next({ key: "phasers", armed: true, npcKeys: [npcKey] });
       },
+      bearingFor(npcKey, at) {
+        const npc = w.n[npcKey];
+        if (npc === undefined) return null;
+        const arm = state.arms.get(npcKey);
+        return arm?.armed === true ? bearingPast(npc, at, arm.muzzleRight) : npc.anim.bearingOf(at);
+      },
       async castAlong(npc, arm, shot) {
         shot.casting = true;
         const [end] = await state.endsAlong([npc.key]);
@@ -900,6 +906,8 @@ export type State = PhaserResources & {
     npcKey: string,
     opts?: { at?: null | string; part?: null | string; local?: null | THREE.Vector3; once?: boolean; toward?: string },
   ): void;
+  /** The bearing that faces `npcKey` at `at`: armed, their muzzle's line through it. `null` without them */
+  bearingFor(npcKey: string, at: Geom.VectJson): null | number;
   /** Where a shot at no one ends: one cast along their aim, level at the gun's height. Npcs are not looked for */
   castAlong(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
   /** Where a shot at no one along each one's aim would end now, and the rooms it passes through, in one worker request */

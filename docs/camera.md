@@ -78,7 +78,7 @@ There is no zooming past the outer stop: the radius is only ever a zoom stop.
 - `followPlayer` holds the target `frontierConfig.panFrac` of the way along it, at every zoom (`getFollowGoal`). The aimed zoom-in heads there too.
 
 **Follow**
-- `follow` is on or off (`setFollow`). The button, or `f`, toggles it.
+- `follow` is on or off (`setFollow`). The button, or `v`, toggles it.
 - `holdFrontier` (MCP's way to show the player) is a `lookAt` tracking the goal. Then `frontierHold` keeps the follow running until the camera is next touched (the controls' `start` event, see `onCameraStart`).
 - A `lookAt` in `embodied` carries the stops on its own alpha, so the zoom lands with the pan.
 - A player respawn (`spawned`, e.g. `fadeSpawn`) or a switch of player (`set-player`) calls `onPlayerRespawn`. The frontier is read afresh, and a follow pans there, never quicker than `respawnPanMinMs`.

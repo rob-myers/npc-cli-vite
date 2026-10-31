@@ -112,6 +112,9 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
   - On touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.
   - `aimAtPointer` faces them to it for `lookHoldMs`, just as `r` does the pointer. `LookMark` marks it with a cross.
   - On a desktop, a right click that picks something does the same (`picked`, in `use-world-events`). The exception is a pick of the player themself, which is what a trackpad's two-finger tap is, besides `r`.
+  - A double tap of `r` starts look mode (`w.player.look`, `toggleLook`), and a press ends it: they face the pointer without `r` held, so a move strafes. The bar keeps a "look" notice whose x ends it, and the cursor is a crosshair. A camera drag leaves their facing be.
+    - It gives way whilst they handle an item, turn of their own accord or fade onto a seat, and `lookYieldSecs` after. Its notice greys meanwhile.
+  - Raised, the phaser's muzzle line passes through the point looked at, not their middle (`w.phasers.bearingFor`).
 
 ## Navigation and crowd
 

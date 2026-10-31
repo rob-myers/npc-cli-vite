@@ -111,6 +111,11 @@ export default function WorldHud() {
           el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
         });
       },
+      watchLook(el) {
+        return w.e.addFrameCallback(() => {
+          el?.classList.toggle("blocked", w.player.isLookYielding() === true);
+        });
+      },
     }),
   );
 
@@ -180,14 +185,12 @@ export default function WorldHud() {
   const hasPhaser = w.e.hasItem(playerKey, "phaser");
   const armed = w.phasers?.isArmed(playerKey) === true;
   /** The notices kept over the bar. A raised phaser strafes them too, which only lowering it ends */
-  const kept: { label: string; title: string; end?: () => void }[] = armed
-    ? [
-        { label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) },
-        ...(stood ? [{ label: "strafe", title: "strafing whilst aiming" }] : []),
-      ]
-    : strafing
-      ? [{ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() }]
-      : [];
+  const kept: { label: string; title: string; end?: () => void }[] = [];
+  if (armed) kept.push({ label: "aim", title: "lower phaser: e", end: () => w.phasers?.disarm(playerKey) });
+  if (armed && stood) kept.push({ label: "strafe", title: "strafing whilst aiming" });
+  else if (strafing)
+    kept.push({ label: "strafe", title: "stop strafing: shift twice", end: () => w.player.toggleStrafe() });
+  if (w.player.look) kept.push({ label: "look", title: "stop looking: r", end: () => w.player.toggleLook() });
   const dead = w.shields?.isDead(playerKey) === true;
 
   /** By slot, what a right-click on it offers */
@@ -271,14 +274,14 @@ export default function WorldHud() {
               {kept.map(({ label, title, end }) => (
                 <div
                   key={label}
-                  ref={label === "aim" ? state.watchAim : undefined}
+                  ref={label === "aim" ? state.watchAim : label === "look" ? state.watchLook : undefined}
                   title={end === undefined ? title : undefined}
                   className={cn(
                     "group pointer-events-auto flex items-center gap-1 rounded bg-neutral-900/90 py-0.5 [&.blocked]:text-neutral-400",
                     end === undefined ? "px-2" : "pr-0.5 pl-2",
                   )}
                 >
-                  <span className="group-[.blocked]:hidden">{label}</span>
+                  <span className={cn(label === "aim" && "group-[.blocked]:hidden")}>{label}</span>
                   {label === "aim" && <span className="hidden group-[.blocked]:inline">aim blocked</span>}
                   {end !== undefined && (
                     <button
@@ -457,10 +460,10 @@ function PlayerButtons() {
           )}
         </div>
       )}
-      {/* follow on (white) or off, as `f` */}
+      {/* follow on (white) or off, as `v` */}
       <div
         className={buttonClass}
-        title={`follow ${follow ? "on" : "off"}: f`}
+        title={`follow ${follow ? "on" : "off"}: v`}
         onClick={() => w.hud?.dragged !== true && w.view.setFollow(!follow)}
       >
         <AnimatePresence>
@@ -841,4 +844,6 @@ export type State = {
   press(index: number): void;
   /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
   watchAim(el: null | HTMLDivElement): () => void;
+  /** Greys the "look" notice whilst look mode yields to what they do themselves */
+  watchLook(el: null | HTMLDivElement): () => void;
 };

@@ -22,10 +22,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       cancelLook: () => {},
+      look: false,
+      lookYieldUntil: 0,
       strafe: false,
       tapMs: {},
       keepAim: { at: 0, rate: 0, untilRest: false },
-      pointerAim: { at: { x: 0, y: 0 }, rate: 1, untilRest: false },
+      pointerAim: { at: 0, rate: 1, untilRest: false },
 
       aimAtPointer() {
         const npc = state.get();
@@ -34,7 +36,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         // not whilst locked on: the phaser's target is whom they face
         const free = w.phasers?.isLocked(state.key) !== true;
         const lookAt = free ? state.lookAt : null;
-        const held = lookAt !== null || (w.view.keysDown.has("r") === true && free);
+        const rHeld = w.view.keysDown.has("r") === true;
+        /** Look mode alone, which a held `r` overrides */
+        const auto = state.look === true && rHeld === false;
+        // it yields to what they do of their own accord: a reach, a turn, a fade onto a seat
+        if (auto && (w.e.handling.has(state.key) || face.turn !== null || npc.isFading()))
+          state.lookYieldUntil = w.gameTime.now() + lookYieldSecs;
+        const held = lookAt !== null || ((rHeld || (state.look && state.isLookYielding() === false)) && free);
         const { posture } = npc;
         if ((held === false || posture !== "stand") && face.aim === state.pointerAim) face.aim = null;
         /** Strafing, they keep their facing. Never over another's aim e.g. the phaser's */
@@ -45,24 +53,30 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (lookAt !== null) {
           tmpHit.set(lookAt.x, 0, lookAt.y);
         } else {
-          const { raycaster, lastPointer, canvas } = w.view;
-          const { width, height } = canvas.getBoundingClientRect();
+          // look mode keeps their facing whilst the camera is dragged
+          if (rHeld === false && (w.view.controls?.pointers.length ?? 0) > 0) return;
+          // measured on resize, not here: a rect read each tick may force a layout
+          const { raycaster, lastPointer, bounds } = w.view;
+          const { width, height } = bounds;
           tmpNdc.set((lastPointer.move.x / width) * 2 - 1, 1 - (lastPointer.move.y / height) * 2);
           raycaster.setFromCamera(tmpNdc, w.r3f.camera);
           if (raycaster.ray.intersectPlane(floorPlane, tmpHit) === null) return;
         }
-        Object.assign(state.pointerAim.at, { x: tmpHit.x, y: tmpHit.z });
+        tmpLook.x = tmpHit.x;
+        tmpLook.y = tmpHit.z;
         w.r3f.invalidate(); // a held key draws nothing of itself
         if (posture === "lie") {
           // lain, they roll over and lift their head to look, held there once let go: armed, they point there instead
-          if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, state.pointerAim.at);
-          return void npc.anim.lookLain(state.pointerAim.at);
+          if (w.phasers?.isArmed(state.key) === true) return w.phasers.pointAt(state.key, tmpLook);
+          return void npc.anim.lookLain(tmpLook);
         }
         if (posture === "sit") {
-          w.phasers?.pointAt(state.key, state.pointerAim.at); // armed, the arm goes with them
+          w.phasers?.pointAt(state.key, tmpLook); // armed, the arm goes with them
           // sat they do not turn round: their head, and a little of their torso
-          return void npc.anim.turnTo(state.pointerAim.at);
+          return void npc.anim.turnTo(tmpLook);
         }
+        // armed, their muzzle's line through it rather than their middle
+        state.pointerAim.at = w.phasers?.bearingFor(state.key, tmpLook) ?? npc.anim.bearingOf(tmpLook);
         // the aim's own ease alone, at rest too: a look for each shift of the pointer stuttered
         face.aim = state.pointerAim;
         if (npc.isMoving() === true) face.turn = null; // else a look landing mid-move idles them
@@ -103,6 +117,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       is(npcKey) {
         return npcKey === state.key;
+      },
+      isLookYielding() {
+        return w.gameTime.now() < state.lookYieldUntil;
       },
       isDoubleTap(key, ms) {
         const double = ms - (state.tapMs[key] ?? -Infinity) < doubleTapMs;
@@ -162,7 +179,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           else anim?.setCrouch(anim.crouchLevel === 1 ? 0 : 1);
           return;
         }
-        if (e.code === "KeyR") return void w.r3f?.invalidate(); // held: see `aimAtPointer`
+        if (e.code === "KeyR") {
+          // held: see `aimAtPointer`. Twice quickly starts look mode, and once ends it
+          if (state.look === true || state.isDoubleTap(e.code, e.timeStamp)) state.toggleLook();
+          return void w.r3f?.invalidate();
+        }
         if (e.code === "KeyQ") state.togglePsi();
         else if (e.code === "KeyE") state.toggleArm();
         else return;
@@ -269,6 +290,13 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           w.phasers.arm(state.key); // lets go of them first, still drawn
         else w.phasers.toggle(state.key);
       },
+      toggleLook() {
+        state.look = !state.look;
+        w.hud?.update(); // on, the bar keeps a notice of it
+        w.view.update(); // and the cursor is a crosshair
+        if (state.look === false) w.hud?.say("look off");
+        w.r3f?.invalidate();
+      },
       togglePsi() {
         if (state.exists() === false) return;
         const on = w.e.isPsiRaised(state.key);
@@ -353,6 +381,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const tmpNdc = new THREE.Vector2();
 const tmpHit = new THREE.Vector3();
+/** Where they look on the floor, this tick */
+const tmpLook = { x: 0, y: 0 };
 /** A look tap's longest, second finger down to last up, and how far any finger may stray — as `isPointDiffDrag` */
 const lookTapMs = 300;
 /** A second press of the same move key within this is a double tap, which runs */
@@ -361,6 +391,8 @@ const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const lookTapSlopPx = 20;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
+/** Game seconds look mode waits after they are done with what it yielded to */
+const lookYieldSecs = 0.8;
 /** Metres from them within which a tap gives no direction to look */
 const lookDeadMetres = 0.3;
 /** Metres off that a tap past the horizon is taken to be */
@@ -372,8 +404,14 @@ export type State = {
 
   /** Place the player if absent, then track them. `false` if they are not where the save left them */
   ensure(): Promise<boolean>;
-  /** Whilst `r` is held they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
+  /** Whilst `r` is held, or `look` is on, they face where the pointer meets the floor: or `lookAt`, whilst it is set. Each tick */
   aimAtPointer(): void;
+  /** Look mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
+  look: boolean;
+  /** Game time until which look mode yields to what they do themselves, e.g. putting a box down */
+  lookYieldUntil: number;
+  /** Look mode is yielding: see `lookYieldUntil` */
+  isLookYielding(): boolean;
   /** Whilst on they keep their facing, so a move strafes, at a walk. A double tap of Shift toggles it */
   strafe: boolean;
   /** When each key last went down, for its double tap */
@@ -383,7 +421,7 @@ export type State = {
   /** The aim strafing gives the player: at `rate` `0` it turns them not at all. Ours alone to clear, so kept over hmr */
   keepAim: { at: number; rate: number; untilRest: boolean };
   /** The aim `aimAtPointer` gives the player. Ours alone to clear, so kept over hmr */
-  pointerAim: { at: Geom.VectJson; rate: number; untilRest: boolean };
+  pointerAim: { at: number; rate: number; untilRest: boolean };
   /** Two fingers down on the canvas that may yet be a look tap: since when, and where */
   tap: null | { startMs: number; downs: [Touch, Touch] };
   /** The move key last pressed and when, and whether a double tap of one has them running */
@@ -412,6 +450,8 @@ export type State = {
   onKeyDown(e: KeyboardEvent): void;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
+  /** Look mode on or off, saying so */
+  toggleLook(): void;
   /** Run or walk — their `anim.hurry` — saying so */
   toggleRun(): void;
   /** Psi off, else on — on needs psi */
