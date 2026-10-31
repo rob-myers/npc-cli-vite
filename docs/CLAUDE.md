@@ -98,7 +98,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 ## Player input
 
 - **Walking.** `w`, `a`, `s` and `d` head as seen, snapped onto a world axis near it: see `embodied` mode in `docs/camera.md`.
-- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap is contextual, half or back up. Touch has no way yet.
+- **Crouching.** `c` crouches the player behind cover (`anim.setCrouch`): a double tap, a full crouch; a tap crouches half from standing, else stands. Touch has no way yet.
   - Crouched they move slowly in that crouch's gaits, strafing too, and never run.
 - **Gait.** `x` held runs, once the key repeats, and a tap ends the run (`w.player.setGait`, `getGait`). A toast names each.
   - The gait button on `WorldHud`, beside follow, toggles walk and run (`toggleRun`). A ↔ badge shows whilst strafing.

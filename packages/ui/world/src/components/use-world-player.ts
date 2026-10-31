@@ -180,10 +180,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return void Object.assign(tap, { code: e.code, ms: e.timeStamp });
         }
         if (e.code === "KeyC") {
-          // twice quickly, a full crouch. Once: half from standing or full, else stood
+          // twice quickly, a full crouch. Once: half from standing, else stood
           const anim = state.get()?.anim;
           if (state.isDoubleTap(e.code, e.timeStamp)) anim?.setCrouch(2);
-          else anim?.setCrouch(anim.crouchLevel === 1 ? 0 : 1);
+          else anim?.setCrouch(anim.crouchLevel === 0 ? 1 : 0);
           return;
         }
         if (e.code === "KeyR") {

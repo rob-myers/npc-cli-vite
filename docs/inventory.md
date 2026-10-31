@@ -166,7 +166,7 @@ Two crouches, behind cover such as a sofa: `crouch_half`, the head 1.32m up, and
 (`docs/npc-strafe.md`).
 
 - The player's `c`: a double tap, a full crouch, as a double tap of Shift toggles strafing. A tap crouches half from
-  standing, stands from half, and comes up to half from full.
+  standing, and stands from either crouch.
 - jsh: `pose rob as:crouch_half`, `pose rob as:crouch_cover`, `pose rob as:breathe`.
 
 - Raised, they stay crouched. `Phasers` skips its stance, and `phaser_aim` / `phaser_aim_avoid` play over the head and
