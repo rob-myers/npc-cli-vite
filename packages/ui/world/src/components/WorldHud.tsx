@@ -3,6 +3,7 @@ import { itemIconUrl } from "@npc-cli/media/icon";
 import { cn, useStateRef } from "@npc-cli/util";
 import {
   ArrowsHorizontalIcon,
+  FingerprintIcon,
   LockIcon,
   LockOpenIcon,
   PersonSimpleRunIcon,
@@ -109,6 +110,14 @@ export default function WorldHud() {
       watchAim(el) {
         return w.e.addFrameCallback(() => {
           el?.classList.toggle("blocked", w.phasers?.isDrawnIn(w.player.key) === true);
+        });
+      },
+      watchFire(el) {
+        return w.e.addFrameCallback(() => {
+          if (el === null) return;
+          const { key } = w.player;
+          el.classList.toggle("blocked", w.phasers?.isDrawnIn(key) === true || w.phasers?.isCooling(key) === true);
+          el.style.setProperty("--charge", `${w.phasers?.chargeOf(key) ?? 0}`); // it glows as it charges
         });
       },
       watchLook(el) {
@@ -270,7 +279,32 @@ export default function WorldHud() {
         >
           {/* kept whilst aiming or strafing, an "x" ending one that may be ended */}
           {kept.length > 0 && (
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
+              {armed && big && (
+                // touch has no Space: held it charges, let go it fires
+                <button
+                  ref={state.watchFire}
+                  type="button"
+                  tabIndex={-1}
+                  title="fire: hold to charge"
+                  className={cn(
+                    "pointer-events-auto mr-1 grid size-12 shrink-0 cursor-pointer touch-none place-items-center rounded-full border-2 border-red-300/50 bg-red-950/90",
+                    "shadow-[0_0_calc(var(--charge,0)*16px)_rgb(248_113_113)] [&.blocked]:pointer-events-none [&.blocked]:opacity-40",
+                  )}
+                  // the canvas keeps the focus: losing it cancels a charge
+                  onMouseDown={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onPointerDown={(e) => {
+                    e.stopPropagation(); // not a drag of the bar
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    w.player.startCharge();
+                  }}
+                  onPointerUp={() => w.player.releaseCharge()}
+                  onPointerCancel={() => w.player.cancelCharge()}
+                >
+                  <FingerprintIcon className="size-8 text-red-300" weight="regular" />
+                </button>
+              )}
               {kept.map(({ label, title, end }) => (
                 <div
                   key={label}
@@ -304,93 +338,99 @@ export default function WorldHud() {
         </motion.div>
       )}
       <motion.div className={rowClass} {...dragProps}>
-        {/* what they are, then what they carry: spaced alike */}
-        <div className="flex shrink-0">
-          {slot(
-            0,
-            { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
-            <BrainIcon firing={psiOn} paused={w.disabled} />,
-          )}
-          {slot(
-            1,
-            {
-              title: dead ? "phaser (deactivated)" : "phaser",
-              hotkey: "e",
-              had: hasPhaser,
-              active: armed,
-              plain: true,
-              drop: hasPhaser ? "phaser" : undefined,
-              // dropped without drawing it first
-              menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
-            },
-            <>
-              <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
-              {w.debug?.hudDebug === true && (
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  title="debug: how every shot ends"
-                  className="absolute bottom-0.5 left-1/2 -translate-x-1/2 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const at = shotCycle.indexOf(w.debug.forceShot);
-                    w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
-                    state.update();
-                    w.view.focus();
-                  }}
-                >
-                  {w.debug.forceShot}
-                </button>
-              )}
-            </>,
-          )}
-          {slot(
-            2,
-            {
-              title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
-              had: keyCount > 0,
-              active: keyDoor !== null,
-              plain: true,
-              menu: heldDoors.map((gdKey) => ({
-                label: `split ${gdKey}`,
-                run: () => w.e.unchainKey(playerKey, gdKey),
-              })),
-            },
-            <>
-              <ItemIcon kind="keychain" />
-              {keyCount > 0 && (
-                <span className="absolute right-1 bottom-0.5 text-xs leading-3 text-sky-100">{keyCount}</span>
-              )}
-              {keyDoor !== null && (
+        {/* what they are, then what they carry, scrolled sideways: the buttons after stay in view */}
+        <div className={itemsClass}>
+          <div className="flex shrink-0">
+            {slot(
+              0,
+              { title: "psi", hotkey: "q", had: w.e.hasItem(playerKey, "psi"), active: psiOn, plain: true },
+              <BrainIcon firing={psiOn} paused={w.disabled} />,
+            )}
+            {slot(
+              1,
+              {
+                title: dead ? "phaser (deactivated)" : "phaser",
+                hotkey: "e",
+                had: hasPhaser,
+                active: armed,
+                plain: true,
+                drop: hasPhaser ? "phaser" : undefined,
+                // dropped without drawing it first
+                menu: hasPhaser ? [{ label: "drop", run: () => state.drop("phaser") }] : undefined,
+              },
+              <>
+                <PhaserIcon armed={armed} locked={w.phasers?.isLocked(playerKey) === true} dead={dead} />
+                {w.debug?.hudDebug === true && (
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    title="debug: how every shot ends"
+                    className="absolute bottom-0.5 left-1/2 -translate-x-1/2 cursor-pointer rounded border border-amber-300/50 bg-neutral-900 px-1 text-[0.6rem] text-amber-200 opacity-100!"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const at = shotCycle.indexOf(w.debug.forceShot);
+                      w.debug.set({ forceShot: shotCycle[(at + 1) % shotCycle.length] });
+                      state.update();
+                      w.view.focus();
+                    }}
+                  >
+                    {w.debug.forceShot}
+                  </button>
+                )}
+              </>,
+            )}
+            {slot(
+              2,
+              {
+                title: keyDoor === null ? "keys" : `key to ${keyDoor.gdKey}`,
+                had: keyCount > 0,
+                active: keyDoor !== null,
+                plain: true,
+                menu: heldDoors.map((gdKey) => ({
+                  label: `split ${gdKey}`,
+                  run: () => w.e.unchainKey(playerKey, gdKey),
+                })),
+              },
+              <>
+                <ItemIcon kind="keychain" />
+                {keyCount > 0 && (
+                  <span className="absolute right-1 bottom-3 text-xs font-bold leading-3 p-0.5 rounded bg-on-background text-background">
+                    {keyCount}
+                  </span>
+                )}
+                {/* {keyDoor !== null && (
                 <KeyLock className="absolute top-0.5 right-0.5 size-4 text-amber-300" weight="fill" />
-              )}
-            </>,
+              )} */}
+              </>,
+            )}
+          </div>
+          {state.getItems().map((def, i) =>
+            slot(
+              i + 3,
+              {
+                title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
+                had: true,
+                active: state.selected === def.key,
+                drop: def.key,
+                // a keycard for a door joins the keys
+                menu: [
+                  ...(def.meta?.door
+                    ? [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }]
+                    : []),
+                  { label: "drop", run: () => state.drop(def.key) },
+                ],
+              },
+              <>
+                <ItemIcon kind={def.meta?.item} />
+                {def.meta?.door && (
+                  <span className="absolute right-1 bottom-0.5 text-[10px] leading-3 text-sky-100 [text-shadow:0_0_3px_#000,0_0_3px_#000]">
+                    {def.meta.door}
+                  </span>
+                )}
+              </>,
+            ),
           )}
         </div>
-        {state.getItems().map((def, i) =>
-          slot(
-            i + 3,
-            {
-              title: [def.meta?.label ?? def.meta?.item, def.meta?.door].filter(Boolean).join(" "),
-              had: true,
-              active: state.selected === def.key,
-              drop: def.key,
-              // a keycard for a door joins the keys
-              menu: [
-                ...(def.meta?.door ? [{ label: "add to keychain", run: () => w.e.chainKey(playerKey, def.key) }] : []),
-                { label: "drop", run: () => state.drop(def.key) },
-              ],
-            },
-            <>
-              <ItemIcon kind={def.meta?.item} />
-              {def.meta?.door && (
-                <span className="absolute right-1 bottom-0.5 text-[10px] leading-3 text-sky-100 [text-shadow:0_0_3px_#000,0_0_3px_#000]">
-                  {def.meta.door}
-                </span>
-              )}
-            </>,
-          ),
-        )}
         <PlayerButtons />
       </motion.div>
 
@@ -540,11 +580,10 @@ function useChangeCount(value: unknown): number {
 }
 
 const barClass = "pointer-events-none absolute inset-x-0 bottom-6 z-10 flex select-none px-2";
-/**
- * Scrolled sideways once it outgrows a narrow World; padded, else the scroll clips a slot's ring.
- * Only its slots and buttons take the pointer, so a press between them reaches the World
- */
-const rowClass = "pointer-events-none mx-auto flex max-w-full overflow-x-auto p-1 [scrollbar-width:none]";
+/** Only its slots and buttons take the pointer, so a press between them reaches the World */
+const rowClass = "pointer-events-none mx-auto flex max-w-full";
+/** Its slots, scrolled sideways once they outgrow a narrow World; padded, else the scroll clips a slot's ring */
+const itemsClass = "pointer-events-none flex min-w-0 overflow-x-auto p-1 [scrollbar-width:none]";
 
 /** Each icon's size, as a fraction of its slot's height: alike, bar art that fills its square */
 const iconScale: Record<"psi" | "keychain" | ItemKind, number> = {
@@ -844,6 +883,8 @@ export type State = {
   press(index: number): void;
   /** Marks the "aim" notice blocked whilst something in the way draws the phaser in. A ref, returning its cleanup */
   watchAim(el: null | HTMLDivElement): () => void;
+  /** Greys the touch fire button whilst blocked or cooling, and glows it by the charge */
+  watchFire(el: null | HTMLButtonElement): () => void;
   /** Greys the "look" notice whilst look mode yields to what they do themselves */
   watchLook(el: null | HTMLDivElement): () => void;
 };

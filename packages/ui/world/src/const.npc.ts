@@ -267,6 +267,12 @@ export const sitTurn = {
  */
 export const sitArmVia = { back: 1, there: 0.5, onFrom: 0.4, slow: 1.6 } as const;
 
+/**
+ * The left hand steadying a phaser as it charges: `grip` in the right forearm's frame, as `gunBoxes`, below the
+ * barrel ahead of the handle. Model units. It reaches there over `secs`
+ */
+export const supportConfig = { grip: [0, -0.44, 0], secs: 0.25 } as const;
+
 /** A "no": the head turns one way then the other `turns` times, `rad` at most, in `secs`. Over `1`, `slowing` gives the later turns more of the time */
 export const headShakeConfig = { secs: 0.75, turns: 1, rad: 0.45, slowing: 1.6 } as const;
 

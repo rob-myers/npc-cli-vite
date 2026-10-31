@@ -106,7 +106,7 @@ Three.js WebGPU renderer (`three/webgpu`) with TSL node materials throughout. Us
 - **Running.** An npc runs whilst `anim.hurry`. Strafing, they walk, and run again once it stops.
   - A move's `fast` sets it either way (`--fast`, `fast:false`). A plain move leaves it be.
   - A double tap of `w`, `a`, `s` or `d` runs too (`w.player.setTapRun`), until those keys are let go or cancel out (`syncRun`).
-- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space fires, and with the phaser lowered raises it. See `docs/engagements.md`.
+- **Targeting.** A raised phaser targets whoever its line crosses (`w.npcFocus.target`). Its height is the muzzle's, so stand or crouch. A red dot marks where a shot would end, pulsing on whom it meets. Space held charges it (the gun brightens and shakes), and let go fires, the beam fuller by the charge. `e` whilst charging cancels into a cooldown, the phaser left raised. The "aim" notice's fire button does the same on touch. Space with the phaser lowered raises it. See `docs/engagements.md`.
 - **Closing the page.** Ctrl or cmd with `w` closes it. So a close within `closeConfirmMs` of a key pressed over the World has the browser ask first (`beforeunload`, in `setupDom`). A reload doesn't ask.
 - **Turning the player.**
   - On touch, a two-finger tap (`w.player.onTouch`). `w.player.lookTowards` takes the floor point under the fingers' midpoint as `lookAt`.

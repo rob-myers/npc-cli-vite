@@ -145,6 +145,14 @@ does one with a laser.
   whom it meets beyond, else the wall. Only a shot aimed from the dot is tested: jsh `shoot:kate part:hips` is not.
 - With no one met, Space fires along the line (A shot at no one), at the dot's end if it was cast
   along this aim. The phaser stays raised, and so does the targeting. Space with the phaser lowered raises it.
+- **Charging.** Raised, Space held charges the shot (`w.phasers.charge`), full after `chargeSecs`, and let go fires
+  it (`w.player.releaseCharge`). The shot takes the charge (`takeCharge`, in `arm` and `fireAlong`): `fireCharge`
+  widens and brightens its beam, and `phaser-fired` carries it as `charge`. A tap fires at once, near `0`.
+  - Charging, the gun brightens with the beam's colour and shakes (`glowOf`, the `phaserCharge` attribute).
+  - `e` whilst charging cancels it (`cancelCharge`): it sputters out over `coolSecs`, the phaser left raised, and
+    none charges meanwhile. Focus leaving the World cancels too, as Space's release never comes.
+  - On touch, the "aim" notice has a fire button: held it charges, let go it fires.
+  - It has no effect on the outcome yet.
 - Anyone may target, through jsh: `phaser rob --target`, `tilt:1`, `--fire`, `--cancel`. An npc's ends when
   fired or cancelled, and shows a dot over whom it targets.
 - **Decor** stops a shot, as an obstacle does: a quad, bar a switch or a keycard, e.g. a screen or a box on a

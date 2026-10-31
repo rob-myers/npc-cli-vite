@@ -165,12 +165,8 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         if (e.key === "Shift") return void (state.isDoubleTap("Shift", e.timeStamp) && state.toggleStrafe());
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.code === "Space") {
-          // raised, it fires at whom its line crosses, else along it. Lowered, it is raised
           e.preventDefault();
-          const raised = w.phasers?.isArmed(state.key) === true;
-          w.npcFocus?.target(state.key);
-          if (raised === true) w.npcFocus?.fire(state.key);
-          return;
+          return state.startCharge(); // fired on release: see `onKeyUp`
         }
         // a hand each: by `code`, so wherever a layout puts the letters
         if (moveCodes.has(e.code) === true) {
@@ -192,10 +188,14 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           return void w.r3f?.invalidate();
         }
         if (e.code === "KeyQ") state.togglePsi();
-        else if (e.code === "KeyE") state.toggleArm();
-        else return;
+        else if (e.code === "KeyE") {
+          if (state.cancelCharge() === false) state.toggleArm(); // charging, it cancels that alone
+        } else return;
         w.hud?.update();
         w.view.forceUpdate();
+      },
+      onKeyUp(e) {
+        if (e.code === "Space") state.releaseCharge();
       },
       onTouch(e) {
         if (e.type === "touchstart") {
@@ -232,6 +232,12 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
           // the moment of the press lands behind
           track: () => state.get()?.point,
         });
+      },
+      releaseCharge() {
+        if (w.phasers?.isCharging(state.key) !== true) return;
+        // paused, no shot leaves: it is called off instead
+        if (w.disabled === true) state.cancelCharge();
+        else w.npcFocus?.fire(state.key);
       },
       persist() {
         w.e.persistNpcs();
@@ -277,6 +283,11 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         await w.npc.spawn({ npcKey: state.key, at: { x: point.x, y: point.y }, angle });
         return true;
       },
+      startCharge() {
+        const raised = w.phasers?.isArmed(state.key) === true;
+        w.npcFocus?.target(state.key); // lowered, it is raised
+        if (raised === true) w.phasers.charge(state.key); // not whilst cooling
+      },
       setTapRun(on) {
         const npc = state.get();
         // never over a run the bar's button began, which is its to end
@@ -288,6 +299,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       syncRun() {
         // none held, or opposites: either way they are no longer going anywhere
         if (state.runTap.on === true && w.view.getWasdDirection().length === 0) state.setTapRun(false);
+      },
+      cancelCharge() {
+        return w.phasers?.cancelCharge(state.key) === true;
       },
       toggleArm() {
         if (state.exists() === false || w.phasers === null) return;
@@ -328,13 +342,22 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       setupDom() {
         const el = w.rootEl;
         const onKeyDown = (e: KeyboardEvent) => state.onKeyDown(e); // the latest, over hmr
+        const onKeyUp = (e: KeyboardEvent) => state.onKeyUp(e);
+        // a key released after focus has gone elsewhere never reaches `onKeyUp`
+        const onBlur = () => state.cancelCharge();
         const onTouch = (e: TouchEvent) => state.onTouch(e);
         const touchTypes = ["touchstart", "touchend", "touchcancel"] as const;
         el.addEventListener("keydown", onKeyDown);
+        el.addEventListener("keyup", onKeyUp);
+        el.addEventListener("focusout", onBlur);
+        window.addEventListener("blur", onBlur);
         // passive: we only watch, so scrolling and the camera never wait on us
         for (const type of touchTypes) el.addEventListener(type, onTouch, { passive: true });
         return () => {
           el.removeEventListener("keydown", onKeyDown);
+          el.removeEventListener("keyup", onKeyUp);
+          el.removeEventListener("focusout", onBlur);
+          window.removeEventListener("blur", onBlur);
           for (const type of touchTypes) el.removeEventListener(type, onTouch);
           state.cancelLook();
         };
@@ -461,6 +484,14 @@ export type State = {
 
   /** The player's controls: `q` psi, `e` held their phaser, a move key twice to run — the view's own keys are WorldView's */
   onKeyDown(e: KeyboardEvent): void;
+  /** Space let go fires a charged shot */
+  onKeyUp(e: KeyboardEvent): void;
+  /** Raised, starts charging a shot, fired by `releaseCharge`. Lowered, raises it: Space, or the bar's fire button */
+  startCharge(): void;
+  /** Fires the shot charging: at whom its line crosses, else along it. Paused, cancels it */
+  releaseCharge(): void;
+  /** Ends a charge into a cooldown, the phaser left raised: `false` if none */
+  cancelCharge(): boolean;
   /** Arms them, unlocks them if locked on, else disarms them — arming needs a phaser */
   toggleArm(): void;
   /** Look mode on or off, saying so */

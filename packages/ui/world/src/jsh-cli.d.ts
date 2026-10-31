@@ -67,6 +67,8 @@ declare namespace JshCli {
         /** A shot left `by`'s phaser: at someone as its beam locks on, else along its aim */
         key: "phaser-fired";
         by: string;
+        /** How charged it was, `0` to `1`: Space held */
+        charge: number;
       }
     | {
         /** `by`'s psi acted on them, a placeholder */

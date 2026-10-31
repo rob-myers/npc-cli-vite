@@ -27,6 +27,7 @@ import {
   stanceConfig,
   strafeEaseSecs,
   strafeSpeed,
+  supportConfig,
   upperFadeSecs,
 } from "../const.npc";
 import { helper } from "../service/helper";
@@ -103,6 +104,17 @@ export class NpcAnimation {
    * `held` is the torso's share for a hand at their head, eased — see `tickTurn`
    */
   turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0, head: false, held: 0 };
+  /**
+   * The left hand on their phaser whilst it charges, eased by `weight`. `base` is the pose's arm before the reach,
+   * `wrote` what it wrote — see `tickSupport`
+   */
+  support = {
+    on: false,
+    weight: 0,
+    written: false,
+    base: [new THREE.Quaternion(), new THREE.Quaternion()],
+    wrote: [new THREE.Quaternion(), new THREE.Quaternion()],
+  };
   /** Lain, a look whilst no arm aims: the head turns to `at` by `weight`, eased towards `on` — see `lookLain` */
   lieLook = { on: false, weight: 0, at: new THREE.Vector3() };
   /** A point the head looks at whilst no aimed arm has it, e.g. psi meeting a shot: `null` for none */
@@ -801,11 +813,21 @@ export class NpcAnimation {
         if (bone.quaternion.equals(written)) bone.quaternion.copy(base);
       this.turn.written = false;
     }
+    const { support } = this; // undefined on an instance from before hmr
+    if (support?.written === true) {
+      // as the pose left the arm, unless its clip has written it since
+      for (let i = 0; i < 2; i++) {
+        const bone = this.upperLeft.bones[i]?.bone;
+        if (bone?.quaternion.equals(support.wrote[i]) === true) bone.quaternion.copy(support.base[i]);
+      }
+      support.written = false;
+    }
     this.tickLieLook(delta);
     this.tickUpper(delta);
     this.tickHeadShake(delta);
     this.tickTurn(delta);
     this.tickAimArm();
+    this.tickSupport(delta);
     this.npc.easeLabel(delta);
     this.tickHurt(delta);
     this.tickBreath(delta);
@@ -888,6 +910,26 @@ export class NpcAnimation {
     if (r.key === null || r.aim === null) return;
     const weight = r.aim.weight * r.eased;
     if (weight > 0) this.aimArm(r.aim, weight);
+  }
+
+  /** After the right arm aims: the left hand reaches the phaser's `supportConfig.grip`, by `support.weight` */
+  tickSupport(delta: number) {
+    const s = this.support;
+    if (s === undefined) return; // from before hmr
+    const on = s.on === true && this.posture !== "lie";
+    s.weight = THREE.MathUtils.clamp(s.weight + (on ? delta : -delta) / supportConfig.secs, 0, 1);
+    if (s.weight === 0) return;
+    const gun = this.upper.bones[1]?.bone; // the right forearm, which holds it
+    const [upper, fore] = this.upperLeft.bones;
+    if (gun === undefined || upper === undefined || fore === undefined) return;
+    s.base[0].copy(upper.bone.quaternion);
+    s.base[1].copy(fore.bone.quaternion);
+    gun.updateWorldMatrix(true, false);
+    const at = gun.localToWorld(tmpSupport.fromArray(supportConfig.grip));
+    this.reachTo("left", at, s.weight * s.weight * (3 - 2 * s.weight));
+    s.wrote[0].copy(upper.bone.quaternion);
+    s.wrote[1].copy(fore.bone.quaternion);
+    s.written = true;
   }
 
   /** Works out the air in their lungs, for `NpcBreath` to draw, and has their body breathe with them */
@@ -1403,6 +1445,7 @@ const tmpAxis = new THREE.Vector3();
 const tmpTip = new THREE.Vector3();
 const tmpPole = new THREE.Vector3();
 const tmpHeld = { left: new THREE.Vector3(), right: new THREE.Vector3() };
+const tmpSupport = new THREE.Vector3();
 
 /**
  * The air in their lungs, `0` to `1`, at `phase` of a breath. In by muscle, a smooth rise.

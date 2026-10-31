@@ -100,6 +100,7 @@ export default function Phasers() {
         const at = opts.at ?? null;
         arm.target =
           at === null || at === npcKey ? null : { npcKey: at, part: opts.part ?? null, local: opts.local ?? null };
+        if (arm.target !== null) state.takeCharge(arm); // fired
         arm.toward = opts.toward ?? null;
         arm.cast = null; // look again, at once
         arm.hitAt = null;
@@ -115,6 +116,25 @@ export default function Phasers() {
         if (npc === undefined) return null;
         const arm = state.arms.get(npcKey);
         return arm?.armed === true ? bearingPast(npc, at, arm.muzzleRight) : npc.anim.bearingOf(at);
+      },
+      cancelCharge(npcKey) {
+        const arm = state.arms.get(npcKey);
+        if (arm?.charge == null) return false;
+        const now = w.gameTime.now();
+        arm.cool = { since: now, from: levelOf(arm.charge, now) };
+        arm.charge = null;
+        w.r3f?.invalidate();
+        return true;
+      },
+      charge(npcKey) {
+        const arm = state.arms.get(npcKey);
+        if (arm?.armed !== true || arm.charge != null || state.isCooling(npcKey)) return false;
+        arm.charge = { since: w.gameTime.now() };
+        w.r3f?.invalidate();
+        return true;
+      },
+      chargeOf(npcKey) {
+        return levelOf(state.arms.get(npcKey)?.charge, w.gameTime.now());
       },
       async castAlong(npc, arm, shot) {
         shot.casting = true;
@@ -198,6 +218,9 @@ export default function Phasers() {
             cast: null,
             casting: false,
             castSecs: -Infinity,
+            charge: null,
+            cool: null,
+            fireCharge: 0,
             firedSecs: null,
             gliding: false,
             hand: null,
@@ -240,9 +263,21 @@ export default function Phasers() {
           casting: false,
         };
         arm.hitAt = null;
+        state.takeCharge(arm);
         state.sync();
-        w.events.next({ key: "phaser-fired", by: npcKey });
+        w.events.next({ key: "phaser-fired", by: npcKey, charge: arm.fireCharge });
         return true;
+      },
+      glowOf(arm, now) {
+        if (arm.charge != null) return levelOf(arm.charge, now);
+        if (arm.cool == null) return 0;
+        const t = (now - arm.cool.since) / phaserConfig.coolSecs;
+        if (t >= 1) {
+          arm.cool = null;
+          return 0;
+        }
+        // it sputters as it drains
+        return arm.cool.from * (1 - t) * (0.65 + 0.35 * Math.sin(t * phaserConfig.sputterHz * 2 * Math.PI));
       },
       freeEndOf(npc, arm, shot, out) {
         if (shot.at === null || shot.dist === null) return null;
@@ -265,6 +300,13 @@ export default function Phasers() {
       },
       isArmed(npcKey) {
         return state.arms.get(npcKey)?.armed === true;
+      },
+      isCharging(npcKey) {
+        return state.arms.get(npcKey)?.charge != null;
+      },
+      isCooling(npcKey) {
+        const cool = state.arms.get(npcKey)?.cool;
+        return cool != null && w.gameTime.now() - cool.since < phaserConfig.coolSecs;
       },
       isClear(npcKey) {
         const arm = state.arms.get(npcKey);
@@ -337,6 +379,10 @@ export default function Phasers() {
           mat.needsUpdate = true;
         }
         w.r3f?.invalidate();
+      },
+      takeCharge(arm) {
+        arm.fireCharge = levelOf(arm.charge, w.gameTime.now());
+        arm.charge = null;
       },
       tilt(npcKey, tilt) {
         Object.assign(state.ensure(npcKey), { tilt, aimAt: null, pitchAt: null });
@@ -442,6 +488,20 @@ export default function Phasers() {
         const present = eased(beam.gun.presence);
         // scaled about the forearm's origin, their elbow: slid down it, so it shrinks into the hand instead
         tmpAt.addScaledVector(along, phaserConfig.grip * tmpScale.x * (1 - present));
+        const now = w.gameTime.now();
+        const glow = state.glowOf(arm, now);
+        if (glow > 0) {
+          // charging it shakes, as it does draining: high sines of game time, so no frame rate shows
+          const { shakeM, shakeRad, shakeHz } = phaserConfig;
+          const t = now * shakeHz * 2 * Math.PI;
+          tmpAt.x += glow * shakeM * Math.sin(t);
+          tmpAt.y += glow * shakeM * Math.sin(1.37 * t + 1);
+          tmpAt.z += glow * shakeM * Math.sin(1.71 * t + 2);
+          const r = glow * shakeRad * Math.sin(1.53 * t + 3);
+          tmpQuat.multiply(tmpShake.set(Math.sin(r / 2), 0, 0, Math.cos(r / 2)));
+        }
+        state.chargeData[2 * i] = glow;
+        state.chargeData[2 * i + 1] = arm.fireCharge ?? 0; // undefined from before hmr
         const sign = (item?.dead?.length ?? 0) > 0 ? -1 : 1; // negative: dead, see `gunNodes`
         put(state.gunData, i, tmpAt.x, tmpAt.y, tmpAt.z, tmpScale.x * present * sign);
         const flip = arm.armed === tmpQuat.w > 0 ? 1 : -1; // so `w > 0` says armed, see `gunNodes`
@@ -546,7 +606,7 @@ export default function Phasers() {
       shoot(npc, arm, to) {
         const shot: ArmShot = { to, outcome: w.debug?.forceShot ?? "hit", through: null, past: null, beyond: null };
         arm.shot = shot;
-        w.events.next({ key: "phaser-fired", by: npc.key });
+        w.events.next({ key: "phaser-fired", by: npc.key, charge: arm.fireCharge });
         const dst = w.n[to.npcKey];
         if (dst === undefined) return;
         /** Aimed at a point, the line from the muzzle through it meets no part of them: it passes there */
@@ -583,6 +643,14 @@ export default function Phasers() {
         if (arm.lowerAt !== null && arm.armed === true && (over || secs >= arm.lowerAt)) {
           lower(arm);
           arm.lowerAt = null;
+          w.hud?.update();
+        }
+        const { support } = npc.anim; // undefined on an instance from before hmr
+        // a hand to steady it, once held a moment: a tap fires before it gets there
+        const steadied = arm.charge != null && secs - arm.charge.since >= phaserConfig.supportAfterSecs;
+        if (support !== undefined) support.on = arm.armed === true && steadied;
+        if (steadied && arm.armed === true && w.e.isPsiRaised(npc.key)) {
+          w.e.setPsi(false, npc.key); // the left hand leaves their temple for the gun
           w.hud?.update();
         }
         const { anim } = npc;
@@ -851,6 +919,7 @@ export default function Phasers() {
         roomData: true,
         gunData: true,
         quatData: true,
+        chargeData: true,
       },
     },
   );
@@ -897,6 +966,8 @@ export type State = PhaserResources & {
   aimAt(npcKey: string, at: null | { npcKey: string; part: string; held?: boolean }): void;
   /** Their aim as a ray from the muzzle, pitched by their tilt: `null` unless armed */
   aimRay(npcKey: string, out: THREE.Ray): null | THREE.Ray;
+  /** Fired: the shot takes their charge so far, ending it */
+  takeCharge(arm: ArmEntry): void;
   /** Tilts them to a detent: down, level or up. Lowering levels it */
   tilt(npcKey: string, tilt: Tilt): void;
   /** Arm them, locked on `at` an npc's `part` — no `at` unlocks */
@@ -908,6 +979,12 @@ export type State = PhaserResources & {
   ): void;
   /** The bearing that faces `npcKey` at `at`: armed, their muzzle's line through it. `null` without them */
   bearingFor(npcKey: string, at: Geom.VectJson): null | number;
+  /** Ends their charge into a cooldown, the phaser left raised: `false` if not charging */
+  cancelCharge(npcKey: string): boolean;
+  /** Starts charging their shot, fired on `arm` with a target or `fireAlong`: `false` unless raised, nor cooling */
+  charge(npcKey: string): boolean;
+  /** Their charge so far, `0` to `1` over `chargeSecs` */
+  chargeOf(npcKey: string): number;
   /** Where a shot at no one ends: one cast along their aim, level at the gun's height. Npcs are not looked for */
   castAlong(npc: Npc, arm: ArmEntry, shot: FreeShot): Promise<void>;
   /** Where a shot at no one along each one's aim would end now, and the rooms it passes through, in one worker request */
@@ -923,6 +1000,8 @@ export type State = PhaserResources & {
   fireAlong(npcKey: string, end?: Omit<AlongEnd, "rooms">): boolean;
   /** Where a shot at no one ends: its length along their live aim, so it follows a strafe as the dot does */
   freeEndOf(npc: Npc, arm: ArmEntry, shot: FreeShot, out: THREE.Vector3): null | THREE.Vector3;
+  /** How brightly the gun glows and how hard it shakes at game `now`: its charge, else draining after a cancel */
+  glowOf(arm: ArmEntry, now: number): number;
   /** Gives them an entry if they hold one and have none: told by events, not looked for each tick */
   hold(npcKey: string): void;
   /** Carries one and stands, so has it in hand — raised or not */
@@ -930,6 +1009,9 @@ export type State = PhaserResources & {
   /** Armed, the arm done easing onto where it points, and not rolling over in bed */
   isAimed(npcKey: string): boolean;
   isArmed(npcKey: string): boolean;
+  isCharging(npcKey: string): boolean;
+  /** Draining after a cancelled charge: none charges until it ends */
+  isCooling(npcKey: string): boolean;
   /** Raised, and nothing in its way as they stand now: not drawn in, nor about to be */
   isClear(npcKey: string): boolean;
   /** Armed, and drawn in: `phaser_aim_avoid`, or lain, stowed */
@@ -997,6 +1079,12 @@ type ArmEntry = {
   /** Where the arm points sat or lain, ahead of any beam — see `armAimAt` */
   armAt: THREE.Vector3;
   armed: boolean;
+  /** Charging since game `since` — see `charge` */
+  charge: null | { since: number };
+  /** Cancelled at `from`, draining since game `since` */
+  cool: null | { since: number; from: number };
+  /** The charge its last shot was fired with, which widens its beam */
+  fireCharge: number;
   /** A wall, closed door, or obstacle at the gun's height, within reach ahead: worked out each tick */
   armHit: boolean;
   beam: Beam;
@@ -1378,6 +1466,16 @@ const phaserConfig = {
   /** Metres moved, or radians turned, that call for another raycast */
   recastMoved: 0.05,
   recastTurned: 0.05,
+  /** Game seconds to a full charge, and to drain one cancelled */
+  chargeSecs: 1.2,
+  /** Game seconds charging before the left hand comes to steady it */
+  supportAfterSecs: 0.3,
+  coolSecs: 1,
+  /** Charged full, the gun shakes this many metres and radians, this many times a second: draining, it sputters */
+  shakeM: 0.005,
+  shakeRad: 0.05,
+  shakeHz: 13,
+  sputterHz: 6,
 } as const;
 
 /** The arm's next pose towards `goal`, never straight between rest and the aim: by `avoid`, and on once that is in */
@@ -1386,9 +1484,24 @@ function byAvoid(goal: null | AnimationClipKey, shown: null | AnimationClipKey, 
   return crossing || (shown === phaserConfig.avoid && settled === false) ? phaserConfig.avoid : goal;
 }
 
+/** A charge's level at game `now`, `0` to `1` over `chargeSecs`: `0` for none */
+function levelOf(charge: undefined | ArmEntry["charge"], now: number) {
+  return charge == null ? 0 : Math.min(1, (now - charge.since) / phaserConfig.chargeSecs);
+}
+
 /** Lowers it, forgetting whom it was on or pointed at: raised again, it is on nobody */
 function lower(arm: ArmEntry) {
-  Object.assign(arm, { armed: false, target: null, toward: null, pointAt: null, tilt: 0, aimAt: null, pitchAt: null });
+  Object.assign(arm, {
+    armed: false,
+    target: null,
+    toward: null,
+    pointAt: null,
+    tilt: 0,
+    aimAt: null,
+    pitchAt: null,
+    charge: null,
+    cool: null,
+  });
 }
 
 /** Faded right out, mid-teleport: in their hand until then, and again as they fade back in */
@@ -1443,6 +1556,7 @@ const tmpAt = new THREE.Vector3();
 const tmpQuat = new THREE.Quaternion();
 const tmpScale = new THREE.Vector3();
 const tmpRoll = new THREE.Quaternion();
+const tmpShake = new THREE.Quaternion();
 const tmpArmWant = new THREE.Vector3();
 const tmpShoulder = new THREE.Vector3();
 const tmpPast = new THREE.Vector3();
