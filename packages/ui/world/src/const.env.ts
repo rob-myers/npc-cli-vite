@@ -158,10 +158,10 @@ export const embodiedFlattenFrom = 0.4;
  */
 export const embodiedAxisLockFrom = isTouchDevice() ? 0.85 : embodiedFlattenFrom;
 /**
- * What the rgb shift is scaled to at the outer zoom stop: zoomed out the whole ship is in frame and
- * the parted channels read as a blur over everything rather than an edge on what is near
+ * How far the rgb shift parts the channels, in css px, from the inner zoom stop to the outer.
+ * Out far, it stays under a line's width, else each thin line keeps only its green.
  */
-export const rgbShiftZoomedOutScale = 1;
+export const rgbShiftPx = { near: 3, far: 0.5 };
 /** `embodied` turn let go with ctrl held is a detented compass dial: past this, it advances a point */
 export const embodiedSnapArm = (10 * Math.PI) / 180;
 /**

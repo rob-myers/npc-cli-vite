@@ -9,7 +9,7 @@ export type RgbShiftFx = {
    * something in `PostProcessing`'s deps moved. See `WorldView`'s `reset`
    */
   uid: string;
-  /** How far the channels part, in uv: eased down as the view zooms out — see `WorldView`'s `onCameraFrame` */
+  /** How far the channels part, in uv. `WorldView`'s `onCameraFrame` sets it from `rgbShiftPx` */
   setAmount(amount: number): void;
   /**
    * @param composed what `PostProcessing.apply` produced — OPAQUE, with the theme's backdrop
@@ -26,7 +26,7 @@ export type RgbShiftFx = {
 export function createRgbShift(): RgbShiftFx {
   // the effect keeps its own uniform, so the amount is written onto whichever node is built
   let node: null | { amount: { value: number } } = null;
-  let amount = rgbShiftAmount;
+  let amount = 0;
 
   return {
     uid: crypto.randomUUID(),
@@ -51,6 +51,5 @@ export function createRgbShift(): RgbShiftFx {
   };
 }
 
-/** How far the channels part close in, in uv, and along which direction */
-export const rgbShiftAmount = 0.0025;
+/** Which direction the channels part */
 const rgbShiftAngle = 0;

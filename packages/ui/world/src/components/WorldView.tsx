@@ -28,7 +28,7 @@ import {
   embodiedZoomInRate,
   frontierConfig,
   maxCanvasPixels,
-  rgbShiftZoomedOutScale,
+  rgbShiftPx,
   roomLabel,
   unfoldDelayMs,
 } from "../const.env";
@@ -67,7 +67,7 @@ import { decodeNpcPickId, decodePick, type NpcBodyPart } from "../service/pick";
 import { createPlayerFrontier, type PlayerFrontier } from "../service/player-frontier";
 import { createPlayerLight, type PlayerLight } from "../service/player-light";
 import { createPostProcessing, type PostProcessing as PostProcessingType } from "../service/post-processing";
-import { createRgbShift, type RgbShiftFx, rgbShiftAmount } from "../service/rgb-shift";
+import { createRgbShift, type RgbShiftFx } from "../service/rgb-shift";
 import { createRoomOutline, type RoomOutline } from "../service/room-outline";
 import { createRoomSlots, type RoomSlots } from "../service/room-slots";
 import {
@@ -631,8 +631,8 @@ export function WorldView(props: React.PropsWithChildren) {
         // view is no less zoomed out, or in, for standing at a wall
         const min = controls.minDistance;
         const max = controls.maxDistance;
-        /** `0` at the inner zoom stop, `1` at the outer one */
-        const t = clamp01((spherical.radius - min) / (max - min));
+        /** `0` at the inner zoom stop, `1` at the outer one. A raised phaser's follow can make the stops meet */
+        const t = max > min ? clamp01((spherical.radius - min) / (max - min)) : 1;
 
         // a room label thins out as the view comes in: close in the room speaks for itself and its
         // name is mostly in the way. Its SIZE is left alone — being fixed in metres it grows with
@@ -654,7 +654,8 @@ export function WorldView(props: React.PropsWithChildren) {
           (roomLabel.drawnInAlpha + (1 - roomLabel.drawnInAlpha) * drawnOut);
 
         // the channels part less the further out the view is, on the same easing: every mode
-        state.rgbShiftFx.setAmount(rgbShiftAmount * (1 - (1 - rgbShiftZoomedOutScale) * eased));
+        const shiftPx = rgbShiftPx.near + (rgbShiftPx.far - rgbShiftPx.near) * eased;
+        state.rgbShiftFx.setAmount(shiftPx / Math.max(1, w.r3f.size.width));
 
         if (state.cameraMode !== "embodied") return;
 
