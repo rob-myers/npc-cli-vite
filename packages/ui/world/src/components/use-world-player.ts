@@ -22,7 +22,7 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       runTap: { code: "", ms: 0, on: false },
       lookAt: null,
       cancelLook: () => {},
-      doing: false,
+      doingUntil: 0,
       look: false,
       lookYieldUntil: 0,
       strafe: false,
@@ -41,7 +41,10 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
         /** Look mode alone, which a held `r` overrides */
         const auto = state.look === true && rHeld === false;
         // it yields to what they do of their own accord: a reach, a turn, a fade onto a seat (not off one)
-        if (auto && (w.e.handling.has(state.key) || face.turn !== null || (state.doing && npc.isFading())))
+        if (
+          auto &&
+          (w.e.handling.has(state.key) || face.turn !== null || (w.gameTime.now() < state.doingUntil && npc.isFading()))
+        )
           state.lookYieldUntil = w.gameTime.now() + lookYieldSecs;
         const held = lookAt !== null || ((rHeld || (state.look && state.isLookYielding() === false)) && free);
         const { posture } = npc;
@@ -118,6 +121,9 @@ export default function useWorldPlayer(w: UseStateRef<WorldState>) {
       },
       is(npcKey) {
         return npcKey === state.key;
+      },
+      setDoing(on) {
+        state.doingUntil = on ? w.gameTime.now() + doingMaxSecs : 0;
       },
       isLookYielding() {
         return w.gameTime.now() < state.lookYieldUntil;
@@ -392,6 +398,8 @@ const moveCodes = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const lookTapSlopPx = 20;
 /** How long a tap's look is held, as `r` would be */
 const lookHoldMs = 1200;
+/** Game seconds from `npc-pre-do` after which they are taken to have given up, should `npc-do` never come */
+const doingMaxSecs = 3;
 /** Game seconds look mode waits after they are done with what it yielded to */
 const lookYieldSecs = 0.8;
 /** Metres from them within which a tap gives no direction to look */
@@ -409,8 +417,10 @@ export type State = {
   aimAtPointer(): void;
   /** Look mode: they face the pointer without `r` held. A double tap of `r` starts it, and a press ends it */
   look: boolean;
-  /** From `npc-pre-do` until `npc-do`: about to sit or lie, so look mode yields to their fade onto it */
-  doing: boolean;
+  /** Game time until which they are about to sit or lie: look mode yields to their fade onto it */
+  doingUntil: number;
+  /** From `npc-pre-do` until `npc-do`, or `doingMaxSecs` should that never come */
+  setDoing(on: boolean): void;
   /** Game time until which look mode yields to what they do themselves, e.g. putting a box down */
   lookYieldUntil: number;
   /** Look mode is yielding: see `lookYieldUntil` */

@@ -51,7 +51,7 @@ export class NpcAnimation {
   /** The clip on show — a KEY, so it survives a hot-reload's new clip objects */
   pose: AnimationClipKey = defaultIdleAnimationClipKey;
   /** Whether `pose` has them stood, sat or lain: kept, as it is read every tick */
-  posture = postureOf(defaultIdleAnimationClipKey);
+  posture: PostureKey = postureOf(defaultIdleAnimationClipKey);
   /** Metres of the head's pivot above their feet in `pose` — see `w.npc.headYByPose` */
   headY = 0;
   /** What `startIdle` returns to, and the gait on show — which follows `speed`, see `syncGait` */
@@ -99,9 +99,9 @@ export class NpcAnimation {
   rolledAt = -Infinity;
   /**
    * A turn towards a point whilst sat, radians off their facing: eased to `target`, over stomach, chest and head.
-   * `want` is the turn asked for, unclamped, and `aim` the phaser's — see `tickTurnAim`
+   * `want` is the turn asked for, unclamped, and `aim` the phaser's — see `tickTurnAim`. `head`: stood, the head's alone
    */
-  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0 };
+  turn = { target: 0, value: 0, bones: [] as UpperBone[], written: false, want: 0, aim: 0, head: false };
   /** Lain, a look whilst no arm aims: the head turns to `at` by `weight`, eased towards `on` — see `lookLain` */
   lieLook = { on: false, weight: 0, at: new THREE.Vector3() };
   /** A point the head looks at whilst no aimed arm has it, e.g. psi meeting a shot: `null` for none */
@@ -302,7 +302,7 @@ export class NpcAnimation {
   /** Their head faces ahead at once, rather than easing round: e.g. respawned unseen */
   faceAhead() {
     this.headTurn.identity();
-    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0 });
+    Object.assign(this.turn, { aim: 0, target: 0, value: 0, want: 0, head: false });
   }
 
   /** A shot landing `at` along `dir` jolts `part`, and the bones it hangs from, away from it */
@@ -1006,7 +1006,7 @@ export class NpcAnimation {
   /** Mostly the head's, about the vertical: the torso takes a little, shared by its two bones */
   tickTurn(delta: number) {
     const { turn } = this;
-    if (this.posture !== "sit") turn.target = turn.want = 0;
+    if (this.posture !== "sit" && turn.head !== true) turn.target = turn.want = 0; // undefined from before hmr
     this.tickTurnAim(delta);
     /** How far an arm aims them: the torso then turns with the gun, not with their look */
     const aiming = this.posture === "sit" && this.upper.aim !== null ? this.upper.eased : 0;
@@ -1029,7 +1029,7 @@ export class NpcAnimation {
       head.worldToLocal(forearm.localToWorld(tmpHeld[side].copy(forearm.position)));
     }
     /** The torso's turn: a share of their look's, giving way whilst an arm aims to the gun's far to their left */
-    const torso = (1 - aiming) * sitTurn.body * turn.value + torsoAim;
+    const torso = (1 - aiming) * (this.posture === "sit" ? sitTurn.body : 0) * turn.value + torsoAim;
     /** The head's turn on the torso: where they look, as far as the neck lets it from a torso turned with the gun */
     const neck = THREE.MathUtils.clamp(turn.value - torso, -sitTurn.maxRad, sitTurn.maxRad);
     /** Each bone's parent's world turn, carried down the chain (stomach, chest, head): one walk up the skeleton, not three */
@@ -1137,6 +1137,12 @@ export class NpcAnimation {
     if (head !== undefined) u.head.fromArray(head.evaluate(u.time)).premultiply(lean);
   }
 
+  /** Stood, only their head turns to `at`, their body left as it is. `null` lets it go — see `tickTurn` */
+  turnHeadTo(at: null | Geom.VectJson) {
+    this.turn.head = at !== null;
+    this.turnTo(at);
+  }
+
   /** Turn towards `at`, a point or bearing, whilst sat, as far as they can without turning round — `null` to face ahead again */
   turnTo(at: null | number | Geom.VectJson) {
     const off = at === null ? 0 : deltaAngle(this.npc.rotation.y, this.bearingOf(at));
@@ -1188,6 +1194,8 @@ function isStride(key: AnimationClipKey) {
 export function postureOf(key: AnimationClipKey) {
   return key === "sit" || key.startsWith("sit_pa") ? "sit" : key === "lie" || key.startsWith("lie_") ? "lie" : "stand";
 }
+
+type PostureKey = ReturnType<typeof postureOf>;
 
 /** The clips one lies at rest in, on their back then either side: not the hurt ones */
 const lieKeys = ["lie", "lie_left", "lie_right"] as const satisfies AnimationClipKey[];

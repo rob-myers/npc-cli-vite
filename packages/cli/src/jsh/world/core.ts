@@ -1099,39 +1099,118 @@ export function play({ api, w }: JshCli.RunArg) {
  * Pose an npc `as` something, facing and pointing `at` an npc — until they move, are armed, something else takes
  * their upper body, or it is killed. Drawn in whilst another npc is too close. `shake` is a one-off "no" of the head.
  * A clip's own name shows it whole, releasing one in pain or pacified. A crouch, `crouch_half` or `crouch_cover`, is
- * kept, moving too, until another clip is shown
+ * kept, moving too, until another clip is shown.
+ * `head` turns their head alone to an npc or point, their body left as it is, until a bare `pose` lets it go. With
+ * `--track` it follows the npc, within the neck's reach, until killed or replaced
  * ```sh
  * pose rob as:point
  * pose rob as:point at:npc-0
  * pose rob as:shake
  * pose rob as:crouch_cover
  * pose npc-0 as:breathe
+ * pose rob head:npc-0
+ * pose rob head:npc-0 --track
+ * pose rob
  * ```
  */
-export async function pose(
-  { api, args, w }: JshCli.RunArg,
-  opts: { as?: string; at?: string; eyes?: EyesKey; blink?: number } = api.jsArg(args),
-) {
+export async function pose({ api, args, w }: JshCli.RunArg, opts: PoseOpts = api.jsArg(args, { "--track": "track" })) {
   const [npcKey] = api.getJsOperands(args, opts);
-  if (npcKey === undefined || (opts.as ?? opts.eyes ?? opts.blink) === undefined)
-    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count]");
+  if (npcKey === undefined)
+    throw Error("usage: pose npcKey [as:pose] [at:npcKey] [eyes:look] [blink:count] [head:npcKey|point] [--track]");
   const npc = w.npc.get(npcKey);
-  // their eyes are apart from any pose — see `docs/skin-slices.md`
-  const looks: EyesKey[] = [...eyeFrames, "shifty"];
-  if (opts.eyes !== undefined && looks.includes(opts.eyes) === false) throw Error(`eyes: expected one of: ${looks}`);
-  if (opts.eyes !== undefined) npc.anim.setEyes(opts.eyes);
+  // bare, their head is let go
+  if ((opts.as ?? opts.eyes ?? opts.blink ?? opts.head) === undefined) return void poseHead(api, w, npc, null, false);
+  if (opts.eyes !== undefined) poseEyes(npc, opts.eyes);
   if (opts.blink !== undefined) npc.anim.blink(opts.blink);
-  if (opts.as === undefined) return;
-  if (opts.as === "shake") return npc.anim.shakeHead(); // over any pose
-  if (!(opts.as in poseConfig.poses) && opts.as in w.npc.clips) {
-    npc.anim.setHurt(null);
-    npc.anim.setCrouch(opts.as === "crouch_cover" ? 2 : opts.as === "crouch_half" ? 1 : 0);
-    return npc.anim.setPose(opts.as as keyof typeof w.npc.clips);
+  await Promise.all([
+    opts.head === undefined ? undefined : poseHead(api, w, npc, opts.head, opts.track === true),
+    opts.as === undefined ? undefined : poseAs(api, w, npc, opts.as, opts.at),
+  ]);
+}
+
+type PoseOpts = {
+  as?: string;
+  at?: string;
+  eyes?: EyesKey;
+  blink?: number;
+  head?: null | string | Geom.VectJson;
+  track?: boolean;
+};
+
+/** Their eyes, apart from any pose — see `docs/skin-slices.md` */
+function poseEyes(npc: JshCli.Npc, eyes: EyesKey) {
+  const looks: EyesKey[] = [...eyeFrames, "shifty"];
+  if (looks.includes(eyes) === false) throw Error(`eyes: expected one of: ${looks}`);
+  npc.anim.setEyes(eyes);
+}
+
+/** `pose … head:`: their head alone turns to an npc or point. `track` follows the npc until killed or replaced */
+async function poseHead(
+  api: JshCli.RunArg["api"],
+  w: JshCli.WorldState,
+  npc: JshCli.Npc,
+  head: null | string | Geom.VectJson,
+  track: boolean,
+) {
+  heads.get(npc.key)?.(); // a new one replaces any tracking
+  const target = typeof head === "string" ? w.npc.get(head) : null;
+  const point = target === null && head !== null ? w.helper.parseGroundPoint(head as Geom.VectJson) : null;
+  const at = () => (target === null ? point : { x: target.position.x, y: target.position.z });
+  npc.anim.turnHeadTo(at());
+  if (track === false) return;
+  if (target === null) throw Error("--track: expected head:npcKey");
+
+  const task = new Task();
+  let replaced = false;
+  const replace = () => {
+    replaced = true;
+    task.cancel();
+  };
+  heads.set(npc.key, replace);
+  const handlers = api.handleStatus({ cleanup: () => task.cancel() });
+  try {
+    await task.run(async () => {
+      while (w.n[npc.key] === npc && w.n[target.key] === target) {
+        await task.wait(w.npc.nextTick()); // none comes whilst the World is paused
+        if (api.isRunning()) npc.anim.turnHeadTo(at()); // suspended, it stays where it is
+      }
+    });
+  } finally {
+    handlers.dispose();
+    if (heads.get(npc.key) === replace) heads.delete(npc.key);
+    if (replaced === false && w.n[npc.key] === npc) npc.anim.turnHeadTo(null);
   }
-  if (!(opts.as in poseConfig.poses))
-    throw Error(`as: expected one of: ${[...keys(poseConfig.poses), "shake"]}, or a clip`);
-  const target = opts.at === undefined || opts.at === npc.key ? undefined : w.npc.get(opts.at);
-  const { upper: clipKey, avoid } = poseConfig.poses[opts.as as PoseKey];
+  if (task.isCancelled && replaced === false) throw api.getKillError();
+}
+
+/** By npcKey, how to end their head's tracking: a new `head` replaces it */
+const heads = new Map<string, () => void>();
+
+/** `pose … as:`: a shake, a clip shown whole, else an upper-body pose held — see `poseUpper` */
+async function poseAs(api: JshCli.RunArg["api"], w: JshCli.WorldState, npc: JshCli.Npc, as: string, at?: string) {
+  if (as === "shake") return npc.anim.shakeHead(); // over any pose
+  if (!(as in poseConfig.poses) && as in w.npc.clips) return poseClip(npc, as as keyof typeof w.npc.clips);
+  if (!(as in poseConfig.poses)) throw Error(`as: expected one of: ${[...keys(poseConfig.poses), "shake"]}, or a clip`);
+  const target = at === undefined || at === npc.key ? undefined : w.npc.get(at);
+  return poseUpper(api, w, npc, as as PoseKey, target);
+}
+
+/** A clip shown whole, releasing one in pain or pacified. A crouch's is kept, moving too */
+function poseClip(npc: JshCli.Npc, clip: keyof JshCli.WorldState["npc"]["clips"]) {
+  npc.anim.setHurt(null);
+  npc.anim.setCrouch(clip === "crouch_cover" ? 2 : clip === "crouch_half" ? 1 : 0);
+  npc.anim.setPose(clip);
+}
+
+/** An upper-body pose, facing and pointing at `target`, held until they move, are armed, or it is killed or replaced */
+async function poseUpper(
+  api: JshCli.RunArg["api"],
+  w: JshCli.WorldState,
+  npc: JshCli.Npc,
+  as: PoseKey,
+  target: undefined | JshCli.Npc,
+) {
+  const { upper: clipKey, avoid } = poseConfig.poses[as];
   const { upper, face } = npc.anim;
   const mine = () => upper.target === 1 && (upper.key === clipKey || upper.key === avoid);
   /** A gun held up whilst crouched, not raised, gives way */
