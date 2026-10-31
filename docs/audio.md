@@ -17,8 +17,9 @@ sounds, the Audio pane's desk, and the jsh commands that play them in the World.
 ## The engine
 
 - **One per page.** `getAudio()` makes it on first use: one `AudioContext` and a master bus.
-  - The bus is a compressor, then an analyser, then the speakers. There is no reverb: the steps' recordings have their
-    own room.
+  - The bus is a limiter (`limiter` in `nodes.ts`, catching peaks over -6 dBFS), then an analyser, then the speakers.
+    Near the default faders an effect or a run's step peaks about -6 dBFS (`sfxLevel`, `stepLevel`).
+  - There is no reverb: the steps' recordings have their own room.
   - **Sleeping.** After `idleSecs` (10 s) without a sound the context is suspended, sparing the audio thread, and the
     next sound resumes it. It sleeps only once all is silent, and wakes from silence, so neither pops.
   - The steps and the fx each reach it through their own level. Whilst not playing, `footfall` drops the steps.

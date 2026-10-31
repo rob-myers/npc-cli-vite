@@ -27,6 +27,17 @@ export function panner(ctx: BaseAudioContext, pan: number) {
   return node;
 }
 
+/** A compressor that only catches peaks, so the mix keeps its level */
+export function limiter(ctx: BaseAudioContext) {
+  const node = ctx.createDynamicsCompressor();
+  node.threshold.value = -6;
+  node.knee.value = 0;
+  node.ratio.value = 20;
+  node.attack.value = 0.003;
+  node.release.value = 0.25;
+  return node;
+}
+
 export async function loadBuffer(ctx: BaseAudioContext, url: string) {
   const response = await fetch(url);
   return ctx.decodeAudioData(await response.arrayBuffer());

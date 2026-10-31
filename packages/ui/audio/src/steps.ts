@@ -119,4 +119,4 @@ export function createSteps(ctx: AudioContext, out: AudioNode, samples: Samples,
 /** How far each foot is placed to its side */
 const sidePan = 0.12;
 /** A step's level at full gait and fader */
-const stepLevel = 0.6;
+const stepLevel = 1;

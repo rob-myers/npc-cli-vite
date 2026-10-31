@@ -16,7 +16,7 @@ export type SfxContext = {
 
 /** Plays `key` from `c.at`, into its own panner and level */
 export function playSfx(key: SfxKey, c: SfxContext) {
-  const out = gain(c.ctx, c.level);
+  const out = gain(c.ctx, c.level * sfxLevel);
   out.connect(panner(c.ctx, c.pan)).connect(c.out);
   sfx[key](c, out);
   window.setTimeout(() => out.disconnect(), (c.at - c.ctx.currentTime + 2) * 1000);
@@ -159,6 +159,8 @@ function getStatic(ctx: BaseAudioContext) {
   return buffer;
 }
 
+/** Every effect's level at full fader, lifting them to about -6 dBFS */
+const sfxLevel = 1.6;
 /** A struck plate's partials, as `[Hz, level, decay seconds]` */
 const chinkPartials: [number, number, number][] = [
   [2350, 0.14, 0.35],

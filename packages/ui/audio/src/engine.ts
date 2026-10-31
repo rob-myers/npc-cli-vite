@@ -1,4 +1,4 @@
-import { gain } from "./nodes";
+import { gain, limiter } from "./nodes";
 import { playSfx, type SfxKey } from "./sfx";
 import {
   type AudioConfig,
@@ -65,7 +65,7 @@ function createEngine() {
   const master = gain(ctx, config.master);
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 4096;
-  master.connect(ctx.createDynamicsCompressor()).connect(analyser).connect(ctx.destination);
+  master.connect(limiter(ctx)).connect(analyser).connect(ctx.destination);
   const steps = gain(ctx, config.steps);
   steps.connect(master);
   const fx = gain(ctx, config.fx);

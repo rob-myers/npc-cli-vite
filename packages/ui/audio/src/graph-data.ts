@@ -38,7 +38,7 @@ export const graphNodes: GraphNode[] = [
   { id: "fxOut", label: "fx level", at: [4, 2.5], group: "fx", keys: ["fx"] },
 
   { id: "master", label: "master level", at: [8, 0.5], group: "master", keys: ["master"] },
-  { id: "limiter", label: "limiter", at: [9, 0.5], group: "master", note: "compressor" },
+  { id: "limiter", label: "limiter", at: [9, 0.5], group: "master", note: "peaks over -6 dB" },
   { id: "analyser", label: "analyser", at: [9, 1.5], group: "master", note: "spectrum" },
   { id: "out", label: "speakers", at: [9, 2.5], group: "master" },
 ];
