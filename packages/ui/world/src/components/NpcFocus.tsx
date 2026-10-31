@@ -17,7 +17,6 @@ import {
 } from "../service/overlay";
 import { bodyPartPoint, type PartHit, type StruckKind } from "../service/phaser-beam";
 import type { Npc } from "./npc";
-import type { State as WorldState } from "./World";
 import { WorldContext } from "./world-context";
 
 /**
@@ -81,11 +80,14 @@ export default function NpcFocus() {
         state.update();
         w.r3f?.invalidate();
       },
+      isAiming(npcKey) {
+        return w.phasers.isRaised(npcKey) === true && w.phasers.isDrawnIn(npcKey) === false;
+      },
       onFrame() {
         const stale: PhaserEntry[] = [];
         for (const entry of state.phasers.values()) {
           // this frame's aim, once: none unless aiming
-          entry.aim = isAiming(w, entry.by) ? w.phasers.aimOf(entry.by) : null;
+          entry.aim = state.isAiming(entry.by) ? w.phasers.aimOf(entry.by) : null;
           if (entry.aim !== null && isCastStale(entry, entry.aim)) stale.push(entry);
           state.syncTarget(entry);
         }
@@ -148,6 +150,14 @@ export default function NpcFocus() {
         const y = chest.y + own.offset.y - cancelEl.offsetTop - cancelEl.offsetHeight / 2;
         actionsEl.style.transform = `translate(${x}px,${y}px)`;
       },
+      placeEnd(entry, toScreenAt, shown) {
+        const { endEl } = entry;
+        const at = shown ? landingOf(entry, tmpEnd) : null;
+        showMark(endEl, at !== null);
+        if (at === null || endEl == null) return;
+        endEl.toggleAttribute("data-on", false);
+        pin(endEl, toScreenAt(at));
+      },
       placeOn(entry, toScreenAt) {
         const { endEl, met } = entry;
         showMark(endEl, met != null);
@@ -155,19 +165,11 @@ export default function NpcFocus() {
         endEl.toggleAttribute("data-on", true);
         pin(endEl, toScreenAt(tmpEnd.copy(met.point)));
       },
-      placeEnd(entry, toScreenAt, shown) {
-        const { aim, end, endEl } = entry;
-        showMark(endEl, shown && aim != null && end != null);
-        if (aim == null || end == null || endEl == null) return;
-        endEl.toggleAttribute("data-on", false);
-        // along the aim as it is now, its length from the last cast: else it lags a turn
-        pin(endEl, toScreenAt(alongAim(aim, end.dist, tmpEnd)));
-      },
       reachOf(by) {
         const entry = state.phasers.get(by);
         const npc = w.n?.[by];
-        if (entry?.aim == null || entry.end == null || npc === undefined) return null;
-        const at = alongAim(entry.aim, entry.end.dist, tmpEnd);
+        const at = entry === undefined ? null : landingOf(entry, tmpEnd);
+        if (at === null || npc === undefined) return null;
         return Math.hypot(at.x - npc.position.x, at.z - npc.position.z);
       },
       recast() {
@@ -391,15 +393,19 @@ function isCastStale(entry: PhaserEntry, aim: Aim) {
   );
 }
 
+/**
+ * Where a shot at no one lands, along the live aim at its last cast's length, else it lags a turn.
+ * `null` unless aiming, or if nothing stops it, e.g. out of a hull window
+ */
+function landingOf({ aim, end }: PhaserEntry, out: THREE.Vector3) {
+  return aim == null || end == null || end.what === "nothing" ? null : alongAim(aim, end.dist, out);
+}
+
 /** Two casts' ends differ, enough to draw again */
 function endsDiffer(a: PhaserEntry["end"], b: PhaserEntry["end"]) {
   if (a == null || b == null) return a !== b;
   return a.what !== b.what || a.at.distanceTo(b.at) > 0.01 || a.rooms.join() !== b.rooms.join();
 }
-
-/** Their phaser is all the way up and not drawn in, e.g. by a wall: its marks show only then */
-const isAiming = (w: WorldState, npcKey: string) =>
-  w.phasers.isRaised(npcKey) === true && w.phasers.isDrawnIn(npcKey) === false;
 
 const tmpPoint = new THREE.Vector3();
 const tmpEnd = new THREE.Vector3();
@@ -490,15 +496,17 @@ export type State = {
   /** Focuses `by`'s psi on `npcKey`, replacing any other */
   /** `atPointer`: opened by a press, so the player's Cancel goes under it */
   focus(by: string, npcKey: string, atPointer?: boolean): void;
+  /** Their phaser is all the way up and not drawn in, e.g. by a wall: its marks show only then */
+  isAiming(npcKey: string): boolean;
   /** Each frame: each raised phaser's cast, whom its line crosses, then the marks */
   onFrame(): void;
   /** Pins each dot over its target, the player's laser dot, and their psi actions beside whom they focus on */
   place(): void;
-  /** Pins `entry`'s dot where its ray meets whom it targets */
-  placeOn(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson): void;
   /** Pins `entry`'s dot where a shot at no one would land, whilst `shown`: no one is crossed */
   placeEnd(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson, shown: boolean): void;
-  /** Metres along the ground from `by` to where a shot at no one would land, `null` unless aiming and cast */
+  /** Pins `entry`'s dot where its ray meets whom it targets */
+  placeOn(entry: PhaserEntry, toScreenAt: (point: THREE.Vector3) => Geom.VectJson): void;
+  /** Metres along the ground from `by` to where a shot at no one would land. `null` unless aiming at something */
   reachOf(by: string): null | number;
   /** Casts again along every aim, e.g. a door or shield changed */
   recast(): void;

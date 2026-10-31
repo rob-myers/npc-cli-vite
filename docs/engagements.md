@@ -135,7 +135,7 @@ does one with a laser.
   a shot makes (`partOnRay`), each frame. It culls first: missing a cylinder `cullRadius` about them in plan,
   nothing is tested, else only bones within reach of the ray's heights across them.
 - With no one met, a small red dot marks where a shot at no one would land (`placeEnd`), drawn along the
-  live aim. The player's alone.
+  live aim. The player's alone. None is drawn where nothing stops it (`what: "nothing"`), e.g. out of a hull window.
 - Space fires (`fire`): locked on the part the dot is on by `w.phasers.arm`, as every shot is, landing where the dot
   is. That point is held in the part's bone frame (the target's `local`, read by `targetPoint`), so it moves with
   them.
