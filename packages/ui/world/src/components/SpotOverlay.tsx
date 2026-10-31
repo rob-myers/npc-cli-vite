@@ -26,7 +26,7 @@ import { getWorldStore } from "../service/storage";
 import { selectAs } from "../service/tsl";
 import { WorldContext } from "./world-context";
 
-/** The map's spots, an icon per kind coloured by sight, filled by jsh `spots --show` */
+/** The map's spots, an icon per kind coloured by sight, filled by jsh `spots show` */
 export function SpotOverlay() {
   const w = useContext(WorldContext);
 
@@ -105,7 +105,7 @@ export function SpotOverlay() {
         state.set({ shown });
         state.count();
         getWorldStore(w.key).patch({ spotsShown: shown });
-        w.events.next({ key: "spots-overlay", shown }); // jsh `spots --show` fills it
+        w.events.next({ key: "spots-overlay", shown }); // jsh `spots show` fills it
         w.view.forceUpdate();
       },
     }),
@@ -221,7 +221,7 @@ const spotArrowLift = 0.02;
 const spotArrowLen = 0.18;
 /** How far along its arrow the middle of its head is — see `createOpenArrowGeo` */
 const arrowheadAt = 0.82;
-/** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spots --show`'s */
+/** By theme: how opaque a spot's icon and arrow are, its room not faded. Their colours are jsh `spots show`'s */
 const spotInk = { dark: { icon: 0.2, arrow: 0.2 }, light: { icon: 1, arrow: 0.7 } };
 /** A spot's icon, this much larger when picking: easier to press */
 const spotPickScale = 1.4;
@@ -300,7 +300,7 @@ export type State = {
   arrowsInst: THREE.InstancedMesh;
   /** Each spot's icon. `null` until mounted, despite the type */
   iconsInst: THREE.InstancedMesh;
-  /** Whether the map's spots are drawn — see jsh `spots --show` */
+  /** Whether the map's spots are drawn — see jsh `spots show` */
   shown: boolean;
   /** The spots drawn, by instance id */
   drawn: SpotDraw[];

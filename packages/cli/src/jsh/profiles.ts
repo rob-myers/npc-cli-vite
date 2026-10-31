@@ -8,7 +8,7 @@ predicates
 inventory
 sidestep
 sounds
-spots --show
+spots show
 
 `.trim();
 

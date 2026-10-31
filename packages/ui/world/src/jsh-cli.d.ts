@@ -125,7 +125,7 @@ declare namespace JshCli {
         key: "update-faded-rooms";
       }
     | {
-        /** The spots overlay was turned on or off — see jsh `spots --show` */
+        /** The spots overlay was turned on or off — see jsh `spots show` */
         key: "spots-overlay";
         shown: boolean;
       }
