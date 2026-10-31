@@ -256,6 +256,8 @@ export const sitTurn = {
   /** Past this to their left, the torso turns with the gun: the arm aiming, their right, would cross their chest */
   aimTorsoFrom: Math.PI / 4,
   body: 0.25,
+  /** The most the neck turns towards a hand at their head, e.g. psi: past it the arm would cross the head, so the torso turns */
+  heldNeckRad: Math.PI / 6,
   rate: 6,
 } as const;
 

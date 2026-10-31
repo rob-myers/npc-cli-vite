@@ -1029,7 +1029,10 @@ export class NpcAnimation {
       head.worldToLocal(forearm.localToWorld(tmpHeld[side].copy(forearm.position)));
     }
     /** The torso's turn: a share of their look's, giving way whilst an arm aims to the gun's far to their left */
-    const torso = (1 - aiming) * (this.posture === "sit" ? sitTurn.body : 0) * turn.value + torsoAim;
+    let torso = (1 - aiming) * (this.posture === "sit" ? sitTurn.body : 0) * turn.value + torsoAim;
+    // towards a hand at their head (their left is positive), the torso takes what the neck may not
+    if (held.left === true && turn.value > 0) torso = Math.max(torso, turn.value - sitTurn.heldNeckRad);
+    if (held.right === true && turn.value < 0) torso = Math.min(torso, turn.value + sitTurn.heldNeckRad);
     /** The head's turn on the torso: where they look, as far as the neck lets it from a torso turned with the gun */
     const neck = THREE.MathUtils.clamp(turn.value - torso, -sitTurn.maxRad, sitTurn.maxRad);
     /** Each bone's parent's world turn, carried down the chain (stomach, chest, head): one walk up the skeleton, not three */
