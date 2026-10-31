@@ -162,8 +162,10 @@ export const npcMaterialConfig = {
   litAmbient: 0.4,
   /** Seconds the player's room's extra light eases over — see `theme.npcs.sameRoom` */
   sameRoomSecs: 0.4,
-  /** A light of the npcs' own, from straight above: how far an underside darkens, a side half as far */
+  /** A light of the npcs' own, from `faceShadeDir`: how far a face turned away darkens, one edge-on half as far */
   faceShade: 0.85,
+  /** Where `faceShade`'s light comes from, in world space. Straight above is `[0, 1, 0]` */
+  faceShadeDir: [0.25, 1, 0.25],
 } as const;
 
 export const fromAnimationClipKey = {

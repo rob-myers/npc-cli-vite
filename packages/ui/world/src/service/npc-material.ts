@@ -208,7 +208,8 @@ function exposure(
   { ambient, dim, sameRoom }: NpcShared,
   fold: THREE.Node<"float">,
 ) {
-  const { ambient: least, ambientInSight, litAmbient, faceShade } = npcMaterialConfig;
+  const { ambient: least, ambientInSight, litAmbient, faceShade, faceShadeDir } = npcMaterialConfig;
+  const toLight = new THREE.Vector3(...faceShadeDir).normalize();
   const ambientNow = mix(float(least), float(ambientInSight), w.view.fadeRoomsFx.sightNode).max(ambient);
   return (
     ambientNow
@@ -216,8 +217,8 @@ function exposure(
       .add(litAmount.mul(litAmbient))
       .add(roomLit.mul(sameRoom))
       .clamp(0, 1)
-      // flat-shaded from straight above, half-Lambert: whatever the light, and steady as the camera turns
-      .mul(normalWorld.y.mul(faceShade / 2).add(1 - faceShade / 2))
+      // flat-shaded from `faceShadeDir`, half-Lambert: whatever the light, and steady as the camera turns
+      .mul(normalWorld.dot(vec3(toLight)).mul(faceShade / 2).add(1 - faceShade / 2))
       .mul(fold)
       .mul(dim)
   );

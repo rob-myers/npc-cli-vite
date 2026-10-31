@@ -48,5 +48,5 @@ An npc's colour is their skin times their exposure, which is ADDED up (`exposure
 - **The player's light**: `litBody`, taking what the ambient leaves.
 - **Lit**: `litAmbient` more whilst lit (`setNpcLit`). A lit npc also keeps their colour as their room fades.
 - **In the player's room**: `theme.npcs.sameRoom` more, eased in and out over `sameRoomSecs` as either changes room. Each npc's `roomLit` uniform is eased in `NpcAnimation.tickRoomLit`, against `w.npc.playerRoom`, which `syncNpcRoomSlots` sets.
-- Then flat-shaded from above (`faceShade`), and scaled by the npc brightness slider (`dimNode`). A tint would be capped at a 0.4 swing by `unlitTint`.
+- Then flat-shaded by a light of their own, from `faceShadeDir` (`faceShade`, half-Lambert, fixed in world space), and scaled by the npc brightness slider (`dimNode`). A tint would be capped at a 0.4 swing by `unlitTint`.
 - `ambient`, `sameRoom` and `dim` are uniforms shared by every npc, set with the theme (`w.npc.setAmbient`) or the slider (`setBrightness`).
