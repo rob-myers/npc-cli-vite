@@ -4,8 +4,8 @@ import type { Plugin } from "vite";
 
 /** Lists the hashed assets a deploy carries, so the next build can carry them forward */
 const historyFile = "asset-history.json";
-/** A superseded asset is dropped once this many deploys have passed without it */
-const retainDeploys = 30;
+/** A superseded asset is dropped once this many deploys have passed without it. `ASSET_HISTORY_RETAIN` overrides it */
+const defaultRetainDeploys = 30;
 const assetKeyRegex = /^assets\/[\w.-]+$/;
 
 type History = {
@@ -33,6 +33,7 @@ export function assetHistoryPlugin(): Plugin {
   let ui: Record<string, string> = {};
   // a Netlify production build is still serving the previous deploy
   const from = process.env.ASSET_HISTORY_FROM || (process.env.CONTEXT === "production" ? process.env.URL : undefined);
+  const retainDeploys = parseRetain(process.env.ASSET_HISTORY_RETAIN);
 
   return {
     name: "asset-history",
@@ -96,13 +97,22 @@ export function assetHistoryPlugin(): Plugin {
         await fs.writeFile(path.join(outDir, historyFile), `${JSON.stringify({ seq, files, deploys })}\n`);
         const mb = (n: number) => `${(n / 2 ** 20).toFixed(1)}MB`;
         console.log(
-          `[asset-history] deploy #${seq}: ${counts.current} assets ${mb(bytes.current)} (${counts.added} new ${mb(bytes.added)}), carried ${counts.carried} ${mb(bytes.carried)}${from ? ` from ${from}` : ""}`,
+          `[asset-history] deploy #${seq}: ${counts.current} assets ${mb(bytes.current)} (${counts.added} new ${mb(bytes.added)}), carried ${counts.carried} ${mb(bytes.carried)}${from ? ` from ${from}` : ""}, retaining ${retainDeploys} deploys`,
         );
       } catch (e) {
         console.warn("[asset-history] skipped:", e); // never fail a deploy over history
       }
     },
   };
+}
+
+/** A whole number of deploys, else the default */
+function parseRetain(value: string | undefined) {
+  if (value === undefined || value === "") return defaultRetainDeploys;
+  const n = Number(value);
+  if (Number.isInteger(n) && n >= 0) return n;
+  console.warn(`[asset-history] ignored ASSET_HISTORY_RETAIN=${value}`);
+  return defaultRetainDeploys;
 }
 
 async function fetchHistory(from: string): Promise<History | null> {
